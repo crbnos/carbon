@@ -124,6 +124,29 @@ function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
 }
 
+// A receipt lot is closed once its receipt is voided: the stock it inspects was
+// never received. Accepting it made the voided serials and batches Available
+// again, and rejecting an untracked lot wrote the reversed stock off a second
+// time. FOR SHARE waits for a void that is running, which locks the receipt.
+async function assertReceiptNotVoided(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspection: { sourceDocument: string; sourceDocumentId: string | null }
+): Promise<void> {
+  if (inspection.sourceDocument !== "Receipt" || !inspection.sourceDocumentId)
+    return;
+  const receipt = await trx
+    .selectFrom("receipt")
+    .select("status")
+    .where("id", "=", inspection.sourceDocumentId)
+    .where("companyId", "=", companyId)
+    .forShare()
+    .executeTakeFirst();
+  if (receipt?.status === "Voided") {
+    throw new Error("The receipt of this inspection was voided");
+  }
+}
+
 // A sample whose verdict already drove a production posting (MES verdict-driven
 // completion links productionQuantity.inspectionSampleId) is locked — changing
 // it would desync the posted quantity. Deleting the productionQuantity row in
@@ -239,6 +262,7 @@ export async function upsertInspectionSample(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, sample.companyId, inspection);
 
       // Serial parts carry a tracked entity that may only be sampled once, so we
       // upsert by it. Anonymous (batch / inventory / non-inventory) columns have
@@ -416,6 +440,7 @@ export async function dispositionInspection(
       if (args.requireOpen && isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is already dispositioned");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
       const isReceiptSource = inspection.sourceDocument === "Receipt";
 
       const item = await trx
@@ -686,6 +711,7 @@ export async function upsertInspectionMeasurement(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const feature = await trx
         .selectFrom("inspectionFeature")
@@ -1013,7 +1039,7 @@ export async function changeInspectionDocument(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
@@ -1021,6 +1047,7 @@ export async function changeInspectionDocument(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const measurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -1083,7 +1110,7 @@ export async function recordInspectionGauge(
     const result = await db.transaction().execute(async (trx) => {
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status"])
+        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
         .executeTakeFirst();
@@ -1091,6 +1118,7 @@ export async function recordInspectionGauge(
       if (isInspectionClosed(inspection.status)) {
         throw new Error("Inspection is closed");
       }
+      await assertReceiptNotVoided(trx, args.companyId, inspection);
 
       const plan = await trx
         .selectFrom("inspectionSamplingPlan")

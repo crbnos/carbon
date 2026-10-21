@@ -40,6 +40,7 @@ pnpm --filter @carbon/env test
 - **Redis/Jobs:** `REDIS_URL`, `INNGEST_SIGNING_KEY`, `INNGEST_EVENT_KEY`
 - **Auth:** `SESSION_SECRET`, `SESSION_MAX_AGE`, `RATE_LIMIT`, `AUTH_PROVIDERS`, `isAuthProviderEnabled()`
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)
+- **Maintenance and status:** `MAINTENANCE_MODE` (every request but `/health` answers 503), `SYSTEM_STATUS_URL` (optional status/announcement document)
 - **URLs:** `getAppUrl()`, `getMESUrl()`, `getBrowserEnv()`
 - **Logging:** `LOG_LEVEL` (optional, non-secret, browser-safe — consumed by `@carbon/logger`)
 - **Integrations:** Stripe, SMTP email, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)

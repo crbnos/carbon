@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getMaterialForms } from "~/modules/items";
+import { getMaterialForms } from "~/modules/items/items.service";
 import { MaterialFormsTable } from "~/modules/items/ui/MaterialShapes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

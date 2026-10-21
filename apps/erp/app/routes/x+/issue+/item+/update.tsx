@@ -2,112 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { datetime } from "@carbon/utils";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { isIssueLocked } from "~/modules/quality";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { disposition } from "~/modules/quality/quality.models";
-import { updateIssueItemQuantity } from "~/modules/quality/quality-disposition.server";
-import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
-  });
+// The disposition rows post one field at a time, as form strings.
+const field = z.discriminatedUnion("field", [
+  z.object({
+    id: z.string(),
+    field: z.literal("disposition"),
+    value: z.enum(disposition)
+  }),
+  z.object({
+    id: z.string(),
+    field: z.literal("quantity"),
+    value: zfd.numeric(z.number()),
+    expectedQuantity: zfd.numeric(z.number())
+  })
+]);
 
-  const formData = await request.formData();
-  const id = formData.get("id");
-  const field = formData.get("field");
-  const value = formData.get("value");
-
-  if (typeof id !== "string") {
-    return {
-      error: { message: "Invalid nonConformanceItem id" },
-      data: null
-    };
-  }
-
-  if (
-    typeof field !== "string" ||
-    (typeof value !== "string" && value !== null)
-  ) {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
-
-  const parent = await client
-    .from("nonConformanceItem")
-    .select("nonConformance(status)")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-  // Without this, an update against a missing row matches nothing and still
-  // reports success.
-  if (parent.error || !parent.data) {
-    return { error: { message: "Issue item not found" }, data: null };
-  }
-  const lockedError = requireUnlockedBulk({
-    statuses: [(parent.data as any)?.nonConformance?.status ?? null],
-    checkFn: isIssueLocked,
-    message: "Cannot modify a closed issue. Reopen it first."
-  });
-  if (lockedError) return lockedError;
-
-  switch (field) {
-    case "disposition":
-      if (
-        value === null ||
-        !disposition.includes(value as (typeof disposition)[number])
-      ) {
-        return {
-          error: { message: "Invalid disposition" },
-          data: null
-        };
-      }
-      return await client
-        .from("nonConformanceItem")
-        .update({
-          [field]: value ? (value as (typeof disposition)[number]) : null,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", id);
-    case "quantity": {
-      const quantity = Number(value);
-      if (
-        value === null ||
-        value.trim() === "" ||
-        !Number.isFinite(quantity) ||
-        quantity < 0
-      ) {
-        return {
-          error: { message: "Quantity must be zero or more" },
-          data: null
-        };
-      }
-      const expected = formData.get("expectedQuantity");
-      const expectedQuantity = Number(expected);
-      if (
-        typeof expected !== "string" ||
-        expected.trim() === "" ||
-        !Number.isFinite(expectedQuantity)
-      ) {
-        return {
-          error: { message: "Invalid expected quantity" },
-          data: null
-        };
-      }
-      return await updateIssueItemQuantity({
-        id,
-        companyId,
-        userId,
-        quantity,
-        expectedQuantity
-      });
-    }
-    default:
-      return {
-        error: { message: `Invalid field: ${field}` },
-        data: null
-      };
-  }
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(field).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.quality.updateIssueItemField(input.data);
 }

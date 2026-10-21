@@ -77,18 +77,16 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import type { PurchaseInvoice } from "~/modules/invoicing";
-import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
+import { purchaseInvoiceLineValidator } from "~/modules/invoicing/invoicing.models";
+import type { PurchaseInvoice } from "~/modules/invoicing/types";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
-  EACH_UNIT_OF_MEASURE_CODE,
-  getSupplierPartPricing
-} from "~/modules/items";
-import {
-  type ItemType,
   itemType,
-  resolveSupplierPrice,
   type SupplierPartPricing
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 

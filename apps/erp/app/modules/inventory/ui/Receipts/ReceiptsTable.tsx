@@ -38,12 +38,12 @@ import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Receipt } from "~/modules/inventory";
 import {
-  ReceiptStatus,
   receiptSourceDocumentType,
   receiptStatusType
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
+import type { Receipt } from "~/modules/inventory/types";
+import { ReceiptStatus } from "~/modules/inventory/ui";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 

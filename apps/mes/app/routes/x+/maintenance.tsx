@@ -298,7 +298,7 @@ function EmptyState({
 }) {
   return (
     <MesEmptyState
-      className="flex-1 w-full h-[calc(100dvh-var(--header-height)*2-40px)]"
+      className="flex-1 w-full h-[calc(100dvh-var(--header-height)*2-40px-var(--announcement-height,0px))]"
       title={message}
       action={
         onClear ? (

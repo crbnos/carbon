@@ -5,7 +5,7 @@
 import type { OptionsSource } from "@carbon/ee/workflows";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useFetcher } from "react-router";
-import type { OptionsErrorCode } from "~/modules/workflows/options-providers.server";
+import type { OptionsErrorCode } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 export type WorkflowOptions = {

@@ -11,11 +11,13 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
 import {
   accountValidator,
+  groupAccountValidator
+} from "~/modules/accounting/accounting.models";
+import {
   getAccount,
   getGroupAccounts,
-  groupAccountValidator,
   upsertAccount
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import {
   ChartOfAccountForm,
   GroupAccountForm

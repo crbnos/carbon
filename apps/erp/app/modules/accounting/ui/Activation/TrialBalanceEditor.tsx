@@ -30,7 +30,13 @@ import {
 import { equals, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import { LuFileUp, LuSave, LuSearch, LuTriangleAlert } from "react-icons/lu";
+import {
+  LuCloudDownload,
+  LuFileUp,
+  LuSave,
+  LuSearch,
+  LuTriangleAlert
+} from "react-icons/lu";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -41,23 +47,39 @@ import type { TrialBalanceCsvError } from "../../trial-balance-csv";
 import type { AccountListItem } from "../../types";
 import { activationStepPath, useAccountsById } from "./ActivationSteps";
 
-type Amounts = { debit: number; credit: number };
-
 /** What the trial balance step's action returns when an import fails. */
 export type TrialBalanceImportResult = { errors?: TrialBalanceCsvError[] };
 
 /**
- * The prior system's trial balance as of the day before the cutover: a debit
- * and a credit per posting account, entered here or imported from a CSV with
- * the columns `accountNumber`, `debit` and `credit`. Saving replaces the
- * Draft opening journal's lines.
+ * What a pull from the accounting provider returns when some of its balances
+ * have no Carbon account: the rest is saved, these are left to the user.
+ * `amount` is debit-signed.
+ */
+export type TrialBalancePullResult = {
+  unplaced?: {
+    code: string | null;
+    name: string;
+    amount: number;
+    /** Mapped to more than one Carbon account. */
+    ambiguous: boolean;
+  }[];
+};
+
+/**
+ * The prior system's trial balance as of the day before the cutover: one
+ * debit-signed balance per posting account (a credit is negative), entered
+ * here or imported from a CSV with the columns `accountNumber`, `debit` and
+ * `credit`. Saving replaces the Draft opening journal's lines.
  */
 export default function TrialBalanceEditor({
   cutoverDate,
+  providerName,
   lines,
   controlAccountIds
 }: {
   cutoverDate: string;
+  /** The connected accounting integration that can provide a trial balance. */
+  providerName: string | null;
   /** The saved trial balance. */
   lines: TrialBalanceLine[];
   /** Accounts whose opening balance Carbon posts from its open items. */
@@ -75,7 +97,7 @@ export default function TrialBalanceEditor({
   const [search, setSearch] = useState("");
   // Only what the user typed since the last save. The saved lines come from
   // the loader, so a reload after a save shows what was stored.
-  const [edits, setEdits] = useState<Record<string, Partial<Amounts>>>({});
+  const [edits, setEdits] = useState<Record<string, number>>({});
 
   const save = useAction({
     onSettled: (result) => {
@@ -88,12 +110,18 @@ export default function TrialBalanceEditor({
       if (!result) setEdits({});
     }
   });
+  const puller = useAction<TrialBalancePullResult>({
+    // A pull that saved redirects, or returns what it could not place.
+    onSettled: (result) => {
+      if (!result || result.unplaced) setEdits({});
+    }
+  });
   const fileInput = useRef<HTMLInputElement>(null);
 
   const saved = useMemo(() => {
-    const byAccount = new Map<string, Amounts>();
+    const byAccount = new Map<string, number>();
     for (const line of lines) {
-      byAccount.set(line.accountId, { debit: line.debit, credit: line.credit });
+      byAccount.set(line.accountId, round(line.debit - line.credit));
     }
     return byAccount;
   }, [lines]);
@@ -121,33 +149,27 @@ export default function TrialBalanceEditor({
       : sorted;
   }, [accountsById, search]);
 
-  const amountsOf = (accountId: string): Amounts => {
-    const stored = saved.get(accountId);
-    const edit = edits[accountId];
-    return {
-      debit: edit?.debit ?? stored?.debit ?? 0,
-      credit: edit?.credit ?? stored?.credit ?? 0
-    };
-  };
+  const balanceOf = (accountId: string): number =>
+    edits[accountId] ?? saved.get(accountId) ?? 0;
 
   const allAccountIds = new Set([...saved.keys(), ...Object.keys(edits)]);
   const entered = [...allAccountIds]
-    .map((accountId) => ({ accountId, ...amountsOf(accountId) }))
-    .filter((line) => line.debit !== 0 || line.credit !== 0);
-  const totalDebit = round(entered.reduce((sum, line) => sum + line.debit, 0));
-  const totalCredit = round(
-    entered.reduce((sum, line) => sum + line.credit, 0)
-  );
-  const isBalanced = equals(totalDebit, totalCredit);
+    .map((accountId) => ({ accountId, balance: balanceOf(accountId) }))
+    .filter((line) => line.balance !== 0);
+  // The save takes a debit and a credit per account.
+  const enteredLines = entered.map(({ accountId, balance }) => ({
+    accountId,
+    debit: balance > 0 ? balance : 0,
+    credit: balance < 0 ? -balance : 0
+  }));
+  const total = round(entered.reduce((sum, line) => sum + line.balance, 0));
+  const isBalanced = equals(total, 0);
   const hasEdits = Object.keys(edits).length > 0;
 
-  const setAmount = (accountId: string, side: keyof Amounts, value: number) => {
+  const setBalance = (accountId: string, value: number) => {
     setEdits((prev) => ({
       ...prev,
-      [accountId]: {
-        ...prev[accountId],
-        [side]: Number.isFinite(value) ? value : 0
-      }
+      [accountId]: Number.isFinite(value) ? value : 0
     }));
   };
 
@@ -167,6 +189,7 @@ export default function TrialBalanceEditor({
   );
   const step = INPUT_STEP.money(currencyDecimals);
   const importErrors = importer.data?.errors ?? [];
+  const unplaced = puller.data?.unplaced ?? [];
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -189,6 +212,21 @@ export default function TrialBalanceEditor({
             className="hidden"
             onChange={(e) => onFile(e.target.files?.[0])}
           />
+          {providerName && (
+            <puller.Form method="post" action={action}>
+              <input type="hidden" name="intent" value="pull-tb" />
+              <input type="hidden" name="cutoverDate" value={cutoverDate} />
+              <Button
+                type="submit"
+                variant="secondary"
+                leftIcon={<LuCloudDownload />}
+                isDisabled={!canEdit}
+                isLoading={puller.isPending}
+              >
+                <Trans>Pull from {providerName}</Trans>
+              </Button>
+            </puller.Form>
+          )}
           <Button
             variant="secondary"
             leftIcon={<LuFileUp />}
@@ -201,7 +239,11 @@ export default function TrialBalanceEditor({
           <save.Form method="post" action={action}>
             <input type="hidden" name="intent" value="save-tb" />
             <input type="hidden" name="cutoverDate" value={cutoverDate} />
-            <input type="hidden" name="lines" value={JSON.stringify(entered)} />
+            <input
+              type="hidden"
+              name="lines"
+              value={JSON.stringify(enteredLines)}
+            />
             <Button
               type="submit"
               leftIcon={<LuSave />}
@@ -215,10 +257,19 @@ export default function TrialBalanceEditor({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        <Trans>
-          The CSV needs the columns accountNumber, debit and credit. An import
-          replaces the whole trial balance.
-        </Trans>
+        {providerName ? (
+          <Trans>
+            Enter debits as positive and credits as negative amounts. The CSV
+            needs the columns accountNumber, debit and credit. An import or a
+            pull from {providerName} replaces the whole trial balance.
+          </Trans>
+        ) : (
+          <Trans>
+            Enter debits as positive and credits as negative amounts. The CSV
+            needs the columns accountNumber, debit and credit. An import
+            replaces the whole trial balance.
+          </Trans>
+        )}
       </p>
 
       {importErrors.length > 0 && (
@@ -240,6 +291,38 @@ export default function TrialBalanceEditor({
         </Alert>
       )}
 
+      {unplaced.length > 0 && (
+        <Alert variant="warning">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Some balances have no Carbon account</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            <p>
+              <Trans>
+                Map these accounts in the {providerName} integration settings
+                and pull again, or enter their balances below.
+              </Trans>
+            </p>
+            <ul className="list-disc pl-4">
+              {unplaced.map((row, index) => (
+                // Two computed provider lines can share a name and no code.
+                <li key={`${index}:${row.code ?? ""}:${row.name}`}>
+                  {row.code ? `${row.code} ` : ""}
+                  {row.name}: {formatter.format(row.amount)}
+                  {row.ambiguous && (
+                    <span className="text-muted-foreground">
+                      {" "}
+                      <Trans>(mapped to more than one Carbon account)</Trans>
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Table>
         <Thead>
           <Tr>
@@ -247,16 +330,13 @@ export default function TrialBalanceEditor({
               <Trans>Account</Trans>
             </Th>
             <Th className="w-48 text-right">
-              <Trans>Debit</Trans>
-            </Th>
-            <Th className="w-48 text-right">
-              <Trans>Credit</Trans>
+              <Trans>Balance</Trans>
             </Th>
           </Tr>
         </Thead>
         <Tbody>
           {accounts.map((account) => {
-            const amounts = amountsOf(account.id);
+            const balance = balanceOf(account.id);
             return (
               <Tr key={account.id}>
                 <Td>
@@ -284,32 +364,25 @@ export default function TrialBalanceEditor({
                     )}
                   </div>
                 </Td>
-                {(["debit", "credit"] as const).map((side) => (
-                  <Td key={side} className="text-right">
-                    <NumberField
-                      aria-label={
-                        side === "debit"
-                          ? t`Debit for ${account.name}`
-                          : t`Credit for ${account.name}`
-                      }
-                      value={amounts[side]}
-                      minValue={0}
-                      step={step}
-                      formatOptions={formatOptions}
-                      isDisabled={!canEdit}
-                      onChange={(value) => setAmount(account.id, side, value)}
-                    >
-                      <NumberInput
-                        size="sm"
-                        className={cn(
-                          "h-7 text-right tabular-nums",
-                          // Most accounts carry no balance; mute the zeros.
-                          amounts[side] === 0 && "text-muted-foreground"
-                        )}
-                      />
-                    </NumberField>
-                  </Td>
-                ))}
+                <Td className="text-right">
+                  <NumberField
+                    aria-label={t`Balance for ${account.name}`}
+                    value={balance}
+                    step={step}
+                    formatOptions={formatOptions}
+                    isDisabled={!canEdit}
+                    onChange={(value) => setBalance(account.id, value)}
+                  >
+                    <NumberInput
+                      size="sm"
+                      className={cn(
+                        "h-7 text-right tabular-nums",
+                        // Most accounts carry no balance; mute the zeros.
+                        balance === 0 && "text-muted-foreground"
+                      )}
+                    />
+                  </NumberField>
+                </Td>
               </Tr>
             );
           })}
@@ -321,18 +394,17 @@ export default function TrialBalanceEditor({
                 <Trans>Total</Trans>
               ) : (
                 <span className="text-destructive">
-                  <Trans>
-                    Total (out of balance by{" "}
-                    {formatter.format(round(totalDebit - totalCredit))})
-                  </Trans>
+                  <Trans>Total (out of balance)</Trans>
                 </span>
               )}
             </Th>
-            <Th className="text-right tabular-nums">
-              {formatter.format(totalDebit)}
-            </Th>
-            <Th className="text-right tabular-nums">
-              {formatter.format(totalCredit)}
+            <Th
+              className={cn(
+                "text-right tabular-nums",
+                !isBalanced && "text-destructive"
+              )}
+            >
+              {formatter.format(total)}
             </Th>
           </Tr>
         </Tfoot>

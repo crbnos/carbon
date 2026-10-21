@@ -6,12 +6,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getDocumentTemplateConfig } from "~/modules/settings";
 import {
   getCompanyLogoForLabel,
+  getCompanySettings,
+  getDocumentTemplateConfig,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 import { getStockTransferLabelItems } from "./labels.server";
 

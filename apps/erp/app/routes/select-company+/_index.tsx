@@ -27,7 +27,7 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Form, useLoaderData, useNavigation } from "react-router";
-import { getEmployeeCompanies } from "~/modules/settings";
+import { getEmployeeCompanies } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -64,7 +64,7 @@ export default function SelectCompany() {
   const [query, setQuery] = useState("");
 
   // A group name only tells the companies apart when more than one of the
-  // user's companies shares it — mirrors the top-bar CompanySwitcher.
+  // user's companies shares it — mirrors the navigation rail's CompanySwitcher.
   const sharedGroupNames = useMemo(() => {
     const counts = new Map<string, number>();
     for (const c of companies) {

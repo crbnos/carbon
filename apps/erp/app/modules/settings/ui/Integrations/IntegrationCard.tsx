@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Integration } from "@carbon/ee";
-import { isIntegrationWhitelisted } from "@carbon/ee/plan";
+import {
+  isIntegrationComingSoon,
+  isIntegrationWhitelisted
+} from "@carbon/ee/plan";
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -16,13 +20,18 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  toast,
+  useEdition,
   useRouteData
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { useUser } from "~/hooks/useUser";
+import { getIntegrationError } from "~/modules/settings/integration-errors";
+import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
 import { path } from "~/utils/path";
 import { InstallButton } from "./InstallButton";
 import { InstallModeDialog } from "./InstallModeDialog";
@@ -58,6 +67,9 @@ export function IntegrationCard({
   installed: IntegrationHealth | null;
 }) {
   const fetcher = useFetcher<{}>();
+  const revalidator = useRevalidator();
+  const { i18n } = useLingui();
+
   // The declared mode this install is in, if any. Undefined for every
   // integration without modes, which then keeps its own description.
   const installedMode = installed?.installMode
@@ -78,17 +90,27 @@ export function IntegrationCard({
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
+  const edition = useEdition();
+  const user = useUser();
+  // Only an install is withheld: a company where Carbon staff installed it
+  // keeps a working card.
+  const comingSoon =
+    !installed &&
+    isIntegrationComingSoon(integration, { edition, email: user.email });
 
   // At most one ACTIVE integration per provider role, enforced by a database
   // trigger. Surfacing it here is what keeps a customer from meeting that
   // refusal as a failed install — and it names the incumbent, so the next step
   // is obvious.
   const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" }
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
   ).providerRole;
-  const roleIncumbent = providerRole
-    ? (routeData?.activeRoles?.[providerRole] ?? null)
-    : null;
+  // Several OEE providers may be active at once (the database exempts the
+  // role), so an active one is never an incumbent.
+  const roleIncumbent =
+    providerRole && providerRole !== "oee"
+      ? (routeData?.activeRoles?.[providerRole] ?? null)
+      : null;
   const modes =
     (
       integration as {
@@ -105,6 +127,32 @@ export function IntegrationCard({
   const needsModeChoice =
     "oauth" in integration && !!integration.oauth && modes.length > 0;
 
+  // An OAuth callback that ran inside the popup `onClientInstall` opened posts
+  // its outcome here and closes the popup (see oauth-popup.server.ts).
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (!isOAuthPopupResult(event.data)) return;
+      if (event.data.integration !== integration.id) return;
+
+      if (event.data.ok) {
+        revalidator.revalidate();
+        return;
+      }
+
+      const failure = getIntegrationError(integration.id, event.data.error);
+      if (failure) {
+        toast.error(i18n._(failure.title), {
+          id: `${integration.id}:${event.data.error}`,
+          description: i18n._(failure.description)
+        });
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [integration.id, revalidator, i18n]);
+
   const handleUninstall = async () => {
     await integration?.onClientUninstall?.();
   };
@@ -117,6 +165,10 @@ export function IntegrationCard({
           installed ? (
             <Badge className="flex-shrink-0" variant="green">
               <Trans>Installed</Trans>
+            </Badge>
+          ) : comingSoon ? (
+            <Badge className="flex-shrink-0" variant="secondary">
+              <Trans>Coming soon</Trans>
             </Badge>
           ) : null
         ) : (
@@ -182,7 +234,7 @@ export function IntegrationCard({
             ) : (
               <InstallButton
                 integration={integration}
-                isDisabled={!!conflictsWith}
+                isDisabled={comingSoon || !!conflictsWith}
                 onInstall={
                   needsModeChoice ? () => setShowModeDialog(true) : undefined
                 }

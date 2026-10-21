@@ -19,7 +19,10 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
+import {
+  ssoConnectionValidator,
+  ssoDomainValidator
+} from "~/modules/settings/settings.models";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

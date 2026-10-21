@@ -6,16 +6,17 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { batchTrigger } from "@carbon/jobs";
+import { datetime, redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
 import type {
   DraftedRentalCreditMemo,
   DraftedRentalInvoice
-} from "@carbon/server-functions/create-rental-invoices";
-import { datetime, redirect } from "@carbon/utils";
-import type { ActionFunctionArgs } from "react-router";
-
-import { getRentalAgreement } from "~/modules/sales";
-import { generateRentalInvoicesNow } from "~/modules/sales/sales.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/sales/sales.service";
+import {
+  generateRentalInvoicesNow,
+  getRentalAgreement
+} from "~/modules/sales/sales.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

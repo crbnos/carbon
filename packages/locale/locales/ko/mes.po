@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} 작업 지시"
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 안내: {0}에 계정이 erp.try.carbon.ms(으)로 이전됩니다"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "이전 완료가 완료되지 않았습니다. 다시 시도하면 남은 단계가 재개되며 — 수량이 중복으로 계산되지 않습니다."
 
@@ -402,6 +406,9 @@ msgstr "닫기"
 msgid "Collapse characteristics table"
 msgstr "특성 표 축소"
 
+msgid "Collapse navigation"
+msgstr "탐색 접기"
+
 msgid "Collapse panel"
 msgstr "패널 축소"
 
@@ -424,6 +431,9 @@ msgstr "열: {0}"
 
 msgid "Columns"
 msgstr "열"
+
+msgid "Companies"
+msgstr "회사"
 
 msgid "Company"
 msgstr "회사"
@@ -541,6 +551,9 @@ msgstr "설명"
 
 msgid "Details"
 msgstr "상세 정보"
+
+msgid "Dismiss"
+msgstr "닫기"
 
 msgid "Dispatch not found"
 msgstr "유지보수 지시를 찾을 수 없습니다"
@@ -817,6 +830,9 @@ msgstr "아직 작업 중입니다"
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+msgid "Idle"
+msgstr "유휴"
+
 msgid "Idle for"
 msgstr "유휴 상태"
 
@@ -908,6 +924,9 @@ msgstr "작업 이동표"
 msgid "Jobs"
 msgstr "작업 지시"
 
+msgid "Keep navigation open"
+msgstr "탐색 열어 두기"
+
 msgid "Keep picking"
 msgstr "피킹을 계속하세요"
 
@@ -958,6 +977,9 @@ msgstr "목록 보기"
 
 msgid "Load list"
 msgstr "목록 불러오기"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "로드됨: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -1280,6 +1302,9 @@ msgstr "OEM 필요"
 msgid "of {0}"
 msgstr "/{0}"
 
+msgid "Offline"
+msgstr "오프라인"
+
 msgid "Oldest first"
 msgstr "오래된순"
 
@@ -1310,6 +1335,9 @@ msgstr "이 배치에서 작업 지시 열기"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
+
+msgid "Open ERP"
+msgstr "ERP 열기"
 
 msgid "Open Jobs"
 msgstr "미결 작업 지시"
@@ -2154,6 +2182,9 @@ msgstr "업데이트"
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
 msgstr "업데이트됨 {0}"
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "성공적으로 업데이트되었습니다"

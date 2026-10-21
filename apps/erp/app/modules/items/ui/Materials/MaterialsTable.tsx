@@ -77,7 +77,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";

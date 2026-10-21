@@ -8,7 +8,6 @@ import { isBrowser } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
-import { RAMP_AUTHORIZE_URL, RAMP_TOKEN_URL } from "./environment";
 // Client-bundle safe: `modes` value-imports only the pure `spend/types` leaf;
 // everything else it touches is type-only and erased.
 import {
@@ -19,19 +18,22 @@ import {
 import { RAMP_OAUTH_SCOPES, RAMP_PUSH_ONLY_OAUTH_SCOPES } from "./scopes";
 
 /**
- * OAuth "Connect to Ramp" authorization-code flow — the ONLY way to connect
- * Ramp. The authorize/token hosts come from `./environment` (a browser-safe
- * module, not `./lib/client`, which pulls `node:crypto` into the client
- * bundle), which carries the TEMPORARY sandbox/production switch used for
- * customer testing. `offline_access` requests a refresh token; the app must
- * have the Refresh Token grant enabled. IntegrationCard builds the authorize
- * redirect from this block.
+ * OAuth "Connect to Ramp" authorization-code flow (production) — the ONLY way to
+ * connect Ramp. Declared inline (not imported from `./lib/client`, which pulls
+ * `node:crypto` into the client bundle). `offline_access` requests a refresh
+ * token; the app must have the Refresh Token grant enabled. IntegrationCard
+ * builds the authorize redirect from this block.
  */
+// The user-consent authorize endpoint lives on the APP host (app.ramp.com), NOT
+// the API host — hitting api.ramp.com/v1/authorize returns "Not Authorized" from
+// the API gateway before any consent screen. The token exchange DOES stay on the
+// API host (api.ramp.com/developer/v1/token).
+const RAMP_AUTHORIZE_URL = "https://app.ramp.com/v1/authorize";
+const RAMP_TOKEN_URL = "https://api.ramp.com/developer/v1/token";
 
 /**
  * Ramp settings form schema. Connection is exclusively via the "Connect to Ramp"
- * OAuth flow — the callback stores `metadata.credentials` (oauth2), pinned to
- * production — so the form carries NO client credentials. It only holds the
+ * OAuth flow — the callback stores `metadata.credentials` (oauth2) — so the form carries NO client credentials. It only holds the
  * optional entity scope, the account mapping, and the sync toggles, all flat at
  * the metadata root.
  */

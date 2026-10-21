@@ -5,14 +5,13 @@
 import type { ManifestEntry } from "@carbon/api";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createCatalogSearch } from "@carbon/ee/mcp";
-import { createMcpServer } from "@carbon/ee/mcp.server";
+import { serveMcpRequest } from "@carbon/ee/mcp.server";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
 import { withLogContext } from "@carbon/logger/middleware.server";
 import { datetime, getRequestOrigin } from "@carbon/utils";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import {
   authenticateApiKey,
   findOAuthToken,
@@ -24,7 +23,6 @@ import {
   isListOperation,
   operationsByName
 } from "../v1+/lib/operations.server";
-import { isMcpBlockedTool } from "./lib/mcp-blocked-tools";
 import toolMetadata from "./lib/tool-metadata.json";
 
 // One catalog search index for the process (built lazily on first query); the
@@ -171,10 +169,11 @@ export async function action({ request }: ActionFunctionArgs) {
       async () => {
         // The agent is told what "today" is; it has to be the company's day, not
         // the server's, or every relative-date tool call it makes lands a day off.
-        // `createMcpServer` embeds the MCP entitlement LOCK (Business+), covering
+        // `serveMcpRequest` embeds the MCP entitlement LOCK (Business+), covering
         // every auth path since both resolve to an authed context first — it
         // throws `EntitlementError` for community/starter, caught below as 402.
-        const server = await createMcpServer(
+        return serveMcpRequest(
+          authedRequest,
           ctx,
           datetime
             .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
@@ -183,18 +182,10 @@ export async function action({ request }: ActionFunctionArgs) {
             callOperation,
             operationsByName,
             isListOperation,
-            isMcpBlockedTool,
             catalogSearch,
             toolMetadata
           }
         );
-        const transport = new WebStandardStreamableHTTPServerTransport({
-          sessionIdGenerator: undefined,
-          enableJsonResponse: true
-        });
-
-        await server.connect(transport);
-        return transport.handleRequest(authedRequest);
       }
     );
   } catch (err) {

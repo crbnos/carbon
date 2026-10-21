@@ -289,6 +289,11 @@ export function computePlanningOrders(
         1,
         round(Number(demandAccumulationPeriod) || 1, 0, RoundingMode.Down)
       );
+      const batches: {
+        periodIndex: number;
+        quantity: number;
+        projectedStock: number;
+      }[] = [];
       for (let i = 0; i < periods.length; i += windowLength) {
         const windowEnd = Math.min(i + windowLength, periods.length);
 
@@ -332,35 +337,79 @@ export function computePlanningOrders(
           );
         }
 
-        // One order per batch, due dates spread across the period
+        // One order per batch, each due in the week its share is needed: the
+        // first week the projection, with every batch before it, is still
+        // under safety stock. The reschedule check dates an order by the
+        // first demand it covers, so a batch for week 3 due in week 1 read
+        // as early and was deferred as soon as it was raised. A batch no
+        // later week needs (rounded up past the shortfall) stays with the
+        // one before it.
         const perOrder = demandBasedPerOrder(
           lotSize,
           maximumOrderQuantity,
           orderMultiple
         );
+        let neededPeriod = firstDipIndex;
+        let orderedBefore = orderedQuantity;
         for (const batch of lotSizeBatches(totalOrderQuantity, perOrder)) {
-          const dueDate = parseDate(currentPeriod.startDate).add({
-            days: batch.dayOffset
-          });
-          const startDate = dueDate.subtract({ days: leadTime });
-
-          orders.push({
-            startDate: startDate.toString(),
-            dueDate: dueDate.toString(),
+          let j = neededPeriod;
+          while (
+            j < periods.length &&
+            (projections[j] || 0) + orderedBefore >=
+              demandAccumulationSafetyStock
+          ) {
+            j++;
+          }
+          if (j < periods.length) neededPeriod = j;
+          batches.push({
+            periodIndex: neededPeriod,
             quantity: batch.quantity,
-            periodId: currentPeriod.id,
-            isASAP: startDate.compare(todaysDate) < 0,
-            policyName: "Demand-Based Reorder",
-            triggerValues: {
-              projectedStock: endOfWindowProjection,
-              safetyStock: demandAccumulationSafetyStock,
-              lotSize,
-              leadTime
-            }
+            projectedStock: endOfWindowProjection
           });
+          orderedBefore += batch.quantity;
         }
 
         orderedQuantity += totalOrderQuantity;
+      }
+
+      // Batches sharing a week spread across its days in the order they were
+      // sized — across windows too, since a surplus batch can land in a later
+      // window's week — so an earlier batch is never due after a later one.
+      const batchesInWeek = new Map<number, number>();
+      for (const batch of batches) {
+        batchesInWeek.set(
+          batch.periodIndex,
+          (batchesInWeek.get(batch.periodIndex) ?? 0) + 1
+        );
+      }
+      const placedInWeek = new Map<number, number>();
+      for (const batch of batches) {
+        const period = periods[batch.periodIndex];
+        if (!period) continue;
+        const indexInWeek = placedInWeek.get(batch.periodIndex) ?? 0;
+        placedInWeek.set(batch.periodIndex, indexInWeek + 1);
+        const dueDate = parseDate(period.startDate).add({
+          days: intFloorDiv(
+            indexInWeek * DAYS_IN_PERIOD,
+            batchesInWeek.get(batch.periodIndex) ?? 1
+          )
+        });
+        const startDate = dueDate.subtract({ days: leadTime });
+
+        orders.push({
+          startDate: startDate.toString(),
+          dueDate: dueDate.toString(),
+          quantity: batch.quantity,
+          periodId: period.id,
+          isASAP: startDate.compare(todaysDate) < 0,
+          policyName: "Demand-Based Reorder",
+          triggerValues: {
+            projectedStock: batch.projectedStock,
+            safetyStock: demandAccumulationSafetyStock,
+            lotSize,
+            leadTime
+          }
+        });
       }
       return orders;
     }

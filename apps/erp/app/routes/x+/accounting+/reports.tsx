@@ -26,6 +26,7 @@ import {
   LuArrowUpDown,
   LuBanknote,
   LuBookmark,
+  LuBookOpen,
   LuBoxes,
   LuBriefcase,
   LuFileSpreadsheet,
@@ -47,12 +48,12 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
   getReportViews,
-  reportPinValidator,
   upsertReportPin
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -181,6 +182,15 @@ export default function ReportsIndexRoute() {
         icon: LuFileSpreadsheet,
         category: t`Close Reports`,
         defaultPinned: true
+      },
+      {
+        key: "general-ledger",
+        name: t`General Ledger`,
+        description: t`Every posted journal line in a period`,
+        to: path.to.generalLedger,
+        icon: LuBookOpen,
+        category: t`Close Reports`,
+        defaultPinned: false
       },
       {
         key: "inventory-valuation",

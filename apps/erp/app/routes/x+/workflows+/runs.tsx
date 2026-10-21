@@ -7,11 +7,11 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import WorkflowRunsTable from "~/modules/workflows/ui/Runs/WorkflowRunsTable";
 import {
   getWorkflowRunRecordNames,
   getWorkflowRuns
-} from "~/modules/workflows";
-import WorkflowRunsTable from "~/modules/workflows/ui/Runs/WorkflowRunsTable";
+} from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

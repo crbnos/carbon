@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { departmentValidator } from "~/modules/people/people.models";
 import {
-  departmentValidator,
   getDepartment,
   upsertDepartment
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { DepartmentForm } from "~/modules/people/ui/Departments";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

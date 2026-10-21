@@ -2,179 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  jobMaterialValidator,
-  pullJobMaterialMakeMethod,
-  recalculateJobMakeMethodRequirements,
-  recalculateJobOperationDependencies,
-  upsertJobMaterial
-} from "~/modules/production";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { jobMaterialValidator } from "~/modules/production/production.models";
 import { setCustomFields } from "~/utils/form";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(jobMaterialValidator).request(args, {
+    params: ["jobId"]
   });
-
-  const { jobId } = params;
-  if (!jobId) {
-    throw new Error("jobId not found");
-  }
-
-  const formData = await request.formData();
-  const validation = await validator(jobMaterialValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // The writes below use the service role, which bypasses RLS: the job and
-  // every parent id in the form must belong to this company.
-  const serviceRole = getCarbonServiceRole();
-  await Promise.all([
-    requireCompanyRecord(serviceRole, "job", companyId, { id: jobId }),
-    requireCompanyRecord(serviceRole, "jobMakeMethod", companyId, {
-      id: validation.data.jobMakeMethodId,
-      jobId
-    }),
-    validation.data.jobOperationId
-      ? requireCompanyRecord(serviceRole, "jobOperation", companyId, {
-          id: validation.data.jobOperationId,
-          jobId
-        })
-      : undefined
-  ]);
-
-  const insertJobMaterial = await upsertJobMaterial(serviceRole, {
-    ...validation.data,
-    jobId,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.production.createJobMaterial({
+    ...input.data,
+    jobId: input.params.jobId,
+    customFields: setCustomFields(input.formData ?? new FormData())
   });
-  if (insertJobMaterial.error) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertJobMaterial.error, "Failed to insert job material")
-      )
-    );
-  }
-
-  const jobMaterialId = insertJobMaterial.data?.id;
-  if (!jobMaterialId) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertJobMaterial, "Failed to insert job material")
-      )
-    );
-  }
-
-  // Part ↔ step links are managed from the STEP side (the BoP step editor's "Parts" picker),
-  // so the material save no longer touches jobMaterialStep.
-
-  // Check if job is released (not Draft or Planned)
-  const job = await serviceRole
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", companyId)
-    .single();
-  const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
-
-  if (validation.data.methodType === "Make to Order") {
-    const makeMethod = await pullJobMaterialMakeMethod(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        jobMaterialId,
-        itemId: validation.data.itemId,
-        companyId,
-        userId
-      }
-    );
-
-    if (makeMethod.error) {
-      return data(
-        {
-          id: jobMaterialId
-        },
-        await flash(
-          request,
-          error(makeMethod.error, "Failed to insert job material make method")
-        )
-      );
-    }
-  }
-
-  // Recalculate for ALL material types if job is released
-  if (isReleased) {
-    const promises: Promise<{ error: Error | null }>[] = [
-      recalculateJobMakeMethodRequirements(serviceRole, getDatabaseClient(), {
-        id: validation.data.jobMakeMethodId,
-        companyId,
-        userId
-      })
-    ];
-
-    promises.push(
-      recalculateJobOperationDependencies(serviceRole, getDatabaseClient(), {
-        jobId,
-        companyId,
-        userId
-      })
-    );
-
-    const [recalculateResult, recalculateDependencies] =
-      await Promise.all(promises);
-
-    if (recalculateResult.error) {
-      return data(
-        { id: jobMaterialId },
-        await flash(
-          request,
-          error(
-            recalculateResult.error,
-            "Failed to recalculate job make method requirements"
-          )
-        )
-      );
-    }
-
-    if (recalculateDependencies?.error) {
-      return data(
-        { id: jobMaterialId },
-        await flash(
-          request,
-          error(
-            recalculateDependencies.error,
-            "Failed to recalculate job operation dependencies"
-          )
-        )
-      );
-    }
-  }
-
-  return {
-    id: jobMaterialId,
-    success: true,
-    message: "Material created"
-  };
 }

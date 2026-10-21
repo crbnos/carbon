@@ -76,9 +76,10 @@ that disagrees with a present foreign key is a build error.
 ## The dispatcher seam
 
 `packages/jobs` cannot import `~/modules/*` — the dependency only runs app → package.
-But the four `*.create` actions must go through the ERP's own `upsert*` service
-functions, so sequence numbers, defaults and required-field logic are the ones the
-app already uses.
+But the four `*.create` actions must go through the ERP's own service functions
+(`production_insertJob`, `quality_insertIssue`, `purchasing_insertPurchaseOrder`,
+`sales_insertSalesOrder`), so sequence numbers, defaults and required-field logic are
+the ones the app already uses.
 
 So `packages/jobs/src/workflows/actions/dispatcher.ts` holds one module-level
 slot:
@@ -93,18 +94,32 @@ client build can tree-shake the server graph):
 
 ```ts
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
+import { scopesFromPermissions } from "./v1+/lib/base.server";
 import { callOperation } from "./v1+/lib/call.server";
 
-setWorkflowDispatch((name, context, args) =>
-  callOperation(name, { ...context, authKind: "session", scopes: {} }, args)
+setWorkflowDispatch((name, { permissions, ...context }, args) =>
+  callOperation(
+    name,
+    {
+      ...context,
+      authKind: "session",
+      scopes: scopesFromPermissions(permissions, context.companyId)
+    },
+    args
+  )
 );
 ```
 
 `callOperation` is the Carbon API's canonical entry point (the same one MCP
 `call_tool` uses) — it runs the operation through the real
 oRPC procedure. `authKind: "session"` marks the workflow engine as an
-already-authorized in-process caller, so the per-operation API-key scope gate
-does not apply; the owner-scoped client's RLS still does. `WorkflowDispatch` is
+in-process caller acting as the owner. The per-operation gate checks the
+operation's own permission against the owner's permissions, which
+`execute.ts` reads once per run (`readOwnerPermissions`) and passes through
+`createWorkflowServices` into `DispatchContext.permissions`. That is on top of
+the engine's own check of the node's catalog permission, and of RLS on the
+owner-scoped client. A step whose owner lacks the operation's permission fails
+with "The workflow's owner does not have the required permission: …". `WorkflowDispatch` is
 **structurally** satisfied by the wrapper, so nothing in `@carbon/jobs` names an
 app type. An unfilled slot is not a crash: `runAction` returns
 `"This step is not available in this environment."`
@@ -116,8 +131,8 @@ and `create.ts` handles both that and the legacy envelope shape: it checks
 `envelope.error` when the payload looks like one, and `idIn` walks a list if one
 came back. No id means `"The record was created but could not be read back."`,
 never a silent success. `companyId`, `createdBy` and `updatedBy` are stamped by
-the dispatch layer (`enrichWithAuthContext` in
-`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`).
+the service function itself (`payload`, `@carbon/api/service-tools.server`), from
+its context, never from the input.
 
 ## `createWorkflowServices` — the one port
 
@@ -321,21 +336,28 @@ covered completely: a literal cannot rebind, because there is no name to re-reso
 The two layers are what make the guard whole, so don't drop the pre-check as
 "redundant".
 
-## The two older webhook systems are untouched
+## The other two webhook systems
 
-Three things in this repo are called "webhook". Only the first is new:
+Three things in this repo are called "webhook":
 
 | | What | Where |
 |---|---|---|
 | **Workflow action** | Outbound, SSRF-guarded, https-only | `packages/jobs/src/workflows/actions/webhook.ts` |
-| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL with its configured headers — **no signing, no URL guard** | `packages/jobs/src/inngest/functions/events/webhook.ts` |
+| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL, signed (`Carbon-Signature`), SSRF-guarded, http or https | `packages/jobs/src/inngest/functions/events/webhook.ts` |
 | Integration webhooks | **Inbound** routes for Jira, Linear, Paperless Parts, Stripe and Xero | `apps/erp/app/routes/api+/webhook.{jira,linear,paperless-parts,stripe,xero}*.ts` |
 
-They share no code with the workflow action and were deliberately not changed.
-Do not "unify" them: the event-system handler's contract is an existing customer
-integration, and hardening it is its own decision with its own migration. The
-matcher's subscription reconciler is already careful never to touch a company's
-`WEBHOOK` rows (see `workflow-matcher.md`).
+The event-system handler shares only the guard with the workflow action, through
+`checkWebhookUrl` (the private-network check of `checkOutboundUrl`, but http and URL
+credentials still allowed, since its customer contract never forbade them) and
+`outboundHttpAgent` / `outboundHttpsAgent` (`guardedLookup` for node's http client),
+both in `url-guard.ts`. `webhookTransport` (`events/webhook-body.ts`) holds its axios
+options: those agents, `maxRedirects: 0` (a 3xx fails the attempt) and `proxy: false`
+(through an `HTTP_PROXY` the guard would check the proxy, not the target). A refused
+address counts one error and throws `NonRetriableError`; a failed lookup is
+`retryable` and takes the ordinary retry path. Do not go further and
+"unify" the two: the event handler's contract (http, signing, retries, the 30 s
+timeout) is an existing customer integration. The matcher's subscription reconciler
+is careful never to touch a company's `WEBHOOK` rows (see `workflow-matcher.md`).
 
 ## Gotchas
 

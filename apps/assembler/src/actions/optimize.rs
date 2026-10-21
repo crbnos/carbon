@@ -8,13 +8,13 @@
 //! glTF to GLB via a streaming base64 decode), then runs the
 //! meshopt geometry passes + codec encode (via `crates/optimize`), walking a
 //! simplify ladder until the render-weight + output-size gates pass. Async job;
-//! late-mint uploads the single `glb` output. Fails loud with a typed error
+//! uploads the single `glb` output to its submit-time URL. Fails loud with a typed error
 //! (`unsupported_format` / `ambiguous_format` / `tessellation_failed` /
 //! `cannot_fit_budget`) rather than storing an over-cap or wrong result.
 
 use crate::formats::{self, Format};
 use crate::jobs::{Done, Output};
-use crate::{admission, http, telemetry, AppState};
+use crate::{admission, compute, http, telemetry, AppState};
 use serde_json::json;
 use std::time::{Duration, Instant};
 
@@ -22,9 +22,130 @@ pub struct OptimizeReq {
     pub source_url: String,
     /// Declared source format, or `"auto"` / empty to content-detect.
     pub format: String,
-    /// Storage path recorded in the completion pointer (late-mint uploads here).
+    /// Storage path recorded in the completion pointer (the `glb` upload).
     pub glb_path: Option<String>,
     pub opts: Opts,
+    /// Ingest: also write the retained raw's compact form (output `raw`), from
+    /// the same download. `Some(path)` records where it goes.
+    pub compact: Option<Option<String>>,
+    /// Ingest: also render the preview thumbnail (output `thumbnail`) from the
+    /// optimised GLB, still in memory.
+    pub thumbnail: Option<ThumbnailOut>,
+}
+
+/// The thumbnail an ingest renders (see `thumbnail` for the camera).
+pub struct ThumbnailOut {
+    pub path: Option<String>,
+    pub size: u32,
+    pub direction: [f32; 3],
+}
+
+/// The retained raw's compact form.
+struct Compacted {
+    bytes: bytes::Bytes,
+    /// `xbf` (a STEP as BinXCAF, then zstd) or `zstd` (the raw as it is).
+    kind: &'static str,
+}
+
+/// What an ingest hands the optimiser: the file to tessellate, its format, and
+/// the compacted raw. A STEP becomes BinXCAF once, and the optimiser reads that
+/// (identical geometry, and far faster to parse) instead of parsing the STEP a
+/// second time.
+struct Ingest {
+    load_path: String,
+    declared: String,
+    source_format: &'static str,
+    /// The file to compress for the retained raw, and what it is. Compressed
+    /// after the optimise, so its bytes are not held through it.
+    compact_from: Option<(String, &'static str)>,
+    xbf: Option<std::path::PathBuf>,
+    warnings: Vec<String>,
+}
+
+fn prepare_ingest(path: &str, declared: &str, ext: Option<&str>) -> Result<Ingest, ActionErr> {
+    let head = read_head_bytes(path, 512 * 1024).map_err(|e| ActionErr::new("invalid_input", e))?;
+    let size = std::fs::metadata(path).map(|m| m.len()).unwrap_or(0);
+    let (format, _) = formats::resolve(declared, &head, size, ext)
+        .map_err(|e| ActionErr::new(e.code, e.message))?;
+    let mut ingest = Ingest {
+        load_path: path.to_string(),
+        declared: declared.to_string(),
+        source_format: format.name(),
+        compact_from: None,
+        xbf: None,
+        warnings: Vec::new(),
+    };
+    match format {
+        // Already the compact form.
+        Format::Xbf => {}
+        Format::Step => {
+            let xbf = http::temp_path("xbf");
+            let xbf_str = xbf.to_string_lossy().to_string();
+            match converter::convert::step_to_xbf(path, &xbf_str) {
+                Ok(()) => {
+                    ingest.compact_from = Some((xbf_str.clone(), "xbf"));
+                    ingest.load_path = xbf_str;
+                    ingest.declared = "xbf".into();
+                    ingest.xbf = Some(xbf);
+                }
+                // The optimiser still reads the STEP; only the compact form is lost.
+                Err(e) => {
+                    let _ = std::fs::remove_file(&xbf);
+                    ingest.warnings.push(format!("compact: {}", e.message));
+                }
+            }
+        }
+        _ => ingest.compact_from = Some((path.to_string(), "zstd")),
+    }
+    Ok(ingest)
+}
+
+/// Optimise, with the ingest outputs when asked for: the optimised GLB, the
+/// compacted raw, and the thumbnail (or why it failed: a preview never fails
+/// the job).
+fn run_ingest(
+    path: &str,
+    declared: &str,
+    ext: Option<&str>,
+    opts: &Opts,
+    compact: bool,
+    thumbnail: Option<(u32, [f32; 3])>,
+) -> Result<(Outcome, Option<Compacted>, Option<Result<Vec<u8>, String>>), ActionErr> {
+    let ingest = if compact { Some(prepare_ingest(path, declared, ext)?) } else { None };
+    let (load_path, load_declared) = match &ingest {
+        Some(i) => (i.load_path.as_str(), i.declared.as_str()),
+        None => (path, declared),
+    };
+    let outcome = run_optimize(load_path, load_declared, ext, opts);
+    // Compress the retained raw only once the optimise has succeeded, and
+    // before the BinXCAF it may be made from is deleted.
+    let compacted = match (&outcome, ingest.as_ref().and_then(|i| i.compact_from.as_ref())) {
+        (Ok(_), Some((from, kind))) => Some(
+            crate::actions::compact::zstd_file_mapped(from, crate::actions::compact::ZSTD_LEVEL)
+                .map(|bytes| Compacted { bytes, kind }),
+        ),
+        _ => None,
+    };
+    if let Some(xbf) = ingest.as_ref().and_then(|i| i.xbf.as_ref()) {
+        let _ = std::fs::remove_file(xbf);
+    }
+    let mut outcome = outcome?;
+    if let Some(i) = ingest {
+        outcome.detected_format = i.source_format;
+        outcome.warnings.extend(i.warnings);
+    }
+    let compacted = match compacted {
+        Some(Ok(c)) => Some(c),
+        Some(Err(e)) => {
+            outcome.warnings.push(format!("compact: {e}"));
+            None
+        }
+        None => None,
+    };
+    let png = thumbnail.map(|(size, direction)| {
+        thumbnail::render_png(&outcome.glb, size, direction).map_err(|e| e.0)
+    });
+    Ok((outcome, compacted, png))
 }
 
 pub struct Opts {
@@ -70,6 +191,7 @@ pub struct Opts {
 }
 
 /// A typed action failure carrying the snake_case API error code.
+#[derive(Debug)]
 struct ActionErr {
     code: &'static str,
     message: String,
@@ -86,44 +208,54 @@ impl ActionErr {
 pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "optimize", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
-        eprintln!(
-            "[{job_id}] optimize running (codec={:?} format={})",
-            req.opts.codec, req.format
-        );
         let started = Instant::now();
 
-        let tmp = http::temp_path("model");
-        if let Err(e) = http::download_hashed(&req.source_url, &tmp, None).await {
-            let _ = tokio::fs::remove_file(&tmp).await;
-            eprintln!("[{job_id}] optimize failed: source download: {}", e.message);
-            jobs.set_error(&job_id, &e.code, e.message).await;
-            return;
-        }
-        let tmp_str = tmp.to_string_lossy().to_string();
+        let src = match sources.download(&req.source_url, "model", None).await {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] optimize failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let tmp_str = src.path_string();
         let declared = req.format.clone();
         let ext = url_ext(&req.source_url);
         let mut opts = req.opts;
-        // Charge the download + tessellation already spent against the budget.
-        opts.deadline = opts.budget.map(|b| started + b);
+        let compact = req.compact.is_some();
+        let thumbnail = req.thumbnail.as_ref().map(|t| (t.size, t.direction));
 
         let res = {
-            let _grant = admission
-                .acquire(admission::estimate_mb(http::file_len(&tmp).await))
+            let grant = admission
+                .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
-            telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
-                run_optimize(&tmp_str, &declared, ext.as_deref(), &opts)
-            }))
+            // The wait may have been long: a job cancelled meanwhile is dropped
+            // before it takes the memory it was granted.
+            if jobs.is_canceled(&job_id).await {
+                return;
+            }
+            // Running from here on: the wait for memory is queue time, not
+            // work, so the budget starts now too.
+            jobs.set_status(&job_id, "running").await;
+            eprintln!(
+                "[{job_id}] optimize running (codec={:?} format={declared})",
+                opts.codec
+            );
+            opts.deadline = opts.budget.map(|b| Instant::now() + b);
+            compute::run(Some(grant), move || {
+                run_ingest(&tmp_str, &declared, ext.as_deref(), &opts, compact, thumbnail)
+            })
             .await
         };
-        let _ = tokio::fs::remove_file(&tmp).await;
+        drop(src);
 
-        let outcome = match res {
+        let (mut outcome, compacted, png) = match res {
             Ok(Ok(o)) => o,
             Ok(Err(e)) => {
                 eprintln!("[{job_id}] optimize failed ({}): {}", e.code, e.message);
@@ -131,9 +263,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 return;
             }
             Err(e) => {
-                let msg = format!("optimize panicked: {e}");
+                let msg = format!("optimize {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "optimize_failed", msg).await;
+                jobs.set_error(&job_id, e.code("optimize_failed"), msg).await;
                 return;
             }
         };
@@ -150,17 +282,39 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             outcome.ratio,
         );
 
+        let png = match png {
+            Some(Ok(png)) => Some(png),
+            Some(Err(e)) => {
+                outcome.warnings.push(format!("thumbnail: {e}"));
+                None
+            }
+            None => None,
+        };
+        let mut result_outputs = json!({
+            "glb": {
+                "path": req.glb_path,
+                "bytes": outcome.glb.len(),
+                "codec": codec_name(outcome.codec),
+            }
+        });
+        if let Some(c) = &compacted {
+            result_outputs["raw"] = json!({
+                "path": req.compact.clone().flatten(),
+                "bytes": c.bytes.len(),
+                "kind": c.kind,
+            });
+        }
+        if let Some(png) = &png {
+            result_outputs["thumbnail"] = json!({
+                "path": req.thumbnail.as_ref().and_then(|t| t.path.clone()),
+                "bytes": png.len(),
+            });
+        }
         let done = Done {
             result: json!({
                 "detected_format": outcome.detected_format,
                 "detected_via": outcome.detected_via,
-                "outputs": {
-                    "glb": {
-                        "path": req.glb_path,
-                        "bytes": outcome.glb.len(),
-                        "codec": codec_name(outcome.codec),
-                    }
-                },
+                "outputs": result_outputs,
                 "warnings": outcome.warnings,
             }),
             stats: json!({
@@ -171,13 +325,29 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 "render_weight_bytes": outcome.stats.decoded_bytes,
                 "simplify_ratio_used": outcome.ratio,
                 "optimise_ms": optimise_ms,
+                "compact_bytes": compacted.as_ref().map(|c| c.bytes.len()),
+                "thumbnail_bytes": png.as_ref().map(|p| p.len()),
             }),
         };
-        let outputs = vec![Output {
+        let mut outputs = vec![Output {
             name: "glb".into(),
             content_type: "model/gltf-binary".into(),
             bytes: outcome.glb.into(),
         }];
+        if let Some(c) = compacted {
+            outputs.push(Output {
+                name: "raw".into(),
+                content_type: "application/zstd".into(),
+                bytes: c.bytes,
+            });
+        }
+        if let Some(png) = png {
+            outputs.push(Output {
+                name: "thumbnail".into(),
+                content_type: "image/png".into(),
+                bytes: png.into(),
+            });
+        }
         jobs.finish(&job_id, outputs, done, None).await;
     });
 }
@@ -382,6 +552,9 @@ fn run_optimize(
         .unwrap_or(1.0);
         let mut smallest = lossless.glb.len();
         let mut prev_encoded = lossless.glb.len();
+        // Only its sizes are needed from here: free the full-fidelity model
+        // before the targeted passes build theirs.
+        drop(lossless);
         let mut aggressive = false;
         for _ in 0..AUTO_MAX_TARGETED_PASSES {
             // Ratio targeting hits its triangle count whatever the error — the
@@ -439,7 +612,8 @@ fn run_optimize(
     } else {
         opts.ladder.clone()
     };
-    let mut best: Option<Outcome> = None;
+    // Only the last rung's size is reported; its model is not kept.
+    let mut last_len: Option<usize> = None;
     let mut warnings: Vec<String> = Vec::new();
     let mut i = 0;
     while i < ladder.len() {
@@ -465,13 +639,13 @@ fn run_optimize(
             return Ok(outcome);
         }
         warnings.push(over_msg(&format!("rung {rung:?}"), &outcome));
-        best = Some(outcome);
+        last_len = Some(outcome.glb.len());
         i += 1;
     }
 
     // Nothing fit the budget even at the most aggressive rung: fail loud rather
     // than store an artifact the served bucket would reject.
-    let smallest = best.map(|o| o.glb.len()).unwrap_or(0);
+    let smallest = last_len.unwrap_or(0);
     Err(ActionErr::new(
         "cannot_fit_budget",
         format!(
@@ -481,6 +655,17 @@ fn run_optimize(
             warnings.join("; ")
         ),
     ))
+}
+
+/// The downloaded source, memory-mapped: the page cache holds it, not the
+/// heap, while it is parsed.
+fn map_source(path: &str) -> Result<memmap2::Mmap, ActionErr> {
+    let file = std::fs::File::open(path)
+        .map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
+    // SAFETY: the source is this job's own temp file; nothing writes it while
+    // it is mapped.
+    unsafe { memmap2::Mmap::map(&file) }
+        .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))
 }
 
 /// Load the resolved format into GLB bytes.
@@ -501,30 +686,23 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
             Ok(Src::Owned(glb))
         }
         Format::Stl => {
-            let bytes =
-                std::fs::read(path).map_err(|e| ActionErr::new("invalid_input", e.to_string()))?;
+            let bytes = map_source(path)?;
             let glb = optimize::stl_to_glb(&bytes)
                 .map_err(|e| ActionErr::new("optimize_failed", e.message))?;
             Ok(Src::Owned(glb))
         }
-        Format::Glb => {
-            let file = std::fs::File::open(path)
-                .map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
-            let map = unsafe { memmap2::Mmap::map(&file) }
-                .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))?;
-            Ok(Src::Mapped(map))
-        }
+        Format::Glb => Ok(Src::Mapped(map_source(path)?)),
         Format::Gltf => {
             use std::io::Write as _;
             // Repack text glTF → GLB with a streaming base64 decode, then mmap the
             // GLB and run the bounded GLB path. A serde parse of a multi-GB glTF
             // holds the base64 string + decoded bytes at once (~3× the file); this
             // keeps peak memory off the geometry (it lives in the temp GLB on disk).
-            let file = std::fs::File::open(path)
-                .map_err(|e| ActionErr::new("invalid_input", format!("open source: {e}")))?;
-            let gltf = unsafe { memmap2::Mmap::map(&file) }
-                .map_err(|e| ActionErr::new("invalid_input", format!("mmap source: {e}")))?;
-            let mut tmp = tempfile::NamedTempFile::new()
+            let gltf = map_source(path)?;
+            // `geometry-*`, so startup cleanup removes it after a kill.
+            let mut tmp = tempfile::Builder::new()
+                .prefix("geometry-")
+                .tempfile()
                 .map_err(|e| ActionErr::new("invalid_input", format!("temp glb: {e}")))?;
             {
                 let mut bw = std::io::BufWriter::new(&mut tmp);
@@ -544,8 +722,7 @@ fn load_source(path: &str, format: Format, head: &[u8], opts: &Opts) -> Result<S
         // Plain mesh formats: parse → triangle-soup GLB (the optimiser's weld
         // pass reconstructs sharing) → the bounded GLB path.
         Format::Obj | Format::Ply | Format::Off | Format::Bim | Format::ThreeMf | Format::Amf => {
-            let bytes =
-                std::fs::read(path).map_err(|e| ActionErr::new("invalid_input", e.to_string()))?;
+            let bytes = map_source(path)?;
             let glb = match format {
                 Format::Obj => optimize::obj_to_glb(&bytes),
                 Format::Ply => optimize::ply_to_glb(&bytes),
@@ -604,11 +781,85 @@ fn codec_name(c: optimize::Codec) -> &'static str {
 mod tests {
     use super::*;
 
+    fn default_opts() -> Opts {
+        crate::request::optimize_opts(&serde_json::json!({}), &serde_json::json!({}))
+    }
+
+    fn fixture_step(name: &str, boxes: u32) -> String {
+        let dir = std::env::temp_dir().join(format!("carbon-ingest-{name}"));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("fixture.step").to_string_lossy().to_string();
+        assert!(occt_bridge::write_test_step(&path, boxes), "write test STEP");
+        path
+    }
+
+    #[test]
+    fn ingest_of_a_step_compacts_to_xbf_and_matches_a_plain_optimise() {
+        let step = fixture_step("step", 3);
+        let opts = default_opts();
+
+        let plain = run_optimize(&step, "step", Some("step"), &opts).expect("plain optimise");
+        let (outcome, compacted, png) = run_ingest(
+            &step,
+            "step",
+            Some("step"),
+            &opts,
+            true,
+            Some((64, thumbnail::DEFAULT_DIRECTION)),
+        )
+        .expect("ingest");
+
+        // The source is reported as what was uploaded, not the xbf read.
+        assert_eq!(outcome.detected_format, "step");
+        // Tessellated from the xbf: the same mesh as from the STEP.
+        assert_eq!(
+            outcome.stats.output_triangles,
+            plain.stats.output_triangles
+        );
+        let compacted = compacted.expect("compacted raw");
+        assert_eq!(compacted.kind, "xbf");
+        let xbf = zstd::decode_all(compacted.bytes.as_ref()).unwrap();
+        assert!(xbf.starts_with(b"BINFILE"), "the compact form is BinXCAF");
+        let png = png.expect("thumbnail asked for").expect("thumbnail rendered");
+        assert!(png.starts_with(b"\x89PNG"));
+    }
+
+    #[test]
+    fn ingest_of_a_mesh_compacts_its_bytes_as_they_are() {
+        let step = fixture_step("mesh", 2);
+        let opts = default_opts();
+        // A plain (unquantized) GLB, as an upload would be.
+        let dir = std::env::temp_dir().join("carbon-ingest-mesh");
+        let xbf = dir.join("fixture.xbf").to_string_lossy().to_string();
+        converter::convert::step_to_xbf(&step, &xbf).unwrap();
+        let glb = converter::convert::convert_xbf(&xbf, opts.lin, opts.ang).unwrap().glb;
+        let glb_path = dir.join("model.glb");
+        std::fs::write(&glb_path, &glb).unwrap();
+        let glb_str = glb_path.to_string_lossy().to_string();
+
+        let (_, compacted, png) =
+            run_ingest(&glb_str, "auto", Some("glb"), &opts, true, None).expect("ingest");
+
+        let compacted = compacted.expect("compacted raw");
+        assert_eq!(compacted.kind, "zstd");
+        assert_eq!(zstd::decode_all(compacted.bytes.as_ref()).unwrap(), glb);
+        assert!(png.is_none(), "no thumbnail asked for");
+    }
+
+    #[test]
+    fn a_plain_optimise_writes_no_ingest_outputs() {
+        let step = fixture_step("plain", 1);
+        let (_, compacted, png) =
+            run_ingest(&step, "step", Some("step"), &default_opts(), false, None).unwrap();
+        assert!(compacted.is_none());
+        assert!(png.is_none());
+    }
+
     #[test]
     #[ignore = "scratch probe: needs real STEP files in .ai/scratch/"]
     fn probe_real_model() {
         let scratch = concat!(env!("CARGO_MANIFEST_DIR"), "/../../.ai/scratch");
-        let opts = crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
+        let opts = crate::request::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
         eprintln!(
             "PROBE opts lin={} ang={} auto_scale={} max_packed={} max_output={}",
             opts.lin, opts.ang, opts.auto_scale, opts.max_packed, opts.max_output
@@ -633,7 +884,7 @@ mod tests {
                 // Force the measured-overshoot predictor path.
                 ("tight-gates", 8 * 1024 * 1024, 2 * 1024 * 1024),
             ] {
-                let mut o = crate::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
+                let mut o = crate::request::optimize_opts(&serde_json::json!({}), &serde_json::json!({}));
                 o.max_packed = max_packed;
                 o.max_output = max_output;
                 let t0 = std::time::Instant::now();

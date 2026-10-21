@@ -2,17 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import {
   SelectControlled,
   Submit,
   ValidatedForm,
-  validationError,
   validator
 } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import {
   Button,
   Card,
@@ -27,20 +24,17 @@ import {
   useEdition,
   VStack
 } from "@carbon/react";
-import { getBillingPortalRedirectUrl } from "@carbon/stripe/stripe.server";
 import { Edition, redirectExternal } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Form, useLoaderData, useNavigation } from "react-router";
+import { Form, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
 import { SettingsPage } from "~/components/SettingsPage";
 import { usePermissions, useUser } from "~/hooks";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "billing");
 
 export const handle: Handle = {
   breadcrumb: msg`Payment`,
@@ -107,78 +101,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      update: "settings"
+const billingForm = z.discriminatedUnion("intent", [
+  z.object({ intent: z.literal("billing-portal") }),
+  transferOwnershipValidator
+]);
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(billingForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+
+  if (input.data.intent === "billing-portal") {
+    const result = await api.settings.getBillingPortalUrl({});
+    if (result.error) {
+      return respond(args.request, result).redirect(path.to.billing);
     }
-  );
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "billing-portal") {
-    try {
-      const plans = await client
-        .from("plan")
-        .select("stripePriceId")
-        .eq("userBasedPricing", true);
-
-      const priceIds = plans.data?.map((plan) => plan.stripePriceId);
-
-      const billingPortalUrl = await getBillingPortalRedirectUrl({
-        companyId,
-        priceIds
-      });
-      return redirectExternal(billingPortalUrl, 301);
-    } catch (err) {
-      logger.error("Failed to get billing portal URL", { error: err });
-      return data(
-        {},
-        await flash(request, error("Failed to access billing portal"))
-      );
-    }
+    return redirectExternal(result.data.url, 301);
   }
 
-  if (intent === "transfer-ownership") {
-    const validation = await validator(transferOwnershipValidator).validate(
-      formData
-    );
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const { newOwnerId } = validation.data;
-
-    try {
-      const updateResult = await client
-        .from("companyGroup")
-        .update({ ownerId: newOwnerId })
-        .eq("id", companyGroupId);
-
-      if (updateResult.error) {
-        throw new Error(updateResult.error.message);
-      }
-
-      return data(
-        {},
-        await flash(
-          request,
-          success("Company ownership has been transferred successfully")
-        )
-      );
-    } catch (err) {
-      logger.error("Failed to transfer ownership", { error: err });
-      return data(
-        {},
-        await flash(request, error("Failed to transfer ownership"))
-      );
-    }
-  }
-
-  return data({}, await flash(request, error("Invalid intent")));
+  return respond(
+    args.request,
+    await api.settings.transferCompanyOwnership(input.data)
+  ).redirect(path.to.billing, {
+    message: "Company ownership has been transferred successfully"
+  });
 }
 
 // This route now only handles actions - UI is in the company route

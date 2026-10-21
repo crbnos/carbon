@@ -19,7 +19,7 @@ import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { getClientIp } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getJobByOperationId } from "~/modules/production";
+import { getJobByOperationId } from "~/modules/production/production.service";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
 import { parseJobFilePath } from "~/utils/supabase";
 

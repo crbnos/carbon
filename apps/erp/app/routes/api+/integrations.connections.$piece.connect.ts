@@ -12,7 +12,7 @@ import {
   resolveOAuthApp
 } from "@carbon/jobs/integrations";
 import type { LoaderFunctionArgs } from "react-router";
-import { signConnectionState } from "~/modules/settings/connection-state.server";
+import { signConnectionState } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"

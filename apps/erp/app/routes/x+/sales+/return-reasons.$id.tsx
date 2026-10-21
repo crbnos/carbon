@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { returnReasonValidator } from "~/modules/sales/sales.models";
 import {
   getReturnReason,
-  returnReasonValidator,
   upsertReturnReason
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import ReturnReasonForm from "~/modules/sales/ui/ReturnReasons/ReturnReasonForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

@@ -15,27 +15,27 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { PartSummary } from "~/modules/items";
+import { itemUnitSalePriceValidator } from "~/modules/items/items.models";
 import {
   getItemCustomerParts,
   getItemUnitSalePrice,
-  itemUnitSalePriceValidator,
   upsertItemUnitSalePrice
-} from "~/modules/items";
+} from "~/modules/items/items.service";
+import type { PartSummary } from "~/modules/items/types";
 import {
   CustomerRentalRates,
   ItemRentalRateForm,
   ItemSalePriceForm
 } from "~/modules/items/ui/Item";
 import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
+import { itemRentalRateValidator } from "~/modules/sales/sales.models";
 import {
   getCustomerItemRentalRates,
   getItemRentalRate,
-  itemRentalRateValidator,
   upsertItemRentalRate
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
-import { getCompany } from "~/modules/settings";
+import { getCompany } from "~/modules/settings/settings.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

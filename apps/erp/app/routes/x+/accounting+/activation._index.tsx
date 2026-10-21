@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 /** The wizard opens on its first step, keeping a chosen cutover date. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { search } = new URL(request.url);
-  throw redirect(`${path.to.accountingActivationStep("readiness")}${search}`);
+  throw redirect(`${path.to.accountingActivationStep("chart")}${search}`);
 }
 
 export const middleware = [redirectBeforeLoaders(loader)];

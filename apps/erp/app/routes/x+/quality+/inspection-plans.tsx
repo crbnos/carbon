@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getInspectionDocuments } from "~/modules/quality";
+import { getInspectionDocuments } from "~/modules/quality/quality.service";
 import { InspectionDocumentTable } from "~/modules/quality/ui/InspectionDocument";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

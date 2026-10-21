@@ -88,6 +88,9 @@ actionId)` looks up by **`entityId`** (the action id, despite the name) and pars
 
 ## Outbound: Carbon → Linear
 
+- The POST/DELETE writes below are operations in `apps/erp/app/modules/shared/shared.server.ts`
+  (`createLinearIssue` / `linkLinearIssue` / `unlinkLinearIssue`, `shared.server.ts`), gated on the task's module
+  (`actionTaskPermissions`) and refused on a change notice whose workflow is locked.
 - **Link existing** `api+/integrations.linear.issue.link.ts`: GET search issues; POST
   link `{actionId, issueId}` (map assignee email→user, link, create back-link attachment
   to `/x/issue/{nonConformanceId}/details`); DELETE unlink + best-effort remove the

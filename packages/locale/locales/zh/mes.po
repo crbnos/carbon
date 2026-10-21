@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} 个工单"
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 提醒：您的账户将于 {0} 迁移至 erp.try.carbon.ms"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
 
@@ -402,6 +406,9 @@ msgstr "关闭"
 msgid "Collapse characteristics table"
 msgstr "折叠特性表格"
 
+msgid "Collapse navigation"
+msgstr "收起导航"
+
 msgid "Collapse panel"
 msgstr "折叠面板"
 
@@ -424,6 +431,9 @@ msgstr "列：{0}"
 
 msgid "Columns"
 msgstr "列"
+
+msgid "Companies"
+msgstr "公司"
 
 msgid "Company"
 msgstr "公司"
@@ -541,6 +551,9 @@ msgstr "描述"
 
 msgid "Details"
 msgstr "详情"
+
+msgid "Dismiss"
+msgstr "关闭"
 
 msgid "Dispatch not found"
 msgstr "找不到维护工单"
@@ -817,6 +830,9 @@ msgstr "我还在工作"
 msgid "Ideas, suggestions or problems?"
 msgstr "有想法、建议或问题？"
 
+msgid "Idle"
+msgstr "空闲"
+
 msgid "Idle for"
 msgstr "闲置时间"
 
@@ -908,6 +924,9 @@ msgstr "工单流转卡"
 msgid "Jobs"
 msgstr "工单"
 
+msgid "Keep navigation open"
+msgstr "保持导航展开"
+
 msgid "Keep picking"
 msgstr "继续拣货"
 
@@ -958,6 +977,9 @@ msgstr "列表视图"
 
 msgid "Load list"
 msgstr "加载列表"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "已加载: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
@@ -1280,6 +1302,9 @@ msgstr "需要 OEM"
 msgid "of {0}"
 msgstr "/"
 
+msgid "Offline"
+msgstr "离线"
+
 msgid "Oldest first"
 msgstr "最早优先"
 
@@ -1310,6 +1335,9 @@ msgstr "打开此生产批次中的工单"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "为MRB处置打开NCR"
+
+msgid "Open ERP"
+msgstr "打开 ERP"
 
 msgid "Open Jobs"
 msgstr "未结工单"
@@ -2154,6 +2182,9 @@ msgstr "更新"
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
 msgstr "更新于 {0}"
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "更新成功"

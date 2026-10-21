@@ -26,13 +26,16 @@ import { data, useFetcher, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
 import type {
   AnalyticsReportKey,
-  DimensionPivotLine,
   PivotState
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.models";
 import {
   analyticsReportKeys,
   analyticsReports,
   applyPivotDisplayParams,
+  pivotStateValidator,
+  reportViewValidator
+} from "~/modules/accounting/accounting.models";
+import {
   deleteReportView,
   getAccountsInScope,
   getActiveDimensionsWithValues,
@@ -40,10 +43,9 @@ import {
   getFiscalYearSettings,
   getReportViews,
   getScrapAccountIds,
-  pivotStateValidator,
-  reportViewValidator,
   upsertReportView
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type { DimensionPivotLine } from "~/modules/accounting/types";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
   getPeriodColumnLabel,
@@ -56,8 +58,8 @@ import {
   pivotToCsvRows,
   UNASSIGNED_COLUMN_KEY
 } from "~/modules/accounting/ui/Reports/pivotData";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { revalidateIgnoringPivotDisplay } from "~/utils/revalidate";

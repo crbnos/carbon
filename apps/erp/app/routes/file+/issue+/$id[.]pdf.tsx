@@ -22,12 +22,12 @@ import {
   getIssueReviewers,
   getIssueTypes,
   getRequiredActionsList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import {
   getCompany,
   getDocumentTemplate,
   resolveSections
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "issue", "pdf");
 

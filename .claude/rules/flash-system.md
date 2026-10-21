@@ -27,7 +27,9 @@ import { flash } from "@carbon/auth/session.server";     // session.server.ts
   Logs via `getLogger("auth").error(message, { error })` (`@carbon/logger`) when `error` is truthy.
 - `flash(request, result): Promise<{ headers: { "Set-Cookie": ... } }>` — commits the
   result into the `carbon` session cookie and returns a `ResponseInit`-shaped object you
-  spread as the response's second arg.
+  spread as the response's second arg. That cookie also holds the signed-in session,
+  so `flash` and `getSessionFlash` commit with `maxAge: SESSION_MAX_AGE`; without it a
+  toast turned the session into one that ends when the browser closes.
 - `Result` type (`packages/auth/src/types.ts`):
   `{ success: boolean; message?: string; flash?: "success" | "error" }`.
 

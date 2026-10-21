@@ -12,7 +12,7 @@ import {
 } from "@carbon/ee/integrations/connections";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { invalidateIntegrationHealthCache } from "~/modules/settings/settings.server";
+import { invalidateIntegrationHealthCache } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"

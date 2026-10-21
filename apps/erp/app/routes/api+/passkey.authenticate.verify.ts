@@ -18,7 +18,7 @@ import { redirect } from "@carbon/utils";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getEmployeeCompanies } from "~/modules/settings";
+import { getEmployeeCompanies } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

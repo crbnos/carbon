@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { deleteCustomField } from "~/modules/settings/settings.server";
+import { deleteCustomField } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: LoaderFunctionArgs) {

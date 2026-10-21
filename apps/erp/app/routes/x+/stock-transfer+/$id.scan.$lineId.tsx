@@ -2,38 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Result } from "@carbon/auth";
-import { error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
+import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   TrackedEntityPicker,
-  type TrackedEntitySelection,
-  toast
+  type TrackedEntitySelection
 } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
-import { getErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
-import {
-  getAvailableTrackedEntities,
-  getStockTransfer,
-  resolveStockTransferPickForward,
-  stockTransferLineScanValidator
-} from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
-import { getDatabaseClient } from "~/services/database.server";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
+import { stockTransferLineScanValidator } from "~/modules/inventory/inventory.models";
+import { getAvailableTrackedEntities } from "~/modules/inventory/inventory.service";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "id-scan-lineid");
 
 /**
  * Loads the lots available to pick for this line so the picker can offer a
@@ -97,141 +86,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(stockTransferLineScanValidator).request(args, {
+    params: ["lineId"]
   });
-
-  const { id } = params;
-  if (!id) throw new Error("id is not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "inventory"
-  });
-  const transfer = await getStockTransfer(viewClient, id);
-  await requireUnlocked({
-    request,
-    isLocked: transfer.data?.status === "Completed",
-    redirectTo: path.to.stockTransfer(id),
-    message: "Cannot pick from a completed stock transfer."
-  });
-
-  const payload = await request.json();
-  const validated = stockTransferLineScanValidator.safeParse(payload);
-  if (!validated.success) {
-    return data(
-      { success: false, message: "Invalid form data" },
-      await flash(request, error(validated.error.message, "Invalid form data"))
-    );
-  }
-
-  const {
-    id: lineId,
-    stockTransferId,
-    locationId,
+  if ("invalid" in input) return input.invalid;
+  const { trackedEntityId, quantity, locationId } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.pickStockTransferLineEntity({
+    lineId: input.params.lineId,
     trackedEntityId,
-    quantity
-  } = validated.data;
-
-  const stockTransferLine = await client
-    .from("stockTransferLines")
-    .select("*")
-    .eq("id", lineId!)
-    .single();
-
-  if (stockTransferLine.error) {
-    return data(
-      { success: false, message: "Failed to load stock transfer line" },
-      await flash(
-        request,
-        error(stockTransferLine.error, "Failed to load stock transfer line")
-      )
-    );
-  }
-
-  // Determine the type of transfer based on tracking requirements
-  const transferType = stockTransferLine.data?.requiresBatchTracking
-    ? "batch"
-    : "serial";
-
-  // The server function re-checks this under a row lock, but refusing an already-
-  // full line here avoids a round trip and a raw failure.
-  const forward = resolveStockTransferPickForward({
-    transferType,
     quantity,
-    lineQuantity: Number(stockTransferLine.data?.quantity ?? 0),
-    pickedQuantity: Number(stockTransferLine.data?.pickedQuantity ?? 0)
+    locationId
   });
-  if (!forward.ok) {
-    return data(
-      { success: false, message: forward.message },
-      await flash(request, error(forward.message, forward.message))
-    );
-  }
-
-  // Prepare the payload for the post-stock-transfer function.
-  const functionPayload: any = {
-    type: transferType,
-    stockTransferId,
-    stockTransferLineId: lineId,
-    trackedEntityId,
-    quantity: forward.quantity,
-    locationId: locationId,
-    userId,
-    companyId
-  };
-
-  // Service role: `userId` is the effective (console pin-in) user, not the
-  // token's subject, which the operation's membership check compares.
-  const { data: transferResult, error: functionError } = await serverFns
-    .system({
-      db: getDatabaseClient(),
-      companyId: functionPayload.companyId,
-      userId: functionPayload.userId
-    })
-    .invoke("post-stock-transfer", functionPayload);
-
-  if (functionError) {
-    // The server function returns its guard failures (over-pick, already
-    // picked) with the real reason; surface that, not the generic fallback.
-    const message = getErrorMessage(functionError, "Failed to pick line");
-    return data(
-      { success: false, message },
-      await flash(request, error(functionError, message))
-    );
-  }
-
-  if (transferResult?.splitEntityId) {
-    try {
-      // Post-flip, splitEntityId is the DEPARTING child that physically
-      // arrives at the destination bin — it gets a fresh Entity label. The
-      // payload entity is the shelf parent whose quantity changed — reprint.
-      // (Under legacy deploy skew the roles invert, but both entities still
-      // need Entity labels, so printing both ids is role-agnostic.)
-      await trigger("print-job", {
-        sourceDocument: "Entity",
-        sourceDocumentId: transferResult.splitEntityId,
-        companyId,
-        userId,
-        locationId: locationId || undefined
-      });
-      if (trackedEntityId) {
-        await trigger("print-job", {
-          sourceDocument: "Entity",
-          sourceDocumentId: trackedEntityId,
-          companyId,
-          userId,
-          locationId: locationId || undefined
-        });
-      }
-    } catch (e) {
-      logger.error("Auto-print for split entity failed", { error: e });
-    }
-  }
-
-  throw redirect(
-    path.to.stockTransfer(stockTransferId),
-    await flash(request, success("Tracked entity scanned and transferred"))
+  // An error is toasted and the picker stays open.
+  if (!result.data) return result;
+  return respond(args.request, result).redirect(
+    path.to.stockTransfer(result.data.stockTransferId),
+    { message: "Tracked entity scanned and transferred" }
   );
 }
 
@@ -264,13 +136,7 @@ export default function StockTransferScan() {
   const onClose = () =>
     navigate(path.to.stockTransfer(stockTransferLine.stockTransferId!));
 
-  const fetcher = useAction<Result>({
-    onError: (data) => {
-      if (data?.success === false) {
-        toast.error(data.message);
-      }
-    }
-  });
+  const fetcher = useAction<typeof action>();
 
   const locationId = routeData?.stockTransfer.locationId ?? "";
 

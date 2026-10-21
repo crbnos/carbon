@@ -6,6 +6,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -36,7 +37,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuChevronDown,
@@ -44,9 +45,10 @@ import {
   LuGitPullRequest,
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
-  LuRedoDot
+  LuRedoDot,
+  LuTrash
 } from "react-icons/lu";
-import { useFetcher, useFetchers, useParams } from "react-router";
+import { useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import { MethodIcon } from "~/components";
 import {
@@ -78,12 +80,14 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
-import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
+import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items/items.utils";
 import {
   MaterialRowDetails,
   MaterialRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import type { action as editQuoteMaterialAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.material.$id";
+import type { action as newQuoteMaterialAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.material.new";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -231,7 +235,8 @@ const QuoteBillOfMaterial = ({
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const fetcher = useFetcher<{}>();
+  // Deletes and reorders: a failure is toasted.
+  const fetcher = useAction();
   const permissions = usePermissions();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
@@ -329,28 +334,37 @@ const QuoteBillOfMaterial = ({
     }));
   };
 
-  const onRemoveItem = async (id: string) => {
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
     if (!permissions.can("update", "sales") || isDisabled) return;
 
-    // Check if this is a temporary item (exists in temporaryItems state)
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      fetcher.submit(new FormData(), {
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
+      );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      fetcher.submit(formData, {
         method: "post",
-        action: path.to.deleteQuoteMaterial(quoteId, lineId, id)
+        action: path.to.deleteQuoteMaterials(quoteId, lineId)
       });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const updateSortOrder = useDebounce(
     (updates: Record<string, number>) => {
@@ -479,14 +493,26 @@ const QuoteBillOfMaterial = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addItemButtonRef}
-            variant="secondary"
-            isDisabled={isDisabled || !permissions.can("update", "sales")}
-            onClick={onAddItem}
-          >
-            <Trans>Add Item</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addItemButtonRef}
+              variant="secondary"
+              isDisabled={isDisabled || !permissions.can("update", "sales")}
+              onClick={onAddItem}
+            >
+              <Trans>Add Item</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
@@ -534,33 +560,30 @@ function MaterialForm({
   if (!lineId) throw new Error("lineId not found");
 
   const { carbon } = useCarbon();
-  const methodMaterialFetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
+  const isNew = !!temporaryItems[item.id];
+  const methodMaterialFetcher = useAction<
+    typeof newQuoteMaterialAction | typeof editQuoteMaterialAction
+  >({
+    onSuccess: ({ data }) => {
+      // The material is saved: it is no longer a temporary row.
+      setTemporaryItems((prev) => {
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      });
+      if (data && "warning" in data && data.warning) {
+        toast.error(data.warning);
+      } else {
+        toast.success(isNew ? t`Material created` : t`Material updated`);
+      }
+      onSubmit();
+    }
+  });
   const params = useParams();
   const { company } = useUser();
   const routeData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    // Remove from temporary items after successful submission
-    if (methodMaterialFetcher.data && methodMaterialFetcher.data.id) {
-      // Clear temporary item after successful save
-      setTemporaryItems((prev) => {
-        const { [item.id]: _, ...rest } = prev;
-        return rest;
-      });
-
-      if (methodMaterialFetcher.data.success) {
-        toast.success(methodMaterialFetcher.data.message);
-      }
-      onSubmit();
-    }
-  }, [item.id, methodMaterialFetcher.data, setTemporaryItems, onSubmit]);
 
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{

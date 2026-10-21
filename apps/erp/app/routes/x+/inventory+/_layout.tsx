@@ -8,9 +8,9 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
-import { useInventorySubmodules } from "~/modules/inventory";
-import { getUnitOfMeasuresList } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
+import { useInventorySubmodules } from "~/modules/inventory/ui";
+import { getUnitOfMeasuresList } from "~/modules/items/items.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

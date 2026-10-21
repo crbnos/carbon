@@ -12,11 +12,13 @@ import {
   InputLeftElement
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuPlus, LuSearch, LuX } from "react-icons/lu";
+import { LuFileUp, LuPlus, LuSearch, LuX } from "react-icons/lu";
 import { Link } from "react-router";
 import { New, PeriodSelector } from "~/components";
 import { AppBarAction } from "~/components/New";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useSettings, useUrlParams } from "~/hooks";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import { path } from "~/utils/path";
 
 type ChartOfAccountsTableFiltersProps = {
   fiscalStartMonth?: number;
@@ -32,6 +34,10 @@ const ChartOfAccountsTableFilters = ({
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const permissions = usePermissions();
+  const settings = useSettings();
+  // The chart is imported once, before accounting is activated.
+  const canImport =
+    permissions.can("update", "accounting") && !hasAccountingCutover(settings);
   const newGroupTo = `new-group?${params.toString()}`;
   const newAccountTo = `new?${params.toString()}`;
 
@@ -65,6 +71,18 @@ const ChartOfAccountsTableFilters = ({
         )}
       </HStack>
       <HStack className="max-md:ml-auto max-md:mr-4">
+        {canImport && (
+          <Button
+            variant="secondary"
+            leftIcon={<LuFileUp />}
+            className="max-md:hidden"
+            asChild
+          >
+            <Link to={path.to.chartOfAccountsImport}>
+              <Trans>Import</Trans>
+            </Link>
+          </Button>
+        )}
         {permissions.can("create", "accounting") && (
           // Phones: one app bar "+" opens both Add actions, instead of
           // two identical "+" icons.

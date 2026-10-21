@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getNoQuoteReasons } from "~/modules/sales";
+import { getNoQuoteReasons } from "~/modules/sales/sales.service";
 import { NoQuoteReasonsTable } from "~/modules/sales/ui/NoQuoteReasons";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

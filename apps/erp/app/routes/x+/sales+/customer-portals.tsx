@@ -13,7 +13,7 @@ import {
   CustomerPortalsTable,
   CustomerPortalsUpgradeOverlay
 } from "~/modules/sales/ui/CustomerPortals";
-import { getCustomerPortals } from "~/modules/shared";
+import { getCustomerPortals } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

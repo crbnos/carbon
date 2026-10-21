@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { ChangeNoticeStatus } from "~/modules/items";
+import type { ChangeNoticeStatus } from "~/modules/items/types";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
   getGaugeCalibrationRecords,

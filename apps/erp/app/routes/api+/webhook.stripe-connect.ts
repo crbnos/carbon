@@ -49,7 +49,7 @@ import {
 } from "@carbon/stripe/connect.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"

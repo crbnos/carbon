@@ -6,7 +6,7 @@
  * them depends on.
  *
  * These strings are the whole contract between the committed catalog and the app's
- * options registry (`apps/erp/app/modules/workflows/options-providers.server.ts`).
+ * options registry (`apps/erp/app/modules/workflows/workflows.service.ts`).
  * The builder never reads them — it forwards whatever `provider` an input names —
  * so adding a provider for Carbon's own data touches the registry and nothing here.
  */

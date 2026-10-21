@@ -686,7 +686,7 @@ function KanbanSchedule() {
   return (
     // Phones: the shell grows with its content, so the page takes the screen
     // above the tab bar itself; each column then scrolls under its header.
-    <div className="flex flex-col flex-1 min-h-0 w-full max-md:h-[calc(100dvh-var(--mes-tab-bar-h))] max-md:flex-none">
+    <div className="flex flex-col flex-1 min-h-0 w-full max-md:h-[calc(100dvh-var(--mes-tab-bar-h)-var(--announcement-height,0px))] max-md:flex-none">
       <MesAppBar
         title={<Trans>Schedule</Trans>}
         actions={

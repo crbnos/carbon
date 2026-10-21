@@ -13,10 +13,13 @@ import { useLoaderData } from "react-router";
 import {
   getBatchableProcesses,
   getJobOperationBatchWithMembers
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { BatchBuilder } from "~/modules/production/ui/Batches/BatchBuilder";
-import { getLocationsList, getWorkCentersList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import {
+  getLocationsList,
+  getWorkCentersList
+} from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

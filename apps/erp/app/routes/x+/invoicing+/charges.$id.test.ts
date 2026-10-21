@@ -55,10 +55,8 @@ vi.mock("~/hooks", () => ({
 vi.mock("~/modules/accounting/ui/JournalEntries", () => ({
   JournalEntryStatus: EmptyComponent
 }));
-vi.mock("~/modules/invoicing", () => ({
-  ChargeStatus: EmptyComponent,
-  getCharge
-}));
+vi.mock("~/modules/invoicing/ui", () => ({ ChargeStatus: EmptyComponent }));
+vi.mock("~/modules/invoicing/invoicing.service", () => ({ getCharge }));
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
@@ -162,20 +160,20 @@ describe("charge detail loader", () => {
     expect(result.receipts).toHaveLength(1);
   });
 
-  it.each([
-    "account",
-    "document"
-  ] as const)("fails closed when the %s auxiliary read fails", async (table) => {
-    const { client } = clientFor(table);
+  it.each(["account", "document"] as const)(
+    "fails closed when the %s auxiliary read fails",
+    async (table) => {
+      const { client } = clientFor(table);
 
-    await expect(runLoader(client)).rejects.toMatchObject({ status: 302 });
+      await expect(runLoader(client)).rejects.toMatchObject({ status: 302 });
 
-    expect(flash).toHaveBeenCalledWith(
-      expect.any(Request),
-      expect.objectContaining({
-        cause: expect.objectContaining({ message: `${table} lookup failed` }),
-        message: "Failed to load charge"
-      })
-    );
-  });
+      expect(flash).toHaveBeenCalledWith(
+        expect.any(Request),
+        expect.objectContaining({
+          cause: expect.objectContaining({ message: `${table} lookup failed` }),
+          message: "Failed to load charge"
+        })
+      );
+    }
+  );
 });

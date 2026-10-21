@@ -829,7 +829,7 @@ export const inspectionSaveAnchorsPayloadValidator = z
  *
  * Breaking change vs legacy: `type` and `unit` are closed vocabularies, not arbitrary strings.
  *
- * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.server.ts`.
+ * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.service.ts`.
  */
 
 /** POST body for `/api/quality/inspection-document/:id/balloon-analyze` */

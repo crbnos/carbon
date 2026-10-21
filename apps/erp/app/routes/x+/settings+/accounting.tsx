@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getLegacyDocumentCounts,
   hasLegacyDocuments
 } from "@carbon/database/accounting-cutover-reads";
-import { ValidatedForm, validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+import { ValidatedForm, validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Alert,
@@ -28,19 +28,13 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
-import {
-  getErrorMessage,
-  INPUT_FORMAT,
-  INPUT_STEP,
-  redirect
-} from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useFetcher, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -53,19 +47,13 @@ import {
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
-import { getDefaultAccounts } from "~/modules/accounting";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import {
-  getCompanySettings,
-  updateAssetTaxDepreciationSettings,
-  updateLeasePolicySettings,
-  updateShowCurrencyTrailingZerosSetting
-} from "~/modules/settings";
+import { settingsToggle } from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "settings/accounting");
 
 const JOURNAL_LEGACY_INTENT = "journal-legacy";
 
@@ -158,137 +146,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `updateAccountingSettings` it saves (the operation drops `intent`), or the
+// missing-journals repair.
+const accountingSettingsForm = z.discriminatedUnion("intent", [
+  z
+    .object({ intent: z.literal(JOURNAL_LEGACY_INTENT) })
+    .transform(() => ({ writeMissingJournals: true as const })),
+  settingsToggle("showCurrencyTrailingZeros", "showCurrencyTrailingZeros"),
+  settingsToggle(
+    "assetTaxDepreciationEnabled",
+    "assetTaxDepreciationEnabled"
+  ).transform(({ assetTaxDepreciationEnabled }) => ({
+    assetTaxDepreciationEnabled,
+    assetTaxRate: null
+  })),
+  leasePolicySettingsValidator,
+  taxDepreciationSettingsValidator.transform(({ intent: _, ...tax }) => ({
+    ...tax,
+    assetTaxDepreciationEnabled: true
+  }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === JOURNAL_LEGACY_INTENT) {
-    return journalLegacyDocuments(request);
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(accountingSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  if ("writeMissingJournals" in input.data) {
+    return api.settings.writeMissingJournals({});
   }
-
-  if (intent === "showCurrencyTrailingZeros") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await updateShowCurrencyTrailingZerosSetting(
-      client,
-      companyId,
-      enabled
-    );
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Currency display updated" };
-  }
-
-  if (intent === "assetTaxDepreciationEnabled") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await updateAssetTaxDepreciationSettings(client, companyId, {
-      assetTaxDepreciationEnabled: enabled,
-      assetTaxRate: null
-    });
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Fixed asset settings updated" };
-  }
-
-  if (intent === "leasePolicy") {
-    const validation = await validator(leasePolicySettingsValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const { intent: _intent, ...settings } = validation.data;
-    const update = await updateLeasePolicySettings(client, companyId, settings);
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Lease policy updated" };
-  }
-
-  if (intent === "assetTaxDepreciation") {
-    const validation = await validator(
-      taxDepreciationSettingsValidator
-    ).validate(formData);
-
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const {
-      assetTaxRate,
-      deferredTaxLiabilityAccountId,
-      deferredTaxExpenseAccountId
-    } = validation.data;
-
-    const settingsUpdate = await updateAssetTaxDepreciationSettings(
-      client,
-      companyId,
-      { assetTaxDepreciationEnabled: true, assetTaxRate }
-    );
-
-    if (settingsUpdate.error)
-      return { success: false, message: settingsUpdate.error.message };
-
-    const accountUpdate = await client
-      .from("accountDefault")
-      .update({
-        deferredTaxLiabilityAccountId,
-        deferredTaxExpenseAccountId,
-        updatedBy: userId
-      } as any)
-      .eq("companyId", companyId);
-
-    if (accountUpdate.error)
-      return { success: false, message: accountUpdate.error.message };
-
-    return { success: true, message: "Fixed asset settings updated" };
-  }
-
-  return { success: false, message: "Unknown intent" };
-}
-
-/** Writes the journals the enable would have written for legacy documents. */
-async function journalLegacyDocuments(request: Request) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
-  const result = await serverFns
-    .as({ client, db: getDatabaseClient(), companyId, userId })
-    .invoke("journal-legacy-documents", {});
-  if (result.error) {
-    logger.error("Failed to write the missing journals", {
-      companyId,
-      error: result.error
-    });
-    // The flash carries the message; the other intents' toast stays quiet.
-    return data(
-      { success: false, message: null },
-      await flash(
-        request,
-        error(
-          result.error,
-          getErrorMessage(result.error, "Failed to write the missing journals")
-        )
-      )
-    );
-  }
-  const { movementCostRows: _, ...families } = result.data.legacyJournals;
-  const documents = Object.values(families).reduce(
-    (sum, count) => sum + count,
-    0
-  );
-  return data(
-    { success: true, message: null },
-    await flash(
-      request,
-      success(
-        documents === 1
-          ? "Wrote the missing journal of 1 document"
-          : `Wrote the missing journals of ${documents} documents`
-      )
-    )
-  );
+  return api.settings.updateAccountingSettings(input.data);
 }
 
 export default function AccountingSettingsRoute() {
@@ -300,44 +187,33 @@ export default function AccountingSettingsRoute() {
   } = useLoaderData<typeof loader>();
   const legacyDocumentCount = useResolved(legacyDocumentCountPromise, null);
   const permissions = usePermissions();
-  const legacyFetcher = useFetcher<typeof action>();
+  const { t } = useLingui();
+  const legacyFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data || !("documents" in data)) return;
+      toast.success(
+        data.documents === 1
+          ? t`Wrote the missing journal of 1 document`
+          : t`Wrote the missing journals of ${data.documents} documents`
+      );
+    }
+  });
   const fetcher = useAction<typeof action>({
-    onSettled: (data) => {
-      if (data && "success" in data) {
-        if (data.success === true && data.message) {
-          toast.success(data.message);
-        }
-        if (data.success === false && data.message) {
-          toast.error(data.message);
-        }
-      }
+    onSuccess: ({ data }) => {
+      if (!data || "documents" in data) return;
+      toast.success(
+        data.showCurrencyTrailingZeros !== undefined
+          ? t`Currency display updated`
+          : t`Fixed asset settings updated`
+      );
     }
   });
   const taxFetcher = useAction<typeof action>({
-    onSettled: (data) => {
-      if (data && "success" in data) {
-        if (data.success === true && data.message) {
-          toast.success(data.message);
-        }
-        if (data.success === false && data.message) {
-          toast.error(data.message);
-        }
-      }
-    }
+    onSuccess: () => toast.success(t`Fixed asset settings updated`)
   });
   const leaseFetcher = useAction<typeof action>({
-    onSettled: (data) => {
-      if (data && "success" in data) {
-        if (data.success === true && data.message) {
-          toast.success(data.message);
-        }
-        if (data.success === false && data.message) {
-          toast.error(data.message);
-        }
-      }
-    }
+    onSuccess: () => toast.success(t`Lease policy updated`)
   });
-  const { t } = useLingui();
   const { formatDate } = useDateFormatter();
 
   const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;

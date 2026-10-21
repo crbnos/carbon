@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getMaterialTypes } from "~/modules/items";
+import { getMaterialTypes } from "~/modules/items/items.service";
 import MaterialTypesTable from "~/modules/items/ui/MaterialTypes/MaterialTypesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

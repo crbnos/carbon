@@ -72,6 +72,7 @@ import {
   LuMaximize2,
   LuMinimize2,
   LuSquareFunction,
+  LuTrash,
   LuTriangleAlert,
   LuWorkflow
 } from "react-icons/lu";
@@ -133,13 +134,9 @@ import {
 } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
-  OperationParameter,
-  OperationStep,
-  OperationStepSlide,
-  OperationTool,
   SlideAnnotation,
   SlideSize
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -148,7 +145,13 @@ import {
   operationTypes,
   procedureStepType,
   standardFactorType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationStepSlide,
+  OperationTool
+} from "~/modules/shared/types";
 import type { action as editMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.$id";
 import type { action as newMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.new";
 import type { action as editMethodOperationStepAction } from "~/routes/x+/items+/methods+/operation.step.$id";
@@ -278,7 +281,7 @@ const BillOfProcess = ({
 
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
+  const deleteOperationFetcher = useAction();
   const { id: userId } = useUser();
 
   const [allItems] = useItems();
@@ -464,34 +467,37 @@ const BillOfProcess = ({
     setSelectedItemId(operationId);
   };
 
-  const onRemoveItem = async (id: string) => {
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
     if (isReadOnly) return;
 
-    const operation = operationsById.get(id);
-    if (!operation) return;
-
-    // Check if this is a temporary item (exists in temporaryItems state)
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      deleteOperationFetcher.submit(
-        { id },
-        {
-          method: "post",
-          action: path.to.methodOperationsDelete
-        }
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
       );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      deleteOperationFetcher.submit(formData, {
+        method: "post",
+        action: path.to.methodOperationsDelete
+      });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
@@ -847,6 +853,16 @@ const BillOfProcess = ({
 
         <CardAction>
           <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
             <Button
               ref={addOperationButtonRef}
               variant="secondary"

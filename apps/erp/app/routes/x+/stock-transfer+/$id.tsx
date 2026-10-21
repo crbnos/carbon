@@ -12,7 +12,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
-import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
+import {
+  getStockTransfer,
+  getStockTransferLines
+} from "~/modules/inventory/inventory.service";
 import StockTransferDocuments from "~/modules/inventory/ui/StockTransfers/StockTransferDocuments";
 import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTransferHeader";
 import StockTransferLines from "~/modules/inventory/ui/StockTransfers/StockTransferLines";

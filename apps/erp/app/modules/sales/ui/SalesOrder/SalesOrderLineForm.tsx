@@ -86,8 +86,8 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service";
-import { itemType, methodType } from "~/modules/shared";
+import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.utils";
+import { itemType, methodType } from "~/modules/shared/shared.models";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {

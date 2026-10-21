@@ -2,62 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { recalculateQuoteLinePrices } from "~/modules/sales";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    delete: "sales"
-  });
-
-  const formData = await request.formData();
-  const id = formData.get("id") as string;
-
-  if (!id) {
-    return data(
-      { error: "Operation ID is required" },
-      {
-        status: 400
-      }
-    );
-  }
-
-  // Fetch the operation's quoteId/quoteLineId before deleting
-  const op = await client
-    .from("quoteOperation")
-    .select("quoteId, quoteLineId")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-
-  const { error } = await client
-    .from("quoteOperation")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
-
-  if (error) {
-    return data(
-      { success: false, error: error.message },
-      {
-        status: 400
-      }
-    );
-  }
-
-  if (op.data) {
-    const serviceRole = getCarbonServiceRole();
-    await recalculateQuoteLinePrices(
-      serviceRole,
-      companyId,
-      op.data.quoteId,
-      op.data.quoteLineId,
-      userId
-    );
-  }
-
-  return { success: true };
+// One `id` per operation, so the bill of process's Delete Selected is one
+// request and the line is repriced once.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(
+    z.object({ id: zfd.repeatable(z.array(z.string().min(1)).min(1)) })
+  ).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.sales.deleteQuoteOperationsAndReprice({ ids: input.data.id });
 }

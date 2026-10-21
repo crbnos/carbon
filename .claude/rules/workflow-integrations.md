@@ -5,9 +5,9 @@ paths:
   - "packages/ee/src/google-calendar/**"
   - "apps/erp/app/routes/api+/integrations.connections*"
   - "apps/erp/app/routes/api+/workflows.options.ts"
-  - "apps/erp/app/modules/settings/connection-state.server.ts"
+  - "apps/erp/app/modules/settings/settings.service.ts"
   - "apps/erp/app/modules/settings/ui/Integrations/ConnectionsTab.tsx"
-  - "apps/erp/app/modules/workflows/options-providers.server.ts"
+  - "apps/erp/app/modules/workflows/workflows.service.ts"
   - "apps/erp/app/modules/workflows/ui/Builder/fields/OptionsField.tsx"
   - "apps/erp/app/modules/workflows/ui/Builder/config/forms/IntegrationNodeForm.tsx"
   - "packages/workflows/src/runtime/integration.ts"
@@ -133,15 +133,15 @@ as `null` — pieces branch on `undefined`.
 company. A company may connect several Google accounts, so integration connections get
 their own table.
 
-`integrationConnection` (`20261013031247_workflow-integration-connections.sql`) —
+`integrationConnection` (`20261020120101_workflow-integration-connections.sql`) —
 `id('icn')`, `companyId`, `pieceName`, `name`, `authType`, `accountLabel`, `metadata`,
 `secretRef`, `expiresAt`, `refreshingAt`, `status`, `lastError` + audit columns. Unique on
 `(companyId, pieceName, name)`. RLS is `settings_view` to read and NO API-role writes
-(`20261015164232`): a user-written row could claim another company's Slack `team_id` or
+(`20261021060226`): a user-written row could claim another company's Slack `team_id` or
 point `secretRef` anywhere. Every write — create, rename, disconnect, revoke — goes
 through the service role after the route's `requirePermissions`, scoped by `companyId`.
 `get_connection_secret` reads the vault by name (`connection:<companyId>:<id>`), never by
-`secretRef` (`20261015164237`).
+`secretRef` (`20261020120103`).
 
 **The existing vault RPCs could not be reused** — `upsert_integration_secret` and friends
 are hard-wired to `companyIntegration` and the `'integration:'` name prefix. The migration
@@ -215,7 +215,7 @@ The vault RPCs are `service_role` only, so a user client cannot decrypt a token 
 
 Do not move the row read to the owner's client. The row's RLS asks for `settings_view`,
 but the builder lists connections with the service role to anyone who can edit workflows
-(`options-providers.server.ts`). An owner-client read refused a connection the author was
+(`OPTIONS_PROVIDERS`, `workflows.service.ts`). An owner-client read refused a connection the author was
 allowed to pick, so every run failed with "This step needs a connection." The tenancy
 guarantee is the `companyId` filter: it comes from the run row, never from the definition.
 
@@ -236,7 +236,7 @@ go through `resolveConnectionAuth`, which owns the refresh claim.
   failure redirects to the integrations page with an error **code** (the `connection` key in
   `integration-errors.ts`), never JSON and never the vendor's own message.
 
-**The `state` is HMAC-signed and verified** (`connection-state.server.ts`, keyed on
+**The `state` is HMAC-signed and verified** (`signConnectionState` / `verifyConnectionState` in `settings.service.ts`, keyed on
 `SESSION_SECRET`, 10-minute lifetime), and the callback additionally re-checks its
 `companyId` against the session. That signature is what stops a token being planted into
 another company's connection — it is not decoration, and must never be reduced to a bare
@@ -285,7 +285,7 @@ Three parts, and only the last knows what a provider id means:
   provider's declared permission**, and returns `{ options, emptyHref? }`. An unknown
   provider still passes through `workflows_view` first, so it is not an unauthenticated
   probe. A failure never echoes the resolver's own message.
-- `modules/workflows/options-providers.server.ts` — `OPTIONS_PROVIDERS`, the only module that
+- `OPTIONS_PROVIDERS` in `modules/workflows/workflows.service.ts`, the only module that
   knows what a provider id means. Two entries today, both from
   `@carbon/jobs/integrations`'s `options.ts` constants: `integration.connection`
   (`workflows_view`, lists the company's connections) and `integration.property`
@@ -325,7 +325,7 @@ the SAME string as the piece name, so nothing has to map between the two.
   `SLACK_STATE_SECRET` are gone. `SLACK_OAUTH_REDIRECT_URL` keeps its name and may keep its
   deployed value: `api+/integrations.slack.oauth.ts` is now a 302 forwarder onto the
   connections callback, so no environment or Slack-app redirect change is needed to ship. Migration
-  `20261013031318_slack-connections-single-source.sql` backfilled existing installs. The
+  `20261020120102_slack-connections-single-source.sql` backfilled existing installs. The
   builder's "Connect …" link deep-links to `?tab=connections`.
 - `ui/Integrations/ConnectionsTab.tsx` is an `IntegrationFormTab` ("Accounts") on that card,
   listing the connected accounts with rename, Disconnect and Add account. It is the ONE place
@@ -406,7 +406,7 @@ in this path.
    NOTHING`): `companyIntegration.id` is an FK to `integration.id`, so without it
    `markIntegrationInstalled` fails the callback with a bare PostgREST error after the token
    is already in the vault. The `INSERT INTO "integration"` at the end of
-   `20261013031247_workflow-integration-connections.sql` is the shape (one row per piece).
+   `20261020120101_workflow-integration-connections.sql` is the shape (one row per piece).
 6. Check every action you expose ships an `outputSchema` — the generator refuses one
    that does not, and coverage is all-or-nothing per piece. Then run the generator and read
    its refusals: each unmappable prop is a decision — `omit` it (optional, or required with

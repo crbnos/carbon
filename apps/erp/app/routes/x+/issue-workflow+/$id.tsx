@@ -12,12 +12,12 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import { issueWorkflowValidator } from "~/modules/quality/quality.models";
 import {
   getIssueWorkflow,
   getRequiredActionsList,
-  issueWorkflowValidator,
   upsertIssueWorkflow
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

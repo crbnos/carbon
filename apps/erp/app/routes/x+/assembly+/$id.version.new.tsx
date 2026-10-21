@@ -9,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblyInstructionVersionValidator,
-  copyAssemblyInstructionAsVersion
-} from "~/modules/production";
+import { assemblyInstructionVersionValidator } from "~/modules/production/production.models";
+import { copyAssemblyInstructionAsVersion } from "~/modules/production/production.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

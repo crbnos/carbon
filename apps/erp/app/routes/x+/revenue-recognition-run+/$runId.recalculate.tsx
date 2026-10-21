@@ -2,79 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { serverFns } from "@carbon/server-functions";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["runId"] });
+  if ("invalid" in input) return input.invalid;
+  const { runId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.accounting.recalculateRevenueRecognitionRun({
+    runId
   });
-
-  const { runId } = params;
-  if (!runId) {
-    throw redirect(
-      path.to.revenueRecognitionRuns,
-      await flash(request, error(null, "Missing revenue recognition run ID"))
-    );
-  }
-
+  const run = result.data;
   // A run left with nothing due is deleted; go back to its own type's list.
-  const run = await client
-    .from("revenueRecognitionRun")
-    .select("type")
-    .eq("id", runId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  const { listPath } = RUN_PAGES[run.data?.type ?? "Revenue Recognition"];
-
-  const result = await serverFns
-    .as({ client, db: getDatabaseClient(), companyId, userId })
-    .invoke("recalculate-revenue-recognition-run", { runId });
-
-  if (result.error) {
-    throw redirect(
-      path.to.revenueRecognitionRun(runId),
-      await flash(
-        request,
-        error(
-          result.error,
-          result.error.message ||
-            "Failed to recalculate revenue recognition run"
-        )
-      )
-    );
-  }
-
-  const { data } = result;
-  if (data.deleted) {
-    throw redirect(
-      listPath,
-      await flash(
-        request,
-        success(
-          `Nothing is due by this run's period end any more, so ${data.runId} was deleted`
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.revenueRecognitionRun(runId),
-    await flash(
-      request,
-      success(
-        data.changed
-          ? `Recalculated ${data.runId}: ${data.lineCount} lines`
-          : `${data.runId} is already up to date`
-      )
-    )
+  return respond(args.request, result).redirect(
+    run?.deleted
+      ? RUN_PAGES[run.type].listPath
+      : path.to.revenueRecognitionRun(runId),
+    {
+      message: !run
+        ? undefined
+        : run.deleted
+          ? `Nothing is due by this run's period end any more, so ${run.readableId} was deleted`
+          : run.changed
+            ? `Recalculated ${run.readableId}: ${run.lineCount} lines`
+            : `${run.readableId} is already up to date`
+    }
   );
 }

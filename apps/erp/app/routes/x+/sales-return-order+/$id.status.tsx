@@ -10,7 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 import {
   cancelSalesReturnOrder,
   reopenSalesReturnOrder
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

@@ -54,7 +54,7 @@ vi.mock("~/modules/settings/integration-errors", () => ({
   integrationErrorSearch: (integration: string, error: string) =>
     `?integration=${integration}&error=${error}`
 }));
-vi.mock("~/modules/shared", () => ({
+vi.mock("~/modules/shared/shared.models", () => ({
   oAuthCallbackSchema: {
     safeParse(value: Record<string, unknown>) {
       return typeof value.code === "string" && typeof value.state === "string"
@@ -79,8 +79,7 @@ const credentials = {
   type: "oauth2",
   accessToken: "new-access",
   refreshToken: "new-refresh",
-  expiresAt: "2026-09-11T13:00:00.000Z",
-  environment: "production"
+  expiresAt: "2026-09-11T13:00:00.000Z"
 };
 
 async function callbackRequest(

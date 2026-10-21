@@ -14,7 +14,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { AuditLogTable } from "~/modules/settings";
+import { AuditLogTable } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

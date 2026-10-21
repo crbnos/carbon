@@ -2,33 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
+import { trainingAssignmentValidator } from "~/modules/resources/resources.models";
 import {
   getTrainingAssignment,
-  getTrainingAssignmentStatus,
-  getTrainingsList,
-  TrainingAssignmentForm,
-  trainingAssignmentValidator,
-  upsertTrainingAssignment
-} from "~/modules/resources";
-import type {
-  TrainingAssignmentStatusItem,
-  TrainingListItem
-} from "~/modules/resources/types";
+  getTrainingsList
+} from "~/modules/resources/resources.service";
+import type { TrainingListItem } from "~/modules/resources/types";
+import { TrainingAssignmentForm } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "assignments-assignment-assignmentid");
 
 export const handle: Handle = {
   breadcrumb: msg`Edit Assignment`,
@@ -49,16 +40,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [assignment, trainings, assignmentStatus] = await Promise.all([
+  const [assignment, trainings] = await Promise.all([
     getTrainingAssignment(client, assignmentId),
-    getTrainingsList(client, companyId),
-    // @ts-expect-error TS2345 - TODO: fix type
-    getTrainingAssignmentStatus(client, companyId, {
-      // We'll filter by trainingId which we'll get from the assignment
-    })
+    getTrainingsList(client, companyId)
   ]);
 
-  if (assignment.error) {
+  if (assignment.error || assignment.data.companyId !== companyId) {
     throw redirect(
       path.to.trainingAssignments,
       await flash(request, error(assignment.error, "Error loading assignment"))
@@ -72,99 +59,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // Filter assignment status by trainingAssignmentId
-  const filteredStatus = (assignmentStatus.data ?? []).filter(
-    (s) => s.trainingAssignmentId === assignmentId
-  );
-
-  const currentPeriod =
-    filteredStatus.length > 0 ? filteredStatus[0].currentPeriod : null;
-
   return {
     assignment: assignment.data,
-    trainings: (trainings.data ?? []) as TrainingListItem[],
-    assignmentStatus: filteredStatus as TrainingAssignmentStatusItem[],
-    currentPeriod
+    trainings: (trainings.data ?? []) as TrainingListItem[]
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources",
-    role: "employee"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(trainingAssignmentValidator).request(args, {
+    params: ["assignmentId"]
   });
-
-  const { assignmentId } = params;
-  if (!assignmentId) {
-    return data({ error: "Assignment ID is required" }, { status: 400 });
-  }
-
-  const formData = await request.formData();
-  const validation = await validator(trainingAssignmentValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { trainingId, groupIds } = validation.data;
-
-  const result = await upsertTrainingAssignment(client, {
-    id: assignmentId,
-    trainingId,
-    groupIds,
-    companyId: "", // not used for updates
-    updatedBy: userId
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.updateTrainingAssignment({
+    ...input.data,
+    id: input.params.assignmentId
   });
-
-  if (result.error) {
-    return data(
-      { error: result.error.message },
-      {
-        status: 500,
-        // @ts-expect-error TS2322 - TODO: fix type
-        headers: await flash(
-          request,
-          error(result.error, "Failed to update assignment")
-        )
-      }
-    );
-  }
-
-  // Send notifications to all users in the assigned groups
-  try {
-    await trigger("notify", {
-      companyId,
-      documentId: assignmentId,
-      event: NotificationEvent.TrainingAssignment,
-      recipient: {
-        type: "group",
-        groupIds
-      },
-      from: userId
-    });
-  } catch (err) {
-    logger.error("Failed to send training assignment notifications", {
-      error: err
-    });
-  }
-
-  throw redirect(
-    path.to.trainingAssignments,
-    await flash(request, success("Assignment updated successfully"))
-  );
+  // The drawer posts through a fetcher, which toasts a refusal.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(path.to.trainingAssignments, {
+    message: "Assignment updated successfully"
+  });
 }
 
 export default function EditTrainingAssignmentRoute() {
-  const { assignment, trainings, assignmentStatus, currentPeriod } =
-    useLoaderData<typeof loader>();
+  const { assignment, trainings } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const params = useParams();
 
   const initialValues = {
     id: params.assignmentId!,
+    isExternal: !assignment?.trainingId,
     trainingId: assignment?.trainingId ?? "",
+    name: assignment?.name ?? "",
     groupIds: assignment?.groupIds ?? []
   };
 
@@ -172,8 +99,6 @@ export default function EditTrainingAssignmentRoute() {
     <TrainingAssignmentForm
       initialValues={initialValues}
       trainings={trainings}
-      assignmentStatus={assignmentStatus}
-      currentPeriod={currentPeriod}
       onClose={() => navigate(path.to.trainingAssignments)}
     />
   );

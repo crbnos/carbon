@@ -14,8 +14,9 @@ const logger = getLogger("ee", "email");
  * provider without actually sending a message:
  *
  * - `resend`: hits `GET https://api.resend.com/domains` with the API key.
- *   A 2xx means the key is valid and has read access; anything else means
- *   the credentials are wrong or the account is suspended.
+ *   A 2xx means the key is valid and has read access; a 401
+ *   `restricted_api_key` means a valid "Sending access" key, also healthy.
+ *   Anything else means the credentials are wrong or the account is suspended.
  * - `smtp`:   dynamically imports `nodemailer`, builds a transport from the
  *   stored host/port/username/password/secure and calls `.verify()`, which
  *   performs a handshake without sending mail.
@@ -49,7 +50,16 @@ export async function emailHealthcheck(
           Authorization: `Bearer ${data.apiKey}`
         }
       });
-      return response.ok;
+      if (response.ok) return true;
+      // A "Sending access" key is refused here with `restricted_api_key`, but
+      // sending is all the integration uses it for.
+      if (response.status === 401) {
+        const body = (await response.json().catch(() => null)) as {
+          name?: string;
+        } | null;
+        return body?.name === "restricted_api_key";
+      }
+      return false;
     }
 
     if (data.provider === "smtp") {

@@ -20,7 +20,7 @@ import { Trans } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { DateTime, Hyperlink } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
-import type { getInvoiceSettlements } from "~/modules/invoicing";
+import type { getInvoiceSettlements } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 
 type PaymentApplication = NonNullable<

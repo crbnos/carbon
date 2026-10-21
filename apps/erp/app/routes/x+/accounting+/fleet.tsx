@@ -10,7 +10,7 @@ import { LuHammer } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { usePermissions } from "~/hooks";
-import { getFleetAssets } from "~/modules/accounting";
+import { getFleetAssets } from "~/modules/accounting/accounting.service";
 import { FleetAssetsTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

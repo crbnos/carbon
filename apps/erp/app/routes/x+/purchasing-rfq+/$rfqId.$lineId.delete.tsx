@@ -7,11 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { isRfqLocked } from "~/modules/purchasing/purchasing.models";
 import {
   deletePurchasingRFQLine,
-  getPurchasingRFQ,
-  isRfqLocked
-} from "~/modules/purchasing";
+  getPurchasingRFQ
+} from "~/modules/purchasing/purchasing.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

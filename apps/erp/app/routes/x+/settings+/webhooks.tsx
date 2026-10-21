@@ -11,7 +11,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getConfig, getWebhooks } from "~/modules/settings";
+import { getConfig, getWebhooks } from "~/modules/settings/settings.service";
 import {
   WebhooksTable,
   WebhooksUpgradeOverlay

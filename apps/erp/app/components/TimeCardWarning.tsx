@@ -33,7 +33,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
-import { setClockOutValidator } from "~/modules/people";
+import { setClockOutValidator } from "~/modules/people/people.models";
 import { path } from "~/utils/path";
 import { DateTimePicker, Hidden, Submit } from "./Form";
 
@@ -53,13 +53,9 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
   const { locale } = useLocale();
   const [showClockWarning, setShowClockWarning] = useState(false);
   const fetcher = useAction({
-    onSettled: (data) => {
-      if (data) {
-        if ((data as { success?: boolean }).success) {
-          toast.success(t`Updated successfully`);
-          setShowClockWarning(false);
-        }
-      }
+    onSuccess: () => {
+      toast.success(t`Updated successfully`);
+      setShowClockWarning(false);
     }
   });
 

@@ -2,31 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteShipmentLine } from "~/modules/inventory";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client } = await requirePermissions(request, {
-    delete: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.inventory.deleteShipmentLine({
+    shipmentLineId: input.params.id
   });
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const lineDelete = await deleteShipmentLine(client, id);
-
-  if (lineDelete.error) {
-    return {
-      success: false,
-      message: lineDelete.error.message
-    };
-  }
-
-  return {
-    success: true,
-    message: "Shipment line deleted successfully"
-  };
 }

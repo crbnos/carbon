@@ -10,11 +10,11 @@ import { useLoaderData } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getInventoryValuation,
-  getInventoryValuationTieOut,
-  InventoryValuationWorkbench
-} from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+  getInventoryValuationTieOut
+} from "~/modules/inventory/inventory.service";
+import { InventoryValuationWorkbench } from "~/modules/inventory/ui";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

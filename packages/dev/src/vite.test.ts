@@ -8,7 +8,10 @@ import { clientOnlyAlias } from "../vite.js";
 describe("clientOnlyAlias", () => {
   const plugin = clientOnlyAlias("unpdf/pdfjs", "/stub.mjs") as unknown as {
     applyToEnvironment: (environment: { name: string }) => boolean;
-    resolveId: (source: string) => string | undefined;
+    resolveId: {
+      filter: { id: RegExp };
+      handler: (source: string) => string | undefined;
+    };
   };
 
   it("applies to the client environment only", () => {
@@ -18,7 +21,14 @@ describe("clientOnlyAlias", () => {
   });
 
   it("resolves the exact specifier and nothing else", () => {
-    expect(plugin.resolveId("unpdf/pdfjs")).toBe("/stub.mjs");
-    expect(plugin.resolveId("unpdf")).toBeUndefined();
+    expect(plugin.resolveId.handler("unpdf/pdfjs")).toBe("/stub.mjs");
+    expect(plugin.resolveId.handler("unpdf")).toBeUndefined();
+  });
+
+  it("filters natively on the exact specifier", () => {
+    const { id } = plugin.resolveId.filter;
+    expect(id.test("unpdf/pdfjs")).toBe(true);
+    expect(id.test("unpdf/pdfjs/x")).toBe(false);
+    expect(id.test("xunpdf/pdfjs")).toBe(false);
   });
 });

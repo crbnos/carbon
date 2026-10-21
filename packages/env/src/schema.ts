@@ -15,6 +15,7 @@ export type Group =
   | "quickbooks"
   | "jira"
   | "onshape"
+  | "onshapeV2"
   | "ramp"
   | "ai"
   | "assembler"
@@ -32,6 +33,7 @@ export const FEATURES = {
   quickbooks: "QuickBooks",
   jira: "Jira",
   onshape: "Onshape",
+  onshapeV2: "Onshape V2",
   ramp: "Ramp",
   ai: "AI",
   assembler: "Assembler"
@@ -117,6 +119,16 @@ export const schema = define({
     group: "core",
     description: "true for an ITAR / controlled deployment",
     browser: true
+  },
+  MAINTENANCE_MODE: {
+    group: "core",
+    description: "true answers every request except /health with a 503"
+  },
+  SYSTEM_STATUS_URL: {
+    group: "core",
+    description:
+      "URL of a JSON document with the latest version and an announcement",
+    type: url
   },
   DEFAULT_LANGUAGE: {
     group: "core",
@@ -240,6 +252,11 @@ export const schema = define({
     description: "signs the session cookie",
     secret: true,
     required: "error"
+  },
+  AUTH_COOKIE_SUFFIX: {
+    group: "auth",
+    description:
+      "Suffix for the auth cookie names when another deployment sets cookies on the same DOMAIN (EU: eu)"
   },
   AUTH_PROVIDERS: {
     group: "auth",
@@ -414,19 +431,38 @@ export const schema = define({
   // ── onshape ───────────────────────────────────────────────────────────────
   ONSHAPE_CLIENT_ID: {
     group: "onshape",
-    description: "Onshape app client id",
+    description: "Onshape sync app client id",
     browser: true,
     needed: true
   },
   ONSHAPE_CLIENT_SECRET: {
     group: "onshape",
-    description: "Onshape app client secret",
+    description: "Onshape sync app client secret",
     secret: true,
     needed: true
   },
   ONSHAPE_OAUTH_REDIRECT_URL: {
     group: "onshape",
-    description: "Onshape OAuth callback URL",
+    description: "Onshape sync app OAuth callback URL",
+    type: url
+  },
+
+  // ── onshapeV2 (the panel's own Onshape app) ───────────────────────────────
+  ONSHAPE_V2_CLIENT_ID: {
+    group: "onshapeV2",
+    description: "Onshape panel app client id",
+    browser: true,
+    needed: true
+  },
+  ONSHAPE_V2_CLIENT_SECRET: {
+    group: "onshapeV2",
+    description: "Onshape panel app client secret",
+    secret: true,
+    needed: true
+  },
+  ONSHAPE_V2_OAUTH_REDIRECT_URL: {
+    group: "onshapeV2",
+    description: "Onshape panel app OAuth callback URL",
     type: url
   },
 

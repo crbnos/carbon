@@ -102,7 +102,11 @@ around its generic FK-null + topological delete, all inside the apply transactio
    customer-XOR-supplier CHECK the FK-nulling pass would violate.
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
-   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass.
+   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
+   seeded table with a CHECK that needs one of several nullable FKs set goes in
+   `PARENT_CHECK_TABLES` (today `customerContractInvoiceLine`: an invoice OR a credit
+   memo). Missing one fails every re-apply with "new row … violates check constraint",
+   while a first apply onto an empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
@@ -306,7 +310,7 @@ Never use JavaScript `Date` here, and never `CURRENT_DATE` in a tier's SQL — t
 the company's day, the database session's is UTC, and the two disagree for a slice of every
 day. The pure validator checks offset VALUES (planning horizon, period floors, document
 chronology) but nothing scans for `Date` / `CURRENT_DATE` usage: `@carbon/checks` covers
-`apps/mes/app/services`, `packages/jobs/src`, `packages/server-functions/src` and
+`apps/mes/app/services`, `packages/jobs/src` and
 the ERP module/route files, none of which is `packages/database/src/**`. That part is
 convention only.
 
@@ -341,9 +345,9 @@ journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cuto
 
 It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
 no `WHERE`), even when the company already has a cutover.
-A company always has one by then: `seed-company` stamps the first day of the current month
-(onboarding runs it before the template job), and an app-created company applied through
-Settings → Demo Data has its own. Kept, that later date would put up to eleven months of
+`seed-company` leaves a new company without one (it stays Provisional until activation), so
+tier 01 usually writes the first; an app-created company applied through Settings → Demo
+Data may already have its own. Kept, a later date would put up to eleven months of
 seeded Posted journals before the cutover, where a void is refused and the readers above
 assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
 `companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
@@ -382,7 +386,7 @@ make parts. Keep it that way when authoring a new notice or a new dataset.
 
 Posted receipts and shipments, completed returns / transfers / picking lists / counts,
 Paid and Partially Paid invoices, disposed assets and Posted journals are all seeded. The
-posting server functions cannot run inside the one seed transaction (and a post-commit call
+postings cannot run inside the one seed transaction (and a post-commit call
 would break all-or-nothing apply and the drift check's rollback), so each posted state is
 **hand-authored together with the rows its posting path would have written** —
 `itemLedger`, `invoiceSettlement`, tracked entities/activities, receipt/shipment lines —
@@ -404,7 +408,7 @@ in the same tier. Conventions, each mirroring the real code path:
   `memo.journalId` set), posted PO receipt (plus its FIFO `costLedger` layer) and SO
   shipment (a `costLedger` draw on those layers, else `itemCost.unitCost` = the item's
   `standardCost`) and scrapped lot (post-inventory-adjustment's `Inventory Adjustment`
-  shape, CR inventory / DR `scrapAccount`), all `Posted`, through the server functions'
+  shape, CR inventory / DR `scrapAccount`), all `Posted`, through the postings'
   own builders (`buildSalesPostingLines`, `buildPaymentJournal`, `buildMemoJournal`) or
   copies of their inline shapes (`helpers/posting-journals.ts`). Ids come from the
   `journalEntry` sequence, which the wipe never rewinds. Payments stay USD at rate 1,
@@ -575,6 +579,14 @@ which is exactly what lets one caller commit and the other roll back.
 
 The scratch company is attributed to the `system` user, never a real developer's.
 
+After the coverage check it applies the dataset AGAIN over the seeded scratch company with
+`wipeFirst: true` — the Settings → Demo Data path on a company that already has data. That
+is the only way to exercise the wipe against real rows: a new CHECK the FK-nulling pass
+cannot survive fails here as "re-applying over the seeded company failed (datasets/wipe.ts)".
+Before that pass it dates the seeded locations one second after the bootstrap one, because
+`buildCtx` keeps the OLDEST location and inside one transaction `NOW()` gives every row the
+same `createdAt`.
+
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
 table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 255 tables, measured across all four
 datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
@@ -641,6 +653,6 @@ feature and is unaffected.
 ## Local development note
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
-browser onboarding flow additionally runs the `seed-company` server function
-(`@carbon/server-functions/seed-company`, for the chart of accounts and other reference data)
+browser onboarding flow additionally runs `seedCompany` (`settings.service.ts`, ported
+from the `seed-company` server function, for the chart of accounts and other reference data)
 before the template step ever runs, in-process in the ERP.

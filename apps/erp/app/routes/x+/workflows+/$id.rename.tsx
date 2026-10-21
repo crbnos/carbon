@@ -10,7 +10,8 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateWorkflow, workflowValidator } from "~/modules/workflows";
+import { workflowValidator } from "~/modules/workflows/workflows.models";
+import { updateWorkflow } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 // Name and description only. This route never accepts an ownerId — a workflow

@@ -176,6 +176,16 @@ const RentalAgreementProperties = () => {
 
   if (!agreement) return null;
 
+  // As the Billing card reads: Monthly, with "Align to calendar periods"
+  // telling Calendar Month apart.
+  const billingCycleLabels: Record<
+    (typeof rentalBillingCycles)[number],
+    string
+  > = {
+    Monthly: t`Monthly`,
+    "Calendar Month": t`Monthly (calendar)`,
+    "28 Days": t`28 Days`
+  };
   const invoiceAutomationLabels: Record<
     (typeof invoiceAutomations)[number],
     string
@@ -357,11 +367,17 @@ const RentalAgreementProperties = () => {
           name="billingCycle"
           label={t`Billing Cycle`}
           termId="billing-cycle"
-          inline={(value) => <span>{value}</span>}
+          inline={(value) => (
+            <span>
+              {billingCycleLabels[
+                value as (typeof rentalBillingCycles)[number]
+              ] ?? value}
+            </span>
+          )}
           isReadOnly={isDisabled}
           options={rentalBillingCycles.map((cycle) => ({
             value: cycle,
-            label: cycle
+            label: billingCycleLabels[cycle]
           }))}
           onChange={(option) => {
             if (option?.value) onUpdate("billingCycle", option.value);

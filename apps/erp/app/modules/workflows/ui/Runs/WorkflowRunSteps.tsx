@@ -7,7 +7,8 @@ import { topologicalNodeOrder } from "@carbon/ee/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
-import { MAX_RUN_STEPS, type WorkflowRunStep } from "../../workflows.service";
+import type { WorkflowRunStep } from "../../workflows.service";
+import { MAX_RUN_STEPS } from "../../workflows.utils";
 import { useWorkflowLabel } from "../Builder/catalog";
 import {
   actionInputLabelKey,

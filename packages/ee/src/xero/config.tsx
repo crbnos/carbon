@@ -77,7 +77,12 @@ export const Xero = defineIntegration({
       "accounting.invoices",
       "accounting.payments",
       "accounting.banktransactions",
-      "accounting.manualjournals"
+      "accounting.manualjournals",
+      // Read-only: the accounting activation wizard pulls the trial balance
+      // as at the day before the cutover (GET /Reports/TrialBalance). A tenant
+      // connected before this scope was added gets a 401/403 there, surfaced as
+      // "reconnect the integration" — no forced reconnect.
+      "accounting.reports.trialbalance.read"
     ],
     tokenUrl: "https://login.xero.com/identity/connect/token"
   },

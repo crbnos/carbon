@@ -2,9 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
+import { toast } from "@carbon/react";
 import { useCallback } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings", "integrations");
 
 /**
  * Installing an integration, from wherever it is offered — the card in the grid and the
@@ -19,6 +23,7 @@ import { path } from "~/utils/path";
  * variants don't all assign back to the bare type. */
 export type InstallableIntegration = {
   id: string;
+  name: string;
   settings: readonly { required?: boolean }[];
   onClientInstall?: () => void | Promise<void>;
   oauth?: {
@@ -52,7 +57,7 @@ export function useIntegrationInstall(
   const install = useCallback(async () => {
     if (!integration) return;
 
-    if ("oauth" in integration && !!integration.oauth) {
+    if ("oauth" in integration && integration.oauth) {
       startOAuthConnect(integration.id);
       return;
     }
@@ -63,7 +68,15 @@ export function useIntegrationInstall(
     }
 
     if (integration.onClientInstall) {
-      await integration.onClientInstall();
+      try {
+        await integration.onClientInstall();
+      } catch (error) {
+        logger.error("Client install failed", {
+          integration: integration.id,
+          error
+        });
+        toast.error(`Couldn't start the ${integration.name} connection`);
+      }
       return;
     }
 

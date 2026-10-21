@@ -38,8 +38,8 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
   `expectedConnectInvoiceTotal`, no client or env), tested in
   `packages/jobs/src/invoicing/stripe-invoice-lines.test.ts`
 - **Send a posted sales invoice**: `sendPostedSalesInvoiceViaStripe`
-  (`send-sales-invoice.server.ts`) is the ONE send, shared by the ERP post route
-  (`x+/sales-invoice+/$invoiceId.post.tsx`) and invoice automation
+  (`send-sales-invoice.server.ts`) is the ONE send, shared by the ERP post operation
+  (`postSalesInvoice`, `invoicing.server.ts`) and invoice automation
   (`sendPostedInvoiceViaStripe` in `@carbon/jobs` `src/invoicing/automate-invoice.ts`,
   the `Post and Send via Stripe` mode). The caller resolves and links the Stripe
   customer first. The mapping write is injected as `linkStripeInvoice`, so this

@@ -13,12 +13,14 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   priceOverrideBreaksValidator,
-  priceOverrideValidator,
-  upsertCustomerItemPriceOverride
-} from "~/modules/sales";
+  priceOverrideValidator
+} from "~/modules/sales/sales.models";
+import { upsertCustomerItemPriceOverride } from "~/modules/sales/sales.service";
 import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getCompanyTimeZone,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 

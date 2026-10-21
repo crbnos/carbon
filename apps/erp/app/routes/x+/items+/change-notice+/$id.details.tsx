@@ -6,8 +6,11 @@ import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { ChangeNotice, ChangeNoticeActionTask } from "~/modules/items";
-import { canEditChangeNoticeWorkflow } from "~/modules/items";
+import { canEditChangeNoticeWorkflow } from "~/modules/items/items.models";
+import type {
+  ChangeNotice,
+  ChangeNoticeActionTask
+} from "~/modules/items/types";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import {
   ChangeNoticeActions,

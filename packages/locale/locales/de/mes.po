@@ -103,6 +103,10 @@ msgstr "{recorded}/{0} Fertigungsaufträge"
 msgid "+{overflow} more"
 msgstr "+{overflow} weitere"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Hinweis: Am {0} wird Ihr Konto zu erp.try.carbon.ms verschoben"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Eine vorherige Fertigstellung wurde nicht abgeschlossen. Ein erneuter Versuch setzt die verbleibenden Schritte fort – Mengen werden nicht doppelt gezählt."
 
@@ -402,6 +406,9 @@ msgstr "Schließen"
 msgid "Collapse characteristics table"
 msgstr "Merkmalstabelle einklappen"
 
+msgid "Collapse navigation"
+msgstr "Navigation einklappen"
+
 msgid "Collapse panel"
 msgstr "Bereich reduzieren"
 
@@ -424,6 +431,9 @@ msgstr "Spalte: {0}"
 
 msgid "Columns"
 msgstr "Spalten"
+
+msgid "Companies"
+msgstr "Unternehmen"
 
 msgid "Company"
 msgstr "Unternehmen"
@@ -541,6 +551,9 @@ msgstr "Beschreibung"
 
 msgid "Details"
 msgstr "Details"
+
+msgid "Dismiss"
+msgstr "Verwerfen"
 
 msgid "Dispatch not found"
 msgstr "Instandhaltungsauftrag nicht gefunden"
@@ -817,6 +830,9 @@ msgstr "Ich arbeite noch"
 msgid "Ideas, suggestions or problems?"
 msgstr "Ideen, Vorschläge oder Probleme?"
 
+msgid "Idle"
+msgstr "Leerlauf"
+
 msgid "Idle for"
 msgstr "Untätig seit"
 
@@ -908,6 +924,9 @@ msgstr "Fertigungsauftrag-Laufkarte"
 msgid "Jobs"
 msgstr "Fertigungsaufträge"
 
+msgid "Keep navigation open"
+msgstr "Navigation geöffnet lassen"
+
 msgid "Keep picking"
 msgstr "Kommissionierung fortsetzen"
 
@@ -958,6 +977,9 @@ msgstr "Listenansicht"
 
 msgid "Load list"
 msgstr "Liste laden"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Beladen: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
@@ -1280,6 +1302,9 @@ msgstr "OEM erforderlich"
 msgid "of {0}"
 msgstr "von {0}"
 
+msgid "Offline"
+msgstr "Offline"
+
 msgid "Oldest first"
 msgstr "Älteste zuerst"
 
@@ -1310,6 +1335,9 @@ msgstr "Öffnen Sie einen Fertigungsauftrag in diesem Los"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie einen NCR für MRB-Verwendungsentscheid"
+
+msgid "Open ERP"
+msgstr "ERP öffnen"
 
 msgid "Open Jobs"
 msgstr "Offene Fertigungsaufträge"
@@ -2154,6 +2182,9 @@ msgstr "Aktualisieren"
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
 msgstr "Aktualisiert {0}"
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "Erfolgreich aktualisiert"

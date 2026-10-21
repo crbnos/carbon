@@ -11,10 +11,11 @@ import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useCompanyToday, useRouteData, useUser } from "~/hooks";
-import type { GaugeType } from "~/modules/quality";
-import { gaugeValidator, insertGauge } from "~/modules/quality";
+import { gaugeValidator } from "~/modules/quality/quality.models";
+import { insertGauge } from "~/modules/quality/quality.service";
+import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

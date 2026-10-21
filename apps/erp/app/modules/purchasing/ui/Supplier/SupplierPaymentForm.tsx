@@ -24,7 +24,7 @@ import {
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
 import { usePermissions } from "~/hooks";
-import { supplierPaymentValidator } from "~/modules/purchasing";
+import { supplierPaymentValidator } from "~/modules/purchasing/purchasing.models";
 
 type SupplierPaymentFormProps = {
   initialValues: z.infer<typeof supplierPaymentValidator>;

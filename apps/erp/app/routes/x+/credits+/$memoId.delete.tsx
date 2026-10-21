@@ -2,81 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteMemo, getMemo } from "~/modules/invoicing";
-import { deleteRentalCreditMemoReleasingPeriods } from "~/modules/sales/sales.server";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "credits.delete");
-
-// Action-only route — the delete confirmation modal (ConfirmDelete) posts here.
-// The memo table's RLS DELETE policy restricts deletes to Draft memos, so a
-// non-draft delete fails at the database; the UI also hides the action.
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    delete: "invoicing"
-  });
-
-  const { memoId } = params;
-  if (!memoId) {
-    throw redirect(
-      path.to.invoicing,
-      await flash(request, error(params, "Failed to get a memo id"))
-    );
-  }
-
-  // Read the memo before deleting so we can return to its party's list —
-  // supplier memos → Supplier Credits (AP), customer memos → Credit Memos (AR).
-  const existing = await getMemo(client, memoId, companyId);
-  const listPath = existing.data?.supplierId
-    ? path.to.supplierCredits
-    : path.to.creditMemos;
-
-  // A rental early-return credit returns its periods to Pending as it goes,
-  // so the next invoice run credits them again.
-  if (existing.data?.rentalAgreementId) {
-    try {
-      await deleteRentalCreditMemoReleasingPeriods(getDatabaseClient(), {
-        companyId,
-        memoId,
-        userId
-      });
-    } catch (err) {
-      logger.error("rental credit memo delete failed", {
-        companyId,
-        memoId,
-        error: err
-      });
-      throw redirect(
-        path.to.memo(memoId),
-        await flash(
-          request,
-          error(
-            err,
-            err instanceof Error ? err.message : "Failed to delete memo"
-          )
-        )
-      );
-    }
-  } else {
-    const remove = await deleteMemo(client, memoId, companyId);
-    if (remove.error) {
-      throw redirect(
-        path.to.memo(memoId),
-        await flash(request, error(remove.error, "Failed to delete memo"))
-      );
-    }
-  }
-
-  throw redirect(
-    listPath,
-    await flash(request, success("Successfully deleted memo"))
+// Action-only route: the delete confirmation modal posts here.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["memoId"] });
+  if ("invalid" in input) return input.invalid;
+  const { memoId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.deleteDraftMemo({ memoId });
+  // Back to the memo's own list: supplier memos are Supplier Credits (AP),
+  // customer memos Credit Memos (AR).
+  return respond(args.request, result).redirect(
+    !result.data
+      ? path.to.memo(memoId)
+      : result.data.party === "supplier"
+        ? path.to.supplierCredits
+        : path.to.creditMemos,
+    { message: "Successfully deleted memo" }
   );
 }

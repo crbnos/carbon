@@ -12,6 +12,7 @@ import {
   ValidatedForm
 } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BadgeCloseButton,
@@ -32,9 +33,9 @@ import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import React, { Suspense, useEffect, useState } from "react";
 import { LuImage, LuMegaphone } from "react-icons/lu";
-import { useFetcher, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useUser } from "~/hooks";
-import { suggestionValidator } from "~/modules/shared";
+import { suggestionValidator } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/resources+/suggestions.new";
 import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";
@@ -54,7 +55,6 @@ type EmojiData = {
 
 const Suggestion = () => {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [suggestion, setSuggestion] = useState("");
@@ -76,19 +76,17 @@ const Suggestion = () => {
     (state) => state.clearSuggestionRequest
   );
 
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      toast.success(fetcher.data.message);
+  const fetcher = useAction<typeof action>({
+    onSuccess: () => {
+      toast.success(t`Suggestion submitted`);
       setSuggestion("");
       setEmoji(defaultEmoji);
       setAttachment(null);
       setAnonymous(true);
       setSendToCarbon(CARBON_SLACK_ENABLED);
       setOpen(false);
-    } else if (fetcher.data?.message) {
-      toast.error(fetcher.data.message);
     }
-  }, [fetcher.data]);
+  });
 
   useEffect(() => {
     if (!suggestionPrefill) return;

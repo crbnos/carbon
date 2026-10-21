@@ -43,7 +43,7 @@ import {
 } from "~/components";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
-import type { JobMaterialPick } from "~/modules/inventory";
+import type { JobMaterialPick } from "~/modules/inventory/inventory.service";
 import { type Item, useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {

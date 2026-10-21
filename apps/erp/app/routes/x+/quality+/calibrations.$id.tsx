@@ -13,13 +13,13 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import type z from "zod";
-import type { calibrationAttempt } from "~/modules/quality";
+import type { calibrationAttempt } from "~/modules/quality/quality.models";
+import { gaugeCalibrationRecordValidator } from "~/modules/quality/quality.models";
 import {
-  gaugeCalibrationRecordValidator,
   getGaugeCalibrationRecord,
   getQualityFiles,
   upsertGaugeCalibrationRecord
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

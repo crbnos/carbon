@@ -19,7 +19,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import { Hidden, Input, Submit, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { groupValidator } from "~/modules/users";
+import { groupValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 type GroupFormProps = {

@@ -11,7 +11,7 @@ import {
   LuStickyNote,
   LuUser
 } from "react-icons/lu";
-import type { PublicAttributes } from "~/modules/account";
+import type { PublicAttributes } from "~/modules/users/types";
 
 export function usePersonSidebar(
   attributeCategories: PublicAttributes[],

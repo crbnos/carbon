@@ -81,6 +81,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   journalLine: ["documentId"],
   journalLineDimension: ["valueId"],
   leasePayment: ["purchaseInvoiceLineId", "voidedPurchaseInvoiceId"],
+  machineStateChange: ["workCenterDeviceId"],
   nonConformance: ["requiredActionIds"],
   nonConformancePurchaseReturnOrderLine: ["purchaseReturnOrderId"],
   nonConformanceSalesReturnOrderLine: ["salesReturnOrderId"],
@@ -110,5 +111,6 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   trackedActivity: ["sourceDocumentId"],
   trackedEntity: ["sourceDocumentId"],
   trainingAssignment: ["groupIds"],
+  workCenterLoad: ["jobOperationId"],
   workflowRun: ["causedByRunId", "rootRunId", "triggerRecordId"]
 } satisfies IdRefColumns;

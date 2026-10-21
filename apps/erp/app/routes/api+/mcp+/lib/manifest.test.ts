@@ -66,7 +66,8 @@ describe("buildMcpManifest", () => {
     expect(meta.tools.map((tool) => tool.name)).toEqual([
       "search_tools",
       "describe_tool",
-      "call_tool"
+      "call_tool",
+      "call_destructive_tool"
     ]);
     for (const tool of meta.tools) {
       expect(tool.description.length, tool.name).toBeGreaterThan(40);

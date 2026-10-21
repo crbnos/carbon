@@ -24,7 +24,7 @@ import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { usePermissions } from "~/hooks";
-import { supplierLocationValidator } from "~/modules/purchasing";
+import { supplierLocationValidator } from "~/modules/purchasing/purchasing.models";
 import { path } from "~/utils/path";
 
 type SupplierLocationFormProps = {

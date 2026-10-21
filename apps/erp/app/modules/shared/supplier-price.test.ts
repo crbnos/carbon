@@ -15,7 +15,7 @@ vi.mock("@carbon/content/glossary", () => ({
   termSlug: vi.fn()
 }));
 
-const { resolveSupplierPrice } = await import("./shared.service");
+const { resolveSupplierPrice } = await import("./shared.utils");
 
 const EUR_PART = {
   priceBreaks: [

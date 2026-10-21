@@ -16,7 +16,7 @@ import { useMemo } from "react";
 import type { z } from "zod";
 import { Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { months } from "~/modules/shared";
+import { months } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import { fiscalYearSettingsValidator } from "../../accounting.models";
 

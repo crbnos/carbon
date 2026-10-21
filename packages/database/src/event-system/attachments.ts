@@ -128,7 +128,11 @@ export const attachments = {
   },
   itemCost: { events: true },
   itemLedger: {
-    statement: ["apply_item_stock_quantities", "broadcast_table_changes"]
+    statement: [
+      "apply_item_stock_quantities",
+      "broadcast_table_changes",
+      "queue_kanban_level_checks"
+    ]
   },
   itemPlanning: { events: true },
   itemPostingGroup: {
@@ -173,7 +177,8 @@ export const attachments = {
     before: ["sync_finish_job_operation"],
     after: [
       "set_shelf_life_on_operation_done",
-      "set_shelf_life_on_operation_started"
+      "set_shelf_life_on_operation_started",
+      "sync_unload_work_center_operation"
     ],
     events: true,
     statement: ["broadcast_table_changes"]
@@ -185,6 +190,7 @@ export const attachments = {
   jobOperationNote: { statement: ["broadcast_table_changes"] },
   jobOperationStep: { statement: ["broadcast_table_changes"] },
   jobOperationStepRecord: { statement: ["broadcast_table_changes"] },
+  kanban: { after: ["sync_kanban_level_check"] },
   journal: {
     after: ["sync_advance_document_sequence"],
     events: true,
@@ -209,6 +215,7 @@ export const attachments = {
   maintenanceDispatchEvent: { events: true },
   maintenanceSchedule: { events: true },
   maintenanceScheduleItem: { events: true },
+  makeMethod: { events: true },
   material: { statement: ["broadcast_table_changes"] },
   materialForm: { statement: ["broadcast_table_changes"] },
   materialSubstance: { statement: ["broadcast_table_changes"] },
@@ -218,7 +225,15 @@ export const attachments = {
     before: ["sync_check_method_material_self_reference"],
     events: true
   },
-  modelUpload: { statement: ["broadcast_table_changes", "log_table_changes"] },
+  methodOperation: { events: true },
+  modelUpload: {
+    events: true,
+    statement: [
+      "broadcast_table_changes",
+      "log_table_changes",
+      "queue_model_pipeline"
+    ]
+  },
   nonConformance: {
     after: ["sync_advance_document_sequence"],
     events: true,
@@ -262,6 +277,7 @@ export const attachments = {
   process: { statement: ["broadcast_reference_changes"] },
   productionEvent: {
     before: ["sync_set_job_operation_in_progress"],
+    after: ["sync_load_work_center_operation"],
     events: true,
     statement: ["broadcast_table_changes"]
   },
@@ -425,6 +441,7 @@ export const attachments = {
   },
   trackedActivity: { statement: ["broadcast_table_changes"] },
   trackedEntity: { statement: ["broadcast_table_changes"] },
+  unattributedMachineTime: { statement: ["broadcast_table_changes"] },
   unitOfMeasure: { statement: ["broadcast_reference_changes"] },
   user: {
     after: [
@@ -445,6 +462,7 @@ export const attachments = {
   },
   webhook: { after: ["sync_webhook_subscription"], events: true },
   workCenter: { events: true, statement: ["broadcast_reference_changes"] },
+  workCenterDevice: { statement: ["broadcast_table_changes"] },
   workCenterProcess: { events: true },
   workflowRun: { statement: ["broadcast_table_changes"] },
   workflowStepRun: { statement: ["broadcast_table_changes"] }

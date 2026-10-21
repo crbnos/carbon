@@ -8,13 +8,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-
+import { rentalAgreementChargeValidator } from "~/modules/sales/sales.models";
 import {
   getRentalAgreement,
   getRentalAgreementLine,
-  rentalAgreementChargeValidator,
   upsertRentalAgreementCharge
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

@@ -33,17 +33,17 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJob,
-  getJobMethodTree,
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
+import { getJobMethodTree } from "~/modules/production/production.utils";
 import {
   getCompany,
   getCompanySettings,
   getDocumentTemplate,
   resolveSections
-} from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "job-traveler", "pdf");
 

@@ -30,7 +30,7 @@ import { DateTime, EmployeeAvatar } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { FixedAsset } from "~/modules/accounting";
+import type { FixedAsset } from "~/modules/accounting/types";
 import { path } from "~/utils/path";
 import FixedAssetStatus from "./FixedAssetStatus";
 

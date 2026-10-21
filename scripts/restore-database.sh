@@ -489,7 +489,6 @@ $PSQL_SA -v ON_ERROR_STOP=0 -c "
 INSERT INTO storage.buckets (id, name, public) VALUES
   ('public',            'public',            true),
   ('avatars',           'avatars',           true),
-  ('private',           'private',           false),
   ('feedback',          'feedback',          true),
   ('company-templates', 'company-templates', false)
 ON CONFLICT (id) DO NOTHING;
@@ -501,9 +500,9 @@ cat "$WORK_DIR/buckets.err" >> "$RESTORE_LOG"
 # Every company needs its bucket (uploads go there), so a short count is a
 # broken restore, not a number to eyeball.
 BUCKET_COUNT=$($PSQL_PG -At -c "SELECT count(*) FROM storage.buckets;" 2>/dev/null || echo 0)
-BUCKETS_EXPECTED=$($PSQL_PG -At -c "SELECT 5 + count(*) FROM public.company;" 2>/dev/null || echo 5)
+BUCKETS_EXPECTED=$($PSQL_PG -At -c "SELECT 4 + count(*) FROM public.company;" 2>/dev/null || echo 4)
 if [[ "$BUCKET_COUNT" -ge "$BUCKETS_EXPECTED" ]]; then
-  echo "  ✓ $BUCKET_COUNT storage buckets present (5 fixed + one per company)"
+  echo "  ✓ $BUCKET_COUNT storage buckets present (4 fixed + one per company)"
 else
   RESTORE_UNVERIFIED=1
   echo "  ✗ $BUCKET_COUNT of $BUCKETS_EXPECTED storage buckets present — the re-seed failed:"

@@ -9,6 +9,7 @@
 // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II,
 // `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III
 
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
@@ -27,7 +28,6 @@ import {
 } from "@carbon/lib/sales-invoice-document.server";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import {
   getLinkedStripeCustomerId,
   getStripeConnectAccountId,
@@ -353,9 +353,11 @@ export async function postSalesInvoiceUnattended(args: {
   // No user is behind an automated post: the job is the system actor.
   let postError: string | undefined;
   try {
-    const posted = await serverFns
-      .system({ db, companyId, userId: "system" })
-      .invoke("post-sales-invoice", { invoiceId });
+    const posted = await posting(
+      "post-sales-invoice",
+      { db, companyId, userId: "system" },
+      { invoiceId }
+    );
     if (posted.error) postError = posted.error.message || "Posting failed";
   } catch (error) {
     postError = error instanceof Error ? error.message : String(error);

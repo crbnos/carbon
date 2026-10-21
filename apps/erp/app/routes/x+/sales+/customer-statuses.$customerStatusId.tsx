@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { customerStatusValidator } from "~/modules/sales/sales.models";
 import {
-  customerStatusValidator,
   getCustomerStatus,
   upsertCustomerStatus
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import CustomerStatusForm from "~/modules/sales/ui/CustomerStatuses/CustomerStatusForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

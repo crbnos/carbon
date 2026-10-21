@@ -33,7 +33,7 @@ import {
   JobOperationProgress,
   type jobOperationValidator
 } from "~/modules/sales/ui/CustomerPortal";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export const outboundHorizons = ["7", "14", "30", "all"] as const;

@@ -2,9 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Result } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
+import { useAction } from "@carbon/query";
 import {
+  Badge,
   Button,
   DropdownMenuIcon,
   DropdownMenuItem,
@@ -17,19 +18,20 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuLoaderCircle,
+  LuScanQrCode,
   LuTrash
 } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import {
-  isStockTransferLocked,
-  type StockTransfer,
-  type StockTransferLine
-} from "~/modules/inventory";
+import { isStockTransferLocked } from "~/modules/inventory/inventory.models";
+import type {
+  StockTransfer,
+  StockTransferLine
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import StockTransferStatus from "./StockTransferStatus";
 
@@ -45,7 +47,8 @@ const StockTransferHeader = () => {
 
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const statusFetcher = useFetcher<Result>();
+  // Reopen; an error is toasted.
+  const statusFetcher = useAction();
   // Storage rules fire on Release + Complete (the "go" transitions). Each gets
   // its own fetcher so Release's loading state doesn't disable Complete and
   // vice versa, and violations surface via a single shared modal.
@@ -105,6 +108,17 @@ const StockTransferHeader = () => {
               Completed{" "}
               <DateTime value={stockTransfer.completedAt} variant="relative" />
             </Trans>
+          ) : null,
+          stockTransfer.kanbanId ? (
+            <Badge key="kanban" variant="outline">
+              <Link
+                to={path.to.kanban(stockTransfer.kanbanId)}
+                className="flex flex-row items-center gap-1"
+              >
+                <LuScanQrCode />
+                <Trans>Kanban</Trans>
+              </Link>
+            </Badge>
           ) : null
         ]}
         menuItems={

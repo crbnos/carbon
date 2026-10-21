@@ -13,8 +13,8 @@ How to add or extend a Carbon edge function. These are **Deno** functions in
 | `embedding` | `{ text }` → `{ embedding }`; `{ texts }` (≤ 100) → `{ embeddings }` — gte-small (384 dims) via `Supabase.ai.Session` | `requireCaller`: the service role key, a `service_role`/`authenticated` JWT (signature verified with `JWT_SECRET` when set), or a `carbon-key` API key checked against `apiKey` + `check_api_key_rate_limit` | ERP `shared.service.ts` (search), `@carbon/jobs` `events/embedding.ts` (`embedRecords`) |
 
 Everything else is Node. Privileged, transactional writes shared by the apps, the
-API and jobs (posting, converting, issuing, CSV import) are **server functions** —
-see `packages/server-functions/AGENTS.md`. MRP and scheduling are
+API and jobs (posting, converting, issuing, CSV import) are **postings** in the ERP
+modules' service files — see `module-files.md`. MRP and scheduling are
 `@carbon/planning`. Async/event-driven side effects go through the Inngest event
 system (`@carbon/jobs`, see `event-system.md`); Postgres sends its own Inngest
 events with `util.send_inngest_event` and never calls an edge function. Model

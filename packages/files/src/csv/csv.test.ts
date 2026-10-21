@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { encodeCsv, encodeCsvTable, parseCsv } from "./csv";
+import { encodeCsv, encodeCsvTable, parseCsv, parseCsvLines } from "./csv";
 
 // stripCsvFormulaPrefix itself is pinned by apps/erp/app/utils/bom.test.ts;
 // these tests cover what the ENCODERS add on top of papaparse.
@@ -16,6 +16,17 @@ describe("encodeCsv", () => {
   it("strips formula prefixes from headers too (import-error re-exports echo uploaded headers)", () => {
     const csv = encodeCsv([{ "=cmd|calc": "safe" }]);
     expect(csv).toBe("cmd|calc\r\nsafe");
+  });
+  it("strips formula prefixes in every column of a table, the first included", () => {
+    expect(encodeCsvTable(["a", "b"], [["=1+1", "=2+2"]])).toBe(
+      "a,b\r\n1+1,2+2"
+    );
+  });
+  it("keeps string cells as they are with formulaSafe false", () => {
+    const csv = encodeCsv([{ phone: "+1 555 0100", note: "=draft" }], {
+      formulaSafe: false
+    });
+    expect(csv).toBe("phone,note\r\n+1 555 0100,=draft");
   });
   it("respects an explicit field order and empty value", () => {
     const csv = encodeCsv([{ b: 1, a: 2 }], {
@@ -61,6 +72,18 @@ describe("encodeCsvTable / parseCsv round trip", () => {
     expect(rows).toEqual([
       { a: "1", b: "2" },
       { a: "3", b: "4" }
+    ]);
+  });
+});
+
+describe("parseCsvLines", () => {
+  it("numbers records by the line they start on, past blank ones", () => {
+    const { lines } = parseCsvLines('\uFEFFA,B\n1,2\n\n,,\n"x\ny",3\n 4 , 5 ');
+    expect(lines).toEqual([
+      { line: 1, cells: ["A", "B"] },
+      { line: 2, cells: ["1", "2"] },
+      { line: 5, cells: ["x\ny", "3"] },
+      { line: 7, cells: ["4", "5"] }
     ]);
   });
 });

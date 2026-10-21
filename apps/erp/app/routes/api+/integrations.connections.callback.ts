@@ -21,14 +21,14 @@ import {
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { verifyConnectionState } from "~/modules/settings/connection-state.server";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import {
   invalidateIntegrationHealthCache,
-  markIntegrationInstalled
-} from "~/modules/settings/settings.server";
-import { oAuthCallbackSchema } from "~/modules/shared";
+  markIntegrationInstalled,
+  verifyConnectionState
+} from "~/modules/settings/settings.service";
+import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 export const config = {

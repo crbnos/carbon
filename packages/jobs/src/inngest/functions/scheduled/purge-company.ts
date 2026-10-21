@@ -8,11 +8,7 @@ import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
 import { chunkArray } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { listBucketFilesRecursive } from "../../../backups/storage";
-import {
-  type Catalog,
-  STORAGE_BUCKET,
-  wipeScopedData
-} from "../tasks/company-backup";
+import { type Catalog, wipeScopedData } from "../tasks/company-backup";
 
 /**
  * Delete one company and everything it owns, inside the caller's transaction.
@@ -158,9 +154,8 @@ export async function dropOrphanCompanyTables(
 }
 
 /**
- * A company's files: its own storage bucket, and pre-bucket-migration files
- * under `<companyId>/` in the shared private bucket. Returns the failures; each
- * part is attempted regardless.
+ * A company's files: its own storage bucket, drained and then deleted. Returns
+ * the error that stopped it, or null once the bucket is gone.
  *
  * Run BEFORE the purge transaction, never inside it. Storage deletes its object
  * rows on its own connection, and `delete_orphaned_documents` then deletes the
@@ -175,9 +170,7 @@ export async function dropOrphanCompanyTables(
 export async function removeCompanyFiles(
   serviceRole: ReturnType<typeof getCarbonServiceRole>,
   companyId: string
-): Promise<{ part: string; error: unknown }[]> {
-  const failures: { part: string; error: unknown }[] = [];
-
+): Promise<unknown> {
   // Drained by listing, not `emptyBucket`: that only queues the deletes, so the
   // `deleteBucket` after it is refused as "not empty" for any bucket with files.
   // A bucket already gone (an earlier attempt removed it, then failed) is done.
@@ -186,16 +179,8 @@ export async function removeCompanyFiles(
   if (!bucketError) {
     bucketError = (await serviceRole.storage.deleteBucket(bucket)).error;
   }
-  if (bucketError && !(await isBucketGone(bucketError))) {
-    failures.push({ part: "company bucket", error: bucketError });
-  }
-
-  const legacyError = await drainFolder(serviceRole, STORAGE_BUCKET, companyId);
-  if (legacyError) {
-    failures.push({ part: "legacy private files", error: legacyError });
-  }
-
-  return failures;
+  if (bucketError && !(await isBucketGone(bucketError))) return bucketError;
+  return null;
 }
 
 const isBucketGone = async (error: unknown) =>

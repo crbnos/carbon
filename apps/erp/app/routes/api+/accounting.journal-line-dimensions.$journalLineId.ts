@@ -6,7 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { saveJournalLineDimensions } from "~/modules/accounting";
+import { saveJournalLineDimensions } from "~/modules/accounting/accounting.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

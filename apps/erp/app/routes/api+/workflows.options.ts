@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { OPTIONS_PROVIDERS } from "~/modules/workflows/options-providers.server";
+import { OPTIONS_PROVIDERS } from "~/modules/workflows/workflows.service";
 
 export const config = {
   runtime: "nodejs"

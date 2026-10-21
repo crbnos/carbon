@@ -99,6 +99,8 @@ export type InspectionViewProps = {
   inspection: InspectionRow;
   sourceDocumentReadableId: string | null;
   receiverId: string | null;
+  /** The receipt was voided: its stock was never received, so the lot is closed. */
+  receiptVoided: boolean;
   itemName: string;
   itemTrackingType: string | null;
   supplierName: string | null;
@@ -137,6 +139,7 @@ const InspectionView = ({
   inspection,
   sourceDocumentReadableId,
   receiverId,
+  receiptVoided,
   itemName,
   itemTrackingType,
   supplierName,
@@ -363,8 +366,9 @@ const InspectionView = ({
     enforceFourEyes && !!receiverId && receiverId === currentUserId;
 
   const lotClosed =
-    inspection.dispositionedAt != null &&
-    (inspection.status === "Passed" || inspection.status === "Failed");
+    receiptVoided ||
+    (inspection.dispositionedAt != null &&
+      (inspection.status === "Passed" || inspection.status === "Failed"));
 
   // Serial lots build their sample columns by scanning tracked entities. The
   // header "Add Sample" button stays primary until the plan's sample size is
@@ -498,7 +502,14 @@ const InspectionView = ({
     .join("  ·  ");
 
   const statusBadge = (
-    <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+    <HStack spacing={1}>
+      <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+      {receiptVoided && (
+        <Badge variant="red">
+          <Trans>Receipt voided</Trans>
+        </Badge>
+      )}
+    </HStack>
   );
 
   return (

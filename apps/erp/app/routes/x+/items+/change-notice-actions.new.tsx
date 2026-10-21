@@ -9,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  changeNoticeRequiredActionValidator,
-  upsertChangeNoticeRequiredAction
-} from "~/modules/items";
+import { changeNoticeRequiredActionValidator } from "~/modules/items/items.models";
+import { upsertChangeNoticeRequiredAction } from "~/modules/items/items.service";
 import { ChangeNoticeRequiredActionForm } from "~/modules/items/ui/ChangeNoticeActions";
 import { getParams, path, requestReferrer } from "~/utils/path";
 

@@ -13,9 +13,12 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
 import type { z } from "zod";
-import { type salesRuleSeverities, salesRuleValidator } from "~/modules/sales";
+import {
+  type salesRuleSeverities,
+  salesRuleValidator
+} from "~/modules/sales/sales.models";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
-import { getEnforcementRule } from "~/modules/shared";
+import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

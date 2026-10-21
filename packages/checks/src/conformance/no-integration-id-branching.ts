@@ -16,6 +16,7 @@ const INTEGRATION_IDS = [
   "quickbooks",
   "rillet",
   "ramp",
+  "sense",
   "slack",
   "jira",
   "linear",
@@ -47,7 +48,7 @@ const EXCLUDED = [
   /^packages\/ee\/src\/sync\//,
   /^apps\/erp\/app\/modules\/settings\/integration-errors\.ts$/,
   // A provider's own directory may name itself.
-  /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect)\//
+  /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect|sense)\//
 ];
 
 export const noIntegrationIdBranching: ConformanceCheck = {

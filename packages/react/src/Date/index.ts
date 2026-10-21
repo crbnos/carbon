@@ -12,8 +12,8 @@ import TimePicker from "./TimePicker";
 export {
   Calendar,
   DatePicker,
-  DateTimePicker,
   DateRangePicker,
+  DateTimePicker,
   TimeCombobox,
   TimePicker
 };

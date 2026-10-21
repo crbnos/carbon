@@ -49,13 +49,14 @@ import {
   useViewport
 } from "@carbon/react";
 import { distinctItemText, formatDurationMilliseconds } from "@carbon/utils";
-import type {
-  AssemblyStep,
-  CameraPose,
-  Fastener,
-  Motion
+import type { AssemblyStep, CameraPose, Fastener } from "@carbon/viewer";
+import {
+  AssemblyPlayer,
+  buildSubAssemblyPlan,
+  isOrientation,
+  isPlanFlagged,
+  isPlayableMotion
 } from "@carbon/viewer";
-import { AssemblyPlayer, buildSubAssemblyPlan } from "@carbon/viewer";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -104,6 +105,7 @@ import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { useRealtime, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
+import { ownsLooseMaterial } from "~/services/step-backflush";
 import type {
   JobMaterial,
   JobOperationStep,
@@ -213,21 +215,19 @@ type AssemblyPlayback = {
     isSubAssembly: boolean;
     motion: Json;
     camera: Json | null;
+    /** The build's orientation from this step on (unit quaternion) */
+    orientation: Json | null;
     fastener: Json | null;
     durationSeconds: number | null;
     warnings: Json | null;
   }[];
 };
 
-const playerMotionTypes = ["linear", "L", "helix", "path", "none"];
-
 /** Opens a sub-assembly: the step bar and the player show only its steps. */
 const SUB_ASSEMBLY_PARAM = "subAssembly";
 
 // DB row → @carbon/viewer AssemblyStep.
 function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
-  const motion = step.motion as Motion | null;
-  const warnings = step.warnings as { flagged?: boolean } | null;
   return {
     id: step.id,
     title: step.title,
@@ -237,16 +237,13 @@ function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
     parentStepId: step.parentStepId ?? null,
     usedInStepId: step.usedInStepId ?? null,
     isSubAssembly: step.isSubAssembly,
-    motion:
-      motion &&
-      typeof motion === "object" &&
-      playerMotionTypes.includes(motion.type)
-        ? motion
-        : { type: "none" },
+    motion: isPlayableMotion(step.motion) ? step.motion : { type: "none" },
     camera: (step.camera as CameraPose | null) ?? null,
+    orientation: isOrientation(step.orientation) ? step.orientation : null,
     fastener: (step.fastener as Fastener | null) ?? null,
     durationSeconds: step.durationSeconds,
-    flagged: warnings?.flagged === true ? true : undefined
+    // A hand-drawn path overrides the planner's flag, as in the ERP editor.
+    flagged: isPlanFlagged(step.warnings, step.motion) ? true : undefined
   };
 }
 
@@ -775,12 +772,17 @@ export function AssemblyView({
   // with NO step link are unassigned ("General") and show on the FIRST step only — loose
   // untracked parts are backflushed when the unit's first step is recorded, so that's
   // where the operator sees and handles them; repeating them on every step just buries
-  // the step-specific parts. Quantity and issuing live on the jobMaterial (the part), so
-  // a part on several assigned steps never multiplies the requirement.
+  // the step-specific parts. A General part on another operation shows on that
+  // operation's first step instead. Quantity and issuing live on the jobMaterial (the
+  // part), so a part on several assigned steps never multiplies the requirement.
   const stepNumberById = new Map(steps.map((s, i) => [s.id, i + 1] as const));
   const allMaterials: any[] = materials?.materials ?? [];
   const isGeneralMaterial = (m: any) =>
-    (m.jobOperationStepIds ?? []).length === 0;
+    (m.jobOperationStepIds ?? []).length === 0 &&
+    ownsLooseMaterial(
+      { jobOperationId: m.jobOperationId ?? null },
+      operationId
+    );
   const isOnCurrentStep = (m: any) =>
     step?.id != null && (m.jobOperationStepIds ?? []).includes(step.id);
   // Visible here = parts assigned to the current step, plus (first step only) the

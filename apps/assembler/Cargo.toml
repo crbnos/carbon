@@ -26,7 +26,7 @@ futures-util = "0.3"
 tokio-util = { version = "0.7", features = ["rt", "io"] }
 async-compression = { version = "0.4", features = ["tokio", "zstd"] }
 zstd = "0.13"
-redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager", "tokio-rustls-comp"] }
+redis = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager", "tokio-rustls-comp", "script"] }
 # Lambda self-invoke dispatch (ASSEMBLER_DISPATCH=lambda): one SigV4-signed POST
 # to the Lambda Invoke API (Event type). Hand-signed — the aws-sdk tree needs
 # rustc 1.94 (ours is 1.90) and is ~40 crates for a single call; creds come
@@ -54,3 +54,7 @@ async-trait = "0.1"
 # to the OS. Prefixed, it served Rust only and the C++ side stayed on glibc,
 # whose arenas keep an idle service near its last job's peak.
 tikv-jemallocator = { version = "0.6", features = ["unprefixed_malloc_on_supported_platforms", "background_threads"] }
+
+[dev-dependencies]
+# Hermetic STEP fixtures for the optimize/ingest tests.
+occt-bridge = { path = "../../crates/occt-bridge" }

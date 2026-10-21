@@ -54,6 +54,9 @@ msgstr "(compte inactif)"
 msgid "(Inactive)"
 msgstr "(Inactif)"
 
+msgid "(mapped to more than one Carbon account)"
+msgstr "(Associé à plusieurs comptes Carbon)"
+
 msgid "(not an Equity posting account)"
 msgstr "(pas un compte de comptabilisation de capitaux propres)"
 
@@ -105,6 +108,10 @@ msgstr "{0, plural, one {pour # actif} other {pour # actifs}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Comptabilisez ou supprimez le # document daté avant le cutover.} other {Comptabilisez ou supprimez les # documents datés avant le cutover.}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {Le fichier n'a pas de colonne {columns}.} other {Le fichier n'a pas de colonnes {columns}.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Le planificateur traite ce composant comme un corps rigide — une étape dans les instructions. Réexécutez la planification pour appliquer.} other {Le planificateur traite ces # composants comme un corps rigide — une étape dans les instructions. Réexécutez la planification pour appliquer.}}"
@@ -112,6 +119,10 @@ msgstr "{0, plural, one {Le planificateur traite ce composant comme un corps rig
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Cet article est sur 1 avis de modification ouvert} other {Cet article est sur # avis de modification ouverts}}"
+
+#. placeholder {0}: file.name
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# ligne} other {# lignes}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -140,6 +151,10 @@ msgstr "{0} actifs"
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
 msgstr "{0} actifs à amortir · {amount}"
+
+#. placeholder {0}: unmatched.length
+msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -221,9 +236,18 @@ msgstr "{0} en stock ; les {1} restants seront prélevés comme {2}"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} factures ont été facturées dans votre système précédent et ne sont pas créées à nouveau."
 
+#. placeholder {0}: skipped.readableId
+#. placeholder {1}: skipped.status
+msgid "{0} is {1}, not Draft or Planned"
+msgstr ""
+
 #. placeholder {0}: integration.name
 msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
 msgstr "{0} n'est pas encore installé. Il n'y a rien à configurer — installez-le pour connecter un compte."
+
+#. placeholder {0}: data.quantity
+msgid "{0} items marked as picked"
+msgstr ""
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -286,6 +310,10 @@ msgstr "{0} opérations · {1} pièces"
 msgid "{0} orders"
 msgstr "{0} commandes"
 
+#. placeholder {0}: data.partsUnmatched
+msgid "{0} part links had no matching BOM line on the operation"
+msgstr ""
+
 #. placeholder {0}: payments.length
 msgid "{0} payments"
 msgstr "{0} paiements"
@@ -344,6 +372,13 @@ msgstr "{0} comptes non mappés seront appariés à {1} comptes de fournisseur."
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} unposted documents"
 msgstr "{0} documents non comptabilisés"
+
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} modifiés · {1} nouveaux · {2} fusionnés · {3} supprimés"
 
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
@@ -408,6 +443,9 @@ msgstr "{0}h requis"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}h pourvus"
+
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} a un historique comptabilisé, il ne peut donc pas être supprimé."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} pièces ignorées – elles ont déjà des ordres de fabrication ouverts"
@@ -493,6 +531,9 @@ msgstr "{documentTypeLabel} règle d'approbation"
 msgid "{done} of {total} phases complete"
 msgstr "{done} sur {total} phases terminées"
 
+msgid "{errors} failed"
+msgstr ""
+
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# ligne exclue} other {# lignes exclues}}"
 
@@ -513,6 +554,12 @@ msgstr "{hiddenCount} autres : {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} insérés, {updated} mis à jour, {0} nécessitent correction, {1} ignorés."
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# ordre de fabrication ouvert a des matériaux sans unité de stockage} other {# ordres de fabrication ouverts ont des matériaux sans unité de stockage}}"
+
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} est utilisé par des documents, des écritures ou des comptes par défaut, il ne peut donc pas être supprimé."
+
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# jour} other {# jours}}"
 
@@ -528,11 +575,20 @@ msgstr "{load} en attente"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (de la location)"
 
+msgid "{manual} targets are committed — review on the order"
+msgstr ""
+
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{mappedCount} sur {totalCount} associés"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limite"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# étape} other {# étapes}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# méthode active a des matériaux sans Prélèvement depuis} other {# méthodes actives ont des matériaux sans Prélèvement depuis}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} mois avec des totaux non concordants"
@@ -551,6 +607,12 @@ msgstr "{name} se termine {end} (était {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} se termine {end} (était sans terme)"
+
+msgid "{name} needs an account number."
+msgstr "{name} a besoin d'un numéro de compte."
+
+msgid "{name} path"
+msgstr "{name} chemin"
 
 msgid "{name} replaced"
 msgstr "{name} remplacé"
@@ -596,6 +658,9 @@ msgstr "{passing} sur {total} actifs"
 msgid "{percent} picked"
 msgstr "{percent} prélevé"
 
+msgid "{position} of {total}"
+msgstr "{position} sur {total}"
+
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Supprimer définitivement # ligne ?} other {Supprimer définitivement # lignes ?}}"
 
@@ -619,6 +684,12 @@ msgstr "{sectionLineCount} lignes"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} sélectionnés"
+
+msgid "{stale} changed since the page loaded"
+msgstr ""
+
+msgid "{state} · synced {syncedAgo}"
+msgstr "{state} · synchronisé {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mois} other {# mois}}"
@@ -653,6 +724,9 @@ msgstr "{uncounted, plural, one {# ligne non comptabilisée} other {# lignes non
 msgid "{unitCount} units"
 msgstr "{unitCount} unités"
 
+msgid "{unmapped} components have no BOM match — use Match BOM to link their materials."
+msgstr ""
+
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {Mapper d'abord le # compte requis restant.} other {Mapper d'abord les # comptes requis restants.}}"
 
@@ -670,6 +744,9 @@ msgstr "{value, plural, one {# jour} other {# jours}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# ligne diffère de la quantité attendue} other {# lignes diffèrent de la quantité attendue}}"
+
+msgid "{warnings} need a follow-up"
+msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}an"
@@ -692,12 +769,19 @@ msgstr "↩ {0} redirigé depuis {1} obsolète"
 msgid "+{0}h"
 msgstr "+{0}h"
 
+msgid "+{more} more"
+msgstr "+{more} plus"
+
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Ajoutez une pièce fournisseur</0> pour cet article pour définir un fournisseur préféré."
 
 #. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
 msgid "≈ {0}"
 msgstr "≈ {0}"
+
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Attention : le {0}, votre compte sera transféré vers erp.try.carbon.ms"
 
 msgid "0 operations"
 msgstr "0 opération"
@@ -741,6 +825,9 @@ msgstr "1 écriture à reconnaître · {amount}"
 msgid "1 invoice was billed in your previous system and is not drafted again."
 msgstr "1 facture a été facturée dans votre système précédent et n'est pas créée à nouveau."
 
+msgid "1 item marked as picked"
+msgstr ""
+
 msgid "1 job created"
 msgstr "1 tâche créée"
 
@@ -767,6 +854,9 @@ msgstr "1 Achat = {conversionFactor} Stocks"
 
 msgid "1 suggested batch"
 msgstr "1 lot de production suggéré"
+
+msgid "1 target is committed — review on the order"
+msgstr ""
 
 msgid "1 unit"
 msgstr "1 unité"
@@ -1073,6 +1163,9 @@ msgstr "Une matière est un article physique utilisé pour fabriquer une pièce 
 
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "Un instrument de mesure (pied à coulisse, micromètre, pige, MMT) suivi en tant qu'enregistrement et soumis à un calendrier d'étalonnage récurrent."
+
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "Une version de méthode a besoin d'une unité de stockage de prélèvement pour chaque matière prélevée avant de pouvoir être rendue active."
 
 msgid "A name is required to save a view"
 msgstr "Un nom est requis pour enregistrer une vue"
@@ -1395,6 +1488,12 @@ msgstr "Le statut d'une expédition change"
 msgid "A shipment's tracking number changes"
 msgstr "Le numéro de suivi d'une expédition change"
 
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "Une unité de stockage insuffisante bascule vers une autre unité de stockage ayant du stock."
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "Une unité de stockage peut descendre en dessous de zéro, et l'opération ou l'ordre de fabrication se termine quand même."
+
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "Une location à court terme ne peut pas s'étendre au-delà de 12 mois à compter de sa date de début. Mettez-la fin et saisissez l'extension en tant que nouvelle location."
 
@@ -1603,6 +1702,9 @@ msgstr "La Comptabilité n'est pas configurée"
 msgid "Accounting is not set up for this company."
 msgstr "La Comptabilité n'est pas configurée pour cette société."
 
+msgid "Accounting is set up for {company}, so the chart of accounts can no longer be imported."
+msgstr "La comptabilité est configurée pour {company}, le plan comptable ne peut donc plus être importé."
+
 msgid "Accounting period"
 msgstr "Période comptable"
 
@@ -1636,11 +1738,29 @@ msgstr "Comptes d'enregistrement des différences entre les coûts réels et sta
 msgid "Accounts Payable"
 msgstr "Comptes fournisseurs"
 
+msgid "Accounts payable billing address disabled"
+msgstr ""
+
+msgid "Accounts payable billing address enabled"
+msgstr ""
+
+msgid "Accounts payable billing address updated"
+msgstr ""
+
 msgid "Accounts payable for amounts owed to suppliers"
 msgstr "Comptes créditeurs pour les montants dus aux fournisseurs."
 
 msgid "Accounts Receivable"
 msgstr "Comptes clients"
+
+msgid "Accounts receivable billing address disabled"
+msgstr ""
+
+msgid "Accounts receivable billing address enabled"
+msgstr ""
+
+msgid "Accounts receivable billing address updated"
+msgstr ""
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Comptes débiteurs pour les montants dus par les clients."
@@ -1774,6 +1894,9 @@ msgstr "Actif"
 
 msgid "Active Jobs"
 msgstr "Ordres de fabrication actifs"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "Méthodes actives sans Prélèvement depuis"
 
 msgid "Active Statuses"
 msgstr "Statuts actifs"
@@ -2176,6 +2299,10 @@ msgstr "Ajouté"
 #. placeholder {0}: rows.length
 msgid "Added {0} lines"
 msgstr "Ajout de {0} lignes"
+
+#. placeholder {0}: data.materialsCreated
+msgid "added {0} step materials"
+msgstr ""
 
 msgid "Added {name} · {quantity} × {rate}"
 msgstr "Ajouté {name} · {quantity} × {rate}"
@@ -2592,6 +2719,9 @@ msgstr "Une Opération effectuée par un Fournisseur externe plutôt qu'un Poste
 msgid "An operation on this job runs in this batch"
 msgstr "Une opération de cet OF s'exécute dans ce lot"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "Une opération ou un ordre de fabrication qui mènerait son unité de stockage en dessous de zéro est arrêté jusqu'à ce que le stock soit disponible."
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "La position d'une opération dans la file d'attente de son poste de travail — l'ordre dans lequel l'atelier exécute le travail. Le moteur la numérote d'après l'ordre de placement (le démarrage projeté le plus tôt d'abord) ; le réordonnancement des cartes sur le Tableau des postes de travail la remplace sans modifier les dates."
 
@@ -2669,6 +2799,9 @@ msgstr "Une autre connexion à cette intégration porte déjà ce nom. Choisisse
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Un autre centre de coûts auquel celui-ci se rapporte, vous permettant d'imbriquer un sous-centre de coûts sous son supérieur pour des rapports de coûts hiérarchiques."
 
+msgid "Another job or operation"
+msgstr "Autre ordre ou opération"
+
 msgid "Another spend integration is already active"
 msgstr "Une autre intégration de dépenses est déjà active"
 
@@ -2744,6 +2877,12 @@ msgstr "Apparence"
 msgid "Applied"
 msgstr "Appliqué"
 
+msgid "Applied {applied} planning actions"
+msgstr ""
+
+msgid "Applied 1 planning action"
+msgstr ""
+
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Les montants appliqués sont dans la devise de base de la société ({baseCurrency})."
 
@@ -2767,6 +2906,9 @@ msgstr "S'applique à tous les Postes de travail"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "S'applique aux caractéristiques sans leur propre règle et au lot lorsque ce plan de contrôle entraîne une inspection."
+
+msgid "Applies when strict backflush is on."
+msgstr "S'applique quand la post-consommation stricte est activée."
 
 msgid "Apply"
 msgstr "Appliquer"
@@ -2810,6 +2952,9 @@ msgstr "Appliquer aux factures"
 
 msgid "Apply to reimbursements"
 msgstr "Appliquer aux remboursements"
+
+msgid "Apply to Trial Balance"
+msgstr "Appliquer à la balance de vérification"
 
 msgid "Applying"
 msgstr "Application en cours"
@@ -2895,6 +3040,9 @@ msgstr "Archiver"
 
 msgid "Archive all"
 msgstr "Archiver tout"
+
+msgid "Archive Training"
+msgstr "Archiver Formation"
 
 msgid "Archived"
 msgstr "Archivé"
@@ -3040,10 +3188,8 @@ msgstr "Êtes-vous sûr de vouloir supprimer le paramètre {key} de cette opéra
 msgid "Are you sure you want to delete the {name} attribute from this operation? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer l'attribut {name} de cette opération ? Cette action ne peut pas être annulée."
 
-#. placeholder {0}: account.name
-#. placeholder {1}: account.number ? ` (${account.number})` : ""
-msgid "Are you sure you want to delete the account: {0}{1}? This cannot be undone."
-msgstr "Êtes-vous sûr de vouloir supprimer le compte : {0}{1} ? Cette action ne peut pas être annulée."
+msgid "Are you sure you want to delete the account: {label}? This cannot be undone."
+msgstr "Êtes-vous sûr de vouloir supprimer le compte : {label} ? Cette action ne peut pas être annulée."
 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
@@ -3543,6 +3689,9 @@ msgstr "Actifs"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Actifs, passifs et capitaux propres à une date"
 
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "Attribuer au bon ordre de fabrication le temps machine qu'aucune opération chargée n'a revendiqué, ou le rejeter."
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Attribuer des imprimantes aux sites. L'expédition, la réception et les postes de travail héritent du paramètre par défaut du site sauf s'ils sont remplacés."
 
@@ -3558,8 +3707,14 @@ msgstr "M'attribuer"
 msgid "Assigned"
 msgstr "Assigné"
 
+msgid "Assigned {changed} planning actions"
+msgstr ""
+
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} assigné à {targetName} pour la semaine"
+
+msgid "Assigned 1 planning action"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "Assigné à moi"
@@ -3572,6 +3727,9 @@ msgstr "Assignés"
 
 msgid "Assignment"
 msgstr "Affectation"
+
+msgid "Assignment updated"
+msgstr ""
 
 msgid "Assignments"
 msgstr "Affectations"
@@ -3812,6 +3970,9 @@ msgstr "Retour à la traçabilité"
 msgid "Backflush"
 msgstr "Post-consommation"
 
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "Post-consommer chaque matière uniquement depuis l'unité de stockage de sa ligne de matière, jamais depuis une autre unité de stockage."
+
 msgid "Background"
 msgstr "Arrière-plan"
 
@@ -3829,6 +3990,10 @@ msgstr "Sauvegardes"
 
 msgid "Balance"
 msgstr "Solde"
+
+#. placeholder {0}: account.name
+msgid "Balance for {0}"
+msgstr "Solde de {0}"
 
 msgid "Balance Sheet"
 msgstr "Bilan"
@@ -3959,6 +4124,9 @@ msgstr "Regroupement en lots"
 msgid "BCC Email"
 msgstr "BCC E-mail"
 
+msgid "Becomes"
+msgstr "Devient"
+
 msgid "Before cutover"
 msgstr "Avant la transition"
 
@@ -3984,6 +4152,9 @@ msgstr "En retard de {daysBehindTarget} jour(s)"
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "En cours de suppression — successeur : <0>{0}</0>"
 
+msgid "Below level"
+msgstr "Sous le niveau"
+
 msgid "Below safety stock"
 msgstr "Sous stock de sécurité"
 
@@ -4004,6 +4175,9 @@ msgstr "Bêta"
 
 msgid "Biggest causes of scrap by reason, item, or work center"
 msgstr "Principales causes de rebut par raison, article ou poste de travail"
+
+msgid "Bill calendar months, with a part month first. Off, each period starts on the start date's day of the month."
+msgstr "Facturer par mois civils, avec un mois partiel en premier. Désactivé, chaque période commence le jour du mois de la date de début."
 
 msgid "Bill of Material"
 msgstr "Nomenclature"
@@ -4041,8 +4215,8 @@ msgstr "Facturé :"
 msgid "Billing"
 msgstr "Facturation"
 
-msgid "Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
-msgstr "Facturation d'une location en périodes fixes, soit des mois civils, soit des périodes consécutives de 28 jours, chacune facturée le premier jour (Anticipé) ou le dernier jour (Arriéré)."
+msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
+msgstr "Facturation d'une location en périodes fixes, soit des mois à partir de la date de début, des mois calendaires, ou des périodes consécutives de 28 jours, chacune facturée à son premier jour (Anticipée) ou à son dernier jour (Différée)."
 
 msgid "Billing Address"
 msgstr "Adresse de facturation"
@@ -4138,6 +4312,9 @@ msgstr "BoM + BoP"
 
 msgid "BoM Explorer"
 msgstr "Explorateur BoM"
+
+msgid "BoM explorer setting updated"
+msgstr ""
 
 msgid "BOM synced successfully"
 msgstr "BOM synchronisé avec succès"
@@ -4309,9 +4486,6 @@ msgstr "Méthode de calcul"
 
 msgid "Calendar"
 msgstr "Calendrier"
-
-msgid "Calendar Month"
-msgstr "Mois Calendaire"
 
 msgid "Calibration"
 msgstr "Étalonnage"
@@ -4560,6 +4734,9 @@ msgstr "Carbon comptabilise tous les documents datés de ce jour ou après. Choi
 msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
 msgstr "Carbon comptabilise l'écriture d'ouverture, comptabilise chaque écriture datée de la date de transition ou après, et clôture les périodes antérieures."
 
+msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. The import needs two files: your chart, and the default accounts template filled with your account numbers. To keep Carbon's chart, continue."
+msgstr "Carbon démarre chaque société avec son plan comptable par défaut. Importez votre propre plan comptable maintenant, avant la balance de vérification qui apparie les comptes par numéro. L'importation nécessite deux fichiers : votre plan comptable et le modèle de comptes par défaut rempli avec vos numéros de compte. Pour conserver le plan comptable de Carbon, continuez."
+
 msgid "Carbon value"
 msgstr "Valeur Carbon"
 
@@ -4783,6 +4960,26 @@ msgstr "Débits"
 msgid "Chart"
 msgstr "Graphique"
 
+#. placeholder {0}: error.line
+msgid "Chart line {0}: a new account needs a class."
+msgstr "Ligne du plan comptable {0} : un nouveau compte a besoin d'une classe."
+
+#. placeholder {0}: error.line
+msgid "Chart line {0}: Migration Clearing must be an Equity account."
+msgstr "Ligne du plan comptable {0} : « Migration Clearing » doit être un compte de Capitaux propres."
+
+msgid "Chart line {line}: group \"{group}\" holds accounts of another class."
+msgstr "Ligne du plan comptable {line} : le groupe « {group} » contient des comptes d'une autre classe."
+
+msgid "Chart line {line}: name \"{value}\" is already on line {firstLine}."
+msgstr "Ligne du plan comptable {line} : le nom « {value} » se trouve déjà à la ligne {firstLine}."
+
+msgid "Chart line {line}: number {value} is already on line {firstLine}."
+msgstr "Ligne du plan comptable {line} : le numéro {value} se trouve déjà à la ligne {firstLine}."
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "Ligne du plan comptable {line} : le type « {accountType} » n'est pas un type de classe {accountClass}."
+
 msgid "Chart of accounts"
 msgstr "Plan comptable"
 
@@ -4870,6 +5067,9 @@ msgstr "Choisissez les unités de parc que cet accord loue. Chacune commence à 
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Choisissez les prestations que ce contrat facture. Chacune est ajoutée en tant que ligne récurrente que vous pouvez tarifier dans la grille."
+
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "Choisissez ce qu'une nouvelle réception préremplie pour la quantité reçue sur chaque ligne : ce qui reste à réceptionner, ou zéro pour que le réceptionnaire saisisse la quantité réellement arrivée."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choisir ce qui apparaît sur la fiche suiveuse d'ordre de fabrication imprimée."
@@ -4967,6 +5167,9 @@ msgstr "Pointé"
 msgid "Clocked in since <0/>"
 msgstr "Connecté depuis <0/>"
 
+msgid "Clocked out"
+msgstr ""
+
 msgid "Close"
 msgstr "Fermer"
 
@@ -5056,6 +5259,9 @@ msgstr "Réduire la ligne"
 msgid "Collapse Machine"
 msgstr "Réduire Machine"
 
+msgid "Collapse navigation"
+msgstr "Réduire la navigation"
+
 msgid "Collapse row"
 msgstr "Réduire la ligne"
 
@@ -5117,8 +5323,14 @@ msgstr "Comptabilisation d'une réception, d'une expédition ou d'une facture : 
 msgid "Community support"
 msgstr "Support communautaire"
 
+msgid "Compact"
+msgstr "Compact"
+
 msgid "Companies"
 msgstr "Entreprises"
+
+msgid "Companies affected"
+msgstr "Sociétés affectées"
 
 msgid "Company"
 msgstr "Société"
@@ -5128,6 +5340,9 @@ msgstr "Valeur par défaut de la société"
 
 msgid "Company default ({companyLabel})"
 msgstr "Par défaut de la société ({companyLabel})"
+
+msgid "Company default updated"
+msgstr ""
 
 msgid "Company group"
 msgstr "Groupe de sociétés"
@@ -5389,9 +5604,6 @@ msgstr "Confirmer le décompte d'inventaire"
 msgid "Confirm Mapping"
 msgstr "Confirmer le mappage"
 
-msgid "Confirm Password"
-msgstr "Confirmer le mot de passe"
-
 msgid "Confirm Skip"
 msgstr "Confirmer le saut"
 
@@ -5431,6 +5643,9 @@ msgstr "Connecter un problème Jira"
 msgid "Connect Linear issue"
 msgstr "Connecter un problème Linear"
 
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "Connectez les dispositifs de surveillance machine aux postes de travail pour que le temps machine soit enregistré par rapport à l'opération chargée."
+
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Connectez d'abord Slack sous Paramètres → Intégrations."
 
@@ -5461,6 +5676,10 @@ msgstr "Nom de la connexion"
 msgid "Console Mode"
 msgstr "Mode Console"
 
+#. placeholder {0}: data.pinError.toLowerCase()
+msgid "Console mode enabled, but {0}. Set one from Users → Employees → Set Console PIN."
+msgstr ""
+
 msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
 msgstr "Le mode console a été activé. Utilisez ce code PIN pour vous identifier aux terminaux MES."
 
@@ -5469,6 +5688,9 @@ msgstr "Le mode console est désactivé"
 
 msgid "Console mode is enabled"
 msgstr "Le mode console est activé"
+
+msgid "Console mode settings updated"
+msgstr ""
 
 msgid "Console Operator"
 msgstr "Opérateur Console"
@@ -5493,6 +5715,9 @@ msgstr "Détails du consommable"
 
 msgid "Consumable ID"
 msgstr "ID Consommable"
+
+msgid "Consumable supplier created"
+msgstr ""
 
 msgid "consumables"
 msgstr "consommables"
@@ -5673,6 +5898,10 @@ msgstr "Conversion en cours…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Convertit l'unité d'achat d'un fournisseur en votre unité d'inventaire sur une ligne de commande, reçu ou facture — acheter en cartons de 12, stocker en unités."
+
+#. placeholder {0}: counts.copied ?? 0
+msgid "Copied {0} assignments"
+msgstr ""
 
 msgid "Copied ID to clipboard"
 msgstr "ID copié dans le presse-papiers"
@@ -5887,6 +6116,9 @@ msgstr "Copier le numéro de service"
 msgid "Copy service unique identifier"
 msgstr "Copier l'identifiant unique du service"
 
+msgid "Copy signing secret"
+msgstr "Copier la clé de signature"
+
 msgid "Copy supplier quote unique identifier"
 msgstr "Copier l'identifiant unique du devis fournisseur"
 
@@ -6011,10 +6243,25 @@ msgstr "Impossible d'analyser la région : {0}"
 msgid "Could not build PDF. Try again."
 msgstr "Impossible de créer le PDF. Réessayez."
 
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "Impossible de vérifier les méthodes actives et les ordres de fabrication ouverts avec des lacunes. Rechargez la page pour réessayer."
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "Impossible de vérifier les unités de stockage des matériaux de cet ordre de fabrication. Fermez cette boîte de dialogue et ouvrez-la à nouveau pour réessayer."
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Impossible de dissoudre {0}: {1} — production déjà enregistrée"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Impossible de lister les appareils du fournisseur. Les appareils associés restent affichés."
+
+msgid "Could not load operations"
+msgstr "Impossible de charger les opérations"
+
+msgid "Could not load what ran on {workCenterName}."
+msgstr "Impossible de charger ce qui s'est exécuté sur {workCenterName}."
 
 msgid "Could not predict lead time"
 msgstr "Impossible de prédire le délai d'approvisionnement"
@@ -6026,12 +6273,10 @@ msgstr "Impossible de préparer l'image de la région pour l'analyse"
 msgid "Could not read the document: {0}"
 msgstr "Impossible de lire le document : {0}"
 
-#. placeholder {0}: d.failed.length
+#. placeholder {0}: data.failed.length
 #. placeholder {0}: failure.readableId
-#. placeholder {0}: result.failed.length
-#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+#. placeholder {1}: data.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 #. placeholder {1}: failure.message
-#. placeholder {1}: result.failed .map((f) => `${f.readableId} (${f.message})`) .join(", ")
 msgid "Could not release {0}: {1}"
 msgstr "Impossible de lancer {0} : {1}"
 
@@ -6445,10 +6690,6 @@ msgstr "Mémos de crédit et de débit"
 msgid "Credit applied"
 msgstr "Crédit appliqué"
 
-#. placeholder {0}: account.name
-msgid "Credit for {0}"
-msgstr "Crédit pour {0}"
-
 msgid "Credit Memo"
 msgstr "Avoir"
 
@@ -6513,6 +6754,9 @@ msgstr "Devise"
 msgid "Currency code"
 msgstr "Code de devise"
 
+msgid "Currency display updated"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "Conversion de Devises"
 
@@ -6527,9 +6771,6 @@ msgstr "Actuel"
 
 msgid "Current Net Book Value:"
 msgstr "Valeur Nette Comptable Actuelle:"
-
-msgid "Current Password"
-msgstr "Mot de passe actuel"
 
 msgid "Current portion"
 msgstr "Portion courante"
@@ -6570,6 +6811,9 @@ msgstr "Champs personnalisés"
 msgid "Custom fields are not available for items yet."
 msgstr "Les champs personnalisés ne sont pas encore disponibles pour les articles."
 
+msgid "Custom path"
+msgstr "Chemin personnalisé"
+
 msgid "Custom SOW · we manage"
 msgstr "SOW personnalisé · nous gérons"
 
@@ -6594,6 +6838,12 @@ msgstr "Contact client"
 msgid "Customer Contact"
 msgstr "Contact Client"
 
+msgid "Customer contact requirement disabled"
+msgstr ""
+
+msgid "Customer contact requirement enabled"
+msgstr ""
+
 msgid "Customer contacts"
 msgstr "Contacts client"
 
@@ -6605,6 +6855,9 @@ msgstr "Dépôt client"
 
 msgid "Customer Details"
 msgstr "Détails du client"
+
+msgid "Customer email settings updated"
+msgstr ""
 
 msgid "Customer engineering contact"
 msgstr "Contact technique client"
@@ -6623,6 +6876,12 @@ msgstr "Les IDs Clients sont masqués"
 
 msgid "Customer IDs are shown"
 msgstr "Les IDs Clients sont visibles"
+
+msgid "Customer IDs hidden"
+msgstr ""
+
+msgid "Customer IDs shown"
+msgstr ""
 
 msgid "Customer Invoice Number"
 msgstr "Numéro de facture client"
@@ -6780,6 +7039,9 @@ msgstr "Sombre"
 msgid "Dashboard"
 msgstr "Tableau de bord"
 
+msgid "Dashboard settings updated"
+msgstr ""
+
 msgid "Data flows through once instead of being re-keyed and reconciled across tools."
 msgstr "Les données circulent une seule fois au lieu d'être ressaisies et rapprochées dans plusieurs outils."
 
@@ -6936,10 +7198,6 @@ msgstr "Débit ({0})"
 msgid "Debit Account"
 msgstr "Compte Débiteur"
 
-#. placeholder {0}: account.name
-msgid "Debit for {0}"
-msgstr "Débit pour {0}"
-
 msgid "Debit Memo"
 msgstr "Note de débit"
 
@@ -6988,6 +7246,9 @@ msgstr "Compte par défaut"
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Compte par défaut pour comptabiliser les revenus des ventes sur factures"
 
+msgid "Default accounts"
+msgstr "Comptes par défaut"
+
 msgid "Default Accounts"
 msgstr "Comptes par défaut"
 
@@ -7012,6 +7273,15 @@ msgstr "Comptes par défaut pour les transactions liées aux impôts"
 msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "Comptes par défaut pour le coût des marchandises vendues et les achats indirects"
 
+msgid "Default accounts line {line}: \"{value}\" is not a default account."
+msgstr "Ligne des comptes par défaut {line} : « {value} » n'est pas un compte par défaut."
+
+msgid "Default accounts line {line}: {name} is already on line {firstLine}."
+msgstr "Ligne des comptes par défaut {line} : {name} se trouve déjà à la ligne {firstLine}."
+
+msgid "Default accounts line {line}: account {value} is not in the chart."
+msgstr "Ligne des comptes par défaut {line} : le compte {value} ne se trouve pas dans le plan comptable."
+
 msgid "Default Approver"
 msgstr "Approbateur par défaut"
 
@@ -7023,6 +7293,9 @@ msgstr "Compte de trésorerie par défaut pour les transactions en devises non-d
 
 msgid "Default cash account for transactions in your base currency."
 msgstr "Compte de trésorerie par défaut pour les transactions dans votre devise de base."
+
+msgid "Default category markups updated"
+msgstr ""
 
 msgid "Default cc"
 msgstr "CC par défaut"
@@ -7429,6 +7702,9 @@ msgstr "Supprimer la commande client"
 msgid "Delete Schedule"
 msgstr "Supprimer le calendrier"
 
+msgid "Delete Selected"
+msgstr "Supprimer la sélection"
+
 msgid "Delete Service"
 msgstr "Supprimer le service"
 
@@ -7539,6 +7815,9 @@ msgstr "Supprimer le flux de travail"
 msgid "Deleted"
 msgstr "Supprimé"
 
+msgid "Deleted attribute value"
+msgstr ""
+
 msgid "Deliver"
 msgstr "Livrer"
 
@@ -7547,6 +7826,9 @@ msgstr "Livré"
 
 msgid "Delivered on"
 msgstr "Livré le"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Les livraisons sont signées avec la nouvelle clé immédiatement. Mettez à jour votre endpoint avec cette clé."
 
 msgid "Delivery Date"
 msgstr "Date de livraison"
@@ -7686,8 +7968,17 @@ msgstr "Description du problème"
 msgid "Description of the event. You can use HTML tags here."
 msgstr "Description de l'événement. Vous pouvez utiliser des balises HTML ici."
 
+msgid "Detach"
+msgstr "Détacher"
+
+msgid "Detach from Onshape?"
+msgstr "Détacher d'Onshape ?"
+
 msgid "Detail"
 msgstr "Détail"
+
+msgid "Detailed"
+msgstr "Détaillé"
 
 msgid "Details"
 msgstr "Détails"
@@ -7697,6 +7988,9 @@ msgstr "Détecté par le planificateur de mouvement"
 
 msgid "Developer"
 msgstr "Développeur"
+
+msgid "Devices"
+msgstr "Dispositifs"
 
 msgid "Difference"
 msgstr "Différence"
@@ -7718,6 +8012,9 @@ msgstr "Devis numérique rejeté par"
 
 msgid "Digital quote rejected by email"
 msgstr "Devis numérique rejeté par e-mail"
+
+msgid "Digital quote setting updated"
+msgstr ""
 
 msgid "Digital Quotes"
 msgstr "Devis numériques"
@@ -7829,6 +8126,12 @@ msgstr "Fermer"
 
 msgid "Dismissed"
 msgstr "Écartée"
+
+msgid "Dismissed {changed} planning actions"
+msgstr ""
+
+msgid "Dismissed 1 planning action"
+msgstr ""
 
 msgid "Dispatch"
 msgstr "Intervention de maintenance"
@@ -7966,6 +8269,9 @@ msgstr "Double-cliquez pour ouvrir ce sous-ensemble"
 msgid "Double-click to play this step"
 msgstr "Double-cliquez pour jouer cette étape"
 
+msgid "Down"
+msgstr "En panne"
+
 msgid "Download"
 msgstr "Télécharger"
 
@@ -7987,6 +8293,9 @@ msgstr "Télécharger le PDF"
 
 msgid "Download template"
 msgstr "Télécharger le modèle"
+
+msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
+msgstr "Téléchargez le modèle. Chaque ligne est un compte par défaut que Carbon comptabilise. Dans le champ Numéro de compte, entrez le numéro du compte de votre plan comptable qui le remplace. Carbon met à jour le compte par défaut pour correspondre."
 
 msgid "Draft"
 msgstr "Brouillon"
@@ -8272,9 +8581,6 @@ msgstr "Chaque paiement est dû le dernier jour de sa période."
 msgid "Each period is 28 days from the start date."
 msgstr "Chaque période est de 28 jours à partir de la date de début."
 
-msgid "Each period is a calendar month, with a part month first."
-msgstr "Chaque période est un mois calendaire, avec un mois partiel en premier."
-
 msgid "Each period is invoiced on its first day, before the service is delivered."
 msgstr "Chaque période est facturée le premier jour, avant la prestation du service."
 
@@ -8287,8 +8593,15 @@ msgstr "Chaque période est facturée le dernier jour, après la prestation du s
 msgid "Each period is invoiced on its last day, after the units are used."
 msgstr "Chaque période est facturée le dernier jour, après que les unités ont été utilisées."
 
+msgid "Each period is one month, for the month rate."
+msgstr "Chaque période dure un mois, pour le tarif mensuel."
+
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Chaque unité physique obtient sa propre entité suivie et un numéro unique — une entité, une unité."
+
+#. placeholder {0}: replaced.join(", ")
+msgid "Each push replaces: {0}. Other edits stay."
+msgstr "Chaque envoi remplace : {0}. Les autres modifications restent."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Le commercial de chaque accord de location ou contrat (ou son créateur) reçoit un résumé quotidien de ses factures."
@@ -8750,6 +9063,15 @@ msgstr "employés"
 msgid "Employees"
 msgstr "Employés"
 
+msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
+msgstr "Les employés affectés à cette formation peuvent l'ouvrir. Le contenu, le guide et les questions ne peuvent plus changer."
+
+msgid "Employees can no longer open this training."
+msgstr "Les employés ne peuvent plus ouvrir cette formation."
+
+msgid "Employees complete a training in Carbon"
+msgstr "Les employés terminent une formation dans Carbon"
+
 msgid "Empty"
 msgstr "Vide"
 
@@ -8818,6 +9140,9 @@ msgstr "Activez pour configurer les méthodes d'amortissement spécifiques aux i
 
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Activez pour générer des identifiants et des descriptions pour les matières premières."
+
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "Permettre aux réceptionnaires de saisir la quantité sur chaque ligne au lieu de confirmer la quantité à réceptionner."
 
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "Activez pour exiger une application d'authentification avant que quiconque puisse ouvrir cette société."
@@ -8952,6 +9277,9 @@ msgstr "Entrez une quantité entre 1 et {0}."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Entrez une raison pour retirer l'unité du service"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "Saisissez une quantité reçue ou cochez une unité sur au moins une ligne."
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "Entrez une adresse web, par exemple https://example.com"
 
@@ -8963,6 +9291,12 @@ msgstr "Entrer et approuver les factures fournisseurs par rapport à un bon de c
 
 msgid "Enter at least one debit and credit"
 msgstr "Entrer au moins un Débit et un Crédit"
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+msgstr "Entrez les débits en montants positifs et les crédits en montants négatifs. Le CSV doit contenir les colonnes accountNumber, debit et credit. Une importation ou une extraction depuis {providerName} remplace l'intégralité de la balance de vérification."
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "Entrez les débits en montants positifs et les crédits en montants négatifs. Le CSV doit contenir les colonnes accountNumber, debit et credit. Une importation remplace l'intégralité de la balance de vérification."
 
 msgid "Enter number…"
 msgstr "Entrez un nombre…"
@@ -8984,6 +9318,9 @@ msgstr "Entrez l'URL Onshape, l'ID client et le secret client de votre applicati
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Entrez la balance de vérification du système précédent au jour avant la transition, pour chaque compte."
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "Saisissez la quantité sur chaque ligne qui est arrivée. Une ligne laissée à zéro ne sera pas reçue quand la réception est comptabilisée."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Entrez la quantité que ce mouvement aurait dû avoir. Un mouvement opposé pour la différence est posté à côté de l'original, dans la période de l'original."
@@ -9027,8 +9364,17 @@ msgstr "Le type d'entité ne peut pas être modifié"
 msgid "Entry"
 msgstr "Écriture"
 
+msgid "Entry added"
+msgstr ""
+
+msgid "Entry deleted"
+msgstr ""
+
 msgid "Entry Type"
 msgstr "Type d'entrée"
+
+msgid "Entry updated"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -9160,6 +9506,15 @@ msgstr "Bonsoir, {name}."
 msgid "Event"
 msgstr "Événement"
 
+msgid "Event saved"
+msgstr ""
+
+msgid "Event started"
+msgstr ""
+
+msgid "Event stopped"
+msgstr ""
+
 msgid "Event Type"
 msgstr "Type d'événement"
 
@@ -9171,6 +9526,9 @@ msgstr "Toutes les 3 heures"
 
 msgid "Every account default is set"
 msgstr "Tous les comptes par défaut sont définis"
+
+msgid "Every account is mapped"
+msgstr "Tous les comptes sont mappés"
 
 msgid "Every asset needs a payment row before activating."
 msgstr "Chaque actif a besoin d'une ligne de paiement avant l'activation."
@@ -9190,6 +9548,9 @@ msgstr "Tous les enregistrements de l'entreprise. Les identifiants, jetons d'int
 msgid "Every condition must match"
 msgstr "Chaque condition doit correspondre"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Chaque livraison contient un en-tête Carbon-Signature signé avec ce secret. Vérifiez-le pour confirmer qu'une requête provient de Carbon."
+
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Tous les tests dans le périmètre réussissent dans votre système configuré, avec vos données."
 
@@ -9204,6 +9565,9 @@ msgstr "Chaque ligne reconnaît ce qu'elle facture."
 
 msgid "Every match"
 msgstr "Chaque correspondance"
+
+msgid "Every posted journal line in a period"
+msgstr "Chaque ligne d'écriture comptabilisée sur une période"
 
 msgid "Every required action has already been added."
 msgstr "Chaque action requise a déjà été ajoutée."
@@ -9458,6 +9822,9 @@ msgstr "Exporter CSV"
 msgid "Export Lines to CSV"
 msgstr "Exporter les lignes en CSV"
 
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "Exportez votre plan comptable depuis votre système actuel au format CSV, une ligne par compte, avec son numéro, son nom, sa classe, son type et son groupe, ou partez du modèle du plan actuel. Carbon ne conserve que les comptes de ce fichier."
+
 msgid "Extended Price"
 msgstr "Prix étendu"
 
@@ -9487,6 +9854,9 @@ msgstr "Réf. externe"
 
 msgid "External Reference"
 msgstr "Référence externe"
+
+msgid "External training"
+msgstr "Formation externe"
 
 msgid "Extra fields to capture data Carbon doesn't track by default"
 msgstr "Champs supplémentaires pour capturer les données que Carbon ne suit pas par défaut"
@@ -9518,6 +9888,9 @@ msgstr "Échec de l'ajout des lignes"
 
 msgid "Failed to apply pricing rules"
 msgstr "Impossible d'appliquer les règles de prix"
+
+msgid "Failed to check the batch's jobs"
+msgstr "Impossible de vérifier les ordres de fabrication du lot de production"
 
 msgid "Failed to convert image"
 msgstr "Échec de la conversion d'image"
@@ -9569,10 +9942,6 @@ msgstr "Échec de la création du groupe d'articles : {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create location: {0}"
 msgstr "Échec de la création du site : {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create maintenance schedule: {0}"
-msgstr "Échec de la création du planning de maintenance : {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create material dimension: {0}"
@@ -9629,18 +9998,6 @@ msgstr "Échec de la création de la raison de retour : {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "Échec de la création de la prestation : {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create shipping method: {0}"
-msgstr "Échec de la création du mode d'expédition : {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create stock transfer line: {0}"
-msgstr "Échec de la création de la ligne de transfert : {0}"
-
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to create storage type: {0}"
-msgstr "Échec de la création du type de stockage : {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
@@ -9769,10 +10126,6 @@ msgstr "Échec du chargement des tarifs de location"
 msgid "Failed to load tracked entities"
 msgstr "Impossible de charger les entités suivies"
 
-#. placeholder {0}: fetcher.data.error.message
-msgid "Failed to move account: {0}"
-msgstr "Impossible de déplacer le compte : {0}"
-
 msgid "Failed to plan job"
 msgstr "Impossible de planifier l'ordre de fabrication"
 
@@ -9809,6 +10162,12 @@ msgstr "Échec du redimensionnement de l'image : {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "Impossible de récupérer les données de colonne CSV."
 
+msgid "Failed to reveal the secret"
+msgstr "Impossible de révéler la clé"
+
+msgid "Failed to roll the secret"
+msgstr "Impossible de renouveler la clé"
+
 msgid "Failed to save configuration rule"
 msgstr "Échec de l'enregistrement de la règle de configuration"
 
@@ -9829,6 +10188,9 @@ msgstr "Échec de l'enregistrement des diapositives"
 
 msgid "Failed to save the change"
 msgstr "Impossible d'enregistrer la modification"
+
+msgid "Failed to save the content"
+msgstr ""
 
 msgid "Failed to save the cost"
 msgstr "Impossible d'enregistrer le coût"
@@ -9868,6 +10230,9 @@ msgstr "Impossible de mettre à jour la ligne de devis"
 
 msgid "Failed to update supplier quote line"
 msgstr "Impossible de mettre à jour la ligne de devis fournisseur"
+
+msgid "Failed to update the setting"
+msgstr ""
 
 msgid "Failed to update thumbnail path"
 msgstr "Impossible de mettre à jour le chemin de la miniature"
@@ -10132,6 +10497,9 @@ msgstr "Ajuster la vue"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Résolvez les problèmes avec ce flux de travail avant de le tester"
 
+msgid "Fix these in the files, then upload them again"
+msgstr "Corrigez-les dans les fichiers, puis téléversez-les à nouveau"
+
 msgid "Fix these jobs before releasing"
 msgstr "Corrigez ces ordres de fabrication avant de lancer"
 
@@ -10155,6 +10523,9 @@ msgstr "Catégorie d'immobilisation"
 
 msgid "Fixed Asset Class"
 msgstr "Catégorie d'immobilisation"
+
+msgid "Fixed asset settings updated"
+msgstr ""
 
 msgid "Fixed Assets"
 msgstr "Immobilisations"
@@ -10201,6 +10572,9 @@ msgstr "Unité de parc"
 msgid "Fleet Units"
 msgstr "Unités de parc"
 
+msgid "Flip over"
+msgstr "Retourner"
+
 msgid "For <0/>"
 msgstr "Pour <0/>"
 
@@ -10215,6 +10589,9 @@ msgstr "Prévision de consommation"
 
 msgid "Forecast Consumption"
 msgstr "Consommation des prévisions"
+
+msgid "Forecast consumption updated"
+msgstr ""
 
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -10240,6 +10617,12 @@ msgstr "Fondation"
 
 msgid "Foundation (everyone)"
 msgstr "Fondation (tous)"
+
+msgid "Four-eyes enforcement disabled"
+msgstr ""
+
+msgid "Four-eyes enforcement enabled"
+msgstr ""
 
 msgid "Freeze the old system, no new transactions"
 msgstr "Geler l'ancien système, aucune nouvelle transaction"
@@ -10351,6 +10734,9 @@ msgstr "instrument de mesure"
 msgid "Gauge"
 msgstr "Instrument de mesure"
 
+msgid "Gauge calibration notification settings updated"
+msgstr ""
+
 msgid "Gauge Calibration Notifications"
 msgstr "Notifications d'étalonnage de l'instrument de mesure"
 
@@ -10410,6 +10796,9 @@ msgstr "Générer les IDs de matériaux et les descriptions en fonction des prop
 
 msgid "Generate Picking List"
 msgstr "Générer la liste de prélèvement"
+
+msgid "Generated {created} steps from the motion plan"
+msgstr ""
 
 msgid "Generated from a rental agreement. Change the agreement to change this line."
 msgstr "Généré à partir d'un accord de location. Modifiez l'accord pour modifier cette ligne."
@@ -10796,6 +11185,9 @@ msgstr "Masquer la sélection à cette étape"
 msgid "Hide system quantities until the review step"
 msgstr "Masquer les quantités système jusqu'à l'étape de revue"
 
+msgid "Hide the items on {label}"
+msgstr "Masquer les éléments sur {label}"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Masquer, épingler et réorganiser les colonnes"
 
@@ -10880,8 +11272,8 @@ msgstr "Comment une ligne de contrat génère ses revenus sur ses dates de reven
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Comment un contrat ou un amendement est classé pour la déclaration des revenus récurrents : Nouvelles Ventes, Existant, Expansion, Réactivation ou Contraction. Carbon le suggère et vous pouvez le modifier."
 
-msgid "How a rental agreement cuts billing periods from its start date: Calendar Month cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a calendar month is prorated by days."
-msgstr "Comment un accord de location découpe les périodes de facturation à partir de sa Date de début : Mois calendaire découpe les mois calendaires, et 28 jours découpe les périodes consécutives de 28 jours. Chaque Unité facture un taux à sa propre fréquence pour les jours, semaines ou mois entiers qu'une période couvre ; un taux Mensuel dans un mois calendaire est réparti au prorata des jours."
+msgid "How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days."
+msgstr "Comment un accord de location coupe les périodes de facturation à partir de sa date de début : Mensuel coupe un mois à partir du jour de la date de début (un démarrage le 7 facture du 7 au 6), Mois calendaire (Mensuel, aligné sur les périodes calendaires) coupe les mois calendaires, et 28 Jours coupe les périodes consécutives de 28 jours. Chaque unité facture un taux à sa propre fréquence pour la durée complète (jours, semaines ou mois) qu'une période couvre; un taux mensuel dans une période partielle est au prorata par jour."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Comment un article est approvisionné globalement (Achat, Fabrication ou Achat et fabrication), défini par article, contrairement au type d'approvisionnement par ligne."
@@ -10991,6 +11383,9 @@ msgstr "Comment la taille d'échantillon est décidée — Inspecter tout, Inspe
 msgid "How the unit price of each quantity was calculated."
 msgstr "Comment le prix unitaire de chaque quantité a été calculé."
 
+msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
+msgstr "Orientation de l'ensemble complet à une étape, par exemple retourné pour poser des pièces sur sa face inférieure. Les étapes suivantes du même ensemble conservent cette orientation jusqu'à ce qu'une étape oriente à nouveau l'ensemble."
+
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Comment cet instrument de mesure est utilisé — Standard (contrôles réguliers) ou Maître (étalonner d'autres instruments)."
 
@@ -11084,6 +11479,9 @@ msgstr "Fournisseur d'identité"
 msgid "Identity provider (IdP)"
 msgstr "Fournisseur d'identité (IdP)"
 
+msgid "Idle"
+msgstr "Disponible"
+
 msgid "IdP Metadata URL"
 msgstr "URL des métadonnées IdP"
 
@@ -11129,6 +11527,9 @@ msgstr "Code IFSC"
 msgid "Ignore"
 msgstr "Ignorer"
 
+msgid "Ignored"
+msgstr "Ignoré"
+
 msgid "II (normal default)"
 msgstr "II (normal par défaut)"
 
@@ -11150,8 +11551,17 @@ msgstr "Centre de mise en œuvre"
 msgid "Implementation Lead"
 msgstr "Chef de mise en œuvre"
 
+msgid "Import"
+msgstr "Importer"
+
 msgid "Import {label} CSV"
 msgstr "Importer {label} CSV"
+
+msgid "Import chart of accounts"
+msgstr "Importer le plan comptable"
+
+msgid "Import Chart of Accounts"
+msgstr "Importer le plan comptable"
 
 msgid "Import CSV"
 msgstr "Importer CSV"
@@ -11161,6 +11571,12 @@ msgstr "Résultats d'Importation"
 
 msgid "Import your BOM"
 msgstr "Importer votre BOM"
+
+msgid "Import your chart"
+msgstr "Importer votre plan"
+
+msgid "Import your chart of accounts from a spreadsheet"
+msgstr "Importer votre plan comptable à partir d'une feuille de calcul"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11515,6 +11931,9 @@ msgstr "Notes internes"
 msgid "Internal Notes"
 msgstr "Notes internes"
 
+msgid "Into"
+msgstr "En"
+
 msgid "inv"
 msgstr "inv"
 
@@ -11656,11 +12075,17 @@ msgstr "Numéro de facture"
 msgid "Invoice Location"
 msgstr "Lieu de facturation"
 
+msgid "Invoice notification settings updated"
+msgstr ""
+
 msgid "Invoice Now"
 msgstr "Facturer maintenant"
 
 msgid "Invoice Number"
 msgstr "Numéro de facture"
+
+msgid "Invoice posted and sent via Stripe"
+msgstr ""
 
 msgid "Invoice Rate"
 msgstr "Taux de change de la facture"
@@ -11669,7 +12094,7 @@ msgid "Invoice schedule"
 msgstr "Planning de facturation"
 
 msgid "Invoice Separately"
-msgstr ""
+msgstr "Facturer séparément"
 
 msgid "Invoice settlement"
 msgstr "Règlement de facture"
@@ -11702,7 +12127,7 @@ msgid "Invoiced Amount:"
 msgstr "Montant facturé :"
 
 msgid "Invoiced separately"
-msgstr ""
+msgstr "Facturé séparément"
 
 msgid "Invoiced Statuses"
 msgstr "Statuts facturés"
@@ -11712,6 +12137,9 @@ msgstr "Facturé à ce jour"
 
 msgid "Invoices"
 msgstr "Factures"
+
+msgid "Invoices and bills sync after you activate accounting"
+msgstr "Les factures et les factures fournisseur se synchronisent après l'activation de la comptabilité"
 
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Les factures sont créées automatiquement chaque jour pour tout ce qui est dû. Utilisez ceci pour facturer ce qui est dû immédiatement, par exemple après l'ajout d'une charge. Les factures suivent ensuite le paramètre de facturation de cet accord."
@@ -11848,6 +12276,9 @@ msgstr "Date d'émission"
 msgid "Issues"
 msgstr "Problèmes"
 
+msgid "It is coming soon. Contact Carbon to have it set up for your company."
+msgstr "Elle sera bientôt disponible. Contactez Carbon pour la faire configurer pour votre entreprise."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Elle s'arrêtera d'être exécutée jusqu'à ce que vous publiiez une nouvelle version. Rien n'est supprimé."
 
@@ -11872,6 +12303,9 @@ msgstr "groupe d'articles"
 msgid "Item Group"
 msgstr "Groupe d'articles"
 
+msgid "Item group ownership updated"
+msgstr ""
+
 msgid "item groups"
 msgstr "groupes d'articles"
 
@@ -11883,6 +12317,9 @@ msgstr "Groupes d'articles"
 
 msgid "Item ID"
 msgstr "ID Article"
+
+msgid "Item ID casing setting updated"
+msgstr ""
 
 msgid "Item IDs"
 msgstr "ID d'article"
@@ -11959,6 +12396,12 @@ msgstr "Tâche"
 msgid "Job · {itemReadableId}"
 msgstr "Ordre de fabrication · {itemReadableId}"
 
+msgid "Job cancelled"
+msgstr ""
+
+msgid "Job completed successfully"
+msgstr ""
+
 msgid "Job completions"
 msgstr "Achèvement des ordres de fabrication"
 
@@ -11971,6 +12414,9 @@ msgstr "Tâche en cours"
 msgid "Job Location"
 msgstr "Localisation du travail"
 
+msgid "Job locked"
+msgstr "Ordre verrouillé"
+
 msgid "Job make method"
 msgstr "Méthode de fabrication du travail"
 
@@ -11979,6 +12425,9 @@ msgstr "Sorties de stock pour ordres de fabrication"
 
 msgid "Job Materials"
 msgstr "Composants d'OF"
+
+msgid "Job notification settings updated"
+msgstr ""
 
 msgid "Job operation"
 msgstr "Opération d'OF"
@@ -12062,6 +12511,9 @@ msgstr "Kanban pour {kanbanName}"
 msgid "Kanban Output"
 msgstr "Sortie Kanban"
 
+msgid "Kanban output setting updated"
+msgstr ""
+
 msgid "Kanbans"
 msgstr "Kanbans"
 
@@ -12088,6 +12540,9 @@ msgstr "Conserver la ligne"
 
 msgid "Keep matching items"
 msgstr "Conserver les articles correspondants"
+
+msgid "Keep navigation open"
+msgstr "Garder la navigation ouverte"
 
 msgid "Keep only items where…"
 msgstr "Garder uniquement les articles où…"
@@ -12220,6 +12675,9 @@ msgstr "Le dernier envoi {when} a échoué : {0}"
 msgid "Last push {when}:"
 msgstr "Dernier envoi {when} :"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Dernière mise à jour le {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Dernier trimestre"
 
@@ -12274,6 +12732,12 @@ msgstr "Les mises à jour des délais d'approvisionnement sont désactivées"
 msgid "Lead time updates are enabled"
 msgstr "Les mises à jour des délais d'approvisionnement sont activées"
 
+msgid "Lead time updates on receipt disabled"
+msgstr ""
+
+msgid "Lead time updates on receipt enabled"
+msgstr ""
+
 msgid "Lead Time:"
 msgstr "Délai d'approvisionnement :"
 
@@ -12309,6 +12773,9 @@ msgstr "Passif de location"
 
 msgid "Lease Liability:"
 msgstr "Passif de location :"
+
+msgid "Lease policy updated"
+msgstr ""
 
 msgid "Lease Reminder Days"
 msgstr "Jours de rappel de location"
@@ -12477,6 +12944,26 @@ msgstr "Ligne"
 msgid "Line {0}"
 msgstr "Ligne {0}"
 
+#. placeholder {0}: error.line
+msgid "Line {0} has no account name."
+msgstr "La ligne {0} n'a pas de nom de compte."
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no account number."
+msgstr "La ligne {0} n'a pas de numéro de compte."
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no group."
+msgstr "Ligne {0} n'a pas de groupe."
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no key."
+msgstr "La ligne {0} n'a pas de clé."
+
+#. placeholder {0}: error.line
+msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
+msgstr "Ligne {0} : « {value} » n'est pas une classe. Utilisez Actif, Passif, Capitaux propres, Revenus ou Charge."
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Ligne {line} ({accountNumber}) : le crédit « {value} » a une virgule. Écrivez les montants avec un point pour les décimales et sans séparateur de milliers, par exemple 1234.56."
 
@@ -12512,6 +12999,9 @@ msgstr "Statut de la ligne"
 
 msgid "Line Type"
 msgstr "Type de Ligne"
+
+msgid "Line unpicked"
+msgstr ""
 
 msgid "Linear Team"
 msgstr "Équipe Linear"
@@ -12566,6 +13056,9 @@ msgstr "Liez ce client Carbon à l'un d'entre eux, ou créez un client Stripe di
 
 msgid "Link to sales order line"
 msgstr "Lier à la ligne de commande client"
+
+msgid "Linked"
+msgstr "Lié"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12660,6 +13153,9 @@ msgstr "Emplacement / Article"
 
 msgid "Location Name"
 msgstr "Nom du lieu"
+
+msgid "Location ownership updated"
+msgstr ""
 
 msgid "Location shifts"
 msgstr "Équipes du site"
@@ -12761,6 +13257,12 @@ msgstr "Taille du lot :"
 msgid "Lot-based inspection of received goods against a sampling plan; the units post On Hold at receipt and only release to Available once the lot is dispositioned as accepted."
 msgstr "Contrôle basé sur les lots des biens reçus selon un plan d'échantillonnage ; les unités sont enregistrées Suspendu à la réception et ne sont lancées vers Disponible qu'une fois que le lot est disposé comme Accepté."
 
+msgid "Lots merged"
+msgstr ""
+
+msgid "Lots merged into {readableId}"
+msgstr ""
+
 msgid "Low"
 msgstr "Faible"
 
@@ -12775,6 +13277,9 @@ msgstr "Coûts Machine"
 
 msgid "Machine Hours"
 msgstr "Heures de machine"
+
+msgid "Machine monitoring"
+msgstr "Surveillance machine"
 
 msgid "Machine rate"
 msgstr "Taux machine"
@@ -12829,6 +13334,9 @@ msgstr "Maintenance"
 
 msgid "Maintenance Dispatch"
 msgstr "Intervention de maintenance"
+
+msgid "Maintenance dispatch notification settings updated"
+msgstr ""
 
 msgid "Maintenance Dispatch Notifications"
 msgstr "Notifications d'intervention de maintenance"
@@ -12978,11 +13486,25 @@ msgstr "Mapper les lignes extraites"
 msgid "Map Lines Now"
 msgstr "Mapper les lignes maintenant"
 
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Mettez en correspondance ces comptes dans les paramètres de l'intégration {providerName} et récupérez à nouveau, ou entrez leurs soldes ci-dessous."
+
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Mappez votre plan comptable au plan comptable du fournisseur. Les comptes de comptabilisation par défaut et les comptes de charge sont marqués Requis ; les écritures comptabilisées utilisent le code de compte du fournisseur mappé."
 
 msgid "Map your current process, systems, and data"
 msgstr "Cartographiez votre processus actuel, vos systèmes et vos données"
+
+msgid "Mapped"
+msgstr "Mappés"
+
+#. placeholder {0}: data.mapped
+#. placeholder {1}: data.totalComponents
+msgid "Mapped {0} of {1} components to the bill of materials"
+msgstr ""
+
+msgid "Mapped devices"
+msgstr "Appareils associés"
 
 msgid "Mapped values"
 msgstr "Valeurs mappées"
@@ -12990,6 +13512,10 @@ msgstr "Valeurs mappées"
 #. placeholder {0}: i18n._(step.gate)
 msgid "Mark \"{0}\" as passed?"
 msgstr "Marquer « {0} » comme réussi ?"
+
+#. placeholder {0}: assignment.employeeName?.trim()
+msgid "Mark {0} complete. Attach their certificate if you have one."
+msgstr "Marquer {0} comme terminé. Joindre son certificat si vous en avez un."
 
 msgid "Mark absent"
 msgstr "Marquer comme absent"
@@ -13032,6 +13558,10 @@ msgstr "Marquer comme manquant"
 
 msgid "Mark to delete"
 msgstr "Marquer pour supprimer"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "Marked absent for {0} day(s)"
+msgstr ""
 
 msgid "Market rate"
 msgstr "Taux du marché"
@@ -13099,6 +13629,9 @@ msgstr "Matériau"
 msgid "Material Cost"
 msgstr "Coût de matière"
 
+msgid "Material created"
+msgstr ""
+
 msgid "Material Dimension"
 msgstr "Axe analytique de matière"
 
@@ -13135,6 +13668,9 @@ msgstr "ID Matériau"
 msgid "Material IDs"
 msgstr "IDs de matériau"
 
+msgid "Material IDs setting updated"
+msgstr ""
+
 msgid "Material is pre-selected"
 msgstr "Le matériel est pré-sélectionné"
 
@@ -13150,8 +13686,17 @@ msgstr "Planification des matériaux"
 msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
 msgstr "La planification des matières n'affiche que les actions et les ordres suggérés dus dans ce nombre de jours à partir d'aujourd'hui, afin que les besoins éloignés restent hors du chemin jusqu'à ce qu'ils deviennent pertinents. L'horizon de planification propre de l'article remplace cette valeur par défaut."
 
+msgid "Material pre-selection disabled"
+msgstr ""
+
+msgid "Material pre-selection enabled"
+msgstr ""
+
 msgid "Material Properties"
 msgstr "Propriétés des matériaux"
+
+msgid "Material return timing updated"
+msgstr ""
 
 msgid "Material Review Board (MRB)"
 msgstr "Comité de revue des matériaux (MRB)"
@@ -13168,6 +13713,9 @@ msgstr "Substance Matérielle"
 msgid "Material Substances"
 msgstr "Substances Matérielles"
 
+msgid "Material supplier created"
+msgstr ""
+
 msgid "material type"
 msgstr "Type de Matériau"
 
@@ -13179,6 +13727,12 @@ msgstr "Types de Matériau"
 
 msgid "Material Types"
 msgstr "Types de matériaux"
+
+msgid "Material units setting updated"
+msgstr ""
+
+msgid "Material updated"
+msgstr ""
 
 msgid "Material Usage Variance"
 msgstr "Écart d'utilisation de matériel"
@@ -13197,6 +13751,12 @@ msgstr "Les matériaux sont inclus"
 
 msgid "Materials are not included"
 msgstr "Les matériaux ne sont pas inclus"
+
+msgid "Materials missing a Pull From"
+msgstr "Matériaux sans Prélèvement depuis"
+
+msgid "Materials with no storage unit"
+msgstr "Matériaux sans unité de stockage"
 
 msgid "Matrix"
 msgstr "Matrice"
@@ -13273,6 +13833,9 @@ msgstr "Fusionner {0} lots"
 
 msgid "Merge output lots"
 msgstr "Fusionner les lots de sortie"
+
+msgid "Merged"
+msgstr "Fusionné"
 
 msgid "MES"
 msgstr "MES"
@@ -13391,6 +13954,9 @@ msgstr "Opérations manquantes"
 msgid "Missing Shipping Costs"
 msgstr "Frais de port manquants"
 
+msgid "Missing Storage Units"
+msgstr "Unités de stockage manquantes"
+
 msgid "Missing Suppliers"
 msgstr "Fournisseurs manquants"
 
@@ -13407,6 +13973,12 @@ msgstr "Téléphone Mobile"
 
 msgid "Mode"
 msgstr "Mode"
+
+msgid "Model cache invalidated; re-converting from the source file"
+msgstr ""
+
+msgid "Model conversion started"
+msgstr ""
 
 msgid "Model Number"
 msgstr "Numéro de modèle"
@@ -13481,6 +14053,9 @@ msgstr "Tarif mensuel"
 msgid "Monthly"
 msgstr "Mensuel"
 
+msgid "Monthly (calendar)"
+msgstr "Mensuel (calendrier)"
+
 msgid "Monthly Depreciation"
 msgstr "Amortissement mensuel"
 
@@ -13537,6 +14112,9 @@ msgstr "La plupart des choses sont détectées et résolues ici. Nommez-les clai
 
 msgid "Motion"
 msgstr "Motion"
+
+msgid "Motion planning started — steps generate when it finishes"
+msgstr ""
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
 msgstr "Mount a {matches} enregistrements avec cet identifiant. Supprimez ou fusionnez les doublons dans Mount, puis envoyez à nouveau."
@@ -13612,6 +14190,9 @@ msgstr "MRP s'exécute automatiquement chaque jour à {time} ({timeZone}), mais 
 
 msgid "MRP Schedule"
 msgstr "Planification MRP"
+
+msgid "MRP schedule updated"
+msgstr ""
 
 msgid "MRP Suggestions"
 msgstr "Suggestions MRP"
@@ -13690,6 +14271,9 @@ msgstr "Nécessite une revue"
 
 msgid "Negative Adjustment"
 msgstr "Ajustement Négatif"
+
+msgid "Negative stock setting updated"
+msgstr "Paramètre de stock négatif mis à jour"
 
 msgid "Net book value"
 msgstr "Valeur Nette Comptable"
@@ -13853,6 +14437,9 @@ msgstr "Nouvelle Transaction IC"
 msgid "New Inspection Plan"
 msgstr "Nouveau plan de contrôle"
 
+msgid "New instruction"
+msgstr ""
+
 msgid "New Inventory Count"
 msgstr "Nouveau Décompte d'Inventaire"
 
@@ -13912,9 +14499,6 @@ msgstr "Nouveau propriétaire"
 
 msgid "New Part"
 msgstr "Nouvelle Pièce"
-
-msgid "New Password"
-msgstr "Nouveau mot de passe"
 
 msgid "New Payment"
 msgstr "Nouveau Paiement"
@@ -14180,6 +14764,9 @@ msgstr "Aucune compétence ajoutée"
 msgid "No Access"
 msgstr "Aucun accès"
 
+msgid "No accounts are mapped yet"
+msgstr "Aucun compte n'est encore mappé"
+
 msgid "No accounts connected yet."
 msgstr "Aucun compte connecté pour le moment."
 
@@ -14316,6 +14903,9 @@ msgstr "Aucun composant pour le moment"
 msgid "No condition may match"
 msgstr "Aucune condition ne doit correspondre"
 
+msgid "No content"
+msgstr "Aucun contenu"
+
 msgid "No control account has a balance at the cutover."
 msgstr "Aucun compte de contrôle n'a de solde à la date limite."
 
@@ -14358,6 +14948,12 @@ msgstr "Aucun acompte n'a été reçu pour cet accord."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Aucune exécution d'amortissement ne se produit avant le cutover. Entrez l'amortissement cumulé de chaque actif au jour avant le cutover."
 
+msgid "No devices found"
+msgstr "Aucun dispositif trouvé"
+
+msgid "No devices match your search"
+msgstr "Aucun appareil ne correspond à votre recherche"
+
 msgid "No dimension slots configured"
 msgstr "Aucun emplacement d'axe analytique configuré"
 
@@ -14393,9 +14989,6 @@ msgstr "Pas d'adresse e-mail pour ce client"
 
 msgid "No employees assigned this week"
 msgstr "Aucun employé affecté cette semaine"
-
-msgid "No employees assigned yet. Add groups to see status."
-msgstr "Aucun employé assigné pour le moment. Ajoutez des groupes pour voir le statut."
 
 msgid "No employees found"
 msgstr "Aucun employé trouvé"
@@ -14493,6 +15086,9 @@ msgstr "Aucun article"
 msgid "No items have inventory activity here yet."
 msgstr "Aucun article n'a encore d'activité d'inventaire ici."
 
+msgid "No job at this location has an open operation."
+msgstr "Aucun ordre de fabrication sur ce site n'a d'opération ouverte."
+
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Aucun ordre de fabrication n'est programmé sur ce site pour l'instant — lancez un ordre de fabrication pour voir la charge du poste de travail."
 
@@ -14586,6 +15182,9 @@ msgstr "Aucune ligne ouverte. Ajoutez un service pour modifier."
 msgid "No open memos"
 msgstr "Aucun mémo ouvert"
 
+msgid "No open operations"
+msgstr "Aucune opération ouverte"
+
 msgid "No open orders for this item are available to link."
 msgstr "Aucune commande ouverte pour cet article n'est disponible pour la liaison."
 
@@ -14658,6 +15257,9 @@ msgstr "Pas de lignes de paiement."
 
 msgid "No payments yet."
 msgstr "Aucun paiement pour le moment."
+
+msgid "No PDF uploaded"
+msgstr "Aucun PDF téléversé"
 
 msgid "No planned invoices are removed."
 msgstr "Aucune facture planifiée n'est supprimée."
@@ -14763,6 +15365,9 @@ msgstr "Pas de lignes ici."
 
 msgid "No rules assigned"
 msgstr "Aucune règle assignée"
+
+msgid "No running job to cancel"
+msgstr ""
 
 msgid "No schedule lines."
 msgstr "Aucune ligne d'échéancier."
@@ -14950,6 +15555,9 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Pas une table mais un solde du grand livre : le coût s'accumule à mesure que les composants d'OF sont émis et s'annule lorsque l'OF est reçu en stock."
 
+msgid "Not calibrated"
+msgstr "Non étalonné"
+
 msgid "Not certified"
 msgstr "Non certifié"
 
@@ -14970,6 +15578,12 @@ msgstr "Pas assez de données sur l'unité"
 
 msgid "Not feasible"
 msgstr "Non réalisable"
+
+msgid "Not job time"
+msgstr "Pas du temps de production"
+
+msgid "Not mapped"
+msgstr "Non associé"
 
 msgid "Not now"
 msgstr "Pas maintenant"
@@ -15038,6 +15652,9 @@ msgstr "Rien n'a encore été terminé dans MES"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Aucun autre article à cet endroit n'a de stock à prélever."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "Rien d'autre n'a tourné sur {workCenterName} ce jour-là."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Rien ici ne correspond à votre recherche et vos filtres."
 
@@ -15098,6 +15715,9 @@ msgstr "Notifier"
 msgid "Notify someone"
 msgstr "Notifier quelqu'un"
 
+msgid "now"
+msgstr "maintenant"
+
 msgid "Number"
 msgstr "Nombre"
 
@@ -15141,6 +15761,9 @@ msgstr "Off — géré en dehors de la synchronisation"
 msgid "Off — released revisions stay editable"
 msgstr "Désactivé — les révisions publiées restent modifiables"
 
+msgid "Offline"
+msgstr "Hors ligne"
+
 msgid "Offset Account"
 msgstr "Compte de contrepartie"
 
@@ -15162,8 +15785,11 @@ msgstr "Activé"
 msgid "On {sentDate}"
 msgstr "Le {sentDate}"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
-msgstr "Sur un compte de contrôle, Carbon établit le solde d'ouverture à partir de ses propres articles ouverts, stocks et immobilisations. La balance d'essai doit concorder : toute différence reste dans le compte de transition, qui doit totaliser zéro."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled. Apply to Trial Balance sets each control account to Carbon's total and puts what is left on Retained Earnings."
+msgstr "Sur un compte de contrôle, Carbon ouvre le solde de ses propres articles ouverts, ses stocks et ses immobilisations. La balance de vérification doit correspondre : chaque différence reste sur Rapprochement de migration, qui doit totaliser zéro. Ouvrez un compte pour voir ses articles, et ignorez une facture que le système antérieur a déjà réglée. Appliquer à la Balance de vérification définit chaque compte de contrôle au total de Carbon et place ce qui reste sur Report à nouveau."
+
+msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
+msgstr "Sur un kanban de transfert, la quantité minimale pour l'unité de stockage de destination. Lorsque le stock disponible plus les transferts entrants ouverts descend au-dessous, Carbon crée un transfert de stock lancé pour la quantité du kanban."
 
 msgid "On cutover day, work the checklist below in order. Acceptance tests come from your in-scope requirements. Support details are at the bottom."
 msgstr "Le jour du basculement, travaillez la liste de contrôle ci-dessous dans l'ordre. Les tests d'acceptation proviennent de vos exigences dans le périmètre. Les détails du support se trouvent en bas."
@@ -15188,6 +15814,12 @@ msgstr "En stock : de {before} à {after}"
 
 msgid "On Hold"
 msgstr "Suspendu"
+
+msgid "On its side"
+msgstr "Sur le côté"
+
+msgid "On its side, from step {orientationSource}"
+msgstr "Sur le côté, depuis l'étape {orientationSource}"
 
 msgid "On Jobs"
 msgstr "Sur ordres de fabrication"
@@ -15311,6 +15943,9 @@ msgstr "Unique"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Seules les procédures en brouillon sont modifiables. Créez une nouvelle version pour modifier une procédure active ou archivée."
 
+msgid "Only employees can post receipts."
+msgstr "Seuls les employés peuvent comptabiliser les réceptions."
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
 
@@ -15428,6 +16063,9 @@ msgstr "Ouverts dans les avis de modification {ids}. Lancez-les pour créer de n
 msgid "Open in MES"
 msgstr "Ouvrir dans MES"
 
+msgid "Open in Onshape"
+msgstr "Ouvrir dans Onshape"
+
 msgid "Open Issues"
 msgstr "Problèmes ouverts"
 
@@ -15442,6 +16080,9 @@ msgstr "Ordres de fabrication ouverts"
 
 msgid "Open Jobs"
 msgstr "Ordres de fabrication Ouverts"
+
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "Ordres de fabrication ouverts sans unité de stockage"
 
 msgid "Open menu"
 msgstr "Ouvrir le menu"
@@ -15560,6 +16201,9 @@ msgstr "Opération"
 msgid "Operation batch"
 msgstr "Lot de production d'opération"
 
+msgid "Operation created"
+msgstr ""
+
 msgid "Operation lead time"
 msgstr "Délai d'approvisionnement de l'opération"
 
@@ -15578,6 +16222,12 @@ msgstr "Quantité d'opération"
 msgid "Operation supplier process"
 msgstr "Processus fournisseur d'opération"
 
+msgid "Operation timer auto-start disabled"
+msgstr ""
+
+msgid "Operation timer auto-start enabled"
+msgstr ""
+
 msgid "Operation type"
 msgstr "Type d'opération"
 
@@ -15586,6 +16236,9 @@ msgstr "Type d'opération"
 
 msgid "Operation unit cost"
 msgstr "Coût unitaire de l'opération"
+
+msgid "Operation updated"
+msgstr ""
 
 msgid "Operations"
 msgstr "Opérations"
@@ -15703,14 +16356,14 @@ msgstr "Date de commande"
 msgid "Order Date"
 msgstr "Date de commande"
 
+msgid "Order Items"
+msgstr "Commander des articles"
+
 msgid "Order Multiple"
 msgstr "Multiplicateur de commande"
 
 msgid "Order Multiple:"
 msgstr "Multiple de commande :"
-
-msgid "Order Parts"
-msgstr "Commander des pièces"
 
 msgid "Order Qty"
 msgstr "Qté Commande"
@@ -15735,6 +16388,9 @@ msgstr "Commandes"
 
 msgid "Orders submitted"
 msgstr "Commandes soumises"
+
+msgid "Orientation"
+msgstr "Orientation"
 
 msgid "Origin"
 msgstr "Origine"
@@ -15882,6 +16538,10 @@ msgstr "Modifier la date d'expiration sur {label}."
 msgid "Overtime"
 msgstr "Heures supplémentaires"
 
+#. placeholder {0}: counts.updated ?? 0
+msgid "Overtime set for {0} assignments"
+msgstr ""
+
 msgid "Overview"
 msgstr "Aperçu"
 
@@ -15994,6 +16654,9 @@ msgstr "pièces"
 msgid "Part"
 msgstr "Pièce"
 
+msgid "Part added and issued successfully"
+msgstr ""
+
 msgid "Part Being Replaced"
 msgstr "Pièce remplacée"
 
@@ -16017,6 +16680,9 @@ msgstr "Numéro de pièce"
 
 msgid "Part Supersession"
 msgstr "Remplacement de pièce"
+
+msgid "Part supplier created"
+msgstr ""
 
 msgid "Partial"
 msgstr "Partielle"
@@ -16086,6 +16752,9 @@ msgstr "Chemin"
 
 msgid "Pause"
 msgstr "Mettre en pause"
+
+msgid "Paused"
+msgstr "Suspendu"
 
 msgid "Pay"
 msgstr "Payer"
@@ -16263,8 +16932,14 @@ msgstr "Fin de période"
 msgid "Period lock policy"
 msgstr "Politique de verrouillage des périodes"
 
+msgid "Period locked"
+msgstr ""
+
 msgid "Period Start"
 msgstr "Début de période"
+
+msgid "Period unlocked"
+msgstr ""
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "Charge d'amortissement périodique des immobilisations"
@@ -16353,6 +17028,9 @@ msgstr "Choisir une valeur d'une étape antérieure"
 msgid "Pick a variable…"
 msgstr "Choisir une variable…"
 
+msgid "Pick an account"
+msgstr "Sélectionner un compte"
+
 msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 msgstr "Choisissez une règle existante de la bibliothèque ou créez-en une nouvelle pour commencer à appliquer des vérifications sur cet article."
 
@@ -16404,6 +17082,9 @@ msgstr "Liste de prélèvement"
 
 msgid "Picking List"
 msgstr "Liste de prélèvement"
+
+msgid "Picking list completion policy updated"
+msgstr ""
 
 msgid "Picking List ID"
 msgstr "ID de la liste de prélèvement"
@@ -16512,6 +17193,9 @@ msgstr "Horizon de Planification"
 
 msgid "Planning Horizon (Days)"
 msgstr "Horizon de Planification (Jours)"
+
+msgid "Planning horizon updated"
+msgstr ""
 
 msgid "Planning Horizon:"
 msgstr "Horizon de Planification :"
@@ -16724,6 +17408,9 @@ msgstr "Appuyez sur « / » pour les commandes"
 msgid "Prev"
 msgstr "Précédent"
 
+msgid "Prevent negative stock"
+msgstr "Empêcher le stock négatif"
+
 msgid "Preventive action"
 msgstr "Action préventive"
 
@@ -16840,6 +17527,9 @@ msgstr "Imprimer {0} étiquettes"
 msgid "Print batch list"
 msgstr "Imprimer la liste des lots de production"
 
+msgid "Print job deleted"
+msgstr ""
+
 msgid "Print Jobs"
 msgstr "Imprimer les ordres de fabrication"
 
@@ -16852,6 +17542,12 @@ msgstr "Imprimer l'étiquette"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Imprimer la sortie ({0})"
+
+msgid "Printer route created"
+msgstr ""
+
+msgid "Printer route updated"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Paramètres d'imprimante"
@@ -16961,6 +17657,9 @@ msgstr "Quantité de production"
 msgid "Production Quantity"
 msgstr "Quantité de Production"
 
+msgid "Production settings updated"
+msgstr ""
+
 msgid "Production variance"
 msgstr "Écart de production"
 
@@ -16996,6 +17695,9 @@ msgstr "Démarrage du projet"
 
 msgid "Projected"
 msgstr "Prévue"
+
+msgid "Projected (To)"
+msgstr "Projeté (Vers)"
 
 msgid "Projected completion"
 msgstr "Achèvement projeté"
@@ -17107,6 +17809,9 @@ msgstr "Public"
 msgid "Publish"
 msgstr "Publier"
 
+msgid "Publish Training"
+msgstr "Publier Formation"
+
 #. placeholder {0}: current.versionNumber
 msgid "Publish Version {0}?"
 msgstr "Publier la version {0} ?"
@@ -17128,6 +17833,9 @@ msgstr "Récupérer"
 
 msgid "Pull From"
 msgstr "Prélever de"
+
+msgid "Pull from {providerName}"
+msgstr "Importer depuis {providerName}"
 
 msgid "Pull from accounting"
 msgstr "Récupérer de la comptabilité"
@@ -17161,6 +17869,9 @@ msgstr "Montant de la facture d'achat"
 
 msgid "Purchase Invoice Line"
 msgstr "Ligne de facture d'achat"
+
+msgid "Purchase invoice voided"
+msgstr ""
 
 msgid "Purchase invoices"
 msgstr "Factures d'achat"
@@ -17230,6 +17941,9 @@ msgstr "Planification des achats"
 
 msgid "Purchase Price"
 msgstr "Prix d'achat"
+
+msgid "Purchase price update timing updated"
+msgstr ""
 
 msgid "Purchase price variance"
 msgstr "Écart de Prix d'Achat"
@@ -17318,8 +18032,17 @@ msgstr "Envoyer l'écriture sans l'axe analytique"
 msgid "Push to accounting"
 msgstr "Envoyer vers la comptabilité"
 
+msgid "Pushes don't change this item's fields, so edits made here stay."
+msgstr "Les envois ne modifient pas les champs de cet article, donc les modifications apportées ici restent."
+
+msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgstr "Les envois depuis Onshape cessent de mettre à jour cet article. Envoyer à nouveau cette pièce depuis Onshape rétablit le lien."
+
+msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr "Les envois ne remplacent que les champs que la page Champs d'Onshape configure pour une mise à jour à chaque envoi."
+
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
-msgstr ""
+msgstr "Mettre cette charge sur sa propre facture, en attente de Revue avant d'être comptabilisée. Sinon, elle va sur la prochaine facture de l'accord."
 
 msgid "Putting your data back"
 msgstr "Restauration de vos données"
@@ -17329,6 +18052,9 @@ msgstr "VA des paiements"
 
 msgid "PV of Residual"
 msgstr "VA de la valeur résiduelle"
+
+msgid "QR Code to complete the current operation for this kanban"
+msgstr "QR Code pour terminer l'opération en cours pour ce kanban"
 
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
@@ -17486,8 +18212,14 @@ msgstr "Questions"
 msgid "Queued"
 msgstr "En file d'attente"
 
+msgid "Queued {count} sync operations for sync"
+msgstr ""
+
 msgid "Queued finish"
 msgstr "Fin en file d'attente"
+
+msgid "Queued sync operation for sync"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Calme à l'atelier ce soir, {name}."
@@ -17594,6 +18326,9 @@ msgstr "Ramp n’a pas renvoyé de code d’autorisation"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp a rejeté l’autorisation"
 
+msgid "Ran at the time"
+msgstr "A tourné à ce moment"
+
 msgid "Rate"
 msgstr "Taux"
 
@@ -17638,6 +18373,12 @@ msgstr "Redater au premier jour ouvert"
 
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Ressaisie entre les devis, l'atelier et la finance"
+
+msgid "Re-planning from scratch — steps rebuild automatically when it finishes"
+msgstr ""
+
+msgid "Re-planning motions in the current step order — steps update when it finishes"
+msgstr ""
 
 msgid "Re-send"
 msgstr "Renvoyer"
@@ -17747,8 +18488,17 @@ msgstr "Lignes de réception"
 msgid "Receipt Promised Date"
 msgstr "Date de livraison promise"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "Les quantités de réception commencent maintenant à la quantité à réceptionner"
+
+msgid "Receipt quantities now start at zero"
+msgstr "Les quantités de réception commencent maintenant à zéro"
+
 msgid "Receipt Requested Date"
 msgstr "Date de réception demandée"
+
+msgid "Receipt voided"
+msgstr ""
 
 msgid "Receipts"
 msgstr "Reçus"
@@ -17773,6 +18523,9 @@ msgstr "Ancienneté des créances clients"
 
 msgid "Receivables Email"
 msgstr "E-mail des créances clients"
+
+msgid "Receivables email updated"
+msgstr ""
 
 msgid "Receive"
 msgstr "Recevoir"
@@ -17814,6 +18567,12 @@ msgstr "Lignes reçues de ce fournisseur avec quantité restant à retourner"
 msgid "Received Qty"
 msgstr "Quantité reçue"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "Les quantités reçues commencent à la quantité à réceptionner"
+
+msgid "Received quantities start at zero"
+msgstr "Les quantités reçues commencent à zéro"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Quantité reçue non encore facturisée. L'avoir est créé en tant que brouillon."
 
@@ -17822,6 +18581,9 @@ msgstr "E-mail du destinataire (À)"
 
 msgid "Receives the invoice email"
 msgstr "Reçoit l'e-mail de facture"
+
+msgid "Receiving"
+msgstr "Réception"
 
 msgid "Receiving Location"
 msgstr "Site de réception"
@@ -17937,6 +18699,9 @@ msgstr "Les enregistrements et les écritures comptabilisées sont envoyés à e
 msgid "Records here appear as plain text — {appLabel} doesn't support links in this field."
 msgstr "Les enregistrements ici s'affichent en texte brut — {appLabel} ne supporte pas les liens dans ce champ."
 
+msgid "Records moved"
+msgstr "Enregistrements déplacés"
+
 #. placeholder {0}: notice.params.equals
 msgid "Records will be plain text. Set {siblingLabel} to {0} (under Advanced) to turn them into links."
 msgstr "Les enregistrements seront du texte brut. Définissez {siblingLabel} à {0} (sous Avancé) pour les transformer en liens."
@@ -17953,6 +18718,9 @@ msgstr "Enregistrer"
 
 msgid "Recurring"
 msgstr "Récurrent"
+
+msgid "Recurring invoice setting updated"
+msgstr ""
 
 msgid "Recurring Invoices"
 msgstr "Factures récurrentes"
@@ -18013,6 +18781,9 @@ msgstr "Régénérez le planning pour ce site maintenant. Il s'exécute égaleme
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Régénérer la miniature à partir du modèle 3D"
+
+msgid "Regenerated {created} steps from the motion plan"
+msgstr ""
 
 msgid "Regenerating thumbnail…"
 msgstr "Régénération de la miniature en cours…"
@@ -18107,6 +18878,9 @@ msgstr "Contrôle de lancement"
 msgid "Release Control"
 msgstr "Contrôle de lancement"
 
+msgid "Release control setting updated"
+msgstr ""
+
 msgid "Release date"
 msgstr "Date de libération"
 
@@ -18137,12 +18911,15 @@ msgstr "Révision publiée"
 msgid "Released revision is locked"
 msgstr "La révision publiée est verrouillée"
 
-#. placeholder {0}: result.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
+#. placeholder {0}: data.warnings .map((w) => `${w.readableId} (${w.message})`) .join(", ")
 msgid "Released with problems: {0}"
 msgstr "Lancé avec des problèmes : {0}"
 
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Lancer le lot de production lance ses ordres de fabrication, et chacun doit être prêt pour l'atelier."
+
+msgid "Reload the page to try again."
+msgstr "Rechargez la page pour réessayer."
 
 msgid "Remaining"
 msgstr "Restant"
@@ -18194,6 +18971,9 @@ msgstr "Retirer l'application authenticateur"
 msgid "Remove clause"
 msgstr "Retirer la clause"
 
+msgid "Remove Completion"
+msgstr "Retirer Accomplissement"
+
 msgid "Remove condition"
 msgstr "Retirer la condition"
 
@@ -18242,6 +19022,9 @@ msgstr "Retirer la pièce"
 msgid "Remove path"
 msgstr "Retirer le chemin"
 
+msgid "Remove PDF"
+msgstr "Retirer le PDF"
+
 msgid "Remove row"
 msgstr "Retirer la ligne"
 
@@ -18256,6 +19039,9 @@ msgstr "Retirer le tri par colonne"
 
 msgid "Remove station"
 msgstr "Supprimer la station"
+
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Retirer les numéros de série et de lot reçus du stock"
 
 msgid "Remove this item"
 msgstr "Retirer cet article"
@@ -18351,6 +19137,15 @@ msgstr "Rouvrir"
 msgid "Reopen as Revision"
 msgstr "Rouvrir comme Révision"
 
+msgid "Reopen Training"
+msgstr "Rouvrir Formation"
+
+msgid "Reopened {changed} planning actions"
+msgstr ""
+
+msgid "Reopened 1 planning action"
+msgstr ""
+
 msgid "Reorder"
 msgstr "Réorganiser"
 
@@ -18396,6 +19191,18 @@ msgstr "Passage répété"
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "Se répète une fois pour chaque élément dans {inputLabel}"
 
+msgid "Replace"
+msgstr "Remplacer"
+
+msgid "Replace Carbon's default chart with your own, before you set up accounting"
+msgstr "Remplacez le plan comptable par défaut de Carbon par le vôtre, avant de configurer la comptabilité"
+
+msgid "Replace chart"
+msgstr "Remplacer le plan comptable"
+
+msgid "Replace defaults"
+msgstr "Remplacer les paramètres par défaut"
+
 msgid "Replace drawing?"
 msgstr "Remplacer le dessin ?"
 
@@ -18408,6 +19215,9 @@ msgstr "Remplacer le PDF"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "Remplacer les données de cette société par un ensemble de données de démonstration — d'abord enregistré, pour que vous puissiez annuler."
 
+msgid "Replace with"
+msgstr "Remplacer par"
+
 msgid "Replacement Order"
 msgstr "Commande de remplacement"
 
@@ -18416,6 +19226,9 @@ msgstr "Le remplacement du PDF supprime tous les placements de bulles sur ce doc
 
 msgid "Replenishment"
 msgstr "Réapprovisionnement"
+
+msgid "Replenishment Level"
+msgstr "Niveau de réapprovisionnement"
 
 msgid "Replenishment system"
 msgstr "Mode d'approvisionnement"
@@ -18453,6 +19266,9 @@ msgstr "Le retarification avec les règles et les coûts d'aujourd'hui donne <0>
 
 msgid "Reprint"
 msgstr "Réimprimer"
+
+msgid "Reprint job created"
+msgstr ""
 
 msgid "Request a new invite"
 msgstr "Demander une nouvelle invitation"
@@ -18555,6 +19371,9 @@ msgstr "Tolérance de reprogrammation"
 
 msgid "Reschedule Tolerance"
 msgstr "Tolérance de reprogrammation"
+
+msgid "Reschedule tolerance updated"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "Plancher de réserve"
@@ -18662,9 +19481,6 @@ msgstr "Restaurer cette société à partir d'une sauvegarde"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Restaurer cette entité au stock disponible au casier et au coût à partir duquel elle a été mise au rebut."
-
-msgid "Restore tracked entities to available"
-msgstr "Restaurer les entités suivies en disponibles"
 
 msgid "Restore…"
 msgstr "Restaurer…"
@@ -18788,6 +19604,9 @@ msgstr "Rév {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Rév {revisionId}"
+
+msgid "Reveal"
+msgstr "Révéler"
 
 msgid "Reveal account number"
 msgstr "Afficher le numéro de compte"
@@ -18988,6 +19807,9 @@ msgstr "Localisation RFQ"
 msgid "RFQ Number"
 msgstr "Numéro de RFQ"
 
+msgid "RFQ setting updated"
+msgstr ""
+
 msgid "RFQs"
 msgstr "Appels d'offres"
 
@@ -19055,8 +19877,17 @@ msgstr "Rôles et responsabilités"
 msgid "Roles that set default permissions for new employees"
 msgstr "Rôles qui définissent les autorisations par défaut pour les nouveaux employés"
 
+msgid "Roll secret"
+msgstr "Renouveler la clé"
+
+msgid "Rolled the signing secret"
+msgstr "Clé de signature renouvelée"
+
 msgid "Room to grow without bolting on more tools"
 msgstr "Espace pour croître sans ajouter d'autres outils"
+
+msgid "Rotate"
+msgstr "Tourner"
 
 msgid "ROU Amortization"
 msgstr "Amortissement du droit d'utilisation"
@@ -19260,11 +20091,17 @@ msgstr "Facture de vente"
 msgid "Sales Invoice"
 msgstr "Facture de vente"
 
+msgid "Sales invoice confirmed"
+msgstr ""
+
 msgid "Sales invoice line"
 msgstr "Ligne de facture de vente"
 
 msgid "Sales Invoice Line"
 msgstr "Ligne de facture de vente"
+
+msgid "Sales invoice voided"
+msgstr ""
 
 msgid "Sales invoices"
 msgstr "Factures de vente"
@@ -19324,6 +20161,9 @@ msgstr "Règle de vente"
 msgid "Sales rule \"{0}\""
 msgstr "Règle de ventes « {0} »"
 
+msgid "Sales rule notification settings updated"
+msgstr ""
+
 msgid "Sales Rule Violations"
 msgstr "Violations de règles de vente"
 
@@ -19374,6 +20214,9 @@ msgstr "Échantillonnage — Caractéristique {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Norme d'échantillonnage"
+
+msgid "Sampling standard updated"
+msgstr ""
 
 msgid "Saturday"
 msgstr "Samedi"
@@ -19429,6 +20272,25 @@ msgstr "Enregistrer la vue"
 
 msgid "Saved"
 msgstr "Enregistré"
+
+#. placeholder {0}: data.count
+msgid "Saved {0} dimension value mappings"
+msgstr ""
+
+msgid "Saved {count} account mappings"
+msgstr ""
+
+msgid "Saved account mapping"
+msgstr ""
+
+msgid "Saved device mapping"
+msgstr ""
+
+msgid "Saved dimension value mapping"
+msgstr ""
+
+msgid "Saved document layout"
+msgstr ""
 
 msgid "Saved view"
 msgstr "Vue enregistrée"
@@ -19623,6 +20485,9 @@ msgstr "Rechercher les clients et les types..."
 msgid "Search customers or types..."
 msgstr "Rechercher des clients ou des types..."
 
+msgid "Search devices"
+msgstr "Rechercher des appareils"
+
 msgid "Search employees..."
 msgstr "Rechercher des employés..."
 
@@ -19646,6 +20511,9 @@ msgstr "Rechercher des articles ou des casiers"
 
 msgid "Search Job"
 msgstr "Rechercher un travail"
+
+msgid "Search jobs and operations"
+msgstr "Rechercher des ordres et des opérations"
 
 msgid "Search jobs or items"
 msgstr "Rechercher des ordres de fabrication ou des articles"
@@ -19706,6 +20574,12 @@ msgstr "Secret copié dans le presse-papiers"
 
 msgid "Section"
 msgstr "Section"
+
+msgid "Section deleted"
+msgstr ""
+
+msgid "Section saved"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Sécurisez votre compte avec l'authentification à deux facteurs"
@@ -20028,6 +20902,9 @@ msgstr "Nom de l'expéditeur"
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Renvoi des unités défectueuses à une opération antérieure pour correction au lieu d'être mises au rebut."
 
+msgid "Sending invoice"
+msgstr ""
+
 msgid "Sends this document for approval before it can go active."
 msgstr "Envoie ce document pour approbation avant qu'il ne puisse devenir actif."
 
@@ -20142,6 +21019,9 @@ msgstr "Détails du fournisseur de services"
 msgid "Service start"
 msgstr "Début de service"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "services"
 msgstr "services"
 
@@ -20153,6 +21033,15 @@ msgstr "Session verrouillée"
 
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Définissez un client sur ce retour pour ajouter à partir d'une expédition."
+
+msgid "Set a Pull From on each one through a new version."
+msgstr "Définissez un Prélèvement depuis pour chacun via une nouvelle version."
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "définir une unité de stockage Prélever de sur {names}"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "définir une unité de stockage Prélever de sur {names} et {more} de plus"
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Définir un fournisseur sur ce retour pour ajouter à partir d'une réception."
@@ -20215,7 +21104,7 @@ msgid "Set Up Accounting"
 msgstr "Configurer la comptabilité"
 
 msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
-msgstr ""
+msgstr "Configurer la comptabilité pour utiliser les rapports, les écritures comptables, les périodes comptables, les amortissements et bien plus encore."
 
 msgid "Set up authenticator app"
 msgstr "Configurer l'application d'authentification"
@@ -20247,6 +21136,9 @@ msgstr "Définit le coût auquel cette unité est portée en stocks. La différe
 
 msgid "Settings"
 msgstr "Paramètres"
+
+msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+msgstr "Apurées dans le système qui tenait les livres avant le basculement. Carbon les exclut de ses totaux et les marque Payées la veille du basculement comptable lorsque vous activez la comptabilité."
 
 msgid "Setup"
 msgstr "Configuration"
@@ -20331,6 +21223,9 @@ msgstr "Durée de conservation"
 msgid "Shelf Life (Days)"
 msgstr "Durée de conservation (jours)"
 
+msgid "Shelf life & expiry settings updated"
+msgstr ""
+
 msgid "Shelf Life Start Process"
 msgstr "Processus de démarrage de la durée de conservation"
 
@@ -20393,6 +21288,9 @@ msgstr "Lignes d'expédition"
 
 msgid "Shipment Location"
 msgstr "Lieu d'expédition"
+
+msgid "Shipment voided"
+msgstr ""
 
 msgid "Shipments"
 msgstr "Expéditions"
@@ -20588,6 +21486,9 @@ msgstr "Afficher les ID fournisseur"
 msgid "Show sync options"
 msgstr "Afficher les options de synchronisation"
 
+msgid "Show the items on {label}"
+msgstr "Afficher les éléments sur {label}"
+
 msgid "Show Trailing Zeros"
 msgstr "Afficher les zéros de fin"
 
@@ -20668,6 +21569,9 @@ msgstr "La connexion nécessite également un code à usage unique de votre appl
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "La connexion ne nécessitera plus de code. Entrez le code à 6 chiffres actuel de votre application d'authentification pour confirmer."
 
+msgid "Signing secret"
+msgstr "Clé de signature"
+
 msgid "Simultaneous"
 msgstr "Simultané"
 
@@ -20712,6 +21616,12 @@ msgstr "Ignorer l'état lancé mais non démarré — l'ordre de fabrication dé
 
 msgid "Skipped"
 msgstr "Ignoré"
+
+msgid "Skipped {count} sync operations"
+msgstr ""
+
+msgid "Skipped sync operation"
+msgstr ""
 
 msgid "Slack"
 msgstr "Slack"
@@ -20759,6 +21669,9 @@ msgstr "Vendu"
 msgid "Solutions Engineer"
 msgstr "Ingénieur Solutions"
 
+msgid "Some balances have no Carbon account"
+msgstr "Certains soldes n'ont pas de compte Carbon"
+
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Certaines lignes sont facturées pour plus ou moins que leur total. Corriger les montants avant de confirmer."
 
@@ -20776,6 +21689,9 @@ msgstr "Certaines équipes"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Quelqu'un qui peut mettre à jour la comptabilité doit entrer le coût de fabrication avant qu'il puisse être capitalisé."
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Quelque chose s'est mal passé. Veuillez réessayer."
@@ -20885,6 +21801,12 @@ msgstr "Articles spécifiques"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Dépenses par fournisseur, article ou catégorie — vos principaux moteurs de coûts"
 
+msgid "Spin left"
+msgstr "Tourner à gauche"
+
+msgid "Spin right"
+msgstr "Tourner à droite"
+
 msgid "Split"
 msgstr "Diviser"
 
@@ -20908,6 +21830,12 @@ msgstr "Personnel optionnel"
 
 msgid "Staffing required"
 msgstr "Personnel requis"
+
+msgid "Staffing requirement disabled"
+msgstr ""
+
+msgid "Staffing requirement enabled"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Mettre en place l'hébergement"
@@ -20973,6 +21901,9 @@ msgstr "Début de l'exercice comptable"
 msgid "Start of Tax Year"
 msgstr "Début de l'année fiscale"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "Initialiser les quantités de réception à zéro"
+
 msgid "Start Time"
 msgstr "Heure de début"
 
@@ -20990,6 +21921,9 @@ msgstr "Démarrage…"
 
 msgid "Starts"
 msgstr "Commence"
+
+msgid "State"
+msgstr "État"
 
 msgid "State / Province"
 msgstr "État / Province"
@@ -21142,6 +22076,9 @@ msgstr "Arrêter l'expédition"
 msgid "Stop using {0} in this step"
 msgstr "Arrêter d'utiliser {0} dans cette étape"
 
+msgid "Stopped"
+msgstr "Arrêté"
+
 msgid "Stops new purchase suggestions after this date."
 msgstr "Arrête les nouvelles suggestions d'achat après cette date."
 
@@ -21187,6 +22124,9 @@ msgstr "unités de stockage"
 msgid "Storage Units"
 msgstr "Unités de stockage"
 
+msgid "Storage Units Not Checked"
+msgstr "Unités de stockage non vérifiées"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "Stocker un nombre fixe de jours sur cet article. La date de début de péremption est définie sur chaque lot de production ou numéro de série lors de sa création (ou lorsque le processus déclencheur s'exécute, s'il est défini)."
 
@@ -21204,6 +22144,21 @@ msgstr "Amortissement linéaire des droits d'utilisation pour baux de financemen
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Charge de bail linéaire des baux d'exploitation, et les paiements des baux à court terme"
+
+msgid "Strict Backflush"
+msgstr "Post-consommation stricte"
+
+msgid "Strict backflush is off"
+msgstr "Post-consommation stricte désactivée"
+
+msgid "Strict backflush is on"
+msgstr "Post-consommation stricte activée"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "La post-consommation stricte est activée. Définir une unité de stockage de prélèvement sur ces matières avant le lancement :"
+
+msgid "Strict backflush setting updated"
+msgstr "Paramètre de post-consommation stricte mis à jour"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -21266,6 +22221,9 @@ msgstr "Sous-assemblage {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "Expiries des sous-ensembles uniquement"
+
+msgid "Sub-assembly path"
+msgstr "Chemin du sous-ensemble"
 
 msgid "Sub-Departments"
 msgstr "Sous-départements"
@@ -21330,11 +22288,23 @@ msgstr "Réussi"
 msgid "Success"
 msgstr "Succès"
 
+msgid "Successfully added invites to queue"
+msgstr ""
+
 msgid "Successfully copied quote"
 msgstr "Devis copié avec succès"
 
 msgid "Successfully created a new revision"
 msgstr "Révision créée avec succès"
+
+msgid "Successfully resent invite"
+msgstr ""
+
+msgid "Successfully revoked invites"
+msgstr ""
+
+msgid "Successfully seeded documents"
+msgstr ""
 
 msgid "Successor effectivity"
 msgstr "Date d'effet du successeur"
@@ -21378,8 +22348,14 @@ msgstr "Commandes suggérées que vous n'avez pas encore passées."
 msgid "Suggestion"
 msgstr "Suggestion"
 
+msgid "Suggestion notification settings updated"
+msgstr ""
+
 msgid "Suggestion Notifications"
 msgstr "Notifications de suggestions"
+
+msgid "Suggestion submitted"
+msgstr ""
 
 msgid "Suggestions"
 msgstr "Suggestions"
@@ -21426,11 +22402,20 @@ msgstr "Contact fournisseur"
 msgid "Supplier Contact"
 msgstr "Contact Fournisseur"
 
+msgid "Supplier contact requirement disabled"
+msgstr ""
+
+msgid "Supplier contact requirement enabled"
+msgstr ""
+
 msgid "Supplier Credit"
 msgstr "Avoir fournisseur"
 
 msgid "Supplier Credits"
 msgstr "Avoirs fournisseur"
+
+msgid "Supplier email settings updated"
+msgstr ""
 
 msgid "Supplier ID"
 msgstr "ID Fournisseur"
@@ -21443,6 +22428,12 @@ msgstr "Les IDs Fournisseurs sont masqués"
 
 msgid "Supplier IDs are shown"
 msgstr "Les IDs Fournisseurs sont visibles"
+
+msgid "Supplier IDs hidden"
+msgstr ""
+
+msgid "Supplier IDs shown"
+msgstr ""
 
 msgid "Supplier interaction"
 msgstr "Interaction avec le fournisseur"
@@ -21477,6 +22468,9 @@ msgstr "Numéro de pièce fournisseur"
 msgid "Supplier Part Numbers"
 msgstr "Numéros de pièce fournisseur"
 
+msgid "Supplier part updated"
+msgstr ""
+
 msgid "Supplier Parts"
 msgstr "Pièces du fournisseur"
 
@@ -21509,6 +22503,9 @@ msgstr "Devis Fournisseur"
 
 msgid "Supplier Quote ID"
 msgstr "ID de devis fournisseur"
+
+msgid "Supplier quote notification setting updated"
+msgstr ""
 
 msgid "Supplier Quote Notifications"
 msgstr "Notifications de devis fournisseur"
@@ -21632,6 +22629,9 @@ msgstr "Passer en mode panoramique"
 msgid "Switch to select mode"
 msgstr "Passer en mode sélection"
 
+msgid "Switch to Written Content"
+msgstr "Passer au contenu écrit"
+
 msgid "Switch users over and confirm access"
 msgstr "Basculer les utilisateurs et confirmer l'accès"
 
@@ -21655,6 +22655,14 @@ msgstr "Rapprochement de synchronisation"
 
 msgid "Synced"
 msgstr "Synchronisé"
+
+#. placeholder {0}: data.created
+#. placeholder {1}: data.updated
+#. placeholder {2}: data.deleted
+#. placeholder {3}: data.slidesSynced
+#. placeholder {4}: data.toolsLinked
+msgid "Synced {synced} steps to the BOP ({0} new, {1} updated, {2} removed, {3} slides, {4} tool links)"
+msgstr ""
 
 msgid "System"
 msgstr "Système"
@@ -21704,6 +22712,9 @@ msgstr "Prendre la durée de conservation la plus courte parmi les matières con
 
 msgid "taken"
 msgstr "prise"
+
+msgid "Taken outside Carbon. You mark each employee complete."
+msgstr "Suivi en dehors de Carbon. Vous marquez chaque employé comme terminé."
 
 msgid "Takes Effect"
 msgstr "Prend effet"
@@ -21764,6 +22775,12 @@ msgstr "Version cible"
 
 msgid "Task"
 msgstr "Tâche"
+
+msgid "Task marked done"
+msgstr ""
+
+msgid "Task skipped"
+msgstr ""
 
 msgid "tasks"
 msgstr "tâches"
@@ -21931,6 +22948,9 @@ msgstr "Conditions d'utilisation"
 msgid "Test"
 msgstr "Tester"
 
+msgid "Test label sent to printer"
+msgstr ""
+
 msgid "Test run"
 msgstr "Exécution de test"
 
@@ -21979,6 +22999,9 @@ msgstr "Le compte {appName} utilisé par cette étape n'est pas disponible — i
 
 msgid "The accent color used across Carbon."
 msgstr "La couleur d'accent utilisée dans Carbon."
+
+msgid "The account picked for {account} is no longer in the chart."
+msgstr "Le compte sélectionné pour {account} ne se trouve plus dans le plan comptable."
 
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "L'axe analytique de comptabilité qui catégorise les articles pour le rapport et l'analyse."
@@ -22039,6 +23062,10 @@ msgstr "La date calculée rétroactivement à laquelle une opération doit être
 
 msgid "The batch goes to the shop floor. Its jobs are already released."
 msgstr "Le lot de production va à l'atelier. Ses ordres de fabrication sont déjà lancés."
+
+#. placeholder {0}: skipped.status
+msgid "The batch is {0}, not Planned"
+msgstr ""
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Le lot s'exécute au rythme de son membre le plus urgent — les autres sont avancés"
@@ -22109,6 +23136,9 @@ msgstr "La catégorie à laquelle appartient ce client (OEM, distributeur, utili
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "La catégorie à laquelle appartient ce fournisseur (matière première, services, fabricant sous contrat); détermine les comptes GL par défaut et les groupements de rapports."
 
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "Le plan comptable est partagé par chaque société du groupe. Ces sociétés ont des documents ou des écritures qui se déplacent vers un autre compte."
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Les lignes de prestation choisies sont déplacées vers un nouveau contrat Brouillon, qui les facture selon son planning. La commande les compte comme facturées."
 
@@ -22153,9 +23183,6 @@ msgstr "Le fichier CSV est vide."
 
 msgid "The CSV has no {columns} column."
 msgstr "Le CSV n'a pas de colonne {columns}."
-
-msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
-msgstr "Le CSV nécessite les colonnes accountNumber, débit et crédit. Une importation remplace l'ensemble de la balance de vérification."
 
 msgid "The CSV was not imported"
 msgstr "Le CSV n'a pas été importé"
@@ -22266,6 +23293,9 @@ msgstr "Le taux de taxe par défaut appliqué aux lignes de devis et de commande
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Le département sous lequel celui-ci se cumule pour la déclaration et les hiérarchies de dénombrement; laisser vide pour un département au niveau supérieur."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Le site de l'appareil est en {siteTimezone} ; Carbon utilise {locationTimezone}"
+
 msgid "The early hours, {name}."
 msgstr "Les premières heures, {name}."
 
@@ -22301,6 +23331,18 @@ msgstr "Le pourcentage attendu de la production de cet article perdu lors de la 
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Le compte de charge auquel cette ligne de dépenses indirectes se comptabilise; requis parce que les lignes indirectes n'ont pas d'entrée de livre comptable d'article à partir de laquelle dériver le compte."
+
+msgid "The file could not be read"
+msgstr "Le fichier n'a pas pu être lu"
+
+msgid "The file has no rows."
+msgstr "Le fichier n'a pas de lignes."
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "Le fichier n'est pas un CSV valide : une valeur entre guillemets n'est jamais fermée."
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "Le fichier est trop volumineux pour être un plan comptable."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Le fichier que vous avez importé et les correspondances que vous avez définies seront perdus."
@@ -22535,6 +23577,9 @@ msgstr "Le plan d'échantillonnage par caractéristique du lot sera redétermin�
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Le montant minimum que ce fournisseur facturera pour ce procédé, indépendamment de la quantité; les ordres de fabrication en dessous du volume de rentabilité coûtent au moins ce montant."
 
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "La machine tourne encore. Attribuez ce temps après son arrêt."
+
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Les machines, cellules et postes par lesquels votre travail passe"
 
@@ -22549,6 +23594,9 @@ msgstr "Les types de matériaux selon lesquels vous organisez votre stock"
 
 msgid "The model is still loading."
 msgstr "Le modèle est toujours en cours de chargement."
+
+msgid "The model isn't ready yet"
+msgstr "Le modèle n'est pas encore prêt"
 
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "Le mois où votre exercice financier commence; les périodes sont numérotées à partir de ce mois."
@@ -22646,14 +23694,20 @@ msgstr "La substitution est conservée à l'activation et enregistrée dans le j
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "La chaîne parent-enfant des entités suivies - ce dont une unité a été construite et ce qu'elle est devenue."
 
+msgid "The part has a newer model than this instruction."
+msgstr ""
+
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "La pièce est fabriquée comme son propre travail quand le parent qui en a besoin est construit."
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La pièce est prélevée du stock existant lors de la construction de son parent - aucune nouvelle tâche ou bon de commande."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Le chemin que les composants de cette étape parcourent lors de la lecture ; calculé à partir du modèle ou dessiné manuellement avec Modifier le chemin."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Le chemin qu'un sous-ensemble fini parcourt comme une seule pièce quand il se joint à la construction. Il arrive avant les pièces de cette étape ; jusqu'à ce que vous en traciez un avec Modifier le chemin, il glisse depuis le côté de la construction."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Le chemin que les pièces de cette étape parcourent pour se mettre en place pendant la lecture ; calculé à partir du modèle, ou tracé à la main avec Modifier le chemin, où une pièce peut également être tournée à n'importe quel point."
 
 msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
 msgstr "Le paiement à partir de la date d'effet. L'augmentation prend toujours effet à chaque anniversaire de la date de début"
@@ -22734,6 +23788,9 @@ msgstr "L'envoi vers Mount est terminé. Certains enregistrements nécessitent u
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Les points d'arrêt de quantité à laquelle cette ligne est tarifée; chaque colonne porte son propre prix par unité pour la négociation acheteur-fournisseur et la conversion en documents aval."
 
+msgid "The quantity moved from the From storage unit on each signal."
+msgstr "La quantité déplacée de l'unité de stockage source à chaque signal."
+
 msgid "The quantity of the item to be reordered on scan-based replenishment."
 msgstr "La quantité de l'article à réapprovisionner lors du réapprovisionnement basé sur la numérisation."
 
@@ -22763,6 +23820,9 @@ msgstr "Les raisons que vous enregistrez lorsque des pièces sont mises au rebut
 
 msgid "The reasons you record when you decline an RFQ"
 msgstr "Les raisons que vous enregistrez lorsque vous refusez une demande de devis"
+
+msgid "The receipt was not voided"
+msgstr "La réception n'a pas été invalidée"
 
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "L'enregistrement vers lequel une notification de flux de travail pointe, nommé comme un id plus son type ; laissez-le vide et la notification lien vers l'exécution du flux de travail elle-même."
@@ -22978,6 +24038,12 @@ msgstr "Le total à fabriquer pour tous les ordres de fabrication créés dans c
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "La référence traçable (par ex. norme NIST, numéro de série de l'instrument de mesure étalon) contre laquelle les valeurs d'étalonnage ont été comparées."
 
+msgid "The training goes back to Draft so you can change it. Employees cannot open it until you publish it again."
+msgstr "La formation revient à Brouillon pour que vous puissiez la modifier. Les employés ne peuvent pas l'ouvrir jusqu'à ce que vous la republiiez."
+
+msgid "The training goes back to Pending for {employeeName}. The employee keeps any ability this training granted. Remove it on their Abilities page if needed."
+msgstr "La formation revient à En attente pour {employeeName}. L'employé conserve toute compétence que cette formation a accordée. La retirer sur leur page Compétences si nécessaire."
+
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "La fiche suiveuse répertorie chaque article de la nomenclature avec sa quantité."
 
@@ -23029,6 +24095,9 @@ msgstr "La valeur comptable de l'unité n'est pas visible, donc son coût des ma
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Les unités de mesure dans lesquelles vous achetez, stockez et vendez"
 
+msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
+msgstr ""
+
 msgid "The US tax depreciation system with IRS property-class tables, run as a separate tax schedule alongside the book schedule."
 msgstr "Le système d'amortissement fiscal américain avec des tables de classe de propriété IRS, exécuté comme un planning fiscal distinct aux côtés du planning comptable."
 
@@ -23074,6 +24143,9 @@ msgstr "Les heures de travail et les calendriers qui pilotent la planification"
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Leurs dates et fractions sont recalculées à partir des lignes."
 
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "Leur prochaine post-consommation sera refusée jusqu'à ce que chaque matériau ait une unité de stockage."
+
 msgid "Theme"
 msgstr "Thème"
 
@@ -23112,6 +24184,9 @@ msgstr "Il n'y a rien d'impayé pour appliquer ces crédits."
 
 msgid "Thereafter"
 msgstr "Par la suite"
+
+msgid "These accounts need a replacement"
+msgstr "Ces comptes ont besoin d'un remplacement"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Ces champs personnalisés ne seront disponibles que pour les entités ayant les mêmes balises"
@@ -23154,6 +24229,9 @@ msgstr "Ces lignes sont liées à des données en dehors de cette société, don
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Ces unités sont traitées comme des ventes. L'activation retire chacune d'elles et comptabilise son écriture de démarrage :"
+
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "Ils ne figurent pas dans votre plan comptable, mais des documents ou des écritures les utilisent. Sélectionnez le compte dans votre plan comptable qui remplace chacun d'eux."
 
 msgid "this ability"
 msgstr "cette compétence"
@@ -23250,6 +24328,9 @@ msgstr "Ces informations seront visibles à tous les utilisateurs, soyez prudent
 
 msgid "this inspection plan"
 msgstr "ce plan de contrôle"
+
+msgid "This integration isn't available yet"
+msgstr "Cette intégration n'est pas encore disponible"
 
 msgid "This integration isn't configured"
 msgstr "Cette intégration n'est pas configurée"
@@ -23384,6 +24465,12 @@ msgstr "ce bon de commande"
 
 msgid "This Quarter"
 msgstr "Ce trimestre"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "Cette réception n'a pas de lignes. Choisissez un document d'origine pour les ajouter."
+
+msgid "This removes the PDF. Employees will see the written content instead."
+msgstr "Cela supprime le PDF. Les employés verront le contenu écrit à la place."
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Ceci supprime leur application d'authentification, de sorte que leur prochain accès ne nécessite qu'un lien magique. Utilisez cette option lorsqu'ils ont perdu l'accès à leur authentificateur. Cela affecte leur accès pour chaque société à laquelle ils appartiennent."
@@ -23632,6 +24719,9 @@ msgstr "Utilisation du temps"
 msgid "Timecard"
 msgstr "Feuille de temps"
 
+msgid "Timecard settings updated"
+msgstr ""
+
 msgid "Timecards"
 msgstr "Feuilles de temps"
 
@@ -23646,6 +24736,12 @@ msgstr "Minuterie en cours d'exécution"
 
 msgid "Timezone"
 msgstr "Fuseau horaire"
+
+msgid "Tip away from you"
+msgstr "Basculer en l'éloignant de vous"
+
+msgid "Tip toward you"
+msgstr "Basculer vers vous"
 
 msgid "Title"
 msgstr "Titre"
@@ -23770,6 +24866,9 @@ msgstr "Détails de l'outil"
 msgid "Tool ID"
 msgstr "ID Outil"
 
+msgid "Tool supplier created"
+msgstr ""
+
 msgid "Tooling Cost"
 msgstr "Coût de l'outillage"
 
@@ -23791,9 +24890,8 @@ msgstr "Sujets"
 msgid "Total"
 msgstr "Total"
 
-#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
-msgid "Total (out of balance by {0})"
-msgstr "Total (écart de {0})"
+msgid "Total (out of balance)"
+msgstr "Total (non équilibré)"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"
@@ -23976,8 +25074,17 @@ msgstr "Formation"
 msgid "Training Assignments"
 msgstr "Affectations de formation"
 
+msgid "Training marked as complete"
+msgstr ""
+
+msgid "Training not recorded"
+msgstr "Formation non enregistrée"
+
 msgid "Training Plan"
 msgstr "Plan de formation"
+
+msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+msgstr "Formation suivie en dehors de Carbon, comme une formation de fournisseur. L'affectation n'a qu'un nom. Un administrateur marque chaque employé comme terminé et peut joindre son certificat."
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Formation de votre équipe via l'Academy et les guides intégrés"
@@ -24033,6 +25140,18 @@ msgstr "Transit et institution"
 msgid "Trash"
 msgstr "Corbeille"
 
+msgid "Traveler materials disabled"
+msgstr ""
+
+msgid "Traveler materials enabled"
+msgstr ""
+
+msgid "Traveler operations disabled"
+msgstr ""
+
+msgid "Traveler operations enabled"
+msgstr ""
+
 msgid "Treatment"
 msgstr "Traitement"
 
@@ -24069,6 +25188,12 @@ msgstr "Activez <0>l'option de simplification des baux à court terme dans Param
 msgid "Turn on the built-in pieces"
 msgstr "Activez les éléments intégrés"
 
+msgid "Turned off sync"
+msgstr ""
+
+msgid "Turned on sync"
+msgstr ""
+
 msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
 msgstr "Douze mois ou moins. Rien n'est inscrit au bilan ; chaque facture est comptabilisée en charge."
 
@@ -24090,8 +25215,14 @@ msgstr "Authentification à deux facteurs activée"
 msgid "Two-Factor Authentication Enforcement"
 msgstr "Application de l'authentification à deux facteurs"
 
+msgid "Two-factor authentication is no longer required"
+msgstr ""
+
 msgid "Two-factor authentication is not enabled."
 msgstr "L'authentification à deux facteurs n'est pas activée."
+
+msgid "Two-factor authentication is now required"
+msgstr ""
 
 msgid "Two-factor authentication is optional"
 msgstr "L'authentification à deux facteurs est facultative"
@@ -24156,6 +25287,9 @@ msgstr "Retirer la règle"
 
 msgid "Unassigned"
 msgstr "Non assigné"
+
+msgid "Unattributed Time"
+msgstr "Temps non attribué"
 
 msgid "Unbalanced"
 msgstr "Déséquilibré"
@@ -24257,6 +25391,9 @@ msgstr "Prix unitaire"
 msgid "Unit Price"
 msgstr "Prix unitaire"
 
+msgid "Unit recosted"
+msgstr ""
+
 msgid "Unit Sale Price"
 msgstr "Prix de vente unitaire"
 
@@ -24313,6 +25450,9 @@ msgstr "Déverrouiller"
 
 msgid "Unlock with passkey"
 msgstr "Déverrouiller avec une clé d'accès"
+
+msgid "Unmapped"
+msgstr "Non mappés"
 
 msgid "Unmapped dimension values"
 msgstr "Valeurs d'axes analytiques non mappées"
@@ -24463,9 +25603,6 @@ msgstr "Mettre à jour le problème Linear"
 msgid "Update part lead times from posted purchase receipts."
 msgstr "Mettre à jour les délais d'approvisionnement des pièces à partir des réceptions comptabilisées."
 
-msgid "Update Password"
-msgstr "Mettre à jour le mot de passe"
-
 msgid "Update Permissions"
 msgstr "Mettre à jour les autorisations"
 
@@ -24484,6 +25621,9 @@ msgstr "Mettez à jour les informations du kanban pour le réapprovisionnement b
 msgid "Update the purchase order quantities"
 msgstr "Mettre à jour les quantités du bon de commande"
 
+msgid "Update the return order quantities"
+msgstr "Mettre à jour les quantités du bon de retour"
+
 msgid "Updated"
 msgstr "Mis à jour"
 
@@ -24493,11 +25633,32 @@ msgstr "Compte mis à jour"
 msgid "Updated At"
 msgstr "Mis à jour le"
 
+msgid "Updated attribute value"
+msgstr ""
+
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated By"
 msgstr "Mis à jour par"
 
+msgid "Updated dimension sync settings"
+msgstr ""
+
+msgid "Updated dispatch status"
+msgstr ""
+
+msgid "Updated job status"
+msgstr ""
+
+msgid "Updated posting sync settings"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "Mise à jour réussie"
+
+msgid "Updated task status"
+msgstr ""
 
 msgid "Upgrade"
 msgstr "Mettre à niveau"
@@ -24524,17 +25685,26 @@ msgstr "Téléverser"
 msgid "Upload a PDF first"
 msgstr "Téléversez d'abord un PDF"
 
+msgid "Upload chart"
+msgstr "Téléverser le plan comptable"
+
 msgid "Upload completed but no file path returned"
 msgstr "Téléversement terminé mais aucun chemin d'accès au fichier retourné"
 
 msgid "Upload CSV"
 msgstr "Téléverser un CSV"
 
+msgid "Upload defaults"
+msgstr "Téléverser les paramètres par défaut"
+
 msgid "Upload failed. Please try again."
 msgstr "Le téléversement a échoué. Veuillez réessayer."
 
 msgid "Upload new backup…"
 msgstr "Téléverser une nouvelle sauvegarde…"
+
+msgid "Upload PDF"
+msgstr "Téléverser un PDF"
 
 msgid "Uploaded model"
 msgstr "Modèle téléchargé"
@@ -24574,6 +25744,15 @@ msgstr "Téléchargement en cours…"
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "En cliquant sur Convertir, les pièces seront créées avec les numéros de pièce internes suivants :"
 
+msgid "Upright"
+msgstr "Debout"
+
+msgid "Upside down"
+msgstr "À l'envers"
+
+msgid "Upside down, from step {orientationSource}"
+msgstr "À l'envers, depuis l'étape {orientationSource}"
+
 msgid "URL"
 msgstr "URL"
 
@@ -24612,6 +25791,9 @@ msgstr "Utiliser le système métrique pour les dimensions de matière par défa
 
 msgid "Use Sub-Assembly"
 msgstr "Utiliser le sous-ensemble"
+
+msgid "Used by"
+msgstr "Utilisé par"
 
 msgid "Used in"
 msgstr "Utilisé dans"
@@ -24920,6 +26102,9 @@ msgstr "Afficher la ligne d'écriture"
 msgid "View Lists"
 msgstr "Afficher les listes"
 
+msgid "View Machine Time"
+msgstr "Afficher le temps machine"
+
 msgid "View maintenance dispatch"
 msgstr "Afficher l'intervention de maintenance"
 
@@ -25098,6 +26283,12 @@ msgstr "L'invalidation de cette expédition :"
 
 msgid "Waited"
 msgstr "En attente"
+
+msgid "Waiting"
+msgstr "En attente"
+
+msgid "Waiting for the first sync"
+msgstr "En attente de la première synchronisation"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Parcourez chaque domaine avec votre responsable et désactivez tout ce qui est hors du champ. Les codes se lisent Module.Domaine.Numéro (ACC.GL.01 = Comptabilité, Grand livre, article 1)."
@@ -25286,6 +26477,9 @@ msgstr "La valeur de chaque immobilisation, sa durée de vie et ce qui s'en pass
 
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Quel est le paiement de chaque période pour cette immobilisation la première année"
+
+msgid "What employees read before the questions"
+msgstr "Ce que les employés lisent avant les questions"
 
 msgid "What happens to an invoice once it is created"
 msgstr "Ce qui se passe pour une facture une fois créée"
@@ -25476,6 +26670,9 @@ msgstr "Lorsque la carte kanban est scannée, le travail est automatiquement dé
 msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
 msgstr "Quand le bail commence et combien de temps il s'exécute, y compris les renouvellements qui sont raisonnablement certains."
 
+msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
+msgstr "Lorsque la quantité projetée dans l'unité de stockage de destination descend au-dessous de ce niveau, un transfert de stock lancé pour la Quantité est créé. Laissez vide pour la numérisation uniquement."
+
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Quand le site de réception s'attend à la réception du stock ; détermine la disponibilité du MRP à destination."
 
@@ -25604,6 +26801,9 @@ msgstr "Quel type de requête envoyer : GET lit quelque chose, POST crée, PUT e
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Quel événement de production démarre l'horloge de durée de vie — par exemple, remplissage, scellage, ou QC final."
+
+msgid "Which operation was this?"
+msgstr "De quelle opération s'agissait-il ?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Tant que cette intervention est ouverte, le poste de travail n'est pas disponible pour la planification (jusqu'à l'heure de fin prévue, ou jusqu'à ce que l'intervention soit terminée)."
@@ -25823,6 +27023,9 @@ msgstr "Séances de travail sur la configuration et les données"
 msgid "Worst Performing Machines"
 msgstr "Machines les plus défaillantes"
 
+msgid "Write"
+msgstr "Écrire"
+
 msgid "Write a note…"
 msgstr "Rédiger une note…"
 
@@ -25846,6 +27049,13 @@ msgstr "Passage en perte du stock mis au rebut ou retourné par les rejets de co
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Réduire progressivement la valeur d'un bien sur sa durée de vie — un lot mensuel que vous créez, examinez en tant que brouillon, puis comptabilisez."
+
+msgid "Wrote the missing journal of 1 document"
+msgstr ""
+
+#. placeholder {0}: data.documents
+msgid "Wrote the missing journals of {0} documents"
+msgstr ""
 
 msgid "Year"
 msgstr "Année"
@@ -25984,9 +27194,6 @@ msgstr "Votre fournisseur DNS peut ajouter automatiquement votre domaine au nom 
 
 msgid "Your Email"
 msgstr "Votre e-mail"
-
-msgid "Your general-ledger accounts and their structure"
-msgstr "Vos comptes du grand livre et leur structure"
 
 msgid "Your GL accounts"
 msgstr "Vos comptes GL"

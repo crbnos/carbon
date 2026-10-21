@@ -23,7 +23,7 @@ import {
 } from "@carbon/react";
 import type { MouseEventHandler } from "react";
 import { useMemo, useRef, useState } from "react";
-import type { getStorageUnitsList } from "~/modules/inventory";
+import type { getStorageUnitsList } from "~/modules/inventory/inventory.service";
 import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";

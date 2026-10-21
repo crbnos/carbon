@@ -79,7 +79,9 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 `INNGEST_SERVE_HOST`, `INNGEST_TLS_HOST`.
 
 **Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
-single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
+single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`),
+`AUTH_COOKIE_SUFFIX` (optional; suffixes the auth cookie names when another deployment
+shares `DOMAIN` — EU sets `eu`, see `authentication-system.md`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
 Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for
@@ -126,8 +128,12 @@ account notifications loader and the app shell loader (`pushPublicKey`), not
 `getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
 exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`,
-`SLACK_OAUTH_REDIRECT_URL` — one Slack app serves the Assistant and workflow steps; the value may still name the legacy `/api/integrations/slack/oauth` path, which forwards to the connections callback), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
-`ONSHAPE_OAUTH_REDIRECT_URL`), Google (`GOOGLE_OAUTH_CLIENT_ID`, public and exposed by
+`SLACK_OAUTH_REDIRECT_URL` — one Slack app serves the Assistant and workflow steps; the value may still name the legacy `/api/integrations/slack/oauth` path, which forwards to the connections callback), Onshape (two Onshape apps, no shared variable:
+`ONSHAPE_CLIENT_ID/SECRET` + `ONSHAPE_OAUTH_REDIRECT_URL` for the `onshape` sync
+integration, `ONSHAPE_V2_CLIENT_ID/SECRET` + `ONSHAPE_V2_OAUTH_REDIRECT_URL` for the
+`onshape-v2` panel. `crbn up` writes `ONSHAPE_V2_OAUTH_REDIRECT_URL`
+into `.env.local` from the stack's `ERP_URL`, so each worktree host must be registered
+on the panel's Onshape app, or pinned in `.env` with `#force`), Google (`GOOGLE_OAUTH_CLIENT_ID`, public and exposed by
 `getBrowserEnv()` so the Google Calendar and Gmail cards can show "Coming soon";
 `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URL` — one Google app serves both
 workflow pieces; its own `google` feature group, so a half-set app is reported), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
@@ -147,7 +153,7 @@ The integrations page loader issues one for every integration with an `oauth` co
 save — its OAuth client is the customer's private app, not an env var — and each callback
 consumes it.
 Slack (like every workflow piece) binds its state separately: `signConnectionState`
-(`~/modules/settings/connection-state.server`) HMAC-signs `{companyId,pieceName,name,connectionId?,userId}`
+(`~/modules/settings/settings.service`) HMAC-signs `{companyId,pieceName,name,connectionId?,userId}`
 with `SESSION_SECRET` (10 min lifetime) and `api+/integrations.connections.callback.ts`
 verifies it against the caller's company and user. Managed deployment propagates both Ramp OAuth
 vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
@@ -156,6 +162,24 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 (optional, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
 `CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
+
+**Maintenance and status (both optional, server-only)** — `MAINTENANCE_MODE=true`
+makes `maintenanceMiddleware` (`@carbon/auth/middleware/maintenance.server`, in
+every app's root `middleware`, after `security`) answer every request with a 503:
+a page renders the root ErrorBoundary's 503 screen, an open tab gets the same
+screen on its next navigation, and a resource route (API, MCP, webhooks,
+`/api/inngest`) returns a bare 503 with `Retry-After: 300` so the caller retries.
+`/health` answers 200 `{ status: "maintenance" }` without probing the database,
+so the load balancer keeps the tasks. The flag is read at start: changing it
+needs a restart or redeploy. `SYSTEM_STATUS_URL` is a JSON document the app
+reads for `{ latestVersion?, announcement? }` (`systemStatusValidator`,
+`@carbon/lib/system-status`); unset means no request is made, on any edition.
+`getSystemStatus()` caches it in Redis for 5 minutes (a failure for 1), each
+app serves it at `api+/system-status`, and the shell shows the announcement
+with `AnnouncementBar` (`@carbon/react`). `latestVersion` is returned but not
+shown — Carbon has no version to compare it with. Neither variable is on the
+`workspaces` row, so `ci/src/deploy.ts` does not set them; `sst.config.ts`
+forwards them from the deploying process's environment.
 
 **Tracing (all optional)** — the standard OpenTelemetry variables, read raw by
 the OTel SDK (not `@carbon/env`): `OTEL_EXPORTER_OTLP_ENDPOINT` (or
@@ -177,6 +201,13 @@ deprecated alias), `APP_ENV` (`production | preview | development`; alias
 `app.carbon.ms` based on `CONTROLLED_ENVIRONMENT`. In preview, derive from
 `VERCEL_URL`. In dev, honor the `ERP_URL`/`MES_URL` that `crbn up` wrote into
 `.env.local` (portless `*.dev` hostnames), else `localhost:3000`/`3001`.
+
+MES posts to the ERP over HTTP (`erpPostingUrl`, `apps/mes/app/services/erp.ts`)
+and does not use `getAppUrl()` for it: on a preview that is MES itself. It takes
+`ERP_URL`; without it, `localhost:3000` in local dev and `app.carbon.ms` /
+`itar.carbon.ms` on Carbon Cloud production (`CARBON_EDITION=cloud`, not a
+preview). Anywhere else a posting fails with a configuration error, so a
+self-hosted or preview MES needs `ERP_URL`.
 
 ## Gotchas
 
