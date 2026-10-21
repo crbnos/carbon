@@ -79,6 +79,8 @@ export async function createDepotRepairOrders(
         .where("customerId", "=", salesReturnOrder.customerId)
         .where("companyId", "=", companyId)
         .where("status", "=", "Active")
+        // A project contract never covers a repair; coverage is a service contract's.
+        .where("billingBasis", "=", "Schedule")
         .execute()
   ]);
   if (open.length > 0) {

@@ -170,7 +170,7 @@ export default function ContractLineSummary({
                     {percent(line.materialHandlingPercent)}
                   </ReadOnlyField>
                 )}
-                <ReadOnlyField label={t`Funded Amount`}>
+                <ReadOnlyField label={t`Funded`}>
                   {money(line.fundedAmount)}
                 </ReadOnlyField>
                 <ReadOnlyField label={t`Funded Cost`}>

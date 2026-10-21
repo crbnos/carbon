@@ -143,13 +143,17 @@ export default function ContractDetailsRoute() {
         computedSchedule={computedSchedule}
       />
       {isProject && projectBillingCard}
-      <ContractInvoices
-        contract={contract}
-        lines={lines}
-        schedule={schedule}
-        credits={credits}
-        computedSchedule={computedSchedule}
-      />
+      {/* A project contract's schedule holds only its Fixed Price billing
+          events; with none, the card would be an empty list. */}
+      {(!isProject || lines.some((line) => line.billingMethod === "Fixed")) && (
+        <ContractInvoices
+          contract={contract}
+          lines={lines}
+          schedule={schedule}
+          credits={credits}
+          computedSchedule={computedSchedule}
+        />
+      )}
       {!isProject && projectBillingCard}
       <ContractRevenue
         contract={contract}

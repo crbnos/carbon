@@ -98,7 +98,7 @@ export function ContractLineBillingFields({
       )}
       <Number
         name="fundedAmount"
-        label={t`Funded Amount`}
+        label={t`Funded`}
         termId="funded-amount"
         helperText={
           fundedByActions
