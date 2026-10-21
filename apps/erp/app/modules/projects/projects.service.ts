@@ -2948,6 +2948,50 @@ export async function getContractBillingLines(
     .order("startDate", { ascending: true });
 }
 
+/**
+ * The project contracts that bill a project, each with all of its lines: a
+ * contract whose header names the project, and a contract with a line that
+ * bills it. A line bills its own project, which may differ from the
+ * header's (or the header may name none), so the header alone misses
+ * contracts. Two reads, whatever the number of contracts.
+ */
+export async function getProjectContracts(
+  client: Client,
+  args: { companyId: string; projectId: string }
+) {
+  const [byHeader, byLine] = await Promise.all([
+    client
+      .from("customerContract")
+      .select(
+        "id, customerContractId, name, status, projectId, lines:customerContractLine!customerContractLine_contract_fkey(id, projectId, amendsLineId, billingMethod, fundedAmount, quantity, rate)"
+      )
+      .eq("companyId", args.companyId)
+      .eq("projectId", args.projectId)
+      .eq("billingBasis", "Project"),
+    client
+      .from("customerContractLine")
+      .select(
+        "contract:customerContract!customerContractLine_contract_fkey!inner(id, customerContractId, name, status, projectId, lines:customerContractLine!customerContractLine_contract_fkey(id, projectId, amendsLineId, billingMethod, fundedAmount, quantity, rate))"
+      )
+      .eq("companyId", args.companyId)
+      .eq("projectId", args.projectId)
+      .eq("contract.billingBasis", "Project")
+  ]);
+
+  const byId = new Map(
+    (byHeader.data ?? []).map((contract) => [contract.id, contract])
+  );
+  for (const row of byLine.data ?? []) {
+    if (row.contract) byId.set(row.contract.id, row.contract);
+  }
+  return {
+    data: [...byId.values()].sort((a, b) =>
+      a.customerContractId.localeCompare(b.customerContractId)
+    ),
+    error: byHeader.error ?? byLine.error
+  };
+}
+
 export type ProjectContractRevenue = {
   /** Σ the line's months recognized in Carbon or externally. */
   recognizedToDate: number;

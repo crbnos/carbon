@@ -12,8 +12,10 @@ import { useLoaderData, useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   buildProjectCostFigures,
+  contractLinesBillingProject,
   getChildServiceProjectCosts,
   getProjectContractRevenue,
+  getProjectContracts,
   getProjectCostSummary,
   getProjectElements,
   getProjectMembers,
@@ -24,7 +26,11 @@ import {
 } from "~/modules/projects";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectOverview from "~/modules/projects/ui/Project/ProjectOverview";
-import { getContractLineFunding, projectContractFunded } from "~/modules/sales";
+import {
+  currentContractLines,
+  getContractLineFunding,
+  projectContractFunded
+} from "~/modules/sales";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 
@@ -88,18 +94,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .order("createdAt", { ascending: false })
       .limit(ACTIVITY_LIMIT),
-    // The project contracts that bill the project, with their lines.
-    canViewSales
-      ? client
-          .from("customerContract")
-          .select(
-            "id, customerContractId, name, status, lines:customerContractLine!customerContractLine_contract_fkey(id, billingMethod, fundedAmount, quantity, rate)"
-          )
-          .eq("companyId", companyId)
-          .eq("projectId", projectId)
-          .eq("billingBasis", "Project")
-          .order("customerContractId")
-      : null,
+    // The project contracts that bill the project, by header or by line,
+    // with their lines.
+    canViewSales ? getProjectContracts(client, { companyId, projectId }) : null,
     // The project's contract billable items that wait for review.
     canReviewBilling
       ? client
@@ -138,12 +135,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const elementRows = elements.data ?? [];
 
   // The Contract card: every confirmed project contract (Active or Ended)
-  // together. Billing lines (T&M, Cost Plus) give the cost, billed and
-  // unbilled amounts; a Fixed Price line is billed by its invoiced billing
-  // events. Three reads, whatever the number of lines.
+  // together, counting only the lines that bill this project. Billing lines
+  // (T&M, Cost Plus) give the cost, billed and unbilled amounts; a Fixed
+  // Price line is billed by its invoiced billing events. Three reads,
+  // whatever the number of lines.
   const contracts = projectContracts?.data ?? [];
   const confirmed = contracts.filter((contract) => contract.status !== "Draft");
-  const confirmedLines = confirmed.flatMap((contract) => contract.lines);
+  const confirmedLines = confirmed.flatMap((contract) =>
+    contractLinesBillingProject(contract, projectId)
+  );
+  // Funded counts each line once at its current terms: an amendment's copy
+  // replaces the line it amends, on whichever project the copy now bills.
+  const currentLines = confirmed.flatMap((contract) =>
+    contractLinesBillingProject(
+      { ...contract, lines: currentContractLines(contract.lines) },
+      projectId
+    )
+  );
   const billingLineIds = confirmedLines
     .filter((line) => line.billingMethod !== "Fixed")
     .map((line) => line.id);
@@ -197,7 +205,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           id: (
             confirmed.find((row) => row.status === "Active") ?? confirmed[0]!
           ).id,
-          funded: projectContractFunded(confirmedLines),
+          funded: projectContractFunded(currentLines),
           incurred: sum(fundingRows.map((row) => Number(row.incurred))),
           billed:
             sum(fundingRows.map((row) => Number(row.billed))) +

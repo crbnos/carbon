@@ -5297,3 +5297,13 @@ export function buildMspdiXml(input: MspdiInput): string {
   add(0, "</Project>");
   return `${lines.join("\n")}\n`;
 }
+
+/** The lines of a project contract that bill `projectId`: a line's own
+ *  project, else the contract's. */
+export function contractLinesBillingProject<
+  T extends { projectId: string | null }
+>(contract: { projectId: string | null; lines: T[] }, projectId: string): T[] {
+  return contract.lines.filter(
+    (line) => (line.projectId ?? contract.projectId) === projectId
+  );
+}

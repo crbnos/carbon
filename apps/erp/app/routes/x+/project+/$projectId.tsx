@@ -21,6 +21,7 @@ import {
   getProject,
   getProjectBorrows,
   getProjectChangeRequests,
+  getProjectContracts,
   getProjectElements,
   getProjectLabels,
   getProjectMilestones,
@@ -115,15 +116,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId),
     getContractBillingLines(client, { companyId, projectId }),
-    // The project contracts that bill the project: the Billing page names
-    // them, and offers a new one when there is none.
-    client
-      .from("customerContract")
-      .select("id, customerContractId, name, status")
-      .eq("companyId", companyId)
-      .eq("projectId", projectId)
-      .eq("billingBasis", "Project")
-      .order("customerContractId"),
+    // The project contracts that bill the project, by header or by line:
+    // the Billing page names them, and offers a new one when there is none.
+    getProjectContracts(client, { companyId, projectId }),
     // The client bypasses RLS: contracts reach only a user who can view
     // sales.
     getUserClaims(userId, companyId),
@@ -260,7 +255,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       "view",
       companyId
     )
-      ? (projectContracts.data ?? [])
+      ? projectContracts.data.map((contract) => ({
+          id: contract.id,
+          customerContractId: contract.customerContractId,
+          name: contract.name,
+          status: contract.status
+        }))
       : [],
     hasProjectStock: (stockRows.count ?? 0) > 0,
     hasPegs: (pegRows.count ?? 0) > 0

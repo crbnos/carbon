@@ -310,8 +310,11 @@ upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
   billing line here.
 - Project **Billing** page (`$projectId.billing.tsx`): in the project sidebar under
   Costs for every Contract project (`showBilling`: `costTreatment = 'Contract'`), with
-  `view: sales`. The `$projectId.tsx` loader also returns `projectContracts` (the project's
-  `billingBasis = 'Project'` contracts, empty without `view: sales`). With none, the page
+  `view: sales`. The `$projectId.tsx` loader also returns `projectContracts`
+  (`getProjectContracts`: the `billingBasis = 'Project'` contracts whose header names the
+  project OR that have a line whose own `projectId` is the project — a line bills its own
+  project, so a backfilled contract with no header project still counts; empty without
+  `view: sales`). With none, the page
   is an `Empty` "No project contract bills this project" with **New Project Contract**
   (`path.to.newProjectContractForProject`, `create: sales`). Otherwise a row names each
   project contract with its status, then the contract lines table (`ProjectBillingLines`:
@@ -320,8 +323,10 @@ upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
   billing lines yet"), then the project's billable items.
 - Project Overview (`$projectId._index.tsx`, `ProjectOverview`), for `view: sales`: a
   **Contract** card under Budget when a confirmed (not Draft) project contract bills the
-  project, all of them summed: `FundingBar` (compact) and Funded
-  (`projectContractFunded`), Cost, Billed (billing lines' funding rows plus Fixed Price
+  project, all of them summed over the lines that bill THIS project
+  (`contractLinesBillingProject`: the line's `projectId`, else the header's): `FundingBar`
+  (compact) and Funded (`projectContractFunded`, which skips a line an amendment
+  replaced — `currentContractLines`), Cost, Billed (billing lines' funding rows plus Fixed Price
   schedule rows on Invoiced or Billed Externally invoices), Unbilled and Revenue
   (`getProjectContractRevenue`), linking the first Active contract. **Needs attention**
   rows on a Contract project: no project contract (links the Billing page), a Draft

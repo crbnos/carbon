@@ -79,10 +79,10 @@ export default function useProjectsSubmodules() {
   // A DCAA labor transfer always waits for approval, so Approvals shows in
   // DCAA mode even when the company does not require approval of all time.
   // Contract billable items that wait for review also show it.
-  const showApprovals =
+  const showsTime =
     settings.timesheetApprovalRequired === true ||
-    settings.timekeepingControls === "DCAA" ||
-    billingReviewCount > 0;
+    settings.timekeepingControls === "DCAA";
+  const showApprovals = showsTime || billingReviewCount > 0;
 
   const projectsRoutes: AuthenticatedRouteGroup[] = [
     {
@@ -105,7 +105,11 @@ export default function useProjectsSubmodules() {
           ? [
               {
                 name: t`Approvals`,
-                to: path.to.projectTimesheetApprovals,
+                // Only billable items wait: open their tab, not an empty
+                // Time tab.
+                to: showsTime
+                  ? path.to.projectTimesheetApprovals
+                  : `${path.to.projectTimesheetApprovals}?tab=billing`,
                 icon: <LuClipboardCheck />,
                 count: counts
                   ? counts.approvalCount + counts.billingReviewCount
