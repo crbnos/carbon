@@ -11,21 +11,21 @@
 - [x] Task 2: Add the basis helpers and validator rules
 - [x] Task 3: Make the sales services and the server function basis-aware
 - [x] Task 4: Test, and fix if it fails, Confirm of a Fixed Percent Complete line
-- [ ] Task 5: Split the list and the nav into Service Contracts and Project Contracts
-- [ ] Task 6: Create a project contract and give it its own Details step
-- [ ] Task 7: Give a project contract its own Lines step and line drawer
-- [ ] Task 8: Make the Invoicing step basis-aware, with Fixed Price billing events
-- [ ] Task 9: Add the project contract gaps to the Review step
-- [ ] Task 10: Make the contract page basis-aware
-- [ ] Task 11: Keep service order coverage on service contracts
-- [ ] Task 12: Show the Billing page for every Contract project
-- [ ] Task 13: Add the Contract card and the Needs attention rows to the Overview
-- [ ] Task 14: Show Approvals while billable items wait
-- [ ] Task 15: Apply the canonical labels, the helper text and the glossary
-- [ ] Task 16: Add the Journal card to the Draft revenue run
-- [ ] Task 17: Write the "Project to cash" guide and update the reference pages
-- [ ] Task 18: Update the rules and AGENTS files
-- [ ] Task 19: Fill the translations
+- [x] Task 5: Split the list and the nav into Service Contracts and Project Contracts
+- [x] Task 6: Create a project contract and give it its own Details step
+- [x] Task 7: Give a project contract its own Lines step and line drawer
+- [x] Task 8: Make the Invoicing step basis-aware, with Fixed Price billing events
+- [x] Task 9: Add the project contract gaps to the Review step
+- [x] Task 10: Make the contract page basis-aware
+- [x] Task 11: Keep service order coverage on service contracts
+- [x] Task 12: Show the Billing page for every Contract project
+- [x] Task 13: Add the Contract card and the Needs attention rows to the Overview
+- [x] Task 14: Show Approvals while billable items wait
+- [x] Task 15: Apply the canonical labels, the helper text and the glossary
+- [x] Task 16: Add the Journal card to the Draft revenue run
+- [x] Task 17: Write the "Project to cash" guide and update the reference pages
+- [x] Task 18: Update the rules and AGENTS files
+- [x] Task 19: Fill the translations
 - [ ] Task 20: Verify in the browser
 
 ## Dependencies
@@ -486,3 +486,15 @@ pnpm lingui:extract 2>&1 | grep -A3 "erp:" | head
 - Task 3 (`9e2905e6e6`): `upsertContractLine` forces a project contract line to One-time before the basis check, so its Recurring refusal never fires there; confirm and amend still refuse. Amend checks the lines it adds, not the copies of changed lines. `contract-lifecycle.test.ts` now builds its T&M contracts as `billingBasis: "Project"`.
 - Task 4 (`03563a5fab`): the bug was real ("The revenue plan no longer recognizes each line's billed total"). Confirm and the `$id.tsx` residual check now skip Right to Invoice and Percent Complete lines. 18 of 18 lifecycle tests pass.
 - Task 6 must post `renewalUplift` 0 as a hidden field: the validator still requires it.
+- Task 5 (`5f4e73fe47`): both nav entries share the `customerContract` saved views. A project contract list also hides Invoiced to Date (schedule-only).
+- Task 6 (`6543863bfc`): `ContractProject` cannot filter to Contract projects; the Review gap catches a wrong treatment. `contractSetupStepsFor(basis)` picks the steps.
+- Task 7 (`4703be8e48`): `$id.$lineId.update.tsx` now carries the billing terms, CLIN and parent CLIN. Before, a cell edit saved a T&M line without them and turned it back into Fixed. New project lines default to T&M, Right to Invoice.
+- Task 8 (`54805e7ba8`): the Invoicing step passes only Fixed lines to `ContractInvoiceGrid` ("Billing Events").
+- Task 9 (`da9a838e5c`): billing elements are read with one `.in("id", …)` query, so an element of another project shows as a gap, not a false pass. A fact the user cannot read gives no gap.
+- Task 10 (`698b2c2847`): `create-project-billing-invoices` already took `customerContractId`; the Invoice action drafts project billing BEFORE the schedule invoices, as the nightly job does.
+- Task 11 (`dc05e26acb`): the service order page's coverage picker is filtered too. `d4f62b727d` also filters Depot Repair's contract pick (`post-receipt/repair.ts`).
+- Tasks 12–14 (`3e074405ff`, `0cd04b77cb`, `47aee89587`): no "Cancelled" contract status exists, so the project's contract read has no status filter. The Contract card's Billed includes Fixed Price events that are Invoiced or Billed Externally.
+- Task 15 (`7915417418`): glossary hrefs point at page roots; repointing `fixed-price` and `project-contract` at the new sections needs Brad's OK (`docs/content/AGENTS.md` → Ask First). `d4f62b727d` renamed the line form's "Funded Amount" to "Funded".
+- Task 16 (`72295a77bb`): the Journal card nets each account to one side.
+- Tasks 17–18 (`a2a6256050`, `e5a3efcdde`).
+- Task 19 (`22be6410ed`): 2,208 strings filled across 12 locales; `linguito check` and `check-glossary` pass (advisory hits only).
