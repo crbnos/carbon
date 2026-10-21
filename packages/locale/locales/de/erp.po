@@ -4774,6 +4774,9 @@ msgstr "Abrechnungselement"
 msgid "Billing Element"
 msgstr "Abrechnungselement"
 
+msgid "Billing Events"
+msgstr ""
+
 msgid "Billing Frequency"
 msgstr "Fakturierungshäufigkeit"
 
@@ -4782,6 +4785,9 @@ msgstr "Abrechnungsmethode"
 
 msgid "Billing Method"
 msgstr "Abrechnungsmethode"
+
+msgid "Billing Period"
+msgstr ""
 
 msgid "Billing Periods"
 msgstr "Abrechnungsperioden"
@@ -9709,6 +9715,9 @@ msgstr "Jede physische Einheit erhält ihre eigene verfolgte Einheit und eine ei
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Der Verkäufer (oder Ersteller) jeder Mietvereinbarung oder eines Vertrags erhält eine tägliche Zusammenfassung seiner Rechnungen."
 
+msgid "Each row is an invoice for a Fixed Price line. Add, split or move rows until each line's rows add up to its price."
+msgstr ""
+
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Die Fremdarbeitsgänge jedes Lieferanten aus jedem Fertigungsauftrag werden auf einer neuen Bestellung oder auf einem bestehenden Entwurf platziert, den Sie wählen."
 
@@ -12784,6 +12793,9 @@ msgstr "Wie viele wurden tatsächlich gepickt?"
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Wie oft der Kunde fakturiert wird und ab wann. Die unten stehenden Rechnungen folgen."
+
+msgid "How often the project is billed. Each billing period is invoiced after it ends."
+msgstr ""
 
 msgid "How often this gauge must be recalibrated; combined with Last Calibration Date to recompute Next Calibration Date automatically."
 msgstr "Wie oft dieses Prüfmittel kalibriert werden muss; kombiniert mit dem letzten Kalibrierungsdatum, um das nächste Kalibrierungsdatum automatisch neu zu berechnen."
@@ -27327,6 +27339,9 @@ msgstr "Zeit"
 
 msgid "Time & Materials"
 msgstr "Zeit & Materialien"
+
+msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr ""
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Zeit- und Kostenauslastung der Leihflotte nach Anlage und Klasse"

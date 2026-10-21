@@ -10,6 +10,7 @@ import {
   Switch,
   toast
 } from "@carbon/react";
+import type { ContractBillingBasis } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -91,6 +92,9 @@ export function useContractTermSave(contractId: string) {
 
 type ContractBillToProps = {
   contract: Contract;
+  /** A project contract bills each billing period in arrears on calendar
+   *  periods, so only its billing period is a choice. */
+  billingBasis?: ContractBillingBasis | null;
   /** The first invoice the schedule plans — what an empty First Invoice
    *  means. */
   plannedFirstInvoice: string | null;
@@ -100,13 +104,13 @@ type ContractBillToProps = {
  *  its own as it changes; the invoice preview below follows. */
 const ContractBillTo = ({
   contract,
+  billingBasis,
   plannedFirstInvoice
 }: ContractBillToProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const companySettings = useSettings();
   const labels = useContractLabels();
-  const { formatDate } = useDateFormatter();
 
   const contractId = contract.id!;
   const { save, submit } = useContractTermSave(contractId);
@@ -196,103 +200,167 @@ const ContractBillTo = ({
         </div>
       </SetupSection>
 
-      <SetupSection
-        title={<Trans>Schedule</Trans>}
-        description={
-          <Trans>
-            How often the customer is invoiced, and from when. The invoices
-            below follow.
-          </Trans>
-        }
-      >
-        <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-          <TermForm name="billingFrequency" value={contract.billingFrequency}>
-            <Select
-              name="billingFrequency"
-              label={t`Frequency`}
-              isReadOnly={isDisabled}
-              options={contractBillingFrequencies.map((value) => ({
-                value,
-                label: labels.billingFrequency[value]
-              }))}
-              onChange={(option) => {
-                if (option?.value) onChange("billingFrequency", option.value);
-              }}
-            />
-          </TermForm>
-          <TermForm name="firstInvoiceDate" value={contract.firstInvoiceDate}>
-            <DatePicker
-              name="firstInvoiceDate"
-              label={t`First Invoice`}
-              isDisabled={isDisabled}
-              helperText={
-                !contract.firstInvoiceDate && plannedFirstInvoice
-                  ? t`Planned for ${formatDate(plannedFirstInvoice)}`
-                  : undefined
+      {billingBasis === "Project" ? (
+        <SetupSection
+          title={<Trans>Billing</Trans>}
+          description={
+            <Trans>
+              How often the project is billed. Each billing period is invoiced
+              after it ends.
+            </Trans>
+          }
+        >
+          <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+            <TermForm name="billingFrequency" value={contract.billingFrequency}>
+              <Select
+                name="billingFrequency"
+                label={t`Billing Period`}
+                isReadOnly={isDisabled}
+                options={contractBillingFrequencies.map((value) => ({
+                  value,
+                  label: labels.billingFrequency[value]
+                }))}
+                onChange={(option) => {
+                  if (option?.value) onChange("billingFrequency", option.value);
+                }}
+              />
+            </TermForm>
+            <ContractInvoiceAutomation
+              contract={contract}
+              companyLabel={
+                labels.invoiceAutomation[companySettings.invoiceAutomation]
               }
-              onChange={(date) => onChange("firstInvoiceDate", date)}
+              onSubmit={submit}
             />
-          </TermForm>
-          <ChoiceCardGroup<BillingTiming>
-            className="md:col-span-2"
-            direction="row"
-            label={t`Billing Timing`}
-            value={contract.billingTiming ?? "Advance"}
-            onChange={(value) => onChange("billingTiming", value)}
-            options={[
-              {
-                value: "Advance",
-                title: labels.billingTiming.Advance,
-                description: t`Each period is invoiced on its first day, before the service is delivered.`,
-                icon: <LuCalendarClock />,
-                disabled: isDisabled
-              },
-              {
-                value: "Arrears",
-                title: labels.billingTiming.Arrears,
-                description: t`Each period is invoiced on its last day, after the service is delivered.`,
-                icon: <LuCalendarCheck />,
-                disabled: isDisabled
-              }
-            ]}
-          />
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id="billingAlignment"
-              isChecked={contract.billingAlignment === "Calendar"}
-              disabled={isDisabled}
-              onCheckedChange={(checked) =>
-                onChange(
-                  "billingAlignment",
-                  checked === true ? "Calendar" : "Anniversary"
-                )
-              }
-            />
-            <label htmlFor="billingAlignment" className="flex flex-col gap-1">
-              <span className="text-sm font-medium">
-                <Trans>Align to calendar periods</Trans>
-              </span>
-              <span className="text-xs text-muted-foreground">
-                <Trans>
-                  Bill whole months, quarters or years, with a part period
-                  first.
-                </Trans>
-              </span>
-            </label>
           </div>
-        </div>
-      </SetupSection>
+        </SetupSection>
+      ) : (
+        <ContractScheduleTerms
+          contract={contract}
+          isDisabled={isDisabled}
+          plannedFirstInvoice={plannedFirstInvoice}
+          onChange={onChange}
+        />
+      )}
 
-      <ContractInvoicingAdvanced
-        contract={contract}
-        isDisabled={isDisabled}
-        companyLabel={
-          labels.invoiceAutomation[companySettings.invoiceAutomation]
-        }
-        onSave={onChange}
-        onSubmit={submit}
-      />
+      {billingBasis !== "Project" && (
+        <ContractInvoicingAdvanced
+          contract={contract}
+          isDisabled={isDisabled}
+          companyLabel={
+            labels.invoiceAutomation[companySettings.invoiceAutomation]
+          }
+          onSave={onChange}
+          onSubmit={submit}
+        />
+      )}
     </>
+  );
+};
+
+/** A service contract's schedule: how often, from when, before or after
+ *  the period, and on which periods. */
+const ContractScheduleTerms = ({
+  contract,
+  isDisabled,
+  plannedFirstInvoice,
+  onChange
+}: {
+  contract: Contract;
+  isDisabled: boolean;
+  plannedFirstInvoice: string | null;
+  onChange: (field: Term, value: string | null) => void;
+}) => {
+  const { t } = useLingui();
+  const labels = useContractLabels();
+  const { formatDate } = useDateFormatter();
+
+  return (
+    <SetupSection
+      title={<Trans>Schedule</Trans>}
+      description={
+        <Trans>
+          How often the customer is invoiced, and from when. The invoices below
+          follow.
+        </Trans>
+      }
+    >
+      <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+        <TermForm name="billingFrequency" value={contract.billingFrequency}>
+          <Select
+            name="billingFrequency"
+            label={t`Frequency`}
+            isReadOnly={isDisabled}
+            options={contractBillingFrequencies.map((value) => ({
+              value,
+              label: labels.billingFrequency[value]
+            }))}
+            onChange={(option) => {
+              if (option?.value) onChange("billingFrequency", option.value);
+            }}
+          />
+        </TermForm>
+        <TermForm name="firstInvoiceDate" value={contract.firstInvoiceDate}>
+          <DatePicker
+            name="firstInvoiceDate"
+            label={t`First Invoice`}
+            isDisabled={isDisabled}
+            helperText={
+              !contract.firstInvoiceDate && plannedFirstInvoice
+                ? t`Planned for ${formatDate(plannedFirstInvoice)}`
+                : undefined
+            }
+            onChange={(date) => onChange("firstInvoiceDate", date)}
+          />
+        </TermForm>
+        <ChoiceCardGroup<BillingTiming>
+          className="md:col-span-2"
+          direction="row"
+          label={t`Billing Timing`}
+          value={contract.billingTiming ?? "Advance"}
+          onChange={(value) => onChange("billingTiming", value)}
+          options={[
+            {
+              value: "Advance",
+              title: labels.billingTiming.Advance,
+              description: t`Each period is invoiced on its first day, before the service is delivered.`,
+              icon: <LuCalendarClock />,
+              disabled: isDisabled
+            },
+            {
+              value: "Arrears",
+              title: labels.billingTiming.Arrears,
+              description: t`Each period is invoiced on its last day, after the service is delivered.`,
+              icon: <LuCalendarCheck />,
+              disabled: isDisabled
+            }
+          ]}
+        />
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="billingAlignment"
+            isChecked={contract.billingAlignment === "Calendar"}
+            disabled={isDisabled}
+            onCheckedChange={(checked) =>
+              onChange(
+                "billingAlignment",
+                checked === true ? "Calendar" : "Anniversary"
+              )
+            }
+          />
+          <label htmlFor="billingAlignment" className="flex flex-col gap-1">
+            <span className="text-sm font-medium">
+              <Trans>Align to calendar periods</Trans>
+            </span>
+            <span className="text-xs text-muted-foreground">
+              <Trans>
+                Bill whole months, quarters or years, with a part period first.
+              </Trans>
+            </span>
+          </label>
+        </div>
+      </div>
+    </SetupSection>
   );
 };
 
@@ -311,9 +379,6 @@ const ContractInvoicingAdvanced = ({
   onSave: (field: Term, value: string | null) => void;
   onSubmit: (fields: Record<string, string>) => Promise<void>;
 }) => {
-  const { t } = useLingui();
-  const permissions = usePermissions();
-  const labels = useContractLabels();
   const [isOpen, setIsOpen] = useState(
     !!contract.billedThrough || !!contract.invoiceAutomation
   );
@@ -331,35 +396,11 @@ const ContractInvoicingAdvanced = ({
       </Button>
       {isOpen && (
         <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-          <TermForm
-            name="invoiceAutomation"
-            value={contract.invoiceAutomation ?? COMPANY_DEFAULT}
-          >
-            <Select
-              name="invoiceAutomation"
-              label={t`Invoicing`}
-              helperText={t`What happens to an invoice once it is drafted`}
-              isReadOnly={!permissions.can("update", "sales")}
-              options={[
-                {
-                  value: COMPANY_DEFAULT,
-                  label: t`Company default (${companyLabel})`
-                },
-                ...invoiceAutomations.map((mode) => ({
-                  value: mode,
-                  label: labels.invoiceAutomation[mode]
-                }))
-              ]}
-              onChange={(option) => {
-                const next =
-                  !option?.value || option.value === COMPANY_DEFAULT
-                    ? null
-                    : option.value;
-                if ((contract.invoiceAutomation ?? null) === next) return;
-                onSubmit({ intent: "invoiceAutomation", value: next ?? "" });
-              }}
-            />
-          </TermForm>
+          <ContractInvoiceAutomation
+            contract={contract}
+            companyLabel={companyLabel}
+            onSubmit={onSubmit}
+          />
           <div className="md:col-span-2">
             <ContractMigrationSwitch
               contract={contract}
@@ -372,6 +413,53 @@ const ContractInvoicingAdvanced = ({
         </div>
       )}
     </section>
+  );
+};
+
+/** What happens to an invoice once it is drafted; empty follows the
+ *  company's setting. Saves through its own intent, in any status. */
+const ContractInvoiceAutomation = ({
+  contract,
+  companyLabel,
+  onSubmit
+}: {
+  contract: Contract;
+  companyLabel: string;
+  onSubmit: (fields: Record<string, string>) => Promise<void>;
+}) => {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const labels = useContractLabels();
+  return (
+    <TermForm
+      name="invoiceAutomation"
+      value={contract.invoiceAutomation ?? COMPANY_DEFAULT}
+    >
+      <Select
+        name="invoiceAutomation"
+        label={t`Invoicing`}
+        helperText={t`What happens to an invoice once it is drafted`}
+        isReadOnly={!permissions.can("update", "sales")}
+        options={[
+          {
+            value: COMPANY_DEFAULT,
+            label: t`Company default (${companyLabel})`
+          },
+          ...invoiceAutomations.map((mode) => ({
+            value: mode,
+            label: labels.invoiceAutomation[mode]
+          }))
+        ]}
+        onChange={(option) => {
+          const next =
+            !option?.value || option.value === COMPANY_DEFAULT
+              ? null
+              : option.value;
+          if ((contract.invoiceAutomation ?? null) === next) return;
+          onSubmit({ intent: "invoiceAutomation", value: next ?? "" });
+        }}
+      />
+    </TermForm>
   );
 };
 

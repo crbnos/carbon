@@ -4774,6 +4774,9 @@ msgstr "Billing element"
 msgid "Billing Element"
 msgstr "Billing Element"
 
+msgid "Billing Events"
+msgstr "Billing Events"
+
 msgid "Billing Frequency"
 msgstr "Billing Frequency"
 
@@ -4782,6 +4785,9 @@ msgstr "Billing method"
 
 msgid "Billing Method"
 msgstr "Billing Method"
+
+msgid "Billing Period"
+msgstr "Billing Period"
 
 msgid "Billing Periods"
 msgstr "Billing Periods"
@@ -9709,6 +9715,9 @@ msgstr "Each physical unit gets its own tracked entity and unique number — one
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 
+msgid "Each row is an invoice for a Fixed Price line. Add, split or move rows until each line's rows add up to its price."
+msgstr "Each row is an invoice for a Fixed Price line. Add, split or move rows until each line's rows add up to its price."
+
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 
@@ -12784,6 +12793,9 @@ msgstr "How many were actually picked?"
 
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "How often the customer is invoiced, and from when. The invoices below follow."
+
+msgid "How often the project is billed. Each billing period is invoiced after it ends."
+msgstr "How often the project is billed. Each billing period is invoiced after it ends."
 
 msgid "How often this gauge must be recalibrated; combined with Last Calibration Date to recompute Next Calibration Date automatically."
 msgstr "How often this gauge must be recalibrated; combined with Last Calibration Date to recompute Next Calibration Date automatically."
@@ -27327,6 +27339,9 @@ msgstr "Time"
 
 msgid "Time & Materials"
 msgstr "Time & Materials"
+
+msgid "Time & Materials and Cost Plus lines bill from project cost every billing period."
+msgstr "Time & Materials and Cost Plus lines bill from project cost every billing period."
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"
