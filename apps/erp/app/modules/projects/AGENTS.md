@@ -219,8 +219,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   contract billing review (Phase 4a): the **Billing** tab of Projects → Approvals
   (`projects+/approvals.tsx?tab=billing`; `billing.tsx` only redirects there, and
   `billing.update.tsx` still takes the actions) and the project's **Billing** page under
-  Costs (`$projectId.billing.tsx`, a Contract project that a contract line bills), UI in
-  `ui/Billing/`. Both, and `billing.update.tsx`, also need `view: sales`: without it the
+  Costs (`$projectId.billing.tsx`, every Contract project; with no project contract it is
+  an empty state with New Project Contract), UI in `ui/Billing/`. Both, and `billing.update.tsx`, also need `view: sales`: without it the
   project sidebar has no Billing link, Approvals has no tabs, and the routes refuse.
 - `updateProjectElementBilling` — the element page's **Billing element** switch
   (`isBilling`); refuses a second billing element in one branch, a Parameter, and turning
@@ -228,8 +228,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   that is not Contract.
 - `getProjectContractRevenue` (`ProjectContractRevenue`) — per contract line, the revenue
   recognized to date and the latest month's progress, EAC and price (Phase 4b). The project's
-  Billing page passes it to `ProjectBillingLines` (**Percent Complete**, **Revenue
-  Recognized**), and the contract page (`contract+/$id.details.tsx`) to
+  Billing page passes it to `ProjectBillingLines` (**Progress**, **Revenue**), the
+  Overview to its Contract card, and the contract page (`contract+/$id.details.tsx`) to
   `ContractProjectBilling`.
 - `getProjectMembers`, `addProjectMember`, `removeProjectMember`;
   `getTimesheetRevisions`, `getPendingReviewEntries`, `acceptTimesheetReview`;
@@ -255,7 +255,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 The screens open in layers (`.claude/rules/projects-system.md` → *Information architecture*;
 plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
 - `ui/useProjectsSubmodules.tsx` — the module sidebar: Projects, My Time, Approvals (with a
-  count, only while time approval or DCAA is on), Reports; Setup: Labor Categories, Planning
+  count, while time approval or DCAA is on or contract billable items wait for review;
+  `getBillingReviewCountForUser`, `projects.server.ts`), Reports; Setup: Labor Categories, Planning
   Groups. `ui/useGovernmentContracting.ts` — shows the government fields (Layer 5):
   `useGovernmentContracting` (DCAA or the feature) for most screens, and
   `useGovernmentContractingFields` for the element page's group (DCAA and the feature; DCAA
@@ -267,7 +268,8 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   transitions; no primary button), `ProjectSidebar` + `useProjectSidebarLinks`
   (`useProjectNavigation.tsx`), `ProjectElementTree` (the sidebar tree and the Plan page's
   only search), `ProjectOverview` (the Overview's card dashboard; the
-  `$projectId._index.tsx` loader computes progress, coming up and activity) +
+  `$projectId._index.tsx` loader computes progress, coming up, activity, the Contract card
+  and the project contract Needs attention rows, `.claude/rules/project-billing.md` → UI) +
   `ProjectProperties` (its Details card, in the row layout),
   `ProjectMembers`, `ProjectControlSettings.ee` (a properties group),
   `StopWorkModal.ee`.

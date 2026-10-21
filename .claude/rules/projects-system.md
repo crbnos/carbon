@@ -42,9 +42,12 @@ opens in layers. Each layer shows the least that a user needs.
 
 - **Module sidebar** (`ui/useProjectsSubmodules.tsx`). Manage: **Projects**, **My Time**,
   **Approvals**, **Reports**. Setup: **Labor Categories**, **Planning Groups**. The groups
-  do not collapse. Approvals shows only while `timesheetApprovalRequired` is on or
-  `timekeepingControls = 'DCAA'`. Its count comes from the `projects+/_layout.tsx` loader
-  (`getApprovalCountForUser`). Transfers and Billing are not in the sidebar: a transfer
+  do not collapse. Approvals shows while `timesheetApprovalRequired` is on,
+  `timekeepingControls = 'DCAA'`, or contract billable items wait for review (Unbilled or
+  On Hold). Its count is the sum of two counts from the `projects+/_layout.tsx` and
+  `project+/_layout.tsx` loaders: `getApprovalCountForUser` (time) and
+  `getBillingReviewCountForUser` (billable items; 0 without `update: projects` and
+  `view: sales`). Transfers and Billing are not in the sidebar: a transfer
   opens from the project's Stock page, and billing review is the Billing tab of Approvals.
   The old URLs still work.
 - **Projects list** (`ProjectsTable`): Identifier, Name, Status, Owner, Due and Budget used.
@@ -54,7 +57,10 @@ opens in layers. Each layer shows the least that a user needs.
   button. Then the page links (`useProjectSidebarLinks`): Overview, Plan, Schedule, Costs
   and Time. There is no Settings page (Brad, 2026-10-19). The Overview (`ProjectOverview`) is a
   dashboard of light cards in two columns. The left column has About (the description), Progress,
-  Coming up, Budget and Needs attention. Progress shows the share of work elements done (whole
+  Coming up, Budget, Contract (a Contract project billed by a confirmed project contract,
+  `view: sales`) and Needs attention. Needs attention also names, on a Contract project, a
+  missing or Draft project contract and the contract billable items that wait for review
+  (see `project-billing.md` → UI). Progress shows the share of work elements done (whole
   percent, rounded down; Cancelled work is left out), the days to the due date, the overdue count
   and a bar per state. Coming up lists open elements with a target date. The right column has
   Details, Milestones, Members (only with `restrictCharging`) and Recent activity. Recent activity
@@ -74,7 +80,8 @@ opens in layers. Each layer shows the least that a user needs.
   and its "Search elements" box show under the links (the search writes `?search=`
   only on the Plan page; elsewhere it filters the tree). Under Costs, each link shows only
   when it applies: Stock (the project has an `itemLedger` row), Pegging (a current
-  `projectPeg`) and Billing (a Contract project that a contract line bills). The header
+  `projectPeg`) and Billing (every Contract project, `showBilling`, with `view: sales`;
+  with no project contract the page offers New Project Contract). The header
   (`ProjectHeader`, on `RecordHeader`) is one line: the identifier and the name (a button
   that opens the project switcher), the status badge, then the copy button and the ⋯ menu
   at the right end. It has no primary button. The ⋯ menu lists the status transitions
@@ -82,7 +89,9 @@ opens in layers. Each layer shows the least that a user needs.
   requests, Copy project and Template.
 - **Element page** (`/x/project/$id/element/$elementId`, `ElementView`): a full-screen page
   with no project header and no project sidebar. See *The Plan page*.
-- **Layer 5: a feature shows only when it is used.** Stock, Pegging and Billing as above.
+- **Layer 5: a feature shows only when it is used.** Stock and Pegging as above. Billing is
+  the exception: it shows on every Contract project, so a new one shows how to start
+  billing.
   Earned value on the Costs page needs an element with `isControlAccount`. The government
   contracting fields of the project form need `useGovernmentContracting()` (DCAA
   timekeeping, or the `GOVERNMENT_CONTRACTING` feature); the element page's group needs DCAA
@@ -283,7 +292,7 @@ Contract project's billing element and its subtree. The whole subsystem is in
   line's billing page has **Generate Billable Items** to do it at once.
 - Review: Projects → **Approvals** → **Billing** tab (`projects+/approvals.tsx?tab=billing`;
   `projects+/billing.tsx` redirects there with its query) and the project's **Billing** page
-  under Costs (a Contract project that a contract line bills), `update: projects`. Each
+  under Costs (every Contract project), `update: projects`. Each
   change reaches the audit log ("Billable Item").
 - `laborCategoryRate.billRate` is a category's default price of an hour, beside its
   cost rate.

@@ -45,12 +45,28 @@ to Invoice); Percent Complete needs a billing element. The ERP mirrors them in
 `checkBillingTerms` (`sales.models.ts`, `contractRevenueMethodsByBillingMethod`),
 and `upsertContractLine` forces quantity 1, rate 0 and One-time for a billing line.
 
+A billing line lives on a **project contract** (`customerContract.billingBasis =
+'Project'`, migration `20261021045959_contract-billing-basis.sql`; spec
+`.ai/specs/2026-10-21-project-contracts.md`). A service contract (`Schedule`) takes only
+`Fixed` lines, and every project contract line is One-time; a project contract's `Fixed`
+line is labelled "Fixed Price", has quantity 1 and its `rate` as the price, and bills on
+its schedule rows ("billing events", edited in `ContractInvoiceGrid` on the Invoicing
+step). `billingBasisMismatch` (`@carbon/database/contract-schedule`) is the one test:
+`upsertContractLine` and `insertContractLines` refuse with
+`CONTRACT_BILLING_BASIS_MISMATCH`, and `post-customer-contract` refuses at Confirm and for
+an added line at Amend, with `billingBasisMismatchMessages`. The project contract screens
+are in `apps/erp/app/modules/sales/AGENTS.md` → Contracts → "Billing basis".
+
 Confirm and amend (`post-customer-contract`, `checkBillingLines`) refuse a billing
 line whose element is the same as, an ancestor of or a descendant of another live
 billing line's element (P7), a non-Contract project, and a contract currency other
 than the base currency (P5). Amend refuses a `change` of a billing line and allows
 `add` and `end` (P9). Funding changes through **Edit Funding**
-(`updateContractLineFunding`, Draft or Active).
+(`updateContractLineFunding`, Draft or Active). Confirm's revenue check
+(`refuseRevenueResiduals`) and the contract page's `revenueResiduals` skip Right to
+Invoice and Percent Complete lines (`isProgressRevenueMethod`): they have no planned
+revenue, so a Fixed Percent Complete line's billed total is not a residual. Before this,
+Confirm refused every Fixed Percent Complete line.
 
 ## Bill rates
 
@@ -97,10 +113,15 @@ Billing review is the **Billing** tab of Projects → **Approvals**
 (`projects+/approvals.tsx?tab=billing`; the loader reads only the open tab's rows, and
 with no status filter shows Unbilled and On Hold). The tab needs what the page needs,
 `update: projects`. `projects+/billing.tsx` is a loader-only redirect to that tab that
-keeps the query (`redirectBeforeLoaders`). The sidebar lists Approvals only while
-time approval or DCAA is on (`useProjectsSubmodules`), so with both off billing review
-has no sidebar link; the line billing page links it. The project **Billing** page lists the
-project's items too. Both use `ProjectBillableItemsTable`; the bulk actions post to
+keeps the query (`redirectBeforeLoaders`). The sidebar lists Approvals while time
+approval or DCAA is on, or while contract billable items are Unbilled or On Hold
+(`useProjectsSubmodules`): `getBillingReviewCountForUser` (`projects.server.ts`, one
+`count: exact, head: true` read on `projectBillableItem` with `customerContractLineId` set)
+returns that count, 0 for a user without `update: projects` and `view: sales`. Both
+projects layouts (`projects+/_layout.tsx`, `project+/_layout.tsx`) load it as
+`billingReviewCount`, and the Approvals count adds it to the time count. The line billing
+page and the project Overview's Needs attention row link the tab. The project **Billing**
+page lists the project's items too. Both use `ProjectBillableItemsTable`; the bulk actions post to
 `projects+/billing.update.tsx` (`update: projects`) → `updateProjectBillableItems`:
 hold (reason), release, write off (reason), price (one item;
 `amount = round(quantity × unitPrice)`; releases a "No bill rate" hold). Billed and
@@ -136,6 +157,10 @@ The contract page's **Project Billing** card lists the billing lines and the inv
 that billed them (`getContractProjectBillingInvoices`); each invoice has a backup
 report (`contract+/$id.billing-backup.$invoiceId.tsx`, `getProjectBillingBackup`, CSV
 from the table).
+
+**Invoice** on a project contract's page (`$id.invoice.tsx` → `generateContractInvoicesNow`,
+`sales.server.ts`) runs `create-project-billing-invoices` for that contract, then
+`create-contract-invoices` (its Fixed Price billing events), in the nightly job's order.
 
 ## The nightly job
 
@@ -238,9 +263,13 @@ delete the relief rows.
 **Review.** The run page shows a **Project Revenue** card above its sections
 (`ProjectRevenueProgress.ee.tsx`): per line the EAC, price, progress, earned to date,
 this month, cost relieved and loss provision change. A Right to Invoice line has no
-EAC, price or progress. The project **Billing** page shows **Complete** and
-**Recognized** per billing line, and the contract's **Project Billing** card
-shows **Revenue Recognized** (`getProjectContractRevenue`, `projects.service.ts`).
+EAC, price or progress. The project **Billing** page shows **Progress** and
+**Revenue** per billing line, and the contract's **Project Billing** card
+shows **Revenue** (`getProjectContractRevenue`, `projects.service.ts`). A Draft run also
+shows a **Journal** card: `summarizeRunJournal`
+(`ui/RevenueRecognition/runJournal.ts`, tested) sums the run lines' schedule rows by
+account, a negative amount on the swapped sides, rendered by `JournalPreview`
+(`~/components/JournalPreview.tsx`).
 
 ## Commercial gating
 
@@ -280,12 +309,24 @@ upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
   Approvals (`?tab=billing`), where items are reviewed. The contract explorer opens a
   billing line here.
 - Project **Billing** page (`$projectId.billing.tsx`): in the project sidebar under
-  Costs, only for a Contract project with a T&M or Cost Plus line
-  (`hasBillingLines`: `costTreatment = 'Contract'` and `getContractBillingLines`, which
-  skips Fixed lines). Its contract lines table (`ProjectBillingLines`) has the columns
-  Line (the contract id, then the line name, truncated with a tooltip, linking the line
-  billing page), Billing Element, Funding, Complete and Recognized. Below it, the
-  project's billable items.
+  Costs for every Contract project (`showBilling`: `costTreatment = 'Contract'`), with
+  `view: sales`. The `$projectId.tsx` loader also returns `projectContracts` (the project's
+  `billingBasis = 'Project'` contracts, empty without `view: sales`). With none, the page
+  is an `Empty` "No project contract bills this project" with **New Project Contract**
+  (`path.to.newProjectContractForProject`, `create: sales`). Otherwise a row names each
+  project contract with its status, then the contract lines table (`ProjectBillingLines`:
+  Line, linking the line billing page, Billing Element, Funding, Progress and Revenue;
+  `getContractBillingLines` skips Fixed lines, and with no billing line it shows "No
+  billing lines yet"), then the project's billable items.
+- Project Overview (`$projectId._index.tsx`, `ProjectOverview`), for `view: sales`: a
+  **Contract** card under Budget when a confirmed (not Draft) project contract bills the
+  project, all of them summed: `FundingBar` (compact) and Funded
+  (`projectContractFunded`), Cost, Billed (billing lines' funding rows plus Fixed Price
+  schedule rows on Invoiced or Billed Externally invoices), Unbilled and Revenue
+  (`getProjectContractRevenue`), linking the first Active contract. **Needs attention**
+  rows on a Contract project: no project contract (links the Billing page), a Draft
+  project contract (links its Review step), and the contract billable items that wait for
+  review (`update: projects` too; links Approvals `?tab=billing`).
 - Labor categories: the rates are a `Grid` on the category drawer (Effective From, Cost
   Rate, **Bill Rate**). Rates have no delete endpoint, so the grid has no delete.
 
