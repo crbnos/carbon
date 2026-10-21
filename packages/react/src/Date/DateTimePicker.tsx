@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { DateValue } from "@internationalized/date";
+import { useLingui } from "@lingui/react/macro";
 import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
@@ -49,6 +50,7 @@ const DateTimePicker = (
     helperText?: string;
   }
 ) => {
+  const { t } = useLingui();
   // `granularity` is pinned, `hourCycle` is the caller's choice.
   //
   // react-stately DERIVES granularity from the value, so an EMPTY picker falls
@@ -153,7 +155,7 @@ const DateTimePicker = (
               onChange={state.setTimeValue}
               isDisabled={props.isDisabled}
               hour24={props.hourCycle === 24}
-              aria-label="Time"
+              aria-label={t`Time`}
             />
           </div>
           {props.inline && (

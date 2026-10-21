@@ -15,10 +15,17 @@
  * probe component with `renderToStaticMarkup` and driving its setters after.
  */
 import type { DateValue } from "@internationalized/date";
-import { CalendarDate } from "@internationalized/date";
+import { CalendarDate, Time } from "@internationalized/date";
 import { useDatePickerState } from "@react-stately/datepicker";
+import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { TimeCombobox } from "../Date/TimeCombobox";
+
+// The Lingui macro is compiled by the app build, not by vitest.
+vi.mock("@lingui/react/macro", () => ({
+  Trans: ({ children }: { children: ReactNode }) => children
+}));
 
 /** The hook with the props DateTimePicker passes, minus the pins when asked. */
 function stateFor(
@@ -82,5 +89,16 @@ describe("DateTimePicker state settings", () => {
     // pending date in React state, which a server render never flushes, so the
     // absence of a commit is what is assertable here.)
     expect(fromPinned).toBeNull();
+  });
+});
+
+describe("TimeCombobox", () => {
+  // The draft is only seeded on focus, so until someone edits, what the field
+  // shows must be derived from the value itself.
+  it("shows the given time before any edit", () => {
+    const html = renderToStaticMarkup(
+      <TimeCombobox value={new Time(15, 30)} onChange={vi.fn()} hour24 />
+    );
+    expect(html).toContain('value="15:30"');
   });
 });

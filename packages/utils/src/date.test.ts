@@ -241,5 +241,8 @@ describe("parseTypedTime", () => {
     expect(parseTypedTime("   ")).toBeNull();
     expect(parseTypedTime("3:")).toBeNull();
     expect(parseTypedTime("12345")).toBeNull();
+    // One minute digit is ambiguous (3:05 or 3:30?), so it is not guessed.
+    expect(parseTypedTime("3.5")).toBeNull();
+    expect(parseTypedTime("3:5")).toBeNull();
   });
 });

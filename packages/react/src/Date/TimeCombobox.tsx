@@ -4,9 +4,10 @@
 
 import { formatTimeOfDay, parseTypedTime } from "@carbon/utils";
 import { Time } from "@internationalized/date";
+import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { TimeValue } from "@react-types/datepicker";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Command,
   CommandEmpty,
@@ -92,26 +93,21 @@ export const TimeCombobox = ({
   const committed = value
     ? formatTimeOfDay(toTimeString(value), locale, hour24)
     : "";
-  const [draft, setDraft] = useState(committed);
+  const [draft, setDraft] = useState("");
   const [isOpen, setOpen] = useState(false);
   const [isEditing, setEditing] = useState(false);
 
-  // The single writer of `draft` outside of typing: a value set elsewhere (the
-  // calendar, a reset) is adopted, but never yanked out from under someone
-  // mid-edit. Every commit path below sets state and lets this do the display.
-  useEffect(() => {
-    if (!isEditing) setDraft(committed);
-  }, [committed, isEditing]);
+  // What was typed is shown only while editing; otherwise the value itself is.
+  // So a value set elsewhere (the calendar, a reset) shows at once, but is never
+  // yanked out from under someone mid-edit. Focus seeds the draft from it.
+  const shown = isEditing ? draft : committed;
 
   /** Interpret what was typed. Anything unreadable — including empty — reverts. */
   const commit = () => {
     setEditing(false);
     setOpen(false);
-    const parsed = parseTypedTime(draft);
-    if (!parsed) {
-      setDraft(committed);
-      return;
-    }
+    const parsed = parseTypedTime(shown);
+    if (!parsed) return;
     onChange(parsed);
   };
 
@@ -148,7 +144,7 @@ export const TimeCombobox = ({
       {/* cmdk owns filtering by default; ours is time-aware, so it is off. */}
       <Command shouldFilter={false} className="bg-transparent overflow-visible">
         <CommandInputTextField
-          value={draft}
+          value={shown}
           onValueChange={(next) => {
             setEditing(true);
             setOpen(true);
@@ -167,7 +163,6 @@ export const TimeCombobox = ({
               // Abandon the edit rather than commit it.
               event.preventDefault();
               setEditing(false);
-              setDraft(committed);
               setOpen(false);
               return;
             }
@@ -177,7 +172,10 @@ export const TimeCombobox = ({
             }
             if (event.key === "ArrowDown" && !isOpen) setOpen(true);
           }}
-          onFocus={() => setEditing(true)}
+          onFocus={() => {
+            setDraft(committed);
+            setEditing(true);
+          }}
           onBlur={commit}
           isDisabled={isDisabled}
           autoComplete="off"
@@ -192,7 +190,9 @@ export const TimeCombobox = ({
             // the scroll-lock problem in .claude/rules/conventions-ui.md.
             className="absolute w-full top-10 z-50 rounded-md border bg-popover text-popover-foreground shadow-md p-1 max-h-52"
           >
-            <CommandEmpty>No matching time</CommandEmpty>
+            <CommandEmpty>
+              <Trans>No matching time</Trans>
+            </CommandEmpty>
             <CommandGroup>
               {visible.map((option) => (
                 <CommandItem

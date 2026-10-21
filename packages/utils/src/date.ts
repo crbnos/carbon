@@ -234,10 +234,10 @@ export function formatTimeOfDay(
     const t = parseTime(value);
     const anchor = new Date(Date.UTC(2000, 0, 1, t.hour, t.minute, t.second));
     return new Intl.DateTimeFormat(locale || DEFAULT_LOCALE, {
-      hour: "2-digit",
+      hour: hour24 ? "2-digit" : "numeric",
       minute: "2-digit",
       timeZone: "UTC",
-      ...(hour24 ? { hourCycle: "h23" } : { hour: "numeric" })
+      ...(hour24 ? { hourCycle: "h23" } : {})
     }).format(anchor);
   } catch {
     return value;
@@ -296,7 +296,8 @@ export function formatPreciseDuration(
  * someone can type rather than tab through segments: `3`, `3p`, `3 pm`, `3:07pm`,
  * `15:30`, `1530` and `9.45` all land. It is strict about what it REJECTS —
  * `25:00`, `3:75` and `abc` are null, never silently clamped, since a clamped
- * time is a wrong meeting nobody notices.
+ * time is a wrong meeting nobody notices. Minutes after a separator take two
+ * digits: `3.5` could mean 3:05 or 3:30, so it is refused rather than guessed.
  *
  * 12-hour is inferred only from an explicit am/pm marker. A bare `3` is 03:00,
  * matching what the ISO-ish text says; `3p` is what a person types for 3 PM.
@@ -315,8 +316,8 @@ export function parseTypedTime(input: string): Time | null {
   let hour: number;
   let minute = 0;
 
-  // "3:07" / "3.07" / "3 07" — an explicit separator.
-  const separated = /^(\d{1,2})[:.\s](\d{1,2})$/.exec(body);
+  // "3:07" / "3.07" / "3 07" — an explicit separator, then two minute digits.
+  const separated = /^(\d{1,2})[:.\s](\d{2})$/.exec(body);
   // "1530" / "930" — a bare digit run, read from the right so "930" is 9:30.
   const packed = /^(\d{3,4})$/.exec(body);
   const bare = /^(\d{1,2})$/.exec(body);
@@ -334,7 +335,6 @@ export function parseTypedTime(input: string): Time | null {
     return null;
   }
 
-  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
   if (minute > 59) return null;
 
   if (marker) {
