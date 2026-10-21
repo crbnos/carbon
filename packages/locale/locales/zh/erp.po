@@ -29373,6 +29373,9 @@ msgstr "这是什么类型的采购订单 — 标准货物、服务、外协或�
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "这是什么类型的报价单 — 标准供应商报价、框架协议定价报价单或合同制造报价单；在转换时驱动采购订单行布局。"
 
+msgid "What posting this run will write, by account."
+msgstr ""
+
 msgid "What should the author change?"
 msgstr "作者应该更改什么？"
 

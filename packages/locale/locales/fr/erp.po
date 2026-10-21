@@ -29373,6 +29373,9 @@ msgstr "Quel type de BC il s'agit — biens standard, prestations, sous-traitanc
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "Quel type de devis c'est — devis de fournisseur standard, devis à prix d'accord-cadre ou devis de fabrication contractuelle ; détermine la disposition de la ligne PO lors de la conversion."
 
+msgid "What posting this run will write, by account."
+msgstr ""
+
 msgid "What should the author change?"
 msgstr "Qu'est-ce que l'auteur devrait modifier ?"
 

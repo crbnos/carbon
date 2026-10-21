@@ -29373,6 +29373,9 @@ msgstr "このPOの種類（標準商品、外注サービス、外注加工、�
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "この見積の種類 — 標準仕入先見積、ブランケット契約価格見積、または契約製造見積。変換時にPOラインレイアウトを決定します。"
 
+msgid "What posting this run will write, by account."
+msgstr ""
+
 msgid "What should the author change?"
 msgstr "作成者は何を変更すべきですか？"
 

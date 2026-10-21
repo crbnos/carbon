@@ -29373,6 +29373,9 @@ msgstr "What kind of PO this is — standard goods, services, outside-processing
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 
+msgid "What posting this run will write, by account."
+msgstr "What posting this run will write, by account."
+
 msgid "What should the author change?"
 msgstr "What should the author change?"
 

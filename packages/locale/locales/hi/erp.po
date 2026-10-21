@@ -29373,6 +29373,9 @@ msgstr "यह किस प्रकार का PO है — मानक �
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "यह किस प्रकार का कोटेशन है — मानक आपूर्तिकर्ता कोटेशन, व्यापक समझौता मूल्य वाला कोटेशन, या अनुबंध विनिर्माण कोटेशन; रूपांतरण के समय PO पंक्ति लेआउट को संचालित करता है।"
 
+msgid "What posting this run will write, by account."
+msgstr ""
+
 msgid "What should the author change?"
 msgstr "लेखक को क्या बदलना चाहिए?"
 

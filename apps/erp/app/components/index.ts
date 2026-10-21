@@ -36,6 +36,7 @@ import {
 } from "./Icons";
 import { ItemLifecycleBadge } from "./ItemLifecycleBadge";
 import ItemThumbnail from "./ItemThumbnail";
+import JournalPreview, { type JournalPreviewRow } from "./JournalPreview";
 import LinkValue from "./LinkValue";
 import Location from "./Location";
 import MetricCard from "./MetricCard";
@@ -84,6 +85,7 @@ export {
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
+  JournalPreview,
   LinkValue,
   Location,
   MethodBadge,
@@ -118,3 +120,4 @@ export {
   useOptimisticAssignment,
   VersionMenu
 };
+export type { JournalPreviewRow };

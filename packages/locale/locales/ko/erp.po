@@ -29373,6 +29373,9 @@ msgstr "이 구매주문의 종류입니다 — 표준 재화, 서비스, 외주
 msgid "What kind of quote this is — standard supplier quote, blanket-agreement priced quote, or contract-manufacturing quote; drives the PO line layout when converted."
 msgstr "이 견적의 종류입니다 — 표준 공급업체 견적, 포괄계약 가격 견적, 또는 위탁제조 견적 중 하나이며, 구매주문으로 전환될 때 라인 레이아웃을 결정합니다."
 
+msgid "What posting this run will write, by account."
+msgstr ""
+
 msgid "What should the author change?"
 msgstr "저자가 무엇을 변경해야 합니까?"
 
