@@ -113,6 +113,9 @@ msgstr "前回の完了は終了しませんでした。再試行により残り
 msgid "About"
 msgstr "バージョン情報"
 
+msgid "About this field"
+msgstr "このフィールドについて"
+
 msgid "Accept"
 msgstr "承諾"
 
@@ -1193,6 +1196,9 @@ msgstr "本日の保全予定はありません。"
 msgid "No matches. Type to create one."
 msgstr "一致するものがありません。入力して新しく作成してください。"
 
+msgid "No matching time"
+msgstr "一致する時刻がありません"
+
 msgid "No materials"
 msgstr "材料なし"
 
@@ -2047,6 +2053,9 @@ msgstr "サムネイル"
 
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
+
+msgid "Time"
+msgstr "時刻"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "時間と原価が数量に比例して製造指図全体に分配されます。"

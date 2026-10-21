@@ -28,7 +28,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const SECRET_KEYS: Record<string, string[]> = {
   linear: ["apiKey", "webhookSigningSecret"],
   mount: ["clientSecret"],
-  slack: ["access_token"],
+  // slack: none — its token lives on integrationConnection (piece "slack").
   jira: [
     "credentials.accessToken",
     "credentials.refreshToken",

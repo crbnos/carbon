@@ -162,6 +162,9 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      integrationConnect: (piece: string) =>
+        generatePath(`${api}/integrations/connections/${piece}/connect`),
+      integrationConnectionCallback: `${api}/integrations/connections/callback`,
       integrationSyncActivityCsv: (id: string, status?: string | null) =>
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
@@ -415,7 +418,8 @@ export const path = {
       webhookTables: `${api}/webhook/tables?${build}`,
       workCenters: `${api}/resources/work-centers`,
       workCentersByLocation: (id: string) =>
-        generatePath(`${api}/resources/work-centers?location=${id}`)
+        generatePath(`${api}/resources/work-centers?location=${id}`),
+      workflowOptions: `${api}/workflows/options`
     },
     // The docs render every endpoint against a host. Hand them this deployment's
     // REST origin so a self-hosted or non-default-region reader sees their own
@@ -1415,6 +1419,9 @@ export const path = {
     inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
+    integrationAccounts: (id: string) =>
+      `${generatePath(`${x}/settings/integrations/${id}`)}?tab=connections`,
+    integrationConnections: `${x}/settings/integrations/connections`,
     integrationDeactivate: (id: string) =>
       generatePath(`${x}/settings/integrations/deactivate/${id}`),
     integrations: `${x}/settings/integrations`,

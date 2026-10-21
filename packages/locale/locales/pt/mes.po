@@ -113,6 +113,9 @@ msgstr "Uma conclusão anterior não foi concluída. Tentar novamente retoma as 
 msgid "About"
 msgstr "Sobre"
 
+msgid "About this field"
+msgstr "Sobre este campo"
+
 msgid "Accept"
 msgstr "Aceitar"
 
@@ -1193,6 +1196,9 @@ msgstr "Nenhuma manutenção programada para hoje"
 msgid "No matches. Type to create one."
 msgstr "Nenhuma correspondência. Digite para criar uma."
 
+msgid "No matching time"
+msgstr "Nenhum horário correspondente"
+
 msgid "No materials"
 msgstr "Nenhum material"
 
@@ -2047,6 +2053,9 @@ msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Marque as ordens de produção para as quais isso foi feito."
+
+msgid "Time"
+msgstr "Hora"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Tempo e custo divididos entre as ordens de produção na proporção da quantidade."

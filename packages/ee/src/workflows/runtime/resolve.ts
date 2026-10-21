@@ -2,6 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { CatalogInput, LinkFormat } from "../definition/catalog";
+import { linkState } from "../definition/links";
 import type {
   ItemRef,
   Pairs,
@@ -14,6 +16,7 @@ import {
   fromColumn,
   fromLiteral,
   isNull,
+  nullValue,
   pairsValue,
   primitiveValue
 } from "./values";
@@ -54,8 +57,9 @@ export function renderValue(value: RuntimeValue): string {
   if (value.kind === "list") return value.items.map(renderValue).join(", ");
   if (value.kind === "entity")
     return pickDisplay(value.row, INLINE_ENTITY_COLUMNS) ?? value.id;
-  // Rows have no reading as a sentence; nothing writes one into text.
-  if (value.kind === "pairs") return "";
+  // Neither rows nor objects have a reading as a sentence, and `rendersAsText`
+  // keeps both out of a template — this is the belt to that suspenders.
+  if (value.kind === "pairs" || value.kind === "record") return "";
   return value.value === null ? "" : String(value.value);
 }
 
@@ -68,7 +72,12 @@ async function entityText(
   value: Extract<RuntimeValue, { kind: "entity" }>,
   ctx: RuntimeContext
 ): Promise<string> {
-  const columns = ctx.catalog.getEntity(value.of)?.display ?? [];
+  // The catalog's own display columns first, then the conventional ones: an entity
+  // that declares none still reads by the name it carries rather than by its id.
+  const columns = [
+    ...(ctx.catalog.getEntity(value.of)?.display ?? []),
+    ...INLINE_ENTITY_COLUMNS
+  ];
   return (
     pickDisplay(value.row, columns) ??
     pickDisplay(await ctx.loader.load(value.of, value.id), columns) ??
@@ -76,33 +85,72 @@ async function entityText(
   );
 }
 
+/** One entry per destination dialect. A record's NAME is customer data, so each
+ * renderer sanitises the label until it cannot break out of its own link; the href
+ * is Carbon's own URL from `linkFor`, never user text. */
+const LINK_RENDERERS: Record<
+  LinkFormat,
+  (label: string, href: string) => string
+> = {
+  // The link matcher's label cannot hold a `]` and honours no backslash escape, so a
+  // record named `PO](…)` would end the label early and pick the destination itself.
+  // Drop the brackets; a name that is nothing but brackets stays unlinked.
+  markdown: (label, href) => {
+    const clean = label.replace(/[[\]]/g, "").trim();
+    return clean === "" ? label : `[${clean}](${href})`;
+  },
+  // Slack mrkdwn `<url|label>`: `&`, `<`, `>` are the only escapes and `|` would end
+  // the label early, so it is dropped the way markdown drops brackets.
+  slack: (label, href) => {
+    const clean = label
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll("|", "");
+    return clean.trim() === "" ? label : `<${href}|${clean}>`;
+  },
+  html: (label, href) => {
+    const escape = (raw: string) =>
+      raw
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    return `<a href="${escape(href)}">${escape(label)}</a>`;
+  }
+};
+
+/** How a template turns a record into a link: where it lives, and in whose dialect. */
+export interface RenderOptions {
+  linkFor?: (of: string, id: string) => string | null;
+  /** Defaults to markdown — the dialect Carbon's own notification renderer reads. */
+  format?: LinkFormat;
+}
+
 /**
- * A record in prose reads as its name, and becomes a markdown link when the caller knows
- * where it lives. Every other value renders exactly as `renderValue` does — a LIST of
- * records never reaches here, because `rendersAsText` refuses one as a template part.
+ * A record in prose reads as its name, and becomes a link when the caller knows
+ * where it lives — in the destination's own dialect. Every other value renders
+ * exactly as `renderValue` does — a LIST of records never reaches here, because
+ * `rendersAsText` refuses one as a template part.
  */
-async function renderPart(
+export async function renderPart(
   value: RuntimeValue,
   ctx: RuntimeContext,
-  linkFor?: (of: string, id: string) => string | null
+  options?: RenderOptions
 ): Promise<string> {
   if (value.kind !== "entity") return renderValue(value);
   const text = await entityText(value, ctx);
-  if (linkFor === undefined || text === "") return text;
-  const href = linkFor(value.of, value.id);
+  if (options?.linkFor === undefined || text === "") return text;
+  const href = options.linkFor(value.of, value.id);
   if (href === null) return text;
-  // The link matcher's label cannot hold a `]` and honours no backslash escape, so a record
-  // named `PO](…)` would end the label early and pick the destination itself. Drop the
-  // brackets; a name that is nothing but brackets stays unlinked.
-  const label = text.replace(/[[\]]/g, "").trim();
-  return label === "" ? text : `[${label}](${href})`;
+  return LINK_RENDERERS[options.format ?? "markdown"](text, href);
 }
 
 /** An unresolvable part fails the whole template; a blank would be a silent lie. */
 export async function renderTemplate(
   template: Template,
   ctx: RuntimeContext,
-  options?: { linkFor?: (of: string, id: string) => string | null }
+  options?: RenderOptions
 ): Promise<Resolution> {
   const pieces: string[] = [];
   for (const part of template.parts) {
@@ -115,7 +163,7 @@ export async function renderTemplate(
         ? await resolveItem(part, ctx)
         : await resolveRef(part, ctx);
     if (!resolved.ok) return resolved;
-    pieces.push(await renderPart(resolved.value, ctx, options?.linkFor));
+    pieces.push(await renderPart(resolved.value, ctx, options));
   }
   return { ok: true, value: primitiveValue("string", pieces.join("")) };
 }
@@ -165,7 +213,7 @@ export async function resolveItem(
 }
 
 /** A null anywhere along the path ends the walk as null rather than failing. */
-async function walk(
+export async function walk(
   start: RuntimeValue,
   path: string[],
   ctx: RuntimeContext
@@ -174,6 +222,14 @@ async function walk(
 
   for (const segment of path) {
     if (isNull(current)) return { ok: true, value: current };
+
+    // A record holds its data inline, so there is nothing to load. A field the
+    // vendor did not send reads as null rather than failing the step — the schema
+    // it was declared from is the vendor's, and nothing validates it.
+    if (current.kind === "record") {
+      current = current.fields[segment] ?? nullValue();
+      continue;
+    }
 
     if (current.kind !== "entity") {
       return {
@@ -207,4 +263,48 @@ async function walk(
   }
 
   return { ok: true, value: current };
+}
+
+/**
+ * A step's inputs, resolved for one run of it — shared by the action and the
+ * integration executors so the two kinds cannot drift apart. `declared` is every
+ * input the step declares.
+ *
+ * A record in prose becomes a link only where the catalog declares `links` (and
+ * its gate holds — see `linkState`) and the engine supplied a resolver; everything
+ * else renders as plain text, so a link can never ship to a field that would show
+ * it as literal markup (a webhook body, a vendor's plain-text field).
+ */
+export async function resolveStepInputs(
+  inputs: Record<string, ValueOrRef>,
+  declared: Record<string, CatalogInput>,
+  ctx: RuntimeContext
+): Promise<
+  | { ok: true; inputs: Record<string, RuntimeValue> }
+  | { ok: false; reason: string }
+> {
+  const resolved: Record<string, RuntimeValue> = {};
+  for (const [name, value] of Object.entries(inputs)) {
+    const link = linkState(inputs, declared, name);
+    const result =
+      link.kind === "linked" && value.kind === "template"
+        ? await renderTemplate(value, ctx, {
+            linkFor: ctx.linkFor,
+            format: link.format
+          })
+        : await resolveValue(value, ctx);
+    if (!result.ok) return result;
+    // In a batch the one list input stands for the item this turn is on. Only a
+    // slot declared single-valued can be that input (`batchCandidates`); a slot
+    // declared as a list keeps its list, or a real list input on the same step
+    // would be replaced by the item on every turn.
+    resolved[name] =
+      ctx.item !== undefined &&
+      result.value.kind === "list" &&
+      declared[name]?.type.kind !== "list"
+        ? ctx.item
+        : result.value;
+    ctx.record?.(name, resolved[name]);
+  }
+  return { ok: true, inputs: resolved };
 }

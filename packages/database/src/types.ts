@@ -23280,6 +23280,162 @@ export type Database = {
         }
         Relationships: []
       }
+      integrationConnection: {
+        Row: {
+          accountLabel: string | null
+          authType: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          expiresAt: string | null
+          id: string
+          lastError: string | null
+          metadata: Json
+          name: string
+          pieceName: string
+          refreshingAt: string | null
+          secretRef: string | null
+          status: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountLabel?: string | null
+          authType?: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          expiresAt?: string | null
+          id?: string
+          lastError?: string | null
+          metadata?: Json
+          name: string
+          pieceName: string
+          refreshingAt?: string | null
+          secretRef?: string | null
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountLabel?: string | null
+          authType?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          expiresAt?: string | null
+          id?: string
+          lastError?: string | null
+          metadata?: Json
+          name?: string
+          pieceName?: string
+          refreshingAt?: string | null
+          secretRef?: string | null
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "integrationConnection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrationConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       intercompanyEliminationLine: {
         Row: {
           accountId: string
@@ -78580,7 +78736,6 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
-          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -78633,7 +78788,6 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
-          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -78686,7 +78840,6 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
-          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -79009,7 +79162,6 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
-          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -91896,6 +92048,10 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      delete_connection_secret: {
+        Args: { p_company_id: string; p_connection_id: string }
+        Returns: undefined
+      }
       delete_event_system_subscription: {
         Args: { p_subscription_id: string }
         Returns: undefined
@@ -92335,6 +92491,10 @@ export type Database = {
           status: Database["public"]["Enums"]["jobStatus"]
           thumbnailPath: string
         }[]
+      }
+      get_connection_secret: {
+        Args: { p_company_id: string; p_connection_id: string }
+        Returns: Json
       }
       get_consumable_details: {
         Args: { item_id: string }
@@ -94393,8 +94553,32 @@ export type Database = {
         Args: { p_item_id: string; p_receipt_id: string }
         Returns: string
       }
+      revoke_connections: {
+        Args: {
+          p_company_id: string
+          p_connection_id?: string
+          p_piece_name: string
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
       rotate_webhook_signing_secret: {
         Args: { p_company_id: string; p_webhook_id: string }
+        Returns: string
+      }
+      save_connection: {
+        Args: {
+          p_account_label?: string
+          p_auth_type: string
+          p_company_id: string
+          p_connection_id?: string
+          p_expires_at?: string
+          p_metadata?: Json
+          p_name: string
+          p_piece_name: string
+          p_secret: Json
+          p_user_id: string
+        }
         Returns: string
       }
       save_inspection_document_atomic: {
@@ -94849,6 +95033,10 @@ export type Database = {
           p_updated_by?: string
         }
         Returns: Json
+      }
+      upsert_connection_secret: {
+        Args: { p_company_id: string; p_connection_id: string; p_secret: Json }
+        Returns: string
       }
       upsert_integration_secret: {
         Args: { p_company_id: string; p_integration_id: string; p_secret: Json }

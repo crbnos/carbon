@@ -2583,9 +2583,6 @@ importers:
       '@slack/bolt':
         specifier: 4.4.0
         version: 4.4.0(@types/express@5.0.6)
-      '@slack/oauth':
-        specifier: 3.0.5
-        version: 3.0.5
       '@slack/types':
         specifier: 2.20.1
         version: 2.20.1
@@ -2878,6 +2875,15 @@ importers:
 
   packages/jobs:
     dependencies:
+      '@activepieces/piece-gmail':
+        specifier: 0.13.0
+        version: 0.13.0
+      '@activepieces/piece-google-calendar':
+        specifier: 0.10.3
+        version: 0.10.3
+      '@activepieces/piece-slack':
+        specifier: 0.17.9
+        version: 0.17.9
       '@ai-sdk/openai':
         specifier: 'catalog:'
         version: 4.0.78(zod@4.5.4)
@@ -4174,6 +4180,15 @@ importers:
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(vite@7.3.5(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1))
 
 packages:
+
+  '@activepieces/piece-gmail@0.13.0':
+    resolution: {integrity: sha512-G7pcZ+CFBidd2JKQU6sxfb2/N938dX2damdYaz+HU9C10eZxWlFEtJiMsjykbV8clWoTKMQ+Zxs4jVn1Q4EpSw==}
+
+  '@activepieces/piece-google-calendar@0.10.3':
+    resolution: {integrity: sha512-F3wdJU1J6MagKgqrskCHCuFg6g1NMNiwtoi647vl1HZ7LJXnBrm83WnPum6ewm8mjfFUMKcADfylSuZu8ExyTA==}
+
+  '@activepieces/piece-slack@0.17.9':
+    resolution: {integrity: sha512-cdw5jr7yweGFBVkoSTw3WKUcF6tIVFTNFcT0t1Cp8MER0P4eAj/+BAnvC104ki6/q5Pm4FdXxJQHwEu5f47Azw==}
 
   '@ai-sdk/anthropic@1.2.12':
     resolution: {integrity: sha512-YSzjlko7JvuiyQFmI9RN1tNZdEiZxc+6xld/0tq/VkJaHpEzGAb1yiNxxvmYVcjvfu/PcvCxAAYXmTYQQ63IHQ==}
@@ -17764,6 +17779,12 @@ packages:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
 snapshots:
+
+  '@activepieces/piece-gmail@0.13.0': {}
+
+  '@activepieces/piece-google-calendar@0.10.3': {}
+
+  '@activepieces/piece-slack@0.17.9': {}
 
   '@ai-sdk/anthropic@1.2.12(zod@3.25.76)':
     dependencies:

@@ -52,7 +52,7 @@ vi.mock("../../inngest/functions/notifications/content", () => ({
 }));
 
 const { executeWorkflowRun } = await import("./execute");
-const { loadRunContext } = await import("./log");
+const { finishRun, loadRunContext } = await import("./log");
 const { claimStep, settleStep } = await import("./ledger");
 const { createWorkflowServices } = await import("../actions");
 
@@ -167,6 +167,7 @@ function withServices(params: {
   );
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
+    runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
     runOperation: async () => ({ ok: false, error: "not stubbed" }),
     search
   });
@@ -293,6 +294,11 @@ describe("batch mode", () => {
     expect(aggregateReason()).toBe("Ran 3 of 3; 1 failed.");
     // One failed item still marks the run failed; the node itself carried on.
     expect(result.status).toBe("Failed");
+    // ...and the run says why, in the aggregate row's words, not with no error.
+    expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
+      status: "Failed",
+      error: "Ran 3 of 3; 1 failed."
+    });
   });
 
   it("follows the failure handle when every item fails", async () => {
@@ -390,6 +396,10 @@ describe("batch mode", () => {
           ? { ok: false, error: "This turn had no item." }
           : { ok: true, outputs: { record: job } };
       },
+      runIntegration: async () => ({
+        ok: false as const,
+        error: "not stubbed"
+      }),
       runOperation: async () => ({ ok: false, error: "not stubbed" }),
       search: async () => ({
         ok: true,

@@ -59,6 +59,7 @@ import {
   orderLayersForConsumption,
   relieveLayers
 } from "@carbon/database/cost-relief";
+import { TEMPLATE_ASSET_PREFIX } from "@carbon/database/dataset-assets";
 import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import {
   assertPostingStatusUnchanged,
@@ -243,6 +244,13 @@ export async function getBase64ImageFromSupabase(
   // miss, so callers would get a rejected promise instead of the fallback.
   const companyId = path.split("/")[0];
   if (!companyId) {
+    return null;
+  }
+
+  // Demo-template artwork is bundled with the app, not uploaded — there is no
+  // storage object to download. It is also SVG, which react-pdf's <Image>
+  // cannot decode (JPG/PNG only), so there is nothing to hand a PDF either.
+  if (path.startsWith(TEMPLATE_ASSET_PREFIX)) {
     return null;
   }
 

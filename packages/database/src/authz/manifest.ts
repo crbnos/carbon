@@ -658,6 +658,15 @@ export const manifest = {
   inspectionSample: company("quality", { read: "quality_view" }),
   inspectionSamplingPlan: company("quality", { read: "quality_view" }),
   integration: policies({ select: authenticated }),
+  // Read-only to API roles: a user-written row could claim another company's Slack
+  // team_id or point secretRef at someone else's vault secret. The server writes it
+  // with the service role after its own permission check.
+  integrationConnection: company("settings", {
+    read: "settings_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   intercompanyEliminationLine: company("accounting"),
   intercompanyTransaction: policies({
     select: or(

@@ -118,6 +118,9 @@ OAuth credentials for each connector, all optional, set only the ones you use.
 <EnvVar name="ONSHAPE_V2_CLIENT_ID" type="string">Client id of the Onshape OAuth application for the panel integration (`onshape-v2`), a separate application from the pull integration's. Without it the Onshape V2 card reads Not Configured.</EnvVar>
 <EnvVar name="ONSHAPE_V2_CLIENT_SECRET" type="string">Client secret of the panel integration's Onshape OAuth application.</EnvVar>
 <EnvVar name="ONSHAPE_V2_OAUTH_REDIRECT_URL" type="url">Callback for the panel integration: `https://<erp-host>/api/integrations/onshape-v2/oauth`. Must be registered on the panel integration's Onshape application. Without it the Onshape V2 Connect button fails with "Onshape isn't configured".</EnvVar>
+<EnvVar name="GOOGLE_CLIENT_ID" type="string">Client id of the Google OAuth application used by the Google Calendar and Gmail workflow steps. Without it both cards read Coming soon.</EnvVar>
+<EnvVar name="GOOGLE_CLIENT_SECRET" type="string">Client secret of that Google OAuth application.</EnvVar>
+<EnvVar name="GOOGLE_OAUTH_REDIRECT_URL" type="url">Callback for workflow integration connections: `https://<erp-host>/api/integrations/connections/callback`. Must be registered on the Google OAuth application.</EnvVar>
 <EnvVar name="EXCHANGE_RATES_API_KEY" type="string">Currency exchange-rate feed.</EnvVar>
 <EnvVar name="GOOGLE_PLACES_API_KEY" type="string">Address autocomplete.</EnvVar>
 </EnvVars>

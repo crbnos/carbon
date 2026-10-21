@@ -113,6 +113,9 @@ msgstr "एक पिछला समापन पूरा नहीं हु�
 msgid "About"
 msgstr "के बारे में"
 
+msgid "About this field"
+msgstr "इस फ़ील्ड के बारे में"
+
 msgid "Accept"
 msgstr "स्वीकार करें"
 
@@ -1193,6 +1196,9 @@ msgstr "आज के लिए कोई रखरखाव निर्धा�
 msgid "No matches. Type to create one."
 msgstr "कोई मेल नहीं। एक बनाने के लिए टाइप करें।"
 
+msgid "No matching time"
+msgstr "कोई मेल खाता समय नहीं"
+
 msgid "No materials"
 msgstr "कोई सामग्री नहीं"
 
@@ -2047,6 +2053,9 @@ msgstr "थंबनेल"
 
 msgid "Tick the jobs this was done for."
 msgstr "उन जॉब्स को चेक करें जिनके लिए यह किया गया था।"
+
+msgid "Time"
+msgstr "समय"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "समय और लागत मात्रा के अनुपात में जॉब में विभाजित है।"

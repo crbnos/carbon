@@ -46,3 +46,15 @@ describe("rebaseline", () => {
     );
   });
 });
+
+describe("setNotices", () => {
+  it("keeps the same empty list when there is still nothing to say", () => {
+    const api = store();
+    const before = api.getState().notices;
+
+    api.getState().setNotices([]);
+
+    // A fresh empty array would re-render every subscriber on each debounce.
+    expect(api.getState().notices).toBe(before);
+  });
+});

@@ -1353,6 +1353,31 @@ any new `memo` writer.
 
 **Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.
 
+## Secret material is read through ONE reader — never off a column
+
+**Context:** After `20260817132607` moved integration tokens into the Vault, three readers kept
+reading `companyIntegration.metadata.access_token` directly (`send-slack.ts`, `integrations.slack.interactive.ts`,
+`notify.ts`). They did not fail — they got `undefined`, fell back or returned `[]`, and Slack DMs /
+slash commands silently stopped for weeks. When Slack later moved to `integrationConnection`
+(`20261021123102`), the same class of miss happened again with `notify.ts` because the consumer map
+was built from module exports, not from a grep of the column.
+
+**Rule:** A credential has exactly one reader (`resolveIntegrationSecrets` for `companyIntegration`,
+`readConnectionAccessToken` / `resolveConnectionAuth` for `integrationConnection`). Before changing
+where a secret lives, grep for the *column and id* (`"companyIntegration"` + `"slack"`,
+`metadata.access_token`, `secretRef`) across `apps/` and `packages/`, not for function names — and
+make the old path fail loudly (throw) rather than return `undefined`.
+
+**Applies to:** every `companyIntegration` / `integrationConnection` reader; any future secret move.
+
+## `.po` catalogs are committed only after `lingui:clean`
+
+**Context:** `pnpm run lingui:extract` alone leaves `#: path:line` origin comments and a
+`POT-Creation-Date` header in all 26 catalogs — 170k diff lines for ~30 real strings.
+
+**Rule:** always `pnpm run lingui:extract && pnpm run lingui:clean` (or `pnpm run translate`);
+the commit hook normalises, but the working tree should never carry the noise.
+
 ## Kysely builds ONE column list per multi-row insert — a conditionally-set key writes NULL into its siblings
 
 **Context:** `get-method`'s `quoteLineToJob` builds every `jobMaterial` row into one array, then inserts them with a single `trx.insertInto("jobMaterial").values(rows)`. Only rows whose item had an effective supersession successor carried a `unitCost` key; the rest omitted it, on the assumption that omitting a key lets the column default apply.
@@ -1412,6 +1437,26 @@ any new `memo` writer.
 **Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+
+## Compare OAuth scopes the way the vendor REPORTS them, not the way you asked
+
+**Context:** The Gmail allowlist row requested `["…/auth/gmail.send", "email"]`, the spelling
+the Activepieces piece uses. Google's token response came back with
+`openid …/auth/gmail.send …/auth/userinfo.email` — the alias canonicalised, an unrequested
+`openid` added. `missingScopes(granted, required)` reported `email` missing and the account
+showed "Reconnect needed" the second it connected. Google Calendar's piece has the same alias
+and was never caught only because its first connections predate scope recording.
+
+**Rule:** Every scope in an allowlist row (and anything else that feeds `requiredScopesFor`)
+is spelled exactly as the vendor echoes it in the token response — for Google the full
+`https://www.googleapis.com/auth/…` URL. When a piece's own list uses an alias, override
+`oauth.scope` with the canonical form (same set of permissions). `oauth.test.ts` refuses
+`email` / `profile` / `openid` on any row. When a "reconnect needed" appears on a freshly
+connected account, diff `metadata.scopes` against `requiredScopesFor` before anything else.
+
+**Applies to:** `packages/jobs/src/workflows/integrations/allowlist.ts` `oauth.scope`,
+`packages/ee/src/integrations/connections.ts` `missingScopes`, any future vendor whose token
+response normalises scope names (Microsoft returns short names for Graph scopes too).
 
 ## `CREATE OR REPLACE VIEW` cannot reorder columns — DROP + CREATE when `t.*` grows
 
@@ -4029,3 +4074,23 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** When a posting must ignore a line, filter it where every per-line collection is built, not only in the loop that writes the ledger. List every map or array derived from the lines and check each. Pin the skipped line's absence in a test: assert the side effects did not happen, not only that the ledger row is missing.
 
 **Applies to:** `postReceipt` / `postShipment` and every posting in `inventory.service.ts` that builds update maps before its write loop.
+
+## Open an OAuth popup in the click, before you fetch its URL
+
+**Context:** Install and Add account on a workflow piece card (`startIntegrationConnect`, `packages/ee/src/integrations/connect.ts`) fetch the consent URL from the connect route, then open it in a popup.
+
+**Problem:** The old code awaited the fetch and then called `window.open`. The await can outlive the click's transient user activation, so Chrome blocked the popup without an error, and Install looked like it did nothing.
+
+**Rule:** Call `beginOAuthPopup()` (`packages/ee/src/oauth-popup.ts`) synchronously in the click handler, before any await. Then fetch the URL and call `navigate(url)` on the handle. If the fetch fails, call `close()`. If the browser blocked the popup anyway, `navigate` falls back to the current window.
+
+**Applies to:** every consent or payment flow that opens a window after a request: the piece cards, the Onshape connect, any new OAuth integration.
+
+## One OAuth state mechanism: the cookie helper, consumed by value for a shared callback
+
+**Context:** The workflow pieces (Slack, Gmail, Google Calendar) signed their own OAuth state with an HMAC helper in `settings.service.ts`, beside the cookie-bound state that every other integration uses (`@carbon/auth/oauth-state.server`).
+
+**Problem:** Two mechanisms meant two sets of binding, expiry and single-use rules to keep correct, and a review had to check both. The pieces share one callback route, so that route cannot know which integration's entry to consume before it reads the state.
+
+**Rule:** Issue every OAuth state with `issueOAuthState`. Carry extra facts (`mode`, `name`, `connectionId`) as `OAuthStateExtras`, never in the query string. Pass the request, so the other integrations' pending entries survive the Set-Cookie. A callback that serves several integrations calls `consumeOAuthStateByValue`; it finds the entry that holds the value and takes the integration id from that entry. Do not add a second signer.
+
+**Applies to:** `api+/integrations.connections.$piece.connect.ts`, `api+/integrations.connections.callback.ts`, `api+/integrations.$id.connect.ts`, and any new OAuth connect or callback route.

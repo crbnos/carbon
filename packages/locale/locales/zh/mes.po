@@ -113,6 +113,9 @@ msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会�
 msgid "About"
 msgstr "关于"
 
+msgid "About this field"
+msgstr "关于此字段"
+
 msgid "Accept"
 msgstr "接受"
 
@@ -1193,6 +1196,9 @@ msgstr "今天没有计划的维护"
 msgid "No matches. Type to create one."
 msgstr "没有匹配项。输入以创建一个。"
 
+msgid "No matching time"
+msgstr "没有匹配的时间"
+
 msgid "No materials"
 msgstr "没有原材料"
 
@@ -2047,6 +2053,9 @@ msgstr "缩略图"
 
 msgid "Tick the jobs this was done for."
 msgstr "标记完成此项工作的工单。"
+
+msgid "Time"
+msgstr "时间"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "时间和成本按数量比例分配到各个工作中。"
