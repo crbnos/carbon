@@ -3,12 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 import {
   discoverOneOffScripts,
   ONE_OFF_SCRIPT_DEFERRED,
@@ -182,25 +180,4 @@ test("builds the IPv4 Supavisor URL of the primary database", () => {
     supavisorUrl([{ ...pooler, database_type: "READ_REPLICA" }], "x"),
     null
   );
-});
-
-// The runner records nothing for a deferred script and does not fail the
-// deploy, so a workspace with no Postgres URL retries it on a later deploy.
-test("journal-legacy-documents defers when it has no Postgres URL", () => {
-  const script = fileURLToPath(
-    new URL("../../scripts/one-off/journal-legacy-documents.ts", import.meta.url)
-  );
-  const cwd = mkdtempSync(join(tmpdir(), "one-off-env-"));
-  try {
-    const { SUPABASE_DB_URL: _url, ...env } = process.env;
-    const result = spawnSync("tsx", [script, "--dry-run"], {
-      cwd,
-      env,
-      encoding: "utf8"
-    });
-    assert.equal(result.status, ONE_OFF_SCRIPT_DEFERRED, result.stderr);
-    assert.match(result.stderr, /deferred/);
-  } finally {
-    rmSync(cwd, { recursive: true, force: true });
-  }
 });

@@ -1,6 +1,6 @@
 paths:
   - "packages/database/src/supersession-pick.ts"
-  - "packages/server-functions/src/get-method/**"
+  - "apps/erp/app/modules/production/production.service.ts"
   - "packages/planning/src/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"
@@ -217,9 +217,10 @@ recover the source's target (`estimatedQuantity − scrapQuantity` on a Buy/Pick
 row), convert, and re-derive scrap at the TARGET item's rate — the rate the
 row now carries.
 
-Cancelling a job (`$jobId.status.tsx`) returns the staged material first, then
-`cancelOpenPickingListsForJob` cancels its lines on every open list and the
-lists that have no live line left; a list shared with other jobs stays open.
+Cancelling a job (`cancelJob`, `production.server.ts`) sets it Cancelled, then
+returns the staged material, then `cancelOpenPickingListsForJob` cancels its
+lines on every open list and the lists that have no live line left; a list
+shared with other jobs stays open.
 `get_picking_schedule` ignores a cancelled LINE as well as a cancelled list, so
 a reopened job's operation returns to the schedule. Its Consume First
 predecessor stock test is the whole-assembly one (warehouse on-hand ≥

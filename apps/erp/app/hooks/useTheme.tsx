@@ -4,7 +4,7 @@
 
 import { useRouteData } from "@carbon/react";
 import { useFetchers } from "react-router";
-import { themeValidator } from "~/modules/settings";
+import { themeValidator } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 
 export function useOptimisticTheme() {

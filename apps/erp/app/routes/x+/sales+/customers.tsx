@@ -10,9 +10,12 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerStatuses, getCustomers } from "~/modules/sales";
+import {
+  getCustomerStatuses,
+  getCustomers
+} from "~/modules/sales/sales.service";
 import { CustomersTable } from "~/modules/sales/ui/Customers";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

@@ -83,10 +83,11 @@ import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import type {
   dimensionEntityTypes,
   journalEntrySourceTypes
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.models";
 import type { JobOperation } from "~/modules/production/types";
-import type { nonConformanceTaskStatus } from "~/modules/quality";
-import type { MethodType, OperationType } from "~/modules/shared";
+import type { nonConformanceTaskStatus } from "~/modules/quality/quality.models";
+import type { OperationType } from "~/modules/shared/shared.models";
+import type { MethodType } from "~/modules/shared/types";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
   return (

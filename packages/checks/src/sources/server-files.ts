@@ -15,8 +15,7 @@ const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
   "packages/database/supabase/functions",
-  "packages/database/src",
-  "packages/server-functions/src"
+  "packages/database/src"
 ];
 
 /** ERP module server files are matched by suffix inside apps/erp/app/modules. */
@@ -104,10 +103,11 @@ export function maskClientCode(contents: string): string {
     }
     if (inClientRegion) {
       kept[i] = "";
-      // `}`/`};` closes a block body; a bare `)`/`);` closes a paren-wrapped
-      // expression body. A `) {`-style line is a multi-line SIGNATURE closer —
+      // `}`/`};`/`});` closes a block body; a bare `)`/`);` closes a
+      // paren-wrapped expression body. A `) {`, `}: {` or `}) {` line closes a
+      // multi-line SIGNATURE (a destructured props parameter and its type) —
       // the body is still ahead, so it must not end the region.
-      if (line.startsWith("}") || /^\)\s*;?\s*$/.test(line)) {
+      if (/^[})]+;?\s*$/.test(line)) {
         inClientRegion = false;
       }
     }

@@ -2,16 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import type { ActionFunctionArgs } from "react-router";
-import { proposePeriodRun } from "~/modules/accounting/period-runs.server";
+import { createPeriodRun } from "~/routes/x+/accounting+/period-runs.server";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  return proposePeriodRun(
-    request,
-    "Revenue Recognition",
-    projectRevenueSynthesizers
-  );
+export async function action(args: ActionFunctionArgs) {
+  return createPeriodRun(args, "Revenue Recognition");
 }

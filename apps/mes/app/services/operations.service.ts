@@ -9,13 +9,17 @@ import {
   getCompanyTimeZone
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
+import {
+  lockMachinePress,
+  recordManualMachinePress
+} from "@carbon/database/machine-time";
 import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { serverFns } from "@carbon/server-functions";
 import {
   async,
   datetime,
@@ -28,6 +32,7 @@ import {
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import { erpPosting } from "~/services/erp";
 import { sanitize } from "~/utils/supabase";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
@@ -38,6 +43,7 @@ import type {
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
+import { planStepBackflush } from "./step-backflush";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 const log = getLogger("mes", "operations");
@@ -319,7 +325,6 @@ export async function deleteAttributeRecord(
 
 export async function finishJobOperation(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
@@ -348,9 +353,9 @@ export async function finishJobOperation(
   }
 
   if (!result.error) {
-    // System: every caller passes the service role. An operation's own
-    // failure is logged inside it; onError catches anything that escapes (the
-    // query, the import).
+    // As the system: every caller passes the service role. A posting that
+    // fails or is skipped is logged in postEventTime; onError catches the
+    // query.
     async.background(
       async () => {
         const unposted = await client
@@ -362,17 +367,10 @@ export async function finishJobOperation(
         if (unposted.error) throw unposted.error;
         if (unposted.data.length === 0) return;
 
-        const fns = serverFns.system({
-          db,
-          companyId: args.companyId,
-          userId: args.userId
-        });
+        const caller = { companyId: args.companyId, userId: args.userId };
         await async.map(
           unposted.data,
-          (event) =>
-            fns.invoke("post-production-event", {
-              productionEventId: event.id
-            }),
+          (event) => postEventTime(caller, event.id),
           { concurrency: 4 }
         );
       },
@@ -389,7 +387,7 @@ export async function finishJobOperation(
     // last operation. Return any picked-but-unconsumed stock staged at lineside
     // back to its warehouse source — the SQL trigger can't run app code,
     // so we orchestrate it here.
-    await returnPickedRemainders(client, db, args);
+    await returnPickedRemainders(client, args);
     const jobId = result.data[0]?.jobId;
 
     if (jobId) {
@@ -449,19 +447,20 @@ export async function finishJobOperation(
  */
 export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
     companyId: string;
   }
 ): Promise<void> {
-  const { error } = await serverFns
-    .as({ client, db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-picking", {
+  const { error } = await erpPosting(
+    "post-picking",
+    { client, companyId: args.companyId, userId: args.userId },
+    {
       type: "returnOperationRemainders",
       ...args
-    });
+    }
+  );
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
@@ -1014,7 +1013,7 @@ export async function getBatchWorkInstructions(
 }> {
   const members = await client
     .from("jobOperation")
-    .select("id, jobId, job(jobId, itemId)")
+    .select("id, jobId, job(jobId, itemId), jobMakeMethod(itemId)")
     .eq("jobOperationBatchId", args.batchId)
     .eq("companyId", args.companyId);
   if (members.error || !members.data?.length) {
@@ -1095,12 +1094,21 @@ export async function getBatchWorkInstructions(
   const jobs = members.data
     .map((m) => ({
       id: m.jobId,
-      readableId: (m.job as { jobId?: string } | null)?.jobId ?? m.jobId,
-      itemId: (m.job as { itemId?: string } | null)?.itemId ?? null
+      readableId: (m.job as { jobId?: string } | null)?.jobId ?? m.jobId
     }))
     .filter((job, i, all) => all.findIndex((j) => j.id === job.id) === i);
+  // The item an operation builds is its make method's — a sub-assembly's,
+  // not the job's top-level part — as get_job_operation_by_id resolves it.
   const itemIds = [
-    ...new Set(jobs.map((job) => job.itemId).filter((id): id is string => !!id))
+    ...new Set(
+      members.data
+        .map(
+          (m) =>
+            (m.jobMakeMethod as { itemId?: string } | null)?.itemId ??
+            (m.job as { itemId?: string } | null)?.itemId
+        )
+        .filter((id): id is string => !!id)
+    )
   ];
   const [jobFiles, itemFiles] = await Promise.all([
     Promise.all(
@@ -1439,24 +1447,13 @@ export async function getJobMaterialsByOperationId(
  * built one at a time; an untracked (not serial/batch) part is consumed as the
  * step that "owns" it is recorded, so recording that step issues one unit's worth
  * automatically instead of making the operator issue it by hand (tracked parts
- * still require a scan). Step ownership:
- *   • A step-assigned part (jobMaterialStep) is owned by its assigned step(s) and
- *     issues when any of those steps is recorded for a unit.
- *   • A loose part (no step assignment) is owned by the operation's FIRST step —
- *     that's where the operator sees it — matching the prior behavior.
- * Idempotent by construction: per material the target is
- * (distinct units that recorded an owning step) × per-unit quantity, and only the
- * shortfall vs quantityIssued is issued — re-records, undo/redo, manual issues,
- * and the completion-time backflush (backflush_job_materials, which tops up to
- * completed × per-unit) can all overlap without double-issuing. A part assigned to
- * several steps is still counted once per unit, so its requirement never
- * multiplies. Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
+ * still require a scan). `planStepBackflush` decides which step owns a part and
+ * how much to issue. Eligibility mirrors backflush_job_materials (Material/Part/Consumable,
  * not Make to Order, untracked). Issue failures (e.g. insufficient stock) are
  * collected, not thrown — the part simply stays unissued and manually issuable.
  */
 export async function backflushUntrackedMaterialsOnStepRecord(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
   const step = await client
@@ -1490,7 +1487,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
 
   const materials = await client
     .from("jobMaterial")
-    .select("id, itemId, quantity, quantityIssued, methodType")
+    .select("id, itemId, quantity, quantityIssued, methodType, jobOperationId")
     .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
     .eq("companyId", args.companyId)
     .in("itemType", ["Material", "Part", "Consumable"])
@@ -1501,8 +1498,6 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     return { error: materials.error };
   }
 
-  // Step ownership: materialId → the step ids it's assigned to (empty = loose),
-  // plus each link's per-step quantity (NULL = the full BOM line quantity).
   // Falls back to the bare links against a pre-migration schema.
   let stepLinks = await client
     .from("jobMaterialStep")
@@ -1521,96 +1516,46 @@ export async function backflushUntrackedMaterialsOnStepRecord(
       )) as unknown as typeof stepLinks;
   }
   if (stepLinks.error) return { error: stepLinks.error };
-  const ownedSteps = new Map<string, Set<string>>();
-  const linkQuantities = new Map<string, Map<string, number | null>>();
-  for (const link of stepLinks.data ?? []) {
-    const set = ownedSteps.get(link.jobMaterialId) ?? new Set<string>();
-    set.add(link.jobOperationStepId);
-    ownedSteps.set(link.jobMaterialId, set);
-    const quantities =
-      linkQuantities.get(link.jobMaterialId) ??
-      new Map<string, number | null>();
-    quantities.set(link.jobOperationStepId, link.quantity);
-    linkQuantities.set(link.jobMaterialId, quantities);
-  }
 
-  // Units (index) that have recorded each of the operation's steps, so we can
-  // count distinct started units per material from its owning step(s).
   const records = await client
     .from("jobOperationStepRecord")
     .select("jobOperationStepId, index")
     .in("jobOperationStepId", stepIds);
   if (records.error) return { error: records.error };
-  const unitsByStep = new Map<string, Set<number>>();
-  for (const r of records.data ?? []) {
-    const set = unitsByStep.get(r.jobOperationStepId) ?? new Set<number>();
-    set.add(r.index);
-    unitsByStep.set(r.jobOperationStepId, set);
-  }
+
+  const issues = planStepBackflush({
+    operationId,
+    stepIds,
+    materials: materials.data,
+    stepLinks: (stepLinks.data ?? []).map((link) => ({
+      jobMaterialId: link.jobMaterialId,
+      jobOperationStepId: link.jobOperationStepId,
+      quantity: link.quantity ?? null
+    })),
+    records: records.data ?? []
+  });
 
   const failures: string[] = [];
-  for (const material of materials.data) {
-    const perUnit = material.quantity ?? 0;
-    if (perUnit <= 0) continue;
-    // Owning steps: the material's assigned steps (scoped to this operation), or
-    // the first step when it's loose (unassigned).
-    const owning = ownedSteps.get(material.id);
-    const triggerStepIds =
-      owning && owning.size > 0
-        ? stepIds.filter((id) => owning.has(id))
-        : [firstStepId];
-    const quantities = linkQuantities.get(material.id);
-    const hasSplitQuantities = triggerStepIds.some(
-      (id) => (quantities?.get(id) ?? null) !== null
-    );
-    // Distinct units that recorded at least one owning step — the line-level
-    // requirement bound: a material can never owe more than units × per-unit.
-    const units = new Set<number>();
-    for (const id of triggerStepIds) {
-      for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
-    }
-    let target: number;
-    if (hasSplitQuantities) {
-      // The line is SPLIT across steps (5 screws at step 1, 5 at step 2): each
-      // owning step consumes its own share as it is recorded, so the target is
-      // the per-step sum. A link left without an explicit quantity falls back
-      // to the full per-unit quantity for its step. The sum is capped at the
-      // line-level bound — the BOM line is the source of truth, so shares that
-      // over-allocate the line (2 + 10 on a 5-quantity line) must not issue
-      // more stock than the line requires.
-      target = Math.min(
-        triggerStepIds.reduce(
-          (sum, id) =>
-            sum +
-            (unitsByStep.get(id)?.size ?? 0) * (quantities?.get(id) ?? perUnit),
-          0
-        ),
-        units.size * perUnit
-      );
-    } else {
-      // Unsplit: distinct units counted once, so the requirement never
-      // multiplies across a material's several owning steps.
-      target = units.size * perUnit;
-    }
-    const delta = target - (material.quantityIssued ?? 0);
-    if (delta <= 0) continue;
-    const issued = await serverFns
-      .as({ client, db, companyId: args.companyId, userId: args.userId })
-      .invoke("issue", {
+  for (const issue of issues) {
+    const issued = await erpPosting(
+      "issue",
+      { client, companyId: args.companyId, userId: args.userId },
+      {
         id: operationId,
         type: "partToOperation",
-        itemId: material.itemId,
-        materialId: material.id,
-        quantity: delta,
+        itemId: issue.itemId,
+        materialId: issue.materialId,
+        quantity: issue.quantity,
         adjustmentType: "Negative Adjmt."
-      });
-    if (issued.error) failures.push(material.itemId);
+      }
+    );
+    if (issued.error) failures.push(issued.error.message || issue.itemId);
   }
 
   return {
     error: failures.length
       ? new Error(
-          `Backflush failed for ${failures.length} material(s): ${failures.join(", ")}`
+          `Backflush failed for ${failures.length} material(s): ${failures.join("; ")}`
         )
       : null
   };
@@ -2024,7 +1969,7 @@ export function isSerialEntityIncompleteForOperation(
  * when every entity is already complete it falls back to the last entity, which
  * preserves the prior end-state behavior. This unifies both the pre-split flow
  * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
- * `issue` server function spawns the next entity on each completion).
+ * `issue` posting spawns the next entity on each completion).
  */
 export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection
@@ -2371,7 +2316,6 @@ export async function insertBatchStepRecords(
 // operator data. Gated at the route on the Production DELETE permission.
 export async function completeAllStepsForUnit(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     operationId: string;
     index: number;
@@ -2417,7 +2361,7 @@ export async function completeAllStepsForUnit(
   // operation-wide, so one call after the inserts tops up this unit's shortfall.
   // Non-blocking: a failure (e.g. insufficient stock) leaves parts manually
   // issuable, matching the per-step record path.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, db, {
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, {
     jobOperationStepId: missing[0].id,
     companyId: args.companyId,
     userId: args.createdBy
@@ -2525,13 +2469,112 @@ export async function endProductionEvent(
     id: string;
     endTime: string;
     employeeId: string;
+    companyId: string;
   }
 ) {
+  // Only an open event ends: a repeated End must not move its end time.
   return client
     .from("productionEvent")
     .update({ endTime: data.endTime, updatedBy: data.employeeId })
     .eq("id", data.id)
+    .eq("companyId", data.companyId)
+    .is("endTime", null)
     .select("*");
+}
+
+/** A Machine press refused to end an event (already ended, or started later). */
+class MachineEventNotEnded extends Error {}
+
+/**
+ * Ends an operator's open Machine event with a press: the press ends every
+ * open Machine event on the work center, this one included, in one
+ * transaction. Null when the event is no longer open, or the press could not
+ * end it (it starts after the press), and then nothing was ended. Skips RLS:
+ * the caller checks that the user may update production events first.
+ */
+export async function endMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; workCenterId: string; companyId: string; userId: string }
+) {
+  try {
+    return await db.transaction().execute(async (trx) => {
+      await lockMachinePress(trx, args);
+      const open = await trx
+        .selectFrom("productionEvent")
+        .select("id")
+        .where("id", "=", args.id)
+        .where("companyId", "=", args.companyId)
+        .where("endTime", "is", null)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!open) throw new MachineEventNotEnded();
+      const press = await recordManualMachinePress(trx, args);
+      if (!press.endedEventIds.includes(args.id)) {
+        throw new MachineEventNotEnded();
+      }
+      return press;
+    });
+  } catch (error) {
+    if (error instanceof MachineEventNotEnded) return null;
+    throw error;
+  }
+}
+
+/**
+ * Posts the events a press ended (machine cost to WIP), as an operator's own
+ * End posts theirs. Batch timers post at batch completion, so they are left.
+ * A failure is logged, never thrown: the operation-finish catch-up posts what
+ * is still unposted.
+ */
+export async function postEndedProductionEvents(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string; ids: string[] }
+) {
+  if (args.ids.length === 0) return;
+  const events = await client
+    .from("productionEvent")
+    .select("id")
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .is("jobOperationBatchId", null);
+  if (events.error) {
+    log.error("Failed to read the events a press ended", {
+      companyId: args.companyId,
+      error: events.error
+    });
+    return;
+  }
+  const caller = { companyId: args.companyId, userId: args.userId };
+  for (const event of events.data ?? []) {
+    await postEventTime(caller, event.id);
+  }
+}
+
+/**
+ * Posts an ended event's time to the GL. An event the posting refused or
+ * skipped (`success: false`) stays unposted: it is logged, not thrown, and the
+ * operation-finish and job-completion catch-ups post it later.
+ */
+async function postEventTime(
+  caller: { companyId: string; userId: string },
+  productionEventId: string
+) {
+  const posted = await erpPosting("post-production-event", caller, {
+    productionEventId
+  });
+  if (posted.error) {
+    log.error("Failed to post a production event", {
+      companyId: caller.companyId,
+      productionEventId,
+      error: posted.error
+    });
+  } else if (posted.data.success === false) {
+    log.warn("A production event was not posted", {
+      companyId: caller.companyId,
+      productionEventId,
+      reason: posted.data.reason
+    });
+  }
 }
 
 export async function endProductionEventsForJobOperation(
@@ -2565,6 +2608,7 @@ export async function endProductionEvents(
     .eq("companyId", args.companyId);
 }
 
+/** Ends every open event on the work center; returns the ended ids to post. */
 export async function endProductionEventsByWorkCenter(
   client: SupabaseClient<Database>,
   args: { workCenterId: string; companyId: string; endTime: string }
@@ -2576,7 +2620,8 @@ export async function endProductionEventsByWorkCenter(
     })
     .is("endTime", null)
     .eq("workCenterId", args.workCenterId)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id");
 }
 
 // Phase 3 (auto-start): when an operator starts a production event, flip a not-yet-started
@@ -2831,6 +2876,115 @@ export async function startProductionEvent(
   }
 
   return eventInsert;
+}
+
+/**
+ * A Machine start on a work center: the press, which ends the work center's
+ * open machine time, the new event and its tracked activity commit in one
+ * transaction, at the press time read under the press locks. If any of it
+ * fails, nothing was ended. Skips RLS: the caller checks that the user may
+ * create production events first.
+ */
+export async function startMachineProductionEvent(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  data: Parameters<typeof startProductionEvent>[1] & { workCenterId: string },
+  trackedEntityId: string | undefined,
+  unitIndex?: number,
+  source: WorkSource = "mes"
+): Promise<{
+  data: { id: string; endedEventIds: string[] } | null;
+  error: unknown;
+}> {
+  const refs = await verifyProductionEventRefs(client, {
+    companyId: data.companyId,
+    jobOperationId: data.jobOperationId,
+    workCenterId: data.workCenterId,
+    jobOperationBatchId: data.jobOperationBatchId,
+    trackedEntityId
+  });
+  if (!refs.ok) return notFoundResponse(refs.message);
+
+  // The tracked entity is the separate argument; productionEvent has no column for it.
+  const { trackedEntityId: _trackedEntityId, ...event } = data;
+
+  try {
+    const started = await db.transaction().execute(async (trx) => {
+      const press = await recordManualMachinePress(trx, {
+        workCenterId: data.workCenterId,
+        companyId: data.companyId,
+        userId: data.createdBy
+      });
+      const inserted = await trx
+        .insertInto("productionEvent")
+        .values({ ...event, startTime: press.pressedAt })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      if (trackedEntityId) {
+        const operation = await trx
+          .selectFrom("jobOperation")
+          .select(["description", "jobId"])
+          .where("id", "=", data.jobOperationId)
+          .where("companyId", "=", data.companyId)
+          .executeTakeFirstOrThrow();
+        const activityId = nanoid();
+        await trx
+          .insertInto("trackedActivity")
+          .values({
+            id: activityId,
+            type: `${operation.description} (${data.type})`,
+            sourceDocument: "Production Event",
+            sourceDocumentId: inserted.id,
+            attributes: toJson({
+              Job: operation.jobId,
+              "Job Operation": data.jobOperationId,
+              "Production Event": inserted.id,
+              "Work Center": data.workCenterId,
+              Employee: data.employeeId,
+              ...(typeof unitIndex === "number" ? { Unit: unitIndex } : {})
+            }),
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+        await trx
+          .insertInto("trackedActivityOutput")
+          .values({
+            trackedActivityId: activityId,
+            trackedEntityId,
+            quantity: 1,
+            companyId: data.companyId,
+            createdBy: data.createdBy
+          })
+          .execute();
+      }
+
+      return { id: inserted.id, endedEventIds: press.endedEventIds };
+    });
+
+    await autoStartJobAndOperation(client, {
+      jobOperationId: data.jobOperationId,
+      userId: data.createdBy,
+      companyId: data.companyId
+    });
+    trackWorkEvent("job_operation_started", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionEventId: started.id,
+      jobOperationId: data.jobOperationId,
+      eventType: data.type,
+      source
+    });
+    return { data: started, error: null };
+  } catch (error) {
+    log.error("Failed to start the Machine event", {
+      companyId: data.companyId,
+      workCenterId: data.workCenterId,
+      error
+    });
+    return { data: null, error };
+  }
 }
 
 type JobMethod = {

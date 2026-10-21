@@ -15,6 +15,7 @@ import {
   stateMap
 } from "@carbon/onboarding";
 import { OnboardingHubSummary } from "@carbon/onboarding/ui";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -45,7 +46,7 @@ import {
 } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import type { LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   ClaudeIcon,
   CodexIcon,
@@ -153,7 +154,8 @@ export default function AppIndexRoute() {
   const { greeting, agentDismissed } = useLoaderData<typeof loader>();
   const modules = useModules();
   const permissions = usePermissions();
-  const enrollFetcher = useFetcher();
+  // A failed enrollment is toasted by `useAction`; success opens the hub.
+  const enrollFetcher = useAction();
   // Self-serve: anyone who can update company settings can enroll their
   // company — no Carbon staff required.
   const canEnroll = permissions.can("update", "settings");

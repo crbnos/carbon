@@ -9,6 +9,7 @@ import { getIntegrationIdsByRole, integrations } from "@carbon/ee";
 import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { buildIntegrationOAuthUrl } from "~/modules/settings/integration-oauth";
+import { isIntegrationInstallWithheld } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 // nodejs runtime: issuing the signed state cookie.
@@ -29,9 +30,12 @@ export const config = {
  * parameter the callback reads back.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId, client } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const { userId, companyId, client, email } = await requirePermissions(
+    request,
+    {
+      update: "settings"
+    }
+  );
 
   const integrationId = params.id;
   const integration = integrations.find((i) => i.id === integrationId);
@@ -49,13 +53,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (
+    await isIntegrationInstallWithheld(client, {
+      companyId,
+      integrationId,
+      email
+    })
+  ) {
+    return redirectExternal(
+      `${getAppUrl()}${path.to.integrations}?error=coming-soon&integration=${integrationId}`
+    );
+  }
+
   // Refuse before consent when the integration's role slot is already taken. The
   // database enforces this too (`companyIntegration_single_active_role`), but
   // reaching that refusal AFTER the customer has authorized at the provider
   // leaves them with a live grant and no install.
-  const role = (integration as { providerRole?: "accounting" | "spend" })
-    .providerRole;
-  if (role) {
+  const role = (
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
+  ).providerRole;
+  // Several OEE providers may be active at once, so the role has no incumbent.
+  if (role && role !== "oee") {
     const roleIds = new Set<string>(getIntegrationIdsByRole(role));
     const existing = await client
       .from("companyIntegration")

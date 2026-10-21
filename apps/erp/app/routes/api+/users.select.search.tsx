@@ -7,7 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getUserSelectGroups, searchUsersForSelect } from "~/modules/users";
+import {
+  getUserSelectGroups,
+  searchUsersForSelect
+} from "~/modules/users/users.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

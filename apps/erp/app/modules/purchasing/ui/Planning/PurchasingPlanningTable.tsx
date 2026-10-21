@@ -54,14 +54,16 @@ import {
   useUser
 } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
-import type { PlanningAction } from "~/modules/production";
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
-  PLANNING_DRAWER_PARAM,
+  PLANNING_DRAWER_PARAM
+} from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
+import {
   PLANNING_SEGMENT_COLUMN,
   planningRowKey
-} from "~/modules/production";
+} from "~/modules/production/ui/Planning/planning-action-scope";
 import {
   isApplyablePlanningAction,
   isNewSupplyAction,
@@ -815,7 +817,7 @@ const PlanningTable = memo(
               disabled={bulkUpdateFetcher.state !== "idle"}
             >
               <DropdownMenuIcon icon={<LuSquareChartGantt />} />
-              <Trans>Order Parts</Trans>
+              <Trans>Order Items</Trans>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={

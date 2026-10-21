@@ -11,11 +11,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { useCompanyToday } from "~/hooks";
+import { intercompanyTransactionValidator } from "~/modules/accounting/accounting.models";
 import {
   createIntercompanyTransaction,
-  getCompaniesInGroup,
-  intercompanyTransactionValidator
-} from "~/modules/accounting";
+  getCompaniesInGroup
+} from "~/modules/accounting/accounting.service";
 import { IntercompanyTransactionForm } from "~/modules/accounting/ui/Intercompany";
 import { getParams, path } from "~/utils/path";
 

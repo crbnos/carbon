@@ -11,6 +11,7 @@ import {
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { maintenanceMiddleware } from "@carbon/auth/middleware/maintenance.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
@@ -58,7 +59,9 @@ import {
   Scripts,
   ScrollRestoration,
   UNSAFE_FrameworkContext,
-  useLoaderData
+  useLoaderData,
+  useLocation,
+  useMatches
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
@@ -66,6 +69,7 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import "@carbon/lib/shims";
 import { MotionConfig } from "motion/react";
@@ -76,6 +80,8 @@ export const middleware = timedMiddleware({
   // First: the request scope (context, request id, access log).
   request: requestMiddleware,
   security: securityMiddleware,
+  // After security, so the 503 still carries the nonce and security headers.
+  maintenance: maintenanceMiddleware,
   formBody: formBodyMiddleware,
   flash: flashMiddleware,
   prefetchCache: prefetchCacheMiddleware
@@ -126,6 +132,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     MES_URL,
     NODE_ENV,
     ONSHAPE_CLIENT_ID,
+    ONSHAPE_V2_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
@@ -159,6 +166,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         MES_URL,
         NODE_ENV,
         ONSHAPE_CLIENT_ID,
+        ONSHAPE_V2_CLIENT_ID,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         QUICKBOOKS_CLIENT_ID,
@@ -309,7 +317,9 @@ export function Document({
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
+        {!CONTROLLED_ENVIRONMENT &&
+          import.meta.env.PROD &&
+          import.meta.env.VITE_VERCEL_ENV && <Analytics />}
       </body>
     </html>
   );
@@ -322,7 +332,12 @@ export default function App() {
   const prefs = loaderData?.preferences;
   const appLanguage = resolveLanguage(prefs.locale);
   const catalog = useCatalog(appLanguage);
-  const mode = useMode();
+  const userMode = useMode();
+  const { search } = useLocation();
+  const hostMode = useMatches()
+    .map((match) => (match.handle as Handle | undefined)?.hostMode)
+    .find((value) => value !== undefined);
+  const mode = hostMode ? hostMode(new URLSearchParams(search)) : userMode;
 
   // One client for both consumers: the imperative `window.clientCache`
   // read-through convention (clientLoader/cachedApiQuery) and hook-based

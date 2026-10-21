@@ -116,6 +116,54 @@ const M = {
       panel(700, 214, 340, 250, 20, PANEL2, ACCENT), ...actions].join("\n");
   },
 
+  /* The API: one operation in the middle. A phone's button, an HTTP request and an
+   * agent's prompt all call it, and it acts on one unit of the fleet. No window. */
+  hub: (r) => {
+    const wire = (d) => `  <path d="${d}" stroke="${MID}" stroke-width="1.5" stroke-dasharray="5 7"/>`;
+    const phone = [`  <clipPath id="frame"><rect width="1200" height="675"/></clipPath>`, `  <g clip-path="url(#frame)">`,
+      `  <rect x="110" y="120" width="260" height="600" rx="42" fill="${PANEL}" stroke="${MID}" stroke-width="1.5"/>`,
+      `  <rect x="122" y="132" width="236" height="576" rx="32" fill="${FAINT}"/>`,
+      `  <rect x="138" y="150" width="204" height="40" rx="12" fill="${PANEL2}"/>`, bar(154, 165, 84, MID, 10, 5),
+      ...[0, 1, 2].flatMap((i) => [sq(140, 212 + i * 54, 36, DIM, 9),
+        bar(190, 218 + i * 54, pick(r, 90, 140), MID, 9, 4), bar(190, 236 + i * 54, pick(r, 60, 100), DIM, 7, 3)]),
+      `  <rect x="122" y="380" width="236" height="340" rx="28" fill="${PANEL2}" stroke="${STROKE}" stroke-width="1.5"/>`,
+      bar(214, 394, 52, MID, 6, 3), bar(144, 420, pick(r, 100, 130), MID, 12, 6), bar(144, 446, 170, DIM, 8, 4),
+      `  <rect x="144" y="474" width="192" height="36" rx="10" fill="${FAINT}"/>`, bar(158, 488, pick(r, 70, 110), DIM, 8, 4),
+      `  <rect x="144" y="528" width="192" height="44" rx="22" fill="${MID}"/>`, bar(208, 546, 64, PANEL2, 8, 4), "  </g>"];
+    const callers = [
+      panel(450, 92, 220, 80, 16),
+      `  <path d="M488 112 q-12 0 -12 12 v6 q0 6 -8 6 q8 0 8 6 v6 q0 12 12 12 M544 112 q12 0 12 12 v6 q0 6 8 6 q-8 0 -8 6 v6 q0 12 -12 12" stroke="${MID}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+      bar(498, 127, 36, DIM), bar(584, 127, pick(r, 50, 66), DIM),
+      panel(450, 504, 220, 80, 16),
+      `  <path d="M474 530 l14 14 -14 14" stroke="${MID}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+      bar(500, 553, 26, MID, 6, 3), bar(546, 539, pick(r, 80, 100), DIM)];
+    const iso = (cx, cy, s, h, top, left, right) => {
+      const dx = s * 0.866, dy = s / 2;
+      return [`  <path d="M${cx} ${cy - dy} L${cx + dx} ${cy} L${cx} ${cy + dy} L${cx - dx} ${cy} Z" fill="${top}"/>`,
+        `  <path d="M${cx - dx} ${cy} L${cx} ${cy + dy} V${cy + dy + h} L${cx - dx} ${cy + h} Z" fill="${left}"/>`,
+        `  <path d="M${cx + dx} ${cy} L${cx} ${cy + dy} V${cy + dy + h} L${cx + dx} ${cy + h} Z" fill="${right}"/>`].join("\n");
+    };
+    const P = (u, v) => [900 + (u + v) * 46.8, 360 + (u - v) * 27];
+    const floor = [-3, -2, -1, 0, 1, 2, 3].flatMap((k) => {
+      const [x0, y0] = P(k, -3), [x1, y1] = P(k, 3), [x2, y2] = P(-3, k), [x3, y3] = P(3, k);
+      return [`  <path d="M${x0} ${y0} L${x1} ${y1} M${x2} ${y2} L${x3} ${y3}" stroke="${FAINT}" stroke-width="1.5"/>`];
+    });
+    const grey = ["#2E3036", "#1B1C20", "#232529"];
+    const slots = [[-1, 1], [-1, 0], [0, 1], [1, 1], [0, -1], [1, 0]];
+    const out = slots.splice(pick(r, 4, 5), 1)[0];
+    const units = [...slots, out].map(([u, v], i) => [...P(u, v), i === slots.length])
+      .sort((x, y) => x[1] - y[1])
+      .map(([x, y, hot]) => iso(x, y, 40, 36, ...(hot ? [ACCENT, ACC_BG, "#0F4E66"] : grey)));
+    const [ox, oy] = P(...out);
+    return [...floor, ...phone, ...callers,
+      wire("M336 550 C430 550 430 358 504 358"), wire("M560 172 V282"), wire("M560 394 V504"),
+      wire(`M616 338 C720 338 ${ox - 110} ${oy} ${ox - 35} ${oy}`),
+      dot(504, 358, 4, ACCENT), dot(560, 282, 4, ACCENT), dot(560, 394, 4, ACCENT), dot(616, 338, 4, ACCENT),
+      ...units,
+      `  <rect x="504" y="282" width="112" height="112" rx="28" fill="${ACC_BG}" stroke="${ACCENT}" stroke-width="1.5"/>`,
+      `  <path d="M540 318 l-14 20 14 20 M580 318 l14 20 -14 20 M568 312 l-16 52" stroke="${ACCENT}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`].join("\n");
+  },
+
   gantt: (r) => {
     const lanes = [0, 1, 2, 3, 4, 5].map((i) => {
       const hot = i === 2, x = pick(r, 40, 330), w = pick(r, 130, 250);
@@ -298,6 +346,7 @@ const MOTIFS = [
   ["speed", /faster|speed|performance|latency/i],
   ["dashboard", /dashboard|time clock|timecard|report/i],
   ["planning", /mrp|planning action/i],
+  ["hub", /\bapi\b/i],
   ["gantt", /schedul|capacity|gantt/i],
   ["merge", /batching|batch |merge|consolidat/i],
   ["flow", /workflow|automation|trigger/i],
@@ -308,7 +357,7 @@ const MOTIFS = [
   ["stack", /document|pdf|asset|template/i],
   ["branch", /multi-entity|intercompany|storage rule/i],
   ["grid", /storage unit|inventory|bin|shelf|warehouse/i],
-  ["rings", /passkey|sign-in|sso|two-factor|mcp|console|api\b|security/i],
+  ["rings", /passkey|sign-in|sso|two-factor|mcp|console|security/i],
   ["ledger", /accounting|ledger|invoice|payment|card transaction|journal|budget|valuation/i],
   ["balloons", /balloon/i],
 ];

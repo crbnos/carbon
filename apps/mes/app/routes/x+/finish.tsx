@@ -10,7 +10,6 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { finishValidator } from "~/services/models";
 import { finishJobOperation } from "~/services/operations.service";
 import { readOrigin } from "~/utils/origin";
@@ -28,15 +27,11 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const finishOperation = await finishJobOperation(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      ...validation.data,
-      userId,
-      companyId
-    }
-  );
+  const finishOperation = await finishJobOperation(serviceRole, {
+    ...validation.data,
+    userId,
+    companyId
+  });
 
   if (finishOperation.error) {
     return data(

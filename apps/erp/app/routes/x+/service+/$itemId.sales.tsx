@@ -10,11 +10,11 @@ import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { itemUnitSalePriceValidator } from "~/modules/items/items.models";
 import {
   getItemUnitSalePrice,
-  itemUnitSalePriceValidator,
   upsertItemUnitSalePrice
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

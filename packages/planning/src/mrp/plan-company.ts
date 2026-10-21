@@ -40,6 +40,7 @@ import {
   actualConsumesForecast,
   consumeForecast
 } from "./forecast-consumption.ts";
+import { bomChildren } from "./bom-children.ts";
 import {
   jobCompletionDate,
   purchaseOrderLineArrivalDate
@@ -412,15 +413,7 @@ export function planCompany(input: PlanCompanyInputs): PlanCompanyOutputs {
   // Build itemId -> direct BOM children (one level only)
   const bomByItem = new Map<string, BomChild[]>();
   for (const [itemId, methodId] of methodIdByItem) {
-    const materials = materialsByMethodId.get(methodId) ?? [];
-    const children: BomChild[] = [];
-    for (const mat of materials) {
-      children.push({
-        itemId: mat.itemId,
-        quantity: Number(mat.quantity) || 1,
-        methodType: mat.methodType as MethodType
-      });
-    }
+    const children = bomChildren(materialsByMethodId.get(methodId) ?? []);
     if (children.length > 0) {
       bomByItem.set(itemId, children);
     }

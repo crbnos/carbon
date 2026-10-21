@@ -9,10 +9,8 @@ import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import type {
-  CustomerLocation as CustomerLocationType,
-  getCustomerLocations
-} from "~/modules/sales";
+import type { getCustomerLocations } from "~/modules/sales/sales.service";
+import type { CustomerLocation as CustomerLocationType } from "~/modules/sales/types";
 import CustomerLocationForm from "~/modules/sales/ui/Customer/CustomerLocationForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

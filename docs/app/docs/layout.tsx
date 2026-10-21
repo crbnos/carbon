@@ -90,6 +90,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
       "scheduling",
       "batching",
       "kanban",
+      "strict-backflush",
       "work-centers",
       "maintenance",
       "mes",

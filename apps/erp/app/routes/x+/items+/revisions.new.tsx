@@ -9,8 +9,11 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { revisionValidator } from "~/modules/items/items.models";
-import { requireItemChangeNoticeUnlocked } from "~/modules/items/items.server";
-import { createRevision, getItem } from "~/modules/items/items.service";
+import {
+  createRevision,
+  getItem,
+  requireItemChangeNoticeUnlocked
+} from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

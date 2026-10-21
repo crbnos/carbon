@@ -17,7 +17,6 @@ const COMPLIANT = [
   "sales.models.ts",
   "types.ts",
   "ui",
-  "index.ts",
   "sales.server.ts"
 ];
 
@@ -28,7 +27,7 @@ describe("moduleShape", () => {
 
   it("flags a missing required entry (types.ts)", () => {
     const v = moduleShape.inspect(
-      mod("sales", ["sales.service.ts", "sales.models.ts", "ui", "index.ts"])
+      mod("sales", ["sales.service.ts", "sales.models.ts", "ui"])
     );
     expect(v).toHaveLength(1);
     expect(v[0]?.snippet).toBe("missing:types.ts");
@@ -53,7 +52,6 @@ describe("moduleShape", () => {
         "widget.models.ts",
         "types.ts",
         "ui",
-        "index.ts",
         "widget.ee.server.ts"
       ])
     );
@@ -67,7 +65,6 @@ describe("moduleShape", () => {
         "widget.models.ts",
         "types.ts",
         "ui",
-        "index.ts",
         "extra.service.ts"
       ])
     );
@@ -76,25 +73,48 @@ describe("moduleShape", () => {
 
   it("flags a missing primary service file", () => {
     const v = moduleShape.inspect(
-      mod("sales", ["sales.models.ts", "types.ts", "ui", "index.ts"])
+      mod("sales", ["sales.models.ts", "types.ts", "ui"])
     );
     expect(v.map((x) => x.snippet)).toContain("missing:sales.service.ts");
   });
 
-  it("allows multiple .server.ts and utils/test files", () => {
+  it("allows utils and test files", () => {
     const v = moduleShape.inspect(
       mod("quality", [
         "quality.service.ts",
         "quality.models.ts",
         "types.ts",
         "ui",
-        "index.ts",
         "quality.server.ts",
-        "inspectionBalloon.server.ts",
         "quality.utils.ts",
         "quality.utils.test.ts"
       ])
     );
     expect(v).toHaveLength(0);
+  });
+
+  it("flags a barrel", () => {
+    const v = moduleShape.inspect(
+      mod("sales", [...COMPLIANT, "index.ts", "index.server.ts"])
+    );
+    expect(v.map((x) => x.snippet)).toEqual([
+      "barrel:index.ts",
+      "barrel:index.server.ts"
+    ]);
+  });
+
+  it("allows one server file, and its tests", () => {
+    const v = moduleShape.inspect(
+      mod("sales", [
+        ...COMPLIANT,
+        "sales.server.test.ts",
+        "sales.documents.server.tsx",
+        "timezone.server.ts"
+      ])
+    );
+    expect(v.map((x) => x.snippet)).toEqual([
+      "extra-server:sales.documents.server.tsx",
+      "extra-server:timezone.server.ts"
+    ]);
   });
 });

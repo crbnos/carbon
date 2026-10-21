@@ -14,7 +14,7 @@ import { toSafeHref } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import Customer from "./Customer";
 import Employee from "./Employee";
 import Supplier from "./Supplier";

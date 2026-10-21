@@ -16,16 +16,14 @@ import {
   ShippingMethod
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type {
-  ShipmentSourceDocument,
-  shipmentStatusType
-} from "~/modules/inventory";
+import type { shipmentStatusType } from "~/modules/inventory/inventory.models";
 // From the models file, not the module barrel: the barrel re-exports this
 // form, and the cycle left `ShipmentForm` read before it was defined in dev.
 import {
   shipmentSourceDocumentType,
   shipmentValidator
 } from "~/modules/inventory/inventory.models";
+import type { ShipmentSourceDocument } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import useShipmentForm from "./useShipmentForm";
 

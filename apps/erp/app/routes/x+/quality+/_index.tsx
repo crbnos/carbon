@@ -75,11 +75,11 @@ import {
 } from "recharts";
 import { DateSelect, Empty, Hyperlink, MetricCard } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
-import { getIssueTypesList, QualityKPIs } from "~/modules/quality";
+import { QualityKPIs } from "~/modules/quality/quality.models";
+import { getIssueTypesList } from "~/modules/quality/quality.service";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { loader as kpiLoader } from "~/routes/api+/quality.kpi.$key";
-
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

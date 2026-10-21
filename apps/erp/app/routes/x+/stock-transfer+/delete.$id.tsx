@@ -2,55 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  deleteStockTransfer,
-  getStockTransfer,
-  isStockTransferLocked
-} from "~/modules/inventory";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const { id } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.deleteStockTransfer({
+    stockTransferId: id
   });
-
-  const { id } = params;
-
-  if (!id) throw new Error("id is not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "inventory"
+  // An error is toasted where the delete was confirmed.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(path.to.stockTransfers, {
+    message: "Successfully deleted stock transfer"
   });
-  const transfer = await getStockTransfer(viewClient, id);
-  await requireUnlocked({
-    request,
-    isLocked: isStockTransferLocked(transfer.data?.status),
-    redirectTo: path.to.stockTransfer(id),
-    message: "Cannot modify a locked stock transfer. Reopen it first."
-  });
-
-  const mutation = await deleteStockTransfer(client, id);
-  if (mutation.error) {
-    return data(
-      {
-        success: false
-      },
-      await flash(
-        request,
-        error(mutation.error, "Failed to delete stock transfer")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.stockTransfers,
-    await flash(request, success("Successfully deleted stock transfer"))
-  );
 }

@@ -65,128 +65,39 @@ beforeEach(() => {
 // Nothing is delegated in these fixtures, so the topology is carbon-owned.
 const CARBON_TOPOLOGY = buildIntegrationTopology([], []);
 
-describe.each([
-  "xero",
-  "quickbooks"
-])("%s reconciled card void", (providerId) => {
-  it.each([
-    true,
-    false
-  ])("enqueues a mapped void, reaches the native adapter, and persists only confirmed deletion (confirmed=%s)", async (confirmed) => {
-    const client = {
-      from(table: string) {
-        const query = {
-          select: () => query,
-          eq: () => query,
-          in: async () => ({
-            error: null,
-            data:
-              table === "charge" ? [{ id: "charge-1", status: "Voided" }] : []
-          })
-        };
-        return query;
-      }
-    };
-    const database = {
-      selectFrom: () => {
-        const query = {
-          select: () => query,
-          where: () => query,
-          execute: async () => [mapping]
-        };
-        return query;
-      }
-    };
-    const summary = await reconcileEntities({
-      topology: CARBON_TOPOLOGY,
-      client: client as never,
-      database: database as never,
-      companyId: "company-1",
-      providerId,
-      integrationMetadata: {},
-      createdBy: "system",
-      scope: "void",
-      refs: [{ entityType: "charge", entityId: "charge-1" }]
-    });
-    expect(summary.enqueued).toBe(1);
-    expect(requests[0]).toMatchObject({
-      entityType: "charge",
-      entityId: "charge-1"
-    });
-
-    const remoteCalls: string[] = [];
-    const provider = {
-      id: providerId,
-      deletePurchase: async () => {
-        remoteCalls.push("delete");
-        if (!confirmed) throw new Error("Provider refused deletion");
-      },
-      request: async (method: string) => {
-        remoteCalls.push(method);
-        if (!confirmed && method === "POST")
-          throw new Error("Provider refused deletion");
-        return {
-          error: false,
-          data: {
-            BankTransactions: [
-              {
-                BankTransactionID: "remote-1",
-                Type: "SPEND",
-                BankAccount: { Code: "card" },
-                LineItems: [],
-                Status: method === "GET" ? "AUTHORISED" : "DELETED"
-              }
-            ]
+describe.each(["xero", "quickbooks"])(
+  "%s reconciled card void",
+  (providerId) => {
+    it.each([true, false])(
+      "enqueues a mapped void, reaches the native adapter, and persists only confirmed deletion (confirmed=%s)",
+      async (confirmed) => {
+        const client = {
+          from(table: string) {
+            const query = {
+              select: () => query,
+              eq: () => query,
+              in: async () => ({
+                error: null,
+                data:
+                  table === "charge"
+                    ? [{ id: "charge-1", status: "Voided" }]
+                    : []
+              })
+            };
+            return query;
           }
         };
-      }
-    };
-    const Syncer = providerId === "xero" ? XeroChargeSyncer : QboChargeSyncer;
-    const syncer = new Syncer({
-      database: {} as never,
-      companyId: "company-1",
-      provider: provider as never,
-      entityType: "charge",
-      config: {
-        enabled: true,
-        direction: "push-to-accounting",
-        owner: "carbon"
-      }
-    });
-    const localSource: CardChargeSource = {
-      id: "charge-1",
-      companyId: "company-1",
-      chargeId: "CARD-1",
-      type: "Charge",
-      status: "Voided",
-      supplierId: "supplier",
-      supplierExternalId: "remote-supplier",
-      merchantName: null,
-      memo: null,
-      updatedAt: null
-    };
-    vi.spyOn(
-      syncer as unknown as {
-        fetchLocalBatch(ids: string[]): Promise<Map<string, CardChargeSource>>;
-      },
-      "fetchLocalBatch"
-    ).mockResolvedValue(new Map([[localSource.id, localSource]]));
-    const result = await syncer.pushBatchToAccounting(
-      requests.map((request) => request.entityId)
-    );
-    expect(result.results[0]).toMatchObject(
-      confirmed
-        ? {
-            status: "success",
-            action: "deleted"
+        const database = {
+          selectFrom: () => {
+            const query = {
+              select: () => query,
+              where: () => query,
+              execute: async () => [mapping]
+            };
+            return query;
           }
-        : { status: "error" }
-    );
-    expect(remoteCalls.length).toBeGreaterThan(0);
-    expect(mapping.metadata.voided === true).toBe(confirmed);
-    expect(
-      (
-        await reconcileEntities({
+        };
+        const summary = await reconcileEntities({
           topology: CARBON_TOPOLOGY,
           client: client as never,
           database: database as never,
@@ -194,10 +105,104 @@ describe.each([
           providerId,
           integrationMetadata: {},
           createdBy: "system",
-          scope: "void-repeat",
+          scope: "void",
           refs: [{ entityType: "charge", entityId: "charge-1" }]
-        })
-      ).enqueued
-    ).toBe(confirmed ? 0 : 1);
-  });
-});
+        });
+        expect(summary.enqueued).toBe(1);
+        expect(requests[0]).toMatchObject({
+          entityType: "charge",
+          entityId: "charge-1"
+        });
+
+        const remoteCalls: string[] = [];
+        const provider = {
+          id: providerId,
+          deletePurchase: async () => {
+            remoteCalls.push("delete");
+            if (!confirmed) throw new Error("Provider refused deletion");
+          },
+          request: async (method: string) => {
+            remoteCalls.push(method);
+            if (!confirmed && method === "POST")
+              throw new Error("Provider refused deletion");
+            return {
+              error: false,
+              data: {
+                BankTransactions: [
+                  {
+                    BankTransactionID: "remote-1",
+                    Type: "SPEND",
+                    BankAccount: { Code: "card" },
+                    LineItems: [],
+                    Status: method === "GET" ? "AUTHORISED" : "DELETED"
+                  }
+                ]
+              }
+            };
+          }
+        };
+        const Syncer =
+          providerId === "xero" ? XeroChargeSyncer : QboChargeSyncer;
+        const syncer = new Syncer({
+          database: {} as never,
+          companyId: "company-1",
+          provider: provider as never,
+          entityType: "charge",
+          config: {
+            enabled: true,
+            direction: "push-to-accounting",
+            owner: "carbon"
+          }
+        });
+        const localSource: CardChargeSource = {
+          id: "charge-1",
+          companyId: "company-1",
+          chargeId: "CARD-1",
+          type: "Charge",
+          status: "Voided",
+          supplierId: "supplier",
+          supplierExternalId: "remote-supplier",
+          merchantName: null,
+          memo: null,
+          updatedAt: null
+        };
+        vi.spyOn(
+          syncer as unknown as {
+            fetchLocalBatch(
+              ids: string[]
+            ): Promise<Map<string, CardChargeSource>>;
+          },
+          "fetchLocalBatch"
+        ).mockResolvedValue(new Map([[localSource.id, localSource]]));
+        const result = await syncer.pushBatchToAccounting(
+          requests.map((request) => request.entityId)
+        );
+        expect(result.results[0]).toMatchObject(
+          confirmed
+            ? {
+                status: "success",
+                action: "deleted"
+              }
+            : { status: "error" }
+        );
+        expect(remoteCalls.length).toBeGreaterThan(0);
+        expect(mapping.metadata.voided === true).toBe(confirmed);
+        expect(
+          (
+            await reconcileEntities({
+              topology: CARBON_TOPOLOGY,
+              client: client as never,
+              database: database as never,
+              companyId: "company-1",
+              providerId,
+              integrationMetadata: {},
+              createdBy: "system",
+              scope: "void-repeat",
+              refs: [{ entityType: "charge", entityId: "charge-1" }]
+            })
+          ).enqueued
+        ).toBe(confirmed ? 0 : 1);
+      }
+    );
+  }
+);

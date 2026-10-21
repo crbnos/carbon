@@ -44,7 +44,8 @@ import { Form, Link, useLoaderData } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
-} from "~/modules/users/users.server";
+} from "~/modules/users/users.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "invite");
@@ -96,7 +97,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const authSession = await getAuthSession(request);
 
-  const accept = await acceptInvite(serviceRole, code, authSession?.email);
+  const accept = await acceptInvite(
+    serviceRole,
+    getDatabaseClient(),
+    code,
+    authSession?.email
+  );
   if (accept.error) {
     throw redirect(
       path.to.root,

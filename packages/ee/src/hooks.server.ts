@@ -14,7 +14,12 @@ import {
   linearOnUninstall
 } from "./linear/hooks.server";
 import { mountHealthcheck } from "./mount/hooks.server";
-import { onshapeOnUninstall } from "./onshape/hooks.server";
+import { onshapeHealthcheck, onshapeOnUninstall } from "./onshape/hooks.server";
+import {
+  ONSHAPE_GOVERNMENT_INTEGRATION_ID,
+  ONSHAPE_INTEGRATION_ID
+} from "./onshape/lib/connection";
+import { ONSHAPE_V2_INTEGRATION_ID } from "./onshape/lib/integration-id";
 import {
   quickbooksOnInstall,
   quickbooksOnUninstall
@@ -30,6 +35,7 @@ import {
   rilletOnInstall,
   rilletOnUninstall
 } from "./rillet/hooks.server";
+import { senseHealthcheck, senseOnUninstall } from "./sense/hooks.server";
 import {
   stripeConnectHealthcheck,
   stripeConnectOnInstall,
@@ -81,10 +87,15 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onHealthcheck: mountHealthcheck
   },
   onshape: {
-    onUninstall: onshapeOnUninstall
+    onUninstall: onshapeOnUninstall,
+    onHealthcheck: onshapeHealthcheck(ONSHAPE_INTEGRATION_ID)
   },
   "onshape-government": {
-    onUninstall: onshapeOnUninstall
+    onUninstall: onshapeOnUninstall,
+    onHealthcheck: onshapeHealthcheck(ONSHAPE_GOVERNMENT_INTEGRATION_ID)
+  },
+  "onshape-v2": {
+    onHealthcheck: onshapeHealthcheck(ONSHAPE_V2_INTEGRATION_ID)
   },
   // The accounting providers' onUpdate re-runs the same subscription
   // convergence as onInstall: a settings save on an existing install
@@ -106,6 +117,10 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onInstall: rilletOnInstall,
     onUpdate: rilletOnInstall,
     onUninstall: rilletOnUninstall
+  },
+  sense: {
+    onHealthcheck: senseHealthcheck,
+    onUninstall: senseOnUninstall
   },
   xero: {
     onHealthcheck: xeroHealthcheck,

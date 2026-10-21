@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import type {
   ActionPresentation,
   TrackedEntityOption,
@@ -31,12 +32,11 @@ import {
   TooltipContent,
   TooltipTrigger,
   TrackedEntityPicker,
-  toast,
   useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -293,7 +293,8 @@ function PickingListLineItem({
   const { t } = useLingui();
   const { isPhone } = useViewport();
   const [items] = useItems();
-  const fetcher = useFetcher<{ success: boolean; message?: string }>();
+  // A refused pick is toasted by useAction.
+  const fetcher = useAction();
   const isPending = fetcher.state !== "idle";
   const [shortOpen, setShortOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -305,12 +306,6 @@ function PickingListLineItem({
     expiredEntityPolicy: "Warn" | "Block" | "BlockWithOverride";
     defaultOrder: TrackedEntityPickOrder;
   }>();
-
-  useEffect(() => {
-    if (fetcher.data && fetcher.data.success === false) {
-      toast.error(fetcher.data.message ?? "Failed to pick line");
-    }
-  }, [fetcher.data]);
 
   const openPicker = () => {
     setPickerOpen(true);

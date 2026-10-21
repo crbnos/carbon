@@ -11,7 +11,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getSalesReturnOrder, getSalesReturnOrderLines } from "~/modules/sales";
+import {
+  getSalesReturnOrder,
+  getSalesReturnOrderLines
+} from "~/modules/sales/sales.service";
 import {
   SalesReturnOrderExplorer,
   SalesReturnOrderHeader,

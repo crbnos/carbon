@@ -9,12 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { documentValidator } from "~/modules/documents/documents.models";
 import {
-  DocumentForm,
-  documentValidator,
   getDocument,
   upsertDocument
-} from "~/modules/documents";
+} from "~/modules/documents/documents.service";
+import { DocumentForm } from "~/modules/documents/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

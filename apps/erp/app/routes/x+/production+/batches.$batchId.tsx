@@ -13,7 +13,7 @@ import {
   getBatchOutputLots,
   getJobOperationBatchEvents,
   getJobOperationBatchWithMembers
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { BatchDetailDrawer } from "~/modules/production/ui/Batches/BatchDetailDrawer";
 import { path } from "~/utils/path";
 

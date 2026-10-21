@@ -13,9 +13,14 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
-  AvailableCreditsTable,
+  isPaymentLocked,
+  paymentValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
+  checkDepositDocument,
   getAvailableCreditsForParty,
   getAvailableOnAccountCreditSources,
+  getDepositDocuments,
   getInvoiceSettlements,
   getOpenPurchaseInvoicesForSupplier,
   getOpenReimbursementsForEmployee,
@@ -24,19 +29,16 @@ import {
   getPaymentCurrencyConfiguration,
   getSettlementRelatedItems,
   getStagedCreditsForPayment,
-  isPaymentLocked,
+  upsertPayment
+} from "~/modules/invoicing/invoicing.service";
+import {
+  AvailableCreditsTable,
   PaymentApplications,
   PaymentApplyTable,
   PaymentDocuments,
   PaymentForm,
-  PaymentHeader,
-  paymentValidator,
-  upsertPayment
-} from "~/modules/invoicing";
-import {
-  checkDepositDocument,
-  getDepositDocuments
-} from "~/modules/invoicing/invoicing.server";
+  PaymentHeader
+} from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -10,10 +10,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   assertMethodOperationIsDraft,
+  checkRevisionLock,
   upsertMethodOperationStep
-} from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
-import { operationStepValidator } from "~/modules/shared";
+} from "~/modules/items/items.service";
+import { operationStepValidator } from "~/modules/shared/shared.models";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

@@ -41,7 +41,7 @@ import {
   useLineOrderEditMode
 } from "~/components/LineReorder";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isSalesRfqLocked, salesRfqDragValidator } from "../../sales.models";
@@ -50,6 +50,7 @@ import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 import MapExtractedLinesModal from "./MapExtractedLinesModal";
 import SalesRFQLineForm from "./SalesRFQLineForm";
 import { useOptimisticDocumentDrag } from "./useOptimiticDocumentDrag";
+
 export default function SalesRFQExplorer() {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");

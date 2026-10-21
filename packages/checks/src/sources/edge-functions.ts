@@ -7,7 +7,6 @@ import { join, relative } from "node:path";
 import type { SourceFile } from "../check";
 
 const FUNCTIONS_ROOT = "packages/database/supabase/functions";
-const SERVER_FUNCTIONS_ROOT = "packages/server-functions/src";
 
 const NOT_FUNCTIONS = new Set(["node_modules"]);
 
@@ -29,11 +28,6 @@ function collectTs(dir: string, out: string[]): void {
  */
 export function loadEdgeFunctions(root: string): SourceFile[] {
   return loadFunctionDirs(root, FUNCTIONS_ROOT);
-}
-
-/** One SourceFile per `@carbon/server-functions` entry point (one directory each). */
-export function loadServerFunctions(root: string): SourceFile[] {
-  return loadFunctionDirs(root, SERVER_FUNCTIONS_ROOT);
 }
 
 function loadFunctionDirs(root: string, dir: string): SourceFile[] {

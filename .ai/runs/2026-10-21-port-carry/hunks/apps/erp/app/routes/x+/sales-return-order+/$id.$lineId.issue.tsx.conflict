@@ -1,0 +1,369 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, success } from "@carbon/auth";
+import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+<<<<<<< HEAD
+import { deleteIssue, getIssueTypesList, insertIssue } from "~/modules/quality";
+import {
+  getSalesReturnOrder,
+  getSalesReturnOrderLine,
+  getSalesReturnOrderLineTrackedEntities,
+  REPAIR_DISPOSITION_LOCKED_MESSAGE,
+  setSalesReturnOrderLineDisposition
+} from "~/modules/sales";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
+||||||| 23bd5d6e0b
+import { deleteIssue, getIssueTypesList, insertIssue } from "~/modules/quality";
+import {
+  getSalesReturnOrder,
+  getSalesReturnOrderLine,
+  getSalesReturnOrderLineTrackedEntities,
+  setSalesReturnOrderLineDisposition
+} from "~/modules/sales";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
+=======
+import { escalateReturnOrderLine } from "~/modules/sales/sales.server";
+>>>>>>> 0a1bd961b2
+import { path, requestReferrer } from "~/utils/path";
+
+const dispositionForm = escalateReturnOrderLine.input.pick({
+  disposition: true
+});
+
+// Escalate an RMA line to a quality Issue (NCR): Scrap and Rework are
+// quality decisions.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(dispositionForm).request(args, {
+    params: ["id", "lineId"]
+  });
+<<<<<<< HEAD
+
+  const { id, lineId } = params;
+  if (!id) throw notFound("Could not find id");
+  if (!lineId) throw notFound("Could not find lineId");
+
+  const redirectTo =
+    requestReferrer(request) ?? path.to.salesReturnOrderLine(id, lineId);
+
+  const failWith = async (err: unknown, message: string): Promise<Response> => {
+    return redirect(redirectTo, await flash(request, error(err, message)));
+  };
+
+  const formData = await request.formData();
+  const disposition = formData.get("disposition");
+  if (disposition !== "Scrap" && disposition !== "Rework") {
+    throw await failWith(
+      null,
+      "Only Scrap and Rework dispositions escalate to an Issue"
+    );
+  }
+
+  const [salesReturnOrder, line] = await Promise.all([
+    getSalesReturnOrder(client, id),
+    getSalesReturnOrderLine(client, lineId)
+  ]);
+
+  if (salesReturnOrder.error || !salesReturnOrder.data) {
+    throw await failWith(salesReturnOrder.error, "Failed to load return order");
+  }
+  if (line.error || !line.data) {
+    throw await failWith(line.error, "Failed to load return order line");
+  }
+  if (
+    line.data.salesReturnOrderId !== id ||
+    salesReturnOrder.data.companyId !== companyId
+  ) {
+    throw await failWith(
+      null,
+      "This line does not belong to this return order"
+    );
+  }
+
+  const quantityReceived = Number(line.data.quantityReceived ?? 0);
+  if (quantityReceived <= 0) {
+    throw await failWith(
+      null,
+      "Cannot set a disposition before any quantity is received"
+    );
+  }
+  // A received Repair line's unit never entered stock, so it cannot be
+  // scrapped or reworked from stock.
+  if (line.data.disposition === "Repair") {
+    throw await failWith(null, REPAIR_DISPOSITION_LOCKED_MESSAGE);
+  }
+
+  // The line's returned entities: expected serials/batches still On Hold...
+  const linked = await getSalesReturnOrderLineTrackedEntities(client, [lineId]);
+  const linkedOnHoldIds = (linked.data ?? [])
+    .filter((row) => row.trackedEntity?.status === "On Hold")
+    .map((row) => row.trackedEntityId);
+
+  // ...plus blind returns: On Hold entities created at receipt against this
+  // line's receipt lines with no expected-entity row.
+  const receipts = await client
+    .from("receipt")
+    .select("id")
+    .eq("sourceDocument", "Sales Return Order")
+    .eq("sourceDocumentId", id)
+    .eq("companyId", companyId);
+  let blindOnHoldIds: string[] = [];
+  const receiptIds = (receipts.data ?? []).map((receipt) => receipt.id);
+  if (receiptIds.length > 0) {
+    const receiptLines = await client
+      .from("receiptLine")
+      .select("id")
+      .in("receiptId", receiptIds)
+      .eq("lineId", lineId)
+      .eq("companyId", companyId);
+    const receiptLineIds = (receiptLines.data ?? []).map((row) => row.id);
+    if (receiptLineIds.length > 0) {
+      const blind = await client
+        .from("trackedEntity")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("status", "On Hold")
+        .in("attributes ->> Receipt Line", receiptLineIds);
+      blindOnHoldIds = (blind.data ?? []).map((entity) => entity.id);
+    }
+  }
+  const entityIds = Array.from(
+    new Set([...linkedOnHoldIds, ...blindOnHoldIds])
+  );
+
+  const serviceRole = getCarbonServiceRole();
+
+  const [userDefaults, issueTypes, item, returnReason] = await Promise.all([
+    getUserDefaults(client, userId, companyId),
+    getIssueTypesList(client, companyId),
+    client
+      .from("item")
+      .select("readableIdWithRevision")
+      .eq("id", line.data.itemId)
+      .eq("companyId", companyId)
+      .single(),
+    line.data.returnReasonId
+      ? client
+          .from("returnReason")
+          .select("name")
+          .eq("id", line.data.returnReasonId)
+          .single()
+      : Promise.resolve({ data: null, error: null })
+  ]);
+
+  const issueType = issueTypes.data?.[0];
+  const locationId =
+    salesReturnOrder.data.locationId ?? userDefaults.data?.locationId ?? null;
+
+  if (!issueType || !locationId) {
+    throw await failWith(
+      null,
+      "Configure at least one Issue Type and a location to escalate this line to an Issue"
+    );
+  }
+
+  const rmaReadableId = salesReturnOrder.data.salesReturnOrderId ?? "";
+  const itemReadableId = item.data?.readableIdWithRevision ?? line.data.itemId;
+  const returnReasonName = returnReason.data?.name ?? null;
+
+  // Idempotency: the disposition select posts here on every change, so
+  // Scrap -> Rework -> Scrap would otherwise leave two or three open Issues
+  // each carrying the FULL received quantity — and post-nonconformance would
+  // write the same goods off once per Issue. Mirrors the purchase bridge's
+  // "re-invoking returns the existing draft" rule (spec, Quality bridge).
+  const existingLink = await serviceRole
+    .from("nonConformanceSalesReturnOrderLine")
+    .select("nonConformanceId, nonConformance(id, nonConformanceId, status)")
+    .eq("salesReturnOrderLineId", lineId)
+    .eq("companyId", companyId);
+  if (existingLink.error) {
+    throw await failWith(
+      existingLink.error,
+      "Failed to check for an existing Issue"
+    );
+  }
+  const openLink = (existingLink.data ?? []).find((row) => {
+    const nc = row.nonConformance as { status?: string | null } | null;
+    return nc && nc.status !== "Closed";
+||||||| 23bd5d6e0b
+
+  const { id, lineId } = params;
+  if (!id) throw notFound("Could not find id");
+  if (!lineId) throw notFound("Could not find lineId");
+
+  const redirectTo =
+    requestReferrer(request) ?? path.to.salesReturnOrderLine(id, lineId);
+
+  const failWith = async (err: unknown, message: string): Promise<Response> => {
+    return redirect(redirectTo, await flash(request, error(err, message)));
+  };
+
+  const formData = await request.formData();
+  const disposition = formData.get("disposition");
+  if (disposition !== "Scrap" && disposition !== "Rework") {
+    throw await failWith(
+      null,
+      "Only Scrap and Rework dispositions escalate to an Issue"
+    );
+  }
+
+  const [salesReturnOrder, line] = await Promise.all([
+    getSalesReturnOrder(client, id),
+    getSalesReturnOrderLine(client, lineId)
+  ]);
+
+  if (salesReturnOrder.error || !salesReturnOrder.data) {
+    throw await failWith(salesReturnOrder.error, "Failed to load return order");
+  }
+  if (line.error || !line.data) {
+    throw await failWith(line.error, "Failed to load return order line");
+  }
+  if (
+    line.data.salesReturnOrderId !== id ||
+    salesReturnOrder.data.companyId !== companyId
+  ) {
+    throw await failWith(
+      null,
+      "This line does not belong to this return order"
+    );
+  }
+
+  const quantityReceived = Number(line.data.quantityReceived ?? 0);
+  if (quantityReceived <= 0) {
+    throw await failWith(
+      null,
+      "Cannot set a disposition before any quantity is received"
+    );
+  }
+
+  // The line's returned entities: expected serials/batches still On Hold...
+  const linked = await getSalesReturnOrderLineTrackedEntities(client, [lineId]);
+  const linkedOnHoldIds = (linked.data ?? [])
+    .filter((row) => row.trackedEntity?.status === "On Hold")
+    .map((row) => row.trackedEntityId);
+
+  // ...plus blind returns: On Hold entities created at receipt against this
+  // line's receipt lines with no expected-entity row.
+  const receipts = await client
+    .from("receipt")
+    .select("id")
+    .eq("sourceDocument", "Sales Return Order")
+    .eq("sourceDocumentId", id)
+    .eq("companyId", companyId);
+  let blindOnHoldIds: string[] = [];
+  const receiptIds = (receipts.data ?? []).map((receipt) => receipt.id);
+  if (receiptIds.length > 0) {
+    const receiptLines = await client
+      .from("receiptLine")
+      .select("id")
+      .in("receiptId", receiptIds)
+      .eq("lineId", lineId)
+      .eq("companyId", companyId);
+    const receiptLineIds = (receiptLines.data ?? []).map((row) => row.id);
+    if (receiptLineIds.length > 0) {
+      const blind = await client
+        .from("trackedEntity")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("status", "On Hold")
+        .in("attributes ->> Receipt Line", receiptLineIds);
+      blindOnHoldIds = (blind.data ?? []).map((entity) => entity.id);
+    }
+  }
+  const entityIds = Array.from(
+    new Set([...linkedOnHoldIds, ...blindOnHoldIds])
+  );
+
+  const serviceRole = getCarbonServiceRole();
+
+  const [userDefaults, issueTypes, item, returnReason] = await Promise.all([
+    getUserDefaults(client, userId, companyId),
+    getIssueTypesList(client, companyId),
+    client
+      .from("item")
+      .select("readableIdWithRevision")
+      .eq("id", line.data.itemId)
+      .eq("companyId", companyId)
+      .single(),
+    line.data.returnReasonId
+      ? client
+          .from("returnReason")
+          .select("name")
+          .eq("id", line.data.returnReasonId)
+          .single()
+      : Promise.resolve({ data: null, error: null })
+  ]);
+
+  const issueType = issueTypes.data?.[0];
+  const locationId =
+    salesReturnOrder.data.locationId ?? userDefaults.data?.locationId ?? null;
+
+  if (!issueType || !locationId) {
+    throw await failWith(
+      null,
+      "Configure at least one Issue Type and a location to escalate this line to an Issue"
+    );
+  }
+
+  const rmaReadableId = salesReturnOrder.data.salesReturnOrderId ?? "";
+  const itemReadableId = item.data?.readableIdWithRevision ?? line.data.itemId;
+  const returnReasonName = returnReason.data?.name ?? null;
+
+  // Idempotency: the disposition select posts here on every change, so
+  // Scrap -> Rework -> Scrap would otherwise leave two or three open Issues
+  // each carrying the FULL received quantity — and post-nonconformance would
+  // write the same goods off once per Issue. Mirrors the purchase bridge's
+  // "re-invoking returns the existing draft" rule (spec, Quality bridge).
+  const existingLink = await serviceRole
+    .from("nonConformanceSalesReturnOrderLine")
+    .select("nonConformanceId, nonConformance(id, nonConformanceId, status)")
+    .eq("salesReturnOrderLineId", lineId)
+    .eq("companyId", companyId);
+  if (existingLink.error) {
+    throw await failWith(
+      existingLink.error,
+      "Failed to check for an existing Issue"
+    );
+  }
+  const openLink = (existingLink.data ?? []).find((row) => {
+    const nc = row.nonConformance as { status?: string | null } | null;
+    return nc && nc.status !== "Closed";
+=======
+  if ("invalid" in input) return input.invalid;
+  const { id, lineId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.sales.escalateReturnOrderLine({
+    salesReturnOrderId: id,
+    lineId,
+    disposition: input.data.disposition
+>>>>>>> 0a1bd961b2
+  });
+  if (!result.data) {
+    return respond(args.request, result).redirect(
+      requestReferrer(args.request) ?? path.to.salesReturnOrderLine(id, lineId),
+      { message: "" }
+    );
+  }
+  const { issueId, created, warning } = result.data;
+  // An Issue the line already had is opened as it is.
+  throw redirect(
+    path.to.issue(issueId),
+    created
+      ? await flash(
+          args.request,
+          warning
+            ? error(null, warning)
+            : success("Issue created for return line")
+        )
+      : undefined
+  );
+}

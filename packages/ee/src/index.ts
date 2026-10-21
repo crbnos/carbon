@@ -7,12 +7,14 @@ import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
 import { Onshape, OnshapeGovernment } from "./onshape/config";
+import { OnshapeV2 } from "./onshape/config-v2";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
 import { Ramp } from "./ramp/config";
 import { Rillet } from "./rillet/config";
 import { Sage } from "./sage/config";
+import { Sense } from "./sense/config";
 import { Slack } from "./slack/config";
 import { StripeConnect } from "./stripe-connect/config";
 import type { QuickInstallConnector } from "./types";
@@ -61,11 +63,13 @@ export const integrations = [
   Mount,
   Onshape,
   OnshapeGovernment,
+  OnshapeV2,
   PaperlessParts,
   QuickBooks,
   Ramp,
   Rillet,
   Sage,
+  Sense,
   Slack,
   Xero,
   StripeConnect
@@ -75,11 +79,14 @@ export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
 export { Mount } from "./mount/config";
+export { beginOAuthPopup } from "./oauth-popup";
 export {
   Logo as OnshapeLogo,
   Onshape,
   OnshapeGovernment
 } from "./onshape/config";
+export { OnshapeV2 } from "./onshape/config-v2";
+export type { OnshapeDocument } from "./onshape/lib";
 // Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
 // without naming either integration id.
 export {
@@ -87,11 +94,196 @@ export {
   isOnshapeIntegrationId,
   ONSHAPE_INTEGRATION_IDS
 } from "./onshape/lib/connection";
+export type { OnshapeBomNode } from "./onshape/panel/bom";
+export {
+  flattenBomTree,
+  metadataProperty,
+  missingBomColumnsMessage,
+  parseBomTree,
+  withoutProperties
+} from "./onshape/panel/bom";
+export type { OnshapePanelContext } from "./onshape/panel/messages";
+export {
+  PANEL_SESSION_MESSAGE,
+  parsePanelContext
+} from "./onshape/panel/messages";
+export { correlateCopiedLines } from "./onshape/panel/method-version";
+export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
+export { OnshapePanel } from "./onshape/panel/Panel";
+export type {
+  AssemblyPlan,
+  AssemblyPlanItem,
+  AssemblyPlanMethod,
+  AssemblyPlanMethodStatus,
+  AssemblyPlanRoot,
+  ChangeNoticeEdit,
+  ItemEdit,
+  ItemFieldChange,
+  ItemFieldSnapshot,
+  ItemMethodType,
+  ItemReplenishmentSystem,
+  ItemSourcingType,
+  ItemTrackingType,
+  KeptDifference,
+  MappedItemValues,
+  MappedRowPlan,
+  MergeResult,
+  OwnedFieldChange,
+  PartPlan,
+  PartPlanAction,
+  PartPlanRow,
+  PlanItemRow,
+  PlanLine,
+  PlanMappingContext,
+  PlanMappingRow,
+  PlanMethodRow,
+  PlanOptions,
+  PlanUnitOfMeasure,
+  ProposalInput,
+  ProposedItem,
+  ReleasePlan,
+  ReleasePlanChild,
+  ReleasePlanItem,
+  ReleasePlanItemAction
+} from "./onshape/panel/plan";
+export {
+  BOM_LINE_ITEM_TYPES,
+  bomLineItemType,
+  buildAssemblyPlan,
+  buildPartPlan,
+  buildReleasePlan,
+  CHANGE_NOTICE_DESCRIPTION_MAX_LENGTH,
+  CHANGE_NOTICE_NAME_MAX_LENGTH,
+  changedItemFields,
+  changeNoticeDescriptionJson,
+  createdItemExtras,
+  currentItemFields,
+  defaultUnitOfMeasureCode,
+  EDITABLE_ITEM_FIELDS,
+  flattenNodes,
+  ITEM_DESCRIPTION_MAX_LENGTH,
+  ITEM_METHOD_TYPES,
+  ITEM_NAME_MAX_LENGTH,
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_SOURCING_TYPES,
+  ITEM_TRACKING_TYPES,
+  interlockItemFields,
+  mappedItemValues,
+  mergeChangeNoticeEdit,
+  mergeEditsForCreates,
+  mergeExistingItemEdits,
+  mergeItemEdits,
+  methodForReplenishment,
+  pickAdoptTarget,
+  pickBomChildRow,
+  pickLatestRow,
+  pickReuseRow,
+  pickRevisionBase,
+  planCreatedItem,
+  planExistingItem,
+  proposeItem,
+  proposeMappedItem,
+  reconcileMethodForReplenishment,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT
+} from "./onshape/panel/plan";
+export type { OnshapePushDefaults } from "./onshape/panel/preferences";
+export {
+  DEFAULT_PUSH_DEFAULTS,
+  parsePushDefaults,
+  reconcilePushDefaults
+} from "./onshape/panel/preferences";
+export type {
+  DescriptionModes,
+  MappingMode,
+  OnshapePropertyValue,
+  PlanCustomField,
+  PlanCustomFieldDefinition,
+  PlanItemField,
+  PropertyMapEntry,
+  PropertyMapTarget,
+  UnmappedProperty
+} from "./onshape/panel/properties";
+export {
+  CUSTOM_FIELD_DATA_TYPES,
+  CUSTOM_FIELD_TYPE_LABELS,
+  coerceOnshapeValue,
+  customFieldDisplayValue,
+  customFieldKeptDifferences,
+  customFieldWrites,
+  DEFAULT_DESCRIPTION_MODES,
+  everyPushTargets,
+  MAPPABLE_VALUE_TYPES,
+  MAPPING_MODES,
+  mappedFieldValues,
+  mergeCustomFieldValues,
+  parseDescriptionModes,
+  parseProperties,
+  parsePropertyMap,
+  partPropertiesFromElementMetadata,
+  propertyDisplayValue,
+  resolveMappedFields,
+  targetKey
+} from "./onshape/panel/properties";
+export type {
+  PanelRelease,
+  PanelReleaseItem,
+  ReleaseCarbonItemRow,
+  ReleasePackageItemLike,
+  ReleaseRevisionLike
+} from "./onshape/panel/releases";
+export {
+  drawingModels,
+  groupRevisionsIntoReleases,
+  isModelReleaseItem,
+  releaseBomKey,
+  releaseDrawingFileName,
+  releaseKeyFor,
+  resolveReleaseStates
+} from "./onshape/panel/releases";
+export type {
+  StandardField,
+  StandardFieldId,
+  StandardFieldWriter,
+  TranslatedValue,
+  ValueTranslation
+} from "./onshape/panel/standard-fields";
+export {
+  defaultTranslations,
+  isStandardFieldId,
+  matchingUnit,
+  onshapeValueOptions,
+  repeatedTranslationRows,
+  STANDARD_FIELD_IDS,
+  STANDARD_FIELDS,
+  standardField,
+  standardFieldValues,
+  translateValue,
+  translationErrors,
+  untranslatedOptions
+} from "./onshape/panel/standard-fields";
+export type {
+  PanelAssemblyLineInput,
+  PanelAssemblyLineStatus,
+  PanelItemRow,
+  PanelMappingRow,
+  PanelPartStatus,
+  ReleasedRevision
+} from "./onshape/panel/status";
+export {
+  buildAssemblyLineStatuses,
+  buildPartStatuses,
+  externalIdForAssembly,
+  externalIdForBomLine,
+  externalIdForPart,
+  normalizeConfiguration,
+  releasedRevisionsByPartNumber
+} from "./onshape/panel/status";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
 export { Ramp } from "./ramp/config";
 export { Rillet } from "./rillet/config";
+export { Sense } from "./sense/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";
 export { StripeConnect } from "./stripe-connect/config";
@@ -115,7 +307,7 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
  * in the accounting layout, and `.eq("id","ramp")` in the Ramp sweep. A new
  * provider joins by declaring its role, not by being added to a list.
  */
-export type ProviderRole = "accounting" | "spend";
+export type ProviderRole = "accounting" | "spend" | "oee";
 
 /**
  * `integrations` is a union of concrete descriptor types, and only the four

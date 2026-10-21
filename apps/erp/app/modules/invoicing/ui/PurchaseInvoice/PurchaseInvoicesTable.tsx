@@ -38,11 +38,9 @@ import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { PurchaseInvoiceListItem } from "~/modules/invoicing";
-import {
-  PurchaseInvoicingStatus,
-  purchaseInvoiceStatusType
-} from "~/modules/invoicing";
+import { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
+import type { PurchaseInvoiceListItem } from "~/modules/invoicing/types";
+import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 

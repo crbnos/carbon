@@ -3,6 +3,7 @@
   "type": "module",
   "dependencies": {
     "@carbon/account": "workspace:*",
+    "@carbon/api": "workspace:*",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
@@ -15,7 +16,6 @@
     "@carbon/locale": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/serve": "workspace:*",
-    "@carbon/server-functions": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/printing": "workspace:*",
     "@carbon/query": "workspace:*",
@@ -124,5 +124,7 @@
     "typecheck": "react-router typegen && tsgo --noEmit",
     "typegen": "react-router typegen"
   },
-  "sideEffects": false
+  "sideEffects": [
+    "./app/zod.client.ts"
+  ]
 }

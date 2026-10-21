@@ -2,181 +2,93 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
   CardContent,
   CardHeader,
   HStack,
+  toast,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { LuPlay, LuSquare } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useFetcher, useParams } from "react-router";
+import { useParams } from "react-router";
+import { z } from "zod";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import {
-  isMaintenanceDispatchLocked,
-  maintenanceDispatchEventValidator
-} from "~/modules/resources";
-import { postMaintenanceLabor } from "~/modules/resources/resources.server";
+import { maintenanceDispatchEventValidator } from "~/modules/resources/resources.models";
 import type { MaintenanceDispatchEvent } from "~/modules/resources/types";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources"
-  });
-
-  const { dispatchId } = params;
-  if (!dispatchId) throw new Error("dispatchId not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "resources"
-  });
-  const dispatchForLock = await viewClient
-    .from("maintenanceDispatch")
-    .select("id, status")
-    .eq("id", dispatchId)
-    .single();
-  await requireUnlocked({
-    request,
-    isLocked: isMaintenanceDispatchLocked(dispatchForLock.data?.status),
-    redirectTo: path.to.maintenanceDispatch(dispatchId),
-    message: "Cannot modify a locked dispatch. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  const dispatch = await client
-    .from("maintenanceDispatch")
-    .select("id, workCenterId")
-    .eq("id", dispatchId)
-    .single();
-  if (dispatch.error) {
-    return data(
-      {},
-      await flash(request, error(dispatch.error, "Failed to get dispatch"))
-    );
-  }
-
-  const { workCenterId } = dispatch.data;
+export async function action(args: ActionFunctionArgs) {
+  const intent = (await args.request.clone().formData()).get("intent");
 
   if (intent === "start") {
-    const insertEvent = await client
-      .from("maintenanceDispatchEvent")
-      .insert({
-        maintenanceDispatchId: dispatchId!,
-        employeeId: userId,
-        workCenterId: workCenterId!,
-        startTime: new Date().toISOString(),
-        companyId,
-        createdBy: userId
-      })
-      .select("id")
-      .single();
-
-    if (insertEvent.error) {
-      return data(
-        {},
-        await flash(request, error(insertEvent.error, "Failed to start event"))
-      );
-    }
-
-    return data({}, await flash(request, success("Event started")));
+    const input = await validator().request(args, { params: ["dispatchId"] });
+    if ("invalid" in input) return input.invalid;
+    const api = await carbon(args.request);
+    return api.resources.startMaintenanceEvent({
+      dispatchId: input.params.dispatchId
+    });
   }
 
   if (intent === "stop") {
-    const eventId = formData.get("eventId") as string;
-    if (!eventId) throw new Error("eventId not found");
-
-    const updateEvent = await client
-      .from("maintenanceDispatchEvent")
-      .update({
-        endTime: new Date().toISOString(),
-        updatedBy: userId
-      })
-      .eq("id", eventId);
-
-    if (updateEvent.error) {
-      return data(
-        {},
-        await flash(request, error(updateEvent.error, "Failed to stop event"))
-      );
-    }
-
-    const postingError = await postMaintenanceLabor({
-      maintenanceDispatchIds: [dispatchId],
-      companyId,
-      userId
+    const input = await validator(z.object({ eventId: z.string() })).request(
+      args,
+      { params: ["dispatchId"] }
+    );
+    if ("invalid" in input) return input.invalid;
+    const api = await carbon(args.request);
+    return api.resources.stopMaintenanceEvent({
+      dispatchId: input.params.dispatchId,
+      eventId: input.data.eventId
     });
-
-    return data(
-      {},
-      await flash(
-        request,
-        postingError
-          ? error(
-              postingError,
-              "Event stopped, but its labor cost did not post"
-            )
-          : success("Event stopped")
-      )
-    );
   }
 
-  const validation = await validator(
-    maintenanceDispatchEventValidator
-  ).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const upsertEvent = await client.from("maintenanceDispatchEvent").insert({
-    ...validation.data,
-    companyId,
-    createdBy: userId
-  });
-
-  if (upsertEvent.error) {
-    return data(
-      {},
-      await flash(request, error(upsertEvent.error, "Failed to save event"))
-    );
-  }
-
-  const postingError = await postMaintenanceLabor({
-    maintenanceDispatchIds: [dispatchId],
-    companyId,
-    userId
-  });
-
-  return data(
-    {},
-    await flash(
-      request,
-      postingError
-        ? error(postingError, "Event saved, but its labor cost did not post")
-        : success("Event saved")
-    )
+  // The timecard drawer: an id edits that timecard, none adds one.
+  const input = await validator(maintenanceDispatchEventValidator).request(
+    args,
+    { params: ["dispatchId"] }
   );
+  if ("invalid" in input) return input.invalid;
+  const { id, ...event } = input.data;
+  const maintenanceDispatchId = input.params.dispatchId;
+  const api = await carbon(args.request);
+  return id
+    ? api.resources.updateMaintenanceEvent({
+        ...event,
+        id,
+        maintenanceDispatchId
+      })
+    : api.resources.createMaintenanceEvent({
+        ...event,
+        maintenanceDispatchId
+      });
 }
 
 export default function MaintenanceDispatchEventsRoute() {
   const { dispatchId } = useParams();
   if (!dispatchId) throw new Error("dispatchId not found");
 
+  const { t } = useLingui();
   const user = useUser();
   const permissions = usePermissions();
-  const fetcher = useFetcher();
+  const start = useAction<typeof action>({
+    onSuccess: () => toast.success(t`Event started`)
+  });
+  const stop = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      toast.success(t`Event stopped`);
+      if (data && "warning" in data && typeof data.warning === "string") {
+        toast.error(data.warning);
+      }
+    }
+  });
 
   const routeData = useRouteData<{
     events: MaintenanceDispatchEvent[];
@@ -191,36 +103,33 @@ export default function MaintenanceDispatchEventsRoute() {
     <VStack spacing={4}>
       <HStack className="justify-between w-full">
         <h2 className="text-lg font-semibold">Time Events</h2>
-        {permissions.can("update", "resources") && (
-          <fetcher.Form method="post">
-            {activeEvent ? (
-              <>
-                <input type="hidden" name="intent" value="stop" />
-                <input type="hidden" name="eventId" value={activeEvent.id} />
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  leftIcon={<LuSquare />}
-                  isLoading={fetcher.state !== "idle"}
-                >
-                  Stop Timer
-                </Button>
-              </>
-            ) : (
-              <>
-                <input type="hidden" name="intent" value="start" />
-                <Button
-                  type="submit"
-                  variant="primary"
-                  leftIcon={<LuPlay />}
-                  isLoading={fetcher.state !== "idle"}
-                >
-                  Start Timer
-                </Button>
-              </>
-            )}
-          </fetcher.Form>
-        )}
+        {permissions.can("update", "resources") &&
+          (activeEvent ? (
+            <stop.Form method="post">
+              <input type="hidden" name="intent" value="stop" />
+              <input type="hidden" name="eventId" value={activeEvent.id} />
+              <Button
+                type="submit"
+                variant="secondary"
+                leftIcon={<LuSquare />}
+                isLoading={stop.isPending}
+              >
+                Stop Timer
+              </Button>
+            </stop.Form>
+          ) : (
+            <start.Form method="post">
+              <input type="hidden" name="intent" value="start" />
+              <Button
+                type="submit"
+                variant="primary"
+                leftIcon={<LuPlay />}
+                isLoading={start.isPending}
+              >
+                Start Timer
+              </Button>
+            </start.Form>
+          ))}
       </HStack>
 
       {events.length === 0 ? (

@@ -8,12 +8,7 @@ import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getProjectContractRevenue } from "~/modules/projects";
-import {
-  getContractLineFunding,
-  getContractProjectBillingInvoices
-} from "~/modules/sales";
-import { draftContractSetupPath } from "~/modules/sales/sales.server";
+import { draftContractSetupPath } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractAmendments,

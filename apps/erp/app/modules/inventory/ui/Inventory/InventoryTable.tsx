@@ -60,7 +60,7 @@ import { useMrpScheduleDescription, useUrlParams } from "~/hooks";
 import {
   itemReorderingPolicies,
   itemReplenishmentSystems
-} from "~/modules/items";
+} from "~/modules/items/items.models";
 import {
   getReorderPolicyDescription,
   ItemReorderPolicy

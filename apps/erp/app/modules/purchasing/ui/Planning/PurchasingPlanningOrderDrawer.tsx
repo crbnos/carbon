@@ -47,7 +47,7 @@ import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
-import type { PlanningAction } from "~/modules/production";
+import type { PlanningAction } from "~/modules/production/types";
 import {
   type PlanningActionHandlers,
   reviewPathFor

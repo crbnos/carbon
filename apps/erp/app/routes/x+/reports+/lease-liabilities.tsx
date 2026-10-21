@@ -41,10 +41,10 @@ import {
   useQuantityFormatter,
   useUrlParams
 } from "~/hooks";
-import { getLeaseLiabilities } from "~/modules/accounting";
+import { getLeaseLiabilities } from "~/modules/accounting/accounting.service";
 import type { LeaseLiabilityRow } from "~/modules/accounting/lease-liabilities";
 import { useLesseeClassificationLabel } from "~/modules/purchasing/ui/Leases";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

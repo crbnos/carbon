@@ -6,7 +6,7 @@ import { VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { ChangeNotice } from "~/modules/items";
+import type { ChangeNotice } from "~/modules/items/types";
 import type { AffectedItemDraft } from "~/modules/items/ui/ChangeNotice";
 import { useChangeNoticeEngineeringLock } from "~/modules/items/ui/ChangeNotice";
 import AffectedItemDetail from "~/modules/items/ui/ChangeNotice/AffectedItemDetail";

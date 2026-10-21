@@ -464,3 +464,40 @@ export type SupplierPartPricing = {
   supplierUnitPrice: number | null;
   currency: CurrencyRate;
 };
+
+/** The tables with an `assignee` column: what `assignRecord` may assign. */
+export const assignableTables = [
+  "changeOrder",
+  "changeOrderActionTask",
+  "customer",
+  "item",
+  "job",
+  "jobOperation",
+  "lease",
+  "maintenanceDispatch",
+  "nonConformance",
+  "nonConformanceActionTask",
+  "nonConformanceApprovalTask",
+  "nonConformanceReviewer",
+  "pickingList",
+  "planningAction",
+  "procedure",
+  "purchaseInvoice",
+  "purchaseOrder",
+  "purchaseReturnOrder",
+  "purchasingRfq",
+  "qualityDocument",
+  "quote",
+  "receipt",
+  "riskRegister",
+  "salesInvoice",
+  "salesOrder",
+  "salesOrderShipment",
+  "salesReturnOrder",
+  "salesRfq",
+  "shipment",
+  "stockTransfer",
+  "supplier",
+  "supplierQuote",
+  "training"
+] as const;

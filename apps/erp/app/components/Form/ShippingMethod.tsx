@@ -8,8 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
-import type { getShippingMethodsList } from "~/modules/inventory";
-import { ShippingMethodForm } from "~/modules/inventory";
+import type { getShippingMethodsList } from "~/modules/inventory/inventory.service";
+import { ShippingMethodForm } from "~/modules/inventory/ui";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

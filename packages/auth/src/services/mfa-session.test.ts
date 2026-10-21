@@ -17,6 +17,7 @@ vi.mock("@carbon/kv", () => ({
 }));
 
 vi.mock("../config/env", () => ({
+  AUTH_COOKIE_SUFFIX: undefined,
   DOMAIN: "localhost",
   CarbonEdition: "Community",
   CONTROLLED_ENVIRONMENT: false,

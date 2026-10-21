@@ -9,14 +9,12 @@ import { getLogger } from "@carbon/logger";
 import { round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
-  contractLineBillingFormValues,
-  customerContractLineValidator,
   getContract,
   getContractLine,
   upsertContractLine
-} from "~/modules/sales";
-import { projectRevenueRefusal } from "~/modules/sales/sales.server";
+} from "~/modules/sales/sales.service";
 
 const logger = getLogger("erp", "contract-line-update");
 

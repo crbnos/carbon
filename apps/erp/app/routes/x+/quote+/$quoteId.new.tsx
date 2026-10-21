@@ -2,249 +2,38 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import {
-  dedupeViolations,
-  evaluateSalesRuleLines,
-  isBlocked
-} from "@carbon/ee/rules.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import { breakQuantities, redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  getQuote,
-  isQuoteLocked,
-  quoteLineValidator,
-  recalculateQuoteLinePrices,
-  resolvePurchaseToOrderPrices,
-  resolveQuoteLinePrices,
-  upsertQuoteLine,
-  upsertQuoteLineMethod
-} from "~/modules/sales";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { quoteLineValidator } from "~/modules/sales/sales.models";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "quote");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(quoteLineValidator).request(args, {
+    params: ["quoteId"]
   });
-
-  const { quoteId } = params;
-  if (!quoteId) throw new Error("Could not find quoteId");
-
-  // The line is inserted with the service role, which bypasses RLS: the quote
-  // must belong to this company.
-  const serviceRole = getCarbonServiceRole();
-  await requireCompanyRecord(serviceRole, "quote", companyId, {
-    id: quoteId
-  });
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
-  });
-  const quote = await getQuote(viewClient, quoteId);
-  await requireUnlocked({
-    request,
-    isLocked: isQuoteLocked(quote.data?.status),
-    redirectTo: path.to.quote(quoteId),
-    message: "Cannot modify a locked quote. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(quoteLineValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-  let configuration = undefined;
-  if (d.configuration) {
-    try {
-      configuration = JSON.parse(d.configuration);
-    } catch (error) {
-      logger.error("Failed to parse quote line configuration", { error });
-    }
-  }
-
-  // Sales-rule enforcement: evaluate before the line is written. Blocked
-  // submissions return violations for the form's violation modal;
-  // acknowledged warns pass through on re-submit.
-  const acknowledged = formData.get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateSalesRuleLines({
-    client: serviceRole,
-    companyId,
-    userId,
-    surface: "quoteLine",
-    // Quote lines carry a quantity-break array rather than a single
-    // transaction quantity. Evaluate every break — a min-quantity rule fires
-    // on the smallest, a max-quantity rule on the largest; dedupe collapses
-    // same-message repeats.
-    lines: breakQuantities(d.quantity).map((quantity) => ({
-      lineId: "new",
-      itemId: d.itemId ?? null,
-      quantity
-    })),
-    customerId: quote.data?.customerId ?? null,
-    customerLocationId: quote.data?.customerLocationId ?? null
-  });
-  const deduped = dedupeViolations(violations);
-  const blocked = deduped.length > 0 && isBlocked(deduped, acknowledged);
-  if (blocked) {
-    // No line exists on a blocked create, so documentLineId stays null.
-    await recordSalesRuleOutcome(serviceRole, {
-      companyId,
-      userId,
-      documentType: "quote",
-      documentId: quoteId,
-      documentLineId: null,
-      itemId: d.itemId ?? null,
-      outcome: "blocked",
-      violations: deduped,
-      ruleNames
-    });
-    return { error: null, data: null, violations: deduped, ruleNames };
-  }
-
-  const createQuotationLine = await upsertQuoteLine(serviceRole, {
-    ...d,
-    // The URL quote was verified above; the form's copy was not.
+  if ("invalid" in input) return input.invalid;
+  const { quoteId } = input.params;
+  const formData = input.formData ?? new FormData();
+  const api = await carbon(args.request);
+  const result = await api.sales.createQuoteLine({
+    ...input.data,
+    // The URL quote, not the form's copy.
     quoteId,
-    companyId,
-    configuration,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+    customFields: setCustomFields(formData),
+    acknowledged: formData.get("acknowledged") === "true"
   });
-
-  if (createQuotationLine.error) {
-    logger.error("Failed to create quote line", {
-      error: createQuotationLine.error
-    });
-    throw redirect(
-      path.to.quote(quoteId),
-      await flash(
-        request,
-        error(createQuotationLine.error, "Failed to create quote line.")
-      )
-    );
-  }
-
-  const quoteLineId = createQuotationLine.data.id;
-
-  // Acknowledged proceed: persist override evidence now that the line exists
-  // so documentLineId captures the created line (and the notification only
-  // fires for a line that actually landed).
-  if (deduped.length > 0) {
-    await recordSalesRuleOutcome(serviceRole, {
-      companyId,
-      userId,
-      documentType: "quote",
-      documentId: quoteId,
-      documentLineId: quoteLineId,
-      itemId: d.itemId ?? null,
-      outcome: "acknowledged",
-      violations: deduped,
-      ruleNames
-    });
-  }
-
-  if (d.methodType === "Purchase to Order") {
-    const quantities = d.quantity ?? [1];
-    const priceResult = await resolvePurchaseToOrderPrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      quantities,
-      userId
-    );
-    if (priceResult?.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(priceResult.error, "Failed to resolve Purchase to Order prices")
-        )
-      );
-    }
-  }
-
-  if (d.methodType === "Pull from Inventory") {
-    const quantities = d.quantity ?? [1];
-    const priceResult = await resolveQuoteLinePrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      quantities,
-      userId
-    );
-    if (priceResult?.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(
-            priceResult.error,
-            "Failed to resolve Pull from Inventory prices"
-          )
-        )
-      );
-    }
-  }
-
-  if (d.methodType === "Make to Order") {
-    const upsertMethod = await upsertQuoteLineMethod(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        quoteId,
-        quoteLineId,
-        itemId: d.itemId,
-        configuration,
-        companyId,
-        userId
-      }
-    );
-
-    if (upsertMethod.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(upsertMethod.error, "Failed to create quote line method.")
-        )
-      );
-    }
-    const recalcResult = await recalculateQuoteLinePrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      userId
-    );
-    if (recalcResult?.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(recalcResult.error, "Failed to recalculate quote line prices")
-        )
-      );
-    }
-  }
-
-  throw redirect(path.to.quoteLine(quoteId, quoteLineId));
+  // An error is toasted; the violation modal reads `violations`.
+  if (!result.data) return result;
+  if ("violations" in result.data) return result.data;
+  const { quoteLineId, warning } = result.data;
+  // The line exists: open it, saying what could not be priced.
+  throw redirect(
+    path.to.quoteLine(quoteId, quoteLineId),
+    warning ? await flash(args.request, error(null, warning)) : undefined
+  );
 }

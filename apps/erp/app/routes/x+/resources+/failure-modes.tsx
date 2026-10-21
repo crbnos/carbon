@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getFailureModes } from "~/modules/resources";
+import { getFailureModes } from "~/modules/resources/resources.service";
 import FailureModesTable from "~/modules/resources/ui/FailureModes/FailureModesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

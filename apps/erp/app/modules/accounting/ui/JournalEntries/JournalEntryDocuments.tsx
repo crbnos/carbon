@@ -21,10 +21,12 @@ import { JournalEntrySourceTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
 import type {
   getJournalEntryRelatedItems,
+  JournalSourceDocument
+} from "~/modules/accounting/accounting.service";
+import type {
   JournalEntry,
-  JournalSourceDocument,
   PeriodCloseStatus
-} from "~/modules/accounting";
+} from "~/modules/accounting/types";
 import { path } from "~/utils/path";
 import JournalEntryStatus from "./JournalEntryStatus";
 

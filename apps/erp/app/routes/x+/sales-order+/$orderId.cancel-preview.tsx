@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { LIVE_JOB_STATUSES } from "~/modules/sales";
+import { LIVE_JOB_STATUSES } from "~/modules/sales/sales.service";
 
 export type CancelPreviewJob = {
   id: string;

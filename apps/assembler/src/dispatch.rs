@@ -98,7 +98,11 @@ pub async fn self_invoke(spec: &Value) -> Result<(), String> {
         "AWS4-HMAC-SHA256 Credential={access_key}/{scope}, SignedHeaders={signed_headers}, Signature={signature}"
     );
 
-    let client = reqwest::Client::new();
+    // Bounded: the create handler waits on this inside API Gateway's 30 s.
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("lambda invoke client: {e}"))?;
     let mut req = client
         .post(format!("https://{host}{path}"))
         .header("content-type", "application/json")

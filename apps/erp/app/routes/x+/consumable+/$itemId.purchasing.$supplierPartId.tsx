@@ -2,17 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
-import { isUniqueViolation } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
-import type { ConsumableSummary } from "~/modules/items";
-import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import { supplierPartFormValidator } from "~/modules/items/items.models";
+import type { ConsumableSummary } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
-import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -60,85 +58,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId, companyId } = await requirePermissions(request, {
-    update: "parts"
+// Answers with the result rather than redirecting, so a drawer opened
+// outside the item page (a supplier's parts, a change notice) stays put.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(supplierPartFormValidator).request(args, {
+    params: ["itemId", "supplierPartId"]
   });
-
-  const { itemId, supplierPartId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-  if (!supplierPartId) throw new Error("Could not find supplierPartId");
-
-  const formData = await request.formData();
-
-  const validation = await validator(supplierPartValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const updatedSupplierPart = await upsertSupplierPart(client, {
-    id: supplierPartId,
-    ...d,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const { id: _id, ...supplierPart } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.items.updateSupplierPart({
+    ...supplierPart,
+    id: input.params.supplierPartId,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  // buyMethod_part_supplier_unique: one supplier part per item and supplier
-  if (isUniqueViolation(updatedSupplierPart.error)) {
+  // One supplier part per item and supplier: shown under the Supplier field.
+  if (result.error?.category === "conflict") {
     return validationError({
-      fieldErrors: {
-        supplierId: "This item already has a supplier part for this supplier"
-      }
+      fieldErrors: { supplierId: result.error.message }
     });
   }
-
-  if (updatedSupplierPart.error) {
-    return { success: false, message: "Failed to update supplier part" };
-  }
-
-  const priceBreaksRaw = formData.get("priceBreaks");
-  if (priceBreaksRaw) {
-    const priceBreaks = JSON.parse(priceBreaksRaw as string) as {
-      quantity: number;
-      supplierUnitPrice: number;
-      leadTime: number;
-    }[];
-    const db = getDatabaseClient();
-    await db.transaction().execute(async (trx) => {
-      await trx
-        .deleteFrom("supplierPartPrice")
-        .where("supplierPartId", "=", supplierPartId)
-        .where("companyId", "=", companyId)
-        .execute();
-      if (priceBreaks.length > 0) {
-        await trx
-          .insertInto("supplierPartPrice")
-          .values(
-            priceBreaks.map((pb) => ({
-              supplierPartId,
-              quantity: pb.quantity,
-              supplierUnitPrice: pb.supplierUnitPrice,
-              leadTime: pb.leadTime ?? 0,
-              sourceType: "Manual Entry" as const,
-              companyId,
-              createdBy: userId,
-              updatedBy: userId
-            }))
-          )
-          .execute();
-      }
-    });
-  }
-
-  // Fetcher-friendly success, as on the part route: the form's fetcher effect
-  // toasts and fires onClose, so a caller outside the item page stays put.
-  return { success: true, message: "Supplier part updated" };
+  return result;
 }
 
 export default function EditConsumableSupplierRoute() {

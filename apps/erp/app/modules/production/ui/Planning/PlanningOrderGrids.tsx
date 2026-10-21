@@ -23,7 +23,7 @@ import { Hyperlink } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { useAfterFirstPaint, useQuantityFormatter } from "~/hooks";
-import type { PlanningAction } from "~/modules/production";
+import type { PlanningAction } from "~/modules/production/types";
 import type { PlanningActionHandlers } from "./PlanningActionLines";
 import {
   PlanningActionRowActions,

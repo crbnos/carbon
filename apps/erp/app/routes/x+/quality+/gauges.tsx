@@ -7,7 +7,10 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getGauges, getGaugeTypesList } from "~/modules/quality";
+import {
+  getGauges,
+  getGaugeTypesList
+} from "~/modules/quality/quality.service";
 import GaugesTable from "~/modules/quality/ui/Gauge/GaugesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

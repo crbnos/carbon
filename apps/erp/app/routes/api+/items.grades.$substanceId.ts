@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getMaterialGradeList } from "~/modules/items";
+import { getMaterialGradeList } from "~/modules/items/items.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

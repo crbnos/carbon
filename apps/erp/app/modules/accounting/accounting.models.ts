@@ -6,7 +6,7 @@ import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { months } from "~/modules/shared";
+import { months } from "~/modules/shared/shared.models";
 import {
   itemLedgerDocumentTypes,
   itemLedgerTypes
@@ -1211,6 +1211,19 @@ export const openingTrialBalanceValidator = z.object({
 export const openingTrialBalanceImportValidator = z.object({
   cutoverDate: cutoverDateField,
   csv: z.string().min(1, { message: "The CSV file is empty" })
+});
+
+/** Ignore an invoice on Migration Clearing, or stop ignoring it. */
+export const cutoverIgnoredInvoiceValidator = z.object({
+  cutoverDate: cutoverDateField,
+  invoiceId: z.string().min(1, { message: "Invoice is required" }),
+  ignored: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+/** A trial balance step action that needs only the cutover date: apply
+ *  Carbon's totals, or pull the provider's trial balance. */
+export const cutoverStepValidator = z.object({
+  cutoverDate: cutoverDateField
 });
 
 /** The enable: the cutover date and the company name typed to confirm. */

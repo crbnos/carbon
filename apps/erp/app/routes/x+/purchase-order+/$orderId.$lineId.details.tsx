@@ -21,13 +21,15 @@ import {
   checkProjectBudget
 } from "~/modules/projects/projects.server";
 import {
+  isPurchaseOrderLocked,
+  purchaseOrderLineValidator
+} from "~/modules/purchasing/purchasing.models";
+import {
   getPurchaseOrder,
   getPurchaseOrderLine,
   getSupplierInteractionLineDocuments,
-  isPurchaseOrderLocked,
-  purchaseOrderLineValidator,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import {
   SupplierInteractionLineDocuments,
@@ -184,6 +186,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const updatePurchaseOrderLine = await upsertPurchaseOrderLine(client, {
     id: lineId,
     ...d,
+    companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });

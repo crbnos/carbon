@@ -8,8 +8,7 @@ import { RampIntegrationMetadataSchema } from "../models";
 // Minimal oauth2 credentials — the shape a fresh "Connect to Ramp" install stores.
 const credentials = {
   type: "oauth2" as const,
-  accessToken: "token",
-  environment: "production" as const
+  accessToken: "token"
 };
 
 describe("RampIntegrationMetadataSchema — flat sync flags → runtime sync", () => {

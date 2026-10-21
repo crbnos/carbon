@@ -1,0 +1,164 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
+<<<<<<< HEAD
+import {
+  getJobReleaseReadiness,
+  jobStatus,
+  makeToAssetItemError,
+  recalculateJobRequirements,
+  updateJobStatus
+} from "~/modules/production";
+import { runMRP } from "~/modules/production/production.mcp.server";
+import { cancelJob, releaseJobs } from "~/modules/production/production.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
+import { path, requestReferrer } from "~/utils/path";
+||||||| 23bd5d6e0b
+import {
+  getJobReleaseReadiness,
+  jobStatus,
+  makeToAssetItemError,
+  recalculateJobRequirements,
+  runMRP,
+  updateJobStatus
+} from "~/modules/production";
+import { cancelJob, releaseJobs } from "~/modules/production/production.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
+import { path, requestReferrer } from "~/utils/path";
+=======
+import { z } from "zod";
+import { path } from "~/utils/path";
+>>>>>>> 0a1bd961b2
+
+// The job header's status buttons. Release, Complete and Cancel have their own
+// routes; Cancelled stays here for older callers.
+const statusForm = z.object({
+  status: z.enum([
+    "Planned",
+    "Paused",
+    "Ready",
+    "Draft",
+    "In Progress",
+    "Closed",
+    "Cancelled"
+  ])
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(statusForm).request(args, {
+    params: ["jobId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { jobId } = input.params;
+  const api = await carbon(args.request);
+
+<<<<<<< HEAD
+  const { jobId: id } = params;
+  if (!id) throw new Error("Could not find id");
+
+  // Much of what follows (MRP, scheduling, picking sweeps, PO creation) runs
+  // with the service role or Kysely and keys on the URL job id.
+  await requireCompanyRecord(getCarbonServiceRole(), "job", companyId, { id });
+
+  const url = new URL(request.url);
+  const shouldSchedule = url.searchParams.get("schedule") === "1";
+
+  const formData = await request.formData();
+  const status = formData.get("status") as (typeof jobStatus)[number];
+  const selectedPurchaseOrdersBySupplierId = formData.get(
+    "selectedPurchaseOrdersBySupplierId"
+  ) as string | null;
+  const selectedSupplierProcessByOperationId = formData.get(
+    "selectedSupplierProcessByOperationId"
+  ) as string | null;
+
+  if (!status || !jobStatus.includes(status)) {
+    throw redirect(
+      path.to.job(id),
+      await flash(request, error(null, "Invalid status"))
+    );
+  }
+
+  if (status === "Ready") {
+    const { data } = await client
+      .from("job")
+      .select(
+        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      )
+      .eq("id", id)
+      .single();
+
+    if (data?.item?.itemReplenishment?.manufacturingBlocked) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(null, "Manufacturing is blocked"))
+||||||| 23bd5d6e0b
+  const { jobId: id } = params;
+  if (!id) throw new Error("Could not find id");
+
+  // Much of what follows (MRP, scheduling, picking sweeps, PO creation) runs
+  // with the service role or Kysely and keys on the URL job id.
+  await requireCompanyRecord(getCarbonServiceRole(), "job", companyId, { id });
+
+  const url = new URL(request.url);
+  const shouldSchedule = url.searchParams.get("schedule") === "1";
+
+  const formData = await request.formData();
+  const status = formData.get("status") as (typeof jobStatus)[number];
+  const selectedPurchaseOrdersBySupplierId = formData.get(
+    "selectedPurchaseOrdersBySupplierId"
+  ) as string | null;
+  const selectedSupplierProcessByOperationId = formData.get(
+    "selectedSupplierProcessByOperationId"
+  ) as string | null;
+
+  if (!status || !jobStatus.includes(status)) {
+    throw redirect(
+      path.to.job(id),
+      await flash(request, error(null, "Invalid status"))
+    );
+  }
+
+  if (status === "Ready") {
+    const { data } = await client
+      .from("job")
+      .select(
+        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      )
+      .eq("id", id)
+      .single();
+
+    if (data?.item?.itemReplenishment?.manufacturingBlocked) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(null, "Manufacturing is blocked"))
+=======
+  switch (input.data.status) {
+    case "Planned": {
+      const result = await api.production.planDraftJob({ jobId });
+      if (result.error) return result;
+      return respond(args.request, result).redirect(
+        path.to.jobMaterials(jobId),
+        { message: "Job marked as planned" }
+>>>>>>> 0a1bd961b2
+      );
+    }
+    case "Paused":
+      return api.production.pauseJob({ jobId });
+    case "Ready":
+      return api.production.resumeJob({ jobId });
+    case "Draft":
+    case "In Progress":
+      return api.production.reopenJob({ jobId });
+    case "Closed":
+      return api.production.closeJob({ jobId });
+    case "Cancelled":
+      return api.production.cancelJob({ jobId });
+  }
+}

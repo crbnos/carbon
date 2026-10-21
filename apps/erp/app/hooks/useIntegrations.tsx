@@ -4,7 +4,7 @@
 
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
-import type { Integration } from "~/modules/settings";
+import type { Integration } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 export function useIntegrations(): {

@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { draftLeaseSetupPath } from "~/modules/purchasing/purchasing.server";
+import { draftLeaseSetupPath } from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 /** Opening a lease: a Draft continues its setup, anything else shows its

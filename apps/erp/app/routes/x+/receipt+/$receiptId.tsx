@@ -18,17 +18,17 @@ import {
   getReceiptFiles,
   getReceiptLines,
   getReceiptRelatedItems,
-  getReceiptTracking,
   getRentalReceiptLines,
-  getShelfLifeForItems,
-  type RentalReceiptLine
-} from "~/modules/inventory";
+  getShelfLifeForItems
+} from "~/modules/inventory/inventory.service";
+import { getReceiptTracking } from "~/modules/inventory/inventory.utils";
+import type { RentalReceiptLine } from "~/modules/inventory/types";
 import {
   ReceiptDocuments,
   ReceiptHeader
 } from "~/modules/inventory/ui/Receipts";
-import { getReceiptInspections } from "~/modules/quality";
-import { getCompanySettings } from "~/modules/settings";
+import { getReceiptInspections } from "~/modules/quality/quality.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -3,17 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-  HStack,
-  IconButton
-} from "@carbon/react";
+import { Button, HStack } from "@carbon/react";
 import { unchecked } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -29,16 +19,15 @@ import {
   LuTriangleAlert,
   LuWrench
 } from "react-icons/lu";
-import { useFetcher, useFetchers, useParams, useSubmit } from "react-router";
+import { useFetcher, useFetchers, useParams } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import { Enumerable } from "~/components/Enumerable";
-import { OperationStatusIcon } from "~/components/Icons";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { operationTypes } from "~/modules/shared";
+import { usePermissions, useUser } from "~/hooks";
+import { operationTypes } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
-import { jobOperationStatus } from "../../production.models";
-import type { Job, JobOperation } from "../../types";
+import type { JobOperation } from "../../types";
+import { JobOperationStatus } from "./JobOperationStatus";
 
 type JobOperationsTableProps = {
   data: JobOperation[];
@@ -50,30 +39,8 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
   const { t } = useLingui();
   if (!jobId) throw new Error("Job ID is required");
 
-  const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
-  const isPaused = routeData?.job?.status === "Paused";
-
   const fetcher = useFetcher<{}>();
-  const submit = useSubmit();
   const permissions = usePermissions();
-
-  const onOperationStatusChange = useCallback(
-    (id: string, status: JobOperation["status"]) => {
-      submit(
-        {
-          id,
-          status
-        },
-        {
-          method: "post",
-          action: path.to.jobOperationStatus,
-          navigate: false,
-          fetcherKey: `jobOperation:${id}`
-        }
-      );
-    },
-    [submit]
-  );
 
   const columns = useMemo<ColumnDef<JobOperation>[]>(() => {
     return [
@@ -82,40 +49,13 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         header: t`Description`,
         cell: ({ row }) => (
           <HStack className="py-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  size="sm"
-                  variant="ghost"
-                  aria-label={t`Change status`}
-                  icon={
-                    <OperationStatusIcon
-                      status={isPaused ? "Paused" : row.original.status}
-                    />
-                  }
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuRadioGroup
-                  value={row.original.status}
-                  onValueChange={(status) =>
-                    onOperationStatusChange(
-                      row.original.id,
-                      status as JobOperation["status"]
-                    )
-                  }
-                >
-                  {jobOperationStatus.map((status) => (
-                    <DropdownMenuRadioItem key={status} value={status}>
-                      <DropdownMenuIcon
-                        icon={<OperationStatusIcon status={status} />}
-                      />
-                      <span>{status}</span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <JobOperationStatus
+              operation={{
+                id: row.original.id,
+                jobId,
+                status: row.original.status
+              }}
+            />
             <Hyperlink
               to={`${path.to.jobProductionEvents(
                 jobId
@@ -205,7 +145,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         }
       }
     ];
-  }, [isPaused, jobId, onOperationStatusChange, t]);
+  }, [jobId, t]);
 
   const { carbon } = useCarbon();
   const { id: userId } = useUser();

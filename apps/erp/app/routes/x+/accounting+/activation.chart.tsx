@@ -10,7 +10,7 @@ import { LuFileUp } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import { ActivationFooter } from "~/modules/accounting/ui/Activation";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -30,7 +30,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import type { ContractAmendmentPreview } from "@carbon/server-functions/post-customer-contract";
 import { equals, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -74,6 +73,7 @@ import {
   useQuantityFormatter
 } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import type { ContractAmendmentPreview } from "~/modules/sales/sales.service";
 import { useServices } from "~/stores";
 import {
   type contractAmendmentChangeValidator,

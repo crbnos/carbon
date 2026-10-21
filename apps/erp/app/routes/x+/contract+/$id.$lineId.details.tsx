@@ -10,14 +10,12 @@ import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
+import { customerContractLineValidator } from "~/modules/sales/sales.models";
 import {
-  contractLineBillingFormValues,
-  customerContractLineValidator,
   getContract,
   getContractLine,
   upsertContractLine
-} from "~/modules/sales";
-import { projectRevenueRefusal } from "~/modules/sales/sales.server";
+} from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractLineForm,

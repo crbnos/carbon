@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { materialGradeValidator } from "~/modules/items/items.models";
 import {
   getMaterialGrade,
-  materialGradeValidator,
   upsertMaterialGrade
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
 import { getParams, path } from "~/utils/path";
 

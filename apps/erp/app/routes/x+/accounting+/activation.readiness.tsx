@@ -13,7 +13,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { useDateFormatter } from "~/hooks";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
   activationStepPath,

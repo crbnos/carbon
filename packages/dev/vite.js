@@ -47,12 +47,15 @@ export function applyDotenvToProcessEnv(mode, appDir) {
  * @returns {import("vite").Plugin}
  */
 export function clientOnlyAlias(specifier, file) {
+  const exact = specifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return {
     name: `carbon:client-only-alias:${specifier}`,
     enforce: "pre",
     applyToEnvironment: (environment) => environment.name === "client",
-    resolveId(source) {
-      if (source === specifier) return file;
+    resolveId: {
+      // Matched natively: no JS call for any other import.
+      filter: { id: new RegExp(`^${exact}$`) },
+      handler: (source) => (source === specifier ? file : undefined),
     },
   };
 }
@@ -104,6 +107,8 @@ export function stackActivity() {
   return {
     name: "carbon:stack-activity",
     apply: "serve",
+    // Its middleware has to see a request before any app handler does.
+    enforce: "pre",
     configureServer(server) {
       const dir = process.env.CRBN_STACK_STATE;
       if (!dir) return;
@@ -228,4 +233,120 @@ export async function compressRemaining(directory) {
     if (source.length < 1024) continue;
     await writeFile(`${file}.br`, await brotli(source));
   }
+}
+
+/**
+ * Splits a production server build into one chunk per installed package
+ * (`vendor-<name>`) and per workspace package (`carbon-<name>`), instead of
+ * one file holding every dependency. Vercel traces the server function with
+ * @vercel/nft after the build, and nft handles one huge module far worse than
+ * many small ones: the ERP's 35 MB single bundle took ~5 min there and up to
+ * the full 8 GB of a build machine; split, the step takes under a minute.
+ * Applied to every SSR environment, including the Vercel preset's
+ * `ssrBundle_*`, through `configEnvironment`, so it merges over React
+ * Router's own entry.
+ *
+ * Only modules the server loads at startup (reached from the entry by static
+ * imports) are grouped. A package chunk holding a module that is only reached
+ * through `import()` would load it eagerly: the browser-only query devtools
+ * did, and threw on `window`. A cycle reads as lazy, which only leaves that
+ * module where Rolldown would put it.
+ *
+ * @returns {import("vite").Plugin}
+ */
+export function splitServerByPackage() {
+  /** @param {string} id */
+  const packageChunk = (id) => {
+    if (!id.includes("node_modules/")) {
+      return `carbon-${id.split("/packages/").pop()?.split("/")[0]}`;
+    }
+    const [scope, name] = (id.split("node_modules/").pop() ?? "").split("/");
+    return `vendor-${scope.startsWith("@") ? `${scope}+${name}` : scope}`;
+  };
+  return {
+    name: "carbon:split-server-by-package",
+    apply: "build",
+    configEnvironment(name) {
+      if (!name.startsWith("ssr")) return;
+      /** @type {Map<string, boolean>} */
+      const eager = new Map();
+      /**
+       * @param {string} id
+       * @param {import("vite").Rolldown.ChunkingContext} ctx
+       * @returns {boolean}
+       */
+      const loadsAtStartup = (id, ctx) => {
+        const known = eager.get(id);
+        if (known !== undefined) return known;
+        eager.set(id, false);
+        const info = ctx.getModuleInfo(id);
+        const result =
+          !!info &&
+          (info.isEntry ||
+            info.importers.some((importer) => loadsAtStartup(importer, ctx)));
+        eager.set(id, result);
+        return result;
+      };
+      return {
+        build: {
+          rolldownOptions: {
+            output: {
+              codeSplitting: {
+                groups: [
+                  {
+                    name: (id, ctx) =>
+                      loadsAtStartup(id, ctx) ? packageChunk(id) : null,
+                    // Matched natively before the name callback runs.
+                    test: /node_modules|\/packages\//,
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+    },
+  };
+}
+
+/**
+ * Every Carbon app's own Vite plugins, in one call. React Router and
+ * Tailwind stay in the app's config, as the framework and styling plugins.
+ *
+ * Always on: stack activity (a no-op outside `crbn up`) and Lingui's macro
+ * transform with the React Router id fix. The rest is opt-in, and a package
+ * is imported only when its plugin runs, so a dev server or a small app pays
+ * nothing for what it does not use.
+ *
+ * @param {import("./vite").CarbonOptions} options
+ * @returns {Promise<import("vite").PluginOption[]>}
+ */
+export async function carbon({
+  command,
+  mode,
+  locales = false,
+  clientOnly = {},
+  splitServer = false,
+  precompress = false,
+} = {}) {
+  const { lingui } = await import("@lingui/vite-plugin");
+  return [
+    stackActivity(),
+    linguiWithoutIdQuery(lingui({ macroTransform: true })),
+    splitServer && splitServerByPackage(),
+    precompress && command && mode && precompressedAssets({ command, mode }),
+    locales && ariaLocales(),
+    ...Object.entries(clientOnly).map(([specifier, file]) =>
+      clientOnlyAlias(specifier, file)
+    ),
+  ].filter(Boolean);
+}
+
+// react-aria ships strings for ~34 locales; keep the ones the app translates.
+async function ariaLocales() {
+  const [{ getConfig }, { default: optimizeLocales }] = await Promise.all([
+    import("@lingui/conf"),
+    import("@react-aria/optimize-locales-plugin"),
+  ]);
+  return optimizeLocales.vite({ locales: getConfig().locales });
 }

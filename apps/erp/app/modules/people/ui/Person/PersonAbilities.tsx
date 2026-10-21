@@ -16,8 +16,8 @@ import { LuCirclePlus, LuPencil } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
 import { DateTime } from "~/components";
 import { usePermissions } from "~/hooks";
-import { EmployeeAbilityStatus } from "~/modules/resources";
 import type { EmployeeAbility } from "~/modules/resources/types";
+import { EmployeeAbilityStatus } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 type PersonAbilitiesProps = {

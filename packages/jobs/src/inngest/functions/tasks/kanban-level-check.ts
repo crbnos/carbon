@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { serverFns } from "@carbon/server-functions";
+import { postingOrThrow } from "@carbon/api/postings.server";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -30,9 +30,11 @@ export const kanbanLevelCheckFunction = inngest.createFunction(
     const { companyId, kanbanIds } = event.data;
 
     const result = await step.run("replenish", () =>
-      serverFns
-        .system({ db: getJobDatabaseClient(), companyId, userId: "system" })
-        .invokeOrThrow("kanban-replenish", { mode: "level", kanbanIds })
+      postingOrThrow(
+        "kanban-replenish",
+        { db: getJobDatabaseClient(), companyId, userId: "system" },
+        { mode: "level", kanbanIds }
+      )
     );
 
     for (const outcome of result.results) {

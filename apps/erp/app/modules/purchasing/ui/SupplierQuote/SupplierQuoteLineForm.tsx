@@ -51,8 +51,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-
-import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {

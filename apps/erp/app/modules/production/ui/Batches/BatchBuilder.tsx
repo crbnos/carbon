@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useLoaderQuery } from "@carbon/query";
+import { useAction, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -34,7 +34,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   Spinner,
-  toast,
   useLocalStorage,
   useViewport,
   VStack
@@ -75,12 +74,13 @@ import {
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateSelect, Enumerable, ItemThumbnail, Table } from "~/components";
 import DateRangeFields, {
   type DateRangeValue
 } from "~/components/DateRangeFields";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
+import type { action as batchingAction } from "~/routes/x+/priority+/batching.update";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
@@ -411,11 +411,22 @@ export function BatchBuilder({
     processes
   ]);
 
-  const submitFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-    batchId?: string | null;
-  }>();
+  // Navigate on success (a failure is toasted). addTargetRef remembers which
+  // existing batch an add-to submit targeted (the action returns no id for add).
+  const addTargetRef = useRef<string | null>(null);
+  const submitFetcher = useAction<typeof batchingAction>({
+    onSuccess: ({ data }) => {
+      const created =
+        data && "batchId" in data && typeof data.batchId === "string"
+          ? data.batchId
+          : null;
+      const targetId = isAddMode
+        ? batch?.id
+        : (addTargetRef.current ?? created);
+      if (targetId) navigate(path.to.operationBatch(targetId));
+      else navigate(path.to.operationBatches);
+    }
+  });
 
   // Candidates for the scope, once it is complete. `staleTime: 0`: operations
   // move on the shop floor, so each scope change asks again.
@@ -752,32 +763,6 @@ export function BatchBuilder({
   }, [visible, lockedById]);
 
   const selected = useMemo(() => [...selectedById.values()], [selectedById]);
-
-  // Toast on submit failure; navigate on success. addTargetRef remembers which
-  // existing batch an add-to submit targeted (the action returns no id for add).
-  const addTargetRef = useRef<string | null>(null);
-  const wasSubmitting = useRef(false);
-  useEffect(() => {
-    if (submitFetcher.state !== "idle") {
-      wasSubmitting.current = true;
-      return;
-    }
-    if (!wasSubmitting.current) return;
-    wasSubmitting.current = false;
-    const data = submitFetcher.data;
-    if (!data) return;
-    if (data.success === false && data.message) {
-      toast.error(data.message);
-      return;
-    }
-    if (data.success) {
-      const targetId = isAddMode
-        ? batch?.id
-        : (addTargetRef.current ?? data.batchId);
-      if (targetId) navigate(path.to.operationBatch(targetId));
-      else navigate(path.to.operationBatches);
-    }
-  }, [submitFetcher.state, submitFetcher.data, isAddMode, batch?.id, navigate]);
 
   const [createReleaseOpen, setCreateReleaseOpen] = useState(false);
   const submit = (

@@ -10,13 +10,13 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useCurrencyDecimals, useRouteData } from "~/hooks";
+import { rentalAgreementLineValidator } from "~/modules/sales/sales.models";
 import {
-  getDefaultRentalRates,
   getRentalAgreement,
   getRentalAgreementLine,
-  rentalAgreementLineValidator,
   upsertRentalAgreementLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import { getDefaultRentalRates } from "~/modules/sales/sales.utils";
 import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import {
   RentalAgreementCharges,

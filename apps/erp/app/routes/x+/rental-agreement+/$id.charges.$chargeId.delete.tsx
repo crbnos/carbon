@@ -7,8 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-
-import { deleteRentalAgreementCharge } from "~/modules/sales";
+import { deleteRentalAgreementCharge } from "~/modules/sales/sales.service";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

@@ -35,7 +35,7 @@ import { useCompanyToday, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { reconcileReceiptLineSerials } from "../../inventory.models";
-import { getReceiptTracking } from "../../inventory.service";
+import { getReceiptTracking } from "../../inventory.utils";
 import type { Receipt, ReceiptLine, RentalReceiptLine } from "../../types";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {

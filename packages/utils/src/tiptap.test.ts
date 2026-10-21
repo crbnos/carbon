@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { documentHasImages } from "./tiptap";
+import { documentHasImages, textToTiptap } from "./tiptap";
 
 describe("documentHasImages", () => {
   it("returns false for empty / textless documents", () => {
@@ -55,5 +55,45 @@ describe("documentHasImages", () => {
         ]
       })
     ).toBe(true);
+  });
+});
+
+describe("textToTiptap", () => {
+  it("makes each line a paragraph and **text** bold", () => {
+    expect(
+      textToTiptap("Tap with **TiN-coated** tap.\n\nChase a ** b")
+    ).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "Tap with " },
+            { type: "text", text: "TiN-coated", marks: [{ type: "bold" }] },
+            { type: "text", text: " tap." }
+          ]
+        },
+        { type: "paragraph" },
+        { type: "paragraph", content: [{ type: "text", text: "Chase a ** b" }] }
+      ]
+    });
+  });
+
+  it("splits on CRLF, LF and CR alike, and keeps asterisks inside bold", () => {
+    for (const text of [
+      "a\r\n**M6*1 tap**",
+      "a\n**M6*1 tap**",
+      "a\r**M6*1 tap**"
+    ]) {
+      expect(textToTiptap(text).content).toEqual([
+        { type: "paragraph", content: [{ type: "text", text: "a" }] },
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "M6*1 tap", marks: [{ type: "bold" }] }
+          ]
+        }
+      ]);
+    }
   });
 });

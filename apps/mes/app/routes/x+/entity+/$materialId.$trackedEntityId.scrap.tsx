@@ -4,10 +4,9 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { scrapTrackedEntityValidator } from "~/services/models";
 import { getTrackedEntity } from "~/services/operations.service";
 
@@ -37,16 +36,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { status: 400 }
     );
   }
-  const issued = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       trackedEntityId,
       materialId,
       parentTrackedEntityId: parentTrackedEntityId!,
       type: "scrapTrackedEntity",
       scrapReasonId: validation.data.scrapReasonId,
       makeReplacement: validation.data.makeReplacement
-    });
+    }
+  );
 
   if (issued.error) {
     return data(

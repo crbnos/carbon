@@ -26,8 +26,8 @@ import {
   SupplierLocation
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { supplierShippingValidator } from "~/modules/purchasing";
-import { incoterms } from "~/modules/shared";
+import { supplierShippingValidator } from "~/modules/purchasing/purchasing.models";
+import { incoterms } from "~/modules/shared/shared.models";
 
 type SupplierShippingFormProps = {
   initialValues: z.infer<typeof supplierShippingValidator>;

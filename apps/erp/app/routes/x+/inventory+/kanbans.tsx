@@ -11,11 +11,14 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getKanbanProjectedQuantities, getKanbans } from "~/modules/inventory";
+import {
+  getKanbanProjectedQuantities,
+  getKanbans
+} from "~/modules/inventory/inventory.service";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
-import { getLocationsList } from "~/modules/resources";
-import { getKanbanOutputSetting } from "~/modules/settings";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getKanbanOutputSetting } from "~/modules/settings/settings.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

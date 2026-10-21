@@ -50,7 +50,8 @@ export const path = {
       ) =>
         generatePath(
           `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}${operationId ? `&operationId=${operationId}` : ""}`
-        )
+        ),
+      systemStatus: `${api}/system-status`
     },
     assembly: (id: string) => generatePath(`${x}/assembly/${id}`),
     assigned: `${x}/assigned`,

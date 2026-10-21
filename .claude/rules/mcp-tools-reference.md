@@ -1,129 +1,190 @@
 ---
 paths:
   - "apps/erp/app/routes/api+/mcp+/**"
+  - "apps/erp/app/routes/api+/v1+/lib/**"
   - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
+  - "scripts/lib/service-fn-metadata.ts"
 ---
 
 # Carbon ERP MCP Server
 
-The ERP exposes an MCP (Model Context Protocol) server that wraps the module
-service functions as ERP tools. The **protocol engine is commercial** — it lives
-in `packages/ee/src/mcp/` (`@carbon/ee/mcp` for the pure logic —
-catalog-search/describe-format/format-result/instructions/types; `@carbon/ee/mcp.server`
-for `server.ts`, which embeds the `requireEntitlement("MCP")` lock). The **dispatch,
-tool manifest and generated metadata stay in the app** under
-`apps/erp/app/routes/api+/mcp+/` (they derive from `~/modules/*` and cannot move
-into a package) and are INJECTED into the engine as `deps` by the thin route
-(`_index.ts`): `{ callOperation, operationsByName, isListOperation, isMcpBlockedTool,
-catalogSearch, toolMetadata }`.
+The ERP publishes its service functions (`defineServiceFn` consts in each
+`apps/erp/app/modules/<module>/<module>.server.ts`, see `module-files.md`) as
+MCP tools and as the HTTP API. One manifest describes both; one oRPC procedure
+per operation runs both.
 
-> Don't recreate the old per-tool dump — it goes stale instantly (it still listed
-> `inventory_getShelf`, removed when `shelf` was renamed to `storageUnit`). The
-> live tool list is `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`;
-> `describe_tool` / `search_tools` read from it at runtime.
->
-> That manifest is **gitignored build output** (1.9 MB, rewritten wholesale on every
-> run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, as the turbo
-> root task `//#generate:mcp`. `postinstall` runs that task, and the `typecheck`,
-> `build` and `test` of the two packages that read the manifest — `erp` and `docs`
-> (`apps/erp/turbo.json`, `docs/turbo.json`) — depend on it, so a fresh clone
-> regenerates it before anything imports it. The `postinstall` half is for
-> local development only (`react-router dev`, the editor and a bare `vitest` bypass
-> turbo). Under `CI` it is skipped, because the generator needs about 3 GB and most CI
-> installs never read the manifest: there the turbo dependency is the only producer,
-> so a CI step that reads the manifest outside turbo must run `//#generate:mcp`
-> itself, as `check:workflow-catalog` does. The root `Dockerfile` installs with
-> `CI=1`. Vercel is exempt (`VERCEL` set) and keeps generating on install. The task is CACHED: its `inputs` in
-> `turbo.json` are every `.ts` file under `apps/erp/app/modules`, the app's
-> `types` and `utils`, the generated DB types, the two `mcp-*` lib files,
-> `scripts/lib`, and the `src` of each package a `*.models.ts` imports. With none
-> of those changed turbo restores both output files in milliseconds instead of
-> spending ~20s. The validators are why the list is that wide: the generator
-> EXECUTES every models file, so an enum array in `sales.utils.ts` or a helper in
-> `@carbon/utils` can change a schema. Listing only service/models files made such
-> a change a cache hit that restored a STALE manifest, which the build then
-> bundled. `apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models
-> file imports something the inputs do not cover; the manifest trigger in
-> `scripts/git-hooks/pre-commit` names the same set. Types reached only through the compiler
-> (a return type declared in a package no models file imports) are still not
-> inputs.
-> The committed record of the published contract is its small companion
-> `tool-manifest.digest.json`: one line per operation carrying classification,
-> permission, injectAuth, argument count and a hash of the schema, so a contract
-> change is still one visible line in review. `pnpm check:manifest` regenerates
-> WITHOUT the cache and fails if the digest is stale; pre-commit runs it when a
-> service, models or generator file is staged.
+The **protocol engine is commercial**. It lives in `packages/ee/src/mcp/`:
+`@carbon/ee/mcp` holds the pure logic (catalog search, describe/format
+helpers, instructions, types) and `@carbon/ee/mcp.server` holds `server.ts`,
+which embeds the `requireEntitlement("MCP")` lock. The dispatch and the
+manifest stay in the app, because they derive from `~/modules/*`. The route
+(`api+/mcp+/_index.ts`) injects them into the engine as `deps`:
+`{ callOperation, operationsByName, isListOperation, catalogSearch, toolMetadata }`.
+
+Don't list individual tools in docs: they go stale. `search_tools` and
+`apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` are the live list.
+
+## The manifest
+
+`tool-metadata.json` is **gitignored build output**, written by
+`pnpm generate:mcp` (`scripts/generate-mcp.ts`, the turbo root task
+`//#generate:mcp`). `postinstall` runs it for local development (skipped under
+`CI`; Vercel still runs it), and the `typecheck`, `build` and `test` of `erp` and
+`docs` depend on it. The task is cached on the inputs in `turbo.json`: the
+module sources, the app's `types`, `utils` and `services`, the generated DB
+types, `scripts/lib` and the package sources the modules' types reach
+(`@carbon/ee` included: published inputs use its validators).
+`apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models file or a
+module's `<module>.server.ts` imports something those inputs do not cover.
+
+The committed record is `tool-manifest.digest.json`: one line per operation
+with its classification, permission, `paginates` and a hash of each schema, so
+a contract change is one visible line in review. `pnpm check:manifest`
+regenerates without the cache and fails when the digest is stale. Pre-commit
+(`scripts/git-hooks/pre-commit`) runs that check when a staged file falls under
+the same inputs; its path pattern mirrors the turbo list, so change both.
+
+Each entry (`ManifestEntry`, `@carbon/api`): `{ name, module, classification,
+title, description, permission, paginates, schema, responseSchema?, serviceFn }`.
+`serviceFn.path` is the operation's path in the router
+(`["production", "cancelJob"]`). The file also carries `companyTables`, read from
+the generated DB types (generation fails if it comes back short).
+
+## How the generator reads a service function
+
+`buildManifest()` (`scripts/lib/service-fn-metadata.ts`) walks
+`apps/erp/app/modules/router.server.ts` with ts-morph. Each module is a namespace
+import of its server file, and each exported `defineServiceFn` const is a leaf;
+any other value export in a server file fails generation.
+
+- **Published**: only a leaf whose TSDoc has `@mcp`. A building block in
+  `.service.ts` is never a tool.
+- **Name**: `<module>_<constName>`; HTTP path `POST /api/v1/<module>/<constName>`.
+  Renaming the const renames the public tool.
+- **Title and description**: the summary (the doc's first paragraph) is the
+  title (required), taken whole.
+  The description is the summary sentence, then `@remarks`, then `@returns`.
+  `@param name - text` becomes that input field's `description`, and naming a
+  field the input does not have fails generation.
+- **Permission**: read off the literal `permission` and published in the
+  manifest. One module → `{ module, actions }`; several modules, or `{}`
+  (company membership) → `{ module: null, actions: [] }`. The function's own
+  gate is the only check. `"system"` and a keyed permission (`{ by, rules }`)
+  cannot be published.
+- **Classification**: only `view` → READ; any `delete` → DESTRUCTIVE; else
+  WRITE. `@mcp read` forces READ, for a read gated on membership alone (`{}`);
+  on a permission that names `create`, `update` or `delete` it fails
+  generation, since a READ is offered as safe to run unasked. `@mcp destructive`
+  forces DESTRUCTIVE.
+- **Input schema**: the TYPE of `run`'s input parameter, through
+  `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
+  admits `undefined` is optional. Enum members are sorted, so the hash does not
+  move with the checker's type ids. The type carries no descriptions, so
+  `inputFieldDescriptions` (`scripts/lib/input-docs.ts`) reads each top-level
+  field's `.describe("…")` from the source, following the validator an input
+  extends; `@param` overrides it. A loose input whose `run` calls a building
+  block of its module that runs `setGenericQueryFilters`
+  (`appliesGenericFilters`) also publishes `filters` and `sorts`.
+- **Response schema**: `run`'s return type, with `Promise` and `{ data, error }`
+  peeled off. A `paged` result (`{ rows, count }`, `@carbon/api/service-tools.server`)
+  is published as its rows with `paginates: true`; rows that are not a list
+  fail generation.
+
+Pinned by `apps/erp/test/mcp-service-fn-metadata.test.ts`. Permissions and
+classifications across the whole manifest are pinned by
+`apps/erp/test/mcp-tool-permissions.test.ts`. The workflow catalog names tools
+by these names; `scripts/check-workflow-catalog.ts` fails on a name that no
+longer exists.
+
+## How a call runs
+
+`callOperation(name, ctx, args)` (`api+/v1+/lib/call.server.ts`) is the one
+server-side entry for MCP `call_tool`, the in-app agent and the workflow
+dispatcher. It looks the entry up, runs its oRPC procedure with server-side
+`call()`, and returns `{ success: true, data, count? }` or
+`{ success: false, error, errorKind: "execution", category? }`.
+
+The procedure (`api+/v1+/lib/router.server.ts`) is the same one HTTP serves:
+
+1. `traced` names the span.
+2. `.input(jsonSchemaInput(meta.schema))` validates against the published
+   schema. Unknown keys pass. `callOperation` turns validation issues into
+   one message naming each field (`formatValidationIssues`, capped at 8).
+   Validation runs before the permission check, so a malformed call gets a
+   400 before a 403.
+3. `runServiceFn` (`service-fn.server.ts`) builds a service context from the
+   caller and calls the const, whose permission gate is the one check for
+   every `authKind`: an API key's scopes, an OAuth connector's user's live
+   permissions in the token's company, or a workflow owner's permissions.
+   The context's client is `scopedToCompany`: every update and delete on a
+   company table also filters by the caller's company, so an id from the
+   user's other company matches nothing.
+4. A refusal (`CarbonError`) becomes an `ORPCError` with the category's code and
+   status, and `data.category`. The message is the function's own; a throw
+   inside `run` arrives as `internal` with the cause logged, not returned.
+5. The spec (`openapi[.]json.ts`) adds every refusal beside the 200 body
+   (`withErrorResponses`, `spec-options.server.ts`): a JSON `Error`
+   (`{ code, status, message, data: { category } }`) from the operation, plain
+   text for the API key's own 401 / 403 / 429.
+6. `shapeHttpBody`: a list (`isListOperation`, an array response schema) goes
+   out as `{ results, count }`, anything else as the bare value.
+   `callOperation` reverses it with `unshapeHttpBody`.
 
 ## Endpoint & transport
 
 - Route: `POST /api/mcp` (`api+/mcp+/_index.ts`). `loader` rejects non-POST (405);
-  `OPTIONS` → 204 with CORS. JSON-RPC over
-  `WebStandardStreamableHTTPServerTransport` (`enableJsonResponse: true`,
-  `sessionIdGenerator: undefined` — stateless, no session).
-- A fresh `McpServer` (`await createMcpServer(ctx, today, deps)` from
-  `@carbon/ee/mcp.server`) is built per request and connected to a fresh transport.
-  It is async because it `await requireEntitlement("MCP")` first.
+  `OPTIONS` → 204 with CORS. The route authenticates, then makes one call:
+  `serveMcpRequest(request, ctx, today, deps)` (`@carbon/ee/mcp.server`, MCP
+  TypeScript SDK v2, `@modelcontextprotocol/server`). It awaits
+  `requireEntitlement("MCP")`, then builds a fresh server for the request.
+- Both protocol eras, one server definition. `isLegacyRequest` sends 2025-era
+  requests (every client's default `initialize` handshake) to
+  `WebStandardStreamableHTTPServerTransport` with `sessionIdGenerator:
+  undefined` and `enableJsonResponse: true`, the wiring SDK v1 had: the SDK's
+  own stateless fallback answers with SSE. 2026-07-28 requests go to
+  `createMcpHandler(factory, { legacy: "reject", maxSubscriptions: 0 })`.
+  `maxSubscriptions: 0` refuses `subscriptions/listen` in-band, because it holds
+  a stream open that a per-request serverless function cannot keep, and the tool
+  list never changes at runtime.
+- Pinned by `packages/ee/src/mcp/server.test.ts`: an SDK client over HTTP
+  against `serveMcpRequest` in each era.
 
 ## Public discovery endpoints (unauthenticated)
 
-Three GET routes let an agent or registry find and connect to the server without
-a credential. All derive their URLs from `getAppUrl() || url.origin`, so a
-self-hosted / ITAR instance advertises its OWN endpoint — never hard-code
-`app.carbon.ms`.
+All derive their URLs from `getAppUrl() || url.origin`, so a self-hosted / ITAR
+instance advertises its own endpoint. Never hard-code `app.carbon.ms`.
 
-- `GET /.well-known/mcp.json` (`routes/[.]well-known.mcp[.]json.ts` → `lib/manifest.ts`
-  `buildMcpManifest(origin)`) — the MCP registry `server.json`: `remotes[]` with
-  `type: "streamable-http"`, tool/module counts derived from `tool-metadata.json`.
-- `GET /.well-known/oauth-protected-resource` + `/.well-known/oauth-authorization-server`
-  (routes at the app root) — RFC 9728 / OAuth AS discovery for the connector flow.
-- `GET /agent-setup/prompt.md` (`routes/agent-setup.prompt[.]md.tsx` →
-  `lib/agent-setup-prompt.ts` `buildAgentSetupPrompt(origin)`) — an agent-facing
-  markdown "connect your MCP client" doc (modeled on Cloudflare's
-  `agent-setup/prompt.md`). The prose is the raw file `lib/agent-setup-prompt.md`,
-  imported with Vite `?raw`; `{{MCP_URL}}` / `{{ORIGIN}}` tokens are replaced at
-  request time. The template is a colocation file, NOT a route — remix-flat-routes
-  only promotes `index|route|layout|page|_x|x.route` names, so a plain-named `.md`
-  under `lib/` is ignored (same reason `manifest.ts` there isn't a route).
+- `GET /.well-known/mcp.json` (`lib/manifest.ts` `buildMcpManifest(origin)`):
+  the registry `server.json`, with tool and module counts from the manifest.
+- `GET /.well-known/oauth-protected-resource` + `/.well-known/oauth-authorization-server`:
+  RFC 9728 / OAuth AS discovery for the connector flow.
+- `GET /agent-setup/prompt.md` (`lib/agent-setup-prompt.ts`): the "connect your
+  MCP client" doc. The prose is `lib/agent-setup-prompt.md` (Vite `?raw`), with
+  `{{MCP_URL}}` / `{{ORIGIN}}` replaced per request. It is a colocated file, not
+  a route: remix-flat-routes ignores a plain-named `.md` under `lib/`.
 
 ## Auth (`_index.ts` → `resolveAuth`)
 
-Three ways in, resolved in this order:
+1. **OAuth bearer**: `Authorization: Bearer <token>` not prefixed `crbn_`.
+   `findOAuthToken` (hash lookup + expiry), the per-user rate limit, then
+   `oauthContext` (membership, company group, claims, user client), in
+   `api+/v1+/lib/authenticate.server.ts`.
+2. **API key**: `Bearer crbn_…` is rewritten to the `carbon-key` header, or the
+   header is sent directly (`authenticateApiKey`).
+3. **No auth** → 401 with `WWW-Authenticate: Bearer resource_metadata=…`.
 
-1. **OAuth bearer** — `Authorization: Bearer <token>` where the token is **not**
-   prefixed `crbn_`. The token is SHA-256 hashed (`hashOAuthSecret`) and looked up
-   in the `oauthToken` table; expired/missing → 401. On hit, a user-scoped client
-   is minted via `getUserScopedClient(userId)`. This is the remote
-   Claude/MCP-connector path (OAuth AS routes live at `_oauth+/` plus
-   `[.]well-known.oauth-*` at the routes root;
-   `/.well-known/oauth-protected-resource` advertises `resource: <origin>/api/mcp`,
-   `scopes_supported: ["mcp:tools"]`).
-2. **API key** — `Bearer crbn_…` is rewritten to the `carbon-key` header, or the
-   `carbon-key` header is sent directly; falls through to `requirePermissions`.
-3. **No auth** → 401 with a `WWW-Authenticate: Bearer resource_metadata=…` header
-   so clients can discover the OAuth flow.
+`companyId` / `userId` always come from the credential, never from arguments.
 
-Auth always yields the app's `AuthedContext` (`../v1+/lib/base.server`; a superset
-of the engine's `McpContext` in `@carbon/ee/mcp` `types.ts`). `companyId`/`userId`
-come from the auth context and are injected server-side — never trusted from tool
-arguments.
+**Edition/plan gate.** MCP is a Business+ feature, locked inside the commercial
+engine: `serveMcpRequest` throws `EntitlementError`, which the route turns into
+a 402 (`makeMcpDisabledResponse`). One check covers both auth paths, the
+Community edition and Cloud Starter. The discovery endpoints are not gated.
 
-**Edition/plan gate (the commercial LOCK).** The MCP server is a Business+ feature.
-The gate lives INSIDE the commercial engine: `createMcpServer` (`@carbon/ee/mcp.server`)
-`await requireEntitlement(ctx.client, ctx.companyId, "MCP")` before building the server,
-throwing `EntitlementError`, which the route catches → 402 (`makeMcpDisabledResponse`).
-One check covers BOTH auth paths and blocks the **Community** edition (self-hosted) as
-well as Cloud **Starter** companies. It is un-strippable — serving MCP requires executing
-`@carbon/ee` code — replacing the former deletable in-route `companyHasFeature` check. The
-unauthenticated discovery endpoints
-(`/.well-known/mcp.json`, `/agent-setup/prompt.md`) are NOT gated — they have no company
-context and only advertise the endpoint; enforcement is at `POST /api/mcp`.
+## The 4 meta-tools
 
-## The 3 meta-tools (the ONLY tools actually registered)
-
-To avoid context exhaustion, `server.registerTool` registers just three discovery
-tools (`packages/ee/src/mcp/server.ts` (`@carbon/ee/mcp.server`)); the ~1200 ERP functions are reached through them, not
-registered individually:
+Only four tools are registered (`packages/ee/src/mcp/server.ts`); every ERP
+operation is reached through them.
 
 | Tool | Purpose |
 |------|---------|
@@ -738,85 +799,183 @@ the model context or the MCP dispatch.
   passes). The `carbon-key` API-key path is not a Supabase JWT (`auth.uid()` is null),
   so the `private` bucket's storage RLS will refuse the signed-URL mint — same class
   of limitation as the blocked note-table tools. OAuth is the supported path.
+| `search_tools` | Ranked discovery. Filters: `query`, `module` (substring), `classification`, `limit` (default 10) / `offset`. |
+| `describe_tool` | The contract for one `name` or up to 10 `names`: description, permission, list marker, input and response schema. |
+| `call_tool` | Run a READ or WRITE tool: `{ name, arguments, fields? }`. `arguments` may arrive as a JSON string. Parameters go flat, exactly as `describe_tool` lists them. |
+| `call_destructive_tool` | The same, for a DESTRUCTIVE tool, with `destructiveHint: true`. Each refuses the other's tools, so a client can ask before a delete runs; one handler (`runCall`) serves both. |
+
+An unknown name in `call_tool` or `describe_tool` is answered with the three
+closest tools from catalog search ("Did you mean: …"); `call_tool` does not
+dispatch it.
+
+`call_tool` also refuses, without dispatching, a top-level argument a STRICT
+input would drop (`unknownArguments`, `describe-format.ts`): one whose schema
+lists `properties` and publishes no `additionalProperties` (a `z.object`; a
+`z.looseObject` publishes `additionalProperties` and is left alone). The HTTP
+API keeps accepting and dropping such a field; an agent reads that success as
+"saved". The call is logged with its argument KEYS only (values are customer
+data). It was found when the refactor's strict inputs silently dropped the
+`workInstruction` and `assignee` that the old pass-through tools wrote
+(`.ai/runs/2026-10-19-api-refactor-lost-mcp-writes.md`).
+
+### Catalog search (`packages/ee/src/mcp/catalog-search.ts`)
+
+BM25 full-text search via **zbsearch**, index built lazily once per process over
+the manifest.
+
+- Fields and boosts: `name` (4), camelCase-split `tokens` (3), `description`
+  (1.5), input property names `fields` (0.5). Prefix expansion is on; a query
+  with no match retries with `tolerance: 1`.
+- `SEARCH_ALIASES` expands domain abbreviations additively (`rma`, `po`,
+  `bom`, `nonconformance` → issue, `shelf` → storage unit, …), and
+  `PHRASE_ALIASES` multi-word terms (`work orders` → jobs, `non conformance` →
+  issue). `expandQueryTerm` adds each word's inflection stem to
+  the QUERY, never the index. The in-app agent's `search_docs`
+  (`doc-search.ts`) shares it.
+- BM25 finds the matches; `createNameComparator` orders them, applied as
+  zbsearch's `sortBy` to every hit before `limit`/`offset`, so paging and the
+  total stay native. Order: the exact tool name (with or without its module),
+  then query words the NAME covers, then words matched in full (an
+  `ACTION_SYNONYMS` word such as create → insert, or every word of an alias),
+  then READ first when the query names no action, then fewer extra name words,
+  then a database-paged tool before a `get*List` that reads the whole table,
+  then the BM25 score. BM25 alone ranked `inventory_getInventoryItems` tenth for
+  its own name, and no `relevance` (k, b) or `threshold` setting gets close:
+  measured 22/34 at best against 33/34. Pinning cannot hold the exact-name rule
+  because it matches the expanded term, not the query. `stemInflection` leaves
+  "materials" unstemmed, so `sameWord` also accepts a plain -s/-es plural.
+- `DOCUMENT_VERBS` (receive → receipt, ship → shipment) ranks tools named for
+  that document first, before name coverage: "receive a purchase order" asks
+  for a receipt, and the order's two words otherwise outranked it.
+- `module` keeps substring semantics; filter-only calls bypass the index.
+- `search_tools` output (`formatSearchResults`, `describe-format.ts`): one
+  line per tool in rank order, `name [READ] (requiredParams, +N optional)`
+  (`formatParamSummary`), plus ` — ` and the description's first paragraph when
+  it says more than the name (`searchLineDescription`; case, a closing full
+  stop and articles do not count, and 937 of 1,612 summaries only restate the
+  name). Results are not grouped by module: grouping put lower-ranked tools
+  above better ones, and the name already carries the module. A page short of
+  the total names the next offset.
+- `describe_tool` (`formatToolDescription`) opens with `name [CLASS]`, the
+  description, and `Permission:` (the gate checks it for every caller, not only
+  API keys).
+- `describe_tool` prints input and response schemas as TypeScript types
+  (`formatSchemaType`): the manifest's schemas use only type, enum, anyOf,
+  properties, required, items and additionalProperties, so nothing is lost and
+  the text is under half the JSON Schema's size.
+- Server instructions: `packages/ee/src/mcp/instructions.ts`. `lib/manifest.ts`
+  keeps its own copies of the meta-tool descriptions; keep them in sync by hand.
+- Pinned by `lib/catalog-search.test.ts` and `lib/describe-format.test.ts`.
+
+### Responses are token-lean (`packages/ee/src/mcp/format-result.ts`)
+
+MCP text differs from the HTTP body on purpose; the other `callOperation`
+callers get the exact data.
+
+- A list of records is CSV under a `# <tool>.csv` title, written by `encodeCsv`
+  (`@carbon/files/csv`, the one CSV encoder) with `formulaSafe: false`: the
+  reader is an agent, and stripping `=`/`+`/`-`/`@` would change values such
+  as `+1 555 0100`. The column names come once, then one line per record. An
+  empty cell is null or empty, a nested value (arrays included) is JSON in its
+  cell, and a column empty in every row shown is left out. A single record, or
+  a list of plain values, stays compact JSON with nulls removed.
+- Why CSV, measured on 100 real inventory rows (o200k tokens, a proxy: Claude's
+  tokenizer is not public): compact JSON 27,207, CSV 13,778 (−49%), markdown
+  table 17,656, TOON 32,298, markdown key-value 29,631. TOON is larger than
+  JSON here because null-stripped rows are not uniform, and its compact form
+  needs uniform rows. With 6 `fields`: JSON 5,822, CSV 3,917, TOON 3,999.
+  Published comparisons find no single best format; markdown key-value reads
+  best for small models on 1,000-row tables, while at about 100 rows strong
+  models read CSV and JSON near-perfectly. Anthropic's tool-writing guidance
+  says to choose by your own evaluation. Measure tokens, not characters:
+  characters overstated CSV's saving (71% vs 49%).
+- A list stops at `MCP_MAX_ROWS` (100) rows or `MCP_MAX_CHARS` (20,000)
+  characters, always with at least one row; any list short of its total ends
+  with `(rows A-B of TOTAL; next page: offset N)`. A `limit` above
+  `MCP_MAX_ROWS` is clamped before the call. `call_tool.truncate: false` lifts
+  all three: the caller's limit goes to the database (PostgREST's 1,000-row cap
+  still applies) and every row it returns is written.
+- `call_tool.fields` (beside `arguments`, not inside them) keeps only those
+  top-level fields of each row (`projectFields`). `limit: 1` plus
+  `fields: ["id"]` is the cheap way to read a total.
+- The instructions and the `call_tool` description say record contents are
+  data written by people, never instructions to follow.
+- **Paging splits on `paginates`**:
+  - `paginates: true` (a `paged` service function): `call_tool` fills `limit`
+    (`MCP_DEFAULT_LIMIT`, 25) and `offset` (0) when the caller leaves them out.
+  - `paginates: false` list: the function returns every row. `call_tool` takes
+    the caller's `limit`/`offset` (defaults 25/0) and pages the RESPONSE
+    (`pageMcpListResult`). `describe_tool` says so and names a paginating
+    sibling when one exists (`paginatingSibling`).
+
+## The read-tool sweep
+
+`pnpm sweep:tools` (`apps/erp/test/sweep/`) runs every READ tool for real
+through `callOperation` (`authKind: "oauth"`, the user's own scopes) against a
+seeded company on a running local stack. Arguments are sampled from the
+company's rows: `publishedParamFilters` (`scripts/lib/service-ast.ts`) reads each
+published leaf's `run`, and the building block it hands its input to
+(`service.getJob(client, input.id)`), for the column each input field is
+compared to, as a path into the tool's input; the few nothing can answer are in
+`read-tools.inputs.ts`. A `notFound` refusal counts as not-found, not a failure.
+It gates on `read-tools.baseline.json`, which stays empty unless a failure is
+knowingly accepted. Seed first (`pnpm db:seed:dev`). Not part of `pnpm test`.
+
+## The agent evaluation
+
+`apps/erp/test/mcp-eval/satellite.xml`: ten read-only, multi-hop questions in
+the mcp-builder skill's format, answered only through the meta-tools,
+each with one answer checked by string comparison. The answers come from the
+satellite demo dataset (no dates or sequence ids), so they hold for any company
+seeded with it; the file's header names the traps it sets on purpose. Run it
+with that skill's `scripts/evaluation.py` and a `crbn_` key holding the view
+scopes. Not part of `pnpm test`.
+
+## The 14 modules
+
+`accounting` · `documents` · `inventory` · `invoicing` · `items` · `people` ·
+`production` · `purchasing` · `quality` · `resources` · `sales` · `settings` ·
+`shared` · `users`. Each is one namespace in `modules/router.server.ts`. The
+caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
+part of `users` and gates on company membership.
+
+## File uploads (two-step, signed URL)
+
+`call_tool.arguments` is JSON only, so a file goes up in two steps and its
+bytes never pass through the model or the dispatch.
+
+- **Step 1:** a per-entity tool mints a folder-scoped signed upload URL and
+  returns `{ path, token, signedUrl }`: `production_createJobDocumentUploadUrl`,
+  `items_createItemDocumentUploadUrl`, `sales_createOpportunityDocumentUploadUrl`,
+  `sales_createOpportunityLineDocumentUploadUrl`,
+  `purchasing_createSupplierInteractionDocumentUploadUrl`,
+  `purchasing_createSupplierInteractionLineDocumentUploadUrl`, and the generic
+  `documents_createDocumentUploadUrl` (raw `folder` / `entityId`). Per entity
+  because an opportunity's storage folder id differs from its source document
+  id. Path convention: `buildDocumentUploadPath` (`documents.models.ts`).
+- The agent PUTs the bytes to `signedUrl`.
+- **Step 2:** `documents_insertUploadedDocument` registers the `document` row
+  (`size` in KB; read/write groups default to the creating user).
+- Works on the OAuth path. An API key is not a Supabase JWT (`auth.uid()` is
+  null), so the company bucket's storage RLS refuses the mint.
+
+**CAD models** follow the same two steps with their own pair:
+`items_createModelUploadUrl` (`{ name }` → `{ signedUrl, token, path, modelId }`,
+signed into the `temp-staging` bucket, 2.5 GB) and `items_insertModelUpload`
+(`{ modelId, path, name, size, itemId?, jobId?, salesRfqLineId?, quoteLineId?,
+salesOrderLineId?, convert? }`). The `temp-staging` storage policies read the key's
+scopes (`parts_create` / `parts_update`), so an API key with those scopes can mint
+the URL and upload — unlike the document pair above, which signs into a company bucket.
 
 ## Gotchas
 
-- The generator takes a service's parameters from the AST (name, optionality,
-  rest, the `/** doc */` above the parameter, and the type's text with comments
-  removed), then resolves that TYPE text — and it resolves more shapes than it
-  used to. A parameter with a default is optional and keeps its declared type
-  (`sortDescending: boolean = false` used to publish as an untyped, required
-  field). An **inline** array-of-objects
-  (`prices: { quantity: number; ... }[]`) now publishes as a typed
-  `{"type":"array","items":{...}}`; a `z.infer<typeof V>` validator param resolves
-  `V.merge(z.object({...}))` / `applyX(...)` wrappers / referenced `*Validator`s
-  (same models file) into real fields; and an `errorMap: () => (...)` inside a
-  validator no longer truncates the fields after it. A `z.infer<typeof V>`
-  **nested inside an inline object type** also resolves — bare, `Partial<...>`,
-  `PickPartial<..., "k">` (listed keys turn optional), `Omit<..., "k">`, an
-  indexed access (`z.infer<...>["lines"]`), and an `& { ... }` intersection —
-  as do parenthesized discriminated-upsert union branches
-  (`(Omit<z.infer<...>> & {...}) | (...)`). Also resolved:
-  `Database["public"]["Enums"][...]` (real value enums) and
-  `Database["public"]["Tables"][t]["Row"|"Insert"|"Update"]` (real columns,
-  auth-injected fields stripped) via `scripts/lib/db-types.ts` over the
-  generated types; `Array<T>`/`ReadonlyArray<T>`/`Record<string, V>`/
-  `Partial<X>` generics; general `A & B` intersections; `(typeof x)[number]`
-  const arrays (real values when the registry has them); and bare **type
-  aliases declared in the module's own sources** (service file, `types.ts`,
-  models, and the shared equivalents). This matters on WRITE tools: an untyped
-  `{}` invites an MCP client to guess field names, and a guessed
-  `contact.phone` reached the insert and failed with PGRST204 (pinned by
-  `apps/erp/test/mcp-tool-metadata.test.ts`). Still opaque, deliberately:
-  compiler-derived types (`ReturnType`/`Awaited`), aliases imported from other
-  packages, `Map<...>` params, and genuine `Json`/`unknown`/rich-text fields.
-- A service whose first parameter is `db` (a Kysely transaction client) is served
-  `getDatabaseClient()` by `dispatch.server.ts`, the same way `client` is served
-  the supabase one. A first parameter named anything else falls through to the
-  positional-argument branches and receives a business argument as its client.
-- Don't enumerate individual tools in docs — `search_tools` is the source of truth.
-  Names follow `<module>_<verb><Entity>` (e.g. `sales_getCustomers`,
-  `inventory_upsertStorageUnit`).
-- "Shelf" was renamed to **storage unit**: use `inventory_*StorageUnit*`, not
-  `getShelf` (which no longer exists). "Shelf life" (`*ShelfLife*`) is a
-  *different*, still-current concept — don't conflate them.
-- To expose a service function, put `@mcp <verb>` in its doc comment and
-  regenerate; without the tag it is not a tool, whatever it is called. To keep an
-  exposed-looking function internal on purpose (and say why), also add its
-  `<module>_<func>` name to `MCP_BLOCKED_TOOL_NAMES` — that list is enforced at
-  run time too.
-- **Moving a service function to another module RENAMES its published tool**
-  (`production_getInspectionDocument` → `quality_getInspectionDocument`). Add the
-  old name to `OPERATION_ALIASES` (`api+/v1+/lib/operations.server.ts`) in the same
-  change. `operationsByName` maps the old name to the NEW entry, so `call_tool`,
-  `describe_tool` (which prints a deprecation line), the agent, workflows and
-  `callOperation` all resolve it; `router.server.ts` mounts the old HTTP path,
-  marked `deprecated` in the spec. The alias runs and is gated as the new
-  operation (its permission, not the old module's). Search and the docs never list
-  aliases. `dispatch-parity.test.ts` fails on a dangling or shadowing alias.
-- **A `{module}.service.ts` must not import a `*.server` module** (`@carbon/auth/users.server`,
-  `@carbon/ee/rules.server`, an app `*.server.ts`, …) — even via `await import(...)`.
-  The module barrel (`~/modules/{module}`) re-exports the service, and client components
-  value-import that barrel for validators/enums, so the service is in the **client** bundle;
-  React Router's `react-router:dot-server` plugin then fails the build with *"Server-only
-  module referenced by client"*. Put such MCP write functions in a server-only companion
-  `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
-  and `registry.server.ts` spreads its exports into the module namespace, so the tool names and
-  metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
-  holds `issueMaterial` / `completeJob`.
-- **A same-named `{module}.mcp.server.ts` export SHADOWS the service function** —
-  the generator dedupes by name (mcp wins, matching the runtime registry spread),
-  so an orchestration wrapper can replace a bare service function without
-  renaming the published tool. Precedent: `upsertJobMaterial` — the ROUTES run
-  the requirements recalc themselves (`recalculateJobMakeMethodRequirements`,
-  which fills `estimatedQuantity`; the generated `quantityToIssue` derives from
-  it), so a connector call to the bare service left every imported material at
-  estimatedQuantity 0 and issue/picking pulled nothing. The wrapper mirrors both
-  routes' orchestration (MTO method pull on transition, recalc released creates /
-  all updates) and keeps the exact service payload type so the published schema
-  hash is unchanged. Classification, the upsert rule and the audit-column rule are
-  read from the WRAPPER's own body (it replaces the service function in the AST),
-  and it is the wrapper that carries the `@mcp` tags; the service function it
-  shadows carries none. Pinned by
-  `mcp-upsert-job-material.test.ts` and the "registers a shadowed mcp.server
-  function exactly once" case in `mcp-tool-metadata.test.ts`.
+- **Renaming or moving a service function renames its tool**, and there are no
+  aliases. List the old and new names in the changelog entry. Workflow
+  definitions name tools too: `check-workflow-catalog.ts` catches the catalog,
+  not a customer's saved workflow.
+- Publish a function only when it is safe with nothing but its input. The API
+  runs the gate and `run`; nothing a route does around the call.
+- A function gated on several modules publishes `module: null` in the
+  manifest; its own gate decides, as for every function.
+- "Shelf" was renamed to **storage unit** (`inventory_*StorageUnit*`). "Shelf
+  life" (`*ShelfLife*`) is a different, current concept.

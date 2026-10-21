@@ -6,7 +6,7 @@ import { stripSpecialCharacters } from "@carbon/utils";
 
 /**
  * Build the canonical storage path for an uploaded document:
- * `${companyId}/${folder}/${entityId}/${sanitizedName}` in the `"private"` bucket.
+ * `${companyId}/${folder}/${entityId}/${sanitizedName}` in the company's own bucket.
  * Single source of truth for the path convention every `use*Documents` hook
  * inlines client-side; shared so the server-side (MCP) upload methods produce
  * paths the entity document panels list from.

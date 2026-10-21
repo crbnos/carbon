@@ -5,6 +5,7 @@
 import { expect, it } from "vitest";
 import {
   getBillableQuantity,
+  getCompletionAfterQuantityChange,
   getRemainingQuantityToInvoice,
   type ShortCloseInvoicingLine
 } from "./short-close";
@@ -83,4 +84,62 @@ it("null quantities behave as zero", () => {
   });
   expect(getBillableQuantity(l)).toEqual(0);
   expect(getRemainingQuantityToInvoice(l)).toEqual(0);
+});
+
+it("raising an invoiced line's quantity reopens invoicing", () => {
+  // Ordered 10 and invoiced 10, then reopened and raised to 20.
+  const l = line({ purchaseQuantity: 10, quantityInvoiced: 10 });
+  expect(getCompletionAfterQuantityChange(l, 20)).toEqual({
+    receivedComplete: false,
+    invoicedComplete: false
+  });
+});
+
+it("raising a received line's quantity reopens receiving", () => {
+  const l = line({
+    purchaseQuantity: 10,
+    quantityReceived: 10,
+    receivedComplete: true
+  });
+  expect(getCompletionAfterQuantityChange(l, 20)).toEqual({
+    receivedComplete: false,
+    invoicedComplete: false
+  });
+});
+
+it("lowering a line to what was received and invoiced completes it", () => {
+  const l = line({
+    purchaseQuantity: 20,
+    quantityReceived: 10,
+    quantityInvoiced: 10
+  });
+  expect(getCompletionAfterQuantityChange(l, 10)).toEqual({
+    receivedComplete: true,
+    invoicedComplete: true
+  });
+});
+
+it("a short-closed line stays closed when its quantity changes", () => {
+  // Ordered 9, received 2, Stop Receiving, then raised to 12.
+  const l = line({ quantityReceived: 2, receivedComplete: true });
+  expect(getCompletionAfterQuantityChange(l, 12)).toEqual({
+    receivedComplete: true,
+    invoicedComplete: false
+  });
+  expect(
+    getCompletionAfterQuantityChange({ ...l, quantityInvoiced: 2 }, 12)
+  ).toEqual({ receivedComplete: true, invoicedComplete: true });
+});
+
+it("a short-close settled by matching the quantity reopens on a later raise", () => {
+  // Ordered 9, received 2, Stop Receiving, set to 2, then raised to 12.
+  const settled = line({
+    purchaseQuantity: 2,
+    quantityReceived: 2,
+    receivedComplete: true
+  });
+  expect(getCompletionAfterQuantityChange(settled, 12)).toEqual({
+    receivedComplete: false,
+    invoicedComplete: false
+  });
 });

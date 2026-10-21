@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCustomerStatusesList } from "~/modules/sales";
+import { getCustomerStatusesList } from "~/modules/sales/sales.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

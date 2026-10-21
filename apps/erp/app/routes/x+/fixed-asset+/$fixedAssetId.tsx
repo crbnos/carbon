@@ -26,15 +26,15 @@ import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { Enumerable } from "~/components/Enumerable";
 import { useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
 import {
-  CONSTRUCTION_IN_PROGRESS_ENABLED,
   getAssetDepreciationHistory,
   getFixedAsset,
   getFixedAssetCipCosts,
   getFixedAssetDisposal,
   getFixedAssetRelatedItems,
   getFixedAssetTransfers
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import {
   DepreciationRunStatus,
   FixedAssetCipCosts,
@@ -42,7 +42,7 @@ import {
   FixedAssetHeader,
   FixedAssetNotes
 } from "~/modules/accounting/ui/FixedAssets";
-import { getWorkCenter } from "~/modules/resources";
+import { getWorkCenter } from "~/modules/resources/resources.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

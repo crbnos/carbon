@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
 import {
@@ -43,8 +48,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { useFileUpload, usePermissions, useUser } from "~/hooks";
-import type { OptimisticFileObject } from "~/modules/shared";
-import { getDocumentType } from "~/modules/shared";
+import type { OptimisticFileObject } from "~/modules/shared/types";
 import type { ModelUpload, StorageItem } from "~/types";
 import { downloadModelFile } from "~/utils/download";
 import { path } from "~/utils/path";

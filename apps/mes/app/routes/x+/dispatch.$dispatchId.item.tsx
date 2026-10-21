@@ -7,10 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { addMaintenanceDispatchItem } from "~/services/maintenance.service";
 
 const logger = getLogger("mes", "dispatch-item");
@@ -103,12 +102,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return data({}, await flash(request, error("Item ID is required")));
     }
 
-    const result = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const result = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "maintenanceDispatchUnissue",
         maintenanceDispatchItemId: itemId
-      });
+      }
+    );
 
     if (result.error) {
       return data(

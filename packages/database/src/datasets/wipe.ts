@@ -121,7 +121,9 @@ const PARENT_CHECK_TABLES = [
   // toProjectId, which nulling both project FKs breaks. Its lines cascade;
   // projectBorrow references a line with no cascade, so it goes first.
   "projectBorrow",
-  "projectStockTransfer"
+  "projectStockTransfer",
+  // trainingAssignment_training_or_name: a training OR an external name
+  "trainingAssignment"
 ];
 
 type ForeignKey = {

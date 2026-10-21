@@ -21,15 +21,16 @@ const errors = (env: Record<string, string>) =>
 describe("deployments keep starting", () => {
   const services = read("sst.config.ts").split("environment: {").slice(1);
 
-  it.each(
-    ["erp", "mes"].map((name, i) => [name, services[i]])
-  )("SST %s service", (_, block = "") => {
-    const keys = [
-      ...(block.split("\n      },")[0] ?? "").matchAll(/^\s+([A-Z0-9_]+):/gm)
-    ];
-    expect(keys.length).toBeGreaterThan(20);
-    expect(errors(set(keys.map((m) => m[1] as string)))).toEqual([]);
-  });
+  it.each(["erp", "mes"].map((name, i) => [name, services[i]]))(
+    "SST %s service",
+    (_, block = "") => {
+      const keys = [
+        ...(block.split("\n      },")[0] ?? "").matchAll(/^\s+([A-Z0-9_]+):/gm)
+      ];
+      expect(keys.length).toBeGreaterThan(20);
+      expect(errors(set(keys.map((m) => m[1] as string)))).toEqual([]);
+    }
+  );
 
   it("local crbn up", () => {
     const written = read("packages/dev/src/env.ts").matchAll(

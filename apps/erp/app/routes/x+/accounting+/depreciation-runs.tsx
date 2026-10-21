@@ -23,7 +23,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import { getDepreciationRuns } from "~/modules/accounting";
+import { getDepreciationRuns } from "~/modules/accounting/accounting.service";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { DepreciationRunTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";

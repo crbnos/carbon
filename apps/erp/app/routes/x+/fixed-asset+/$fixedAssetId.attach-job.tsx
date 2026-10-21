@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { fixedAssetAttachJobValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetAttachJobValidator,
   getFixedAsset,
   invokeAssetTransfer
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { FixedAssetAttachJobForm } from "~/modules/accounting/ui/FixedAssets";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

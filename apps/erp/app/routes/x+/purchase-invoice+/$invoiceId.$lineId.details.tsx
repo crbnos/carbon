@@ -15,16 +15,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import {
+  isPurchaseInvoiceLocked,
+  purchaseInvoiceLineValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
   getPurchaseInvoice,
   getPurchaseInvoiceLine,
-  isPurchaseInvoiceLocked,
-  PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
   upsertPurchaseInvoiceLine
-} from "~/modules/invoicing";
-import { getLineChargeNumber } from "~/modules/projects";
-import { chargeNumberError } from "~/modules/projects/projects.server";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing";
+} from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
+import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes

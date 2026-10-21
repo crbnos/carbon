@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getStorageTypes } from "~/modules/inventory";
+import { getStorageTypes } from "~/modules/inventory/inventory.service";
 import StorageTypesTable from "~/modules/inventory/ui/StorageTypes/StorageTypesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

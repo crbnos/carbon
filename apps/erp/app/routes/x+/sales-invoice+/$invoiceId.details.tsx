@@ -15,20 +15,20 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData, useUser } from "~/hooks";
+import {
+  getInvoiceSettlementsForInvoice,
+  getSalesInvoice
+} from "~/modules/invoicing/invoicing.service";
 import type {
   SalesInvoice,
   SalesInvoiceLine,
   SalesInvoiceShipment
-} from "~/modules/invoicing";
-import {
-  getInvoiceSettlementsForInvoice,
-  getSalesInvoice,
-  InvoicePaymentsPanel
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/types";
+import { InvoicePaymentsPanel } from "~/modules/invoicing/ui";
 import type { SalesInvoiceShipmentFormRef } from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
 import SalesInvoiceShipmentForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
 import SalesInvoiceSummary from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceSummary";
-import type { Opportunity } from "~/modules/sales";
+import type { Opportunity } from "~/modules/sales/types";
 import {
   OpportunityDocuments,
   OpportunityNotes

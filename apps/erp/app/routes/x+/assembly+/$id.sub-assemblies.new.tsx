@@ -9,10 +9,8 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblySubAssemblyNewValidator,
-  makeAssemblySubAssembly
-} from "~/modules/production";
+import { assemblySubAssemblyNewValidator } from "~/modules/production/production.models";
+import { makeAssemblySubAssembly } from "~/modules/production/production.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "assembly-sub-assembly-new");

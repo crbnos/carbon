@@ -15,7 +15,7 @@ import {
   procedureStepType,
   standardFactorType,
   toTiptapDoc
-} from "../shared";
+} from "../shared/shared.models";
 import type {
   ItemOrderStatus,
   JobOrderStatusCategory,
@@ -114,17 +114,20 @@ export function isJobEditableFromPlanning(
   return PLANNING_EDITABLE_JOB_STATUSES.some((editable) => editable === status);
 }
 
-export const JOB_LOCKED_STATUSES = [
-  "Completed",
-  "Closed",
-  "Cancelled"
-] as const;
+// The one definition lives in @carbon/utils, shared with the OEE sync.
+export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
 
-export function isJobLocked(status: string | null | undefined): boolean {
-  return JOB_LOCKED_STATUSES.includes(
-    status as (typeof JOB_LOCKED_STATUSES)[number]
-  );
-}
+export const JOB_LOCKED_MESSAGE =
+  "Cannot modify a locked job. Reopen it first.";
+
+/** The statuses a job can be cancelled from. */
+export const CANCELLABLE_JOB_STATUSES = [
+  "Draft",
+  "Planned",
+  "Ready",
+  "In Progress",
+  "Paused"
+] as const;
 
 export const DATE_COLUMN_SENTINELS = [
   "unscheduled",
@@ -425,6 +428,24 @@ export function makeToAssetItemError(job: {
     return "Make to Asset needs a serialized item or a quantity of one";
   }
   return null;
+}
+
+/** Why a Make to Asset job cannot be released, or null: the item rule, then
+ *  a sales order line (a sale, not a capitalisation). */
+export function makeToAssetReleaseError(job: {
+  fixedAssetClassId?: string | null;
+  fixedAssetId?: string | null;
+  salesOrderLineId?: string | null;
+  itemTrackingType?: string | null;
+  quantity?: number | null;
+}): string | null {
+  if (!job.fixedAssetClassId && !job.fixedAssetId) return null;
+  return (
+    makeToAssetItemError(job) ??
+    (job.salesOrderLineId
+      ? "A job linked to a sales order line cannot complete to a fixed asset"
+      : null)
+  );
 }
 
 export const leftoverAction = ["ship", "receive", "split", "discard"] as const;
@@ -1104,6 +1125,15 @@ export const productionEventValidator = z
       path: ["endTime"]
     }
   );
+
+export const assignMachineTimeValidator = z.object({
+  intent: z.literal("assign"),
+  jobOperationId: z.string().min(1, { message: "Operation is required" })
+});
+
+export const dismissMachineTimeValidator = z.object({
+  intent: z.literal("dismiss")
+});
 
 export const productionOrderValidator = z.object({
   startDate: zfd.text(z.string().nullable()),

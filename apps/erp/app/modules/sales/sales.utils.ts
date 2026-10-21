@@ -3,15 +3,24 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import type { LeasePaymentTerms, RateUnit, Timing } from "@carbon/utils";
+import type {
+  DefaultRentalRates,
+  LeasePaymentTerms,
+  RateUnit,
+  RentalBillingCycle,
+  ScopedRentalRate,
+  Timing
+} from "@carbon/utils";
 import {
   classifyLessorLease,
   classifyRentalLine,
+  defaultRentalRates,
   equals,
   leasePaymentTerms,
-  round,
-  wholeMonthsInTerm
+  rentalTermMonths,
+  round
 } from "@carbon/utils";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type {
   MatchedRule,
@@ -219,19 +228,21 @@ export type LeasePolicy = {
   substantiallyAllPercent: number;
 };
 
-/** Whole calendar months of the term; null when open-ended. */
+/** Whole months of the term, as activation counts them
+ *  (`rentalTermMonths`); null when open-ended. */
 export function leaseTermMonths(
+  cycle: RentalBillingCycle,
   startDate: string,
   endDate: string | null | undefined
 ): number | null {
-  return endDate ? wholeMonthsInTerm(startDate, endDate) : null;
+  return rentalTermMonths(cycle, startDate, endDate || null);
 }
 
 /** `leasePaymentTerms` from @carbon/utils — the same function activation
  *  prices a line with — or null when the line cannot be priced (a rate that
  *  is not a finite number). */
 export function draftLeasePaymentTerms(args: {
-  cycle: "Calendar Month" | "28 Days";
+  cycle: RentalBillingCycle;
   rateUnit: RateUnit;
   rate: number;
   discountRate: number;
@@ -256,7 +267,7 @@ export function previewLeaseClassification(args: {
   agreement: {
     startDate: string;
     endDate: string | null;
-    billingCycle: "Calendar Month" | "28 Days";
+    billingCycle: RentalBillingCycle;
     billingTiming: Timing;
     discountRate: number;
     ownershipTransfers: boolean;
@@ -308,7 +319,11 @@ export function previewLeaseClassification(args: {
   const inputs = {
     ownershipTransfers: agreement.ownershipTransfers,
     purchaseOptionReasonablyCertain: agreement.purchaseOptionReasonablyCertain,
-    termMonths: leaseTermMonths(agreement.startDate, agreement.endDate),
+    termMonths: leaseTermMonths(
+      agreement.billingCycle,
+      agreement.startDate,
+      agreement.endDate
+    ),
     economicLifeMonths: line.economicLifeMonths,
     pvPayments: 0,
     fairValue: line.fairValue,
@@ -752,4 +767,116 @@ export function configuredQuoteBasePrice({
     return null;
   }
   return unitSalePrice;
+}
+export async function getQuoteLines(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client
+    .from("quoteLines")
+    .select("*")
+    .eq("quoteId", quoteId)
+    .order("sortOrder", { ascending: true })
+    .order("itemReadableId", { ascending: true });
+}
+
+export async function getQuoteLinePricesByQuoteId(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client
+    .from("quoteLinePrice")
+    .select("*")
+    .eq("quoteId", quoteId)
+    .order("quoteLineId", { ascending: true });
+}
+
+/** Per item: the rate a rental unit starts at for each frequency. */
+export type DefaultRentalRatesByItem = Record<string, DefaultRentalRates>;
+
+/** The rate each item starts at on a rental line for this customer, per
+ *  frequency — the customer's own rate, else its customer type's, else the
+ *  item's (`defaultRentalRates`) — in effect on `asOf`, the agreement's start
+ *  date. Keyed by item id. One query per table over every item.
+ */
+export async function getDefaultRentalRates(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    customerId: string;
+    currencyCode: string;
+    asOf: string;
+    itemIds: string[];
+  }
+): Promise<
+  | { data: DefaultRentalRatesByItem; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const { companyId, customerId, currencyCode, asOf } = args;
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: {}, error: null };
+
+  const customer = await client
+    .from("customer")
+    .select("customerTypeId")
+    .eq("id", customerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (customer.error) return { data: null, error: customer.error };
+  const customerTypeId = customer.data?.customerTypeId ?? null;
+
+  // Two plain `.eq` reads rather than one `.or()` string: `customerId` is a
+  // caller's value (this is an MCP tool) and never belongs in a filter string.
+  const scopedSelect =
+    "itemId, customerId, customerTypeId, dayRate, weekRate, monthRate, validFrom, validTo";
+  const [itemRates, customerRates, typeRates] = await Promise.all([
+    client
+      .from("itemRentalRate")
+      .select("itemId, dayRate, weekRate, monthRate")
+      .eq("companyId", companyId)
+      .eq("currencyCode", currencyCode)
+      .in("itemId", itemIds),
+    client
+      .from("customerItemRentalRate")
+      .select(scopedSelect)
+      .eq("companyId", companyId)
+      .eq("currencyCode", currencyCode)
+      .eq("customerId", customerId)
+      .in("itemId", itemIds),
+    customerTypeId
+      ? client
+          .from("customerItemRentalRate")
+          .select(scopedSelect)
+          .eq("companyId", companyId)
+          .eq("currencyCode", currencyCode)
+          .eq("customerTypeId", customerTypeId)
+          .in("itemId", itemIds)
+      : null
+  ]);
+  if (itemRates.error) return { data: null, error: itemRates.error };
+  if (customerRates.error) return { data: null, error: customerRates.error };
+  if (typeRates?.error) return { data: null, error: typeRates.error };
+  const scopedRates = [...customerRates.data, ...(typeRates?.data ?? [])];
+
+  const itemRateById = new Map(itemRates.data.map((row) => [row.itemId, row]));
+  const result: DefaultRentalRatesByItem = {};
+  for (const itemId of itemIds) {
+    const item = itemRateById.get(itemId);
+    result[itemId] = defaultRentalRates({
+      customerId,
+      customerTypeId,
+      asOf,
+      scoped: scopedRates.filter(
+        (row): boolean => row.itemId === itemId
+      ) satisfies ScopedRentalRate[],
+      item: item
+        ? {
+            dayRate: item.dayRate,
+            weekRate: item.weekRate,
+            monthRate: item.monthRate
+          }
+        : null
+    });
+  }
+  return { data: result, error: null };
 }

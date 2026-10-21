@@ -3,12 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Integration, QuickInstallConnector } from "@carbon/ee";
+import { isIntegrationComingSoon } from "@carbon/ee/plan";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useEdition,
   useUrlParams
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -26,6 +28,7 @@ import {
 } from "~/components/UpgradeOverlay";
 import { useAnyVisible } from "~/hooks/useAnyVisible";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { useUser } from "~/hooks/useUser";
 import type { IntegrationHealth } from "./IntegrationCard";
 import { IntegrationCard } from "./IntegrationCard";
 import { QuickInstall } from "./QuickInstall";
@@ -47,6 +50,8 @@ const IntegrationsList = ({
     "all"
   );
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
+  const edition = useEdition();
+  const { email } = useUser();
   const search = params.get("search") || "";
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -70,12 +75,14 @@ const IntegrationsList = ({
     } else if (filter === "available") {
       filtered = filtered.filter(
         (integration) =>
-          !installedIds.includes(integration.id) && integration.active
+          !installedIds.includes(integration.id) &&
+          integration.active &&
+          !isIntegrationComingSoon(integration, { edition, email })
       );
     }
 
     return filtered;
-  }, [availableIntegrations, installedIds, search, filter]);
+  }, [availableIntegrations, installedIds, search, filter, edition, email]);
 
   const anyWhitelistedVisible = useAnyVisible({
     containerRef: gridRef,

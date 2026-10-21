@@ -59,7 +59,7 @@ One remains: `embedding`.
 - Adding new edge functions is safe
 
 The business functions (`get-method`, `issue`, `convert`, `create`, the `post-*` family,
-…) are no longer edge functions: they run in the app as `@carbon/server-functions` and
+…) are no longer edge functions: they run in the ERP as postings in its module service files and
 are reached through the Carbon API's operations (for example
 `POST /api/v1/sales/upsertQuoteLineMethod`). `functions.invoke("<name>")` for any of
 them no longer works.

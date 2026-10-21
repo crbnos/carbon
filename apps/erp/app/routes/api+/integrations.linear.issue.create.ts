@@ -2,143 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getAppUrl } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  isSyncedEntityType,
-  syncedEntities,
-  syncedEntityPermissions
-} from "@carbon/ee/issue-sync";
-import { linkNewIssue } from "@carbon/ee/issue-sync.server";
 import { getCompanyEmployees, getLinearClient } from "@carbon/ee/linear.server";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunction, LoaderFunction } from "react-router";
-import { data } from "react-router";
-import { requireChangeNoticeEditable } from "~/modules/items/items.server";
-import {
-  getActionTaskWithParent,
-  getNewIssueDefaults,
-  projectElementLinkRefusal
-} from "~/modules/shared/shared.server";
-
-const logger = getLogger("erp", "integrations-linear-issue-create");
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs, LoaderFunction } from "react-router";
+import { createLinearIssue } from "~/modules/shared/shared.server";
 
 const linear = getLinearClient();
 
-export const action: ActionFunction = async ({ request }) => {
-  try {
-    const data = await request.formData();
-
-    const actionId = data.get("actionId") as string;
-    const entityType = data.get("entityType") as string | null;
-
-    if (!isSyncedEntityType(entityType)) {
-      return { success: false, message: "Invalid entityType" };
-    }
-
-    const { companyId, client } = await requirePermissions(
-      request,
-      syncedEntityPermissions(entityType)
-    );
-
-    const teamId = data.get("teamId") as string;
-    const title = data.get("title") as string;
-    const description = data.get("description") as string;
-    const assigneeId = data.get("assignee") as string;
-
-    const carbonIssue = await getActionTaskWithParent(
-      client,
-      entityType,
-      actionId,
-      companyId
-    );
-
-    if (entityType === "changeOrderActionTask") {
-      const locked = carbonIssue.parentId
-        ? await requireChangeNoticeEditable(client, {
-            changeNoticeId: carbonIssue.parentId,
-            companyId,
-            scope: "workflow"
-          })
-        : { error: { message: "Could not find change notice" } };
-
-      if (locked) {
-        return { success: false, message: locked.error.message };
-      }
-    }
-
-    if (entityType === "projectElement") {
-      const refusal = await projectElementLinkRefusal(
-        client,
-        actionId,
-        companyId
-      );
-      if (refusal) {
-        return { success: false, message: refusal };
-      }
-    }
-
-    const issue = await linear.createIssue(companyId, {
-      teamId,
-      title,
-      description: description || undefined,
-      assigneeId: assigneeId || null
-    });
-
-    if (!issue) {
-      return { success: false, message: "Issue not found" };
-    }
-
-    const linked = await linkNewIssue(getCarbonServiceRole(), {
-      companyId,
-      tracker: "linear",
-      entityType,
-      entityId: actionId,
-      issueId: issue.id
-    });
-
-    if ("error" in linked) {
-      return { success: false, message: linked.error };
-    }
-
-    const url =
-      getAppUrl() +
-      syncedEntities[entityType].detailPath(
-        carbonIssue.parentId ?? "",
-        actionId
-      );
-
-    await linear.createAttachmentLink(companyId, {
-      issueId: issue.id,
-      url,
-      title: `Linked Carbon Issue: ${carbonIssue.parentReadableId ?? ""}`
-    });
-
-    // The first push runs under the per-company sync key.
-    await trigger("issue-sync-push", {
-      companyId,
-      initial: true,
-      records: [
-        {
-          table: entityType,
-          recordId: actionId,
-          operation: "UPDATE",
-          old: null
-        }
-      ]
-    });
-
-    return new Response("Linear issue created");
-  } catch (error) {
-    logger.error("Linear issue action error", { error: error });
-    return data(
-      { success: false, message: "Failed to create issue" },
-      { status: 400 }
-    );
-  }
-};
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(createLinearIssue.input).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.shared.createLinearIssue(input.data);
+}
 
 export const loader: LoaderFunction = async ({ request }) => {
   const { companyId, client } = await requirePermissions(request, {});

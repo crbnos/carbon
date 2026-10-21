@@ -2,24 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import { riskRegisterValidator } from "~/modules/quality/quality.models";
-import { getRisk, upsertRisk } from "~/modules/quality/quality.service";
+import { getRisk } from "~/modules/quality/quality.service";
 import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm";
 import { getParams, path } from "~/utils/path";
-
-const logger = getLogger("erp", "risks-id");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { client } = await requirePermissions(request, {
@@ -37,69 +30,27 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return data({ risk: risk.data });
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { client, userId, companyId } = await requirePermissions(request, {
-    update: "quality",
-    role: "employee"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(riskRegisterValidator).request(args, {
+    params: ["id"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(riskRegisterValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const riskId = validation.data.id!;
-
-  // Get the previous assignee to check if it changed
-  const existingRisk = await getRisk(client, riskId);
-  const previousAssignee = existingRisk.data?.assignee;
-
-  const severity = parseInt(validation.data.severity ?? "1", 10);
-  const likelihood = parseInt(validation.data.likelihood ?? "1", 10);
-
-  const result = await upsertRisk(client, {
-    ...validation.data,
-    id: riskId,
-    assignee: validation.data.assignee || undefined,
-    severity,
-    likelihood,
-    companyId,
-    updatedBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { id: _, severity, likelihood, ...risk } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.quality.updateRisk({
+    ...risk,
+    id: input.params.id,
+    severity: Number.parseInt(severity ?? "1", 10),
+    likelihood: Number.parseInt(likelihood ?? "1", 10)
   });
-
   if (result.error) {
-    throw redirect(
-      path.to.risks,
-      await flash(request, error(result.error, "Failed to update risk"))
-    );
+    return respond(args.request, result).redirect(path.to.risks);
   }
-
-  // Notify the new assignee if it changed
-  const newAssignee = validation.data.assignee;
-  if (newAssignee && newAssignee !== previousAssignee) {
-    try {
-      await trigger("notify", {
-        companyId,
-        documentId: riskId,
-        event: NotificationEvent.RiskAssignment,
-        recipient: {
-          type: "user",
-          userId: newAssignee
-        },
-        from: userId
-      });
-    } catch (err) {
-      logger.error("Failed to notify assignee", { error: err });
-    }
-  }
-
-  throw redirect(
-    `${path.to.risks}?${getParams(request)}`,
-    await flash(request, success("Risk updated successfully"))
+  return respond(args.request, result).redirect(
+    `${path.to.risks}?${getParams(args.request)}`,
+    { message: "Risk updated successfully" }
   );
-};
+}
 
 export default function EditRiskRoute() {
   const { risk } = useLoaderData<typeof loader>();

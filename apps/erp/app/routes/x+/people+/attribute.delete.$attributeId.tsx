@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { deleteAttribute } from "~/modules/people";
+import { deleteAttribute } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: LoaderFunctionArgs) {

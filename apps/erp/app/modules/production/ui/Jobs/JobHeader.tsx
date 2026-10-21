@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -30,6 +31,7 @@ import {
   Spinner,
   SplitButton,
   Status,
+  toast,
   useDisclosure,
   useMount,
   useViewport,
@@ -65,6 +67,7 @@ import {
   LuTable,
   LuTrash,
   LuTriangleAlert,
+  LuTvMinimalPlay,
   LuWorkflow,
   LuZap
 } from "react-icons/lu";
@@ -85,12 +88,17 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
+import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
+import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
+import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
+import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
 import type { JobProjectCharge } from "../../production.service";
-import { getJobMethodTree } from "../../production.service";
+import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
@@ -99,7 +107,11 @@ import {
   getReceivableSerialUnits,
   type JobReceiptSnapshot
 } from "./job-complete-logic";
-import { makeMethodsMissingOperations } from "./job-release-logic";
+import {
+  makeMethodsMissingOperations,
+  materialsWithoutStorageUnit
+} from "./job-release-logic";
+import { type JobRelease, useJobRelease } from "./useJobRelease";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -149,7 +161,23 @@ const JobHeader = () => {
   }>(path.to.job(jobId));
   const projectCharge = routeData?.projectCharge;
 
-  const statusFetcher = useFetcher<{}>();
+  const statusFetcher = useAction<typeof statusAction>({
+    onSuccess: () => toast.success(t`Updated job status`)
+  });
+  const complete = useAction<typeof completeAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      toast.success(t`Job completed successfully`);
+      if (data.warning) toast.error(data.warning);
+    }
+  });
+  const release = useJobRelease();
+  const cancel = useAction<typeof cancelAction>({
+    onSuccess: ({ data }) => {
+      toast.success(t`Job cancelled`);
+      if (data?.warning) toast.error(data.warning);
+    }
+  });
   const expediteFetcher = useFetcher<{
     expedite: {
       projectedCompletionAt: string | null;
@@ -178,6 +206,7 @@ const JobHeader = () => {
   const currentValue = getOptionFromPath(jobId);
 
   const markAsPlanned = () => {
+    if (status === "Planned") return;
     statusFetcher.submit(
       {
         status: "Planned"
@@ -383,6 +412,23 @@ const JobHeader = () => {
                   </Button>
                 </RecordAction>
               )}
+            {["Ready", "In Progress", "Paused"].includes(status ?? "") && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuTvMinimalPlay />}
+                  variant="secondary"
+                  asChild
+                >
+                  <a
+                    href={path.to.external.mesJob(jobId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Trans>Open in MES</Trans>
+                  </a>
+                </Button>
+              </RecordAction>
+            )}
             <RecordAction slot="overflow">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -499,13 +545,11 @@ const JobHeader = () => {
             <RecordAction slot={isReleasable ? "primary" : "overflow"}>
               <SplitButton
                 onClick={releaseModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Ready"
-                }
+                isLoading={release.isPending}
                 isDisabled={
                   !isReleasable ||
                   statusFetcher.state !== "idle" ||
+                  release.isPending ||
                   !permissions.can("update", "production") ||
                   (routeData?.job?.quantity === 0 &&
                     routeData?.job?.scrapQuantity === 0)
@@ -527,10 +571,7 @@ const JobHeader = () => {
             <RecordAction slot={isReleasable ? "overflow" : "primary"}>
               <Button
                 onClick={completeModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formAction === path.to.jobComplete(jobId)
-                }
+                isLoading={complete.isPending}
                 isDisabled={
                   ["Completed", "Cancelled"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
@@ -545,13 +586,11 @@ const JobHeader = () => {
             <RecordAction slot="overflow">
               <Button
                 onClick={cancelModal.onOpen}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Cancelled"
-                }
+                isLoading={cancel.isPending}
                 isDisabled={
                   ["Cancelled", "Completed"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
+                  cancel.isPending ||
                   !permissions.can("update", "production")
                 }
                 leftIcon={<LuCircleStop />}
@@ -567,21 +606,21 @@ const JobHeader = () => {
         <JobStartModal
           job={routeData?.job}
           onClose={releaseModal.onClose}
-          fetcher={statusFetcher}
+          release={release}
         />
       )}
       {cancelModal.isOpen && (
         <JobCancelModal
           job={routeData?.job}
           onClose={cancelModal.onClose}
-          fetcher={statusFetcher}
+          cancel={cancel}
         />
       )}
       {completeModal.isOpen && (
         <JobCompleteModal
           job={routeData?.job}
           onClose={completeModal.onClose}
-          fetcher={statusFetcher}
+          fetcher={complete}
         />
       )}
       {expediteModal.isOpen && (
@@ -654,15 +693,29 @@ const getExplorePath = (jobId: string, type: string) => {
 export function JobStartModal({
   job,
   onClose,
-  fetcher
+  release
 }: {
   job?: Job;
-  fetcher: FetcherWithComponents<{}>;
+  release: JobRelease;
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
   const [suppliers] = useSuppliers();
+  const companySettings = useCompanySettings();
+  const strictBackflush = companySettings?.requireBackflushStorageUnit === true;
   const [loading, setLoading] = useState(true);
+  // Assumed to apply while the locations load, so the dialog never offers a
+  // release the route refuses.
+  const pullFromLocationIds = usePullFromLocationIds();
+  const strictAtJobLocation =
+    strictBackflush &&
+    (pullFromLocationIds === null ||
+      (!!job?.locationId && pullFromLocationIds.includes(job.locationId)));
+  const [storageUnitGaps, setStorageUnitGaps] = useState<
+    { id: string; description: string }[]
+  >([]);
+  const [storageUnitCheckFailed, setStorageUnitCheckFailed] = useState(false);
+  const missingStorageUnits = strictAtJobLocation ? storageUnitGaps : [];
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
   >([]);
@@ -696,20 +749,31 @@ export function JobStartModal({
 
   const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
-    const [makeMethod, materials, operations, methodTree] = await Promise.all([
-      carbon
-        .from("jobMakeMethod")
-        .select("*")
-        .eq("jobId", job.id!)
-        .is("parentMaterialId", null)
-        .single(),
-      carbon
-        .from("jobMaterialWithMakeMethodId")
-        .select("*")
-        .eq("jobId", job.id!),
-      carbon.from("jobOperation").select("*").eq("jobId", job.id!),
-      getJobMethodTree(carbon, job.id!)
-    ]);
+    const [makeMethod, materials, operations, methodTree, storageUnitLines] =
+      await Promise.all([
+        carbon
+          .from("jobMakeMethod")
+          .select("*")
+          .eq("jobId", job.id!)
+          .is("parentMaterialId", null)
+          .single(),
+        carbon
+          .from("jobMaterialWithMakeMethodId")
+          .select("*")
+          .eq("jobId", job.id!),
+        carbon.from("jobOperation").select("*").eq("jobId", job.id!),
+        getJobMethodTree(carbon, job.id!),
+        strictBackflush
+          ? carbon
+              .from("jobMaterial")
+              .select(
+                "id, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision)"
+              )
+              .eq("jobId", job.id!)
+              .eq("companyId", job.companyId!)
+              .is("storageUnitId", null)
+          : Promise.resolve({ data: [], error: null })
+      ]);
 
     // Check for existing purchase order lines for outside operations
     const outsideOperations =
@@ -910,6 +974,10 @@ export function JobStartModal({
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
+      setStorageUnitGaps(
+        materialsWithoutStorageUnit(storageUnitLines.data ?? [])
+      );
+      setStorageUnitCheckFailed(!!storageUnitLines.error);
 
       // Show the release UI whenever there are outside operations still needing handling,
       // whether or not they have a supplier yet
@@ -971,6 +1039,8 @@ export function JobStartModal({
             <ModalBody>
               <VStack>
                 {missingOperationAssemblies.length === 0 &&
+                  missingStorageUnits.length === 0 &&
+                  !(strictAtJobLocation && storageUnitCheckFailed) &&
                   eachOutsideOperationHasASupplier && (
                     <p className="text-sm">
                       <Trans>
@@ -1112,6 +1182,40 @@ export function JobStartModal({
                     </AlertDescription>
                   </Alert>
                 )}
+                {strictAtJobLocation && storageUnitCheckFailed && (
+                  <Alert variant="destructive">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Storage Units Not Checked</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Could not check the storage units of this job's
+                        materials. Close this dialog and open it again to try
+                        again.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {missingStorageUnits.length > 0 && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Missing Storage Units</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Strict backflush is on. Set a Pull From storage unit on
+                        these materials before releasing:
+                      </Trans>
+                      <ul className="mt-2 list-disc pl-4 space-y-1 max-h-48 overflow-y-auto">
+                        {missingStorageUnits.map((material) => (
+                          <li key={material.id}>{material.description}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {!eachOutsideOperationHasASupplier && hasOutsideOperations && (
                   <Alert variant="warning">
                     <LuTriangleAlert />
@@ -1134,37 +1238,27 @@ export function JobStartModal({
               <Button variant="secondary" onClick={onClose}>
                 <Trans>Cancel</Trans>
               </Button>
-              <fetcher.Form
-                onSubmit={onClose}
-                method="post"
-                action={`${path.to.jobStatus(job.id!)}?schedule=1`}
+              <Button
+                isLoading={release.isPending}
+                isDisabled={
+                  release.isPending ||
+                  missingOperationAssemblies.length > 0 ||
+                  missingStorageUnits.length > 0 ||
+                  (strictAtJobLocation && storageUnitCheckFailed) ||
+                  !eachOutsideOperationHasASupplier
+                }
+                onClick={() => {
+                  release.submit(job.id!, {
+                    purchaseOrdersBySupplierId:
+                      selectedPurchaseOrdersBySupplierId,
+                    supplierProcessByOperationId:
+                      selectedSupplierProcessByOperationId
+                  });
+                  onClose();
+                }}
               >
-                <input type="hidden" name="status" value="Ready" />
-                <input
-                  type="hidden"
-                  name="selectedPurchaseOrdersBySupplierId"
-                  value={JSON.stringify(selectedPurchaseOrdersBySupplierId)}
-                />
-                <input
-                  type="hidden"
-                  name="selectedSupplierProcessByOperationId"
-                  value={JSON.stringify(selectedSupplierProcessByOperationId)}
-                />
-                <Button
-                  isLoading={
-                    fetcher.state !== "idle" &&
-                    fetcher.formData?.get("status") === "Ready"
-                  }
-                  isDisabled={
-                    fetcher.state !== "idle" ||
-                    missingOperationAssemblies.length > 0 ||
-                    !eachOutsideOperationHasASupplier
-                  }
-                  type="submit"
-                >
-                  <Trans>Release Job</Trans>
-                </Button>
-              </fetcher.Form>
+                <Trans>Release Job</Trans>
+              </Button>
             </ModalFooter>
           </>
         )}
@@ -1176,10 +1270,10 @@ export function JobStartModal({
 function JobCancelModal({
   job,
   onClose,
-  fetcher
+  cancel
 }: {
   job?: Job;
-  fetcher: FetcherWithComponents<{}>;
+  cancel: ReturnType<typeof useAction<typeof cancelAction>>;
   onClose: () => void;
 }) {
   if (!job) return null;
@@ -1209,16 +1303,20 @@ function JobCancelModal({
           <Button variant="secondary" onClick={onClose}>
             <Trans>Don't Cancel</Trans>
           </Button>
-          <fetcher.Form
-            onSubmit={onClose}
-            method="post"
-            action={path.to.jobStatus(job.id!)}
+          <Button
+            variant="destructive"
+            isLoading={cancel.isPending}
+            isDisabled={cancel.isPending}
+            onClick={() => {
+              cancel.submit(null, {
+                method: "post",
+                action: path.to.jobCancel(job.id!)
+              });
+              onClose();
+            }}
           >
-            <input type="hidden" name="status" value="Cancelled" />
-            <Button variant="destructive" type="submit">
-              <Trans>Cancel Job</Trans>
-            </Button>
-          </fetcher.Form>
+            <Trans>Cancel Job</Trans>
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -1350,7 +1448,7 @@ function JobCompleteModal({
   fetcher
 }: {
   job?: Job;
-  fetcher: FetcherWithComponents<{}>;
+  fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();

@@ -8,7 +8,8 @@ import { describe, expect, it, vi } from "vitest";
 // macros that vitest does not transform. accounting.service only needs
 // getNextSequence from it, which these tests never exercise — stub it to keep
 // the import graph light and macro-free.
-vi.mock("~/modules/settings", () => ({
+vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getNextSequence: vi.fn()
 }));
 

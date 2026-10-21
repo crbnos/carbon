@@ -2,8 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Project } from "ts-morph";
 import { describe, expect, it } from "vitest";
-import { paramFilters, parseServiceSource } from "../../../scripts/lib/service-ast";
+import {
+  paramFilters,
+  parseServiceSource,
+  publishedParamFilters
+} from "../../../scripts/lib/service-ast";
 import { consensusByName, planInputs } from "./sweep/inputs";
 
 function filtersOf(source: string) {
@@ -67,6 +72,72 @@ describe("what a parameter is, read off the body", () => {
   it("says nothing when the body does not compare it to a column", () => {
     expect(filters.viaRpc).toEqual([]);
     expect(filters.notMine).toEqual([]);
+  });
+});
+
+describe("what a published tool's input is", () => {
+  const project = new Project({ useInMemoryFileSystem: true });
+  project.createSourceFile(
+    "/m/helper.ts",
+    `export declare function defineServiceFn<D>(definition: D): D;
+     export declare function payload<T>(ctx: unknown, value: T): { build(): T };`
+  );
+  project.createSourceFile(
+    "/m/jobs.service.ts",
+    `export async function getJob(client: Client, jobId: string) {
+       return client.from("job").select("*").eq("id", jobId).single();
+     }
+     export async function getLines(client: Client, companyId: string, args: { orderId: string }) {
+       return client.from("orderLine").select("*").eq("companyId", companyId).eq("orderId", args.orderId);
+     }`
+  );
+  project.createSourceFile(
+    "/m/jobs.server.ts",
+    `import { defineServiceFn, payload } from "./helper";
+     import * as service from "./jobs.service";
+     export const getJob = defineServiceFn({
+       input: null,
+       permission: { view: "production" },
+       async run(ctx, input) {
+         return service.getJob(ctx.client, input.jobId as never);
+       }
+     });
+     export const lines = defineServiceFn({
+       input: null,
+       permission: { view: "production" },
+       async run(ctx, input) {
+         return service.getLines(ctx.client, ctx.company.id, payload(ctx, input).build() as never);
+       }
+     });
+     export const status = defineServiceFn({
+       input: null,
+       permission: { view: "production" },
+       async run(ctx, { jobId, ...rest }) {
+         return ctx.client.from("jobStatus").select("*").eq("jobId", jobId);
+       }
+     });`
+  );
+  project.createSourceFile(
+    "/m/router.ts",
+    `import * as jobs from "./jobs.server";
+     export const router = { jobs };`
+  );
+  const filters = publishedParamFilters(project, "/m/router.ts");
+
+  it("reads the building block a leaf hands its input to, as paths into the input", () => {
+    // The tool is named for the leaf, whatever its building block is called.
+    expect(filters.get("jobs_getJob")).toEqual([
+      { path: "jobId", table: "job", column: "id" }
+    ]);
+    expect(filters.get("jobs_lines")).toEqual([
+      { path: "orderId", table: "orderLine", column: "orderId" }
+    ]);
+  });
+
+  it("reads a leaf's own query on a destructured input", () => {
+    expect(filters.get("jobs_status")).toEqual([
+      { path: "jobId", table: "jobStatus", column: "jobId" }
+    ]);
   });
 });
 

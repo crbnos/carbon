@@ -9,10 +9,8 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  updateWorkflowCanvasState,
-  workflowCanvasStateValidator
-} from "~/modules/workflows";
+import { workflowCanvasStateValidator } from "~/modules/workflows/workflows.models";
+import { updateWorkflowCanvasState } from "~/modules/workflows/workflows.service";
 import { path } from "~/utils/path";
 
 // Canvas state is per workflow, not per version, so the live-version lock does

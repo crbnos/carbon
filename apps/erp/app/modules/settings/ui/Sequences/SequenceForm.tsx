@@ -21,7 +21,7 @@ import { useState } from "react";
 import type { z } from "zod";
 import { Hidden, Input, Number, Submit } from "~/components/Form";
 import { useCompanyTimeZone, usePermissions } from "~/hooks";
-import { sequenceValidator } from "~/modules/settings";
+import { sequenceValidator } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 import { interpolateSequenceDate } from "~/utils/string";
 

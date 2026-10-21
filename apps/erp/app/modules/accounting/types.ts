@@ -15,6 +15,7 @@ import type {
   getDimensionPivot,
   getDimensionPivotLines,
   getDimensions,
+  getGeneralLedgerLines,
   getJournalEntries,
   getJournalEntry,
   getPaymentTerms,
@@ -446,6 +447,10 @@ export type ChartPeriodSeries = Account & {
 export type JournalEntry = NonNullable<
   Awaited<ReturnType<typeof getJournalEntry>>["data"]
 >;
+
+export type GeneralLedgerLine = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getGeneralLedgerLines>>>["data"]
+>[number];
 
 export type JournalEntryListItem = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getJournalEntries>>>["data"]

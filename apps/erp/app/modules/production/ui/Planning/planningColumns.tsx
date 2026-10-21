@@ -31,7 +31,7 @@ import {
   getReorderPolicyDescription,
   ItemReorderPolicy
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
-import type { ProductionPlanningItem } from "~/modules/production";
+import type { ProductionPlanningItem } from "~/modules/production/types";
 import {
   LatestOrderDateCell,
   latestOrderDateExportValue
@@ -46,7 +46,7 @@ import {
   planningWeekStripSize,
   planningWeekValues
 } from "~/modules/production/ui/Planning/PlanningWeekStrip";
-import type { PurchasingPlanningItem } from "~/modules/purchasing";
+import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 import {
   COMMON_SEGMENT_OPTION,
   PLANNING_SEGMENT_COLUMN

@@ -62,6 +62,7 @@ import {
   LuListChecks,
   LuMaximize2,
   LuMinimize2,
+  LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useFetchers, useParams } from "react-router";
@@ -115,11 +116,6 @@ import {
   OperationRowDetails,
   OperationRowTitle
 } from "~/modules/items/ui/Item/MethodRow";
-import type {
-  OperationParameter,
-  OperationStep,
-  OperationTool
-} from "~/modules/shared";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -127,7 +123,14 @@ import {
   operationToolValidator,
   operationTypes,
   procedureStepType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationTool
+} from "~/modules/shared/types";
+import type { action as editQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.$id";
+import type { action as newQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.new";
 import type { action as editQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.$id";
 import type { action as newQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.new";
 import type { action as editQuoteOperationStepAction } from "~/routes/x+/quote+/methods+/operation.step.$id";
@@ -273,7 +276,8 @@ const QuoteBillOfProcess = ({
 }: QuoteBillOfProcessProps) => {
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
+  // A failed delete is toasted.
+  const deleteOperationFetcher = useAction();
   const permissions = usePermissions();
   const { id: userId } = useUser();
 
@@ -392,7 +396,7 @@ const QuoteBillOfProcess = ({
   const onUploadImage = useImageUpload(`opportunity-line/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id]
@@ -422,33 +426,37 @@ const QuoteBillOfProcess = ({
     setSelectedItemId(operationId);
   };
 
-  const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "sales")) return;
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
+    if (isReadOnly) return;
 
-    const operation = operationsById.get(id);
-    if (!operation) return;
-
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      deleteOperationFetcher.submit(
-        { id },
-        {
-          method: "post",
-          action: path.to.quoteOperationsDelete
-        }
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
       );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      deleteOperationFetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteOperationsDelete
+      });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "sales") || isDisabled) return;
@@ -776,18 +784,30 @@ const QuoteBillOfProcess = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addOperationButtonRef}
-            variant="secondary"
-            isDisabled={
-              !permissions.can("update", "sales") ||
-              selectedItemId !== null ||
-              isDisabled
-            }
-            onClick={onAddItem}
-          >
-            <Trans>Add Operation</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addOperationButtonRef}
+              variant="secondary"
+              isDisabled={
+                !permissions.can("update", "sales") ||
+                selectedItemId !== null ||
+                isDisabled
+              }
+              onClick={onAddItem}
+            >
+              <Trans>Add Operation</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
@@ -1664,30 +1684,24 @@ function OperationForm({
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const fetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
-  const { carbon } = useCarbon();
-
-  const baseCurrency = company?.baseCurrencyCode ?? "USD";
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    if (fetcher.data && fetcher.data.id) {
-      // Clear temporary item after successful save
+  const isNew = !!temporaryItems[item.id];
+  const fetcher = useAction<
+    typeof newQuoteOperationAction | typeof editQuoteOperationAction
+  >({
+    onSuccess: () => {
+      // The operation is saved: it is no longer a temporary row.
       setTemporaryItems((prev) => {
         const { [item.id]: _, ...rest } = prev;
         return rest;
       });
-
-      if (fetcher.data?.success) {
-        toast.success(fetcher.data.message);
-      }
+      toast.success(isNew ? t`Operation created` : t`Operation updated`);
       onSubmit();
     }
-  }, [item.id, fetcher.data, setTemporaryItems, onSubmit]);
+  });
+  const { carbon } = useCarbon();
+
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const machineDisclosure = useDisclosure();
   const assemblyDisclosure = useDisclosure();

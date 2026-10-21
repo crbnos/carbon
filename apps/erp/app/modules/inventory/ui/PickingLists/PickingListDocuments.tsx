@@ -13,7 +13,7 @@ import {
   RelatedDocumentSkeleton
 } from "~/components/DocumentPage";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { getPickingListRelatedItems } from "~/modules/inventory";
+import type { getPickingListRelatedItems } from "~/modules/inventory/inventory.service";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";

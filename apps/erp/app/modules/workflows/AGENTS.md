@@ -48,10 +48,10 @@ pnpm --filter @carbon/checks workflow-events   # trigger-row drift after a publi
 ```
 modules/workflows/
 ├── workflows.models.ts     # zod validators
-├── workflows.service.ts    # Supabase reads/writes for workflow + workflowVersion
-├── workflows.server.ts     # lock predicates, publish, unpublish — server only
+├── workflows.service.ts    # building blocks: reads/writes, lock predicate, publish, unpublish
+├── workflows.server.ts     # service functions: createWorkflow, deleteWorkflow
+├── workflows.utils.ts      # browser-safe constants (MAX_RUN_STEPS)
 ├── types.ts                # BuilderNode / BuilderEdge React Flow aliases
-├── index.ts                # barrel (does NOT export workflows.server)
 └── ui/
     ├── WorkflowsTable.tsx, WorkflowForm.tsx, WorkflowLockModal.tsx,
     │   ConfirmUnpublishWorkflow.tsx, WorkflowsUpgradeOverlay.tsx
@@ -68,9 +68,18 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - `insertWorkflow` / `updateWorkflow` — separate rather than one `upsert*`
 - `insertWorkflowVersion` / `updateWorkflowDefinition` / `deleteWorkflowVersion`
 - `updateWorkflowOwner` — takes the session user, never a submitted id
-- `checkWorkflowVersionLock` (server) — the published-version lock; the rule is one equality against `publishedVersionId`, so there is no helper wrapping it
-- `updateWorkflowNodePositions` (service) — the positions-only writer behind `$id.positions.tsx`
-- `publishWorkflowVersion` / `unpublishWorkflow` (server) — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
+- `checkWorkflowVersionLock` — the published-version lock; the rule is one equality against `publishedVersionId`, so there is no helper wrapping it
+- `updateWorkflowNodePositions` — the positions-only writer behind `$id.positions.tsx`
+- `publishWorkflowVersion` / `unpublishWorkflow` — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
+
+## Operations (`workflows.server.ts`)
+
+Each is a `defineServiceFn` const; the route calls it through `carbon(request)` (`api.workflows.createWorkflow(input)`). Neither is published (no `@mcp`). Every function under Key Service Functions is a building block in `workflows.service.ts`.
+
+- `createWorkflow` (`x+/workflows+/new.tsx`) — inserts the workflow (the creator is its owner) and version 1 with one trigger node; the New Workflow modal opens the builder on the returned `id`.
+- `deleteWorkflow` (`x+/workflows+/delete.$id.tsx`) — deletes the workflow, then `syncAfterWorkflowDelete` reconciles the company's event subscriptions.
+
+Both refuse with `entitlement` when the company's plan has no `WORKFLOWS` (`companyHasFeature`), the check the routes' `requireFeature` used to make.
 
 ## Builder Notes
 

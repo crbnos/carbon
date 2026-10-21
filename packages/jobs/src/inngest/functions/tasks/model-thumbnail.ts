@@ -10,15 +10,19 @@ import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   internalizeStorageUrl,
-  runAssemblerJob
+  runAssemblerJob,
+  signUploadUrls
 } from "./assembler-client";
+import { getModelUpload, updateModelUpload } from "./model-rows";
 
 const SIGNED_URL_EXPIRY = 60 * 60; // seconds — the source (read) URL only.
 const MAX_THUMBNAIL_WAIT_MS = 5 * 60 * 1000;
 
 /**
- * Renders a model's preview thumbnail. The assembler draws the model's GLB
- * (the optimised one, else the lossless assembly GLB) to a PNG and uploads it
+ * Renders a model's preview thumbnail again, from the viewer's camera
+ * (`direction`) when the user captures one. The first thumbnail comes from
+ * model-optimize's ingest job. The assembler draws the model's GLB (the
+ * optimised one, else the lossless assembly GLB) to a PNG and uploads it
  * through a late-minted signed URL; this function then points
  * `modelUpload.thumbnailPath` at it.
  */
@@ -27,9 +31,9 @@ export const modelThumbnailFunction = inngest.createFunction(
     id: "model-thumbnail",
     retries: 3,
     concurrency: ASSEMBLER_CONCURRENCY,
-    // One render per model at a time — overlapping runs (regenerate + the
-    // optimise-chained event, or rapid clicks) would race the "delete previous
-    // thumbnail" step and can strand a just-published object. (This event's
+    // One render per model at a time — overlapping runs (rapid clicks) would
+    // race the "delete previous thumbnail" step and can strand a
+    // just-published object. (This event's
     // payload key is `modelId`, not `modelUploadId`.)
     singleton: { key: "event.data.modelId", mode: "skip" }
   },
@@ -45,26 +49,15 @@ export const modelThumbnailFunction = inngest.createFunction(
     }
 
     const model = await step.run("resolve", async () => {
-      const client = getCarbonServiceRole();
-      const upload = await client
-        .from("modelUpload")
-        .select("glbPath, optimizedModelPath, thumbnailPath")
-        .eq("id", modelId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      if (upload.error) {
-        throw new Error(`Failed to read model upload: ${upload.error.message}`);
-      }
+      const upload = await getModelUpload(companyId, modelId);
       return {
-        glbPath:
-          upload.data?.optimizedModelPath ?? upload.data?.glbPath ?? null,
+        glbPath: upload?.optimizedModelPath ?? upload?.glbPath ?? null,
         // Deleted after the new one lands, so a regeneration leaves no orphan.
-        previousPath: upload.data?.thumbnailPath ?? null
+        previousPath: upload?.thumbnailPath ?? null
       };
     });
 
-    // The assembler writes the GLB; model-optimize sends this event again once
-    // it has.
+    // No GLB yet: model-optimize renders the first thumbnail when it writes it.
     if (!model.glbPath) {
       logger.info("model thumbnail skipped — no GLB yet", { modelId });
       return { modelId, status: "Skipped" as const };
@@ -102,23 +95,18 @@ export const modelThumbnailFunction = inngest.createFunction(
           output: { path: thumbnailPath, ...(direction && { direction }) }
         };
       },
-      mintUploadUrls: async () => {
-        const client = getCarbonServiceRole();
-        const upload = await storage(client)
-          .company(companyId)
-          .createSignedUploadUrl(thumbnailPath, { upsert: true });
-        if (upload.error) {
-          throw new Error(
-            `Failed to sign thumbnail upload URL: ${upload.error.message}`
-          );
-        }
-        return { thumbnail: internalizeStorageUrl(upload.data.signedUrl) };
-      }
+      mintUploadUrls: () =>
+        signUploadUrls({
+          thumbnail: {
+            bucket: storage(getCarbonServiceRole()).company(companyId),
+            path: thumbnailPath
+          }
+        })
     });
 
     await step.run("persist", async () => {
       const client = getCarbonServiceRole();
-      // The upload goes through a late-minted URL: confirm it landed before repointing.
+      // Confirm the upload landed before repointing.
       const uploaded = await storage(client)
         .company(companyId)
         .info(thumbnailPath);
@@ -127,16 +115,7 @@ export const modelThumbnailFunction = inngest.createFunction(
           `Thumbnail was not uploaded to ${thumbnailPath}: ${uploaded.error.message}`
         );
       }
-      const result = await client
-        .from("modelUpload")
-        .update({ thumbnailPath })
-        .eq("id", modelId)
-        .eq("companyId", companyId);
-      if (result.error) {
-        throw new Error(
-          `Failed to update thumbnail path: ${result.error.message}`
-        );
-      }
+      await updateModelUpload(companyId, modelId, { thumbnailPath });
 
       // Drop the superseded thumbnail (best-effort — never fail the run over it).
       if (model.previousPath && model.previousPath !== thumbnailPath) {

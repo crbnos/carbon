@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { setJobOperationToolStepLink } from "~/modules/production";
+import { setJobOperationToolStepLink } from "~/modules/production/production.service";
 
 // Toggle a tool↔step link from the step editor's "Tools" picker (job tier).
 // `toolId` is the tool ITEM id — the picker offers the whole tool library, and the

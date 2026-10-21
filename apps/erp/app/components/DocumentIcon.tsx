@@ -15,7 +15,7 @@ import {
   BsFileZipFill
 } from "react-icons/bs";
 import { LuAxis3D } from "react-icons/lu";
-import type { documentTypes } from "~/modules/shared";
+import type { documentTypes } from "~/modules/shared/shared.models";
 
 type DocumentIconProps = {
   type: (typeof documentTypes)[number];

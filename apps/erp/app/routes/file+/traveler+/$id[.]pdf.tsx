@@ -17,12 +17,15 @@ import type { LoaderFunctionArgs } from "react-router";
 import {
   getJob,
   getJobMakeMethodById,
-  getJobMethodTree,
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getJobMethodTree } from "~/modules/production/production.utils";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "traveler", "pdf");
 

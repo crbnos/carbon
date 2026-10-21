@@ -14,7 +14,8 @@ const db = vi.hoisted(() => ({
 }));
 // Env constants only: the real @carbon/auth barrel reaches Lingui macros that
 // only compile under Vite's lingui plugin.
-vi.mock("@carbon/auth", () => ({
+vi.mock("@carbon/auth", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   SUPABASE_URL: "http://localhost",
   JIRA_CLIENT_ID: "test",
   JIRA_CLIENT_SECRET: "test"

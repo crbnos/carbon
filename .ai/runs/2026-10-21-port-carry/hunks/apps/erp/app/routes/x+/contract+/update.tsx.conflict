@@ -1,0 +1,445 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
+<<<<<<< HEAD
+import { getExchangeRate } from "~/modules/accounting";
+import {
+  customerContractInvoiceAutomationValidator,
+  customerContractResearchFields,
+  customerContractTypes,
+  customerContractValidator,
+  getContract,
+  updateContract,
+  updateContractInvoiceAutomation,
+  updateContractNotes,
+  updateContractResearchFlags,
+  updateContractType
+} from "~/modules/sales";
+import { contractCustomerChange } from "~/modules/sales/sales.server";
+import { contractDurationOf } from "~/modules/sales/ui/Contracts";
+import { getCompanySettings } from "~/modules/settings";
+||||||| 23bd5d6e0b
+import { getExchangeRate } from "~/modules/accounting";
+import {
+  customerContractInvoiceAutomationValidator,
+  customerContractTypes,
+  customerContractValidator,
+  getContract,
+  updateContract,
+  updateContractInvoiceAutomation,
+  updateContractNotes,
+  updateContractType
+} from "~/modules/sales";
+import { contractCustomerChange } from "~/modules/sales/sales.server";
+import { contractDurationOf } from "~/modules/sales/ui/Contracts";
+import { getCompanySettings } from "~/modules/settings";
+=======
+import { zfd } from "zod-form-data";
+>>>>>>> 0a1bd961b2
+
+// The properties panel: one term, or the type or invoicing intent, by id.
+const propertyForm = z.object({
+  id: z.string(),
+  intent: zfd.text(z.string().optional()),
+  field: zfd.text(z.string().optional()),
+  value: z.string().nullish()
+});
+
+/**
+ * One property of a contract, saved from its properties panel. The type and
+ * the invoicing mode stay editable while Active; every other field is a term.
+ */
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(propertyForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id, intent, field, value } = input.data;
+  const api = await carbon(args.request);
+  // Each operation checks the value it is given against its own choices.
+
+  if (intent === "invoiceAutomation") {
+    return api.sales.setContractInvoiceAutomation({
+      id,
+      // Empty is the company's setting.
+      invoiceAutomation: (value || null) as never
+    });
+  }
+  if (intent === "contractType") {
+    return api.sales.setContractType({ id, contractType: value as never });
+  }
+<<<<<<< HEAD
+
+  // R&D tax (Government Contracting 5d): tax facts, not terms, so they
+  // change in any status. Funded research "" is the default (null).
+  if (intent === "researchFlag") {
+    const flag = customerContractResearchFields.find((name) => name === field);
+    if (!flag || (value !== "true" && value !== "false" && value !== "")) {
+      return { error: { message: "Invalid research flag" }, data: null };
+    }
+    if (value === "" && flag !== "researchFunded") {
+      return { error: { message: "Invalid research flag" }, data: null };
+    }
+    const update = await updateContractResearchFlags(client, {
+      id,
+      companyId,
+      [flag]: value === "" ? null : value === "true",
+      updatedBy: userId
+    });
+    if (update.error) {
+      logger.error("contract research flag update failed", {
+        companyId,
+        id,
+        flag,
+        error: update.error
+      });
+      return {
+        error: {
+          message: update.error.message || "Failed to update the research flag"
+        },
+        data: null
+      };
+    }
+    return { error: null, data: update.data };
+  }
+
+  if (typeof field !== "string" || !isTermField(field)) {
+    return { error: { message: "Invalid form data" }, data: null };
+  }
+
+  const current = await getContract(client, id, companyId);
+  if (current.error || current.data?.companyId !== companyId) {
+    logger.error("contract not found for update", {
+      companyId,
+      id,
+      error: current.error
+    });
+    return { error: { message: "Contract not found" }, data: null };
+  }
+  const contract = current.data;
+
+  if (contract.status !== "Draft") {
+    if (field !== "notes") {
+      return {
+        error: {
+          message: "Only a Draft contract's terms can be edited — use Amend"
+        },
+        data: null
+      };
+    }
+    // Notes are not a term: they stay editable after Confirm.
+    const update = await updateContractNotes(client, {
+      id,
+      companyId,
+      notes: notesDoc(value),
+      updatedBy: userId
+    });
+    if (update.error) {
+      logger.error("contract notes update failed", {
+        companyId,
+        id,
+        error: update.error
+      });
+      return {
+        error: { message: update.error.message || "Failed to update notes" },
+        data: null
+      };
+    }
+    return { error: null, data: update.data };
+  }
+
+  const terms: Record<TermField, unknown> = {
+    name: contract.name,
+    customerId: contract.customerId,
+    invoiceCustomerId: contract.invoiceCustomerId,
+    invoiceCustomerContactId: contract.invoiceCustomerContactId,
+    invoiceCustomerLocationId: contract.invoiceCustomerLocationId,
+    shipToCustomerLocationId: contract.shipToCustomerLocationId,
+    salesPersonId: contract.salesPersonId,
+    projectId: contract.projectId,
+    customerReference: contract.customerReference,
+    closeDate: contract.closeDate,
+    startDate: contract.startDate,
+    duration: contractDurationOf({
+      endDate: contract.endDate,
+      termMonths: contract.termMonths
+    }),
+    endDate: contract.endDate,
+    renewal: contract.renewal,
+    // Stored as a fraction; the form speaks percent points.
+    renewalUplift: round(Number(contract.renewalUplift ?? 0) * 100),
+    billingFrequency: contract.billingFrequency,
+    billingAlignment: contract.billingAlignment,
+    billingTiming: contract.billingTiming,
+    firstInvoiceDate: contract.firstInvoiceDate,
+    billedThrough: contract.billedThrough,
+    recognizeRevenueFrom: contract.recognizeRevenueFrom,
+    paymentTermId: contract.paymentTermId,
+    currencyCode: contract.currencyCode,
+    // The stored document, re-encoded so the validator keeps it as is.
+    notes: contract.notes ? JSON.stringify(contract.notes) : null
+  };
+
+  terms[field] =
+    field === "notes"
+      ? value
+        ? JSON.stringify(textToTiptap(value))
+        : null
+      : value || null;
+  // Picking an end date is choosing a custom term.
+  if (field === "endDate") terms.duration = "custom";
+  // A different customer brings its own bill-to, contact, addresses and
+  // payment terms, as in setup step 1.
+  if (field === "customerId") {
+    const invoicing = await contractCustomerChange(client, companyId, {
+      from: contract.customerId,
+      to: value
+    });
+    if (invoicing) Object.assign(terms, invoicing);
+  }
+  // A contact and address belong to the bill-to customer.
+  if (field === "invoiceCustomerId" && value !== contract.invoiceCustomerId) {
+    terms.invoiceCustomerContactId = null;
+    terms.invoiceCustomerLocationId = null;
+  }
+
+  // The same FormData the new contract form posts, so the same zfd coercion
+  // applies.
+  const merged = new FormData();
+  for (const key of TERM_FIELDS) {
+    const term = terms[key];
+    if (term !== null && term !== undefined && term !== "") {
+      merged.append(key, String(term));
+    }
+  }
+  // Not a term, but the terms service writes it: carried so saving a term
+  // never resets the contract to the company's invoicing setting.
+  if (contract.invoiceAutomation) {
+    merged.append("invoiceAutomation", contract.invoiceAutomation);
+  }
+  // Not a term either, and never edited here: carried so the validator
+  // applies the rules of this contract's basis.
+  if (contract.billingBasis) {
+    merged.append("billingBasis", contract.billingBasis);
+  }
+
+  if (field === "currencyCode" && value && value !== contract.currencyCode) {
+    const exchangeRate = await getExchangeRate(client, companyId, value);
+    if (exchangeRate.error) {
+      // A missing rate is an error, never 1.
+      return { error: exchangeRate.error, data: null };
+    }
+    merged.append("exchangeRate", String(exchangeRate.data));
+  }
+
+  const validation = await validator(customerContractValidator).validate(
+    merged
+  );
+  if (validation.error) {
+    const message =
+      Object.values(validation.error.fieldErrors)[0] ??
+      "These terms are not valid";
+    return { error: { message }, data: null };
+  }
+
+  const {
+    id: _id,
+    customerContractId: _customerContractId,
+    ...data
+  } = validation.data;
+
+  const update = await updateContract(client, {
+    ...data,
+    // Not a term: `contractType` is left alone (an omitted type is kept).
+    contractType: undefined,
+    id,
+    updatedBy: userId,
+    // Not a term: carried through so saving one term keeps them.
+    customFields: contract.customFields ?? undefined
+  });
+  if (update.error) {
+    logger.error("contract term update failed", {
+      companyId,
+      id,
+      field,
+      error: update.error
+    });
+    return {
+      error: { message: update.error.message || "Failed to update contract" },
+      data: null
+    };
+  }
+
+  return { error: null, data: update.data };
+||||||| 23bd5d6e0b
+
+  if (typeof field !== "string" || !isTermField(field)) {
+    return { error: { message: "Invalid form data" }, data: null };
+  }
+
+  const current = await getContract(client, id, companyId);
+  if (current.error || current.data?.companyId !== companyId) {
+    logger.error("contract not found for update", {
+      companyId,
+      id,
+      error: current.error
+    });
+    return { error: { message: "Contract not found" }, data: null };
+  }
+  const contract = current.data;
+
+  if (contract.status !== "Draft") {
+    if (field !== "notes") {
+      return {
+        error: {
+          message: "Only a Draft contract's terms can be edited — use Amend"
+        },
+        data: null
+      };
+    }
+    // Notes are not a term: they stay editable after Confirm.
+    const update = await updateContractNotes(client, {
+      id,
+      companyId,
+      notes: notesDoc(value),
+      updatedBy: userId
+    });
+    if (update.error) {
+      logger.error("contract notes update failed", {
+        companyId,
+        id,
+        error: update.error
+      });
+      return {
+        error: { message: update.error.message || "Failed to update notes" },
+        data: null
+      };
+    }
+    return { error: null, data: update.data };
+  }
+
+  const terms: Record<TermField, unknown> = {
+    name: contract.name,
+    customerId: contract.customerId,
+    invoiceCustomerId: contract.invoiceCustomerId,
+    invoiceCustomerContactId: contract.invoiceCustomerContactId,
+    invoiceCustomerLocationId: contract.invoiceCustomerLocationId,
+    shipToCustomerLocationId: contract.shipToCustomerLocationId,
+    salesPersonId: contract.salesPersonId,
+    projectId: contract.projectId,
+    customerReference: contract.customerReference,
+    closeDate: contract.closeDate,
+    startDate: contract.startDate,
+    duration: contractDurationOf({
+      endDate: contract.endDate,
+      termMonths: contract.termMonths
+    }),
+    endDate: contract.endDate,
+    renewal: contract.renewal,
+    // Stored as a fraction; the form speaks percent points.
+    renewalUplift: round(Number(contract.renewalUplift ?? 0) * 100),
+    billingFrequency: contract.billingFrequency,
+    billingAlignment: contract.billingAlignment,
+    billingTiming: contract.billingTiming,
+    firstInvoiceDate: contract.firstInvoiceDate,
+    billedThrough: contract.billedThrough,
+    recognizeRevenueFrom: contract.recognizeRevenueFrom,
+    paymentTermId: contract.paymentTermId,
+    currencyCode: contract.currencyCode,
+    // The stored document, re-encoded so the validator keeps it as is.
+    notes: contract.notes ? JSON.stringify(contract.notes) : null
+  };
+
+  terms[field] =
+    field === "notes"
+      ? value
+        ? JSON.stringify(textToTiptap(value))
+        : null
+      : value || null;
+  // Picking an end date is choosing a custom term.
+  if (field === "endDate") terms.duration = "custom";
+  // A different customer brings its own bill-to, contact, addresses and
+  // payment terms, as in setup step 1.
+  if (field === "customerId") {
+    const invoicing = await contractCustomerChange(client, companyId, {
+      from: contract.customerId,
+      to: value
+    });
+    if (invoicing) Object.assign(terms, invoicing);
+  }
+  // A contact and address belong to the bill-to customer.
+  if (field === "invoiceCustomerId" && value !== contract.invoiceCustomerId) {
+    terms.invoiceCustomerContactId = null;
+    terms.invoiceCustomerLocationId = null;
+  }
+
+  // The same FormData the new contract form posts, so the same zfd coercion
+  // applies.
+  const merged = new FormData();
+  for (const key of TERM_FIELDS) {
+    const term = terms[key];
+    if (term !== null && term !== undefined && term !== "") {
+      merged.append(key, String(term));
+    }
+  }
+  // Not a term, but the terms service writes it: carried so saving a term
+  // never resets the contract to the company's invoicing setting.
+  if (contract.invoiceAutomation) {
+    merged.append("invoiceAutomation", contract.invoiceAutomation);
+  }
+
+  if (field === "currencyCode" && value && value !== contract.currencyCode) {
+    const exchangeRate = await getExchangeRate(client, companyId, value);
+    if (exchangeRate.error) {
+      // A missing rate is an error, never 1.
+      return { error: exchangeRate.error, data: null };
+    }
+    merged.append("exchangeRate", String(exchangeRate.data));
+  }
+
+  const validation = await validator(customerContractValidator).validate(
+    merged
+  );
+  if (validation.error) {
+    const message =
+      Object.values(validation.error.fieldErrors)[0] ??
+      "These terms are not valid";
+    return { error: { message }, data: null };
+  }
+
+  const {
+    id: _id,
+    customerContractId: _customerContractId,
+    ...data
+  } = validation.data;
+
+  const update = await updateContract(client, {
+    ...data,
+    // Not a term: `contractType` is left alone (an omitted type is kept).
+    contractType: undefined,
+    id,
+    updatedBy: userId,
+    // Not a term: carried through so saving one term keeps them.
+    customFields: contract.customFields ?? undefined
+  });
+  if (update.error) {
+    logger.error("contract term update failed", {
+      companyId,
+      id,
+      field,
+      error: update.error
+    });
+    return {
+      error: { message: update.error.message || "Failed to update contract" },
+      data: null
+    };
+  }
+
+  return { error: null, data: update.data };
+=======
+  return api.sales.setContractTerm({ id, field: field as never, value });
+>>>>>>> 0a1bd961b2
+}

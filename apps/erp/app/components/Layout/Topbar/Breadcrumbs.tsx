@@ -5,6 +5,7 @@
 import { HStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { LuHouse } from "react-icons/lu";
 import { useMatches } from "react-router";
 import { z } from "zod";
 import {
@@ -13,6 +14,7 @@ import {
   Breadcrumbs as BreadcrumbsBase
 } from "~/components";
 import type { BreadcrumbSegment } from "~/utils/handle";
+import { path } from "~/utils/path";
 
 export const BreadcrumbHandle = z.object({
   breadcrumb: z.any(),
@@ -70,11 +72,22 @@ export function useBreadcrumbs() {
 }
 
 const Breadcrumbs = () => {
+  const { t } = useLingui();
   const breadcrumbs = useBreadcrumbs();
 
   return (
     <HStack className="items-center h-full hidden md:flex -ml-2" spacing={0}>
       <BreadcrumbsBase className="line-clamp-1">
+        {/* Always first. On the dashboard itself it is the current page. */}
+        <BreadcrumbItem>
+          <BreadcrumbLink
+            isCurrentPage={breadcrumbs.length === 0}
+            to={path.to.authenticatedRoot}
+            aria-label={t`Home`}
+          >
+            <LuHouse className="size-4" />
+          </BreadcrumbLink>
+        </BreadcrumbItem>
         {breadcrumbs.map((breadcrumb, i) => (
           <BreadcrumbItem key={i}>
             <BreadcrumbLink

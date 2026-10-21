@@ -6,9 +6,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-
-import { getShippingTermsList } from "~/modules/inventory";
-import { getSupplierTypes } from "~/modules/purchasing";
+import { getShippingTermsList } from "~/modules/inventory/inventory.service";
+import { getSupplierTypes } from "~/modules/purchasing/purchasing.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

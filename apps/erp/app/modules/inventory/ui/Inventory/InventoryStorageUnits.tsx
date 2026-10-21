@@ -85,10 +85,10 @@ import {
 } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import type {
-  ItemStorageUnitQuantities,
   itemTrackingTypes,
   pickMethodValidator
-} from "~/modules/items";
+} from "~/modules/items/items.models";
+import type { ItemStorageUnitQuantities } from "~/modules/items/types";
 import { path } from "~/utils/path";
 import {
   inventoryAdjustmentValidator,
@@ -392,7 +392,10 @@ const InventoryStorageUnits = ({
   const [recostItem, setRecostItem] =
     useState<ItemStorageUnitQuantities | null>(null);
   const recostFetcher = useAction({
-    onSuccess: () => setRecostItem(null)
+    onSuccess: () => {
+      setRecostItem(null);
+      toast.success(t`Unit recosted`);
+    }
   });
   const unitCostOf = (item: ItemStorageUnitQuantities) =>
     item.trackedEntityId ? serialCosts?.costs[item.trackedEntityId] : undefined;

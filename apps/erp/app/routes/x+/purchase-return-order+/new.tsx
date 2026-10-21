@@ -11,12 +11,10 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import {
-  insertPurchaseReturnOrder,
-  purchaseReturnOrderValidator
-} from "~/modules/purchasing";
+import { purchaseReturnOrderValidator } from "~/modules/purchasing/purchasing.models";
+import { insertPurchaseReturnOrder } from "~/modules/purchasing/purchasing.service";
 import { PurchaseReturnOrderForm } from "~/modules/purchasing/ui/PurchaseReturnOrders";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -14,7 +14,7 @@ vi.mock("@carbon/content/glossary", () => ({
   termSlug: (s: string) => s,
   glossaryEntries: () => []
 }));
-vi.mock("~/modules/purchasing", () => ({}));
+
 vi.mock("../people/people.service", () => ({}));
 vi.mock("../sales/sales.service", () => ({}));
 vi.mock("../accounting/accounting.service", () => ({}));
@@ -585,20 +585,23 @@ describe("memo application save", () => {
     { ...memo, direction: "Debit" },
     { ...memo, currencyCode: "GBP" },
     { ...memo, customerId: "other" }
-  ])("rejects an ineligible memo before replacing staged credits", async (invalid) => {
-    const { db, deletes } = draftDb({ memo: [invalid] });
-    await expect(
-      service.applyCreditsToInvoices(db, {
-        paymentId: "current",
-        companyId: "co",
-        createdBy: "user",
-        side: "sales",
-        appliedDate: "2026-09-07",
-        applications: [{ memoId: "memo", invoiceId: "invoice", amount: 50 }]
-      })
-    ).rejects.toThrow();
-    expect(deletes).toEqual([]);
-  });
+  ])(
+    "rejects an ineligible memo before replacing staged credits",
+    async (invalid) => {
+      const { db, deletes } = draftDb({ memo: [invalid] });
+      await expect(
+        service.applyCreditsToInvoices(db, {
+          paymentId: "current",
+          companyId: "co",
+          createdBy: "user",
+          side: "sales",
+          appliedDate: "2026-09-07",
+          applications: [{ memoId: "memo", invoiceId: "invoice", amount: 50 }]
+        })
+      ).rejects.toThrow();
+      expect(deletes).toEqual([]);
+    }
+  );
   it("rejects base overdraw that the former document-number cap accepted", async () => {
     const { db } = draftDb({ memo: [memo] });
     await expect(
@@ -910,47 +913,47 @@ describe("complete composer source reads", () => {
     memo: null,
     appliedViaPayment: null
   };
-  it.each([
-    "sales",
-    "purchase"
-  ] as const)("reads all %s settlements beyond the response cap", async (side) => {
-    const { client } = clientFor({
-      ...config,
-      [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
-        {
-          ...invoice,
-          totalAmount: 1002,
-          exchangeRate: 1,
-          balance: 1,
-          status: "Partially Paid"
-        }
-      ],
-      journalLine: [{ documentId: "invoice", amount: 1002 }],
-      invoiceSettlement: Array.from({ length: 1001 }, (_, index) => ({
-        ...application,
-        id: `s${index}`
-      }))
-    });
-    const result =
-      side === "sales"
-        ? await service.getOpenSalesInvoicesForCustomer(
-            client,
-            "co",
-            "cust",
-            "EUR"
-          )
-        : await service.getOpenPurchaseInvoicesForSupplier(
-            client,
-            "co",
-            "supplier",
-            "EUR"
-          );
-    expect(result.error).toBeNull();
-    expect(result.data?.[0]).toMatchObject({
-      balance: 1,
-      remainingDocument: 1
-    });
-  });
+  it.each(["sales", "purchase"] as const)(
+    "reads all %s settlements beyond the response cap",
+    async (side) => {
+      const { client } = clientFor({
+        ...config,
+        [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
+          {
+            ...invoice,
+            totalAmount: 1002,
+            exchangeRate: 1,
+            balance: 1,
+            status: "Partially Paid"
+          }
+        ],
+        journalLine: [{ documentId: "invoice", amount: 1002 }],
+        invoiceSettlement: Array.from({ length: 1001 }, (_, index) => ({
+          ...application,
+          id: `s${index}`
+        }))
+      });
+      const result =
+        side === "sales"
+          ? await service.getOpenSalesInvoicesForCustomer(
+              client,
+              "co",
+              "cust",
+              "EUR"
+            )
+          : await service.getOpenPurchaseInvoicesForSupplier(
+              client,
+              "co",
+              "supplier",
+              "EUR"
+            );
+      expect(result.error).toBeNull();
+      expect(result.data?.[0]).toMatchObject({
+        balance: 1,
+        remainingDocument: 1
+      });
+    }
+  );
   it("reads every original control line beyond the response cap", async () => {
     const { client } = clientFor({
       ...config,
@@ -1136,44 +1139,44 @@ it("saves a manual memo partial and then its final document cent with zero carry
   });
 });
 
-it.each([
-  "sales",
-  "purchase"
-] as const)("preserves signed original %s controls", async (side) => {
-  const { client } = clientFor({
-    ...config,
-    [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
-      {
-        ...invoice,
-        status: side === "sales" ? "Submitted" : "Open",
-        totalAmount: 90,
-        exchangeRate: 1
-      }
-    ],
-    journalLine: [
-      { documentId: "invoice", amount: 100 },
-      { documentId: "invoice", amount: -10 }
-    ]
-  });
-  const result =
-    side === "sales"
-      ? await service.getOpenSalesInvoicesForCustomer(
-          client,
-          "co",
-          "cust",
-          "EUR"
-        )
-      : await service.getOpenPurchaseInvoicesForSupplier(
-          client,
-          "co",
-          "supplier",
-          "EUR"
-        );
-  expect(result.data?.[0]).toMatchObject({
-    balance: 90,
-    remainingDocument: 90
-  });
-});
+it.each(["sales", "purchase"] as const)(
+  "preserves signed original %s controls",
+  async (side) => {
+    const { client } = clientFor({
+      ...config,
+      [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
+        {
+          ...invoice,
+          status: side === "sales" ? "Submitted" : "Open",
+          totalAmount: 90,
+          exchangeRate: 1
+        }
+      ],
+      journalLine: [
+        { documentId: "invoice", amount: 100 },
+        { documentId: "invoice", amount: -10 }
+      ]
+    });
+    const result =
+      side === "sales"
+        ? await service.getOpenSalesInvoicesForCustomer(
+            client,
+            "co",
+            "cust",
+            "EUR"
+          )
+        : await service.getOpenPurchaseInvoicesForSupplier(
+            client,
+            "co",
+            "supplier",
+            "EUR"
+          );
+    expect(result.data?.[0]).toMatchObject({
+      balance: 90,
+      remainingDocument: 90
+    });
+  }
+);
 
 it("reads a legacy settlement with no document principal from its applied base", async () => {
   const { client } = clientFor({
@@ -1206,37 +1209,37 @@ it("reads a legacy settlement with no document principal from its applied base",
     remainingDocument: 89
   });
 });
-it.each([
-  -1,
-  Number.NaN
-])("refuses invalid effective invoice principal %s", async (sourceAmount) => {
-  const { client } = clientFor({
-    ...config,
-    salesInvoices: [{ ...invoice, totalAmount: 90, exchangeRate: 1 }],
-    invoiceSettlement: [
-      {
-        paymentId: "posted",
-        memoId: null,
-        targetSalesInvoiceId: "invoice",
-        sourceAmount,
-        appliedAmount: 1,
-        discountAmount: 0,
-        writeOffAmount: 0,
-        payment: { status: "Posted" },
-        memo: null,
-        appliedViaPayment: null
-      }
-    ]
-  });
-  const result = await service.getOpenSalesInvoicesForCustomer(
-    client,
-    "co",
-    "cust",
-    "EUR"
-  );
-  expect(result.data).toBeNull();
-  expect(result.error?.message).toMatch(/principal/i);
-});
+it.each([-1, Number.NaN])(
+  "refuses invalid effective invoice principal %s",
+  async (sourceAmount) => {
+    const { client } = clientFor({
+      ...config,
+      salesInvoices: [{ ...invoice, totalAmount: 90, exchangeRate: 1 }],
+      invoiceSettlement: [
+        {
+          paymentId: "posted",
+          memoId: null,
+          targetSalesInvoiceId: "invoice",
+          sourceAmount,
+          appliedAmount: 1,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          payment: { status: "Posted" },
+          memo: null,
+          appliedViaPayment: null
+        }
+      ]
+    });
+    const result = await service.getOpenSalesInvoicesForCustomer(
+      client,
+      "co",
+      "cust",
+      "EUR"
+    );
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toMatch(/principal/i);
+  }
+);
 it("refuses excess invoice settlements instead of silently clamping the balance", async () => {
   const { client } = clientFor({
     ...config,
@@ -1266,108 +1269,108 @@ it("refuses excess invoice settlements instead of silently clamping the balance"
   expect(result.error?.message).toMatch(/excessive settlements/i);
 });
 
-it.each([
-  "sales",
-  "purchase"
-] as const)("uses original IC %s controls and excludes VOID rows", async (side) => {
-  const description = side === "sales" ? "IC Receivables" : "IC Payables";
-  const { client } = clientFor({
-    ...config,
-    [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
-      {
-        ...invoice,
-        status: side === "sales" ? "Submitted" : "Open",
-        totalAmount: 99,
-        exchangeRate: 1
-      }
-    ],
-    journalLine: [
-      { documentId: "invoice", amount: 100, description },
-      {
-        documentId: "invoice",
-        amount: -100,
-        description: `VOID: ${description}`
-      }
-    ]
-  });
-  const result =
-    side === "sales"
-      ? await service.getOpenSalesInvoicesForCustomer(
-          client,
-          "co",
-          "cust",
-          "EUR"
-        )
-      : await service.getOpenPurchaseInvoicesForSupplier(
-          client,
-          "co",
-          "supplier",
-          "EUR"
-        );
-  expect(result.data?.[0]).toMatchObject({
-    balance: 100,
-    remainingDocument: 99
-  });
-});
+it.each(["sales", "purchase"] as const)(
+  "uses original IC %s controls and excludes VOID rows",
+  async (side) => {
+    const description = side === "sales" ? "IC Receivables" : "IC Payables";
+    const { client } = clientFor({
+      ...config,
+      [side === "sales" ? "salesInvoices" : "purchaseInvoices"]: [
+        {
+          ...invoice,
+          status: side === "sales" ? "Submitted" : "Open",
+          totalAmount: 99,
+          exchangeRate: 1
+        }
+      ],
+      journalLine: [
+        { documentId: "invoice", amount: 100, description },
+        {
+          documentId: "invoice",
+          amount: -100,
+          description: `VOID: ${description}`
+        }
+      ]
+    });
+    const result =
+      side === "sales"
+        ? await service.getOpenSalesInvoicesForCustomer(
+            client,
+            "co",
+            "cust",
+            "EUR"
+          )
+        : await service.getOpenPurchaseInvoicesForSupplier(
+            client,
+            "co",
+            "supplier",
+            "EUR"
+          );
+    expect(result.data?.[0]).toMatchObject({
+      balance: 100,
+      remainingDocument: 99
+    });
+  }
+);
 
-it.each([
-  true,
-  false
-])("stages %s customer-ledger refund against exact memo principal with cash-direction FX", async (isAR) => {
-  const { db, inserts } = draftDb({
-    payment: [
-      {
-        ...current,
-        paymentType: isAR ? "Disbursement" : "Receipt",
-        customerId: isAR ? "cust" : null,
-        supplierId: isAR ? null : "supplier",
-        totalAmount: 55,
-        exchangeRate: 1.25
-      }
-    ],
-    memo: [
-      {
-        id: "memo",
-        companyId: "co",
-        status: "Posted",
-        customerId: isAR ? "cust" : null,
-        supplierId: isAR ? null : "supplier",
-        direction: isAR ? "Credit" : "Debit",
-        currencyCode: "EUR",
-        exchangeRate: 1.1,
-        amount: 55
-      }
-    ],
-    journalLine: [{ documentId: "memo", amount: -50 }]
-  });
-  await service.replaceInvoiceSettlements(db, {
-    paymentId: "current",
-    companyId: "co",
-    createdBy: "user",
-    applications: [
-      {
-        ...draft,
-        targetSalesInvoiceId: undefined,
+it.each([true, false])(
+  "stages %s customer-ledger refund against exact memo principal with cash-direction FX",
+  async (isAR) => {
+    const { db, inserts } = draftDb({
+      payment: [
+        {
+          ...current,
+          paymentType: isAR ? "Disbursement" : "Receipt",
+          customerId: isAR ? "cust" : null,
+          supplierId: isAR ? null : "supplier",
+          totalAmount: 55,
+          exchangeRate: 1.25
+        }
+      ],
+      memo: [
+        {
+          id: "memo",
+          companyId: "co",
+          status: "Posted",
+          customerId: isAR ? "cust" : null,
+          supplierId: isAR ? null : "supplier",
+          direction: isAR ? "Credit" : "Debit",
+          currencyCode: "EUR",
+          exchangeRate: 1.1,
+          amount: 55
+        }
+      ],
+      journalLine: [{ documentId: "memo", amount: -50 }]
+    });
+    await service.replaceInvoiceSettlements(db, {
+      paymentId: "current",
+      companyId: "co",
+      createdBy: "user",
+      applications: [
+        {
+          ...draft,
+          targetSalesInvoiceId: undefined,
+          targetMemoId: "memo",
+          sourceAmount: 55,
+          sourceExchangeRate: 1.25,
+          appliedAmount: 50
+        }
+      ]
+    });
+    expect(inserts).toEqual([
+      expect.objectContaining({
         targetMemoId: "memo",
+        targetSalesInvoiceId: null,
+        targetPurchaseInvoiceId: null,
+        sourcePaymentId: null,
         sourceAmount: 55,
-        sourceExchangeRate: 1.25,
-        appliedAmount: 50
-      }
-    ]
-  });
-  expect(inserts).toEqual([
-    expect.objectContaining({
-      targetMemoId: "memo",
-      targetSalesInvoiceId: null,
-      targetPurchaseInvoiceId: null,
-      sourcePaymentId: null,
-      sourceAmount: 55,
-      appliedAmount: 50,
-      fxGainLossAmount: isAR ? 6 : -6,
-      createdBy: "user"
-    })
-  ]);
-});
+        appliedAmount: 50,
+        fxGainLossAmount: isAR ? 6 : -6,
+        createdBy: "user"
+      })
+    ]);
+  }
+);
 
 it("memo availability reserves refund document principal without subtracting refund FX from memo carrying", async () => {
   const { client } = clientFor({
@@ -1448,54 +1451,57 @@ it.each([
     {},
     { targetMemoId: undefined, targetPurchaseInvoiceId: "invoice" }
   ]
-])("rejects invalid supplier refund %s without replacing applications", async (_label, memoOverride, appOverride) => {
-  const { db, inserts, deletes } = draftDb({
-    payment: [
-      {
-        ...current,
-        paymentType: "Receipt",
-        customerId: null,
-        supplierId: "supplier",
-        totalAmount: 100,
-        exchangeRate: 1.25
-      }
-    ],
-    memo: [
-      {
-        id: "memo",
-        companyId: "co",
-        status: "Posted",
-        supplierId: "supplier",
-        customerId: null,
-        direction: "Debit",
-        currencyCode: "EUR",
-        exchangeRate: 1.1,
-        amount: 55,
-        ...memoOverride
-      }
-    ]
-  });
-  await expect(
-    service.replaceInvoiceSettlements(db, {
-      paymentId: "current",
-      companyId: "co",
-      createdBy: "user",
-      applications: [
+])(
+  "rejects invalid supplier refund %s without replacing applications",
+  async (_label, memoOverride, appOverride) => {
+    const { db, inserts, deletes } = draftDb({
+      payment: [
         {
-          ...draft,
-          targetSalesInvoiceId: undefined,
-          targetMemoId: "memo",
-          sourceAmount: 55,
-          sourceExchangeRate: 1.25,
-          appliedAmount: 50,
-          ...appOverride
+          ...current,
+          paymentType: "Receipt",
+          customerId: null,
+          supplierId: "supplier",
+          totalAmount: 100,
+          exchangeRate: 1.25
+        }
+      ],
+      memo: [
+        {
+          id: "memo",
+          companyId: "co",
+          status: "Posted",
+          supplierId: "supplier",
+          customerId: null,
+          direction: "Debit",
+          currencyCode: "EUR",
+          exchangeRate: 1.1,
+          amount: 55,
+          ...memoOverride
         }
       ]
-    })
-  ).rejects.toThrow();
-  expect(inserts).toEqual([]);
-  expect(deletes).toEqual([]);
-});
+    });
+    await expect(
+      service.replaceInvoiceSettlements(db, {
+        paymentId: "current",
+        companyId: "co",
+        createdBy: "user",
+        applications: [
+          {
+            ...draft,
+            targetSalesInvoiceId: undefined,
+            targetMemoId: "memo",
+            sourceAmount: 55,
+            sourceExchangeRate: 1.25,
+            appliedAmount: 50,
+            ...appOverride
+          }
+        ]
+      })
+    ).rejects.toThrow();
+    expect(inserts).toEqual([]);
+    expect(deletes).toEqual([]);
+  }
+);
 
 it("a fully refunded memo cannot also fund an invoice", async () => {
   const { db, inserts } = draftDb({

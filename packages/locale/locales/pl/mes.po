@@ -116,6 +116,10 @@ msgstr "+{0} h"
 msgid "+{overflow} more"
 msgstr "+{overflow} więcej"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 Uwaga: {0} Twoje konto zostanie przeniesione na erp.try.carbon.ms"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Poprzednie zakończenie nie zostało ukończone. Ponowienie wznawia pozostałe kroki — ilości nie są liczone podwójnie."
 
@@ -292,6 +296,9 @@ msgstr "Wstecz"
 
 msgid "Back to batch"
 msgstr "Powrót do partii produkcyjnej"
+
+msgid "Back to ERP"
+msgstr "Powrót do ERP"
 
 msgid "Background"
 msgstr "Tło"
@@ -585,6 +592,9 @@ msgstr "Opis"
 msgid "Details"
 msgstr "Szczegóły"
 
+msgid "Dismiss"
+msgstr "Odrzuć"
+
 msgid "Dispatch not found"
 msgstr "Nie znaleziono zlecenia utrzymania ruchu"
 
@@ -869,6 +879,9 @@ msgstr "Nadal pracuję"
 msgid "Ideas, suggestions or problems?"
 msgstr "Pomysły, propozycje czy problemy?"
 
+msgid "Idle"
+msgstr "Bezczynny"
+
 msgid "Idle for"
 msgstr "Bezczynny przez"
 
@@ -1019,6 +1032,9 @@ msgstr "Widok listy"
 
 msgid "Load list"
 msgstr "Załaduj listę"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "Załadowany: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Ładowanie szczegółów pozycji..."
@@ -1355,6 +1371,9 @@ msgstr "Wymagany OEM"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "z {0}"
+
+msgid "Offline"
+msgstr "Offline"
 
 msgid "Oldest first"
 msgstr "Najstarsze pierwsze"
@@ -2279,6 +2298,9 @@ msgstr "Aktualizuj"
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
 msgstr "Zaktualizowano {0}"
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "Zaktualizowano pomyślnie"

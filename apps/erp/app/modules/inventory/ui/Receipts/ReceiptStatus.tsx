@@ -5,7 +5,7 @@
 import { Status } from "@carbon/react";
 import { RECEIPT_STATUS_COLOR_MAP } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import type { receiptStatusType } from "~/modules/inventory";
+import type { receiptStatusType } from "~/modules/inventory/inventory.models";
 
 type ReceiptStatusProps = {
   status?: (typeof receiptStatusType)[number] | null;

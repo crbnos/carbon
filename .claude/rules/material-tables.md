@@ -82,7 +82,7 @@ de-dupes to the latest item per `(readableId, companyId)` and aggregates the rev
 ## Editing properties
 
 `updateMaterialProperties(client, db, material)` is the one path for substance, form, type,
-finish, grade and dimension changes: the properties panel (`x+/items+/update.tsx`),
+finish, grade and dimension changes: the properties panel (`x+/items+/update.tsx`, through `setMaterialProperties`),
 `upsertMaterial`'s update branch and MCP all go through it. The rules are pure functions in
 `apps/erp/app/modules/items/material-properties.ts` (pinned by `apps/erp/test/material-properties.test.ts`);
 the service loads the rows they read and writes what they decide.
@@ -113,9 +113,9 @@ the service loads the rows they read and writes what they decide.
   failure there leaves the transaction's writes in place. An update by readable id is refused when
   the material has several revisions (sizes are revisions); pass the item id.
 - `materialDimension`, `materialFinish`, `materialGrade` and `materialType` have no audit columns,
-  so their MCP tools inject only `companyId` (the generator drops an audit field the
-  tool's one table has no column for — `withoutAbsentAuditColumns` in
-  `scripts/lib/service-metadata.ts`). Their update branch filters by `companyId` when given and
+  so their service functions in `items.server.ts` stamp only `companyId`
+  (`payload(ctx, input).build()`; the `stamp-matches-columns` check fails a stamped
+  field the table has no column for). Their update branch filters by `companyId` when given and
   never writes it, so an update cannot move a row to another company.
 
 ## Code map

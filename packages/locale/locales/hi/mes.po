@@ -116,6 +116,10 @@ msgstr "+{0} घंटे"
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
 
+#. placeholder {0}: formatDate(moveDate, { dateStyle: "long" }, locale)
+msgid "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
+msgstr "🚨 ध्यान दें: {0} को आपका खाता erp.try.carbon.ms पर स्थानांतरित कर दिया जाएगा"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
@@ -292,6 +296,9 @@ msgstr "वापस"
 
 msgid "Back to batch"
 msgstr "बैच पर वापस"
+
+msgid "Back to ERP"
+msgstr "ERP पर वापस"
 
 msgid "Background"
 msgstr "पृष्ठभूमि"
@@ -585,6 +592,9 @@ msgstr "विवरण"
 msgid "Details"
 msgstr "विवरण"
 
+msgid "Dismiss"
+msgstr "खारिज करें"
+
 msgid "Dispatch not found"
 msgstr "रखरखाव कार्य नहीं मिला"
 
@@ -869,6 +879,9 @@ msgstr "मैं अभी भी काम कर रहा हूँ"
 msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
 
+msgid "Idle"
+msgstr "निष्क्रिय"
+
 msgid "Idle for"
 msgstr "के लिए निष्क्रिय"
 
@@ -1019,6 +1032,9 @@ msgstr "सूची दृश्य"
 
 msgid "Load list"
 msgstr "सूची लोड करें"
+
+msgid "Loaded: {loadedLabel}"
+msgstr "लोड किया गया: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
@@ -1355,6 +1371,9 @@ msgstr "OEM आवश्यक"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "का {0}"
+
+msgid "Offline"
+msgstr "ऑफलाइन"
 
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
@@ -2279,6 +2298,9 @@ msgstr "अपडेट करें"
 #. placeholder {0}: formatClock(lastUpdated)
 msgid "Updated {0}"
 msgstr "अपडेट किया गया {0}"
+
+msgid "Updated avatar"
+msgstr ""
 
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"

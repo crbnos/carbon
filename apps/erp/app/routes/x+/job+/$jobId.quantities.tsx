@@ -14,7 +14,7 @@ import {
   getJobOperationsList,
   getProductionQuantities,
   getScrapReasons
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { ProductionQuantitiesTable } from "~/modules/production/ui/Jobs";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

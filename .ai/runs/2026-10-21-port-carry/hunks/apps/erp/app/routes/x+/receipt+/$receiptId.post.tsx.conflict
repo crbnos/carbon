@@ -1,0 +1,330 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { path } from "~/utils/path";
+
+// The post modal's form: `acknowledged` is set when the user accepts the
+// rule violations shown to them, `postingDate` dates a rental return.
+const postForm = z.object({
+  acknowledged: zfd.checkbox({ trueValue: "true" }),
+  postingDate: zfd.text(z.string().optional())
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(postForm).request(args, {
+    params: ["receiptId"]
+  });
+<<<<<<< HEAD
+
+  const { receiptId } = params;
+  if (!receiptId) throw new Error("receiptId not found");
+
+  const formData = await request.formData();
+  const acknowledged = formData.get("acknowledged") === "true";
+  const postingDateValue = formData.get("postingDate");
+  const postingDate =
+    typeof postingDateValue === "string" && postingDateValue !== ""
+      ? postingDateValue
+      : undefined;
+
+  // Storage Rule evaluation across every line on this receipt before posting.
+  // Use service role so item / storageUnit reads are not blocked by RLS for
+  // users who have `inventory.update` but not `parts.view` etc.
+  const serviceRole = getCarbonServiceRole();
+  const { data: lines } = await serviceRole
+    .from("receiptLine")
+    .select(
+      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, lineId, conversionFactor"
+    )
+    .eq("receiptId", receiptId)
+    .eq("companyId", companyId);
+
+  // Receipt source determines which surface(s) eval. Receipts originating from
+  // an Inbound Transfer ALSO eval the `warehouseTransfer` surface — the post
+  // auto-completes the parent transfer, so warehouse-scoped rules need to
+  // fire here too.
+  const { data: receiptForSurface } = await serviceRole
+    .from("receipt")
+    .select("sourceDocument, status")
+    .eq("id", receiptId)
+    .eq("companyId", companyId)
+    .single();
+
+  // A voided receipt has already been reversed — re-posting would duplicate
+  // ledger entries, cost layers and journal lines. Block it before mutating
+  // any state (the route flips status to "Pending" below, which is why this
+  // guard lives here and not in the server function).
+  if (receiptForSurface?.status === "Voided") {
+    throw redirect(
+      path.to.receipt(receiptId),
+      await flash(
+        request,
+        error(null, "This receipt has already been posted or voided")
+      )
+    );
+  }
+
+  const surfaces: ("receipt" | "warehouseTransfer")[] = ["receipt"];
+  if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
+    surfaces.push("warehouseTransfer");
+  }
+
+  const evalLines = (lines ?? []).map((l) => ({
+    lineId: l.id as string,
+    itemId: l.itemId as string | null,
+    storageUnitId: l.storageUnitId as string | null,
+    quantity: Number(l.receivedQuantity ?? 0),
+    locationId: l.locationId as string | null
+  }));
+
+  const allViolations = [];
+  const allRuleNames: Record<string, string> = {};
+  for (const surface of surfaces) {
+    const { violations, ruleNames } = await evaluateLinesForSurface({
+      client: serviceRole,
+      companyId,
+      userId,
+      targetType: "item",
+      surface,
+      lines: evalLines
+    });
+    allViolations.push(...violations);
+    Object.assign(allRuleNames, ruleNames);
+  }
+
+  // Place pass — the bin side of the receipt. Same lines, same item target;
+  // storage rules own the `place` surface. Transfers double-up via the
+  // warehouseTransfer surface (dedupe collapses the overlap).
+  const placeSurfaces: ("place" | "warehouseTransfer")[] = ["place"];
+  if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
+    placeSurfaces.push("warehouseTransfer");
+  }
+  for (const surface of placeSurfaces) {
+    const { violations, ruleNames } = await evaluateLinesForSurface({
+      client: serviceRole,
+      companyId,
+      userId,
+      targetType: "item",
+      surface,
+      lines: evalLines
+    });
+    allViolations.push(...violations);
+    Object.assign(allRuleNames, ruleNames);
+  }
+
+  // Check over-receipt against the live PO lines rather than the receipt's
+  // outstanding-quantity snapshot so concurrent receipts are counted.
+  if (receiptForSurface?.sourceDocument === "Purchase Order") {
+    const purchaseOrderLineIds = [
+      ...new Set(
+        (lines ?? [])
+          .map((l) => l.lineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (purchaseOrderLineIds.length > 0) {
+      const { data: purchaseOrderLines } = await serviceRole
+        .from("purchaseOrderLine")
+        .select(
+          "id, purchaseQuantity, quantityReceived, item!purchaseOrderLine_itemId_fkey(readableIdWithRevision)"
+        )
+        .in("id", purchaseOrderLineIds)
+        .eq("companyId", companyId);
+
+      const overReceipt = getOverReceiptViolations(
+        lines ?? [],
+        (purchaseOrderLines ?? []).map((line) => ({
+          id: line.id,
+          purchaseQuantity: line.purchaseQuantity,
+          quantityReceived: line.quantityReceived,
+          itemReadableId: line.item?.readableIdWithRevision
+        }))
+      );
+      allViolations.push(...overReceipt.violations);
+      Object.assign(allRuleNames, overReceipt.ruleNames);
+    }
+  }
+
+  const deduped = dedupeViolations(allViolations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    return {
+      error: null,
+      data: null,
+      violations: deduped,
+      ruleNames: allRuleNames
+    };
+  }
+
+  // Serial-tracked lines can accumulate stale tracked entities (reduced
+  // quantity leaves orphans, edited serials leave duplicates) that would
+  // otherwise be flipped to Available as phantom serials. Clear them before
+  // posting.
+  await reconcileReceiptSerialEntities(serviceRole, {
+||||||| 23bd5d6e0b
+
+  const { receiptId } = params;
+  if (!receiptId) throw new Error("receiptId not found");
+
+  const formData = await request.formData();
+  const acknowledged = formData.get("acknowledged") === "true";
+  const postingDateValue = formData.get("postingDate");
+  const postingDate =
+    typeof postingDateValue === "string" && postingDateValue !== ""
+      ? postingDateValue
+      : undefined;
+
+  // Storage Rule evaluation across every line on this receipt before posting.
+  // Use service role so item / storageUnit reads are not blocked by RLS for
+  // users who have `inventory.update` but not `parts.view` etc.
+  const serviceRole = getCarbonServiceRole();
+  const { data: lines } = await serviceRole
+    .from("receiptLine")
+    .select(
+      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, lineId, conversionFactor"
+    )
+    .eq("receiptId", receiptId)
+    .eq("companyId", companyId);
+
+  // Receipt source determines which surface(s) eval. Receipts originating from
+  // an Inbound Transfer ALSO eval the `warehouseTransfer` surface — the post
+  // auto-completes the parent transfer, so warehouse-scoped rules need to
+  // fire here too.
+  const { data: receiptForSurface } = await serviceRole
+    .from("receipt")
+    .select("sourceDocument, status")
+    .eq("id", receiptId)
+    .eq("companyId", companyId)
+    .single();
+
+  // A voided receipt has already been reversed — re-posting would duplicate
+  // ledger entries, cost layers and journal lines. Block it before mutating
+  // any state (the route flips status to "Pending" below, which is why this
+  // guard lives here and not in the server function).
+  if (receiptForSurface?.status === "Voided") {
+    throw redirect(
+      path.to.receipt(receiptId),
+      await flash(
+        request,
+        error(null, "This receipt has already been posted or voided")
+      )
+    );
+  }
+
+  const surfaces: ("receipt" | "warehouseTransfer")[] = ["receipt"];
+  if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
+    surfaces.push("warehouseTransfer");
+  }
+
+  const evalLines = (lines ?? []).map((l) => ({
+    lineId: l.id as string,
+    itemId: l.itemId as string | null,
+    storageUnitId: l.storageUnitId as string | null,
+    quantity: Number(l.receivedQuantity ?? 0),
+    locationId: l.locationId as string | null
+  }));
+
+  const allViolations = [];
+  const allRuleNames: Record<string, string> = {};
+  for (const surface of surfaces) {
+    const { violations, ruleNames } = await evaluateLinesForSurface({
+      client: serviceRole,
+      companyId,
+      userId,
+      targetType: "item",
+      surface,
+      lines: evalLines
+    });
+    allViolations.push(...violations);
+    Object.assign(allRuleNames, ruleNames);
+  }
+
+  // Place pass — the bin side of the receipt. Same lines, same item target;
+  // storage rules own the `place` surface. Transfers double-up via the
+  // warehouseTransfer surface (dedupe collapses the overlap).
+  const placeSurfaces: ("place" | "warehouseTransfer")[] = ["place"];
+  if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
+    placeSurfaces.push("warehouseTransfer");
+  }
+  for (const surface of placeSurfaces) {
+    const { violations, ruleNames } = await evaluateLinesForSurface({
+      client: serviceRole,
+      companyId,
+      userId,
+      targetType: "item",
+      surface,
+      lines: evalLines
+    });
+    allViolations.push(...violations);
+    Object.assign(allRuleNames, ruleNames);
+  }
+
+  // Check over-receipt against the live PO lines rather than the receipt's
+  // outstanding-quantity snapshot so concurrent receipts are counted.
+  if (receiptForSurface?.sourceDocument === "Purchase Order") {
+    const purchaseOrderLineIds = [
+      ...new Set(
+        (lines ?? [])
+          .map((l) => l.lineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (purchaseOrderLineIds.length > 0) {
+      const { data: purchaseOrderLines } = await serviceRole
+        .from("purchaseOrderLine")
+        .select(
+          "id, purchaseQuantity, quantityReceived, item(readableIdWithRevision)"
+        )
+        .in("id", purchaseOrderLineIds)
+        .eq("companyId", companyId);
+
+      const overReceipt = getOverReceiptViolations(
+        lines ?? [],
+        (purchaseOrderLines ?? []).map((line) => ({
+          id: line.id,
+          purchaseQuantity: line.purchaseQuantity,
+          quantityReceived: line.quantityReceived,
+          itemReadableId: line.item?.readableIdWithRevision
+        }))
+      );
+      allViolations.push(...overReceipt.violations);
+      Object.assign(allRuleNames, overReceipt.ruleNames);
+    }
+  }
+
+  const deduped = dedupeViolations(allViolations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    return {
+      error: null,
+      data: null,
+      violations: deduped,
+      ruleNames: allRuleNames
+    };
+  }
+
+  // Serial-tracked lines can accumulate stale tracked entities (reduced
+  // quantity leaves orphans, edited serials leave duplicates) that would
+  // otherwise be flipped to Available as phantom serials. Clear them before
+  // posting.
+  await reconcileReceiptSerialEntities(serviceRole, {
+=======
+  if ("invalid" in input) return input.invalid;
+  const { receiptId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.postReceipt({
+>>>>>>> 0a1bd961b2
+    receiptId,
+    ...input.data
+  });
+  // An error, toasted by the modal.
+  if (!result.data) return result;
+  // A blocking rule: the violation modal reads these.
+  if ("violations" in result.data) return result.data;
+  throw redirect(path.to.receipt(receiptId));
+}

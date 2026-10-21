@@ -17,11 +17,13 @@ import type { z } from "zod";
 import { DateSelect } from "~/components/DateSelect";
 import { useQuantityFormatter } from "~/hooks";
 import type {
-  ItemQuantities,
-  ItemStorageUnitQuantities,
   itemTrackingTypes,
   pickMethodValidator
-} from "~/modules/items";
+} from "~/modules/items/items.models";
+import type {
+  ItemQuantities,
+  ItemStorageUnitQuantities
+} from "~/modules/items/types";
 import InventoryStorageUnits from "./InventoryStorageUnits";
 
 type InventoryDetailsProps = {

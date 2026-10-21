@@ -27,8 +27,8 @@ import {
   toCompanyPermissions,
   usePermissionMatrix
 } from "~/hooks/usePermissionMatrix";
-import type { CompanyPermission } from "~/modules/users";
-import { employeeValidator } from "~/modules/users";
+import type { CompanyPermission } from "~/modules/users/types";
+import { employeeValidator } from "~/modules/users/users.models";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 

@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getUnitOfMeasures } from "~/modules/items";
+import { getUnitOfMeasures } from "~/modules/items/items.service";
 import { UnitOfMeasuresTable } from "~/modules/items/ui/UnitOfMeasure";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

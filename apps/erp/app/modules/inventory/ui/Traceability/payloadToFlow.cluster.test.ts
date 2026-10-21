@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { isClusterId } from "./cluster";
 import { type LineagePayload, payloadToFlow } from "./utils";
 

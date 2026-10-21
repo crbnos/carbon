@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getMakeMethods } from "~/modules/items";
+import { getMakeMethods } from "~/modules/items/items.service";
 
 // Lightweight status check for the "Add Affected Item" modal: does this item have
 // an Active make method? When it doesn't (its current method is still an

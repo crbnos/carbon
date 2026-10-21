@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -38,9 +39,9 @@ import {
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { LuTrash } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import type { z } from "zod";
 import { DateTime } from "~/components";
 import { EditableNumber } from "~/components/Editable";
@@ -211,17 +212,21 @@ const SupplierPartForm = ({
     selectItem ? selectedItemId : itemId,
     initialValues.id
   );
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: onClose must be excluded — it is a new ref each render in route components, which would cause an infinite re-fire loop
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      if (fetcher.data?.message) toast.success(fetcher.data.message);
+  const createdMessage = {
+    Part: t`Part supplier created`,
+    Material: t`Material supplier created`,
+    Tool: t`Tool supplier created`,
+    Consumable: t`Consumable supplier created`,
+    Service: t`Service supplier created`
+  };
+  const fetcher = useAction({
+    onSuccess: () => {
+      toast.success(
+        isEditing ? t`Supplier part updated` : createdMessage[itemType]
+      );
       onClose();
-    } else if (fetcher.data?.message) {
-      toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success, fetcher.data?.message]);
+  });
 
   return (
     <Drawer

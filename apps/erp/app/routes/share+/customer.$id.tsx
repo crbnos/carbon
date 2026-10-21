@@ -21,7 +21,7 @@ import {
   MethodIcon,
   Table
 } from "~/components";
-import { getJobOperationAttachments } from "~/modules/production";
+import { getJobOperationAttachments } from "~/modules/production/production.service";
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
 import {

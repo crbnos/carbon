@@ -10,17 +10,17 @@ import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
-import { getPicksByJobMaterial } from "~/modules/inventory";
-import { getItemSupersessionsForItems } from "~/modules/items";
+import { getPicksByJobMaterial } from "~/modules/inventory/inventory.service";
+import { getItemSupersessionsForItems } from "~/modules/items/items.service";
 import {
   getJob,
   getJobMaterialItemIds,
   getJobMaterialsWithQuantityOnHand,
   getJobOrderStatusMap
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { JobMaterialsTable } from "~/modules/production/ui/Jobs";
-import { getCompanySettings } from "~/modules/settings";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getLocationTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

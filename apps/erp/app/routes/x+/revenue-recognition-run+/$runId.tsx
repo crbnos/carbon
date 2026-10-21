@@ -25,13 +25,13 @@ import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { useAccounts } from "~/components/Form/Account";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { revenueScheduleTypes } from "~/modules/accounting/accounting.models";
 import {
+  getCompanyToday,
   getPeriodRunRelatedItems,
   getRevenueRecognitionRun,
-  getRevenueRecognitionRunLines,
-  revenueScheduleTypes
-} from "~/modules/accounting";
-import { getCompanyToday } from "~/modules/accounting/accounting.server";
+  getRevenueRecognitionRunLines
+} from "~/modules/accounting/accounting.service";
 import {
   getNextPeriodEnd,
   isFutureRunPeriod
