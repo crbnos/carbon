@@ -77,6 +77,7 @@ import {
   getNextSequence,
   getNextSerialNumbers
 } from "@carbon/database/sequence";
+import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
 import {
   buildConsumeFirstHops,
   buildConsumeFirstRules,
@@ -242,6 +243,7 @@ import type {
 } from "./types";
 import {
   makeMethodsMissingOperations,
+  materialsWithoutStorageUnit,
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
@@ -1935,7 +1937,7 @@ export async function getJobMaterialsByMethodId(
   const result = await client
     .from("jobMaterial")
     .select(
-      "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId, quantity)"
+      "*, item(replenishmentSystem, itemTrackingType), jobMaterialStep(jobOperationStepId, quantity)"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -1943,7 +1945,7 @@ export async function getJobMaterialsByMethodId(
     return (await client
       .from("jobMaterial")
       .select(
-        "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId)"
+        "*, item(replenishmentSystem, itemTrackingType), jobMaterialStep(jobOperationStepId)"
       )
       .eq("jobMakeMethodId", jobMakeMethodId)
       .order("order", { ascending: true })) as unknown as typeof result;
@@ -2898,6 +2900,7 @@ export type JobReleaseReadiness = {
     }[];
     // The suppliers this job's outside operations go on a purchase order for.
     supplierIds: string[];
+    materialsWithoutStorageUnit: { id: string; description: string }[];
   }[];
   // Suppliers whose outside operations release will put on a purchase order,
   // with the Draft POs the planner may add them to instead of a new one.
@@ -2906,6 +2909,77 @@ export type JobReleaseReadiness = {
     draftPurchaseOrders: { id: string; purchaseOrderId: string }[];
   }[];
 };
+
+async function getMaterialsWithoutStorageUnit(
+  client: SupabaseClient<Database>,
+  jobIds: string[],
+  companyId: string
+): Promise<{
+  data: Record<string, { id: string; description: string }[]>;
+  error: PostgrestError | null;
+}> {
+  const settings = await client
+    .from("companySettings")
+    .select("requireBackflushStorageUnit")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { data: {}, error: settings.error };
+  if (settings.data?.requireBackflushStorageUnit !== true)
+    return { data: {}, error: null };
+
+  const lines = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("jobMaterial")
+      .select(
+        "id, jobId, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), job(locationId)"
+      )
+      .in("jobId", batch)
+      .eq("companyId", companyId)
+      .is("storageUnitId", null)
+      .order("id")
+  );
+  if (lines.error) return { data: {}, error: lines.error };
+
+  const jobLocationIds = [
+    ...new Set(
+      (lines.data ?? []).flatMap((line) =>
+        line.job?.locationId ? [line.job.locationId] : []
+      )
+    )
+  ];
+  const pullFromLocations =
+    jobLocationIds.length === 0
+      ? { data: [], error: null }
+      : await client
+          .from("location")
+          .select("id, workCenter!inner(id), storageUnit!inner(id)")
+          .in("id", jobLocationIds)
+          .eq("companyId", companyId)
+          .eq("workCenter.active", true)
+          .eq("storageUnit.active", true)
+          .limit(1, { referencedTable: "workCenter" })
+          .limit(1, { referencedTable: "storageUnit" });
+  if (pullFromLocations.error)
+    return { data: {}, error: pullFromLocations.error };
+  const strictLocationIds = new Set(
+    (pullFromLocations.data ?? []).map((location) => location.id)
+  );
+
+  const byJob: Record<string, { id: string; description: string }[]> = {};
+  for (const [jobId, jobLines] of Object.entries(
+    groupBy(
+      (lines.data ?? []).filter(
+        (line) =>
+          line.job?.locationId && strictLocationIds.has(line.job.locationId)
+      ),
+      (line) => line.jobId
+    )
+  )) {
+    const missing = materialsWithoutStorageUnit(jobLines);
+    if (missing.length > 0) byJob[jobId] = missing;
+  }
+  return { data: byJob, error: null };
+}
 
 // What stands between these jobs and release, read in one query per table for
 // any number of jobs. The job Release dialog and batch release both read it, so
@@ -2962,6 +3036,14 @@ export async function getJobReleaseReadiness(
   const failed =
     jobs.error ?? roots.error ?? materials.error ?? operations.error;
   if (failed) return { data: null, error: failed };
+
+  const withoutStorageUnit = await getMaterialsWithoutStorageUnit(
+    client,
+    jobIds,
+    companyId
+  );
+  if (withoutStorageUnit.error)
+    return { data: null, error: withoutStorageUnit.error };
 
   const outsideOperationIds = (operations.data ?? [])
     .filter((op) => op.operationType === "Outside Processing")
@@ -3116,7 +3198,8 @@ export async function getJobReleaseReadiness(
                 : []
             )
           )
-        ]
+        ],
+        materialsWithoutStorageUnit: withoutStorageUnit.data[job.id] ?? []
       })),
       suppliers: supplierIds.map((supplierId) => ({
         supplierId,
@@ -3147,7 +3230,8 @@ export async function updateJobStatus(
     // cancelled in between must not come back as Ready. `updated` is false
     // when the row no longer matched.
     fromStatuses?: (typeof jobStatus)[number][];
-  }
+  },
+  { source = "erp" }: { source?: JobSource } = {}
 ) {
   const { id, companyId, status, assignee, updatedBy, fromStatuses } = params;
 
@@ -3196,7 +3280,7 @@ export async function updateJobStatus(
         userId: updatedBy,
         jobId: id,
         priorStatus: prior.data.status,
-        source: "erp"
+        source
       });
     } else if (status === "Paused") {
       await raiseMoment("production.jobHeld", {
@@ -13337,6 +13421,13 @@ export async function getMethod(
       const scrapPercentageByItemId = new Map<string, number>();
       const defaultStorageUnitByItemId = new Map<string, string>();
       const jobLocationId = job.locationId;
+      let fullestBinAllowed: boolean | undefined;
+      async function withFullestBin(reader: typeof db) {
+        fullestBinAllowed ??= !(
+          await getStrictBackflushSettings(reader, companyId, jobLocationId)
+        ).strict;
+        return fullestBinAllowed;
+      }
 
       const operationsByMakeMethodId = new Map<string, MethodOperationRow[]>();
 
@@ -13382,22 +13473,24 @@ export async function getMethod(
         // Default storage units at the job's location — two set-based
         // queries instead of up to two per material (getStorageUnitId):
         // pickMethod default wins, else the bin with the highest on-hand
-        // quantity.
+        // quantity — never the fullest bin under strict backflush.
         if (jobLocationId) {
-          const ledgerTotals = await reader
-            .selectFrom("itemLedger")
-            .where("locationId", "=", jobLocationId)
-            .where("companyId", "=", companyId)
-            .where("itemId", "in", missing)
-            .where("storageUnitId", "is not", null)
-            .groupBy(["itemId", "storageUnitId"])
-            .select([
-              "itemId",
-              "storageUnitId",
-              (eb) => eb.fn.sum("quantity").as("totalQuantity")
-            ])
-            .having((eb) => eb.fn.sum("quantity"), ">", 0)
-            .execute();
+          const ledgerTotals = !(await withFullestBin(reader))
+            ? []
+            : await reader
+                .selectFrom("itemLedger")
+                .where("locationId", "=", jobLocationId)
+                .where("companyId", "=", companyId)
+                .where("itemId", "in", missing)
+                .where("storageUnitId", "is not", null)
+                .groupBy(["itemId", "storageUnitId"])
+                .select([
+                  "itemId",
+                  "storageUnitId",
+                  (eb) => eb.fn.sum("quantity").as("totalQuantity")
+                ])
+                .having((eb) => eb.fn.sum("quantity"), ">", 0)
+                .execute();
 
           const bestQuantityByItemId = new Map<string, number>();
           for (const row of ledgerTotals) {
@@ -14419,10 +14512,20 @@ export async function getMethod(
                 // material at the successor and explode the SUCCESSOR's method
                 // (not the old part's). A Make -> Buy successor is a structural
                 // flip we leave on the old part (handled/flagged elsewhere).
-                const madeSwapHandled = await swapMadeSubAssembly({
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
                   trx,
                   companyId,
                   child,
+                  material?.itemId
+                );
+                if (!made) continue;
+
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  trx,
+                  companyId,
+                  child: made,
                   material,
                   materialId,
                   locationId: job.locationId ?? "",
@@ -14432,9 +14535,9 @@ export async function getMethod(
                 });
 
                 // prevent an infinite loop
-                if (!madeSwapHandled && child!.data.itemId !== itemId) {
+                if (!madeSwapHandled && made.data.itemId !== itemId) {
                   await traverseMethod(
-                    child,
+                    made,
                     newMakeMethodId,
                     childTotalForCascade || 1
                   );
@@ -15175,10 +15278,20 @@ export async function getMethod(
                 // if a made component has an effective successor that is itself
                 // made, point the job material at the successor and explode the
                 // SUCCESSOR's method instead of the old part's.
-                const madeSwapHandled = await swapMadeSubAssembly({
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
                   trx,
                   companyId,
                   child,
+                  material?.itemId
+                );
+                if (!made) continue;
+
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  trx,
+                  companyId,
+                  child: made,
                   material,
                   materialId,
                   locationId: job.data?.locationId ?? "",
@@ -15188,9 +15301,9 @@ export async function getMethod(
                 });
 
                 // prevent an infinite loop
-                if (!madeSwapHandled && child.data.itemId !== itemId) {
+                if (!madeSwapHandled && made.data.itemId !== itemId) {
                   await traverseMethod(
-                    child,
+                    made,
                     newMakeMethodId,
                     childTotalForCascade || 1
                   );
@@ -16010,9 +16123,26 @@ export async function getMethod(
                     }
                   );
 
+                  // A configuration rule may have moved this line onto another
+                  // made item; the sub-assembly under it is then that item's.
+                  const made = await configuredMadeChild(
+                    trx,
+                    companyId,
+                    child!,
+                    madeMaterialsWithIds[index]!.itemId
+                  );
+                  if (!made) continue;
+                  if (made !== child) {
+                    for (const [id, ops] of await readOperationsForTree(
+                      trx,
+                      made
+                    ))
+                      treeOperations.set(id, ops);
+                  }
+
                   // prevent an infinite loop
-                  if (child!.data.itemId !== itemId) {
-                    await traverseMethod(child, newMakeMethodId);
+                  if (made.data.itemId !== itemId) {
+                    await traverseMethod(made, newMakeMethodId);
                   }
                 }
               }
@@ -16425,9 +16555,26 @@ export async function getMethod(
               for (const [index, child] of madeChildren.entries()) {
                 const newMakeMethodId = newMakeMethodIds[index]!;
 
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
+                  trx,
+                  companyId,
+                  child,
+                  madeMaterialsWithIds[index]!.itemId
+                );
+                if (!made) continue;
+                if (made !== child) {
+                  for (const [id, ops] of await readOperationsForTree(
+                    trx,
+                    made
+                  ))
+                    treeOperations.set(id, ops);
+                }
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, newMakeMethodId);
+                if (made.data.itemId !== itemId) {
+                  await traverseMethod(made, newMakeMethodId);
                 }
               }
             }
@@ -20614,6 +20761,11 @@ async function itemDerivedJobMaterialFields(opts: {
   lineStorageUnitId?: string;
 }) {
   const { trx, companyId, itemId, locationId, lineStorageUnitId } = opts;
+  const { strict } = await getStrictBackflushSettings(
+    trx,
+    companyId,
+    locationId
+  );
 
   const [item, replenishment, storageUnitId] = await Promise.all([
     readItemWithCost(trx, itemId, companyId),
@@ -20623,7 +20775,7 @@ async function itemDerivedJobMaterialFields(opts: {
       .where("itemId", "=", itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst(),
-    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId)
+    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId, !strict)
   ]);
 
   if (!item) return null;
@@ -20646,6 +20798,50 @@ async function itemDerivedJobMaterialFields(opts: {
 // scaling the cascade by the conversion factor. A Make -> Buy successor is a
 // structural flip we leave on the old part (handled elsewhere). Returns true when
 // the swap was applied, so the caller can skip the default traversal.
+/**
+ * The tree a made line explodes into. A configuration rule can move a Make to
+ * Order line onto another item (a 14 ft body where the BOM names the 12 ft
+ * one); the line is then that item's, and so is the sub-assembly under it.
+ * Exploding `child` as it stood built the BOM item's sub-assembly under the
+ * configured item. The line's own fields (quantity, operation, order, the
+ * row's ids) stay the BOM line's; the item and its method become the
+ * configured item's. Undefined when the configured item has no make method:
+ * there is nothing of its own to explode, and the BOM item's would be wrong.
+ */
+async function configuredMadeChild(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  child: MethodTreeItem,
+  itemId: string | null | undefined
+): Promise<MethodTreeItem | undefined> {
+  if (!itemId || itemId === child.data.itemId) return child;
+  const method = await trx
+    .selectFrom("activeMakeMethods")
+    .select(["id"])
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!method?.id) return undefined;
+  const root = (await getMethodTree(trx, method.id)).data?.[0];
+  if (!root) return undefined;
+  return {
+    id: child.id,
+    data: {
+      ...child.data,
+      itemId: root.data.itemId,
+      itemReadableId: root.data.itemReadableId,
+      itemTrackingType: root.data.itemTrackingType,
+      itemType: root.data.itemType,
+      materialMakeMethodId: root.data.materialMakeMethodId,
+      replenishmentSystem: root.data.replenishmentSystem,
+      revision: root.data.revision,
+      unitCost: root.data.unitCost,
+      version: root.data.version
+    },
+    children: root.children
+  };
+}
+
 async function swapMadeSubAssembly(opts: {
   trx: Transaction<KyselyDatabase>;
   companyId: string;
@@ -21055,6 +21251,7 @@ function createItemDefaults(
   const scrapByItemId = new Map<string, number>();
   const binByItemId = new Map<string, string>();
   const loaded = new Set<string>();
+  let fullestBinAllowed: boolean | undefined;
 
   async function load(
     reader: Kysely<KyselyDatabase>,
@@ -21075,25 +21272,31 @@ function createItemDefaults(
       scrapByItemId.set(row.itemId, Number(row.scrapPercentage ?? 0));
     }
 
-    // The pick method's default bin wins, else the bin holding the most.
+    // The pick method's default bin wins, else the bin holding the most (never
+    // under strict backflush).
     if (locationId) {
-      const ledgerTotals = await reader
-        .selectFrom("itemLedger")
-        .where("locationId", "=", locationId)
-        .where("companyId", "=", companyId)
-        .where("itemId", "in", missing)
-        .where("storageUnitId", "is not", null)
-        .groupBy(["itemId", "storageUnitId"])
-        .select([
-          "itemId",
-          "storageUnitId",
-          (eb) => eb.fn.sum("quantity").as("totalQuantity")
-        ])
-        .having((eb) => eb.fn.sum("quantity"), ">", 0)
-        .orderBy("itemId")
-        .orderBy("totalQuantity", "desc")
-        .orderBy("storageUnitId")
-        .execute();
+      fullestBinAllowed ??= !(
+        await getStrictBackflushSettings(reader, companyId, locationId)
+      ).strict;
+      const ledgerTotals = !fullestBinAllowed
+        ? []
+        : await reader
+            .selectFrom("itemLedger")
+            .where("locationId", "=", locationId)
+            .where("companyId", "=", companyId)
+            .where("itemId", "in", missing)
+            .where("storageUnitId", "is not", null)
+            .groupBy(["itemId", "storageUnitId"])
+            .select([
+              "itemId",
+              "storageUnitId",
+              (eb) => eb.fn.sum("quantity").as("totalQuantity")
+            ])
+            .having((eb) => eb.fn.sum("quantity"), ">", 0)
+            .orderBy("itemId")
+            .orderBy("totalQuantity", "desc")
+            .orderBy("storageUnitId")
+            .execute();
       for (const row of ledgerTotals) {
         // Ordered by quantity: the first row for an item is its fullest bin.
         if (row.storageUnitId && !binByItemId.has(row.itemId)) {
@@ -23908,6 +24111,28 @@ async function completeBatch(
   // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
   let glEvents: { id: string; postedToGL: boolean }[] = [];
 
+  // Strict backflush: refuse before phase 1 writes, since phase 2 issues after
+  // it commits. Every member is checked in one dry run, so members sharing a
+  // bin are held to their combined demand. A completed batch skips this, so a
+  // retry still gets the "already completed" answer.
+  const batchStatus = await db
+    .selectFrom("jobOperationBatch")
+    .select("status")
+    .where("id", "=", batchId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (batchStatus?.status !== "Completed") {
+    await inventoryPostings.dryRunJobOperationIssues(db, {
+      companyId,
+      userId,
+      operations: members.map((m) => ({
+        id: m.jobOperationId,
+        quantity: m.quantity
+      }))
+    });
+  }
+  const system = { db, companyId, userId };
+
   await db.transaction().execute(async (trx) => {
     const batch = await trx
       .selectFrom("jobOperationBatch")
@@ -24161,7 +24386,6 @@ async function completeBatch(
   // Phase 2 (post-commit, idempotent). Any throw leaves the batch Completing; a
   // retry re-runs these steps alone. Runs as the system: the batch completion
   // itself was authorized.
-  const system = { db, companyId, userId };
   for (const m of members) {
     if (m.quantity <= 0) continue;
     const issued = await invokePosting(
@@ -24175,8 +24399,10 @@ async function completeBatch(
       inventoryPostings.issueMaterial
     );
     if (issued.error) {
-      throw new Error(
-        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`
+      // Keep a strict backflush refusal's 409; completing again resumes.
+      throw new ServerFnError(
+        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`,
+        issued.error instanceof ServerFnError ? issued.error.status : 500
       );
     }
   }

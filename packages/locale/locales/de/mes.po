@@ -272,6 +272,9 @@ msgstr "Zurück"
 msgid "Back to batch"
 msgstr "Zurück zum Los"
 
+msgid "Back to ERP"
+msgstr "Zurück zum ERP"
+
 msgid "Background"
 msgstr "Hintergrund"
 

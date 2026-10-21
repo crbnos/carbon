@@ -544,6 +544,9 @@ msgstr "{hiddenCount} more: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 
@@ -573,6 +576,9 @@ msgstr "{maxSizeMB}MB limit"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# step} other {# steps}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "{mismatchCount} months with mismatched totals"
@@ -752,6 +758,9 @@ msgstr "↩ {0} redirected from superseded {1}"
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}h"
+
+msgid "+{more} more"
+msgstr "+{more} more"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Add a supplier part</0> for this item to set a preferred supplier."
@@ -1145,6 +1154,9 @@ msgstr "A material is a physical item used to make a part that can be used acros
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+
 msgid "A name is required to save a view"
 msgstr "A name is required to save a view"
 
@@ -1465,6 +1477,12 @@ msgstr "A shipment's status changes"
 
 msgid "A shipment's tracking number changes"
 msgstr "A shipment's tracking number changes"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "A short storage unit falls back to another storage unit with stock."
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "A short storage unit goes below zero, and the operation or job still completes."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
@@ -1860,6 +1878,9 @@ msgstr "Active"
 
 msgid "Active Jobs"
 msgstr "Active Jobs"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "Active Methods Missing a Pull From"
 
 msgid "Active Statuses"
 msgstr "Active Statuses"
@@ -2667,6 +2688,9 @@ msgstr "An operation done by an outside supplier rather than an in-house work ce
 msgid "An operation on this job runs in this batch"
 msgstr "An operation on this job runs in this batch"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 
@@ -2845,6 +2869,9 @@ msgstr "Applies to all work centers"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+
+msgid "Applies when strict backflush is on."
+msgstr "Applies when strict backflush is on."
 
 msgid "Apply"
 msgstr "Apply"
@@ -3896,6 +3923,9 @@ msgstr "Back to traceability"
 
 msgid "Backflush"
 msgstr "Backflush"
+
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "Backflush each material only from the storage unit on its material line, never from another storage unit."
 
 msgid "Background"
 msgstr "Background"
@@ -4967,6 +4997,9 @@ msgstr "Choose the fleet units this agreement rents. Each starts at its rate on 
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
+
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
@@ -6121,6 +6154,12 @@ msgstr "Could not analyze region: {0}"
 
 msgid "Could not build PDF. Try again."
 msgstr "Could not build PDF. Try again."
+
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -8975,6 +9014,9 @@ msgstr "Enable to configure tax-specific depreciation methods on asset classes (
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Enable to generate IDs and descriptions for raw materials."
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "Enable to require an authenticator app before anyone can open this company."
 
@@ -9105,6 +9147,9 @@ msgstr "Enter a quantity between 1 and {0}."
 msgid "Enter a reason to take the unit out of service"
 msgstr "Enter a reason to take the unit out of service"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "Enter a received quantity, or tick a unit, on at least one line."
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "Enter a web address, such as https://example.com"
 
@@ -9143,6 +9188,9 @@ msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "Enter the prior system's trial balance as of the day before the cutover, for every account."
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
@@ -9349,6 +9397,9 @@ msgstr "Every 3 hours"
 msgid "Every account default is set"
 msgstr "Every account default is set"
 
+msgid "Every account is mapped"
+msgstr "Every account is mapped"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Every asset needs a payment row before activating."
 
@@ -9384,6 +9435,9 @@ msgstr "Every line recognizes what it bills."
 
 msgid "Every match"
 msgstr "Every match"
+
+msgid "Every posted journal line in a period"
+msgstr "Every posted journal line in a period"
 
 msgid "Every required action has already been added."
 msgstr "Every required action has already been added."
@@ -9704,6 +9758,9 @@ msgstr "Failed to add lines"
 
 msgid "Failed to apply pricing rules"
 msgstr "Failed to apply pricing rules"
+
+msgid "Failed to check the batch's jobs"
+msgstr "Failed to check the batch's jobs"
 
 msgid "Failed to convert image"
 msgstr "Failed to convert image"
@@ -12056,6 +12113,9 @@ msgstr "Issued Date"
 msgid "Issues"
 msgstr "Issues"
 
+msgid "It is coming soon. Contact Carbon to have it set up for your company."
+msgstr "It is coming soon. Contact Carbon to have it set up for your company."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "It will stop running until you publish a version again. Nothing is deleted."
 
@@ -13266,6 +13326,9 @@ msgstr "Map your chart of accounts to the provider's. Posting-default and expens
 msgid "Map your current process, systems, and data"
 msgstr "Map your current process, systems, and data"
 
+msgid "Mapped"
+msgstr "Mapped"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -13520,6 +13583,12 @@ msgstr "Materials are included"
 msgid "Materials are not included"
 msgstr "Materials are not included"
 
+msgid "Materials missing a Pull From"
+msgstr "Materials missing a Pull From"
+
+msgid "Materials with no storage unit"
+msgstr "Materials with no storage unit"
+
 msgid "Matrix"
 msgstr "Matrix"
 
@@ -13715,6 +13784,9 @@ msgstr "Missing Operations"
 
 msgid "Missing Shipping Costs"
 msgstr "Missing Shipping Costs"
+
+msgid "Missing Storage Units"
+msgstr "Missing Storage Units"
 
 msgid "Missing Suppliers"
 msgstr "Missing Suppliers"
@@ -14030,6 +14102,9 @@ msgstr "Needs Review"
 
 msgid "Negative Adjustment"
 msgstr "Negative Adjustment"
+
+msgid "Negative stock setting updated"
+msgstr "Negative stock setting updated"
 
 msgid "Net book value"
 msgstr "Net book value"
@@ -14519,6 +14594,9 @@ msgstr "No abilities added"
 
 msgid "No Access"
 msgstr "No Access"
+
+msgid "No accounts are mapped yet"
+msgstr "No accounts are mapped yet"
 
 msgid "No accounts match your search"
 msgstr "No accounts match your search"
@@ -15681,6 +15759,9 @@ msgstr "One-time"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 
+msgid "Only employees can post receipts."
+msgstr "Only employees can post receipts."
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
 
@@ -15812,6 +15893,9 @@ msgstr "Open jobs"
 
 msgid "Open Jobs"
 msgstr "Open Jobs"
+
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "Open Jobs Missing a Storage Unit"
 
 msgid "Open menu"
 msgstr "Open menu"
@@ -17134,6 +17218,9 @@ msgstr "Press '/' for commands"
 msgid "Prev"
 msgstr "Prev"
 
+msgid "Prevent negative stock"
+msgstr "Prevent negative stock"
+
 msgid "Preventive action"
 msgstr "Preventive action"
 
@@ -18205,6 +18292,12 @@ msgstr "Receipt Lines"
 msgid "Receipt Promised Date"
 msgstr "Receipt Promised Date"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "Receipt quantities now start at the quantity to receive"
+
+msgid "Receipt quantities now start at zero"
+msgstr "Receipt quantities now start at zero"
+
 msgid "Receipt Requested Date"
 msgstr "Receipt Requested Date"
 
@@ -18278,11 +18371,20 @@ msgstr "Received lines from this supplier with quantity remaining to return"
 msgid "Received Qty"
 msgstr "Received Qty"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "Received quantities start at the quantity to receive"
+
+msgid "Received quantities start at zero"
+msgstr "Received quantities start at zero"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Received quantity not yet credited. The credit memo is created as a draft."
 
 msgid "Receives the invoice email"
 msgstr "Receives the invoice email"
+
+msgid "Receiving"
+msgstr "Receiving"
 
 msgid "Receiving Location"
 msgstr "Receiving Location"
@@ -18717,6 +18819,9 @@ msgstr "Remove sort by column"
 msgid "Remove station"
 msgstr "Remove station"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "Remove the received serial and batch numbers from stock"
+
 msgid "Remove this item"
 msgstr "Remove this item"
 
@@ -19146,9 +19251,6 @@ msgstr "Restore this company from a backup"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Restore this entity to available stock at the bin and cost it was scrapped from."
-
-msgid "Restore tracked entities to available"
-msgstr "Restore tracked entities to available"
 
 msgid "Restore…"
 msgstr "Restore…"
@@ -20684,6 +20786,15 @@ msgstr "Session locked"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Set a customer on this return to add from a shipment."
 
+msgid "Set a Pull From on each one through a new version."
+msgstr "Set a Pull From on each one through a new version."
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "set a Pull From storage unit on {names}"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "set a Pull From storage unit on {names} and {more} more"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Set a supplier on this return to add from a receipt."
 
@@ -21527,6 +21638,9 @@ msgstr "Start of Fiscal Year"
 msgid "Start of Tax Year"
 msgstr "Start of Tax Year"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "Start Receipt Quantities at Zero"
+
 msgid "Start Time"
 msgstr "Start Time"
 
@@ -21747,6 +21861,9 @@ msgstr "storage units"
 msgid "Storage Units"
 msgstr "Storage Units"
 
+msgid "Storage Units Not Checked"
+msgstr "Storage Units Not Checked"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 
@@ -21764,6 +21881,21 @@ msgstr "Straight-line amortization of finance lease right-of-use assets"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "Straight-line lease cost of operating leases, and the payments of short-term leases"
+
+msgid "Strict Backflush"
+msgstr "Strict Backflush"
+
+msgid "Strict backflush is off"
+msgstr "Strict backflush is off"
+
+msgid "Strict backflush is on"
+msgstr "Strict backflush is on"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+
+msgid "Strict backflush setting updated"
+msgstr "Strict backflush setting updated"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23375,6 +23507,9 @@ msgstr "The reasons you record when parts get scrapped"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "The reasons you record when you decline an RFQ"
 
+msgid "The receipt was not voided"
+msgstr "The receipt was not voided"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 
@@ -23685,6 +23820,9 @@ msgstr "The working hours and calendars that drive scheduling"
 msgid "Their dates and splits are planned again from the lines."
 msgstr "Their dates and splits are planned again from the lines."
 
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "Their next backflush will be refused until each material has a storage unit."
+
 msgid "Theme"
 msgstr "Theme"
 
@@ -23859,6 +23997,9 @@ msgstr "This information will be visible to all users, so be careful what you sh
 msgid "this inspection plan"
 msgstr "this inspection plan"
 
+msgid "This integration isn't available yet"
+msgstr "This integration isn't available yet"
+
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
@@ -23989,6 +24130,9 @@ msgstr "this purchase order"
 
 msgid "This Quarter"
 msgstr "This Quarter"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "This receipt has no lines. Choose a source document to add them."
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "This removes the PDF. Employees will see the written content instead."
@@ -24960,6 +25104,9 @@ msgstr "Unlock"
 msgid "Unlock with passkey"
 msgstr "Unlock with passkey"
 
+msgid "Unmapped"
+msgstr "Unmapped"
+
 msgid "Unmapped dimension values"
 msgstr "Unmapped dimension values"
 
@@ -25126,6 +25273,9 @@ msgstr "Update the kanban information for scan-based replenishment."
 
 msgid "Update the purchase order quantities"
 msgstr "Update the purchase order quantities"
+
+msgid "Update the return order quantities"
+msgstr "Update the return order quantities"
 
 msgid "Updated"
 msgstr "Updated"

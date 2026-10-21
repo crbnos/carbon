@@ -272,6 +272,9 @@ msgstr "Geri"
 msgid "Back to batch"
 msgstr "Partiye geri dön"
 
+msgid "Back to ERP"
+msgstr "ERP'ye geri dön"
+
 msgid "Background"
 msgstr "Arka plan"
 

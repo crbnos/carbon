@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 import {
   finishPickingList,
   kanbanValidator,
+  planSerialBoxWrite,
   receiptFixedAssetLineUpdateValidator,
+  reconcileReceiptLineSerials,
   resolveStockTransferPickForward,
   shipmentFixedAssetLineUpdateValidator,
   storageTypeValidator,
@@ -235,6 +237,209 @@ describe("kanbanValidator replenishmentLevel", () => {
       replenishmentLevel: "-1"
     });
     expect(errorPaths(r)).toContain("replenishmentLevel");
+  });
+});
+
+describe("planSerialBoxWrite", () => {
+  const box = (line: string, index: number) => ({
+    "Receipt Line": line,
+    "Receipt Line Index": index,
+    Receipt: "rec1"
+  });
+
+  it("clears the box when the serial is emptied", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "  ",
+        box: [{ id: "e1", hasHistory: false }],
+        withSerial: []
+      })
+    ).toEqual({ kind: "clear", releaseIds: ["e1"] });
+  });
+
+  it("renames the box's own entity when the serial is edited", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "NEW",
+        box: [{ id: "e1", hasHistory: false }],
+        withSerial: []
+      })
+    ).toEqual({ kind: "write", targetId: "e1", releaseIds: [] });
+  });
+
+  it("refuses a serial held by another box and empties this one", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 1,
+        serialNumber: "SN-A",
+        box: [{ id: "e2", hasHistory: false }],
+        withSerial: [
+          { id: "e1", hasHistory: false, attributes: box("line1", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "box", releaseIds: ["e2"] });
+  });
+
+  it("refuses a serial held by a box on another receipt line", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-A",
+        box: [],
+        withSerial: [
+          { id: "e9", hasHistory: false, attributes: box("line2", 0) }
+        ]
+      }).kind
+    ).toBe("taken");
+  });
+
+  it("keeps one copy when a racing save left two in the box", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-A",
+        box: [
+          { id: "e1", hasHistory: false },
+          { id: "e2", hasHistory: false }
+        ],
+        withSerial: [
+          { id: "e1", hasHistory: false, attributes: box("line1", 0) },
+          { id: "e2", hasHistory: false, attributes: box("line1", 0) }
+        ]
+      })
+    ).toEqual({ kind: "write", targetId: "e1", releaseIds: ["e2"] });
+  });
+
+  it("never renames a box entity that has stock history", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "NEW",
+        box: [{ id: "unit", hasHistory: true }],
+        withSerial: []
+      })
+    ).toEqual({ kind: "write", targetId: undefined, releaseIds: ["unit"] });
+  });
+
+  it("refuses the serial of a unit with stock history", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-B",
+        box: [{ id: "e1", hasHistory: false }],
+        withSerial: [
+          { id: "shipped", hasHistory: true, attributes: { Shipment: "sh1" } }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["e1"] });
+  });
+
+  it("refuses a unit with stock history even when it already sits in the box", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-B",
+        box: [{ id: "shipped", hasHistory: true }],
+        withSerial: [
+          { id: "shipped", hasHistory: true, attributes: box("line1", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["shipped"] });
+  });
+
+  it("takes back the serial of a voided receipt as the same unit", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-A",
+        box: [],
+        withSerial: [
+          {
+            id: "voided",
+            hasHistory: false,
+            attributes: { ...box("lineOld", 0), Receipt: "recVoided" },
+            onVoidedReceipt: true
+          }
+        ]
+      })
+    ).toEqual({ kind: "write", targetId: "voided", releaseIds: [] });
+  });
+
+  it("refuses the serial of a record no receipt box holds (a job's reserved serial)", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-A",
+        box: [{ id: "e1", hasHistory: false }],
+        withSerial: [
+          { id: "reserved", hasHistory: false, attributes: { Job: "job1" } }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: ["e1"] });
+  });
+
+  it("names a received unit in another box as an existing unit", () => {
+    expect(
+      planSerialBoxWrite({
+        receiptLineId: "line1",
+        index: 0,
+        serialNumber: "SN-B",
+        box: [],
+        withSerial: [
+          { id: "received", hasHistory: true, attributes: box("line2", 0) }
+        ]
+      })
+    ).toEqual({ kind: "taken", reason: "unit", releaseIds: [] });
+  });
+});
+
+describe("reconcileReceiptLineSerials", () => {
+  it("reports an index with no serial as missing", () => {
+    expect(
+      reconcileReceiptLineSerials(
+        [
+          { id: "a", index: 0, hasSerial: true },
+          { id: "c", index: 2, hasSerial: true }
+        ],
+        3
+      ).missingIndexes
+    ).toEqual([1]);
+  });
+
+  it("marks the boxes beyond the received quantity as surplus", () => {
+    expect(
+      reconcileReceiptLineSerials(
+        [
+          { id: "a", index: 0, hasSerial: true },
+          { id: "c", index: 2, hasSerial: true }
+        ],
+        2
+      ).surplusEntityIds
+    ).toEqual(["c"]);
+  });
+
+  it("keeps the serial-bearing entity over an older blank one", () => {
+    expect(
+      reconcileReceiptLineSerials(
+        [
+          { id: "blank", index: 0, hasSerial: false, createdAt: "1" },
+          { id: "serial", index: 0, hasSerial: true, createdAt: "2" }
+        ],
+        1
+      )
+    ).toEqual({ missingIndexes: [], surplusEntityIds: ["blank"] });
   });
 });
 

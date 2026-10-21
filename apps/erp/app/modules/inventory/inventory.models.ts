@@ -530,7 +530,8 @@ export type ReceiptSerialEntity = {
  * can never disagree on which serials count:
  *   - `missingIndexes`  — required indices with no serial yet (post validation)
  *   - `surplusEntityIds` — orphan/duplicate entities to delete before posting,
- *     keeping the earliest-created entity for each in-range index.
+ *     keeping, for each in-range index, a serial-bearing entity over a blank
+ *     one, then the earliest-created.
  */
 export function reconcileReceiptLineSerials(
   entities: ReceiptSerialEntity[],
@@ -548,8 +549,10 @@ export function reconcileReceiptLineSerials(
 
   const keptIndexes = new Set<number>();
   const surplusEntityIds: string[] = [];
-  const ordered = [...entities].sort((a, b) =>
-    (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
+  const ordered = [...entities].sort(
+    (a, b) =>
+      Number(b.hasSerial) - Number(a.hasSerial) ||
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
   );
   for (const entity of ordered) {
     const index = entity.index;
@@ -562,6 +565,66 @@ export function reconcileReceiptLineSerials(
   }
 
   return { missingIndexes, surplusEntityIds };
+}
+
+export type SerialBoxEntity = { id: string; hasHistory: boolean };
+
+export type SerialBoxWrite =
+  | { kind: "clear"; releaseIds: string[] }
+  | { kind: "taken"; reason: "box" | "unit"; releaseIds: string[] }
+  | { kind: "write"; targetId: string | undefined; releaseIds: string[] };
+
+export function planSerialBoxWrite(args: {
+  receiptLineId: string;
+  index: number;
+  serialNumber: string;
+  box: SerialBoxEntity[];
+  withSerial: (SerialBoxEntity & {
+    attributes: Record<string, unknown>;
+    /** Its `Receipt` is voided: the box it names no longer holds it. */
+    onVoidedReceipt?: boolean;
+  })[];
+}): SerialBoxWrite {
+  const boxIds = args.box.map((entity) => entity.id);
+  if (!args.serialNumber.trim()) return { kind: "clear", releaseIds: boxIds };
+
+  const isInThisBox = (attributes: Record<string, unknown>) =>
+    attributes["Receipt Line"] === args.receiptLineId &&
+    attributes["Receipt Line Index"] === args.index;
+
+  if (args.withSerial.some((entity) => entity.hasHistory)) {
+    return { kind: "taken", reason: "unit", releaseIds: boxIds };
+  }
+
+  // Only this box's record or one from a voided receipt can be taken over;
+  // any other record with the serial belongs to another box or document (a
+  // job's reserved serial).
+  const elsewhere = args.withSerial.filter(
+    (entity) => !entity.onVoidedReceipt && !isInThisBox(entity.attributes)
+  );
+  if (elsewhere.length > 0) {
+    return {
+      kind: "taken",
+      reason: elsewhere.some(
+        (entity) => "Receipt Line Index" in entity.attributes
+      )
+        ? "box"
+        : "unit",
+      releaseIds: boxIds
+    };
+  }
+
+  const targetId =
+    (
+      args.withSerial.find((entity) => isInThisBox(entity.attributes)) ??
+      args.withSerial[0]
+    )?.id ?? args.box.find((entity) => !entity.hasHistory)?.id;
+
+  return {
+    kind: "write",
+    targetId,
+    releaseIds: boxIds.filter((id) => id !== targetId)
+  };
 }
 
 export const warehouseTransferValidator = z

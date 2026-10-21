@@ -72,6 +72,7 @@ import type { AccountType } from "@carbon/database/ledger";
 import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
 import { equals } from "@carbon/database/precision";
 import { quoteToOrderPriceTrace } from "@carbon/database/price-trace";
+import { releaseReceiptSerialEntities } from "@carbon/database/receipt-serials";
 import type * as rows from "@carbon/database/rows";
 import type * as rowsModule from "@carbon/database/rows";
 import {
@@ -185,6 +186,7 @@ import {
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
 import type { assignableTables, NoteField, NoteTable } from "./shared.models";
+import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload } from "./types";
 
 const logger = getLogger("erp", "shared");
@@ -8059,6 +8061,10 @@ export async function convertDocument(
       if (makeMethod.error) throw new Error(makeMethod.error.message);
       if (!makeMethod.data) throw new NotFoundError("Make method not found");
 
+      if (await isStrictBackflush(db, companyId)) {
+        await assertMethodHasPullFrom(db, { makeMethodId, companyId });
+      }
+
       const [relatedMakeMethods, draftQuotes, draftJobs] = await inOrder([
         () =>
           many(db, "makeMethod", {
@@ -10061,6 +10067,18 @@ async function getFallbackLocationId(
   return location.data?.id ?? null;
 }
 
+async function receiptQuantitiesStartAtZero(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<boolean> {
+  const row = await db
+    .selectFrom("companySettings")
+    .select("receiptQuantitiesStartAtZero")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return row?.receiptQuantitiesStartAtZero === true;
+}
+
 export const createDocumentPermission = {
   by: "type",
   rules: {
@@ -10895,6 +10913,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = purchaseOrderLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -10922,7 +10942,9 @@ export async function createDocument(
           itemId: d.itemId,
           orderQuantity: d.purchaseQuantity * (d.conversionFactor ?? 1),
           outstandingQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
-          receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
+          receivedQuantity: startAtZero
+            ? 0
+            : outstandingQuantity * (d.conversionFactor ?? 1),
           conversionFactor: d.conversionFactor ?? 1,
           requiresSerialTracking:
             serializedItems.has(d.itemId) && !isOutsideOperation,
@@ -11026,7 +11048,7 @@ export async function createDocument(
               unreceivedFaLines.map((line) => ({
                 receiptId: receiptId,
                 purchaseOrderLineId: line.id,
-                received: true,
+                received: !startAtZero,
                 companyId,
                 createdBy: userId
               }))
@@ -11106,6 +11128,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11129,7 +11153,7 @@ export async function createDocument(
           storageUnitId: d.toStorageUnitId,
           requiresSerialTracking: serialTracking,
           requiresBatchTracking: batchTracking,
-          receivedQuantity: quantityToReceive,
+          receivedQuantity: startAtZero ? 0 : quantityToReceive,
           outstandingQuantity: quantityToReceive,
           unitPrice: 0, // Transfers don't have a unit price
           conversionFactor: 1,
@@ -11293,6 +11317,8 @@ export async function createDocument(
       if (hasReceipt && receipt.data!.status !== "Draft")
         throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = salesReturnOrderLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11311,7 +11337,7 @@ export async function createDocument(
           storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
           requiresSerialTracking: serializedItems.has(d.itemId),
           requiresBatchTracking: batchItems.has(d.itemId),
-          receivedQuantity: outstanding,
+          receivedQuantity: startAtZero ? 0 : outstanding,
           outstandingQuantity: outstanding,
           // Cost is resolved at posting (original outbound cost / current /
           // zero-value reason) — never the line's credit-basis unitPrice.
@@ -11459,6 +11485,8 @@ export async function createDocument(
         return acc;
       }, {});
 
+      const startAtZero = await receiptQuantitiesStartAtZero(db, companyId);
+
       const receiptLineItems = warehouseTransferLines.data.reduce<
         ReceiptLineItem[]
       >((acc, d) => {
@@ -11481,7 +11509,7 @@ export async function createDocument(
           storageUnitId: d.toStorageUnitId,
           requiresSerialTracking: serialTracking,
           requiresBatchTracking: batchTracking,
-          receivedQuantity: quantityToReceive,
+          receivedQuantity: startAtZero ? 0 : quantityToReceive,
           outstandingQuantity: quantityToReceive,
           unitPrice: 0, // Transfers don't have a unit price
           conversionFactor: 1,
@@ -11596,11 +11624,11 @@ export async function createDocument(
           trackedEntities.data?.length
         ) {
           // TODO: update the Receipt Line and Index attributes to point to the new line
-          await trx
-            .deleteFrom("trackedEntity")
-            .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
-            .where("companyId", "=", companyId)
-            .execute();
+          await releaseReceiptSerialEntities(
+            trx,
+            companyId,
+            trackedEntities.data.map((d) => d.id)
+          );
         }
 
         const newReceiptLineRows = await trx
@@ -15822,7 +15850,9 @@ export async function getStorageUnitId(
   trx: Transaction<DB>,
   itemId: string,
   locationId: string,
-  storageUnitId?: string
+  storageUnitId?: string,
+  /** False under strict backflush: the fullest bin is a guess, not a choice. */
+  allowFullestBin = true
 ): Promise<string | undefined> {
   if (storageUnitId) return storageUnitId;
 
@@ -15834,6 +15864,7 @@ export async function getStorageUnitId(
     .executeTakeFirst();
 
   if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
+  if (!allowFullestBin) return undefined;
 
   const storageUnitWithHighestQuantity =
     await getStorageUnitWithHighestQuantity(trx, itemId, locationId);

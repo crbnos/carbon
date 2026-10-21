@@ -4,6 +4,11 @@
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import {
+  activationRefusalMessage,
+  getMethodPartsMissingPullFrom,
+  getStrictBackflushSettings
+} from "@carbon/database/strict-backflush";
 import { approvalDecisionValidator } from "@carbon/ee/approvals";
 import {
   cancelPendingApprovals,
@@ -949,7 +954,9 @@ export const copyMethod = defineServiceFn({
  * @remarks
  * The new version takes `copyFromId`'s header and, through get-method, its
  * whole bill of materials and process. `activeVersionId` is made Active first
- * (the item's only version, when its successor is drafted).
+ * (the item's only version, when its successor is drafted). With strict
+ * backflush on, that activation is refused while a pulled line has no Pull
+ * From storage unit, as `methodVersionToActive` refuses it.
  *
  * @mcp
  */
@@ -960,6 +967,20 @@ export const createMethodVersion = defineServiceFn({
   async run(ctx, input) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
+
+    if (input.activeVersionId) {
+      const db = ctx.asSystem.pg;
+      const { strict } = await getStrictBackflushSettings(db, companyId);
+      if (strict) {
+        const parts = await getMethodPartsMissingPullFrom(db, {
+          makeMethodId: input.activeVersionId,
+          companyId
+        });
+        if (parts.length > 0) {
+          return ctx.error("rule", activationRefusalMessage(parts));
+        }
+      }
+    }
     const insert = await service.upsertMakeMethodVersion(
       ctx.asCaller.supabase,
       {

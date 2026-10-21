@@ -226,7 +226,9 @@ export const writeMissingJournals = defineServiceFn({
  * new item; which inputs a calculated expiry reads; and what consuming an
  * expired entity does), whether finishing a picking list with unpicked
  * material warns or refuses, and when unconsumed picked material is returned
- * (when the job completes, or when each operation is done).
+ * (when the job completes, or when each operation is done), and whether a
+ * new receipt's lines start at a received quantity of 0 instead of the
+ * quantity still to receive.
  *
  * @mcp
  */
@@ -244,7 +246,8 @@ export const updateInventorySettings = defineServiceFn({
     incompletePickingListPolicy: z
       .enum(incompletePickingListPolicies)
       .optional(),
-    returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional()
+    returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).optional(),
+    receiptQuantitiesStartAtZero: z.boolean().optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
@@ -329,8 +332,10 @@ export const updateInvoicingSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether material ids are
  * generated from their properties, whether material sizes use metric units,
  * whether item ids may contain lowercase letters, whether the BoM explorer
- * shows readable ids, and how strictly a released revision controls changes
- * (off, warn or enforce).
+ * shows readable ids, how strictly a released revision controls changes
+ * (off, warn or enforce), whether a backflush consumes only from a line's Pull
+ * From storage unit (strict backflush), and whether a strict backflush refuses
+ * to take that storage unit below zero.
  *
  * @mcp
  */
@@ -340,6 +345,8 @@ export const updateItemsSettings = defineServiceFn({
     useMetric: z.boolean().optional(),
     allowLowercaseItemIds: z.boolean().optional(),
     showBomExplorerReadableId: z.boolean().optional(),
+    requireBackflushStorageUnit: z.boolean().optional(),
+    preventNegativeBackflush: z.boolean().optional(),
     plmReleaseControl: z.enum(plmReleaseControl).optional()
   }),
   permission: { update: "settings" },

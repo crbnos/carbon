@@ -213,8 +213,8 @@ export const modelOptimizeFunction = inngest.createFunction(
     const stats: Json = optimize.stats;
 
     await step.run("persist", async () => {
-      // Read the thumbnail now, not at queue time: an Onshape sync can attach
-      // its own while the job runs, and that one is superseded too.
+      // Read the thumbnail now, not at queue time: an earlier run's thumbnail
+      // is superseded too.
       const superseded = outputs.thumbnail
         ? (await getModelUpload(companyId, modelUploadId))?.thumbnailPath
         : null;

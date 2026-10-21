@@ -272,6 +272,9 @@ msgstr "戻る"
 msgid "Back to batch"
 msgstr "バッチへ戻る"
 
+msgid "Back to ERP"
+msgstr "ERP へ戻る"
+
 msgid "Background"
 msgstr "背景"
 

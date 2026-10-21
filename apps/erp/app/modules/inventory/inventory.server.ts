@@ -4,6 +4,7 @@
 
 import {
   type CarbonError,
+  createServiceContext,
   defineServiceFn
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
@@ -15,7 +16,6 @@ import {
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -32,13 +32,15 @@ import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { getItemReplenishment } from "~/modules/items/items.service";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
+import { releaseCheckedJobs } from "~/modules/production/production.server";
 import {
   getActiveJobOperationByJobId,
+  getJobReleaseReadiness,
   insertJob,
-  runMRP,
   updateKanbanJob,
   upsertJobMethod
 } from "~/modules/production/production.service";
+import { jobReleaseProblems } from "~/modules/production/ui/Jobs/job-release-logic";
 import {
   insertPurchaseOrder,
   updatePurchasedPrices,
@@ -461,11 +463,17 @@ export const postReceipt = defineServiceFn({
 
     let failure: CarbonError | null = null;
     try {
-      await service.reconcileReceiptSerialEntities(serviceRole, {
-        receiptId,
-        companyId,
-        lines: lines.data ?? []
-      });
+      const { linesMissingSerials } =
+        await service.reconcileReceiptSerialEntities(ctx.asSystem.pg, {
+          receiptId,
+          companyId,
+          isSalesReturn: receipt.data.sourceDocument === "Sales Return Order",
+          lines: lines.data ?? []
+        });
+      if (linesMissingSerials.length > 0) {
+        await backToDraft();
+        return ctx.error("rule", "Serial numbers are missing");
+      }
       const posted = await invokePosting(
         ctx,
         "post-receipt",
@@ -477,11 +485,14 @@ export const postReceipt = defineServiceFn({
       );
       if (posted.error) {
         await backToDraft();
-        return service.serverFnFailure(
-          ctx,
-          posted.error,
-          "Failed to post receipt"
-        );
+        // Below 500 the posting refused the receipt, in words for the person.
+        return posted.error.status < 500
+          ? service.serverFnFailure(
+              ctx,
+              posted.error,
+              posted.error.message || "Failed to post receipt"
+            )
+          : ctx.error("internal", "Failed to post receipt", posted.error);
       }
     } catch (thrown) {
       await backToDraft();
@@ -591,11 +602,14 @@ export const voidReceipt = defineServiceFn({
       service.postReceipt
     );
     if (voided.error) {
-      return service.serverFnFailure(
-        ctx,
-        voided.error,
-        "Failed to void receipt"
-      );
+      // Below 500 the posting refused the void, in words for the person.
+      return voided.error.status < 500
+        ? service.serverFnFailure(
+            ctx,
+            voided.error,
+            voided.error.message || "Failed to void receipt"
+          )
+        : ctx.error("internal", "Failed to void receipt", voided.error);
     }
     return { receiptId };
   }
@@ -685,12 +699,58 @@ export const updateReceiptLines = defineServiceFn({
       return ctx.error("rule", RECEIPT_LOCKED);
     }
 
+    if (field === "receivedQuantity") {
+      const receivedQuantity = Number(value || 0);
+      if (!Number.isFinite(receivedQuantity)) {
+        return ctx.error("validation", "Received quantity must be a number");
+      }
+      // Drop serials beyond the new quantity in the same transaction.
+      try {
+        await ctx.asSystem.pg.transaction().execute(async (trx) => {
+          const updated = await trx
+            .updateTable("receiptLine")
+            .set({
+              receivedQuantity,
+              updatedBy: ctx.auditUserId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "in", ids)
+            .where("companyId", "=", ctx.company.id)
+            .returning([
+              "id",
+              "receiptId",
+              "receivedQuantity",
+              "requiresSerialTracking"
+            ])
+            .execute();
+          if (updated.length === 0) return;
+
+          const receipts = await trx
+            .selectFrom("receipt")
+            .select(["id", "sourceDocument"])
+            .where("id", "in", [...new Set(updated.map((l) => l.receiptId))])
+            .where("companyId", "=", ctx.company.id)
+            .where("status", "=", "Draft")
+            .execute();
+          for (const receipt of receipts) {
+            await service.reconcileReceiptSerialsInTransaction(trx, {
+              receiptId: receipt.id,
+              companyId: ctx.company.id,
+              isSalesReturn: receipt.sourceDocument === "Sales Return Order",
+              lines: updated.filter((l) => l.receiptId === receipt.id)
+            });
+          }
+        });
+      } catch (error) {
+        return ctx.error("internal", "Failed to update receipt lines", error);
+      }
+      return { ids };
+    }
+
     const update = await ctx.asCaller.supabase
       .from("receiptLine")
       .update({
-        ...(field === "storageUnitId"
-          ? { storageUnitId: value || null }
-          : { receivedQuantity: Number(value || 0) }),
+        storageUnitId: value || null,
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
@@ -855,8 +915,10 @@ export const setReceiptLineBatch = defineServiceFn({
  * Set one serial number of a serial-tracked receipt line.
  *
  * @remarks
- * `index` is the unit's position on the line, from 0. A serial number the
- * line's item already uses at another receipt line or position is refused.
+ * `index` is the unit's position on the line, from 0. An empty serial number
+ * clears the position. A serial number the line's item already uses at another
+ * position, or that belongs to an existing unit with stock movements, is
+ * refused and the position is cleared.
  *
  * @mcp
  */
@@ -871,76 +933,60 @@ export const setReceiptLineSerial = defineServiceFn({
   permission: { create: "inventory" },
 
   async run(ctx, input) {
-    const [line, receipt] = await Promise.all([
-      service.receiptLineOf(ctx, input),
-      ctx.asSystem.supabase
-        .from("receipt")
-        .select("status")
-        .eq("id", input.receiptId)
-        .eq("companyId", ctx.company.id)
-        .maybeSingle()
-    ]);
+    const line = await service.receiptLineOf(ctx, input);
     if (line instanceof Error) return line;
-    if (receipt.error) {
-      return ctx.error("internal", "Failed to load receipt", receipt.error);
-    }
-    if (receipt.data?.status !== "Draft") {
-      return ctx.error("rule", RECEIPT_LOCKED);
-    }
 
-    const existing = await ctx.asCaller.supabase
-      .from("trackedEntity")
-      .select("id, attributes")
-      .eq("sourceDocumentId", line.itemId ?? "")
-      .eq("readableId", input.serialNumber)
-      .eq("companyId", ctx.company.id)
-      .maybeSingle();
-    if (existing.error) {
-      return ctx.error(
-        "internal",
-        "Failed to check serial number index",
-        existing.error
-      );
-    }
-
-    // Only a serial entity (one with a receipt line index) at a different
-    // line or position conflicts.
-    if (existing.data) {
-      const attributes = (existing.data.attributes ?? {}) as Record<
-        string,
-        unknown
-      >;
-      if (
-        "Receipt Line Index" in attributes &&
-        (attributes["Receipt Line"] !== input.receiptLineId ||
-          attributes["Receipt Line Index"] !== input.index)
-      ) {
-        return ctx.error(
-          "conflict",
-          "Serial number is already used for a different item or position"
+    const box = {
+      companyId: ctx.company.id,
+      receiptLineId: input.receiptLineId,
+      index: input.index
+    };
+    let saved: service.ReceiptSerialBoxResult;
+    try {
+      saved = await service.saveReceiptSerialBox(ctx.asSystem.pg, {
+        ...box,
+        receiptId: input.receiptId,
+        itemId: line.itemId ?? "",
+        serialNumber: input.serialNumber.trim(),
+        expiryDate: input.expiryDate
+      });
+    } catch (error) {
+      // The position shows a value that did not save; empty it so its
+      // previous serial cannot post in its place.
+      await service
+        .clearReceiptSerialBox(ctx.asSystem.pg, box)
+        .catch((clearError) =>
+          logger.error("Failed to clear the serial box", {
+            ...box,
+            error: clearError
+          })
         );
-      }
-    }
-
-    const updated = await ctx.asSystem.supabase.rpc(
-      "update_receipt_line_serial_tracking",
-      {
-        p_tracked_entity_id: existing.data?.id,
-        p_receipt_line_id: input.receiptLineId,
-        p_receipt_id: input.receiptId,
-        p_serial_number: input.serialNumber,
-        p_index: input.index,
-        p_expiry_date: input.expiryDate || undefined
-      }
-    );
-    if (updated.error) {
-      if (isUniqueViolation(updated.error)) {
+      if (isUniqueViolation(error)) {
         return ctx.error(
           "conflict",
           "Serial number already exists for this item"
         );
       }
-      return ctx.error("internal", "Failed to update tracking", updated.error);
+      return ctx.error("internal", "Failed to update tracking", error);
+    }
+
+    if (!saved.ok) {
+      switch (saved.reason) {
+        case "notFound":
+          return ctx.error("notFound", RECEIPT_NOT_FOUND);
+        case "locked":
+          return ctx.error("rule", RECEIPT_LOCKED);
+        case "unit":
+          return ctx.error(
+            "conflict",
+            "Serial number already belongs to an existing unit"
+          );
+        case "box":
+          return ctx.error(
+            "conflict",
+            "Serial number is already used for a different item or position"
+          );
+      }
     }
     return { receiptLineId: input.receiptLineId, index: input.index };
   }
@@ -3327,12 +3373,15 @@ export type KanbanScan =
   /**
    * The job it made. `operationId` is its first operation when the kanban
    * releases the job; `startAs` how to start it when the kanban starts it.
+   * `message` says why the job was not released, or that its method could
+   * not be copied.
    */
   | {
       type: "job";
       jobId: string;
       operationId: string | null;
       startAs: "Setup" | "Labor" | "Machine" | null;
+      message: string | null;
     }
   | { type: "purchaseOrder"; purchaseOrderId: string }
   | { type: "stockTransfer"; stockTransferId: string };
@@ -3343,8 +3392,10 @@ export type KanbanScan =
  * @remarks
  * Make: creates a Hard Deadline job for the kanban's item and quantity, due
  * after the item's lead time, copies the item's method and links the job to
- * the kanban; with auto-release it recalculates, runs MRP and the location's
- * schedule, and sets the job Ready. A kanban that already has a job is a
+ * the kanban; with auto-release it runs the release checks, then releases the
+ * job (`releaseCheckedJobs`) and runs the location's schedule. A job that
+ * fails the checks, or whose method could not be copied, stays Draft and
+ * `message` names the problems. A kanban that already has a job is a
  * collision. Buy: adds a line to the supplier's open Draft or Planned purchase
  * order, or a new Draft one, priced from the supplier part in the order's
  * currency. Transfer: releases a stock transfer to the kanban's storage unit
@@ -3367,6 +3418,102 @@ export const scanKanban = defineServiceFn({
       return ctx.error("notFound", "Kanban is not active", kanban.error);
     }
     const card = kanban.data;
+
+    /** No one at a kanban card can choose a purchase order, so unlike
+     *  `releaseJobs` a supplier's newest Draft PO is reused rather than a
+     *  blocker. */
+    async function releaseKanbanJob(
+      jobId: string,
+      locationId: string
+    ): Promise<{ released: boolean; message: string | null }> {
+      const job = await serviceRole
+        .from("job")
+        .select("jobId")
+        .eq("id", jobId)
+        .eq("companyId", companyId)
+        .single();
+      const readiness = await getJobReleaseReadiness(
+        serviceRole,
+        [jobId],
+        companyId
+      );
+      const ready = readiness.data?.jobs[0];
+      if (job.error || readiness.error || !ready) {
+        logger.error("Failed to check a kanban job for release", {
+          companyId,
+          jobId,
+          error: job.error ?? readiness.error
+        });
+        return {
+          released: false,
+          message: `${job.data?.jobId ?? "The job"} was created but could not be checked for release. Release it from the job.`
+        };
+      }
+
+      const problems = jobReleaseProblems(ready);
+      if (problems.length > 0) {
+        return {
+          released: false,
+          message: `${job.data.jobId} was created but not released: ${problems.join("; ")}`
+        };
+      }
+
+      // As the system, like the job it releases: the scanner may not hold
+      // production update, and the status write runs on the caller's client.
+      const system = createServiceContext({
+        actor: { type: "system", onBehalfOf: userId },
+        company: ctx.company,
+        caller: serviceRole,
+        system: () => serviceRole,
+        pg: () => ctx.asSystem.pg,
+        kv: () => ctx.kv
+      });
+      const result = await releaseCheckedJobs(system, {
+        jobIds: [jobId],
+        purchaseOrdersBySupplierId: Object.fromEntries(
+          (readiness.data?.suppliers ?? []).map((supplier) => [
+            supplier.supplierId,
+            [...supplier.draftPurchaseOrders].sort((a, b) =>
+              b.purchaseOrderId.localeCompare(a.purchaseOrderId)
+            )[0]?.id ?? "new"
+          ])
+        ),
+        source: "kanban"
+      });
+      const failure = result.error ?? result.data.failure;
+      const released = result.data?.releasedJobIds.includes(jobId) ?? false;
+      if (failure) {
+        logger.error("Failed to release a kanban job", {
+          companyId,
+          jobId,
+          error: failure
+        });
+      }
+
+      // After the status is persisted: the scheduler only places released jobs.
+      if (released) {
+        try {
+          await runLocationSchedule({
+            db: ctx.asSystem.pg,
+            client: serviceRole,
+            locationId,
+            companyId,
+            userId
+          });
+        } catch (error) {
+          logger.error("Failed to schedule a kanban job", {
+            companyId,
+            jobId,
+            error
+          });
+        }
+      }
+
+      return {
+        released,
+        message: failure ? `${job.data.jobId}: ${failure.message}` : null
+      };
+    }
 
     if (card.replenishmentSystem === "Make") {
       if (card.jobReadableId) return { type: "collision" };
@@ -3409,10 +3556,10 @@ export const scanKanban = defineServiceFn({
         },
         { skipMethod: true, skipRecalculate: true, source: "kanban" }
       );
-      const jobId = createdJob.data?.id;
-      if (createdJob.error || !jobId) {
+      if (createdJob.error || !createdJob.data) {
         return ctx.error("internal", "Failed to create job", createdJob.error);
       }
+      const jobId = createdJob.data.id;
 
       const [method, associated] = await Promise.all([
         upsertJobMethod(serviceRole, ctx.asSystem.pg, "itemToJob", {
@@ -3439,51 +3586,27 @@ export const scanKanban = defineServiceFn({
 
       if (method.error) {
         logger.error("Kanban operation failed", { error: method.error });
-      } else if (card.autoRelease) {
-        await Promise.all([
-          trigger("recalculate", {
-            type: "jobRequirements",
-            id: jobId,
-            companyId,
-            userId
-          }),
-          runMRP(serviceRole, ctx.asSystem.pg, {
-            type: "job",
-            id: jobId,
-            companyId,
-            userId
-          }),
-          runLocationSchedule({
-            db: ctx.asSystem.pg,
-            client: serviceRole,
-            locationId: card.locationId!,
-            companyId,
-            userId
-          }),
-          serviceRole
-            .from("job")
-            .update({ status: "Ready" as const })
-            .eq("id", jobId)
-            .eq("companyId", companyId)
-        ]);
-
-        // This path writes job.status directly, so it never reaches
-        // updateJobStatus and its raiseMoment. The job was just created, so
-        // the prior status is always Draft.
-        trackWorkEvent("job_released", {
-          companyId,
-          userId,
-          jobId,
-          priorStatus: "Draft",
-          source: "kanban"
-        });
       }
+      const release = method.error
+        ? {
+            released: false,
+            message: `${createdJob.data.jobId} was created, but its method could not be copied. Use Get Method on the job before releasing it.`
+          }
+        : card.autoRelease
+          ? await releaseKanbanJob(jobId, card.locationId!)
+          : { released: false, message: null };
 
-      const operation = card.autoRelease
+      const operation = release.released
         ? await getActiveJobOperationByJobId(client, jobId, companyId)
         : null;
       if (!operation) {
-        return { type: "job", jobId, operationId: null, startAs: null };
+        return {
+          type: "job",
+          jobId,
+          operationId: null,
+          startAs: null,
+          message: release.message
+        };
       }
       const startAs = !card.autoStartJob
         ? null
@@ -3492,7 +3615,13 @@ export const scanKanban = defineServiceFn({
           : operation.machineTime && !operation.laborTime
             ? "Machine"
             : "Labor";
-      return { type: "job", jobId, operationId: operation.id, startAs };
+      return {
+        type: "job",
+        jobId,
+        operationId: operation.id,
+        startAs,
+        message: release.message
+      };
     }
 
     if (card.replenishmentSystem === "Buy") {

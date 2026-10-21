@@ -95,10 +95,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getRevisions.mockResolvedValue({ items: [released] });
   mocks.getCompanyRevisions.mockResolvedValue({ items: [released] });
-  mocks.sync.mockResolvedValue({
-    modelUploadId: "selected-model",
-    thumbnailAttached: false
-  });
+  mocks.sync.mockResolvedValue({ modelUploadId: "selected-model" });
 });
 
 describe("release identity", () => {

@@ -13,6 +13,7 @@ export const OnshapeV2 = defineIntegration({
   name: "Onshape V2",
   id: ONSHAPE_V2_INTEGRATION_ID,
   active: !!ONSHAPE_V2_CLIENT_ID,
+  internalOnly: true,
   category: "CAD",
   logo: Logo,
   description:

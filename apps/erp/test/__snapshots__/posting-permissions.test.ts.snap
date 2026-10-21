@@ -65,6 +65,9 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
       "jobOperationBatchOutput": {
         "update": "production",
       },
+      "jobOperationDryRun": {
+        "update": "production",
+      },
       "jobOperationScrap": {
         "update": "production",
       },
@@ -404,6 +407,9 @@ exports[`posting permissions > match the reviewed manifest 2`] = `
         "update": "production",
       },
       "jobOperationBatchOutput": {
+        "update": "production",
+      },
+      "jobOperationDryRun": {
         "update": "production",
       },
       "jobOperationScrap": {

@@ -272,6 +272,9 @@ msgstr "返回"
 msgid "Back to batch"
 msgstr "返回生产批次"
 
+msgid "Back to ERP"
+msgstr "返回 ERP"
+
 msgid "Background"
 msgstr "背景"
 

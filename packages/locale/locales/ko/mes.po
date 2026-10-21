@@ -272,6 +272,9 @@ msgstr "뒤로"
 msgid "Back to batch"
 msgstr "배치로 돌아가기"
 
+msgid "Back to ERP"
+msgstr "ERP로 돌아가기"
+
 msgid "Background"
 msgstr "배경"
 

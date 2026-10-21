@@ -272,6 +272,9 @@ msgstr "Retour"
 msgid "Back to batch"
 msgstr "Retour au lot de production"
 
+msgid "Back to ERP"
+msgstr "Retour à l'ERP"
+
 msgid "Background"
 msgstr "Arrière-plan"
 

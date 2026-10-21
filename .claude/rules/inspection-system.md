@@ -349,6 +349,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   call `runInspectionBalloonRegionVisionAnalysis`). `packages/database/src/sampling.ts`
   is the pure resolver; the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
+  - **Voided receipt (2026-10-16):** a Receipt lot whose receipt is `Voided` is
+    closed too. `assertReceiptNotVoided` (reads the receipt `FOR SHARE`, so it waits
+    for a void in progress) refuses samples, measurements, gauges, document swaps and
+    dispositions with "The receipt of this inspection was voided", and the `$id` loader
+    passes `receiptVoided` so `InspectionView` treats the lot as closed and shows a
+    "Receipt voided" badge. The lot keeps its Pending status: there is no cancelled
+    inspection status.
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
     statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
     is NEW — it had none) and `upsertInspectionMeasurement` ("Inspection is

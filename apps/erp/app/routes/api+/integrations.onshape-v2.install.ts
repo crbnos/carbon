@@ -7,12 +7,25 @@ import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
 import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { isIntegrationInstallWithheld } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 async function authorize(request: Request) {
-  const { userId, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+  const { client, userId, companyId, email } = await requirePermissions(
+    request,
+    {
+      update: "settings"
+    }
+  );
+  if (
+    await isIntegrationInstallWithheld(client, {
+      companyId,
+      integrationId: ONSHAPE_V2_INTEGRATION_ID,
+      email
+    })
+  ) {
+    return { ok: false as const, reason: "coming-soon" as const };
+  }
   return beginOnshapeAuthorization(request, {
     integrationId: ONSHAPE_V2_INTEGRATION_ID,
     userId,
@@ -26,7 +39,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!started.ok) {
     return data(
       { error: started.reason },
-      { status: started.reason === "not-configured" ? 500 : 409 }
+      {
+        status:
+          started.reason === "not-configured"
+            ? 500
+            : started.reason === "coming-soon"
+              ? 403
+              : 409
+      }
     );
   }
 

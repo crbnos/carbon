@@ -3703,6 +3703,86 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `membership` and its interceptors in `packages/database/src/event-system/handlers/`, and any unique key with a nullable column.
 
+## A pick moves a job material's storage unit to lineside, so the line no longer names its Pull From
+
+**Context:** Strict backflush (2026-10-16) consumed what no pick covered from `jobMaterial.storageUnitId`.
+
+**Problem:** Posting a pick calls `pointJobMaterialAtLineside`, which overwrites `jobMaterial.storageUnitId` with the lineside bin. After a partial pick, the remainder was checked against lineside (already drawn) instead of the warehouse bin the BoM named. With negative stock prevented it refused a completion the shelf could cover. With it allowed, it drove lineside negative. The TypeScript and SQL paths had the same bug, and no test picked anything.
+
+**Rule:** Never read `jobMaterial.storageUnitId` as "the Pull From" once picking may have run. The pick line keeps the source (`pickingListLine.storageUnitId`). Use the oldest pick line into the line's current bin (`pullFromStorageUnit`, `@carbon/database/strict-backflush`). A later list is sourced from the fullest bin, so do not use the newest one. Any test of a bin rule needs a case with a partial pick.
+
+**Applies to:** strict backflush, and any rule keyed on a job material's bin (picking, returns, lineside credit, consumption).
+
+## A module the browser bundles must not reach the Kysely runtime, even through a helper
+
+**Context:** Strict backflush (2026-10-16). `@carbon/database/strict-backflush` is imported by BoM UI components and by `settings.service.ts`, which the module barrel bundles for the browser.
+
+**Problem:** Using `inOrder` from `@carbon/database/rows` there would have imported `kysely` at runtime into the client bundle; typecheck does not see it. Separately, `settings.server.ts` gained an import of `~/utils/query`, which imports the `@carbon/auth` barrel. That barrel runs a Lingui `msg` macro, which plain vitest cannot compile, so 2 unrelated test files stopped loading.
+
+**Rule:** In a client-bundled module, import only types from `kysely` and `./client`. Run two awaits instead of `inOrder`. Raw `sql` belongs in a server-only file. Before adding an import to a file that tests import, check what that import's barrel pulls in, then run the module's tests.
+
+**Applies to:** `@carbon/database` subpaths read by UI, `{module}.service.ts`, `{module}.server.ts` imported by vitest files.
+
+## A Lingui placeholder is named after its expression, so a refactor can silently drop translations
+
+**Context:** Strict backflush (2026-10-16) changed `<Plural value={methodsMissingPullFrom} …>` to `<Plural value={gaps.methods} …>`.
+
+**Problem:** A member expression has no name, so the message id changed from `{methodsMissingPullFrom, plural, …}` to `{0, plural, …}`. `lingui:extract --clean` then deleted the old id and its 12 translations, and the new id came back untranslated.
+
+**Rule:** Pass a plain, named variable to `Plural`, `t` and `Trans` placeholders, and keep the name when refactoring. If extract drops translations by mistake, restore the catalogs from git (`git checkout HEAD -- packages/locale/locales`), fix the name, and extract again.
+
+**Applies to:** every `Plural` / `t\`…${x}\`` / `<Trans>` with an interpolation.
+
+## Guard a state by listing everything that writes it, not by who calls the check
+
+**Context:** Strict backflush (2026-10-17). Release had to refuse a job with a line that had no storage unit. The check was added where the release check already ran: the Release dialog, bulk release, batch release.
+
+**Problem:** Two more paths set a job to Ready without any check. The kanban scan with auto-release wrote `status: "Ready"` straight to the job with the service role. The MCP / API tool `production_updateJobStatus` wrote any status. A search for callers of the release function cannot find a direct write. A self-review on a fixed file list did not look outside it, and the docs then claimed "every release path".
+
+**Rule:** To guard a state change, first list every writer of that state: grep for the value being written (`status: "Ready"`, `SET status = 'Ready'` in SQL) and for every caller of the write function, including MCP tools. Put the check where all writers meet, or give each writer the check. Keep the unchecked write out of the API (no `@mcp` tag). Do not claim "every path" without that list.
+
+**Applies to:** release, completion, posting, cancellation — any status a check must gate.
+
+## A flash returned with `data()` from a page loader never shows
+
+**Context:** The kanban scan (2026-10-19) returned `data(result, await flash(request, error(…)))` from its loader, and its page then navigated to the job with `window.location`.
+
+**Problem:** The message never appeared. The root's `flashMiddleware` reads and clears the flash on every request. It ran on the scan's own document request and cleared the cookie the loader had just set. Typecheck and unit tests cannot see this; only the browser did.
+
+**Rule:** To carry a message to another page, throw `redirect(path, await flash(request, …))` from the loader or action, as every other route does. Do not return a flash with `data()` from a page loader and expect a later page to show it.
+
+**Applies to:** any loader or action that sets a flash for the page it sends the user to.
+
+## A flash on a fetcher's redirect back to the same page is never shown
+
+**Context:** Refusing a receipt post that still misses serial numbers (2026-10-16). The Post dialog submits through `useRuleViolations`, a fetcher.
+
+**Problem:** The action threw `redirect(path.to.receipt(id), await flash(...))`. The redirect lands on the pathname already on screen, so the root's `shouldRevalidate` (`isSearchParamOnlyNavigation`) skips the root loader, and the root is what reads the flash and shows the toast. The post was refused correctly, but the user saw nothing happen. The route's older flash errors ("Failed to post receipt") have the same gap.
+
+**Rule:** An action submitted through a fetcher returns its error as data (`{ error: { message } }`, which `useRuleViolations` toasts), not as a flash on a redirect to the current page. A flash is for a redirect that navigates somewhere else.
+
+**Applies to:** Post / void / approve actions behind a modal or `useRuleViolations` (`receipt+/$receiptId.post.tsx` and its siblings).
+
+## What a document posts must be what its form shows
+
+**Context:** Receipt serial entry (2026-10-16). Each serial box saved on blur, keyed on the serial number.
+
+**Problem:** A box emptied, refused (a duplicate) or pushed out of range by a lower received quantity kept its saved serial. The post check reads what is saved, so the receipt posted a serial the user could no longer see.
+
+**Rule:** Key a per-field save on the field's position (here the box: receipt line + index), not on its value. An empty value, a refused value and a removed field each clear what is saved for it. And a removal never deletes a record with stock history: a sales return re-tags real shipped units, so those only lose their receipt link (`planReceiptSerialRelease`).
+
+**Applies to:** `setReceiptLineSerial` / `saveReceiptSerialBox`, `updateReceiptLines`, `ReceiptLines` `SerialForm`, the receipt line split (`receiptLineSplit` in `shared.service.ts`), and any autosaved list of tracked values (shipment serials, batch numbers).
+
+## A void reverses only what is still where the posting put it
+
+**Context:** Voiding a posted purchase receipt with serials and batches (2026-10-16).
+
+**Problem:** The void set every tracked entity back to Available at its received quantity, so a lot that was never received stayed pickable. It also reversed each ledger row at the receipt's bin with only a cost-layer check. A serial moved to another bin, picked to lineside or shipped (Standard and Average cost never draw a layer down) passed that check, so the receipt bin went negative while the unit stayed counted where it went. And the receipt's inspection lot stayed open: Accept made the voided batch Available again, and Reject wrote the reversed stock off a second time.
+
+**Rule:** A reversal checks, inside its transaction, that the stock it removes is still at the position the posting wrote: per serial or batch for tracked rows. It closes every record that hangs off the document (here the inspection lot) or refuses while one has acted. It drains the document's tracked entities to quantity 0. To keep `Rejected` at zero, write the status directly: `settleQuantity` only preserves `Scrapped` and turns `Rejected` into `Consumed`.
+
+**Applies to:** the `postReceipt` void (`lockPostedReceipt`, `assertReceivedStockOnHand`, `assertNoRejectedUntrackedLot` in `inventory.service.ts`), and any other void that reverses item ledger rows (shipments, stock transfers, adjustments).
+
 ## A text replace on a function name also renames its prefix siblings
 
 **Context:** The service-function migration (2026-10-16) renamed thousands of call sites with scripts.
@@ -3939,3 +4019,23 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** A rich-text field whose UI is a plain textarea read back with `tiptapToText` stores text as typed: `optionalPlainTextDoc` / `textToTiptap`, not `optionalTiptapDoc` / `markdownToTiptap`. Markdown is for fields a rich editor shows, where the formatting survives.
 
 **Applies to:** `apps/erp/app/modules/shared/shared.models.ts` (`toTiptapDoc`, `optionalTiptapDoc`, `optionalPlainTextDoc`), contract notes (`customerContractValidator`, `setContractTerm`), any new textarea over a `json` column.
+
+## A posting's refusal only reaches the dialog when it is thrown as a 4xx
+
+**Context:** A refused receipt void showed "Failed to void receipt" with no reason. The guards inside the `post-receipt` posting said exactly why ("stock received on this receipt was moved, picked or shipped since it was received").
+
+**Problem:** `invokePosting` reads a plain `Error` as status 500 (the posting's default), and the operation passed every failure to `serverFnFailure` with a fixed message. So every refusal, and every new guard, was reported with the same generic text.
+
+**Rule:** Throw an authored refusal from a posting as `InvalidInputError` (or another `ServerFnError` below 500), never a plain `Error`. In the operation, below 500 return the error's own message (`error.message || <fallback>`); keep the generic message for 500, whose detail `toError` already withholds.
+
+**Applies to:** every operation that calls `invokePosting` and every posting body (`voidReceipt` / `postReceipt` in `inventory.server.ts`, `adjustInventory` follows the same shape).
+
+## A skip inside a posting loop does not cover maps built before the loop
+
+**Context:** Making `postReceipt` (PO path) ignore a receipt line received at 0 (receipt quantities can start at zero, 2026-10).
+
+**Problem:** The fix added `if (receivedQuantity === 0) continue;` to the per-line ledger loop. Three side-effect maps were built earlier from every line: `receiptLinesByPurchaseOrderLineId` (PO line `receivedDate`, outside-processing operation status) and `trackedEntityUpdates` (entity status and the Receive activity). A zero line still stamped its PO line received today, and a batch left on it became Available at its full quantity with no item ledger row. Review caught it, not the tests.
+
+**Rule:** When a posting must ignore a line, filter it where every per-line collection is built, not only in the loop that writes the ledger. List every map or array derived from the lines and check each. Pin the skipped line's absence in a test: assert the side effects did not happen, not only that the ledger row is missing.
+
+**Applies to:** `postReceipt` / `postShipment` and every posting in `inventory.service.ts` that builds update maps before its write loop.

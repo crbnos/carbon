@@ -19,6 +19,7 @@ import {
   insertProductionQuantity,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
+import { checkStrictBackflush } from "~/services/quality.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "end-operation");
@@ -199,6 +200,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           }
         );
 
+        if (response.error) {
+          return redirect(
+            path.to.operation(operationId),
+            await flash(request, {
+              ...error(
+                response.error,
+                response.error.message || "Failed to complete job operation"
+              ),
+              flash: "error"
+            })
+          );
+        }
+
         const newTrackedEntityId = response.data?.newTrackedEntityId;
 
         if (newTrackedEntityId) {
@@ -271,13 +285,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           return redirect(
             path.to.operation(operationId),
             await flash(request, {
-              ...error(response.error, "Failed to complete job operation"),
+              ...error(
+                response.error,
+                response.error.message || "Failed to complete job operation"
+              ),
               flash: "error"
             })
           );
         }
       }
     } else {
+      const check = await checkStrictBackflush({
+        jobOperationId: operationId,
+        quantity: quantityToComplete,
+        companyId,
+        userId
+      });
+
+      if (check.error) {
+        return redirect(
+          path.to.operation(operationId),
+          await flash(request, {
+            ...error(check.error, check.message!),
+            flash: "error"
+          })
+        );
+      }
+
       const insertProduction = await insertProductionQuantity(
         serviceRole,
         {
@@ -317,7 +351,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         return redirect(
           path.to.operation(operationId),
           await flash(request, {
-            ...error(issued.error, "Failed to issue materials"),
+            ...error(
+              issued.error,
+              `Units completed, but ${issued.error.message || "failed to issue materials"}`
+            ),
             flash: "error"
           })
         );

@@ -65,6 +65,7 @@ import {
   LuTable,
   LuTrash,
   LuTriangleAlert,
+  LuTvMinimalPlay,
   LuWorkflow,
   LuZap
 } from "react-icons/lu";
@@ -85,6 +86,8 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
+import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
 import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
 import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
 import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
@@ -101,7 +104,10 @@ import {
   getReceivableSerialUnits,
   type JobReceiptSnapshot
 } from "./job-complete-logic";
-import { makeMethodsMissingOperations } from "./job-release-logic";
+import {
+  makeMethodsMissingOperations,
+  materialsWithoutStorageUnit
+} from "./job-release-logic";
 import { type JobRelease, useJobRelease } from "./useJobRelease";
 
 const JobHeader = () => {
@@ -367,6 +373,23 @@ const JobHeader = () => {
                   </Button>
                 </RecordAction>
               )}
+            {["Ready", "In Progress", "Paused"].includes(status ?? "") && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuTvMinimalPlay />}
+                  variant="secondary"
+                  asChild
+                >
+                  <a
+                    href={path.to.external.mesJob(jobId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Trans>Open in MES</Trans>
+                  </a>
+                </Button>
+              </RecordAction>
+            )}
             <RecordAction slot="overflow">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -639,7 +662,21 @@ export function JobStartModal({
 }) {
   const { carbon } = useCarbon();
   const [suppliers] = useSuppliers();
+  const companySettings = useCompanySettings();
+  const strictBackflush = companySettings?.requireBackflushStorageUnit === true;
   const [loading, setLoading] = useState(true);
+  // Assumed to apply while the locations load, so the dialog never offers a
+  // release the route refuses.
+  const pullFromLocationIds = usePullFromLocationIds();
+  const strictAtJobLocation =
+    strictBackflush &&
+    (pullFromLocationIds === null ||
+      (!!job?.locationId && pullFromLocationIds.includes(job.locationId)));
+  const [storageUnitGaps, setStorageUnitGaps] = useState<
+    { id: string; description: string }[]
+  >([]);
+  const [storageUnitCheckFailed, setStorageUnitCheckFailed] = useState(false);
+  const missingStorageUnits = strictAtJobLocation ? storageUnitGaps : [];
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
   >([]);
@@ -673,20 +710,31 @@ export function JobStartModal({
 
   const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
-    const [makeMethod, materials, operations, methodTree] = await Promise.all([
-      carbon
-        .from("jobMakeMethod")
-        .select("*")
-        .eq("jobId", job.id!)
-        .is("parentMaterialId", null)
-        .single(),
-      carbon
-        .from("jobMaterialWithMakeMethodId")
-        .select("*")
-        .eq("jobId", job.id!),
-      carbon.from("jobOperation").select("*").eq("jobId", job.id!),
-      getJobMethodTree(carbon, job.id!)
-    ]);
+    const [makeMethod, materials, operations, methodTree, storageUnitLines] =
+      await Promise.all([
+        carbon
+          .from("jobMakeMethod")
+          .select("*")
+          .eq("jobId", job.id!)
+          .is("parentMaterialId", null)
+          .single(),
+        carbon
+          .from("jobMaterialWithMakeMethodId")
+          .select("*")
+          .eq("jobId", job.id!),
+        carbon.from("jobOperation").select("*").eq("jobId", job.id!),
+        getJobMethodTree(carbon, job.id!),
+        strictBackflush
+          ? carbon
+              .from("jobMaterial")
+              .select(
+                "id, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision)"
+              )
+              .eq("jobId", job.id!)
+              .eq("companyId", job.companyId!)
+              .is("storageUnitId", null)
+          : Promise.resolve({ data: [], error: null })
+      ]);
 
     // Check for existing purchase order lines for outside operations
     const outsideOperations =
@@ -887,6 +935,10 @@ export function JobStartModal({
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
+      setStorageUnitGaps(
+        materialsWithoutStorageUnit(storageUnitLines.data ?? [])
+      );
+      setStorageUnitCheckFailed(!!storageUnitLines.error);
 
       // Show the release UI whenever there are outside operations still needing handling,
       // whether or not they have a supplier yet
@@ -948,6 +1000,8 @@ export function JobStartModal({
             <ModalBody>
               <VStack>
                 {missingOperationAssemblies.length === 0 &&
+                  missingStorageUnits.length === 0 &&
+                  !(strictAtJobLocation && storageUnitCheckFailed) &&
                   eachOutsideOperationHasASupplier && (
                     <p className="text-sm">
                       <Trans>
@@ -1089,6 +1143,40 @@ export function JobStartModal({
                     </AlertDescription>
                   </Alert>
                 )}
+                {strictAtJobLocation && storageUnitCheckFailed && (
+                  <Alert variant="destructive">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Storage Units Not Checked</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Could not check the storage units of this job's
+                        materials. Close this dialog and open it again to try
+                        again.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {missingStorageUnits.length > 0 && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Missing Storage Units</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Strict backflush is on. Set a Pull From storage unit on
+                        these materials before releasing:
+                      </Trans>
+                      <ul className="mt-2 list-disc pl-4 space-y-1 max-h-48 overflow-y-auto">
+                        {missingStorageUnits.map((material) => (
+                          <li key={material.id}>{material.description}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {!eachOutsideOperationHasASupplier && hasOutsideOperations && (
                   <Alert variant="warning">
                     <LuTriangleAlert />
@@ -1116,6 +1204,8 @@ export function JobStartModal({
                 isDisabled={
                   release.isPending ||
                   missingOperationAssemblies.length > 0 ||
+                  missingStorageUnits.length > 0 ||
+                  (strictAtJobLocation && storageUnitCheckFailed) ||
                   !eachOutsideOperationHasASupplier
                 }
                 onClick={() => {

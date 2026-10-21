@@ -272,6 +272,9 @@ msgstr "Назад"
 msgid "Back to batch"
 msgstr "Вернуться к серии"
 
+msgid "Back to ERP"
+msgstr "Вернуться в ERP"
+
 msgid "Background"
 msgstr "Фон"
 

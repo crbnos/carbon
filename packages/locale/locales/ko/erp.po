@@ -544,6 +544,9 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
+msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label}은(는) 문서, 전표 또는 기본 계정에서 사용 중이므로 삭제할 수 없습니다."
 
@@ -573,6 +576,9 @@ msgstr "{maxSizeMB}MB 제한"
 
 msgid "{memberCount, plural, one {# step} other {# steps}}"
 msgstr "{memberCount, plural, one {# 단계} other {# 단계}}"
+
+msgid "{methodsMissingPullFrom, plural, one {# active method has materials with no Pull From} other {# active methods have materials with no Pull From}}"
+msgstr "{methodsMissingPullFrom, plural, one {# 개의 활성 방법이 출처가 없는 자재를 포함합니다} other {# 개의 활성 방법이 출처가 없는 자재를 포함합니다}}"
 
 msgid "{mismatchCount} months with mismatched totals"
 msgstr "총액이 일치하지 않는 {mismatchCount}개월"
@@ -752,6 +758,9 @@ msgstr "↩ 대체된 {1}에서 {0}(으)로 전환됨"
 #. placeholder {0}: formatHours(delta)
 msgid "+{0}h"
 msgstr "+{0}시간"
+
+msgid "+{more} more"
+msgstr "+{more} 더"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>이 품목에 공급업체 부품 추가</0>하여 우선 공급업체를 설정하세요."
@@ -1145,6 +1154,9 @@ msgstr "자재는 부품을 만드는 데 사용되는 물리적 품목으로 �
 msgid "A measurement instrument (caliper, micrometer, pin gauge, CMM) tracked as a record and held to a recurring calibration schedule."
 msgstr "계측기(캘리퍼, 마이크로미터, 핀 게이지, CMM)로 기록으로 추적되며 반복되는 교정 일정을 유지합니다."
 
+msgid "A method version needs a Pull From storage unit on each pulled material before it can be made active."
+msgstr "방법 버전을 활성화하려면 각 자재에 Pull From 보관 단위가 설정되어야 합니다."
+
 msgid "A name is required to save a view"
 msgstr "보기를 저장하려면 이름이 필요합니다"
 
@@ -1465,6 +1477,12 @@ msgstr "출하의 상태가 변경됨"
 
 msgid "A shipment's tracking number changes"
 msgstr "출하의 추적 번호가 변경됨"
+
+msgid "A short storage unit falls back to another storage unit with stock."
+msgstr "보관 단위의 재고가 부족하면 재고가 있는 다른 보관 단위로 전환됩니다."
+
+msgid "A short storage unit goes below zero, and the operation or job still completes."
+msgstr "보관 단위가 마이너스가 되면, 공정 또는 작업 지시는 여전히 완료 처리된다."
 
 msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
 msgstr "단기 자산은 개시일로부터 12개월을 초과하여 운영할 수 없습니다. 종료하고 연장을 새로운 리스로 입력합니다."
@@ -1860,6 +1878,9 @@ msgstr "활성"
 
 msgid "Active Jobs"
 msgstr "진행 중인 작업 지시"
+
+msgid "Active Methods Missing a Pull From"
+msgstr "출처가 없는 활성 방법"
 
 msgid "Active Statuses"
 msgstr "활성 상태"
@@ -2667,6 +2688,9 @@ msgstr "사내 작업장이 아닌 외부 공급업체에서 수행되고 외주
 msgid "An operation on this job runs in this batch"
 msgstr "이 작업의 공정이 이 배치에서 실행됩니다"
 
+msgid "An operation or job that would take its storage unit below zero is stopped until the stock is there."
+msgstr "보관 단위를 마이너스로 만들 공정 또는 작업 지시는 재고가 있을 때까지 중단된다."
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "공정이 작업장의 대기열에서 차지하는 위치 — 현장이 작업을 처리하는 순서입니다. 엔진은 배치 순서(가장 빠른 예상 시작)에 따라 번호를 매깁니다. 작업장 보드에서 카드 순서를 변경하면 날짜를 변경하지 않고 이를 재정의합니다."
 
@@ -2845,6 +2869,9 @@ msgstr "모든 작업장에 적용"
 
 msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
 msgstr "자신의 규칙이 없는 특성과 이 계획이 검사를 실행하는 로트에 적용됩니다."
+
+msgid "Applies when strict backflush is on."
+msgstr "엄격한 백플러시가 활성화되었을 때 적용된다."
 
 msgid "Apply"
 msgstr "적용"
@@ -3896,6 +3923,9 @@ msgstr "추적성으로 돌아가기"
 
 msgid "Backflush"
 msgstr "백플러시"
+
+msgid "Backflush each material only from the storage unit on its material line, never from another storage unit."
+msgstr "각 자재는 해당 자재 라인의 보관 단위에서만 백플러시되며, 다른 보관 단위에서는 백플러시되지 않는다."
 
 msgid "Background"
 msgstr "배경"
@@ -4967,6 +4997,9 @@ msgstr "이 계약이 렌트하는 플릿 단위를 선택하세요. 각 단위�
 
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "이 계약이 청구하는 서비스를 선택하세요. 각 서비스는 그리드에서 가격을 책정할 수 있는 반복 라인으로 추가됩니다."
+
+msgid "Choose what a new receipt fills in as each line's received quantity: what is still to receive, or zero so the receiver enters what actually arrived."
+msgstr "새 입고 시 각 라인의 입고 수량을 무엇으로 채울지 선택하세요: 입고 대기 수량 또는 0(수령자가 실제 도착 수량을 입력하도록)"
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "인쇄된 작업 이동표에 나타날 내용을 선택하십시오."
@@ -6121,6 +6154,12 @@ msgstr "영역을 분석할 수 없습니다: {0}"
 
 msgid "Could not build PDF. Try again."
 msgstr "PDF를 생성할 수 없습니다. 다시 시도하세요."
+
+msgid "Could not check for active methods and open jobs with gaps. Reload the page to try again."
+msgstr "활성 방법 및 간격이 있는 미결 작업 지시를 확인할 수 없습니다. 페이지를 다시 로드하여 다시 시도하십시오."
+
+msgid "Could not check the storage units of this job's materials. Close this dialog and open it again to try again."
+msgstr "이 작업 지시 자재의 보관 단위를 확인할 수 없습니다. 이 대화를 닫고 다시 열어서 다시 시도하십시오."
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -8975,6 +9014,9 @@ msgstr "자산 클래스에 세무 전용 감가상각 방법(예: MACRS, 가속
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "원자재에 대한 ID와 설명을 자동 생성하려면 활성화하세요."
 
+msgid "Enable to make receivers enter the quantity on each line instead of confirming the quantity still to receive."
+msgstr "각 라인에서 입고 대기 수량을 확인하는 대신 수량을 입력하도록 활성화합니다."
+
 msgid "Enable to require an authenticator app before anyone can open this company."
 msgstr "누구든 이 회사를 열기 전에 인증기 앱이 필요하려면 활성화합니다."
 
@@ -9105,6 +9147,9 @@ msgstr "1과 {0} 사이의 수량을 입력하세요."
 msgid "Enter a reason to take the unit out of service"
 msgstr "장비를 운영 중단하는 이유를 입력하세요"
 
+msgid "Enter a received quantity, or tick a unit, on at least one line."
+msgstr "최소한 하나의 라인에 수량을 입력하거나 개를 체크하세요."
+
 msgid "Enter a web address, such as https://example.com"
 msgstr "웹 주소를 입력하세요(예: https://example.com)"
 
@@ -9143,6 +9188,9 @@ msgstr "개인 OAuth 애플리케이션의 Onshape URL, 클라이언트 ID 및 �
 
 msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
 msgstr "기준일 전날의 이전 시스템의 시산표를 모든 계정에 대해 입력하세요."
+
+msgid "Enter the quantity on each line that arrived. A line left at zero is not received when the receipt is posted."
+msgstr "도착한 각 라인의 수량을 입력하세요. 0으로 남겨진 라인은 입고가 전기될 때 입고되지 않습니다."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
@@ -9349,6 +9397,9 @@ msgstr "3시간마다"
 msgid "Every account default is set"
 msgstr "모든 계정 기본값이 설정되었습니다"
 
+msgid "Every account is mapped"
+msgstr "모든 계정이 매핑되었습니다"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "활성화하기 전에 모든 자산이 지불 라인을 필요로 합니다."
 
@@ -9384,6 +9435,9 @@ msgstr "모든 라인이 청구한 것을 인식합니다."
 
 msgid "Every match"
 msgstr "모든 일치"
+
+msgid "Every posted journal line in a period"
+msgstr "기간 내 전기된 모든 분개 라인"
 
 msgid "Every required action has already been added."
 msgstr "필요한 모든 작업이 이미 추가되었습니다."
@@ -9704,6 +9758,9 @@ msgstr "라인 추가 실패"
 
 msgid "Failed to apply pricing rules"
 msgstr "가격 규칙을 적용하지 못했습니다"
+
+msgid "Failed to check the batch's jobs"
+msgstr "배치의 작업 지시를 확인하지 못했습니다"
 
 msgid "Failed to convert image"
 msgstr "이미지 전환 실패"
@@ -12056,6 +12113,9 @@ msgstr "출고일"
 msgid "Issues"
 msgstr "이슈"
 
+msgid "It is coming soon. Contact Carbon to have it set up for your company."
+msgstr "곧 제공될 예정입니다. 회사에 설정하려면 Carbon에 문의하세요."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 내용은 없습니다."
 
@@ -13266,6 +13326,9 @@ msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비�
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
 
+msgid "Mapped"
+msgstr "매핑됨"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -13520,6 +13583,12 @@ msgstr "자재 포함됨"
 msgid "Materials are not included"
 msgstr "자재 미포함"
 
+msgid "Materials missing a Pull From"
+msgstr "출처가 없는 자재"
+
+msgid "Materials with no storage unit"
+msgstr "보관 단위가 없는 자재"
+
 msgid "Matrix"
 msgstr "매트릭스"
 
@@ -13715,6 +13784,9 @@ msgstr "누락된 공정작업"
 
 msgid "Missing Shipping Costs"
 msgstr "누락된 운송비"
+
+msgid "Missing Storage Units"
+msgstr "보관 단위 누락"
 
 msgid "Missing Suppliers"
 msgstr "누락된 공급업체"
@@ -14030,6 +14102,9 @@ msgstr "검토 필요"
 
 msgid "Negative Adjustment"
 msgstr "음수 조정"
+
+msgid "Negative stock setting updated"
+msgstr "마이너스 재고 설정이 업데이트되었습니다"
 
 msgid "Net book value"
 msgstr "순장부가액"
@@ -14519,6 +14594,9 @@ msgstr "추가된 역량이 없습니다"
 
 msgid "No Access"
 msgstr "접근 권한 없음"
+
+msgid "No accounts are mapped yet"
+msgstr "아직 매핑된 계정이 없습니다"
 
 msgid "No accounts match your search"
 msgstr "검색과 일치하는 계정이 없습니다"
@@ -15681,6 +15759,9 @@ msgstr "일회성"
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "초안 절차서만 편집 가능합니다. 활성 또는 보관됨 절차서를 변경하려면 새로운 버전을 생성하세요."
 
+msgid "Only employees can post receipts."
+msgstr "직원만 입고를 전기할 수 있습니다."
+
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 
@@ -15812,6 +15893,9 @@ msgstr "미결 작업 지시"
 
 msgid "Open Jobs"
 msgstr "미결 작업 지시"
+
+msgid "Open Jobs Missing a Storage Unit"
+msgstr "보관 단위가 없는 미결 작업 지시"
 
 msgid "Open menu"
 msgstr "메뉴 열기"
@@ -17134,6 +17218,9 @@ msgstr "'/'를 눌러 명령어 표시"
 msgid "Prev"
 msgstr "이전"
 
+msgid "Prevent negative stock"
+msgstr "마이너스 재고 방지"
+
 msgid "Preventive action"
 msgstr "예방 조치"
 
@@ -18205,6 +18292,12 @@ msgstr "입고 라인"
 msgid "Receipt Promised Date"
 msgstr "입고 약속일"
 
+msgid "Receipt quantities now start at the quantity to receive"
+msgstr "입고 수량이 이제 입고 대기 수량부터 시작합니다"
+
+msgid "Receipt quantities now start at zero"
+msgstr "입고 수량이 이제 0부터 시작합니다"
+
 msgid "Receipt Requested Date"
 msgstr "입고 요청일"
 
@@ -18278,11 +18371,20 @@ msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 �
 msgid "Received Qty"
 msgstr "입고 수량"
 
+msgid "Received quantities start at the quantity to receive"
+msgstr "입고 수량은 입고 대기 수량에서 시작합니다"
+
+msgid "Received quantities start at zero"
+msgstr "입고 수량은 0에서 시작합니다"
+
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "수신한 수량이 아직 대변처리되지 않았습니다. 대변전표가 초안으로 생성됩니다."
 
 msgid "Receives the invoice email"
 msgstr "송장 이메일을 수신합니다."
+
+msgid "Receiving"
+msgstr "입고"
 
 msgid "Receiving Location"
 msgstr "입고 사업장"
@@ -18717,6 +18819,9 @@ msgstr "열 정렬 제거"
 msgid "Remove station"
 msgstr "스테이션 제거"
 
+msgid "Remove the received serial and batch numbers from stock"
+msgstr "수령한 일련번호 및 배치 번호를 재고에서 제거"
+
 msgid "Remove this item"
 msgstr "이 항목 제거"
 
@@ -19146,9 +19251,6 @@ msgstr "백업에서 이 회사 복원"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "이 엔티티를 스크랩 전의 빈과 원가로 가용 재고에 복원합니다."
-
-msgid "Restore tracked entities to available"
-msgstr "추적된 엔티티를 가용으로 복원"
 
 msgid "Restore…"
 msgstr "복원…"
@@ -20684,6 +20786,15 @@ msgstr "세션 잠김"
 msgid "Set a customer on this return to add from a shipment."
 msgstr "출하에서 추가할 고객을 이 반품에 설정하세요."
 
+msgid "Set a Pull From on each one through a new version."
+msgstr "새 버전을 통해 각각에 출처를 설정합니다."
+
+msgid "set a Pull From storage unit on {names}"
+msgstr "{names}의 위치에서 인수할 보관 단위 설정"
+
+msgid "set a Pull From storage unit on {names} and {more} more"
+msgstr "{names} 및 {more}개 항목의 위치에서 인수할 보관 단위 설정"
+
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "이 반품에 공급업체를 지정하여 입고에서 추가하세요."
 
@@ -21527,6 +21638,9 @@ msgstr "회계연도 시작"
 msgid "Start of Tax Year"
 msgstr "회계연도 시작"
 
+msgid "Start Receipt Quantities at Zero"
+msgstr "입고 수량을 0으로 시작"
+
 msgid "Start Time"
 msgstr "시작 시간"
 
@@ -21747,6 +21861,9 @@ msgstr "보관 단위"
 msgid "Storage Units"
 msgstr "보관 단위"
 
+msgid "Storage Units Not Checked"
+msgstr "보관 단위 미확인"
+
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "이 품목에 고정 일수를 저장합니다. 유통기한 시작일은 각 배치 또는 시리얼이 생성될 때(또는 트리거 공법이 실행될 때, 설정된 경우) 설정됩니다."
 
@@ -21764,6 +21881,21 @@ msgstr "금융 리스 사용권 자산의 정액법 상각"
 
 msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
 msgstr "운영 리스의 정액법 리스 원가 및 단기 리스의 지불"
+
+msgid "Strict Backflush"
+msgstr "엄격한 백플러시"
+
+msgid "Strict backflush is off"
+msgstr "엄격한 백플러시가 꺼져 있습니다"
+
+msgid "Strict backflush is on"
+msgstr "엄격한 백플러시가 켜져 있습니다"
+
+msgid "Strict backflush is on. Set a Pull From storage unit on these materials before releasing:"
+msgstr "엄격한 백플러시가 켜져 있습니다. 릴리스 전에 이 자재들에 Pull From 보관 단위를 설정하세요:"
+
+msgid "Strict backflush setting updated"
+msgstr "엄격한 백플러시 설정이 업데이트되었습니다"
 
 msgid "Stripe"
 msgstr "Stripe"
@@ -23375,6 +23507,9 @@ msgstr "부품이 스크랩될 때 기록하는 사유"
 msgid "The reasons you record when you decline an RFQ"
 msgstr "RFQ를 거절할 때 기록하는 사유"
 
+msgid "The receipt was not voided"
+msgstr "입고가 무효 처리되지 않았습니다"
+
 msgid "The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself."
 msgstr "워크플로우 알림이 가리키는 기록이며, id와 종류로 이름이 지어집니다. 비워두면 알림이 워크플로우 실행 자체에 연결됩니다."
 
@@ -23685,6 +23820,9 @@ msgstr "일정 수립의 기준이 되는 근무 시간 및 캘린더"
 msgid "Their dates and splits are planned again from the lines."
 msgstr "그들의 날짜와 분할이 라인에서 다시 계획됩니다."
 
+msgid "Their next backflush will be refused until each material has a storage unit."
+msgstr "각 자재가 보관 단위를 가질 때까지 다음 백플러시는 거부됩니다."
+
 msgid "Theme"
 msgstr "테마"
 
@@ -23859,6 +23997,9 @@ msgstr "이 정보는 모든 사용자에게 표시되므로 공유할 내용을
 msgid "this inspection plan"
 msgstr "이 검사 계획"
 
+msgid "This integration isn't available yet"
+msgstr "이 연동은 아직 사용할 수 없습니다"
+
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "이 {0}에 가입하라는 초대가 만료되었습니다. 새 초대를 이메일로 보내달라고 요청할 수 있습니다."
@@ -23989,6 +24130,9 @@ msgstr "이 발주서"
 
 msgid "This Quarter"
 msgstr "이번 분기"
+
+msgid "This receipt has no lines. Choose a source document to add them."
+msgstr "이 입고에는 항목이 없습니다. 추가하려면 원본 문서를 선택하십시오."
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "이렇게 하면 PDF가 제거됩니다. 직원들은 대신 작성된 콘텐츠를 보게 됩니다."
@@ -24960,6 +25104,9 @@ msgstr "잠금 해제"
 msgid "Unlock with passkey"
 msgstr "패스키로 잠금 해제"
 
+msgid "Unmapped"
+msgstr "매핑 안 됨"
+
 msgid "Unmapped dimension values"
 msgstr "매핑되지 않은 차원 값"
 
@@ -25126,6 +25273,9 @@ msgstr "스캔 기반 보충을 위한 칸반 정보를 업데이트합니다."
 
 msgid "Update the purchase order quantities"
 msgstr "발주서 수량 업데이트"
+
+msgid "Update the return order quantities"
+msgstr "반품 주문 수량 업데이트"
 
 msgid "Updated"
 msgstr "업데이트됨"

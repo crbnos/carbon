@@ -49,7 +49,7 @@ Create and manage webhooks under **Settings → Webhooks**. A webhook has:
 
 - **Name:** a label, unique within your company.
 - **Table:** the one table to watch.
-- **URL:** where the `POST` is sent; must be a valid URL.
+- **URL:** where the `POST` is sent; must be an `http` or `https` URL that resolves to a public address. Carbon refuses to deliver to loopback, private-network, link-local and cloud metadata addresses.
 - **Triggers:** any of insert, update, delete (at least one).
 - **Active:** webhooks are on by default; switch off to pause delivery.
 - **Signing secret:** reveal or roll it from the webhook's edit drawer (see below).
@@ -66,6 +66,8 @@ Delivery is **at least once**. If the endpoint does not return a success status 
 - **Reconcile after outages.** After retries are exhausted, Carbon drops the change and increments the error count. Query the API when complete event processing is required.
 
 The success and error counters record one outcome per change, not per attempt, so a retried-then-delivered event counts once as a success.
+
+Carbon does not follow redirects. A `3xx` response is a failed attempt, so configure the final URL. A delivery to a refused address is not retried; it counts once as an error.
 
 ## Verifying deliveries
 

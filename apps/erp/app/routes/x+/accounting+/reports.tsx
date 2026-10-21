@@ -26,6 +26,7 @@ import {
   LuArrowUpDown,
   LuBanknote,
   LuBookmark,
+  LuBookOpen,
   LuBoxes,
   LuBriefcase,
   LuFileSpreadsheet,
@@ -181,6 +182,15 @@ export default function ReportsIndexRoute() {
         icon: LuFileSpreadsheet,
         category: t`Close Reports`,
         defaultPinned: true
+      },
+      {
+        key: "general-ledger",
+        name: t`General Ledger`,
+        description: t`Every posted journal line in a period`,
+        to: path.to.generalLedger,
+        icon: LuBookOpen,
+        category: t`Close Reports`,
+        defaultPinned: false
       },
       {
         key: "inventory-valuation",

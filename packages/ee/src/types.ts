@@ -201,6 +201,13 @@ export type IntegrationConfig = {
    * Defaults to true if not specified.
    */
   active?: boolean;
+  /**
+   * Installable on Carbon Cloud by Carbon staff only, while the integration is
+   * rolled out. Everyone else sees a "Coming soon" card. Staff may install it in
+   * any company, and the install then works for that company like any other.
+   * See `isIntegrationComingSoon` (`plan.ts`).
+   */
+  internalOnly?: boolean;
   /** Category for grouping in the UI (e.g., "Accounting", "CAD", "Email") */
   category: string;
   /**

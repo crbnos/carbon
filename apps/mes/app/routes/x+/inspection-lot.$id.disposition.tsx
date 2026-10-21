@@ -18,6 +18,7 @@ import {
   insertScrapQuantity
 } from "~/services/operations.service";
 import {
+  checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
@@ -205,6 +206,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       null,
       `Allocation (${postedTotal}) exceeds the operation's remaining quantity (${state.opRemaining})`
     );
+  }
+
+  // Strict backflush: refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity + (scrapReasonId ? scrapTotal : 0),
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
   }
 
   // ---------------------------------------------------------------

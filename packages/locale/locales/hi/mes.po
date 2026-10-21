@@ -272,6 +272,9 @@ msgstr "वापस"
 msgid "Back to batch"
 msgstr "बैच पर वापस"
 
+msgid "Back to ERP"
+msgstr "ERP पर वापस"
+
 msgid "Background"
 msgstr "पृष्ठभूमि"
 

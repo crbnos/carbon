@@ -21,6 +21,13 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
     process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ??
     Date.now().toString(36);
 
+  // root.tsx loads Vercel Web Analytics only in a build Vercel ran: its script
+  // is served nowhere else. Vercel's React Router preset exposes no VITE_ copy
+  // of its system variables, so make the one Vercel's Vite preset would.
+  if (process.env.VERCEL === "1") {
+    process.env.VITE_VERCEL_ENV ??= process.env.VERCEL_ENV;
+  }
+
   /**
    * Dev-server SSR dependencies that must be inlined rather than left as bare
    * `import`s. A production build inlines every dependency (`ssrBuild` below).

@@ -41,6 +41,8 @@ A user can belong to multiple companies and switch between them with the company
   <Field name="useMetric" type="boolean">Whether material units default to metric.</Field>
   <Field name="materialGeneratedIds" type="boolean">Whether new materials get an auto-generated readable id.</Field>
   <Field name="plmReleaseControl" type="text">The release-control policy for item revisions.</Field>
+  <Field name="requireBackflushStorageUnit" type="boolean">Strict backflush: each material is backflushed only from the storage unit on its line. Default off. Edited from **Settings → Items**. See [strict backflush](/docs/reference/strict-backflush).</Field>
+  <Field name="preventNegativeBackflush" type="boolean">With strict backflush on, stops an operation or job that would take its storage unit below zero. Default on. Edited from **Settings → Items**.</Field>
   <Field name="kanbanOutput" type="enum">What a Kanban card prints: `label`, `qrcode`, or `url`.</Field>
   <Field name="productLabelSize / shelfLabelSize" type="text">Default label sizes.</Field>
   <Field name="mrpRunTime" type="time">The time of day scheduled MRP runs, on the company's time zone. Empty keeps the default, every 3 hours. Edited from **Settings → Planning**. See [planning](/docs/reference/planning#when-it-runs).</Field>
