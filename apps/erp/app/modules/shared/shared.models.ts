@@ -260,7 +260,12 @@ export function toTiptapDoc(
  */
 const tiptapDocInput = (format?: "markdown" | "text") =>
   z
-    .union([z.string(), z.record(z.string(), z.unknown())])
+    .union([
+      z.string(),
+      // A Tiptap document, or `{}` to clear; any other object is refused.
+      z.looseObject({ type: z.literal("doc") }),
+      z.strictObject({})
+    ])
     .transform((value): any =>
       value === "" ? undefined : toTiptapDoc(value, format)
     )

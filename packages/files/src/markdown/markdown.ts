@@ -193,18 +193,29 @@ function textDocument(text: string): JSONContent {
   return { type: "doc", content };
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object" && !Array.isArray(value);
+
+/** A Tiptap document: an object whose `type` is `doc`. */
+export const isTiptapDocument = (value: unknown): value is JSONContent =>
+  isRecord(value) && value.type === "doc";
+
 function readDocument(value: unknown, format: Format): JSONContent {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as JSONContent;
+  if (isTiptapDocument(value)) return value;
+  // Any other object is not a document. `{}` is how the editor stores an
+  // empty one; stringifying it would read as "[object Object]".
+  if (isRecord(value) || value === null || value === undefined) {
+    return emptyDocument();
   }
-  if (value === null || value === undefined) return emptyDocument();
   const text = String(value);
   // A document encoded as text (a form post, or a JSON string scalar stored by
-  // an older API). Anything else that parses (`123`, `"quoted"`) is text.
+  // an older API), or `{}`. Anything else that parses (`123`, `"quoted"`,
+  // `{"a":1}`) is text.
   try {
-    const parsed = JSON.parse(text);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed;
+    const parsed: unknown = JSON.parse(text);
+    if (isTiptapDocument(parsed)) return parsed;
+    if (isRecord(parsed) && Object.keys(parsed).length === 0) {
+      return emptyDocument();
     }
   } catch {
     // Not JSON: read as text below.

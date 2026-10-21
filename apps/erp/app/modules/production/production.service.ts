@@ -2061,16 +2061,31 @@ export async function getJobOperationsList(
     .order("order", { ascending: true });
 }
 
+const JOB_OPERATION_DETAIL_COLUMNS =
+  "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))" as const;
+
 export async function getJobOperationsByMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string
 ) {
   return client
     .from("jobOperation")
-    .select(
-      "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
-    )
+    .select(JOB_OPERATION_DETAIL_COLUMNS)
     .eq("jobMakeMethodId", jobMakeMethodId)
+    .order("order", { ascending: true });
+}
+
+/** `getJobOperationsByMethodId` for several make methods of one company. */
+export async function getJobOperationsByMethodIds(
+  client: SupabaseClient<Database>,
+  jobMakeMethodIds: string[],
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(JOB_OPERATION_DETAIL_COLUMNS)
+    .in("jobMakeMethodId", jobMakeMethodIds)
+    .eq("companyId", companyId)
     .order("order", { ascending: true });
 }
 

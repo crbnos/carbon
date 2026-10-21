@@ -18,8 +18,13 @@ const { sanitize } = pkg;
 
 // Rows written before the API stored documents can hold a JSON string scalar.
 // `"type" in "text"` throws and crashes the page, so read strings as documents.
+// Objects pass as they are: `isRichTextEmpty` walks child nodes through here.
 const toRichTextDoc = (content: unknown): JSONContent | null =>
-  content ? TiptapText(content).toDocument() : null;
+  typeof content === "string"
+    ? content.trim()
+      ? TiptapText(content).toDocument()
+      : null
+    : ((content as JSONContent | null | undefined) ?? null);
 
 const generateHTML = (content: JSONContent) => {
   if (typeof window === "undefined") {

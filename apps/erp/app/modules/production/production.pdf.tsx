@@ -18,7 +18,13 @@ import {
 } from "@carbon/documents/template";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { flattenTree, generateBomIds } from "@carbon/utils";
+import {
+  flattenTree,
+  generateBomIds,
+  groupBy,
+  indexBy,
+  pluckUnique
+} from "@carbon/utils";
 import {
   Document,
   Page,
@@ -35,7 +41,7 @@ import {
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 import {
   getJob,
-  getJobOperationsByMethodId,
+  getJobOperationsByMethodIds,
   getTrackedEntityByJobId
 } from "./production.service";
 import { getJobMethodTree } from "./production.utils";
@@ -95,18 +101,38 @@ export async function renderJobTravelerPdf(
     throw new Response("Not found", { status: 404 });
   }
 
-  const [company, companySettings, customer, methodTree, documentTemplate] =
-    await Promise.all([
-      getCompany(client, companyId),
-      getCompanySettings(client, companyId),
-      client
-        .from("customer")
-        .select("*")
-        .eq("id", job.data.customerId ?? "")
-        .maybeSingle(),
-      getJobMethodTree(client, jobId),
-      getDocumentTemplate(client, companyId, "jobTraveler")
-    ]);
+  const makeMethodIds = jobMakeMethods.data.map((method) => method.id);
+  const itemIds = pluckUnique(jobMakeMethods.data, (method) => method.itemId);
+  const rootMethod = jobMakeMethods.data.find(
+    (method) => method.parentMaterialId === null
+  );
+
+  const [
+    company,
+    companySettings,
+    customer,
+    methodTree,
+    documentTemplate,
+    operations,
+    items
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getCompanySettings(client, companyId),
+    client
+      .from("customer")
+      .select("*")
+      .eq("id", job.data.customerId ?? "")
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getJobMethodTree(client, jobId),
+    getDocumentTemplate(client, companyId, "jobTraveler"),
+    getJobOperationsByMethodIds(client, makeMethodIds, companyId),
+    client
+      .from("item")
+      .select("*, modelUpload(thumbnailPath)")
+      .in("id", itemIds)
+      .eq("companyId", companyId)
+  ]);
   if (company.error) {
     logger.error("Failed to load company", { error: company.error });
     throw new Error("Failed to load company");
@@ -117,6 +143,33 @@ export async function renderJobTravelerPdf(
     });
     throw new Error("Failed to load company settings");
   }
+  if (operations.error) {
+    logger.error("Failed to load operations", { error: operations.error });
+    throw new Error("Failed to load job operations");
+  }
+  if (items.error) {
+    logger.error("Failed to load items", { error: items.error });
+    throw new Error("Failed to load the job's items");
+  }
+  // Without its template the traveler prints the default one, which leaves
+  // out work instructions; say so rather than print it silently.
+  if (documentTemplate.error) {
+    logger.error(
+      "Failed to load the Job Traveler template; using the default",
+      {
+        companyId,
+        jobId,
+        error: documentTemplate.error
+      }
+    );
+  }
+  if (customer.error) {
+    logger.error("Failed to load the job's customer", {
+      companyId,
+      jobId,
+      error: customer.error
+    });
+  }
 
   const settings = companySettings.data as {
     includeMaterialsOnTraveler?: boolean | null;
@@ -125,6 +178,32 @@ export async function renderJobTravelerPdf(
   // Opt-in: a materials (BOM) section. Opt-out (defaults on): the operations.
   const includeMaterials = settings?.includeMaterialsOnTraveler ?? false;
   const includeOperations = settings?.includeOperationsOnTraveler ?? true;
+
+  const itemById = indexBy(items.data, (item) => item.id);
+  const rootItem = rootMethod ? itemById.get(rootMethod.itemId ?? "") : null;
+
+  // Only loaded when the materials section is on; the batch or serial number
+  // belongs to the item the job makes.
+  const [jobMaterials, trackedEntity] = await Promise.all([
+    includeMaterials
+      ? client
+          .from("jobMaterial")
+          .select(
+            "id, jobMakeMethodId, description, quantity, unitOfMeasureCode, methodType, item(readableIdWithRevision)"
+          )
+          .in("jobMakeMethodId", makeMethodIds)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true })
+      : null,
+    rootItem && ["Batch", "Serial"].includes(rootItem.itemTrackingType)
+      ? getTrackedEntityByJobId(client, jobId)
+      : null
+  ]);
+  if (jobMaterials?.error) {
+    logger.error("Failed to load job materials", { error: jobMaterials.error });
+    throw new Error("Failed to load job materials");
+  }
+  const batchNumber = trackedEntity?.data?.readableId ?? undefined;
 
   const jobNotes = job.data.notes as JSONContent | undefined;
 
@@ -137,85 +216,46 @@ export async function renderJobTravelerPdf(
     });
   }
 
+  const operationsByMethod = groupBy(
+    operations.data ?? [],
+    (operation) => operation.jobMakeMethodId ?? ""
+  );
+  const materialsByMethod = groupBy(
+    jobMaterials?.data ?? [],
+    (material) => material.jobMakeMethodId ?? ""
+  );
+
   const makeMethodsWithData = await Promise.all(
     jobMakeMethods.data.map(async (makeMethod) => {
-      const [operations, item] = await Promise.all([
-        getJobOperationsByMethodId(client, makeMethod.id),
-        client
-          .from("item")
-          .select("*, modelUpload(thumbnailPath)")
-          .eq("id", makeMethod.itemId ?? "")
-          .single()
-      ]);
-
-      if (operations.error || !operations.data) {
-        logger.error("Failed to load operations", { error: operations.error });
-        throw new Error(
-          `Failed to load operations for make method ${makeMethod.id}`
-        );
-      }
-      if (item.error || !item.data) {
-        logger.error("Failed to load item", { error: item.error });
+      const item = itemById.get(makeMethod.itemId ?? "");
+      if (!item) {
+        logger.error("Failed to load item", { itemId: makeMethod.itemId });
         throw new Error(`Failed to load item for make method ${makeMethod.id}`);
       }
 
-      let thumbnail: string | null = null;
-      if (item.data.thumbnailPath || item.data.modelUpload?.thumbnailPath) {
-        thumbnail = await getBase64ImageFromSupabase(
-          client,
-          item.data.thumbnailPath ?? item.data.modelUpload?.thumbnailPath ?? ""
-        );
-      }
+      const thumbnailPath =
+        item.thumbnailPath ?? item.modelUpload?.thumbnailPath ?? null;
+      const thumbnail = thumbnailPath
+        ? await getBase64ImageFromSupabase(client, thumbnailPath)
+        : null;
 
-      // The job's batch or serial number belongs to the item it makes.
-      let batchNumber: string | undefined;
-      if (
-        ["Batch", "Serial"].includes(item.data.itemTrackingType) &&
-        makeMethod.parentMaterialId === null
-      ) {
-        const trackedEntity = await getTrackedEntityByJobId(client, jobId);
-        if (!trackedEntity.error && trackedEntity.data) {
-          batchNumber = trackedEntity.data.readableId ?? undefined;
-        }
-      }
-
-      // Only load BOM lines when the materials section is on.
-      let materials: JobTravelerMaterial[] = [];
-      if (includeMaterials) {
-        const jobMaterials = await client
-          .from("jobMaterial")
-          .select(
-            "id, description, quantity, unitOfMeasureCode, methodType, item(readableIdWithRevision)"
-          )
-          .eq("jobMakeMethodId", makeMethod.id)
-          .eq("companyId", companyId)
-          .order("order", { ascending: true });
-
-        if (jobMaterials.error) {
-          logger.error("Failed to load job materials", {
-            error: jobMaterials.error
-          });
-          throw new Error(
-            `Failed to load materials for make method ${makeMethod.id}`
-          );
-        }
-
-        materials = (jobMaterials.data ?? []).map((material) => ({
-          id: material.id,
-          itemReadableId: material.item?.readableIdWithRevision,
-          description: material.description,
-          quantity: material.quantity,
-          unitOfMeasureCode: material.unitOfMeasureCode,
-          methodType: material.methodType
-        }));
-      }
+      const materials: JobTravelerMaterial[] = (
+        materialsByMethod[makeMethod.id] ?? []
+      ).map((material) => ({
+        id: material.id,
+        itemReadableId: material.item?.readableIdWithRevision,
+        description: material.description,
+        quantity: material.quantity,
+        unitOfMeasureCode: material.unitOfMeasureCode,
+        methodType: material.methodType
+      }));
 
       return {
         makeMethod,
-        operations: operations.data,
-        item: item.data,
+        operations: operationsByMethod[makeMethod.id] ?? [],
+        item,
         thumbnail,
-        batchNumber,
+        batchNumber: makeMethod === rootMethod ? batchNumber : undefined,
         materials,
         bomId: bomIdMap.get(makeMethod.id)
       };

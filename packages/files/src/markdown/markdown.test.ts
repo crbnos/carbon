@@ -174,6 +174,15 @@ describe("TiptapText reads stored values", () => {
     expect(TiptapText("123").toString()).toBe("123");
   });
 
+  it("reads JSON that is not a document as text", () => {
+    expect(TiptapText('{"a":1}').toString()).toBe('{"a":1}');
+  });
+
+  it("reads `{}` as an empty document, stored or encoded", () => {
+    expect(TiptapText({}).toString()).toBe("");
+    expect(TiptapText("{}").toString()).toBe("");
+  });
+
   it("reads null as an empty document", () => {
     expect(TiptapText(null).toDocument()).toEqual({
       type: "doc",

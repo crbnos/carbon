@@ -129,6 +129,21 @@ describe("optionalTiptapDoc", () => {
     expect(optionalTiptapDoc.safeParse(["x"]).success).toBe(false);
     expect(optionalTiptapDoc.safeParse(null).success).toBe(false);
   });
+
+  // A malformed object reached the column and the editor's initial content.
+  it("rejects an object that is not a document", () => {
+    expect(optionalTiptapDoc.safeParse({ a: 1 }).success).toBe(false);
+    expect(optionalTiptapDoc.safeParse({ type: "paragraph" }).success).toBe(
+      false
+    );
+  });
+
+  it("takes `{}` as an empty document", () => {
+    expect(optionalTiptapDoc.parse({})).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph" }]
+    });
+  });
 });
 
 describe("optionalPlainTextDoc", () => {
