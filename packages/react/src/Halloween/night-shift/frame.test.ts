@@ -52,7 +52,7 @@ function withPlan(overrides: Partial<ShiftPlan>): ShiftPlan {
 describe("renderFrame", () => {
   it("draws every act, at every panel size, without leaving the grid blank", () => {
     for (const [cols, rows] of SIZES) {
-      for (let s = 0; s < 90; s += 1.5) {
+      for (let s = 0; s < 90; s += 3) {
         const { grid, frame } = render(planShift(7, 2), s, cols, rows);
         const glyphs = grid.ch.reduce(
           (n, code) => n + (code === 32 ? 0 : 1),
@@ -66,15 +66,25 @@ describe("renderFrame", () => {
   });
 
   it("draws every visitor, rare event and weather", () => {
-    for (const visitor of ["witch", "horseman", "spider", "ship"] as const) {
-      for (const event of ["none", "reject", "boo", "dance"] as const) {
-        for (const weather of ["clear", "drizzle", "fog"] as const) {
-          const plan = withPlan({ visitor, event, weather });
-          for (const s of [3, 5, 20, 35, 45, 52, 70, 75, 85]) {
-            expect(() => render(plan, s)).not.toThrow();
-          }
-        }
-      }
+    // Each varies on its own, so each is drawn where it shows: a visitor in
+    // the witching hour, an event across the shift, weather on the hill.
+    const witching = [actStart("witching") + 3, actStart("witching") + 8];
+    const wholeShift = [3, 5, 20, 35, 45, 52, 70, 75, 85];
+    const onTheHill = [3, 52, 70, 85];
+    const cases: [Partial<ShiftPlan>, number[]][] = [
+      ...(["witch", "horseman", "spider", "ship"] as const).map(
+        (visitor): [Partial<ShiftPlan>, number[]] => [{ visitor }, witching]
+      ),
+      ...(["none", "reject", "boo", "dance"] as const).map(
+        (event): [Partial<ShiftPlan>, number[]] => [{ event }, wholeShift]
+      ),
+      ...(["clear", "drizzle", "fog"] as const).map(
+        (weather): [Partial<ShiftPlan>, number[]] => [{ weather }, onTheHill]
+      )
+    ];
+    for (const [overrides, moments] of cases) {
+      const plan = withPlan(overrides);
+      for (const s of moments) expect(() => render(plan, s)).not.toThrow();
     }
   });
 

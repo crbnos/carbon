@@ -150,7 +150,9 @@ afterEach(() => {
 const overlaps = (a: Obstacle, b: Obstacle) =>
   a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 
-describe("createBarSpider", () => {
+// Each test simulates minutes of the spider's life frame by frame; well under
+// a second on a quiet machine, several on a loaded CI runner.
+describe("createBarSpider", { timeout: 30_000 }, () => {
   it("crawls out of its web and along the bar, and never takes a click meant for the bar", () => {
     const { sim, el } = setup();
     sim.appear();
@@ -160,21 +162,41 @@ describe("createBarSpider", () => {
     let travelled = 0;
     let clickableSomewhere = false;
     let previous = sim.state().body.x;
+    // Three simulated minutes is ~11k frames: note the first frame that breaks
+    // a rule and assert once, since an expect per frame is what made this
+    // test slow enough to time out on a loaded CI runner.
+    let firstBreak: { frame: number; rule: string; hit: Obstacle } | null =
+      null;
+    let frame = 0;
     live(180, () => {
+      frame++;
       const state = sim.state();
       travelled += Math.abs(state.body.x - previous);
       previous = state.body.x;
       lowest = Math.max(lowest, state.body.y);
+      if (firstBreak) return;
       const takesClicks = el.button.style.pointerEvents === "auto";
       if (takesClicks) {
         clickableSomewhere = true;
         // Whenever it takes clicks, nothing on the bar is under it...
-        for (const thing of BAR) expect(overlaps(state.hit, thing)).toBe(false);
+        if (BAR.some((thing) => overlaps(state.hit, thing))) {
+          firstBreak = {
+            frame,
+            rule: "clickable over the bar",
+            hit: { ...state.hit }
+          };
+        }
       }
       // ...and its target never leaves the bar.
-      expect(state.hit.top).toBeGreaterThanOrEqual(0);
-      expect(state.hit.top + HIT_SIZE).toBeLessThanOrEqual(BAR_HEIGHT);
+      if (state.hit.top < 0 || state.hit.top + HIT_SIZE > BAR_HEIGHT) {
+        firstBreak = {
+          frame,
+          rule: "target off the bar",
+          hit: { ...state.hit }
+        };
+      }
     });
+    expect(firstBreak).toBeNull();
     // It wandered well along the bar, keeping to it, and could be clicked
     // out in the open.
     expect(travelled).toBeGreaterThan(300);
