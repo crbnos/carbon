@@ -3361,7 +3361,8 @@ export const updateQuoteOperation = defineServiceFn({
       ...operation,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId,
-      customFields
+      // Left out, the custom fields are kept (sanitize writes undefined as null).
+      ...(customFields !== undefined && { customFields })
     });
     if (updated.error || !updated.data?.id) {
       return ctx.error(

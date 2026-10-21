@@ -166,23 +166,22 @@ export function normalizeOperationSourceIds<
     workCenterId?: string | null;
   }
 >(operation: T): T {
+  // The type's own pointer is written only when the caller sent it (a form
+  // clearing it sends the key); a partial update that left it out keeps it.
+  const own = <K extends keyof T>(key: K, type: string) =>
+    operation.operationType !== type
+      ? { [key]: null }
+      : key in operation
+        ? { [key]: operation[key] || null }
+        : {};
   return {
     ...operation,
     ...(operation.operationType === "Outside Processing"
       ? { workCenterId: null }
       : {}),
-    procedureId:
-      operation.operationType === "Process"
-        ? operation.procedureId || null
-        : null,
-    assemblyInstructionId:
-      operation.operationType === "Assembly"
-        ? operation.assemblyInstructionId || null
-        : null,
-    inspectionDocumentId:
-      operation.operationType === "Inspection"
-        ? operation.inspectionDocumentId || null
-        : null
+    ...own("procedureId", "Process"),
+    ...own("assemblyInstructionId", "Assembly"),
+    ...own("inspectionDocumentId", "Inspection")
   };
 }
 
@@ -258,12 +257,28 @@ export function toTiptapDoc(
  * INPUT schema) tells a caller both shapes are accepted, instead of the bare
  * `{}` a `z.any()` produced.
  */
+// A node's `content` must be a list of nodes, at every depth: a document
+// whose content was a string reached the editor and RichTextView, which walk
+// it as an array.
+type TiptapNodeInput = { type: string; content?: TiptapNodeInput[] };
+const tiptapNodeInput: z.ZodType<TiptapNodeInput> = z.lazy(() =>
+  z.looseObject({
+    type: z.string().min(1),
+    text: z.string().optional(),
+    content: z.array(tiptapNodeInput).optional()
+  })
+);
+const tiptapDocumentInput = z.looseObject({
+  type: z.literal("doc"),
+  content: z.array(tiptapNodeInput).optional()
+});
+
 const tiptapDocInput = (format?: "markdown" | "text") =>
   z
     .union([
       z.string(),
       // A Tiptap document, or `{}` to clear; any other object is refused.
-      z.looseObject({ type: z.literal("doc") }),
+      tiptapDocumentInput,
       z.strictObject({})
     ])
     .transform((value): any =>

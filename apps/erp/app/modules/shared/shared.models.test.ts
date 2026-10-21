@@ -138,6 +138,18 @@ describe("optionalTiptapDoc", () => {
     );
   });
 
+  it("rejects a document whose content is not a list of nodes", () => {
+    expect(
+      optionalTiptapDoc.safeParse({ type: "doc", content: "bad" }).success
+    ).toBe(false);
+    expect(
+      optionalTiptapDoc.safeParse({
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ text: "no type" }] }]
+      }).success
+    ).toBe(false);
+  });
+
   it("takes `{}` as an empty document", () => {
     expect(optionalTiptapDoc.parse({})).toEqual({
       type: "doc",
@@ -188,6 +200,37 @@ describe("normalizeOperationSourceIds", () => {
         workCenterId: "wc1"
       }).workCenterId
     ).toBe("wc1");
+  });
+
+  // A partial update (API) that left the type's own link out kept nothing:
+  // the link was written as null and the procedure came off the operation.
+  it("keeps the type's own link when it was left out", () => {
+    expect(
+      normalizeOperationSourceIds<{
+        operationType?: string;
+        procedureId?: string | null;
+      }>({ operationType: "Process" })
+    ).not.toHaveProperty("procedureId");
+  });
+
+  it("clears the type's own link when it was sent empty", () => {
+    expect(
+      normalizeOperationSourceIds({
+        operationType: "Process",
+        procedureId: undefined
+      }).procedureId
+    ).toBeNull();
+  });
+
+  it("clears the other types' links", () => {
+    const normalized = normalizeOperationSourceIds<{
+      operationType?: string;
+      procedureId?: string | null;
+      assemblyInstructionId?: string | null;
+    }>({ operationType: "Assembly", procedureId: "proc1" });
+    expect(normalized.procedureId).toBeNull();
+    expect(normalized).not.toHaveProperty("assemblyInstructionId");
+    expect(normalized).toHaveProperty("inspectionDocumentId", null);
   });
 
   it("does not add a work center to an in-house operation that omitted it", () => {
