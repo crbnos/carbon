@@ -16,8 +16,10 @@ import {
 import { now } from "@internationalized/date";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
+import { issueMaterial as issue } from "../../app/modules/inventory/inventory.service";
 import { completeJob } from "../../app/modules/production/production.server";
 import { numberSerialUnitsForCompletion } from "../../app/modules/production/production.service";
+import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
   type Fixture,
@@ -25,8 +27,10 @@ import {
   seed,
   stockPart,
   TIME_ZONE,
-  USER
+  USER,
+  unwrap
 } from "./fixtures/always-post";
+import { handlesOf } from "./fixtures/handles";
 import { hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 
@@ -264,6 +268,107 @@ describe.skipIf(!client)("serial number timing", () => {
         .where("itemId", "=", f.assemblyId)
         .executeTakeFirstOrThrow();
       expect(Number(sequence.next)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("creates the units no row holds when a completion follows the shop floor", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "6", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+
+      // The shop floor completes one unit: the seed keeps one unit and the
+      // next is spawned, so the rows hold two of the job's three units.
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationSerialComplete",
+            trackedEntityId: seedUnit!.id,
+            quantity: 1,
+            jobOperationId: job.operationId
+          },
+          issue
+        )
+      );
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ readableId: "SN-001", quantity: 1 }),
+        expect.objectContaining({ readableId: null, quantity: 1 })
+      ]);
+
+      const result = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 3
+      });
+      expect(result.error).toBeNull();
+
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: "SN-001", quantity: 1 },
+        { readableId: "SN-002", quantity: 1 },
+        { readableId: "SN-003", quantity: 1 }
+      ]);
+      expect(await units(f, job.makeMethodId)).toHaveLength(3);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("scraps one unit of an unsplit seed, and the job still owes it", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "7", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+      const scrapReason = await f.db
+        .insertInto("scrapReason")
+        .values({ name: "Damaged", companyId: f.companyId, createdBy: USER })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationScrap",
+            jobOperationId: job.operationId,
+            quantity: 1,
+            scrapReasonId: scrapReason.id,
+            trackedEntityId: seedUnit!.id
+          },
+          issue
+        )
+      );
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({
+          readableId: "SN-001",
+          quantity: 1,
+          status: "Scrapped"
+        }),
+        expect.objectContaining({
+          readableId: null,
+          quantity: 1,
+          status: "Reserved"
+        })
+      ]);
+
+      const result = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 3
+      });
+      expect(result.error).toBeNull();
+
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: "SN-002", quantity: 1 },
+        { readableId: "SN-003", quantity: 1 },
+        { readableId: "SN-004", quantity: 1 }
+      ]);
     } finally {
       await f.cleanup();
     }

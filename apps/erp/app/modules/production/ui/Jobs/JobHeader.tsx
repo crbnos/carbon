@@ -1529,7 +1529,8 @@ function JobCompleteModal({
           ? getSerialCompleteChoice({
               trackedEntities: trackedEntities.data,
               receivedEntityIds: receipts ? receivedEntityIds : null,
-              serialNumberTiming
+              serialNumberTiming,
+              jobQuantity: job?.quantity ?? 0
             })
           : ({ mode: "locked" } as const);
 

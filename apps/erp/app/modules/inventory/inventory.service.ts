@@ -23320,10 +23320,15 @@ export async function issueMaterial(
             .execute();
           // No `Operation ...` completion stamp — the unit did NOT complete
           // this operation; status is the terminal marker.
+          // One unit is scrapped. An unsplit seed (serialNumberTiming =
+          // 'production', or an item with no serial sequence) holds every unit
+          // of the job, so it keeps one; the rest are spawned one at a time,
+          // as after a serial completion.
           await trx
             .updateTable("trackedEntity")
             .set({
               status: "Scrapped",
+              quantity: 1,
               attributes: {
                 ...(entity.attributes as TrackedEntityAttributes),
                 "Scrap Reason": scrapReasonId

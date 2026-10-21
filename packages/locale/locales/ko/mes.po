@@ -1238,6 +1238,9 @@ msgstr "필요한 샘플이 없습니다."
 msgid "No scheduled time"
 msgstr "예정된 시간 없음"
 
+msgid "No serial number yet"
+msgstr "아직 일련번호 없음"
+
 msgid "No serial numbers"
 msgstr "시리얼 번호 없음"
 

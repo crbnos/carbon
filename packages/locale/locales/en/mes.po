@@ -1238,6 +1238,9 @@ msgstr "No samples required."
 msgid "No scheduled time"
 msgstr "No scheduled time"
 
+msgid "No serial number yet"
+msgstr "No serial number yet"
+
 msgid "No serial numbers"
 msgstr "No serial numbers"
 

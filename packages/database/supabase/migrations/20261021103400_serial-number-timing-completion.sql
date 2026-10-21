@@ -116,6 +116,12 @@ $function$;
 -- is 'jobCreation', the item is not serial-tracked or has no sequence, or the
 -- job cannot cover the completion (the completion then refuses with its own
 -- message).
+--
+-- A unit can also have no row at all. The shop floor's first completion or
+-- scrap of the seed leaves it holding one unit and adds the next units one at a
+-- time, so after it the rows cover fewer units than the job quantity. Those
+-- units are created here, up to the job quantity less the units already in
+-- rows (a scrapped unit does not count: the job still owes it).
 CREATE OR REPLACE FUNCTION public.number_serial_units_for_completion(
   p_job_id text,
   p_quantity_complete numeric,
@@ -135,8 +141,12 @@ DECLARE
   v_to_number text[];
   v_short integer;
   v_seed record;
+  v_from_seed integer := 0;
   v_new_units integer := 0;
   v_seed_becomes_unit boolean := false;
+  v_missing integer := 0;
+  v_unstarted numeric;
+  v_template record;
   v_count integer;
   v_serials text[];
   v_location record;
@@ -150,7 +160,7 @@ BEGIN
     RETURN 0;
   END IF;
 
-  SELECT j."itemId", j."quantityReceivedToInventory", j."fixedAssetClassId",
+  SELECT j."itemId", j.quantity, j."quantityReceivedToInventory", j."fixedAssetClassId",
          j."fixedAssetId", j."locationId", i."itemTrackingType"
   INTO v_job
   FROM "job" j
@@ -267,17 +277,42 @@ BEGIN
       AND te.quantity > 1
     ORDER BY te."createdAt"
     LIMIT 1;
-    IF NOT FOUND OR v_seed.quantity < v_short THEN
-      RETURN 0;
+    IF FOUND THEN
+      v_from_seed := LEAST(v_short, v_seed.quantity::integer);
+      v_seed_becomes_unit := v_seed.quantity = v_from_seed;
+      v_new_units := CASE WHEN v_seed_becomes_unit THEN v_from_seed - 1 ELSE v_from_seed END;
+      IF v_seed_becomes_unit AND v_seed."readableId" IS NULL THEN
+        v_to_number := v_to_number || v_seed."id";
+      END IF;
     END IF;
-    v_seed_becomes_unit := v_seed.quantity = v_short;
-    v_new_units := CASE WHEN v_seed_becomes_unit THEN v_short - 1 ELSE v_short END;
-    IF v_seed_becomes_unit AND v_seed."readableId" IS NULL THEN
-      v_to_number := v_to_number || v_seed."id";
+
+    -- Units no row holds yet.
+    v_missing := v_short - v_from_seed;
+    IF v_missing > 0 THEN
+      SELECT v_job.quantity - COALESCE(SUM(te.quantity), 0)
+      INTO v_unstarted
+      FROM "trackedEntity" te
+      WHERE te.attributes->>'Job Make Method' = v_make_method."id"
+        AND te."companyId" = p_company_id
+        AND te.status <> 'Scrapped';
+      IF v_unstarted < v_missing THEN
+        RETURN 0;
+      END IF;
+
+      SELECT *
+      INTO v_template
+      FROM "trackedEntity" te
+      WHERE te.attributes->>'Job Make Method' = v_make_method."id"
+        AND te."companyId" = p_company_id
+      ORDER BY te."createdAt", te."id"
+      LIMIT 1;
+      IF NOT FOUND THEN
+        RETURN 0;
+      END IF;
     END IF;
   END IF;
 
-  v_count := COALESCE(array_length(v_to_number, 1), 0) + v_new_units;
+  v_count := COALESCE(array_length(v_to_number, 1), 0) + v_new_units + v_missing;
   IF v_count = 0 THEN
     RETURN 0;
   END IF;
@@ -307,7 +342,7 @@ BEGIN
       AND te."readableId" IS NULL;
   END IF;
 
-  IF v_short > 0 THEN
+  IF v_from_seed > 0 THEN
     UPDATE "trackedEntity"
     SET quantity = CASE WHEN v_seed_becomes_unit THEN 1 ELSE v_seed.quantity - v_new_units END
     WHERE "id" = v_seed."id"
@@ -327,6 +362,23 @@ BEGIN
       v_serials[COALESCE(array_length(v_to_number, 1), 0) + n],
       p_company_id, v_seed."createdBy"
     FROM generate_series(1, v_new_units) AS n;
+  END IF;
+
+  IF v_missing > 0 THEN
+    INSERT INTO "trackedEntity" (
+      "createdAt", "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId",
+      quantity, status, attributes, "itemId", "readableId",
+      "companyId", "createdBy"
+    )
+    SELECT
+      now() + (v_new_units + n) * interval '1 millisecond',
+      v_template."sourceDocument", v_template."sourceDocumentId", v_template."sourceDocumentReadableId",
+      1, 'Reserved'::"trackedEntityStatus",
+      jsonb_build_object('Job', p_job_id, 'Job Make Method', v_make_method."id"),
+      v_job."itemId",
+      v_serials[COALESCE(array_length(v_to_number, 1), 0) + v_new_units + n],
+      p_company_id, v_template."createdBy"
+    FROM generate_series(1, v_missing) AS n;
   END IF;
 
   RETURN v_count;
