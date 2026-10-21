@@ -7,10 +7,10 @@
 
 ## Progress
 
-- [ ] Task 1: Add the `billingBasis` column and recreate the `customerContracts` view
-- [ ] Task 2: Add the basis helpers and validator rules
-- [ ] Task 3: Make the sales services and the server function basis-aware
-- [ ] Task 4: Test, and fix if it fails, Confirm of a Fixed Percent Complete line
+- [x] Task 1: Add the `billingBasis` column and recreate the `customerContracts` view
+- [x] Task 2: Add the basis helpers and validator rules
+- [x] Task 3: Make the sales services and the server function basis-aware
+- [x] Task 4: Test, and fix if it fails, Confirm of a Fixed Percent Complete line
 - [ ] Task 5: Split the list and the nav into Service Contracts and Project Contracts
 - [ ] Task 6: Create a project contract and give it its own Details step
 - [ ] Task 7: Give a project contract its own Lines step and line drawer
@@ -481,4 +481,8 @@ pnpm lingui:extract 2>&1 | grep -A3 "erp:" | head
 
 ## Execution notes
 
-(Recorded during execution.)
+- Task 1 (`c2bdead6bd`): the hook's backup check was skipped. It compares against main's manifest, which has 5 tables this branch (behind main) does not have. The new column has a default.
+- Task 2 (`fe23b54faf`): `billingBasisMismatchMessages` lives in `contract-schedule.ts`, so the ERP and the server function share the text. A line validator cannot see the contract's basis, so `checkBillingTerms` got no project rules.
+- Task 3 (`9e2905e6e6`): `upsertContractLine` forces a project contract line to One-time before the basis check, so its Recurring refusal never fires there; confirm and amend still refuse. Amend checks the lines it adds, not the copies of changed lines. `contract-lifecycle.test.ts` now builds its T&M contracts as `billingBasis: "Project"`.
+- Task 4 (`03563a5fab`): the bug was real ("The revenue plan no longer recognizes each line's billed total"). Confirm and the `$id.tsx` residual check now skip Right to Invoice and Percent Complete lines. 18 of 18 lifecycle tests pass.
+- Task 6 must post `renewalUplift` 0 as a hidden field: the validator still requires it.
