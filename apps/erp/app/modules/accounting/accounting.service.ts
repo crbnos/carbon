@@ -48,7 +48,8 @@ import {
   type OpenItem,
   planInventoryReset,
   type RecostEvent,
-  recostOutbound
+  recostOutbound,
+  splitOpeningLayersByStripe
 } from "@carbon/database/accounting-cutover";
 import {
   ACCOUNTING_ALREADY_SET_UP,
@@ -145,6 +146,9 @@ import {
   getNextSequence as getNextSequenceInTransaction,
   getNextSequences
 } from "@carbon/database/sequence";
+import { getTimesheetCloseReadiness } from "@carbon/database/timesheet-readiness";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { getLogger } from "@carbon/logger";
 import type {
   AccountType as LedgerAccountType,
@@ -218,6 +222,17 @@ import {
   type SalesLineRevenue,
   salesLineDimensions
 } from "~/modules/invoicing/invoicing.service";
+import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "~/modules/projects/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  resolveProjectLineCharges,
+  reverseProjectLedgerRows
+} from "~/modules/projects/project-posting";
 import { getOnRentLineForAsset } from "~/modules/sales/sales.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -244,7 +259,6 @@ import {
   getAccountingPeriodForDate,
   getDefaultPostingGroup,
   getOffsetAccount,
-  insertNegatedJournal,
   invokePosting,
   loadContractPositions,
   lockContractPositions,
@@ -308,6 +322,10 @@ import {
   summarizeLeaseCosts,
   summarizeLeaseLiabilities
 } from "./lease-liabilities";
+import {
+  projectRevenueWriters,
+  synthesizeProjectRevenue
+} from "./project-revenue";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
@@ -3038,12 +3056,7 @@ export async function closeAccountingPeriod(
     companyGroupId: string;
     userId: string;
   },
-  // No commercial synthesizers by default: the route passes its own previewer
-  // (`runPreviewer` with `projectRevenueSynthesizers`).
-  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, {
-    ...args,
-    revenueRunSynthesizers: []
-  }),
+  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args),
   entitlements: PeriodCloseEntitlements = {}
 ) {
   const cutover = await requireAccountingCutover(client, args.companyId);
@@ -3207,12 +3220,19 @@ export async function closePeriodWithChecklist(
     userId: string;
   }
 ) {
-  return closeAccountingPeriod(client, db, {
+  const closeArgs = {
     periodId: args.periodId,
     companyId: args.companyId,
     companyGroupId: args.companyGroupId,
     userId: args.userId
-  });
+  };
+  return closeAccountingPeriod(
+    client,
+    db,
+    closeArgs,
+    runPreviewer(client, db, closeArgs),
+    await periodCloseEntitlements(client, args.companyId)
+  );
 }
 
 export async function reopenAccountingPeriod(
@@ -3545,16 +3565,12 @@ function previewError(error: unknown, fallback: string): string {
 
 /**
  * Asks both run engines what a new run for `periodEnd` would hold, without
- * creating one. Revenue: the `preview-revenue-recognition-run` server
- * function (the proposal's synthesizers and due rows, rolled back).
+ * creating one. Revenue: `previewRevenueRecognitionRun` (the proposal's
+ * synthesizers, the commercial project revenue one included, and due rows,
+ * rolled back).
  * Depreciation: `buildDepreciationRunLines`, empty when a later period is
  * already posted (per-month posting put those months in their periods).
  * Never throws: a failure is returned as the preview's `error`.
- *
- * `revenueRunSynthesizers` are the commercial run synthesizers
- * (`projectRevenueSynthesizers` from `@carbon/ee/project-revenue.server`). This
- * file is bundled for the browser and cannot import a `.server` module, so a
- * route passes them in.
  */
 export async function getPeriodRunPreview(
   client: SupabaseClient<Database>,
@@ -3564,7 +3580,6 @@ export async function getPeriodRunPreview(
     companyGroupId: string;
     userId: string;
     periodEnd: string;
-    revenueRunSynthesizers: RunRowSynthesizer[];
   }
 ): Promise<PeriodRunPreview> {
   const { companyId, companyGroupId, userId, periodEnd } = args;
@@ -3628,8 +3643,7 @@ export async function getPeriodRunPreview(
   return { revenue, lease, depreciation };
 }
 
-/** The previewer the close checklist uses outside tests. The close route
- *  passes `projectRevenueSynthesizers`; the MCP tools pass none. */
+/** The previewer the close checklist uses outside tests. */
 export function runPreviewer(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -3637,7 +3651,6 @@ export function runPreviewer(
     companyId: string;
     companyGroupId: string;
     userId: string;
-    revenueRunSynthesizers: RunRowSynthesizer[];
   }
 ): PeriodRunPreviewer {
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
@@ -3667,15 +3680,27 @@ async function getPeriodTimesheetReadiness(
 }
 
 /**
- * The commercial features the close checks depend on. The close route reads
- * them with `companyHasFeature`, which this browser-bundled service cannot
- * import. MCP and the API pass none, so those checks are not applicable there.
+ * The commercial features the close checks depend on. The checklist and the
+ * close read them with `periodCloseEntitlements`; a test passes its own.
  */
 export type PeriodCloseEntitlements = {
   /** GOVERNMENT_CONTRACTING: the "Compute burden for the period" and the
    *  "Close earned value for the period" checks. */
   governmentContracting?: boolean;
 };
+
+/** The company's `PeriodCloseEntitlements` (Government Contracting 5b: the
+ *  burden check; 5c: the earned value check). */
+export async function periodCloseEntitlements(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<PeriodCloseEntitlements> {
+  return {
+    governmentContracting: await companyHasFeature(client, companyId, {
+      feature: "GOVERNMENT_CONTRACTING"
+    })
+  };
+}
 
 /**
  * The "Compute burden for the period" decision (Government Contracting 5b).
@@ -4279,13 +4304,11 @@ export async function getPeriodCloseReadiness(
     companyId,
     period.data.startDate,
     period.data.endDate,
-    // MCP and the API cannot reach commercial code: no project revenue
-    // synthesizers here.
     await getPeriodRunPreview(client, db, {
       ...args,
-      periodEnd: period.data.endDate,
-      revenueRunSynthesizers: []
-    })
+      periodEnd: period.data.endDate
+    }),
+    await periodCloseEntitlements(client, companyId)
   );
   return { data: { checks, blockers, warnings }, error: null };
 }
@@ -4447,14 +4470,13 @@ export async function getPeriodCloseChecklist(
     periodId: string;
   }
 ) {
-  // MCP and the API cannot reach commercial code: the close route calls
-  // `loadPeriodCloseChecklist` with the project revenue synthesizers instead.
   return loadPeriodCloseChecklist(
     client,
     db,
     args.companyId,
     args.periodId,
-    runPreviewer(client, db, { ...args, revenueRunSynthesizers: [] })
+    runPreviewer(client, db, args),
+    await periodCloseEntitlements(client, args.companyId)
   );
 }
 
@@ -4840,6 +4862,27 @@ export async function getFiscalYearSettings(
     .single();
 }
 
+/**
+ * The company's current fiscal year — today in its time zone, counted from
+ * its fiscal year's start month — and that start month (1–12).
+ */
+export async function getCurrentFiscalYear(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const [timeZone, settings] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    getFiscalYearSettings(client, companyId)
+  ]);
+  const startMonth = MONTH_NUMBER[settings.data?.startMonth ?? "January"] ?? 1;
+  const today = datetime.today(timeZone);
+  return {
+    startMonth,
+    fiscalYear: fiscalYearAndPeriodFor(today.year, today.month, startMonth)
+      .fiscalYear
+  };
+}
+
 export async function getPaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
@@ -5150,91 +5193,6 @@ export async function upsertCostCenter(
     .from("costCenter")
     .update(sanitize(costCenter))
     .eq("id", costCenter.id)
-    .select("id")
-    .single();
-}
-
-export async function deleteProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string,
-  updatedBy: string
-) {
-  return client
-    .from("project")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
-
-export async function getProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string
-) {
-  return client
-    .from("project")
-    .select("*")
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getProjects(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("project")
-    .select("*", { count: LIST_COUNT })
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  if (args.search) {
-    query = query.or(searchFilter(["name", "description"], args.search));
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
-
-  return query;
-}
-
-export async function upsertProject(
-  client: SupabaseClient<Database>,
-  project:
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in project) {
-    return client
-      .from("project")
-      .insert([{ ...project, active: true }])
-      .select("id")
-      .single();
-  }
-
-  const { companyId, id, ...update } = project;
-  return client
-    .from("project")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -10993,6 +10951,8 @@ export type RevenueRecognitionDimensionIds = {
   location?: string;
   /** Contract rows only: the contract line's project, else the contract's. */
   project?: string;
+  /** Contract rows only: the contract line's billing element. */
+  projectElement?: string;
   /** Lessee lease rows only: the lease's supplier. */
   supplier?: string;
 };
@@ -11241,6 +11201,7 @@ export async function postRevenueRecognitionRun(
               "ccl.itemId",
               "cc.id as customerContractId",
               "cc.customerId",
+              "ccl.projectElementId",
               sql<string | null>`COALESCE(ccl."projectId", cc."projectId")`.as(
                 "projectId"
               )
@@ -11322,6 +11283,7 @@ export async function postRevenueRecognitionRun(
       Item: dimensionIds.item,
       Location: dimensionIds.location,
       Project: dimensionIds.project,
+      ProjectElement: dimensionIds.projectElement,
       Supplier: dimensionIds.supplier
     };
 
@@ -14581,6 +14543,10 @@ export interface ChargeLineInput {
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   description?: string | null;
 }
 
@@ -14615,6 +14581,9 @@ export interface ChargeJournalLine {
   documentId: string;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** Index of the coding line this journal line posts, if any. */
+  sourceLineIndex?: number;
 }
 
 export interface BuildChargeJournalResult {
@@ -14670,6 +14639,8 @@ export function buildChargeJournal(
       description: string;
       costCenterId?: string | null;
       projectId?: string | null;
+      projectElementId?: string | null;
+      sourceLineIndex?: number;
     }
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
@@ -14683,9 +14654,19 @@ export function buildChargeJournal(
       documentType: "Charge",
       documentId,
       costCenterId: fields.costCenterId ?? null,
-      projectId: fields.projectId ?? null
+      projectId: fields.projectId ?? null,
+      ...(fields.sourceLineIndex === undefined
+        ? {}
+        : {
+            projectElementId: fields.projectElementId ?? null,
+            sourceLineIndex: fields.sourceLineIndex
+          })
     });
   };
+
+  // A line charged to a non-Statistical project posts to the project account.
+  const postingAccountOf = (line: ChargeLineInput) =>
+    line.projectAccountId ?? line.accountId;
 
   // Line-bearing types must have lines that sum to the header amount, or the
   // subledger and the GL disagree. Throw a typed error naming the mismatch.
@@ -14736,16 +14717,18 @@ export function buildChargeJournal(
     case "Charge": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("debit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("debit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card charge",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("credit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -14757,16 +14740,18 @@ export function buildChargeJournal(
     case "Credit": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("credit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("credit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card credit",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("debit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -14818,12 +14803,19 @@ export function buildChargeJournal(
         description: "Card repayment"
       });
       lines.forEach((line, index) => {
-        pushLine("credit", classOf(line.accountId), lineMagnitudes[index]!, {
-          accountId: line.accountId,
-          description: line.description ?? "Card repayment",
-          costCenterId: line.costCenterId,
-          projectId: line.projectId
-        });
+        pushLine(
+          "credit",
+          classOf(postingAccountOf(line)),
+          lineMagnitudes[index]!,
+          {
+            accountId: postingAccountOf(line),
+            description: line.description ?? "Card repayment",
+            costCenterId: line.costCenterId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceLineIndex: index
+          }
+        );
       });
       break;
     }
@@ -14973,6 +14965,47 @@ export async function postChargeJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the charge's date) in place of its own account.
+  const projectChargeByLineId = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    charge.postingDate ?? charge.transactionDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+
+  // The project account's journal line for each coding line, by line id.
+  const projectJournalLineIdByLineId = new Map<string, string>();
   let postingDate = charge.postingDate ?? charge.transactionDate;
   // A Provisional journal has no accounting period, and no posting creates a
   // period before the cutover.
@@ -15001,6 +15034,8 @@ export async function postChargeJournal(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectElementId: line.projectElementId,
+      projectAccountId: projectAccountByLineId.get(line.id) ?? null,
       description: line.description
     })),
     accounts,
@@ -15017,6 +15052,19 @@ export async function postChargeJournal(
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
+  // The element tag is written where the group has the dimension.
+  const projectElementDimension = lines.some((line) => line.projectElementId)
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "ProjectElement")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .executeTakeFirst()
+    : undefined;
 
   const journal = await trx
     .insertInto("journal")
@@ -15103,6 +15151,97 @@ export async function postChargeJournal(
         .execute();
     }
   }
+  if (projectElementDimension) {
+    const elementDimensionValues = built.journalLines.flatMap((line, index) => {
+      const journalLineId = journalLineIds[index];
+      if (!line.projectElementId) return [];
+      if (!journalLineId) throw new Error("Failed to map card journal line");
+      return [
+        {
+          journalLineId,
+          dimensionId: projectElementDimension.id,
+          valueId: line.projectElementId,
+          companyId
+        }
+      ];
+    });
+    if (elementDimensionValues.length) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(elementDimensionValues)
+        .execute();
+    }
+  }
+  built.journalLines.forEach((line, index) => {
+    const sourceLine =
+      line.sourceLineIndex === undefined
+        ? undefined
+        : lines[line.sourceLineIndex];
+    const journalLineId = journalLineIds[index];
+    if (sourceLine && journalLineId) {
+      projectJournalLineIdByLineId.set(sourceLine.id, journalLineId);
+    }
+  });
+
+  // One projectLedger row per line charged to a project account: a Charge
+  // adds cost, a Credit or Repayment takes it back.
+  const projectSign = charge.type === "Charge" ? 1 : -1;
+  const projectRows = lines.flatMap((line) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Charge",
+            documentId: charge.id,
+            documentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            journalLineId: projectJournalLineIdByLineId.get(line.id) ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
+  }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Charge",
+            sourceDocumentId: charge.id,
+            sourceDocumentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("charge")
@@ -15216,6 +15355,9 @@ export async function voidCharge(
     CHARGE_VOID_BEFORE_CUTOVER_ERROR
   );
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (charge.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -15250,18 +15392,101 @@ export async function voidCharge(
     ) {
       throw new Error("Original charge journal has invalid lines");
     }
-    await insertNegatedJournal(trx, {
-      companyId,
-      userId,
-      originalLines,
-      description: `VOID Charge ${charge.chargeId}`,
-      sourceType: "Charge",
-      postingStatus,
-      date: today,
-      periodMode: "current",
-      postedAt: timestamp
-    });
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequenceInTransaction(
+          trx,
+          "journalEntry",
+          companyId
+        ),
+        accountingPeriodId: period?.id ?? null,
+        description: `VOID Charge ${charge.chargeId}`,
+        postingDate: period?.postingDate ?? today,
+        companyId,
+        sourceType: "Charge",
+        status: postingStatus,
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length
+    );
+    await trx
+      .insertInto("journalLine")
+      .values(
+        originalLines.map((line, index) => ({
+          id: reversalLineIds[index],
+          journalId: reversal.id,
+          accountId: line.accountId,
+          amount: -Number(line.amount),
+          quantity: line.quantity,
+          description: `VOID: ${line.description ?? ""}`,
+          documentType: "Charge" as const,
+          documentId: charge.id,
+          documentLineReference: line.documentLineReference,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    const dimensions = await trx
+      .selectFrom("journalLineDimension")
+      .select(["journalLineId", "dimensionId", "valueId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "journalLineId",
+        "in",
+        originalLines.map((line) => line.id)
+      )
+      .execute();
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
+    if (dimensions.length) {
+      const reversedDimensions = dimensions.map((dimension) => {
+        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+        if (!journalLineId) {
+          throw new Error("Failed to map reversed journal line");
+        }
+        return {
+          ...dimension,
+          journalLineId,
+          companyId
+        };
+      });
+      await trx
+        .insertInto("journalLineDimension")
+        .values(reversedDimensions)
+        .execute();
+    }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Charge",
+    documentId: charge.id,
+    postingDate: today,
+    userId,
+    reversalLineIds: reversalByOriginal
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Charge",
+    sourceDocumentId: charge.id
+  });
 
   await trx
     .updateTable("charge")
@@ -15309,6 +15534,9 @@ export async function postCharge(
 }
 export interface ReimbursementLineInput {
   accountId: string;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
@@ -15448,8 +15676,9 @@ export function buildReimbursementJournal(
   for (const line of lines) {
     const magnitude = toBase(line.amount);
     payableMagnitude += magnitude;
-    pushLine("debit", classOf(line.accountId), magnitude, {
-      accountId: line.accountId,
+    const postingAccountId = line.projectAccountId ?? line.accountId;
+    pushLine("debit", classOf(postingAccountId), magnitude, {
+      accountId: postingAccountId,
       description: line.description ?? "Employee reimbursement",
       costCenterId: line.costCenterId,
       projectId: line.projectId
@@ -15623,6 +15852,47 @@ export async function postReimbursementJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the reimbursement's date) in place of its own.
+  const projectChargeByLineId = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    reimbursement.postingDate ?? reimbursement.reimbursementDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+  const postingAccountOf = (line: (typeof lines)[number]) =>
+    projectAccountByLineId.get(line.id) ?? line.accountId;
+
   let postingDate =
     reimbursement.postingDate ?? reimbursement.reimbursementDate;
   // A Provisional journal has no accounting period, and no posting creates a
@@ -15650,6 +15920,7 @@ export async function postReimbursementJournal(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectAccountId: projectAccountByLineId.get(line.id) ?? null,
       description: line.description
     })),
     accounts,
@@ -15662,7 +15933,8 @@ export async function postReimbursementJournal(
   if (
     built.journalLines.length !== lines.length + 1 ||
     lines.some(
-      (line, index) => built.journalLines[index]?.accountId !== line.accountId
+      (line, index) =>
+        built.journalLines[index]?.accountId !== postingAccountOf(line)
     )
   ) {
     throw new Error("Reimbursement journal lines do not match coding lines");
@@ -15678,6 +15950,19 @@ export async function postReimbursementJournal(
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
+  // The element tag is written where the group has the dimension.
+  const projectElementDimension = lines.some((line) => line.projectElementId)
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "ProjectElement")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .executeTakeFirst()
+    : undefined;
 
   // The generic per-line dimension rows — where a human's edit in the line
   // editor lands.
@@ -15794,6 +16079,9 @@ export async function postReimbursementJournal(
     if (projectDimensionId && journalLine.projectId) {
       byDimension.set(projectDimensionId, journalLine.projectId);
     }
+    if (projectElementDimension && sourceLine.projectElementId) {
+      byDimension.set(projectElementDimension.id, sourceLine.projectElementId);
+    }
     for (const row of genericByLineId.get(sourceLine.id) ?? []) {
       byDimension.set(row.dimensionId, row.valueId);
     }
@@ -15812,6 +16100,68 @@ export async function postReimbursementJournal(
       .values(dimensionRows)
       .execute();
   }
+
+  // One projectLedger row per line charged to a project account. The builder
+  // emits one debit per coding line in order, so line i is journal line i.
+  const projectRows = lines.flatMap((line, index) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Reimbursement",
+            documentId: reimbursement.id,
+            documentLineId: line.id,
+            employeeId: reimbursement.employeeId,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            journalLineId: journalLineIds[index] ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
+  }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Reimbursement",
+            sourceDocumentId: reimbursement.id,
+            sourceDocumentLineId: line.id,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("reimbursement")
@@ -15963,6 +16313,9 @@ export async function voidReimbursement(
     throw new Error("Cannot void a paid reimbursement; void its payment first");
   }
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (reimbursement.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -15998,18 +16351,101 @@ export async function voidReimbursement(
     ) {
       throw new Error("Original reimbursement journal has invalid lines");
     }
-    await insertNegatedJournal(trx, {
-      companyId,
-      userId,
-      originalLines,
-      description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
-      sourceType: "Reimbursement",
-      postingStatus,
-      date: today,
-      periodMode: "current",
-      postedAt: timestamp
-    });
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequenceInTransaction(
+          trx,
+          "journalEntry",
+          companyId
+        ),
+        accountingPeriodId: period?.id ?? null,
+        description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
+        postingDate: period?.postingDate ?? today,
+        companyId,
+        sourceType: "Reimbursement",
+        status: postingStatus,
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length
+    );
+    await trx
+      .insertInto("journalLine")
+      .values(
+        originalLines.map((line, index) => ({
+          id: reversalLineIds[index],
+          journalId: reversal.id,
+          accountId: line.accountId,
+          amount: -Number(line.amount),
+          quantity: line.quantity,
+          description: `VOID: ${line.description ?? ""}`,
+          documentType: "Reimbursement" as const,
+          documentId: reimbursement.id,
+          documentLineReference: line.documentLineReference,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    const dimensions = await trx
+      .selectFrom("journalLineDimension")
+      .select(["journalLineId", "dimensionId", "valueId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "journalLineId",
+        "in",
+        originalLines.map((line) => line.id)
+      )
+      .execute();
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
+    if (dimensions.length) {
+      const reversedDimensions = dimensions.map((dimension) => {
+        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+        if (!journalLineId) {
+          throw new Error("Failed to map reversed journal line");
+        }
+        return {
+          ...dimension,
+          journalLineId,
+          companyId
+        };
+      });
+      await trx
+        .insertInto("journalLineDimension")
+        .values(reversedDimensions)
+        .execute();
+    }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Reimbursement",
+    documentId: reimbursement.id,
+    postingDate: today,
+    userId,
+    reversalLineIds: reversalByOriginal
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Reimbursement",
+    sourceDocumentId: reimbursement.id
+  });
 
   await trx
     .updateTable("reimbursement")
@@ -18812,6 +19248,7 @@ async function loadRecognitionRows(
           "contractLine.itemId",
           "contract.id as customerContractId",
           "contract.customerId",
+          "contractLine.projectElementId",
           sql<
             string | null
           >`coalesce("contractLine"."projectId", "contract"."projectId")`.as(
@@ -20157,6 +20594,21 @@ export async function promoteJournals(
 }
 const RECOST_DESCRIPTION = "Cutover recost";
 
+type ProjectLedgerRow = Database["public"]["Tables"]["projectLedger"]["Row"];
+
+/**
+ * Why the enable refuses a project stock payback whose cost the re-cost
+ * changes: a payback returns the lender's cost at the borrowed unit cost and
+ * books the difference as Payback Variance, and the re-cost cannot move that
+ * variance with it.
+ */
+export function paybackRecostRefusal(
+  transferId: string,
+  postingDate: string
+): string {
+  return `The cutover changes the cost of project stock payback ${transferId}, posted ${postingDate}. Carbon cannot re-cost a payback. Pick a cutover date after ${postingDate}.`;
+}
+
 /** Sets each row's `column` to its value, one statement per chunk. */
 async function setCostLedger(
   trx: KyselyTx,
@@ -20177,8 +20629,18 @@ async function setCostLedger(
 }
 
 /**
+ * The pool a cost row relieves from or opens into: its item, on its stock
+ * stripe. `calculateCOGS` relieves a project stripe from that stripe's
+ * layers only. Common stock keys on the item alone.
+ */
+function poolKey(itemId: string, projectId: string | null): string {
+  return projectId ? `${itemId}\u0000${projectId}` : itemId;
+}
+
+/**
  * Closes the cost layers dated before the cutover and opens one layer per
- * item at the reviewed unit cost. Then re-costs every outbound movement of a
+ * item and stock stripe at the reviewed unit cost
+ * (`splitOpeningLayersByStripe`). Then re-costs every outbound movement of a
  * FIFO or LIFO item dated on or after the cutover: the opening layer and
  * every layer and movement after it run again in the order they were posted
  * (`recostOutbound`), each movement relieving the layers open then as
@@ -20189,6 +20651,13 @@ async function setCostLedger(
  * their cost. A serial recost (`costLedgerType` "Revaluation") keeps its
  * cost: it relieves the layers in the run, but the account its difference
  * was booked against is not stored, so it is not re-costed.
+ *
+ * Each stock stripe is its own pool, as `calculateCOGS` relieves it. A
+ * project stock Transfer or Borrow moves stock at cost between two stripes
+ * of one inventory account: the layer it opens takes the re-costed cost of
+ * the stock it drew, and it books no journal. A Payback whose cost changes
+ * is refused: its lender layers, variance journal and Payback Variance
+ * ledger row would all have to move with it.
  */
 export async function resetAndRecostInventory(
   trx: KyselyTx,
@@ -20228,9 +20697,33 @@ export async function resetAndRecostInventory(
       ])
     )
     .execute();
-  const openingLayers = planInventoryReset(
-    inventory.map((item) => ({ itemId: item.itemId, quantity: item.quantity })),
-    new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+  // Project stock at the cutover, per item and stripe.
+  const projectOnHand = await trx
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "projectId",
+      sql<number>`sum("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("postingDate", "<", cutoverDate)
+    .where("projectId", "is not", null)
+    .groupBy(["itemId", "projectId"])
+    .having(sql`sum("quantity")`, ">", 0)
+    .execute();
+  const openingLayers = splitOpeningLayersByStripe(
+    planInventoryReset(
+      inventory.map((item) => ({
+        itemId: item.itemId,
+        quantity: item.quantity
+      })),
+      new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+    ),
+    projectOnHand.map((row) => ({
+      itemId: row.itemId,
+      projectId: row.projectId!,
+      quantity: Number(row.quantity)
+    }))
   );
 
   // The FIFO and LIFO items' layers and movements after the cutover, in the
@@ -20265,7 +20758,8 @@ export async function resetAndRecostInventory(
           "costLedgerType",
           "documentType",
           "documentId",
-          "postingDate"
+          "postingDate",
+          "projectId"
         ])
         .where((eb) => eb.or([isCostLayer(eb), isCostRelief(eb)]))
         .orderBy("postingDate")
@@ -20318,15 +20812,51 @@ export async function resetAndRecostInventory(
     (row) => `${row.documentId}:${row.itemId}`
   );
 
-  const openingKey = (itemId: string) => `opening:${itemId}`;
+  // The type of each project stock transfer after the cutover: a Transfer
+  // or a Borrow opens its layer at the cost of the stock it drew.
+  const transferIds = [
+    ...new Set(
+      ledger.flatMap((row) =>
+        row.documentType === "Project Transfer" && row.documentId
+          ? [row.documentId]
+          : []
+      )
+    )
+  ];
+  const transferById = new Map(
+    (
+      await readByIds(transferIds, (ids) =>
+        trx
+          .selectFrom("projectStockTransfer")
+          .select(["id", "type", "projectStockTransferId"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", ids)
+          .execute()
+      )
+    ).map((transfer) => [transfer.id, transfer])
+  );
+  const transferType = (row: (typeof ledger)[number]) =>
+    row.documentType === "Project Transfer" && row.documentId
+      ? transferById.get(row.documentId)?.type
+      : undefined;
+  const movesAtCost = (row: (typeof ledger)[number]) => {
+    const type = transferType(row);
+    return type === "Transfer" || type === "Borrow";
+  };
+
+  const openingKey = (itemId: string, projectId: string | null) =>
+    `opening:${poolKey(itemId, projectId)}`;
+  // Each layer a Transfer or Borrow opens pairs with the relief before it
+  // of the same document and item: the one line that drew the stock.
+  const pendingReliefs = new Map<string, string[]>();
   // Every layer runs again from its full quantity.
   const events: RecostEvent[] = [
     ...openingLayers
       .filter((layer) => methodByItem.has(layer.itemId))
       .map((layer) => ({
         layer: {
-          id: openingKey(layer.itemId),
-          itemId: layer.itemId,
+          id: openingKey(layer.itemId, layer.projectId),
+          itemId: poolKey(layer.itemId, layer.projectId),
           quantity: layer.quantity,
           cost: layer.cost,
           remainingQuantity: layer.quantity,
@@ -20336,46 +20866,73 @@ export async function resetAndRecostInventory(
       })),
     ...ledger.map((row): RecostEvent => {
       const itemId = row.itemId!;
-      return Number(row.quantity) > 0
-        ? {
-            layer: {
-              id: row.id,
-              itemId,
-              quantity: Number(row.quantity),
-              cost: Number(row.cost),
-              remainingQuantity: Number(row.quantity),
-              trackedEntityId: row.trackedEntityId,
-              children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
-                id: child.id,
-                quantity: Number(child.quantity),
-                cost: Number(child.cost),
-                remainingQuantity: Number(child.quantity)
-              }))
-            }
-          }
-        : {
-            outbound: {
-              costLedgerId: row.id,
-              itemId,
-              quantity: -Number(row.quantity),
-              cost: -Number(row.cost),
-              trackedEntityIds: row.trackedEntityId
-                ? [row.trackedEntityId]
-                : (
-                    leavingByDocumentItem.get(`${row.documentId}:${itemId}`) ??
-                    []
-                  ).map((unit) => unit.trackedEntityId!)
-            }
-          };
+      const pool = poolKey(itemId, row.projectId);
+      const lineKey = `${row.documentId}:${itemId}`;
+      if (Number(row.quantity) > 0) {
+        const costOf = movesAtCost(row)
+          ? pendingReliefs.get(lineKey)?.shift()
+          : undefined;
+        return {
+          layer: {
+            id: row.id,
+            itemId: pool,
+            quantity: Number(row.quantity),
+            cost: Number(row.cost),
+            remainingQuantity: Number(row.quantity),
+            trackedEntityId: row.trackedEntityId,
+            children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
+              id: child.id,
+              quantity: Number(child.quantity),
+              cost: Number(child.cost),
+              remainingQuantity: Number(child.quantity)
+            }))
+          },
+          ...(costOf ? { costOf } : {})
+        };
+      }
+      if (movesAtCost(row)) {
+        const pending = pendingReliefs.get(lineKey) ?? [];
+        pending.push(row.id);
+        pendingReliefs.set(lineKey, pending);
+      }
+      return {
+        outbound: {
+          costLedgerId: row.id,
+          itemId: pool,
+          quantity: -Number(row.quantity),
+          cost: -Number(row.cost),
+          trackedEntityIds: row.trackedEntityId
+            ? [row.trackedEntityId]
+            : (leavingByDocumentItem.get(lineKey) ?? []).map(
+                (unit) => unit.trackedEntityId!
+              )
+        }
+      };
     })
   ];
-  // A quantity no layer covers costs at the item's unit cost, as
-  // calculateCOGS costs negative inventory.
-  const recost = recostOutbound(
-    events,
-    methodByItem,
-    new Map(layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)]))
+  // Every pool of a FIFO or LIFO item relieves by the item's method. A
+  // quantity no layer covers costs at the item's unit cost, as calculateCOGS
+  // costs negative inventory.
+  const unitCostByItem = new Map(
+    layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)])
   );
+  const poolItem = new Map<string, string>([
+    ...openingLayers.map(
+      (layer) => [poolKey(layer.itemId, layer.projectId), layer.itemId] as const
+    ),
+    ...ledger.map(
+      (row) => [poolKey(row.itemId!, row.projectId), row.itemId!] as const
+    )
+  ]);
+  const methodByPool = new Map<string, CostingMethod>();
+  const unitCostByPool = new Map<string, number>();
+  for (const [pool, itemId] of poolItem) {
+    const method = methodByItem.get(itemId);
+    if (method) methodByPool.set(pool, method);
+    const unitCost = unitCostByItem.get(itemId);
+    if (unitCost !== undefined) unitCostByPool.set(pool, unitCost);
+  }
+  const recost = recostOutbound(events, methodByPool, unitCostByPool);
 
   // The opening layers, with what the re-cost left of them.
   if (openingLayers.length > 0) {
@@ -20390,12 +20947,14 @@ export async function resetAndRecostInventory(
           documentType: "Purchase Receipt" as const,
           adjustment: false,
           itemId: layer.itemId,
+          projectId: layer.projectId,
           quantity: layer.quantity,
           cost: layer.cost,
           nominalCost: layer.cost,
           remainingQuantity:
-            recost.remainingById.get(openingKey(layer.itemId)) ??
-            layer.quantity,
+            recost.remainingById.get(
+              openingKey(layer.itemId, layer.projectId)
+            ) ?? layer.quantity,
           postingDate: cutoverDate,
           // Before any layer posted on the cutover day, so later relief
           // takes the opening stock first.
@@ -20428,24 +20987,51 @@ export async function resetAndRecostInventory(
       Math.abs(movement.delta) > EPSILON &&
       ledgerById.get(movement.costLedgerId)!.costLedgerType !== "Revaluation"
   );
-  if (changed.length === 0) return;
-  await setCostLedger(
-    trx,
-    companyId,
-    "cost",
-    changed.map((movement) => [movement.costLedgerId, -movement.newCost])
+  const payback = changed.find(
+    (movement) =>
+      transferType(ledgerById.get(movement.costLedgerId)!) === "Payback"
   );
+  if (payback) {
+    const row = ledgerById.get(payback.costLedgerId)!;
+    const transfer = transferById.get(row.documentId!);
+    throw new ServerFnError(
+      paybackRecostRefusal(
+        transfer?.projectStockTransferId ?? row.documentId!,
+        String(row.postingDate)
+      ),
+      409
+    );
+  }
+  // The layers a Transfer or Borrow opened, at the re-costed cost of the
+  // stock they drew.
+  const movedLayers = [...recost.layerCostById].filter(
+    ([id, cost]) => !equals(Number(ledgerById.get(id)?.cost ?? cost), cost)
+  );
+  await setCostLedger(trx, companyId, "cost", [
+    ...changed.map((movement): [string, number] => [
+      movement.costLedgerId,
+      -movement.newCost
+    ]),
+    ...movedLayers
+  ]);
 
-  // One Provisional journal per document and posting date.
-  await postRecostJournals(trx, {
+  // One Provisional journal per document and posting date. A Transfer or
+  // Borrow moves cost between two stripes of one inventory account, so it
+  // has no journal to adjust.
+  const journaled = changed.filter(
+    (movement) => !movesAtCost(ledgerById.get(movement.costLedgerId)!)
+  );
+  if (journaled.length === 0) return;
+  const posted = await postRecostJournals(trx, {
     companyId,
     companyGroupId,
     userId,
     cutoverDate,
     defaults,
-    deltas: changed.map((movement) => {
+    deltas: journaled.map((movement) => {
       const row = ledgerById.get(movement.costLedgerId)!;
       return {
+        costLedgerId: row.id,
         itemId: row.itemId!,
         documentId: row.documentId,
         documentType: row.documentType,
@@ -20455,15 +21041,159 @@ export async function resetAndRecostInventory(
       };
     })
   });
+  await recostProjectIssues(trx, {
+    companyId,
+    userId,
+    recosted: posted.filter(
+      (entry) => entry.delta.documentType === "Project Issue"
+    )
+  });
+}
+
+/**
+ * A re-costed Project Issue changes the project's cost too: one
+ * `projectLedger` adjustment row per issue (quantity 0, the cost difference,
+ * the issue's project, element and cost type, `journalLineId` the re-cost's
+ * project account line), written through `insertProjectLedgerRows` so a
+ * Time & Materials line bills it like any row, and for a Capitalize project
+ * the matching `fixedAssetCipCost` row. The issue's cost rows and its ledger
+ * row are written in one transaction, so they share `createdAt`: that and
+ * the project, item and date find the ledger row of each cost row. A
+ * Statistical issue has no ledger row and gets none.
+ */
+async function recostProjectIssues(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    recosted
+  }: { companyId: string; userId: string; recosted: PostedRecost[] }
+) {
+  if (recosted.length === 0) return;
+  const recostByCostLedger = new Map(
+    recosted.map((entry) => [entry.delta.costLedgerId, entry])
+  );
+  const issues: (ProjectLedgerRow & { costLedgerId: string })[] = [];
+  for (const ids of chunkArray(
+    [...recostByCostLedger.keys()],
+    ROWS_PER_STATEMENT
+  )) {
+    const { rows } = await sql<ProjectLedgerRow & { costLedgerId: string }>`
+      SELECT c."id" AS "costLedgerId", pl.*
+      FROM "costLedger" c
+      JOIN "projectLedger" pl
+        ON pl."companyId" = c."companyId"
+       AND pl."documentType" = 'Project Issue'
+       AND pl."reversalOfId" IS NULL
+       AND pl."projectId" = c."documentId"
+       AND pl."itemId" = c."itemId"
+       AND pl."postingDate" = c."postingDate"
+       AND pl."createdAt" = c."createdAt"
+      WHERE c."companyId" = ${companyId}
+        AND c."id" = ANY(${ids}::text[])
+    `.execute(trx);
+    issues.push(...rows);
+  }
+  if (issues.length === 0) return;
+
+  // One adjustment per issue: an issue split across stock stripes has one
+  // cost row per stripe and one ledger row.
+  const byIssue = Map.groupBy(issues, (issue) => issue.id);
+  const adjustments = [...byIssue.values()].flatMap((rows) => {
+    const issue = rows[0]!;
+    const entries = rows.map(
+      (row) => recostByCostLedger.get(row.costLedgerId)!
+    );
+    const amount = round(
+      entries.reduce((sum, entry) => sum + entry.delta.delta, 0)
+    );
+    if (Math.abs(amount) <= EPSILON) return [];
+    return [{ issue, amount, recost: entries[0]! }];
+  });
+  if (adjustments.length === 0) return;
+
+  await insertProjectLedgerRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) =>
+      buildProjectLedgerRow({
+        companyId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        postingDate: String(issue.postingDate),
+        costType: issue.costType,
+        documentType: issue.documentType,
+        documentId: issue.documentId,
+        documentLineId: issue.documentLineId,
+        itemId: issue.itemId,
+        quantity: 0,
+        unitOfMeasureCode: issue.unitOfMeasureCode,
+        amount,
+        journalLineId: recost.offsetJournalLineId,
+        coverage: issue.coverage,
+        coverageReason: issue.coverageReason,
+        unallowable: issue.unallowable,
+        createdBy: userId
+      })
+    )
+  });
+
+  // A Capitalize project's issue raised its asset's cost: the difference
+  // goes on the same asset.
+  const cipRows = await readByIds(
+    adjustments.map(({ issue }) => issue.documentId),
+    (ids) =>
+      trx
+        .selectFrom("fixedAssetCipCost")
+        .select(["sourceDocumentId", "fixedAssetId", "postCapitalization"])
+        .where("companyId", "=", companyId)
+        .where("sourceType", "=", "Project Issue")
+        .where("projectId", "is not", null)
+        .where("sourceDocumentId", "in", ids)
+        .execute()
+  );
+  const cipByIssue = new Map(cipRows.map((row) => [row.sourceDocumentId, row]));
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) => {
+      const cip = cipByIssue.get(issue.documentId);
+      if (!cip) return null;
+      return buildProjectCipRow({
+        resolved: {
+          fixedAssetId: cip.fixedAssetId,
+          postCapitalization: cip.postCapitalization
+        },
+        companyId,
+        userId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        sourceType: "Project Issue",
+        sourceDocumentId: issue.documentId,
+        amount,
+        costDate: String(issue.postingDate),
+        journalId: recost.journalId
+      });
+    })
+  });
 }
 
 type RecostDelta = {
+  costLedgerId: string;
   itemId: string;
   documentId: string | null;
   documentType: string | null;
   postingDate: string;
   quantity: number;
   delta: number;
+};
+
+/** A re-costed movement and the journal line its difference posted to on
+ *  the account its document charged (the inventory line's pair). */
+type PostedRecost = {
+  delta: RecostDelta;
+  journalId: string;
+  offsetJournalLineId: string;
 };
 
 /**
@@ -20495,7 +21225,7 @@ async function postRecostJournals(
     defaults: AccountDefaults;
     deltas: RecostDelta[];
   }
-) {
+): Promise<PostedRecost[]> {
   const label = (delta: RecostDelta) =>
     `${delta.documentType ?? "document"} ${delta.documentId ?? "(none)"}`;
   const missingDocument = deltas.find((delta) => !delta.documentId);
@@ -20677,6 +21407,12 @@ async function postRecostJournals(
     journals.map((journal) => [journal.journalEntryId, journal.id])
   );
 
+  // Each movement's pair of lines shares one reference; the offset is the
+  // line on its pair's offset account.
+  const offsetByReference = new Map<
+    string,
+    { delta: RecostDelta; journalId: string; accountId: string | null }
+  >();
   const lineInserts: JournalLineInsert[] = groups.flatMap((entries, index) => {
     const journalId = journalIdByEntry.get(entryIds[index]!)!;
     return entries.flatMap(({ delta, pair }) => {
@@ -20692,6 +21428,11 @@ async function postRecostJournals(
       }
       const inventoryAmount = round(credit("asset", delta.delta));
       const journalLineReference = nanoid();
+      offsetByReference.set(journalLineReference, {
+        delta,
+        journalId,
+        accountId: pair.offset.accountId
+      });
       const keys = (line: Line) => ({
         documentType: line.documentType,
         documentId: line.documentId,
@@ -20724,9 +21465,25 @@ async function postRecostJournals(
       ];
     });
   });
+  const posted: PostedRecost[] = [];
   for (const rows of chunkArray(lineInserts, ROWS_PER_STATEMENT)) {
-    await trx.insertInto("journalLine").values(rows).execute();
+    const inserted = await trx
+      .insertInto("journalLine")
+      .values(rows)
+      .returning(["id", "journalLineReference", "accountId"])
+      .execute();
+    for (const line of inserted) {
+      const offset = offsetByReference.get(line.journalLineReference);
+      if (offset && line.accountId === offset.accountId) {
+        posted.push({
+          delta: offset.delta,
+          journalId: offset.journalId,
+          offsetJournalLineId: line.id
+        });
+      }
+    }
   }
+  return posted;
 }
 const activateAccountingLogger = getLogger(
   "server-functions",
@@ -21444,6 +22201,9 @@ export async function synthesizeContractRevenue(
     .select("id")
     .where("companyId", "=", companyId)
     .where("status", "=", "Planned")
+    // Only revenue rows hang off a month row. A Cost Relief or Loss Provision
+    // row has a line and no month row by design (decision R6).
+    .where("type", "in", ["Deferral", "Accrual"])
     .where("customerContractLineId", "is not", null)
     .where("customerContractRevenueId", "is", null)
     .execute();
@@ -21642,11 +22402,19 @@ export async function synthesizeContractRevenue(
 
 /** The synthesizers a run of `type` runs before it selects its rows. A lease
  *  run synthesizes rental accruals; a revenue recognition run synthesizes
- *  contract revenue. Neither ever runs the other's. */
-export function runRowSynthesizers(type: RunType): RunRowSynthesizer[] {
+ *  project and contract revenue. Neither ever runs the other's. `extra` is
+ *  the commercial project revenue synthesizer (`@carbon/ee`, decision R1),
+ *  which degrades to nothing without PROJECT_REVENUE; a test passes its own.
+ *  It runs, in a revenue recognition run, before the Right to Invoice and
+ *  contract synthesizers: the contract synthesizer moves the month rows both
+ *  project synthesizers write through the contract position. */
+export function runRowSynthesizers(
+  type: RunType,
+  extra: RunRowSynthesizer[] = projectRevenueSynthesizers(projectRevenueWriters)
+): RunRowSynthesizer[] {
   return type === "Lease"
     ? [synthesizeRentalAccruals]
-    : [synthesizeContractRevenue];
+    : [...extra, synthesizeProjectRevenue, synthesizeContractRevenue];
 }
 
 export type RunProposal = { id: string; runId: string; lineCount: number };

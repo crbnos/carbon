@@ -43,6 +43,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  projectStates,
   returnReasons,
   scrapReasons,
   sequences,
@@ -292,8 +293,7 @@ import { oeeDevicesCacheKey } from "./oee-devices-cache";
 import type {
   itemSerialSequenceValidator,
   sequenceValidator,
-  subsidiaryValidator,
-  timekeepingSettingsValidator
+  subsidiaryValidator
 } from "./settings.models";
 import { companyValidator, type customFieldValidator } from "./settings.models";
 
@@ -3198,6 +3198,112 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
+const timekeepingLogger = getLogger("erp", "settings", "time");
+
+/**
+ * Why the company cannot turn DCAA timekeeping on, or null. DCAA mode needs a
+ * cost objective on every Released project, so each charge lands in a known
+ * pool, and the certification text each employee signs at submit (the sent
+ * text, else the stored one). The projects are checked only when the mode
+ * turns on.
+ */
+export async function dcaaTimekeepingRefusal(
+  ctx: ServiceContext,
+  sent: {
+    certificationTextExempt?: string | null;
+    certificationTextNonExempt?: string | null;
+  }
+): Promise<CarbonError | null> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const current = await client
+    .from("companySettings")
+    .select(
+      "timekeepingControls, certificationTextExempt, certificationTextNonExempt"
+    )
+    .eq("id", companyId)
+    .maybeSingle();
+  if (current.error) {
+    timekeepingLogger.error("Failed to read the timekeeping settings", {
+      companyId,
+      error: current.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to read the timekeeping settings",
+      current.error
+    );
+  }
+
+  const exempt =
+    sent.certificationTextExempt !== undefined
+      ? sent.certificationTextExempt
+      : current.data?.certificationTextExempt;
+  if (!exempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for exempt staff"
+    );
+  }
+  const nonExempt =
+    sent.certificationTextNonExempt !== undefined
+      ? sent.certificationTextNonExempt
+      : current.data?.certificationTextNonExempt;
+  if (!nonExempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for non-exempt staff"
+    );
+  }
+
+  if (current.data?.timekeepingControls === "DCAA") return null;
+  const missing = await client
+    .from("project")
+    .select("id", { count: "exact", head: true })
+    .eq("companyId", companyId)
+    .eq("projectType", "Standard")
+    .eq("status", "Released")
+    .is("costObjective", null);
+  if (missing.error) {
+    timekeepingLogger.error("Failed to count projects with no cost objective", {
+      companyId,
+      error: missing.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to check the projects' cost objectives",
+      missing.error
+    );
+  }
+  const count = missing.count ?? 0;
+  if (count > 0) {
+    return ctx.error(
+      "rule",
+      `Set a cost objective on ${count} ${
+        count === 1 ? "project" : "projects"
+      } first`
+    );
+  }
+  return null;
+}
+
+/**
+ * Whether `itemId` is one of the company's service items. The service labor
+ * item prices service time, so it must be a Service.
+ */
+export async function isCompanyServiceItem(
+  ctx: ServiceContext,
+  itemId: string
+): Promise<boolean> {
+  const item = await ctx.asCaller.supabase
+    .from("item")
+    .select("type")
+    .eq("id", itemId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  return item.data?.type === "Service";
+}
+
 /** Multi-company management is open to internal (Carbon) users only, for now. */
 export async function refuseUnlessInternalUser(
   ctx: ServiceContext
@@ -3697,6 +3803,19 @@ export async function seedCompany(
       await trx
         .insertInto("sequence")
         .values(sequences.map((s) => ({ ...s, companyId })))
+        .execute();
+
+      // project states: company-wide, shared by every project and service
+      // order (Settings → Projects)
+      await trx
+        .insertInto("projectState")
+        .values(
+          projectStates.map((state) => ({
+            ...state,
+            companyId,
+            createdBy: "system"
+          }))
+        )
         .execute();
 
       // period-close checklist definitions (system template rows). The table is

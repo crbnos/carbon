@@ -2,16 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { RecordOutlet, VStack } from "@carbon/react";
-import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
-import { getProjects } from "~/modules/accounting/accounting.service";
-import { ProjectsTable } from "~/modules/accounting/ui/Projects";
-import type { Handle } from "~/utils/handle";
+import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import { path } from "~/utils/path";
 
 // Projects moved to their own module; keep old links working.

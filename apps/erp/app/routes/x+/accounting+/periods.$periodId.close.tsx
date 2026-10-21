@@ -67,21 +67,6 @@ import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "accounting-period-close");
-
-/** The commercial features the close checks depend on (Government
- *  Contracting 5b: the burden check; 5c: the earned value check). */
-async function closeEntitlements(
-  client: Parameters<typeof companyHasFeature>[0],
-  companyId: string
-): Promise<PeriodCloseEntitlements> {
-  return {
-    governmentContracting: await companyHasFeature(client, companyId, {
-      feature: "GOVERNMENT_CONTRACTING"
-    })
-  };
-}
-
 export const handle: Handle = {
   breadcrumb: msg`Close Period`,
   to: path.to.accountingPeriods
@@ -97,24 +82,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
 
-  const db = getDatabaseClient();
-  const entitlements = await closeEntitlements(client, companyId);
   const [checklist, periods] = await Promise.all([
-    // `getPeriodCloseChecklist` with the project revenue synthesizers and the
-    // entitlements, which the browser-bundled service cannot import.
-    loadPeriodCloseChecklist(
-      client,
-      db,
+    getPeriodCloseChecklist(client, getDatabaseClient(), {
       companyId,
-      periodId,
-      runPreviewer(client, db, {
-        companyId,
-        companyGroupId,
-        userId,
-        revenueRunSynthesizers: projectRevenueSynthesizers
-      }),
-      entitlements
-    ),
+      companyGroupId,
+      userId,
+      periodId
+    }),
     getAccountingPeriods(client, companyId)
   ]);
 
@@ -142,6 +116,8 @@ const closeForm = z.object({
     "create-revenue-run",
     "create-lease-run",
     "create-depreciation-run",
+    "compute-burden",
+    "close-earned-value",
     "close"
   ]),
   taskId: z.string().optional(),
@@ -173,6 +149,10 @@ export async function action(args: ActionFunctionArgs) {
       return api.accounting.lockPeriod({ periodId });
     case "unlock":
       return api.accounting.unlockPeriod({ periodId });
+    case "compute-burden":
+      return api.accounting.computePeriodBurden({ periodId });
+    case "close-earned-value":
+      return api.accounting.closePeriodEarnedValue({ periodId });
     case "close": {
       const result = await api.accounting.closePeriod({ periodId });
       if (result.error) return result;
@@ -316,6 +296,20 @@ function PeriodCloseTaskRow({
         toast.success(
           data.closeStatus === "Locked" ? t`Period locked` : t`Period unlocked`
         );
+      } else if ("burdenComputed" in data) {
+        toast.success(t`Burden computed`);
+      } else if ("workPackages" in data) {
+        const closed =
+          data.projects === 1
+            ? t`Earned value closed for ${data.projects} project`
+            : t`Earned value closed for ${data.projects} projects`;
+        // A project without a baseline gets no snapshot: the warning says
+        // so, and the check keeps failing for it.
+        if (data.warnings.length > 0) {
+          toast.error(`${closed}. ${data.warnings.join(" ")}`);
+        } else {
+          toast.success(closed);
+        }
       } else if ("status" in data) {
         toast.success(
           data.status === "Done" ? t`Task marked done` : t`Task skipped`

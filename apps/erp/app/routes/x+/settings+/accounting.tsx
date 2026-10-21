@@ -10,7 +10,10 @@ import {
   getLegacyDocumentCounts,
   hasLegacyDocuments
 } from "@carbon/database/accounting-cutover-reads";
+import { burdenSettingsValidator } from "@carbon/ee/indirect-rates";
+import { getBurdenSettings } from "@carbon/ee/indirect-rates.server";
 import { ValidatedForm, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
   Alert,
@@ -51,6 +54,7 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { useResolved } from "~/hooks/useResolved";
 import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import BurdenSettingsForm from "~/modules/accounting/ui/IndirectRates/BurdenSettingsForm.ee";
 import { settingsToggle } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -58,6 +62,8 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const JOURNAL_LEGACY_INTENT = "journal-legacy";
+
+const logger = getLogger("erp", "accounting-settings");
 
 const taxDepreciationSettingsValidator = z.object({
   intent: z.literal("assetTaxDepreciation"),
@@ -180,7 +186,11 @@ const accountingSettingsForm = z.discriminatedUnion("intent", [
   taxDepreciationSettingsValidator.transform(({ intent: _, ...tax }) => ({
     ...tax,
     assetTaxDepreciationEnabled: true
-  }))
+  })),
+  // Government contracting (indirect rates): `updateBurdenSettings`.
+  burdenSettingsValidator
+    .extend({ intent: z.literal("burdenSettings") })
+    .transform(({ intent: _, ...burden }) => ({ burden }))
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -189,6 +199,9 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   if ("writeMissingJournals" in input.data) {
     return api.settings.writeMissingJournals({});
+  }
+  if ("burden" in input.data) {
+    return api.accounting.updateBurdenSettings(input.data.burden);
   }
   return api.settings.updateAccountingSettings(input.data);
 }
@@ -219,7 +232,8 @@ export default function AccountingSettingsRoute() {
   });
   const fetcher = useAction<typeof action>({
     onSuccess: ({ data }) => {
-      if (!data || "documents" in data) return;
+      // The burden settings card toasts its own result.
+      if (!data || "documents" in data || "success" in data) return;
       toast.success(
         data.showCurrencyTrailingZeros !== undefined
           ? t`Currency display updated`

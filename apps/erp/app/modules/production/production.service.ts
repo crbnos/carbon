@@ -92,6 +92,7 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
@@ -158,6 +159,15 @@ import { type QueryCreator, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  loadJobProjectCharge
+} from "~/modules/projects/project-posting";
+import {
+  chargeNumberError,
+  checkProjectBudget
+} from "~/modules/projects/projects.server";
 import {
   assertCompanyRecords,
   attributesContain,
@@ -251,6 +261,7 @@ import {
   type MachineTimeListFilters,
   machineTimeQueueKeyset
 } from "./ui/MachineTime/machine-time-filters.ee";
+import { planningSegmentFilter } from "./ui/Planning/planning-action-scope";
 
 const logger = getLogger("erp", "production");
 
@@ -889,6 +900,59 @@ export async function getUnscheduledJobs(
   return client.rpc("get_unscheduled_jobs", {
     location_id: locationId
   });
+}
+
+export type JobProject = {
+  projectId: string;
+  projectElementId: string | null;
+  // The element's readable id when the job is charged to one, else the
+  // project's identifier
+  projectReadableId: string;
+  projectName: string;
+};
+
+/**
+ * The charge number of each job that has one, keyed by job id — what the
+ * schedule cards show beside the sales order.
+ */
+export async function getJobProjects(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobIds: string[]
+): Promise<{
+  data: Record<string, JobProject>;
+  error: PostgrestError | null;
+}> {
+  if (jobIds.length === 0) return { data: {}, error: null };
+
+  const result = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("job")
+      .select(
+        "id, projectId, projectElementId, project:project!job_project_fkey(identifier, name), projectElement:projectElement!job_projectElement_fkey(readableId, name)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+
+  if (result.error) return { data: {}, error: result.error };
+
+  const data: Record<string, JobProject> = {};
+  for (const job of result.data ?? []) {
+    const readableId =
+      job.projectElement?.readableId ?? job.project?.identifier;
+    if (!job.projectId || !job.project || !readableId) continue;
+    data[job.id] = {
+      projectId: job.projectId,
+      projectElementId: job.projectElementId,
+      projectReadableId: readableId,
+      projectName: job.projectElement?.name ?? job.project.name
+    };
+  }
+
+  return { data, error: null };
 }
 
 export async function getActiveProductionEvents(
@@ -2886,9 +2950,13 @@ export async function runMRP(
   // Run MRP IN-PROCESS (Node). The caller's service-role client does
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
+  // It injects the commercial planning group functions
+  // (`planningGroupMrpDeps`, `@carbon/ee/pegging.server`): `@carbon/planning`
+  // imports no `.server` module, so every server-side `runMrp` caller passes
+  // them in. Every ERP caller (routes, operations) reaches MRP through here.
   try {
     const { runMrp } = await import("@carbon/planning");
-    const data = await runMrp(client, db, params);
+    const data = await runMrp(client, db, params, planningGroupMrpDeps);
     return { data, error: null };
   } catch (err) {
     return {
@@ -3031,7 +3099,7 @@ export async function getJobReleaseReadiness(
       client
         .from("job")
         .select(
-          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
         )
         .in("id", batch)
         .eq("companyId", companyId)
@@ -3732,8 +3800,9 @@ export async function insertJob(
       customFields: input.customFields,
       fixedAssetClassId: input.fixedAssetClassId ?? null,
       fixedAssetId: input.fixedAssetId ?? null,
-      projectId: input.projectId ?? null,
-      projectElementId: input.projectElementId ?? null,
+      // A form sends an empty charge number as "".
+      projectId: input.projectId || null,
+      projectElementId: input.projectElementId || null,
       consumeToProject: input.consumeToProject ?? false,
       receiveToProjectStock: input.receiveToProjectStock ?? false,
       planningGroupId: input.planningGroupId ?? null,
@@ -11965,7 +12034,7 @@ export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
   const jobs = await ctx.asCaller.supabase
     .from("job")
     .select(
-      "id, status, quantity, fixedAssetClassId, fixedAssetId, dueDate, deadlineType, locationId"
+      "id, status, quantity, fixedAssetClassId, fixedAssetId, dueDate, deadlineType, locationId, consumeToProject, receiveToProjectStock"
     )
     .in("id", ids)
     .eq("companyId", ctx.company.id);
@@ -11976,6 +12045,91 @@ export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
     return ctx.error("rule", JOB_LOCKED_MESSAGE);
   }
   return jobs.data;
+}
+
+/**
+ * Why a job's charge number is refused, or null: the project is not this
+ * company's, the element is not one of its elements, or the project cannot
+ * take what the job asks of it (consume to a Statistical or capital project,
+ * receive into a project with no project stock). `chargeNumberError` decides;
+ * the refusal is `validation`, which the job forms show on the charge number.
+ */
+export async function jobChargeNumberRefusal(
+  ctx: ServiceContext,
+  client: SupabaseClient<Database>,
+  job: {
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
+  }
+): Promise<CarbonError | null> {
+  const refusal = await chargeNumberError(client, ctx.company.id, job);
+  return refusal ? ctx.error("validation", refusal.message) : null;
+}
+
+/**
+ * Budget control for a job that consumes to its project (Government
+ * Contracting 5c, C4 and C5). The job charges quantity × the item's unit cost
+ * to the project; a saved job (`jobId`) less its cost already in the project
+ * ledger, which the check counts as actual cost. Burden rows are left out, as
+ * in the check (C3). Block refuses the job (`conflict`, shown on the
+ * quantity); Warn returns the overrun as a note for the success message.
+ */
+export async function jobBudgetCheck(
+  ctx: ServiceContext,
+  job: {
+    jobId?: string;
+    itemId: string;
+    quantity?: number;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+  }
+): Promise<{ refusal: CarbonError | null; note: string }> {
+  if (!job.consumeToProject || !job.projectId) {
+    return { refusal: null, note: "" };
+  }
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const [cost, posted] = await Promise.all([
+    db
+      .selectFrom("itemCost")
+      .select("unitCost")
+      .where("itemId", "=", job.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    job.jobId
+      ? db
+          .selectFrom("projectLedger")
+          .select(sql<number>`COALESCE(SUM("amount"), 0)`.as("amount"))
+          .where("companyId", "=", companyId)
+          .where("jobId", "=", job.jobId)
+          .where("costType", "!=", "Burden")
+          .executeTakeFirst()
+      : null
+  ]);
+  const charge = (job.quantity ?? 0) * Number(cost?.unitCost ?? 0);
+  const budget = await checkProjectBudget(db, ctx.asCaller.supabase, {
+    companyId,
+    source: "job",
+    charges: [
+      {
+        projectId: job.projectId,
+        projectElementId: job.projectElementId || null,
+        amount: job.jobId
+          ? Math.max(0, charge - Number(posted?.amount ?? 0))
+          : charge
+      }
+    ]
+  });
+  if (budget.status === "block") {
+    return { refusal: ctx.error("conflict", budget.message), note: "" };
+  }
+  return {
+    refusal: null,
+    note: budget.status === "warn" ? budget.message : ""
+  };
 }
 
 /**
@@ -12399,7 +12553,7 @@ export async function getJobToResume(
   return client
     .from("job")
     .select(
-      "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
     )
     .eq("id", jobId)
     .eq("companyId", companyId)
@@ -13431,7 +13585,7 @@ export async function getMethod(
         .execute();
       const jobRow = await db
         .selectFrom("job")
-        .select(["locationId", "quantity", "startDate", "dueDate"])
+        .select(["locationId", "quantity", "startDate", "dueDate", "projectId"])
         .where("id", "=", jobId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
@@ -14673,6 +14827,7 @@ export async function getMethod(
           jobId: jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.locationId,
+          projectId: job.projectId,
           asOfDate: jobBuildDate(job)
         });
       });
@@ -15443,6 +15598,7 @@ export async function getMethod(
           jobId: jobMakeMethod.data.jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.data?.locationId,
+          projectId: job.data?.projectId,
           asOfDate: jobBuildDate(job.data)
         });
       });
@@ -18091,6 +18247,7 @@ export async function getMethod(
           jobId: targetJobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: targetJob.data?.locationId,
+          projectId: targetJob.data?.projectId,
           asOfDate: jobBuildDate(targetJob.data)
         });
       });
@@ -19759,6 +19916,7 @@ export async function getMethod(
           jobId: jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.data?.locationId,
+          projectId: job.data?.projectId,
           asOfDate: jobBuildDate(job.data)
         });
       });
@@ -20698,6 +20856,13 @@ function jobBuildDate(
   );
 }
 
+// The itemStockQuantities stripes a job's material may draw: common stock (''),
+// plus the job's own project's stock when the job is charged to a project.
+// Another project's stock needs a transfer or a borrow first.
+function jobStockStripes(projectId: string | null | undefined): string[] {
+  return projectId ? ["", projectId] : [""];
+}
+
 // Load every supersession for the company and collapse it into the redirect map
 // (chain-collapsed, mode-gated, conversion-factored) as-of the job's build date.
 // Every *-ToJob path needs the same map, so this is the single load point.
@@ -20709,6 +20874,7 @@ async function loadSupersessionRedirect(
         locationId?: string | null;
         startDate?: string | null;
         dueDate?: string | null;
+        projectId?: string | null;
       }
     | null
     | undefined
@@ -20744,6 +20910,7 @@ async function loadSupersessionRedirect(
       .select(["itemId", "quantityOnHand"])
       .where("companyId", "=", companyId)
       .where("locationId", "=", job.locationId)
+      .where("projectId", "in", jobStockStripes(job.projectId))
       .where("itemId", "in", consumeFirstItemIds)
       .execute();
     const items = await db
@@ -21018,9 +21185,18 @@ async function settleConsumeFirstLines(opts: {
   jobId: string;
   jobMaterialIds: string[];
   locationId: string | null | undefined;
+  projectId: string | null | undefined;
   asOfDate: string;
 }) {
-  const { trx, companyId, jobId, jobMaterialIds, locationId, asOfDate } = opts;
+  const {
+    trx,
+    companyId,
+    jobId,
+    jobMaterialIds,
+    locationId,
+    projectId,
+    asOfDate
+  } = opts;
   if (!locationId || jobMaterialIds.length === 0) return;
 
   const rules = await trx
@@ -21078,6 +21254,7 @@ async function settleConsumeFirstLines(opts: {
     .select(["itemId", "quantityOnHand"])
     .where("companyId", "=", companyId)
     .where("locationId", "=", locationId)
+    .where("projectId", "in", jobStockStripes(projectId))
     .where("itemId", "in", [...predecessorIds])
     .execute();
   const onHandByItem = new Map<string, number>();
@@ -22614,7 +22791,9 @@ export async function postProductionEvent(
                 "Location",
                 "Employee",
                 "WorkCenter",
-                "Process"
+                "Process",
+                "Project",
+                "ProjectElement"
               ]
             },
             { columns: ["id", "entityType"] }
@@ -22665,6 +22844,11 @@ export async function postProductionEvent(
   }
 
   const jobId = (event.jobOperation as any).jobId as string;
+
+  // A consume-to-project job charges its project account instead of WIP.
+  const projectCharge = await loadJobProjectCharge(db, companyId, jobId);
+  const costAccount =
+    projectCharge?.accountId ?? accountDefaults.data.workInProgressAccount;
 
   let cost = 0;
   let overheadCost = 0;
@@ -22849,9 +23033,12 @@ export async function postProductionEvent(
     ...(laborAbsorption
       ? [
           {
-            accountId: accountDefaults.data.workInProgressAccount,
+            accountId: costAccount,
             accountDefaultRole: null,
-            description: "WIP Account",
+            description:
+              projectCharge && !projectCharge.keepsWip
+                ? "Project Labor"
+                : "WIP Account",
             amount: round(debit("asset", cost)),
             quantity: 1,
             documentType: "Production Event" as const,
@@ -22877,9 +23064,12 @@ export async function postProductionEvent(
     ...(overheadAbsorption
       ? [
           {
-            accountId: accountDefaults.data.workInProgressAccount,
+            accountId: costAccount,
             accountDefaultRole: null,
-            description: "WIP Account (Overhead)",
+            description:
+              projectCharge && !projectCharge.keepsWip
+                ? "Project Overhead"
+                : "WIP Account (Overhead)",
             amount: round(debit("asset", overheadCost)),
             quantity: 1,
             documentType: "Production Event" as const,
@@ -22984,7 +23174,7 @@ export async function postProductionEvent(
         companyId: string;
       }[] = [];
 
-      journalLineResults.forEach((jl) => {
+      journalLineResults.forEach((jl, index) => {
         if (
           finishedItemCost?.data?.itemPostingGroupId &&
           dimensionMap.has("ItemPostingGroup")
@@ -23039,6 +23229,31 @@ export async function postProductionEvent(
             companyId
           });
         }
+        // The project lines (new and reversing) carry the project tags.
+        if (
+          projectCharge &&
+          journalLineInserts[index]?.accountId === projectCharge.accountId
+        ) {
+          if (dimensionMap.has("Project")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("Project")!,
+              valueId: projectCharge.projectId,
+              companyId
+            });
+          }
+          if (
+            projectCharge.projectElementId &&
+            dimensionMap.has("ProjectElement")
+          ) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("ProjectElement")!,
+              valueId: projectCharge.projectElementId,
+              companyId
+            });
+          }
+        }
       });
 
       if (dimensionInserts.length > 0) {
@@ -23047,6 +23262,116 @@ export async function postProductionEvent(
           .values(dimensionInserts)
           .execute();
       }
+    }
+
+    // The project ledger mirrors the journal: reverse what this event wrote
+    // before, then write its current cost.
+    const priorProjectRows = await trx
+      .selectFrom("projectLedger")
+      .selectAll()
+      .where("documentType", "=", "Production Event")
+      .where("documentId", "=", productionEventId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const reversedIds = new Set(
+      priorProjectRows
+        .map((row) => row.reversalOfId)
+        .filter((id): id is string => Boolean(id))
+    );
+    const openProjectRows = priorProjectRows.filter(
+      (row) => !row.reversalOfId && !reversedIds.has(row.id)
+    );
+    // A reversal row names this journal's reversal line on its original
+    // line's account, so the revenue run relieves it like the original.
+    // The reversal lines net per account, so rows on one account share it.
+    const originalLineIds = openProjectRows
+      .map((row) => row.journalLineId)
+      .filter((id): id is string => Boolean(id));
+    const originalLineAccounts = new Map(
+      originalLineIds.length > 0
+        ? (
+            await trx
+              .selectFrom("journalLine")
+              .select(["id", "accountId"])
+              .where("id", "in", originalLineIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          ).map((line) => [line.id, line.accountId])
+        : []
+    );
+    const reversalLineFor = (journalLineId: string | null) => {
+      const accountId = journalLineId
+        ? originalLineAccounts.get(journalLineId)
+        : undefined;
+      if (!accountId) return null;
+      const index = reversalLines.findIndex(
+        (line) => line.accountId === accountId
+      );
+      return index < 0 ? null : (journalLineResults[index]?.id ?? null);
+    };
+    const hours = (event.duration ?? 0) / 3600;
+    const projectLedgerInserts = [
+      ...openProjectRows.map((row) =>
+        buildProjectLedgerRow({
+          companyId,
+          projectId: row.projectId,
+          projectElementId: row.projectElementId,
+          postingDate: today,
+          costType: row.costType,
+          documentType: "Production Event",
+          documentId: productionEventId,
+          jobId: row.jobId,
+          employeeId: row.employeeId,
+          quantity: row.quantity === null ? null : -Number(row.quantity),
+          amount: -Number(row.amount),
+          reversalOfId: row.id,
+          journalLineId: reversalLineFor(row.journalLineId),
+          unallowable: row.unallowable,
+          createdBy: userId
+        })
+      ),
+      ...(projectCharge && !reverse
+        ? (
+            [
+              [
+                event.type === "Machine" ? "Machine" : "Labor",
+                cost,
+                reversalLines.length
+              ],
+              [
+                "Overhead",
+                overheadCost,
+                reversalLines.length + (cost > 0 ? 2 : 0)
+              ]
+            ] as const
+          )
+            .filter(([, amount]) => amount > 0)
+            .map(([costType, amount, lineIndex]) =>
+              buildProjectLedgerRow({
+                companyId,
+                projectId: projectCharge.projectId,
+                projectElementId: projectCharge.projectElementId,
+                postingDate: today,
+                costType,
+                documentType: "Production Event",
+                documentId: productionEventId,
+                jobId,
+                employeeId: event.employeeId,
+                quantity: hours,
+                amount,
+                journalLineId: journalLineResults[lineIndex]?.id ?? null,
+                unallowable: projectCharge.unallowable,
+                createdBy: userId
+              })
+            )
+        : [])
+    ];
+    if (projectLedgerInserts.length > 0) {
+      await insertProjectLedgerRows(trx, {
+        companyId,
+        userId,
+        rows: projectLedgerInserts
+      });
     }
 
     await trx

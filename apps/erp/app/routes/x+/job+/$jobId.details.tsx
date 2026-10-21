@@ -21,7 +21,6 @@ import {
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import { sql } from "kysely";
 import { Suspense } from "react";
 import { LuShoppingCart } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -36,6 +35,7 @@ import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   JOB_LOCKED_MESSAGE,
+  jobFormRefusalField,
   jobValidator
 } from "~/modules/production/production.models";
 import {
@@ -58,10 +58,6 @@ import {
   JobRiskRegister
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
-import {
-  chargeNumberError,
-  checkProjectBudget
-} from "~/modules/projects/projects.server";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import {
   getTagsList,
@@ -178,8 +174,16 @@ export async function action(args: ActionFunctionArgs) {
   ) {
     return validationError({ fieldErrors: { itemId: result.error.message } });
   }
+  // The charge number is refused, or the project's budget blocks the save.
+  const field = jobFormRefusalField(result.error?.category);
+  if (result.error && field) {
+    return validationError({ fieldErrors: { [field]: result.error.message } });
+  }
+  // A budget warning saves the job; the flash says by how much it runs over.
   return respond(args.request, result).redirect(path.to.job(jobId), {
-    message: "Updated job"
+    message: result.data?.budgetNote
+      ? `Updated job. ${result.data.budgetNote}`
+      : "Updated job"
   });
 }
 

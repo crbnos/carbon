@@ -9,10 +9,14 @@ import { getLogger } from "@carbon/logger";
 import { round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { customerContractLineValidator } from "~/modules/sales/sales.models";
+import {
+  contractLineBillingFormValues,
+  customerContractLineValidator
+} from "~/modules/sales/sales.models";
 import {
   getContract,
   getContractLine,
+  projectRevenueRefusal,
   upsertContractLine
 } from "~/modules/sales/sales.service";
 

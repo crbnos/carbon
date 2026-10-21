@@ -407,6 +407,20 @@ export const jobValidator = baseJobValidator
   );
 
 /**
+ * The job form field a `createJob` / `updateJobDetails` refusal belongs on:
+ * a refused charge number (`validation`, from `chargeNumberError`) on the
+ * Charge Number picker, a budget Block (`conflict`) on the quantity. Any other
+ * refusal has no field. `rule` (the item) is handled by the routes.
+ */
+export function jobFormRefusalField(
+  category: string | undefined
+): string | null {
+  if (category === "validation") return "projectId__projectElementId";
+  if (category === "conflict") return "quantity";
+  return null;
+}
+
+/**
  * The Make to Asset item rule, the same one `complete_job_to_inventory`
  * enforces at completion. A job that targets a class makes new assets, each a
  * fleet unit that rental, return to inventory and capitalization follow by its

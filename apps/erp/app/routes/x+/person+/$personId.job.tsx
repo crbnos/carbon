@@ -60,6 +60,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.people.updatePersonJob({
     ...input.data,
+    // This form always renders both switches, and an unchecked switch posts
+    // nothing — so here a missing value is "off". (The validator keeps them
+    // optional for API callers, where a missing value keeps the stored flag.)
+    isOfficer: input.data.isOfficer ?? false,
+    timesheetRequired: input.data.timesheetRequired ?? false,
     employeeId: personId,
     customFields: input.formData && setCustomFields(input.formData)
   });

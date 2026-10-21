@@ -26,6 +26,7 @@ import {
   getMaterialFormsList,
   getMaterialSubstancesList
 } from "~/modules/items/items.service";
+import { getStockOwnerProjects } from "~/modules/projects/projects.service";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getTagsList } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.service";

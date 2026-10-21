@@ -2,12 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ValidatedForm, validator } from "@carbon/form";
+import { Hidden, ValidatedForm, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useAction } from "@carbon/query";
+import { serviceErrorMessage, useAction } from "@carbon/query";
 import {
   Badge,
   Card,
@@ -22,16 +23,14 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { Boolean, Number, Select, Submit, TextArea } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
-  updateTimeCardSetting,
-  updateTimekeepingSettings
-} from "~/modules/settings";
-import {
+  settingsToggle,
   timeCardSettingsValidator,
   timekeepingControlsModes,
   timekeepingSettingsValidator,
@@ -70,104 +69,43 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { companySettings: companySettings.data };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// Two forms, told apart by their intent: the Timecards switch saves on its
+// own (it moved here from Settings → People), the controls form saves every
+// timekeeping field at once.
+const timeSettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle("timeCard", "timeCardEnabled"),
+  timekeepingSettingsValidator
+    .safeExtend({ intent: z.literal("timekeeping") })
+    // An emptied certification text clears the stored one.
+    .transform(({ intent: _, ...settings }) => ({
+      ...settings,
+      certificationTextExempt: settings.certificationTextExempt ?? null,
+      certificationTextNonExempt: settings.certificationTextNonExempt ?? null
+    }))
+]);
 
-  const formData = await request.formData();
-
-  // The Timecards switch saves on its own (it moved here from Settings →
-  // People with its intent).
-  if (formData.get("intent") === "timeCard") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await updateTimeCardSetting(client, companyId, enabled);
-    if (update.error) {
-      logger.error("Failed to update the timecard setting", {
-        companyId,
-        error: update.error
-      });
-      return { success: false, message: update.error.message };
-    }
-    return { success: true, message: "Timecard settings updated" };
-  }
-
-  const validation = await validator(timekeepingSettingsValidator).validate(
-    formData
-  );
-  if (validation.error) {
-    return { success: false, message: "Invalid form data" };
-  }
-
-  // DCAA mode needs a cost objective on every Released project, so each
-  // charge lands in a known pool. Checked only when the mode turns on.
-  if (validation.data.timekeepingControls === "DCAA") {
-    const current = await getCompanySettings(client, companyId);
-    if (current.data?.timekeepingControls !== "DCAA") {
-      const missing = await client
-        .from("project")
-        .select("id", { count: "exact", head: true })
-        .eq("companyId", companyId)
-        .eq("projectType", "Standard")
-        .eq("status", "Released")
-        .is("costObjective", null);
-      if (missing.error) {
-        logger.error("Failed to count projects with no cost objective", {
-          companyId,
-          error: missing.error
-        });
-        return {
-          success: false,
-          message: "Failed to check the projects' cost objectives"
-        };
-      }
-      const count = missing.count ?? 0;
-      if (count > 0) {
-        return {
-          success: false,
-          message: `Set a cost objective on ${count} ${
-            count === 1 ? "project" : "projects"
-          } first`
-        };
-      }
-    }
-  }
-
-  const update = await updateTimekeepingSettings(
-    client,
-    companyId,
-    validation.data
-  );
-  if (update.error) {
-    logger.error("Failed to update the time settings", {
-      companyId,
-      error: update.error
-    });
-    return { success: false, message: "Failed to save the settings" };
-  }
-  return { success: true, message: "Time settings updated" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(timeSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateTimeSettings(input.data);
 }
 
 export default function TimeSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
-
-  useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data?.message) return;
-    if (fetcher.data.success) {
-      toast.success(fetcher.data.message);
-    } else {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.state, fetcher.data]);
+  const fetcher = useAction<typeof action>({
+    onSuccess: () => toast.success(t`Time settings updated`)
+  });
 
   // The Timecards switch posts at once; a refused save puts it back.
   const [timeCardReset, setTimeCardReset] = useState(0);
   const timeCardFetcher = useAction<typeof action>({
-    onSuccess: (data) => toast.success(data.message),
-    onError: (data) => {
-      toast.error(data.message);
+    onSuccess: () => toast.success(t`Timecard settings updated`),
+    onError: (result) => {
+      toast.error(
+        serviceErrorMessage(result) ?? t`Failed to update timecard settings`
+      );
       setTimeCardReset((count) => count + 1);
     }
   });
@@ -235,6 +173,7 @@ export default function TimeSettingsRoute() {
           fetcher={fetcher}
           className="flex w-full flex-col gap-4"
         >
+          <Hidden name="intent" value="timekeeping" />
           <Card>
             <CardHeader>
               <CardTitle>

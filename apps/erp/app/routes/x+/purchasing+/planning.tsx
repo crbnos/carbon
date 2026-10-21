@@ -18,9 +18,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope
 } from "~/modules/production/production.models";
 import { getPlanningActions } from "~/modules/production/production.service";
+import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
+import { getProjectBorrows } from "~/modules/projects/projects.service";
 import { getPurchasingPlanning } from "~/modules/purchasing/purchasing.service";
 import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";

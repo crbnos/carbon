@@ -25,7 +25,7 @@ import {
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineBilling } from "~/modules/sales/ui/Contracts";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-line-billing");

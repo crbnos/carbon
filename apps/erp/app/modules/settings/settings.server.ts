@@ -91,7 +91,9 @@ import {
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   returnPickedMaterialTimings,
-  subsidiaryValidator
+  subsidiaryValidator,
+  timekeepingControlsModes,
+  timesheetTimecardChecks
 } from "./settings.models";
 import * as service from "./settings.service";
 
@@ -270,9 +272,12 @@ export const updateInventorySettings = defineServiceFn({
  * invoice when the daily job creates it, the receivables email (the Reply-To
  * and a CC on automated invoice emails), who is also notified about
  * invoices, whether documents print the centralized receivables billing
- * address, that address itself (a null field clears it), and the default CC
- * on customer emails. "Post and Send via Stripe" is refused until Stripe is
- * connected in Integrations, or every recurring invoice would be held.
+ * address, that address itself (a null field clears it), the default CC
+ * on customer emails, and the service labor item: the service item whose
+ * sale price prices time on a service order, its estimate and its invoice
+ * (null clears it; anything but a Service item is refused). "Post and Send
+ * via Stripe" is refused until Stripe is connected in Integrations, or every
+ * recurring invoice would be held.
  *
  * @mcp
  */
@@ -283,13 +288,21 @@ export const updateInvoicingSettings = defineServiceFn({
     invoiceNotificationGroup: notificationGroup.optional(),
     accountsReceivableAddress: z.boolean().optional(),
     accountsReceivableBillingAddress: billingAddressInput.optional(),
-    defaultCustomerCc: z.array(z.string().email()).optional()
+    defaultCustomerCc: z.array(z.string().email()).optional(),
+    serviceLaborItemId: z.string().min(1).nullable().optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
     const { accountsReceivableBillingAddress, ...settings } = input;
+
+    if (
+      settings.serviceLaborItemId &&
+      !(await service.isCompanyServiceItem(ctx, settings.serviceLaborItemId))
+    ) {
+      return ctx.error("rule", "Choose a service item");
+    }
 
     if (
       settings.invoiceAutomation === "Post and Send via Stripe" &&
@@ -668,6 +681,89 @@ export const updatePeopleSettings = defineServiceFn({
       );
     }
     return { ...input, pin: update.pin, pinError: update.pinError };
+  }
+});
+
+/**
+ * Update the time settings.
+ *
+ * @remarks
+ * Writes the fields sent and leaves the rest: whether timecards are on, the
+ * timekeeping controls (Standard or DCAA), the entry window in days, the
+ * timecard check on a submitted week (Off, Warn or Block), the
+ * certification texts exempt and non-exempt staff sign at submit (empty
+ * clears one), and the standard weekly hours an exempt employee's week is
+ * diluted to. DCAA is refused without both certification texts, and,
+ * when it turns on, while a Released standard project has no cost
+ * objective.
+ *
+ * @mcp
+ */
+export const updateTimeSettings = defineServiceFn({
+  input: z.object({
+    timeCardEnabled: z.boolean().optional(),
+    timekeepingControls: z.enum(timekeepingControlsModes).optional(),
+    timesheetEntryWindowDays: z.number().int().min(0).optional(),
+    timesheetTimecardCheck: z.enum(timesheetTimecardChecks).optional(),
+    certificationTextExempt: z.string().trim().nullable().optional(),
+    certificationTextNonExempt: z.string().trim().nullable().optional(),
+    standardWeeklyHours: z.number().gt(0).optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const refused = service.nothingSent(ctx, input);
+    if (refused) return refused;
+
+    if (input.timekeepingControls === "DCAA") {
+      const refusal = await service.dcaaTimekeepingRefusal(ctx, input);
+      if (refusal) return refusal;
+    }
+
+    const { certificationTextExempt, certificationTextNonExempt, ...rest } =
+      input;
+    const saved = await service.saveCompanySettings(
+      ctx,
+      {
+        ...rest,
+        // An emptied text is cleared, not stored as "".
+        ...(certificationTextExempt !== undefined
+          ? { certificationTextExempt: certificationTextExempt || null }
+          : {}),
+        ...(certificationTextNonExempt !== undefined
+          ? { certificationTextNonExempt: certificationTextNonExempt || null }
+          : {})
+      },
+      "Failed to save the time settings"
+    );
+    return saved ?? input;
+  }
+});
+
+/**
+ * Update the project settings.
+ *
+ * @remarks
+ * Writes the fields sent and leaves the rest: whether timesheets need
+ * approval before they post, and whether every project charge needs an
+ * element.
+ *
+ * @mcp
+ */
+export const updateProjectSettings = defineServiceFn({
+  input: z.object({
+    timesheetApprovalRequired: z.boolean().optional(),
+    requireProjectElement: z.boolean().optional()
+  }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const refused = service.nothingSent(ctx, input);
+    if (refused) return refused;
+    const saved = await service.saveCompanySettings(
+      ctx,
+      input,
+      "Failed to update project settings"
+    );
+    return saved ?? input;
   }
 });
 

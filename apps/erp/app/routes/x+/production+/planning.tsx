@@ -18,14 +18,17 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope
 } from "~/modules/production/production.models";
 import {
   getPlanningActions,
   getProductionPlanning
 } from "~/modules/production/production.service";
 import type { ProductionPlanningItem } from "~/modules/production/types";
+import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
+import { getProjectBorrows } from "~/modules/projects/projects.service";
 import {
   getLocationTimeZone,
   getOrCreatePeriods,

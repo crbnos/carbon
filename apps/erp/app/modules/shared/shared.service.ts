@@ -100,11 +100,8 @@ import {
   ImplementationHubEmail,
   SalesOrderEmail
 } from "@carbon/documents/email";
-import {
-  type ActionTaskEntityType,
-  actionTaskEntities,
-  actionTaskParentId
-} from "@carbon/ee/action-task-entity";
+import { type SyncedEntityType, syncedEntities } from "@carbon/ee/issue-sync";
+import { type TiptapDocument, tiptapToMarkdown } from "@carbon/ee/linear";
 import {
   ERP_URL,
   SESSION_SECRET,
@@ -189,6 +186,7 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
+import { importPayrollTotals } from "./payroll-total-import";
 import type { assignableTables } from "./shared.models";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload } from "./types";
@@ -1398,21 +1396,83 @@ export async function getImplementationSignals(
   return signals;
 }
 
-// The readable identifier on each action task's parent, used for the Linear
-// attachment / Jira remote-link title.
-const actionTaskParents: Record<
-  ActionTaskEntityType,
-  { parentTable: string; readableColumn: string }
-> = {
-  nonConformanceActionTask: {
-    parentTable: "nonConformance",
-    readableColumn: "nonConformanceId"
-  },
-  changeOrderActionTask: {
-    parentTable: "changeOrder",
-    readableColumn: "changeOrderId"
-  }
-};
+/**
+ * A record's Linear and Jira links (the link's `metadata`, or null), for the
+ * issue dialogs. One query for both trackers.
+ */
+export async function getRecordIssueLinks(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  entityId: string,
+  companyId: string
+): Promise<{ linearIssue: unknown; jiraIssue: unknown }> {
+  const links = await client
+    .from("externalIntegrationMapping")
+    .select("integration, metadata")
+    .eq("companyId", companyId)
+    .eq("entityType", entityType)
+    .eq("entityId", entityId)
+    .in("integration", ["linear", "jira"]);
+  const linkOf = (integration: string) =>
+    links.data?.find((link) => link.integration === integration)?.metadata ??
+    null;
+  return { linearIssue: linkOf("linear"), jiraIssue: linkOf("jira") };
+}
+
+/**
+ * The title and description a new Linear or Jira issue starts from: the
+ * record's description as Markdown, and an element's name. The form shows
+ * them so the user creates the issue from the record, not from a blank page.
+ */
+export async function getNewIssueDefaults(
+  client: SupabaseClient<Database>,
+  entityType: SyncedEntityType,
+  id: string,
+  companyId: string
+): Promise<{ title: string; description: string }> {
+  const [task, element] = await Promise.all([
+    getActionTaskWithParent(client, entityType, id, companyId),
+    entityType === "projectElement"
+      ? client
+          .from("projectElement")
+          .select("name")
+          .eq("id", id)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+
+  return {
+    title: element.data?.name ?? "",
+    description: tiptapToMarkdown(task.notes as TiptapDocument | null)
+  };
+}
+
+/**
+ * Why a project element cannot link to an issue, or null. A Closed project
+ * refuses every change, so it refuses a link too.
+ */
+export async function projectElementLinkRefusal(
+  client: SupabaseClient<Database>,
+  elementId: string,
+  companyId: string
+): Promise<string | null> {
+  const element = await client
+    .from("projectElement")
+    .select("projectId")
+    .eq("id", elementId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!element.data) return "Could not find the element";
+
+  const project = await client
+    .from("project")
+    .select("status")
+    .eq("id", element.data.projectId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return project.data?.status === "Closed" ? "The project is closed" : null;
+}
 
 export type ActionTaskWithParent = {
   id: string | null;
@@ -1425,19 +1485,27 @@ export type ActionTaskWithParent = {
 // task and its parent's readable id from whichever table the entity type names.
 export async function getActionTaskWithParent(
   client: SupabaseClient<Database>,
-  entityType: ActionTaskEntityType,
+  entityType: SyncedEntityType,
   taskId: string,
   companyId: string
 ): Promise<ActionTaskWithParent> {
-  const { table, parentColumn } = actionTaskEntities[entityType];
-  const { parentTable, readableColumn } = actionTaskParents[entityType];
+  // The registry names the parent and its readable id (the Linear attachment /
+  // Jira remote-link title) and the rich-text column, read here as `notes`.
+  const { table, parentColumn, parentTable, readableColumn, textColumn } =
+    syncedEntities[entityType];
 
   const result = await client
     .from(table)
-    .select(`id, notes, ${parentColumn}, ${parentTable}(${readableColumn})`)
+    .select(
+      `id, notes:${textColumn}, ${parentColumn}, ${parentTable}(${readableColumn})`
+    )
     .eq("id", taskId)
     .eq("companyId", companyId)
     .maybeSingle();
+
+  if (result.error) {
+    throw new Error(`Failed to read the ${table}: ${result.error.message}`);
+  }
 
   // The select string is built from the entity map, which erases Supabase's row typing
   const row = result.data as Record<string, any> | null;
@@ -1642,12 +1710,13 @@ export async function notifyImplementationHubAdmins(ctx: ServiceContext) {
 }
 
 /**
- * The action task an integration acts on, or a refusal when it hangs off a
- * change notice whose workflow can no longer change.
+ * The record an issue integration acts on (an action task or a project
+ * element), or a refusal: a change notice's task once the notice's workflow
+ * can no longer change, an element of a Closed project.
  */
 export async function editableActionTask(
   ctx: ServiceContext,
-  entityType: ActionTaskEntityType,
+  entityType: SyncedEntityType,
   actionId: string
 ): Promise<ActionTaskWithParent | CarbonError> {
   const client = ctx.asCaller.supabase;
@@ -1657,6 +1726,15 @@ export async function editableActionTask(
     actionId,
     ctx.company.id
   );
+
+  if (entityType === "projectElement") {
+    const refusal = await projectElementLinkRefusal(
+      client,
+      actionId,
+      ctx.company.id
+    );
+    return refusal ? ctx.error("rule", refusal) : task;
+  }
   if (entityType !== "changeOrderActionTask") return task;
 
   const notFound = ctx.error("notFound", "Could not find change notice");
@@ -1674,13 +1752,29 @@ export async function editableActionTask(
   return task;
 }
 
-/** Where the action task's parent opens in Carbon, for the link back. */
+/** Queue the record's push to its issue, under the per-company sync key. */
+export async function pushToIssue(
+  companyId: string,
+  entityType: SyncedEntityType,
+  actionId: string,
+  initial: boolean
+) {
+  await trigger("issue-sync-push", {
+    companyId,
+    ...(initial ? { initial: true } : {}),
+    records: [
+      { table: entityType, recordId: actionId, operation: "UPDATE", old: null }
+    ]
+  });
+}
+
+/** Where the record opens in Carbon, for the link back from the issue. */
 export function actionTaskUrl(
-  rows: unknown,
-  entityType: ActionTaskEntityType
+  entityType: SyncedEntityType,
+  parentId: string,
+  actionId: string
 ): string {
-  const parentId = actionTaskParentId(rows, entityType) ?? "";
-  return `${getAppUrl()}${actionTaskEntities[entityType].detailPath(parentId)}/details`;
+  return `${getAppUrl()}${syncedEntities[entityType].detailPath(parentId, actionId)}`;
 }
 // Timezones change only when someone edits Settings → Company or a location, so
 // a long TTL is fine — writes invalidate the key explicitly (below). The
@@ -4619,7 +4713,8 @@ export const importCsvInput = z.object({
     "materialDimension",
     "inventoryQuantity",
     "batchQuantity",
-    "serialQuantity"
+    "serialQuantity",
+    "payrollPeriodTotal"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -7849,6 +7944,15 @@ export async function importCsvTable(
       });
       break;
     }
+    case "payrollPeriodTotal": {
+      await importPayrollTotals(db, {
+        mappedRecords,
+        companyId,
+        userId,
+        summary
+      });
+      break;
+    }
     default: {
       throw new Error(`Invalid table: ${table}`);
     }
@@ -8275,6 +8379,8 @@ export async function convertDocument(
             storageUnitId: line.storageUnitId,
             accountId: line.accountId,
             costCenterId: line.costCenterId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
             assetId: line.assetId,
             description: line.description,
             quantity: getRemainingQuantityToInvoice(line),
@@ -11938,10 +12044,45 @@ export async function createDocument(
       if (!locationId) throw new Error("The return order has no location");
 
       const returnLines = salesReturnOrderLines.data.filter(
-        (d) => d.disposition === "Return to Customer"
+        (d) =>
+          d.disposition === "Return to Customer" || d.disposition === "Repair"
       );
       if (returnLines.length === 0)
-        throw new Error('No lines are dispositioned "Return to Customer"');
+        throw new Error(
+          'No lines are dispositioned "Return to Customer" or "Repair"'
+        );
+
+      // A Repair line ships back one unit per Depot Repair order that is
+      // done (Completed, or Closed after its invoice) and whose unit is
+      // still at the depot. The asset leaves At Depot when the return
+      // shipment posts, so the count needs no prior-shipment netting.
+      const repairLineIds = returnLines
+        .filter((d) => d.disposition === "Repair")
+        .map((d) => d.id);
+      const readyToShipByRepairLine = new Map<string, number>();
+      if (repairLineIds.length > 0) {
+        const readyOrders = await db
+          .selectFrom("serviceOrder as so")
+          .innerJoin("customerAsset as ca", (join) =>
+            join
+              .onRef("ca.id", "=", "so.customerAssetId")
+              .on("ca.companyId", "=", companyId)
+          )
+          .select("so.salesReturnOrderLineId")
+          .where("so.type", "=", "Depot Repair")
+          .where("so.salesReturnOrderLineId", "in", repairLineIds)
+          .where("so.status", "in", ["Completed", "Closed"])
+          .where("ca.status", "=", "At Depot")
+          .where("so.companyId", "=", companyId)
+          .execute();
+        for (const order of readyOrders) {
+          if (!order.salesReturnOrderLineId) continue;
+          readyToShipByRepairLine.set(
+            order.salesReturnOrderLineId,
+            (readyToShipByRepairLine.get(order.salesReturnOrderLineId) ?? 0) + 1
+          );
+        }
+      }
 
       // Quantity already shipped back by earlier posted shipments
       const priorShipments = await many(
@@ -12005,10 +12146,13 @@ export async function createDocument(
       const shipmentLineItems = returnLines.reduce<ShipmentLineItem[]>(
         (acc, d) => {
           if (!d.itemId) return acc;
-          const outstanding = Math.max(
-            0,
-            (d.quantityReceived ?? 0) - (shippedBackByLine.get(d.id) ?? 0)
-          );
+          const outstanding =
+            d.disposition === "Repair"
+              ? (readyToShipByRepairLine.get(d.id) ?? 0)
+              : Math.max(
+                  0,
+                  (d.quantityReceived ?? 0) - (shippedBackByLine.get(d.id) ?? 0)
+                );
           if (outstanding === 0) return acc;
 
           acc.push({

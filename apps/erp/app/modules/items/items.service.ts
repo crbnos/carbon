@@ -63,6 +63,12 @@ import { ruleError, SERVICE_RULE_ERROR_CODE, sanitize } from "~/utils/supabase";
 import { makeToAssetItemError } from "../production/production.models";
 import * as productionPostings from "../production/production.service";
 import type { nonConformancePriority } from "../quality/quality.models";
+import {
+  BASE_IGNORED_FIELDS,
+  comparedFields,
+  diffRows,
+  valuesEqual
+} from "../shared/diff";
 import type {
   operationParameterValidator,
   operationStepSlideValidator,

@@ -25,7 +25,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getCurrentFiscalYear } from "~/modules/accounting/accounting.server";
+import { getCurrentFiscalYear } from "~/modules/accounting/accounting.service";
 import type { IndirectRateRunRow } from "~/modules/accounting/ui/IndirectRates";
 import {
   IndirectRateRuns,

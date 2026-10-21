@@ -7,7 +7,6 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -41,7 +40,9 @@ import { path } from "~/utils/path";
 //   invoiceId   -> one or more; their open balances are summed into the total
 //                  and (on submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
-//   salesOrderId / rentalAgreementId -> seeds the deposit document
+//   salesOrderId / rentalAgreementId / customerContractId -> seeds the
+//                  deposit document
+//   financingRequestId -> the contract financing request the payment receives
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -178,7 +179,10 @@ export async function action(args: ActionFunctionArgs) {
     seedInvoiceIds: String(formData.get("seedInvoiceIds") ?? "")
       .split(",")
       .map((id) => id.trim())
-      .filter(Boolean)
+      .filter(Boolean),
+    // A payment made from a contract financing request receives that request.
+    financingRequestId:
+      String(formData.get("financingRequestId") ?? "") || undefined
   });
   if (!result.data) {
     return respond(args.request, result).redirect(path.to.paymentNew);

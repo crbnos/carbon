@@ -300,7 +300,11 @@ export const postInventoryAdjustmentInput = z
     scrapReasonId: z.string().optional().nullable(),
     // Unscrap: the original scrap itemLedger row to reverse against. Optional —
     // resolved server-side from the tracked entity's newest Scrap movement.
-    unscrapOfItemLedgerId: z.string().optional().nullable()
+    unscrapOfItemLedgerId: z.string().optional().nullable(),
+    // The stock stripe of untracked stock, and of a NEW tracked entity: a
+    // project with project stock, or null / omitted for common stock. An
+    // existing tracked entity always moves in the stripe that holds it.
+    projectId: z.string().optional().nullable()
   })
   .superRefine((data, ctx) => {
     if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {

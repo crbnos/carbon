@@ -3,10 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
+import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
 import { safeStorageFileName, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { validator } from "@carbon/form";
@@ -66,6 +68,8 @@ import {
 import {
   contractAmendmentChangeValidator,
   contractDurationOf,
+  contractLaborRateValidator,
+  contractLineFundingValidator,
   customerContractAmendmentValidator,
   customerContractTypes,
   customerContractValidator,
@@ -74,11 +78,13 @@ import {
   isSalesOrderLocked,
   isSalesReturnOrderLocked,
   isSalesRfqLocked,
+  projectContractTermDefaults,
   quoteLineValidator,
   quoteMaterialValidator,
   quoteOperationValidator,
   quoteStatusType,
   quoteValidator,
+  REPAIR_DISPOSITION_LOCKED_MESSAGE,
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
@@ -2644,6 +2650,11 @@ export const escalateReturnOrderLine = defineServiceFn({
         "Cannot set a disposition before any quantity is received"
       );
     }
+    // A received Repair line's unit never entered stock, so it cannot be
+    // scrapped or reworked from stock.
+    if (line.data.disposition === "Repair") {
+      return ctx.error("rule", REPAIR_DISPOSITION_LOCKED_MESSAGE);
+    }
 
     const entityIds = await service.returnedOnHoldEntityIds(ctx, {
       id,
@@ -3496,9 +3507,27 @@ export const createContract = defineServiceFn({
       id: _id,
       customerContractId: _customerContractId,
       customFields,
-      ...data
+      ...posted
     } = input;
 
+    // A project contract runs over its period of performance: no duration (so
+    // no term months), and the billing terms its basis fixes. Only the billing
+    // frequency is the user's.
+    const data =
+      posted.billingBasis === "Project"
+        ? {
+            ...posted,
+            ...projectContractTermDefaults,
+            billingFrequency:
+              posted.billingFrequency ??
+              projectContractTermDefaults.billingFrequency,
+            duration: undefined,
+            renewalUplift: 0
+          }
+        : posted;
+
+    // Spec decision 17: suggested from the customer's previous contracts, and
+    // editable afterwards. A type the input set is kept.
     let contractType = data.contractType;
     if (!contractType) {
       const previous = await service.getCustomerContractStatuses(
@@ -3803,6 +3832,11 @@ export const setContractTerm = defineServiceFn({
     if (contract.invoiceAutomation) {
       merged.append("invoiceAutomation", contract.invoiceAutomation);
     }
+    // Not a term either, and never edited here: carried so the validator
+    // applies the rules of this contract's basis.
+    if (contract.billingBasis) {
+      merged.append("billingBasis", contract.billingBasis);
+    }
     if (field === "currencyCode" && value && value !== contract.currencyCode) {
       const rate = await getExchangeRate(client, companyId, value);
       if (rate.error) {
@@ -4099,7 +4133,8 @@ export const previewContractAmendment = defineServiceFn({
  * Changes, adds or ends lines from `amendmentDate`, recorded with its type
  * and reason. The `post-customer-contract` server function owns every guard
  * and re-plans the schedule and revenue from the effective date; its
- * refusal is the message.
+ * refusal is the message. An added Cost Plus line, or a line moved to
+ * Percent Complete revenue, needs the Project Revenue feature.
  *
  * @mcp
  */
@@ -4108,6 +4143,19 @@ export const amendContract = defineServiceFn({
   permission: { update: "sales" },
 
   async run(ctx, input) {
+    const upgrade = await service.projectRevenueRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.changes.flatMap((change) =>
+        change.op === "add"
+          ? [change.line]
+          : change.op === "change"
+            ? [{ revenueMethod: change.revenueMethod }]
+            : []
+      )
+    );
+    if (upgrade) return ctx.error("entitlement", upgrade);
+
     const result = await service.postContract(ctx, {
       type: "amend",
       asOf: await service.companyToday(ctx),
@@ -10142,10 +10190,18 @@ export const createContractLine = defineServiceFn({
     startDate: z.string().min(1),
     endDate: z.string().optional(),
     goLiveDate: z.string().optional(),
-    revenueMethod: z.enum(["Daily", "Even Period"]),
+    revenueMethod: z.enum([
+      "Daily",
+      "Even Period",
+      "Right to Invoice",
+      "Percent Complete"
+    ]),
     revenueStartDate: z.string().optional(),
     revenueEndDate: z.string().optional(),
     projectId: z.string().optional(),
+    billingMethod: z
+      .enum(["Fixed", "Time & Materials", "Cost Plus"])
+      .optional(),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -10153,6 +10209,13 @@ export const createContractLine = defineServiceFn({
   }),
   permission: { create: "sales" },
   async run(ctx, input) {
+    // Cost Plus and Percent Complete need the project revenue feature.
+    const upgrade = await service.projectRevenueRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [input]
+    );
+    if (upgrade) return ctx.error("entitlement", upgrade);
     return unwrap(
       ctx,
       await service.upsertContractLine(
@@ -10187,10 +10250,18 @@ export const updateContractLine = defineServiceFn({
       startDate: z.string().min(1),
       endDate: z.string().optional(),
       goLiveDate: z.string().optional(),
-      revenueMethod: z.enum(["Daily", "Even Period"]),
+      revenueMethod: z.enum([
+        "Daily",
+        "Even Period",
+        "Right to Invoice",
+        "Percent Complete"
+      ]),
       revenueStartDate: z.string().optional(),
       revenueEndDate: z.string().optional(),
       projectId: z.string().optional(),
+      billingMethod: z
+        .enum(["Fixed", "Time & Materials", "Cost Plus"])
+        .optional(),
       id: z
         .string()
         .describe("Send to update that record; omit to create a new one.")
@@ -10199,12 +10270,374 @@ export const updateContractLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "sales" },
   async run(ctx, input) {
+    // Cost Plus and Percent Complete need the project revenue feature.
+    const upgrade = await service.projectRevenueRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [input]
+    );
+    if (upgrade) return ctx.error("entitlement", upgrade);
     return unwrap(
       ctx,
       await service.upsertContractLine(
         ctx.asCaller.supabase,
         payload(ctx, input).forUpdate() as never
       )
+    );
+  }
+});
+
+/**
+ * Draft a contract's project billing invoices.
+ *
+ * @remarks
+ * Per Active contract with a started billing line (Time & Materials or Cost
+ * Plus), one Draft invoice for the Unbilled items posted on or before the
+ * latest billing period end that has passed by `asOf`, within each line's
+ * funding (`create-project-billing-invoices`). A contract that fails is
+ * reported in `failures`; the others still draft.
+ */
+export const createProjectBillingInvoices = defineServiceFn({
+  input: service.createProjectBillingInvoicesInput,
+  permission: service.createProjectBillingInvoicesPermission,
+
+  async run(ctx, input) {
+    return run(ctx, "create-project-billing-invoices", () =>
+      service.createProjectBillingInvoices(ctx, input)
+    );
+  }
+});
+
+/**
+ * Generate a contract line's billable items.
+ *
+ * @remarks
+ * The line's items for the ledger rows posted up to today that have none
+ * yet: work posted before the line existed, or rows the job SQL wrote. A Time
+ * & Materials line runs the T&M backfill (`generate-contract-billable-items`);
+ * a Cost Plus line runs the commercial generator, which needs the Project
+ * Revenue feature.
+ */
+export const generateContractBillableItems = defineServiceFn({
+  input: z.object({
+    customerContractId: z.string(),
+    customerContractLineId: z.string()
+  }),
+  permission: service.generateContractBillableItemsPermission,
+
+  async run(ctx, { customerContractId, customerContractLineId }) {
+    const companyId = ctx.company.id;
+    const line = await service.getContractLine(
+      ctx.asCaller.supabase,
+      customerContractLineId,
+      companyId
+    );
+    if (line.error || line.data.customerContractId !== customerContractId) {
+      return ctx.error("notFound", "The line was not found", line.error);
+    }
+    const through = await service.companyToday(ctx);
+
+    if (line.data.billingMethod === "Cost Plus") {
+      let result: Awaited<ReturnType<typeof generateCostPlusItems>>;
+      try {
+        result = await generateCostPlusItems(ctx.asSystem.pg, {
+          companyId,
+          userId: ctx.auditUserId,
+          through,
+          customerContractLineId
+        });
+      } catch (err) {
+        logger.error("Failed to generate Cost Plus items", {
+          companyId,
+          customerContractLineId,
+          error: err
+        });
+        return ctx.error(
+          "internal",
+          getErrorMessage(err, "Failed to generate billable items"),
+          err
+        );
+      }
+      if (result.gated) {
+        return ctx.error(
+          "entitlement",
+          defaultUpgradeMessage(
+            resolveRequirement({ feature: "PROJECT_REVENUE" })
+          )
+        );
+      }
+      return { generated: result.generated };
+    }
+
+    const result = await run(ctx, "generate-contract-billable-items", () =>
+      service.generateContractBillableItems(ctx, {
+        customerContractLineId,
+        through
+      })
+    );
+    if (result instanceof CarbonError) {
+      logger.error("Failed to generate billable items", {
+        companyId,
+        customerContractLineId,
+        error: result
+      });
+    }
+    return result;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Project contracts: research flags, funding, bill rates, billing invoices
+
+/**
+ * Set a contract's R&D tax flags.
+ *
+ * @remarks
+ * Tax facts, not terms, so they change in any status. A flag left out keeps
+ * its value. `researchFunded` null means the default: funded when the
+ * contract has a Cost Plus or Time & Materials line.
+ *
+ * @mcp
+ */
+export const updateContractResearchFlags = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    researchFunded: z.boolean().nullable().optional(),
+    paymentContingentOnSuccess: z.boolean().optional(),
+    contractorRetainsRights: z.boolean().optional()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    const update = await service.updateContractResearchFlags(
+      ctx.asCaller.supabase,
+      { ...input, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
+    );
+    if (update.error) {
+      logger.error("contract research flag update failed", {
+        companyId: ctx.company.id,
+        id: input.id,
+        error: update.error
+      });
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update the research flag",
+        update.error
+      );
+    }
+    return { id: input.id };
+  }
+});
+
+/**
+ * List the funding actions of billing lines.
+ *
+ * @remarks
+ * The contract modifications of Time & Materials and Cost Plus lines, by
+ * funded date.
+ *
+ * @mcp read
+ */
+export const getContractFundingActions = defineServiceFn({
+  input: z.object({ lineIds: z.array(z.string()) }),
+  permission: { view: "sales" },
+
+  async run(ctx, { lineIds }) {
+    return unwrap(
+      ctx,
+      await service.getContractFundingActions(
+        ctx.asCaller.supabase,
+        lineIds,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * List the bill rates of a contract line.
+ *
+ * @remarks
+ * Per labor category and per employee, newest first.
+ *
+ * @mcp read
+ */
+export const getContractLaborRates = defineServiceFn({
+  input: z.object({ customerContractLineId: z.string() }),
+  permission: { view: "sales" },
+
+  async run(ctx, { customerContractLineId }) {
+    return unwrap(
+      ctx,
+      await service.getContractLaborRates(
+        ctx.asCaller.supabase,
+        customerContractLineId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create or change a bill rate of a contract line.
+ *
+ * @remarks
+ * For a labor category or an employee. Rates change at any time, also on an
+ * Active contract. Only a Time & Materials line has bill rates.
+ *
+ * @mcp
+ */
+export const upsertContractLaborRate = defineServiceFn({
+  input: contractLaborRateValidator,
+  permission: { update: "sales" },
+
+  async run(ctx, { id, ...rate }) {
+    return unwrap(
+      ctx,
+      await service.upsertContractLaborRate(
+        ctx.asCaller.supabase,
+        id
+          ? {
+              ...rate,
+              id,
+              companyId: ctx.company.id,
+              updatedBy: ctx.auditUserId
+            }
+          : { ...rate, companyId: ctx.company.id, createdBy: ctx.auditUserId }
+      )
+    );
+  }
+});
+
+/**
+ * Delete a bill rate of a contract line.
+ *
+ * @mcp destructive
+ */
+export const deleteContractLaborRate = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id }) {
+    const result = await service.deleteContractLaborRate(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        result.error.message || "Failed to delete the bill rate",
+        result.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Get the funding position of billing lines.
+ *
+ * @remarks
+ * Billed, unbilled, incurred cost and the cost of the last 90 days, on
+ * `asOf` (today in the company's timezone when left out).
+ *
+ * @mcp read
+ */
+export const getContractLineFunding = defineServiceFn({
+  input: z.object({
+    lineIds: z.array(z.string()),
+    asOf: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional()
+  }),
+  permission: { view: "sales" },
+
+  async run(ctx, { lineIds, asOf }) {
+    return unwrap(
+      ctx,
+      await service.getContractLineFunding(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        lineIds,
+        asOf: asOf ?? (await service.companyToday(ctx))
+      })
+    );
+  }
+});
+
+/**
+ * Change the funding of a billing line.
+ *
+ * @remarks
+ * The funded amount and cost, the ceiling and the notice terms, on a Draft
+ * or Active contract; nothing else on the line changes. In DCAA mode the
+ * funding actions own the funded cost and amount.
+ *
+ * @mcp
+ */
+export const updateContractLineFunding = defineServiceFn({
+  input: contractLineFundingValidator,
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.updateContractLineFunding(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * List a contract's project billing invoices.
+ *
+ * @remarks
+ * The sales invoices that bill its Time & Materials and Cost Plus lines,
+ * each with the lines' billed total, newest first.
+ *
+ * @mcp read
+ */
+export const getContractProjectBillingInvoices = defineServiceFn({
+  input: z.object({ customerContractId: z.string() }),
+  permission: { view: "sales" },
+
+  async run(ctx, { customerContractId }) {
+    return unwrap(
+      ctx,
+      await service.getContractProjectBillingInvoices(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        customerContractId
+      })
+    );
+  }
+});
+
+/**
+ * Get the backup of a project billing invoice.
+ *
+ * @remarks
+ * Every billable item it billed, with the ledger row's posting date, cost
+ * type, employee, labor category, hours and document, and the billing
+ * element. A burden item carries its pool, fiscal year, rate and base.
+ * Reconciles the invoice to the books (DFARS 252.242-7006).
+ *
+ * @mcp read
+ */
+export const getProjectBillingBackup = defineServiceFn({
+  input: z.object({ salesInvoiceId: z.string() }),
+  permission: { view: "sales" },
+
+  async run(ctx, { salesInvoiceId }) {
+    return unwrap(
+      ctx,
+      await service.getProjectBillingBackup(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        salesInvoiceId
+      })
     );
   }
 });

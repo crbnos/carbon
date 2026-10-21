@@ -359,13 +359,15 @@ export const recurringBillingFunction = inngest.createFunction(
                   .today(await getCompanyTimeZone(serviceRole, company.id))
                   .toString();
 
-              const drafted = await serverFns
-                .system({
+              const drafted = await postingOrThrow(
+                "create-project-billing-invoices",
+                {
                   db: getJobDatabaseClient(),
                   companyId: company.id,
                   userId: "system"
-                })
-                .invokeOrThrow("create-project-billing-invoices", { asOf });
+                },
+                { asOf }
+              );
 
               for (const failure of drafted.failures) {
                 logger.error(

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { contractDurationOf } from "../../sales.models";
 import ContractAmendModal from "./ContractAmendModal";
 import ContractAmendments from "./ContractAmendments";
 import ContractBillTo, { ContractRevenueMigration } from "./ContractBillTo";
@@ -45,7 +46,7 @@ import {
 import FundingBar from "./FundingBar";
 import ProjectContractDetailsForm from "./ProjectContractDetailsForm";
 import ProjectContractLinesGrid from "./ProjectContractLinesGrid";
-import { contractDurationOf, useContractLabels } from "./useContractLabels";
+import { useContractLabels } from "./useContractLabels";
 import { useProjectContractGaps } from "./useProjectContractGaps";
 
 export type { ContractSetupStep } from "./ContractSetupSteps";
@@ -83,12 +84,12 @@ export {
   ContractStatus,
   ContractSummary,
   ContractsTable,
-  FundingBar,
   contractDurationOf,
   contractLineFormValues,
   contractLineName,
   contractSetupSteps,
   contractSetupStepsFor,
+  FundingBar,
   newContractLineFormValues,
   ProjectContractDetailsForm,
   ProjectContractLinesGrid,

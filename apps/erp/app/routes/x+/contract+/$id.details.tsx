@@ -8,7 +8,12 @@ import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { draftContractSetupPath } from "~/modules/sales/sales.service";
+import { getProjectContractRevenue } from "~/modules/projects/projects.service";
+import {
+  draftContractSetupPath,
+  getContractLineFunding,
+  getContractProjectBillingInvoices
+} from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import {
   ContractAmendments,
@@ -17,7 +22,7 @@ import {
   ContractRevenue,
   ContractSummary
 } from "~/modules/sales/ui/Contracts";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-details");

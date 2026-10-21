@@ -15,7 +15,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { getCurrentFiscalYear } from "~/modules/accounting/accounting.server";
+import { getCurrentFiscalYear } from "~/modules/accounting/accounting.service";
 import { IceExport } from "~/modules/accounting/ui/IndirectRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

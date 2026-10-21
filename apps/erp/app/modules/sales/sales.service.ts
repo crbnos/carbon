@@ -22,6 +22,7 @@ import {
 import {
   type ContractRevenueRow,
   type ContractRevenueStatus,
+  isProgressRevenueMethod,
   monthStart,
   planRevenueSchedule,
   type RevenuePlanLine,
@@ -30,6 +31,7 @@ import {
 } from "@carbon/database/contract-revenue-schedule";
 import {
   amendmentEffectiveDate,
+  billingGrid,
   type ContractLineTerms,
   type ContractPlannedInvoice,
   type ContractScheduleReconciliation,
@@ -66,6 +68,9 @@ import { monthEnd } from "@carbon/database/revenue-schedule";
 import { getNextSequence } from "@carbon/database/sequence";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
+import { requireProjectRevenueEntitlement } from "@carbon/ee/project-revenue.server";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
@@ -80,8 +85,15 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import type { PickPartial, Violation } from "@carbon/utils";
+import type {
+  ContractBillingBasis,
+  PickPartial,
+  Violation
+} from "@carbon/utils";
 import {
+  BILLABLE_REASON_FUNDING_LIMIT,
+  billingBasisMismatch,
+  billingBasisMismatchMessages,
   billingHorizon,
   buildJournalLineDimensionInserts,
   buildLessorSchedule,
@@ -89,6 +101,7 @@ import {
   certainPurchaseOption,
   classifyRentalLine,
   contractInvoiceHold,
+  DEFAULT_CURRENCY_DECIMALS,
   datetime,
   EPSILON,
   type ExistingBillingPeriod,
@@ -105,12 +118,18 @@ import {
   leasePaymentTerms,
   lineRevenueDates,
   type PeriodSpec,
+  type ProjectInvoicePlanItem,
+  parseLineItemNumber,
+  planProjectInvoiceLines,
   planRentalInvoices,
+  projectInvoiceHold,
   type RentalBillingCycle,
   round,
   salesTypeRequirementError,
   searchFilter,
   suggestContractType,
+  sumFunding,
+  takeWithinFunding,
   wholeRateUnits
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -133,6 +152,7 @@ import {
 import { upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
+import { generateTimeAndMaterialsItems } from "~/modules/projects/project-posting";
 import {
   getCompany,
   getCompanySettings
@@ -176,7 +196,15 @@ import {
   resolveBuyUnitCost
 } from "../shared/shared.utils";
 import { updateSortOrder } from "../shared/sort-order";
+import {
+  acrnPositions,
+  type ClinAllocation,
+  type ClinSection,
+  planClinSections
+} from "./contract-clin";
 import type {
+  contractLaborRateValidator,
+  contractLineFundingValidator,
   customerBankAccountValidator,
   customerContactValidator,
   customerContractFundingValidator,
@@ -221,9 +249,13 @@ import {
   contractEndDate,
   costCategoryKeys,
   type createContractFromSalesOrderValidator,
+  isProjectBillingMethod,
   isQuoteLocked,
   isSalesOrderLocked,
-  OPEN_SALES_ORDER_STATUSES
+  OPEN_SALES_ORDER_STATUSES,
+  REPAIR_DISPOSITION_LOCKED_MESSAGE,
+  REPAIR_LINE_CREDIT_MESSAGE,
+  REPAIR_ONLY_REPLACEMENT_MESSAGE
 } from "./sales.models";
 import { renderSalesOrderPdf } from "./sales.pdf";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
@@ -7479,7 +7511,8 @@ export async function getShippedTrackedEntitiesForCustomer(
 /**
  * Per-line creditable pool = received − already credited. Draft memos count
  * against the pool (two Drafts must not double-credit); the VIEW's displayed
- * quantityCredited still derives from Posted memos only.
+ * quantityCredited still derives from Posted memos only. A Repair line is
+ * left out: its unit goes back to the customer, so it is never credited.
  */
 export async function getCreditableQuantities(
   client: SupabaseClient<Database>,
@@ -7538,7 +7571,8 @@ export async function getCreditableQuantities(
  * The creditable cap (received − already credited over NON-VOIDED memos —
  * Drafts count so two drafts can't double-credit) is validated inside the
  * transaction under a row lock on the RMA lines. Amount is rounded ONCE at
- * the currency's decimals (settlement boundary). Returns the memo id.
+ * the currency's decimals (settlement boundary). A Repair line is refused:
+ * its unit goes back to the customer. Returns the memo id.
  */
 export async function createSalesReturnOrderCredit(
   client: SupabaseClient<Database>,
@@ -7727,6 +7761,8 @@ export async function createSalesReturnOrderCredit(
  * lines, priced via resolvePrice (user adjusts on the draft — e.g. to zero
  * for warranty). One replacement per RMA; re-invoking returns the existing
  * link. Rollback-by-delete on line failure (the insertSalesOrder pattern).
+ * Repair lines are skipped: their units go back repaired. An RMA of Repair
+ * lines only is refused.
  */
 export async function createReplacementSalesOrder(
   client: SupabaseClient<Database>,
@@ -9456,7 +9492,6 @@ export async function updateContractType(
  * not terms. A flag left out keeps its value. `researchFunded` null means
  * the default: funded when the contract has a Cost Plus or Time & Materials
  * line.
- * @mcp update
  */
 export async function updateContractResearchFlags(
   client: SupabaseClient<Database>,
@@ -9852,7 +9887,6 @@ async function checkContractLineNumber(
 /**
  * Lists the funding actions (contract modifications) of billing lines, by
  * funded date.
- * @mcp read
  */
 export async function getContractFundingActions(
   client: SupabaseClient<Database>,
@@ -10031,7 +10065,6 @@ export async function deleteContractFunding(
 /**
  * Lists the bill rates of a contract line: per labor category and per
  * employee, newest first.
- * @mcp read
  */
 export async function getContractLaborRates(
   client: SupabaseClient<Database>,
@@ -10051,7 +10084,6 @@ export async function getContractLaborRates(
 /**
  * Creates or changes one bill rate of a contract line, for a labor category
  * or an employee. Rates change at any time, also on an Active contract.
- * @mcp upsert
  */
 export async function upsertContractLaborRate(
   client: SupabaseClient<Database>,
@@ -10118,7 +10150,6 @@ export async function upsertContractLaborRate(
 
 /**
  * Deletes one bill rate of a contract line.
- * @mcp delete
  */
 export async function deleteContractLaborRate(
   client: SupabaseClient<Database>,
@@ -10135,7 +10166,6 @@ export async function deleteContractLaborRate(
 /**
  * Gets the funding position of billing lines on a day: billed, unbilled,
  * incurred cost and the cost of the last 90 days.
- * @mcp read
  */
 export async function getContractLineFunding(
   client: SupabaseClient<Database>,
@@ -10154,7 +10184,6 @@ export async function getContractLineFunding(
  * and the notice terms. Allowed on a Draft or Active contract (a funding
  * modification is routine on a live contract); nothing else on the line
  * changes.
- * @mcp update
  */
 export async function updateContractLineFunding(
   client: SupabaseClient<Database>,
@@ -10212,7 +10241,6 @@ export async function updateContractLineFunding(
 /**
  * Lists the sales invoices that bill a contract's Time & Materials and Cost
  * Plus lines, each with the lines' billed total, newest first.
- * @mcp read
  */
 export async function getContractProjectBillingInvoices(
   client: SupabaseClient<Database>,
@@ -10259,7 +10287,6 @@ export async function getContractProjectBillingInvoices(
  * hours and document, and the billing element. A burden item has no ledger
  * row: it carries its pool, fiscal year, rate and base. Reconciles the
  * invoice to the books (DFARS 252.242-7006).
- * @mcp read
  */
 export async function getProjectBillingBackup(
   client: SupabaseClient<Database>,
@@ -11646,6 +11673,8 @@ async function releaseRecurringInvoiceStamps(
   const { companyId, salesInvoiceLineIds, userId } = args;
   if (salesInvoiceLineIds.length === 0) return;
 
+  await releaseServiceOrderStamps(trx, args);
+
   await trx
     .updateTable("rentalBillingPeriod")
     .set({
@@ -11721,6 +11750,86 @@ async function releaseRecurringInvoiceStamps(
 }
 
 /**
+ * A service order's billable items go back to Unbilled when the Draft lines
+ * that billed them are deleted. An invoice left with no billing line loses
+ * its `serviceOrderId`, and its order goes back from Closed to Completed so
+ * it can be invoiced again.
+ */
+async function releaseServiceOrderStamps(
+  trx: KyselyTx,
+  args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
+): Promise<void> {
+  const { companyId, salesInvoiceLineIds, userId } = args;
+  const released = await trx
+    .updateTable("projectBillableItem")
+    .set({
+      salesInvoiceLineId: null,
+      status: "Unbilled",
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
+    .returning("id")
+    .execute();
+  if (released.length === 0) return;
+
+  const invoices = await trx
+    .selectFrom("salesInvoiceLine")
+    .select("invoiceId")
+    .distinct()
+    .where("companyId", "=", companyId)
+    .where("id", "in", salesInvoiceLineIds)
+    .execute();
+  const invoiceIds = invoices.map((row) => row.invoiceId);
+  if (invoiceIds.length === 0) return;
+
+  // An invoice still billing the order through another line keeps it.
+  const stillBilled = sql<boolean>`EXISTS (
+    SELECT 1 FROM "salesInvoiceLine" l
+    JOIN "projectBillableItem" b
+      ON b."salesInvoiceLineId" = l."id" AND b."companyId" = l."companyId"
+    WHERE l."invoiceId" = "salesInvoice"."id" AND l."companyId" = ${companyId}
+  )`;
+  const unstamped = await trx
+    .selectFrom("salesInvoice")
+    .select(["id", "serviceOrderId"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", invoiceIds)
+    .where("serviceOrderId", "is not", null)
+    .where(sql<boolean>`NOT ${stillBilled}`)
+    .execute();
+  if (unstamped.length === 0) return;
+
+  await trx
+    .updateTable("salesInvoice")
+    .set({ serviceOrderId: null, updatedBy: userId, updatedAt: sql`now()` })
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      unstamped.map((row) => row.id)
+    )
+    .execute();
+  await trx
+    .updateTable("serviceOrder")
+    .set({
+      status: "Completed",
+      salesInvoiceId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      unstamped.map((row) => row.serviceOrderId as string)
+    )
+    .where("status", "=", "Closed")
+    .execute();
+}
+
+/**
  * Deletes a Draft sales invoice and, in the same transaction, releases the
  * rental billing periods and charges and the contract schedule rows it
  * billed, so the next generation bills them again. `salesInvoiceLineId` on
@@ -11755,7 +11864,18 @@ export async function deleteSalesInvoiceReleasingRentals(
       .where((eb) =>
         eb.or([
           eb("invoiceLineType", "=", "Rental"),
-          eb("customerContractInvoiceLineId", "is not", null)
+          eb("customerContractInvoiceLineId", "is not", null),
+          eb.exists(
+            eb
+              .selectFrom("projectBillableItem")
+              .select(sql`1`.as("one"))
+              .whereRef(
+                "projectBillableItem.salesInvoiceLineId",
+                "=",
+                "salesInvoiceLine.id"
+              )
+              .where("projectBillableItem.companyId", "=", companyId)
+          )
         ])
       )
       .execute();
@@ -11881,7 +12001,10 @@ export async function deleteSalesInvoiceLineReleasingRentals(
 
 /** The contract page's "Invoice": drafts the invoices the contract has due,
  *  exactly as the daily job would — the `create-contract-invoices` server
- *  function. */
+ *  function. A project contract also drafts its project billing invoice
+ *  (`create-project-billing-invoices`) FIRST, in the job's order: the
+ *  contract step ends a contract past its end date, and an Ended contract's
+ *  last period would then never bill. */
 export async function generateContractInvoicesNow(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -11890,20 +12013,70 @@ export async function generateContractInvoicesNow(
     /** `YYYY-MM-DD` in the company's timezone. */
     asOf: string;
     customerContractId: string;
+    billingBasis: Database["public"]["Enums"]["contractBillingBasis"];
   }
 ): Promise<{ invoices: DraftedContractInvoice[]; invoiceIds: string[] }> {
-  const { companyId, userId, asOf, customerContractId } = args;
-  const { invoices, invoiceIds, failures } = await invokePostingOrThrow(
-    { db, companyId, userId },
+  const { companyId, userId, asOf, customerContractId, billingBasis } = args;
+  const handles = { db, companyId, userId };
+  const project =
+    billingBasis === "Project"
+      ? await invokePostingOrThrow(
+          handles,
+          "create-project-billing-invoices",
+          { asOf, customerContractId },
+          createProjectBillingInvoices
+        )
+      : { invoices: [], invoiceIds: [], failures: [] };
+  const schedule = await invokePostingOrThrow(
+    handles,
     "create-contract-invoices",
     { asOf, customerContractId },
     createContractInvoices
   );
   // One contract is billed here, so its failure is the action's failure.
+  const failures = [...project.failures, ...schedule.failures];
   if (failures.length > 0) {
     throw new Error(failures.map((f) => f.error).join("; "));
   }
-  return { invoices, invoiceIds };
+  return {
+    invoices: [...project.invoices, ...schedule.invoices],
+    invoiceIds: [...project.invoiceIds, ...schedule.invoiceIds]
+  };
+}
+
+/**
+ * Cost Plus billing and Percent Complete revenue need `PROJECT_REVENUE`
+ * (plan decision P2). Returns the upgrade message when the company is not
+ * entitled and a line asks for either, else null. The lock lives in
+ * `@carbon/ee` (`requireProjectRevenueEntitlement`); this only turns its
+ * `EntitlementError` into a message a route can flash.
+ */
+export async function projectRevenueRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: {
+    billingMethod?: Database["public"]["Enums"]["contractBillingMethod"];
+    revenueMethod?: Database["public"]["Enums"]["contractRevenueMethod"];
+  }[]
+): Promise<string | null> {
+  const needsEntitlement = lines.some(
+    (line) =>
+      line.billingMethod === "Cost Plus" ||
+      line.revenueMethod === "Percent Complete"
+  );
+  if (!needsEntitlement) return null;
+  try {
+    await requireProjectRevenueEntitlement(client, companyId);
+    return null;
+  } catch (err) {
+    if (!(err instanceof EntitlementError)) throw err;
+    logger.error("Project revenue is not in the company's plan", {
+      companyId
+    });
+    return defaultUpgradeMessage(
+      resolveRequirement({ feature: "PROJECT_REVENUE" })
+    );
+  }
 }
 
 /** A new contract's invoicing terms from its customer: the bill-to
@@ -17506,6 +17679,19 @@ export function copyLineValues(
     projectId: merged.projectId,
     sortOrder: merged.sortOrder,
     customFields: toJson(merged.customFields) ?? null,
+    billingMethod: merged.billingMethod,
+    projectElementId: merged.projectElementId,
+    materialHandlingPercent: merged.materialHandlingPercent,
+    feePercent: merged.feePercent,
+    fundedAmount: merged.fundedAmount,
+    fundedCost: merged.fundedCost,
+    noticePercent: merged.noticePercent,
+    noticeWindowDays: merged.noticeWindowDays,
+    ceilingAmount: merged.ceilingAmount,
+    thresholdNoticeFundedCost: merged.thresholdNoticeFundedCost,
+    runOutNoticeFundedCost: merged.runOutNoticeFundedCost,
+    lineItemNumber: merged.lineItemNumber,
+    parentLineId: merged.parentLineId,
     companyId: scope.companyId,
     createdBy: scope.userId
   };
@@ -17712,6 +17898,7 @@ export function toLineTerms(
     | "discountPercent"
     | "startDate"
     | "endDate"
+    | "billingMethod"
   >[]
 ): ContractLineTerms[] {
   return lines.map((line) => ({
@@ -17722,7 +17909,8 @@ export function toLineTerms(
     rateUnit: line.rateUnit,
     discountPercent: Number(line.discountPercent),
     startDate: line.startDate,
-    endDate: line.endDate
+    endDate: line.endDate,
+    billingMethod: line.billingMethod
   }));
 }
 
@@ -18204,8 +18392,15 @@ const contractRevenueTypes = [
 
 const contractRevenueMethods = [
   "Daily",
-  "Even Period"
+  "Even Period",
+  "Right to Invoice",
+  "Percent Complete"
 ] as const satisfies readonly Enums["contractRevenueMethod"][];
+const contractBillingMethods = [
+  "Fixed",
+  "Time & Materials",
+  "Cost Plus"
+] as const satisfies readonly Enums["contractBillingMethod"][];
 
 const contractAmendmentEffects = [
   "Change Date",
@@ -18342,7 +18537,17 @@ const amendmentLine = z
     revenueMethod: z.enum(contractRevenueMethods),
     revenueStartDate: isoDate.optional(),
     revenueEndDate: isoDate.optional(),
-    projectId: z.string().optional()
+    projectId: z.string().optional(),
+    // Project billing (Phase 4a). Absent means a Fixed line.
+    billingMethod: z.enum(contractBillingMethods).optional(),
+    projectElementId: z.string().optional(),
+    materialHandlingPercent: percentPoints.optional(),
+    feePercent: percentPoints.optional(),
+    fundedAmount: z.number().min(0).optional(),
+    fundedCost: z.number().min(0).optional(),
+    noticePercent: z.number().min(75).max(85).optional(),
+    noticeWindowDays: z.number().int().min(30).max(90).optional(),
+    ceilingAmount: z.number().min(0).optional()
   })
   .refine((line) => (line.revenueType === "Recurring") === !!line.rateUnit, {
     message: "A recurring line needs a rate unit; a one-time line has none",
@@ -18424,6 +18629,195 @@ function refuseUnless(
 }
 
 // ---------------------------------------------------------------------------
+// project billing lines
+
+type BillingLineCheck = {
+  label: string;
+  billingMethod: Enums["contractBillingMethod"];
+  revenueMethod: Enums["contractRevenueMethod"];
+  projectId: string | null;
+  projectElementId: string | null;
+  startDate: string;
+  endDate: string | null;
+};
+
+/** Whether two line date ranges share a day. A line that ends before it
+ *  starts (an amendment replaced it from its first day) covers no days. */
+function rangesOverlap(
+  a: { startDate: string; endDate: string | null },
+  b: { startDate: string; endDate: string | null }
+): boolean {
+  if (a.endDate !== null && a.endDate < a.startDate) return false;
+  if (b.endDate !== null && b.endDate < b.startDate) return false;
+  return (
+    (a.endDate === null || a.endDate >= b.startDate) &&
+    (b.endDate === null || b.endDate >= a.startDate)
+  );
+}
+
+/**
+ * The problems of the project billing lines among `lines` (Time & Materials,
+ * Cost Plus, and Percent Complete lines), for confirm and amend:
+ * 1. the contract must be in the company's base currency (plan P5);
+ * 2. a billing line needs a billing element of a Contract-treatment project;
+ * 3. its element must not be the same as, above or below the element of
+ *    another billing line of an Active contract whose dates overlap (P7);
+ * 4. a Time & Materials line recognizes revenue by Right to Invoice (P6).
+ * Other lines are read with their stored end dates, so an amendment checks
+ * after it writes the end dates of the lines it ends.
+ */
+async function checkBillingLines(
+  trx: KyselyTx,
+  scope: Scope,
+  args: {
+    contract: Pick<ContractRow, "id" | "currencyCode">;
+    lines: BillingLineCheck[];
+  }
+): Promise<string[]> {
+  const { companyId } = scope;
+  const progress = args.lines.filter(
+    (line) =>
+      line.billingMethod !== "Fixed" ||
+      line.revenueMethod === "Percent Complete"
+  );
+  if (progress.length === 0) return [];
+  const problems: string[] = [];
+
+  const company = await trx
+    .selectFrom("company")
+    .select("baseCurrencyCode")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (company && company.baseCurrencyCode !== args.contract.currencyCode) {
+    problems.push(
+      `Project billing needs the contract in the company's base currency (${company.baseCurrencyCode}); this contract is in ${args.contract.currencyCode}`
+    );
+  }
+
+  const billing = progress.filter((line) => line.billingMethod !== "Fixed");
+  for (const line of billing) {
+    if (
+      line.billingMethod === "Time & Materials" &&
+      line.revenueMethod === "Percent Complete"
+    ) {
+      problems.push(
+        `${line.label}: a Time & Materials line recognizes revenue by Right to Invoice`
+      );
+    }
+    if (!line.projectId || !line.projectElementId) {
+      problems.push(`${line.label}: choose the billing element`);
+    }
+  }
+
+  const placed = billing.filter(
+    (
+      line
+    ): line is BillingLineCheck & {
+      projectId: string;
+      projectElementId: string;
+    } => !!line.projectId && !!line.projectElementId
+  );
+  if (placed.length === 0) return problems;
+  const projectIds = [...new Set(placed.map((line) => line.projectId))];
+
+  const projects = await trx
+    .selectFrom("project")
+    .select(["id", "costTreatment"])
+    .where("id", "in", projectIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const elements = await trx
+    .selectFrom("projectElement")
+    .select(["id", "parentId", "isBilling", "readableId", "name"])
+    .where("projectId", "in", projectIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const others = await trx
+    .selectFrom("customerContractLine as l")
+    .innerJoin("customerContract as c", (join) =>
+      join
+        .onRef("c.id", "=", "l.customerContractId")
+        .onRef("c.companyId", "=", "l.companyId")
+    )
+    .select([
+      "l.id",
+      "l.description",
+      "l.projectElementId",
+      "l.startDate",
+      "l.endDate",
+      "c.customerContractId as contractReadableId"
+    ])
+    .where("l.companyId", "=", companyId)
+    .where("l.billingMethod", "<>", "Fixed")
+    .where("c.status", "=", "Active")
+    .where("l.projectId", "in", projectIds)
+    .execute();
+
+  const treatmentById = new Map(projects.map((p) => [p.id, p.costTreatment]));
+  const elementById = new Map(elements.map((e) => [e.id, e]));
+  const elementLabel = (id: string) => {
+    const element = elementById.get(id);
+    return element?.readableId || element?.name || id;
+  };
+  /** Whether `id` is `ancestorId` or sits under it. */
+  const within = (id: string, ancestorId: string) => {
+    const seen = new Set<string>();
+    let current: string | null = id;
+    while (current && !seen.has(current)) {
+      if (current === ancestorId) return true;
+      seen.add(current);
+      current = elementById.get(current)?.parentId ?? null;
+    }
+    return false;
+  };
+  const related = (a: string, b: string) => within(a, b) || within(b, a);
+
+  const otherLines = others.flatMap((other) =>
+    other.projectElementId
+      ? [
+          {
+            label: `${other.description ?? "a line"} on ${other.contractReadableId}`,
+            projectElementId: other.projectElementId,
+            startDate: other.startDate,
+            endDate: other.endDate
+          }
+        ]
+      : []
+  );
+
+  placed.forEach((line, index) => {
+    if (treatmentById.get(line.projectId) !== "Contract") {
+      problems.push(
+        `${line.label}: the project's cost treatment must be Contract`
+      );
+    }
+    const element = elementById.get(line.projectElementId);
+    if (!element) {
+      problems.push(`${line.label}: the billing element is not on the project`);
+      return;
+    }
+    if (!element.isBilling) {
+      problems.push(
+        `${line.label}: ${elementLabel(element.id)} is not a billing element`
+      );
+    }
+    // Stored lines, then the later lines of this set (each pair once).
+    const clash = [...otherLines, ...placed.slice(index + 1)].find(
+      (other) =>
+        related(line.projectElementId, other.projectElementId) &&
+        rangesOverlap(line, other)
+    );
+    if (clash) {
+      problems.push(
+        `${line.label}: ${elementLabel(line.projectElementId)} overlaps the billing element of ${clash.label}; one cost can be billed by one line only`
+      );
+    }
+  });
+
+  return problems;
+}
+
+// ---------------------------------------------------------------------------
 // confirm
 
 async function confirm(
@@ -18461,7 +18855,23 @@ async function confirm(
       if (line.revenueType === "Recurring" && !line.rateUnit) {
         problems.push(`${label}: a recurring line needs a rate unit`);
       }
+      const mismatch = billingBasisMismatch(contract.billingBasis, line);
+      if (mismatch) {
+        problems.push(`${label}: ${billingBasisMismatchMessages[mismatch]}`);
+      }
     }
+    problems.push(
+      ...(await checkBillingLines(trx, scope, {
+        contract,
+        lines: lines.map((line) => ({
+          ...line,
+          label:
+            line.description ??
+            itemById.get(line.itemId)?.readableIdWithRevision ??
+            "Line"
+        }))
+      }))
+    );
     if (problems.length > 0) throw new InvalidInputError(problems.join("; "));
 
     const terms = toTerms(contract);
@@ -18627,6 +19037,17 @@ async function confirm(
       .where("companyId", "=", companyId)
       .execute();
 
+    // 6. Bill the work posted before the contract was confirmed (P15).
+    for (const line of lines) {
+      if (line.billingMethod !== "Time & Materials") continue;
+      await generateTimeAndMaterialsItems(trx, {
+        companyId,
+        userId,
+        customerContractLineId: line.id,
+        through: payload.asOf
+      });
+    }
+
     return { customerContractId: contract.id };
   });
 }
@@ -18640,9 +19061,28 @@ async function refuseRevenueResiduals(
   contractId: string,
   lineLabel: (lineId: string) => string
 ): Promise<void> {
+  // A progress line (Right to Invoice, Percent Complete) has no planned
+  // revenue: the monthly run recognizes it. A Fixed Percent Complete line
+  // still bills on its schedule, so its billed total has nothing to match.
+  const lines = await trx
+    .selectFrom("customerContractLine")
+    .select(["id", "revenueMethod"])
+    .where("customerContractId", "=", contractId)
+    .where("companyId", "=", scope.companyId)
+    .execute();
+  const progressLineIds = new Set(
+    lines
+      .filter((line) => isProgressRevenueMethod(line.revenueMethod))
+      .map((line) => line.id)
+  );
   const billed = await billedTotals(trx, scope, contractId);
-  const rows = await loadRevenue(trx, scope, contractId);
-  const { ok, residuals } = validateRevenueEdit(billed.totals, rows);
+  const totals = new Map(
+    [...billed.totals].filter(([lineId]) => !progressLineIds.has(lineId))
+  );
+  const rows = (await loadRevenue(trx, scope, contractId)).filter(
+    (row) => !progressLineIds.has(row.lineId)
+  );
+  const { ok, residuals } = validateRevenueEdit(totals, rows);
   if (ok) return;
   const detail = [...residuals].map(
     ([lineId, residual]) => `${lineLabel(lineId)}: ${residual}`
@@ -19405,6 +19845,17 @@ async function amend(
               "Only Service items can be on a contract"
             );
           }
+          // Added lines only: a change copies a stored line, and a contract
+          // that mixed both kinds before the billing basis keeps its lines.
+          const mismatch = billingBasisMismatch(contract.billingBasis, {
+            billingMethod: line.billingMethod ?? "Fixed",
+            revenueType: line.revenueType
+          });
+          if (mismatch) {
+            throw new InvalidInputError(
+              `${line.description || "The added line"}: ${billingBasisMismatchMessages[mismatch]}`
+            );
+          }
         }
       }
 
@@ -19415,6 +19866,13 @@ async function amend(
       for (const change of payload.changes) {
         if (change.op === "change") {
           const line = openLine(change.lineId);
+          // A change replaces the line with a new id; billable items point at
+          // the old one (plan decision P9).
+          if (line.billingMethod !== "Fixed") {
+            throw new InvalidInputError(
+              "Edit a project billing line's rates and funding on the line itself"
+            );
+          }
           if (
             line.revenueType === "One-time" &&
             change.rateUnit !== undefined
@@ -19504,7 +19962,29 @@ async function amend(
               amendsLineId: null,
               projectId: line.projectId || null,
               sortOrder: null,
-              customFields: null
+              customFields: null,
+              billingMethod: line.billingMethod ?? "Fixed",
+              projectElementId: line.projectElementId || null,
+              materialHandlingPercent:
+                line.materialHandlingPercent === undefined
+                  ? null
+                  : fraction(line.materialHandlingPercent),
+              feePercent:
+                line.feePercent === undefined
+                  ? null
+                  : fraction(line.feePercent),
+              fundedAmount: line.fundedAmount ?? null,
+              fundedCost: line.fundedCost ?? null,
+              noticePercent:
+                line.noticePercent === undefined
+                  ? 0.75
+                  : fraction(line.noticePercent),
+              noticeWindowDays: line.noticeWindowDays ?? 60,
+              ceilingAmount: line.ceilingAmount ?? null,
+              thresholdNoticeFundedCost: null,
+              runOutNoticeFundedCost: null,
+              lineItemNumber: null,
+              parentLineId: null
             },
             overrides: {}
           });
@@ -19555,8 +20035,18 @@ async function amend(
         .returning(["id"])
         .executeTakeFirstOrThrow();
       await setLineEndDates(trx, scope, contract.id, ends);
+      const billingProblems = await checkBillingLines(trx, scope, {
+        contract,
+        lines: inserts.map(({ fields, overrides }) => {
+          const line = { ...fields, ...overrides };
+          return { ...line, label: line.description ?? "The added line" };
+        })
+      });
+      if (billingProblems.length > 0) {
+        throw new InvalidInputError(billingProblems.join("; "));
+      }
       if (inserts.length > 0) {
-        await trx
+        const added = await trx
           .insertInto("customerContractLine")
           .values(
             inserts.map(({ fields, overrides }) =>
@@ -19566,7 +20056,18 @@ async function amend(
               })
             )
           )
+          .returning(["id", "billingMethod"])
           .execute();
+        // An added T&M line bills the work posted before it (P15).
+        for (const line of added) {
+          if (line.billingMethod !== "Time & Materials") continue;
+          await generateTimeAndMaterialsItems(trx, {
+            companyId,
+            userId,
+            customerContractLineId: line.id,
+            through: payload.asOf
+          });
+        }
       }
 
       // A discount on a new line that ends inside it is split off now, as at
@@ -20671,8 +21172,10 @@ async function draftDueInvoices(
 
 /** Where a contract's invoices are drafted: its sales order's shipping
  *  location when it came from one, else the company's first location. A
- *  contract has no location of its own. */
-async function contractLocationId(
+ *  contract has no location of its own. Shared by the contract schedule
+ *  source (`createContractInvoices`) and the project billing source
+ *  (`createProjectBillingInvoices`). */
+export async function contractLocationId(
   trx: KyselyTx,
   companyId: string,
   contract: ContractRow
@@ -20699,8 +21202,13 @@ async function contractLocationId(
   return location.id;
 }
 
-type InvoiceLineValues = {
-  itemId: string;
+/** One Service line of a contract invoice. A project billing line has no
+ *  schedule row, so `customerContractInvoiceLineId` is null there. A Comment
+ *  line (a project billing invoice's CLIN heading) has no item, no contract
+ *  line and no amount. */
+export type InvoiceLineValues = {
+  invoiceLineType?: "Service" | "Comment";
+  itemId: string | null;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -20709,95 +21217,31 @@ type InvoiceLineValues = {
   serviceStartDate: string | null;
   serviceEndDate: string | null;
   customerContractId: string;
-  customerContractLineId: string;
-  customerContractInvoiceLineId: string;
+  customerContractLineId: string | null;
+  customerContractInvoiceLineId: string | null;
   projectId: string | null;
   methodType: Enums["methodType"];
   unitOfMeasureCode: string;
 };
 
-/** One schedule row as a Service sales-invoice line (plan decision 10). */
-function invoiceLineValues(
-  row: DueRow,
-  line: ContractLineRow,
-  item:
-    | {
-        name: string;
-        unitOfMeasureCode: string | null;
-        defaultMethodType: Enums["methodType"] | null;
-      }
-    | undefined,
-  context: { contract: ContractRow; locationId: string }
-): InvoiceLineValues {
-  const quantity = Number(line.quantity);
-  const discountPercent = Number(line.discountPercent);
-  const pricing = invoiceLinePricing(row, { quantity, discountPercent });
-
-  const period = `${formatDate(row.periodStart, DESCRIPTION_DATE, DESCRIPTION_LOCALE)}–${formatDate(
-    row.periodEnd,
-    DESCRIPTION_DATE,
-    DESCRIPTION_LOCALE
-  )}`;
-  const fellBack = pricing.discountPercent === 0 && discountPercent > 0;
-  const description = [
-    line.description ?? item?.name ?? "",
-    period,
-    ...(fellBack
-      ? [`${formatPercent(discountPercent, DESCRIPTION_LOCALE)} off`]
-      : [])
-  ].join(" · ");
-
-  let serviceStartDate: string | null = row.periodStart;
-  let serviceEndDate: string | null = row.periodEnd;
-  if (line.revenueType === "One-time") {
-    const revenue = lineRevenueDates(line);
-    serviceStartDate = revenue.end === null ? null : revenue.start;
-    serviceEndDate = revenue.end;
-  }
-
-  return {
-    itemId: line.itemId,
-    description,
-    quantity: pricing.quantity,
-    // The schedule prices in the contract's currency; `salesInvoiceLine.
-    // unitPrice` is base currency (`convertedUnitPrice` = unitPrice ×
-    // exchangeRate is what the customer sees), as on every sales document.
-    unitPrice: toBaseAmount(
-      pricing.unitPrice,
-      Number(context.contract.exchangeRate)
-    ),
-    discountPercent: pricing.discountPercent,
-    taxPercent: Number(line.taxPercent),
-    serviceStartDate,
-    serviceEndDate,
-    customerContractId: context.contract.id,
-    customerContractLineId: line.id,
-    customerContractInvoiceLineId: row.id,
-    projectId: line.projectId ?? context.contract.projectId,
-    // As the invoice line form fills it from the item (and `convert` copies
-    // it from the order line the form filled the same way).
-    methodType: item?.defaultMethodType ?? "Pull from Inventory",
-    unitOfMeasureCode: item?.unitOfMeasureCode ?? "EA"
-  };
-}
-
 /**
- * Inserts one Draft contract invoice (opportunity, header, shipment, lines),
- * stamps the planned invoice `Invoiced` with it and each row with the line
- * that bills it. Returns the invoice id.
+ * Inserts one Draft contract invoice: the opportunity, the header, the
+ * shipment and the lines. Returns the invoice id and the inserted line ids in
+ * `sortOrder` (the order of `lines`). Shared by the contract schedule source
+ * (`createContractInvoices`) and the project billing source
+ * (`createProjectBillingInvoices`), so both draft the same document.
  */
-async function insertContractInvoice(
+export async function insertDraftContractInvoice(
   trx: KyselyTx,
   scope: Scope,
   args: {
     asOf: string;
     contract: ContractRow;
     locationId: string;
-    plannedInvoiceId: string;
     holdReason: string | null;
     lines: InvoiceLineValues[];
   }
-): Promise<string> {
+): Promise<{ invoiceId: string; lineIds: string[] }> {
   const { companyId, userId } = scope;
   const { asOf, contract, locationId, lines } = args;
 
@@ -20865,12 +21309,12 @@ async function insertContractInvoice(
     })
     .execute();
 
-  await trx
+  const inserted = await trx
     .insertInto("salesInvoiceLine")
     .values(
-      lines.map((line, index) => ({
+      lines.map(({ invoiceLineType = "Service", ...line }, index) => ({
         invoiceId: invoice.id,
-        invoiceLineType: "Service" as const,
+        invoiceLineType,
         ...line,
         exchangeRate: contract.exchangeRate,
         locationId,
@@ -20879,7 +21323,108 @@ async function insertContractInvoice(
         createdBy: userId
       }))
     )
+    .returning(["id", "sortOrder"])
     .execute();
+  // RETURNING order is not guaranteed: sort by the sortOrder each line got.
+  const lineIds = inserted
+    .sort((a, b) => Number(a.sortOrder) - Number(b.sortOrder))
+    .map((line) => line.id);
+
+  return { invoiceId: invoice.id, lineIds };
+}
+
+/** One schedule row as a Service sales-invoice line (plan decision 10). */
+function invoiceLineValues(
+  row: DueRow,
+  line: ContractLineRow,
+  item:
+    | {
+        name: string;
+        unitOfMeasureCode: string | null;
+        defaultMethodType: Enums["methodType"] | null;
+      }
+    | undefined,
+  context: { contract: ContractRow; locationId: string }
+): InvoiceLineValues {
+  const quantity = Number(line.quantity);
+  const discountPercent = Number(line.discountPercent);
+  const pricing = invoiceLinePricing(row, { quantity, discountPercent });
+
+  const period = `${formatDate(row.periodStart, DESCRIPTION_DATE, DESCRIPTION_LOCALE)}–${formatDate(
+    row.periodEnd,
+    DESCRIPTION_DATE,
+    DESCRIPTION_LOCALE
+  )}`;
+  const fellBack = pricing.discountPercent === 0 && discountPercent > 0;
+  const description = [
+    line.description ?? item?.name ?? "",
+    period,
+    ...(fellBack
+      ? [`${formatPercent(discountPercent, DESCRIPTION_LOCALE)} off`]
+      : [])
+  ].join(" · ");
+
+  let serviceStartDate: string | null = row.periodStart;
+  let serviceEndDate: string | null = row.periodEnd;
+  if (line.revenueType === "One-time") {
+    const revenue = lineRevenueDates(line);
+    serviceStartDate = revenue.end === null ? null : revenue.start;
+    serviceEndDate = revenue.end;
+  }
+
+  return {
+    itemId: line.itemId,
+    description,
+    quantity: pricing.quantity,
+    // The schedule prices in the contract's currency; `salesInvoiceLine.
+    // unitPrice` is base currency (`convertedUnitPrice` = unitPrice ×
+    // exchangeRate is what the customer sees), as on every sales document.
+    unitPrice: toBaseAmount(
+      pricing.unitPrice,
+      Number(context.contract.exchangeRate)
+    ),
+    discountPercent: pricing.discountPercent,
+    taxPercent: Number(line.taxPercent),
+    serviceStartDate,
+    serviceEndDate,
+    customerContractId: context.contract.id,
+    customerContractLineId: line.id,
+    customerContractInvoiceLineId: row.id,
+    projectId: line.projectId ?? context.contract.projectId,
+    // As the invoice line form fills it from the item (and `convert` copies
+    // it from the order line the form filled the same way).
+    methodType: item?.defaultMethodType ?? "Pull from Inventory",
+    unitOfMeasureCode: item?.unitOfMeasureCode ?? "EA"
+  };
+}
+
+/**
+ * Inserts one Draft contract invoice (`insertDraftContractInvoice`), stamps
+ * the planned invoice `Invoiced` with it and each row with the line that
+ * bills it. Returns the invoice id.
+ */
+async function insertContractInvoice(
+  trx: KyselyTx,
+  scope: Scope,
+  args: {
+    asOf: string;
+    contract: ContractRow;
+    locationId: string;
+    plannedInvoiceId: string;
+    holdReason: string | null;
+    lines: InvoiceLineValues[];
+  }
+): Promise<string> {
+  const { companyId, userId } = scope;
+  const { contract } = args;
+  const { invoiceId } = await insertDraftContractInvoice(trx, scope, {
+    asOf: args.asOf,
+    contract,
+    locationId: args.locationId,
+    holdReason: args.holdReason,
+    lines: args.lines
+  });
+  const invoice = { id: invoiceId };
 
   // Stamp what was drafted with the invoice (and line) that bills it.
   await trx
@@ -20940,5 +21485,568 @@ export async function createContractInvoices(
     userId,
     asOf,
     customerContractId
+  });
+}
+
+// ---------------------------------------------------------------------------
+// create-project-billing-invoices
+//
+// Project billing invoices: per Active contract with a billing line (Time &
+// Materials or Cost Plus), one Draft invoice for the Unbilled items posted on
+// or before the latest billing period end, within each line's funding. Shared
+// by the contract page and the nightly recurring billing job. Posting stays
+// with post-sales-invoice.
+// Plan: .ai/plans/2026-10-09-project-billing-phase-4a.md (Task 10, P10, P11).
+
+export type ProjectBillingInvoiceArgs = {
+  companyId: string;
+  userId: string;
+  /** `YYYY-MM-DD` in the company's timezone. */
+  asOf: string;
+  /** Draft one contract only (the contract page's action). */
+  customerContractId?: string;
+};
+
+type BillingItem = ProjectInvoicePlanItem & {
+  customerContractLineId: string;
+  postingDate: string;
+  voidedSalesInvoiceId: string | null;
+};
+
+const isBillingLine = (line: ContractLineRow) =>
+  line.billingMethod !== "Fixed" && line.projectElementId !== null;
+
+/**
+ * Drafts the project billing invoices of every Active contract with a
+ * billing line that has started by `asOf`. Each contract is its own
+ * transaction, so one contract's failure never rolls back another's invoice.
+ * A taken item is stamped Billed with its invoice line, which is what makes a
+ * second call for the same day a no-op.
+ */
+export async function createProjectBillingInvoicesForContracts(
+  db: Kysely<KyselyDatabase>,
+  args: ProjectBillingInvoiceArgs
+): Promise<ContractInvoiceGenerationResult> {
+  const { companyId, asOf } = args;
+
+  // An ended line can still hold Unbilled items, so the read asks for a
+  // started billing line, not one live on `asOf`.
+  let query = db
+    .selectFrom("customerContract as c")
+    .select("c.id")
+    .where("c.companyId", "=", companyId)
+    .where("c.status", "=", "Active")
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("customerContractLine as l")
+          .select("l.id")
+          .whereRef("l.customerContractId", "=", "c.id")
+          .whereRef("l.companyId", "=", "c.companyId")
+          .where("l.billingMethod", "<>", "Fixed")
+          .where("l.projectElementId", "is not", null)
+          .where("l.startDate", "<=", asOf)
+      )
+    )
+    .orderBy("c.customerContractId");
+  if (args.customerContractId) {
+    query = query.where("c.id", "=", args.customerContractId);
+  }
+  const contracts = await query.execute();
+
+  const invoices: DraftedContractInvoice[] = [];
+  const failures: ContractInvoiceGenerationFailure[] = [];
+  for (const contract of contracts) {
+    try {
+      const drafted = await db
+        .transaction()
+        .execute((trx) =>
+          processProjectBillingContract(trx, args, contract.id)
+        );
+      if (drafted) invoices.push(drafted);
+    } catch (error) {
+      failures.push({
+        customerContractId: contract.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+  return { invoices, invoiceIds: invoices.map((i) => i.invoiceId), failures };
+}
+
+async function processProjectBillingContract(
+  trx: KyselyTx,
+  args: ProjectBillingInvoiceArgs,
+  contractId: string
+): Promise<DraftedContractInvoice | null> {
+  const { companyId, userId, asOf } = args;
+  const scope: Scope = { companyId, userId };
+
+  // 1. Lock and load.
+  const { contract, lines } = await loadContractForUpdate(
+    trx,
+    companyId,
+    contractId
+  );
+  if (contract.status !== "Active") return null;
+  const billingLines = lines.filter(isBillingLine);
+  if (billingLines.length === 0) return null;
+
+  // 2. The latest billing period that has ended by `asOf`.
+  const periodEnd = billingGrid(toTerms(contract), asOf)
+    .map((period) => period.end)
+    .filter((end) => end <= asOf)
+    .sort()
+    .at(-1);
+  if (!periodEnd) return null;
+
+  // 3. Rows the job-completion SQL wrote skip posting's hook: bill them now.
+  for (const line of billingLines) {
+    if (line.billingMethod !== "Time & Materials") continue;
+    if (line.startDate > periodEnd) continue;
+    await generateTimeAndMaterialsItems(trx, {
+      companyId,
+      userId,
+      customerContractLineId: line.id,
+      through:
+        line.endDate !== null && line.endDate < periodEnd
+          ? line.endDate
+          : periodEnd
+    });
+  }
+
+  const lineIds = billingLines.map((line) => line.id);
+  const now = datetime.timestamp();
+
+  // 4. A funding hold is decided again on every run.
+  await trx
+    .updateTable("projectBillableItem")
+    .set({ statusReason: null, updatedBy: userId, updatedAt: now })
+    .where("companyId", "=", companyId)
+    .where("customerContractLineId", "in", lineIds)
+    .where("status", "=", "Unbilled")
+    .where("statusReason", "=", BILLABLE_REASON_FUNDING_LIMIT)
+    .execute();
+
+  // 5. The Unbilled items of the period, oldest first, locked. A burden item
+  // has no ledger row: it carries its own posting date and its pool.
+  const postingDate = sql<string>`COALESCE(pl."postingDate", b."postingDate")`;
+  const rows = await trx
+    .selectFrom("projectBillableItem as b")
+    .leftJoin("projectLedger as pl", (join) =>
+      join
+        .onRef("pl.id", "=", "b.projectLedgerId")
+        .onRef("pl.companyId", "=", "b.companyId")
+    )
+    .leftJoin("laborCategory as lc", (join) =>
+      join
+        .onRef("lc.id", "=", "pl.laborCategoryId")
+        .onRef("lc.companyId", "=", "pl.companyId")
+    )
+    .leftJoin("indirectPool as ip", (join) =>
+      join
+        .onRef("ip.id", "=", "b.indirectPoolId")
+        .onRef("ip.companyId", "=", "b.companyId")
+    )
+    .select([
+      "b.id",
+      "b.customerContractLineId",
+      "b.quantity",
+      "b.unitPrice",
+      "b.amount",
+      "b.voidedSalesInvoiceId",
+      "b.indirectPoolId",
+      postingDate.as("postingDate"),
+      "pl.costType",
+      "pl.laborCategoryId",
+      "lc.name as laborCategoryName",
+      "ip.name as poolName"
+    ])
+    .where("b.companyId", "=", companyId)
+    .where("b.customerContractLineId", "in", lineIds)
+    .where("b.status", "=", "Unbilled")
+    .where(postingDate, "<=", periodEnd)
+    .orderBy(postingDate)
+    .orderBy("b.id")
+    .forUpdate("b")
+    .execute();
+  if (rows.length === 0) return null;
+
+  const methodByLine = new Map(
+    billingLines.map((line) => [line.id, line.billingMethod])
+  );
+  const items: BillingItem[] = rows.map((row) => ({
+    id: row.id,
+    customerContractLineId: row.customerContractLineId as string,
+    postingDate: row.postingDate,
+    costType: row.costType ?? "Burden",
+    laborCategoryId: row.laborCategoryId,
+    laborCategoryName: row.laborCategoryName,
+    indirectPoolId: row.indirectPoolId,
+    poolName: row.poolName,
+    quantity: Number(row.quantity),
+    unitPrice: Number(row.unitPrice),
+    amount: Number(row.amount),
+    billingMethod: methodByLine.get(row.customerContractLineId as string)!,
+    voidedSalesInvoiceId: row.voidedSalesInvoiceId
+  }));
+
+  // 6. Each line's funding position, one read.
+  const { rows: funding } = await sql<{
+    customerContractLineId: string;
+    billed: number;
+  }>`
+    SELECT "customerContractLineId", "billed"
+    FROM get_contract_line_funding(${companyId}, ${lineIds}::text[], ${asOf}::date)
+  `.execute(trx);
+  const billedByLine = new Map(
+    funding.map((row) => [row.customerContractLineId, Number(row.billed)])
+  );
+
+  // 7. Per line, in line order: take what the funding covers, hold the rest.
+  const taken: { line: ContractLineRow; items: BillingItem[] }[] = [];
+  const heldIds: string[] = [];
+  for (const line of billingLines) {
+    const own = items.filter((item) => item.customerContractLineId === line.id);
+    if (own.length === 0) continue;
+    const { take, held } = takeWithinFunding(own, {
+      billed: billedByLine.get(line.id) ?? 0,
+      fundedAmount:
+        line.fundedAmount === null ? null : Number(line.fundedAmount)
+    });
+    heldIds.push(...held.map((item) => item.id));
+    if (take.length > 0) taken.push({ line, items: take });
+  }
+  if (heldIds.length > 0) {
+    await trx
+      .updateTable("projectBillableItem")
+      .set({
+        statusReason: BILLABLE_REASON_FUNDING_LIMIT,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("companyId", "=", companyId)
+      .where("id", "in", heldIds)
+      .execute();
+  }
+  if (taken.length === 0) return null;
+
+  // 8. The invoice lines: per contract line, the grouped items.
+  const itemIds = [...new Set(taken.map(({ line }) => line.itemId))];
+  const catalog = await trx
+    .selectFrom("item")
+    .select(["id", "name", "unitOfMeasureCode", "defaultMethodType"])
+    .where("id", "in", itemIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const itemById = new Map(catalog.map((item) => [item.id, item]));
+
+  type PlannedLine = InvoiceLineValues & {
+    customerContractLineId: string;
+    billableItemIds: string[];
+  };
+  const plannedLines: PlannedLine[] = [];
+  for (const { line, items: lineItems } of taken) {
+    const item = itemById.get(line.itemId);
+    for (const planned of planProjectInvoiceLines(lineItems)) {
+      plannedLines.push({
+        itemId: line.itemId,
+        description: planned.description,
+        quantity: planned.quantity,
+        unitPrice: toBaseAmount(
+          planned.unitPrice,
+          Number(contract.exchangeRate)
+        ),
+        discountPercent: 0,
+        taxPercent: Number(line.taxPercent),
+        serviceStartDate: null,
+        serviceEndDate: null,
+        customerContractId: contract.id,
+        customerContractLineId: line.id,
+        customerContractInvoiceLineId: null,
+        projectId: line.projectId ?? contract.projectId,
+        methodType: item?.defaultMethodType ?? "Pull from Inventory",
+        unitOfMeasureCode: item?.unitOfMeasureCode ?? "EA",
+        billableItemIds: planned.itemIds
+      });
+    }
+  }
+
+  // 8a. Invoice by CLIN (Government Contracting 5a): a comment line heads
+  // each numbered line's lines, and its amount is allocated to its ACRNs.
+  // With no number on any line, the invoice is unchanged.
+  const numberedLineIds = taken
+    .filter(({ line }) => line.lineItemNumber !== null)
+    .map(({ line }) => line.id);
+  let sections: ClinSection<PlannedLine>[] = plannedLines.map((line) => ({
+    type: "line",
+    line
+  }));
+  let allocations: ClinAllocation[] = [];
+  if (numberedLineIds.length > 0) {
+    const fundingRows = await trx
+      .selectFrom("customerContractFunding")
+      .select([
+        "customerContractLineId",
+        "acrn",
+        "fundedDate",
+        "fundedCost",
+        "fundedFee"
+      ])
+      .where("companyId", "=", companyId)
+      .where("customerContractLineId", "in", numberedLineIds)
+      .execute();
+    const billedRows = await trx
+      .selectFrom("salesInvoiceFundingAllocation as a")
+      .innerJoin("salesInvoice as si", (join) =>
+        join
+          .onRef("si.id", "=", "a.salesInvoiceId")
+          .onRef("si.companyId", "=", "a.companyId")
+      )
+      .select(["a.customerContractLineId", "a.acrn", "a.amount"])
+      .where("a.companyId", "=", companyId)
+      .where("a.customerContractLineId", "in", numberedLineIds)
+      .where("si.status", "<>", "Voided")
+      .execute();
+    const currency = await trx
+      .selectFrom("currency")
+      .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+      .select("currency.decimalPlaces")
+      .where("company.id", "=", companyId)
+      .where("currency.code", "=", contract.currencyCode)
+      .executeTakeFirst();
+    const planned = planClinSections(
+      plannedLines,
+      taken.map(({ line }) => ({
+        id: line.id,
+        lineItemNumber: line.lineItemNumber,
+        description:
+          line.description || itemById.get(line.itemId)?.name || line.itemId
+      })),
+      acrnPositions(
+        fundingRows.map((row) => ({
+          ...row,
+          fundedCost: Number(row.fundedCost),
+          fundedFee: Number(row.fundedFee)
+        })),
+        billedRows.map((row) => ({ ...row, amount: Number(row.amount) }))
+      ),
+      // Only the comment's figures read it; the amounts stay unrounded.
+      { decimalPlaces: currency?.decimalPlaces ?? DEFAULT_CURRENCY_DECIMALS }
+    );
+    sections = planned.sections;
+    allocations = planned.allocations;
+  }
+
+  const invoiceLines: InvoiceLineValues[] = [];
+  const itemIdsByInvoiceLine: string[][] = [];
+  for (const section of sections) {
+    if (section.type === "comment") {
+      invoiceLines.push({
+        invoiceLineType: "Comment",
+        itemId: null,
+        description: section.description,
+        quantity: 0,
+        unitPrice: 0,
+        discountPercent: 0,
+        taxPercent: 0,
+        serviceStartDate: null,
+        serviceEndDate: null,
+        customerContractId: contract.id,
+        customerContractLineId: null,
+        customerContractInvoiceLineId: null,
+        projectId: null,
+        methodType: "Pull from Inventory",
+        unitOfMeasureCode: "EA"
+      });
+      itemIdsByInvoiceLine.push([]);
+      continue;
+    }
+    const { billableItemIds, ...values } = section.line;
+    invoiceLines.push(values);
+    itemIdsByInvoiceLine.push(billableItemIds);
+  }
+
+  // 9. The hold, from the effective invoice automation.
+  const takenItems = taken.flatMap(({ items: lineItems }) => lineItems);
+  const voidedIds = [
+    ...new Set(
+      takenItems
+        .map((item) => item.voidedSalesInvoiceId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const settings = await trx
+    .selectFrom("companySettings")
+    .select("invoiceAutomation")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const voided =
+    voidedIds.length === 0
+      ? []
+      : await trx
+          .selectFrom("salesInvoice")
+          .select(["id", "invoiceId"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", voidedIds)
+          .execute();
+  const voidedReadable = new Map(voided.map((row) => [row.id, row.invoiceId]));
+  const mode = effectiveInvoiceAutomation(
+    contract.invoiceAutomation,
+    settings.invoiceAutomation
+  );
+  const holdReason = projectInvoiceHold(
+    mode,
+    takenItems.map((item) => ({
+      amount: item.amount,
+      voidedInvoiceReadableId: item.voidedSalesInvoiceId
+        ? (voidedReadable.get(item.voidedSalesInvoiceId) ??
+          item.voidedSalesInvoiceId)
+        : null
+    }))
+  );
+
+  // 10. Draft the invoice, then stamp each taken item with its line.
+  const locationId = await contractLocationId(trx, companyId, contract);
+  const { invoiceId, lineIds: invoiceLineIds } =
+    await insertDraftContractInvoice(trx, scope, {
+      asOf,
+      contract,
+      locationId,
+      holdReason,
+      lines: invoiceLines
+    });
+
+  if (allocations.length > 0) {
+    await trx
+      .insertInto("salesInvoiceFundingAllocation")
+      .values(
+        allocations.map((allocation) => ({
+          salesInvoiceId: invoiceId,
+          customerContractLineId: allocation.customerContractLineId,
+          acrn: allocation.acrn,
+          amount: allocation.amount,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+  }
+
+  const stamps = itemIdsByInvoiceLine.flatMap((billableItemIds, index) =>
+    billableItemIds.map((billableItemId) => ({
+      billableItemId,
+      lineId: invoiceLineIds[index]!
+    }))
+  );
+  await sql`
+    UPDATE "projectBillableItem" b
+    SET "salesInvoiceLineId" = v."lineId",
+        "status" = 'Billed',
+        "statusReason" = NULL,
+        "voidedSalesInvoiceId" = NULL,
+        "updatedBy" = ${userId},
+        "updatedAt" = NOW()
+    FROM (VALUES ${sql.join(
+      stamps.map((stamp) => sql`(${stamp.billableItemId}, ${stamp.lineId})`)
+    )}) AS v("id", "lineId")
+    WHERE b."id" = v."id" AND b."companyId" = ${companyId}
+  `.execute(trx);
+
+  return {
+    invoiceId,
+    customerContractId: contract.id,
+    mode,
+    holdReason
+  };
+}
+
+export const createProjectBillingInvoicesInput = z.object({
+  /** `YYYY-MM-DD` in the company's timezone. */
+  asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Draft one contract only. */
+  customerContractId: z.string().optional()
+});
+
+export const createProjectBillingInvoicesPermission = {
+  update: "sales",
+  create: "invoicing"
+} satisfies PermissionRule<z.output<typeof createProjectBillingInvoicesInput>>;
+
+/** Drafts the project billing invoices due on `asOf` (see
+ *  `createProjectBillingInvoicesForContracts`). A contract that fails is
+ *  reported in `failures`, never thrown, so the others still draft. */
+export async function createProjectBillingInvoices(
+  ctx: ServiceContext,
+  raw: z.input<typeof createProjectBillingInvoicesInput>
+): Promise<ContractInvoiceGenerationResult> {
+  const { asOf, customerContractId } =
+    createProjectBillingInvoicesInput.parse(raw);
+  return createProjectBillingInvoicesForContracts(ctx.asSystem.pg, {
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
+    asOf,
+    customerContractId
+  });
+}
+
+// ---------------------------------------------------------------------------
+// generate-contract-billable-items
+
+export const generateContractBillableItemsInput = z.object({
+  customerContractLineId: z.string(),
+  /** `YYYY-MM-DD` in the company's timezone: rows posted on or before it bill. */
+  through: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+});
+
+export const generateContractBillableItemsPermission = {
+  update: "sales"
+} satisfies PermissionRule<z.output<typeof generateContractBillableItemsInput>>;
+
+export type GenerateContractBillableItemsResult = {
+  /** The number of billable items written. */
+  generated: number;
+};
+
+/**
+ * The backfill of one Time & Materials line: billable items for the ledger
+ * rows of its billing element subtree posted on or before `through` that have
+ * none yet. A second call writes nothing. A Cost Plus line is refused: its
+ * items come from the commercial generator, which the ERP calls.
+ * Plan: .ai/plans/2026-10-09-project-billing-phase-4a.md (Task 9).
+ */
+export async function generateContractBillableItems(
+  ctx: ServiceContext,
+  raw: z.input<typeof generateContractBillableItemsInput>
+): Promise<GenerateContractBillableItemsResult> {
+  const { customerContractLineId, through } =
+    generateContractBillableItemsInput.parse(raw);
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  return ctx.asSystem.pg.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("customerContractLine")
+      .select(["id", "billingMethod"])
+      .where("id", "=", customerContractLineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!line) throw new NotFoundError("Contract line not found");
+    if (line.billingMethod === "Cost Plus") {
+      throw new InvalidInputError(
+        "Cost Plus items come from the Project Revenue feature"
+      );
+    }
+    if (line.billingMethod !== "Time & Materials") {
+      throw new InvalidInputError(
+        "Only a Time & Materials line has billable items"
+      );
+    }
+    const generated = await generateTimeAndMaterialsItems(trx, {
+      companyId,
+      userId,
+      customerContractLineId,
+      through
+    });
+    return { generated };
   });
 }

@@ -5,6 +5,10 @@
 import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
+  linkFinancingPayment,
+  markFinancingRequestsPaid
+} from "@carbon/ee/contract-financing.server";
+import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument,
   isBlocked,
@@ -24,6 +28,10 @@ import {
   resolveItemIdFromExtractedText,
   upsertPart
 } from "~/modules/items/items.service";
+import {
+  chargeNumberError,
+  chargeNumbersError
+} from "~/modules/projects/projects.server";
 import {
   deletePurchaseInvoiceLineReleasingLeases,
   deletePurchaseInvoiceReleasingLeases
@@ -1405,25 +1413,31 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
  * Create a Draft payment.
  *
  * @remarks
- * A deposit (`salesOrderId` / `rentalAgreementId`) must name this company's
- * and this customer's document, and a new deposit an open one; that refusal
- * is a `validation` error. The currency must be configured for the company.
- * Without a `paymentId` the next number is used. Then one application is
- * seeded per `seedInvoiceIds` invoice of the payment's party in the
- * payment's currency, for its full open balance less any early-payment
- * discount as of the payment date. When seeding fails the payment is kept
- * and `warning` says so.
+ * A deposit (`salesOrderId` / `rentalAgreementId` / `customerContractId`)
+ * must name this company's and this customer's document, and a new deposit
+ * an open one; that refusal is a `validation` error. The currency must be
+ * configured for the company. Without a `paymentId` the next number is used.
+ * A contract deposit made from a financing request (`financingRequestId`)
+ * receives that request; a failed link is logged and the payment kept. Then
+ * one application is seeded per `seedInvoiceIds` invoice of the payment's
+ * party in the payment's currency, for its full open balance less any
+ * early-payment discount as of the payment date. When seeding fails the
+ * payment is kept and `warning` says so.
  *
  * @mcp
  */
 export const createPayment = defineServiceFn({
   input: paymentValidator.safeExtend({
     customFields: customFieldValues.optional(),
-    seedInvoiceIds: z.array(z.string()).default([])
+    seedInvoiceIds: z.array(z.string()).default([]),
+    financingRequestId: z.string().optional()
   }),
   permission: { create: "invoicing" },
 
-  async run(ctx, { id: _id, seedInvoiceIds, customFields, ...payment }) {
+  async run(
+    ctx,
+    { id: _id, seedInvoiceIds, customFields, financingRequestId, ...payment }
+  ) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
 
@@ -1475,6 +1489,25 @@ export const createPayment = defineServiceFn({
     }
     const id = inserted.data.id;
 
+    // A payment made from a contract financing request receives that request.
+    if (financingRequestId && payment.customerContractId) {
+      try {
+        await linkFinancingPayment(client, ctx.asSystem.pg, {
+          companyId,
+          userId: ctx.auditUserId,
+          customerContractId: payment.customerContractId,
+          requestId: financingRequestId,
+          paymentId: id
+        });
+      } catch (err) {
+        logger.error("Failed to link the payment to the financing request", {
+          companyId,
+          financingRequestId,
+          error: err
+        });
+      }
+    }
+
     let warning: string | null = null;
     if (seedInvoiceIds.length > 0) {
       try {
@@ -1501,7 +1534,9 @@ export const createPayment = defineServiceFn({
  *
  * @remarks
  * The `post-payment` server function books the payment's journal and its
- * applications; its refusal is returned as it is.
+ * applications; its refusal is returned as it is. The contract financing
+ * requests the payment receives are then Paid (a failure is logged, the
+ * payment stays posted).
  *
  * @mcp
  */
@@ -1523,6 +1558,20 @@ export const postPayment = defineServiceFn({
     );
     if (posted.error) {
       return fromServerFn(ctx, posted.error, "Failed to post payment");
+    }
+    // A contract deposit can receive a financing request: it is now Paid.
+    try {
+      await markFinancingRequestsPaid(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        paymentId,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      logger.error("Failed to mark the financing request paid", {
+        companyId: ctx.company.id,
+        paymentId,
+        error: err
+      });
     }
     return { paymentId };
   }
@@ -1761,9 +1810,11 @@ const reimbursementInput = reimbursementUpdateValidator.safeExtend({
  * Change a Draft reimbursement and replace its coding lines.
  *
  * @remarks
- * Refused once the reimbursement is posted. The header is updated, then the
- * lines are replaced as sent (each with its dimension pairs). Currency and
- * exchange rate are the source transaction's facts and are not changed.
+ * Refused once the reimbursement is posted, and when a line's charge number
+ * is not this company's project or an element of it. The header is updated,
+ * then the lines are replaced as sent (each with its dimension pairs).
+ * Currency and exchange rate are the source transaction's facts and are not
+ * changed.
  *
  * @mcp
  */
@@ -1772,6 +1823,14 @@ export const saveReimbursement = defineServiceFn({
   permission: { update: "invoicing" },
 
   async run(ctx, { lines, customFields, ...header }) {
+    // Each line's charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumbersError(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      lines
+    );
+    if (chargeError) return ctx.error("validation", chargeError);
+
     const existing = await service.loadReimbursement(ctx, header.id);
     if (existing instanceof Error) return existing;
     // A readable refusal beats the raw 55000 the draft guard trigger raises.
@@ -2498,6 +2557,8 @@ export const createPurchaseInvoiceLine = defineServiceFn({
     itemId: z.string().optional(),
     accountId: z.string().optional(),
     costCenterId: z.string().optional(),
+    projectId: z.string().optional(),
+    projectElementId: z.string().optional(),
     assetId: z.string().optional(),
     leaseId: z.string().optional(),
     leasePaymentId: z.string().optional(),
@@ -2539,6 +2600,13 @@ export const createPurchaseInvoiceLine = defineServiceFn({
   }),
   permission: { create: "invoicing" },
   async run(ctx, input) {
+    // The charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumberError(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input
+    );
+    if (chargeError) return ctx.error("validation", chargeError.message);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(
@@ -2553,7 +2621,8 @@ export const createPurchaseInvoiceLine = defineServiceFn({
  * Update a purchase invoice line
  *
  * @remarks
- * Upsert purchase invoice line
+ * Upsert purchase invoice line. A charge number (`projectId`,
+ * `projectElementId`) must name this company's project and an element of it.
  *
  * @mcp
  */
@@ -2578,6 +2647,8 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
       itemId: z.string().optional(),
       accountId: z.string().optional(),
       costCenterId: z.string().optional(),
+      projectId: z.string().optional(),
+      projectElementId: z.string().optional(),
       assetId: z.string().optional(),
       leaseId: z.string().optional(),
       leasePaymentId: z.string().optional(),
@@ -2620,6 +2691,13 @@ export const updatePurchaseInvoiceLine = defineServiceFn({
     .required({ id: true }),
   permission: { update: "invoicing" },
   async run(ctx, input) {
+    // The charge number: the company's project, and an element of it.
+    const chargeError = await chargeNumberError(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input
+    );
+    if (chargeError) return ctx.error("validation", chargeError.message);
     return unwrap(
       ctx,
       await service.upsertPurchaseInvoiceLine(

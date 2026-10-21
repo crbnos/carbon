@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -40,8 +41,6 @@ import {
 } from "~/modules/projects/projects.service";
 import { ProjectLabelsGrid } from "~/modules/projects/ui/Settings/ProjectLabelsGrid";
 import { ProjectStatesGrid } from "~/modules/projects/ui/Settings/ProjectStatesGrid";
-import { updateProjectSettings } from "~/modules/settings";
-import { projectSettingsValidator } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -224,16 +223,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const field = SETTING_BY_INTENT[intent as keyof typeof SETTING_BY_INTENT];
-  const parsed = projectSettingsValidator
-    .pick({ [field]: true } as Record<typeof field, true>)
-    .safeParse({
-      [field]: formData.get("enabled") === "true" ? "on" : undefined
-    });
-  if (!parsed.success) {
-    return { success: false, message: "Invalid form data" };
-  }
-
-  const update = await updateProjectSettings(client, companyId, parsed.data);
+  const api = await carbon(request);
+  const update = await api.settings.updateProjectSettings({
+    [field]: formData.get("enabled") === "true"
+  });
   if (update.error) {
     logger.error("Failed to update project settings", {
       companyId,

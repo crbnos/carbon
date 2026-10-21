@@ -51,7 +51,12 @@ export function usePlanningActions({
       const outcome = describePlanningResult(result, lastAction.current);
       if (!outcome) return;
       // An applied Transfer leaves the worklist; the toast links its transfer.
-      const transfers = "transfers" in result ? (result.transfers ?? []) : [];
+      // Purchasing answers `transfers` at the top level; production's
+      // service function answers it inside `data`.
+      const transfers =
+        ("transfers" in result ? result.transfers : undefined) ??
+        ("data" in result ? result.data?.transfers : undefined) ??
+        [];
       const content =
         transfers.length > 0
           ? createElement(
@@ -215,6 +220,8 @@ type PlanningActionsResult =
         errors?: string[];
         changed?: number;
         requested?: number;
+        /** The Draft project stock transfers an applied Transfer created. */
+        transfers?: { id: string; projectStockTransferId: string }[];
       } | null;
       error: { message: string } | null;
     };

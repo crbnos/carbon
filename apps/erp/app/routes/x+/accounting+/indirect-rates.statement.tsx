@@ -23,7 +23,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Select } from "~/components";
 import { useUrlParams } from "~/hooks";
-import { getCurrentFiscalYear } from "~/modules/accounting/accounting.server";
+import { getCurrentFiscalYear } from "~/modules/accounting/accounting.service";
 import { IndirectExpenseStatement } from "~/modules/accounting/ui/IndirectRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

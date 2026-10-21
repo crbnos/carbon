@@ -38,6 +38,11 @@ import {
   unreleasedChangeOrderItemsMessage,
   withLockNotice
 } from "~/modules/items/items.service";
+import {
+  applyTransferPlanningActions,
+  getPlanningSegmentOwners,
+  moveActionPegsToSupply
+} from "~/modules/projects/projects.server";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
@@ -1709,7 +1714,9 @@ export const setJobQuantity = defineServiceFn({
  *
  * @remarks
  * Refused when any job is locked. A line links the jobs to its order and its
- * order's customer; a line of a completed or cancelled order is refused.
+ * order's customer; a line of a completed or cancelled order is refused, and
+ * so is linking a job that consumes to a project or receives into project
+ * stock.
  * `null` clears the order and line and leaves the customer.
  *
  * @mcp
@@ -1733,6 +1740,18 @@ export const setJobSalesOrderLine = defineServiceFn({
       customerId?: string | null;
     };
     if (salesOrderLineId) {
+      if (jobs.some((job) => job.consumeToProject)) {
+        return ctx.error(
+          "rule",
+          "A job that consumes to a project cannot be linked to a sales order line"
+        );
+      }
+      if (jobs.some((job) => job.receiveToProjectStock)) {
+        return ctx.error(
+          "rule",
+          "A job that receives into project stock cannot be linked to a sales order line"
+        );
+      }
       const line = await client
         .from("salesOrderLine")
         .select("id, salesOrderId, salesOrder(customerId, status)")
@@ -1759,6 +1778,89 @@ export const setJobSalesOrderLine = defineServiceFn({
       .from("job")
       .update({
         ...link,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .in("id", ids)
+      .eq("companyId", companyId);
+    if (update.error) {
+      return ctx.error("internal", update.error.message, update.error);
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Set or clear jobs' charge number: the project and, optionally, one of its
+ * elements.
+ *
+ * @remarks
+ * Refused when any job is locked, and once any job is released (only Draft
+ * and Planned jobs): issued material and labor already carry the charge
+ * number. The project must be this company's and the element one of its
+ * elements. Consume to project is cleared when there is no project or it is
+ * Statistical; receive to project stock is cleared when the project has no
+ * project stock.
+ *
+ * @param projectId - The project, or null to clear the charge number.
+ * @param projectElementId - One of the project's elements, or null.
+ *
+ * @mcp
+ */
+export const setJobChargeNumber = defineServiceFn({
+  input: z.object({
+    ids: jobIdsInput,
+    projectId: z.string().nullable(),
+    projectElementId: z.string().nullable()
+  }),
+  permission: { update: "production" },
+
+  async run(ctx, { ids, projectId, projectElementId }) {
+    const companyId = ctx.company.id;
+    const client = ctx.asCaller.supabase;
+    const jobs = await service.readUnlockedJobs(ctx, ids);
+    if (jobs instanceof CarbonError) return jobs;
+
+    // The charge number is chosen before release; after that, issued
+    // material and labor already carry it.
+    if (
+      jobs.some((job) => job.status !== "Draft" && job.status !== "Planned")
+    ) {
+      return ctx.error(
+        "rule",
+        "The charge number is fixed once the job is released"
+      );
+    }
+    const chargeRefusal = await service.jobChargeNumberRefusal(ctx, client, {
+      projectId: projectId || null,
+      projectElementId: projectElementId || null
+    });
+    if (chargeRefusal) return chargeRefusal;
+
+    const project = projectId
+      ? await client
+          .from("project")
+          .select("costTreatment, projectStock")
+          .eq("id", projectId)
+          .eq("companyId", companyId)
+          .single()
+      : null;
+    if (project?.error) {
+      return ctx.error("internal", "Failed to read the project", project.error);
+    }
+    const keepsConsume =
+      !!project?.data && project.data.costTreatment !== "Statistical";
+    const keepsProjectStock = !!project?.data?.projectStock;
+
+    const update = await client
+      .from("job")
+      .update({
+        projectId: projectId || null,
+        projectElementId: projectElementId || null,
+        // No project, or one with no account: nothing to consume to.
+        ...(keepsConsume ? {} : { consumeToProject: false }),
+        // No project, or one without project stock: nothing to receive into.
+        ...(keepsProjectStock ? {} : { receiveToProjectStock: false }),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
@@ -1831,9 +1933,13 @@ const customFieldsInput = z
  * @remarks
  * Refused when the job is locked. The asset class or asset must be this
  * company's, and the item must be able to complete to it
- * (`makeToAssetItemError`). A changed date or deadline type re-ranks the job's
- * priority. Then the job's requirements are recalculated; a failure there is
- * returned after the details are saved.
+ * (`makeToAssetItemError`). The charge number is checked as in `createJob`. A
+ * job that consumes to its project is checked against the project's budget:
+ * its new amount is quantity × the item's unit cost less the job's cost
+ * already in the project ledger. Block refuses the save, Warn saves and
+ * returns the overrun as `budgetNote`. A changed date or deadline type
+ * re-ranks the job's priority. Then the job's requirements are recalculated;
+ * a failure there is returned after the details are saved.
  *
  * @mcp
  */
@@ -1857,6 +1963,13 @@ export const updateJobDetails = defineServiceFn({
     ]);
     if (owned) return owned;
 
+    const chargeRefusal = await service.jobChargeNumberRefusal(
+      ctx,
+      ctx.asSystem.supabase,
+      job
+    );
+    if (chargeRefusal) return chargeRefusal;
+
     if (job.fixedAssetClassId || job.fixedAssetId) {
       const item = await ctx.asCaller.supabase
         .from("item")
@@ -1870,6 +1983,9 @@ export const updateJobDetails = defineServiceFn({
       });
       if (itemError) return ctx.error("rule", itemError);
     }
+
+    const budget = await service.jobBudgetCheck(ctx, { ...job, jobId: id });
+    if (budget.refusal) return budget.refusal;
 
     const result = await service.updateJob(ctx.asCaller.supabase, {
       id,
@@ -1886,6 +2002,10 @@ export const updateJobDetails = defineServiceFn({
       modelUploadId: job.modelUploadId || null,
       fixedAssetClassId: job.fixedAssetClassId || null,
       fixedAssetId: job.fixedAssetId || null,
+      projectId: job.projectId || null,
+      projectElementId: job.projectElementId || null,
+      consumeToProject: job.consumeToProject,
+      receiveToProjectStock: job.receiveToProjectStock,
       ...(customFields && { customFields }),
       updatedBy: userId
     });
@@ -1905,7 +2025,7 @@ export const updateJobDetails = defineServiceFn({
         recalculate.error
       );
     }
-    return { id };
+    return { id, ...(budget.note && { budgetNote: budget.note }) };
   }
 });
 
@@ -2074,7 +2194,13 @@ export const createJobs = defineServiceFn({
  * The item, location, customer, model, and fixed-asset class or asset must be
  * this company's. Refused for an item an unreleased change notice holds (the
  * job would take its draft method) and for a Make to Asset job whose item
- * cannot complete to an asset. The job takes the item's method and its
+ * cannot complete to an asset. The charge number (`projectId`,
+ * `projectElementId`) must be this company's project and one of its elements;
+ * a job that consumes to the project needs an Expense or Contract project, and
+ * one that receives into project stock a project with project stock. A job
+ * that consumes to its project is checked against the project's budget
+ * (quantity × the item's unit cost): Block refuses it, Warn creates it and
+ * returns the overrun as `budgetNote`. The job takes the item's method and its
  * requirements are calculated.
  *
  * @mcp
@@ -2091,6 +2217,16 @@ export const createJob = defineServiceFn({
     const refusal = await jobCreationRefusal(ctx, job);
     if (refusal) return refusal;
 
+    const chargeRefusal = await service.jobChargeNumberRefusal(
+      ctx,
+      ctx.asSystem.supabase,
+      job
+    );
+    if (chargeRefusal) return chargeRefusal;
+
+    const budget = await service.jobBudgetCheck(ctx, job);
+    if (budget.refusal) return budget.refusal;
+
     const created = await service.insertJob(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
@@ -2099,6 +2235,10 @@ export const createJob = defineServiceFn({
         jobId: job.jobId || undefined,
         fixedAssetClassId: job.fixedAssetClassId || null,
         fixedAssetId: job.fixedAssetId || null,
+        projectId: job.projectId || null,
+        projectElementId: job.projectElementId || null,
+        consumeToProject: job.consumeToProject,
+        receiveToProjectStock: job.receiveToProjectStock,
         configuration,
         companyId,
         createdBy: ctx.auditUserId
@@ -2108,7 +2248,10 @@ export const createJob = defineServiceFn({
     if (created.error || !created.data) {
       return ctx.error("internal", "Failed to insert job", created.error);
     }
-    return { jobId: created.data.id };
+    return {
+      jobId: created.data.id,
+      ...(budget.note && { budgetNote: budget.note })
+    };
   }
 });
 
@@ -3979,7 +4122,12 @@ export const orderPlannedJobs = defineServiceFn({
     locationId: z.string(),
     items: z
       .array(
-        z.object({ id: z.string(), orders: z.array(productionOrderValidator) })
+        z.object({
+          id: z.string(),
+          // The netting segment of the grid row ('' is common).
+          planningSegmentId: z.string().default(""),
+          orders: z.array(productionOrderValidator)
+        })
       )
       .min(1, "No items were provided to create production orders")
   }),
@@ -4028,6 +4176,26 @@ export const orderPlannedJobs = defineServiceFn({
       return ctx.error("notFound", "Not found");
     }
 
+    // A job in a project segment is charged to that project and receives
+    // its output into the project's stock. A job in a planning group
+    // segment is the group's: it carries the group and no project, and its
+    // output splits by the pegs. The segment must be a project of this
+    // company with project stock, or a planning group of this company.
+    const segments = await getPlanningSegmentOwners(
+      client,
+      companyId,
+      items.map((item) => item.planningSegmentId)
+    );
+    if (segments.error || segments.unknownIds.length > 0) {
+      logger.error("Planning order names an unknown segment", {
+        companyId,
+        locationId,
+        segmentIds: segments.unknownIds,
+        error: segments.error
+      });
+      return ctx.error("notFound", "Project not found");
+    }
+
     const createdJobs: { id: string; readableId: string }[] = [];
     const itemsWithoutOrders: string[] = [];
     const supplyByKey = new Map<
@@ -4038,14 +4206,20 @@ export const orderPlannedJobs = defineServiceFn({
         sourceType: "Production Order";
         forecastQuantity: number;
         periodId: string;
+        planningSegmentId: string;
         companyId: string;
         createdBy: string;
         updatedBy: string;
       }
     >();
-    // The (item, week) of every order that became a job, so the Make
-    // suggestions it answers leave the worklist now, not at the next run.
-    const ordered: { itemId: string; periodId: string }[] = [];
+    // The (item, week, segment) of every order that became a job, so the
+    // Make suggestions it answers leave the worklist now, not at the next run.
+    const ordered: {
+      itemId: string;
+      periodId: string;
+      planningSegmentId: string;
+      jobId: string;
+    }[] = [];
     const errors: string[] = [];
     let processedItems = 0;
 
@@ -4120,7 +4294,15 @@ export const orderPlannedJobs = defineServiceFn({
             locationId,
             companyId,
             createdBy: userId,
-            unitOfMeasureCode: "EA"
+            unitOfMeasureCode: "EA",
+            ...(segments.planningGroupIds.has(item.planningSegmentId)
+              ? { planningGroupId: item.planningSegmentId }
+              : item.planningSegmentId
+                ? {
+                    projectId: item.planningSegmentId,
+                    receiveToProjectStock: true
+                  }
+                : {})
           },
           { skipMethod: true, skipRecalculate: true, source: "mrp" }
         );
@@ -4149,8 +4331,15 @@ export const orderPlannedJobs = defineServiceFn({
 
         createdJobs.push({ id, readableId: created.data.jobId ?? "" });
         itemProcessed = true;
-        ordered.push({ itemId: item.id, periodId: order.periodId });
-        const key = `${item.id}\u001f${order.periodId}`;
+        ordered.push({
+          itemId: item.id,
+          periodId: order.periodId,
+          planningSegmentId: item.planningSegmentId,
+          jobId: id
+        });
+        const key = [item.id, order.periodId, item.planningSegmentId].join(
+          "\u001f"
+        );
         const supply = supplyByKey.get(key);
         if (supply) supply.forecastQuantity += order.quantity;
         else {
@@ -4160,6 +4349,7 @@ export const orderPlannedJobs = defineServiceFn({
             sourceType: "Production Order",
             forecastQuantity: order.quantity,
             periodId: order.periodId,
+            planningSegmentId: item.planningSegmentId,
             companyId,
             createdBy: userId,
             updatedBy: userId
@@ -4184,13 +4374,45 @@ export const orderPlannedJobs = defineServiceFn({
         locationId,
         error: settled.error
       });
+    } else if (segments.planningGroupIds.size > 0) {
+      // A grouped Make's pegs move to the job it created. A failure
+      // leaves them on the action; the next MRP run re-pegs.
+      const jobByOrder = new Map<string, string>();
+      for (const entry of ordered) {
+        const key = [
+          entry.itemId,
+          entry.periodId,
+          entry.planningSegmentId
+        ].join("\u0000");
+        if (!jobByOrder.has(key)) jobByOrder.set(key, entry.jobId);
+      }
+      const moves = (settled.data ?? []).flatMap((action) => {
+        if (!segments.planningGroupIds.has(action.planningSegmentId)) {
+          return [];
+        }
+        const supplyId = jobByOrder.get(
+          [action.itemId, action.periodId, action.planningSegmentId].join(
+            "\u0000"
+          )
+        );
+        return supplyId
+          ? [
+              {
+                planningActionId: action.id,
+                supplyType: "Job" as const,
+                supplyId
+              }
+            ]
+          : [];
+      });
+      await moveActionPegsToSupply(db, { companyId, userId, moves });
     }
 
     if (supplyByKey.size > 0) {
       const forecasts = await client
         .from("supplyForecast")
         .upsert([...supplyByKey.values()], {
-          onConflict: "itemId,locationId,periodId",
+          onConflict: "itemId,locationId,periodId,planningSegmentId",
           ignoreDuplicates: false
         });
       if (forecasts.error) {
@@ -4408,8 +4630,11 @@ const CHANGE_ACTION_TYPES = [
  * job's quantity (guarded on Draft / Planned in the UPDATE) and recalculate
  * it; Cancel runs `cancelJob` from Draft / Planned. Each of those
  * is claimed right before its change, three jobs at a time, and a failed one
- * gives its claim back. Returns what was `applied`, what needs review,
- * `warnings` (applied, with a follow-up step that failed) and `errors`.
+ * gives its claim back. With no `type`, an Open Transfer or Borrow creates a
+ * Draft project stock transfer (`applyTransferPlanningActions`, which needs
+ * `update: projects`). Returns what was `applied`, the `transfers` created,
+ * what needs review, `warnings` (applied, with a follow-up step that failed)
+ * and `errors`.
  *
  * @mcp
  */
@@ -4464,8 +4689,30 @@ export const applyPlanningActions = defineServiceFn({
     }
     const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
+    // A Transfer or a Borrow creates a Draft project stock transfer
+    // (approved and posted on the transfer pages); it is never one of the
+    // change actions below. Only a plain Apply (no `type`) takes them.
+    const transferIds = type
+      ? []
+      : planningActionIds.filter((id) => {
+          const row = rowById.get(id);
+          return (
+            (row?.type === "Transfer" || row?.type === "Borrow") &&
+            row.status === "Open"
+          );
+        });
+    const transferOutcome = await applyTransferPlanningActions({
+      companyId,
+      userId,
+      planningActionIds: transferIds
+    });
+    applied.push(...transferOutcome.applied);
+    errors.push(...transferOutcome.errors);
+    const transferIdSet = new Set(transferIds);
+
     const eligible: { planningActionId: string; row: PlanningActionRow }[] = [];
     for (const planningActionId of planningActionIds) {
+      if (transferIdSet.has(planningActionId)) continue;
       const row = rowById.get(planningActionId);
       if (!row) {
         errors.push(`Planning action ${planningActionId} not found`);
@@ -4697,7 +4944,15 @@ export const applyPlanningActions = defineServiceFn({
       { concurrency: 3 }
     );
 
-    return { applied, requiresManualAction, warnings, errors };
+    return {
+      applied,
+      // The Draft project stock transfers the applied Transfers and Borrows
+      // created, for the toast's links.
+      transfers: transferOutcome.transfers,
+      requiresManualAction,
+      warnings,
+      errors
+    };
   }
 });
 /**

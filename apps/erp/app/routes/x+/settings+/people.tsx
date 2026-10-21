@@ -68,9 +68,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { companySettings: companySettings.data };
 }
 
-// One switch per setting, told apart by its intent.
+// One switch per setting, told apart by its intent. The Timecards switch
+// moved to Settings → Time.
 const peopleSettingsForm = z.discriminatedUnion("intent", [
-  settingsToggle("timeCard", "timeCardEnabled"),
   settingsToggle("console", "consoleEnabled")
 ]);
 
@@ -99,10 +99,8 @@ export default function PeopleSettingsRoute() {
         toast.error(
           t`Console mode enabled, but ${data.pinError.toLowerCase()}. Set one from Users → Employees → Set Console PIN.`
         );
-      } else if (data.consoleEnabled !== undefined) {
-        toast.success(t`Console mode settings updated`);
       } else {
-        toast.success(t`Timecard settings updated`);
+        toast.success(t`Console mode settings updated`);
       }
     }
   });

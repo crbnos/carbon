@@ -10,10 +10,14 @@ import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   contractDurationOf,
-  customerContractValidator
+  customerContractValidator,
+  projectContractTermDefaults
 } from "~/modules/sales/sales.models";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import { ContractDetailsForm } from "~/modules/sales/ui/Contracts";
+import {
+  ContractDetailsForm,
+  ProjectContractDetailsForm
+} from "~/modules/sales/ui/Contracts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

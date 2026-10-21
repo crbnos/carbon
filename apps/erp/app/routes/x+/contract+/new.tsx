@@ -5,6 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import type { ContractBillingBasis } from "@carbon/utils";
 import { redirect, suggestContractType } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -12,7 +13,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUser } from "~/hooks";
-import { customerContractValidator } from "~/modules/sales/sales.models";
+import {
+  customerContractValidator,
+  projectContractTermDefaults
+} from "~/modules/sales/sales.models";
 import { getCustomerContractStatuses } from "~/modules/sales/sales.service";
 import {
   ContractDetailsForm,
@@ -104,7 +108,11 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
   if (!result.data) {
-    return respond(args.request, result).redirect(path.to.contracts, {
+    const listPath =
+      input.data.billingBasis === "Project"
+        ? path.to.projectContracts
+        : path.to.contracts;
+    return respond(args.request, result).redirect(listPath, {
       message: ""
     });
   }

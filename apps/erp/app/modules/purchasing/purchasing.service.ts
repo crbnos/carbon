@@ -132,6 +132,7 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
@@ -6715,12 +6716,18 @@ export function deduplicateForecasts<
     itemId: string;
     locationId: string;
     periodId: string;
+    planningSegmentId: string;
     forecastQuantity: number;
   }
 >(forecasts: T[]): T[] {
   const map = new Map<string, T>();
   for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
     const existing = map.get(key);
     if (existing) {
       existing.forecastQuantity += forecast.forecastQuantity;

@@ -39,7 +39,7 @@ import { useCallback, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { z } from "zod";
-import { EmailRecipients, Users } from "~/components/Form";
+import { EmailRecipients, Item, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
@@ -50,6 +50,7 @@ import {
   invoiceAutomations,
   invoiceAutomationValidator,
   invoiceNotificationValidator,
+  serviceLaborItemValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
 import {
@@ -117,6 +118,11 @@ const invoicingSettingsForm = z.discriminatedUnion("intent", [
     .extend({ intent: z.literal("emails") })
     .transform(({ defaultCustomerCc }) => ({
       defaultCustomerCc: defaultCustomerCc ?? []
+    })),
+  serviceLaborItemValidator
+    .extend({ intent: z.literal("serviceLabor") })
+    .transform(({ serviceLaborItemId }) => ({
+      serviceLaborItemId: serviceLaborItemId || null
     }))
 ]);
 
@@ -142,6 +148,8 @@ export default function InvoicingSettingsRoute() {
         toast.success(t`Invoice notification settings updated`);
       else if (data.accountsReceivableBillingAddress)
         toast.success(t`Accounts receivable billing address updated`);
+      else if (data.serviceLaborItemId !== undefined)
+        toast.success(t`Service labor item updated`);
       else toast.success(t`Customer email settings updated`);
     }
   });

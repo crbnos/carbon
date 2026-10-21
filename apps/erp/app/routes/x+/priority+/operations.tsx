@@ -53,7 +53,10 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams, useUser } from "~/hooks";
-import { getActiveJobOperationsByLocation } from "~/modules/production/production.service";
+import {
+  getActiveJobOperationsByLocation,
+  getJobProjects
+} from "~/modules/production/production.service";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 import type {
   BatchItem,

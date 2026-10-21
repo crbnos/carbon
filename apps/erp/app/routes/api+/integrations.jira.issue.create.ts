@@ -4,10 +4,12 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { isSyncedEntityType } from "@carbon/ee/issue-sync";
 import { getCompanyEmployees, getJiraClient } from "@carbon/ee/jira.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunction } from "react-router";
 import { createJiraIssue } from "~/modules/shared/shared.server";
+import { getNewIssueDefaults } from "~/modules/shared/shared.service";
 
 const jira = getJiraClient();
 

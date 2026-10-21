@@ -4,11 +4,10 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
-  actionTaskPermissions,
-  isActionTaskEntityType
-} from "@carbon/ee/action-task-entity";
+  isSyncedEntityType,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
 import { getJiraClient } from "@carbon/ee/jira.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunction } from "react-router";

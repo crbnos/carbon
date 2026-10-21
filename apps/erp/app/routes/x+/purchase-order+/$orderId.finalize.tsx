@@ -21,12 +21,16 @@ export async function action(args: ActionFunctionArgs) {
     purchaseOrderId: orderId,
     locale: getPreferenceHeaders(args.request).locale
   });
+  // A Warn budget overrun finalizes, and adds the overrun to the flash.
+  const budgetNote = result.data?.budgetWarning
+    ? `. ${result.data.budgetWarning}`
+    : "";
   return respond(args.request, result).redirect(
     requestReferrer(args.request) ?? path.to.purchaseOrder(orderId),
     {
       message: result.data?.needsApproval
-        ? "Purchase order submitted for approval"
-        : "Purchase order finalized",
+        ? `Purchase order submitted for approval${budgetNote}`
+        : `Purchase order finalized${budgetNote}`,
       onError: path.to.purchaseOrder(orderId)
     }
   );

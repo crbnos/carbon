@@ -52,6 +52,7 @@ import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
 import { isDateColumnSentinel } from "~/modules/production/production.models";
 import {
+  getJobProjects,
   getJobsByDateRange,
   getUnscheduledJobs
 } from "~/modules/production/production.service";

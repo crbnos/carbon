@@ -47,6 +47,7 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { PinnedCard, PinToggle } from "~/components/ReportPin";
 import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
