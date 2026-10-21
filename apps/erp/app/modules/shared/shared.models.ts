@@ -438,6 +438,23 @@ export const savedViewStateValidator = z.object({
   sorts: z.array(z.string()).optional()
 });
 
+/**
+ * An Inspection operation needs its inspection plan: unlike times, units and
+ * rates, nothing can fill it in. Spread into `.refine(...)`.
+ */
+export const inspectionPlanRequired: [
+  (operation: {
+    operationType: string;
+    inspectionDocumentId?: string;
+  }) => boolean,
+  { message: string; path: string[] }
+] = [
+  (operation) =>
+    operation.operationType !== "Inspection" ||
+    !!operation.inspectionDocumentId,
+  { message: "Inspection Plan is required", path: ["inspectionDocumentId"] }
+];
+
 export const standardFactorType = [
   "Hours/Piece",
   "Hours/100 Pieces",

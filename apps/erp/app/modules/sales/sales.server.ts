@@ -47,7 +47,10 @@ import {
   getCompanySettings,
   getNextSequence as getNextSequenceNumber
 } from "~/modules/settings/settings.service";
-import { optionalTiptapDoc } from "~/modules/shared/shared.models";
+import {
+  inspectionPlanRequired,
+  optionalTiptapDoc
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -62,9 +65,11 @@ import { sanitize } from "~/utils/supabase";
 import {
   invokeCreate,
   invokePosting,
-  setOperationWorkInstruction
+  setOperationWorkInstruction,
+  withOperationStandards
 } from "../shared/shared.service";
 import {
+  baseQuoteOperationValidator,
   contractAmendmentChangeValidator,
   contractDurationOf,
   customerContractAmendmentValidator,
@@ -77,7 +82,6 @@ import {
   isSalesRfqLocked,
   quoteLineValidator,
   quoteMaterialValidator,
-  quoteOperationValidator,
   quoteStatusType,
   quoteValidator,
   rentalAgreementLineClassificationValidator,
@@ -3272,17 +3276,26 @@ export const deleteQuoteMaterialsAndReprice = defineServiceFn({
     return { ids };
   }
 });
-const quoteOperationInput = quoteOperationValidator.safeExtend({
-  quoteId: z.string(),
-  quoteLineId: z.string(),
-  customFields: customFieldValues.optional()
-});
+// The bill of process form requires times, units and rates; the API fills a
+// new operation's from its work center or process, and an update leaves out
+// what it was not sent.
+const quoteOperationInput = baseQuoteOperationValidator
+  .extend({
+    quoteId: z.string(),
+    quoteLineId: z.string(),
+    customFields: customFieldValues.optional()
+  })
+  .refine(...inspectionPlanRequired);
 
 /**
  * Add an operation to a quote line's method, then reprice the line.
  *
  * @remarks
- * The line and its make method must be this company's and the line's.
+ * The line and its make method must be this company's and the line's. Times,
+ * units and rates left out are filled as the bill of process form fills them:
+ * from the work center, else the process's default standard factor and the
+ * average of its active work centers, with times 0; an outside operation's
+ * minimum cost and lead time come from its supplier process.
  *
  * @mcp
  */
@@ -3290,7 +3303,9 @@ export const createQuoteOperation = defineServiceFn({
   input: quoteOperationInput,
   permission: { create: "sales" },
 
-  async run(ctx, { customFields, ...operation }) {
+  async run(ctx, { customFields, ...input }) {
+    const operation = await withOperationStandards(ctx, input);
+    if (operation instanceof CarbonError) return operation;
     const { quoteId, quoteLineId } = operation;
     const refused = await service.refuseUnlessQuoteMethodRows(ctx, {
       quoteId,
@@ -3319,6 +3334,9 @@ export const createQuoteOperation = defineServiceFn({
 
 /**
  * Change an operation on a quote line's method, then reprice the line.
+ *
+ * @remarks
+ * A field left out keeps its value.
  *
  * @mcp
  */

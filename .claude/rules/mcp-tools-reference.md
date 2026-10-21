@@ -384,5 +384,13 @@ Markdown markers.
   runs the gate and `run`; nothing a route does around the call.
 - A function gated on several modules publishes `module: null` in the
   manifest; its own gate decides, as for every function.
+- **A form validator's `.refine()` checks are invisible in the published
+  schema**: the manifest says a field is optional, and the call refuses it
+  anyway. Give the API input the base object and fill or keep what a caller
+  leaves out. The job and quote operations do: `baseJobOperationValidator` /
+  `baseQuoteOperationValidator`, a create filled by `withOperationStandards`
+  (`shared.service.ts`, as the bill of process form fills it), an update
+  leaving out what it was not sent; only the inspection plan stays required
+  (`inspectionPlanRequired`). Pinned by `apps/erp/test/operation-api-input.test.ts`.
 - "Shelf" was renamed to **storage unit** (`inventory_*StorageUnit*`). "Shelf
   life" (`*ShelfLife*`) is a different, current concept.

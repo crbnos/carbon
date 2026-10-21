@@ -185,7 +185,12 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
-import type { assignableTables, NoteField, NoteTable } from "./shared.models";
+import type {
+  assignableTables,
+  NoteField,
+  NoteTable,
+  standardFactorType
+} from "./shared.models";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
 import type { ItemModelUpload } from "./types";
 
@@ -844,6 +849,150 @@ export async function setRecordNotes(
     .eq("id", id)
     .eq("companyId", companyId)
     .select("id");
+}
+
+type StandardFactor = (typeof standardFactorType)[number];
+
+type OperationStandards = {
+  processId: string;
+  workCenterId?: string;
+  operationSupplierProcessId?: string;
+  setupUnit?: StandardFactor;
+  setupTime?: number;
+  laborUnit?: StandardFactor;
+  laborTime?: number;
+  laborRate?: number;
+  machineUnit?: StandardFactor;
+  machineTime?: number;
+  machineRate?: number;
+  overheadRate?: number;
+  operationMinimumCost?: number;
+  operationUnitCost?: number;
+  operationLeadTime?: number;
+};
+
+type FilledStandards = Required<
+  Omit<
+    OperationStandards,
+    "processId" | "workCenterId" | "operationSupplierProcessId"
+  >
+>;
+
+type WorkCenterStandards = {
+  laborRate: number | null;
+  machineRate: number | null;
+  overheadRate: number | null;
+  defaultStandardFactor: StandardFactor | null;
+};
+
+/**
+ * What the bill of process form fills in for the fields a caller left out of
+ * a new operation: units and rates from the chosen work center, else the
+ * process's default standard factor and the average of its active work
+ * centers; an outside operation's minimum cost and lead time from its
+ * supplier process; times 0. A field the caller sent is kept as sent.
+ */
+export function fillOperationStandards<T extends OperationStandards>(
+  operation: T,
+  facts: {
+    processStandardFactor: StandardFactor | null;
+    workCenters: WorkCenterStandards[];
+    supplierProcess: {
+      minimumCost: number | null;
+      leadTime: number | null;
+    } | null;
+  }
+): T & FilledStandards {
+  const { workCenters, supplierProcess } = facts;
+  const average = (rate: "laborRate" | "machineRate" | "overheadRate") =>
+    workCenters.length
+      ? workCenters.reduce((sum, center) => sum + (center[rate] ?? 0), 0) /
+        workCenters.length
+      : 0;
+  const unit =
+    (operation.workCenterId ? workCenters[0]?.defaultStandardFactor : null) ??
+    facts.processStandardFactor ??
+    "Hours/Piece";
+
+  return {
+    ...operation,
+    setupUnit: operation.setupUnit ?? "Total Minutes",
+    setupTime: operation.setupTime ?? 0,
+    laborUnit: operation.laborUnit ?? unit,
+    laborTime: operation.laborTime ?? 0,
+    laborRate: operation.laborRate ?? average("laborRate"),
+    machineUnit: operation.machineUnit ?? unit,
+    machineTime: operation.machineTime ?? 0,
+    machineRate: operation.machineRate ?? average("machineRate"),
+    overheadRate: operation.overheadRate ?? average("overheadRate"),
+    operationMinimumCost:
+      operation.operationMinimumCost ?? supplierProcess?.minimumCost ?? 0,
+    operationUnitCost: operation.operationUnitCost ?? 0,
+    operationLeadTime:
+      operation.operationLeadTime ?? supplierProcess?.leadTime ?? 0
+  };
+}
+
+/**
+ * `fillOperationStandards` with the facts read: the process, the chosen work
+ * center (or the process's active ones) and the supplier process, all of
+ * this company.
+ */
+export async function withOperationStandards<T extends OperationStandards>(
+  ctx: ServiceContext,
+  operation: T
+): Promise<(T & FilledStandards) | CarbonError> {
+  const db = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [process, workCenters, supplierProcess] = await Promise.all([
+    db
+      .from("process")
+      .select("defaultStandardFactor")
+      .eq("id", operation.processId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    operation.workCenterId
+      ? db
+          .from("workCenter")
+          .select("laborRate, machineRate, overheadRate, defaultStandardFactor")
+          .eq("id", operation.workCenterId)
+          .eq("companyId", companyId)
+      : db
+          .from("workCenterProcess")
+          .select(
+            "workCenter!inner(laborRate, machineRate, overheadRate, defaultStandardFactor)"
+          )
+          .eq("processId", operation.processId)
+          .eq("companyId", companyId)
+          .eq("workCenter.active", true),
+    operation.operationSupplierProcessId
+      ? db
+          .from("supplierProcess")
+          .select("minimumCost, leadTime")
+          .eq("id", operation.operationSupplierProcessId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  const failed = process.error ?? workCenters.error ?? supplierProcess?.error;
+  if (failed) {
+    return ctx.error("internal", "Failed to read the process defaults", failed);
+  }
+  if (!process.data) return ctx.error("notFound", "Process not found");
+
+  const centers = (workCenters.data ?? []).map((row) =>
+    "workCenter" in row
+      ? (row.workCenter as WorkCenterStandards)
+      : (row as WorkCenterStandards)
+  );
+  if (operation.workCenterId && centers.length === 0) {
+    return ctx.error("notFound", "Work center not found");
+  }
+  return fillOperationStandards(operation, {
+    processStandardFactor: process.data.defaultStandardFactor,
+    workCenters: centers,
+    supplierProcess: supplierProcess?.data ?? null
+  });
 }
 
 /**
