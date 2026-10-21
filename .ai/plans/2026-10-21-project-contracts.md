@@ -497,4 +497,6 @@ pnpm lingui:extract 2>&1 | grep -A3 "erp:" | head
 - Task 15 (`7915417418`): glossary hrefs point at page roots; repointing `fixed-price` and `project-contract` at the new sections needs Brad's OK (`docs/content/AGENTS.md` → Ask First). `d4f62b727d` renamed the line form's "Funded Amount" to "Funded".
 - Task 16 (`72295a77bb`): the Journal card nets each account to one side.
 - Tasks 17–18 (`a2a6256050`, `e5a3efcdde`).
+- Self-review fixes: `4f0b7f3286`, `de67a8eda7`, `7dafcc282d`, `5c2ffc2606` (see the run log).
+- Task 20: BLOCKED. The stack re-ported at 02:53 and the API returns 502; see `.ai/runs/2026-10-21-project-contracts.md`.
 - Task 19 (`22be6410ed`): 2,208 strings filled across 12 locales; `linguito check` and `check-glossary` pass (advisory hits only).
