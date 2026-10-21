@@ -6,9 +6,11 @@ import { describe, expect, it } from "vitest";
 import {
   amendmentEffectiveDate,
   averageDayUnits,
+  billingBasisMismatch,
   billingGrid,
   type ContractLineTerms,
   type ContractTerms,
+  contractBillingBasisFor,
   discountEndSplits,
   type ExistingRow,
   invoiceLinePricing,
@@ -961,5 +963,56 @@ describe("periodEndContaining", () => {
     expect(periodEndContaining(terms, "2027-01-15")).toBe("2027-01-31");
     // Clipped at the contract's end.
     expect(periodEndContaining(terms, "2027-12-15")).toBe("2027-10-31");
+  });
+});
+
+describe("billing basis", () => {
+  it("refuses a Time & Materials line on a service contract", () => {
+    expect(
+      billingBasisMismatch("Schedule", {
+        billingMethod: "Time & Materials",
+        revenueType: "One-time"
+      })
+    ).toBe("billing-line-on-schedule");
+  });
+
+  it("refuses a Recurring line on a project contract", () => {
+    expect(
+      billingBasisMismatch("Project", {
+        billingMethod: "Fixed",
+        revenueType: "Recurring"
+      })
+    ).toBe("recurring-line-on-project");
+  });
+
+  it("accepts a Recurring Fixed line on a service contract", () => {
+    expect(
+      billingBasisMismatch("Schedule", {
+        billingMethod: "Fixed",
+        revenueType: "Recurring"
+      })
+    ).toBeNull();
+  });
+
+  it("accepts a One-time Cost Plus line on a project contract", () => {
+    expect(
+      billingBasisMismatch("Project", {
+        billingMethod: "Cost Plus",
+        revenueType: "One-time"
+      })
+    ).toBeNull();
+  });
+
+  it("derives the basis from the lines", () => {
+    expect(contractBillingBasisFor([])).toBe("Schedule");
+    expect(contractBillingBasisFor([{ billingMethod: "Fixed" }])).toBe(
+      "Schedule"
+    );
+    expect(
+      contractBillingBasisFor([
+        { billingMethod: "Fixed" },
+        { billingMethod: "Time & Materials" }
+      ])
+    ).toBe("Project");
   });
 });

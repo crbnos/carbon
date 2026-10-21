@@ -1692,6 +1692,36 @@ export const contractBillingMethods = [
   "Cost Plus"
 ] as const satisfies readonly Enums["contractBillingMethod"][];
 
+/** What a contract bills from: `Schedule` is a service contract (its invoice
+ *  schedule), `Project` a project contract (project cost and billing events). */
+export const contractBillingBases = [
+  "Schedule",
+  "Project"
+] as const satisfies readonly Enums["contractBillingBasis"][];
+
+/** The billing methods a contract's lines may use: a service contract bills
+ *  only on its schedule. */
+export function contractBillingMethodsFor(
+  basis: (typeof contractBillingBases)[number]
+): readonly (typeof contractBillingMethods)[number][] {
+  return basis === "Project" ? contractBillingMethods : ["Fixed"];
+}
+
+/** The header billing terms of a project contract. Its lines bill from
+ *  project cost each billing period, in arrears on calendar periods, and it
+ *  never renews; only the frequency is the user's choice. */
+export const projectContractTermDefaults = {
+  billingFrequency: "Month",
+  billingAlignment: "Calendar",
+  billingTiming: "Arrears",
+  renewal: "End"
+} as const satisfies {
+  billingFrequency: (typeof contractBillingFrequencies)[number];
+  billingAlignment: (typeof contractBillingAlignments)[number];
+  billingTiming: (typeof contractBillingTimings)[number];
+  renewal: (typeof contractRenewals)[number];
+};
+
 export const contractRevenueMethods = [
   "Daily",
   "Even Period",
@@ -1833,24 +1863,27 @@ export const customerContractValidator = z
     projectId: zfd.text(z.string().optional()),
     customerReference: zfd.text(z.string().optional()),
     closeDate: z.string().min(1, { message: "Close date is required" }),
+    /** Omitted means `Schedule`, a service contract. A project contract has
+     *  a period of performance instead of a term, so it takes no duration,
+     *  renewal or billing timing. */
+    billingBasis: zfd.text(z.enum(contractBillingBases).optional()),
     startDate: z.string().min(1, { message: "Start date is required" }),
-    duration: z.enum(contractDurations, { error: "Duration is required" }),
-    /** Required when `duration` is `custom`; otherwise derived. */
+    /** Required on a service contract. */
+    duration: zfd.text(z.enum(contractDurations).optional()),
+    /** Required when `duration` is `custom` and on a project contract;
+     *  otherwise derived. */
     endDate: zfd.text(z.string().optional()),
-    renewal: z.enum(contractRenewals, { error: "Renewal is required" }),
+    /** Required on a service contract. */
+    renewal: zfd.text(z.enum(contractRenewals).optional()),
     /** Percent points: 3 = prices rise 3% at each renewal. */
     renewalUplift: zfd.numeric(
       z.number().min(0, { message: "Renewal uplift cannot be negative" })
     ),
-    billingFrequency: z.enum(contractBillingFrequencies, {
-      error: "Billing frequency is required"
-    }),
-    billingAlignment: z.enum(contractBillingAlignments, {
-      error: "Billing alignment is required"
-    }),
-    billingTiming: z.enum(contractBillingTimings, {
-      error: "Billing timing is required"
-    }),
+    /** Required on a service contract. The three billing terms of a
+     *  project contract default from `projectContractTermDefaults`. */
+    billingFrequency: zfd.text(z.enum(contractBillingFrequencies).optional()),
+    billingAlignment: zfd.text(z.enum(contractBillingAlignments).optional()),
+    billingTiming: zfd.text(z.enum(contractBillingTimings).optional()),
     firstInvoiceDate: zfd.text(z.string().optional()),
     billedThrough: zfd.text(z.string().optional()),
     recognizeRevenueFrom: zfd.text(z.string().optional()),
@@ -1861,10 +1894,40 @@ export const customerContractValidator = z
     exchangeRate: zfd.numeric(z.number().optional()),
     notes: optionalTiptapDoc
   })
-  .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
-    message: "End date is required",
-    path: ["endDate"]
+  .refine((data) => data.billingBasis === "Project" || !!data.duration, {
+    message: "Duration is required",
+    path: ["duration"]
   })
+  .refine((data) => data.billingBasis === "Project" || !!data.renewal, {
+    message: "Renewal is required",
+    path: ["renewal"]
+  })
+  .refine(
+    (data) => data.billingBasis === "Project" || !!data.billingFrequency,
+    { message: "Billing frequency is required", path: ["billingFrequency"] }
+  )
+  .refine(
+    (data) => data.billingBasis === "Project" || !!data.billingAlignment,
+    { message: "Billing alignment is required", path: ["billingAlignment"] }
+  )
+  .refine((data) => data.billingBasis === "Project" || !!data.billingTiming, {
+    message: "Billing timing is required",
+    path: ["billingTiming"]
+  })
+  .refine((data) => data.billingBasis !== "Project" || !!data.projectId, {
+    message: "Project is required",
+    path: ["projectId"]
+  })
+  .refine(
+    (data) =>
+      data.duration === "custom" || data.billingBasis === "Project"
+        ? !!data.endDate
+        : true,
+    {
+      message: "End date is required",
+      path: ["endDate"]
+    }
+  )
   .refine((data) => isOnOrAfter(data.endDate, data.startDate, -1), {
     message: "End date cannot be before the start date",
     path: ["endDate"]

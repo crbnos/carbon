@@ -31,6 +31,10 @@ export type ContractBillingTiming = Enums["contractBillingTiming"];
 export type ContractRateUnit = Enums["contractRateUnit"];
 export type ContractAmendmentEffect = Enums["contractAmendmentEffect"];
 export type CustomerContractType = Enums["customerContractType"];
+/** What a contract bills from: `Schedule` (a service contract, its invoice
+ *  schedule) or `Project` (a project contract, project cost and billing
+ *  events). */
+export type ContractBillingBasis = Enums["contractBillingBasis"];
 
 export type ContractTerms = {
   startDate: string;
@@ -974,4 +978,31 @@ export function horizon(terms: ContractTerms, today: string): string {
   const nextStart = addDays(currentPeriodEnd(terms, today), 1);
   const periods = billingGrid(terms, nextStart);
   return periods[periods.length - 1]?.end ?? nextStart;
+}
+
+/** The basis a contract's lines imply: `Project` when any line is not
+ *  `Fixed`, else `Schedule` — the rule the `contract-billing-basis`
+ *  migration backfilled with. */
+export function contractBillingBasisFor(
+  lines: { billingMethod: string }[]
+): ContractBillingBasis {
+  return lines.some((line) => line.billingMethod !== "Fixed")
+    ? "Project"
+    : "Schedule";
+}
+
+/** Why a line does not belong on a contract of `basis`, or null. A service
+ *  contract bills on its schedule, so it takes only `Fixed` lines; a project
+ *  contract line is always One-time. */
+export function billingBasisMismatch(
+  basis: ContractBillingBasis,
+  line: { billingMethod: string; revenueType: string }
+): "billing-line-on-schedule" | "recurring-line-on-project" | null {
+  if (basis === "Schedule" && line.billingMethod !== "Fixed") {
+    return "billing-line-on-schedule";
+  }
+  if (basis === "Project" && line.revenueType === "Recurring") {
+    return "recurring-line-on-project";
+  }
+  return null;
 }

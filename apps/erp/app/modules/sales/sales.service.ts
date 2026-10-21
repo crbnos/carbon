@@ -9934,9 +9934,11 @@ function customerContractTerms(
     "id" | "customerContractId"
   >
 ) {
+  // A project contract has no duration: its end date is the end of its
+  // period of performance.
   const { endDate, termMonths } = contractEndDate(
     terms.startDate,
-    terms.duration,
+    terms.duration ?? "custom",
     terms.endDate
   );
   return {
@@ -9956,11 +9958,17 @@ function customerContractTerms(
     startDate: terms.startDate,
     endDate,
     termMonths,
-    renewal: terms.renewal,
+    // NOT NULL with defaults, and optional on a project contract: an omitted
+    // term leaves the column alone.
+    ...(terms.renewal ? { renewal: terms.renewal } : {}),
     renewalUplift: percentToFraction(terms.renewalUplift),
-    billingFrequency: terms.billingFrequency,
-    billingAlignment: terms.billingAlignment,
-    billingTiming: terms.billingTiming,
+    ...(terms.billingFrequency
+      ? { billingFrequency: terms.billingFrequency }
+      : {}),
+    ...(terms.billingAlignment
+      ? { billingAlignment: terms.billingAlignment }
+      : {}),
+    ...(terms.billingTiming ? { billingTiming: terms.billingTiming } : {}),
     // A cleared DatePicker posts "", which a DATE column rejects.
     firstInvoiceDate: terms.firstInvoiceDate || null,
     billedThrough: terms.billedThrough || null,

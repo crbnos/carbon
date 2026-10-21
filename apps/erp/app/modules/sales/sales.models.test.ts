@@ -19,7 +19,9 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 const {
+  contractBillingMethodsFor,
   contractTermFromServicePeriods,
+  customerContractValidator,
   quoteLineValidator,
   quoteValidator,
   rentalAgreementChargeValidator,
@@ -260,5 +262,92 @@ describe("contractTermFromServicePeriods", () => {
       duration: "custom",
       endDate: "2027-03-15"
     });
+  });
+});
+
+// A project contract has a period of performance, not a term: it takes no
+// duration, renewal or billing timing, but it needs a project and an end date.
+describe("customerContractValidator billing basis", () => {
+  const header = {
+    name: "Phase 2 support",
+    customerId: "cust_1",
+    closeDate: "2026-10-21",
+    startDate: "2026-11-01",
+    renewalUplift: "0",
+    currencyCode: "USD"
+  };
+
+  it("parses a project contract with no duration and no renewal", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      billingBasis: "Project",
+      projectId: "proj_1",
+      endDate: "2027-10-31"
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuses a project contract without a project", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      billingBasis: "Project",
+      endDate: "2027-10-31"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path[0])).toContain(
+      "projectId"
+    );
+  });
+
+  it("refuses a project contract without an end date", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      billingBasis: "Project",
+      projectId: "proj_1"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path[0])).toContain(
+      "endDate"
+    );
+  });
+
+  it("still requires the term of a service contract", () => {
+    const result = customerContractValidator.safeParse(header);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path[0])).toEqual(
+      expect.arrayContaining([
+        "duration",
+        "renewal",
+        "billingFrequency",
+        "billingAlignment",
+        "billingTiming"
+      ])
+    );
+  });
+
+  it("parses a service contract with its term", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      duration: "12",
+      renewal: "Renew",
+      billingFrequency: "Month",
+      billingAlignment: "Calendar",
+      billingTiming: "Advance"
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("contractBillingMethodsFor", () => {
+  it("offers only Fixed on a service contract", () => {
+    expect(contractBillingMethodsFor("Schedule")).toEqual(["Fixed"]);
+  });
+
+  it("offers every billing method on a project contract", () => {
+    expect(contractBillingMethodsFor("Project")).toEqual([
+      "Fixed",
+      "Time & Materials",
+      "Cost Plus"
+    ]);
   });
 });
