@@ -533,7 +533,12 @@ export const webhookValidator = z
     id: zfd.text(z.string().optional()),
     name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
-    url: z.string().url({ message: "Must be a valid URL" }),
+    url: z
+      .string()
+      .url({ message: "Must be a valid URL" })
+      .refine((url) => /^https?:\/\//i.test(url), {
+        message: "Must be an http or https URL"
+      }),
     onInsert: zfd.checkbox(),
     onUpdate: zfd.checkbox(),
     onDelete: zfd.checkbox(),

@@ -9397,6 +9397,9 @@ msgstr "हर 3 घंटे में"
 msgid "Every account default is set"
 msgstr "हर खाता डिफ़ॉल्ट सेट है"
 
+msgid "Every account is mapped"
+msgstr "सभी खाते मैप किए गए हैं"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "सक्रियण से पहले प्रत्येक संपत्ति को एक भुगतान पंक्ति की आवश्यकता है।"
 
@@ -9432,6 +9435,9 @@ msgstr "प्रत्येक पंक्ति जो बिल करत�
 
 msgid "Every match"
 msgstr "हर मेल"
+
+msgid "Every posted journal line in a period"
+msgstr "किसी अवधि की प्रत्येक पोस्ट की गई जर्नल पंक्ति"
 
 msgid "Every required action has already been added."
 msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
@@ -13320,6 +13326,9 @@ msgstr "अपने खातों का चार्ट को प्रद�
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
 
+msgid "Mapped"
+msgstr "मैप किए गए"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14585,6 +14594,9 @@ msgstr "कोई कौशल जोड़ा नहीं गया"
 
 msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
+
+msgid "No accounts are mapped yet"
+msgstr "अभी तक कोई खाता मैप नहीं किया गया है"
 
 msgid "No accounts match your search"
 msgstr "कोई खाता आपकी खोज से मेल नहीं खाता"
@@ -25091,6 +25103,9 @@ msgstr "अनलॉक करें"
 
 msgid "Unlock with passkey"
 msgstr "पासकी के साथ अनलॉक करें"
+
+msgid "Unmapped"
+msgstr "मैप नहीं किए गए"
 
 msgid "Unmapped dimension values"
 msgstr "अनमैप्ड आयाम मान"

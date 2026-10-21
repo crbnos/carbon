@@ -9397,6 +9397,9 @@ msgstr "3시간마다"
 msgid "Every account default is set"
 msgstr "모든 계정 기본값이 설정되었습니다"
 
+msgid "Every account is mapped"
+msgstr "모든 계정이 매핑되었습니다"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "활성화하기 전에 모든 자산이 지불 라인을 필요로 합니다."
 
@@ -9432,6 +9435,9 @@ msgstr "모든 라인이 청구한 것을 인식합니다."
 
 msgid "Every match"
 msgstr "모든 일치"
+
+msgid "Every posted journal line in a period"
+msgstr "기간 내 전기된 모든 분개 라인"
 
 msgid "Every required action has already been added."
 msgstr "필요한 모든 작업이 이미 추가되었습니다."
@@ -13320,6 +13326,9 @@ msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비�
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
 
+msgid "Mapped"
+msgstr "매핑됨"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14585,6 +14594,9 @@ msgstr "추가된 역량이 없습니다"
 
 msgid "No Access"
 msgstr "접근 권한 없음"
+
+msgid "No accounts are mapped yet"
+msgstr "아직 매핑된 계정이 없습니다"
 
 msgid "No accounts match your search"
 msgstr "검색과 일치하는 계정이 없습니다"
@@ -25091,6 +25103,9 @@ msgstr "잠금 해제"
 
 msgid "Unlock with passkey"
 msgstr "패스키로 잠금 해제"
+
+msgid "Unmapped"
+msgstr "매핑 안 됨"
 
 msgid "Unmapped dimension values"
 msgstr "매핑되지 않은 차원 값"

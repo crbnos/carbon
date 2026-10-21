@@ -328,21 +328,28 @@ covered completely: a literal cannot rebind, because there is no name to re-reso
 The two layers are what make the guard whole, so don't drop the pre-check as
 "redundant".
 
-## The two older webhook systems are untouched
+## The other two webhook systems
 
-Three things in this repo are called "webhook". Only the first is new:
+Three things in this repo are called "webhook":
 
 | | What | Where |
 |---|---|---|
 | **Workflow action** | Outbound, SSRF-guarded, https-only | `packages/jobs/src/workflows/actions/webhook.ts` |
-| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL with its configured headers — **no signing, no URL guard** | `packages/jobs/src/inngest/functions/events/webhook.ts` |
+| Event-system `WEBHOOK` handler | Outbound `axios.post` on `carbon/event-webhook` to a subscription's configured URL, signed (`Carbon-Signature`), SSRF-guarded, http or https | `packages/jobs/src/inngest/functions/events/webhook.ts` |
 | Integration webhooks | **Inbound** routes for Jira, Linear, Paperless Parts, Stripe and Xero | `apps/erp/app/routes/api+/webhook.{jira,linear,paperless-parts,stripe,xero}*.ts` |
 
-They share no code with the workflow action and were deliberately not changed.
-Do not "unify" them: the event-system handler's contract is an existing customer
-integration, and hardening it is its own decision with its own migration. The
-matcher's subscription reconciler is already careful never to touch a company's
-`WEBHOOK` rows (see `workflow-matcher.md`).
+The event-system handler shares only the guard with the workflow action, through
+`checkWebhookUrl` (the private-network check of `checkOutboundUrl`, but http and URL
+credentials still allowed, since its customer contract never forbade them) and
+`outboundHttpAgent` / `outboundHttpsAgent` (`guardedLookup` for node's http client),
+both in `url-guard.ts`. `webhookTransport` (`events/webhook-body.ts`) holds its axios
+options: those agents, `maxRedirects: 0` (a 3xx fails the attempt) and `proxy: false`
+(through an `HTTP_PROXY` the guard would check the proxy, not the target). A refused
+address counts one error and throws `NonRetriableError`; a failed lookup is
+`retryable` and takes the ordinary retry path. Do not go further and
+"unify" the two: the event handler's contract (http, signing, retries, the 30 s
+timeout) is an existing customer integration. The matcher's subscription reconciler
+is careful never to touch a company's `WEBHOOK` rows (see `workflow-matcher.md`).
 
 ## Gotchas
 

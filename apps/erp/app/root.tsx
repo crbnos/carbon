@@ -317,7 +317,9 @@ export function Document({
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
+        {!CONTROLLED_ENVIRONMENT &&
+          import.meta.env.PROD &&
+          import.meta.env.VITE_VERCEL_ENV && <Analytics />}
       </body>
     </html>
   );

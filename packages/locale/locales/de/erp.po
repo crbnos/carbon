@@ -9397,6 +9397,9 @@ msgstr "Alle 3 Stunden"
 msgid "Every account default is set"
 msgstr "Jeder Kontostandardwert ist gesetzt"
 
+msgid "Every account is mapped"
+msgstr "Alle Konten sind zugeordnet"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Jede Anlage benötigt eine Zahlungsposition vor der Aktivierung."
 
@@ -9432,6 +9435,9 @@ msgstr "Jede Position verbucht, was sie fakturiert."
 
 msgid "Every match"
 msgstr "Jede Übereinstimmung"
+
+msgid "Every posted journal line in a period"
+msgstr "Jede gebuchte Journalzeile in einem Zeitraum"
 
 msgid "Every required action has already been added."
 msgstr "Jede erforderliche Aktion wurde bereits hinzugefügt."
@@ -13320,6 +13326,9 @@ msgstr "Ordnen Sie Ihren Kontenplan dem des Anbieters zu. Buchungs-Standardkonte
 msgid "Map your current process, systems, and data"
 msgstr "Ordnen Sie Ihren aktuellen Prozess, Ihre Systeme und Daten"
 
+msgid "Mapped"
+msgstr "Zugeordnet"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14585,6 +14594,9 @@ msgstr "Keine Qualifikationen hinzugefügt"
 
 msgid "No Access"
 msgstr "Kein Zugriff"
+
+msgid "No accounts are mapped yet"
+msgstr "Noch keine Konten zugeordnet"
 
 msgid "No accounts match your search"
 msgstr "Keine Konten stimmen mit Ihrer Suche überein"
@@ -25091,6 +25103,9 @@ msgstr "Entsperren"
 
 msgid "Unlock with passkey"
 msgstr "Mit Passkey entsperren"
+
+msgid "Unmapped"
+msgstr "Nicht zugeordnet"
 
 msgid "Unmapped dimension values"
 msgstr "Nicht zugeordnete Dimensionswerte"

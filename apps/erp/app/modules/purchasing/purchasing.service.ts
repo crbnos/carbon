@@ -67,6 +67,7 @@ import {
   datetime,
   EPSILON,
   escalatedLeasePayment,
+  getCompletionAfterQuantityChange,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
   groupBy,
@@ -2058,6 +2059,85 @@ function normalizePurchaseOrderLineReferences<
   return { ...line, itemId: null, accountId: null, assetId: null };
 }
 
+/** The columns a quantity edit's completion flags are derived from. */
+const COMPLETION_SOURCE_COLUMNS = [
+  "purchaseQuantity",
+  "quantityReceived",
+  "quantityInvoiced",
+  "receivedComplete"
+] as const;
+
+/** A quantity edit retries this many times when a receipt or invoice lands. */
+const COMPLETION_CAS_ATTEMPTS = 3;
+
+/**
+ * Update an existing line, restating its completion flags when the edit
+ * changes `purchaseQuantity` (`getCompletionAfterQuantityChange`). The flags
+ * are derived from a read, so the UPDATE is a compare-and-swap on the columns
+ * they came from: a receipt or invoice posted in between matches no row, and
+ * the edit re-reads and tries again rather than overwriting what it posted.
+ */
+async function updatePurchaseOrderLineRestatingCompletion(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  line: { id: string; purchaseQuantity?: number }
+) {
+  for (let attempt = 0; attempt < COMPLETION_CAS_ATTEMPTS; attempt++) {
+    const current = await client
+      .from("purchaseOrderLine")
+      .select(COMPLETION_SOURCE_COLUMNS.join(", "))
+      .eq("id", line.id)
+      .eq("companyId", companyId)
+      .single<
+        Pick<
+          Database["public"]["Tables"]["purchaseOrderLine"]["Row"],
+          (typeof COMPLETION_SOURCE_COLUMNS)[number]
+        >
+      >();
+    if (current.error) return { data: null, error: current.error };
+
+    const quantityChanged =
+      line.purchaseQuantity !== undefined &&
+      !equals(
+        Number(current.data.purchaseQuantity ?? 0),
+        line.purchaseQuantity
+      );
+
+    let update = client
+      .from("purchaseOrderLine")
+      .update(
+        sanitize({
+          ...line,
+          ...(quantityChanged
+            ? getCompletionAfterQuantityChange(
+                current.data,
+                line.purchaseQuantity!
+              )
+            : {})
+        })
+      )
+      .eq("id", line.id)
+      .eq("companyId", companyId);
+    if (quantityChanged) {
+      for (const column of COMPLETION_SOURCE_COLUMNS) {
+        const value = current.data[column];
+        update =
+          value === null ? update.is(column, null) : update.eq(column, value);
+      }
+    }
+
+    const updated = await update.select("id").maybeSingle();
+    if (updated.error) return { data: null, error: updated.error };
+    if (updated.data) return { data: updated.data, error: null };
+  }
+  return {
+    data: null,
+    error: new Error(
+      "The line was received or invoiced while saving. Try again."
+    )
+  };
+}
+
 export async function upsertPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLine:
@@ -2068,6 +2148,7 @@ export async function upsertPurchaseOrderLine(
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -2081,12 +2162,8 @@ export async function upsertPurchaseOrderLine(
   if (cleared.error) return { data: null, error: cleared.error };
 
   if ("id" in normalized) {
-    return client
-      .from("purchaseOrderLine")
-      .update(sanitize(normalized))
-      .eq("id", normalized.id)
-      .select("id")
-      .single();
+    const { companyId, ...line } = normalized;
+    return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
   }
 
   const existing = await client
@@ -2362,6 +2439,8 @@ export async function applyPurchasingPlanningActions(
             "pol.supplierShippingCost",
             "pol.purchaseQuantity",
             "pol.quantityReceived",
+            "pol.quantityInvoiced",
+            "pol.receivedComplete",
             "pol.taxPercent",
             "pol.supplierTaxAmount",
             "pol.conversionFactor",
@@ -2370,6 +2449,8 @@ export async function applyPurchasingPlanningActions(
           ])
           .where("pol.id", "in", lineIds)
           .where("pol.companyId", "=", companyId)
+          // the completion flags below are derived from these rows
+          .forUpdate("pol")
           .execute()
       ).map(({ baseCurrencyCode, ...line }) => ({
         ...line,
@@ -2401,6 +2482,8 @@ export async function applyPurchasingPlanningActions(
         quantity: number;
         percent: number;
         amount: number;
+        receivedComplete: boolean;
+        invoicedComplete: boolean;
       }[] = [];
       const unheld: string[] = [];
       for (const action of quantities) {
@@ -2439,7 +2522,8 @@ export async function applyPurchasingPlanningActions(
           lineId: action.lineId,
           quantity,
           percent: pair.percent,
-          amount: pair.amount
+          amount: pair.amount,
+          ...getCompletionAfterQuantityChange(line, quantity)
         });
       }
       // a failed computation never holds its claim
@@ -2451,14 +2535,16 @@ export async function applyPurchasingPlanningActions(
           SET "purchaseQuantity" = v."purchaseQuantity"::numeric,
               "taxPercent" = v."taxPercent"::numeric,
               "supplierTaxAmount" = v."supplierTaxAmount"::numeric,
+              "receivedComplete" = v."receivedComplete"::boolean,
+              "invoicedComplete" = v."invoicedComplete"::boolean,
               "updatedBy" = ${userId},
               "updatedAt" = ${now}
           FROM (VALUES ${sql.join(
             values.map(
               (v) =>
-                sql`(${v.lineId}, ${v.quantity}, ${v.percent}, ${v.amount})`
+                sql`(${v.lineId}, ${v.quantity}, ${v.percent}, ${v.amount}, ${v.receivedComplete}, ${v.invoicedComplete})`
             )
-          )}) AS v("id", "purchaseQuantity", "taxPercent", "supplierTaxAmount")
+          )}) AS v("id", "purchaseQuantity", "taxPercent", "supplierTaxAmount", "receivedComplete", "invoicedComplete")
           WHERE l."id" = v."id"
             AND l."companyId" = ${companyId}
             AND l."purchaseOrderId" IN (${editablePurchaseOrders})
@@ -3526,30 +3612,54 @@ export async function updatePurchaseOrderLineSchedule(
   }
 
   try {
-    const updated = await db
-      .updateTable("purchaseOrderLine")
-      .set({
-        ...(args.requiredDate !== undefined
-          ? { requiredDate: args.requiredDate }
-          : {}),
-        ...(args.purchaseQuantity !== undefined
-          ? { purchaseQuantity: args.purchaseQuantity }
-          : {}),
-        ...(tax ?? {}),
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", args.lineId)
-      .where("companyId", "=", args.companyId)
-      .where("purchaseOrderId", "in", (eb) =>
-        eb
-          .selectFrom("purchaseOrder")
-          .select("id")
-          .where("companyId", "=", args.companyId)
-          .where("status", "in", [...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES])
-      )
-      .returning("id")
-      .execute();
+    const updated = await db.transaction().execute(async (trx) => {
+      // The completion flags are derived from the row locked here, so a
+      // receipt or invoice posted meanwhile is not overwritten.
+      const current =
+        args.purchaseQuantity !== undefined
+          ? await trx
+              .selectFrom("purchaseOrderLine")
+              .select([...COMPLETION_SOURCE_COLUMNS])
+              .where("id", "=", args.lineId)
+              .where("companyId", "=", args.companyId)
+              .forUpdate()
+              .executeTakeFirst()
+          : undefined;
+      const completion =
+        current &&
+        args.purchaseQuantity !== undefined &&
+        !equals(Number(current.purchaseQuantity ?? 0), args.purchaseQuantity)
+          ? getCompletionAfterQuantityChange(current, args.purchaseQuantity)
+          : {};
+
+      return trx
+        .updateTable("purchaseOrderLine")
+        .set({
+          ...(args.requiredDate !== undefined
+            ? { requiredDate: args.requiredDate }
+            : {}),
+          ...(args.purchaseQuantity !== undefined
+            ? { purchaseQuantity: args.purchaseQuantity }
+            : {}),
+          ...(tax ?? {}),
+          ...completion,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.lineId)
+        .where("companyId", "=", args.companyId)
+        .where("purchaseOrderId", "in", (eb) =>
+          eb
+            .selectFrom("purchaseOrder")
+            .select("id")
+            .where("companyId", "=", args.companyId)
+            .where("status", "in", [
+              ...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES
+            ])
+        )
+        .returning("id")
+        .execute();
+    });
     return { updated: updated.length > 0, error: null };
   } catch (err) {
     return {

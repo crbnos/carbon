@@ -14,14 +14,14 @@ import {
   OnshapeAssetTooLargeError
 } from "@carbon/ee/onshape";
 import type { OnshapeOAuthIntegrationId } from "@carbon/ee/onshape/integration-id";
+import { getAppUrl } from "@carbon/env";
 import { TEMP_STAGING_BUCKET } from "@carbon/files";
-import { getFileSizeLimit } from "@carbon/utils";
+import { datetime, getFileSizeLimit } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
 import { assemblerEnabled } from "../tasks/assembler-client";
 import {
   type AttachOnshapeAssetsResult,
-  attachModelThumbnail,
   attachOnshapeAssetsToItem
 } from "./onshape-attach";
 import {
@@ -34,14 +34,14 @@ import { withRateLimitRetry } from "./onshape-rate-limit";
 
 // Export→stage→attach for ONE Onshape element, released or in a workspace
 // (`runOnshapeElementSync`), and the PDF export of one released drawing.
-// Poll-with-backoff (real completions take seconds); no translation.complete
-// webhook needed.
+// Translations are polled with backoff (most finish in seconds); one still
+// running after the quick polls waits on Onshape's translation.complete
+// webhook instead (see waitForTranslations).
 //
 // Callers (the release-sync and backfill jobs, and onshape-panel-sync) resolve
 // itemId and the documentId/version-or-workspace/elementId of the geometry,
-// including its partId and configuration. Individual-part
-// thumbnails come from that selected model after optimization; an element
-// thumbnail represents the entire Part Studio and must never be attached to it.
+// including its partId and configuration. Thumbnails come from the model
+// optimizer, which renders one from the exported model.
 
 type CarbonClient = SupabaseClient<Database>;
 type DocumentSourceType = Database["public"]["Enums"]["documentSourceType"];
@@ -66,9 +66,23 @@ export interface SyncOnshapeElementInput {
   assetBaseName?: string; // filename base (e.g. item part number); falls back to Onshape name
 }
 
-const POLL_MAX_ATTEMPTS = 40;
+// Waiting for a translation. Six quick polls (about 40 s of backoff) cover
+// most exports at the cost they always had. One still running then registers a
+// transient translation.complete webhook and waits for it, polling only every
+// WEBHOOK_WAIT_MS as a fallback; without a webhook (a callback Onshape cannot
+// reach) it keeps polling every POLL_MAX_DELAY_MS. A large assembly's export
+// can take far longer than a few minutes, so the budget is an hour. Every wait
+// is a step.sleep or step.waitForEvent, so a long wait holds nothing.
+const QUICK_POLLS = 6;
 const POLL_INITIAL_DELAY_MS = 2000;
-const POLL_MAX_DELAY_MS = 15000;
+const POLL_MAX_DELAY_MS = 30000;
+const WEBHOOK_WAIT_MS = 5 * 60 * 1000;
+const WAIT_BUDGET_MS = 60 * 60 * 1000;
+const TRANSLATION_COMPLETE_EVENT = "carbon/onshape-translation-complete";
+
+// An assembly's last export is recorded per item as a mapping row, so a push of
+// an unchanged assembly reuses its model instead of exporting it again.
+const MODEL_SOURCE_ENTITY_TYPE = "modelSource";
 
 // Size caps — the SAME limits Carbon enforces on manual uploads (CadModel.tsx /
 // document upload), since synced assets land in the same buckets. The raw model
@@ -79,7 +93,7 @@ const DOCUMENT_MAX_BYTES = getFileSizeLimit("DOCUMENT_UPLOAD").bytes;
 
 /**
  * Checkpointing for the functions that run this pipeline: consecutive steps
- * (existing → translate → first poll; drawings → attach → thumbnail) run in
+ * (existing → translate → first poll; drawings → attach) run in
  * one request instead of a round trip each. Every step here is a short Onshape
  * call or storage move. `maxRuntime` is far below the ERP's 300 s Vercel limit
  * because a step that starts at the end of the window gets only the rest of
@@ -92,6 +106,10 @@ export const ONSHAPE_CHECKPOINTING = { maxRuntime: "60s" } as const;
 export type ElementSyncStep = {
   run: (id: string, fn: () => unknown) => Promise<any>;
   sleep: (id: string, duration: number) => Promise<unknown>;
+  waitForEvent: (
+    id: string,
+    opts: { event: string; timeout: number; if: string }
+  ) => Promise<unknown>;
   invoke: (
     id: string,
     opts: { function: typeof onshapeFetchFunction; data: OnshapeFetchInput }
@@ -99,7 +117,6 @@ export type ElementSyncStep = {
 };
 
 export type ElementSyncResult = AttachOnshapeAssetsResult & {
-  thumbnailAttached: boolean;
   /** The export is past Carbon's upload limit: a permanent skip, not a fault. */
   tooLarge?: boolean;
 };
@@ -116,18 +133,20 @@ type FinishedTranslation = {
  * Export one element's model (and any drawings) from Onshape onto an item, as
  * resumable steps:
  *
- * 1. `existing`  — a released part's model id is known before any export; when
- *    that model already exists the export is skipped entirely.
+ * 1. `existing`  — a released part's model id is known before any export, and
+ *    an assembly's source (version, or workspace microversion) is compared with
+ *    the one its item's current model came from; when the model already exists
+ *    the export is skipped entirely.
  * 2. `translate` — start the model and every drawing translation at once.
- * 3. `poll-n` / `sleep-n` — wait for all of them; nothing holds a function
- *    between polls.
+ * 3. `poll-n` / `sleep-n` / `webhook` / `wait-n` — wait for all of them;
+ *    nothing holds a function between polls.
  * 4. `fetch`     — the assembler copies the STEP straight from Onshape into
  *    temp-staging (`fetch` action), so the export never passes through this
  *    process. With no assembler configured, one step downloads and stages it.
  * 5. `drawings`  — download and attach the PDFs.
  * 6. `attach`    — move the staged STEP to its model key, insert the
- *    `modelUpload` row (which starts the optimise) and link the item.
- * 7. `thumbnail` — Onshape's own thumbnail, for an unconfigured assembly.
+ *    `modelUpload` row (which starts the optimise, and its thumbnail) and link
+ *    the item.
  *
  * A retry resumes at the step that failed, so a late failure never re-runs a
  * translation (Onshape's API quota is yearly). Step ids are namespaced by
@@ -145,11 +164,21 @@ export async function runOnshapeElementSync(
 
   const planned: {
     sourceId: string | null;
+    assemblySource?: string | null;
     existing: { id: string; name: string | null } | null;
   } = await step.run(`${prefix}-existing`, async () => {
     assertSelection(input);
     const sourceId = partSourceId(input);
-    if (!sourceId) return { sourceId: null, existing: null };
+    if (!sourceId) {
+      const assemblySource = await assemblySourceKey(carbon, input, label);
+      return {
+        sourceId: null,
+        assemblySource,
+        existing: assemblySource
+          ? await currentModelFromSource(carbon, input, assemblySource)
+          : null
+      };
+    }
     const row = await carbon
       .from("modelUpload")
       .select("id, name")
@@ -244,7 +273,6 @@ export async function runOnshapeElementSync(
         modelUploadId: null,
         documentIds: [],
         preservedPriorModelAsDocument: false,
-        thumbnailAttached: false,
         tooLarge: true
       };
     }
@@ -281,8 +309,8 @@ export async function runOnshapeElementSync(
 
   const attached: AttachOnshapeAssetsResult = await step.run(
     `${prefix}-attach`,
-    () =>
-      attachOnshapeAssetsToItem(carbon, {
+    async () => {
+      const result = await attachOnshapeAssetsToItem(carbon, {
         companyId: input.companyId,
         createdBy: input.userId,
         itemId: input.itemId,
@@ -296,26 +324,22 @@ export async function runOnshapeElementSync(
               }
             }
           : { existingModelId: planned.existing!.id })
-      })
+      });
+      if (staged && planned.assemblySource && result.modelUploadId) {
+        await recordModelSource(
+          carbon,
+          input,
+          planned.assemblySource,
+          result.modelUploadId
+        );
+      }
+      return result;
+    }
   );
-
-  // The element-thumbnail endpoint cannot select a part or configuration.
-  // Keep it only for a new model of an unconfigured assembly. All other
-  // thumbnails are rendered from the selected model by the optimise itself.
-  const thumbnailAttached: boolean =
-    attached.modelUploadId !== null &&
-    staged !== null &&
-    input.modelElementKind === "assembly" &&
-    (!input.configuration || input.configuration.toLowerCase() === "default")
-      ? await step.run(`${prefix}-thumbnail`, () =>
-          attachOnshapeThumbnail(carbon, input, attached.modelUploadId!, label)
-        )
-      : false;
 
   return {
     ...attached,
-    documentIds: [...drawingDocumentIds, ...attached.documentIds],
-    thumbnailAttached
+    documentIds: [...drawingDocumentIds, ...attached.documentIds]
   };
 }
 
@@ -391,6 +415,132 @@ export function partSourceId(input: SyncOnshapeElementInput): string | null {
     .slice(0, 40)}`;
 }
 
+/**
+ * What an assembly export is made from: the released version, or the
+ * workspace's current microversion, which changes on any edit to the document
+ * (an assembly's own microversion would miss an edit to a part it uses). Null
+ * for a part (named by partSourceId), or when the microversion cannot be read:
+ * the sync then exports as before.
+ */
+async function assemblySourceKey(
+  carbon: CarbonClient,
+  input: SyncOnshapeElementInput,
+  label: string
+): Promise<string | null> {
+  if (input.modelElementKind !== "assembly") return null;
+  let state = input.versionId;
+  if (input.sourceWvm === "w") {
+    try {
+      const client = await onshapeClient(carbon, input);
+      state = await client.getCurrentMicroversion(
+        input.documentId,
+        input.versionId
+      );
+    } catch (error) {
+      console.warn(
+        `onshape sync: could not read the microversion of ${label}; exporting`,
+        error
+      );
+      return null;
+    }
+  }
+  return createHash("sha256")
+    .update(
+      JSON.stringify([
+        "assembly-source-v1",
+        input.documentId,
+        input.sourceWvm ?? "v",
+        state,
+        input.modelElementId,
+        input.configuration ?? ""
+      ])
+    )
+    .digest("hex");
+}
+
+/** The item's current model, when it was exported from `source`. */
+async function currentModelFromSource(
+  carbon: CarbonClient,
+  input: SyncOnshapeElementInput,
+  source: string
+): Promise<{ id: string; name: string | null } | null> {
+  const [mapping, item] = await Promise.all([
+    carbon
+      .from("externalIntegrationMapping")
+      .select("externalId, metadata")
+      .eq("entityType", MODEL_SOURCE_ENTITY_TYPE)
+      .eq("entityId", input.itemId)
+      .eq("integration", modelSourceIntegration(input))
+      .eq("companyId", input.companyId)
+      .maybeSingle(),
+    carbon
+      .from("item")
+      .select("modelUploadId")
+      .eq("id", input.itemId)
+      .eq("companyId", input.companyId)
+      .maybeSingle()
+  ]);
+  if (mapping.error || item.error) {
+    throw new Error(
+      `model source lookup failed: ${(mapping.error ?? item.error)!.message}`
+    );
+  }
+  const modelUploadId = (
+    mapping.data?.metadata as { modelUploadId?: unknown } | null
+  )?.modelUploadId;
+  if (
+    mapping.data?.externalId !== source ||
+    typeof modelUploadId !== "string" ||
+    item.data?.modelUploadId !== modelUploadId
+  ) {
+    return null;
+  }
+  const model = await carbon
+    .from("modelUpload")
+    .select("id, name")
+    .eq("id", modelUploadId)
+    .eq("companyId", input.companyId)
+    .maybeSingle();
+  if (model.error) {
+    throw new Error(`existing model lookup failed: ${model.error.message}`);
+  }
+  return model.data ? { id: model.data.id, name: model.data.name } : null;
+}
+
+/** Remember which source the item's new model came from. Only an
+ *  optimization: a failed write means the next push exports again. */
+async function recordModelSource(
+  carbon: CarbonClient,
+  input: SyncOnshapeElementInput,
+  source: string,
+  modelUploadId: string
+): Promise<void> {
+  const written = await carbon.from("externalIntegrationMapping").upsert(
+    {
+      entityType: MODEL_SOURCE_ENTITY_TYPE,
+      entityId: input.itemId,
+      integration: modelSourceIntegration(input),
+      externalId: source,
+      allowDuplicateExternalId: true,
+      metadata: { modelUploadId },
+      companyId: input.companyId,
+      createdBy: input.userId,
+      updatedAt: datetime.timestamp()
+    },
+    { onConflict: "entityType,entityId,integration,companyId" }
+  );
+  if (written.error) {
+    console.warn(
+      `onshape sync: could not record the model source of ${input.itemId}`,
+      written.error
+    );
+  }
+}
+
+function modelSourceIntegration(input: OnshapeCredentials): string {
+  return input.integrationId ?? "onshape";
+}
+
 function startModelTranslation(
   client: OnshapeClient,
   input: SyncOnshapeElementInput
@@ -416,45 +566,144 @@ function startModelTranslation(
       );
 }
 
-/** Poll every translation together until all are done, sleeping (as a step,
- *  holding nothing) between polls. A failed translation fails the sync. */
+/**
+ * Wait for every translation together until all are done. The first
+ * QUICK_POLLS polls back off from 2 s. A translation still running after them
+ * registers a transient, document-scoped translation.complete webhook, polls
+ * once more (one may have finished before the webhook existed), then waits for
+ * the webhook with a poll every WEBHOOK_WAIT_MS. The webhook only wakes the run:
+ * a poll reads the result, so a forged event can do no more than cause a poll.
+ * A failed translation, or an hour without finishing, fails the sync.
+ */
 async function waitForTranslations(
-  step: Pick<ElementSyncStep, "run" | "sleep">,
+  step: Pick<ElementSyncStep, "run" | "sleep" | "waitForEvent">,
   carbon: CarbonClient,
-  input: OnshapeCredentials,
+  input: OnshapeCredentials & { documentId: string },
   label: string,
   prefix: string,
   ids: string[]
 ): Promise<Record<string, FinishedTranslation>> {
   const finished: Record<string, FinishedTranslation> = {};
   let delay = POLL_INITIAL_DELAY_MS;
-  for (let attempt = 0; ; attempt++) {
-    const waiting = ids.filter((id) => !finished[id]);
-    if (waiting.length === 0) return finished;
-    if (attempt >= POLL_MAX_ATTEMPTS) {
-      throw new NonRetriableError(
-        `Onshape translations ${waiting.join(", ")} did not finish after ${POLL_MAX_ATTEMPTS} polls`
+  let startedAt: number | null = null;
+  // undefined: not tried yet; null: tried, and none could be registered.
+  let webhookId: string | null | undefined;
+  try {
+    for (let attempt = 0; ; attempt++) {
+      const waiting = ids.filter((id) => !finished[id]);
+      if (waiting.length === 0) return finished;
+      const poll: { at: number; translations: (FinishedTranslation | null)[] } =
+        await step.run(`${prefix}-poll-${attempt}`, () =>
+          withRateLimitRetry(async () => {
+            const client = await onshapeClient(carbon, input);
+            const translations = await Promise.all(
+              waiting.map(async (id) =>
+                finishedTranslation(await client.getTranslation(id))
+              )
+            );
+            return { at: Date.now(), translations };
+          }, `poll ${label}`)
+        );
+      for (const translation of poll.translations) {
+        if (translation) finished[translation.id] = translation;
+      }
+      if (ids.every((id) => finished[id])) return finished;
+
+      startedAt ??= poll.at;
+      if (poll.at - startedAt >= WAIT_BUDGET_MS) {
+        throw new NonRetriableError(
+          `Onshape translations ${ids.filter((id) => !finished[id]).join(", ")} did not finish within an hour`
+        );
+      }
+
+      if (attempt + 1 >= QUICK_POLLS && webhookId === undefined) {
+        webhookId = await step.run(`${prefix}-webhook`, () =>
+          registerTranslationWebhook(carbon, input, label)
+        );
+        if (webhookId) continue;
+      }
+
+      const condition = webhookId
+        ? translationEventCondition(input, ids)
+        : null;
+      if (condition) {
+        await step.waitForEvent(`${prefix}-wait-${attempt}`, {
+          event: TRANSLATION_COMPLETE_EVENT,
+          timeout: WEBHOOK_WAIT_MS,
+          if: condition
+        });
+      } else {
+        await step.sleep(`${prefix}-sleep-${attempt}`, delay);
+        delay = Math.min(delay * 1.5, POLL_MAX_DELAY_MS);
+      }
+    }
+  } finally {
+    if (webhookId) {
+      const id = webhookId;
+      await step.run(`${prefix}-unwebhook`, () =>
+        deleteTranslationWebhook(carbon, input, id, label)
       );
     }
-    const polled: (FinishedTranslation | null)[] = await step.run(
-      `${prefix}-poll-${attempt}`,
-      () =>
-        withRateLimitRetry(async () => {
-          const client = await onshapeClient(carbon, input);
-          return Promise.all(
-            waiting.map(async (id) =>
-              finishedTranslation(await client.getTranslation(id))
-            )
-          );
-        }, `poll ${label}`)
-    );
-    for (const translation of polled) {
-      if (translation) finished[translation.id] = translation;
-    }
-    if (ids.every((id) => finished[id])) return finished;
-    await step.sleep(`${prefix}-sleep-${attempt}`, delay);
-    delay = Math.min(delay * 1.5, POLL_MAX_DELAY_MS);
   }
+}
+
+/** Register a webhook for this document's translation.complete events.
+ *  Never throws: without one the sync keeps polling. */
+async function registerTranslationWebhook(
+  carbon: CarbonClient,
+  input: OnshapeCredentials & { documentId: string },
+  label: string
+): Promise<string | null> {
+  try {
+    const client = await onshapeClient(carbon, input);
+    const webhook = await client.createWebhook({
+      url: `${getAppUrl()}/api/webhook/onshape/${input.companyId}`,
+      events: ["onshape.model.translation.complete"],
+      documentId: input.documentId,
+      isTransient: true
+    });
+    return webhook.id;
+  } catch (error) {
+    console.warn(
+      `onshape sync: no translation webhook for ${label}; polling`,
+      error
+    );
+    return null;
+  }
+}
+
+/** Best-effort: Onshape removes a transient webhook on its own when idle. */
+async function deleteTranslationWebhook(
+  carbon: CarbonClient,
+  input: OnshapeCredentials,
+  webhookId: string,
+  label: string
+): Promise<void> {
+  try {
+    const client = await onshapeClient(carbon, input);
+    await client.deleteWebhook(webhookId);
+  } catch (error) {
+    console.warn(
+      `onshape sync: could not delete the translation webhook for ${label}`,
+      error
+    );
+  }
+}
+
+/** The `if` expression matching this company's translations. Null (poll
+ *  instead) for an id that is not plain alphanumeric, since it is interpolated. */
+export function translationEventCondition(
+  input: Pick<OnshapeCredentials, "companyId">,
+  ids: string[]
+): string | null {
+  const safe = /^[A-Za-z0-9_-]+$/;
+  if (!safe.test(input.companyId) || !ids.every((id) => safe.test(id))) {
+    return null;
+  }
+  const translations = ids
+    .map((id) => `async.data.translationId == "${id}"`)
+    .join(" || ");
+  return `async.data.companyId == "${input.companyId}" && (${translations})`;
 }
 
 function finishedTranslation(
@@ -553,36 +802,6 @@ async function downloadPdf(
   }
 }
 
-async function attachOnshapeThumbnail(
-  carbon: CarbonClient,
-  input: SyncOnshapeElementInput,
-  modelUploadId: string,
-  label: string
-): Promise<boolean> {
-  try {
-    const client = await onshapeClient(carbon, input);
-    const thumbnail = await client.getElementThumbnail(
-      input.documentId,
-      input.versionId,
-      input.modelElementId,
-      "300x300",
-      input.sourceWvm ?? "v"
-    );
-    await attachModelThumbnail(carbon, {
-      companyId: input.companyId,
-      modelUploadId,
-      pngBytes: new Uint8Array(thumbnail)
-    });
-    return true;
-  } catch (thumbnailError) {
-    console.warn(
-      `onshape sync: Onshape thumbnail fetch failed for ${label}; the optimise renders one`,
-      thumbnailError
-    );
-    return false;
-  }
-}
-
 export interface SyncOnshapeDrawingInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
@@ -603,14 +822,14 @@ export type DrawingSyncResult = AttachOnshapeAssetsResult & {
 
 // Export ONE released Onshape DRAWING element as a PDF and attach it as a document
 // on the given Carbon item, as resumable steps like the element sync's:
-// `translate`, `poll-n` / `sleep-n` (holding no function between polls), then
+// `translate`, the translation wait (holding no function in between), then
 // `attach` (download the PDF and record it). Drawings are released as their own
 // elements (DRW-xxxx, elementType 2) separate from the model, so the caller
 // resolves which item the drawing belongs to (by shared part number) and passes
 // it here. No model is touched — only a PDF document is added/updated
 // (idempotent via the attach helper's replace-not-append rule).
 export async function runOnshapeDrawingSync(
-  step: Pick<ElementSyncStep, "run" | "sleep">,
+  step: Pick<ElementSyncStep, "run" | "sleep" | "waitForEvent">,
   carbon: CarbonClient,
   input: SyncOnshapeDrawingInput,
   prefix: string

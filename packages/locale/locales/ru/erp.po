@@ -9397,6 +9397,9 @@ msgstr "Каждые 3 часа"
 msgid "Every account default is set"
 msgstr "Установлены все значения по умолчанию счета"
 
+msgid "Every account is mapped"
+msgstr "Все счета сопоставлены"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Каждому активу требуется строка платежа перед активацией."
 
@@ -9432,6 +9435,9 @@ msgstr "Каждая строка признает выставленную су
 
 msgid "Every match"
 msgstr "Каждое совпадение"
+
+msgid "Every posted journal line in a period"
+msgstr "Все проведённые строки журнала за период"
 
 msgid "Every required action has already been added."
 msgstr "Все требуемые действия уже добавлены."
@@ -13320,6 +13326,9 @@ msgstr "Сопоставьте ваш план счетов с планом сч
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
 
+msgid "Mapped"
+msgstr "Сопоставленные"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14585,6 +14594,9 @@ msgstr "Нет добавленных навыков"
 
 msgid "No Access"
 msgstr "Нет доступа"
+
+msgid "No accounts are mapped yet"
+msgstr "Сопоставленных счетов пока нет"
 
 msgid "No accounts match your search"
 msgstr "Ни один счет не соответствует вашему поиску"
@@ -25091,6 +25103,9 @@ msgstr "Разблокировать"
 
 msgid "Unlock with passkey"
 msgstr "Разблокировать с помощью ключа доступа"
+
+msgid "Unmapped"
+msgstr "Несопоставленные"
 
 msgid "Unmapped dimension values"
 msgstr "Неотображенные значения измерений"

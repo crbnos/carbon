@@ -127,6 +127,28 @@ describe("lookups", () => {
   });
 });
 
+describe("revised documents", () => {
+  // A revision shares its original's number, so without the suffix both read
+  // as the same document and searching the revised id finds nothing.
+  it.each([
+    ["quote", "quoteId"],
+    ["salesRfq", "rfqId"],
+    ["supplierQuote", "supplierQuoteId"],
+    ["purchaseOrder", "purchaseOrderId"]
+  ])("%s titles carry the revision", (table, column) => {
+    const titles = planIndexWrites([
+      event(table, "INSERT", "r0", {
+        id: "r0",
+        [column]: "D-1",
+        revisionId: 0
+      }),
+      event(table, "INSERT", "r1", { id: "r1", [column]: "D-1", revisionId: 1 })
+    ]).upserts.map((upsert) => toIndexRow(upsert, new Map()).title);
+
+    expect(titles).toEqual(["D-1", "D-1-1"]);
+  });
+});
+
 describe("search links", () => {
   // The search box navigates straight to the stored link, so one that names
   // no route is a 404 (sales RFQs were indexed at /x/rfq/<id>).

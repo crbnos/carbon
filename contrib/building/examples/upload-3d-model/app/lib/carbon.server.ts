@@ -38,7 +38,7 @@ class CarbonClient {
     const fileName = `${this.companyId}/models/${modelId}.${fileExtension}`;
 
     const [fileUpload, recordInsert] = await Promise.all([
-      this.client.storage.from("private").upload(fileName, file),
+      this.client.storage.from(this.companyId).upload(fileName, file),
       this.client.from("modelUpload").insert({
         id: modelId,
         modelPath: fileName,
@@ -78,7 +78,7 @@ class CarbonClient {
     const thumbnailPath = `${this.companyId}/thumbnails/${thumbnailId}.png`;
 
     const thumbnailUpload = await this.client.storage
-      .from("private")
+      .from(this.companyId)
       .upload(thumbnailPath, file, {
         upsert: true,
         contentType: "image/png"
