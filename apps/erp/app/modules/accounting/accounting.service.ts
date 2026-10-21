@@ -466,8 +466,9 @@ export async function getAccountLedger(
   };
 }
 
-// The general ledger report reads the `journalLines` view, which holds Posted
-// and Reversed journals only — the lines the trial balance sums.
+// The general ledger report reads the lines of Posted and Reversed journals
+// only — the lines the trial balance sums. The `journalLines` view filters the
+// same statuses; the report states them so it holds if the view changes.
 const GENERAL_LEDGER_LINE_COLUMNS =
   "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, account(number, name, class)";
 
@@ -490,6 +491,7 @@ function generalLedgerLinesQuery(
       withCount ? { count: LIST_COUNT } : undefined
     )
     .eq("companyId", companyId)
+    .in("status", [...GL_JOURNAL_STATUSES])
     .gte("postingDate", args.startDate)
     .lte("postingDate", args.endDate);
 

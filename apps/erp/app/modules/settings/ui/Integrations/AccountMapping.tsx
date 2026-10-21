@@ -206,8 +206,14 @@ export function AccountMapping({
     () => new Set(blocking.map((account) => account.id)),
     [blocking]
   );
+  // A mapping row with no provider account maps nothing
   const mappedById = useMemo(
-    () => new Map(mappings.map((mapping) => [mapping.accountId, mapping])),
+    () =>
+      new Map(
+        mappings
+          .filter((mapping) => mapping.externalId)
+          .map((mapping) => [mapping.accountId, mapping])
+      ),
     [mappings]
   );
 
