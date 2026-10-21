@@ -502,12 +502,38 @@ type MonthDay = { month: number; day: number };
  */
 export type ThemeWindow = { from: MonthDay; to: MonthDay };
 
+/** Four mesh-gradient stops per mode, for the ERP's onboarding backdrop. */
+export type MeshColors = {
+  light: readonly [string, string, string, string];
+  dark: readonly [string, string, string, string];
+};
+
+/**
+ * What a seasonal theme declares. Everything about it lives on the theme, so
+ * removing one is deleting its file and its `seasonalThemes` entry.
+ */
+export type SeasonalTheme = {
+  name: string;
+  label: string;
+  available: ThemeWindow;
+  /** While in season, every browser renders it, whatever theme it picked. */
+  forced?: boolean;
+  /** Its mesh-gradient colors (`seasonalMeshColors`). */
+  mesh?: MeshColors;
+  activeColor: { light: string; dark: string };
+  cssVars: { light: Record<string, string>; dark: Record<string, string> };
+};
+
 /**
  * Themes offered only for a while each year, and only in Account settings →
  * Appearance (`selectableThemes`). Every other picker lists `themes`, so it
  * never shows one.
  */
 export const seasonalThemes = [halloweenTheme] as const;
+
+// The same list, typed by what a seasonal theme may declare; still compiles
+// when the list is empty.
+const seasonal: readonly SeasonalTheme[] = seasonalThemes;
 
 const allThemes = [...themes, ...seasonalThemes] as const;
 
@@ -520,10 +546,6 @@ export const DEFAULT_THEME_NAME = "zinc" satisfies ThemeName;
 const defaultTheme: Theme = themes[0] satisfies {
   name: typeof DEFAULT_THEME_NAME;
 };
-
-function themeWindow(theme: Theme): ThemeWindow | undefined {
-  return "available" in theme ? theme.available : undefined;
-}
 
 function dayOfYear({ month, day }: MonthDay) {
   return month * 100 + day;
@@ -542,8 +564,11 @@ const LATEST_TIME_ZONE = "Etc/GMT+12";
  * half hours late in India. This way the server and the browser agree, and a
  * user sees the theme at most a day before or after their own dates.
  */
-export function isThemeAvailable(theme: Theme, date?: CalendarDate) {
-  const window = themeWindow(theme);
+export function isThemeAvailable(
+  theme: { name: string; available?: ThemeWindow },
+  date?: CalendarDate
+) {
+  const window = theme.available;
   if (!window) return true;
   const from = dayOfYear(window.from);
   const to = dayOfYear(window.to);
@@ -565,18 +590,34 @@ export function selectableThemes(date?: CalendarDate): Theme[] {
   return allThemes.filter((theme) => isThemeAvailable(theme, date));
 }
 
+/** The seasonal theme every browser renders now, if one is forced and in season. */
+function forcedTheme(date?: CalendarDate): Theme | undefined {
+  const forced = seasonal.find(
+    (theme) => theme.forced && isThemeAvailable(theme, date)
+  );
+  return forced && allThemes.find((theme) => theme.name === forced.name);
+}
+
 /**
- * The theme to render for a stored name. An unknown name (a theme since
- * removed) or a seasonal theme out of season falls back to the default, so
- * removing a theme never breaks a browser that still holds its cookie.
+ * The theme to render for a stored name. A forced seasonal theme in season
+ * wins over any stored name. An unknown name (a theme since removed) or a
+ * seasonal theme out of season falls back to the default, so removing a
+ * theme never breaks a browser that still holds its cookie.
  */
 export function resolveTheme(
   name: string | null | undefined,
   date?: CalendarDate
 ): Theme {
+  const forced = forcedTheme(date);
+  if (forced) return forced;
   const theme = allThemes.find((candidate) => candidate.name === name);
   if (theme && isThemeAvailable(theme, date)) return theme;
   return defaultTheme;
+}
+
+/** A seasonal theme's mesh-gradient colors, if it declares them. */
+export function seasonalMeshColors(name: string): MeshColors | undefined {
+  return seasonal.find((theme) => theme.name === name)?.mesh;
 }
 
 export const BASE_THEME_WITH_VARIABLES = `

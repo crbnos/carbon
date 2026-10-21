@@ -7,10 +7,11 @@ import { useSyncExternalStore } from "react";
 import { useFetchers } from "react-router";
 import { useRouteData } from "../hooks/useRouteData";
 
-// The one check every Halloween decoration sits behind: the user picked the
-// Halloween theme in Account settings → Appearance. Nobody else gets anything
-// rendered, styled or listened to. Out of season the server renders the
-// default theme instead (`resolveTheme`), so it switches itself off on time.
+// The one check every Halloween decoration sits behind: the root loader's
+// theme is Halloween. While it is in season the theme is forced for everyone
+// (`forced` on `halloweenTheme`); out of season the server renders the
+// stored or default theme instead (`resolveTheme`), so everything switches
+// itself off on time and nothing is rendered, styled or listened to.
 
 // Hydration never reverses, so there is nothing to listen to.
 function subscribe() {

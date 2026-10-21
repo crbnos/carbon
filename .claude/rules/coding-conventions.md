@@ -226,10 +226,10 @@ variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
 The choice is a `theme` cookie per browser, never a database column. Each app's
 `getTheme` (`services/theme.server.ts`) resolves through `resolveTheme`, which
 returns the default for a name no longer in `themes`, so removing a theme
-needs no migration and breaks no browser that still holds it. **For now
-`getTheme` ignores the cookie** and renders `halloween` for everyone while it
-is in season (the default outside its window); the pickers still write the
-cookie, which takes effect again once `getTheme` reads it.
+needs no migration and breaks no browser that still holds it. A seasonal
+theme marked `forced` wins over any stored name while in season, so every
+browser renders it; the pickers still write the cookie, and it takes effect
+again once the season ends.
 
 A seasonal theme lives in `seasonalThemes`, not `themes`, and carries an
 `available` window (`ThemeWindow`, month and day, inside one calendar year).
@@ -241,8 +241,12 @@ Account settings → Appearance lists `selectableThemes()`, the everyday themes
 plus any seasonal one in its window. Outside the window `themeColorValidator`
 refuses it and `resolveTheme` (which every app's `Document` renders from)
 falls back to the default. A seasonal theme lives in its own file
-(`halloween-theme.ts`) so removing it is that file, its `seasonalThemes`
-entry, its `index.ts` export and its `MeshGradientBackground` colors.
+(`halloween-theme.ts`) and declares everything about itself on the
+`SeasonalTheme` object (`forced`, its `mesh` colors, read through
+`seasonalMeshColors`), so no other code names it: removing it is that file,
+its `seasonalThemes` entry and its `index.ts` export. `themes.test.ts` tests
+the window on a fixture and loops over `seasonalThemes`, so it survives the
+removal unchanged.
 
 The Halloween decorations (spider, bats, fog, witch on the loading bar, hat,
 Oct 31 date marker, the "boo" ghost) live in `packages/react/src/Halloween/`,
@@ -252,4 +256,22 @@ exported as `@carbon/react/Halloween` and mounted once in each shell
 `halloween` — so nothing renders, styles or listens for anyone else. The
 stylesheet hangs off `data-user-menu` (ERP avatar trigger), `data-date`
 (calendar cells) and `data-app-card` (MES page card); those attributes do
-nothing on their own and may stay when the folder is deleted.
+nothing on their own and may stay when the folder is deleted. **The removal
+checklist** (theme plus decorations) is the header of
+`packages/react/src/Halloween/HalloweenLayer.tsx`: the folder and its
+export, three mounts, the theme file with its two registrations, then
+`lingui:extract`.
+
+The sign-in page's left panel (`_public+/_layout.tsx`) shows the Night Shift
+while in season: `<HalloweenLoginArt />`, an ASCII story on a canvas
+(`packages/react/src/Halloween/night-shift/`), lazy-loaded behind
+`useHalloween`. It brings its own headline scrim and forces the panel it
+fills `dark` from an effect, so the layout holds one line. A haunted plant works one
+90-second shift (`ACTS` in `story.ts`) making a jack-o'-lantern; each shift
+is seeded (`planShift`: face, weather, visitor, moon phase, a rare event),
+shipped lanterns stay on the hill, and thirteen rise as the Carbon mark. The
+shift index lives in sessionStorage (`carbon:night-shift`) so a revisit
+continues the story. Everything a frame shows is a pure function of the
+moment (`renderFrame`), pinned by `frame.test.ts` across panel sizes; the
+cast reacts to the form (focus, secret fields, submit, error toasts) through
+DOM events only.

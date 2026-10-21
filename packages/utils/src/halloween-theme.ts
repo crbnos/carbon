@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ThemeWindow } from "./themes";
+import type { SeasonalTheme } from "./themes";
 
-// Seasonal theme. To remove it, delete this file, its entry in `themes`
-// (themes.ts), its export in index.ts and its mesh colors in the ERP's
-// MeshGradientBackground.tsx. A browser still holding the cookie falls back
-// to the default theme, as it already does outside the window.
+// Seasonal theme, forced for everyone while in season. It goes together with
+// its decorations: the removal checklist is at the top of
+// packages/react/src/Halloween/HalloweenLayer.tsx. A browser still holding
+// its cookie falls back to the default theme, as it does out of season.
 
 export const halloweenTheme = {
   name: "halloween",
@@ -15,7 +15,12 @@ export const halloweenTheme = {
   available: {
     from: { month: 10, day: 20 },
     to: { month: 11, day: 1 }
-  } satisfies ThemeWindow,
+  },
+  forced: true,
+  mesh: {
+    light: ["#fdf0e4", "#f6f0fa", "#fffaf5", "#fbefe6"],
+    dark: ["#2d1205", "#14081f", "#0D0D0D", "#050505"]
+  },
   activeColor: {
     light: "25 95% 50%",
     dark: "25 95% 53%"
@@ -72,4 +77,4 @@ export const halloweenTheme = {
       "success-foreground": "0 0% 98%"
     }
   }
-} as const;
+} as const satisfies SeasonalTheme;

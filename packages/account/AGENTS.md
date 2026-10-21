@@ -28,6 +28,8 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   root action (`/`), which every app's `root.tsx` handles (`modeValidator` /
   `themeColorValidator` from `@carbon/utils`). `useOptimisticMode` only counts a `/`
   submission carrying `mode`, so the two never read each other's in-flight value.
+  The theme grid lists `selectableThemes()`: the everyday themes plus any seasonal one in its
+  window. While a `forced` seasonal theme is in season it renders whatever is picked here.
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a
   `QueryClientProvider`, `window.clientCache` and `createInvalidationMiddleware` in its root.
   Strings use Lingui macros, so it also needs a `LocaleProvider`; the package is in the erp
