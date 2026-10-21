@@ -13,7 +13,8 @@
     "./permissions": "./src/permissions.ts",
     "./postings.server": "./src/postings.server.ts",
     "./postings": "./src/postings.ts",
-    "./internal-call": "./src/internal-call.ts"
+    "./internal-call": "./src/internal-call.ts",
+    "./stock-stripes": "./src/stock-stripes.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",

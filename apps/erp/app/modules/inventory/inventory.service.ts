@@ -9499,6 +9499,8 @@ export type ReceiptCostLedgerRow = {
   cost: number;
   supplierId: string | null;
   trackedEntityId: string | null;
+  /** The row's stock stripe (Projects Phase 2a); null is common stock. */
+  projectId?: string | null;
 };
 
 export type RestoringLayer = {
@@ -9507,6 +9509,8 @@ export type RestoringLayer = {
   cost: number;
   supplierId: string | null;
   trackedEntityId: string | null;
+  /** The stripe the relieved stock came from. */
+  projectId: string | null;
 };
 
 export type ReceiptVoidCostLedgerPlan = {
@@ -9537,7 +9541,8 @@ export function planReceiptVoidCostLedger(
       quantity: -row.quantity,
       cost: -row.cost,
       supplierId: row.supplierId,
-      trackedEntityId: row.trackedEntityId
+      trackedEntityId: row.trackedEntityId,
+      projectId: row.projectId ?? null
     }))
   };
 }
@@ -21337,18 +21342,26 @@ async function issueJobOperationMaterials(
           proposedStorageUnitId = pickMethod?.defaultStorageUnitId ?? null;
 
           if (!proposedStorageUnitId) {
-            proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-              trx,
-              material.itemId,
-              job.locationId!
-            );
+            proposedStorageUnitId =
+              (
+                await getStorageUnitWithHighestQuantity(trx, {
+                  companyId,
+                  itemId: material.itemId,
+                  locationId: job.locationId!,
+                  stripes: [null]
+                })
+              )?.storageUnitId ?? null;
           }
         } else {
-          proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-            trx,
-            material.itemId,
-            job.locationId!
-          );
+          proposedStorageUnitId =
+            (
+              await getStorageUnitWithHighestQuantity(trx, {
+                companyId,
+                itemId: material.itemId,
+                locationId: job.locationId!,
+                stripes: [null]
+              })
+            )?.storageUnitId ?? null;
         }
       }
 
@@ -23890,11 +23903,15 @@ export async function issueMaterial(
               .executeTakeFirst();
             storageUnitId = pickMethod?.defaultStorageUnitId;
           } else {
-            storageUnitId = await getStorageUnitWithHighestQuantity(
-              trx,
-              itemId,
-              job?.locationId!
-            );
+            storageUnitId =
+              (
+                await getStorageUnitWithHighestQuantity(trx, {
+                  companyId,
+                  itemId: itemId,
+                  locationId: job?.locationId!,
+                  stripes: [null]
+                })
+              )?.storageUnitId ?? null;
           }
 
           // Rounded once here: it drives the ledger rows, the budget
@@ -24039,11 +24056,15 @@ export async function issueMaterial(
 
             storageUnitId =
               pickMethod?.defaultStorageUnitId ??
-              (await getStorageUnitWithHighestQuantity(
-                trx,
-                itemId,
-                job?.locationId!
-              ));
+              (
+                await getStorageUnitWithHighestQuantity(trx, {
+                  companyId,
+                  itemId: itemId,
+                  locationId: job?.locationId!,
+                  stripes: [null]
+                })
+              )?.storageUnitId ??
+              null;
 
             itemLedgerInserts.push({
               entryType: "Consumption",
@@ -25642,7 +25663,14 @@ export async function issueMaterial(
         ) {
           // Get storage unit with highest quantity for this item at this location
           const storageUnitId = locationId
-            ? await getStorageUnitWithHighestQuantity(trx, itemId, locationId)
+            ? ((
+                await getStorageUnitWithHighestQuantity(trx, {
+                  companyId,
+                  itemId: itemId,
+                  locationId: locationId,
+                  stripes: [null]
+                })
+              )?.storageUnitId ?? null)
             : null;
 
           await trx
