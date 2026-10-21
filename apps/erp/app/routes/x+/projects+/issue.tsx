@@ -9,7 +9,7 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
-import { projectIssueValidator } from "~/modules/projects";
+import { projectIssueValidator } from "~/modules/projects/projects.models";
 import {
   checkProjectBudget,
   postProjectIssue

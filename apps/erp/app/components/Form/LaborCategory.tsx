@@ -6,7 +6,7 @@ import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
-import type { getLaborCategoriesList } from "~/modules/projects";
+import type { getLaborCategoriesList } from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
 
 type LaborCategorySelectProps = Omit<ComboboxProps, "options">;

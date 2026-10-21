@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import type { ServiceOrderStatusAction } from "~/modules/service";
+import type { ServiceOrderStatusAction } from "~/modules/service/service.models";
 import {
   canMoveServiceOrder,
   serviceOrderStatusActions
-} from "~/modules/service";
+} from "~/modules/service/service.models";
 import {
   cancelServiceOrder,
   completeServiceOrder,

@@ -11,13 +11,13 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ServiceOrder } from "~/modules/service";
+import { serviceBillableItemValidator } from "~/modules/service/service.models";
 import {
   getServiceBillableItems,
   getServiceWork,
-  serviceBillableItemValidator,
   updateServiceBillableItem
-} from "~/modules/service";
+} from "~/modules/service/service.service";
+import type { ServiceOrder } from "~/modules/service/types";
 import BillableItemsTable from "~/modules/service/ui/Billing/BillableItemsTable";
 import { path } from "~/utils/path";
 

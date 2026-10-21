@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import type { z } from "zod";
-import { buildFromPartValidator } from "~/modules/projects";
+import { buildFromPartValidator } from "~/modules/projects/projects.models";
 import type {
   BuildFromPartArgs,
   BuildFromPartPreviewRow

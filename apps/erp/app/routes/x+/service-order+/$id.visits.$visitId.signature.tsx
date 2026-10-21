@@ -10,11 +10,11 @@ import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateServiceVisit } from "~/modules/service";
 import {
   requireOwnServiceVisit,
   ServiceOrderError
 } from "~/modules/service/service.server";
+import { updateServiceVisit } from "~/modules/service/service.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "service-visit-signature");

@@ -10,8 +10,9 @@ import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
-import { insertJob, makeToAssetItemError } from "~/modules/production";
-import { createJobFromMaterialValidator } from "~/modules/projects";
+import { makeToAssetItemError } from "~/modules/production/production.models";
+import { insertJob } from "~/modules/production/production.service";
+import { createJobFromMaterialValidator } from "~/modules/projects/projects.models";
 import {
   chargeNumberError,
   getJobChargeTarget

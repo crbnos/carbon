@@ -20,12 +20,12 @@ import { LuEllipsisVertical, LuPrinter } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { usePermissions } from "~/hooks";
+import { parseElementFilters } from "~/modules/projects/projects.models";
 import {
   getProjectElements,
   getProjectLabels,
-  getProjectStates,
-  parseElementFilters
-} from "~/modules/projects";
+  getProjectStates
+} from "~/modules/projects/projects.service";
 import { ServiceWorkList } from "~/modules/service/ui/Work/ServiceWorkList";
 import { path } from "~/utils/path";
 

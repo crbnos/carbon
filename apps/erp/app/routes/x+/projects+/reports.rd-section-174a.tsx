@@ -13,7 +13,7 @@ import {
   buildSection174ARows,
   projectReportPermissions,
   type Section174ARow
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import {
   getRdTaxReport,
   taxYearParam

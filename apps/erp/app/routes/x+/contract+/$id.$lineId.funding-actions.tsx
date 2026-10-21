@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { customerContractFundingValidator } from "~/modules/sales/sales.models";
 import {
-  customerContractFundingValidator,
   deleteContractFunding,
   upsertContractFunding
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "contract-line-funding-actions");

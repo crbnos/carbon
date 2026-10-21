@@ -16,17 +16,17 @@ import {
   taxableBase
 } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { getSupplierPartPricing } from "~/modules/items";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
   createPurchaseOrderLineFromMaterialValidator,
   NEW_PURCHASE_ORDER
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import { chargeNumberError } from "~/modules/projects/projects.server";
 import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
-import { resolveSupplierPrice } from "~/modules/shared";
+} from "~/modules/purchasing/purchasing.service";
+import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-create-po-line");

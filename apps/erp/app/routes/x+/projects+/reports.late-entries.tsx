@@ -10,12 +10,12 @@ import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getLateTimesheetEntries,
   projectReportPermissions,
   reportChargeNumber,
   type TimesheetEntryStatus as TimesheetEntryStatusType
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import { getProjectReportRange } from "~/modules/projects/projects.server";
+import { getLateTimesheetEntries } from "~/modules/projects/projects.service";
 import { TimesheetEntryStatus } from "~/modules/projects/ui/Element/TimesheetEntryStatus";
 import {
   ChargeNumberCell,

@@ -28,14 +28,16 @@ import { useFetcher, useLoaderData } from "react-router";
 import { Boolean, Number, Select, Submit, TextArea } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
-  getCompanySettings,
-  timeCardSettingsValidator,
-  timekeepingControlsModes,
-  timekeepingSettingsValidator,
-  timesheetTimecardChecks,
   updateTimeCardSetting,
   updateTimekeepingSettings
 } from "~/modules/settings";
+import {
+  timeCardSettingsValidator,
+  timekeepingControlsModes,
+  timekeepingSettingsValidator,
+  timesheetTimecardChecks
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -11,16 +11,16 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useParams } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
 import { useRouteData } from "~/hooks";
-import { getDefaultAccounts } from "~/modules/accounting";
-import { getLaborCategories } from "~/modules/projects";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
+import { getLaborCategories } from "~/modules/projects/projects.service";
 import type {
   ProjectContractAccountDefault,
   ProjectContractGap
-} from "~/modules/sales";
+} from "~/modules/sales/sales.models";
 import {
   laborCategoriesWithoutBillRate,
   projectContractAccountDefaults
-} from "~/modules/sales";
+} from "~/modules/sales/sales.models";
 import type {
   ContractRouteData,
   ProjectContractReviewData

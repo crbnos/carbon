@@ -9,12 +9,15 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteProjectElement, getProject } from "~/modules/projects";
 import {
   deleteElementInChangeRequest,
   readChangeRequestId,
   requireEditablePlanRoute
 } from "~/modules/projects/projects.server";
+import {
+  deleteProjectElement,
+  getProject
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

@@ -14,17 +14,17 @@ import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getContractBillableItems } from "~/modules/projects";
+import { getContractBillableItems } from "~/modules/projects/projects.service";
+import { isProjectBillingMethod } from "~/modules/sales/sales.models";
 import {
   getContractFundingActions,
   getContractLaborRates,
   getContractLine,
-  getContractLineFunding,
-  isProjectBillingMethod
-} from "~/modules/sales";
+  getContractLineFunding
+} from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineBilling } from "~/modules/sales/ui/Contracts";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 

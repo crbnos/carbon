@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { projectStockTransferLineValidator } from "~/modules/projects/projects.models";
 import {
   deleteProjectStockTransferLine,
-  projectStockTransferLineValidator,
   upsertProjectStockTransferLine
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 
 /**
  * Adds, changes (`intent=save`) or deletes (`intent=delete`) a line of a

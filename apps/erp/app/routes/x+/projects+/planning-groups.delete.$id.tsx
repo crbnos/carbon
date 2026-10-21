@@ -11,7 +11,10 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deletePlanningGroup, getPlanningGroup } from "~/modules/projects";
+import {
+  deletePlanningGroup,
+  getPlanningGroup
+} from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "planning-group-delete");

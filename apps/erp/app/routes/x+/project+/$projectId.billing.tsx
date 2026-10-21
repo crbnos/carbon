@@ -16,10 +16,10 @@ import {
   getContractBillableItems,
   getContractBillingLines,
   getProjectContractRevenue
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import ProjectBillingLines from "~/modules/projects/ui/Billing/ProjectBillingLines";
-import { getContractLineFunding } from "~/modules/sales";
+import { getContractLineFunding } from "~/modules/sales/sales.service";
 import type { ContractStatusType } from "~/modules/sales/ui/Contracts";
 import { ContractStatus } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";

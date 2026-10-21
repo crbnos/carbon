@@ -14,10 +14,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate, useParams } from "react-router";
 import {
-  getPlanningGroupOpenSupplies,
   manualPegValidator,
   parseManualPegSupply
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
+import { getPlanningGroupOpenSupplies } from "~/modules/projects/projects.service";
 import ManualPegForm from "~/modules/projects/ui/Pegging/ManualPegForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

@@ -10,8 +10,8 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { ServiceOrder } from "~/modules/service";
-import { getServiceVisits } from "~/modules/service";
+import { getServiceVisits } from "~/modules/service/service.service";
+import type { ServiceOrder } from "~/modules/service/types";
 import VisitsList from "~/modules/service/ui/Visits/VisitsList";
 import { path } from "~/utils/path";
 

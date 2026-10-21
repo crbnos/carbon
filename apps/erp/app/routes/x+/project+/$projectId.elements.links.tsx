@@ -7,13 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  clearSuspectLink,
-  deleteProjectElementLink,
-  getProject,
-  projectElementLinkValidator,
-  upsertProjectElementLink
-} from "~/modules/projects";
+import { projectElementLinkValidator } from "~/modules/projects/projects.models";
 import {
   addLinkToChangeRequest,
   deleteLinkInChangeRequest,
@@ -21,6 +15,12 @@ import {
   requireEditablePlanRoute,
   saveParameterFormula
 } from "~/modules/projects/projects.server";
+import {
+  clearSuspectLink,
+  deleteProjectElementLink,
+  getProject,
+  upsertProjectElementLink
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-links");

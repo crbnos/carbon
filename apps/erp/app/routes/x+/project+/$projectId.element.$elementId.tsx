@@ -15,14 +15,14 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { getProjectElementPageInChangeRequest } from "~/modules/projects/projects.server";
+import { getProject } from "~/modules/projects/projects.service";
 import type {
   Project,
   ProjectLabel,
   ProjectMilestone,
   ProjectState
-} from "~/modules/projects";
-import { getProject } from "~/modules/projects";
-import { getProjectElementPageInChangeRequest } from "~/modules/projects/projects.server";
+} from "~/modules/projects/types";
 import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
 import { getRecordIssueLinks } from "~/modules/shared/shared.server";

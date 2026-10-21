@@ -10,8 +10,8 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import type { ServiceVisitStatus } from "~/modules/service";
-import { serviceVisitStatusValidator } from "~/modules/service";
+import type { ServiceVisitStatus } from "~/modules/service/service.models";
+import { serviceVisitStatusValidator } from "~/modules/service/service.models";
 import {
   ServiceOrderError,
   setServiceVisitStatus

@@ -14,10 +14,8 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import {
-  getStockOwnerProjects,
-  planningGroupValidator
-} from "~/modules/projects";
+import { planningGroupValidator } from "~/modules/projects/projects.models";
+import { getStockOwnerProjects } from "~/modules/projects/projects.service";
 import PlanningGroupForm from "~/modules/projects/ui/PlanningGroups/PlanningGroupForm";
 import { path } from "~/utils/path";
 

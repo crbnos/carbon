@@ -15,11 +15,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getLineChargeNumber } from "~/modules/projects";
 import {
   chargeNumberError,
   checkProjectBudget
 } from "~/modules/projects/projects.server";
+import { getLineChargeNumber } from "~/modules/projects/projects.service";
 import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator

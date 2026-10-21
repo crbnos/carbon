@@ -16,14 +16,16 @@ import {
 } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import {
   buildServiceEstimate,
-  formatSiteAddress,
+  formatSiteAddress
+} from "~/modules/service/service.models";
+import {
   getServiceEstimateInputs,
   getServiceOrder
-} from "~/modules/service";
-import { getCompany } from "~/modules/settings";
+} from "~/modules/service/service.service";
+import { getCompany } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "service-estimate", "pdf");
 

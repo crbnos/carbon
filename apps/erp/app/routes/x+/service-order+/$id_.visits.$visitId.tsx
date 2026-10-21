@@ -14,18 +14,18 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { usePermissions, useUser } from "~/hooks";
-import { getLaborCategoriesList } from "~/modules/projects";
+import { getLaborCategoriesList } from "~/modules/projects/projects.service";
+import {
+  requireOwnServiceVisit,
+  ServiceOrderError
+} from "~/modules/service/service.server";
 import {
   getCustomerAssetRecentOrders,
   getServiceNodeLastServiceDates,
   getServiceVisit,
   getServiceWork,
   updateServiceVisit
-} from "~/modules/service";
-import {
-  requireOwnServiceVisit,
-  ServiceOrderError
-} from "~/modules/service/service.server";
+} from "~/modules/service/service.service";
 import VisitPage from "~/modules/service/ui/Visits/VisitPage";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";

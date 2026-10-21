@@ -15,15 +15,13 @@ import { data, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import RecordDocuments from "~/components/RecordDocuments";
 import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
-import type { ServiceOrder } from "~/modules/service";
-import {
-  serviceOrderUpdateValidator,
-  updateServiceOrder
-} from "~/modules/service";
+import { serviceOrderUpdateValidator } from "~/modules/service/service.models";
 import {
   ServiceOrderError,
   updateServiceOrderCoverageContract
 } from "~/modules/service/service.server";
+import { updateServiceOrder } from "~/modules/service/service.service";
+import type { ServiceOrder } from "~/modules/service/types";
 import { ServiceOrderProperties } from "~/modules/service/ui/ServiceOrders";
 import { ServiceRichText } from "~/modules/service/ui/ServiceRichText";
 import { WarrantyBadge } from "~/modules/service/ui/ServiceStatus";

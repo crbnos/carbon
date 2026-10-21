@@ -14,14 +14,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage } from "~/components/DocumentPage";
 import {
+  projectStockTransferValidator,
+  toStockOwner
+} from "~/modules/projects/projects.models";
+import {
   getProjectBorrows,
   getProjectStockTransfer,
   getProjectStockTransferLines,
   getStockOwnerProjects,
-  projectStockTransferValidator,
-  toStockOwner,
   upsertProjectStockTransfer
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import ProjectStockTransferDetails from "~/modules/projects/ui/Transfers/ProjectStockTransferDetails";
 import ProjectStockTransferHeader from "~/modules/projects/ui/Transfers/ProjectStockTransferHeader";
 import ProjectStockTransferLines from "~/modules/projects/ui/Transfers/ProjectStockTransferLines";

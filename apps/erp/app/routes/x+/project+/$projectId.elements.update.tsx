@@ -8,19 +8,21 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getProject,
   isPlanLayerField,
-  projectElementFieldUpdateValidator,
-  setProjectElementLabels,
-  updateProjectElementBilling,
-  updateProjectElementField
-} from "~/modules/projects";
+  projectElementFieldUpdateValidator
+} from "~/modules/projects/projects.models";
 import {
   ensureCapitalAssets,
   readChangeRequestId,
   requireEditablePlanRoute,
   updateElementFieldInChangeRequest
 } from "~/modules/projects/projects.server";
+import {
+  getProject,
+  setProjectElementLabels,
+  updateProjectElementBilling,
+  updateProjectElementField
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-update");

@@ -11,8 +11,8 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { customerAssetUpdateValidator } from "~/modules/service/service.models";
 import {
-  customerAssetUpdateValidator,
   getCustomerAsset,
   getCustomerAssetComponents,
   getCustomerAssetHistoryByComponent,
@@ -20,7 +20,7 @@ import {
   getServiceOrders,
   updateCustomerAssetNotes,
   upsertCustomerAsset
-} from "~/modules/service";
+} from "~/modules/service/service.service";
 import { CustomerAssetPage } from "~/modules/service/ui/CustomerAssets";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

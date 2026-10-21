@@ -26,23 +26,23 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
+  projectLabelValidator,
+  projectStateValidator
+} from "~/modules/projects/projects.models";
+import {
   deleteProjectLabel,
   deleteProjectState,
   getProjectLabels,
   getProjectStates,
-  projectLabelValidator,
-  projectStateValidator,
   setProjectStateDefault,
   upsertProjectLabel,
   upsertProjectState
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import { ProjectLabelsGrid } from "~/modules/projects/ui/Settings/ProjectLabelsGrid";
 import { ProjectStatesGrid } from "~/modules/projects/ui/Settings/ProjectStatesGrid";
-import {
-  getCompanySettings,
-  projectSettingsValidator,
-  updateProjectSettings
-} from "~/modules/settings";
+import { updateProjectSettings } from "~/modules/settings";
+import { projectSettingsValidator } from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

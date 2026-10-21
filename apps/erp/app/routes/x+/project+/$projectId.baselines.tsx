@@ -9,11 +9,9 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useOutlet, useParams } from "react-router";
-import {
-  getProjectBaselines,
-  projectBaselineValidator
-} from "~/modules/projects";
+import { projectBaselineValidator } from "~/modules/projects/projects.models";
 import { createProjectBaseline } from "~/modules/projects/projects.server";
+import { getProjectBaselines } from "~/modules/projects/projects.service";
 import BaselinesList from "~/modules/projects/ui/Baselines/BaselinesList";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

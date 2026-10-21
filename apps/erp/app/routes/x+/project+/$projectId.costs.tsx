@@ -15,12 +15,14 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import {
   buildProjectCostFigures,
+  preproductionActual
+} from "~/modules/projects/projects.models";
+import {
   getChildServiceProjectCosts,
   getProjectBurdenSummary,
   getProjectCostSummary,
-  getProjectElementCosts,
-  preproductionActual
-} from "~/modules/projects";
+  getProjectElementCosts
+} from "~/modules/projects/projects.service";
 import type { ProjectBurdenPoolRow } from "~/modules/projects/ui/Costs/ProjectBurdenByPool.ee";
 import type { ProjectCostRow } from "~/modules/projects/ui/Costs/ProjectCostsTree";
 import ProjectCostsTree from "~/modules/projects/ui/Costs/ProjectCostsTree";

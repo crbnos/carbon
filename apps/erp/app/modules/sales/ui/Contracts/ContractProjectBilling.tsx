@@ -20,7 +20,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
 import { Hyperlink } from "~/components";
 import { useDateFormatter } from "~/hooks";
-import type { ProjectContractRevenue } from "~/modules/projects";
+import type { ProjectContractRevenue } from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
 import { isProjectBillingMethod } from "../../sales.models";
 import { useBillingMethodLabels } from "./ContractLineBillingFields";

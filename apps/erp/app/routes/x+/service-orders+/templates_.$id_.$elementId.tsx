@@ -11,12 +11,12 @@ import { msg } from "@lingui/core/macro";
 import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
+import { getProjectElementPage } from "~/modules/projects/projects.server";
 import {
   getProject,
   getProjectLabels,
   getProjectStates
-} from "~/modules/projects";
-import { getProjectElementPage } from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
 import { ElementRoutesProvider } from "~/modules/projects/ui/Elements/ElementRoutes";
 import { serviceTemplateElementRoutes } from "~/modules/service/ui/Work/serviceElementRoutes";

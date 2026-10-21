@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { projectElementCommentValidator } from "~/modules/projects/projects.models";
 import {
   deleteProjectElementComment,
-  insertProjectElementComment,
-  projectElementCommentValidator
-} from "~/modules/projects";
+  insertProjectElementComment
+} from "~/modules/projects/projects.service";
 
 const logger = getLogger("erp", "service-work-comments");
 

@@ -12,13 +12,15 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import {
+  laborCategoryRateValidator,
+  laborCategoryValidator
+} from "~/modules/projects/projects.models";
+import {
   getLaborCategory,
   getLaborCategoryRates,
-  laborCategoryRateValidator,
-  laborCategoryValidator,
   upsertLaborCategory,
   upsertLaborCategoryRate
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import LaborCategoryForm from "~/modules/projects/ui/LaborCategories/LaborCategoryForm";
 import { path } from "~/utils/path";
 

@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getProjectStockTransfers } from "~/modules/projects";
+import { getProjectStockTransfers } from "~/modules/projects/projects.service";
 import ProjectStockTransfersTable from "~/modules/projects/ui/Transfers/ProjectStockTransfersTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

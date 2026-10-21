@@ -12,12 +12,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   COST_OBJECTIVE_REQUIRED,
-  getProject,
-  projectValidator,
-  updateProject
-} from "~/modules/projects";
+  projectValidator
+} from "~/modules/projects/projects.models";
 import { ensureCapitalAssets } from "~/modules/projects/projects.server";
-import { getCompanySettings } from "~/modules/settings";
+import { getProject, updateProject } from "~/modules/projects/projects.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

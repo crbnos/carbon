@@ -39,16 +39,16 @@ import type {
 import { data, useFetcher, useLoaderData } from "react-router";
 import { PinnedCard, PinToggle } from "~/components/ReportPin";
 import { usePermissions } from "~/hooks";
+import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
-  reportPinValidator,
   upsertReportPin
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import {
   isProjectReportKey,
   type ProjectReportKey,
   projectReportPermissions
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

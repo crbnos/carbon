@@ -28,30 +28,20 @@ import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
   ChangeOperationMark,
-  Project,
-  ProjectElementLink,
-  ProjectElementListItem,
   ProjectElementType,
-  ProjectLabel,
-  ProjectMilestone,
-  ProjectState,
   ProjectStateGroup,
   VerificationElement
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import {
   canonicalElementsParams,
   elementLayoutFromParams,
   elementWbsCodes,
-  getProjectElementCommentCounts,
-  getProjectElementDescriptions,
-  getProjectElements,
-  getProjectWbsNodes,
   isProjectPlanLocked,
   parseElementFilters,
   projectElementTypes,
   projectPlanLockedMessage,
   projectStateGroups
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
 import {
   getProjectVerification,
@@ -59,6 +49,20 @@ import {
   overlayElementList,
   overlayLinkList
 } from "~/modules/projects/projects.server";
+import type { ProjectElementListItem } from "~/modules/projects/projects.service";
+import {
+  getProjectElementCommentCounts,
+  getProjectElementDescriptions,
+  getProjectElements,
+  getProjectWbsNodes
+} from "~/modules/projects/projects.service";
+import type {
+  Project,
+  ProjectElementLink,
+  ProjectLabel,
+  ProjectMilestone,
+  ProjectState
+} from "~/modules/projects/types";
 import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
 import {
   useActiveChangeRequestId,

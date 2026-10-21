@@ -10,17 +10,10 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  deleteProjectElementCost,
-  deleteProjectElementLabor,
-  deleteProjectElementMaterial,
-  getProject,
   projectElementCostValidator,
   projectElementLaborValidator,
-  projectElementMaterialValidator,
-  upsertProjectElementCost,
-  upsertProjectElementLabor,
-  upsertProjectElementMaterial
-} from "~/modules/projects";
+  projectElementMaterialValidator
+} from "~/modules/projects/projects.models";
 import {
   deletePlanLineInChangeRequest,
   type PlanLineTable,
@@ -28,6 +21,15 @@ import {
   requireEditablePlanRoute,
   upsertPlanLineInChangeRequest
 } from "~/modules/projects/projects.server";
+import {
+  deleteProjectElementCost,
+  deleteProjectElementLabor,
+  deleteProjectElementMaterial,
+  getProject,
+  upsertProjectElementCost,
+  upsertProjectElementLabor,
+  upsertProjectElementMaterial
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-plan");

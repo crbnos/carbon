@@ -13,12 +13,14 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   buildLaborDistribution,
-  getLaborDistributionPeriods,
-  getLaborDistributionRows,
   NO_PAYROLL_IMPORTED,
   type ProjectCostObjective,
   projectReportPermissions
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
+import {
+  getLaborDistributionPeriods,
+  getLaborDistributionRows
+} from "~/modules/projects/projects.service";
 import {
   NumberCell,
   ProjectReport,

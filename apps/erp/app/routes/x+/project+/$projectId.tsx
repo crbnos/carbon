@@ -15,7 +15,14 @@ import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLocation, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
-import type { ProjectElementListItem } from "~/modules/projects";
+import { openChangeRequestStatuses } from "~/modules/projects/projects.models";
+import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
+import {
+  getProjectCapitalAssets,
+  loadChangeRequestOverlay,
+  overlayElementList
+} from "~/modules/projects/projects.server";
+import type { ProjectElementListItem } from "~/modules/projects/projects.service";
 import {
   getContractBillingLines,
   getProject,
@@ -26,15 +33,8 @@ import {
   getProjectLabels,
   getProjectMilestones,
   getProjectStates,
-  getProjectSwitcherOptions,
-  openChangeRequestStatuses
-} from "~/modules/projects";
-import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
-import {
-  getProjectCapitalAssets,
-  loadChangeRequestOverlay,
-  overlayElementList
-} from "~/modules/projects/projects.server";
+  getProjectSwitcherOptions
+} from "~/modules/projects/projects.service";
 import type { ProjectTreeElement } from "~/modules/projects/ui/Project/ProjectElementTree";
 import ProjectHeader from "~/modules/projects/ui/Project/ProjectHeader";
 import { ProjectSidebar } from "~/modules/projects/ui/Project/ProjectSidebar";

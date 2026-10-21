@@ -9,7 +9,7 @@ import { Combobox as ComboboxBase, useLocalStorage } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import type { ChargeNumber as ChargeNumberRow } from "~/modules/projects";
+import type { ChargeNumber as ChargeNumberRow } from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
 
 const RECENT_KEY = "charge-numbers-recent";

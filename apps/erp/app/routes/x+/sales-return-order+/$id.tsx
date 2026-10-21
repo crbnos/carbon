@@ -20,7 +20,7 @@ import {
   SalesReturnOrderHeader,
   SalesReturnOrderProperties
 } from "~/modules/sales/ui/SalesReturnOrders";
-import { getDepotRepairOrdersByReturnOrder } from "~/modules/service";
+import { getDepotRepairOrdersByReturnOrder } from "~/modules/service/service.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

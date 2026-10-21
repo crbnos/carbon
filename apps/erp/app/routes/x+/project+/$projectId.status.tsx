@@ -11,12 +11,14 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   canChangeProjectStatus,
-  getProject,
   projectStatusValidator,
-  stopWorkStatusRefusal,
-  updateProjectStatus
-} from "~/modules/projects";
+  stopWorkStatusRefusal
+} from "~/modules/projects/projects.models";
 import { ensureCapitalAssets } from "~/modules/projects/projects.server";
+import {
+  getProject,
+  updateProjectStatus
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

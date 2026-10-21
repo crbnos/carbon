@@ -8,9 +8,9 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { projectElementValidator } from "~/modules/projects";
+import { projectElementValidator } from "~/modules/projects/projects.models";
 import { insertProjectElement } from "~/modules/projects/projects.server";
-import { serviceNodeTypes } from "~/modules/service";
+import { serviceNodeTypes } from "~/modules/service/service.models";
 import {
   requireServiceWork,
   ServiceOrderError

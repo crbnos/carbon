@@ -8,7 +8,7 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { timesheetCellValidator } from "~/modules/projects";
+import { timesheetCellValidator } from "~/modules/projects/projects.models";
 import {
   saveTimesheetEntry,
   timesheetBudgetWarning

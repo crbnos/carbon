@@ -12,7 +12,7 @@ import {
   postTimesheetEntries,
   submitTimesheetWeek
 } from "~/modules/projects/projects.server";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-timesheet-submit");

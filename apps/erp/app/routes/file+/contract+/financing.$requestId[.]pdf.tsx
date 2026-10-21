@@ -23,7 +23,7 @@ import {
 } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompany } from "~/modules/settings";
+import { getCompany } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "contract-financing", "pdf");

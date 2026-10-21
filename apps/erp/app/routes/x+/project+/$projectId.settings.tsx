@@ -14,11 +14,11 @@ import { getLogger } from "@carbon/logger";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { projectMemberValidator } from "~/modules/projects/projects.models";
 import {
   addProjectMember,
-  projectMemberValidator,
   removeProjectMember
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-settings");

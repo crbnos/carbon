@@ -48,7 +48,7 @@ import {
 import { Link, useFetcher } from "react-router";
 import { Hidden, Submit } from "~/components/Form";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
-import type { ProjectCostType } from "~/modules/projects";
+import type { ProjectCostType } from "~/modules/projects/projects.models";
 import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { BillableItemStatus } from "~/modules/service/ui/ServiceStatus";
 import { path } from "~/utils/path";

@@ -16,7 +16,7 @@ import {
   getProjectElementCosts,
   getProjectLedger,
   getProjectOpenTimesheetEntries
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import ProjectLedgerTable from "~/modules/projects/ui/Costs/ProjectLedgerTable";
 import { OpenTimeAction } from "~/modules/projects/ui/Element/OpenTimeAction";
 import { TimesheetEntryStatus } from "~/modules/projects/ui/Element/TimesheetEntryStatus";

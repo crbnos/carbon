@@ -10,7 +10,7 @@ import { getLogger } from "@carbon/logger";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { serviceTemplateValidator } from "~/modules/service";
+import { serviceTemplateValidator } from "~/modules/service/service.models";
 import { createServiceTemplate } from "~/modules/service/service.server";
 import ServiceTemplateForm from "~/modules/service/ui/Templates/ServiceTemplateForm";
 import { getDatabaseClient } from "~/services/database.server";

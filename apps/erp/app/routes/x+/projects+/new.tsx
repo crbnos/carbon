@@ -12,10 +12,13 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
-import { COST_OBJECTIVE_REQUIRED, projectValidator } from "~/modules/projects";
+import {
+  COST_OBJECTIVE_REQUIRED,
+  projectValidator
+} from "~/modules/projects/projects.models";
 import { copyProject, createProject } from "~/modules/projects/projects.server";
 import { ProjectForm } from "~/modules/projects/ui/Projects";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -16,15 +16,15 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useSearchParams } from "react-router";
 import Empty from "~/components/Empty";
 import { usePermissions } from "~/hooks";
+import { assertCanApprove } from "~/modules/projects/projects.models";
+import { postTimesheetEntries } from "~/modules/projects/projects.server";
 import {
   approveTimesheetEntries,
-  assertCanApprove,
   getContractBillableItems,
   getContractBillingLines,
   getTimesheetApprovals,
   rejectTimesheetEntries
-} from "~/modules/projects";
-import { postTimesheetEntries } from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import ProjectBillableItemsTable from "~/modules/projects/ui/Billing/ProjectBillableItemsTable";
 import TimesheetApprovals from "~/modules/projects/ui/Timesheet/TimesheetApprovals";
 import type { Handle } from "~/utils/handle";

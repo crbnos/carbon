@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { getDepotRepairOrdersByReturnOrder } from "~/modules/service";
+import type { getDepotRepairOrdersByReturnOrder } from "~/modules/service/service.service";
 import type {
   getSalesReturnOrderCredits,
   getSalesReturnOrderIssues,

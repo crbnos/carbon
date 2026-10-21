@@ -10,7 +10,7 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
-import { serviceVisitValidator } from "~/modules/service";
+import { serviceVisitValidator } from "~/modules/service/service.models";
 import {
   ServiceOrderError,
   scheduleServiceVisit

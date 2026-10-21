@@ -10,14 +10,13 @@ import { useState } from "react";
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import type {
-  ProjectElementListItem,
+  BuildFromPartSource,
   ProjectElementType,
-  ProjectLabel,
-  ProjectState,
   ProjectStateGroup
-} from "~/modules/projects";
-import { projectStateGroups } from "~/modules/projects";
-import type { BuildFromPartSource } from "~/modules/projects/projects.models";
+} from "~/modules/projects/projects.models";
+import { projectStateGroups } from "~/modules/projects/projects.models";
+import type { ProjectElementListItem } from "~/modules/projects/projects.service";
+import type { ProjectLabel, ProjectState } from "~/modules/projects/types";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementList } from "~/modules/projects/ui/Elements/ElementList";
 import { useElementRoutes } from "~/modules/projects/ui/Elements/ElementRoutes";

@@ -9,11 +9,11 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getChildServiceProjectCosts } from "~/modules/projects";
+import { getChildServiceProjectCosts } from "~/modules/projects/projects.service";
 import {
   getContractServiceOrders,
   getServiceOrderCosts
-} from "~/modules/service";
+} from "~/modules/service/service.service";
 import type { ContractServiceOrderRow } from "~/modules/service/ui/ServiceOrders/ContractServiceOrders";
 import ContractServiceOrders from "~/modules/service/ui/ServiceOrders/ContractServiceOrders";
 import { nextVisitStart } from "~/modules/service/ui/ServiceOrders/ServiceOrdersTable";

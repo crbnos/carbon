@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getProject } from "~/modules/projects";
 import {
   importProjectWbs,
   requireEditablePlanRoute
 } from "~/modules/projects/projects.server";
+import { getProject } from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-wbs-import");

@@ -13,20 +13,22 @@ import type { LoaderFunctionArgs } from "react-router";
 import type {
   ProjectElementType,
   RequirementStatus,
-  TestCaseVerdict
-} from "~/modules/projects";
+  TestCaseVerdict,
+  VerificationElement
+} from "~/modules/projects/projects.models";
 import {
   buildReaderOutline,
   formatAllocation,
   formatRequirementTarget,
+  parseElementFilters
+} from "~/modules/projects/projects.models";
+import { getProjectVerification } from "~/modules/projects/projects.server";
+import {
   getProject,
   getProjectElementDescriptions,
-  getProjectElements,
-  parseElementFilters
-} from "~/modules/projects";
-import type { VerificationElement } from "~/modules/projects/projects.models";
-import { getProjectVerification } from "~/modules/projects/projects.server";
-import { getCompany } from "~/modules/settings";
+  getProjectElements
+} from "~/modules/projects/projects.service";
+import { getCompany } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "project-reader", "pdf");
 

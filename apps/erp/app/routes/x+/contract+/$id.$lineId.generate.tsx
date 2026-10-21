@@ -11,7 +11,7 @@ import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getContractLine } from "~/modules/sales";
+import { getContractLine } from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";

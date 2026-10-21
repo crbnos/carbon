@@ -15,20 +15,20 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import { usePermissions } from "~/hooks";
+import { getProjectElementPage } from "~/modules/projects/projects.server";
 import {
   getProject,
   getProjectLabels,
   getProjectStates
-} from "~/modules/projects";
-import { getProjectElementPage } from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
 import { PropertyField } from "~/modules/projects/ui/Element/PropertyFields";
 import { ElementRoutesProvider } from "~/modules/projects/ui/Elements/ElementRoutes";
+import { serviceNodeFixedPriceValidator } from "~/modules/service/service.models";
 import {
   getServiceNode,
-  serviceNodeFixedPriceValidator,
   updateServiceNodeFixedPrice
-} from "~/modules/service";
+} from "~/modules/service/service.service";
 import {
   FixedPriceField,
   ServiceCharges,

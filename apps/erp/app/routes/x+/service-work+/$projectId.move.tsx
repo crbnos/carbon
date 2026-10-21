@@ -8,8 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateProjectElementOrder } from "~/modules/projects";
 import { moveProjectElement } from "~/modules/projects/projects.server";
+import { updateProjectElementOrder } from "~/modules/projects/projects.service";
 import {
   requireServiceWork,
   ServiceOrderError

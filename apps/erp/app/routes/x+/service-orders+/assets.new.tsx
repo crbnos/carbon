@@ -10,7 +10,7 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { customerAssetValidator } from "~/modules/service";
+import { customerAssetValidator } from "~/modules/service/service.models";
 import {
   registerCustomerAsset,
   ServiceOrderError

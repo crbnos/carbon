@@ -11,10 +11,8 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  laborCategoryValidator,
-  upsertLaborCategory
-} from "~/modules/projects";
+import { laborCategoryValidator } from "~/modules/projects/projects.models";
+import { upsertLaborCategory } from "~/modules/projects/projects.service";
 import LaborCategoryForm from "~/modules/projects/ui/LaborCategories/LaborCategoryForm";
 import { path } from "~/utils/path";
 

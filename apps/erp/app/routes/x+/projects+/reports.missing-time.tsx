@@ -37,14 +37,16 @@ import { data, Link, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import {
+  missingTimeActionValidator,
+  projectReportPermissions
+} from "~/modules/projects/projects.models";
+import { getProjectReportRange } from "~/modules/projects/projects.server";
+import {
   getMissingTimeByEmployee,
   getMissingTimeExcludedCount,
   type MissingTimeEmployee,
-  missingTimeActionValidator,
-  projectReportPermissions,
   updateTimesheetRequired
-} from "~/modules/projects";
-import { getProjectReportRange } from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import {
   NumberCell,
   ProjectReport,

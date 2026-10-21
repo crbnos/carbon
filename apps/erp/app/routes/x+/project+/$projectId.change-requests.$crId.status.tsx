@@ -23,10 +23,9 @@ import { NotificationEvent } from "@carbon/notifications";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getProjectChangeRequest,
   projectChangeRequestIntentFrom,
   projectChangeRequestStatusValidator
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import {
   applyChangeRequest,
   ProjectChangeConflictError,
@@ -34,6 +33,7 @@ import {
   reopenChangeRequest,
   setChangeRequestStatus
 } from "~/modules/projects/projects.server";
+import { getProjectChangeRequest } from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

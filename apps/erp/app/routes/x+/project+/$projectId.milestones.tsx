@@ -12,19 +12,21 @@ import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams, useSearchParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Project } from "~/modules/projects";
 import {
   buildBurnSeries,
+  projectMilestoneValidator,
+  summarizeMilestones
+} from "~/modules/projects/projects.models";
+import { createProjectBaseline } from "~/modules/projects/projects.server";
+import {
   completeProjectMilestone,
   deleteProjectMilestone,
   getProjectCostSummary,
   getProjectElements,
   getProjectMilestones,
-  projectMilestoneValidator,
-  summarizeMilestones,
   upsertProjectMilestone
-} from "~/modules/projects";
-import { createProjectBaseline } from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
+import type { Project } from "~/modules/projects/types";
 import MilestoneSchedule from "~/modules/projects/ui/Milestones/MilestoneSchedule";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

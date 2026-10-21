@@ -16,11 +16,11 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { contractLaborRateValidator } from "~/modules/sales/sales.models";
 import {
-  contractLaborRateValidator,
   deleteContractLaborRate,
   upsertContractLaborRate
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-line-labor-rates");

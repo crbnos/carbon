@@ -7,12 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import type { ProjectElementEditableField } from "~/modules/projects";
+import type { ProjectElementEditableField } from "~/modules/projects/projects.models";
+import { projectElementFieldUpdateValidator } from "~/modules/projects/projects.models";
 import {
-  projectElementFieldUpdateValidator,
   setProjectElementLabels,
   updateProjectElementField
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import {
   requireServiceWork,
   ServiceOrderError

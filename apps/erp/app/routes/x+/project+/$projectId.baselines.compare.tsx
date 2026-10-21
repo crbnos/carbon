@@ -12,11 +12,13 @@ import { useLoaderData, useParams } from "react-router";
 import {
   CURRENT_PLAN,
   diffPlanSnapshots,
-  getLaborCategoryNames,
-  getProjectBaseline,
   parsePlanSnapshot
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import { loadPlanSnapshot } from "~/modules/projects/projects.server";
+import {
+  getLaborCategoryNames,
+  getProjectBaseline
+} from "~/modules/projects/projects.service";
 import PlanDiffViewer from "~/modules/projects/ui/Baselines/PlanDiffViewer";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

@@ -12,14 +12,12 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  getServiceOrderFormOptions,
-  serviceOrderValidator
-} from "~/modules/service";
+import { serviceOrderValidator } from "~/modules/service/service.models";
 import {
   createServiceOrder,
   ServiceOrderError
 } from "~/modules/service/service.server";
+import { getServiceOrderFormOptions } from "~/modules/service/service.service";
 import { ServiceOrderForm } from "~/modules/service/ui/ServiceOrders";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";

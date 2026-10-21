@@ -7,7 +7,10 @@ import { getCompanyTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { buildMspdiXml, parsePlanSnapshot } from "~/modules/projects";
+import {
+  buildMspdiXml,
+  parsePlanSnapshot
+} from "~/modules/projects/projects.models";
 import { loadWbsElements } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 

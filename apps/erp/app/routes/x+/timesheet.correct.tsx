@@ -9,12 +9,10 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  createTimesheetCorrection,
-  timesheetCorrectionValidator
-} from "~/modules/projects";
+import { timesheetCorrectionValidator } from "~/modules/projects/projects.models";
 import { postTimesheetEntries } from "~/modules/projects/projects.server";
-import { getCompanySettings } from "~/modules/settings";
+import { createTimesheetCorrection } from "~/modules/projects/projects.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-timesheet-correct");

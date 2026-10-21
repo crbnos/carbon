@@ -13,14 +13,14 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { RecordHeader } from "~/components/Layout/RecordHeader";
 import { usePermissions } from "~/hooks";
+import { parseElementFilters } from "~/modules/projects/projects.models";
 import {
   getProjectElements,
   getProjectLabels,
-  getProjectStates,
-  parseElementFilters
-} from "~/modules/projects";
+  getProjectStates
+} from "~/modules/projects/projects.service";
 import { ElementRoutesProvider } from "~/modules/projects/ui/Elements/ElementRoutes";
-import { getServiceTemplate } from "~/modules/service";
+import { getServiceTemplate } from "~/modules/service/service.service";
 import { ServiceWorkList } from "~/modules/service/ui/Work/ServiceWorkList";
 import { serviceTemplateElementRoutes } from "~/modules/service/ui/Work/serviceElementRoutes";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";

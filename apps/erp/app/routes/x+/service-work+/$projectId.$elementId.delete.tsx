@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteProjectElement } from "~/modules/projects";
+import { deleteProjectElement } from "~/modules/projects/projects.service";
 import {
   requireServiceWork,
   ServiceOrderError

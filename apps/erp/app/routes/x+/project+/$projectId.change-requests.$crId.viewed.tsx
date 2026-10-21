@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { projectPlanTables } from "~/modules/projects";
+import { projectPlanTables } from "~/modules/projects/projects.models";
 
 const logger = getLogger("erp", "project-change-request-viewed");
 

@@ -10,16 +10,18 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  projectElementCostValidator,
+  projectElementLaborValidator,
+  projectElementMaterialValidator
+} from "~/modules/projects/projects.models";
+import {
   deleteProjectElementCost,
   deleteProjectElementLabor,
   deleteProjectElementMaterial,
-  projectElementCostValidator,
-  projectElementLaborValidator,
-  projectElementMaterialValidator,
   upsertProjectElementCost,
   upsertProjectElementLabor,
   upsertProjectElementMaterial
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import {
   requireServiceWork,
   ServiceOrderError

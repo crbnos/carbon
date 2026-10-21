@@ -7,12 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import type { ProjectStockTransferAction } from "~/modules/projects";
-import {
-  projectStockTransferActions,
-  updateProjectStockTransferStatus
-} from "~/modules/projects";
+import type { ProjectStockTransferAction } from "~/modules/projects/projects.models";
+import { projectStockTransferActions } from "~/modules/projects/projects.models";
 import { postProjectStockTransfer } from "~/modules/projects/projects.server";
+import { updateProjectStockTransferStatus } from "~/modules/projects/projects.service";
 import { path, requestReferrer } from "~/utils/path";
 
 const successMessages: Record<ProjectStockTransferAction, string> = {

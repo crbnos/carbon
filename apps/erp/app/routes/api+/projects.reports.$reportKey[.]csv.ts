@@ -15,14 +15,6 @@ import {
   buildLaborDistribution,
   buildSection174ARows,
   buildSection6765Input,
-  getCostByClin,
-  getLaborDistributionRows,
-  getLaborTransfers,
-  getLateTimesheetEntries,
-  getMissingTimesheetDays,
-  type getRdEmployeeYear,
-  type getRdLedgerRows,
-  getTimesheetAuditRows,
   isProjectReportKey,
   isRdTaxReportKey,
   type ProjectReportKey,
@@ -31,11 +23,21 @@ import {
   rdSoftwareTypeIrsText,
   type rdTaxReportKeys,
   reportChargeNumber
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import {
   getRdTaxReport,
   taxYearParam
 } from "~/modules/projects/projects.server";
+import {
+  getCostByClin,
+  getLaborDistributionRows,
+  getLaborTransfers,
+  getLateTimesheetEntries,
+  getMissingTimesheetDays,
+  type getRdEmployeeYear,
+  type getRdLedgerRows,
+  getTimesheetAuditRows
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "projects-reports-csv");

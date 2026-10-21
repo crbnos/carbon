@@ -8,7 +8,7 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getTimesheetRevisions } from "~/modules/projects";
+import { getTimesheetRevisions } from "~/modules/projects/projects.service";
 
 const logger = getLogger("erp", "timesheet-revisions");
 

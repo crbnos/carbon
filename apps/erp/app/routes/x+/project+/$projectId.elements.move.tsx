@@ -8,7 +8,6 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getProject, updateProjectElementOrder } from "~/modules/projects";
 import {
   moveElementInChangeRequest,
   moveProjectElement,
@@ -16,6 +15,10 @@ import {
   readChangeRequestId,
   requireEditablePlanRoute
 } from "~/modules/projects/projects.server";
+import {
+  getProject,
+  updateProjectElementOrder
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-move");

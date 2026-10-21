@@ -8,13 +8,14 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getProject, projectElementValidator } from "~/modules/projects";
+import { projectElementValidator } from "~/modules/projects/projects.models";
 import {
   addElementToChangeRequest,
   insertProjectElement,
   readChangeRequestId,
   requireEditablePlanRoute
 } from "~/modules/projects/projects.server";
+import { getProject } from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-element-new");

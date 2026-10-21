@@ -7,8 +7,8 @@ import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useOutlet, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Project } from "~/modules/projects";
-import { getProjectChangeRequests } from "~/modules/projects";
+import { getProjectChangeRequests } from "~/modules/projects/projects.service";
+import type { Project } from "~/modules/projects/types";
 import ChangeRequestsTable from "~/modules/projects/ui/ChangeRequests/ChangeRequestsTable";
 import { path } from "~/utils/path";
 

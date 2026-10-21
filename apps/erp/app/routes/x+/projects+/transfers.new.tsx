@@ -11,16 +11,18 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import type { ProjectStockTransferType } from "~/modules/projects";
+import type { ProjectStockTransferType } from "~/modules/projects/projects.models";
 import {
   COMMON_STOCK_OWNER,
-  getProjectBorrows,
-  getStockOwnerProjects,
   projectStockTransferTypes,
   projectStockTransferValidator,
-  toStockOwner,
+  toStockOwner
+} from "~/modules/projects/projects.models";
+import {
+  getProjectBorrows,
+  getStockOwnerProjects,
   upsertProjectStockTransfer
-} from "~/modules/projects";
+} from "~/modules/projects/projects.service";
 import ProjectStockTransferForm from "~/modules/projects/ui/Transfers/ProjectStockTransferForm";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";

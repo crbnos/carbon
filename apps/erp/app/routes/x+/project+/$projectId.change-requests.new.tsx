@@ -10,8 +10,9 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getProject, projectChangeRequestValidator } from "~/modules/projects";
+import { projectChangeRequestValidator } from "~/modules/projects/projects.models";
 import { createChangeRequest } from "~/modules/projects/projects.server";
+import { getProject } from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

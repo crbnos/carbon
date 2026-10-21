@@ -8,8 +8,8 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { datetime, getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { invokeAssetTransfer } from "~/modules/accounting";
-import { placeInServiceValidator } from "~/modules/projects";
+import { invokeAssetTransfer } from "~/modules/accounting/accounting.service";
+import { placeInServiceValidator } from "~/modules/projects/projects.models";
 import {
   completeElementSubtrees,
   getProjectCapitalAssets

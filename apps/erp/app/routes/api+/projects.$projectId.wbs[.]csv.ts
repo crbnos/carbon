@@ -6,7 +6,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { toWbsCsvRows, WBS_CSV_COLUMNS } from "~/modules/projects";
+import {
+  toWbsCsvRows,
+  WBS_CSV_COLUMNS
+} from "~/modules/projects/projects.models";
 import { loadWbsElements } from "~/modules/projects/projects.server";
 import { getDatabaseClient } from "~/services/database.server";
 

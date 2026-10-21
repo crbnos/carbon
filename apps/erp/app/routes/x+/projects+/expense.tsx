@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { projectExpenseValidator } from "~/modules/projects";
+import { projectExpenseValidator } from "~/modules/projects/projects.models";
 import {
   addProjectExpense,
   checkProjectBudget

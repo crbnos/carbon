@@ -10,8 +10,9 @@ import { parseDate, toZoned } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { ServiceVisitStatus } from "~/modules/service";
-import { getServiceVisits, serviceVisitStatuses } from "~/modules/service";
+import type { ServiceVisitStatus } from "~/modules/service/service.models";
+import { serviceVisitStatuses } from "~/modules/service/service.models";
+import { getServiceVisits } from "~/modules/service/service.service";
 import ServiceSchedule, {
   OPEN_VISITS
 } from "~/modules/service/ui/Visits/ServiceSchedule";

@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cachedClientLoader } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
-import { getLaborCategoriesList } from "~/modules/projects";
+import { getLaborCategoriesList } from "~/modules/projects/projects.service";
 
 const logger = getLogger("erp", "api-labor-categories");
 

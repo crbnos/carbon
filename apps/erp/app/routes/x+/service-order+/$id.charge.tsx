@@ -10,7 +10,10 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { logTimeValidator, projectIssueValidator } from "~/modules/projects";
+import {
+  logTimeValidator,
+  projectIssueValidator
+} from "~/modules/projects/projects.models";
 import {
   postProjectIssue,
   postTimesheetEntries,
@@ -21,7 +24,7 @@ import {
   coverageOverrideValidator,
   serviceChargeReversalValidator,
   serviceExpenseValidator
-} from "~/modules/service";
+} from "~/modules/service/service.models";
 import {
   addServiceExpense,
   reclassServiceCharge,

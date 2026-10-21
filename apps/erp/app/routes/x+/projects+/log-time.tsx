@@ -9,13 +9,13 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { logTimeValidator } from "~/modules/projects";
+import { logTimeValidator } from "~/modules/projects/projects.models";
 import {
   postTimesheetEntries,
   saveTimesheetEntry,
   timesheetBudgetWarning
 } from "~/modules/projects/projects.server";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "project-log-time");
 

@@ -13,6 +13,9 @@ import { usePermissions, useRouteData } from "~/hooks";
 import {
   buildProjectCostFigures,
   contractLinesBillingProject,
+  summarizeMilestones
+} from "~/modules/projects/projects.models";
+import {
   getChildServiceProjectCosts,
   getProjectContractRevenue,
   getProjectContracts,
@@ -20,17 +23,16 @@ import {
   getProjectElements,
   getProjectMembers,
   getProjectMilestones,
-  getProjectOpenTimesheetEntries,
-  type Project,
-  summarizeMilestones
-} from "~/modules/projects";
+  getProjectOpenTimesheetEntries
+} from "~/modules/projects/projects.service";
+import type { Project } from "~/modules/projects/types";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectOverview from "~/modules/projects/ui/Project/ProjectOverview";
 import {
   currentContractLines,
-  getContractLineFunding,
   projectContractFunded
-} from "~/modules/sales";
+} from "~/modules/sales/sales.models";
+import { getContractLineFunding } from "~/modules/sales/sales.service";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
 

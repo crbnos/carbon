@@ -19,7 +19,7 @@ import {
   projectReportPermissions,
   type RdComponentType,
   type RdSoftwareType
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import {
   getRdTaxReport,
   taxYearParam

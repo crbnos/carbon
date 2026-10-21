@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getLaborCategories } from "~/modules/projects";
+import { getLaborCategories } from "~/modules/projects/projects.service";
 import LaborCategoriesTable from "~/modules/projects/ui/LaborCategories/LaborCategoriesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

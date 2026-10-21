@@ -10,11 +10,11 @@ import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
-  getLaborTransfers,
   projectReportPermissions,
   reportChargeNumber
-} from "~/modules/projects";
+} from "~/modules/projects/projects.models";
 import { getProjectReportRange } from "~/modules/projects/projects.server";
+import { getLaborTransfers } from "~/modules/projects/projects.service";
 import {
   NumberCell,
   ProjectReport,

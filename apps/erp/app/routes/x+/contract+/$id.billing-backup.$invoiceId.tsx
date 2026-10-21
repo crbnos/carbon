@@ -21,8 +21,8 @@ import {
   useQuantityFormatter,
   useRouteData
 } from "~/hooks";
-import type { ProjectCostType } from "~/modules/projects";
-import { getProjectBillingBackup } from "~/modules/sales";
+import type { ProjectCostType } from "~/modules/projects/projects.models";
+import { getProjectBillingBackup } from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractMoney } from "~/modules/sales/ui/Contracts";
 import { usePeople } from "~/stores";

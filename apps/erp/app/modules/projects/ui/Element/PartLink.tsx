@@ -8,7 +8,7 @@ import { Link } from "react-router";
 import { ItemThumbnail } from "~/components";
 import { useSerialNumbers } from "~/modules/inventory/ui/Shipments/ShipmentLines";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import type { ProjectElementPage } from "../../projects.server";
 import { useElementField } from "../Elements/ElementProperties";

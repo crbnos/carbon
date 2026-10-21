@@ -10,7 +10,7 @@ import { parseDate, toZoned } from "@internationalized/date";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getProjectPegs } from "~/modules/projects";
+import { getProjectPegs } from "~/modules/projects/projects.service";
 import ProjectPegging from "~/modules/projects/ui/Pegging/ProjectPegging";
 import PlanningGroupsUpgradeOverlay from "~/modules/projects/ui/PlanningGroups/PlanningGroupsUpgradeOverlay";
 

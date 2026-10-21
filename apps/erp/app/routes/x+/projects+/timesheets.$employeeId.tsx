@@ -14,7 +14,7 @@ import { msg } from "@lingui/core/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { timesheetCellValidator } from "~/modules/projects";
+import { timesheetCellValidator } from "~/modules/projects/projects.models";
 import {
   getTimesheetWeekView,
   saveTimesheetEntry,

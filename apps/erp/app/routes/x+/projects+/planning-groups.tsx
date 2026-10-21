@@ -12,7 +12,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getPlanningGroups } from "~/modules/projects";
+import { getPlanningGroups } from "~/modules/projects/projects.service";
 import PlanningGroupsTable from "~/modules/projects/ui/PlanningGroups/PlanningGroupsTable";
 import PlanningGroupsUpgradeOverlay from "~/modules/projects/ui/PlanningGroups/PlanningGroupsUpgradeOverlay";
 import type { Handle } from "~/utils/handle";

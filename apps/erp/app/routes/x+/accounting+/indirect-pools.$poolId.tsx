@@ -26,7 +26,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { usePermissions } from "~/hooks";
-import { getActiveDimensionsWithValues } from "~/modules/accounting";
+import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.service";
 import type { IndirectPoolAccountRow } from "~/modules/accounting/ui/IndirectRates";
 import {
   IndirectPoolAccounts,
