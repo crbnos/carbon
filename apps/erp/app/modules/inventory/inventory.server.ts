@@ -2073,12 +2073,16 @@ export const assignShipmentLineEntity = defineServiceFn({
       );
     }
 
-    // A return-to-customer shipment ships returned stock, On Hold until it
-    // is dispositioned; everything else ships Available stock only. On Hold
-    // alone is not provenance: the entity must have COME BACK on a receipt
-    // of this return order.
+    // The statuses this source may ship (`shippableEntityStatuses`): a
+    // return-to-customer ships returned stock, On Hold until it is
+    // dispositioned; a return-to-supplier also ships rejected units;
+    // everything else ships Available stock only. On Hold alone is not
+    // provenance: the entity must have COME BACK on a receipt of this
+    // return order.
     const isReturn = shipment.data.sourceDocument === "Sales Return Order";
-    const allowedStatus = isReturn ? "On Hold" : "Available";
+    const allowedStatuses = utils.shippableEntityStatuses(
+      shipment.data.sourceDocument
+    );
     const attributes = (entity.data.attributes ?? {}) as Record<
       string,
       unknown
@@ -2111,7 +2115,7 @@ export const assignShipmentLineEntity = defineServiceFn({
       }
     }
 
-    if (entity.data.status !== allowedStatus) {
+    if (!allowedStatuses.includes(entity.data.status)) {
       return ctx.error(
         "rule",
         `Tracked entity is not available. Current status: ${entity.data.status}`
@@ -2143,7 +2147,7 @@ export const assignShipmentLineEntity = defineServiceFn({
       .eq("id", trackedEntityId)
       .eq("companyId", companyId)
       // Guards a concurrent status change: no row matched is a conflict.
-      .eq("status", allowedStatus)
+      .eq("status", entity.data.status)
       .select("id");
     if (updated.error) {
       return ctx.error(
@@ -2155,7 +2159,7 @@ export const assignShipmentLineEntity = defineServiceFn({
     if (!updated.data?.length) {
       return ctx.error(
         "conflict",
-        `Tracked entity is no longer ${allowedStatus}`
+        `Tracked entity is no longer ${entity.data.status}`
       );
     }
 

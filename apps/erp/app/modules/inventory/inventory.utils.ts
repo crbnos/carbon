@@ -11,6 +11,35 @@ export function clampDepth(n: number): number {
   return Math.min(Math.max(1, n), 5);
 }
 
+type TrackedEntityStatus = Database["public"]["Enums"]["trackedEntityStatus"];
+
+/**
+ * The tracked-entity statuses a shipment of this source may ship. A return to
+ * a customer ships returned stock, On Hold until it leaves. A return to a
+ * supplier ships good stock or the units an inspection or issue rejected —
+ * sending rejects back is the point of the return. Everything else ships
+ * Available stock only. `assignShipmentLineEntity`, `ShipmentLines` and
+ * `ShipmentPostModal` all read this, so tracking and posting never disagree.
+ */
+export function shippableEntityStatuses(
+  sourceDocument: string | null | undefined
+): TrackedEntityStatus[] {
+  if (sourceDocument === "Sales Return Order") return ["On Hold"];
+  if (sourceDocument === "Purchase Return Order") {
+    return ["Available", "Rejected"];
+  }
+  return ["Available"];
+}
+
+export function isShippableEntityStatus(
+  sourceDocument: string | null | undefined,
+  status: string | null | undefined
+): boolean {
+  return (shippableEntityStatuses(sourceDocument) as string[]).includes(
+    status ?? ""
+  );
+}
+
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,

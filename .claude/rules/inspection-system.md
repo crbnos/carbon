@@ -396,7 +396,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     semantics.
   - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
     called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
-    includes a "Failed features" block built from the lot's measurements.
+    includes a "Failed features" block built from the lot's measurements, and the lot's
+    `supplierId` is written as the issue's `nonConformanceSupplier` (`insertIssue`'s
+    `supplierId`). The `$id` loader reads the lot's issues (`getInspectionIssues`) and the
+    header links them (one: a button with the issue's readable id; several: an Issues
+    menu). The header's **Create Issue** button passes the failed entities and the lot's
+    `supplierId`, never the inspection: an inspection link tells `closeIssue` the lot was
+    written off at reject, which is only true for a rejected lot.
 - **Service** `quality.service.ts`: `getInspections` (list), `getInspection`,
   `getInspectionTrackedEntities`, `getInspectionSamplingPlans` (embeds
   `inspectionFeature(...)` by table name), `getInspectionMeasurements`,

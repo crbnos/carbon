@@ -10,6 +10,10 @@ import {
   Badge,
   Button,
   ClientOnly,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Modal,
@@ -45,9 +49,10 @@ import {
   LuFileText,
   LuScan,
   LuShieldAlert,
+  LuShieldX,
   LuTriangleAlert
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import {
   RecordAction,
   RecordHero,
@@ -57,6 +62,7 @@ import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
   InspectionGauge,
+  InspectionIssue,
   InspectionMeasurement,
   InspectionRow,
   InspectionSample,
@@ -126,6 +132,8 @@ export type InspectionViewProps = {
   pdfUrl: string | null;
   lotEntities: InspectionTrackedEntity[];
   issueTypes: IssueTypeListItem[];
+  /** The issues linked to this lot (a rejected lot's NCR, or a manual link). */
+  issues: InspectionIssue[];
   currentUserId: string;
   enforceFourEyes: boolean;
 };
@@ -153,6 +161,7 @@ const InspectionView = ({
   pdfUrl,
   lotEntities,
   issueTypes,
+  issues,
   currentUserId,
   enforceFourEyes
 }: InspectionViewProps) => {
@@ -452,7 +461,7 @@ const InspectionView = ({
     .map((s) => s.trackedEntityId)
     .filter(Boolean) as string[];
 
-  const newIssueHref = `/x/issue/new?itemId=${encodeURIComponent(inspection.itemId)}&trackedEntityIds=${encodeURIComponent(failedTrackedEntityIds.join(","))}&sourceInspectionId=${encodeURIComponent(inspection.id)}`;
+  const newIssueHref = `/x/issue/new?itemId=${encodeURIComponent(inspection.itemId)}&trackedEntityIds=${encodeURIComponent(failedTrackedEntityIds.join(","))}${inspection.supplierId ? `&supplierId=${encodeURIComponent(inspection.supplierId)}` : ""}`;
 
   const drawingBalloons = useMemo<DrawingBalloon[]>(() => {
     const labelByFeatureId = new Map(
@@ -528,6 +537,35 @@ const InspectionView = ({
           <p className="truncate text-xs text-muted-foreground">{metaLine}</p>
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
+          {issues.length === 1 && (
+            <RecordAction slot="overflow">
+              <Button variant="secondary" leftIcon={<LuShieldX />} asChild>
+                <Link to={path.to.issue(issues[0].id)}>
+                  {issues[0].nonConformanceId}
+                </Link>
+              </Button>
+            </RecordAction>
+          )}
+          {issues.length > 1 && (
+            <RecordAction slot="overflow">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" leftIcon={<LuShieldX />}>
+                    <Trans>Issues</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {issues.map((issue) => (
+                    <DropdownMenuItem key={issue.id} asChild>
+                      <Link to={path.to.issue(issue.id)}>
+                        {issue.nonConformanceId}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </RecordAction>
+          )}
           <RecordAction slot="overflow">
             <Button
               variant="secondary"

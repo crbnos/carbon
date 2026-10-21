@@ -12343,15 +12343,18 @@ export async function createDocument(
         // Stamp each return line's picked entities onto its shipment line, so
         // the batch/serial flows through to posting. post-shipment splits a
         // batch when the shipped quantity is less than the entity's quantity.
+        // The index puts each serial in its own box on the shipment page,
+        // which shows a serial only at the index it was assigned to.
         for (const shipmentLine of insertedLines) {
           const entities = shipmentLine.lineId
             ? entitiesByReturnLine.get(shipmentLine.lineId)
             : undefined;
-          for (const entity of entities ?? []) {
+          for (const [index, entity] of (entities ?? []).entries()) {
             const attrs = {
               ...(entity.attributes ?? {}),
               Shipment: id,
-              "Shipment Line": shipmentLine.id
+              "Shipment Line": shipmentLine.id,
+              "Shipment Line Index": index
             };
             await trx
               .updateTable("trackedEntity")

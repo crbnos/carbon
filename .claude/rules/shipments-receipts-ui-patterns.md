@@ -52,8 +52,10 @@ run the same checks. The route only parses the form, and takes the document id f
 - `lines.tracking.tsx` (`assignShipmentLineEntity`; receipt: `setReceiptLineBatch` /
   `setReceiptLineSerial` / `assignReceiptReturnEntity` / `removeReceiptReturnEntity`, one per
   `trackingType`) — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
-  `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
-  shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
+  `"Shipment Line Index"`); guards entity status with `shippableEntityStatuses`
+  (`inventory.utils.ts`) — `"Available"` normally, `"On Hold"` when the shipment's source is a
+  Sales Return Order (returned stock ships back from hold), `"Available"` or `"Rejected"` when it
+  is a Purchase Return Order (rejected units go back to the supplier); clears stale
   attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
   sales-return receipts (same-serial re-entry, guarded by provenance: the entity must be the
   return line's item and shipped to that return's customer on a posted shipment).
@@ -156,9 +158,9 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   `lines.tracking`'s guard or they reject what tracking accepted:
   `ReceiptPostModal` counts a serial slot as filled when the entity is merely ASSIGNED on a
   `Sales Return Order` receipt (returned units are picked, not typed, so they carry no
-  `readableId` of their own); `ShipmentPostModal` and `ShipmentLines`' batch/serial inputs
-  expect `On Hold` rather than `Available` when the shipment's source is a
-  `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
+  `readableId` of their own); `ShipmentPostModal`, `ShipmentLines`' batch/serial inputs and
+  `lines.tracking` all read `shippableEntityStatuses` (`inventory.utils.ts`, pinned by
+  `inventory.utils.test.ts`), so the three cannot drift.
 
 ## Posting flow (`$id.post.tsx` → `api.inventory.postShipment` / `postReceipt` → posting body)
 

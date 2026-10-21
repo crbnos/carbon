@@ -78,7 +78,7 @@ const customFieldValues = z.record(
  *
  * @remarks
  * Every record the issue names (location, type, workflow, required actions,
- * items, customer, `trackedEntityIds`) must be the company's, or nothing is
+ * items, customer, supplier, `trackedEntityIds`) must be the company's, or nothing is
  * created. The issue is inserted, the tracked entities are linked to it, and
  * an issue filed against a job operation links the lot that operation's make
  * method produced onto the item's disposition row. Its action and approval
@@ -122,6 +122,7 @@ export const createIssue = defineServiceFn({
       ],
       ["item", [...new Set(input.items ?? [])]],
       ["customer", input.customerId ? [input.customerId] : []],
+      ["supplier", input.supplierId ? [input.supplierId] : []],
       ["trackedEntity", trackedEntityIds]
     ];
     const owned = await Promise.all(
@@ -161,6 +162,7 @@ export const createIssue = defineServiceFn({
       items: input.items,
       jobOperationId: input.jobOperationId,
       customerId: input.customerId,
+      supplierId: input.supplierId,
       salesOrderLineId: input.salesOrderLineId,
       operationSupplierProcessId: input.operationSupplierProcessId,
       companyId,
@@ -1410,6 +1412,9 @@ export const rejectInspection = defineServiceFn({
         .toString(),
       quantity: Number(insp.lotSize ?? 0),
       items: insp.itemId ? [insp.itemId] : [],
+      // The lot's supplier, stamped from the PO at receipt: it drives the
+      // SCAR report, the action-task supplier picker and the explorer.
+      supplierId: insp.supplierId ?? undefined,
       companyId,
       createdBy: userId
     });
