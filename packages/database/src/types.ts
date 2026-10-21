@@ -11793,6 +11793,7 @@ export type Database = {
         Row: {
           billedThrough: string | null
           billingAlignment: Database["public"]["Enums"]["contractBillingAlignment"]
+          billingBasis: Database["public"]["Enums"]["contractBillingBasis"]
           billingFrequency: Database["public"]["Enums"]["contractBillingFrequency"]
           billingTiming: Database["public"]["Enums"]["contractBillingTiming"]
           cancellationReason: string | null
@@ -11842,6 +11843,7 @@ export type Database = {
         Insert: {
           billedThrough?: string | null
           billingAlignment?: Database["public"]["Enums"]["contractBillingAlignment"]
+          billingBasis?: Database["public"]["Enums"]["contractBillingBasis"]
           billingFrequency?: Database["public"]["Enums"]["contractBillingFrequency"]
           billingTiming?: Database["public"]["Enums"]["contractBillingTiming"]
           cancellationReason?: string | null
@@ -11891,6 +11893,7 @@ export type Database = {
         Update: {
           billedThrough?: string | null
           billingAlignment?: Database["public"]["Enums"]["contractBillingAlignment"]
+          billingBasis?: Database["public"]["Enums"]["contractBillingBasis"]
           billingFrequency?: Database["public"]["Enums"]["contractBillingFrequency"]
           billingTiming?: Database["public"]["Enums"]["contractBillingTiming"]
           cancellationReason?: string | null
@@ -85101,6 +85104,9 @@ export type Database = {
           billingAlignment:
             | Database["public"]["Enums"]["contractBillingAlignment"]
             | null
+          billingBasis:
+            | Database["public"]["Enums"]["contractBillingBasis"]
+            | null
           billingFrequency:
             | Database["public"]["Enums"]["contractBillingFrequency"]
             | null
@@ -85113,6 +85119,7 @@ export type Database = {
           companyId: string | null
           confirmedAt: string | null
           confirmedBy: string | null
+          contractorRetainsRights: boolean | null
           contractType:
             | Database["public"]["Enums"]["customerContractType"]
             | null
@@ -85144,12 +85151,14 @@ export type Database = {
           name: string | null
           nextInvoiceDate: string | null
           notes: Json | null
+          paymentContingentOnSuccess: boolean | null
           paymentTermId: string | null
           projectId: string | null
           recognizedToDate: number | null
           recognizeRevenueFrom: string | null
           renewal: Database["public"]["Enums"]["contractRenewal"] | null
           renewalUplift: number | null
+          researchFunded: boolean | null
           salesOrderId: string | null
           salesPersonId: string | null
           shipToCustomerLocationId: string | null
@@ -105048,6 +105057,7 @@ export type Database = {
         | "material"
       contractAmendmentEffect: "Change Date" | "Next Period"
       contractBillingAlignment: "Anniversary" | "Calendar"
+      contractBillingBasis: "Schedule" | "Project"
       contractBillingFrequency: "Week" | "Month" | "Quarter" | "Year"
       contractBillingMethod: "Fixed" | "Time & Materials" | "Cost Plus"
       contractBillingTiming: "Advance" | "Arrears"
@@ -106765,6 +106775,7 @@ export const Constants = {
       ],
       contractAmendmentEffect: ["Change Date", "Next Period"],
       contractBillingAlignment: ["Anniversary", "Calendar"],
+      contractBillingBasis: ["Schedule", "Project"],
       contractBillingFrequency: ["Week", "Month", "Quarter", "Year"],
       contractBillingMethod: ["Fixed", "Time & Materials", "Cost Plus"],
       contractBillingTiming: ["Advance", "Arrears"],

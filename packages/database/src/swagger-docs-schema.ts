@@ -65854,6 +65854,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerContract.contractorRetainsRights"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContract.billingBasis"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -66048,6 +66051,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerContract.contractorRetainsRights"
           },
           {
+            $ref: "#/parameters/rowFilter.customerContract.billingBasis"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -66194,6 +66200,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContract.contractorRetainsRights"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContract.billingBasis"
           },
           {
             $ref: "#/parameters/body.customerContract"
@@ -108962,6 +108971,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerContracts.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContracts.researchFunded"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContracts.paymentContingentOnSuccess"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContracts.contractorRetainsRights"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContracts.billingBasis"
           },
           {
             $ref: "#/parameters/rowFilter.customerContracts.customerName"
@@ -161734,7 +161755,8 @@ export default {
         "createdBy",
         "createdAt",
         "paymentContingentOnSuccess",
-        "contractorRetainsRights"
+        "contractorRetainsRights",
+        "billingBasis"
       ],
       properties: {
         id: {
@@ -161969,6 +161991,14 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        billingBasis: {
+          default: "Schedule",
+          description:
+            "Schedule: a service contract billed on its invoice schedule. Project: a project contract billed from project cost (Time & Materials, Cost Plus) and billing events (Fixed Price).",
+          enum: ["Schedule", "Project"],
+          format: 'public."contractBillingBasis"',
+          type: "string"
         }
       },
       type: "object"
@@ -182435,6 +182465,23 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        researchFunded: {
+          format: "boolean",
+          type: "boolean"
+        },
+        paymentContingentOnSuccess: {
+          format: "boolean",
+          type: "boolean"
+        },
+        contractorRetainsRights: {
+          format: "boolean",
+          type: "boolean"
+        },
+        billingBasis: {
+          enum: ["Schedule", "Project"],
+          format: 'public."contractBillingBasis"',
+          type: "string"
         },
         customerName: {
           format: "text",
@@ -220646,6 +220693,14 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.customerContract.billingBasis": {
+      name: "billingBasis",
+      description:
+        "Schedule: a service contract billed on its invoice schedule. Project: a project contract billed from project cost (Time & Materials, Cost Plus) and billing events (Fixed Price).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.userPermission": {
       name: "userPermission",
       description: "userPermission",
@@ -243432,6 +243487,30 @@ export default {
     },
     "rowFilter.customerContracts.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContracts.researchFunded": {
+      name: "researchFunded",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContracts.paymentContingentOnSuccess": {
+      name: "paymentContingentOnSuccess",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContracts.contractorRetainsRights": {
+      name: "contractorRetainsRights",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContracts.billingBasis": {
+      name: "billingBasis",
       required: false,
       in: "query",
       type: "string"
