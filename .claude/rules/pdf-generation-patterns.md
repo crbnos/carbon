@@ -126,7 +126,8 @@ Times-Roman / Courier are PDF built-ins (no registration).
   calls `registerDocumentFonts()`. The `family` arg is ignored (all registered up front).
 - `getSafeFontFamily(family)` — returns the family if built-in/registered, else
   `"Helvetica"`. **Every render path must route the settings font through this**
-  (both `Template` and the hand-built `file+/job+/$jobId.traveler[.]pdf.tsx` route)
+  (both `Template` and the hand-built job traveler, `renderJobTravelerPdf` in
+  `apps/erp/app/modules/production/production.pdf.tsx`, which both traveler routes call)
   so an unregistered family can never throw.
 
 ## Serving — the file route (`apps/*/app/routes/file+/<doc>+/$id[.]pdf.tsx`)
