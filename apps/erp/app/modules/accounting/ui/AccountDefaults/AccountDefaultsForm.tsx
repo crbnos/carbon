@@ -139,7 +139,7 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
           {
             name: "contractAssetAccount",
             label: t`Contract Assets`,
-            description: t`Unbilled receivable for rent earned before it is invoiced`,
+            description: t`Revenue earned before it is invoiced, for rentals and contracts`,
             badgeType: "Asset",
             termId: "account-default-contract-assets"
           },
@@ -181,7 +181,7 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
           {
             name: "projectWorkInProgressAccount",
             label: t`Project WIP`,
-            description: t`Cost charged to Contract projects until it is billed`,
+            description: t`Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned`,
             badgeType: "Asset"
           }
         ]

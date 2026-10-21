@@ -626,7 +626,7 @@ export const terms = {
   },
   "revenue-method": {
     term: msg`Revenue method`,
-    definition: msg`How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days.`,
+    definition: msg`How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion.`,
     href: "/docs/reference/contracts#revenue"
   },
   "billed-through": {
@@ -769,7 +769,7 @@ export const terms = {
   },
   "account-default-contract-assets": {
     term: msg`Contract Assets (default)`,
-    definition: msg`Asset GL account for revenue earned but not yet invoiced, such as rent accrued for an arrears-billed rental period; cleared when the invoice posts.`
+    definition: msg`Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts.`
   },
   "account-default-net-investment-in-leases": {
     term: msg`Net Investment in Leases (default)`,
@@ -2616,6 +2616,44 @@ export const terms = {
     term: msg`Percent complete`,
     definition: msg`A revenue method that recognizes price × cost to date ÷ estimate at completion. It is also an earned value technique: the budget times the element's percent complete.`,
     href: "/docs/reference/project-billing#revenue"
+  },
+  "project-contract": {
+    term: msg`Project contract`,
+    definition: msg`A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule.`,
+    href: "/docs/reference/project-billing"
+  },
+  "service-contract": {
+    term: msg`Service contract`,
+    definition: msg`A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders.`,
+    href: "/docs/reference/contracts"
+  },
+  "time-and-materials": {
+    term: msg`Time & Materials`,
+    definition: msg`A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %.`,
+    href: "/docs/reference/project-billing",
+    aliases: ["time-materials"]
+  },
+  "cost-plus": {
+    term: msg`Cost Plus`,
+    definition: msg`A billing method that bills every cost charged under the line's billing element, times (1 + fee %).`,
+    href: "/docs/reference/project-billing"
+  },
+  "fixed-price": {
+    term: msg`Fixed Price`,
+    definition: msg`A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step.`,
+    href: "/docs/reference/project-billing"
+  },
+  "funded-amount": {
+    term: msg`Funded`,
+    definition: msg`What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit.`,
+    href: "/docs/reference/project-billing#invoicing",
+    aliases: ["funded"]
+  },
+  "contract-ceiling": {
+    term: msg`Ceiling`,
+    definition: msg`The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it.`,
+    href: "/docs/reference/project-billing#the-billing-line",
+    aliases: ["ceiling"]
   },
 
   // Field service (field-service.md)

@@ -5,6 +5,7 @@
 import { useLoaderQuery } from "@carbon/query";
 import {
   Button,
+  LabelWithHelp,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
@@ -223,12 +224,20 @@ const ProjectContractLinesGrid = ({
       },
       {
         accessorKey: "billingMethod",
-        header: t`Billing Method`,
+        header: () => (
+          <LabelWithHelp termId="billing-method" variant="inline">
+            <Trans>Billing Method</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) => billingMethodLabels[row.original.billingMethod]
       },
       {
         accessorKey: "projectElementId",
-        header: t`Billing Element`,
+        header: () => (
+          <LabelWithHelp termId="billing-element" variant="inline">
+            <Trans>Billing Element</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) =>
           row.original.projectElementId ? (
             <span className="block max-w-[200px] truncate">
@@ -240,7 +249,11 @@ const ProjectContractLinesGrid = ({
       },
       {
         accessorKey: "fundedAmount",
-        header: t`Funded`,
+        header: () => (
+          <LabelWithHelp termId="funded-amount" variant="inline">
+            <Trans>Funded</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) =>
           row.original.fundedAmount === null ? (
             <Dash />
@@ -253,7 +266,11 @@ const ProjectContractLinesGrid = ({
       },
       {
         accessorKey: "ceilingAmount",
-        header: t`Ceiling`,
+        header: () => (
+          <LabelWithHelp termId="contract-ceiling" variant="inline">
+            <Trans>Ceiling</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) =>
           row.original.ceilingAmount === null ? (
             <Dash />
@@ -293,7 +310,11 @@ const ProjectContractLinesGrid = ({
       },
       {
         accessorKey: "revenueMethod",
-        header: t`Revenue`,
+        header: () => (
+          <LabelWithHelp termId="revenue-method" variant="inline">
+            <Trans>Revenue</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) => revenueMethodLabels[row.original.revenueMethod]
       }
     ],

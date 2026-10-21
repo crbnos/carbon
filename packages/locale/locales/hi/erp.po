@@ -1148,6 +1148,12 @@ msgstr "ऑपरेटर बनाए जाने पर एक 4-अंक�
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "बैच को कम से कम एक ऑपरेशन की आवश्यकता है। पूरे बैच को विभाजित करने के लिए, इसके बजाय विघटन का उपयोग करें।"
 
+msgid "A billing method that bills every cost charged under the line's billing element, times (1 + fee %)."
+msgstr ""
+
+msgid "A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %."
+msgstr ""
+
 msgid "A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent."
 msgstr "एक उधार एक परियोजना के स्टॉक को दूसरी परियोजना में स्थानांतरित करता है जब तक भुगतान की तिथि न आ जाए, उधारकर्ता की लागत पर; एक भुगतान इसे लौटाता है, और उधारकर्ता को यह लागत वापस मिल जाती है जो इसने उधार दी थी।"
 
@@ -1201,6 +1207,12 @@ msgstr "एक अनुबंध पंक्ति पर एक अनुब�
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D कर रिपोर्ट के लिए एक अनुबंध सेटिंग। एक वित्तपोषित अनुबंध के तहत एक प्रत्यक्ष परियोजना की लागत एक योग्य अनुसंधान व्यय नहीं है; डिफ़ॉल्ट पर, एक लागत-अतिरिक्त या समय और सामग्री पंक्ति वाला अनुबंध वित्तपोषित के रूप में गिना जाता है।"
+
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
+msgstr ""
+
+msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष कौशल और उपलब्ध घंटे हैं"
@@ -1492,6 +1504,9 @@ msgstr "एक किराये के समझौते पर एक मू
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "एक मूल्यवान बिक्री कोटेशन; ड्राफ्ट → भेजा गया → ऑर्डर किया गया, या खोया, समाप्त, या रद्द में समाप्त होता है।"
+
+msgid "A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step."
+msgstr ""
 
 msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
 msgstr ""
@@ -4169,8 +4184,8 @@ msgstr "निपटान पर संपत्ति लागत"
 msgid "Asset Cost on Disposal (default)"
 msgstr "निपटान पर संपत्ति लागत (डिफ़ॉल्ट)"
 
-msgid "Asset GL account for revenue earned but not yet invoiced, such as rent accrued for an arrears-billed rental period; cleared when the invoice posts."
-msgstr "राजस्व के लिए संपत्ति लेजर खाता जो अर्जित किया गया है लेकिन अभी तक चालान नहीं किया गया है, जैसे विलंब से बिल किए जाने वाली किराये अवधि के लिए उपार्जित किराया; जब चालान पोस्ट किया जाता है तो साफ़ किया जाता है।"
+msgid "Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts."
+msgstr ""
 
 msgid "Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it."
 msgstr "विक्रय प्रकार के पट्टे के शुरू होने पर मान्यता प्राप्त संपत्ति लेजर खाता, जो भुगतानों और अवशेष के वर्तमान मूल्य को रखता है; प्रत्येक किराये का भुगतान इसे कम करता है।"
@@ -7175,8 +7190,8 @@ msgstr "लागत केंद्र"
 msgid "Cost Centers"
 msgstr "लागत केंद्र"
 
-msgid "Cost charged to Contract projects until it is billed"
-msgstr "लागत अनुबंध परियोजनाओं को तब तक दी जाती है जब तक इसे बिल न कर दिया जाए"
+msgid "Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned"
+msgstr ""
 
 msgid "Cost charged to Expense projects"
 msgstr "व्यय परियोजनाओं को दी गई लागत"
@@ -7186,9 +7201,6 @@ msgstr "लागत पूल में जाती है। आधार व
 
 msgid "Cost History"
 msgstr "लागत इतिहास"
-
-msgid "Cost Incurred"
-msgstr "लागत व्यय की गई"
 
 msgid "Cost incurred is past the notice point."
 msgstr "व्यय की गई लागत सूचना बिंदु को पार कर चुकी है।"
@@ -12718,8 +12730,8 @@ msgstr "एक बैचयोग्य प्रक्रिया अपने
 msgid "How a contract line bills: Fixed (its schedule), Time & Materials (hours × a bill rate, plus marked-up cost) or Cost Plus (cost × (1 + fee %))."
 msgstr "अनुबंध पंक्ति कैसे बिल करती है: निश्चित (इसका शेड्यूल), समय और सामग्री (घंटे × एक बिल दर, साथ ही मार्क-अप लागत) या लागत प्लस (लागत × (1 + शुल्क %))।"
 
-msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
-msgstr "अनुबंध की पंक्ति अपने राजस्व तारीखों पर अपना राजस्व कैसे अर्जित करती है: दैनिक, हर दिन समान राशि, या समान अवधि, प्रत्येक कैलेंडर माह में समान राशि आंशिक महीनों को दिनों द्वारा प्रोरेट किया गया।"
+msgid "How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion."
+msgstr ""
 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "अनुबंध या संशोधन को आवर्ती-राजस्व रिपोर्टिंग के लिए कैसे वर्गीकृत किया जाता है: नई बिक्री, मौजूदा, विस्तार, पुनः सक्रियण, या संकुचन। Carbon इसका सुझाव देता है और आप इसे बदल सकते हैं।"
@@ -20019,6 +20031,9 @@ msgstr "प्रोजेक्ट परिवर्तन अनुरोध"
 msgid "Project Change Requests"
 msgstr "प्रोजेक्ट परिवर्तन अनुरोध"
 
+msgid "Project contract"
+msgstr ""
+
 msgid "Project Contract"
 msgstr ""
 
@@ -22066,6 +22081,9 @@ msgstr "इस माह से पहले का राजस्व आपक
 msgid "Revenue Dates"
 msgstr "राजस्व तिथियां"
 
+msgid "Revenue earned before it is invoiced, for rentals and contracts"
+msgstr ""
+
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "राजस्व अर्जित लेकिन अभी चालान नहीं किया गया, जैसे उन दिनों के लिए किराया जब एक इकाई पहले से ही किराये पर थी; मान्यता चलाना इसे जमा करता है और उस अवधि के लिए चालान इसे स्पष्ट करता है।"
 
@@ -22107,9 +22125,6 @@ msgstr "राजस्व मान्यता रन"
 
 msgid "Revenue recognition runs"
 msgstr "राजस्व स्वीकृति रन"
-
-msgid "Revenue Recognized"
-msgstr "राजस्व मान्यता प्राप्त"
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में राजस्व मान्य"
@@ -23452,6 +23467,9 @@ msgstr "सेवा शुल्क"
 
 msgid "Service Charges (default)"
 msgstr "सेवा शुल्क (डिफ़ॉल्ट)"
+
+msgid "Service contract"
+msgstr ""
 
 msgid "Service Contract"
 msgstr ""
@@ -26245,6 +26263,9 @@ msgstr "मासिक अवधि चलन जो पट्टा प्र�
 msgid "The monthly periods you post into and close"
 msgstr "मासिक अवधियाँ जिनमें आप पोस्ट करते हैं और बंद करते हैं"
 
+msgid "The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it."
+msgstr ""
+
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "सबसे संभावित विफलता मोड जिसे अनुरोधकर्ता संदेह करता है; तकनीशियन इसे बंद करते समय की पुष्टि या प्रतिस्थापन करता है, और संदेह और वास्तविक के बीच अंतर विश्वसनीयता रिपोर्ट करता है।"
 
@@ -28053,9 +28074,6 @@ msgstr "अनबैच ऑपरेशन"
 msgid "Unbilled"
 msgstr "अबिल"
 
-msgid "Unbilled receivable for rent earned before it is invoiced"
-msgstr "चालान किए जाने से पहले अर्जित किराये की अबिल प्राप्य"
-
 msgid "Unbilled:"
 msgstr "अबिल्ड:"
 
@@ -29363,6 +29381,9 @@ msgstr "यह आयाम अपने स्वीकृत मानों �
 
 msgid "What the customer can buy each unit for at the end"
 msgstr "ग्राहक प्रत्येक इकाई को अंत में क्या खरीद सकता है"
+
+msgid "What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit."
+msgstr ""
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "ग्राहक अग्रिम में क्या भुगतान करता है, किराए पर कर, और चालान कब देय हैं।"

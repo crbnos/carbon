@@ -1148,6 +1148,12 @@ msgstr "Um PIN de 4 dígitos é gerado quando o operador é criado."
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Um lote de produção precisa de pelo menos uma operação. Para dividir o lote de produção inteiro, use Dissolver em vez disso."
 
+msgid "A billing method that bills every cost charged under the line's billing element, times (1 + fee %)."
+msgstr ""
+
+msgid "A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %."
+msgstr ""
+
 msgid "A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent."
 msgstr "Um Empréstimo move o estoque de um projeto para outro até uma data de devolução, ao custo do credor; uma Devolução o retorna e o credor recupera o custo que emprestou."
 
@@ -1201,6 +1207,12 @@ msgstr "Um número de item de linha de contrato em uma linha de contrato: 4 díg
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Uma configuração de contrato para relatórios fiscais de P&D. O custo de um projeto Direto sob um contrato financiado não é uma despesa de pesquisa qualificada; por padrão, um contrato com uma linha Cost Plus ou Time & Materials conta como financiado."
+
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
+msgstr ""
+
+msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Um terceirizado é um contato de fornecedor com habilidades particulares e horas disponíveis"
@@ -1492,6 +1504,9 @@ msgstr "Um preço em um contrato de aluguel pelo qual o Cliente pode comprar a u
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Um orçamento de vendas com preço; Rascunho → Enviado → Pedido emitido, ou termina Perdido, Vencido ou Cancelado."
+
+msgid "A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step."
+msgstr ""
 
 msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
 msgstr ""
@@ -4169,8 +4184,8 @@ msgstr "Custo do Ativo na Baixa"
 msgid "Asset Cost on Disposal (default)"
 msgstr "Custo do Ativo na Baixa (padrão)"
 
-msgid "Asset GL account for revenue earned but not yet invoiced, such as rent accrued for an arrears-billed rental period; cleared when the invoice posts."
-msgstr "Conta contábil de ativo para receita auferida mas ainda não faturada, como aluguel acumulado para um período de aluguel faturado em atraso; liquidada quando a fatura é contabilizada."
+msgid "Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts."
+msgstr ""
 
 msgid "Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it."
 msgstr "Conta contábil de ativo reconhecida quando um arrendamento de tipo venda inicia, mantendo o valor presente dos pagamentos e residual; cada pagamento de aluguel a reduz."
@@ -7175,8 +7190,8 @@ msgstr "centros de custos"
 msgid "Cost Centers"
 msgstr "Centros de Custo"
 
-msgid "Cost charged to Contract projects until it is billed"
-msgstr "Custo carregado aos projetos de Contrato até ser faturado"
+msgid "Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned"
+msgstr ""
 
 msgid "Cost charged to Expense projects"
 msgstr "Custo carregado aos projetos de Despesa"
@@ -7186,9 +7201,6 @@ msgstr "O custo entra no fundo. Base é o que a taxa do fundo se aplica."
 
 msgid "Cost History"
 msgstr "Histórico de Custos"
-
-msgid "Cost Incurred"
-msgstr "Custo incorrido"
 
 msgid "Cost incurred is past the notice point."
 msgstr "O custo incorrido passou do ponto de aviso."
@@ -12718,8 +12730,8 @@ msgstr "Como um processo em lote executa seu trabalho agrupado: Sequencial execu
 msgid "How a contract line bills: Fixed (its schedule), Time & Materials (hours × a bill rate, plus marked-up cost) or Cost Plus (cost × (1 + fee %))."
 msgstr "Como uma linha de contrato é faturada: Fixa (sua programação), Tempo e Materiais (horas × uma taxa de faturamento, acrescido de custo com margem) ou Custo Mais (custo × (1 + taxa %))."
 
-msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
-msgstr "Como uma linha de contrato aufere sua receita ao longo de suas datas de receita: Diariamente, o mesmo valor todos os dias, ou Período Uniforme, o mesmo valor a cada mês calendário com meses parciais rateados por dias."
+msgid "How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion."
+msgstr ""
 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "Como um contrato ou uma emenda é classificado para relatórios de receita recorrente: Novas Vendas, Existente, Expansão, Reativação ou Contração. O Carbon sugere e você pode alterar."
@@ -20019,6 +20031,9 @@ msgstr "Solicitação de alteração do projeto"
 msgid "Project Change Requests"
 msgstr "Solicitações de Mudança do Projeto"
 
+msgid "Project contract"
+msgstr ""
+
 msgid "Project Contract"
 msgstr ""
 
@@ -22066,6 +22081,9 @@ msgstr "A receita antes deste mês foi reconhecida no seu sistema anterior"
 msgid "Revenue Dates"
 msgstr "Datas de Receita"
 
+msgid "Revenue earned before it is invoiced, for rentals and contracts"
+msgstr ""
+
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "Receita auferida mas não faturada, como aluguel de dias que uma unidade já esteve em aluguel; apropriada pela execução de reconhecimento e encerrada pela fatura desse período."
 
@@ -22107,9 +22125,6 @@ msgstr "Execução de Reconhecimento de Receita"
 
 msgid "Revenue recognition runs"
 msgstr "Execuções de reconhecimento de receita"
-
-msgid "Revenue Recognized"
-msgstr "Receita reconhecida"
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "Receita reconhecida no início de um arrendamento de venda"
@@ -23452,6 +23467,9 @@ msgstr "Taxas de serviço"
 
 msgid "Service Charges (default)"
 msgstr "Taxas de serviço (padrão)"
+
+msgid "Service contract"
+msgstr ""
 
 msgid "Service Contract"
 msgstr ""
@@ -26245,6 +26263,9 @@ msgstr "A execução do período mensal que contabiliza entradas de aluguel: jur
 msgid "The monthly periods you post into and close"
 msgstr "Os períodos mensais nos quais você lança e fecha"
 
+msgid "The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it."
+msgstr ""
+
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "O modo de falha mais provável que o solicitante suspeita; o técnico confirma ou substitui ao fechar, e a diferença entre o suspeito e o real alimenta os relatórios de confiabilidade."
 
@@ -28053,9 +28074,6 @@ msgstr "Operações não agrupadas"
 msgid "Unbilled"
 msgstr "Não Faturado"
 
-msgid "Unbilled receivable for rent earned before it is invoiced"
-msgstr "Receita não faturada pela renda auferida antes de ser faturada"
-
 msgid "Unbilled:"
 msgstr "Não faturado:"
 
@@ -29363,6 +29381,9 @@ msgstr "De qual fonte esta dimensão extrai seus valores permitidos (lista perso
 
 msgid "What the customer can buy each unit for at the end"
 msgstr "O que o cliente pode comprar cada unidade no final"
+
+msgid "What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit."
+msgstr ""
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "O que o cliente paga antecipadamente, o imposto sobre aluguel e quando as faturas vencem."

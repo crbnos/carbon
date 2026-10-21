@@ -1148,6 +1148,12 @@ msgstr "创建操作员时会生成4位数PIN。"
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "生产批次需要至少一个工序。要分解整个生产批次，请改用\"分解\"。"
 
+msgid "A billing method that bills every cost charged under the line's billing element, times (1 + fee %)."
+msgstr ""
+
+msgid "A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %."
+msgstr ""
+
 msgid "A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent."
 msgstr "借出是将一个项目的库存临时转移到另一个项目，直到应还日期，由出借方承担成本。还款是将其返还，出借方收回已垫付的成本。"
 
@@ -1201,6 +1207,12 @@ msgstr "合同行的合同行项目号 (CLIN)：4 位数字，如 0001。项目�
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D 税收报告的合同设置。有资金支持的合同下的直接项目成本不是合格的研究费用。默认情况下，有成本加成或工料合约行的合同计为有资金支持。"
+
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
+msgstr ""
+
+msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "外协人员是具有特定技能和可用工时的供应商联系人。"
@@ -1492,6 +1504,9 @@ msgstr "租赁协议上的价格，客户可以按此购买该件设备。该价
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "一份标价的销售报价单；草稿 → 已发送 → 已订购，或结束为丢单、已过期或已取消。"
+
+msgid "A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step."
+msgstr ""
 
 msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
 msgstr ""
@@ -4169,8 +4184,8 @@ msgstr "处置时资产成本"
 msgid "Asset Cost on Disposal (default)"
 msgstr "处置时资产成本（默认）"
 
-msgid "Asset GL account for revenue earned but not yet invoiced, such as rent accrued for an arrears-billed rental period; cleared when the invoice posts."
-msgstr "资产总账科目，用于尚未开票的已实现收入，例如按后付制计算的租赁期间应计租金；发票过账时冲销。"
+msgid "Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts."
+msgstr ""
 
 msgid "Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it."
 msgstr "销售型租赁开始时确认的资产总账科目，记录付款和残值的现值；每笔租赁付款降低该账户。"
@@ -7175,8 +7190,8 @@ msgstr "成本中心"
 msgid "Cost Centers"
 msgstr "成本中心"
 
-msgid "Cost charged to Contract projects until it is billed"
-msgstr "在计费前计入合同项目的成本"
+msgid "Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned"
+msgstr ""
 
 msgid "Cost charged to Expense projects"
 msgstr "计入费用项目的成本"
@@ -7186,9 +7201,6 @@ msgstr "成本进入费池。基础是费池费率适用的对象。"
 
 msgid "Cost History"
 msgstr "成本历史记录"
-
-msgid "Cost Incurred"
-msgstr "发生的成本"
 
 msgid "Cost incurred is past the notice point."
 msgstr "发生的成本已超过通知点。"
@@ -12718,8 +12730,8 @@ msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上
 msgid "How a contract line bills: Fixed (its schedule), Time & Materials (hours × a bill rate, plus marked-up cost) or Cost Plus (cost × (1 + fee %))."
 msgstr "合同行如何计费：固定（其排程）、时间和材料（小时 × 计费费率，加上加价成本）或成本加成（成本 × (1 + 费用 %)）。"
 
-msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
-msgstr "合同行如何在其收入日期内获得收入：每日，每天金额相同；或均匀周期，每个日历月金额相同，部分月份按天数按比例分配。"
+msgid "How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion."
+msgstr ""
 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "合同或修订如何为经常性收入报告分类：新销售、现有、扩展、重新激活或缩减。Carbon 会建议分类，您可以更改。"
@@ -20019,6 +20031,9 @@ msgstr "项目变更请求"
 msgid "Project Change Requests"
 msgstr "项目变更请求"
 
+msgid "Project contract"
+msgstr ""
+
 msgid "Project Contract"
 msgstr ""
 
@@ -22066,6 +22081,9 @@ msgstr "本月之前的收入已在您之前的系统中确认。"
 msgid "Revenue Dates"
 msgstr "收入日期"
 
+msgid "Revenue earned before it is invoiced, for rentals and contracts"
+msgstr ""
+
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "已赚取但尚未开票的收入，例如单位已租赁天数的租金；识别运行会对其进行计提，相关期间的发票会将其结转。"
 
@@ -22107,9 +22125,6 @@ msgstr "收入确认运行"
 
 msgid "Revenue recognition runs"
 msgstr "收入确认处理"
-
-msgid "Revenue Recognized"
-msgstr "已确认的收入"
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "在销售型租赁开始时确认的收入"
@@ -23452,6 +23467,9 @@ msgstr "服务费"
 
 msgid "Service Charges (default)"
 msgstr "服务费 (默认)"
+
+msgid "Service contract"
+msgstr ""
 
 msgid "Service Contract"
 msgstr ""
@@ -26245,6 +26263,9 @@ msgstr "每月期间运行，过账租赁凭证：承租人租赁利息和使用
 msgid "The monthly periods you post into and close"
 msgstr "您过账和关闭的每月期间"
 
+msgid "The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it."
+msgstr ""
+
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "请求者怀疑的最可能的失败模式；技术人员在关闭时确认或替换此项，疑似与实际之间的差异会影响可靠性报告。"
 
@@ -28053,9 +28074,6 @@ msgstr "未分批工序"
 msgid "Unbilled"
 msgstr "未开票"
 
-msgid "Unbilled receivable for rent earned before it is invoiced"
-msgstr "租赁收入在开票前的未开票应收款"
-
 msgid "Unbilled:"
 msgstr "未开票："
 
@@ -29363,6 +29381,9 @@ msgstr "该维度从哪个来源获取其允许的值(自定义列表或现有�
 
 msgid "What the customer can buy each unit for at the end"
 msgstr "客户在最后可以购买每件的价格"
+
+msgid "What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit."
+msgstr ""
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "客户预付的款项、租赁税和发票到期时间。"

@@ -85,12 +85,12 @@ export default function ProjectBillingLines({
             </Th>
             {revenue && (
               <Th className="w-28 whitespace-nowrap text-right">
-                <Trans>Complete</Trans>
+                <Trans>Progress</Trans>
               </Th>
             )}
             {revenue && (
               <Th className="w-32 whitespace-nowrap text-right">
-                <Trans>Recognized</Trans>
+                <Trans>Revenue</Trans>
               </Th>
             )}
           </Tr>

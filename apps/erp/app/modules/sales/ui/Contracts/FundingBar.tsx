@@ -81,10 +81,10 @@ export default function FundingBar({
         <Figure label={t`Unbilled`} swatch="bg-blue-500">
           <ContractMoney value={unbilled} currencyCode={currencyCode} />
         </Figure>
-        <Figure label={t`Funded Amount`}>
+        <Figure label={t`Funded`}>
           <ContractMoney value={fundedAmount} currencyCode={currencyCode} />
         </Figure>
-        <Figure label={t`Cost Incurred`} swatch="bg-foreground/70">
+        <Figure label={t`Cost`} swatch="bg-foreground/70">
           <ContractMoney value={incurred} currencyCode={currencyCode} />
         </Figure>
         <Figure label={t`Funded Cost`}>

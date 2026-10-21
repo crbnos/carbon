@@ -76,6 +76,7 @@ export function ContractLineBillingFields({
           <BillingElement
             name="projectElementId"
             projectId={projectId}
+            termId="billing-element"
             helperText={t`Bills the work charged to this element and the elements below it`}
           />
           {billingMethod === "Cost Plus" ? (
@@ -98,6 +99,7 @@ export function ContractLineBillingFields({
       <Number
         name="fundedAmount"
         label={t`Funded Amount`}
+        termId="funded-amount"
         helperText={
           fundedByActions
             ? t`Sum of the funding actions`
@@ -117,7 +119,12 @@ export function ContractLineBillingFields({
         isReadOnly={fundedByActions}
         {...money}
       />
-      <Number name="ceilingAmount" label={t`Ceiling`} {...money} />
+      <Number
+        name="ceilingAmount"
+        label={t`Ceiling`}
+        termId="contract-ceiling"
+        {...money}
+      />
       <Number
         name="noticePercent"
         label={t`Notice At (%)`}

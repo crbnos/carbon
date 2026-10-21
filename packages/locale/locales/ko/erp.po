@@ -1148,6 +1148,12 @@ msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분할하려면 대신 Dissolve를 사용하세요."
 
+msgid "A billing method that bills every cost charged under the line's billing element, times (1 + fee %)."
+msgstr ""
+
+msgid "A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %."
+msgstr ""
+
 msgid "A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent."
 msgstr "차용은 반환 기한까지 한 프로젝트의 재고를 다른 프로젝트로 이동하며 대부자의 비용으로 처리됩니다. 반환은 이를 되돌리며 대부자가 차용한 비용을 돌려받습니다."
 
@@ -1201,6 +1207,12 @@ msgstr "계약 라인의 계약 라인 항목 번호: 0001과 같은 4자리 번
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D 세금 보고서에 대한 계약 설정입니다. 자금이 지원되는 계약에 따른 직접 프로젝트의 비용은 적격 연구 비용이 아닙니다. 기본값에서 비용 가산 또는 시간 및 자재 라인이 있는 계약은 자금이 지원되는 것으로 계산됩니다."
+
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
+msgstr ""
+
+msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "외주 인력은 특정 역량과 가용 시간을 가진 공급업체 담당자입니다."
@@ -1492,6 +1504,9 @@ msgstr "고객이 장비를 구매할 수 있는 임차료 계약상의 가격�
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "가격이 책정된 판매 견적으로 초안 → 전송됨 → 발주됨 또는 실주, 만료됨, 취소됨으로 끝납니다."
+
+msgid "A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step."
+msgstr ""
 
 msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
 msgstr ""
@@ -4169,8 +4184,8 @@ msgstr "처분 시 자산 원가"
 msgid "Asset Cost on Disposal (default)"
 msgstr "처분 시 자산 원가(기본값)"
 
-msgid "Asset GL account for revenue earned but not yet invoiced, such as rent accrued for an arrears-billed rental period; cleared when the invoice posts."
-msgstr "매출이 창출되었지만 아직 송장이 발행되지 않은 자산 계정과목(예: 후납 리스 기간에 발생한 임차료)로, 송장이 전기되면 해제됩니다."
+msgid "Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts."
+msgstr ""
 
 msgid "Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it."
 msgstr "판매형 리스 개시 시 인식되는 자산 계정과목으로, 지급액 및 잔존가의 현재가를 보유하며, 각 리스료 지급이 이를 감소시킵니다."
@@ -7175,8 +7190,8 @@ msgstr "원가 센터"
 msgid "Cost Centers"
 msgstr "원가 센터"
 
-msgid "Cost charged to Contract projects until it is billed"
-msgstr "청구될 때까지 계약 프로젝트에 청구된 원가"
+msgid "Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned"
+msgstr ""
 
 msgid "Cost charged to Expense projects"
 msgstr "비용 프로젝트에 청구된 원가"
@@ -7186,9 +7201,6 @@ msgstr "원가는 풀로 들어갑니다. 기준은 풀의 비율이 적용되�
 
 msgid "Cost History"
 msgstr "원가 이력"
-
-msgid "Cost Incurred"
-msgstr "발생 원가"
 
 msgid "Cost incurred is past the notice point."
 msgstr "발생 원가가 공지 시점을 초과했습니다."
@@ -12718,8 +12730,8 @@ msgstr "배치 가능한 공정이 그룹화된 작업을 실행하는 방식: �
 msgid "How a contract line bills: Fixed (its schedule), Time & Materials (hours × a bill rate, plus marked-up cost) or Cost Plus (cost × (1 + fee %))."
 msgstr "계약 라인이 청구하는 방식: 고정 (일정), 시간 & 자재 (시간 × 청구 요율, 인상된 원가 포함) 또는 원가 가산 (원가 × (1 + 수수료 %))."
 
-msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
-msgstr "계약 라인이 수익 인식 기간에 수익을 인식하는 방식: 매일, 매일 동일한 금액, 또는 균등 기간, 달력 월별 동일한 금액(부분 월은 일수로 배분)."
+msgid "How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion."
+msgstr ""
 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "계약 또는 수정안이 반복 수익 보고를 위해 어떻게 분류되는지: 신규 영업, 기존, 확대, 재활성화, 또는 축소. Carbon이 제안하며 변경할 수 있습니다."
@@ -20019,6 +20031,9 @@ msgstr "프로젝트 변경 요청"
 msgid "Project Change Requests"
 msgstr "프로젝트 변경 요청"
 
+msgid "Project contract"
+msgstr ""
+
 msgid "Project Contract"
 msgstr ""
 
@@ -22066,6 +22081,9 @@ msgstr "이번 달 이전의 매출은 이전 시스템에서 인식되었습니
 msgid "Revenue Dates"
 msgstr "매출 날짜"
 
+msgid "Revenue earned before it is invoiced, for rentals and contracts"
+msgstr ""
+
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "이미 임차된 단위의 임차료와 같이 실현되었지만 아직 송장 발행되지 않은 매출로, 수익 인식 실행이 이를 적립하고 해당 기간의 송장이 이를 결제합니다."
 
@@ -22107,9 +22125,6 @@ msgstr "매출 인식 실행"
 
 msgid "Revenue recognition runs"
 msgstr "매출 인식 실행"
-
-msgid "Revenue Recognized"
-msgstr "인식된 매출"
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "판매형 리스 개시 시 인식된 매출"
@@ -23452,6 +23467,9 @@ msgstr "서비스 요금"
 
 msgid "Service Charges (default)"
 msgstr "서비스 요금(기본값)"
+
+msgid "Service contract"
+msgstr ""
 
 msgid "Service Contract"
 msgstr ""
@@ -26245,6 +26263,9 @@ msgstr "리스 항목을 전기하는 월간 기간 실행: 리스이용자 리�
 msgid "The monthly periods you post into and close"
 msgstr "게시하고 종료하는 월별 기간"
 
+msgid "The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it."
+msgstr ""
+
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "요청자가 의심하는 가장 유력한 고장 모드입니다. 기술자는 마감 시 이를 확인하거나 다른 것으로 교체하며, 예상과 실제의 차이는 신뢰성 보고서에 반영됩니다."
 
@@ -28053,9 +28074,6 @@ msgstr "배치되지 않은 공정"
 msgid "Unbilled"
 msgstr "청구되지 않음"
 
-msgid "Unbilled receivable for rent earned before it is invoiced"
-msgstr "송장 발행 전 창출된 임차료에 대한 미청구 매출채권"
-
 msgid "Unbilled:"
 msgstr "미청구:"
 
@@ -29363,6 +29381,9 @@ msgstr "이 차원이 허용 값을 가져오는 소스입니다(사용자 정�
 
 msgid "What the customer can buy each unit for at the end"
 msgstr "고객이 종료 시 각 단위를 구입할 수 있는 가격"
+
+msgid "What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit."
+msgstr ""
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "고객이 선금으로 지불하는 금액, 렌트에 대한 세금, 그리고 송장이 만기인 시기입니다."

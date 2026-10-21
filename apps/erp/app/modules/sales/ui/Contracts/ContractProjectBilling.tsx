@@ -98,7 +98,7 @@ export default function ContractProjectBilling({
                   <Trans>Funded</Trans>
                 </Th>
                 <Th className="text-right">
-                  <Trans>Revenue Recognized</Trans>
+                  <Trans>Revenue</Trans>
                 </Th>
                 <Th className="min-w-32">
                   <Trans>Funding</Trans>

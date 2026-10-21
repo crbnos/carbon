@@ -172,7 +172,12 @@ const ProjectContractDetailsForm = ({
               label={t`Customer`}
               onChange={onCustomerChange}
             />
-            <ContractProject name="projectId" label={t`Project`} isRequired />
+            <ContractProject
+              name="projectId"
+              label={t`Project`}
+              termId="project-contract"
+              isRequired
+            />
             <InputControlled
               name="name"
               label={t`Name`}

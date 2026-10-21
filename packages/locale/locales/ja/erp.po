@@ -1148,6 +1148,12 @@ msgstr "4 桁の PIN は、作業者が作成されるときに生成されま�
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "バッチには少なくとも 1 つの工程が必要です。バッチ全体を分割するには、代わりに [分割] を使用してください。"
 
+msgid "A billing method that bills every cost charged under the line's billing element, times (1 + fee %)."
+msgstr ""
+
+msgid "A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %."
+msgstr ""
+
 msgid "A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent."
 msgstr "貸与は、返却期限まで1つのプロジェクトの在庫を別のプロジェクトに移動し、貸与元が原価を負担します。返却は在庫を返却し、貸与元は貸与した原価を返金されます。"
 
@@ -1201,6 +1207,12 @@ msgstr "契約明細のCLIN（契約明細番号）：0001などの4桁。プロ
 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D税レポートの契約設定。資金提供契約下のDirect プロジェクトの原価は適格研究費ではありません。デフォルトでは、Cost Plus または Time & Materials 明細を持つ契約は資金提供されたと見なされます。"
+
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
+msgstr ""
+
+msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
+msgstr ""
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "外部作業者は、特定のスキルと利用可能な時間を持つ仕入先の担当者です。"
@@ -1492,6 +1504,9 @@ msgstr "得意先がその資産を購入できる賃貸借契約上の価格で
 
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "価格付き販売見積。下書き→送信→発注済、または失注・期限切れ・キャンセル済で終了。"
+
+msgid "A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step."
+msgstr ""
 
 msgid "A project contract sets how this project bills: Time & Materials, Cost Plus or Fixed Price."
 msgstr ""
@@ -4169,8 +4184,8 @@ msgstr "資産除却時の原価"
 msgid "Asset Cost on Disposal (default)"
 msgstr "資産除却時の原価（デフォルト）"
 
-msgid "Asset GL account for revenue earned but not yet invoiced, such as rent accrued for an arrears-billed rental period; cleared when the invoice posts."
-msgstr "稼得されたが請求書発行されていない売上高のための資産勘定科目。例えば、後払い請求型の賃貸期間で発生した家賃など。請求書が転記済になると消去されます。"
+msgid "Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts."
+msgstr ""
 
 msgid "Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it."
 msgstr "売却型リース開始時に認識される資産勘定科目で、支払いと残存価値の現在価値を保有し、各賃貸料支払いにより減額されます。"
@@ -7175,8 +7190,8 @@ msgstr "原価センター"
 msgid "Cost Centers"
 msgstr "原価センター"
 
-msgid "Cost charged to Contract projects until it is billed"
-msgstr "請求されるまで契約プロジェクトに計上された原価"
+msgid "Cost charged to Contract projects. The revenue run moves it to cost of goods sold as revenue is earned"
+msgstr ""
 
 msgid "Cost charged to Expense projects"
 msgstr "費用プロジェクトに計上された原価"
@@ -7186,9 +7201,6 @@ msgstr "原価がプールに入ります。ベースはプールのレートが
 
 msgid "Cost History"
 msgstr "原価履歴"
-
-msgid "Cost Incurred"
-msgstr "発生原価"
 
 msgid "Cost incurred is past the notice point."
 msgstr "発生原価が通知ポイントを超えています。"
@@ -12718,8 +12730,8 @@ msgstr "バッチ処理可能な工法がグループ化されたworkをどの�
 msgid "How a contract line bills: Fixed (its schedule), Time & Materials (hours × a bill rate, plus marked-up cost) or Cost Plus (cost × (1 + fee %))."
 msgstr "契約明細がどのように請求されるか: 固定（スケジュール）、時間・材料（時間 × 請求レート、マークアップコストを加える）またはコストプラス（原価 × (1 + 手数料%)）。"
 
-msgid "How a contract line earns its revenue over its revenue dates: Daily, the same amount every day, or Even Period, the same amount every calendar month with partial months prorated by days."
-msgstr "契約明細が売上高日にわたって売上高を獲得する方法：毎日同じ金額、または均等期間で毎暦月同じ金額で、部分月は日数で按分されます。"
+msgid "How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion."
+msgstr ""
 
 msgid "How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it."
 msgstr "契約または修正が継続売上高レポート用にどのように分類されるか：新規販売、既存、拡張、再開始、または縮小。Carbonが提案し、変更できます。"
@@ -20019,6 +20031,9 @@ msgstr "プロジェクト変更要求"
 msgid "Project Change Requests"
 msgstr "プロジェクト変更要求"
 
+msgid "Project contract"
+msgstr ""
+
 msgid "Project Contract"
 msgstr ""
 
@@ -22066,6 +22081,9 @@ msgstr "この月より前の売上高は、以前のシステムで計上され
 msgid "Revenue Dates"
 msgstr "売上高日付"
 
+msgid "Revenue earned before it is invoiced, for rentals and contracts"
+msgstr ""
+
 msgid "Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it."
 msgstr "レンタル中の機器の日数分など、獲得済みだがまだ請求されていない売上高。認識実行により発生計上され、その期間の請求書で消去されます。"
 
@@ -22107,9 +22125,6 @@ msgstr "売上高認識実行"
 
 msgid "Revenue recognition runs"
 msgstr "売上高認識実行"
-
-msgid "Revenue Recognized"
-msgstr "売上高認識"
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "セールスタイプリースの開始時に認識された売上高"
@@ -23452,6 +23467,9 @@ msgstr "サービス料金"
 
 msgid "Service Charges (default)"
 msgstr "サービス料金 (既定)"
+
+msgid "Service contract"
+msgstr ""
 
 msgid "Service Contract"
 msgstr ""
@@ -26245,6 +26263,9 @@ msgstr "リース項目を転記する毎月の期間実行です。借主リー
 msgid "The monthly periods you post into and close"
 msgstr "転記およびクローズする月次期間"
 
+msgid "The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it."
+msgstr ""
+
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "リクエスターが疑う最も可能性の高い故障モード。技術者はクローズ時にこれを確認または置き換え、疑われたものと実際のものの違いが信頼性レポートに表示されます。"
 
@@ -28053,9 +28074,6 @@ msgstr "バッチ外工程"
 msgid "Unbilled"
 msgstr "未請求"
 
-msgid "Unbilled receivable for rent earned before it is invoiced"
-msgstr "請求済になる前に得られた賃料の売掛金"
-
 msgid "Unbilled:"
 msgstr "未請求:"
 
@@ -29363,6 +29381,9 @@ msgstr "このディメンションが許可された値を引き出すソース
 
 msgid "What the customer can buy each unit for at the end"
 msgstr "得意先が終了時に各個を購入できる価格"
+
+msgid "What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit."
+msgstr ""
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "得意先が前払いするもの、レンタル料に対する税、そして請求書が期限になるとき。"
