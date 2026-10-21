@@ -1,6 +1,6 @@
 # Workflow integration outputs, the data node, and form control
 
-> Status: draft
+> Status: implemented
 > Author: Aashu
 > Date: 2026-08-31
 
@@ -225,11 +225,14 @@ remains the way to reach them.
 
 ```ts
 outputs: {
-  ...toOutputTypes(action.outputSchema),   // e.g. { items: list<record>, status: number }
+  ...describeOutputs(action.outputSchema),  // e.g. { items: list<record>, status: number }
   count: t.number,      // number of items when the payload is a list; else 0/1
   result: t.string      // the raw JSON, unchanged — the escape hatch
 }
 ```
+
+As built, `describeOutputs` (`integrations/outputs.ts`) returns each output's type and its
+declared field. `toOutputTypes` and `toOutputPaths` do not exist.
 
 `count` exists because `compare` has no "is empty" operator on lists, so "did anything come
 back?" is otherwise inexpressible. `result` staying is what makes this **purely additive**:

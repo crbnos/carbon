@@ -1,7 +1,11 @@
+---
 paths:
   - "packages/jobs/src/workflows/integrations/**"
   - "packages/jobs/src/workflows/actions/integration.ts"
   - "packages/ee/src/integrations/connections.ts"
+  - "packages/ee/src/integrations/connect.ts"
+  - "packages/ee/src/integrations/piece-integration.ts"
+  - "packages/ee/src/integrations/pieces.ts"
   - "packages/ee/src/google-calendar/**"
   - "apps/erp/app/routes/api+/integrations.connections*"
   - "apps/erp/app/routes/api+/workflows.options.ts"
@@ -10,7 +14,8 @@ paths:
   - "apps/erp/app/modules/workflows/workflows.service.ts"
   - "apps/erp/app/modules/workflows/ui/Builder/fields/OptionsField.tsx"
   - "apps/erp/app/modules/workflows/ui/Builder/config/forms/IntegrationNodeForm.tsx"
-  - "packages/workflows/src/runtime/integration.ts"
+  - "packages/ee/src/workflows/runtime/integration.ts"
+---
 
 # Workflow Integrations (Activepieces pieces)
 
@@ -19,8 +24,12 @@ event" as an **integration** node, its own kind beside action and condition. The
 code is not ours: each vendor is one published
 [Activepieces](https://github.com/activepieces/activepieces) **piece** npm package.
 
-Spec: `.ai/specs/2026-08-27-workflow-integrations.md`. Research:
-`.ai/research/activepieces-integrations.md`. Catalog: `workflow-event-catalog.md`.
+Plan: `.ai/plans/2026-08-27-workflow-integrations.md`. Research:
+`.ai/research/activepieces-integration-findings.md` and `.ai/research/activepieces-decisions.md`.
+Specs of the later rounds: `.ai/specs/implemented/2026-08-31-workflow-integration-outputs.md`,
+`2026-09-01-slack-workflow-piece.md`, `2026-09-01-gmail-workflow-piece.md`,
+`2026-09-01-slack-single-source-of-truth.md`, `2026-09-01-connection-reconnect-prompts.md` and
+`2026-09-04-integration-datetime-inputs.md` (same folder). Catalog: `workflow-event-catalog.md`.
 Actions: `workflow-actions.md`.
 
 ## The split — the piece is a recipe, Carbon is the kitchen
@@ -68,17 +77,19 @@ Both validate them with the SAME input rules as an action — only how a step RU
 
 Ids are `integration.<piece>.<action>` —
 `integration.google-calendar.create_google_calendar_event` — built by `integrationStepId`
-in `@carbon/workflows`, the one place that shape is written. Nothing parses an id: the
+in `@carbon/ee/workflows` (`definition/catalog.ts`), the one place that shape is written. Nothing parses an id: the
 node holds `piece` and `action` separately, and `runIntegration` is handed the
 `{ name, action }` block off the catalog entry.
 
 Running one: `runtime/integration.ts` `integrationExecutor`, registered in
-`runtime/executors.ts` like every other kind, calls `ctx.services.runIntegration`, which
-`packages/jobs/src/workflows/actions/services.ts` implements over the existing
+`runtime/executors.ts` like every other kind, resolves its inputs with `resolveStepInputs`
+(`runtime/resolve.ts`, shared with `actionExecutor`) and calls `ctx.services.runIntegration`,
+which `packages/jobs/src/workflows/actions/services.ts` implements over the existing
 `actions/integration.ts`. A record in prose renders as a LINK only where the input's
 catalog `links` declaration says the vendor renders one — Slack mrkdwn `<url|label>`,
 Gmail `<a href>` gated on `body_type = html` — via `renderTemplate`'s per-dialect
-renderers in `runtime/resolve.ts`. Everywhere else a record stays its plain name, and the
+renderers (`LINK_RENDERERS`) in `runtime/resolve.ts`; `linkState` (`definition/links.ts`)
+is the one verdict, for the run and the builder hint alike. Everywhere else a record stays its plain name, and the
 builder says so with a muted one-liner under the field (`definition/notices.ts`
 `fieldNotices` → the store's `notices` → `Field`'s `hint`; copy in `noticeCopy.ts`).
 
@@ -96,8 +107,8 @@ instead of the step picker and inputs. Every step of an app shares one connectio
 the FIRST step of the app answers for it — which is what lets the question be asked before a
 step has been picked. The provider is read off that input rather than named in the builder,
 so this stays a fetched list like any other. `INTEGRATION_CONNECTION_INPUT` is declared in
-`@carbon/workflows` (`definition/catalog.ts`) because both sides need it; `integrations/options.ts`
-re-exports it as `CONNECTION_INPUT`.
+`@carbon/ee/workflows` (`definition/catalog.ts`) because both sides need it; `integrations/options.ts`
+re-exports it as `CONNECTION_INPUT` (not part of the `@carbon/jobs/integrations` barrel).
 
 Both scripts are `async function main()` wrappers rather than top-level `await`: `tsx`
 transpiles them to CJS, which rejects it, and reading a piece's actions needs a dynamic
@@ -124,7 +135,11 @@ Anything else (`OBJECT`, `JSON`, `FILE`, `DYNAMIC`, …) throws `UnmappablePrope
 naming the piece, action and property. That **fails the generator**, which writes no files.
 A half-described action must never reach a customer's canvas.
 
-`toPropsValue` is the inverse at run time. An absent optional input is **omitted**, not sent
+`toPropsValue` is the inverse at run time: ONE pass over the piece's own props, so a prop
+the action no longer declares is never sent. Per prop, `visibilityOf` gives the pin (a hidden
+prop's value, or a shown prop's allowlist `value`). An omitted prop sends its pin and nothing
+else; otherwise a node value wins and the pin fills in only where the node supplied nothing
+(an emptied multi-select counts as nothing). An absent optional input is **omitted**, not sent
 as `null` — pieces branch on `undefined`.
 
 ## Connections — a new table, not `companyIntegration`
@@ -133,35 +148,51 @@ as `null` — pieces branch on `undefined`.
 company. A company may connect several Google accounts, so integration connections get
 their own table.
 
-`integrationConnection` (`20261020120101_workflow-integration-connections.sql`) —
+`integrationConnection` (`20261021123101_workflow-integration-connections.sql`) —
 `id('icn')`, `companyId`, `pieceName`, `name`, `authType`, `accountLabel`, `metadata`,
 `secretRef`, `expiresAt`, `refreshingAt`, `status`, `lastError` + audit columns. Unique on
 `(companyId, pieceName, name)`. RLS is `settings_view` to read and NO API-role writes
-(`20261021060226`): a user-written row could claim another company's Slack `team_id` or
+(`20261021123104`): a user-written row could claim another company's Slack `team_id` or
 point `secretRef` anywhere. Every write — create, rename, disconnect, revoke — goes
-through the service role after the route's `requirePermissions`, scoped by `companyId`.
+through the service role, scoped by `companyId`. Rename and Disconnect are the service
+functions `renameIntegrationConnection` / `disconnectIntegrationConnection`
+(`settings.server.ts`, `update: settings`, not published); each reads the row by
+`ctx.company.id` first, and Disconnect takes the piece from it to drop that card's health
+cache.
 `get_connection_secret` reads the vault by name (`connection:<companyId>:<id>`), never by
-`secretRef` (`20261020120103`).
+`secretRef` (`20261021123103`).
 
 **The existing vault RPCs could not be reused** — `upsert_integration_secret` and friends
 are hard-wired to `companyIntegration` and the `'integration:'` name prefix. The migration
 adds three parallel `*_connection_secret` RPCs with a `'connection:'` prefix, plus a delete
-trigger (vault does not cascade). All three are `service_role` only.
+trigger (vault does not cascade). `revoke_connections` (`20261021123105`) drops the
+secrets and marks the rows Revoked in one statement. All four are `service_role` only.
 
 `packages/ee/src/integrations/connections.ts` is the service. **Tokens live in the vault and
-never in `metadata`** — `connections.test.ts` asserts that directly.
+never in `metadata`** — `connectionMetadataFrom` copies only the allowlist row's listed
+paths, and `integrations/oauth.test.ts` (jobs) asserts no token reaches it.
 
-`disconnectConnection` drops the token and sets `status = 'Revoked'` but **keeps the row**:
+`disconnectConnection(serviceRole, companyId, pieceName, connectionId, updatedBy)` (one
+connection) and `revokeConnectionsForPiece` (every non-Revoked one of a piece) both call
+`revoke_connections`, so the token and the status change together. Both **keep the row**:
 a saved workflow node references the id, and a dangling id produces a worse error than a
 clear "reconnect this".
 
-A consent that lands on an existing row must be the SAME account. Reconnect signs the
-row's id into the OAuth state; Add account and Install name the row by its unique name.
+A consent that lands on an existing row must be the SAME account. Reconnect carries the
+row's id in the OAuth state; Add account and Install name the row by its unique name.
 `createConnection` compares the stored and the new identity (Slack's `team_id`, else the
 `accountLabel`) and refuses a different one — `ConnectionAccountMismatchError` for
 Reconnect, `ConnectionNameTakenError` for a name. Without that check, every saved
 workflow on the row silently started acting as whoever signed in. When either side has
 no identity (the label read failed), the consent is accepted.
+
+A vendor workspace belongs to ONE company. Before it saves, `createConnection` reads every
+company's rows of that piece with the same `metadata.team_id` (`readConnectionsByTeamId`, the
+one cross-company read) and refuses with `ConnectionWorkspaceTakenError` when a usable one
+belongs to another company; the callback answers the `workspace-taken` code. An inbound Slack
+event names only its workspace, so a shared one could not be routed:
+`getSlackWorkspaceByTeamId` throws `AmbiguousSlackWorkspaceError` rather than pick. No unique
+index spans companies, so the check is not race-proof.
 
 ### Scope drift — "Reconnect needed"
 
@@ -195,7 +226,7 @@ classes as *restricted*: an app holding them must pass an annual third-party CAS
 assessment before non-test users can consent. So the row omits `in_reply_to` (needs
 `messages.list`), pins `draft` off (needs `drafts.create`) and omits `attachments` (file
 objects — no Carbon input type yet). Widening to read/reply is a compliance decision first.
-Spec: `.ai/specs/2026-09-01-gmail-workflow-piece.md`.
+Spec: `.ai/specs/implemented/2026-09-01-gmail-workflow-piece.md`.
 
 ### The refresh claim
 
@@ -209,9 +240,13 @@ so the stored one is carried forward rather than overwritten with `undefined`.
 ## Who reads the token
 
 The vault RPCs are `service_role` only, so a user client cannot decrypt a token at all.
-`runIntegrationAction` reads BOTH the connection row and its token with
-`getCarbonServiceRole()`, scoped by the run's own `companyId`, and refuses a row whose
-`pieceName` differs from the step's piece.
+`resolvePieceAuth(serviceRole, companyId, pieceName, connectionId)` (`integrations/piece-auth.ts`)
+is the ONE copy of "read the row, check it is this piece's, check its scopes, refresh it",
+shared by `runIntegrationAction` and the builder's property options (`workflows.service.ts`).
+It returns `{ ok: true, accessToken }` or a `reason` each caller words: `no-connection` (another
+company's or another piece's row), `missing-scopes`, `refreshing`, `reconnect`,
+`misconfigured` (the OAuth app, not the account) or `failed`. Both callers pass
+`getCarbonServiceRole()` and a `companyId` from the run or the request.
 
 Do not move the row read to the owner's client. The row's RLS asks for `settings_view`,
 but the builder lists connections with the service role to anyone who can edit workflows
@@ -220,8 +255,10 @@ allowed to pick, so every run failed with "This step needs a connection." The te
 guarantee is the `companyId` filter: it comes from the run row, never from the definition.
 
 Outside a workflow step, a vendor whose tokens never expire (Slack bot tokens) is read with
-`readConnectionAccessToken(serviceRole, companyId, connectionId)`. It refuses a non-Active
-connection and one whose `expiresAt` is inside the refresh window — a refreshable vendor must
+`readConnectionAccessToken(serviceRole, connection)`, which takes the row the caller already
+read (`id`, `companyId`, `status`, `expiresAt`), so its guard judges exactly the connection the
+caller picked. It refuses a non-usable connection and one whose `expiresAt` is inside the
+refresh window — a refreshable vendor must
 go through `resolveConnectionAuth`, which owns the refresh claim.
 
 ## OAuth round trip
@@ -236,12 +273,20 @@ go through `resolveConnectionAuth`, which owns the refresh claim.
   failure redirects to the integrations page with an error **code** (the `connection` key in
   `integration-errors.ts`), never JSON and never the vendor's own message.
 
-**The `state` is HMAC-signed and verified** (`signConnectionState` / `verifyConnectionState` in `settings.service.ts`, keyed on
-`SESSION_SECRET`, 10-minute lifetime), and the callback additionally re-checks its
-`companyId` against the session. That signature is what stops a token being planted into
-another company's connection — it is not decoration, and must never be reduced to a bare
-query parameter. Malformed callbacks log parameter **names only**: `code` is a live
-credential.
+**The `state` is the cookie-bound one every OAuth integration uses**
+(`@carbon/auth/oauth-state.server`). The connect route calls `issueOAuthState` with the
+piece name as the integration id, plus the account `name` and, for Reconnect, the
+`connectionId` (`OAuthStateExtras`), and returns its Set-Cookie on the `{ url }` response
+(`startIntegrationConnect` fetches it same-origin, so the browser keeps the cookie). One
+redirect URI serves every piece, so the callback cannot know the piece before it reads the
+state: `consumeOAuthStateByValue` finds the pending entry holding that value, checks its
+user, company and expiry against the session, and removes it, leaving other integrations'
+entries alone. The piece, name and connection id come only from a valid entry, and every
+reply carries the rewritten cookie. That binding is what stops a token being planted into
+another company's connection — it must never be reduced to a bare query parameter. One
+pending entry per piece: a second connect for the same account reuses a still-fresh state,
+and a connect for another account (other extras) replaces it.
+Malformed callbacks log parameter **names only**: `code` is a live credential.
 
 ## The host shim
 
@@ -252,17 +297,19 @@ must fail loudly in development, not misbehave in production.
 
 ## Where piece code may live
 
-`registry.ts` is the ONLY module that imports a piece package, and everything else reaches
-it through the `@carbon/jobs/integrations` subpath, which is **server-only**. Pieces bundle
-Node vendor SDKs, and `packages/workflows` compiles for the browser at ES2019 — it must
-never see piece code. `integration.ts` imports `@carbon/ee/integrations/connections`, the
+`registry.ts` is the ONLY module that imports a piece package. Code outside `@carbon/jobs`
+reaches it through the `@carbon/jobs/integrations` subpath, which is **server-only** (the
+catalog scripts import `integrations/catalog.ts` and `allowlist.ts` by path). Pieces bundle
+Node vendor SDKs, and `packages/ee/src/workflows` is bundled for the browser — it must
+never see piece code. `piece-auth.ts` imports `@carbon/ee/integrations/connections`, the
 deep subpath, because the `@carbon/ee` root barrel pulls in integration config files whose
-`msg` macro is untransformed outside a Vite build.
+`msg` macro is untransformed outside a Vite build (the root barrel no longer re-exports the
+connections service at all).
 
 ## Fetched choices are a GENERIC catalog feature, not an integration one
 
 An input whose values are only knowable at edit time carries an `OptionsSource`
-(`packages/workflows/src/definition/catalog.ts`) in place of `choices`:
+(`packages/ee/src/workflows/definition/catalog.ts`) in place of `choices`:
 
 ```ts
 options?: { provider: string; params?: Record<string, string>; dependsOn?: readonly string[] }
@@ -300,16 +347,19 @@ names an input the action does not have.
 
 ## The settings UI is the ordinary integration card
 
-A piece is a NORMAL integration: `packages/ee/src/google-calendar/config.tsx` is an ordinary
-`defineIntegration`, in the ordinary `integrations` array, rendering the ordinary
-`IntegrationCard` in the ordinary grid. There is no separate panel. Its `id` is deliberately
-the SAME string as the piece name, so nothing has to map between the two.
+A piece is a NORMAL integration: `packages/ee/src/google-calendar/config.tsx` calls
+`definePieceIntegration(piece, card)` (`integrations/piece-integration.ts`), an ordinary
+`defineIntegration` in the ordinary `integrations` array, rendering the ordinary
+`IntegrationCard` in the ordinary grid. There is no separate panel. The helper sets the `id`
+to the piece name (so nothing has to map between the two), the logo, no settings and an
+`onClientInstall` that calls `startIntegrationConnect`; the config supplies only the name,
+category, `active`, and the two descriptions.
 
 - `active: !!GOOGLE_CLIENT_ID` — an unconfigured server shows "Coming soon", the same
   as any other integration missing its credentials. (`GOOGLE_CLIENT_ID` is therefore in
   `getBrowserEnv()`; it is a public client id, never the secret.)
-- `settings: []` and `schema: z.object({})`, so the drawer shows no settings form and no
-  Submit. Install runs `onClientInstall` → the connect route → the consent popup, exactly
+- `settings: []` and `schema: z.object({})` (set by `definePieceIntegration`), so the drawer
+  shows no settings form and no Submit. Install runs `onClientInstall` → the connect route → the consent popup, exactly
   like Onshape and Slack.
 - The callback calls **`markIntegrationInstalled`**, which inserts the `companyIntegration`
   row if absent or re-activates it, and **never overwrites metadata**. That row is what
@@ -317,7 +367,8 @@ the SAME string as the piece name, so nothing has to map between the two.
   already-connected account.
 - **Slack's card IS the piece card.** The Carbon Assistant (slash commands, issue threads,
   notification fan-out) is a *consumer* of the company's Slack connection: `getSlackWorkspace`
-  returns the OLDEST Active `slack` connection (token from the vault, `team_id` /
+  returns the OLDEST usable `slack` connection that carries a webhook channel, else the
+  oldest usable one (token from the vault, `team_id` /
   `channel_id` / `bot_user_id` from its metadata) and `getSlackWorkspaceByTeamId` matches an
   inbound slash command to its workspace. One consent — the allowlist row's `scope` is the
   union of Assistant and workflow scopes — installs both. `companyIntegration.slack` holds no
@@ -325,7 +376,7 @@ the SAME string as the piece name, so nothing has to map between the two.
   `SLACK_STATE_SECRET` are gone. `SLACK_OAUTH_REDIRECT_URL` keeps its name and may keep its
   deployed value: `api+/integrations.slack.oauth.ts` is now a 302 forwarder onto the
   connections callback, so no environment or Slack-app redirect change is needed to ship. Migration
-  `20261020120102_slack-connections-single-source.sql` backfilled existing installs. The
+  `20261021123102_slack-connections-single-source.sql` backfilled existing installs. The
   builder's "Connect …" link deep-links to `?tab=connections`.
 - `ui/Integrations/ConnectionsTab.tsx` is an `IntegrationFormTab` ("Accounts") on that card,
   listing the connected accounts with rename, Disconnect and Add account. It is the ONE place
@@ -333,11 +384,15 @@ the SAME string as the piece name, so nothing has to map between the two.
   account it runs as.
 - Uninstall goes through the standard deactivate route, whose `onUninstall` hook calls the
   generic `revokeConnectionsForPiece` — otherwise the uninstall would leave live tokens the
-  customer can no longer see. There is deliberately no per-vendor hooks FILE: that behaviour
-  is identical for every piece, and a file per vendor is a file per vendor to forget.
+  customer can no longer see. `hooks.server.ts` builds that hook for every entry of
+  `ACTIVEPIECES_PIECES` (`pieceHooks`), so a new piece needs no hooks entry and no hooks
+  FILE: the behaviour is identical for every piece.
 - Both Install (the card) and Add account (the drawer) go through
-  `integrations/connect.ts` `startIntegrationConnect` / `openConsentPopup`, so the two
-  entry points cannot drift into different popup sizes and different failure behaviour.
+  `integrations/connect.ts` `startIntegrationConnect`, so the two entry points cannot
+  drift into different failure behaviour. It opens the popup with `beginOAuthPopup`
+  (`oauth-popup.ts`) inside the click, before the fetch, and throws an
+  `IntegrationConnectError` carrying the connect route's `connection` code, which
+  the UI words through `integration-errors.ts`.
 
 ## A vendor is named in ONE place, on the workflow side
 
@@ -396,17 +451,16 @@ in this path.
    name, and the settings card reads it client-side to decide "Coming soon" — this is the one
    step the allowlist row cannot carry for you. (Skip when the card already exists and is
    already gated, as Slack's is.)
-5. Add an ordinary `defineIntegration` config whose `id` IS the piece name, with
-   `onClientInstall: () => startIntegrationConnect(...)`, and register it in the
-   `integrations` array. Its `hooks.server.ts` entry is one line —
-   `onUninstall: (companyId) => revokeConnectionsForPiece(getCarbonServiceRole(), "<piece>", companyId)`
-   — never a per-vendor hooks file; there is nothing vendor-specific in that behaviour.
-   **And a migration inserting the `integration` row** (`INSERT INTO "integration" ("id",
+5. Add the piece name to `ACTIVEPIECES_PIECES` (`packages/ee/src/integrations/pieces.ts`) —
+   the allowlist's `Record` then refuses to compile until both agree, and `hooks.server.ts`
+   gives the piece its uninstall hook from that list. Add a config that calls
+   `definePieceIntegration("<piece>", { name, category, active, shortDescription, description })`
+   and register it in the `integrations` array. **And a migration inserting the `integration` row** (`INSERT INTO "integration" ("id",
    "jsonschema") VALUES ('<piece>', '{"type": "object", "properties": {}}'::json) ON CONFLICT DO
    NOTHING`): `companyIntegration.id` is an FK to `integration.id`, so without it
    `markIntegrationInstalled` fails the callback with a bare PostgREST error after the token
    is already in the vault. The `INSERT INTO "integration"` at the end of
-   `20261020120101_workflow-integration-connections.sql` is the shape (one row per piece).
+   `20261021123101_workflow-integration-connections.sql` is the shape (one row per piece).
 6. Check every action you expose ships an `outputSchema` — the generator refuses one
    that does not, and coverage is all-or-nothing per piece. Then run the generator and read
    its refusals: each unmappable prop is a decision — `omit` it (optional, or required with
@@ -423,7 +477,8 @@ before step 1.
 
 ## Outputs come from the piece's own `outputSchema`
 
-`integrations/outputs.ts` maps an action's `outputSchema` to Carbon `ValueType`s:
+`integrations/outputs.ts` `describeOutputs` maps an action's `outputSchema` to Carbon
+`ValueType`s, and keeps each output's declared field beside its type:
 `listItems` → `list<record>`, `children` → a nested `record`, `format` → a primitive
 (`datetime`/`number`/`boolean`; everything else is text). A `dynamicKey` field is
 **omitted** — the vendor is declaring its keys cannot be enumerated, so naming one
@@ -444,8 +499,11 @@ is caught when a piece is allowlisted, never by a customer.
 `outputSchema` is **authoring-time metadata, not a contract**: upstream scopes it to
 presentation, `run()` returns `Promise<unknown | void>`, and nothing validates a
 response against it. So `integrations/project.ts` shapes the real response field by
-field and yields `null` for anything absent or mistyped — it never throws, because a
-vendor disagreeing with its own schema must not fail a step that really did call it.
+field: `readField` reads each declared field from its own path (`value`, else `key`) at
+every depth, inside `children` and `listItems` too, and `fromJson` (`@carbon/ee/workflows`,
+`runtime/values.ts`) coerces it against the declared type, strictly by `typeof`, so
+anything absent or mistyped is `null`. It never throws, because a vendor disagreeing with
+its own schema must not fail a step that really did call it.
 
 ## The form shows a curated subset
 
@@ -467,8 +525,8 @@ pin — otherwise the Advanced section would be a lie.
 email is a one-line box.
 
 `links` is the fourth: this prose reaches the vendor in a dialect that renders links
-(`format: "slack" | "html"`, optionally gated `when` a sibling prop holds a value — Gmail
-links only an html body). It asserts how THIS vendor renders text, so it is reviewed and
+(`format: "slack" | "html"`, optionally gated by `when: { input, equals }` on a sibling
+input — Gmail links only an html body). It asserts how THIS vendor renders text, so it is reviewed and
 pinned like `omit`. Carbon's own Notify declares the same thing as `links: { format:
 "markdown" }` in `catalog/actions.ts`; the old `linkify` flag is gone.
 

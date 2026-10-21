@@ -197,6 +197,6 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
 - Slack NC notifications post to the channel picked at Slack install, read off the company's
   Slack connection (`getSlackWorkspace().channelId`, `integrationConnection` metadata) — the old
   `nonconformance_channel_id` / `nonconformance_notifications_enabled` jsonschema fields were
-  dropped in `20261020120102` (they had no readers).
+  dropped in `20261021123102` (they had no readers).
 - Filename `20251114222648_supplier_id.sql` is non-conformance work (supplier links +
   disposition enum), not a generic "supplier" change.

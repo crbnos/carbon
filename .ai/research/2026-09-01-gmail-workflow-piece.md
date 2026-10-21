@@ -1,6 +1,6 @@
 # Gmail as a workflow piece — research
 
-> Date: 2026-09-01 · Author: Aashu · Feeds `.ai/specs/2026-09-01-gmail-workflow-piece.md`
+> Date: 2026-09-01 · Author: Aashu · Feeds `.ai/specs/implemented/2026-09-01-gmail-workflow-piece.md`
 
 ## The package: `@activepieces/piece-gmail@0.13.0` (researched on 0.14.0; pinned 0.13.0 — see below)
 

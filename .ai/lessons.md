@@ -1359,7 +1359,7 @@ any new `memo` writer.
 reading `companyIntegration.metadata.access_token` directly (`send-slack.ts`, `integrations.slack.interactive.ts`,
 `notify.ts`). They did not fail — they got `undefined`, fell back or returned `[]`, and Slack DMs /
 slash commands silently stopped for weeks. When Slack later moved to `integrationConnection`
-(`20261020120102`), the same class of miss happened again with `notify.ts` because the consumer map
+(`20261021123102`), the same class of miss happened again with `notify.ts` because the consumer map
 was built from module exports, not from a grep of the column.
 
 **Rule:** A credential has exactly one reader (`resolveIntegrationSecrets` for `companyIntegration`,
@@ -4074,3 +4074,23 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** When a posting must ignore a line, filter it where every per-line collection is built, not only in the loop that writes the ledger. List every map or array derived from the lines and check each. Pin the skipped line's absence in a test: assert the side effects did not happen, not only that the ledger row is missing.
 
 **Applies to:** `postReceipt` / `postShipment` and every posting in `inventory.service.ts` that builds update maps before its write loop.
+
+## Open an OAuth popup in the click, before you fetch its URL
+
+**Context:** Install and Add account on a workflow piece card (`startIntegrationConnect`, `packages/ee/src/integrations/connect.ts`) fetch the consent URL from the connect route, then open it in a popup.
+
+**Problem:** The old code awaited the fetch and then called `window.open`. The await can outlive the click's transient user activation, so Chrome blocked the popup without an error, and Install looked like it did nothing.
+
+**Rule:** Call `beginOAuthPopup()` (`packages/ee/src/oauth-popup.ts`) synchronously in the click handler, before any await. Then fetch the URL and call `navigate(url)` on the handle. If the fetch fails, call `close()`. If the browser blocked the popup anyway, `navigate` falls back to the current window.
+
+**Applies to:** every consent or payment flow that opens a window after a request: the piece cards, the Onshape connect, any new OAuth integration.
+
+## One OAuth state mechanism: the cookie helper, consumed by value for a shared callback
+
+**Context:** The workflow pieces (Slack, Gmail, Google Calendar) signed their own OAuth state with an HMAC helper in `settings.service.ts`, beside the cookie-bound state that every other integration uses (`@carbon/auth/oauth-state.server`).
+
+**Problem:** Two mechanisms meant two sets of binding, expiry and single-use rules to keep correct, and a review had to check both. The pieces share one callback route, so that route cannot know which integration's entry to consume before it reads the state.
+
+**Rule:** Issue every OAuth state with `issueOAuthState`. Carry extra facts (`mode`, `name`, `connectionId`) as `OAuthStateExtras`, never in the query string. Pass the request, so the other integrations' pending entries survive the Set-Cookie. A callback that serves several integrations calls `consumeOAuthStateByValue`; it finds the entry that holds the value and takes the integration id from that entry. Do not add a second signer.
+
+**Applies to:** `api+/integrations.connections.$piece.connect.ts`, `api+/integrations.connections.callback.ts`, `api+/integrations.$id.connect.ts`, and any new OAuth connect or callback route.

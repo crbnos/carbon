@@ -1,6 +1,6 @@
 # Run log — Slack single source of truth
 
-Spec: `.ai/specs/2026-09-01-slack-single-source-of-truth.md` · Plan: `.ai/plans/2026-09-01-slack-single-source-of-truth.md`
+Spec: `.ai/specs/implemented/2026-09-01-slack-single-source-of-truth.md` · Plan: `.ai/plans/2026-09-01-slack-single-source-of-truth.md`
 Branch: `feat/active-pieces-integration` · Executed 2026-09-01 · Committed in `94cd181cd7` together with the piece (v1) and reconnect-prompt work.
 
 ## DB before / after (dev, company `HJzQ4BiYavLgTUi63ghSfJ`)

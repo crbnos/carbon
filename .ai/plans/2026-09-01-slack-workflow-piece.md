@@ -1,6 +1,6 @@
 # Slack as a workflow integration piece — implementation plan
 
-**Spec / source:** `.ai/specs/2026-09-01-slack-workflow-piece.md`
+**Spec / source:** `.ai/specs/implemented/2026-09-01-slack-workflow-piece.md`
 **Research:** `.ai/research/2026-09-01-slack-workflow-piece.md`
 **Rule:** `.claude/rules/workflow-integrations.md` ("Adding a piece" checklist; this plan deviates
 only where the spec says so: same card as the Assistant, allowlist `oauth.authUrl`/`scope`
@@ -600,7 +600,7 @@ pnpm --filter @carbon/workflows test
 **Depends on:** 11
 **Files:**
 - Modify: `.claude/rules/workflow-integrations.md`
-- Modify: `.ai/specs/2026-09-01-slack-workflow-piece.md` — status line → `Status: implemented`; changelog entry
+- Modify: `.ai/specs/implemented/2026-09-01-slack-workflow-piece.md` — status line → `Status: implemented`; changelog entry
 
 **Steps:**
 1. Rule doc edits (short, in the existing voice):

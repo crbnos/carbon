@@ -1,6 +1,6 @@
 # Gmail as a workflow integration piece — implementation plan
 
-**Spec / source:** `.ai/specs/2026-09-01-gmail-workflow-piece.md`
+**Spec / source:** `.ai/specs/implemented/2026-09-01-gmail-workflow-piece.md`
 **Research:** `.ai/research/2026-09-01-gmail-workflow-piece.md`
 **Rule:** `.claude/rules/workflow-integrations.md` ("Adding a piece" checklist — followed verbatim; nothing generic changes)
 **Branch:** `feat/active-pieces-integration`
@@ -405,7 +405,7 @@ git diff --stat -- packages/locale | tail -1
 - Modify: `packages/ee/AGENTS.md` — the "Workflow integration connections" bullet: extend the config list "(`google-calendar/config.tsx`, `slack/config.tsx`; `id` === the piece name)" → "(`google-calendar/config.tsx`, `gmail/config.tsx`, `slack/config.tsx`; `id` === the piece name)"
 - Modify: `packages/jobs/AGENTS.md` — wherever the allowlist is described, mention `gmail` (send-only) beside the other two; if the file does not describe the allowlist, leave it untouched
 - Modify: `.env.example` — line 95 "(Google Calendar)." → "(Google Calendar, Gmail)."
-- Modify: `.ai/specs/2026-09-01-gmail-workflow-piece.md` — `Status: draft — awaiting review` → `Status: implemented (2026-09-01)`; append a changelog line
+- Modify: `.ai/specs/implemented/2026-09-01-gmail-workflow-piece.md` — `Status: draft — awaiting review` → `Status: implemented (2026-09-01)`; append a changelog line
 
 **Steps:**
 1. Rule paragraph to add at the end of "### Scope drift — "Reconnect needed"":
@@ -427,7 +427,7 @@ grep -n "gmail/config.tsx" packages/ee/AGENTS.md
 # Expected: 1 match
 grep -n "Google Calendar, Gmail" .env.example
 # Expected: 1 match
-grep -n "Status: implemented" .ai/specs/2026-09-01-gmail-workflow-piece.md
+grep -n "Status: implemented" .ai/specs/implemented/2026-09-01-gmail-workflow-piece.md
 # Expected: 1 match
 ```
 

@@ -8,7 +8,7 @@ A <Term>workflow</Term> can take steps in outside apps: put an event on a Google
 
 ## Connecting an account
 
-Install the app's card and a consent popup opens with the vendor. Approve it and Carbon stores the connection; there are no keys to paste and no settings form. The card's **"Accounts"** tab lists every connected account, where you can rename one, use **"Disconnect"**, or **"Add account"** to connect another.
+Install the app's card and a consent popup opens with the vendor. Approve it and Carbon stores the connection; there are no keys to paste and no settings form. The card's **"Accounts"** tab lists every connected account, where you can rename one, use **"Disconnect"**, or **"Add account"** to connect another. Uninstalling the card disconnects every account it connected.
 
 <Callout type="tip" title="Connect one account per identity that should act">
 You can connect several accounts to the same app — two Google accounts, say — and different workflow steps can act as different ones. An email sent by a workflow comes from the connected Google account itself, so "orders@" and "quality@" can each be a connection.
@@ -57,6 +57,8 @@ One Slack install serves two purposes: it puts the [Carbon Assistant](/docs/inte
 | **"Slack: Create Channel"** | Creates a channel, such as one per issue. |
 
 Records dropped into a message render as links back to Carbon. As with Google, you can connect more than one workspace and pick per step which one posts.
+
+A Slack workspace can be connected to one Carbon company only. If another company already has it connected, Carbon refuses with **"That workspace is connected to another company"**: disconnect it there first, or connect a different workspace.
 
 <Callout type="warn">
 Slack is hidden in controlled (ITAR) environments — when Carbon runs in a controlled deployment, the card doesn't appear at all.

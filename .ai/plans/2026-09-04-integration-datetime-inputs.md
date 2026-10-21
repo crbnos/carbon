@@ -1,6 +1,6 @@
 # Generic date + time inputs for integration steps — implementation plan
 
-**Spec / source:** `.ai/specs/2026-09-04-integration-datetime-inputs.md`
+**Spec / source:** `.ai/specs/implemented/2026-09-04-integration-datetime-inputs.md`
 **Research:** `.ai/research/datetime-input-plumbing.md`
 **Worktree:** `/Users/aashu/work/carbon/carbon-feat-active-pieces-integration`
 

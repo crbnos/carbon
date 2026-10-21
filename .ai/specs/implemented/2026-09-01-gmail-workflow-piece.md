@@ -5,7 +5,7 @@
 > Date: 2026-09-01
 > Research: `.ai/research/2026-09-01-gmail-workflow-piece.md`
 > Rule: `.claude/rules/workflow-integrations.md` ("Adding a piece" checklist)
-> Precedent: `.ai/specs/2026-09-01-slack-workflow-piece.md`, Google Calendar (`packages/ee/src/google-calendar/config.tsx`)
+> Precedent: `.ai/specs/implemented/2026-09-01-slack-workflow-piece.md`, Google Calendar (`packages/ee/src/google-calendar/config.tsx`)
 
 ## TLDR
 

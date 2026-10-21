@@ -52,7 +52,7 @@ Per-workspace Assistant settings; outbound multi-workspace routing beyond "oldes
 
 ## Acceptance Criteria (all met, see run log)
 
-Metadata pick returns the declared keys only; migration leaves one Active connection with a vault secret and a stripped card row, and is a no-op on re-run; `readConnectionAccessToken` refuses non-Active/expiring; `getSlackWorkspace` = oldest Active; consent `scope` = 16 unique, no `user_scope`; forwarder 302s `?code&state` to the callback; `install.ts` and `SLACK_STATE_SECRET` gone; `send-slack`, `notify`, `slack-document-sync`, `interactive` all resolve the per-company token through `getSlackWorkspace`; package tests and typechecks pass.
+Metadata pick returns the declared keys only; migration leaves one Active connection with a vault secret and a stripped card row, and is a no-op on re-run; `readConnectionAccessToken` refuses non-Active/expiring; `getSlackWorkspace` = oldest Active (as built, the oldest one with a webhook channel comes first); consent `scope` = 16 unique, no `user_scope`; forwarder 302s `?code&state` to the callback; `install.ts` and `SLACK_STATE_SECRET` gone; `send-slack`, `notify`, `slack-document-sync`, `interactive` all resolve the per-company token through `getSlackWorkspace`; package tests and typechecks pass.
 
 ## Open Questions
 

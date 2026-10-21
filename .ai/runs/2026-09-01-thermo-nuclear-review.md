@@ -139,7 +139,7 @@ allowlisted pieces, and cache `"0"` with a short TTL (the callback already inval
 ## MAJOR 10 — docs contradict the code
 
 - `.claude/rules/workflow-integrations.md:327` says "the ten our four actions need"; the row has 16.
-- `.ai/specs/2026-09-01-slack-workflow-piece.md:59,92,172,217` and `.ai/plans/…workflow-piece.md:23`
+- `.ai/specs/implemented/2026-09-01-slack-workflow-piece.md:59,92,172,217` and `.ai/plans/…workflow-piece.md:23`
   still name `SLACK_CONNECTIONS_REDIRECT_URL` while marked implemented.
 - `.claude/rules/issue-module.md:169` documents `nonconformance_channel_id` /
   `nonconformance_notifications_enabled` that the migration dropped.
@@ -234,7 +234,7 @@ row holds `team_id/channel_id/webhook url`; it no longer does.
 | `.claude/rules/workflow-integrations.md:327` | "ten" scopes | sixteen (10 Assistant + 6 workflow) |
 | `.claude/rules/issue-module.md:169` | `nonconformance_*` on the integration row | channel comes from the connection's `channel_id` via `getSlackWorkspace` |
 | `.claude/rules/workflow-actions.md:230` | Slack gated on the integration being active | a usable Slack connection |
-| `.ai/specs/2026-09-01-slack-workflow-piece.md:59,92,172,217`, `.ai/plans/…workflow-piece.md:23` | `SLACK_CONNECTIONS_REDIRECT_URL` | superseded note → `SLACK_OAUTH_REDIRECT_URL` + forwarder |
+| `.ai/specs/implemented/2026-09-01-slack-workflow-piece.md:59,92,172,217`, `.ai/plans/…workflow-piece.md:23` | `SLACK_CONNECTIONS_REDIRECT_URL` | superseded note → `SLACK_OAUTH_REDIRECT_URL` + forwarder |
 | `packages/ee/AGENTS.md:42` | piece pattern described as GCal-only | mention Slack; the Assistant consumes the connection |
 | `apps/erp/app/modules/settings/AGENTS.md:75` | helper list | add `markIntegrationInstalled` |
 | `.ai/specs/AGENTS.md:30` | three specs "implemented" but not in `implemented/` | ask, then move |

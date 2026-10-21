@@ -45,7 +45,7 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `./events` | `Events` type |
 | `./inngest` | Inngest client plus workflow dispatch/manual-run server seams |
 | `./backups` | Import-light backup catalog, scope, and compatibility helpers |
-| `./integrations` | **Server-only.** The integration-piece allowlist, registry, property mapping and `buildPieceActionDeclarations` (the catalog generator's fifth input). Piece packages bundle Node vendor SDKs — never import this from browser code. See `.claude/rules/workflow-integrations.md` |
+| `./integrations` | **Server-only.** What the ERP needs from the integration pieces: `allowlistEntry` (+ the `AllowlistEntry` type), the OAuth helpers (`resolveOAuthApp`, `buildConsentUrl`, `requiredScopesFor`, `accountLabelFromBody`, `connectionMetadataFrom`), the options provider ids (`CONNECTION_PROVIDER`, `PROPERTY_PROVIDER`), `resolvePieceAuth`, and `getPieceAction` / `getPieceOAuth2Auth`. The catalog scripts import `buildPieceActionDeclarations` (the generator's sixth `buildCatalog` input) from `src/workflows/integrations/catalog.ts` directly. Piece packages bundle Node vendor SDKs — never import this from browser code. See `.claude/rules/workflow-integrations.md` |
 
 ## Durable Entry Points
 

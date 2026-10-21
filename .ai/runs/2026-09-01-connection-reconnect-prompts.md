@@ -1,7 +1,7 @@
 # Run log — under-scoped connection reconnect prompts
 
 Plan: `.ai/plans/2026-09-01-connection-reconnect-prompts.md`
-Spec: `.ai/specs/2026-09-01-connection-reconnect-prompts.md`
+Spec: `.ai/specs/implemented/2026-09-01-connection-reconnect-prompts.md`
 Branch: `feat/active-pieces-integration` · Executed 2026-09-01 · **Nothing committed** (user commits). Stacks on today's uncommitted v1 + v2 Slack work.
 
 ## What landed

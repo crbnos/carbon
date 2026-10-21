@@ -148,16 +148,19 @@ per integration (keyed by `integrationId`, 1 h lifetime, a still-fresh one is re
 one signed HttpOnly cookie backed by `SESSION_SECRET`; pass the request so other
 integrations' pending states survive. `consumeOAuthState()` validates all fields and
 removes that integration's entry on every attempt (the cookie is destroyed once empty).
-The integrations page loader issues one for every integration with an `oauth` config
-(Ramp, Xero, QuickBooks, Jira — IntegrationCard puts it on the authorize URL), Onshape's
+The integrations page loader issues none (pinned by `integrations.oauth-state.test.ts`).
+An integration with an `oauth` config (Ramp, Xero, QuickBooks, Jira) starts at
+`api+/integrations.$id.connect.ts` (`startOAuthConnect` in `useIntegrationInstall.ts`
+navigates there): it issues the state with the chosen install `mode` as an extra and
+redirects to the authorize URL it builds server-side. Onshape's
 `api+/integrations.onshape.install.ts` issues its own (via `beginOnshapeAuthorization`,
 `@carbon/ee/onshape.server`), Onshape Government's is issued by the integration settings
 save — its OAuth client is the customer's private app, not an env var — and each callback
 consumes it.
-Slack (like every workflow piece) binds its state separately: `signConnectionState`
-(`~/modules/settings/settings.service`) HMAC-signs `{companyId,pieceName,name,connectionId?,userId}`
-with `SESSION_SECRET` (10 min lifetime) and `api+/integrations.connections.callback.ts`
-verifies it against the caller's company and user. Managed deployment propagates both Ramp OAuth
+Slack and every other workflow piece use the same cookie:
+`api+/integrations.connections.$piece.connect.ts` issues the state with the account
+`name` and an optional `connectionId` as extras, and `api+/integrations.connections.callback.ts`
+consumes it with `consumeOAuthStateByValue`, since one callback serves every piece. Managed deployment propagates both Ramp OAuth
 vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`

@@ -1,6 +1,6 @@
 # Workflow integration outputs, data node, and form control — implementation plan
 
-**Spec / source:** `.ai/specs/2026-08-31-workflow-integration-outputs.md`
+**Spec / source:** `.ai/specs/implemented/2026-08-31-workflow-integration-outputs.md`
 **Research:** `.ai/research/activepieces-decisions.md`, `.ai/research/activepieces-integration-findings.md`
 **Branch:** current worktree branch (`carbon-feat-active-pieces-integration`)
 

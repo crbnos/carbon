@@ -1,6 +1,6 @@
 # Under-scoped connection reconnect prompts — implementation plan
 
-**Spec / source:** `.ai/specs/2026-09-01-connection-reconnect-prompts.md`
+**Spec / source:** `.ai/specs/implemented/2026-09-01-connection-reconnect-prompts.md`
 **Branch:** `feat/active-pieces-integration` · never `git commit` (user's rule)
 **Filters:** `@carbon/ee`, `@carbon/jobs`, `erp`, `@carbon/workflows` (scope every typecheck)
 

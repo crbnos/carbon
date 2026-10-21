@@ -132,8 +132,9 @@ slack: {
   runs, so an unmappable type is only ever an error for a prop that would be rendered.
 - `assertHiddenPropIsSatisfied` already fails a required prop with no value; it applies to
   omitted props too (`sendAsBot` is required, hence `value: true`).
-- `pinnedValues` returns omitted-with-value pins exactly as it returns hidden ones, so
-  `toPropsValue` sends `sendAsBot: true` at run time and never stores it on a node.
+- An omitted prop with a `value` is a pin, like a hidden one. `toPropsValue` sends
+  `sendAsBot: true` at run time and never stores it on a node. (As built, `toPropsValue`
+  reads the pins from `visibilityOf` in one pass; `pinnedValues` does not exist.)
 - `toPropsValue` never sends a `MARKDOWN` prop (there is no input to read).
 
 ### 3. Consent URL (`integrations.connections.$piece.connect.ts`)
@@ -187,7 +188,7 @@ vault RPCs. `companyIntegration.slack` keeps its current jsonschema.
 ## API / Service Changes
 
 - `PIECE_ALLOWLIST`: new row; `AllowlistEntry.oauth.{authUrl,scope}`, `AllowlistPropOverride.omit`.
-- `visibilityOf` / `pinnedValues` / catalog prop loop: omit semantics, MARKDOWN auto-omit.
+- `visibilityOf` / catalog prop loop: omit semantics, MARKDOWN auto-omit.
 - Connect route: allowlist overrides win over the piece's `authUrl` / `scope`.
 - `settings.server.ts`: `markIntegrationInstalled` (new); callback uses it.
 - `connections.ts` `readTokenResponse`: includes `body.error` in the message when present.

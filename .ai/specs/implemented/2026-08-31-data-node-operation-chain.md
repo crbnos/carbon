@@ -1,6 +1,6 @@
 # Data node operation chain
 
-**Status:** Approved (pending user sign-off)
+**Status:** implemented
 **Date:** 2026-08-31
 **Research:** N/A — internal composition of an existing node. External precedent
 (Zapier's Formatter chains, n8n's item pipelines) confirms the pattern of piping

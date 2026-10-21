@@ -27,7 +27,7 @@ packages/ee/src/workflows/catalog/labels.generated.ts    COMMITTED  labels for e
 ```
 
 Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and **15
-operations**, plus **2 integration steps** in their own catalog — an integration is a
+operations**, plus **7 integration steps** in their own catalog — an integration is a
 distinct NODE KIND, not an action, so nothing on this path carries a piece. See
 `workflow-integrations.md`. Same commands as the event side — one generator writes all
 three `*.generated.ts` files:

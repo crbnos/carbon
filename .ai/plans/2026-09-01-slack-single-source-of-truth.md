@@ -1,6 +1,6 @@
 # Slack single source of truth — implementation plan (executed)
 
-**Spec:** `.ai/specs/2026-09-01-slack-single-source-of-truth.md` · **Run log:** `.ai/runs/2026-09-01-slack-single-source-of-truth.md`
+**Spec:** `.ai/specs/implemented/2026-09-01-slack-single-source-of-truth.md` · **Run log:** `.ai/runs/2026-09-01-slack-single-source-of-truth.md`
 **Branch:** `feat/active-pieces-integration`
 
 ## Progress

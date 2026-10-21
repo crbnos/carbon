@@ -1,7 +1,7 @@
 # Run log — Slack as a workflow integration piece (v1)
 
 Plan: `.ai/plans/2026-09-01-slack-workflow-piece.md`
-Spec: `.ai/specs/2026-09-01-slack-workflow-piece.md`
+Spec: `.ai/specs/implemented/2026-09-01-slack-workflow-piece.md`
 Branch: `feat/active-pieces-integration` · Executed 2026-09-01 · **Nothing committed** (user commits).
 Recreated after the file was removed from disk outside the session. The card/credential model of this
 run was superseded the same day by `2026-09-01-slack-single-source-of-truth.md`.

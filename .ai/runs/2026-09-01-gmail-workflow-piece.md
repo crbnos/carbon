@@ -1,6 +1,6 @@
 # Run log — Gmail as a workflow integration piece
 
-**Plan:** `.ai/plans/2026-09-01-gmail-workflow-piece.md` · **Spec:** `.ai/specs/2026-09-01-gmail-workflow-piece.md`
+**Plan:** `.ai/plans/2026-09-01-gmail-workflow-piece.md` · **Spec:** `.ai/specs/implemented/2026-09-01-gmail-workflow-piece.md`
 **Branch:** `feat/active-pieces-integration` · **Date:** 2026-09-01
 
 ## Deviations from plan
@@ -89,4 +89,4 @@ visibility `pinnedValues` gmail ×1, catalog `buildPieceActionDeclarations (gmai
 Modified: `packages/jobs/package.json`, `pnpm-lock.yaml`, `packages/jobs/src/workflows/integrations/{allowlist,registry.test,oauth.test,visibility.test,catalog.test}.ts`,
 `packages/ee/src/{index.ts,hooks.server.ts}`, `packages/workflows/src/catalog/{actions,labels}.generated.ts`,
 `packages/locale/locales/*/erp.po` (13), `.claude/rules/workflow-integrations.md`, `packages/ee/AGENTS.md`, `.env.example`.
-Created: `packages/ee/src/gmail/config.tsx`, `.ai/specs/2026-09-01-gmail-workflow-piece.md`, `.ai/plans/2026-09-01-gmail-workflow-piece.md`, `.ai/research/2026-09-01-gmail-workflow-piece.md`, this file.
+Created: `packages/ee/src/gmail/config.tsx`, `.ai/specs/implemented/2026-09-01-gmail-workflow-piece.md`, `.ai/plans/2026-09-01-gmail-workflow-piece.md`, `.ai/research/2026-09-01-gmail-workflow-piece.md`, this file.

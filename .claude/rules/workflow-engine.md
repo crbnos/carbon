@@ -200,10 +200,12 @@ shows a customer a green tick.
   same answer: the run proceeds against the shipped catalog alone. Step ids are therefore
   `"load"`, `"custom-fields"`, `"permissions"`, `` `node:${nodeId}` ``, `"finish"`.
 - **`ctx.linkFor`.** `contextFor` supplies an optional `(of, id) => string | null` that turns a
-  record into the existing `${ERP_URL}/api/link?...` URL. `renderTemplate` uses it ONLY for
-  inputs the catalog marks `linkify` (today: the notify action's `message`), wrapping an entity
-  part as `[name](url)`. A webhook body has no `linkify`, so it still renders a bare
-  name with no markdown. `packages/ee/src/workflows` constructs no URL — it calls the callback.
+  record into the existing `${ERP_URL}/api/link?...` URL. `resolveStepInputs` passes it to
+  `renderTemplate` ONLY for inputs whose catalog `links` declaration holds (`linkState`; today
+  the notify action's `message` as markdown, and integration inputs as Slack mrkdwn or html),
+  wrapping an entity part in that dialect's link. A webhook body declares no `links`, so it
+  still renders a bare name with no markup. `packages/ee/src/workflows` constructs no URL — it
+  calls the callback.
 - **How a record NAMES itself in prose.** `entityText` in `runtime/resolve.ts` reads the columns
   `CatalogEntity.display` lists, best first, and falls back to the raw id only when none of them
   is readable. `display` is REQUIRED on every registry entry and comes from the hand-written
