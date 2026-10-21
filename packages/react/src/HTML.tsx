@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Mention } from "@carbon/tiptap";
+import { textToTiptap } from "@carbon/utils";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import type { JSONContent } from "@tiptap/react";
@@ -15,14 +16,38 @@ import { cn } from "./utils/cn";
 
 const { sanitize } = pkg;
 
+/**
+ * Rows written before the API stored documents can hold a JSON string scalar
+ * (plain text, or a document encoded as text). Read it as a document instead
+ * of throwing: `"type" in "text"` is a TypeError that crashes the page.
+ */
+const toRichTextDoc = (content: unknown): JSONContent | null => {
+  if (typeof content === "string") {
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // Not JSON: plain text, read below.
+    }
+    return content.trim() ? textToTiptap(content) : null;
+  }
+  if (content && typeof content === "object" && !Array.isArray(content)) {
+    return content as JSONContent;
+  }
+  return null;
+};
+
 const generateHTML = (content: JSONContent) => {
   if (typeof window === "undefined") {
     return "";
   }
-  if (!content || !("type" in content)) {
+  const doc = toRichTextDoc(content);
+  if (!doc || !("type" in doc)) {
     return "";
   }
-  const raw = DefaultGenerateHTML(content, [
+  const raw = DefaultGenerateHTML(doc, [
     ...defaultExtensions,
     TextStyle,
     StarterKit,
@@ -71,7 +96,8 @@ const CONTAINER_NODES = new Set([
  * other leaf. Reads the JSON, not the HTML, so the server (where
  * `generateHTML` returns "") agrees with the browser.
  */
-const isRichTextEmpty = (content?: JSONContent | null): boolean => {
+const isRichTextEmpty = (value?: JSONContent | null): boolean => {
+  const content = toRichTextDoc(value);
   if (!content) return true;
   if (content.type === "text") return !content.text?.trim();
   if (content.type && !CONTAINER_NODES.has(content.type)) return false;
