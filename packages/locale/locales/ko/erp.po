@@ -557,6 +557,9 @@ msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, other {값 #개를 가져왔습니다.}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label}은(는) 문서, 전표 또는 기본 계정에서 사용 중이므로 삭제할 수 없습니다."
 
@@ -693,6 +696,9 @@ msgstr "{state} · {syncedAgo} 동기화됨"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 개월} other {# 개월}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, other {값 #개를 결합했습니다.}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "회사를 Carbon에 가동시키기 위한 {total}개 단계. 각 단계는 체크포인트에서 종료됩니다."
@@ -1574,6 +1580,9 @@ msgstr "사용자는 상품을 수령할 때 각 배치 또는 시리얼의 유�
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "변동 요금(마일리지 초과, 손상, 배송, 청소)은 계약의 다음 송장에 청구됩니다."
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "작업 공간은 하나의 Carbon 회사에만 연결할 수 있습니다. 먼저 해당 회사에서 연결을 해제하거나 다른 작업 공간을 연결하세요."
 
 msgid "ABA"
 msgstr "ABA"
@@ -4302,7 +4311,7 @@ msgid "Body for the email you want to send"
 msgstr "보낼 이메일의 본문"
 
 msgid "Body Type"
-msgstr ""
+msgstr "본문 유형"
 
 msgid "BoM"
 msgstr "BOM"
@@ -6286,6 +6295,9 @@ msgstr "{0}을 릴리스할 수 없음: {1}"
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "{appName}이(가) 연결되어 있는지 확인할 수 없습니다."
+
 msgid "Couldn't complete the connection"
 msgstr "연결을 완료할 수 없습니다"
 
@@ -6322,8 +6334,11 @@ msgstr "Onshape Government 연동을 저장할 수 없습니다."
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 연결을 저장할 수 없습니다"
 
+msgid "Couldn't start the {name} connection"
+msgstr "{name} 연결을 시작할 수 없습니다"
+
 msgid "Couldn't start the authorization."
-msgstr ""
+msgstr "인증을 시작할 수 없습니다."
 
 msgid "Count"
 msgstr "실사"
@@ -6336,6 +6351,9 @@ msgstr "실사 ID"
 
 msgid "Count items"
 msgstr "품목 수 계산"
+
+msgid "Counted {total}."
+msgstr "{total}개를 셌습니다."
 
 msgid "Counted Qty"
 msgstr "실사 수량"
@@ -8076,6 +8094,9 @@ msgstr "폐기됨"
 msgid "Disconnect"
 msgstr "연결 해제"
 
+msgid "Disconnected"
+msgstr "연결 해제됨"
+
 msgid "Discontinuation date"
 msgstr "중단 날짜"
 
@@ -9522,7 +9543,7 @@ msgid "Event Type"
 msgstr "이벤트 유형"
 
 msgid "Event types"
-msgstr ""
+msgstr "이벤트 유형"
 
 msgid "Events"
 msgstr "이벤트"
@@ -9694,7 +9715,7 @@ msgid "Expand Machine"
 msgstr "기계 펼치기"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "반복 이벤트를 펼치시겠습니까?"
 
 msgid "Expand row"
 msgstr "행 펼치기"
@@ -12288,6 +12309,9 @@ msgstr "이슈"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "곧 제공될 예정입니다. 회사에 설정하려면 Carbon에 문의하세요."
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "이 페이지를 불러온 후 삭제되었습니다. 페이지를 새로고침하고 다시 시도하세요."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 내용은 없습니다."
 
@@ -12567,6 +12591,12 @@ msgstr "피킹 유지"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "{total}개 중 {kept}개를 유지했습니다. {unresolved}개는 확인할 수 없습니다."
+
+msgid "Kept {kept} of {total}."
+msgstr "{total}개 중 {kept}개를 유지했습니다."
 
 msgid "Key"
 msgstr "키"
@@ -15148,6 +15178,9 @@ msgstr "일치하는 빈이 없습니다"
 
 msgid "No matching operations"
 msgstr "일치하는 공정이 없습니다"
+
+msgid "No matching time"
+msgstr "일치하는 시간 없음"
 
 msgid "No materials"
 msgstr "자재 없음"
@@ -19086,6 +19119,9 @@ msgstr "이름 바꾸기"
 msgid "Rename Workflow"
 msgstr "워크플로우 이름 바꾸기"
 
+msgid "Renamed"
+msgstr "이름 변경됨"
+
 msgid "Rendering label preview..."
 msgstr "라벨 미리보기 생성 중..."
 
@@ -19788,6 +19824,9 @@ msgstr "초대 취소"
 
 msgid "Revoke Invites"
 msgstr "초대 취소"
+
+msgid "Revoked"
+msgstr "취소됨"
 
 msgid "Rework"
 msgstr "재작업"
@@ -20746,7 +20785,7 @@ msgid "Select Employee Type"
 msgstr "직원 유형 선택"
 
 msgid "Select event types"
-msgstr ""
+msgstr "이벤트 유형 선택"
 
 msgid "Select field"
 msgstr "필드 선택"
@@ -20897,7 +20936,7 @@ msgid "Send Invites"
 msgstr "초대 보내기"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "알림 보내기"
 
 msgid "Send RFQ to Suppliers"
 msgstr "공급업체에 RFQ 전송"
@@ -22969,11 +23008,8 @@ msgstr ""
 msgid "Test run"
 msgstr "테스트 실행"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "테스트 실행 - 결과가 실행 페이지에 저장되지 않습니다"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "테스트 실행은 저장되지 않습니다. 이 패널을 닫으면 결과가 사라집니다."
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "테스트 실행은 테스트로 표시되어 실행 이력에 저장됩니다."
 
 msgid "Test Value"
 msgstr "테스트 값"
@@ -22984,14 +23020,26 @@ msgstr "글자 크기"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "해당 계정이 여전히 재연결 중입니다. 잠시 후 다시 시도하세요."
 
+msgid "That account no longer exists"
+msgstr "해당 계정이 더 이상 존재하지 않습니다"
+
 msgid "That connection name is already used"
 msgstr "해당 연결 이름은 이미 사용 중입니다"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "해당 필드는 여러 값을 가지고 있으므로 하나의 목록으로 결합됩니다."
 
+msgid "That integration is not available"
+msgstr "해당 연동을 사용할 수 없습니다"
+
+msgid "That list was empty."
+msgstr "목록이 비어 있었습니다."
+
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."
+
+msgid "That workspace is connected to another company"
+msgstr "해당 작업 공간은 다른 회사에 연결되어 있습니다"
 
 msgid "That's a different account"
 msgstr "다른 계정입니다"
@@ -23882,9 +23930,6 @@ msgstr "응답에 필수 매개변수가 누락되었습니다. 다시 연결해
 msgid "The restore job reported this error."
 msgstr "복원 작업이 이 오류를 보고했습니다."
 
-msgid "The result will not appear on the Runs page."
-msgstr "결과는 실행 페이지에 나타나지 않습니다."
-
 msgid "The revision number of the part"
 msgstr "품목의 리비전 번호"
 
@@ -24344,6 +24389,9 @@ msgstr "이 정보는 모든 사용자에게 표시되므로 공유할 내용을
 msgid "this inspection plan"
 msgstr "이 검사 계획"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "이 Carbon 인스턴스에서는 이 연동을 연결할 수 없습니다."
+
 msgid "This integration isn't available yet"
 msgstr "이 연동은 아직 사용할 수 없습니다"
 
@@ -24719,6 +24767,9 @@ msgstr "빠듯함"
 msgid "Tightened"
 msgstr "까다로운 검사"
 
+msgid "Time"
+msgstr "시간"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "자산 및 클래스별 임차 자산의 시간 및 달러 이용률"
 
@@ -24868,6 +24919,15 @@ msgstr "허용치 (일)"
 
 msgid "Tomorrow"
 msgstr "내일"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "값 {took}개를 가져왔고 처음 {kept}개를 유지했습니다."
+
+msgid "Took the first of {total}."
+msgstr "{total}개 중 첫 번째를 가져왔습니다."
+
+msgid "Took the last of {total}."
+msgstr "{total}개 중 마지막을 가져왔습니다."
 
 msgid "tool"
 msgstr "공구"
@@ -26809,7 +26869,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "선택한 권한을 각 사용자가 이미 가진 권한에 추가할지(추가), 아래 선택 항목으로 각 사용자의 권한 세트를 완전히 교체할지(업데이트) 여부입니다."
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
-msgstr ""
+msgstr "반복 이벤트를 개별 인스턴스로 펼쳐, 기본 반복 이벤트 자체는 제외하고 일회성 이벤트와 반복 이벤트의 인스턴스만 반환할지 여부입니다."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "이 항목에 대한 각 검사 흐름을 운영하는 문서입니다."

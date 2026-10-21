@@ -557,6 +557,9 @@ msgstr "{inserted} 件が挿入されました、{updated} 件が更新されま
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に保管ユニットがない材料があります} other {#個のオープン製造指図に保管ユニットがない材料があります}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, other {# 件の値を取得しました。}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} はドキュメント、仕訳、またはデフォルトアカウントで使用されているため、削除できません。"
 
@@ -693,6 +696,9 @@ msgstr "{state} · {syncedAgo} に同期"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ヶ月} other {# ヶ月}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, other {# 件の値を結合しました。}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "あなたの会社を Carbon に本格運用するまでの {total} つのフェーズがあります。それぞれがチェックポイントで終わります。"
@@ -1574,6 +1580,9 @@ msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "変動料金（走行距離超過、損傷、配送、清掃など）は契約の次の請求書に計上されます。"
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "ワークスペースは1つのCarbon会社にのみ接続できます。先にそちらで切断するか、別のワークスペースを接続してください。"
 
 msgid "ABA"
 msgstr "ABA"
@@ -4302,7 +4311,7 @@ msgid "Body for the email you want to send"
 msgstr "送信するメールの本文"
 
 msgid "Body Type"
-msgstr ""
+msgstr "本文の種類"
 
 msgid "BoM"
 msgstr "BoM"
@@ -6286,6 +6295,9 @@ msgstr "{0}をリリースできませんでした: {1}"
 msgid "Could not save"
 msgstr "保存できませんでした"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "{appName} が接続されているか確認できませんでした。"
+
 msgid "Couldn't complete the connection"
 msgstr "接続を完了できませんでした"
 
@@ -6322,8 +6334,11 @@ msgstr "Onshape Government接続を保存できませんでした"
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 接続を保存できませんでした"
 
+msgid "Couldn't start the {name} connection"
+msgstr "{name} の接続を開始できませんでした"
+
 msgid "Couldn't start the authorization."
-msgstr ""
+msgstr "認可を開始できませんでした。"
 
 msgid "Count"
 msgstr "数"
@@ -6336,6 +6351,9 @@ msgstr "カウントID"
 
 msgid "Count items"
 msgstr "品目をカウント"
+
+msgid "Counted {total}."
+msgstr "{total} 件をカウントしました。"
 
 msgid "Counted Qty"
 msgstr "計数数量"
@@ -8076,6 +8094,9 @@ msgstr "破棄されました"
 msgid "Disconnect"
 msgstr "切断"
 
+msgid "Disconnected"
+msgstr "切断しました"
+
 msgid "Discontinuation date"
 msgstr "廃止日"
 
@@ -9522,7 +9543,7 @@ msgid "Event Type"
 msgstr "イベントタイプ"
 
 msgid "Event types"
-msgstr ""
+msgstr "イベントタイプ"
 
 msgid "Events"
 msgstr "イベント"
@@ -9694,7 +9715,7 @@ msgid "Expand Machine"
 msgstr "機械を展開"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "繰返しイベントを展開しますか?"
 
 msgid "Expand row"
 msgstr "行を展開"
@@ -12288,6 +12309,9 @@ msgstr "問題"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "近日公開予定です。会社向けに設定するには Carbon にお問い合わせください。"
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "このページの読み込み後に削除されました。ページを再度読み込んで、もう一度お試しください。"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "バージョンを再度公開するまで実行は停止します。削除されるものはありません。"
 
@@ -12567,6 +12591,12 @@ msgstr "ピッキングを続ける"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "注文、見積、設定を2段階認証で保護します"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "{total} 件中 {kept} 件を保持しました。{unresolved} 件は確認できませんでした。"
+
+msgid "Kept {kept} of {total}."
+msgstr "{total} 件中 {kept} 件を保持しました。"
 
 msgid "Key"
 msgstr "キー"
@@ -15148,6 +15178,9 @@ msgstr "一致するビンがありません"
 
 msgid "No matching operations"
 msgstr "一致する工程がありません"
+
+msgid "No matching time"
+msgstr "一致する時刻がありません"
 
 msgid "No materials"
 msgstr "物料がありません"
@@ -19086,6 +19119,9 @@ msgstr "名前を変更"
 msgid "Rename Workflow"
 msgstr "ワークフロー名を変更"
 
+msgid "Renamed"
+msgstr "名前を変更しました"
+
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
 
@@ -19788,6 +19824,9 @@ msgstr "招待を取り消す"
 
 msgid "Revoke Invites"
 msgstr "招待を取り消す"
+
+msgid "Revoked"
+msgstr "取り消し済み"
 
 msgid "Rework"
 msgstr "手直し"
@@ -20746,7 +20785,7 @@ msgid "Select Employee Type"
 msgstr "従業員タイプを選択"
 
 msgid "Select event types"
-msgstr ""
+msgstr "イベントタイプを選択"
 
 msgid "Select field"
 msgstr "フィールドを選択"
@@ -20897,7 +20936,7 @@ msgid "Send Invites"
 msgstr "招待を送信"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "通知を送信"
 
 msgid "Send RFQ to Suppliers"
 msgstr "仕入先に見積依頼を送信"
@@ -22969,11 +23008,8 @@ msgstr ""
 msgid "Test run"
 msgstr "テストラン"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "テストラン —結果は「ラン」ページに保存されません"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "テストランは保存されません。このパネルを閉じると結果は消えます。"
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "テストランはテストとして記録され、実行履歴に保存されます。"
 
 msgid "Test Value"
 msgstr "テスト値"
@@ -22984,14 +23020,26 @@ msgstr "テキストサイズ"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "そのアカウントはまだ再接続中です。もう少し待ってからもう一度お試しください。"
 
+msgid "That account no longer exists"
+msgstr "そのアカウントはもう存在しません"
+
 msgid "That connection name is already used"
 msgstr "その接続名はすでに使用されています"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "そのフィールドは複数の値を保持しているため、1 つのリストに結合されます。"
 
+msgid "That integration is not available"
+msgstr "その連携は利用できません"
+
+msgid "That list was empty."
+msgstr "そのリストは空でした。"
+
 msgid "That name is already used by another step."
 msgstr "その名前は別のステップで既に使用されています。"
+
+msgid "That workspace is connected to another company"
+msgstr "そのワークスペースは別の会社に接続されています"
 
 msgid "That's a different account"
 msgstr "別のアカウントです"
@@ -23882,9 +23930,6 @@ msgstr "レスポンスに必要なパラメータが不足しています。再
 msgid "The restore job reported this error."
 msgstr "復元ジョブがこのエラーを報告しました。"
 
-msgid "The result will not appear on the Runs page."
-msgstr "結果は実行ページに表示されません。"
-
 msgid "The revision number of the part"
 msgstr "部品のリビジョン番号"
 
@@ -24344,6 +24389,9 @@ msgstr "この情報はすべてのユーザーに表示されるため、共有
 msgid "this inspection plan"
 msgstr "この検査計画"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "この連携はこのCarbonインスタンスでは接続できません。"
+
 msgid "This integration isn't available yet"
 msgstr "この連携はまだご利用いただけません"
 
@@ -24719,6 +24767,9 @@ msgstr "逼迫"
 msgid "Tightened"
 msgstr "きつい検査"
 
+msgid "Time"
+msgstr "時刻"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "資産クラス別のレンタル資産の時間・金額利用率"
 
@@ -24868,6 +24919,15 @@ msgstr "許容値(日)"
 
 msgid "Tomorrow"
 msgstr "明日"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "{took} 件の値を取得し、最初の {kept} 件を保持しました。"
+
+msgid "Took the first of {total}."
+msgstr "{total} 件中の最初の項目を取得しました。"
+
+msgid "Took the last of {total}."
+msgstr "{total} 件中の最後の項目を取得しました。"
 
 msgid "tool"
 msgstr "ツール"
@@ -26809,7 +26869,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "選択した権限を各ユーザーが既に持っているものに追加するか、または各ユーザーの権限セット全体を下記の選択で置き換えて更新するかどうか。"
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
-msgstr ""
+msgstr "繰返しイベントを個々のインスタンスに展開するかどうか。展開すると、単発のイベントと繰返しイベントのインスタンスのみを返し、元の繰返しイベント自体は返しません。"
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "どの文書がこの品目の各検査フローを駆動するか。"

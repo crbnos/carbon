@@ -1193,6 +1193,9 @@ msgstr "오늘 예정된 유지보수가 없습니다"
 msgid "No matches. Type to create one."
 msgstr "일치항목이 없습니다. 입력하여 새로 만드세요."
 
+msgid "No matching time"
+msgstr "일치하는 시간 없음"
+
 msgid "No materials"
 msgstr "자재 없음"
 
@@ -2047,6 +2050,9 @@ msgstr "썸네일"
 
 msgid "Tick the jobs this was done for."
 msgstr "이것이 수행된 작업 지시를 체크하세요."
+
+msgid "Time"
+msgstr "시간"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분됩니다."

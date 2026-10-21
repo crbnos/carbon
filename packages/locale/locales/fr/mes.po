@@ -1193,6 +1193,9 @@ msgstr "Aucune maintenance planifiée pour aujourd'hui"
 msgid "No matches. Type to create one."
 msgstr "Aucune correspondance. Tapez pour en créer une."
 
+msgid "No matching time"
+msgstr "Aucune heure correspondante"
+
 msgid "No materials"
 msgstr "Aucun matériau"
 
@@ -2047,6 +2050,9 @@ msgstr "Miniature"
 
 msgid "Tick the jobs this was done for."
 msgstr "Cochez les ordres de fabrication pour lesquels c'est effectué."
+
+msgid "Time"
+msgstr "Heure"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Le temps et le coût sont répartis entre les ordres de fabrication proportionnellement à la quantité."

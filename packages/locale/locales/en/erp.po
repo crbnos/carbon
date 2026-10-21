@@ -557,6 +557,9 @@ msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, one {Took # value.} other {Took # values.}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 
@@ -693,6 +696,9 @@ msgstr "{state} · synced {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# month} other {# months}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, one {Joined # value.} other {Joined # values.}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
@@ -1574,6 +1580,9 @@ msgstr "A user records the expiry date on each batch or serial when the goods ar
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
 
 msgid "ABA"
 msgstr "ABA"
@@ -6286,6 +6295,9 @@ msgstr "Could not release {0}: {1}"
 msgid "Could not save"
 msgstr "Could not save"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "Couldn't check whether {appName} is connected."
+
 msgid "Couldn't complete the connection"
 msgstr "Couldn't complete the connection"
 
@@ -6322,6 +6334,9 @@ msgstr "Couldn't save the Onshape Government connection"
 msgid "Couldn't save the Ramp connection"
 msgstr "Couldn't save the Ramp connection"
 
+msgid "Couldn't start the {name} connection"
+msgstr "Couldn't start the {name} connection"
+
 msgid "Couldn't start the authorization."
 msgstr "Couldn't start the authorization."
 
@@ -6336,6 +6351,9 @@ msgstr "Count ID"
 
 msgid "Count items"
 msgstr "Count items"
+
+msgid "Counted {total}."
+msgstr "Counted {total}."
 
 msgid "Counted Qty"
 msgstr "Counted Qty"
@@ -8075,6 +8093,9 @@ msgstr "Discarded"
 
 msgid "Disconnect"
 msgstr "Disconnect"
+
+msgid "Disconnected"
+msgstr "Disconnected"
 
 msgid "Discontinuation date"
 msgstr "Discontinuation date"
@@ -12288,6 +12309,9 @@ msgstr "Issues"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "It is coming soon. Contact Carbon to have it set up for your company."
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "It was removed after this page loaded. Reload the page and try again."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "It will stop running until you publish a version again. Nothing is deleted."
 
@@ -12567,6 +12591,12 @@ msgstr "Keep picking"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Keeps orders, quotes, and settings behind a second check"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "Kept {kept} of {total}; {unresolved} could not be checked."
+
+msgid "Kept {kept} of {total}."
+msgstr "Kept {kept} of {total}."
 
 msgid "Key"
 msgstr "Key"
@@ -15148,6 +15178,9 @@ msgstr "No matching bins"
 
 msgid "No matching operations"
 msgstr "No matching operations"
+
+msgid "No matching time"
+msgstr "No matching time"
 
 msgid "No materials"
 msgstr "No materials"
@@ -19086,6 +19119,9 @@ msgstr "Rename"
 msgid "Rename Workflow"
 msgstr "Rename Workflow"
 
+msgid "Renamed"
+msgstr "Renamed"
+
 msgid "Rendering label preview..."
 msgstr "Rendering label preview..."
 
@@ -19788,6 +19824,9 @@ msgstr "Revoke Invite"
 
 msgid "Revoke Invites"
 msgstr "Revoke Invites"
+
+msgid "Revoked"
+msgstr "Revoked"
 
 msgid "Rework"
 msgstr "Rework"
@@ -22969,11 +23008,8 @@ msgstr "Test label sent to printer"
 msgid "Test run"
 msgstr "Test run"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "Test run — results are not saved to the Runs page"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "Test runs are not saved. Close this panel and the result is gone."
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "Test runs are saved to the run history, marked as tests."
 
 msgid "Test Value"
 msgstr "Test Value"
@@ -22984,14 +23020,26 @@ msgstr "Text size"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "That account is still being reconnected. Try again in a moment."
 
+msgid "That account no longer exists"
+msgstr "That account no longer exists"
+
 msgid "That connection name is already used"
 msgstr "That connection name is already used"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "That field holds several values, so they are combined into one list."
 
+msgid "That integration is not available"
+msgstr "That integration is not available"
+
+msgid "That list was empty."
+msgstr "That list was empty."
+
 msgid "That name is already used by another step."
 msgstr "That name is already used by another step."
+
+msgid "That workspace is connected to another company"
+msgstr "That workspace is connected to another company"
 
 msgid "That's a different account"
 msgstr "That's a different account"
@@ -23882,9 +23930,6 @@ msgstr "The response was missing required parameters. Try connecting again."
 msgid "The restore job reported this error."
 msgstr "The restore job reported this error."
 
-msgid "The result will not appear on the Runs page."
-msgstr "The result will not appear on the Runs page."
-
 msgid "The revision number of the part"
 msgstr "The revision number of the part"
 
@@ -24344,6 +24389,9 @@ msgstr "This information will be visible to all users, so be careful what you sh
 msgid "this inspection plan"
 msgstr "this inspection plan"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "This integration can't be connected on this Carbon instance."
+
 msgid "This integration isn't available yet"
 msgstr "This integration isn't available yet"
 
@@ -24719,6 +24767,9 @@ msgstr "tight"
 msgid "Tightened"
 msgstr "Tightened"
 
+msgid "Time"
+msgstr "Time"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Time and dollar utilization of the rental fleet by asset and class"
 
@@ -24868,6 +24919,15 @@ msgstr "Tolerance (days)"
 
 msgid "Tomorrow"
 msgstr "Tomorrow"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "Took {took} values; kept the first {kept}."
+
+msgid "Took the first of {total}."
+msgstr "Took the first of {total}."
+
+msgid "Took the last of {total}."
+msgstr "Took the last of {total}."
 
 msgid "tool"
 msgstr "tool"

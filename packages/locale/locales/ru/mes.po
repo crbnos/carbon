@@ -1193,6 +1193,9 @@ msgstr "На сегодня техобслуживание не запланир
 msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
 
+msgid "No matching time"
+msgstr "Нет подходящего времени"
+
 msgid "No materials"
 msgstr "Нет материалов"
 
@@ -2047,6 +2050,9 @@ msgstr "Миниатюра"
 
 msgid "Tick the jobs this was done for."
 msgstr "Отметьте производственные заказы, для которых это было сделано."
+
+msgid "Time"
+msgstr "Время"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Время и себестоимость распределяются между производственными заказами пропорционально количеству."

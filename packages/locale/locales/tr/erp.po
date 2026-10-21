@@ -557,6 +557,9 @@ msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} a
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama birimi olmayan malzemeleri var} other {# açık iş emirlerinin depolama birimi olmayan malzemeleri var}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, one {# değer alındı.} other {# değer alındı.}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} belgeler, muhasebe fişleri veya varsayılan hesaplar tarafından kullanıldığından silinemez."
 
@@ -693,6 +696,9 @@ msgstr "{state} · {syncedAgo} eşitlendi"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, one {# değer birleştirildi.} other {# değer birleştirildi.}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} aşama şirketinizi Carbon'da canlı hale getirmek için. Her biri bir kontrol noktasında sona erer."
@@ -1574,6 +1580,9 @@ msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullan
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Değişken bir ücret — kilometre fazlası, hasar, teslimat, temizlik — sözleşmenin bir sonraki faturasında faturalandırılır."
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "Bir çalışma alanı yalnızca bir Carbon şirketine bağlanabilir. Önce oradaki bağlantıyı kesin veya farklı bir çalışma alanı bağlayın."
 
 msgid "ABA"
 msgstr "ABA"
@@ -4302,7 +4311,7 @@ msgid "Body for the email you want to send"
 msgstr "Göndermek istediğiniz e-postanın gövdesi"
 
 msgid "Body Type"
-msgstr ""
+msgstr "Gövde Türü"
 
 msgid "BoM"
 msgstr "BOM"
@@ -6286,6 +6295,9 @@ msgstr "{0} serbest bırakılamadı: {1}"
 msgid "Could not save"
 msgstr "Kaydedilemedi"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "{appName} uygulamasının bağlı olup olmadığı kontrol edilemedi."
+
 msgid "Couldn't complete the connection"
 msgstr "Bağlantı tamamlanamadı"
 
@@ -6322,8 +6334,11 @@ msgstr "Onshape Government bağlantısı kaydedilemedi"
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp bağlantısı kaydedilemedi"
 
+msgid "Couldn't start the {name} connection"
+msgstr "{name} bağlantısı başlatılamadı"
+
 msgid "Couldn't start the authorization."
-msgstr ""
+msgstr "Yetkilendirme başlatılamadı."
 
 msgid "Count"
 msgstr "Adet"
@@ -6336,6 +6351,9 @@ msgstr "Sayım Kimliği"
 
 msgid "Count items"
 msgstr "Öğeleri say"
+
+msgid "Counted {total}."
+msgstr "{total} sayıldı."
 
 msgid "Counted Qty"
 msgstr "Sayılan Mik."
@@ -8076,6 +8094,9 @@ msgstr "İptal edildi"
 msgid "Disconnect"
 msgstr "Bağlantıyı kes"
 
+msgid "Disconnected"
+msgstr "Bağlantı kesildi"
+
 msgid "Discontinuation date"
 msgstr "Kullanımdan kaldırılma tarihi"
 
@@ -9522,7 +9543,7 @@ msgid "Event Type"
 msgstr "Olay Türü"
 
 msgid "Event types"
-msgstr ""
+msgstr "Olay türleri"
 
 msgid "Events"
 msgstr "Etkinlikler"
@@ -9694,7 +9715,7 @@ msgid "Expand Machine"
 msgstr "Makineyi Genişlet"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "Tekrarlanan Olaylar Genişletilsin mi?"
 
 msgid "Expand row"
 msgstr "Satırı Genişlet"
@@ -12288,6 +12309,9 @@ msgstr "Sorunlar"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Yakında kullanıma sunulacak. Şirketiniz için kurulması için Carbon ile iletişime geçin."
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "Bu sayfa yüklendikten sonra kaldırıldı. Sayfayı yeniden yükleyin ve tekrar deneyin."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
 
@@ -12567,6 +12591,12 @@ msgstr "Toplamaya devam et"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında tutar"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "{total} içinden {kept} tutuldu; {unresolved} kontrol edilemedi."
+
+msgid "Kept {kept} of {total}."
+msgstr "{total} içinden {kept} tutuldu."
 
 msgid "Key"
 msgstr "Anahtar"
@@ -15148,6 +15178,9 @@ msgstr "Eşleşen göz yok"
 
 msgid "No matching operations"
 msgstr "Eşleşen operasyon yok"
+
+msgid "No matching time"
+msgstr "Eşleşen saat yok"
 
 msgid "No materials"
 msgstr "Malzeme yok"
@@ -19086,6 +19119,9 @@ msgstr "Yeniden adlandır"
 msgid "Rename Workflow"
 msgstr "İş Akışını Yeniden Adlandır"
 
+msgid "Renamed"
+msgstr "Yeniden adlandırıldı"
+
 msgid "Rendering label preview..."
 msgstr "Etiket önizlemesi oluşturuluyor..."
 
@@ -19788,6 +19824,9 @@ msgstr "Davetlemeyi İptal Et"
 
 msgid "Revoke Invites"
 msgstr "Davetleri İptal Et"
+
+msgid "Revoked"
+msgstr "İptal edildi"
 
 msgid "Rework"
 msgstr "Yeniden İşleme"
@@ -20746,7 +20785,7 @@ msgid "Select Employee Type"
 msgstr "Çalışan Türü Seçin"
 
 msgid "Select event types"
-msgstr ""
+msgstr "Olay türlerini seçin"
 
 msgid "Select field"
 msgstr "Alan seçin"
@@ -20897,7 +20936,7 @@ msgid "Send Invites"
 msgstr "Davet Gönder"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "Bildirim Gönder"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Tedarikçilere RFQ Gönder"
@@ -22969,11 +23008,8 @@ msgstr ""
 msgid "Test run"
 msgstr "Test çalıştırması"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "Test çalıştırması — sonuçlar Çalıştırmalar sayfasına kaydedilmez"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "Test çalıştırmaları kaydedilmez. Bu paneli kapatın ve sonuç ortadan kalkar."
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "Test çalıştırmaları, test olarak işaretlenip çalıştırma geçmişine kaydedilir."
 
 msgid "Test Value"
 msgstr "Test Değeri"
@@ -22984,14 +23020,26 @@ msgstr "Metin boyutu"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "Bu hesap yine de yeniden bağlanıyor. Biraz sonra tekrar deneyin."
 
+msgid "That account no longer exists"
+msgstr "Bu hesap artık mevcut değil"
+
 msgid "That connection name is already used"
 msgstr "Bu bağlantı adı zaten kullanıldı"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "Bu alan birden fazla değer içerir, bu nedenle tek bir listede birleştirilirler."
 
+msgid "That integration is not available"
+msgstr "Bu entegrasyon kullanılamıyor"
+
+msgid "That list was empty."
+msgstr "Bu liste boştu."
+
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."
+
+msgid "That workspace is connected to another company"
+msgstr "Bu çalışma alanı başka bir şirkete bağlı"
 
 msgid "That's a different account"
 msgstr "Bu farklı bir hesap"
@@ -23882,9 +23930,6 @@ msgstr "Yanıt gerekli parametreleri içermiyordu. Tekrar bağlanmayı deneyin."
 msgid "The restore job reported this error."
 msgstr "Geri yükleme işi bu hatayı bildirdi."
 
-msgid "The result will not appear on the Runs page."
-msgstr "Sonuç Çalıştırmalar sayfasında görünmeyecektir."
-
 msgid "The revision number of the part"
 msgstr "Parçanın revizyon numarası"
 
@@ -24344,6 +24389,9 @@ msgstr "Bu bilgi tüm kullanıcılara görünür olacak, bu nedenle paylaştığ
 msgid "this inspection plan"
 msgstr "bu kontrol planı"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "Bu entegrasyon bu Carbon örneğinde bağlanamaz."
+
 msgid "This integration isn't available yet"
 msgstr "Bu entegrasyon henüz kullanılamıyor"
 
@@ -24719,6 +24767,9 @@ msgstr "dar"
 msgid "Tightened"
 msgstr "Sıkılaştırılmış"
 
+msgid "Time"
+msgstr "Saat"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Kiralama filosunun varlık ve sınıf bazında zaman ve dolar kullanım oranı"
 
@@ -24868,6 +24919,15 @@ msgstr "Tolerans (gün)"
 
 msgid "Tomorrow"
 msgstr "Yarın"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "{took} değer alındı; ilk {kept} tutuldu."
+
+msgid "Took the first of {total}."
+msgstr "{total} içinden ilki alındı."
+
+msgid "Took the last of {total}."
+msgstr "{total} içinden sonuncusu alındı."
 
 msgid "tool"
 msgstr "Araç"
@@ -26809,7 +26869,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "Seçilen izinlerin her kullanıcının zaten sahip olduğu şeylerin üstüne Eklenip Eklenmediği veya her kullanıcının izin setinin aşağıda seçilen kişilerle değiştirilmesi suretiyle Güncelleştirilmesi."
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
-msgstr ""
+msgstr "Tekrarlanan olayların tek tek örneklere genişletilip genişletilmeyeceği; yalnızca tek seferlik olaylar ve tekrarlanan olayların örnekleri döndürülür, temel tekrarlanan olayların kendisi döndürülmez."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Bu öğe için hangi belgenin her muayene akışını yönettiği."

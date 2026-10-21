@@ -557,6 +557,9 @@ msgstr "{inserted} вставлено, {updated} обновлено, {0} тре�
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# открытый производственный заказ имеет материалы без единицы хранения} other {# открытых производственных заказов имеют материалы без единиц хранения}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, one {Взято # значение.} few {Взято # значения.} many {Взято # значений.} other {Взято # значения.}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} используется документами, операциями или учетными записями по умолчанию, поэтому не может быть удалена."
 
@@ -693,6 +696,9 @@ msgstr "{state} · синхронизировано {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# месяц} few {# месяца} many {# месяцев} other {# месяцев}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, one {Объединено # значение.} few {Объединено # значения.} many {Объединено # значений.} other {Объединено # значения.}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} этапов для запуска вашей организации на Carbon. Каждый завершается контрольной точкой."
@@ -1574,6 +1580,9 @@ msgstr "Пользователь записывает срок годности 
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Переменная плата — превышение пробега, повреждение, доставка, уборка — выставляется счетом по следующей счет-фактуре договора."
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "Рабочее пространство можно подключить только к одной организации Carbon. Сначала отключите его там или подключите другое рабочее пространство."
 
 msgid "ABA"
 msgstr "ABA"
@@ -4302,7 +4311,7 @@ msgid "Body for the email you want to send"
 msgstr "Текст письма, которое вы хотите отправить"
 
 msgid "Body Type"
-msgstr ""
+msgstr "Тип тела"
 
 msgid "BoM"
 msgstr "BoM"
@@ -6286,6 +6295,9 @@ msgstr "Не удалось запустить в работу {0}: {1}"
 msgid "Could not save"
 msgstr "Не удалось сохранить"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "Не удалось проверить, подключено ли приложение {appName}."
+
 msgid "Couldn't complete the connection"
 msgstr "Не удалось завершить подключение"
 
@@ -6322,8 +6334,11 @@ msgstr "Не удалось сохранить подключение Onshape Go
 msgid "Couldn't save the Ramp connection"
 msgstr "Не удалось сохранить подключение к Ramp"
 
+msgid "Couldn't start the {name} connection"
+msgstr "Не удалось начать подключение к {name}"
+
 msgid "Couldn't start the authorization."
-msgstr ""
+msgstr "Не удалось начать авторизацию."
 
 msgid "Count"
 msgstr "Количество"
@@ -6336,6 +6351,9 @@ msgstr "ID подсчета"
 
 msgid "Count items"
 msgstr "Подсчет элементов"
+
+msgid "Counted {total}."
+msgstr "Подсчитано: {total}."
 
 msgid "Counted Qty"
 msgstr "Подсчитанное кол-во"
@@ -8076,6 +8094,9 @@ msgstr "Отклонено"
 msgid "Disconnect"
 msgstr "Отключить"
 
+msgid "Disconnected"
+msgstr "Отключено"
+
 msgid "Discontinuation date"
 msgstr "Дата прекращения"
 
@@ -9522,7 +9543,7 @@ msgid "Event Type"
 msgstr "Тип события"
 
 msgid "Event types"
-msgstr ""
+msgstr "Типы событий"
 
 msgid "Events"
 msgstr "События"
@@ -9694,7 +9715,7 @@ msgid "Expand Machine"
 msgstr "Развернуть Станок"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "Развернуть повторяющиеся события?"
 
 msgid "Expand row"
 msgstr "Развернуть строку"
@@ -12288,6 +12309,9 @@ msgstr "Проблемы"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Скоро она станет доступна. Свяжитесь с Carbon, чтобы её настроили для вашей компании."
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "Его удалили после загрузки этой страницы. Перезагрузите страницу и попробуйте снова."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Он перестанет работать, пока вы не опубликуете версию снова. Ничего не удаляется."
 
@@ -12567,6 +12591,12 @@ msgstr "Сохранить отбор"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Требует дополнительную проверку для заказов, коммерческих предложений и настроек"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "Оставлено {kept} из {total}; не удалось проверить: {unresolved}."
+
+msgid "Kept {kept} of {total}."
+msgstr "Оставлено {kept} из {total}."
 
 msgid "Key"
 msgstr "Ключ"
@@ -15148,6 +15178,9 @@ msgstr "Нет подходящих ячеек"
 
 msgid "No matching operations"
 msgstr "Нет совпадающих операций"
+
+msgid "No matching time"
+msgstr "Нет подходящего времени"
 
 msgid "No materials"
 msgstr "Нет материалов"
@@ -19086,6 +19119,9 @@ msgstr "Переименовать"
 msgid "Rename Workflow"
 msgstr "Переименовать рабочий процесс"
 
+msgid "Renamed"
+msgstr "Переименовано"
+
 msgid "Rendering label preview..."
 msgstr "Отрисовка предпросмотра этикетки..."
 
@@ -19788,6 +19824,9 @@ msgstr "Отозвать приглашение"
 
 msgid "Revoke Invites"
 msgstr "Отозвать приглашения"
+
+msgid "Revoked"
+msgstr "Отозвано"
 
 msgid "Rework"
 msgstr "Доработка"
@@ -20746,7 +20785,7 @@ msgid "Select Employee Type"
 msgstr "Выберите тип сотрудника"
 
 msgid "Select event types"
-msgstr ""
+msgstr "Выберите типы событий"
 
 msgid "Select field"
 msgstr "Выберите поле"
@@ -20897,7 +20936,7 @@ msgid "Send Invites"
 msgstr "Отправить приглашения"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "Отправлять уведомления"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Отправить РФП поставщикам"
@@ -22969,11 +23008,8 @@ msgstr ""
 msgid "Test run"
 msgstr "Тестовый запуск"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "Тестовый запуск — результаты не сохраняются на странице Запусков"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "Тестовые запуски не сохраняются. Закройте эту панель и результат исчезнет."
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "Тестовые запуски сохраняются в истории запусков с пометкой «тест»."
 
 msgid "Test Value"
 msgstr "Тестовое значение"
@@ -22984,14 +23020,26 @@ msgstr "Размер текста"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "Этот аккаунт все еще переподключается. Повторите попытку через мгновение."
 
+msgid "That account no longer exists"
+msgstr "Этот аккаунт больше не существует"
+
 msgid "That connection name is already used"
 msgstr "Это имя соединения уже используется"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "Это поле содержит несколько значений, поэтому они объединяются в один список."
 
+msgid "That integration is not available"
+msgstr "Эта интеграция недоступна"
+
+msgid "That list was empty."
+msgstr "Этот список был пуст."
+
 msgid "That name is already used by another step."
 msgstr "Это имя уже используется другим шагом."
+
+msgid "That workspace is connected to another company"
+msgstr "Это рабочее пространство подключено к другой организации"
 
 msgid "That's a different account"
 msgstr "Это другая учетная запись"
@@ -23882,9 +23930,6 @@ msgstr "В ответе отсутствовали требуемые парам
 msgid "The restore job reported this error."
 msgstr "Задача восстановления сообщила об этой ошибке."
 
-msgid "The result will not appear on the Runs page."
-msgstr "Результат не появится на странице Запусков."
-
 msgid "The revision number of the part"
 msgstr "Номер ревизии детали."
 
@@ -24344,6 +24389,9 @@ msgstr "Эта информация будет видна всем пользо�
 msgid "this inspection plan"
 msgstr "этот план контроля"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "Эту интеграцию нельзя подключить в этом экземпляре Carbon."
+
 msgid "This integration isn't available yet"
 msgstr "Эта интеграция пока недоступна"
 
@@ -24719,6 +24767,9 @@ msgstr "плотно"
 msgid "Tightened"
 msgstr "Усиленный"
 
+msgid "Time"
+msgstr "Время"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Использование арендного парка по времени и стоимости по активам и классам"
 
@@ -24868,6 +24919,15 @@ msgstr "Допуск (дней)"
 
 msgid "Tomorrow"
 msgstr "Завтра"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "Взято значений: {took}; оставлены первые {kept}."
+
+msgid "Took the first of {total}."
+msgstr "Взят первый из {total}."
+
+msgid "Took the last of {total}."
+msgstr "Взят последний из {total}."
 
 msgid "tool"
 msgstr "Инструмент"
@@ -26809,7 +26869,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "Добавить выбранные права доступа поверх того, что уже имеет каждый пользователь, или Обновить, заменив набор прав доступа каждого пользователя полностью выбором ниже."
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
-msgstr ""
+msgstr "Разворачивать ли повторяющиеся события в отдельные экземпляры и возвращать только разовые события и экземпляры повторяющихся событий, без самих исходных повторяющихся событий."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Какой документ определяет каждый процесс контроля для этого элемента."

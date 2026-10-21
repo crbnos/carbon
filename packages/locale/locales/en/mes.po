@@ -1193,6 +1193,9 @@ msgstr "No maintenance scheduled for today"
 msgid "No matches. Type to create one."
 msgstr "No matches. Type to create one."
 
+msgid "No matching time"
+msgstr "No matching time"
+
 msgid "No materials"
 msgstr "No materials"
 
@@ -2047,6 +2050,9 @@ msgstr "Thumbnail"
 
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
+
+msgid "Time"
+msgstr "Time"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Time and cost split across jobs proportionally to quantity."

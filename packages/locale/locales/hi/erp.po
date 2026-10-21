@@ -557,6 +557,9 @@ msgstr "{inserted} सम्मिलित किया गया, {updated} �
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, one {# मान लिया गया।} other {# मान लिए गए।}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} को दस्तावेज़, जर्नल या डिफ़ॉल्ट खातों द्वारा उपयोग किया जाता है, इसलिए इसे हटाया नहीं जा सकता।"
 
@@ -693,6 +696,9 @@ msgstr "{state} · {syncedAgo} सिंक हुआ"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# महीना} other {# महीने}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, one {# मान जोड़ा गया।} other {# मान जोड़े गए।}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "आपकी कंपनी को Carbon पर लाइव करने के लिए {total} चरण। प्रत्येक एक चेकपॉइंट पर समाप्त होता है।"
@@ -1574,6 +1580,9 @@ msgstr "एक उपयोगकर्ता प्रत्येक बैच
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "एक परिवर्तनीय शुल्क — माइलेज अधिकता, क्षति, डिलीवरी, सफाई — समझौते के अगले चालान पर बिल किया जाता है।"
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "एक वर्कस्पेस केवल एक Carbon कंपनी से कनेक्ट किया जा सकता है। पहले उसे वहाँ से डिस्कनेक्ट करें, या कोई दूसरा वर्कस्पेस कनेक्ट करें।"
 
 msgid "ABA"
 msgstr "ABA"
@@ -4302,7 +4311,7 @@ msgid "Body for the email you want to send"
 msgstr "आप जो ईमेल भेजना चाहते हैं उसका निकाय"
 
 msgid "Body Type"
-msgstr ""
+msgstr "बॉडी प्रकार"
 
 msgid "BoM"
 msgstr "BoM"
@@ -6286,6 +6295,9 @@ msgstr "जारी नहीं कर सके {0}: {1}"
 msgid "Could not save"
 msgstr "सहेज नहीं सके"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "यह जाँच नहीं की जा सकी कि {appName} कनेक्ट है या नहीं।"
+
 msgid "Couldn't complete the connection"
 msgstr "कनेक्शन को पूरा नहीं कर सका"
 
@@ -6322,8 +6334,11 @@ msgstr "Onshape Government कनेक्शन को सहेजा नह�
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp कनेक्शन को सहेजा नहीं जा सका"
 
+msgid "Couldn't start the {name} connection"
+msgstr "{name} कनेक्शन शुरू नहीं किया जा सका"
+
 msgid "Couldn't start the authorization."
-msgstr ""
+msgstr "प्राधिकरण शुरू नहीं किया जा सका।"
 
 msgid "Count"
 msgstr "गिनती"
@@ -6336,6 +6351,9 @@ msgstr "गणना आईडी"
 
 msgid "Count items"
 msgstr "आइटम गिनें"
+
+msgid "Counted {total}."
+msgstr "{total} गिने गए।"
 
 msgid "Counted Qty"
 msgstr "गिनी गई मात्रा"
@@ -8076,6 +8094,9 @@ msgstr "छोड़ा गया"
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
 
+msgid "Disconnected"
+msgstr "डिस्कनेक्ट किया गया"
+
 msgid "Discontinuation date"
 msgstr "बंद करने की तारीख"
 
@@ -9522,7 +9543,7 @@ msgid "Event Type"
 msgstr "ईवेंट प्रकार"
 
 msgid "Event types"
-msgstr ""
+msgstr "ईवेंट प्रकार"
 
 msgid "Events"
 msgstr "घटनाएं"
@@ -9694,7 +9715,7 @@ msgid "Expand Machine"
 msgstr "मशीन का विस्तार करें"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "आवर्ती ईवेंट विस्तारित करें?"
 
 msgid "Expand row"
 msgstr "पंक्ति का विस्तार करें"
@@ -12288,6 +12309,9 @@ msgstr "समस्याएं"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "यह जल्द ही आ रहा है। इसे अपनी कंपनी के लिए सेट अप करवाने के लिए Carbon से संपर्क करें।"
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "इस पृष्ठ के लोड होने के बाद इसे हटा दिया गया। पृष्ठ पुनः लोड करें और फिर से कोशिश करें।"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं गया है।"
 
@@ -12567,6 +12591,12 @@ msgstr "पिकिंग जारी रखें"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "ऑर्डर, कोट्स और सेटिंग्स को एक दूसरी जांच के पीछे रखता है"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "{total} में से {kept} रखे गए; {unresolved} की जाँच नहीं की जा सकी।"
+
+msgid "Kept {kept} of {total}."
+msgstr "{total} में से {kept} रखे गए।"
 
 msgid "Key"
 msgstr "कुंजी"
@@ -15148,6 +15178,9 @@ msgstr "कोई मिलान बिन नहीं"
 
 msgid "No matching operations"
 msgstr "कोई मेल खाने वाला ऑपरेशन नहीं"
+
+msgid "No matching time"
+msgstr "कोई मेल खाता समय नहीं"
 
 msgid "No materials"
 msgstr "कोई सामग्री नहीं"
@@ -19086,6 +19119,9 @@ msgstr "नाम बदलें"
 msgid "Rename Workflow"
 msgstr "वर्कफ़्लो का नाम बदलें"
 
+msgid "Renamed"
+msgstr "नाम बदला गया"
+
 msgid "Rendering label preview..."
 msgstr "लेबल पूर्वावलोकन प्रस्तुत किया जा रहा है..."
 
@@ -19788,6 +19824,9 @@ msgstr "आमंत्रण रद्द करें"
 
 msgid "Revoke Invites"
 msgstr "आमंत्रण रद्द करें"
+
+msgid "Revoked"
+msgstr "रद्द किया गया"
 
 msgid "Rework"
 msgstr "पुनः कार्य"
@@ -20746,7 +20785,7 @@ msgid "Select Employee Type"
 msgstr "कर्मचारी प्रकार चुनें"
 
 msgid "Select event types"
-msgstr ""
+msgstr "ईवेंट प्रकार चुनें"
 
 msgid "Select field"
 msgstr "फ़ील्ड चुनें"
@@ -20897,7 +20936,7 @@ msgid "Send Invites"
 msgstr "आमंत्रण भेजें"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "सूचनाएं भेजें"
 
 msgid "Send RFQ to Suppliers"
 msgstr "आपूर्तिकर्ताओं को RFQ भेजें"
@@ -22969,11 +23008,8 @@ msgstr ""
 msgid "Test run"
 msgstr "परीक्षण चलाएं"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "परीक्षण चलाएं — परिणाम रन पृष्ठ पर सहेजे नहीं जाते हैं"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "परीक्षण चलाएं सहेजे नहीं जाते। इस पैनल को बंद करें और परिणाम चला जाता है।"
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "परीक्षण रन, रन इतिहास में परीक्षण के रूप में चिह्नित होकर सहेजे जाते हैं।"
 
 msgid "Test Value"
 msgstr "परीक्षण मान"
@@ -22984,14 +23020,26 @@ msgstr "पाठ आकार"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "वह खाता अभी भी पुनः कनेक्ट किया जा रहा है। एक पल में फिर से कोशिश करें।"
 
+msgid "That account no longer exists"
+msgstr "वह खाता अब मौजूद नहीं है"
+
 msgid "That connection name is already used"
 msgstr "वह कनेक्शन नाम पहले से उपयोग किया जा रहा है"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "उस फ़ील्ड में कई मान हैं, इसलिए उन्हें एक सूची में मिलाया जाता है।"
 
+msgid "That integration is not available"
+msgstr "वह एकीकरण उपलब्ध नहीं है"
+
+msgid "That list was empty."
+msgstr "वह सूची खाली थी।"
+
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
+
+msgid "That workspace is connected to another company"
+msgstr "वह वर्कस्पेस किसी दूसरी कंपनी से कनेक्ट है"
 
 msgid "That's a different account"
 msgstr "यह एक अलग खाता है"
@@ -23882,9 +23930,6 @@ msgstr "प्रतिक्रिया में आवश्यक पैर
 msgid "The restore job reported this error."
 msgstr "पुनर्स्थापन जॉब ने इस त्रुटि की रिपोर्ट की।"
 
-msgid "The result will not appear on the Runs page."
-msgstr "परिणाम Runs page पर प्रदर्शित नहीं होगा।"
-
 msgid "The revision number of the part"
 msgstr "पार्ट की रिवीजन संख्या"
 
@@ -24344,6 +24389,9 @@ msgstr "यह जानकारी सभी उपयोगकर्ताओ
 msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "यह एकीकरण इस Carbon इंस्टेंस पर कनेक्ट नहीं किया जा सकता।"
+
 msgid "This integration isn't available yet"
 msgstr "यह एकीकरण अभी उपलब्ध नहीं है"
 
@@ -24719,6 +24767,9 @@ msgstr "तंग"
 msgid "Tightened"
 msgstr "कठोर"
 
+msgid "Time"
+msgstr "समय"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "संपत्ति और वर्ग द्वारा किराया बेड़े का समय और डॉलर उपयोग"
 
@@ -24868,6 +24919,15 @@ msgstr "सहनशीलता (दिन)"
 
 msgid "Tomorrow"
 msgstr "कल"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "{took} मान लिए गए; पहले {kept} रखे गए।"
+
+msgid "Took the first of {total}."
+msgstr "{total} में से पहला लिया गया।"
+
+msgid "Took the last of {total}."
+msgstr "{total} में से अंतिम लिया गया।"
 
 msgid "tool"
 msgstr "उपकरण"
@@ -26809,7 +26869,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "क्या जोड़ें चयनित अनुमतियों को प्रत्येक उपयोगकर्ता के पास पहले से है उसके ऊपर, या अपडेट करें प्रत्येक उपयोगकर्ता की अनुमति सेट को नीचे चयन के साथ थोक में प्रतिस्थापित करके।"
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
-msgstr ""
+msgstr "क्या आवर्ती ईवेंट को अलग-अलग इंस्टेंस में विस्तारित करना है और केवल एकल ईवेंट तथा आवर्ती ईवेंट के इंस्टेंस लौटाने हैं, मूल आवर्ती ईवेंट नहीं।"
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "कौन सा दस्तावेज़ इस आइटम के लिए प्रत्येक निरीक्षण प्रवाह को चलाता है।"

@@ -557,6 +557,9 @@ msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已�
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有存储单元} other {# 个未结工单的物料没有存储单元}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, other {已取 # 个值。}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} 被文档、凭证或默认账户使用，因此无法删除。"
 
@@ -693,6 +696,9 @@ msgstr "{state} · {syncedAgo} 已同步"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, other {已合并 # 个值。}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}个阶段使贵公司在Carbon中正式启用。每个阶段都在一个检查点处结束。"
@@ -1574,6 +1580,9 @@ msgstr "用户在收货时记录每个生产批次或序列号的有效期。当
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "可变费用（如里程超额、损害、交付、清洁）在协议的下一份发票上计费。"
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "一个工作区只能连接到一家 Carbon 公司。请先在那里断开连接，或连接其他工作区。"
 
 msgid "ABA"
 msgstr "ABA"
@@ -4302,7 +4311,7 @@ msgid "Body for the email you want to send"
 msgstr "要发送的电子邮件正文"
 
 msgid "Body Type"
-msgstr ""
+msgstr "正文类型"
 
 msgid "BoM"
 msgstr "物料清单"
@@ -6286,6 +6295,9 @@ msgstr "无法下达{0}：{1}"
 msgid "Could not save"
 msgstr "无法保存"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "无法检查 {appName} 是否已连接。"
+
 msgid "Couldn't complete the connection"
 msgstr "无法完成连接"
 
@@ -6322,8 +6334,11 @@ msgstr "无法保存 Onshape Government 连接"
 msgid "Couldn't save the Ramp connection"
 msgstr "无法保存 Ramp 连接"
 
+msgid "Couldn't start the {name} connection"
+msgstr "无法启动 {name} 连接"
+
 msgid "Couldn't start the authorization."
-msgstr ""
+msgstr "无法启动授权。"
 
 msgid "Count"
 msgstr "数量"
@@ -6336,6 +6351,9 @@ msgstr "盘点ID"
 
 msgid "Count items"
 msgstr "计数物料"
+
+msgid "Counted {total}."
+msgstr "已计数 {total} 个。"
 
 msgid "Counted Qty"
 msgstr "已计数数量"
@@ -8076,6 +8094,9 @@ msgstr "已放弃"
 msgid "Disconnect"
 msgstr "断开连接"
 
+msgid "Disconnected"
+msgstr "已断开连接"
+
 msgid "Discontinuation date"
 msgstr "停用日期"
 
@@ -9522,7 +9543,7 @@ msgid "Event Type"
 msgstr "事件类型"
 
 msgid "Event types"
-msgstr ""
+msgstr "事件类型"
 
 msgid "Events"
 msgstr "事件"
@@ -9694,7 +9715,7 @@ msgid "Expand Machine"
 msgstr "展开机器"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "展开循环事件？"
 
 msgid "Expand row"
 msgstr "展开行"
@@ -12288,6 +12309,9 @@ msgstr "问题"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "即将推出。请联系 Carbon 为您的公司进行设置。"
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "此页面加载后它已被删除。请重新加载页面并重试。"
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
 
@@ -12567,6 +12591,12 @@ msgstr "继续拣货"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "让订单、报价单和设置受到第二道检查的保护"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "保留了 {total} 个中的 {kept} 个；{unresolved} 个无法检查。"
+
+msgid "Kept {kept} of {total}."
+msgstr "保留了 {total} 个中的 {kept} 个。"
 
 msgid "Key"
 msgstr "钥匙"
@@ -15148,6 +15178,9 @@ msgstr "没有匹配的料箱"
 
 msgid "No matching operations"
 msgstr "没有匹配的操作"
+
+msgid "No matching time"
+msgstr "没有匹配的时间"
 
 msgid "No materials"
 msgstr "无物料"
@@ -19086,6 +19119,9 @@ msgstr "重命名"
 msgid "Rename Workflow"
 msgstr "重命名工作流"
 
+msgid "Renamed"
+msgstr "已重命名"
+
 msgid "Rendering label preview..."
 msgstr "正在渲染标签预览..."
 
@@ -19788,6 +19824,9 @@ msgstr "撤销邀请"
 
 msgid "Revoke Invites"
 msgstr "撤销邀请"
+
+msgid "Revoked"
+msgstr "已撤销"
 
 msgid "Rework"
 msgstr "返工"
@@ -20746,7 +20785,7 @@ msgid "Select Employee Type"
 msgstr "选择员工类型"
 
 msgid "Select event types"
-msgstr ""
+msgstr "选择事件类型"
 
 msgid "Select field"
 msgstr "选择字段"
@@ -20897,7 +20936,7 @@ msgid "Send Invites"
 msgstr "发送邀请"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "发送通知"
 
 msgid "Send RFQ to Suppliers"
 msgstr "向供应商发送询价单"
@@ -22969,11 +23008,8 @@ msgstr ""
 msgid "Test run"
 msgstr "测试运行"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "测试运行 — 结果不会保存到运行页面"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "测试运行不会保存。关闭此面板，结果就消失了。"
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "测试运行会保存到运行历史记录中，并标记为测试。"
 
 msgid "Test Value"
 msgstr "测试值"
@@ -22984,14 +23020,26 @@ msgstr "文本大小"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "该帐户仍在重新连接中。请稍后再试。"
 
+msgid "That account no longer exists"
+msgstr "该账户已不存在"
+
 msgid "That connection name is already used"
 msgstr "该连接名称已被使用"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "该字段包含多个值，因此它们被合并为一个列表。"
 
+msgid "That integration is not available"
+msgstr "该集成不可用"
+
+msgid "That list was empty."
+msgstr "该列表为空。"
+
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
+
+msgid "That workspace is connected to another company"
+msgstr "该工作区已连接到另一家公司"
 
 msgid "That's a different account"
 msgstr "这是另一个账户"
@@ -23882,9 +23930,6 @@ msgstr "响应缺少必需的参数。请尝试重新连接。"
 msgid "The restore job reported this error."
 msgstr "恢复工作报告了此错误。"
 
-msgid "The result will not appear on the Runs page."
-msgstr "结果不会出现在运行页面上。"
-
 msgid "The revision number of the part"
 msgstr "零件的修订版号"
 
@@ -24344,6 +24389,9 @@ msgstr "此信息将对所有用户可见，请谨慎分享。"
 msgid "this inspection plan"
 msgstr "这个检验计划"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "此集成无法在此 Carbon 实例上连接。"
+
 msgid "This integration isn't available yet"
 msgstr "此集成尚不可用"
 
@@ -24719,6 +24767,9 @@ msgstr "紧张"
 msgid "Tightened"
 msgstr "加严检验"
 
+msgid "Time"
+msgstr "时间"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "按资产和类别统计的租赁设备的时间和成本利用率"
 
@@ -24868,6 +24919,15 @@ msgstr "容差（天）"
 
 msgid "Tomorrow"
 msgstr "明天"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "已取 {took} 个值；保留了前 {kept} 个。"
+
+msgid "Took the first of {total}."
+msgstr "已取 {total} 个中的第一个。"
+
+msgid "Took the last of {total}."
+msgstr "已取 {total} 个中的最后一个。"
 
 msgid "tool"
 msgstr "工具"
@@ -26809,7 +26869,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "是否将选定的权限添加到每个用户已有的权限之上,或通过将每个用户的权限集替换为下面的选择来更新。"
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
-msgstr ""
+msgstr "是否将循环事件展开为单个实例，并只返回一次性事件和循环事件的实例，而不返回底层循环事件本身。"
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "哪份文件驱动此物料的每个检验流程。"

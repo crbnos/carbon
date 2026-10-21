@@ -557,6 +557,9 @@ msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# orden de trabajo abierta tiene materiales sin unidad de almacenamiento} other {# órdenes de trabajo abiertas tienen materiales sin unidad de almacenamiento}}"
 
+msgid "{kept, plural, one {Took # value.} other {Took # values.}}"
+msgstr "{kept, plural, one {Se tomó # valor.} other {Se tomaron # valores.}}"
+
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} se utiliza en documentos, asientos o cuentas predeterminadas, por lo que no se puede eliminar."
 
@@ -693,6 +696,9 @@ msgstr "{state} · sincronizado {syncedAgo}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mes} other {# meses}}"
+
+msgid "{total, plural, one {Joined # value.} other {Joined # values.}}"
+msgstr "{total, plural, one {Se unió # valor.} other {Se unieron # valores.}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} fases para poner tu empresa en vivo en Carbon. Cada una termina en un punto de control."
@@ -1574,6 +1580,9 @@ msgstr "Un usuario registra la fecha de caducidad en cada lote de producción o 
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Un cargo variable — sobrecargo de millaje, daño, entrega, limpieza — se factura en la próxima factura del acuerdo."
+
+msgid "A workspace can be connected to one Carbon company only. Disconnect it there first, or connect a different workspace."
+msgstr "Un espacio de trabajo solo puede conectarse a una empresa de Carbon. Desconéctelo allí primero o conecte otro espacio de trabajo."
 
 msgid "ABA"
 msgstr "ABA"
@@ -4302,7 +4311,7 @@ msgid "Body for the email you want to send"
 msgstr "Cuerpo del email que deseas enviar"
 
 msgid "Body Type"
-msgstr ""
+msgstr "Tipo de cuerpo"
 
 msgid "BoM"
 msgstr "BoM"
@@ -6286,6 +6295,9 @@ msgstr "No se pudo liberar {0}: {1}"
 msgid "Could not save"
 msgstr "No se pudo guardar"
 
+msgid "Couldn't check whether {appName} is connected."
+msgstr "No se pudo comprobar si {appName} está conectado."
+
 msgid "Couldn't complete the connection"
 msgstr "No se pudo completar la conexión"
 
@@ -6322,8 +6334,11 @@ msgstr "No se pudo guardar la conexión con Onshape Government"
 msgid "Couldn't save the Ramp connection"
 msgstr "No se pudo guardar la conexión con Ramp"
 
+msgid "Couldn't start the {name} connection"
+msgstr "No se pudo iniciar la conexión con {name}"
+
 msgid "Couldn't start the authorization."
-msgstr ""
+msgstr "No se pudo iniciar la autorización."
 
 msgid "Count"
 msgstr "Cantidad"
@@ -6336,6 +6351,9 @@ msgstr "ID de Conteo"
 
 msgid "Count items"
 msgstr "Contar artículos"
+
+msgid "Counted {total}."
+msgstr "Se contaron {total}."
 
 msgid "Counted Qty"
 msgstr "Cantidad Contada"
@@ -8076,6 +8094,9 @@ msgstr "Descartado"
 msgid "Disconnect"
 msgstr "Desconectar"
 
+msgid "Disconnected"
+msgstr "Desconectado"
+
 msgid "Discontinuation date"
 msgstr "Fecha de descontinuación"
 
@@ -9522,7 +9543,7 @@ msgid "Event Type"
 msgstr "Tipo de Evento"
 
 msgid "Event types"
-msgstr ""
+msgstr "Tipos de evento"
 
 msgid "Events"
 msgstr "Eventos"
@@ -9694,7 +9715,7 @@ msgid "Expand Machine"
 msgstr "Expandir máquina"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "¿Expandir eventos recurrentes?"
 
 msgid "Expand row"
 msgstr "Expandir fila"
@@ -12288,6 +12309,9 @@ msgstr "Problemas"
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Estará disponible pronto. Contacta con Carbon para que la configuren para tu empresa."
 
+msgid "It was removed after this page loaded. Reload the page and try again."
+msgstr "Se eliminó después de que se cargara esta página. Recargue la página e intente de nuevo."
+
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Se detendrá hasta que publique una Versión nuevamente. Nada se elimina."
 
@@ -12567,6 +12591,12 @@ msgstr "Continuar picking"
 
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Mantiene órdenes, cotizaciones y configuración tras una segunda verificación"
+
+msgid "Kept {kept} of {total}; {unresolved} could not be checked."
+msgstr "Se conservaron {kept} de {total}; {unresolved} no se pudieron comprobar."
+
+msgid "Kept {kept} of {total}."
+msgstr "Se conservaron {kept} de {total}."
 
 msgid "Key"
 msgstr "Clave"
@@ -15148,6 +15178,9 @@ msgstr "Sin contenedores coincidentes"
 
 msgid "No matching operations"
 msgstr "Sin operaciones coincidentes"
+
+msgid "No matching time"
+msgstr "Ninguna hora coincide"
 
 msgid "No materials"
 msgstr "Sin materiales"
@@ -19086,6 +19119,9 @@ msgstr "Renombrar"
 msgid "Rename Workflow"
 msgstr "Renombrar flujo de trabajo"
 
+msgid "Renamed"
+msgstr "Renombrado"
+
 msgid "Rendering label preview..."
 msgstr "Renderizando vista previa de etiqueta..."
 
@@ -19788,6 +19824,9 @@ msgstr "Revocar Invitación"
 
 msgid "Revoke Invites"
 msgstr "Revocar Invitaciones"
+
+msgid "Revoked"
+msgstr "Revocado"
 
 msgid "Rework"
 msgstr "Retrabajo"
@@ -20746,7 +20785,7 @@ msgid "Select Employee Type"
 msgstr "Seleccionar Tipo de Empleado"
 
 msgid "Select event types"
-msgstr ""
+msgstr "Seleccionar tipos de evento"
 
 msgid "Select field"
 msgstr "Seleccionar campo"
@@ -20897,7 +20936,7 @@ msgid "Send Invites"
 msgstr "Enviar invitaciones"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "Enviar notificaciones"
 
 msgid "Send RFQ to Suppliers"
 msgstr "Enviar RFQ a Proveedores"
@@ -22969,11 +23008,8 @@ msgstr ""
 msgid "Test run"
 msgstr "Ejecución de prueba"
 
-msgid "Test run — results are not saved to the Runs page"
-msgstr "Ejecución de prueba — los resultados no se guardan en la página de Ejecuciones"
-
-msgid "Test runs are not saved. Close this panel and the result is gone."
-msgstr "Las ejecuciones de prueba no se guardan. Cierra este panel y el resultado desaparece."
+msgid "Test runs are saved to the run history, marked as tests."
+msgstr "Las ejecuciones de prueba se guardan en el historial de ejecución, marcadas como pruebas."
 
 msgid "Test Value"
 msgstr "Valor de Prueba"
@@ -22984,14 +23020,26 @@ msgstr "Tamaño de texto"
 msgid "That account is still being reconnected. Try again in a moment."
 msgstr "Esa cuenta aún se está reconectando. Intente de nuevo en un momento."
 
+msgid "That account no longer exists"
+msgstr "Esa cuenta ya no existe"
+
 msgid "That connection name is already used"
 msgstr "Ese nombre de conexión ya se está usando"
 
 msgid "That field holds several values, so they are combined into one list."
 msgstr "Ese campo contiene varios valores, por lo que se combinan en una lista."
 
+msgid "That integration is not available"
+msgstr "Esa integración no está disponible"
+
+msgid "That list was empty."
+msgstr "Esa lista estaba vacía."
+
 msgid "That name is already used by another step."
 msgstr "Ese nombre ya está siendo utilizado por otro paso."
+
+msgid "That workspace is connected to another company"
+msgstr "Ese espacio de trabajo está conectado a otra empresa"
 
 msgid "That's a different account"
 msgstr "Esa es otra cuenta"
@@ -23882,9 +23930,6 @@ msgstr "La respuesta no contiene los parámetros requeridos. Intenta conectar de
 msgid "The restore job reported this error."
 msgstr "El trabajo de restauración reportó este error."
 
-msgid "The result will not appear on the Runs page."
-msgstr "El resultado no aparecerá en la página Ejecuciones."
-
 msgid "The revision number of the part"
 msgstr "El número de revisión de la pieza"
 
@@ -24344,6 +24389,9 @@ msgstr "Esta información será visible para todos los usuarios, así que ten cu
 msgid "this inspection plan"
 msgstr "este plan de inspección"
 
+msgid "This integration can't be connected on this Carbon instance."
+msgstr "Esta integración no se puede conectar en esta instancia de Carbon."
+
 msgid "This integration isn't available yet"
 msgstr "Esta integración aún no está disponible"
 
@@ -24719,6 +24767,9 @@ msgstr "ajustado"
 msgid "Tightened"
 msgstr "Rigurosa"
 
+msgid "Time"
+msgstr "Hora"
+
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Utilización de tiempo y dólares de la flota de alquiler por activo y clase"
 
@@ -24868,6 +24919,15 @@ msgstr "Tolerancia (días)"
 
 msgid "Tomorrow"
 msgstr "Mañana"
+
+msgid "Took {took} values; kept the first {kept}."
+msgstr "Se tomaron {took} valores; se conservaron los primeros {kept}."
+
+msgid "Took the first of {total}."
+msgstr "Se tomó el primero de {total}."
+
+msgid "Took the last of {total}."
+msgstr "Se tomó el último de {total}."
 
 msgid "tool"
 msgstr "Herramienta"
@@ -26809,7 +26869,7 @@ msgid "Whether to Add the selected permissions on top of what each user already 
 msgstr "Si se Agregan los permisos seleccionados además de lo que cada usuario ya tiene, o se Actualizan reemplazando el conjunto de permisos de cada usuario con la selección a continuación."
 
 msgid "Whether to expand recurring events into instances and only return single one-off events and instances of recurring events, but not the underlying recurring events themselves."
-msgstr ""
+msgstr "Indica si los eventos recurrentes se expanden en instancias y solo se devuelven eventos únicos e instancias de eventos recurrentes, pero no los eventos recurrentes subyacentes."
 
 msgid "Which document drives each inspection flow for this item."
 msgstr "Qué documento conduce cada flujo de inspección para este artículo."
