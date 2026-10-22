@@ -7,12 +7,11 @@ import {
   actionTaskPermissions,
   isActionTaskEntityType
 } from "@carbon/ee/action-task-entity";
-import type { TiptapDocument } from "@carbon/ee/linear.server";
 import {
   getLinearClient,
-  getLinearIssueFromExternalId,
-  tiptapToMarkdown
+  getLinearIssueFromExternalId
 } from "@carbon/ee/linear.server";
+import { type JSONContent, TiptapText } from "@carbon/files/markdown";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunction } from "react-router";
 import { data } from "react-router";
@@ -68,7 +67,7 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   // Parse the notes JSON
-  let notes: TiptapDocument | null = null;
+  let notes: JSONContent | null = null;
   try {
     notes = notesStr ? JSON.parse(notesStr) : null;
   } catch {
@@ -93,7 +92,7 @@ export const action: ActionFunction = async ({ request }) => {
 
   try {
     // Convert Tiptap notes to markdown for Linear
-    const description = tiptapToMarkdown(notes);
+    const description = TiptapText(notes).toMarkdown();
 
     await linear.updateIssue(companyId, {
       id: issue.id,

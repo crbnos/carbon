@@ -739,6 +739,15 @@ export type Events = {
     };
   };
 
+  // Onshape's translation.complete webhook, forwarded: wakes an element sync
+  // waiting on the translation (matched on companyId + translationId)
+  "carbon/onshape-translation-complete": {
+    data: {
+      companyId: string;
+      translationId: string;
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {

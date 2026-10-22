@@ -1160,7 +1160,8 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     await isIntegrationInstallWithheld(client, {
       companyId,
       integrationId,
-      email
+      email,
+      userId
     })
   ) {
     // The connect route's refusal: the integrations page resolves the code to

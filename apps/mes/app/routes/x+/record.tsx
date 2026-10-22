@@ -36,6 +36,10 @@ export async function action({ request }: ActionFunctionArgs) {
     createdBy: userId
   });
 
+  if (attributeRecord.refusal) {
+    return data({}, await flash(request, error(null, attributeRecord.refusal)));
+  }
+
   if (attributeRecord.error) {
     return data(
       {},

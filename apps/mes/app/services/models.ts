@@ -124,6 +124,12 @@ export const stepRecordValidator = z.object({
   userValue: zfd.text(z.string().optional())
 });
 
+// The record window starts a Measurement step empty, so recording one needs a
+// number: an empty field must not record a blank measurement.
+export const measurementStepRecordValidator = stepRecordValidator.extend({
+  numericValue: zfd.numeric(z.number({ error: "Enter the measurement" }))
+});
+
 // One step recorded for several batch members at once (the batch view's
 // Record). Rows are the members the operator filled in; unchanged ones are
 // never sent, so a re-open can't re-trigger a step's backflush.

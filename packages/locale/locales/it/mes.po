@@ -272,6 +272,9 @@ msgstr "Indietro"
 msgid "Back to batch"
 msgstr "Torna al lotto di produzione"
 
+msgid "Back to ERP"
+msgstr "Torna all'ERP"
+
 msgid "Background"
 msgstr "Sfondo"
 
@@ -299,12 +302,6 @@ msgstr "totale Lotto di produzione"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "In ritardo rispetto al target di {daysBehindTarget} giorno(i)"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "Tra {0} e {1} {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1109,11 +1106,11 @@ msgstr "Altre opzioni"
 msgid "Move column: {0}"
 msgstr "Sposta colonna: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Deve essere < {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "Deve essere almeno {minValue} {unitOfMeasureCode}"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Deve essere > {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "Deve essere al massimo {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "Deve essere compreso tra {minValue} e {maxValue} {unitOfMeasureCode}"
@@ -1470,6 +1467,9 @@ msgstr "Fissa o scollega"
 msgid "Pin Out"
 msgstr "Disconnetti"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pizzica o scorri per ingrandire · trascina per spostare · tocca due volte per ripristinare"
+
 msgid "Planned"
 msgstr "Pianificato"
 
@@ -1582,6 +1582,9 @@ msgstr "Registra Parziale"
 
 msgid "Recorded"
 msgstr "Registrato"
+
+msgid "Reference image"
+msgstr "Immagine di riferimento"
 
 msgid "Registration failed"
 msgstr "Registrazione fallita"

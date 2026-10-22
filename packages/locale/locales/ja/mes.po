@@ -272,6 +272,9 @@ msgstr "戻る"
 msgid "Back to batch"
 msgstr "バッチへ戻る"
 
+msgid "Back to ERP"
+msgstr "ERP へ戻る"
+
 msgid "Background"
 msgstr "背景"
 
@@ -299,12 +302,6 @@ msgstr "バッチ合計"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "{0}から{1} {2}まで"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1109,11 +1106,11 @@ msgstr "その他のオプション"
 msgid "Move column: {0}"
 msgstr "カラムを移動: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "{maxValue} {unitOfMeasureCode} 未満である必要があります"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "{minValue} {unitOfMeasureCode} 以上である必要があります"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "{minValue} {unitOfMeasureCode} より大きい必要があります"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "{maxValue} {unitOfMeasureCode} 以下である必要があります"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "{minValue} から {maxValue} {unitOfMeasureCode} の間である必要があります"
@@ -1470,6 +1467,9 @@ msgstr "ピン留めまたはピン留め解除"
 msgid "Pin Out"
 msgstr "ピンアウト"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ピンチまたはスクロールで拡大縮小 · ドラッグで移動 · ダブルタップでリセット"
+
 msgid "Planned"
 msgstr "計画済み"
 
@@ -1582,6 +1582,9 @@ msgstr "一部を記録"
 
 msgid "Recorded"
 msgstr "記録済"
+
+msgid "Reference image"
+msgstr "参照画像"
 
 msgid "Registration failed"
 msgstr "登録に失敗しました"

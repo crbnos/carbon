@@ -62,7 +62,6 @@ export interface OnshapeRevisionSyncResult {
     | "asset-too-large"; // export exceeds Carbon's upload limits — permanent skip
   itemId?: string;
   modelUploadId?: string | null;
-  thumbnailAttached?: boolean; // Onshape-rendered thumbnail stored — no fallback event needed
   releaseKey?: string;
 }
 
@@ -338,7 +337,6 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
       synced: true,
       itemId: resolved.itemId,
       modelUploadId: attached.modelUploadId,
-      thumbnailAttached: attached.thumbnailAttached,
       releaseKey: resolved.releaseKey
     };
   }

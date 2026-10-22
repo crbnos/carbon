@@ -57,9 +57,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install compatible Pulumi version
@@ -158,9 +158,9 @@ jobs:
           docker push "$TO"
 
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install compatible Pulumi version

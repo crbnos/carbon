@@ -1114,6 +1114,7 @@ export const path = {
     external: {
       mes: MES_URL,
       mesBatch: (id: string) => `${MES_URL}/x/batch/${id}`,
+      mesJob: (id: string) => `${MES_URL}/x/job/${id}`,
       mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
       mesJobOperationComplete: (id: string) => `${MES_URL}/x/end/${id}`,
       mesJobOperationStart: (id: string, type: "Setup" | "Labor" | "Machine") =>
@@ -1377,6 +1378,8 @@ export const path = {
     gauges: `${x}/quality/gauges`,
     gaugeType: (id: string) => generatePath(`${x}/quality/gauge-types/${id}`),
     gaugeTypes: `${x}/quality/gauge-types`,
+    generalLedger: `${x}/reports/general-ledger`,
+    generalLedgerCsv: `${x}/reports/general-ledger.csv`,
     generateAssemblyInstructionSteps: (id: string) =>
       generatePath(`${x}/assembly/${id}/steps/generate`),
     getStarted: `${x}/get-started`,

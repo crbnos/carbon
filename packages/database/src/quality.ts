@@ -57,6 +57,11 @@ export type InspectionDispositionInput = {
   id: string;
   decision: "Accept" | "Reject" | "Partial";
   notes?: string;
+  // Why a lot is rejected when no characteristic reached its rejection number
+  // and no sample failed — a suspected counterfeit, the wrong part, transit
+  // damage. A Reject with a reason needs no failure; it is stored as the lot's
+  // notes when `notes` is empty.
+  reason?: string;
   companyId: string;
   dispositionedBy: string;
   // One-shot mode: refuse to disposition a lot that is already terminal
@@ -387,6 +392,28 @@ export async function upsertInspectionSample(
 //   - inspection (status, dispositionedBy/At, notes)
 //   - inspectionHistory (1 row for future plan auto-switching)
 
+/**
+ * Whether a lot has failed inspection, so it can be rejected with no reason
+ * given. A document-driven lot fails when a characteristic reaches its
+ * rejection number or a sample fails; a lot with no characteristics when its
+ * failed samples pass the acceptance number. Anything else — a suspected
+ * counterfeit, the wrong part — needs a reason. The ERP and MES Reject
+ * buttons apply the same rule.
+ */
+export function isRejectableWithoutReason(lot: {
+  features: { rejectionNumber: number; failed: number }[];
+  failedSamples: number;
+  acceptanceNumber: number;
+}): boolean {
+  if (lot.features.length > 0) {
+    return (
+      lot.features.some((f) => f.failed >= f.rejectionNumber) ||
+      lot.failedSamples > 0
+    );
+  }
+  return lot.failedSamples > lot.acceptanceNumber;
+}
+
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: InspectionDispositionInput
@@ -423,7 +450,8 @@ export async function dispositionInspection(
           "inspectionLevel",
           "aql",
           "lotSize",
-          "sampleSize"
+          "sampleSize",
+          "acceptanceNumber"
         ])
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
@@ -509,16 +537,16 @@ export async function dispositionInspection(
         .where("inspectionId", "=", args.id)
         .execute();
 
+      const countsByFeature = new Map<
+        string,
+        { recorded: number; failed: number }
+      >();
       if (lotFeatures.length > 0) {
         const measurements = await trx
           .selectFrom("inspectionMeasurement")
           .select(["inspectionFeatureId", "status"])
           .where("inspectionId", "=", args.id)
           .execute();
-        const countsByFeature = new Map<
-          string,
-          { recorded: number; failed: number }
-        >();
         for (const m of measurements) {
           const counts = countsByFeature.get(m.inspectionFeatureId) ?? {
             recorded: 0,
@@ -546,19 +574,23 @@ export async function dispositionInspection(
             );
           }
         }
+      }
 
-        if (args.decision === "Reject") {
-          const rejectable =
-            lotFeatures.some((f) => {
-              const counts = countsByFeature.get(f.inspectionFeatureId);
-              return counts != null && counts.failed >= f.rejectionNumber;
-            }) || existingSamples.some((s) => s.status === "Failed");
-          if (!rejectable) {
-            throw new Error(
-              "Cannot reject: no feature has reached its rejection number and no sample has failed"
-            );
-          }
-        }
+      if (
+        args.decision === "Reject" &&
+        !args.reason?.trim() &&
+        !isRejectableWithoutReason({
+          features: lotFeatures.map((f) => ({
+            rejectionNumber: f.rejectionNumber,
+            failed: countsByFeature.get(f.inspectionFeatureId)?.failed ?? 0
+          })),
+          failedSamples: failures,
+          acceptanceNumber: inspection.acceptanceNumber
+        })
+      ) {
+        throw new Error(
+          "Cannot reject: the lot has not failed inspection. Give a reason to reject it anyway."
+        );
       }
 
       // Reject = entire lot non-conforming (ISO 9001:2015 §8.7). Accept
@@ -621,7 +653,7 @@ export async function dispositionInspection(
         .updateTable("inspection")
         .set({
           status: lotStatus,
-          notes: args.notes ?? null,
+          notes: args.notes || args.reason?.trim() || null,
           dispositionedBy: args.dispositionedBy,
           dispositionedAt: nowIso,
           updatedBy: args.dispositionedBy,

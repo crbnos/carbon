@@ -221,7 +221,11 @@ import {
 import { getOnRentLineForAsset } from "~/modules/sales/sales.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
 import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  LIST_COUNT,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
   allocateJournalLineIds,
@@ -308,6 +312,7 @@ import {
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
+  GeneralLedgerLine,
   PeriodCell,
   Transaction,
   TranslatedBalance
@@ -459,6 +464,76 @@ export async function getAccountLedger(
     count: number | null;
     error: PostgrestError | null;
   };
+}
+
+// The general ledger report reads the lines of Posted and Reversed journals
+// only — the lines the trial balance sums. The `journalLines` view filters the
+// same statuses; the report states them so it holds if the view changes.
+const GENERAL_LEDGER_LINE_COLUMNS =
+  "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, account(number, name, class)";
+
+type GeneralLedgerArgs = Pick<GenericQueryFilters, "sorts" | "filters"> & {
+  search: string | null;
+  startDate: string;
+  endDate: string;
+};
+
+function generalLedgerLinesQuery(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs,
+  withCount: boolean
+) {
+  let query = client
+    .from("journalLines")
+    .select(
+      GENERAL_LEDGER_LINE_COLUMNS,
+      withCount ? { count: LIST_COUNT } : undefined
+    )
+    .eq("companyId", companyId)
+    .in("status", [...GL_JOURNAL_STATUSES])
+    .gte("postingDate", args.startDate)
+    .lte("postingDate", args.endDate);
+
+  query = setSearchFilter(query, args.search, [
+    "journalEntryId",
+    "description",
+    "journalDescription"
+  ]);
+
+  query = setGenericQueryFilters(
+    query,
+    { sorts: args.sorts, filters: args.filters },
+    [
+      { column: "postingDate", ascending: true },
+      { column: "journalEntryId", ascending: true }
+    ]
+  );
+
+  // A unique tie-break keeps pages (and the CSV's batches) stable
+  return query.order("id", { ascending: true });
+}
+
+export async function getGeneralLedgerLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs & Pick<GenericQueryFilters, "limit" | "offset">
+) {
+  return generalLedgerLinesQuery(client, companyId, args, true).range(
+    args.offset,
+    args.offset + args.limit - 1
+  );
+}
+
+/** Every line of the report, past PostgREST's row cap — for the CSV export. */
+export async function getAllGeneralLedgerLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs
+) {
+  return fetchAll<GeneralLedgerLine>(() =>
+    generalLedgerLinesQuery(client, companyId, args, false)
+  );
 }
 
 export async function getAccountLedgerSummary(

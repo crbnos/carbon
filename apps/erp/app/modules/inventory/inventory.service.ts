@@ -137,9 +137,11 @@ import {
 } from "~/modules/sales/sales.service";
 import * as settingsService from "~/modules/settings/settings.service";
 import {
+  type AdjustmentItemCost,
   assertCompanyRecords,
   assertPostable,
   attributesContain,
+  type BookAdjustmentArgs,
   bookAdjustment,
   buildCostLedgerRow,
   buildJournalLineDimensions,
@@ -220,7 +222,7 @@ import {
   reconcileReceiptLineSerials,
   shippingCarrierType
 } from "./inventory.models";
-import { clampDepth } from "./inventory.utils";
+import { clampDepth, writeOffRestoreQuantity } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
 import {
   effectiveSuccessorId,
@@ -13401,6 +13403,214 @@ async function lockRentalUnits(
   return { linesById, assetsById };
 }
 
+/** Units of a supplier return line an inspection reject already wrote off. */
+type ReturnLineWriteOff = {
+  quantity: number;
+  // The write-off's own unit cost, so restoring at it nets scrap to zero.
+  unitCost: number | null;
+  // Where the write-off was booked (the receipt's location, no bin).
+  locationId: string | null;
+};
+
+/**
+ * A non-tracked lot is written off when its inspection rejects it: it has no
+ * Rejected status to keep it out of on-hand. Shipping those units back to the
+ * supplier would relieve them a second time, so the return shipment first puts
+ * them back. This finds, per return line, how many of its units that applies
+ * to: the quantity the line covers for an issue whose inspection posted a
+ * write-off of the line's item, capped at what was written off.
+ */
+async function getReturnLineWriteOffs(
+  db: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  companyId: string,
+  lines: { id: string; itemId: string | null }[]
+): Promise<Map<string, ReturnLineWriteOff>> {
+  const result = new Map<string, ReturnLineWriteOff>();
+  const lineIds = lines.filter((line) => line.itemId).map((line) => line.id);
+  if (lineIds.length === 0) return result;
+
+  const links = await db
+    .selectFrom("nonConformancePurchaseReturnOrderLine")
+    .select(["nonConformanceId", "purchaseReturnOrderLineId", "quantity"])
+    .where("companyId", "=", companyId)
+    .where("purchaseReturnOrderLineId", "in", lineIds)
+    .execute();
+  if (links.length === 0) return result;
+
+  const inspectionLinks = await db
+    .selectFrom("nonConformanceInspection")
+    .select(["nonConformanceId", "inspectionId"])
+    .where("companyId", "=", companyId)
+    .where("nonConformanceId", "in", [
+      ...new Set(links.map((link) => link.nonConformanceId))
+    ])
+    .execute();
+  const inspectionIds = [
+    ...new Set(inspectionLinks.map((link) => link.inspectionId))
+  ];
+  if (inspectionIds.length === 0) return result;
+
+  // The reject's write-off: the Inbound Inspection movement and the cost it
+  // relieved, both keyed by the inspection.
+  const [writeOffLedger, writeOffCosts] = await Promise.all([
+    db
+      .selectFrom("itemLedger")
+      .select(["documentId", "itemId", "quantity", "locationId"])
+      .where("companyId", "=", companyId)
+      .where("documentType", "=", "Inbound Inspection")
+      .where("documentId", "in", inspectionIds)
+      .where("quantity", "<", 0)
+      .execute(),
+    db
+      .selectFrom("costLedger")
+      .select(["documentId", "itemId", "quantity", "cost"])
+      .where("companyId", "=", companyId)
+      .where("documentId", "in", inspectionIds)
+      .where("quantity", "<", 0)
+      .execute()
+  ]);
+
+  for (const line of lines) {
+    if (!line.itemId) continue;
+    const lineLinks = links.filter(
+      (link) => link.purchaseReturnOrderLineId === line.id
+    );
+    const lineInspectionIds = new Set(
+      inspectionLinks
+        .filter((link) =>
+          lineLinks.some((l) => l.nonConformanceId === link.nonConformanceId)
+        )
+        .map((link) => link.inspectionId)
+    );
+    const ledger = writeOffLedger.filter(
+      (row) =>
+        row.itemId === line.itemId &&
+        lineInspectionIds.has(row.documentId as string)
+    );
+    if (ledger.length === 0) continue;
+    const writtenOff = ledger.reduce(
+      (sum, row) => sum + Math.abs(Number(row.quantity)),
+      0
+    );
+    // Only links to an issue that wrote this item off count toward the line.
+    const writtenOffIssueIds = new Set(
+      inspectionLinks
+        .filter((link) =>
+          ledger.some((row) => row.documentId === link.inspectionId)
+        )
+        .map((link) => link.nonConformanceId)
+    );
+    const covered = lineLinks
+      .filter((link) => writtenOffIssueIds.has(link.nonConformanceId))
+      .reduce((sum, link) => sum + Number(link.quantity ?? 0), 0);
+    const quantity = Math.min(covered, writtenOff);
+    if (quantity <= 0) continue;
+    result.set(line.id, {
+      quantity,
+      unitCost: resolveUnscrapUnitCost(
+        writeOffCosts
+          .filter(
+            (row) =>
+              row.itemId === line.itemId &&
+              lineInspectionIds.has(row.documentId as string)
+          )
+          .map((row) => ({
+            quantity: Number(row.quantity),
+            cost: Number(row.cost)
+          }))
+      ),
+      locationId: ledger[0]?.locationId ?? null
+    });
+  }
+  return result;
+}
+
+/**
+ * The journal side of an inspection write-off that a supplier return puts back
+ * (or, on void, writes off again): inventory against the scrap account, as the
+ * reject booked it.
+ */
+async function returnWriteOffAccounting(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  args: {
+    postingStatus: AutomaticJournalStatus;
+    accountingPeriodId: string | null;
+    description: string;
+    userId: string;
+  }
+): Promise<NonNullable<BookAdjustmentArgs["accounting"]>> {
+  const [accountDefaults, company] = await Promise.all([
+    getDefaultPostingGroup(db, companyId),
+    single(db, "company", { id: companyId }, { columns: ["companyGroupId"] })
+  ]);
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+  // The Item / ItemPostingGroup / Location tags every adjustment carries.
+  const dimensions: Record<string, string> = {};
+  if (company.data?.companyGroupId) {
+    const active = await many(
+      db,
+      "dimension",
+      {
+        companyGroupId: company.data.companyGroupId,
+        active: true,
+        entityType: ["Item", "ItemPostingGroup", "Location"]
+      },
+      { columns: ["id", "entityType"] }
+    );
+    for (const dim of active.data ?? []) {
+      if (dim.entityType) dimensions[dim.entityType] = dim.id;
+    }
+  }
+  return {
+    postingStatus: args.postingStatus,
+    accountingPeriodId: args.accountingPeriodId,
+    accountDefaults: {
+      rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+      finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+      inventoryAdjustmentVarianceAccount:
+        accountDefaults.data.inventoryAdjustmentVarianceAccount
+    },
+    offsetAccount: resolveDefaultAccount(
+      accountDefaults.data,
+      "scrapAccount",
+      args.postingStatus
+    ).accountId,
+    offsetDescription: "Scrap / Cost of Quality",
+    sourceType: "Purchase Return Shipment",
+    description: args.description,
+    userId: args.userId,
+    dimensions
+  };
+}
+
+/** Costing inputs for valuing a restore when its write-off cost is unknown. */
+async function adjustmentItemCosts(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[]
+): Promise<Map<string, AdjustmentItemCost>> {
+  if (itemIds.length === 0) return new Map();
+  const rows = await db
+    .selectFrom("itemCost")
+    .select(["itemId", "costingMethod", "unitCost", "standardCost"])
+    .where("companyId", "=", companyId)
+    .where("itemId", "in", itemIds)
+    .execute();
+  return new Map(
+    rows.map((row) => [
+      row.itemId,
+      {
+        costingMethod: row.costingMethod,
+        unitCost: row.unitCost == null ? null : Number(row.unitCost),
+        standardCost: row.standardCost == null ? null : Number(row.standardCost)
+      }
+    ])
+  );
+}
+
 export const postShipmentInput = z.object({
   type: z.enum(["post", "void"]),
   shipmentId: z.string(),
@@ -15529,6 +15739,19 @@ export async function postShipment(
               ledgerIndex: number;
             }[] = [];
             const splitChildEdges: { childId: string; quantity: number }[] = [];
+            // Units an inspection reject already wrote off: put back before
+            // they ship, so the shipment relieves them once, not twice.
+            const returnLineWriteOffs = await getReturnLineWriteOffs(
+              db,
+              companyId,
+              purchaseReturnOrderLines.data ?? []
+            );
+            const writeOffRestores: {
+              itemId: string;
+              quantity: number;
+              locationId: string | null;
+              unitCost: number | null;
+            }[] = [];
 
             for (const shipmentLine of shipmentLines.data) {
               if (!shipmentLine.itemId || !shipmentLine.lineId) continue;
@@ -15570,6 +15793,30 @@ export async function postShipment(
               );
 
               if (itemTrackingType === "Inventory") {
+                // The first units the line ships are the written-off ones;
+                // earlier shipments of the line already put theirs back.
+                const writeOff = returnLineWriteOffs.get(returnLine.id);
+                if (writeOff) {
+                  const shippedBefore =
+                    existingUpdate?.quantityShipped ??
+                    Number(returnLine.quantityShipped ?? 0);
+                  const restore = round(
+                    writeOffRestoreQuantity({
+                      shipped: shippedQuantity,
+                      writtenOff: writeOff.quantity,
+                      shippedBefore
+                    })
+                  );
+                  if (restore > 0) {
+                    writeOffRestores.push({
+                      itemId: shipmentLine.itemId,
+                      quantity: restore,
+                      locationId:
+                        writeOff.locationId ?? shipmentLine.locationId,
+                      unitCost: writeOff.unitCost
+                    });
+                  }
+                }
                 itemShipmentQuantities[shipmentLine.itemId] =
                   (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
                   shippedQuantity;
@@ -15651,6 +15898,19 @@ export async function postShipment(
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const restoreAccounting =
+              writeOffRestores.length > 0
+                ? await returnWriteOffAccounting(db, companyId, {
+                    postingStatus,
+                    accountingPeriodId,
+                    description: `Inspection write-off put back for return shipment ${shipmentHeader.shipmentId}`,
+                    userId
+                  })
+                : null;
+            const restoreItemCosts = await adjustmentItemCosts(db, companyId, [
+              ...new Set(writeOffRestores.map((restore) => restore.itemId))
+            ]);
+
             await db.transaction().execute(async (trx) => {
               // Double-post guard: serialize on the shipment row — a second
               // concurrent post waits here, then sees Posted and aborts, so
@@ -15683,6 +15943,45 @@ export async function postShipment(
                 throw new Error(
                   `Cannot ship against a return order in ${lockedOrder.status} status`
                 );
+              }
+
+              // Put back what the inspection reject wrote off, at the write-off's
+              // own cost (Dr Inventory / Cr Scrap) and where it was written off,
+              // so the shipment below relieves those units once. The value rows
+              // stay under this shipment: a void reverses the restore with it.
+              for (const restore of writeOffRestores) {
+                const item = items.data.find((i) => i.id === restore.itemId);
+                await bookAdjustment(trx, {
+                  ledger: {
+                    postingDate: today,
+                    itemId: restore.itemId,
+                    quantity: restore.quantity,
+                    locationId: restore.locationId,
+                    storageUnitId: null,
+                    trackedEntityId: null,
+                    entryType: "Positive Adjmt.",
+                    documentType: "Purchase Return Shipment",
+                    documentId: shipmentId,
+                    comment:
+                      "Inspection write-off put back to ship to the supplier",
+                    companyId,
+                    createdBy: userId
+                  },
+                  item: {
+                    itemTrackingType: item?.itemTrackingType ?? "Inventory",
+                    replenishmentSystem: item?.replenishmentSystem ?? null,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === restore.itemId)
+                        ?.itemPostingGroupId ?? null
+                  },
+                  itemCost: restoreItemCosts.get(restore.itemId) ?? {
+                    costingMethod: "Average",
+                    unitCost: 0,
+                    standardCost: 0
+                  },
+                  accounting: restoreAccounting,
+                  fixedUnitCost: restore.unitCost ?? undefined
+                });
               }
 
               // Split any batch returned in part: keep the shelf entity's id
@@ -17371,16 +17670,47 @@ export async function postShipment(
               );
             }
 
+            // The posting put back units an inspection reject had written off
+            // (a positive row of the shipment's own). Voiding writes them off
+            // again, against scrap, rather than reversing them like the
+            // shipment's other rows.
+            const isWriteOffRestore = (entry: {
+              entryType: string;
+              quantity: number;
+            }) =>
+              entry.entryType === "Positive Adjmt." &&
+              Number(entry.quantity) > 0;
+            const writeOffRestores = (originalItemLedger.data ?? []).filter(
+              isWriteOffRestore
+            );
+
             // A Provisional journal has no accounting period.
             const accountingPeriodId =
-              postingStatus === "Posted" && originalJournalLines.length > 0
+              postingStatus === "Posted" &&
+              (originalJournalLines.length > 0 || writeOffRestores.length > 0)
                 ? await getCurrentAccountingPeriod(companyId, db, today)
                 : null;
 
+            const rewriteOffAccounting =
+              writeOffRestores.length > 0
+                ? await returnWriteOffAccounting(db, companyId, {
+                    postingStatus,
+                    accountingPeriodId,
+                    description: `VOID: inspection write-off put back for return shipment ${shipmentHeader.shipmentId}`,
+                    userId
+                  })
+                : null;
+            const rewriteOffItemCosts = await adjustmentItemCosts(
+              db,
+              companyId,
+              [...new Set(writeOffRestores.map((entry) => entry.itemId))]
+            );
+
             await db.transaction().execute(async (trx) => {
               await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-              const reversingItemLedger = (originalItemLedger.data ?? []).map(
-                (entry) => ({
+              const reversingItemLedger = (originalItemLedger.data ?? [])
+                .filter((entry) => !isWriteOffRestore(entry))
+                .map((entry) => ({
                   postingDate: today,
                   itemId: entry.itemId,
                   quantity: -entry.quantity,
@@ -17393,13 +17723,45 @@ export async function postShipment(
                   trackedEntityId: entry.trackedEntityId,
                   createdBy: userId,
                   companyId
-                })
-              );
+                }));
               if (reversingItemLedger.length > 0) {
                 await trx
                   .insertInto("itemLedger")
                   .values(reversingItemLedger)
                   .execute();
+              }
+
+              for (const entry of writeOffRestores) {
+                const item = items.data.find((i) => i.id === entry.itemId);
+                await bookAdjustment(trx, {
+                  ledger: {
+                    postingDate: today,
+                    itemId: entry.itemId,
+                    quantity: -Number(entry.quantity),
+                    locationId: entry.locationId,
+                    storageUnitId: entry.storageUnitId,
+                    trackedEntityId: null,
+                    entryType: "Negative Adjmt.",
+                    documentType: "Purchase Return Shipment",
+                    documentId: shipmentId,
+                    comment: "Inspection write-off restored by the void",
+                    companyId,
+                    createdBy: userId
+                  },
+                  item: {
+                    itemTrackingType: item?.itemTrackingType ?? "Inventory",
+                    replenishmentSystem: item?.replenishmentSystem ?? null,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === entry.itemId)
+                        ?.itemPostingGroupId ?? null
+                  },
+                  itemCost: rewriteOffItemCosts.get(entry.itemId) ?? {
+                    costingMethod: "Average",
+                    unitCost: 0,
+                    standardCost: 0
+                  },
+                  accounting: rewriteOffAccounting
+                });
               }
 
               // Restore inventory VALUE, not just quantity: posting consumed

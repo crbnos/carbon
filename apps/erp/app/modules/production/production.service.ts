@@ -94,6 +94,7 @@ import {
 } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
@@ -129,8 +130,6 @@ import {
   round,
   scrapAllowance,
   searchFilter,
-  textToTiptap,
-  tiptapToText,
   unchecked
 } from "@carbon/utils";
 import type {
@@ -2062,16 +2061,31 @@ export async function getJobOperationsList(
     .order("order", { ascending: true });
 }
 
+const JOB_OPERATION_DETAIL_COLUMNS =
+  "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))" as const;
+
 export async function getJobOperationsByMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string
 ) {
   return client
     .from("jobOperation")
-    .select(
-      "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
-    )
+    .select(JOB_OPERATION_DETAIL_COLUMNS)
     .eq("jobMakeMethodId", jobMakeMethodId)
+    .order("order", { ascending: true });
+}
+
+/** `getJobOperationsByMethodId` for several make methods of one company. */
+export async function getJobOperationsByMethodIds(
+  client: SupabaseClient<Database>,
+  jobMakeMethodIds: string[],
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(JOB_OPERATION_DETAIL_COLUMNS)
+    .in("jobMakeMethodId", jobMakeMethodIds)
+    .eq("companyId", companyId)
     .order("order", { ascending: true });
 }
 
@@ -8022,7 +8036,7 @@ function newAssemblyStepColumns(data: AssemblyStepFields) {
     description: data.description ?? {},
     instructionText:
       data.description !== undefined
-        ? tiptapToText(data.description as JSONContent) || null
+        ? TiptapText(data.description).toString() || null
         : null,
     required: data.required ?? false,
     unitOfMeasureCode:
@@ -8054,7 +8068,7 @@ export async function upsertAssemblyInstructionStep(
   const derivedInstructionText =
     data.description !== undefined
       ? {
-          instructionText: tiptapToText(data.description as JSONContent) || null
+          instructionText: TiptapText(data.description).toString() || null
         }
       : {};
 
@@ -12758,7 +12772,7 @@ const getMethodLogger = getLogger("erp", "get-method");
 function toTiptapDoc(value: unknown): Json {
   if (value && typeof value === "object") return value as Json;
   if (typeof value === "string" && value.length > 0) {
-    return textToTiptap(value) as Json;
+    return TiptapText(value, { format: "text" }).toDocument() as Json;
   }
   return {};
 }

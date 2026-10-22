@@ -7,7 +7,7 @@
 #
 # In GovCloud, BASE_IMAGE must point at an ECR mirror of
 # supabase/edge-runtime — never Docker Hub.
-ARG BASE_IMAGE=supabase/edge-runtime:v1.69.6
+ARG BASE_IMAGE=supabase/edge-runtime:v1.74.0
 ARG DENO_IMAGE=denoland/deno:1.45.2
 
 # --- Module cache warm stage ---------------------------------------------

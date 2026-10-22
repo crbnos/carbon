@@ -22,6 +22,7 @@ import {
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 import {
   cancelOpenPickingListsForJob,
   issueMaterial,
@@ -40,7 +41,11 @@ import {
 } from "~/modules/items/items.service";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
-import { methodItemType, methodType } from "~/modules/shared/shared.models";
+import {
+  inspectionPlanRequired,
+  methodItemType,
+  methodType
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   isActiveCompanyEmployee
@@ -48,12 +53,14 @@ import {
 import {
   invokeCreate,
   invokePosting,
-  setOperationWorkInstruction
+  setOperationWorkInstruction,
+  withOperationStandards
 } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import {
   type AssemblyModelState,
   assemblyStepComponentsReassignValidator,
+  baseJobOperationValidator,
   bulkJobValidator,
   CANCELLABLE_JOB_STATUSES,
   copyPeopleBoardValidator,
@@ -67,7 +74,6 @@ import {
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   jobOperationStatus,
-  jobOperationValidator,
   jobStatus,
   jobValidator,
   makeToAssetItemError,
@@ -2488,23 +2494,37 @@ export const deleteJobMaterials = defineServiceFn({
   }
 });
 
+// The bill of process form requires times, units and rates; the API fills a
+// new operation's from its work center or process, and an update leaves out
+// what it was not sent.
+const jobOperationInput = baseJobOperationValidator
+  .extend({
+    workCenterId: zfd.text(z.string().optional()),
+    jobId: z.string(),
+    customFields: customFieldsInput
+  })
+  .refine(...inspectionPlanRequired);
+
 /**
  * Add an operation to a job's method.
  *
  * @remarks
- * The make method must be this job's. Then the method's requirements and the
+ * The make method must be this job's. Times, units and rates left out are
+ * filled as the bill of process form fills them: from the work center, else
+ * the process's default standard factor and the average of its active work
+ * centers, with times 0; an outside operation's minimum cost and lead time
+ * come from its supplier process. Then the method's requirements and the
  * job's operation dependencies are recalculated.
  *
  * @mcp
  */
 export const createJobOperation = defineServiceFn({
-  input: jobOperationValidator.extend({
-    jobId: z.string(),
-    customFields: customFieldsInput
-  }),
+  input: jobOperationInput,
   permission: { create: "production" },
 
-  async run(ctx, operation) {
+  async run(ctx, input) {
+    const operation = await withOperationStandards(ctx, input);
+    if (operation instanceof CarbonError) return operation;
     const job = await service.requireJob(ctx, operation.jobId);
     if (job instanceof CarbonError) return job;
     const parents = await service.requireJobChildren(ctx, operation.jobId, {
@@ -2540,16 +2560,13 @@ export const createJobOperation = defineServiceFn({
  *
  * @remarks
  * Writes the operation's process, type, times, rates, work center, outside
- * processing costs and links; it never moves to another job or method.
- * Nothing is recalculated.
+ * processing costs and links; a field left out keeps its value. It never
+ * moves to another job or method. Nothing is recalculated.
  *
  * @mcp
  */
 export const updateJobOperation = defineServiceFn({
-  input: jobOperationValidator.extend({
-    jobId: z.string(),
-    customFields: customFieldsInput
-  }),
+  input: jobOperationInput,
   permission: { create: "production" },
 
   async run(ctx, operation) {
@@ -2580,8 +2597,8 @@ export const updateJobOperation = defineServiceFn({
  * the job's editor is.
  *
  * @param id - The job operation's id.
- * @param text - The work instruction as plain text: each line is a paragraph,
- *   `**text**` is bold. Empty text clears it.
+ * @param text - The work instruction as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code. Empty text clears it.
  *
  * @mcp
  */

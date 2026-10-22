@@ -410,6 +410,7 @@ import { VStack } from "./VStack";
 export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
+export * from "./ImageZoomViewer";
 export * from "./RecordOutlet";
 export type {
   ActionPresentation,

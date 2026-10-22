@@ -248,6 +248,100 @@ and resolved to ids by the FieldMappings enum-mapping step (fetchers on
 `materialSubstance` / `materialForm`), so parents must already exist — an unresolved
 parent is an `errors` row. New rows get a DB-generated `xid()` id.
 
+### Method imports (append to the target version)
+
+`bom`, `operations` and `partWithMethod` are handled by `importMethods`
+(`shared.service.ts`). Rows carry a Row Type (`PART`, `BOM`, `BOP`, `STEP`,
+`TOOL`, `PARAM`; blank means `BOM` in the `bom` file) and name their parent part
+(`parentId` + `parentRevision`). The import groups rows by parent part, validates
+each group (`validateGroup`, pure), then writes each part in its own Kysely
+transaction (`writeGroup`): a part with any error writes nothing, other parts
+continue.
+
+- **Target version** (`pickMethodImportTarget`): a blank Make Method Version
+  targets the highest non-archived version that existed before the import; an
+  explicit one targets that version, created as a Draft when missing. An
+  explicit version must be above 0 with at most 2 decimals
+  (`methodVersionIssue`): `makeMethod.version` is `NUMERIC(10, 2)`, so Postgres
+  would store 1.555 as 1.56 and a re-run could not find it again.
+- **Locks** (`methodImportLock`, which returns the editors' `LockCheck`), the
+  same rules as the BOM and BOP editors: the target must be a Draft; a Draft
+  owned by a change notice follows the notice's engineering lock; a Production
+  revision follows `plmReleaseControl` through `getLockVerdict`. A refusal
+  throws `MethodImportRefused` inside the transaction, so a Draft the file
+  created for that part is rolled back too. Under release control "warn" the
+  import writes, as the editors do, and returns the lock's message in
+  `warnings` for each part it wrote rows into; `ImportResultsModal` shows them
+  in a warning alert.
+- **Append, not fill** (`planMaterialAppend`, `planOperationAppend`): new BOM
+  lines are ordered after the highest existing line; a material already on the
+  version is skipped. An Op No is the operation's `order`, so it must be a
+  number of 0 or more, and Op Nos compare by value (`opKey`: "10", "10.0" and
+  "010" are one). An Op No equal to an existing operation's `order` names that
+  operation: the BOP row is skipped and STEP / TOOL / PARAM rows attach to it
+  (they may reference it with no BOP row). A non-numeric Op No was refused
+  because a re-run could not find its operation again and would add it twice. A step with the same name, a tool
+  with the same item and a parameter with the same key are skipped. Every skip
+  goes to `skipped`, so re-running a file writes nothing.
+- **Results count parts, then rows.** `inserted` and `updated` count parts.
+  The summary also carries `added` (`MethodRowsAdded`, `modules/shared/types.ts`):
+  the BOM lines, operations, steps, tools and parameters written. `importCsvFile`
+  returns it (null for every other table), and `ImportResultsModal`
+  (`MethodImportCounts`) and the `ImportCSVModal` toast name the parts, then
+  the rows. A PART row counts as inserted only when it created the part
+  (`xmax = 0` on the item upsert). For a part that exists, the upsert keeps
+  the part's fields, so the PART row is listed as skipped and the part counts
+  as updated only when its method rows were written.
+- **Rows match the editors' rows.** BOM lines copy `methodType` /
+  `sourcingType` / `materialMakeMethodId` / `storageUnitIds` from the component
+  item, as `upsertMethodMaterial` does, and take the component's unit when the
+  file has none. A blank Operation Type takes the process's `processType` and a
+  blank description the process's name, as BillOfProcess `onProcessChange`
+  fills them. The wizard presets no Default for the BOM Unit of Measure or the
+  Operation Type (`fieldMappings` in `imports.models.ts`): an enum Default
+  fills every blank and unmapped cell before the import runs, so a preset
+  would replace these fallbacks. Step descriptions go through `toTiptapDoc`, as the step form's
+  validator does. `customFields` is `{}` on lines and operations, as the
+  routes' `setCustomFields` writes it.
+  `apps/erp/test/database/method-import-parity.test.ts` builds one method
+  through the editors' validators and building blocks and one through the
+  import, and compares every column but ids and timestamps.
+- **Refusals match the editors' validators** (`methodMaterialValidator`,
+  `methodOperationValidator`, `operationStepValidator`,
+  `operationToolValidator`): a BOM line must be a Part, Material or Consumable
+  and not the part itself, with quantity 0 or more; a TOOL row's item must be a
+  Tool, with quantity above 0; times, costs and lead time are 0 or more; a
+  Process operation needs setup, labor and machine units, an Assembly operation
+  setup and labor; step min and max are 0 or more, max at least min; a List
+  step needs one non-blank option; a Make Method Version must be above 0 with
+  at most 2 decimals. An Inspection operation is refused, because
+  `methodOperationValidator` requires an Inspection Plan and a CSV has no
+  column for one. Pinned by `method-import-guards.test.ts`.
+- **Concurrency.** `writeGroup` locks the part's `item` row (`FOR NO KEY
+  UPDATE`, so rows that reference the item can still be written) before it
+  reads the versions, so two imports that create the same new version create
+  it once. It then locks the target `makeMethod` row
+  (`FOR NO KEY UPDATE`) before it reads the version's lines, so two imports of
+  one file write each line once. Not `FOR UPDATE`: that also blocks the
+  `KEY SHARE` lock the `materialMakeMethodId` foreign key takes, so every BOM
+  line elsewhere pointing at this method would wait for the import. The
+  refusals read the status and change notice of the locked row, so a Draft an editor activates or links to a notice
+  while the import waits is refused. A version the import created for a
+  refused part rolls back with it.
+- **Change notice locks are read before any transaction** (`loadChangeNoticeLocks`):
+  `getChangeNoticeEngineeringLocks` (`items.service.ts`) reads pending approvals
+  for every notice in one service-role request (`pendingApprovalDocumentIds`,
+  `@carbon/ee/approvals.server`), which must not run while a part's
+  transaction is open. A Draft whose notice was linked after that read is
+  refused.
+- Known gaps: a sub-assembly created by a `PART` row must come before its parent
+  in the file (parts are written in order of first appearance); a `PART` row
+  does not write the Unique ID mapping; the Supplier Process column is unused;
+  items are looked up by readable id
+  and revision only, so a readable id shared by two item types resolves to
+  either; the import needs only `update: parts`, while the editors' create
+  routes need `create: parts`.
+
 > The models also include `customerStatus` / `customerType` field-mapping entries (used by
 > creatable lookups), but only the tables above appear in `importPermissions`.
 
@@ -264,8 +358,9 @@ every other field is a column mapping) and calls `importCsvFile` (`shared.server
 3. Validates `columnMappings` against `importSchemas[table]` (required fields mapped).
 4. Calls `importCsv(ctx, { table, filePath, columnMappings, enumMappings })`
    (quote tables go through `importQuotes` instead).
-5. Returns `{ inserted, updated, skipped, errors }`; `ImportCSVModal` reads it from the
-   result's `data`.
+5. Returns `{ inserted, updated, skipped, errors, added, warnings }` (`added` is null
+   and `warnings` empty for all but the method imports); `ImportCSVModal` reads it
+   from the result's `data`.
 
 The lookup values an import creates on the fly (`api+/csv+/create-lookup.tsx`) are
 `createImportLookups` (`shared.server.ts`), gated on `create` of the lookup's module.

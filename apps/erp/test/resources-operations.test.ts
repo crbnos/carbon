@@ -378,4 +378,64 @@ describe("a training's guide", () => {
       "The guide can only change while the training is Draft"
     );
   });
+
+  it("clears the training's video", async () => {
+    const { ctx, writes } = contextWith({ training: [{ id: "tr-1" }] });
+
+    await updateTrainingField(ctx, {
+      ids: ["tr-1"],
+      field: "guidePath",
+      value: "company-1/training/tr-1/upload/guide.pdf"
+    });
+
+    expect(writes[0]?.payload).toMatchObject({
+      guidePath: "company-1/training/tr-1/upload/guide.pdf",
+      videoUrl: null
+    });
+  });
+});
+
+describe("a training's video", () => {
+  it("refuses a link that is not a YouTube video", async () => {
+    const { ctx, writes } = contextWith();
+
+    const result = await updateTrainingField(ctx, {
+      ids: ["tr-1"],
+      field: "videoUrl",
+      value: "https://vimeo.com/123456789"
+    });
+
+    expect(result.error?.message).toBe("Enter a YouTube video link");
+    expect(writes).toEqual([]);
+  });
+
+  it("stores the watch link and clears the PDF", async () => {
+    const { ctx, writes } = contextWith({ training: [{ id: "tr-1" }] });
+
+    const result = await updateTrainingField(ctx, {
+      ids: ["tr-1"],
+      field: "videoUrl",
+      value: "https://youtu.be/dQw4w9WgXcQ?si=share"
+    });
+
+    expect(result.error).toBeNull();
+    expect(writes[0]?.payload).toMatchObject({
+      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      guidePath: null
+    });
+  });
+
+  it("changes only while the training is Draft", async () => {
+    const { ctx } = contextWith({ training: [] });
+
+    const result = await updateTrainingField(ctx, {
+      ids: ["tr-1"],
+      field: "videoUrl",
+      value: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    });
+
+    expect(result.error?.message).toBe(
+      "The video can only change while the training is Draft"
+    );
+  });
 });

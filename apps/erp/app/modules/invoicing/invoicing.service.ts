@@ -10068,6 +10068,10 @@ export async function supplierReturnCarriedCosts(
       .select(["documentId", "itemId", "quantity", "cost"])
       .where("documentType", "=", "Purchase Return Shipment")
       .where("documentId", "in", shipmentIds)
+      // What the shipment relieved. A shipment that ships units an inspection
+      // reject wrote off first puts them back (a positive row at the
+      // write-off's cost), which is not carried cost the return took out.
+      .where("quantity", "<", 0)
       .where("companyId", "=", companyId)
       .execute(),
     trx

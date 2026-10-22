@@ -68,6 +68,7 @@ import type { z } from "zod";
 import { Empty } from "~/components";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
+import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
 import { procedureStepType } from "~/modules/shared/shared.models";
@@ -553,13 +554,10 @@ function ProcedureStepItem({
             </HStack>
             {(attribute.minValue !== null || attribute.maxValue !== null) && (
               <p className="text-muted-foreground text-xs">
-                {attribute.minValue !== null && attribute.maxValue !== null
-                  ? `Must be between ${attribute.minValue} and ${attribute.maxValue}`
-                  : attribute.minValue !== null
-                    ? `Must be > ${attribute.minValue}`
-                    : attribute.maxValue !== null
-                      ? `Must be < ${attribute.maxValue}`
-                      : null}
+                <MeasurementLimits
+                  minValue={attribute.minValue}
+                  maxValue={attribute.maxValue}
+                />
               </p>
             )}
           </VStack>
