@@ -29,7 +29,10 @@ export const lineTitle = {
   margin: 0,
   fontSize: "12px",
   lineHeight: "20px",
-  fontWeight: 600
+  fontWeight: 600,
+  // A long unbroken item ID would otherwise widen the description column.
+  wordBreak: "break-word",
+  overflowWrap: "anywhere"
 } as const;
 export const lineDetail = {
   margin: 0,

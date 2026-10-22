@@ -5,18 +5,10 @@
 import type { Database } from "@carbon/database";
 import { getAppUrl } from "@carbon/env";
 import { formatDate } from "@carbon/utils";
-import {
-  Body,
-  Column,
-  Container,
-  Img,
-  Preview,
-  Row,
-  Section,
-  Text
-} from "react-email";
+import { Body, Column, Img, Preview, Row, Section, Text } from "react-email";
 import type { CompanySettings, Email } from "../types";
 import { getQuoteDisplayId } from "../utils/quote";
+import { DocumentCard } from "./components/DocumentCard";
 import { detailText, labelText } from "./components/documentStyles";
 import ExternalNotes from "./components/ExternalNotes";
 import {
@@ -56,14 +48,7 @@ const QuoteEmail = ({
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}
       >
-        <Container
-          className={`mx-auto py-5 px-5 w-full max-w-[600px] ${themeClasses.container}`}
-          style={{
-            borderStyle: "solid",
-            borderWidth: "1px",
-            borderColor: lightStyles.container.borderColor
-          }}
-        >
+        <DocumentCard>
           <Section>
             <Row>
               <Column>
@@ -195,7 +180,7 @@ const QuoteEmail = ({
               </Column>
             </Row>
           </Section>
-        </Container>
+        </DocumentCard>
       </Body>
     </EmailThemeProvider>
   );

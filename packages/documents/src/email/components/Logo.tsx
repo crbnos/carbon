@@ -12,7 +12,8 @@ const baseUrl = getAppUrl();
 // is what a client shows when it inverts colours on its own (Gmail, classic
 // Outlook). A client that runs the theme's dark CSS swaps it for the white
 // one: `.dark-mode-hide` hides the first, `.dark-mode-show` reveals the
-// second, which stays hidden everywhere else (mso-hide for classic Outlook).
+// second, which stays hidden everywhere else. Classic Outlook can still paint
+// an image inside a hidden div, so a non-MSO conditional keeps it out there.
 export function Logo() {
   return (
     <Section className="mt-[32px]">
@@ -23,6 +24,7 @@ export function Logo() {
         alt="Carbon"
         className="mb-4 mx-auto block dark-mode-hide"
       />
+      <span dangerouslySetInnerHTML={{ __html: "<!--[if !mso]><!-->" }} />
       <div
         className="dark-mode-show"
         style={{ display: "none", msoHide: "all" } as React.CSSProperties}
@@ -35,6 +37,7 @@ export function Logo() {
           className="mb-4 mx-auto block"
         />
       </div>
+      <span dangerouslySetInnerHTML={{ __html: "<!--<![endif]-->" }} />
     </Section>
   );
 }

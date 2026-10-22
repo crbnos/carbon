@@ -18,8 +18,8 @@ is a bug, not a design choice. Grounded in the templates and `components/` in th
 | What | Where |
 |---|---|
 | Templates | `packages/documents/src/email/*.tsx`, exported from `index.ts` → `@carbon/documents/email` |
-| Shared chrome | `components/Theme.tsx` (`EmailThemeProvider`, `getEmailThemeClasses`, Geist font, dark-mode meta), `components/Logo.tsx`, `components/notificationStyles.ts` (the `nf-*` classes) |
-| Rendering | jobs code: `render(SomeEmail({ ...props }))` from `@react-email/components` — a plain function call, no JSX in `@carbon/jobs` |
+| Shared chrome | `components/Theme.tsx` (`EmailThemeProvider`, `getEmailThemeClasses`, Geist font, dark-mode meta), `components/Logo.tsx`, `components/notificationStyles.ts` (the `nf-*` classes), `components/DocumentCard.tsx` (the document emails' card, held to 600px in classic Outlook) |
+| Rendering | jobs code: `render(SomeEmail({ ...props }))` with `import { render } from "react-email"` — a plain function call, no JSX in `@carbon/jobs` |
 | Sending | the `carbon/send-email` event (`notifications/send-email.ts`, needs a `companyId`) or `sendEmail` from `@carbon/lib/email.server` directly for platform mail with no company (`tasks/changelog-dispatch.ts`) — both go through the shared SMTP transport, which no-ops (`data: null`) when no `SMTP_*` / `RESEND_API_KEY` is configured |
 | Previews | `src/email/previews/` — **one fixture per shipped email**, `pnpm --filter @carbon/documents email:previews` |
 

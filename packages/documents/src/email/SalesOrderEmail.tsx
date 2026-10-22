@@ -7,7 +7,6 @@ import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import {
   Body,
   Column,
-  Container,
   Hr,
   Img,
   Preview,
@@ -23,6 +22,7 @@ import {
   getTotal
 } from "../utils/sales-order";
 import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
+import { DocumentCard } from "./components/DocumentCard";
 import {
   detailText,
   labelText,
@@ -103,14 +103,7 @@ const SalesOrderEmail = ({
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}
       >
-        <Container
-          className={`mx-auto py-5 px-5 w-full max-w-[600px] ${themeClasses.container}`}
-          style={{
-            borderStyle: "solid",
-            borderWidth: "1px",
-            borderColor: lightStyles.container.borderColor
-          }}
-        >
+        <DocumentCard>
           <Section>
             <Row>
               <Column>
@@ -362,7 +355,7 @@ const SalesOrderEmail = ({
               </Column>
             </Row>
           </Section>
-        </Container>
+        </DocumentCard>
       </Body>
     </EmailThemeProvider>
   );
