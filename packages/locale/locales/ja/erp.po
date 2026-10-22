@@ -11657,6 +11657,15 @@ msgstr "検査"
 msgid "Inspection · {itemReadableId}"
 msgstr "検査·{itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "検査 {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "検査 {0} · {1}"
+
 msgid "Inspection document"
 msgstr "検査文書"
 
@@ -19129,6 +19138,12 @@ msgstr "対応が必要"
 
 msgid "Requires Adjustment"
 msgstr "調整が必要"
+
+msgid "Requires inspection"
+msgstr "検査が必要"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "検査が必要です。領収書の転記時にロットが作成されます。"
 
 msgid "Requires Repair"
 msgstr "修理が必要"

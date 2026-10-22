@@ -11657,6 +11657,15 @@ msgstr "Muayene"
 msgid "Inspection · {itemReadableId}"
 msgstr "Muayene · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Muayene {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Muayene {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Muayene belgesi"
 
@@ -19129,6 +19138,12 @@ msgstr "Eylem Gerektirir"
 
 msgid "Requires Adjustment"
 msgstr "Düzeltme gerekli"
+
+msgid "Requires inspection"
+msgstr "Muayene gerekli"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Muayene gerekli. Makbuz kaydedildiğinde bir lot açılır."
 
 msgid "Requires Repair"
 msgstr "Onarım Gerektirir"

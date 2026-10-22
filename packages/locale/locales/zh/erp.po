@@ -11657,6 +11657,15 @@ msgstr "检验"
 msgid "Inspection · {itemReadableId}"
 msgstr "检验 · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "检验 {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "检验 {0} · {1}"
+
 msgid "Inspection document"
 msgstr "检验文件"
 
@@ -19129,6 +19138,12 @@ msgstr "需要采取行动"
 
 msgid "Requires Adjustment"
 msgstr "需要调整"
+
+msgid "Requires inspection"
+msgstr "需要检验"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "需要检验。过账收据时将创建一个批次。"
 
 msgid "Requires Repair"
 msgstr "需要维修"

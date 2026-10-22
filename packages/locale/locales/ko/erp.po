@@ -11657,6 +11657,15 @@ msgstr "검사"
 msgid "Inspection · {itemReadableId}"
 msgstr "검사 · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "검사 {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "검사 {0} · {1}"
+
 msgid "Inspection document"
 msgstr "검사 문서"
 
@@ -19129,6 +19138,12 @@ msgstr "조치 필요"
 
 msgid "Requires Adjustment"
 msgstr "조정 필요"
+
+msgid "Requires inspection"
+msgstr "검사 필요"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "검사가 필요합니다. 입고를 전기하면 로트가 생성됩니다."
 
 msgid "Requires Repair"
 msgstr "수리 필요"

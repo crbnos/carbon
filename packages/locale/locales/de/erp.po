@@ -11657,6 +11657,15 @@ msgstr "Prüfung"
 msgid "Inspection · {itemReadableId}"
 msgstr "Prüfung · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Prüfung {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Prüfung {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Prüfungsdokument"
 
@@ -19129,6 +19138,12 @@ msgstr "Erfordert Maßnahmen"
 
 msgid "Requires Adjustment"
 msgstr "Erfordert Korrektur"
+
+msgid "Requires inspection"
+msgstr "Erfordert Prüfung"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Erfordert Prüfung. Beim Buchen des Belegs wird ein Los eröffnet."
 
 msgid "Requires Repair"
 msgstr "Reparatur erforderlich"

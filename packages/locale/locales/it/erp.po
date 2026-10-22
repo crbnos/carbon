@@ -11657,6 +11657,15 @@ msgstr "Controllo"
 msgid "Inspection · {itemReadableId}"
 msgstr "Controllo · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Controllo {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Controllo {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Documento di controllo"
 
@@ -19129,6 +19138,12 @@ msgstr "Richiede Azione"
 
 msgid "Requires Adjustment"
 msgstr "Richiede rettifica"
+
+msgid "Requires inspection"
+msgstr "Richiede controllo"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Richiede controllo. Alla registrazione della ricevuta si apre un lotto."
 
 msgid "Requires Repair"
 msgstr "Richiede Riparazione"

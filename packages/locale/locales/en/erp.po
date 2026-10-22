@@ -11657,6 +11657,15 @@ msgstr "Inspection"
 msgid "Inspection · {itemReadableId}"
 msgstr "Inspection · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Inspection {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Inspection {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Inspection document"
 
@@ -19129,6 +19138,12 @@ msgstr "Requires Action"
 
 msgid "Requires Adjustment"
 msgstr "Requires Adjustment"
+
+msgid "Requires inspection"
+msgstr "Requires inspection"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Requires inspection. A lot opens when the receipt posts."
 
 msgid "Requires Repair"
 msgstr "Requires Repair"

@@ -131,7 +131,11 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   submissions. Batch/serial sub-forms render only when `line.requiresBatchTracking` /
   `requiresSerialTracking`. **Receipt** batch/serial forms add an **expiration date** (batch date
   shows only when item shelf-life mode is "Set on Receipt") and a per-line **FileDropzone**;
-  shipment forms do not.
+  shipment forms do not. A receipt line that is inspected shows a small red clipboard beside the
+  item name (`ReceiptLineInspectionMark`): on an unposted Purchase Order receipt when the item has
+  a Receipt-usage inspection plan (`getReceiptInspectedItemIds`, loader `inspectedItemIds`), and
+  once posted when the line has a lot (`receiptInspections` by `sourceDocumentLineId`), which the
+  mark links to for a `quality` viewer.
 - **Rental lines**: on a `'Rental Agreement'` document the loader reads `getRentalShipmentLines` /
   `getRentalReceiptLines` into `rentalLines`, rendered by the siblings `ShipmentRentalLineItem` /
   `ReceiptRentalLineItem` (no storage unit picker, no serial tracking). Both render the unit through

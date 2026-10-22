@@ -27,7 +27,10 @@ import {
   ReceiptDocuments,
   ReceiptHeader
 } from "~/modules/inventory/ui/Receipts";
-import { getReceiptInspections } from "~/modules/quality/quality.service";
+import {
+  getReceiptInspectedItemIds,
+  getReceiptInspections
+} from "~/modules/quality/quality.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -134,6 +137,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
   }
 
+  // Only a purchase receipt opens inspection lots, for the lines whose item
+  // has a Receipt-usage inspection plan. Once posted, the lots themselves
+  // (receiptInspections) say which lines were inspected.
+  const inspectedItemIds =
+    receipt.data.sourceDocument === "Purchase Order" &&
+    receipt.data.status !== "Posted"
+      ? await getReceiptInspectedItemIds(serviceRole, companyId, [
+          ...new Set(
+            (receiptLines.data ?? [])
+              .map((line) => line.itemId)
+              .filter((itemId): itemId is string => Boolean(itemId))
+          )
+        ])
+      : { data: [] as string[], error: null };
+
   let rentalLines: RentalReceiptLine[] = [];
 
   if (receipt.data.sourceDocument === "Rental Agreement") {
@@ -192,6 +210,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
     receiptInspections: receiptInspections.data ?? [],
+    inspectedItemIds: inspectedItemIds.data ?? [],
     fixedAssetLines,
     rentalLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],

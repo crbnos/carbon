@@ -2219,11 +2219,37 @@ export async function getReceiptInspections(
 ) {
   return client
     .from("inspection")
-    .select("id, inspectionId, itemId, itemReadableId, status")
+    .select(
+      "id, inspectionId, itemId, itemReadableId, sourceDocumentLineId, status"
+    )
     .eq("sourceDocument", "Receipt")
     .eq("sourceDocumentId", receiptId)
     .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
+}
+
+/**
+ * The items, of those given, that are inspected at receipt: each has a
+ * Receipt-usage inspection document assigned, which is what makes posting a
+ * purchase receipt open an inspection lot for the line.
+ */
+export async function getReceiptInspectedItemIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[]
+) {
+  if (itemIds.length === 0) return { data: [] as string[], error: null };
+  const assignments = await client
+    .from("itemInspectionDocumentAssignment")
+    .select("itemId")
+    .eq("usage", "Receipt")
+    .eq("companyId", companyId)
+    .in("itemId", itemIds);
+  if (assignments.error) return { data: null, error: assignments.error };
+  return {
+    data: [...new Set(assignments.data.map((a) => a.itemId))],
+    error: null
+  };
 }
 
 // Receipt-sourced lots only: the received tracked entities are linked to the

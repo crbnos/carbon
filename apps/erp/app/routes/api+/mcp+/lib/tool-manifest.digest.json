@@ -1119,7 +1119,7 @@
     {"name":"quality_getQualityDocuments","classification":"READ","schema":"cd40ae40fad5","response":"4afca05d1d27","permission":"quality:view","paginates":true},
     {"name":"quality_getQualityDocumentVersions","classification":"READ","schema":"b6064496c216","response":"81dd83c56231","permission":"quality:view","paginates":false},
     {"name":"quality_getQualityFiles","classification":"READ","schema":"7f8214d1083f","response":"6351756c9816","permission":"quality:view","paginates":false},
-    {"name":"quality_getReceiptInspections","classification":"READ","schema":"85cf4fd2917f","response":"83d5d10abb6a","permission":"quality:view","paginates":false},
+    {"name":"quality_getReceiptInspections","classification":"READ","schema":"85cf4fd2917f","response":"06f8ced90cfa","permission":"quality:view","paginates":false},
     {"name":"quality_getRequiredAction","classification":"READ","schema":"d65e071deff9","response":"58c7a89fdc1f","permission":"quality:view","paginates":false},
     {"name":"quality_getRequiredActions","classification":"READ","schema":"cd40ae40fad5","response":"bb4170f94792","permission":"quality:view","paginates":true},
     {"name":"quality_getRequiredActionsList","classification":"READ","schema":"31b84d65b2ac","response":"ce08332e0ce6","permission":"quality:view","paginates":false},

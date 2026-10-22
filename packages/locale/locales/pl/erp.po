@@ -11657,6 +11657,15 @@ msgstr "Kontrola"
 msgid "Inspection · {itemReadableId}"
 msgstr "Kontrola · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Kontrola {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Kontrola {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Dokument kontroli"
 
@@ -19129,6 +19138,12 @@ msgstr "Wymaga działania"
 
 msgid "Requires Adjustment"
 msgstr "Wymaga Korekty"
+
+msgid "Requires inspection"
+msgstr "Wymaga kontroli"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Wymaga kontroli. Partia zostanie otwarta po zaksięgowaniu paragonu."
 
 msgid "Requires Repair"
 msgstr "Wymaga naprawy"
