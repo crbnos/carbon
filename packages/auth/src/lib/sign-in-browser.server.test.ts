@@ -38,3 +38,23 @@ describe("sign-in browser", () => {
     expect(await isSignInBrowser(requestWith(cookie))).toBe(false);
   });
 });
+
+describe("sign-in browser without a shared DOMAIN", () => {
+  it("binds nothing, so an MES link still completes on the ERP", async () => {
+    vi.resetModules();
+    vi.doMock("../config/env", () => ({
+      AUTH_COOKIE_SUFFIX: undefined,
+      CarbonEdition: "Community",
+      DOMAIN: undefined,
+      SESSION_SECRET: "test-session-secret"
+    }));
+    const warn = vi.fn();
+    vi.doMock("@carbon/logger", () => ({ getLogger: () => ({ warn }) }));
+    const unbound = await import("./sign-in-browser.server");
+    expect(await unbound.isSignInBrowser(requestWith())).toBe(true);
+    expect(await unbound.isSignInBrowser(requestWith())).toBe(true);
+    expect(warn).toHaveBeenCalledTimes(1);
+    vi.doUnmock("../config/env");
+    vi.doUnmock("@carbon/logger");
+  });
+});

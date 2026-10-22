@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
 import { createCookie } from "react-router";
 import { CarbonEdition, DOMAIN, SESSION_SECRET } from "../config/env";
@@ -17,6 +18,10 @@ import { authCookieName, getCookieDomain } from "../utils/cookie";
  *
  * As long as the link lives (GoTrue's one hour), and carrying nothing but
  * when: it proves "this browser asked", not who for.
+ *
+ * Without DOMAIN the cookie is host-only, and a link the MES asked for could
+ * never complete on the ERP's host. The flag must never make sign-in
+ * impossible, so then every browser counts as the one that asked.
  */
 const MAX_AGE_SECONDS = 60 * 60;
 
@@ -38,8 +43,20 @@ export function markSignInBrowser(): Promise<string> {
   return signInBrowserCookie.serialize({ at: Date.now() });
 }
 
+const log = getLogger("auth", "sign-in-browser");
+let warnedUnbound = false;
+
 /** Whether this browser asked for a sign-in email within the link's life. */
 export async function isSignInBrowser(request: Request): Promise<boolean> {
+  if (!DOMAIN) {
+    if (!warnedUnbound) {
+      warnedUnbound = true;
+      log.warn(
+        "MAGIC_LINK_SAME_BROWSER is on but DOMAIN is unset: the ERP and MES share no cookie, so sign-in links are not bound to the browser that asked."
+      );
+    }
+    return true;
+  }
   const value = await signInBrowserCookie.parse(request.headers.get("Cookie"));
   const at = typeof value?.at === "number" ? value.at : 0;
   return Date.now() - at < MAX_AGE_SECONDS * 1000;
