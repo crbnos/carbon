@@ -77,3 +77,19 @@ Read `.claude/rules/module-files.md`, `.claude/rules/conventions-services.md`,
   agents work in parallel, so errors outside your files are not yours. Other packages:
   `pnpm exec turbo run typecheck --filter=<pkg>`.
 - Run `npx biome check --write <your files>` before you finish.
+
+## Phase 8 (tests)
+
+- Live-database tests run against this worktree's own stack (already up, migrated). Load its
+  env first, or the tests hit another stack: `source /tmp/port/env.sh` (sets SUPABASE_DB_URL
+  etc. from `.env.local`). Then e.g. `cd apps/erp && npx vitest run test/database/<path>`.
+  Never run `crbn up/down`, `db:migrate`, or reset the database.
+- Main's fixtures: `apps/erp/test/database/fixtures/` (`local-database.ts` → `databaseTest`,
+  `always-post.ts` → a system `ServiceContext` as `service`, `handles.ts` → `handlesOf(ctx)`).
+  Main's call pattern: `invokePosting(handlesOf(f.ctx), "post-receipt", {...}, postReceipt)` with
+  bodies imported from `../../../app/modules/<m>/<m>.service`. Look at a test main already moved
+  (e.g. `apps/erp/test/database/post-receipt/*.test.ts`) before writing.
+- A test that fails is a finding, not something to bend: if a ported test fails, decide whether
+  the port lost behaviour (fix the module code if it is clearly a port slip, and say so) or the
+  test's expectation depends on old plumbing (adapt the plumbing only). Never weaken an
+  assertion about posted amounts, accounts, quantities or stripes.
