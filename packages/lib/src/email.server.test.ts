@@ -156,10 +156,11 @@ describe("sendEmail", () => {
     );
   });
 
-  it("reports server mail as configured by SMTP_HOST or RESEND_API_KEY", async () => {
+  it("reports server mail as configured by SMTP_HOST only", async () => {
     expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
+    // The legacy shared Resend account never carries companies' documents.
     vi.stubEnv("RESEND_API_KEY", "re_123");
-    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(true);
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
     vi.stubEnv("RESEND_API_KEY", "");
     vi.stubEnv("SMTP_HOST", "mail.example.com");
     expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(true);

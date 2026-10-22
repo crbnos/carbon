@@ -5332,6 +5332,7 @@ export async function sendPostedSalesInvoice(
       }
 
       await trigger("send-email", {
+        document: true,
         to: [seller.data.email, contact.email!],
         cc: args.cc?.length ? args.cc : undefined,
         from: seller.data.email,

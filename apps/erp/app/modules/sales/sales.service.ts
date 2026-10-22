@@ -12223,6 +12223,7 @@ export async function emailQuote(
   }
 
   await trigger("send-email", {
+    document: true,
     to: [user.data.email, customerContact.data.contact!.email!],
     cc: args.cc?.length ? args.cc : undefined,
     from: user.data.email,

@@ -9,6 +9,8 @@ Carbon uses email for transactional messages such as order confirmations and not
 
 When the server has mail settings, every company can email quotes, orders, invoices and RFQs without installing this integration: they go out through the server's mail settings, from the server's sender address. Install the integration to use your own sender address or your own Resend or SMTP account. If the server has no mail settings, ask your administrator to set them up, or use Resend or SMTP.
 
+These settings apply to document emails only. Sign-in, security and notification emails always go out from the server's sender address.
+
 <Steps>
   <Step>
   ### Choose a provider
@@ -18,13 +20,13 @@ When the server has mail settings, every company can email quotes, orders, invoi
   <Step>
   ### Fill in the provider fields
 
-  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. Server mail needs no credentials. Configure the **from address** for any provider; with server mail, leave it empty to use the server's sender address.
+  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. Server mail needs no credentials. Configure the **from address** for any provider; with server mail, leave it empty to use the server's sender address. Server mail sends only from the server's own mail domain: a from address on another domain is used as the reply-to address, and the email is sent from the server's sender address.
   </Step>
 </Steps>
 
 <FieldTable>
   <Field name="Provider">**Server mail** (this server's mail settings), **Resend** (Carbon-managed) or **SMTP** (your own server).</Field>
-  <Field name="From address">The address outbound mail is sent from. Optional with server mail.</Field>
+  <Field name="From address">The address document emails are sent from. Optional with server mail, where an address on another domain than the server's becomes the reply-to address.</Field>
   <Field name="API key">*(Resend)* Your Resend API key.</Field>
   <Field name="Host / Port">*(SMTP)* Your mail server and port (default `587`).</Field>
   <Field name="Username / Password">*(SMTP)* Credentials for the SMTP server.</Field>

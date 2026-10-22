@@ -40,12 +40,12 @@ export const DEFAULT_FROM =
   SMTP_FROM ?? `Carbon <no-reply@${process.env.RESEND_DOMAIN ?? "carbon.ms"}>`;
 
 /**
- * Whether this server can send mail: SMTP_* set, or the legacy RESEND_API_KEY
- * fallback below.
+ * Whether companies can send their documents through this server's own mail
+ * settings: only when SMTP_HOST is set. The legacy RESEND_API_KEY fallback
+ * below still sends sign-in and system mail, but it is a shared account, so
+ * it never carries a company's documents.
  */
-export const SERVER_MAIL_CONFIGURED = Boolean(
-  SMTP_HOST || process.env.RESEND_API_KEY
-);
+export const SERVER_MAIL_CONFIGURED = Boolean(SMTP_HOST);
 
 /** Domain of the default from-address, e.g. "carbon.ms". */
 export const EMAIL_DOMAIN =

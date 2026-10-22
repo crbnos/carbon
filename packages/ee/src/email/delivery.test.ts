@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { resolveEmailDelivery } from "./delivery";
+import { documentSender, emailDomain, resolveEmailDelivery } from "./delivery";
 
 const installed = (metadata: Record<string, unknown>) => ({
   active: true,
@@ -61,5 +61,47 @@ describe("resolveEmailDelivery", () => {
     expect(
       resolveEmailDelivery(installed({ provider: "server" }), false)
     ).toBeNull();
+  });
+});
+
+describe("documentSender", () => {
+  const server = (fromEmail?: string) => ({
+    provider: "server" as const,
+    fromEmail
+  });
+
+  it("sends as the company's address on the server's own domain", () => {
+    expect(documentSender(server("Sales@Acme.co"), "acme.co")).toEqual({
+      from: "Sales@Acme.co"
+    });
+  });
+
+  it("moves a company address on another domain to the Reply-To", () => {
+    expect(documentSender(server("ceo@bank.com"), "acme.co")).toEqual({
+      replyTo: "ceo@bank.com"
+    });
+    // A subdomain is another domain to the relay.
+    expect(documentSender(server("a@mail.acme.co"), "acme.co")).toEqual({
+      replyTo: "a@mail.acme.co"
+    });
+  });
+
+  it("uses the server's sender without a company address", () => {
+    expect(documentSender(server(), "acme.co")).toEqual({});
+    expect(documentSender(null, "acme.co")).toEqual({});
+  });
+
+  it("never sets a sender for Resend or SMTP integrations", () => {
+    expect(
+      documentSender({ provider: "smtp", fromEmail: "a@acme.co" }, "acme.co")
+    ).toEqual({});
+  });
+});
+
+describe("emailDomain", () => {
+  it("reads the domain of a bare or named address", () => {
+    expect(emailDomain("a@Acme.co")).toBe("acme.co");
+    expect(emailDomain("Acme <a@acme.co>")).toBe("acme.co");
+    expect(emailDomain("nobody")).toBeUndefined();
   });
 });

@@ -6672,6 +6672,7 @@ export async function releaseApprovedPurchaseOrder(
           [{ filename: pdf.fileName, path: pdf.path }]
         );
         await trigger("send-email", {
+          document: true,
           to: email.to,
           cc: cc?.length ? cc : undefined,
           from: email.from,

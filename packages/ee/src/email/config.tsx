@@ -60,7 +60,7 @@ export const Email = defineIntegration({
       name: "fromEmail",
       label: "From email",
       description:
-        "The sender address your customers will see. Must be a domain you control. With Server mail, leave it empty to use this server's sender address.",
+        "The sender address your customers will see. Must be a domain you control. With Server mail, leave it empty to use this server's sender address; an address on another domain than the server's is used as the reply-to address instead.",
       type: "text",
       // Required for Resend and Custom SMTP; the schema enforces that.
       required: false,

@@ -477,6 +477,7 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
           const body = `Hey ${email.firstName},\n\nPlease provide pricing and lead time(s) for the linked quote:`;
           const signature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
           await trigger("send-email", {
+            document: true,
             to: [user.data.email, email.to],
             from: user.data.email,
             subject: `Supplier Quote ${email.quoteReadableId} from ${company.data.name}`,
@@ -759,6 +760,7 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     const signature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
     try {
       await trigger("send-email", {
+        document: true,
         to: [user.data.email, contact.data.contact.email].filter(
           Boolean
         ) as string[],
@@ -2493,6 +2495,7 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
             );
           }
           await trigger("send-email", {
+            document: true,
             to: email.to,
             cc: cc?.length ? cc : undefined,
             from: email.from,

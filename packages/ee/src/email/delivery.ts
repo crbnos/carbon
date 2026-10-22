@@ -33,3 +33,27 @@ export function resolveEmailDelivery(
       : undefined;
   return { provider, fromEmail };
 }
+
+/** Lowercased domain of an address: "Acme <Sales@Acme.co>" → "acme.co". */
+export const emailDomain = (address: string) =>
+  address.match(/@([^>\s]+)/)?.[1]?.toLowerCase();
+
+/**
+ * The From and Reply-To of a document email (quote, order, invoice, purchase
+ * order, RFQ) under a company's delivery settings. Every other email —
+ * sign-in, security, notifications — always goes from the server's address.
+ *
+ * On server mail the company's address is the From only on the server's own
+ * sending domain: the relay sends for that domain alone, and any other one
+ * would let a company send as a domain it does not own. A company address on
+ * another domain becomes the Reply-To instead, beside the server's From.
+ */
+export function documentSender(
+  delivery: EmailDelivery | null,
+  serverDomain: string
+): { from?: string; replyTo?: string } {
+  if (delivery?.provider !== "server" || !delivery.fromEmail) return {};
+  return emailDomain(delivery.fromEmail) === serverDomain.toLowerCase()
+    ? { from: delivery.fromEmail }
+    : { replyTo: delivery.fromEmail };
+}

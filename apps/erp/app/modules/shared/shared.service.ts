@@ -1242,6 +1242,7 @@ export async function sendSalesOrderEmail(args: {
     .createSignedUrl(documentFilePath, 3600);
 
   await trigger("send-email", {
+    document: true,
     to: [seller.data.email, customer.data.contact.email!],
     cc: ccSelections?.length ? ccSelections : undefined,
     from: seller.data.email,
