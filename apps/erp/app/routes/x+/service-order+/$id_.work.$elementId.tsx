@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
@@ -11,13 +12,18 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  data,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import { DateTime } from "~/components";
 import { usePermissions } from "~/hooks";
-import { getProjectElementPage } from "~/modules/projects/projects.server";
 import {
   getProject,
+  getProjectElementPage,
   getProjectLabels,
   getProjectStates
 } from "~/modules/projects/projects.service";
@@ -25,17 +31,15 @@ import { ElementView } from "~/modules/projects/ui/Element/ElementView";
 import { PropertyField } from "~/modules/projects/ui/Element/PropertyFields";
 import { ElementRoutesProvider } from "~/modules/projects/ui/Elements/ElementRoutes";
 import { serviceNodeFixedPriceValidator } from "~/modules/service/service.models";
-import {
-  getServiceNode,
-  updateServiceNodeFixedPrice
-} from "~/modules/service/service.service";
+import { getServiceNode } from "~/modules/service/service.service";
 import {
   FixedPriceField,
   ServiceCharges,
   useServiceChargeActions
 } from "~/modules/service/ui/Work/ServiceCharges";
 import { serviceOrderElementRoutes } from "~/modules/service/ui/Work/serviceElementRoutes";
-import { getRecordIssueLinks } from "~/modules/shared/shared.server";
+import { getRecordIssueLinks } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -88,7 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { projectId } = order.data;
 
   const [page, node, project, states, labels, issueLinks] = await Promise.all([
-    getProjectElementPage(client, {
+    getProjectElementPage(client, getDatabaseClient(), {
       companyId,
       projectId,
       elementId,
@@ -138,49 +142,25 @@ function failure(message: string) {
  * Sets or removes the element's fixed price (`intent=fixedPrice`) while the
  * order is not Closed or Cancelled. The sidebar field saves it quietly.
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["id", "elementId"]
   });
-  const { id, elementId } = params;
-  if (!id) throw new Error("Could not find id");
-  if (!elementId) throw new Error("Could not find elementId");
-
-  const formData = await request.formData();
+  if ("invalid" in input) return input.invalid;
+  const formData = await args.request.formData();
   if (formData.get("intent") !== "fixedPrice") return failure("Unknown intent");
   const validation = await validator(serviceNodeFixedPriceValidator).validate(
     formData
   );
   if (validation.error) return failure("Enter a price of 0 or more");
 
-  const order = await client
-    .from("serviceOrder")
-    .select("projectId, status")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-  if (order.error) return failure("The service order was not found");
-  if (order.data.status === "Closed" || order.data.status === "Cancelled") {
-    return failure("A closed or cancelled service order cannot change");
-  }
-
-  const update = await updateServiceNodeFixedPrice(client, {
-    projectId: order.data.projectId,
-    elementId,
-    fixedPrice: validation.data.fixedPrice ?? null,
-    companyId,
-    updatedBy: userId
+  const api = await carbon(args.request);
+  const result = await api.service.updateServiceNodeFixedPrice({
+    serviceOrderId: input.params.id,
+    elementId: input.params.elementId,
+    fixedPrice: validation.data.fixedPrice
   });
-  if (update.error) {
-    logger.error("Failed to save a fixed price", {
-      companyId,
-      serviceOrderId: id,
-      elementId,
-      error: update.error
-    });
-    return failure("Failed to save the fixed price");
-  }
+  if (result.error) return failure(result.error.message);
   return data({ success: true, error: null });
 }
 

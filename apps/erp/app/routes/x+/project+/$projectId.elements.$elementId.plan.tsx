@@ -2,37 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { type ActionFunctionArgs, data } from "react-router";
 import {
   projectElementCostValidator,
   projectElementLaborValidator,
   projectElementMaterialValidator
 } from "~/modules/projects/projects.models";
-import {
-  deletePlanLineInChangeRequest,
-  type PlanLineTable,
-  readChangeRequestId,
-  requireEditablePlanRoute,
-  upsertPlanLineInChangeRequest
-} from "~/modules/projects/projects.server";
-import {
-  deleteProjectElementCost,
-  deleteProjectElementLabor,
-  deleteProjectElementMaterial,
-  getProject,
-  upsertProjectElementCost,
-  upsertProjectElementLabor,
-  upsertProjectElementMaterial
-} from "~/modules/projects/projects.service";
-import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "project-element-plan");
+import { readChangeRequestId } from "~/modules/projects/projects.service";
 
 const intents = [
   "upsertMaterial",
@@ -46,13 +26,12 @@ type Intent = (typeof intents)[number];
 
 /**
  * Creates, updates and deletes the plan lines of an element. A grid cell
- * posts `quiet` and gets `{ error }` back instead of a flash.
+ * posts `quiet` and gets `{ error }` back instead of a flash. While a change
+ * request is open, the lines change in it instead (`changeRequestId`, or
+ * `?cr=`); the operation refuses a Closed project and a locked plan.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
 
   const { projectId, elementId } = params;
   if (!projectId) throw new Error("Could not find projectId");
@@ -60,10 +39,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const quiet = formData.get("quiet") === "true";
-  const refuse = async (err: unknown, message: string) =>
+  const refuse = async (message: string) =>
     quiet
       ? data({ success: false, error: message }, { status: 400 })
-      : data({ success: false }, await flash(request, error(err, message)));
+      : data({ success: false }, await flash(request, error(null, message)));
   // `id` is the line saved: a grid draft keeps it, so its next edit updates.
   const done = async (message: string, id?: string) =>
     quiet
@@ -83,70 +62,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
           { status: 400 }
         )
       : validationError(validation.error);
-
-  const project = await getProject(client, companyId, projectId);
-  if (project.error || !project.data) {
-    logger.error("Failed to load project", {
-      companyId,
-      projectId,
-      error: project.error
-    });
-    return refuse(project.error, "Failed to load the project");
-  }
-  if (project.data.status === "Closed") {
-    return refuse(null, "A Closed project cannot change");
-  }
+  const settle = (
+    result: {
+      data: { id: string } | null;
+      error: { message: string } | null;
+    },
+    message: string
+  ) =>
+    result.error
+      ? refuse(result.error.message)
+      : done(message, result.data?.id);
 
   const intent = formData.get("intent") as Intent | null;
   formData.set("projectElementId", elementId);
   const id = formData.get("id");
-
-  // While a change request is open, plan lines change in it instead.
-  const changeRequestId = readChangeRequestId(request, formData);
-  // A locked plan takes plan-layer changes only through a change request.
-  const locked = await requireEditablePlanRoute(request, {
-    client,
+  const scope = {
     projectId,
-    companyId,
-    changeRequestId,
-    withFlash: !quiet
-  });
-  if (locked) return locked;
-  const inChangeRequest = async (
-    table: PlanLineTable,
-    line: { id?: string; projectElementId: string } & Record<string, unknown>,
-    message: string
-  ) => {
-    if (!changeRequestId) return null;
-    const { id: lineId, projectElementId: _element, ...fields } = line;
-    let saved: { id: string };
-    try {
-      saved = await upsertPlanLineInChangeRequest(getDatabaseClient(), {
-        companyId,
-        userId,
-        projectId,
-        changeRequestId,
-        table,
-        id: lineId,
-        elementId,
-        fields
-      });
-    } catch (err) {
-      return failed(err, err instanceof Error ? err.message : message);
-    }
-    return done(message, saved.id);
+    changeRequestId: readChangeRequestId(request, formData)
   };
 
-  const failed = (err: unknown, message: string) => {
-    logger.error(message, {
-      companyId,
-      projectId,
-      elementId,
-      intent,
-      error: err
-    });
-    return refuse(err, message);
-  };
+  const api = await carbon(request);
 
   switch (intent) {
     case "upsertMaterial": {
@@ -154,127 +89,53 @@ export async function action({ request, params }: ActionFunctionArgs) {
         projectElementMaterialValidator
       ).validate(formData);
       if (validation.error) return invalid(validation);
-      const staged = await inChangeRequest(
-        "projectElementMaterial",
-        validation.data,
+      return settle(
+        await api.projects.upsertProjectElementMaterial({
+          ...validation.data,
+          ...scope
+        }),
         "Material saved"
       );
-      if (staged) return staged;
-      const { id: lineId, ...line } = validation.data;
-      const result = lineId
-        ? await upsertProjectElementMaterial(client, {
-            ...line,
-            id: lineId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectElementMaterial(client, {
-            ...line,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error)
-        return failed(result.error, "Failed to save the material");
-      return done("Material saved", result.data?.id);
     }
     case "upsertLabor": {
       const validation = await validator(projectElementLaborValidator).validate(
         formData
       );
       if (validation.error) return invalid(validation);
-      const staged = await inChangeRequest(
-        "projectElementLabor",
-        validation.data,
+      return settle(
+        await api.projects.upsertProjectElementLabor({
+          ...validation.data,
+          ...scope
+        }),
         "Labor saved"
       );
-      if (staged) return staged;
-      const { id: lineId, ...line } = validation.data;
-      const result = lineId
-        ? await upsertProjectElementLabor(client, {
-            ...line,
-            id: lineId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectElementLabor(client, {
-            ...line,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) return failed(result.error, "Failed to save the labor");
-      return done("Labor saved", result.data?.id);
     }
     case "upsertCost": {
       const validation = await validator(projectElementCostValidator).validate(
         formData
       );
       if (validation.error) return invalid(validation);
-      const staged = await inChangeRequest(
-        "projectElementCost",
-        validation.data,
+      return settle(
+        await api.projects.upsertProjectElementCost({
+          ...validation.data,
+          ...scope
+        }),
         "Cost saved"
       );
-      if (staged) return staged;
-      const { id: lineId, ...line } = validation.data;
-      const result = lineId
-        ? await upsertProjectElementCost(client, {
-            ...line,
-            id: lineId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectElementCost(client, {
-            ...line,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) return failed(result.error, "Failed to save the cost");
-      return done("Cost saved", result.data?.id);
     }
     case "deleteMaterial":
     case "deleteLabor":
     case "deleteCost": {
-      if (typeof id !== "string" || !id)
-        return refuse(null, "No line was given");
-      if (changeRequestId) {
-        const table: PlanLineTable =
-          intent === "deleteMaterial"
-            ? "projectElementMaterial"
-            : intent === "deleteLabor"
-              ? "projectElementLabor"
-              : "projectElementCost";
-        try {
-          await deletePlanLineInChangeRequest(getDatabaseClient(), {
-            companyId,
-            userId,
-            projectId,
-            changeRequestId,
-            table,
-            id
-          });
-        } catch (err) {
-          return failed(
-            err,
-            err instanceof Error ? err.message : "Failed to delete the line"
-          );
-        }
-        return done("Line deleted");
-      }
+      if (typeof id !== "string" || !id) return refuse("No line was given");
       const remove =
         intent === "deleteMaterial"
-          ? deleteProjectElementMaterial
+          ? api.projects.deleteProjectElementMaterial
           : intent === "deleteLabor"
-            ? deleteProjectElementLabor
-            : deleteProjectElementCost;
-      const result = await remove(client, id, companyId);
-      if (result.error)
-        return failed(result.error, "Failed to delete the line");
-      return done("Line deleted");
+            ? api.projects.deleteProjectElementLabor
+            : api.projects.deleteProjectElementCost;
+      return settle(await remove({ id, ...scope }), "Line deleted");
     }
     default:
-      return refuse(null, "Unknown action");
+      return refuse("Unknown action");
   }
 }

@@ -9,7 +9,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import {
   getApprovalCountForUser,
   getBillingReviewCountForUser
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import type { Handle } from "~/utils/handle";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";

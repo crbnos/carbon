@@ -12,28 +12,25 @@ import { RecordOutlet } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLocation, useParams } from "react-router";
+import { type LoaderFunctionArgs, useLocation, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { openChangeRequestStatuses } from "~/modules/projects/projects.models";
-import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
 import {
-  getProjectCapitalAssets,
-  loadChangeRequestOverlay,
-  overlayElementList
-} from "~/modules/projects/projects.server";
-import type { ProjectElementListItem } from "~/modules/projects/projects.service";
-import {
+  type ChangeRequestOverlay,
   getContractBillingLines,
   getProject,
   getProjectBorrows,
+  getProjectCapitalAssets,
   getProjectChangeRequests,
   getProjectContracts,
   getProjectElements,
   getProjectLabels,
   getProjectMilestones,
   getProjectStates,
-  getProjectSwitcherOptions
+  getProjectSwitcherOptions,
+  loadChangeRequestOverlay,
+  overlayElementList,
+  type ProjectElementListItem
 } from "~/modules/projects/projects.service";
 import type { ProjectTreeElement } from "~/modules/projects/ui/Project/ProjectElementTree";
 import ProjectHeader from "~/modules/projects/ui/Project/ProjectHeader";

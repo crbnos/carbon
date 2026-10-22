@@ -2,20 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate } from "react-router";
-import { projectIssueValidator } from "~/modules/projects/projects.models";
 import {
-  checkProjectBudget,
-  postProjectIssue
-} from "~/modules/projects/projects.server";
+  type ActionFunctionArgs,
+  data,
+  type LoaderFunctionArgs,
+  useNavigate
+} from "react-router";
+import { projectIssueValidator } from "~/modules/projects/projects.models";
 import { IssueMaterialModal } from "~/modules/projects/ui/Element/IssueMaterialModal";
-import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -30,59 +30,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 /**
- * Issues stock to a project, or returns it, through `post-project-issue`.
- * A refusal (a closed element, too little stock) is returned as fetcher
- * data, so the modal shows it and stays open.
+ * Issues stock to a project, or returns it (`postProjectIssue`). A refusal
+ * (a closed element, too little stock, a budget block) is returned as
+ * fetcher data, so the modal shows it and stays open.
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: ["inventory", "projects"]
-  });
-
   const validation = await validator(projectIssueValidator).validate(
     await request.formData()
   );
   if (validation.error) return validationError(validation.error);
 
-  // Budget control (Government Contracting 5c, C4). An Issue charges the
-  // item's unit cost to the element; a Return is never checked. Block keeps
-  // the modal open with the overrun; Warn posts and flashes it.
-  let budgetNote = "";
-  if (validation.data.direction === "Issue") {
-    const db = getDatabaseClient();
-    const cost = await db
-      .selectFrom("itemCost")
-      .select("unitCost")
-      .where("itemId", "=", validation.data.itemId)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    const budget = await checkProjectBudget(db, client, {
-      companyId,
-      source: "issue",
-      charges: [
-        {
-          projectId: validation.data.projectId,
-          projectElementId: validation.data.projectElementId ?? null,
-          amount: validation.data.quantity * Number(cost?.unitCost ?? 0)
-        }
-      ]
-    });
-    if (budget.status === "block") {
-      return data({ success: false, error: { message: budget.message } });
-    }
-    if (budget.status === "warn") budgetNote = `. ${budget.message}`;
+  const api = await carbon(request);
+  const result = await api.projects.postProjectIssue(validation.data);
+  if (result.error) {
+    return data({ success: false, error: { message: result.error.message } });
   }
 
-  const postingError = await postProjectIssue({
-    ...validation.data,
-    companyId,
-    userId
-  });
-  if (postingError) {
-    return data({ success: false, error: { message: postingError } });
-  }
-
+  // Budget control (Government Contracting 5c, C4): Warn posts and flashes
+  // the overrun.
+  const { budgetWarning } = result.data;
+  const budgetNote = budgetWarning ? `. ${budgetWarning}` : "";
   return data(
     { success: true, error: null },
     await flash(

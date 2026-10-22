@@ -6,8 +6,7 @@ import { ValidatedForm } from "@carbon/form";
 import { Button, Copy, cn, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { LuBuilding2 } from "react-icons/lu";
 import { Link } from "react-router";
 import { z } from "zod";
@@ -21,19 +20,17 @@ import {
 } from "~/hooks";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
 import { path } from "~/utils/path";
-import type {
-  CostTotals,
-  ProjectCostObjective,
-  ProjectCostTreatment
-} from "../../projects.models";
 import {
+  type CostTotals,
   elementWbsCodes,
+  type ProjectCostObjective,
+  type ProjectCostTreatment,
   projectElementPriorities,
   rdComponentTypes,
   rdSoftwareTypes,
   rollUpCostSummary
 } from "../../projects.models";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import {
   ElementPriorityIcon,

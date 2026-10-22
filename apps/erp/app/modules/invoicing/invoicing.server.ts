@@ -31,7 +31,7 @@ import {
 import {
   chargeNumberError,
   chargeNumbersError
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import {
   deletePurchaseInvoiceLineReleasingLeases,
   deletePurchaseInvoiceReleasingLeases

@@ -20,13 +20,13 @@ import { useMemo, useState } from "react";
 import { LuCheck, LuLink, LuPlus, LuTrash } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
-import type { ProjectElementLinkType } from "../../projects.models";
 import {
   allowedLinkEnds,
   canLink,
+  type ProjectElementLinkType,
   projectElementLinkTypes
 } from "../../projects.models";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 import type { ProjectElementLink } from "../../types";
 import {
   useActiveChangeRequestId,

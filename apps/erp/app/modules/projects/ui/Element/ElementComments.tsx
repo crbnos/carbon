@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useAction } from "@carbon/query";
-import type { JSONContent } from "@carbon/react";
 import {
   generateHTML,
   HStack,
   IconButton,
+  type JSONContent,
   Textarea,
   VStack
 } from "@carbon/react";
@@ -16,7 +16,7 @@ import { useState } from "react";
 import { LuArrowUp, LuTrash } from "react-icons/lu";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { useUser } from "~/hooks";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 import { useElementRoutes } from "../Elements/ElementRoutes";
 
 type Comment = ProjectElementPage["comments"][number];

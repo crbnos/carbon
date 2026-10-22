@@ -2,24 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import { serviceOrderValidator } from "~/modules/service/service.models";
-import {
-  createServiceOrder,
-  ServiceOrderError
-} from "~/modules/service/service.server";
 import { getServiceOrderFormOptions } from "~/modules/service/service.service";
 import { ServiceOrderForm } from "~/modules/service/ui/ServiceOrders";
-import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -53,49 +46,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "service"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(serviceOrderValidator).validate(formData);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  let order: { id: string; serviceOrderId: string };
-  try {
-    order = await createServiceOrder(client, getDatabaseClient(), {
-      ...validation.data,
-      companyId,
-      userId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(serviceOrderValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.service.createServiceOrder(input.data);
+  // A refusal is about the subject: the unit, or the refurbished serial.
+  if (result.error?.category === "rule") {
+    return validationError({
+      fieldErrors: {
+        [input.data.type === "Refurbishment"
+          ? "trackedEntityId"
+          : "customerAssetId"]: result.error.message
+      }
     });
-  } catch (err) {
-    if (err instanceof ServiceOrderError) {
-      // A refusal is about the subject: the unit, or the refurbished serial.
-      return validationError({
-        fieldErrors: {
-          [validation.data.type === "Refurbishment"
-            ? "trackedEntityId"
-            : "customerAssetId"]: err.message
-        }
-      });
-    }
-    logger.error("Failed to create the service order", {
-      companyId,
-      error: err
-    });
-    throw redirect(
-      path.to.serviceOrders,
-      await flash(request, error(err, "Failed to create the service order"))
-    );
   }
-
-  throw redirect(
-    path.to.serviceOrderDetails(order.id),
-    await flash(request, success(`Created ${order.serviceOrderId}`))
+  if (!result.data) {
+    return respond(args.request, result).redirect(path.to.serviceOrders);
+  }
+  return respond(args.request, result).redirect(
+    path.to.serviceOrderDetails(result.data.id),
+    { message: `Created ${result.data.serviceOrderId}` }
   );
 }
 

@@ -33,7 +33,7 @@ import {
   projectContractFunded
 } from "~/modules/sales/sales.models";
 import { getContractLineFunding } from "~/modules/sales/sales.service";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-overview");

@@ -2,89 +2,56 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { type ActionFunctionArgs, data } from "react-router";
 import { projectElementCommentValidator } from "~/modules/projects/projects.models";
-import {
-  deleteProjectElementComment,
-  insertProjectElementComment
-} from "~/modules/projects/projects.service";
-
-const logger = getLogger("erp", "service-work-comments");
 
 /**
  * The service twin of the project's element comments: `insert` adds a
- * comment; `delete` removes one of the user's own.
+ * comment (`addServiceWorkComment`); `delete` removes one of the user's own
+ * (`deleteServiceWorkComment`).
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "service"
-  });
-  const { elementId } = params;
-  if (!elementId) throw new Error("Could not find elementId");
-
-  const formData = await request.formData();
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["elementId"] });
+  if ("invalid" in input) return input.invalid;
+  const formData = await args.request.formData();
+  const api = await carbon(args.request);
 
   if (formData.get("intent") === "delete") {
     const id = formData.get("id");
     if (typeof id !== "string" || !id) {
       return data(
         { success: false },
-        await flash(request, error(null, "No comment was given"))
+        await flash(args.request, error(null, "No comment was given"))
       );
     }
-    const result = await deleteProjectElementComment(
-      client,
-      id,
-      companyId,
-      userId
-    );
+    const result = await api.service.deleteServiceWorkComment({ id });
     if (result.error) {
-      logger.error("Failed to delete a service element comment", {
-        companyId,
-        elementId,
-        error: result.error
-      });
       return data(
         { success: false },
-        await flash(
-          request,
-          error(result.error, result.error.message ?? "Failed to delete")
-        )
+        await flash(args.request, error(null, result.error.message))
       );
     }
     return data(
       { success: true },
-      await flash(request, success("Comment deleted"))
+      await flash(args.request, success("Comment deleted"))
     );
   }
 
-  formData.set("projectElementId", elementId);
+  formData.set("projectElementId", input.params.elementId);
   const validation = await validator(projectElementCommentValidator).validate(
     formData
   );
   if (validation.error) return validationError(validation.error);
 
-  const result = await insertProjectElementComment(client, {
-    ...validation.data,
-    companyId,
-    createdBy: userId
-  });
+  const result = await api.service.addServiceWorkComment(validation.data);
   if (result.error) {
-    logger.error("Failed to add a service element comment", {
-      companyId,
-      elementId,
-      error: result.error
-    });
     return data(
       { success: false },
-      await flash(request, error(result.error, "Failed to add the comment"))
+      await flash(args.request, error(null, result.error.message))
     );
   }
   return data({ success: true });

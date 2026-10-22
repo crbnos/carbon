@@ -4,11 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
-import { getProjectStockOnHand } from "~/modules/projects/projects.server";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import {
   getProjectBorrows,
+  getProjectStockOnHand,
   getProjectStockTransfers
 } from "~/modules/projects/projects.service";
 import ProjectStock from "~/modules/projects/ui/Stock/ProjectStock";

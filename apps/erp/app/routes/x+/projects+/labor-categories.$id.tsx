@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,9 +18,7 @@ import {
 } from "~/modules/projects/projects.models";
 import {
   getLaborCategory,
-  getLaborCategoryRates,
-  upsertLaborCategory,
-  upsertLaborCategoryRate
+  getLaborCategoryRates
 } from "~/modules/projects/projects.service";
 import LaborCategoryForm from "~/modules/projects/ui/LaborCategories/LaborCategoryForm";
 import { path } from "~/utils/path";
@@ -67,13 +66,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
-
   const { id } = params;
   if (!id) throw notFound("Labor category ID was not found");
 
+  const api = await carbon(request);
   const formData = await request.formData();
 
   if (formData.get("intent") === "rate") {
@@ -97,36 +93,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const { id: rateId, ...rate } = validation.data;
-    const saved = rateId
-      ? await upsertLaborCategoryRate(client, {
-          ...rate,
-          laborCategoryId: id,
-          id: rateId,
-          companyId,
-          updatedBy: userId
-        })
-      : await upsertLaborCategoryRate(client, {
-          ...rate,
-          laborCategoryId: id,
-          companyId,
-          createdBy: userId
-        });
+    const saved = await api.projects.upsertLaborCategoryRate({
+      ...validation.data,
+      laborCategoryId: id
+    });
     if (saved.error) {
-      logger.error("Failed to save a labor category rate", {
-        companyId,
-        id,
-        error: saved.error
-      });
       if (quiet) {
         return data(
-          { success: false, error: "Failed to save the rate" },
+          { success: false, error: saved.error.message },
           { status: 400 }
         );
       }
       return data(
         { success: false },
-        await flash(request, error(saved.error, "Failed to save the rate"))
+        await flash(request, error(null, saved.error.message))
       );
     }
     if (quiet) return data({ success: true, error: null });
@@ -136,26 +116,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const validation = await validator(laborCategoryValidator).validate(formData);
   if (validation.error) return validationError(validation.error);
 
-  const { id: _id, ...fields } = validation.data;
-  const updated = await upsertLaborCategory(client, {
-    ...fields,
-    id,
-    companyId,
-    updatedBy: userId
+  const updated = await api.projects.upsertLaborCategory({
+    ...validation.data,
+    id
   });
   if (updated.error) {
-    logger.error("Failed to update a labor category", {
-      companyId,
-      id,
-      error: updated.error
-    });
-    return data(
-      {},
-      await flash(
-        request,
-        error(updated.error, "Failed to update the labor category")
-      )
-    );
+    return data({}, await flash(request, error(null, updated.error.message)));
   }
 
   throw redirect(

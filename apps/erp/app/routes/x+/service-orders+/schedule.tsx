@@ -16,7 +16,7 @@ import { getServiceVisits } from "~/modules/service/service.service";
 import ServiceSchedule, {
   OPEN_VISITS
 } from "~/modules/service/ui/Visits/ServiceSchedule";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

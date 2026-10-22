@@ -9,17 +9,21 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useMemo } from "react";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
-import { getProjectElementPage } from "~/modules/projects/projects.server";
+import {
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import {
   getProject,
+  getProjectElementPage,
   getProjectLabels,
   getProjectStates
 } from "~/modules/projects/projects.service";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
 import { ElementRoutesProvider } from "~/modules/projects/ui/Elements/ElementRoutes";
 import { serviceTemplateElementRoutes } from "~/modules/service/ui/Work/serviceElementRoutes";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -56,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!elementId) throw new Error("Could not find elementId");
 
   const [page, project, states, labels] = await Promise.all([
-    getProjectElementPage(client, {
+    getProjectElementPage(client, getDatabaseClient(), {
       companyId,
       projectId: id,
       elementId,

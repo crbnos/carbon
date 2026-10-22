@@ -22,7 +22,7 @@ import ProjectBillingLines from "~/modules/projects/ui/Billing/ProjectBillingLin
 import { getContractLineFunding } from "~/modules/sales/sales.service";
 import type { ContractStatusType } from "~/modules/sales/ui/Contracts";
 import { ContractStatus } from "~/modules/sales/ui/Contracts";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

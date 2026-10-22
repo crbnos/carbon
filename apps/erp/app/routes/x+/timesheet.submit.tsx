@@ -2,36 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { redirect, weekStartOf } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  postTimesheetEntries,
-  submitTimesheetWeek
-} from "~/modules/projects/projects.server";
-import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "project-timesheet-submit");
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
- * Submits the signed-in user's Draft entries of one week through the
- * `submit-timesheet-week` server function, which also certifies the week in
- * DCAA mode. With approvals off they post at once; with approvals on they
- * wait in Approvals. Each warning (the timecard check) is flashed. It returns
+ * Submits the signed-in user's Draft entries of one week
+ * (`submitTimesheetWeek`), which also certifies the week in DCAA mode. With
+ * approvals off they post at once; with approvals on they wait in Approvals. Each warning (the timecard check) is flashed. It returns
  * to My Time, or to `redirectTo` (the open time list a row submitted from).
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    role: "employee"
-  });
-
   const formData = await request.formData();
   const from = String(formData.get("from") ?? "");
   const to = String(formData.get("to") ?? "");
@@ -52,58 +39,25 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // The user submits their own week: the server function runs as the system.
-  const submitted = await submitTimesheetWeek({
-    employeeId: userId,
+  const api = await carbon(request);
+  const result = await api.projects.submitTimesheetWeek({
     weekStart: weekStartOf(from),
     certificationText:
       typeof certificationText === "string" && certificationText
         ? certificationText
-        : undefined,
-    companyId,
-    userId
+        : undefined
   });
-  if (submitted.error !== null) {
-    logger.error("Failed to submit the timesheet", {
-      companyId,
-      error: submitted.error
-    });
-    throw redirect(back, await flash(request, error(null, submitted.error)));
+  if (result.error) {
+    throw redirect(
+      back,
+      await flash(request, error(null, result.error.message))
+    );
   }
-  const { entryIds: ids, warnings } = submitted.data;
+  const { warnings, posted, postingError } = result.data;
   // A warning does not stop the week; the flash names it after the outcome.
   const withWarnings = (message: string) =>
     warnings.length > 0 ? `${message}. ${warnings.join(". ")}` : message;
 
-  if (ids.length === 0) {
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(null, "This week has no draft hours to submit")
-      )
-    );
-  }
-
-  const settings = await getCompanySettings(client, companyId);
-  if (settings.error) {
-    logger.error("Failed to load company settings", {
-      companyId,
-      error: settings.error
-    });
-  }
-  if (settings.data?.timesheetApprovalRequired ?? true) {
-    throw redirect(
-      back,
-      await flash(request, success(withWarnings("Week submitted for approval")))
-    );
-  }
-
-  const postingError = await postTimesheetEntries({
-    timesheetEntryIds: ids,
-    companyId,
-    userId
-  });
   if (postingError) {
     throw redirect(
       back,
@@ -116,6 +70,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   throw redirect(
     back,
-    await flash(request, success(withWarnings("Week submitted and posted")))
+    await flash(
+      request,
+      success(
+        withWarnings(
+          posted ? "Week submitted and posted" : "Week submitted for approval"
+        )
+      )
+    )
   );
 }

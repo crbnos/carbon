@@ -8,10 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
-import { getProjectCostTotals } from "~/modules/projects/projects.server";
-import { getProjects } from "~/modules/projects/projects.service";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import {
+  getProjectCostTotals,
+  getProjects
+} from "~/modules/projects/projects.service";
 import { ProjectsTable } from "~/modules/projects/ui/Projects";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

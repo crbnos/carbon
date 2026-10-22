@@ -38,7 +38,7 @@ import {
 } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 
 type Element = ProjectElementPage["element"];
 type ListElement = ProjectElementPage["elements"][number];

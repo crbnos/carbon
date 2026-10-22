@@ -2,68 +2,53 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { type ActionFunctionArgs, data } from "react-router";
 import {
   projectElementCostValidator,
   projectElementLaborValidator,
   projectElementMaterialValidator
 } from "~/modules/projects/projects.models";
-import {
-  deleteProjectElementCost,
-  deleteProjectElementLabor,
-  deleteProjectElementMaterial,
-  upsertProjectElementCost,
-  upsertProjectElementLabor,
-  upsertProjectElementMaterial
-} from "~/modules/projects/projects.service";
-import {
-  requireServiceWork,
-  ServiceOrderError
-} from "~/modules/service/service.server";
+import type { ServicePlanTable } from "~/modules/service/service.models";
 
-const logger = getLogger("erp", "service-work-plan");
-
-type PlanTable =
-  | "projectElementMaterial"
-  | "projectElementLabor"
-  | "projectElementCost";
+const DELETE_TABLES: Record<string, ServicePlanTable> = {
+  deleteMaterial: "projectElementMaterial",
+  deleteLabor: "projectElementLabor",
+  deleteCost: "projectElementCost"
+};
 
 /**
  * Adds, edits and deletes the plan lines of an element of a service order's
  * or a service template's work: the service twin of the project's
- * `elements.$elementId.plan`. A grid cell posts `quiet` and gets
+ * `elements.$elementId.plan` (`upsertServiceWorkMaterial`,
+ * `upsertServiceWorkLabor`, `upsertServiceWorkCost`,
+ * `deleteServiceWorkPlanLine`). A grid cell posts `quiet` and gets
  * `{ error }` back instead of a flash.
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["projectId", "elementId"]
   });
-  const { projectId, elementId } = params;
-  if (!projectId) throw new Error("Could not find projectId");
-  if (!elementId) throw new Error("Could not find elementId");
+  if ("invalid" in input) return input.invalid;
+  const { projectId, elementId } = input.params;
 
-  const formData = await request.formData();
+  const formData = await args.request.formData();
   const quiet = formData.get("quiet") === "true";
-  const refuse = async (err: unknown, message: string) => {
-    if (err && !(err instanceof ServiceOrderError)) {
-      logger.error(message, { companyId, projectId, elementId, error: err });
-    }
-    return quiet
+  const refuse = async (message: string) =>
+    quiet
       ? data({ success: false, error: message }, { status: 400 })
-      : data({ success: false }, await flash(request, error(err, message)));
-  };
+      : data(
+          { success: false },
+          await flash(args.request, error(null, message))
+        );
   // `id` is the line saved: a grid draft keeps it, so its next edit updates.
-  const done = async (message: string, id?: string) =>
+  const done = async (message: string, id?: string | null) =>
     quiet
       ? data({ success: true, error: null, id: id ?? null })
-      : data({ success: true }, await flash(request, success(message)));
+      : data({ success: true }, await flash(args.request, success(message)));
   const invalid = (validation: {
     error: Parameters<typeof validationError>[0];
   }) =>
@@ -79,33 +64,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       : validationError(validation.error);
 
-  try {
-    await requireServiceWork(client, {
-      companyId,
-      projectId,
-      elementIds: [elementId]
-    });
-  } catch (err) {
-    return refuse(
-      err,
-      err instanceof Error ? err.message : "Failed to save the line"
-    );
-  }
-
   formData.set("projectElementId", elementId);
   const intent = formData.get("intent");
-
-  /** That an edited or deleted line belongs to this element. */
-  const ownsLine = async (table: PlanTable, lineId: string) => {
-    const line = await client
-      .from(table)
-      .select("id")
-      .eq("id", lineId)
-      .eq("projectElementId", elementId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    return Boolean(line.data);
-  };
+  const api = await carbon(args.request);
 
   switch (intent) {
     case "upsertMaterial": {
@@ -113,104 +74,54 @@ export async function action({ request, params }: ActionFunctionArgs) {
         projectElementMaterialValidator
       ).validate(formData);
       if (validation.error) return invalid(validation);
-      const { id: lineId, ...line } = validation.data;
-      if (lineId && !(await ownsLine("projectElementMaterial", lineId))) {
-        return refuse(null, "The line is not on this element");
-      }
-      const result = lineId
-        ? await upsertProjectElementMaterial(client, {
-            ...line,
-            id: lineId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectElementMaterial(client, {
-            ...line,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) return refuse(result.error, "Failed to save the part");
-      return done("Part saved", result.data?.id);
+      const result = await api.service.upsertServiceWorkMaterial({
+        ...validation.data,
+        projectId
+      });
+      if (result.error) return refuse(result.error.message);
+      return done("Part saved", result.data.id);
     }
     case "upsertLabor": {
       const validation = await validator(projectElementLaborValidator).validate(
         formData
       );
       if (validation.error) return invalid(validation);
-      const { id: lineId, ...line } = validation.data;
-      if (lineId && !(await ownsLine("projectElementLabor", lineId))) {
-        return refuse(null, "The line is not on this element");
-      }
-      const result = lineId
-        ? await upsertProjectElementLabor(client, {
-            ...line,
-            id: lineId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectElementLabor(client, {
-            ...line,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) return refuse(result.error, "Failed to save the labor");
-      return done("Labor saved", result.data?.id);
+      const result = await api.service.upsertServiceWorkLabor({
+        ...validation.data,
+        projectId
+      });
+      if (result.error) return refuse(result.error.message);
+      return done("Labor saved", result.data.id);
     }
     case "upsertCost": {
       const validation = await validator(projectElementCostValidator).validate(
         formData
       );
       if (validation.error) return invalid(validation);
-      const { id: lineId, ...line } = validation.data;
-      if (lineId && !(await ownsLine("projectElementCost", lineId))) {
-        return refuse(null, "The line is not on this element");
-      }
-      const result = lineId
-        ? await upsertProjectElementCost(client, {
-            ...line,
-            id: lineId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectElementCost(client, {
-            ...line,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) return refuse(result.error, "Failed to save the cost");
-      return done("Cost saved", result.data?.id);
+      const result = await api.service.upsertServiceWorkCost({
+        ...validation.data,
+        projectId
+      });
+      if (result.error) return refuse(result.error.message);
+      return done("Cost saved", result.data.id);
     }
     case "deleteMaterial":
     case "deleteLabor":
     case "deleteCost": {
       const lineId = formData.get("id");
       if (typeof lineId !== "string" || !lineId) {
-        return refuse(null, "No line was given");
+        return refuse("No line was given");
       }
-      const table: PlanTable =
-        intent === "deleteMaterial"
-          ? "projectElementMaterial"
-          : intent === "deleteLabor"
-            ? "projectElementLabor"
-            : "projectElementCost";
-      if (!(await ownsLine(table, lineId))) {
-        return refuse(null, "The line is not on this element");
-      }
-      const remove =
-        intent === "deleteMaterial"
-          ? deleteProjectElementMaterial
-          : intent === "deleteLabor"
-            ? deleteProjectElementLabor
-            : deleteProjectElementCost;
-      const result = await remove(client, lineId, companyId);
-      if (result.error)
-        return refuse(result.error, "Failed to delete the line");
+      const result = await api.service.deleteServiceWorkPlanLine({
+        projectId,
+        projectElementId: elementId,
+        table: DELETE_TABLES[intent]!,
+        lineId
+      });
+      if (result.error) return refuse(result.error.message);
       return done("Line deleted");
     }
     default:
-      return refuse(null, "Unknown action");
+      return refuse("Unknown action");
   }
 }

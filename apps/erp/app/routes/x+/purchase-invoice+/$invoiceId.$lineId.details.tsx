@@ -6,13 +6,16 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { JSONContent } from "@carbon/react";
-import { RecordOutlet } from "@carbon/react";
+import { type JSONContent, RecordOutlet } from "@carbon/react";
 import { getItemReadableId, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import { DeferredFiles } from "~/components";
 import {
   isPurchaseInvoiceLocked,
@@ -24,8 +27,10 @@ import {
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
-import { chargeNumberError } from "~/modules/projects/projects.server";
-import { getLineChargeNumber } from "~/modules/projects/projects.service";
+import {
+  chargeNumberError,
+  getLineChargeNumber
+} from "~/modules/projects/projects.service";
 import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,

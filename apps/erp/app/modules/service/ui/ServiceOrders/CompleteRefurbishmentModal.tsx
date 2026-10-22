@@ -25,7 +25,7 @@ import { LuCircleAlert, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { useCurrencyFormatter } from "~/hooks";
 import { path } from "~/utils/path";
-import type { RefurbishmentCompletionPreview } from "../../service.server";
+import type { RefurbishmentCompletionPreview } from "../../types";
 
 type PreviewResponse =
   | { preview: RefurbishmentCompletionPreview; error: null }

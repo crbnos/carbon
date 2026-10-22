@@ -12,8 +12,7 @@ import { msg } from "@lingui/core/macro";
 import { Plural, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import {
   buildSection6765Input,
   projectReportPermissions,
@@ -23,7 +22,7 @@ import {
 import {
   getRdTaxReport,
   taxYearParam
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import {
   useRdComponentTypeLabels,
   useRdSoftwareTypeLabels

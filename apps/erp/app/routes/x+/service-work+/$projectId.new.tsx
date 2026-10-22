@@ -2,79 +2,28 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+import { type ActionFunctionArgs, data } from "react-router";
 import { projectElementValidator } from "~/modules/projects/projects.models";
-import { insertProjectElement } from "~/modules/projects/projects.server";
-import { serviceNodeTypes } from "~/modules/service/service.models";
-import {
-  requireServiceWork,
-  ServiceOrderError
-} from "~/modules/service/service.server";
-import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "service-work-new");
 
 /**
- * Adds an element to a service order's or a service template's work: the
- * service twin of the project's `elements.new`, under the service permission.
+ * Adds an element to a service order's or a service template's work
+ * (`addServiceWorkElement`): the service twin of the project's
+ * `elements.new`, under the service permission.
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(projectElementValidator).request(args, {
+    params: ["projectId"]
   });
-  const { projectId } = params;
-  if (!projectId) throw new Error("Could not find projectId");
-
-  const validation = await validator(projectElementValidator).validate(
-    await request.formData()
-  );
-  if (validation.error) return validationError(validation.error);
-  const { id: _id, ...element } = validation.data;
-  if (!(serviceNodeTypes as readonly string[]).includes(element.type)) {
-    return data(
-      { error: { message: "Add a System or a Task" } },
-      { status: 400 }
-    );
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.service.addServiceWorkElement({
+    ...input.data,
+    projectId: input.params.projectId
+  });
+  if (result.error) {
+    return data({ error: { message: result.error.message } }, { status: 400 });
   }
-
-  try {
-    await requireServiceWork(client, {
-      companyId,
-      projectId,
-      elementIds: element.parentId ? [element.parentId] : []
-    });
-    const created = await insertProjectElement(getDatabaseClient(), {
-      ...element,
-      projectId,
-      companyId,
-      userId
-    });
-    return data(
-      { id: created.id, readableId: created.readableId },
-      { status: 201 }
-    );
-  } catch (err) {
-    if (!(err instanceof ServiceOrderError)) {
-      logger.error("Failed to add a service element", {
-        companyId,
-        projectId,
-        error: err
-      });
-    }
-    return data(
-      {
-        error: {
-          message:
-            err instanceof Error ? err.message : "Failed to add the element"
-        }
-      },
-      { status: 400 }
-    );
-  }
+  return data(result.data, { status: 201 });
 }

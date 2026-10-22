@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,26 +10,27 @@ import { getCompanyTimeZone } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useParams, useSearchParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  data,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams,
+  useSearchParams
+} from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   buildBurnSeries,
   projectMilestoneValidator,
   summarizeMilestones
 } from "~/modules/projects/projects.models";
-import { createProjectBaseline } from "~/modules/projects/projects.server";
 import {
-  completeProjectMilestone,
-  deleteProjectMilestone,
   getProjectCostSummary,
   getProjectElements,
-  getProjectMilestones,
-  upsertProjectMilestone
+  getProjectMilestones
 } from "~/modules/projects/projects.service";
 import type { Project } from "~/modules/projects/types";
 import MilestoneSchedule from "~/modules/projects/ui/Milestones/MilestoneSchedule";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-milestones");
@@ -137,9 +139,6 @@ type Intent = (typeof intents)[number];
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
@@ -148,10 +147,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const intent = formData.get("intent") as Intent | null;
   const id = formData.get("id");
 
-  const refuse = async (err: unknown, message: string) =>
-    data({ success: false }, await flash(request, error(err, message)));
+  const refuse = async (message: string) =>
+    data({ success: false }, await flash(request, error(null, message)));
   const done = async (message: string) =>
     data({ success: true }, await flash(request, success(message)));
+
+  const api = await carbon(request);
 
   switch (intent) {
     case "upsert": {
@@ -159,72 +160,38 @@ export async function action({ request, params }: ActionFunctionArgs) {
         formData
       );
       if (validation.error) return validationError(validation.error);
-      const { id: milestoneId, ...milestone } = validation.data;
-      const result = milestoneId
-        ? await upsertProjectMilestone(client, {
-            ...milestone,
-            id: milestoneId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectMilestone(client, {
-            ...milestone,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) {
-        return refuse(result.error, "Failed to save the milestone");
-      }
+      const result = await api.projects.upsertProjectMilestone({
+        ...validation.data,
+        projectId
+      });
+      if (result.error) return refuse(result.error.message);
       return done("Milestone saved");
     }
     case "complete":
     case "reopen": {
-      if (typeof id !== "string") return refuse(null, "No milestone was given");
-      const result = await completeProjectMilestone(client, {
+      if (typeof id !== "string") return refuse("No milestone was given");
+      const result = await api.projects.completeProjectMilestone({
         id,
-        companyId,
-        completed: intent === "complete",
-        updatedBy: userId
+        completed: intent === "complete"
       });
-      if (result.error) {
-        return refuse(result.error, "Failed to update the milestone");
-      }
+      if (result.error) return refuse(result.error.message);
       if (intent === "reopen") return done("Milestone reopened");
-
-      // A completed milestone writes a baseline of the plan layer. The
-      // milestone is already saved, so a failed baseline only warns.
-      try {
-        await createProjectBaseline(getDatabaseClient(), {
-          companyId,
-          userId,
-          projectId: result.data.projectId,
-          name: `${result.data.name} (completed)`,
-          source: "Milestone",
-          milestoneId: result.data.id
-        });
-      } catch (err) {
-        logger.error("Failed to write the milestone baseline", {
-          err,
-          milestoneId: result.data.id
-        });
+      // The milestone is saved; a failed baseline only warns.
+      if (result.data.baselineFailed) {
         return refuse(
-          err,
           "Milestone completed, but its baseline could not be written"
         );
       }
       return done("Milestone completed");
     }
     case "delete": {
-      if (typeof id !== "string") return refuse(null, "No milestone was given");
-      const result = await deleteProjectMilestone(client, id, companyId);
-      if (result.error) {
-        return refuse(result.error, "Failed to delete the milestone");
-      }
+      if (typeof id !== "string") return refuse("No milestone was given");
+      const result = await api.projects.deleteProjectMilestone({ id });
+      if (result.error) return refuse(result.error.message);
       return done("Milestone deleted");
     }
     default:
-      return refuse(null, "Unknown action");
+      return refuse("Unknown action");
   }
 }
 

@@ -2,27 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
 import type { ServiceOrderStatusAction } from "~/modules/service/service.models";
-import {
-  canMoveServiceOrder,
-  serviceOrderStatusActions
-} from "~/modules/service/service.models";
-import {
-  cancelServiceOrder,
-  completeServiceOrder,
-  ServiceOrderError,
-  syncServiceOrderStatus
-} from "~/modules/service/service.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { serviceOrderStatusActions } from "~/modules/service/service.models";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("erp", "service-order-status");
 
 const MESSAGES: Record<ServiceOrderStatusAction, string> = {
   Planned: "Planned the service order",
@@ -40,123 +26,40 @@ function plannedMessage(from: string) {
 }
 
 /**
- * Moves an order to the status the user chose, then rolls its status up
- * from its visits and sets its work tree's status to match
- * (`syncServiceOrderStatus`). A cancel goes through `cancelServiceOrder`,
- * which refuses an order with a charge that is not reversed; a completion
- * through `completeServiceOrder` (the `complete-service-order` function).
+ * Moves an order to the status the user chose (`setServiceOrderStatus`): a
+ * completion runs `complete-service-order`, a cancel refuses an order with a
+ * charge that is not reversed, and any other move rolls the order up from its
+ * visits. Then goes back where the user was.
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
+export async function action(args: ActionFunctionArgs) {
+  const back =
+    requestReferrer(args.request) ??
+    path.to.serviceOrderDetails(args.params.id ?? "");
+  const input = await validator(
+    z.object({
+      status: z.enum(serviceOrderStatusActions, { error: "Invalid status" })
+    })
+  ).request(args, { params: ["id"] });
+  if ("invalid" in input) {
+    return respond(args.request, {
+      error: { message: "Invalid status" }
+    }).redirect(back);
+  }
+  const api = await carbon(args.request);
+  const result = await api.service.setServiceOrderStatus({
+    serviceOrderId: input.params.id,
+    status: input.data.status
   });
+  if (!result.data) return respond(args.request, result).redirect(back);
 
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-  const back = requestReferrer(request) ?? path.to.serviceOrderDetails(id);
-
-  const formData = await request.formData();
-  const status = formData.get("status");
-  if (
-    typeof status !== "string" ||
-    !(serviceOrderStatusActions as readonly string[]).includes(status)
-  ) {
-    throw redirect(back, await flash(request, error(null, "Invalid status")));
-  }
-  const to = status as ServiceOrderStatusAction;
-
-  const current = await client
-    .from("serviceOrder")
-    .select("status")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-  if (current.error) {
-    throw redirect(
-      back,
-      await flash(request, error(current.error, "Failed to load service order"))
-    );
-  }
-  if (!canMoveServiceOrder(current.data.status, to)) {
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(null, `A ${current.data.status} service order cannot do that`)
-      )
-    );
-  }
-
-  if (to === "Completed") {
-    // Through complete-service-order: a Refurbishment's cost moves into its
-    // serial there.
-    const completed = await completeServiceOrder(getDatabaseClient(), {
-      companyId,
-      serviceOrderId: id,
-      userId
-    });
-    if (completed.error) {
-      throw redirect(back, await flash(request, error(null, completed.error)));
-    }
-    throw redirect(
-      back,
-      await flash(
-        request,
-        success(
-          [MESSAGES.Completed, ...completed.warnings]
-            .map((message) => message.replace(/\.$/, ""))
-            .join(". ")
-        )
-      )
-    );
-  }
-
-  try {
-    if (to === "Cancelled") {
-      await cancelServiceOrder(getDatabaseClient(), {
-        companyId,
-        serviceOrderId: id,
-        userId
-      });
-    } else {
-      await syncServiceOrderStatus(getDatabaseClient(), {
-        companyId,
-        serviceOrderId: id,
-        userId,
-        status: to
-      });
-    }
-  } catch (err) {
-    if (!(err instanceof ServiceOrderError)) {
-      logger.error("Failed to move the service order", {
-        companyId,
-        serviceOrderId: id,
-        status: to,
-        error: err
-      });
-    }
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(
-          err,
-          err instanceof ServiceOrderError
-            ? err.message
-            : "Failed to update the service order"
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    back,
-    await flash(
-      request,
-      success(
-        to === "Planned" ? plannedMessage(current.data.status) : MESSAGES[to]
-      )
-    )
-  );
+  const { from, status, warnings } = result.data;
+  const message =
+    status === "Completed"
+      ? [MESSAGES.Completed, ...warnings]
+          .map((line) => line.replace(/\.$/, ""))
+          .join(". ")
+      : status === "Planned"
+        ? plannedMessage(from)
+        : MESSAGES[status];
+  return respond(args.request, result).redirect(back, { message });
 }

@@ -18,8 +18,7 @@ import {
   useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, type ReactNode, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuChevronRight,
@@ -47,7 +46,7 @@ import {
   isProjectPlanLocked,
   projectPlanLockedMessage
 } from "../../projects.models";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 import type {
   Project,
   ProjectLabel,

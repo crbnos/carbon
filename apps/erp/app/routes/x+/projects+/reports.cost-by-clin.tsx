@@ -7,11 +7,12 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
 import { projectReportPermissions } from "~/modules/projects/projects.models";
-import { getProjectReportRange } from "~/modules/projects/projects.server";
-import { getCostByClin } from "~/modules/projects/projects.service";
+import {
+  getCostByClin,
+  getProjectReportRange
+} from "~/modules/projects/projects.service";
 import {
   NumberCell,
   ProjectReport,

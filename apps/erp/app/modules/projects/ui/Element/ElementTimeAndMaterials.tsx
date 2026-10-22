@@ -11,8 +11,7 @@ import {
   DropdownMenuTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuPackageMinus,
@@ -32,7 +31,7 @@ import type {
 import type {
   ElementLedgerRow,
   ElementOpenTimeRow
-} from "../../projects.server";
+} from "../../projects.service";
 import {
   CostCard,
   CostToolbar,

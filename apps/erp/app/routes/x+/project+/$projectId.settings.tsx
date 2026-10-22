@@ -2,23 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { projectControlSettingsValidator } from "@carbon/ee/project-control";
-import { updateProjectControlSettings } from "@carbon/ee/project-control.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { projectMemberValidator } from "~/modules/projects/projects.models";
-import {
-  addProjectMember,
-  removeProjectMember
-} from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-settings");
@@ -44,7 +39,7 @@ export const middleware = [redirectBeforeLoaders(loader)];
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "projects"
   });
 
@@ -54,10 +49,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent") as Intent | null;
 
-  const refuse = async (err: unknown, message: string) =>
-    data({ success: false }, await flash(request, error(err, message)));
+  const refuse = async (message: string) =>
+    data({ success: false }, await flash(request, error(null, message)));
   const done = async (message: string) =>
     data({ success: true }, await flash(request, success(message)));
+
+  const api = await carbon(request);
 
   switch (intent) {
     case "addMember":
@@ -67,40 +64,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
       if (validation.error) return validationError(validation.error);
       if (validation.data.projectId !== projectId) {
-        return refuse(null, "The member is not for this project");
+        return refuse("The member is not for this project");
       }
       if (intent === "removeMember") {
-        const result = await removeProjectMember(client, {
-          projectId,
-          userId: validation.data.userId,
-          companyId
-        });
-        if (result.error) {
-          return refuse(result.error, "Failed to remove the member");
-        }
+        const result = await api.projects.removeProjectMember(validation.data);
+        if (result.error) return refuse(result.error.message);
         return done("Member removed");
       }
-      // A member must be an employee of this company.
-      const employee = await client
-        .from("employee")
-        .select("id")
-        .eq("id", validation.data.userId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      if (employee.error || !employee.data) {
+      const result = await api.projects.addProjectMember(validation.data);
+      if (result.error?.category === "validation") {
         return validationError({
-          fieldErrors: { userId: "Choose an employee of this company" }
+          fieldErrors: { userId: result.error.message }
         });
       }
-      const result = await addProjectMember(client, {
-        projectId,
-        userId: validation.data.userId,
-        companyId,
-        createdBy: userId
-      });
-      if (result.error) {
-        return refuse(result.error, "Failed to add the member");
-      }
+      if (result.error) return refuse(result.error.message);
       return done("Member added");
     }
     case "control-settings": {
@@ -118,31 +95,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
         projectControlSettingsValidator
       ).validate(formData);
       if (validation.error) return validationError(validation.error);
-      try {
-        const result = await updateProjectControlSettings(client, {
-          ...validation.data,
+      const result = await api.projects.updateProjectControlSettings(
+        validation.data
+      );
+      if (result.error) {
+        logger.error("Failed to save the project control settings", {
           companyId,
-          userId
+          projectId,
+          error: result.error
         });
-        if (result.error) {
-          logger.error("Failed to save the project control settings", {
-            companyId,
-            projectId,
-            error: result.error
-          });
-          return refuse(result.error, "Failed to save the control settings");
-        }
-      } catch (err) {
-        if (!(err instanceof EntitlementError)) throw err;
-        logger.error("Project control is not in the company's plan", {
-          companyId,
-          projectId
-        });
-        return refuse(err, err.message);
+        return refuse(result.error.message);
       }
       return done("Control settings saved");
     }
     default:
-      return refuse(null, "Unknown action");
+      return refuse("Unknown action");
   }
 }

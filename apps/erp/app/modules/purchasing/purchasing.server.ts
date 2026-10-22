@@ -60,7 +60,7 @@ import {
   checkProjectBudget,
   getPlanningSegmentOwners,
   moveActionPegsToSupply
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import {
   getCompany,
   getCompanySettings
@@ -3638,6 +3638,7 @@ export const applyPlanningActions = defineServiceFn({
           })
         : [];
     const transferOutcome = await applyTransferPlanningActions({
+      db: ctx.asSystem.pg,
       companyId,
       userId: ctx.auditUserId,
       planningActionIds: transferIds

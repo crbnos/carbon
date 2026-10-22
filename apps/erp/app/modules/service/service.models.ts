@@ -9,7 +9,10 @@ import type { Database } from "@carbon/database";
 import { equals, round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { projectElementPriorities } from "../projects/projects.models";
+import {
+  type ProjectElementEditableField,
+  projectElementPriorities
+} from "../projects/projects.models";
 import { optionalTiptapDoc } from "../shared/shared.models";
 
 type Enums = Database["public"]["Enums"];
@@ -378,6 +381,20 @@ export const serviceOrderUpdateValidator = z.object({
   resolution: optionalTiptapDoc
 });
 
+/** The order fields the Properties panel saves one at a time. */
+export const serviceOrderPropertyFields = [
+  "customerLocationId",
+  "customerContactId",
+  "customerContractId",
+  "priority",
+  "invoiceDetail",
+  "expectedSellingPrice",
+  "abnormalRework"
+] as const;
+
+/** The order's rich-text fields, saved by their editors. */
+export const serviceOrderTextFields = ["problem", "resolution"] as const;
+
 export const serviceVisitValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -460,6 +477,29 @@ export function serviceTemplateIdentifier(projectId: string): string {
 /** The node types a service order's work tree offers (no engineering types). */
 export const serviceNodeTypes = ["System", "Task"] as const;
 export type ServiceNodeType = (typeof serviceNodeTypes)[number];
+
+/** The fields a service element shows: no milestone, WBS, budget or flags. */
+export const serviceElementFields = [
+  "name",
+  "description",
+  "stateId",
+  "ownerId",
+  "priority",
+  "startDate",
+  "targetDate",
+  "estimatedHours",
+  "isChargeable",
+  "itemId",
+  "trackedEntityId"
+] as const satisfies readonly ProjectElementEditableField[];
+
+/** The plan-line tables of a work element. */
+export const servicePlanTables = [
+  "projectElementMaterial",
+  "projectElementLabor",
+  "projectElementCost"
+] as const;
+export type ServicePlanTable = (typeof servicePlanTables)[number];
 
 /** An expense charged to a node: mileage, a meal, a part bought on a card. */
 export const serviceExpenseValidator = z.object({

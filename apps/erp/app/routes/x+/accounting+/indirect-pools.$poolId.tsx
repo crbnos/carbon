@@ -2,23 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   indirectPoolAccountValidator,
-  indirectPoolValidator,
-  indirectRatesFieldErrors
+  indirectPoolValidator
 } from "@carbon/ee/indirect-rates";
 import {
-  deleteIndirectPoolAccount,
   getIndirectPool,
-  INDIRECT_POOL_BASE_PROJECT_ACCOUNT,
-  upsertIndirectPool,
-  upsertIndirectPoolAccount
+  INDIRECT_POOL_BASE_PROJECT_ACCOUNT
 } from "@carbon/ee/indirect-rates.server";
-import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useCloseRoute } from "@carbon/react";
@@ -77,114 +72,92 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
 
   const { poolId } = params;
   if (!poolId) throw notFound("Pool ID was not found");
 
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "GOVERNMENT_CONTRACTING",
-    redirectTo: path.to.indirectPools
-  });
-
   const formData = await request.formData();
   const intent = formData.get("intent");
 
-  const refuse = async (err: unknown, message: string) =>
-    data({ success: false }, await flash(request, error(err, message)));
+  const refuse = async (message: string) =>
+    data({ success: false }, await flash(request, error(null, message)));
   const done = async (message: string) =>
     data({ success: true }, await flash(request, success(message)));
+  const upgrade = async (message: string) => {
+    throw redirect(
+      path.to.indirectPools,
+      await flash(request, error(null, message))
+    );
+  };
 
-  try {
-    if (intent === "account-add") {
-      const validation = await validator(indirectPoolAccountValidator).validate(
-        formData
-      );
-      if (validation.error) return validationError(validation.error);
-      if (validation.data.indirectPoolId !== poolId) {
-        return refuse(null, "The account is not for this pool");
-      }
-      const result = await upsertIndirectPoolAccount(client, {
-        ...validation.data,
-        companyId,
-        userId
-      });
-      if (result.error) {
-        // B2: a project account cannot be a Base account.
-        if (result.error.message === INDIRECT_POOL_BASE_PROJECT_ACCOUNT) {
-          return validationError({
-            fieldErrors: { accountId: INDIRECT_POOL_BASE_PROJECT_ACCOUNT }
-          });
-        }
-        const fieldErrors = indirectRatesFieldErrors(result.error);
-        if (fieldErrors) return validationError({ fieldErrors });
-        logger.error("Failed to add an indirect pool account", {
-          companyId,
-          poolId,
-          error: result.error
-        });
-        return refuse(result.error, "Failed to add the account");
-      }
-      return done("Account added");
-    }
+  const api = await carbon(request);
 
-    if (intent === "account-delete") {
-      const id = formData.get("id");
-      if (typeof id !== "string") return refuse(null, "No account was given");
-      const result = await deleteIndirectPoolAccount(client, {
-        id,
-        companyId
-      });
-      if (result.error) {
-        logger.error("Failed to remove an indirect pool account", {
-          companyId,
-          poolId,
-          id,
-          error: result.error
-        });
-        return refuse(result.error, "Failed to remove the account");
-      }
-      return done("Account removed");
-    }
-
-    const validation = await validator(indirectPoolValidator).validate(
+  if (intent === "account-add") {
+    const validation = await validator(indirectPoolAccountValidator).validate(
       formData
     );
     if (validation.error) return validationError(validation.error);
-
-    const { id: _id, ...fields } = validation.data;
-    const updated = await upsertIndirectPool(client, {
-      ...fields,
-      id: poolId,
-      companyId,
-      userId
-    });
-    if (updated.error) {
-      const fieldErrors = indirectRatesFieldErrors(updated.error);
-      if (fieldErrors) return validationError({ fieldErrors });
-      logger.error("Failed to update an indirect pool", {
-        companyId,
-        poolId,
-        error: updated.error
-      });
-      return data(
-        {},
-        await flash(request, error(updated.error, "Failed to update the pool"))
-      );
+    if (validation.data.indirectPoolId !== poolId) {
+      return refuse("The account is not for this pool");
     }
-  } catch (err) {
-    if (!(err instanceof EntitlementError)) throw err;
-    logger.error("Indirect rates are not in the company's plan", {
-      companyId
-    });
-    throw redirect(
-      path.to.indirectPools,
-      await flash(request, error(err, "Upgrade to use indirect rates"))
+    const result = await api.projects.upsertIndirectPoolAccount(
+      validation.data
+    );
+    if (result.error) {
+      if (result.error.category === "entitlement") {
+        return upgrade(result.error.message);
+      }
+      // B2: a project account cannot be a Base account; a duplicate cell is
+      // refused on the account too.
+      if (
+        result.error.category === "conflict" ||
+        result.error.message === INDIRECT_POOL_BASE_PROJECT_ACCOUNT
+      ) {
+        return validationError({
+          fieldErrors: { accountId: result.error.message }
+        });
+      }
+      return refuse("Failed to add the account");
+    }
+    return done("Account added");
+  }
+
+  if (intent === "account-delete") {
+    const id = formData.get("id");
+    if (typeof id !== "string") return refuse("No account was given");
+    const result = await api.projects.deleteIndirectPoolAccount({ id });
+    if (result.error) {
+      if (result.error.category === "entitlement") {
+        return upgrade(result.error.message);
+      }
+      return refuse("Failed to remove the account");
+    }
+    return done("Account removed");
+  }
+
+  const validation = await validator(indirectPoolValidator).validate(formData);
+  if (validation.error) return validationError(validation.error);
+
+  const updated = await api.projects.upsertIndirectPool({
+    ...validation.data,
+    id: poolId
+  });
+  if (updated.error) {
+    if (updated.error.category === "entitlement") {
+      return upgrade(updated.error.message);
+    }
+    // A duplicate name or sequence: the op's message is the field's.
+    if (updated.error.category === "conflict") {
+      return validationError({
+        fieldErrors: {
+          [updated.error.message.includes("sequence") ? "sequence" : "name"]:
+            updated.error.message
+        }
+      });
+    }
+    return data(
+      {},
+      await flash(request, error(null, "Failed to update the pool"))
     );
   }
 

@@ -10,10 +10,12 @@ import * as invoicing from "./invoicing/invoicing.server";
 import * as items from "./items/items.server";
 import * as people from "./people/people.server";
 import * as production from "./production/production.server";
+import * as projects from "./projects/projects.server";
 import * as purchasing from "./purchasing/purchasing.server";
 import * as quality from "./quality/quality.server";
 import * as resources from "./resources/resources.server";
 import * as sales from "./sales/sales.server";
+import * as service from "./service/service.server";
 import * as settings from "./settings/settings.server";
 import * as shared from "./shared/shared.server";
 import * as users from "./users/users.server";
@@ -32,10 +34,12 @@ export const router = {
   items,
   people,
   production,
+  projects,
   purchasing,
   quality,
   resources,
   sales,
+  service,
   settings,
   shared,
   users,

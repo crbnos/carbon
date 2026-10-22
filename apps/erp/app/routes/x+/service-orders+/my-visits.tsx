@@ -13,7 +13,7 @@ import { useLoaderData } from "react-router";
 import type { ServiceVisitStatus } from "~/modules/service/service.models";
 import { getServiceVisits } from "~/modules/service/service.service";
 import MyVisits from "~/modules/service/ui/Visits/MyVisits";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

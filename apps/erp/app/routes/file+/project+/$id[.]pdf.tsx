@@ -3,30 +3,31 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { ProjectReaderSection } from "@carbon/documents/pdf";
-import { ensureFont, ProjectReaderPDF } from "@carbon/documents/pdf";
+import {
+  ensureFont,
+  ProjectReaderPDF,
+  type ProjectReaderSection
+} from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { formatQuantity, getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import type {
-  ProjectElementType,
-  RequirementStatus,
-  TestCaseVerdict,
-  VerificationElement
-} from "~/modules/projects/projects.models";
 import {
   buildReaderOutline,
   formatAllocation,
   formatRequirementTarget,
-  parseElementFilters
+  type ProjectElementType,
+  parseElementFilters,
+  type RequirementStatus,
+  type TestCaseVerdict,
+  type VerificationElement
 } from "~/modules/projects/projects.models";
-import { getProjectVerification } from "~/modules/projects/projects.server";
 import {
   getProject,
   getProjectElementDescriptions,
-  getProjectElements
+  getProjectElements,
+  getProjectVerification
 } from "~/modules/projects/projects.service";
 import { getCompany } from "~/modules/settings/settings.service";
 

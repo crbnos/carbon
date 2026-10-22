@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { createManualPeg } from "@carbon/ee/pegging.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -19,7 +18,6 @@ import {
 } from "~/modules/projects/projects.models";
 import { getPlanningGroupOpenSupplies } from "~/modules/projects/projects.service";
 import ManualPegForm from "~/modules/projects/ui/Pegging/ManualPegForm";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-pegging-manual");
@@ -102,26 +100,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 /**
- * Replaces one Soft peg with a Manual peg. `createManualPeg` writes past
- * row-level security, so this action checks `update: projects` first; the
- * entitlement lock is inside the ee function.
+ * Replaces one Soft peg with a Manual peg (`projects.createManualPeg`). An
+ * unentitled company is sent back to the pegging page with the upgrade
+ * message.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
-
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "PLANNING_GROUPS",
-    redirectTo: path.to.projectPegging(projectId)
-  });
 
   const validation = await validator(manualPegValidator).validate(
     await request.formData()
@@ -135,33 +121,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  let result: Awaited<ReturnType<typeof createManualPeg>>;
-  try {
-    result = await createManualPeg(client, getDatabaseClient(), {
-      companyId,
-      userId,
-      projectId,
-      pegId: validation.data.pegId,
-      supplyType: supply.supplyType,
-      supplyId: supply.supplyId,
-      quantity: validation.data.quantity,
-      manualReason: validation.data.manualReason
-    });
-  } catch (err) {
-    if (!(err instanceof EntitlementError)) throw err;
+  const api = await carbon(request);
+  const result = await api.projects.createManualPeg({
+    projectId,
+    pegId: validation.data.pegId,
+    supplyType: supply.supplyType,
+    supplyId: supply.supplyId,
+    quantity: validation.data.quantity,
+    manualReason: validation.data.manualReason
+  });
+  if (result.error?.category === "entitlement") {
     throw redirect(
       path.to.projectPegging(projectId),
-      await flash(request, error(err, "Upgrade to use planning groups"))
+      await flash(request, error(null, result.error.message))
     );
   }
-
   if (result.error) {
-    logger.error("Failed to create a manual peg", {
-      companyId,
-      projectId,
-      error: result.error
-    });
-    return data({}, await flash(request, error(result.error, result.error)));
+    return data({}, await flash(request, error(null, result.error.message)));
   }
 
   throw redirect(

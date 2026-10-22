@@ -15,24 +15,22 @@ import { DateTime, EmployeeAvatar } from "~/components";
 import { Select } from "~/components/Form";
 import { usePercentFormatter, useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
-import type {
-  ParameterSource,
-  RequirementCategory,
-  RequirementTargetOperator,
-  RequirementVerificationMethod,
-  TestCaseVerdict
-} from "../../projects.models";
 import {
   formatAllocation,
   PARAMETER_ITEM_UNIT_COST,
+  type ParameterSource,
   parameterSources,
   parseParameterFormula,
+  type RequirementCategory,
+  type RequirementTargetOperator,
+  type RequirementVerificationMethod,
   requirementCategories,
   requirementTargetOperators,
   requirementVerificationMethods,
+  type TestCaseVerdict,
   testCaseVerdicts
 } from "../../projects.models";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 import {
   useActiveChangeRequestId,
   withChangeRequest

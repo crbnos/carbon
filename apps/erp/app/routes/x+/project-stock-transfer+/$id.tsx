@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,16 +14,12 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage } from "~/components/DocumentPage";
-import {
-  projectStockTransferValidator,
-  toStockOwner
-} from "~/modules/projects/projects.models";
+import { projectStockTransferValidator } from "~/modules/projects/projects.models";
 import {
   getProjectBorrows,
   getProjectStockTransfer,
   getProjectStockTransferLines,
-  getStockOwnerProjects,
-  upsertProjectStockTransfer
+  getStockOwnerProjects
 } from "~/modules/projects/projects.service";
 import ProjectStockTransferDetails from "~/modules/projects/ui/Transfers/ProjectStockTransferDetails";
 import ProjectStockTransferHeader from "~/modules/projects/ui/Transfers/ProjectStockTransferHeader";
@@ -87,9 +84,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 /** Saves the header of a Draft transfer. Its type never changes. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -99,41 +93,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const current = await getProjectStockTransfer(client, companyId, id);
-  if (current.error) {
-    return data(
-      {},
-      await flash(request, error(current.error, "Failed to load the transfer"))
-    );
-  }
-
-  // A Payback keeps the owners and location of its borrow.
-  const isPayback = current.data.type === "Payback";
-  const updated = await upsertProjectStockTransfer(client, {
-    id,
-    companyId,
-    updatedBy: userId,
-    fromProjectId: isPayback
-      ? current.data.fromProjectId
-      : toStockOwner(validation.data.fromProjectId),
-    toProjectId: isPayback
-      ? current.data.toProjectId
-      : toStockOwner(validation.data.toProjectId),
-    locationId: isPayback
-      ? current.data.locationId
-      : (validation.data.locationId ?? current.data.locationId),
-    reason: validation.data.reason,
-    paybackDueDate:
-      current.data.type === "Borrow"
-        ? (validation.data.paybackDueDate ?? null)
-        : null,
-    settlesBorrowId: current.data.settlesBorrowId
+  const api = await carbon(request);
+  const updated = await api.projects.upsertProjectStockTransfer({
+    ...validation.data,
+    id
   });
 
   if (updated.error) {
     return data(
       {},
-      await flash(request, error(updated.error, "Failed to save the transfer"))
+      await flash(
+        request,
+        error(
+          null,
+          updated.error.category === "notFound"
+            ? updated.error.message
+            : "Failed to save the transfer"
+        )
+      )
     );
   }
 

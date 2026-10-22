@@ -2,17 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { projectStockTransferLineValidator } from "~/modules/projects/projects.models";
-import {
-  deleteProjectStockTransferLine,
-  upsertProjectStockTransferLine
-} from "~/modules/projects/projects.service";
 
 /**
  * Adds, changes (`intent=save`) or deletes (`intent=delete`) a line of a
@@ -20,9 +16,6 @@ import {
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -37,10 +30,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(null, "Line not found"))
       );
     }
-    const deleted = await deleteProjectStockTransferLine(client, {
+    const api = await carbon(request);
+    const deleted = await api.projects.deleteProjectStockTransferLine({
       id: lineId,
-      projectStockTransferId: id,
-      companyId
+      projectStockTransferId: id
     });
     if (deleted.error) {
       return data(
@@ -59,11 +52,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ).validate(formData);
   if (validation.error) return validationError(validation.error);
 
-  const saved = await upsertProjectStockTransferLine(client, {
+  const api = await carbon(request);
+  const saved = await api.projects.upsertProjectStockTransferLine({
     ...validation.data,
-    projectStockTransferId: id,
-    companyId,
-    userId
+    projectStockTransferId: id
   });
   if (saved.error) {
     return data(

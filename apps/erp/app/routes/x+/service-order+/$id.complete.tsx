@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { previewRefurbishmentCompletion } from "~/modules/service/service.server";
+import { previewRefurbishmentCompletion } from "~/modules/service/service.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 /**

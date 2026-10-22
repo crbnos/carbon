@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { stopWorkValidator } from "@carbon/ee/project-control";
-import { resumeWork, stopWork } from "@carbon/ee/project-control.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -26,7 +25,7 @@ const logger = getLogger("erp", "project-stop-work");
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "projects"
   });
 
@@ -36,81 +35,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+  const api = await carbon(request);
 
-  try {
-    if (intent === "stop") {
-      await requireFeature({
-        request,
-        client,
-        companyId,
-        redirectTo: back,
-        feature: "GOVERNMENT_CONTRACTING"
-      });
-      formData.set("projectId", projectId);
-      const validation = await validator(stopWorkValidator).validate(formData);
-      if (validation.error) {
-        throw redirect(
-          back,
-          await flash(
-            request,
-            error(
-              null,
-              Object.values(validation.error.fieldErrors)[0] ??
-                "Invalid stop-work order"
-            )
-          )
-        );
-      }
-      const result = await stopWork(client, {
-        companyId,
-        userId,
-        projectId,
-        orderDate: validation.data.orderDate
-      });
-      if (result.error) {
-        logger.error("Failed to stop work", {
-          companyId,
-          projectId,
-          error: result.error
-        });
-        throw redirect(
-          back,
-          await flash(
-            request,
-            error(result.error, result.error.message ?? "Failed to stop work")
-          )
-        );
-      }
+  if (intent === "stop") {
+    await requireFeature({
+      request,
+      client,
+      companyId,
+      redirectTo: back,
+      feature: "GOVERNMENT_CONTRACTING"
+    });
+    formData.set("projectId", projectId);
+    const validation = await validator(stopWorkValidator).validate(formData);
+    if (validation.error) {
       throw redirect(
         back,
-        await flash(request, success("Stop-work order issued"))
+        await flash(
+          request,
+          error(
+            null,
+            Object.values(validation.error.fieldErrors)[0] ??
+              "Invalid stop-work order"
+          )
+        )
       );
     }
+    const result = await api.projects.stopProjectWork(validation.data);
+    if (result.error) {
+      logger.error("Failed to stop work", {
+        companyId,
+        projectId,
+        error: result.error
+      });
+    }
+    return respond(request, result).redirect(back, {
+      message: "Stop-work order issued"
+    });
+  }
 
-    if (intent === "resume") {
-      const result = await resumeWork(client, { companyId, userId, projectId });
-      if (result.error) {
-        logger.error("Failed to resume work", {
-          companyId,
-          projectId,
-          error: result.error
-        });
-        throw redirect(
-          back,
-          await flash(
-            request,
-            error(result.error, result.error.message ?? "Failed to resume work")
-          )
-        );
-      }
-      throw redirect(back, await flash(request, success("Work resumed")));
+  if (intent === "resume") {
+    const result = await api.projects.resumeProjectWork({ projectId });
+    if (result.error) {
+      logger.error("Failed to resume work", {
+        companyId,
+        projectId,
+        error: result.error
+      });
     }
-  } catch (err) {
-    if (err instanceof EntitlementError) {
-      logger.error("Stop work refused: not entitled", { companyId, projectId });
-      throw redirect(back, await flash(request, error(err, err.message)));
-    }
-    throw err;
+    return respond(request, result).redirect(back, {
+      message: "Work resumed"
+    });
   }
 
   throw redirect(back, await flash(request, error(null, "Unknown action")));

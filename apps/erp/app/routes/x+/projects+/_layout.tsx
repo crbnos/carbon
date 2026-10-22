@@ -11,7 +11,7 @@ import { GroupedContentSidebar } from "~/components/Layout";
 import {
   getApprovalCountForUser,
   getBillingReviewCountForUser
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import useProjectsSubmodules from "~/modules/projects/ui/useProjectsSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

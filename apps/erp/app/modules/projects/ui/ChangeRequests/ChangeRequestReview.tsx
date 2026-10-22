@@ -23,8 +23,7 @@ import {
 } from "@carbon/react";
 import { tiptapToText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
   LuArrowLeft,
   LuCheck,
@@ -38,12 +37,12 @@ import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { Hidden, Submit, TextArea } from "~/components/Form";
 import { useDateFormatter, useUser } from "~/hooks";
 import { path } from "~/utils/path";
-import type {
-  ProjectChangeRequestIntent,
-  ProjectPlanTable
+import {
+  type ProjectChangeRequestIntent,
+  type ProjectPlanTable,
+  projectChangeRequestCommentValidator
 } from "../../projects.models";
-import { projectChangeRequestCommentValidator } from "../../projects.models";
-import type { ChangeRequestReview as Review } from "../../projects.server";
+import type { ChangeRequestReview as Review } from "../../projects.service";
 import type { ProjectChangeRequestComment } from "../../types";
 import { PlanDiffGroups, planDiffGroups } from "../Baselines/PlanDiffViewer";
 import ChangeRequestStatus from "./ChangeRequestStatus";

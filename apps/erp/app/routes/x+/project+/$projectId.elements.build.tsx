@@ -2,22 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import type { z } from "zod";
 import { buildFromPartValidator } from "~/modules/projects/projects.models";
-import type {
-  BuildFromPartArgs,
-  BuildFromPartPreviewRow
-} from "~/modules/projects/projects.server";
 import {
-  buildElementsFromPart,
-  previewBuildFromPart
-} from "~/modules/projects/projects.server";
+  type BuildFromPartPreviewRow,
+  previewBuildFromPart,
+  toBuildFromPartArgs
+} from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-build-from-part");
@@ -33,26 +30,6 @@ export type BuildFromPartResult = {
   skippedLines?: number;
   error?: { message: string } | null;
 };
-
-function toBuildArgs(
-  data: z.infer<typeof buildFromPartValidator>,
-  companyId: string,
-  projectId: string
-): BuildFromPartArgs {
-  return {
-    companyId,
-    projectId,
-    parentId: data.parentId ?? null,
-    depth: data.depth,
-    includeBought: data.includeBought,
-    source:
-      data.source === "Serial"
-        ? { trackedEntityId: data.trackedEntityId! }
-        : data.source === "Item"
-          ? { itemId: data.itemId! }
-          : { templateProjectId: data.templateProjectId! }
-  };
-}
 
 /**
  * The company's project templates and, when the query names a complete
@@ -95,7 +72,7 @@ export async function loader({
     const preview = await previewBuildFromPart(
       client,
       getDatabaseClient(),
-      toBuildArgs(validation.data, companyId, projectId)
+      toBuildFromPartArgs(validation.data, companyId, projectId)
     );
     return { templates: templates.data ?? [], preview, error: null };
   } catch (error) {
@@ -118,9 +95,6 @@ export async function action({
   params
 }: ActionFunctionArgs): Promise<BuildFromPartResult> {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
@@ -131,22 +105,11 @@ export async function action({
     return { error: { message: "Choose a source to build from" } };
   }
 
-  try {
-    const result = await buildElementsFromPart(client, getDatabaseClient(), {
-      ...toBuildArgs(validation.data, companyId, projectId),
-      userId
-    });
-    return { ...result, error: null };
-  } catch (error) {
-    logger.error("Failed to build elements from a part", {
-      companyId,
-      projectId,
-      error
-    });
-    return {
-      error: {
-        message: getErrorMessage(error, "The elements could not be created")
-      }
-    };
-  }
+  const api = await carbon(request);
+  const result = await api.projects.buildElementsFromPart({
+    ...validation.data,
+    projectId
+  });
+  if (result.error) return { error: { message: result.error.message } };
+  return { ...result.data, error: null };
 }

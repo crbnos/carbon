@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,19 +15,15 @@ import type { ProjectStockTransferType } from "~/modules/projects/projects.model
 import {
   COMMON_STOCK_OWNER,
   projectStockTransferTypes,
-  projectStockTransferValidator,
-  toStockOwner
+  projectStockTransferValidator
 } from "~/modules/projects/projects.models";
 import {
   getProjectBorrows,
-  getStockOwnerProjects,
-  upsertProjectStockTransfer
+  getStockOwnerProjects
 } from "~/modules/projects/projects.service";
 import ProjectStockTransferForm from "~/modules/projects/ui/Transfers/ProjectStockTransferForm";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "project-stock-transfer-new");
 
 /**
  * The owners and open borrows the form offers. `?type`, `?from`, `?to`
@@ -68,67 +64,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
 
   const validation = await validator(projectStockTransferValidator).validate(
     await request.formData()
   );
   if (validation.error) return validationError(validation.error);
 
-  const { type, reason, settlesBorrowId } = validation.data;
-  let fromProjectId = toStockOwner(validation.data.fromProjectId);
-  let toProjectId = toStockOwner(validation.data.toProjectId);
-  let locationId = validation.data.locationId ?? "";
+  const { id: _id, ...fields } = validation.data;
+  const api = await carbon(request);
+  const created = await api.projects.upsertProjectStockTransfer(fields);
 
-  // A Payback runs from the borrower back to the lender, at the borrow's
-  // location: the header names both owners (the owner CHECK needs one).
-  if (type === "Payback") {
-    const borrow = await client
-      .from("projectBorrow")
-      .select("borrowerProjectId, lenderProjectId, locationId, status")
-      .eq("id", settlesBorrowId!)
-      .eq("companyId", companyId)
-      .single();
-    if (borrow.error || borrow.data.status !== "Open") {
-      return data(
-        {},
-        await flash(
-          request,
-          error(borrow.error, "Select an open borrow to pay back")
-        )
-      );
-    }
-    fromProjectId = borrow.data.borrowerProjectId;
-    toProjectId = borrow.data.lenderProjectId;
-    locationId = borrow.data.locationId;
-  }
-
-  const created = await upsertProjectStockTransfer(client, {
-    type,
-    fromProjectId,
-    toProjectId,
-    locationId,
-    reason,
-    paybackDueDate:
-      type === "Borrow" ? (validation.data.paybackDueDate ?? null) : null,
-    settlesBorrowId: type === "Payback" ? (settlesBorrowId ?? null) : null,
-    companyId,
-    createdBy: userId
-  });
-
-  if (created.error || !created.data) {
-    logger.error("Failed to create a project stock transfer", {
-      companyId,
-      error: created.error
-    });
+  if (created.error) {
+    // A Payback that names no open borrow says so; anything else is a
+    // failure to create.
     return data(
       {},
       await flash(
         request,
-        error(created.error, "Failed to create the transfer")
+        error(
+          null,
+          created.error.category === "validation"
+            ? created.error.message
+            : "Failed to create the transfer"
+        )
       )
+    );
+  }
+
+  if (!created.data) {
+    return data(
+      {},
+      await flash(request, error(null, "Failed to create the transfer"))
     );
   }
 

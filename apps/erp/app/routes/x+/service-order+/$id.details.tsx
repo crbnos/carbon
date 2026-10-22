@@ -2,12 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Json } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,34 +14,15 @@ import { data, useLoaderData, useParams } from "react-router";
 import { DateTime } from "~/components";
 import RecordDocuments from "~/components/RecordDocuments";
 import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
-import { serviceOrderUpdateValidator } from "~/modules/service/service.models";
 import {
-  ServiceOrderError,
-  updateServiceOrderCoverageContract
-} from "~/modules/service/service.server";
-import { updateServiceOrder } from "~/modules/service/service.service";
+  serviceOrderPropertyFields,
+  serviceOrderTextFields
+} from "~/modules/service/service.models";
 import type { ServiceOrder } from "~/modules/service/types";
 import { ServiceOrderProperties } from "~/modules/service/ui/ServiceOrders";
 import { ServiceRichText } from "~/modules/service/ui/ServiceRichText";
 import { WarrantyBadge } from "~/modules/service/ui/ServiceStatus";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "service-order-details");
-
-/** The order fields the Properties panel saves one at a time. */
-const PROPERTY_FIELDS = [
-  "customerLocationId",
-  "customerContactId",
-  "customerContractId",
-  "priority",
-  "invoiceDetail",
-  "expectedSellingPrice",
-  "abnormalRework"
-] as const;
-
-/** The rich-text fields the editors on this page save. */
-const TEXT_FIELDS = ["problem", "resolution"] as const;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -65,80 +45,50 @@ function failure(message: string) {
   return data({ success: false, error: { message } }, { status: 400 });
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
-  });
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const formData = await args.request.formData();
   const intent = formData.get("intent");
   const field = formData.get("field");
   const value = formData.get("value");
 
-  let changes: Record<string, unknown>;
+  let update: {
+    field:
+      | (typeof serviceOrderPropertyFields)[number]
+      | (typeof serviceOrderTextFields)[number];
+    value: unknown;
+  };
   if (intent === "field") {
-    if (!(TEXT_FIELDS as readonly unknown[]).includes(field)) {
+    if (!(serviceOrderTextFields as readonly unknown[]).includes(field)) {
       return failure("Unknown field");
     }
-    let document: Json;
     try {
-      document = JSON.parse(typeof value === "string" ? value : "{}");
+      update = {
+        field: field as (typeof serviceOrderTextFields)[number],
+        value: JSON.parse(typeof value === "string" ? value : "{}") as Json
+      };
     } catch {
       return failure("Invalid text");
     }
-    changes = { [field as string]: document };
   } else if (intent === "update") {
-    if (!(PROPERTY_FIELDS as readonly unknown[]).includes(field)) {
+    if (!(serviceOrderPropertyFields as readonly unknown[]).includes(field)) {
       return failure("Unknown field");
     }
-    const form = new FormData();
-    form.set("id", id);
-    form.set(field as string, typeof value === "string" ? value : "");
-    const validation = await validator(serviceOrderUpdateValidator).validate(
-      form
-    );
-    if (validation.error) return failure("Invalid value");
-    // The coverage contract also moves the Service project's parent, and is
-    // refused while a Contract charge stands.
-    if (field === "customerContractId") {
-      try {
-        await updateServiceOrderCoverageContract(getDatabaseClient(), {
-          companyId,
-          userId,
-          serviceOrderId: id,
-          customerContractId: validation.data.customerContractId ?? null
-        });
-      } catch (err) {
-        if (err instanceof ServiceOrderError) return failure(err.message);
-        logger.error("Failed to change the coverage contract", {
-          companyId,
-          serviceOrderId: id,
-          error: err
-        });
-        return failure("Failed to change the coverage contract");
-      }
-      return { success: true };
-    }
-    // Only the one field: an absent key would be saved as null.
-    changes = {
-      [field as string]:
-        validation.data[field as (typeof PROPERTY_FIELDS)[number]]
+    update = {
+      field: field as (typeof serviceOrderPropertyFields)[number],
+      value: typeof value === "string" ? value : ""
     };
   } else {
     return failure("Unknown intent");
   }
 
-  const update = await updateServiceOrder(client, {
-    id,
-    ...changes,
-    companyId,
-    updatedBy: userId
+  const api = await carbon(args.request);
+  const result = await api.service.updateServiceOrderField({
+    id: input.params.id,
+    ...update
   });
-  if (update.error) return failure(update.error.message);
-
+  if (result.error) return failure(result.error.message);
   return { success: true };
 }
 

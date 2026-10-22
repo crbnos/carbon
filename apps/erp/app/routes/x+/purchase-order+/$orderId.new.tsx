@@ -8,13 +8,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
-import type { ActionFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import { type ActionFunctionArgs, useParams } from "react-router";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import {
   chargeNumberError,
   checkProjectBudget
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator

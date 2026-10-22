@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,14 +13,17 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import {
+  type ActionFunctionArgs,
+  data,
+  type LoaderFunctionArgs,
+  useLoaderData
+} from "react-router";
 import { timesheetCellValidator } from "~/modules/projects/projects.models";
 import {
   getTimesheetWeekView,
-  saveTimesheetEntry,
-  timesheetBudgetWarning
-} from "~/modules/projects/projects.server";
+  managesEmployee
+} from "~/modules/projects/projects.service";
 import TimesheetGrid from "~/modules/projects/ui/Timesheet/TimesheetGrid";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -37,27 +41,14 @@ const ACCESS_REFUSED =
   "You can open the timesheet of an employee you manage only";
 
 /**
- * Whether the user may open and change the employee's timesheet: the
- * employee's manager (`employeeJob.managerId`), or a user with
- * `update: "projects"`.
+ * Whether the user may open the employee's timesheet: the employee's manager
+ * (`employeeJob.managerId`), or a user with `update: "projects"`.
  */
 async function canManageTimesheet(
   client: SupabaseClient<Database>,
   args: { companyId: string; userId: string; employeeId: string }
 ) {
-  const job = await client
-    .from("employeeJob")
-    .select("managerId")
-    .eq("id", args.employeeId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (job.error) {
-    logger.error("Failed to load the employee job", {
-      companyId: args.companyId,
-      error: job.error
-    });
-  }
-  if (job.data?.managerId === args.userId) return true;
+  if (await managesEmployee(client, args)) return true;
   return hasPermission(
     (await getUserClaims(args.userId, args.companyId))?.permissions,
     "projects",
@@ -134,23 +125,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 /**
- * Saves one cell of the employee's week through `save-timesheet-entry`, as
- * the manager. The server function needs a reason, sets the entry to
- * Pending Employee Review, and refuses a new entry on a day with no recorded
- * absence. Answers `{ error }`, which the grid reads. A budget overrun
- * comes back as `warning` and never refuses the entry.
+ * Saves one cell of the employee's week as the manager
+ * (`saveTimesheetEntry`, which checks who may change the week). The server
+ * function needs a reason, sets the entry to Pending Employee Review, and
+ * refuses a new entry on a day with no recorded absence. Answers `{ error }`,
+ * which the grid reads. A budget overrun comes back as `warning` and never
+ * refuses the entry.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "projects"
-  });
   const { employeeId } = params;
   if (!employeeId) throw new Error("Could not find employeeId");
-
-  if (!(await canManageTimesheet(client, { companyId, userId, employeeId }))) {
-    return data({ error: { message: ACCESS_REFUSED } }, { status: 403 });
-  }
 
   const validation = await validator(timesheetCellValidator).validate(
     await request.formData()
@@ -161,30 +146,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ error: { message } }, { status: 400 });
   }
 
-  // The route checked who may change the week: the server function runs as
-  // the system, with the manager as the actor.
-  const result = await saveTimesheetEntry({
+  const api = await carbon(request);
+  const result = await api.projects.saveTimesheetEntry({
     ...validation.data,
-    companyId,
-    employeeId,
-    userId
+    employeeId
   });
-  if (result.error !== null) {
-    logger.error("Failed to save the employee's timesheet cell", {
-      companyId,
-      error: result.error
-    });
-    return data({ error: { message: result.error } }, { status: 400 });
+  if (result.error) {
+    return data(
+      { error: { message: result.error.message } },
+      { status: result.error.category === "forbidden" ? 403 : 400 }
+    );
   }
 
-  // Budget control (Government Contracting 5c): a timesheet only warns. The
-  // grid toasts the warning; the entry is already saved.
-  const warning = await timesheetBudgetWarning(client, {
-    ...validation.data,
-    companyId
-  });
-
-  return data({ error: null, data: result.data, warning });
+  const { warning, ...saved } = result.data;
+  return data({ error: null, data: saved, warning });
 }
 
 export default function EmployeeTimesheetRoute() {

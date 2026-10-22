@@ -12,11 +12,15 @@ import {
 } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import {
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import { usePermissions } from "~/hooks";
-import { getChangeRequestReview } from "~/modules/projects/projects.server";
+import { getChangeRequestReview } from "~/modules/projects/projects.service";
 import ChangeRequestReview from "~/modules/projects/ui/ChangeRequests/ChangeRequestReview";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-change-request");
@@ -31,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!crId) throw new Error("Could not find crId");
 
   const [review, latest] = await Promise.all([
-    getChangeRequestReview(client, {
+    getChangeRequestReview(client, getDatabaseClient(), {
       companyId,
       projectId,
       changeRequestId: crId,

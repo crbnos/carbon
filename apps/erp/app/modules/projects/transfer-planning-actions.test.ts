@@ -39,7 +39,7 @@ vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 vi.mock("~/modules/items/items.service", () => ({ getMethodTree: vi.fn() }));
 
 const { createProjectStockTransfersFromActions } = await import(
-  "./projects.server"
+  "./projects.service"
 );
 
 // The Postgres wire is the boundary: each statement is recorded, and the

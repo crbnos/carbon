@@ -2,21 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+import { validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { serviceTemplateValidator } from "~/modules/service/service.models";
-import { createServiceTemplate } from "~/modules/service/service.server";
 import ServiceTemplateForm from "~/modules/service/ui/Templates/ServiceTemplateForm";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "service-template-new");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, { create: "service" });
@@ -24,39 +17,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 /** Creates a service template and opens it to build its work. */
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "service"
-  });
-
-  const validation = await validator(serviceTemplateValidator).validate(
-    await request.formData()
-  );
-  if (validation.error) return validationError(validation.error);
-
-  let templateId: string;
-  try {
-    const template = await createServiceTemplate(getDatabaseClient(), {
-      ...validation.data,
-      companyId,
-      userId
-    });
-    templateId = template.id;
-  } catch (err) {
-    logger.error("Failed to create a service template", {
-      companyId,
-      error: err
-    });
-    throw redirect(
-      path.to.serviceTemplates,
-      await flash(request, error(err, "Failed to create the service template"))
-    );
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(serviceTemplateValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.service.createServiceTemplate(input.data);
+  if (!result.data) {
+    return respond(args.request, result).redirect(path.to.serviceTemplates);
   }
-
-  throw redirect(
-    path.to.serviceTemplate(templateId),
-    await flash(request, success("Service template created"))
+  return respond(args.request, result).redirect(
+    path.to.serviceTemplate(result.data.id),
+    { message: "Service template created" }
   );
 }
 

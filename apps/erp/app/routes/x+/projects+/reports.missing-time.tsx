@@ -2,13 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import {
   Badge,
   Button,
@@ -17,7 +15,6 @@ import {
   MenuIcon,
   MenuItem
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -32,20 +29,25 @@ import {
   LuUserCheck,
   LuUserX
 } from "react-icons/lu";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useFetcher, useLoaderData } from "react-router";
+import {
+  type ActionFunctionArgs,
+  data,
+  Link,
+  type LoaderFunctionArgs,
+  useFetcher,
+  useLoaderData
+} from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import {
   missingTimeActionValidator,
   projectReportPermissions
 } from "~/modules/projects/projects.models";
-import { getProjectReportRange } from "~/modules/projects/projects.server";
 import {
   getMissingTimeByEmployee,
   getMissingTimeExcludedCount,
-  type MissingTimeEmployee,
-  updateTimesheetRequired
+  getProjectReportRange,
+  type MissingTimeEmployee
 } from "~/modules/projects/projects.service";
 import {
   NumberCell,
@@ -60,8 +62,6 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle = projectReportHandle("missing-time", msg`Missing Time`);
 
-const logger = getLogger("erp", "projects-missing-time");
-
 /** The columns the report filters on, each an id of `MissingTimeEmployee`. */
 const FILTER_KEYS = [
   "employeeId",
@@ -70,9 +70,6 @@ const FILTER_KEYS = [
   "locationId"
 ] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
-
-/** How many dates a reminder names before it says "and N more". */
-const REMINDER_DATES = 5;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -146,105 +143,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    ...projectReportPermissions["missing-time"],
-    role: "employee"
-  });
   const validation = await validator(missingTimeActionValidator).validate(
     await request.formData()
   );
   if (validation.error) {
     return validationError(validation.error);
   }
-  const db = getDatabaseClient();
+  const api = await carbon(request);
 
   if (validation.data.intent === "remind") {
     const { employeeIds, startDate, endDate } = validation.data;
-    // The dates come from the database again, not from the browser.
-    const employees = await getMissingTimeByEmployee(db, {
-      companyId,
-      from: startDate,
-      to: endDate,
-      excluded: false
+    const result = await api.projects.sendMissingTimeReminders({
+      employeeIds,
+      startDate,
+      endDate
     });
-    const chosen = employees.filter(
-      (employee) =>
-        employeeIds.includes(employee.employeeId) && employee.dates.length > 0
-    );
-
-    try {
-      await Promise.all(
-        chosen.map((employee) => {
-          const shown = employee.dates
-            .slice(0, REMINDER_DATES)
-            .map((date) => formatDate(date))
-            .join(", ");
-          const more = employee.dates.length - REMINDER_DATES;
-          return trigger("notify", {
-            event: NotificationEvent.TimesheetMissing,
-            companyId,
-            documentId: employee.dates[employee.dates.length - 1]!,
-            recipient: { type: "users", userIds: [employee.employeeId] },
-            from: userId,
-            body:
-              more > 0
-                ? `No time entered for ${shown} and ${more} more days`
-                : `No time entered for ${shown}`
-          });
-        })
-      );
-    } catch (err) {
-      logger.error("Failed to send the missing time reminders", {
-        companyId,
-        employeeIds,
-        error: err
-      });
-      return data(
-        {},
-        await flash(request, error(err, "Failed to send the reminders"))
-      );
+    if (result.error) {
+      return data({}, await flash(request, error(null, result.error.message)));
     }
-
+    const { sent } = result.data;
     return data(
       {},
       await flash(
         request,
-        success(
-          chosen.length === 1
-            ? "Sent 1 reminder"
-            : `Sent ${chosen.length} reminders`
-        )
+        success(sent === 1 ? "Sent 1 reminder" : `Sent ${sent} reminders`)
       )
     );
   }
 
   // Taking a person out of the report changes their job record.
-  await requirePermissions(request, { update: "people", role: "employee" });
   const { intent, employeeId } = validation.data;
-  try {
-    const updated = await updateTimesheetRequired(db, {
-      companyId,
-      employeeId,
-      timesheetRequired: intent === "include",
-      updatedBy: userId
-    });
-    if (!updated) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(null, "Set up the person's job before you change this")
-        )
-      );
-    }
-  } catch (err) {
-    logger.error("Failed to update timesheetRequired", {
-      companyId,
-      employeeId,
-      intent,
-      error: err
-    });
-    return data({}, await flash(request, error(err, "Failed to update")));
+  const result = await api.projects.updateTimesheetRequired({
+    employeeId,
+    timesheetRequired: intent === "include"
+  });
+  if (result.error) {
+    return data({}, await flash(request, error(null, result.error.message)));
   }
 
   return data(

@@ -7,17 +7,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import {
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import {
   CURRENT_PLAN,
   diffPlanSnapshots,
   parsePlanSnapshot
 } from "~/modules/projects/projects.models";
-import { loadPlanSnapshot } from "~/modules/projects/projects.server";
 import {
   getLaborCategoryNames,
-  getProjectBaseline
+  getProjectBaseline,
+  loadPlanSnapshot
 } from "~/modules/projects/projects.service";
 import PlanDiffViewer from "~/modules/projects/ui/Baselines/PlanDiffViewer";
 import { getDatabaseClient } from "~/services/database.server";

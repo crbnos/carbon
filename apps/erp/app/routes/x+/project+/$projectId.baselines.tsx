@@ -2,18 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useOutlet, useParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  data,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useOutlet,
+  useParams
+} from "react-router";
 import { projectBaselineValidator } from "~/modules/projects/projects.models";
-import { createProjectBaseline } from "~/modules/projects/projects.server";
 import { getProjectBaselines } from "~/modules/projects/projects.service";
 import BaselinesList from "~/modules/projects/ui/Baselines/BaselinesList";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-baselines");
@@ -40,10 +45,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
-
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
@@ -60,19 +61,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  try {
-    await createProjectBaseline(getDatabaseClient(), {
-      companyId,
-      userId,
-      projectId,
-      name: validation.data.name,
-      source: "Manual"
-    });
-  } catch (err) {
-    logger.error("Failed to take a baseline", { companyId, projectId, err });
+  const api = await carbon(request);
+  const result = await api.projects.createProjectBaseline({
+    ...validation.data,
+    projectId
+  });
+  if (result.error) {
     return data(
       { success: false },
-      await flash(request, error(err, "Failed to take the baseline"))
+      await flash(request, error(null, result.error.message))
     );
   }
 

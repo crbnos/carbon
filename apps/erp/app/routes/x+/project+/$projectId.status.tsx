@@ -2,33 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { assertIsPost, error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  canChangeProjectStatus,
-  projectStatusValidator,
-  stopWorkStatusRefusal
-} from "~/modules/projects/projects.models";
-import { ensureCapitalAssets } from "~/modules/projects/projects.server";
-import {
-  getProject,
-  updateProjectStatus
-} from "~/modules/projects/projects.service";
-import { getDatabaseClient } from "~/services/database.server";
+import { projectStatusValidator } from "~/modules/projects/projects.models";
 import { path, requestReferrer } from "~/utils/path";
-
-const logger = getLogger("erp", "project-status");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
 
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
@@ -43,84 +27,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   const { status } = validation.data;
 
-  const project = await getProject(client, companyId, projectId);
-  if (project.error || !project.data) {
-    logger.error("Failed to load project", {
-      companyId,
-      projectId,
-      error: project.error
-    });
-    throw redirect(
-      back,
-      await flash(request, error(project.error, "Failed to load project"))
-    );
-  }
-
-  // C16: updateProjectStatus refuses this too (the MCP tool calls it). The
-  // route asks first, so a stopped project creates no capital assets below.
-  const stopped = stopWorkStatusRefusal(project.data.stopWorkDate, status);
-  if (stopped) {
-    throw redirect(back, await flash(request, error(null, stopped)));
-  }
-
-  if (!canChangeProjectStatus(project.data.status, status)) {
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(
-          null,
-          `A ${project.data.status} project cannot change to ${status}`
-        )
-      )
-    );
-  }
-
-  // A capital project needs its assets under construction before it takes
-  // charges. Create them before the status changes: the call is safe to
-  // repeat, so a failed status change leaves nothing wrong behind.
-  if (status === "Released") {
-    try {
-      await ensureCapitalAssets(getDatabaseClient(), {
-        companyId,
-        userId,
-        projectId
-      });
-    } catch (err) {
-      logger.error("Failed to create the capital assets", {
-        companyId,
-        projectId,
-        error: err
-      });
-      throw redirect(
-        back,
-        await flash(
-          request,
-          error(err, "Failed to create the assets under construction")
-        )
-      );
-    }
-  }
-
-  const update = await updateProjectStatus(client, {
-    id: projectId,
-    companyId,
-    status,
-    updatedBy: userId
+  const api = await carbon(request);
+  const result = await api.projects.updateProjectStatus({ projectId, status });
+  return respond(request, result).redirect(back, {
+    message: `Project is ${status}`
   });
-
-  if (update.error) {
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(
-          update.error,
-          update.error.message ?? "Failed to update the project status"
-        )
-      )
-    );
-  }
-
-  throw redirect(back, await flash(request, success(`Project is ${status}`)));
 }

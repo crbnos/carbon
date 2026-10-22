@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
+import type { RefurbishmentCompletionPlan } from "./refurbishment-completion-plan";
 import type {
   getCustomerAsset,
   getCustomerAssetComponents,
@@ -61,3 +63,20 @@ export type ServiceVisitDetail = NonNullable<
 export type ServiceTemplate = NonNullable<
   Awaited<ReturnType<typeof getServiceTemplates>>["data"]
 >[number];
+
+/** What completing a Refurbishment would do (`previewRefurbishmentCompletion`). */
+export type RefurbishmentCompletionPreview = {
+  costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
+  /** Capitalize into the serial (or the average), or material variance. */
+  treatment: RefurbishmentCompletionPlan["treatment"];
+  abnormalRework: boolean;
+  wipTotal: number;
+  /** The serial's unit cost (FIFO, LIFO), else the item's unit cost. */
+  currentUnitCost: number;
+  /** The unit cost after completion: the serial's, the new average, or
+   *  unchanged under material variance. */
+  newUnitCost: number;
+  cap: number | null;
+  writeDown: number;
+  warnings: string[];
+};

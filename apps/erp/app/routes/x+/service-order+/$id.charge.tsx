@@ -2,40 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, hasPermission, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { type ActionFunctionArgs, data } from "react-router";
 import {
   logTimeValidator,
   projectIssueValidator
 } from "~/modules/projects/projects.models";
 import {
-  postProjectIssue,
-  postTimesheetEntries,
-  saveTimesheetEntry,
-  timesheetBudgetWarning
-} from "~/modules/projects/projects.server";
-import {
   coverageOverrideValidator,
   serviceChargeReversalValidator,
   serviceExpenseValidator
 } from "~/modules/service/service.models";
-import {
-  addServiceExpense,
-  reclassServiceCharge,
-  requireOwnServiceVisit,
-  requireServiceOrderNode,
-  reverseServiceCharge,
-  ServiceOrderError
-} from "~/modules/service/service.server";
-import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "service-order-charge");
 
 function refuse(message: string) {
   return data({ success: false, error: { message } });
@@ -49,174 +29,96 @@ const MESSAGES = {
   reverse: "Charge reversed"
 } as const;
 
+type Intent = keyof typeof MESSAGES;
+
 /**
  * Charges a service order's node, switching on `intent`:
  * - `time`: a Draft timesheet entry on the node (with the visit), posted at
- *   once by `post-timesheet`;
- * - `part`: an issue or a return through `post-project-issue`;
- * - `expense`: a `projectExpenseEntry`, posted by `post-project-expense`;
+ *   once by `post-timesheet` (`logServiceTime`);
+ * - `part`: an issue or a return through `post-project-issue`
+ *   (`issueServicePart`);
+ * - `expense`: a `projectExpenseEntry`, posted by `post-project-expense`
+ *   (`addServiceExpense`);
  * - `reclass`: a charge moved to another coverage, with a reason, through
- *   `reclass-project-coverage`;
- * - `reverse`: a posted time or expense charge reversed, with a reason (a
- *   timesheet correction through `post-timesheet`, or an expense reversal
- *   through `post-project-expense`).
+ *   `reclass-project-coverage` (`reclassServiceCharge`);
+ * - `reverse`: a posted time or expense charge reversed, with a reason
+ *   (`reverseServiceCharge`).
  * A user without `update: "service"` charges and reverses only on their own
  * open visit (the form's `serviceVisitId`) and never reclasses.
  * A refusal is returned as fetcher data, so the modal shows it and stays open.
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const serviceOrderId = input.params.id;
 
-  const formData = await request.formData();
+  const formData = await args.request.formData();
   const intent = formData.get("intent");
-  if (
-    intent !== "time" &&
-    intent !== "part" &&
-    intent !== "expense" &&
-    intent !== "reclass" &&
-    intent !== "reverse"
-  ) {
+  if (typeof intent !== "string" || !(intent in MESSAGES)) {
     return refuse("Unknown charge");
   }
-  // Budget control (Government Contracting 5c): time only warns. The warning
-  // goes into the success flash.
-  let warning: string | null = null;
-
-  // A part moves stock, so it also needs inventory rights. A technician
-  // without `update: "service"` charges only their own open visit.
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "service",
-    ...(intent === "part" ? { update: "inventory" } : {})
-  });
-  const db = getDatabaseClient();
   const serviceVisitId = formData.get("serviceVisitId");
   const visitId =
     typeof serviceVisitId === "string" && serviceVisitId
       ? serviceVisitId
       : null;
-  const canUpdateAny = hasPermission(
-    (await getUserClaims(userId, companyId))?.permissions,
-    "service",
-    "update",
-    companyId
-  );
 
-  try {
-    if (!canUpdateAny) {
-      if (intent === "reclass") {
-        return refuse("You do not have permission to change a coverage");
-      }
-      await requireOwnServiceVisit(db, {
-        companyId,
-        serviceOrderId: id,
-        serviceVisitId: visitId,
-        userId
-      });
-    }
-    if (intent === "time") {
+  const api = await carbon(args.request);
+  let result: { error: { message: string } | null };
+  // Budget control (Government Contracting 5c): time only warns. The warning
+  // goes into the success flash.
+  let warning: string | null = null;
+
+  switch (intent as Intent) {
+    case "time": {
       const validation = await validator(logTimeValidator).validate(formData);
       if (validation.error) return validationError(validation.error);
-      const order = await requireServiceOrderNode(db, {
-        companyId,
-        serviceOrderId: id,
-        projectElementId: validation.data.projectElementId
+      const logged = await api.service.logServiceTime({
+        ...validation.data,
+        serviceOrderId,
+        serviceVisitId: visitId
       });
-      if (order.projectId !== validation.data.projectId) {
-        return refuse("The time is not for this service order");
-      }
-      // Service time posts from Draft: one new entry, posted right after.
-      const saved = await saveTimesheetEntry({
-        mode: "add",
-        status: "Draft",
-        companyId,
-        userId,
-        employeeId: userId,
-        projectId: order.projectId,
-        projectElementId: validation.data.projectElementId ?? null,
-        serviceVisitId: visitId,
-        laborCategoryId: validation.data.laborCategoryId,
-        entryDate: validation.data.entryDate,
-        hours: validation.data.hours,
-        note: validation.data.note,
-        lateReason: validation.data.lateReason
-      });
-      if (saved.error !== null || !saved.data.entryId) {
-        return refuse(saved.error ?? "Failed to log the time");
-      }
-      // Checked before the entry posts, so its own cost is not counted twice.
-      warning = await timesheetBudgetWarning(client, {
-        companyId,
-        projectId: order.projectId,
-        projectElementId: validation.data.projectElementId ?? null,
-        laborCategoryId: validation.data.laborCategoryId,
-        entryDate: validation.data.entryDate,
-        hours: validation.data.hours
-      });
-      const postingError = await postTimesheetEntries({
-        timesheetEntryIds: [saved.data.entryId],
-        companyId,
-        userId
-      });
-      if (postingError) {
-        return refuse(`The time is logged but did not post: ${postingError}`);
-      }
-    } else if (intent === "part") {
+      warning = logged.data?.warning ?? null;
+      result = logged;
+      break;
+    }
+    case "part": {
       const validation = await validator(projectIssueValidator).validate(
         formData
       );
       if (validation.error) return validationError(validation.error);
-      const order = await requireServiceOrderNode(db, {
-        companyId,
-        serviceOrderId: id,
-        projectElementId: validation.data.projectElementId
-      });
-      if (order.projectId !== validation.data.projectId) {
-        return refuse("The part is not for this service order");
-      }
-      const postingError = await postProjectIssue({
+      result = await api.service.issueServicePart({
         ...validation.data,
-        companyId,
-        userId
+        serviceOrderId,
+        serviceVisitId: visitId
       });
-      if (postingError) return refuse(postingError);
-    } else if (intent === "expense") {
+      break;
+    }
+    case "expense": {
       const validation = await validator(serviceExpenseValidator).validate(
         formData
       );
       if (validation.error) return validationError(validation.error);
-      const order = await requireServiceOrderNode(db, {
-        companyId,
-        serviceOrderId: id,
-        projectElementId: validation.data.projectElementId
-      });
-      const postingError = await addServiceExpense(db, {
+      result = await api.service.addServiceExpense({
         ...validation.data,
         serviceVisitId: visitId ?? undefined,
-        companyId,
-        userId,
-        projectId: order.projectId
+        serviceOrderId
       });
-      if (postingError) return refuse(postingError);
-    } else if (intent === "reverse") {
+      break;
+    }
+    case "reverse": {
       const validation = await validator(
         serviceChargeReversalValidator
       ).validate(formData);
       if (validation.error) return validationError(validation.error);
-      const order = await requireServiceOrderNode(db, {
-        companyId,
-        serviceOrderId: id
-      });
-      const postingError = await reverseServiceCharge(db, {
+      result = await api.service.reverseServiceCharge({
         ...validation.data,
-        companyId,
-        userId,
-        projectId: order.projectId,
-        onlyVisitId: canUpdateAny ? null : visitId
+        serviceOrderId,
+        serviceVisitId: visitId
       });
-      if (postingError) return refuse(postingError);
-    } else {
+      break;
+    }
+    case "reclass": {
       const validation = await validator(coverageOverrideValidator).validate(
         formData
       );
@@ -225,42 +127,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (typeof projectLedgerId !== "string" || !projectLedgerId) {
         return refuse("Choose a charge");
       }
-      const order = await requireServiceOrderNode(db, {
-        companyId,
-        serviceOrderId: id
-      });
-      const charge = await db
-        .selectFrom("projectLedger")
-        .select("id")
-        .where("id", "=", projectLedgerId)
-        .where("projectId", "=", order.projectId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (!charge) return refuse("The charge is not on this service order");
-      const postingError = await reclassServiceCharge(db, {
+      result = await api.service.reclassServiceCharge({
         ...validation.data,
-        companyId,
-        userId,
+        serviceOrderId,
         projectLedgerId
       });
-      if (postingError) return refuse(postingError);
+      break;
     }
-  } catch (err) {
-    if (err instanceof ServiceOrderError) return refuse(err.message);
-    logger.error("Failed to charge the service order", {
-      companyId,
-      serviceOrderId: id,
-      intent,
-      error: err
-    });
-    return refuse("Failed to post the charge");
   }
 
+  if (result.error) return refuse(result.error.message);
+  const message = MESSAGES[intent as Intent];
   return data(
     { success: true, error: null },
     await flash(
-      request,
-      success(warning ? `${MESSAGES[intent]}. ${warning}` : MESSAGES[intent])
+      args.request,
+      success(warning ? `${message}. ${warning}` : message)
     )
   );
 }

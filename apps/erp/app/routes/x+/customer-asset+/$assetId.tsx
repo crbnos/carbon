@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
@@ -17,9 +18,7 @@ import {
   getCustomerAssetComponents,
   getCustomerAssetHistoryByComponent,
   getServiceOrderCosts,
-  getServiceOrders,
-  updateCustomerAssetNotes,
-  upsertCustomerAsset
+  getServiceOrders
 } from "~/modules/service/service.service";
 import { CustomerAssetPage } from "~/modules/service/ui/CustomerAssets";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -74,18 +73,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
-  });
-  const { assetId } = params;
-  if (!assetId) throw new Error("Could not find assetId");
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["assetId"] });
+  if ("invalid" in input) return input.invalid;
+  const { assetId } = input.params;
+  const formData = await args.request.formData();
+  const api = await carbon(args.request);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "field") {
+  if (formData.get("intent") === "field") {
     if (formData.get("field") !== "notes") {
       return data(
         { success: false, error: { message: "Unknown field" } },
@@ -102,15 +97,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         { status: 400 }
       );
     }
-    const update = await updateCustomerAssetNotes(client, {
+    const result = await api.service.updateCustomerAssetNotes({
       id: assetId,
-      notes,
-      companyId,
-      updatedBy: userId
+      notes
     });
-    if (update.error) {
+    if (result.error) {
       return data(
-        { success: false, error: { message: update.error.message } },
+        { success: false, error: { message: result.error.message } },
         { status: 400 }
       );
     }
@@ -124,22 +117,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await upsertCustomerAsset(client, {
+  const result = await api.service.updateCustomerAsset({
     ...validation.data,
-    id: assetId,
-    companyId,
-    updatedBy: userId
+    id: assetId
   });
-  if (update.error) {
-    throw redirect(
-      path.to.customerAsset(assetId),
-      await flash(request, error(update.error, "Failed to update the asset"))
-    );
-  }
-
-  throw redirect(
+  return respond(args.request, result).redirect(
     path.to.customerAsset(assetId),
-    await flash(request, success("Updated customer asset"))
+    {
+      message: "Updated customer asset"
+    }
   );
 }
 

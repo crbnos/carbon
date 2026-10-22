@@ -68,7 +68,7 @@ vi.mock("~/modules/service/service.server", () => ({
   reverseServiceCharge: vi.fn(),
   ServiceOrderError: class extends Error {}
 }));
-vi.mock("~/modules/projects/projects.server", () => ({
+vi.mock("~/modules/projects/projects.service", () => ({
   postProjectIssue: vi.fn(),
   saveTimesheetEntry: vi.fn(async () => {
     events.push("save");

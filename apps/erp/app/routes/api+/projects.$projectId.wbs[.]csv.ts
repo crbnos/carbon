@@ -10,7 +10,7 @@ import {
   toWbsCsvRows,
   WBS_CSV_COLUMNS
 } from "~/modules/projects/projects.models";
-import { loadWbsElements } from "~/modules/projects/projects.server";
+import { loadWbsElements } from "~/modules/projects/projects.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-wbs-csv");

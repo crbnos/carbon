@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -40,12 +41,8 @@ import { data, useFetcher, useLoaderData } from "react-router";
 import { PinnedCard, PinToggle } from "~/components/ReportPin";
 import { usePermissions } from "~/hooks";
 import { reportPinValidator } from "~/modules/accounting/accounting.models";
+import { getReportPins } from "~/modules/accounting/accounting.service";
 import {
-  getReportPins,
-  upsertReportPin
-} from "~/modules/accounting/accounting.service";
-import {
-  isProjectReportKey,
   type ProjectReportKey,
   projectReportPermissions
 } from "~/modules/projects/projects.models";
@@ -92,10 +89,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "projects",
-    role: "employee"
-  });
+  // The role gate the loader has; the pin itself is the operation's.
+  await requirePermissions(request, { view: "projects", role: "employee" });
 
   const validation = await validator(reportPinValidator).validate(
     await request.formData()
@@ -105,30 +100,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { reportKey, pinned } = validation.data;
-  if (!isProjectReportKey(reportKey)) {
-    return data(
-      {},
-      await flash(request, error(null, "The report could not be found"))
-    );
-  }
-
-  const result = await upsertReportPin(client, {
-    reportKey: `${PIN_PREFIX}${reportKey}`,
-    pinned: pinned === "true",
-    userId,
-    companyId
+  const api = await carbon(request);
+  const result = await api.projects.upsertProjectReportPin({
+    reportKey,
+    pinned: pinned === "true"
   });
   if (result.error) {
-    logger.error("Failed to update the report pin", {
-      companyId,
-      userId,
-      reportKey,
-      error: result.error
-    });
-    return data(
-      {},
-      await flash(request, error(result.error, "Failed to update pin"))
-    );
+    return data({}, await flash(request, error(null, result.error.message)));
   }
 
   return {};

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,10 +12,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deletePlanningGroup,
-  getPlanningGroup
-} from "~/modules/projects/projects.service";
+import { getPlanningGroup } from "~/modules/projects/projects.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "planning-group-delete");
@@ -48,20 +46,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 // Deleting is not plan-gated: a company whose plan lapsed can still clean up.
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "projects"
-  });
-
   const { id } = params;
   if (!id) throw notFound("Planning group ID was not found");
 
-  const deleted = await deletePlanningGroup(client, id, companyId);
+  const api = await carbon(request);
+  const deleted = await api.projects.deletePlanningGroup({
+    planningGroupId: id
+  });
+
   if (deleted.error) {
-    logger.error("Failed to delete a planning group", {
-      companyId,
-      id,
-      error: deleted.error
-    });
     throw redirect(
       path.to.planningGroups,
       await flash(

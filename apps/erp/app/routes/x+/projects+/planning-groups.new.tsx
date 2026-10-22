@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { upsertPlanningGroup } from "@carbon/ee/pegging.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -47,17 +46,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "projects"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "PLANNING_GROUPS",
-    redirectTo: path.to.planningGroups
-  });
 
   const validation = await validator(planningGroupValidator).validate(
     await request.formData()
@@ -65,29 +53,16 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) return validationError(validation.error);
 
   const { id: _id, ...fields } = validation.data;
-  let created: Awaited<ReturnType<typeof upsertPlanningGroup>>;
-  try {
-    created = await upsertPlanningGroup(client, {
-      ...fields,
-      companyId,
-      createdBy: userId
-    });
-  } catch (err) {
-    if (!(err instanceof EntitlementError)) throw err;
-    logger.error("Planning groups are not in the company's plan", {
-      companyId
-    });
+  const api = await carbon(request);
+  const created = await api.projects.upsertPlanningGroup(fields);
+
+  if (created.error?.category === "entitlement") {
     throw redirect(
       path.to.planningGroups,
-      await flash(request, error(err, "Upgrade to use planning groups"))
+      await flash(request, error(null, created.error.message))
     );
   }
-
   if (created.error) {
-    logger.error("Failed to create a planning group", {
-      companyId,
-      error: created.error
-    });
     return data(
       {},
       await flash(

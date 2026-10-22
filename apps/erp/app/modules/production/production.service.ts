@@ -20,12 +20,13 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import type { Database, Json } from "@carbon/database";
 import {
+  type Database,
   fetchAllByIds,
   fetchAllFromTable,
   fetchAllRecords,
   getCompanyTimeZone,
+  type Json,
   journalReference
 } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
@@ -96,8 +97,11 @@ import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
-import type { JobSource } from "@carbon/lib/telemetry";
-import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
+import {
+  asJobSource,
+  type JobSource,
+  trackWorkEvent
+} from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import {
@@ -134,12 +138,10 @@ import {
   tiptapToText,
   unchecked
 } from "@carbon/utils";
-import type {
-  AssemblyGraph,
-  AssemblyGraphIndex,
-  AssemblyPlan
-} from "@carbon/viewer";
 import {
+  type AssemblyGraph,
+  type AssemblyGraphIndex,
+  type AssemblyPlan,
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
   describeStep,
@@ -154,8 +156,12 @@ import {
   toCalendarDateTime
 } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { ExpressionBuilder } from "kysely";
-import { type QueryCreator, sql, type Transaction } from "kysely";
+import {
+  type ExpressionBuilder,
+  type QueryCreator,
+  sql,
+  type Transaction
+} from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
@@ -167,7 +173,7 @@ import {
 import {
   chargeNumberError,
   checkProjectBudget
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import {
   assertCompanyRecords,
   attributesContain,
@@ -179,8 +185,8 @@ import {
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
 import { makeDurations } from "~/utils/duration";
-import type { GenericQueryFilters } from "~/utils/query";
 import {
+  type GenericQueryFilters,
   getGenericFilter,
   LIST_COUNT,
   setGenericQueryFilters
@@ -190,13 +196,13 @@ import * as inventoryPostings from "../inventory/inventory.service";
 import { getDefaultStorageUnitForJob } from "../inventory/inventory.utils";
 import { getEmployeeJob } from "../people/people.service";
 import { resolveJobConfiguration } from "../sales/sales.utils";
-import type {
-  operationParameterValidator,
-  operationStepSlideValidator,
-  operationStepValidator,
-  operationToolValidator
+import {
+  normalizeOperationSourceIds,
+  type operationParameterValidator,
+  type operationStepSlideValidator,
+  type operationStepValidator,
+  type operationToolValidator
 } from "../shared/shared.models";
-import { normalizeOperationSourceIds } from "../shared/shared.models";
 import { invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type { MethodType } from "../shared/types";
@@ -204,32 +210,13 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "./planning-action-claims";
-import type {
-  assemblyInstructionStatuses,
-  assemblyStepStatuses,
-  deadlineTypes,
-  failureModeValidator,
-  jobMaterialValidator,
-  jobOperationValidator,
-  jobStatus,
-  jobValidator,
-  maintenanceDispatchCommentValidator,
-  maintenanceDispatchEventValidator,
-  maintenanceDispatchItemValidator,
-  maintenanceDispatchValidator,
-  maintenanceDispatchWorkCenterValidator,
-  maintenanceScheduleItemValidator,
-  maintenanceScheduleValidator,
-  procedureParameterValidator,
-  procedureStepValidator,
-  procedureValidator,
-  productionEventValidator,
-  productionQuantityValidator,
-  scrapReasonValidator
-} from "./production.models";
 import {
   ACTIVE_JOB_STATUSES,
+  type assemblyInstructionStatuses,
+  type assemblyStepStatuses,
   type cameraSchema,
+  type deadlineTypes,
+  type failureModeValidator,
   type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
@@ -237,11 +224,28 @@ import {
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
+  type jobMaterialValidator,
+  type jobOperationValidator,
+  type jobStatus,
+  type jobValidator,
+  type maintenanceDispatchCommentValidator,
+  type maintenanceDispatchEventValidator,
+  type maintenanceDispatchItemValidator,
+  type maintenanceDispatchValidator,
+  type maintenanceDispatchWorkCenterValidator,
+  type maintenanceScheduleItemValidator,
+  type maintenanceScheduleValidator,
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
+  type procedureParameterValidator,
+  type procedureStepValidator,
+  type procedureValidator,
+  type productionEventValidator,
+  type productionQuantityValidator,
+  type scrapReasonValidator,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
 import type {

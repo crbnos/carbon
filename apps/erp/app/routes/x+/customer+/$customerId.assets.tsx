@@ -12,7 +12,7 @@ import type { WarrantyStatus } from "~/modules/service/service.models";
 import { warrantyStatuses } from "~/modules/service/service.models";
 import { getCustomerAssets } from "~/modules/service/service.service";
 import { CustomerAssetsTable } from "~/modules/service/ui/CustomerAssets";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters, takeQueryFilter } from "~/utils/query";
 

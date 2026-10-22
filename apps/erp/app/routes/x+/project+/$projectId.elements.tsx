@@ -12,12 +12,10 @@ import { redirect, type WbsNode } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useState } from "react";
-import type {
-  LinksFunction,
-  LoaderFunctionArgs,
-  ShouldRevalidateFunction
-} from "react-router";
 import {
+  type LinksFunction,
+  type LoaderFunctionArgs,
+  type ShouldRevalidateFunction,
   useLoaderData,
   useLocation,
   useNavigate,
@@ -26,35 +24,31 @@ import {
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
-import type {
-  ChangeOperationMark,
-  ProjectElementType,
-  ProjectStateGroup,
-  VerificationElement
-} from "~/modules/projects/projects.models";
 import {
+  type ChangeOperationMark,
   canonicalElementsParams,
   elementLayoutFromParams,
   elementWbsCodes,
   isProjectPlanLocked,
+  type ProjectElementType,
+  type ProjectStateGroup,
   parseElementFilters,
   projectElementTypes,
   projectPlanLockedMessage,
-  projectStateGroups
+  projectStateGroups,
+  type VerificationElement
 } from "~/modules/projects/projects.models";
-import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
 import {
-  getProjectVerification,
-  loadChangeRequestOverlay,
-  overlayElementList,
-  overlayLinkList
-} from "~/modules/projects/projects.server";
-import type { ProjectElementListItem } from "~/modules/projects/projects.service";
-import {
+  type ChangeRequestOverlay,
   getProjectElementCommentCounts,
   getProjectElementDescriptions,
   getProjectElements,
-  getProjectWbsNodes
+  getProjectVerification,
+  getProjectWbsNodes,
+  loadChangeRequestOverlay,
+  overlayElementList,
+  overlayLinkList,
+  type ProjectElementListItem
 } from "~/modules/projects/projects.service";
 import type {
   Project,

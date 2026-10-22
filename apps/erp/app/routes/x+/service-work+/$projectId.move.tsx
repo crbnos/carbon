@@ -2,21 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { error, success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { moveProjectElement } from "~/modules/projects/projects.server";
-import { updateProjectElementOrder } from "~/modules/projects/projects.service";
-import {
-  requireServiceWork,
-  ServiceOrderError
-} from "~/modules/service/service.server";
-import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "service-work-move");
+import { validator } from "@carbon/form";
+import { type ActionFunctionArgs, data } from "react-router";
 
 /** The `updates` field: a JSON list of `{ id, sortOrder }`; null when invalid. */
 function readOrderUpdates(
@@ -40,113 +30,54 @@ function readOrderUpdates(
  * The service twin of the project's `elements.move`:
  * - `move`: puts `elementId` under `parentId` (empty for the top level),
  *   after its new last sibling; with `updates`, then saves the new siblings'
- *   order (a drop between two rows of the sidebar tree).
+ *   order (a drop between two rows of the sidebar tree)
+ *   (`moveServiceWorkElement`).
  * - `order`: saves the sort order of siblings (`updates`, a JSON list of
- *   `{ id, sortOrder }`).
+ *   `{ id, sortOrder }`) (`orderServiceWorkElements`).
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
-  });
-  const { projectId } = params;
-  if (!projectId) throw new Error("Could not find projectId");
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["projectId"] });
+  if ("invalid" in input) return input.invalid;
+  const { projectId } = input.params;
+  const refuse = async (message: string) =>
+    data({ success: false }, await flash(args.request, error(null, message)));
 
-  const refuse = async (err: unknown, message: string) =>
-    data({ success: false }, await flash(request, error(err, message)));
-  const failed = (err: unknown, message: string) => {
-    if (err instanceof ServiceOrderError) return refuse(err, err.message);
-    logger.error(message, { companyId, projectId, error: err });
-    return refuse(err, message);
-  };
-
-  const formData = await request.formData();
+  const formData = await args.request.formData();
   const intent = formData.get("intent");
+  const api = await carbon(args.request);
 
   if (intent === "move") {
     const elementId = formData.get("elementId");
     const parentValue = formData.get("parentId");
     if (typeof elementId !== "string" || !elementId) {
-      return refuse(null, "No element was given");
+      return refuse("No element was given");
     }
-    const parentId =
-      typeof parentValue === "string" && parentValue ? parentValue : null;
     const order = readOrderUpdates(formData);
-    if (order === null) return refuse(null, "Invalid order");
+    if (order === null) return refuse("Invalid order");
 
-    try {
-      await requireServiceWork(client, {
-        companyId,
-        projectId,
-        elementIds: [
-          ...new Set([
-            elementId,
-            ...(parentId ? [parentId] : []),
-            ...order.map((u) => u.id)
-          ])
-        ]
-      });
-      const siblings = client
-        .from("projectElement")
-        .select("sortOrder")
-        .eq("projectId", projectId)
-        .eq("companyId", companyId)
-        .order("sortOrder", { ascending: false })
-        .limit(1);
-      const last = await (parentId
-        ? siblings.eq("parentId", parentId)
-        : siblings.is("parentId", null)
-      ).maybeSingle();
-      if (last.error) throw last.error;
-      await moveProjectElement(getDatabaseClient(), {
-        companyId,
-        userId,
-        projectId,
-        elementId,
-        parentId,
-        sortOrder: Number(last.data?.sortOrder ?? 0) + 1
-      });
-      if (order.length > 0) {
-        await updateProjectElementOrder(
-          getDatabaseClient(),
-          companyId,
-          userId,
-          projectId,
-          order
-        );
-      }
-    } catch (err) {
-      return failed(
-        err,
-        err instanceof Error ? err.message : "Failed to move the element"
-      );
-    }
-    return data({ success: true }, await flash(request, success("Moved")));
+    const result = await api.service.moveServiceWorkElement({
+      projectId,
+      elementId,
+      parentId:
+        typeof parentValue === "string" && parentValue ? parentValue : null,
+      order
+    });
+    if (result.error) return refuse(result.error.message);
+    return data({ success: true }, await flash(args.request, success("Moved")));
   }
 
   if (intent === "order") {
     const updates = readOrderUpdates(formData);
-    if (updates === null) return refuse(null, "Invalid order");
+    if (updates === null) return refuse("Invalid order");
     if (updates.length === 0) return data({ success: true });
 
-    try {
-      await requireServiceWork(client, {
-        companyId,
-        projectId,
-        elementIds: updates.map((u) => u.id)
-      });
-      await updateProjectElementOrder(
-        getDatabaseClient(),
-        companyId,
-        userId,
-        projectId,
-        updates
-      );
-    } catch (err) {
-      return failed(err, "Failed to save the order");
-    }
+    const result = await api.service.orderServiceWorkElements({
+      projectId,
+      updates
+    });
+    if (result.error) return refuse(result.error.message);
     return data({ success: true });
   }
 
-  return refuse(null, "Unknown action");
+  return refuse("Unknown action");
 }

@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
@@ -14,8 +15,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { serviceBillableItemValidator } from "~/modules/service/service.models";
 import {
   getServiceBillableItems,
-  getServiceWork,
-  updateServiceBillableItem
+  getServiceWork
 } from "~/modules/service/service.service";
 import type { ServiceOrder } from "~/modules/service/types";
 import BillableItemsTable from "~/modules/service/ui/Billing/BillableItemsTable";
@@ -74,16 +74,11 @@ function failure(message: string) {
  * Reviews one billable item of the order before it is billed: a new unit
  * price, a hold or its release, or a write-off with a reason.
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "service"
-  });
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
   const validation = await validator(serviceBillableItemValidator).validate(
-    await request.formData()
+    await args.request.formData()
   );
   if (validation.error) {
     return failure(
@@ -91,26 +86,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const order = await getOrderProject(client, id, companyId);
-  if (order.error) return failure("The service order was not found");
-  if (order.data.status === "Closed" || order.data.status === "Cancelled") {
-    return failure("A closed or cancelled service order cannot change");
-  }
-  const item = await client
-    .from("projectBillableItem")
-    .select("id")
-    .eq("id", validation.data.id)
-    .eq("projectId", order.data.projectId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (!item.data) return failure("The item is not on this service order");
-
-  const update = await updateServiceBillableItem(client, {
+  const api = await carbon(args.request);
+  const result = await api.service.updateServiceBillableItem({
     ...validation.data,
-    companyId,
-    updatedBy: userId
+    serviceOrderId: input.params.id
   });
-  if (update.error) return failure(update.error.message);
+  if (result.error) return failure(result.error.message);
 
   const message =
     validation.data.status === "Written Off"
@@ -122,7 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           : "Price updated";
   return data(
     { success: true, error: null },
-    await flash(request, success(message))
+    await flash(args.request, success(message))
   );
 }
 

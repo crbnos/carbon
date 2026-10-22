@@ -2,22 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data } from "react-router";
+import {
+  type ActionFunctionArgs,
+  data,
+  type LoaderFunctionArgs
+} from "react-router";
 import {
   COST_OBJECTIVE_REQUIRED,
   projectValidator
 } from "~/modules/projects/projects.models";
-import { ensureCapitalAssets } from "~/modules/projects/projects.server";
-import { getProject, updateProject } from "~/modules/projects/projects.service";
-import { getCompanySettings } from "~/modules/settings/settings.service";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-details");
@@ -90,25 +90,28 @@ function withOneField(
   return formData;
 }
 
+/** The refusals of `updateProject` that belong to one field of the form. */
+const FIELD_REFUSALS: Record<string, string> = {
+  [COST_OBJECTIVE_REQUIRED]: "costObjective",
+  "Choose a milestone of this project": "lockPlanAfterMilestoneId",
+  "Only a project with project stock can join a group": "planningGroupId",
+  "Choose a planning group": "planningGroupId",
+  "The group must be at the project's location": "planningGroupId"
+};
+
 export const middleware = [redirectBeforeLoaders(loader)];
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
-
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
+
+  const api = await carbon(request);
 
   // `intent=field` saves one field of the properties column; the Settings
   // form posted every field.
   const posted = await request.formData();
   const isField = posted.get("intent") === "field";
-  const fail = (field: string, message: string) =>
-    isField
-      ? data({ error: { message } }, { status: 400 })
-      : validationError({ fieldErrors: { [field]: message } });
 
   let formData = posted;
   if (isField) {
@@ -116,10 +119,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!PROJECT_PROPERTY_FIELDS.has(field)) {
       return data({ error: { message: "Invalid field" } }, { status: 400 });
     }
-    const project = await getProject(client, companyId, projectId);
+    const project = await api.projects.getProject({ projectId });
     if (project.error || !project.data) {
       logger.error("Failed to load the project", {
-        companyId,
         projectId,
         error: project.error
       });
@@ -146,144 +148,36 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // The identifier is fixed once the project exists: every element's stored
-  // readable id starts with it.
-  const { id: _id, identifier: _identifier, ...fields } = validation.data;
-
-  // DCAA timekeeping: every project needs a cost objective.
-  if (!fields.costObjective) {
-    const settings = await getCompanySettings(client, companyId);
-    if (settings.data?.timekeepingControls === "DCAA") {
-      return fail("costObjective", COST_OBJECTIVE_REQUIRED);
-    }
-  }
-
-  // The lock milestone must be one of this project's milestones.
-  if (fields.lockPlanAfterMilestoneId) {
-    const milestone = await client
-      .from("projectMilestone")
-      .select("id")
-      .eq("id", fields.lockPlanAfterMilestoneId)
-      .eq("projectId", projectId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (milestone.error || !milestone.data) {
-      return fail(
-        "lockPlanAfterMilestoneId",
-        "Choose a milestone of this project"
-      );
-    }
-  }
-
-  // Project stock is chosen while Draft only: after that the switch is
-  // disabled, so its absent value never turns it off.
-  const current = await getProject(client, companyId, projectId);
-  if (current.error) {
-    return data(
-      {},
-      await flash(request, error(current.error, "Failed to load the project"))
-    );
-  }
-  const { projectStock, planningGroupId, planningPriority, ...rest } = fields;
-
-  // Planning group (Projects Phase 3): only a project with project stock may
-  // join, and only a group at the project's location. Joining or leaving
-  // changes planning only; open stock stays in the project's stripe.
-  const hasProjectStock =
-    current.data.status === "Draft"
-      ? (projectStock ?? false)
-      : current.data.projectStock;
-  if (planningGroupId) {
-    if (!hasProjectStock) {
-      return fail(
-        "planningGroupId",
-        "Only a project with project stock can join a group"
-      );
-    }
-    const group = await client
-      .from("planningGroup")
-      .select("id, locationId")
-      .eq("id", planningGroupId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (group.error || !group.data) {
-      return fail("planningGroupId", "Choose a planning group");
-    }
-    if (group.data.locationId !== fields.locationId) {
-      return fail(
-        "planningGroupId",
-        "The group must be at the project's location"
-      );
-    }
-  }
-
-  const update = await updateProject(client, {
-    ...rest,
-    ...(current.data.status === "Draft"
-      ? { projectStock: projectStock ?? false }
-      : {}),
-    planningGroupId: hasProjectStock
-      ? (planningGroupId ?? undefined)
-      : undefined,
-    ...(planningPriority !== undefined ? { planningPriority } : {}),
-    id: projectId,
-    companyId,
-    updatedBy: userId
+  const result = await api.projects.updateProject({
+    ...validation.data,
+    id: projectId
   });
 
-  if (update.error) {
-    logger.error("Failed to update the project", {
-      companyId,
-      projectId,
-      error: update.error
-    });
+  if (result.error) {
     if (isField) {
       return data(
-        { error: { message: "Failed to update the project" } },
+        { error: { message: result.error.message } },
         { status: 400 }
       );
     }
-    return data(
-      {},
-      await flash(request, error(update.error, "Failed to update the project"))
-    );
+    const field = FIELD_REFUSALS[result.error.message];
+    if (field) {
+      return validationError({
+        fieldErrors: { [field]: result.error.message }
+      });
+    }
+    return data({}, await flash(request, error(null, result.error.message)));
   }
 
-  // A released project that becomes Capitalize needs its assets under
-  // construction before it takes charges.
-  if (fields.costTreatment === "Capitalize") {
-    if (current.data.status !== "Draft") {
-      try {
-        await ensureCapitalAssets(getDatabaseClient(), {
-          companyId,
-          userId,
-          projectId
-        });
-      } catch (err) {
-        logger.error("Failed to create the capital assets", {
-          companyId,
-          projectId,
-          error: err
-        });
-        if (isField) {
-          return data(
-            {
-              error: {
-                message: "Failed to create the assets under construction"
-              }
-            },
-            { status: 400 }
-          );
-        }
-        throw redirect(
-          path.to.project(projectId),
-          await flash(
-            request,
-            error(err, "Failed to create the assets under construction")
-          )
-        );
-      }
+  // The project is saved; its assets under construction were not created.
+  if (result.data.warning) {
+    if (isField) {
+      return data({ error: { message: result.data.warning } }, { status: 400 });
     }
+    throw redirect(
+      path.to.project(projectId),
+      await flash(request, error(null, result.data.warning))
+    );
   }
 
   if (isField) return data({ success: true, error: null });

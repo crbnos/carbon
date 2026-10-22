@@ -2,12 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, hasPermission } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Json } from "@carbon/database";
 import { storage } from "@carbon/files";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -16,18 +17,12 @@ import { data, useLoaderData } from "react-router";
 import { usePermissions, useUser } from "~/hooks";
 import { getLaborCategoriesList } from "~/modules/projects/projects.service";
 import {
-  requireOwnServiceVisit,
-  ServiceOrderError
-} from "~/modules/service/service.server";
-import {
   getCustomerAssetRecentOrders,
   getServiceNodeLastServiceDates,
   getServiceVisit,
-  getServiceWork,
-  updateServiceVisit
+  getServiceWork
 } from "~/modules/service/service.service";
 import VisitPage from "~/modules/service/ui/Visits/VisitPage";
-import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -130,16 +125,12 @@ function failure(message: string) {
  * Saves the visit's notes (`intent=field`, `field=notes`). A user without
  * `update: "service"` saves only their own open visit.
  */
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "service"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["id", "visitId"]
   });
-  const { id, visitId } = params;
-  if (!id) throw new Error("Could not find id");
-  if (!visitId) throw new Error("Could not find visitId");
-
-  const formData = await request.formData();
+  if ("invalid" in input) return input.invalid;
+  const formData = await args.request.formData();
   if (formData.get("intent") !== "field" || formData.get("field") !== "notes") {
     return failure("Unknown field");
   }
@@ -151,41 +142,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return failure("Invalid text");
   }
 
-  const canUpdateAny = hasPermission(
-    (await getUserClaims(userId, companyId))?.permissions,
-    "service",
-    "update",
-    companyId
-  );
-  if (!canUpdateAny) {
-    try {
-      await requireOwnServiceVisit(getDatabaseClient(), {
-        companyId,
-        serviceOrderId: id,
-        serviceVisitId: visitId,
-        userId
-      });
-    } catch (err) {
-      if (err instanceof ServiceOrderError) return failure(err.message);
-      throw err;
-    }
-  }
-
-  const update = await updateServiceVisit(client, {
-    id: visitId,
-    serviceOrderId: id,
-    companyId,
-    updatedBy: userId,
+  const api = await carbon(args.request);
+  const result = await api.service.updateServiceVisitNotes({
+    serviceOrderId: input.params.id,
+    serviceVisitId: input.params.visitId,
     notes
   });
-  if (update.error) {
-    logger.error("Failed to save the visit notes", {
-      companyId,
-      serviceVisitId: visitId,
-      error: update.error
-    });
-    return failure("Failed to save the notes");
-  }
+  if (result.error) return failure(result.error.message);
   return { success: true };
 }
 

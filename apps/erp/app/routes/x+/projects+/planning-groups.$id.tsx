@@ -2,12 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { upsertPlanningGroup } from "@carbon/ee/pegging.server";
-import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useCloseRoute } from "@carbon/react";
@@ -77,52 +75,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
 
   const { id } = params;
   if (!id) throw notFound("Planning group ID was not found");
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "PLANNING_GROUPS",
-    redirectTo: path.to.planningGroups
-  });
 
   const validation = await validator(planningGroupValidator).validate(
     await request.formData()
   );
   if (validation.error) return validationError(validation.error);
 
-  const { id: _id, ...fields } = validation.data;
-  let updated: Awaited<ReturnType<typeof upsertPlanningGroup>>;
-  try {
-    updated = await upsertPlanningGroup(client, {
-      ...fields,
-      id,
-      companyId,
-      updatedBy: userId
-    });
-  } catch (err) {
-    if (!(err instanceof EntitlementError)) throw err;
-    logger.error("Planning groups are not in the company's plan", {
-      companyId
-    });
+  const api = await carbon(request);
+  const updated = await api.projects.upsertPlanningGroup({
+    ...validation.data,
+    id
+  });
+
+  if (updated.error?.category === "entitlement") {
     throw redirect(
       path.to.planningGroups,
-      await flash(request, error(err, "Upgrade to use planning groups"))
+      await flash(request, error(null, updated.error.message))
     );
   }
-
   if (updated.error) {
-    logger.error("Failed to update a planning group", {
-      companyId,
-      id,
-      error: updated.error
-    });
     return data(
       {},
       await flash(

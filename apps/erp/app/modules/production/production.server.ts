@@ -42,7 +42,7 @@ import {
   applyTransferPlanningActions,
   getPlanningSegmentOwners,
   moveActionPegsToSupply
-} from "~/modules/projects/projects.server";
+} from "~/modules/projects/projects.service";
 import { isSalesOrderClosed } from "~/modules/sales/sales.models";
 import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
@@ -4702,6 +4702,7 @@ export const applyPlanningActions = defineServiceFn({
           );
         });
     const transferOutcome = await applyTransferPlanningActions({
+      db: ctx.asSystem.pg,
       companyId,
       userId,
       planningActionIds: transferIds

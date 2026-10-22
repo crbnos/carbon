@@ -34,7 +34,6 @@ import {
   Submit
 } from "~/components/Form";
 import { useUser } from "~/hooks";
-import { getMethodMaterialsByMakeMethod } from "~/modules/items/items.service";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { projectIssueDirections } from "../../projects.models";
@@ -156,10 +155,13 @@ function useBomMaterialIds(itemId: string | null | undefined) {
         if (!cancelled) setItemIds([]);
         return;
       }
-      const materials = await getMethodMaterialsByMakeMethod(
-        carbon,
-        makeMethod.data.id
-      );
+      // The method's BOM lines: what the Issue Material picker offers.
+      const materials = await carbon
+        .from("methodMaterial")
+        .select("itemId, methodType")
+        .eq("makeMethodId", makeMethod.data.id)
+        .eq("companyId", company.id)
+        .order("order", { ascending: true });
       if (cancelled) return;
       setItemIds([
         ...new Set(

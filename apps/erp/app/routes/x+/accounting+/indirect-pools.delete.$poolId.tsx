@@ -2,14 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
-import {
-  deleteIndirectPool,
-  getIndirectPool
-} from "@carbon/ee/indirect-rates.server";
+import { getIndirectPool } from "@carbon/ee/indirect-rates.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -45,44 +42,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "accounting"
-  });
-
   const { poolId } = params;
   if (!poolId) throw notFound("Pool ID was not found");
 
-  let deleted: Awaited<ReturnType<typeof deleteIndirectPool>>;
-  try {
-    deleted = await deleteIndirectPool(client, { id: poolId, companyId });
-  } catch (err) {
-    if (!(err instanceof EntitlementError)) throw err;
-    logger.error("Indirect rates are not in the company's plan", {
-      companyId
-    });
-    throw redirect(
-      path.to.indirectPools,
-      await flash(request, error(err, "Upgrade to use indirect rates"))
-    );
-  }
+  const api = await carbon(request);
+  const deleted = await api.projects.deleteIndirectPool({ id: poolId });
 
-  if (deleted.error) {
-    // A pool with rates or burden is refused: the message says what to do.
-    logger.error("Failed to delete an indirect pool", {
-      companyId,
-      poolId,
-      error: deleted.error
-    });
-    throw redirect(
-      path.to.indirectPools,
-      await flash(request, error(deleted.error, deleted.error.message))
-    );
-  }
-
-  throw redirect(
-    path.to.indirectPools,
-    await flash(request, success("Pool deleted"))
-  );
+  // A pool with rates or burden is refused: the message says what to do.
+  return respond(request, deleted).redirect(path.to.indirectPools, {
+    message: "Pool deleted"
+  });
 }
 
 export default function DeleteIndirectPoolRoute() {

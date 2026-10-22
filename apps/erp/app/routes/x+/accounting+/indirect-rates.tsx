@@ -2,20 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { indirectRateEntryValidator } from "@carbon/ee/indirect-rates";
 import {
   getIndirectPools,
   getIndirectRateRuns,
-  getIndirectRates,
-  runFinalTrueUp,
-  runIndirectRatePeriod,
-  setIndirectRate
+  getIndirectRates
 } from "@carbon/ee/indirect-rates.server";
-import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
@@ -31,7 +27,6 @@ import {
   IndirectRateRuns,
   IndirectRatesUpgradeOverlay
 } from "~/modules/accounting/ui/IndirectRates";
-import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -49,7 +44,7 @@ function parseFiscalYear(raw: string | null): number | null {
 }
 
 // The page loads without a plan check: a gated company sees the upgrade
-// overlay. Every intent calls requireFeature, and the ee functions lock.
+// overlay. Every intent runs an operation, and the ee functions lock.
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
@@ -116,96 +111,67 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "GOVERNMENT_CONTRACTING",
-    redirectTo: path.to.indirectRates
-  });
 
   const formData = await request.formData();
   const intent = formData.get("intent");
 
-  const refuse = async (err: unknown, message: string) =>
-    data({ success: false }, await flash(request, error(err, message)));
+  const refuse = async (message: string) =>
+    data({ success: false }, await flash(request, error(null, message)));
   const done = async (message: string) =>
     data({ success: true }, await flash(request, success(message)));
-
-  try {
-    switch (intent) {
-      case "set-rate": {
-        const validation = await validator(indirectRateEntryValidator).validate(
-          formData
-        );
-        if (validation.error) return validationError(validation.error);
-        const result = await setIndirectRate(client, {
-          ...validation.data,
-          companyId,
-          userId
-        });
-        if (result.error) {
-          logger.error("Failed to set an indirect rate", {
-            companyId,
-            error: result.error
-          });
-          return refuse(result.error, result.error.message);
-        }
-        return done("Rate saved");
-      }
-      case "run":
-      case "true-up": {
-        const accountingPeriodId = formData.get("accountingPeriodId");
-        if (typeof accountingPeriodId !== "string" || !accountingPeriodId) {
-          return refuse(null, "Choose a locked period");
-        }
-        const db = getDatabaseClient();
-        const fiscalYear = Number(formData.get("fiscalYear"));
-        if (intent === "true-up" && !Number.isInteger(fiscalYear)) {
-          return refuse(null, "Choose a fiscal year");
-        }
-        const result =
-          intent === "run"
-            ? await runIndirectRatePeriod(db, client, {
-                companyId,
-                userId,
-                accountingPeriodId
-              })
-            : await runFinalTrueUp(db, client, {
-                companyId,
-                userId,
-                fiscalYear,
-                accountingPeriodId
-              });
-        if (result.error) {
-          logger.error("The indirect rate run failed", {
-            companyId,
-            accountingPeriodId,
-            intent,
-            error: result.error
-          });
-          return refuse(result.error, result.error.message);
-        }
-        return done(
-          intent === "run" ? "Period run complete" : "True-up complete"
-        );
-      }
-      default:
-        return refuse(null, "Unknown action");
-    }
-  } catch (err) {
-    if (!(err instanceof EntitlementError)) throw err;
-    logger.error("Indirect rates are not in the company's plan", {
-      companyId
-    });
+  const upgrade = async (message: string) => {
     throw redirect(
       path.to.indirectRates,
-      await flash(request, error(err, "Upgrade to use indirect rates"))
+      await flash(request, error(null, message))
     );
+  };
+
+  switch (intent) {
+    case "set-rate": {
+      const validation = await validator(indirectRateEntryValidator).validate(
+        formData
+      );
+      if (validation.error) return validationError(validation.error);
+      const api = await carbon(request);
+      const result = await api.projects.setIndirectRate(validation.data);
+      if (result.error) {
+        if (result.error.category === "entitlement") {
+          return upgrade(result.error.message);
+        }
+        return refuse(result.error.message);
+      }
+      return done("Rate saved");
+    }
+    case "run":
+    case "true-up": {
+      const accountingPeriodId = formData.get("accountingPeriodId");
+      if (typeof accountingPeriodId !== "string" || !accountingPeriodId) {
+        return refuse("Choose a locked period");
+      }
+      const fiscalYear = Number(formData.get("fiscalYear"));
+      if (intent === "true-up" && !Number.isInteger(fiscalYear)) {
+        return refuse("Choose a fiscal year");
+      }
+      const api = await carbon(request);
+      const result =
+        intent === "run"
+          ? await api.projects.runIndirectRatePeriod({ accountingPeriodId })
+          : await api.projects.runFinalTrueUp({
+              fiscalYear,
+              accountingPeriodId
+            });
+      if (result.error) {
+        if (result.error.category === "entitlement") {
+          return upgrade(result.error.message);
+        }
+        return refuse(result.error.message);
+      }
+      return done(
+        intent === "run" ? "Period run complete" : "True-up complete"
+      );
+    }
+    default:
+      return refuse("Unknown action");
   }
 }
 

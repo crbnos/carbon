@@ -7,19 +7,22 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import type { JSONContent } from "@carbon/react";
-import { RecordOutlet } from "@carbon/react";
+import { type JSONContent, RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { Fragment } from "react/jsx-runtime";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
   chargeNumberError,
-  checkProjectBudget
-} from "~/modules/projects/projects.server";
-import { getLineChargeNumber } from "~/modules/projects/projects.service";
+  checkProjectBudget,
+  getLineChargeNumber
+} from "~/modules/projects/projects.service";
 import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator

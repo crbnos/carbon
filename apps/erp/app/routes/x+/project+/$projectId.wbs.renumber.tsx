@@ -2,19 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  renumberWbsSubtree,
-  requireEditablePlanRoute
-} from "~/modules/projects/projects.server";
-import { getDatabaseClient } from "~/services/database.server";
-
-const logger = getLogger("erp", "project-wbs-renumber");
+import { type ActionFunctionArgs, data } from "react-router";
 
 /**
  * Clears the pinned WBS codes of an element (`elementId`) and its subtree, so
@@ -23,9 +14,6 @@ const logger = getLogger("erp", "project-wbs-renumber");
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
-  });
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
@@ -38,35 +26,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const locked = await requireEditablePlanRoute(request, {
-    client,
+  const api = await carbon(request);
+  const result = await api.projects.renumberProjectWbsSubtree({
     projectId,
-    companyId,
-    changeRequestId: null
+    elementId
   });
-  if (locked) return locked;
-
-  try {
-    const count = await renumberWbsSubtree(getDatabaseClient(), {
-      companyId,
-      userId,
-      projectId,
-      elementId
-    });
+  if (result.error) {
     return data(
-      { success: true },
-      await flash(request, success(`${count} WBS codes unpinned`))
-    );
-  } catch (err) {
-    logger.error("Failed to renumber the WBS", {
-      companyId,
-      projectId,
-      elementId,
-      error: err
-    });
-    return data(
-      { success: false },
-      await flash(request, error(err, "Failed to renumber the WBS"))
+      { success: false, error: { message: result.error.message } },
+      await flash(request, error(null, result.error.message))
     );
   }
+  return data(
+    { success: true },
+    await flash(request, success(`${result.data.count} WBS codes unpinned`))
+  );
 }

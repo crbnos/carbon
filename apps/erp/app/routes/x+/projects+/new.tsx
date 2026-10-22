@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -10,16 +11,18 @@ import { getLogger } from "@carbon/logger";
 import { redirect, WBS_TEMPLATES } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import {
+  type ActionFunctionArgs,
+  data,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useNavigate
+} from "react-router";
 import {
   COST_OBJECTIVE_REQUIRED,
   projectValidator
 } from "~/modules/projects/projects.models";
-import { copyProject, createProject } from "~/modules/projects/projects.server";
 import { ProjectForm } from "~/modules/projects/ui/Projects";
-import { getCompanySettings } from "~/modules/settings/settings.service";
-import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -64,74 +67,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "projects"
-  });
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(projectValidator).request(args);
+  if ("invalid" in input) return input.invalid;
 
-  const formData = await request.formData();
-  const validation = await validator(projectValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // DCAA timekeeping: every project needs a cost objective.
-  if (!validation.data.costObjective) {
-    const settings = await getCompanySettings(client, companyId);
-    if (settings.data?.timekeepingControls === "DCAA") {
-      return validationError({
-        fieldErrors: { costObjective: COST_OBJECTIVE_REQUIRED }
-      });
-    }
-  }
-
-  const { id: _id, ...project } = validation.data;
-  const copyFromProjectId = formData.get("copyFromProjectId");
-
+  const copyFromProjectId = input.formData?.get("copyFromProjectId");
   // `wbs:<key>` starts the plan from a MIL-STD-881F template.
   const wbsTemplateKey =
     typeof copyFromProjectId === "string" &&
     copyFromProjectId.startsWith(WBS_TEMPLATE_PREFIX)
       ? copyFromProjectId.slice(WBS_TEMPLATE_PREFIX.length)
       : undefined;
+  const sourceProjectId =
+    typeof copyFromProjectId === "string" &&
+    copyFromProjectId &&
+    !wbsTemplateKey
+      ? copyFromProjectId
+      : undefined;
 
-  let projectId: string;
-  try {
-    projectId =
-      typeof copyFromProjectId === "string" &&
-      copyFromProjectId &&
-      !wbsTemplateKey
-        ? await copyProject(getDatabaseClient(), {
-            ...project,
-            companyId,
-            userId,
-            sourceProjectId: copyFromProjectId
-          })
-        : await createProject(getDatabaseClient(), {
-            ...project,
-            companyId,
-            userId,
-            wbsTemplateKey
-          });
-  } catch (err) {
-    logger.error("Failed to create project", { companyId, error: err });
+  const api = await carbon(args.request);
+  const result = await api.projects.createProject({
+    ...input.data,
+    sourceProjectId,
+    wbsTemplateKey
+  });
+  if (result.error?.message === COST_OBJECTIVE_REQUIRED) {
+    return validationError({
+      fieldErrors: { costObjective: COST_OBJECTIVE_REQUIRED }
+    });
+  }
+  if (result.error) {
     return data(
       {},
-      await flash(
-        request,
-        error(
-          err,
-          "Failed to create the project. Check that its identifier is not in use."
-        )
-      )
+      await flash(args.request, error(null, result.error.message))
     );
   }
 
   throw redirect(
-    path.to.projectElements(projectId),
-    await flash(request, success("Project created"))
+    path.to.projectElements(result.data.projectId),
+    await flash(args.request, success("Project created"))
   );
 }
 

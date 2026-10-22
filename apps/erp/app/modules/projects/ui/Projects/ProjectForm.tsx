@@ -59,7 +59,7 @@ import {
 import {
   getCipFixedAssetClasses,
   getPlanningGroupsList
-} from "../../projects.service";
+} from "../../projects.utils";
 import { useGovernmentContracting } from "../useGovernmentContracting";
 
 type ProjectFormValues = z.infer<typeof projectValidator>;

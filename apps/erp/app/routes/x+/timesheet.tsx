@@ -6,10 +6,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { certificationTextFor } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
-import { getTimesheetWeekView } from "~/modules/projects/projects.server";
-import { getPendingReviewEntries } from "~/modules/projects/projects.service";
+import { type LoaderFunctionArgs, useLoaderData } from "react-router";
+import {
+  getPendingReviewEntries,
+  getTimesheetWeekView
+} from "~/modules/projects/projects.service";
 import TimesheetWeek from "~/modules/projects/ui/Timesheet/TimesheetWeek";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

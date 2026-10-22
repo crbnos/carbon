@@ -2,21 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { customerAssetValidator } from "~/modules/service/service.models";
-import {
-  registerCustomerAsset,
-  ServiceOrderError
-} from "~/modules/service/service.server";
 import { CustomerAssetForm } from "~/modules/service/ui/CustomerAssets";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -28,40 +21,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { customerId };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "service"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(customerAssetValidator).validate(formData);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  try {
-    const asset = await registerCustomerAsset(getDatabaseClient(), {
-      ...validation.data,
-      companyId,
-      userId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(customerAssetValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.service.registerCustomerAsset(input.data);
+  if (result.error?.category === "rule") {
+    return validationError({
+      fieldErrors: { serialNumber: result.error.message }
     });
-    throw redirect(
-      path.to.customerAsset(asset.id),
-      await flash(request, success("Customer asset registered"))
-    );
-  } catch (err) {
-    if (err instanceof Response) throw err;
-    if (err instanceof ServiceOrderError) {
-      return validationError({
-        fieldErrors: { serialNumber: err.message }
-      });
-    }
-    throw redirect(
-      path.to.customerAssets,
-      await flash(request, error(err, "Failed to register the customer asset"))
-    );
   }
+  if (!result.data) {
+    return respond(args.request, result).redirect(path.to.customerAssets);
+  }
+  return respond(args.request, result).redirect(
+    path.to.customerAsset(result.data.id),
+    { message: "Customer asset registered" }
+  );
 }
 
 export default function NewCustomerAssetRoute() {

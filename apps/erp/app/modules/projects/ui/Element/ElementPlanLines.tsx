@@ -32,8 +32,13 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import {
   LuChevronDown,
   LuEllipsis,
@@ -79,7 +84,7 @@ import {
   projectElementMaterialValidator,
   remainingMaterialQuantity
 } from "../../projects.models";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 import {
   useActiveChangeRequestId,
   withChangeRequest
@@ -109,6 +114,7 @@ type PlanActuals = ProjectElementPage["planActuals"];
 type MaterialLine = PlanLines["materials"][number];
 
 export type { PlanLineType };
+
 type MethodType = (typeof methodType)[number];
 
 /**

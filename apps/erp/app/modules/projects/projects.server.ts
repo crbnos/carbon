@@ -2,5487 +2,5730 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type {
-  SaveTimesheetEntryResult,
-  SubmitTimesheetWeekResult
+import {
+  postTimesheetInput,
+  saveTimesheetEntryInput
 } from "@carbon/api/postings";
-import { error, hasPermission } from "@carbon/auth";
-import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
-import { type Database, getCompanyTimeZone } from "@carbon/database";
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { toJson } from "@carbon/database/json";
-import type {
-  BudgetCheckInput,
-  BudgetCheckResult
+import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
+import { Constants } from "@carbon/database";
+import {
+  approveRequest,
+  canApproveRequest,
+  cancelApprovalRequest,
+  createApprovalRequest,
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  getLatestApprovalRequestForDocument,
+  isApprovalRequired,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import {
+  indirectBaseTypes,
+  indirectPoolAccountValidator,
+  indirectPoolTypes,
+  indirectRateEntryValidator,
+  indirectRatesFieldErrors
+} from "@carbon/ee/indirect-rates";
+import {
+  deleteIndirectPool as eeDeleteIndirectPool,
+  deleteIndirectPoolAccount as eeDeleteIndirectPoolAccount,
+  runFinalTrueUp as eeRunFinalTrueUp,
+  runIndirectRatePeriod as eeRunIndirectRatePeriod,
+  setIndirectRate as eeSetIndirectRate,
+  upsertIndirectPool as eeUpsertIndirectPool,
+  upsertIndirectPoolAccount as eeUpsertIndirectPoolAccount
+} from "@carbon/ee/indirect-rates.server";
+import * as pegging from "@carbon/ee/pegging.server";
+import { upsertPlanningGroup as eeUpsertPlanningGroup } from "@carbon/ee/pegging.server";
+import {
+  elementEarnedValueValidator,
+  projectControlSettingsValidator,
+  stopWorkValidator
 } from "@carbon/ee/project-control";
 import {
-  checkBudgetAvailability,
-  checkTimesheetBudget,
-  formatBudgetCheckMessage
+  resumeWork,
+  stopWork,
+  updateProjectControlSettings as updateControlSettings,
+  updateElementEarnedValue
 } from "@carbon/ee/project-control.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import {
-  computeWbsCodes,
+  applyRate,
   datetime,
-  taxYearBounds,
-  timesheetWeek,
-  wbsTemplate,
-  wbsTemplateParentCode
+  formatDate,
+  getErrorMessage,
+  round,
+  SCALE,
+  taxableBase
 } from "@carbon/utils";
-import { endOfMonth, parseDate } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { sql } from "kysely";
-import { customAlphabet } from "nanoid";
-import { data } from "react-router";
-import type { z } from "zod";
-import { getMethodTree } from "~/modules/items/items.service";
-import { claimPlanningActions } from "~/modules/production/planning-action-claims";
-import { invokePosting } from "~/modules/shared/shared.service";
-import { getDatabaseClient } from "~/services/database.server";
-import type {
-  BuildSourceNode,
-  BuildTraceRow,
-  ChangeOperationMark,
-  ChangeRequestChange,
-  ChangeRequestConflict,
-  ChangeRequestItem,
-  ElementVerification,
-  PlannedBuildElement,
-  PlanRow,
-  ProjectBaselineSource,
-  ProjectChangeOperation,
-  ProjectChangeRequestStatus,
-  ProjectCopyElement,
-  ProjectCopySource,
-  ProjectElementEditableField,
-  ProjectElementType,
-  ProjectPlanSnapshot,
-  ProjectPlanTable,
-  ProjectStateGroup,
+import { z } from "zod";
+import {
+  invokeAssetTransfer,
+  upsertReportPin
+} from "~/modules/accounting/accounting.service";
+import { jobCreationRefusal } from "~/modules/items/items.service";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
+import { insertJob } from "~/modules/production/production.service";
+import {
+  insertPurchaseOrder,
+  upsertPurchaseOrderLine
+} from "~/modules/purchasing/purchasing.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
+import {
+  billableItemActionValidator,
+  buildFromPartValidator,
+  COST_OBJECTIVE_REQUIRED,
+  canChangeProjectStatus,
+  createJobFromMaterialValidator,
+  createPurchaseOrderLineFromMaterialValidator,
+  isPlanLayerField,
+  isProjectReportKey,
+  laborCategoryRateValidator,
+  laborCategoryValidator,
+  logTimeValidator,
+  manualPegSupplyTypes,
+  NEW_PURCHASE_ORDER,
+  placeInServiceValidator,
+  planningGroupExcessRules,
+  planningGroupPriorityRules,
+  projectBaselineValidator,
+  projectBorrowStatuses,
+  projectChangeRequestCommentValidator,
+  projectChangeRequestIntentFrom,
+  projectChangeRequestStatusValidator,
+  projectChangeRequestValidator,
+  projectCostTypes,
+  projectElementCommentValidator,
+  projectElementCostValidator,
+  projectElementFieldUpdateValidator,
+  projectElementLaborValidator,
   projectElementLinkValidator,
+  projectElementMaterialValidator,
+  projectElementTypes,
   projectElementValidator,
   projectExpenseValidator,
   projectIssueValidator,
+  projectLabelValidator,
+  projectMemberValidator,
+  projectMilestoneValidator,
+  projectPlanTables,
+  projectStateGroups,
+  projectStateValidator,
+  projectStatuses,
+  projectStockTransferActions,
+  projectStockTransferLineValidator,
+  projectStockTransferValidator,
   projectValidator,
-  RdActivityRole,
-  RequirementStatus,
-  VerificationElement
-} from "./projects.models";
-import {
-  applyChangeRequestItems,
-  apportionedBaseRefusal,
-  BUILD_FROM_PART_MAX_NODES,
-  canLink,
-  chargeableByDefault,
-  computeVerification,
-  diffPlanSnapshots,
-  elementSubtreeIds,
-  findConflicts,
-  groupTimesheetRows,
-  isProjectPlanLocked,
-  mergeChangeRequestItem,
-  monthNumber,
-  netBuildComponents,
-  overlayPlanRows,
-  PLAN_LAYER_FIELDS,
-  PROJECT_BASELINE_FORMAT_VERSION,
-  parseElementPlanFieldValue,
-  parseParameterFormula,
-  parsePlanSnapshot,
-  pickPlanLayerFields,
-  planElementsFromSource,
-  planProjectCopy,
-  planRowParentIds,
-  planSnapshotKeys,
-  projectCopyIdPrefixes,
-  projectPlanLockedMessage,
-  readWbsCsv,
-  rebaseChangeRequestItems,
-  rollUpRequirementStatus,
-  taxYearOf,
-  toPlanSnapshot,
-  typeSpecificElementFields,
-  type WbsCsvCreate,
-  type WbsCsvResult,
-  type WbsElement,
-  type WbsLink,
-  wbsTemplateElementType
+  rdActivityRoles,
+  stopWorkStatusRefusal,
+  timesheetCorrectionValidator,
+  timesheetReviewAcceptValidator,
+  toStockOwner
 } from "./projects.models";
 import * as service from "./projects.service";
-import {
-  getElementHistoryByItem,
-  getItemNumericCustomFields,
-  getLaborCategoriesList,
-  getLaborCategoryNames,
-  getProjectBaseline,
-  getProjectChangeRequest,
-  getProjectCostSummary,
-  getProjectElement,
-  getProjectElementComments,
-  getProjectElementLinks,
-  getProjectElementPlanLines,
-  getProjectElements,
-  getProjectItemValues,
-  getRdComponents,
-  getRdEmployeeYear,
-  getRdLedgerRows,
-  getTimesheetApprovalCount,
-  getTimesheetWeek
-} from "./projects.service";
-import type { ProjectElementLink } from "./types";
-
-/**
- * Creates a project in one transaction (with a WBS template's elements when
- * one is given). States are company-wide (Settings → Projects), so none are
- * seeded. A new project starts in Draft, so nothing can charge it before it
- * is released.
- * When `identifier` is empty, the SQL function `derive_project_identifier`
- * picks a unique one from the name.
- */
-export async function createProject(
-  db: Kysely<KyselyDatabase>,
-  args: Omit<z.infer<typeof projectValidator>, "id"> & {
-    companyId: string;
-    userId: string;
-    /** A MIL-STD-881F template key (`WBS_TEMPLATES`) to start the plan from. */
-    wbsTemplateKey?: string;
-  }
-): Promise<string> {
-  return db.transaction().execute(async (trx) => {
-    const project = await trx
-      .insertInto("project")
-      .values({
-        name: args.name,
-        identifier: args.identifier
-          ? args.identifier
-          : sql<string>`derive_project_identifier(${args.name}, ${args.companyId})`,
-        description: args.description ?? null,
-        status: "Draft",
-        costTreatment: args.costTreatment,
-        costAccountId: args.costAccountId ?? null,
-        fixedAssetClassId: args.fixedAssetClassId ?? null,
-        customerId: args.customerId ?? null,
-        ownerId: args.ownerId ?? null,
-        locationId: args.locationId ?? null,
-        startDate: args.startDate ?? null,
-        endDate: args.endDate ?? null,
-        priority: args.priority ?? "None",
-        projectStock: args.projectStock ?? false,
-        chargeAtReceipt: args.chargeAtReceipt ?? false,
-        governmentFurnished: args.governmentFurnished ?? false,
-        costObjective: args.costObjective ?? null,
-        restrictCharging: args.restrictCharging ?? false,
-        active: true,
-        companyId: args.companyId,
-        createdBy: args.userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-
-    if (args.wbsTemplateKey) {
-      await insertElementsFromWbsTemplate(trx, {
-        companyId: args.companyId,
-        userId: args.userId,
-        projectId: project.id,
-        templateKey: args.wbsTemplateKey
-      });
-    }
-
-    // States are company-wide (Settings → Projects): nothing to seed here.
-    return project.id;
-  });
-}
-
-/**
- * Inserts a MIL-STD-881F template's elements into a project with no elements,
- * every code pinned to the template's. A row with children is a System, a
- * leaf a Task. Takes one readable id per row from `nextElementSequence`.
- */
-export async function insertElementsFromWbsTemplate(
-  trx: KyselyTx,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    templateKey: string;
-  }
-) {
-  const template = wbsTemplate(args.templateKey);
-  if (!template) throw new Error("The WBS template does not exist");
-
-  const state = await trx
-    .selectFrom("projectState")
-    .select("id")
-    .where("companyId", "=", args.companyId)
-    .where("group", "=", "Unstarted")
-    .orderBy("isDefault", "desc")
-    .orderBy("sortOrder", "asc")
-    .limit(1)
-    .executeTakeFirst();
-  if (!state) {
-    throw new Error("The company has no Unstarted state (Settings → Projects)");
-  }
-
-  const project = await trx
-    .updateTable("project")
-    .set({
-      nextElementSequence: sql`"nextElementSequence" + ${template.rows.length}`,
-      // A project made without an identifier gets one, as for a new element.
-      identifier: sql<string>`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
-    })
-    .where("id", "=", args.projectId)
-    .where("companyId", "=", args.companyId)
-    .returning([
-      sql<number>`"nextElementSequence" - ${template.rows.length}`.as(
-        "firstSequence"
-      ),
-      "identifier"
-    ])
-    .executeTakeFirst();
-  if (!project?.identifier) throw new Error("The project does not exist");
-
-  const idByCode = new Map<string, string>();
-  const siblingCount = new Map<string | null, number>();
-  const rows = template.rows.map((row, index) => {
-    const id = makeCopyId("pje");
-    idByCode.set(row.code, id);
-    const parentCode = wbsTemplateParentCode(row.code, template.rows);
-    const parentId = parentCode ? (idByCode.get(parentCode) ?? null) : null;
-    const sortOrder = (siblingCount.get(parentId) ?? 0) + 1;
-    siblingCount.set(parentId, sortOrder);
-    const sequence = Number(project.firstSequence) + index;
-    const type = wbsTemplateElementType(row.code, template.rows);
-    return {
-      id,
-      companyId: args.companyId,
-      projectId: args.projectId,
-      parentId,
-      sequence,
-      readableId: `${project.identifier}-${sequence}`,
-      type,
-      name: row.name,
-      wbsCode: row.code,
-      stateId: state.id,
-      isChargeable: chargeableByDefault[type],
-      sortOrder,
-      createdBy: args.userId
-    };
-  });
-
-  await trx.insertInto("projectElement").values(rows).execute();
-}
-
-/** A project's elements and `precedes` links as the WBS exports read them. */
-export async function loadWbsElements(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  args: { companyId: string; projectId: string }
-): Promise<{ elements: WbsElement[]; links: WbsLink[] }> {
-  const [elements, links] = await Promise.all([
-    db
-      .selectFrom("projectElement")
-      .select([
-        "id",
-        "readableId",
-        "parentId",
-        "type",
-        "name",
-        "sortOrder",
-        "sequence",
-        "wbsCode",
-        "startDate",
-        "targetDate",
-        "budget"
-      ])
-      .where("projectId", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .execute(),
-    db
-      .selectFrom("projectElementLink")
-      .select(["fromElementId", "toElementId"])
-      .where("projectId", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .where("linkType", "=", "precedes")
-      .execute()
-  ]);
-  return {
-    elements: elements.map((element) => ({
-      ...element,
-      sortOrder: Number(element.sortOrder),
-      budget: element.budget === null ? null : Number(element.budget)
-    })),
-    links
-  };
-}
-
-export type WbsImportResult =
-  | { applied: false; result: WbsCsvResult }
-  | {
-      applied: true;
-      result: WbsCsvResult;
-      created: number;
-      updated: number;
-      linked: number;
-    };
-
-/**
- * Applies a WBS CSV to a project in one transaction: creates (parents first,
- * each after its last sibling), updates, then the new `precedes` links.
- * Writes nothing when any row has an error. Never deletes.
- */
-export async function importProjectWbs(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    rows: Record<string, string | undefined>[];
-    apply: boolean;
-  }
-): Promise<WbsImportResult> {
-  return db.transaction().execute(async (trx) => {
-    const project = await trx
-      .selectFrom("project")
-      .select(["identifier"])
-      .where("id", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!project) throw new Error("The project does not exist");
-
-    const { elements, links } = await loadWbsElements(trx, args);
-    const result = readWbsCsv(args.rows, elements, links);
-    if (!args.apply || result.errors.length > 0) {
-      return { applied: false, result };
-    }
-
-    const state = await trx
-      .selectFrom("projectState")
-      .select("id")
-      .where("companyId", "=", args.companyId)
-      .where("group", "=", "Unstarted")
-      .orderBy("isDefault", "desc")
-      .orderBy("sortOrder", "asc")
-      .limit(1)
-      .executeTakeFirst();
-    if (!state) {
-      throw new Error(
-        "The company has no Unstarted state (Settings → Projects)"
-      );
-    }
-
-    // Keys of new rows become real ids up front, so a child can name a
-    // parent made in the same import.
-    const idOf = new Map<string, string>(
-      result.creates.map((create) => [create.key, makeCopyId("pje")])
-    );
-    const resolve = (key: string | null) =>
-      key === null ? null : (idOf.get(key) ?? key);
-
-    const lastSort = new Map<string | null, number>();
-    for (const element of elements) {
-      const current = lastSort.get(element.parentId) ?? 0;
-      lastSort.set(element.parentId, Math.max(current, element.sortOrder));
-    }
-    const nextSort = (parentId: string | null) => {
-      const value = (lastSort.get(parentId) ?? 0) + 1;
-      lastSort.set(parentId, value);
-      return value;
-    };
-
-    // A code can move between elements in one file (a swap, or a code a new
-    // row takes over). The unique index checks row by row, so clear every
-    // changing code first; the writes below set the new ones.
-    const codeOf = new Map(
-      elements.map((element) => [element.id, element.wbsCode])
-    );
-    const recoded = result.updates
-      .filter((update) => update.wbsCode !== codeOf.get(update.id))
-      .map((update) => update.id);
-    if (recoded.length > 0) {
-      await trx
-        .updateTable("projectElement")
-        .set({ wbsCode: null })
-        .where("id", "in", recoded)
-        .where("projectId", "=", args.projectId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-    }
-
-    if (result.creates.length > 0) {
-      const sequence = await trx
-        .updateTable("project")
-        .set({
-          nextElementSequence: sql`"nextElementSequence" + ${result.creates.length}`,
-          // A project made without an identifier gets one, as for a new element.
-          identifier: sql<string>`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
-        })
-        .where("id", "=", args.projectId)
-        .where("companyId", "=", args.companyId)
-        .returning([
-          sql<number>`"nextElementSequence" - ${result.creates.length}`.as(
-            "first"
-          ),
-          "identifier"
-        ])
-        .executeTakeFirstOrThrow();
-
-      // Parents before children: a create's parent may be another create.
-      const createByKey = new Map(result.creates.map((c) => [c.key, c]));
-      const depthOf = (create: WbsCsvCreate): number => {
-        let depth = 0;
-        let parent = create.parentKey
-          ? createByKey.get(create.parentKey)
-          : undefined;
-        while (parent) {
-          depth += 1;
-          // readWbsCsv refuses a loop; this keeps a missed one from hanging.
-          if (depth > createByKey.size) {
-            throw new Error("The new rows' parents make a loop");
-          }
-          parent = parent.parentKey
-            ? createByKey.get(parent.parentKey)
-            : undefined;
-        }
-        return depth;
-      };
-      const ordered = [...result.creates].sort(
-        (a, b) => depthOf(a) - depthOf(b) || a.row - b.row
-      );
-      const rows = ordered.map((create, index) => {
-        const parentId = resolve(create.parentKey);
-        const seq = Number(sequence.first) + index;
-        return {
-          id: idOf.get(create.key)!,
-          companyId: args.companyId,
-          projectId: args.projectId,
-          parentId,
-          sequence: seq,
-          readableId: `${sequence.identifier}-${seq}`,
-          type: create.type,
-          name: create.name,
-          wbsCode: create.wbsCode,
-          startDate: create.startDate,
-          targetDate: create.targetDate,
-          budget: create.budget,
-          stateId: state.id,
-          isChargeable: chargeableByDefault[create.type],
-          sortOrder: nextSort(parentId),
-          createdBy: args.userId
-        };
-      });
-      await trx.insertInto("projectElement").values(rows).execute();
-    }
-
-    if (result.updates.length > 0) {
-      const sortOrderOf = new Map(
-        elements.map((element) => [element.id, element.sortOrder])
-      );
-      const values = sql.join(
-        result.updates.map((update) => {
-          const parentId = resolve(update.parentKey);
-          const sortOrder = update.parentChanged
-            ? nextSort(parentId)
-            : (sortOrderOf.get(update.id) ?? 0);
-          return sql`(${update.id}, ${parentId}, ${update.type}, ${update.name}, ${update.wbsCode}, ${update.startDate}, ${update.targetDate}, ${update.budget}, ${sortOrder})`;
-        })
-      );
-      await sql`
-        UPDATE "projectElement" AS e
-        SET "parentId" = v."parentId",
-            "type" = v."type"::"projectElementType",
-            "name" = v."name",
-            "wbsCode" = v."wbsCode",
-            "startDate" = v."startDate"::date,
-            "targetDate" = v."targetDate"::date,
-            "budget" = v."budget"::numeric,
-            "sortOrder" = v."sortOrder"::numeric,
-            "updatedBy" = ${args.userId},
-            "updatedAt" = ${datetime.timestamp()}
-        FROM (VALUES ${values}) AS v("id", "parentId", "type", "name", "wbsCode", "startDate", "targetDate", "budget", "sortOrder")
-        WHERE e."id" = v."id"
-          AND e."projectId" = ${args.projectId}
-          AND e."companyId" = ${args.companyId}
-      `.execute(trx);
-    }
-
-    if (result.links.length > 0) {
-      await trx
-        .insertInto("projectElementLink")
-        .values(
-          result.links.map((link) => ({
-            id: makeCopyId("pjk"),
-            companyId: args.companyId,
-            projectId: args.projectId,
-            fromElementId: resolve(link.fromKey)!,
-            toElementId: resolve(link.toKey)!,
-            linkType: "precedes" as const,
-            createdBy: args.userId
-          }))
-        )
-        .execute();
-    }
-
-    return {
-      applied: true,
-      result,
-      created: result.creates.length,
-      updated: result.updates.length,
-      linked: result.links.length
-    };
-  });
-}
-
-/**
- * Pins every derived WBS code of a project, as a contractor does at award:
- * afterwards a move keeps each element's code. Refuses while 2 elements have
- * the same code.
- */
-export async function pinProjectWbsCodes(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; userId: string; projectId: string }
-): Promise<number> {
-  return db.transaction().execute(async (trx) => {
-    const nodes = await trx
-      .selectFrom("projectElement")
-      .select(["id", "parentId", "type", "sortOrder", "sequence", "wbsCode"])
-      .where("projectId", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .execute();
-    const { codes, duplicates } = computeWbsCodes(
-      nodes.map((node) => ({ ...node, sortOrder: Number(node.sortOrder) }))
-    );
-    if (duplicates.size > 0) {
-      throw new Error(
-        `Duplicate WBS codes: ${[...duplicates].join(", ")}. Change one of each pair first.`
-      );
-    }
-
-    const derived = nodes
-      .filter((node) => node.wbsCode === null && codes.has(node.id))
-      .map((node) => ({ id: node.id, code: codes.get(node.id)! }));
-    if (derived.length === 0) return 0;
-
-    const values = sql.join(
-      derived.map((row) => sql`(${row.id}, ${row.code})`)
-    );
-    await sql`
-      UPDATE "projectElement" AS e
-      SET "wbsCode" = v.code,
-          "updatedBy" = ${args.userId},
-          "updatedAt" = ${datetime.timestamp()}
-      FROM (VALUES ${values}) AS v(id, code)
-      WHERE e."id" = v.id
-        AND e."projectId" = ${args.projectId}
-        AND e."companyId" = ${args.companyId}
-    `.execute(trx);
-    return derived.length;
-  });
-}
-
-/**
- * Clears the pinned WBS codes of an element and its descendants, so the
- * subtree derives its codes from the tree again.
- */
-export async function renumberWbsSubtree(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    elementId: string;
-  }
-): Promise<number> {
-  const result = await sql<{ id: string }>`
-    WITH RECURSIVE subtree AS (
-      SELECT "id" FROM "projectElement"
-      WHERE "id" = ${args.elementId}
-        AND "projectId" = ${args.projectId}
-        AND "companyId" = ${args.companyId}
-      UNION
-      SELECT e."id" FROM "projectElement" e
-      JOIN subtree s ON e."parentId" = s."id"
-      WHERE e."projectId" = ${args.projectId}
-        AND e."companyId" = ${args.companyId}
-    )
-    UPDATE "projectElement"
-    SET "wbsCode" = NULL,
-        "updatedBy" = ${args.userId},
-        "updatedAt" = ${datetime.timestamp()}
-    WHERE "id" IN (SELECT "id" FROM subtree)
-      AND "companyId" = ${args.companyId}
-      AND "wbsCode" IS NOT NULL
-    RETURNING "id"
-  `.execute(db);
-  return result.rows.length;
-}
-
-/** A new row id with the prefix the SQL `id()` default would give it. */
-const makeCopyId = (() => {
-  const base58 = customAlphabet(
-    "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz",
-    22
-  );
-  return (prefix: string) => `${prefix}_${base58()}`;
-})();
-
-/**
- * Creates a Draft project as a copy of another project of the company, in
- * one transaction: its milestones, elements (renumbered from 1), element
- * labels, links and plan lines. States and labels are company-wide, so the
- * copy keeps the source's. Charges, ledger rows, timesheets,
- * comments, views, preferences and assets are not copied. When `identifier`
- * is empty, `derive_project_identifier` picks one from the name.
- */
-export async function copyProject(
-  db: Kysely<KyselyDatabase>,
-  args: Omit<z.infer<typeof projectValidator>, "id"> & {
-    companyId: string;
-    userId: string;
-    sourceProjectId: string;
-  }
-): Promise<string> {
-  const { companyId, userId, sourceProjectId } = args;
-  return db.transaction().execute(async (trx) => {
-    const sourceProject = await trx
-      .selectFrom("project")
-      .select("id")
-      .where("id", "=", sourceProjectId)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (!sourceProject) {
-      throw new Error("The project to copy from was not found");
-    }
-
-    const ofSource = <
-      T extends
-        | "projectMilestone"
-        | "projectElement"
-        | "projectElementLink"
-        | "projectElementMaterial"
-        | "projectElementLabor"
-        | "projectElementCost"
-    >(
-      table: T
-    ) =>
-      trx
-        .selectFrom(table as "projectMilestone")
-        .selectAll()
-        .where("projectId", "=", sourceProjectId)
-        .where("companyId", "=", companyId)
-        .execute();
-
-    const [
-      milestones,
-      elements,
-      links,
-      materials,
-      labor,
-      costs,
-      elementLabels,
-      identifierRow
-    ] = await Promise.all([
-      ofSource("projectMilestone"),
-      ofSource("projectElement"),
-      ofSource("projectElementLink"),
-      ofSource("projectElementMaterial"),
-      ofSource("projectElementLabor"),
-      ofSource("projectElementCost"),
-      trx
-        .selectFrom("projectElementLabel as el")
-        .innerJoin("projectElement as e", (join) =>
-          join
-            .onRef("e.id", "=", "el.projectElementId")
-            .onRef("e.companyId", "=", "el.companyId")
-        )
-        .select(["el.projectElementId", "el.projectLabelId"])
-        .where("e.projectId", "=", sourceProjectId)
-        .where("el.companyId", "=", companyId)
-        .execute(),
-      args.identifier
-        ? Promise.resolve({ identifier: args.identifier })
-        : sql<{
-            identifier: string;
-          }>`SELECT derive_project_identifier(${args.name}, ${companyId}) AS "identifier"`
-            .execute(trx)
-            .then((result) => result.rows[0]!)
-    ]);
-
-    const projectId = makeCopyId("prj");
-    const plan = planProjectCopy(
-      {
-        milestones,
-        elements: elements as unknown as ProjectCopyElement[],
-        elementLabels,
-        links: links as unknown as ProjectCopySource["links"],
-        materials: materials as unknown as ProjectCopySource["materials"],
-        labor: labor as unknown as ProjectCopySource["labor"],
-        costs: costs as unknown as ProjectCopySource["costs"]
-      },
-      projectId,
-      identifierRow.identifier,
-      makeCopyId
-    );
-
-    await trx
-      .insertInto("project")
-      .values({
-        id: projectId,
-        name: args.name,
-        identifier: identifierRow.identifier,
-        description: args.description ?? null,
-        status: "Draft",
-        costTreatment: args.costTreatment,
-        costAccountId: args.costAccountId ?? null,
-        fixedAssetClassId: args.fixedAssetClassId ?? null,
-        customerId: args.customerId ?? null,
-        ownerId: args.ownerId ?? null,
-        locationId: args.locationId ?? null,
-        startDate: args.startDate ?? null,
-        endDate: args.endDate ?? null,
-        priority: args.priority ?? "None",
-        projectStock: args.projectStock ?? false,
-        chargeAtReceipt: args.chargeAtReceipt ?? false,
-        governmentFurnished: args.governmentFurnished ?? false,
-        costObjective: args.costObjective ?? null,
-        restrictCharging: args.restrictCharging ?? false,
-        nextElementSequence: plan.nextElementSequence,
-        active: true,
-        companyId,
-        createdBy: userId
-      })
-      .execute();
-
-    // FK order: milestones before the elements that point at them; elements
-    // (parents first) before labels, links and plan lines. Every row of one
-    // insert has the same keys.
-    const audit = { companyId, createdBy: userId };
-    const insertRows = async (table: string, rows: object[]) => {
-      if (rows.length === 0) return;
-      await trx
-        .insertInto(table as "projectMilestone")
-        .values(rows.map((row) => ({ ...row, ...audit })) as never)
-        .execute();
-    };
-    await insertRows("projectMilestone", plan.milestones);
-    await insertRows("projectElement", plan.elements);
-    await insertRows("projectElementLabel", plan.elementLabels);
-    await insertRows("projectElementLink", plan.links);
-    await insertRows("projectElementMaterial", plan.materials);
-    await insertRows("projectElementLabor", plan.labor);
-    await insertRows("projectElementCost", plan.costs);
-
-    return projectId;
-  });
-}
-
-// --- Baselines (Phase 1c) -------------------------------------------------------
-
-/**
- * Loads the plan layer of a project as a snapshot: 5 queries, one per plan
- * table, each reading only its `PLAN_LAYER_FIELDS`. The element query also
- * reads `startDate` and `targetDate` for the snapshot's `schedule`.
- */
-export async function loadPlanSnapshot(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  args: { companyId: string; projectId: string }
-): Promise<ProjectPlanSnapshot> {
-  const ofProject = (table: ProjectPlanTable) =>
-    db
-      .selectFrom(table as "projectElement")
-      .select(
-        (table === "projectElement"
-          ? [...PLAN_LAYER_FIELDS[table], "startDate", "targetDate"]
-          : PLAN_LAYER_FIELDS[table]) as never
-      )
-      .where("projectId", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .execute() as Promise<Record<string, unknown>[]>;
-
-  const [elements, links, materials, labor, costs] = await Promise.all([
-    ofProject("projectElement"),
-    ofProject("projectElementLink"),
-    ofProject("projectElementMaterial"),
-    ofProject("projectElementLabor"),
-    ofProject("projectElementCost")
-  ]);
-  return toPlanSnapshot({ elements, links, materials, labor, costs });
-}
-
-export type CreateProjectBaselineArgs = {
-  companyId: string;
-  userId: string;
-  projectId: string;
-  name: string;
-  source: ProjectBaselineSource;
-  milestoneId?: string | null;
-  changeRequestId?: string | null;
-};
-
-/**
- * Writes a baseline inside an open transaction: takes the next
- * `project.nextBaselineSequence` (the UPDATE locks the project row), loads the
- * snapshot and inserts it with its counts. The change request apply reuses it.
- */
-export async function insertProjectBaseline(
-  trx: KyselyTx,
-  args: CreateProjectBaselineArgs
-): Promise<{ id: string; sequence: number }> {
-  const project = await trx
-    .updateTable("project")
-    .set({ nextBaselineSequence: sql`"nextBaselineSequence" + 1` })
-    .where("id", "=", args.projectId)
-    .where("companyId", "=", args.companyId)
-    .returning(sql<number>`"nextBaselineSequence" - 1`.as("sequence"))
-    .executeTakeFirst();
-  if (!project) throw new Error("The project does not exist");
-
-  const snapshot = await loadPlanSnapshot(trx, args);
-  const baseline = await trx
-    .insertInto("projectBaseline")
-    .values({
-      companyId: args.companyId,
-      projectId: args.projectId,
-      sequence: project.sequence,
-      name: args.name,
-      source: args.source,
-      milestoneId: args.milestoneId ?? null,
-      changeRequestId: args.changeRequestId ?? null,
-      formatVersion: PROJECT_BASELINE_FORMAT_VERSION,
-      snapshot: toJson(snapshot) as never,
-      elementCount: snapshot.elements.length,
-      linkCount: snapshot.links.length,
-      createdBy: args.userId
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-
-  return { id: baseline.id, sequence: project.sequence };
-}
-
-/** Takes a baseline of a project's plan layer, in one transaction. */
-export async function createProjectBaseline(
-  db: Kysely<KyselyDatabase>,
-  args: CreateProjectBaselineArgs
-): Promise<{ id: string; sequence: number }> {
-  return db.transaction().execute((trx) => insertProjectBaseline(trx, args));
-}
-
-// --- Change requests (Phase 1c) -------------------------------------------------
-
-/** A refusal a change request write raises; the route shows its message. */
-export class ProjectChangeRequestError extends Error {
-  status = 422;
-}
-
-/**
- * The change request a plan-layer write goes to: the form field
- * `changeRequestId`, else `?cr=` on the action URL. Null writes live.
- */
-export function readChangeRequestId(request: Request, formData: FormData) {
-  const field = formData.get("changeRequestId");
-  if (typeof field === "string" && field) return field;
-  return new URL(request.url).searchParams.get("cr") || null;
-}
-
-export type ChangeRequestItemRow = ChangeRequestItem & {
-  id: string;
-  createdAt: string;
-  updatedAt: string | null;
-};
-
-function itemKey(table: string, id: string) {
-  return `${table}:${id}`;
-}
-
-function toChangeRequestItem(row: {
-  id: string;
-  operation: ProjectChangeOperation;
-  targetTable: ProjectPlanTable;
-  targetId: string;
-  payload: unknown;
-  baseRow: unknown;
-  createdAt: unknown;
-  updatedAt: unknown;
-}): ChangeRequestItemRow {
-  const asRecord = (value: unknown) =>
-    value && typeof value === "object"
-      ? (value as Record<string, unknown>)
-      : null;
-  const asText = (value: unknown) =>
-    value == null
-      ? null
-      : value instanceof Date
-        ? value.toISOString()
-        : String(value);
-  return {
-    id: row.id,
-    operation: row.operation,
-    targetTable: row.targetTable,
-    targetId: row.targetId,
-    payload: asRecord(row.payload),
-    baseRow: asRecord(row.baseRow),
-    createdAt: asText(row.createdAt) ?? "",
-    updatedAt: asText(row.updatedAt)
-  };
-}
-
-/** The items of a change request, oldest first. */
-export async function loadChangeRequestItems(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  args: { companyId: string; changeRequestId: string }
-): Promise<ChangeRequestItemRow[]> {
-  const rows = await db
-    .selectFrom("projectChangeRequestItem")
-    .select([
-      "id",
-      "operation",
-      "targetTable",
-      "targetId",
-      "payload",
-      "baseRow",
-      "createdAt",
-      "updatedAt"
-    ])
-    .where("changeRequestId", "=", args.changeRequestId)
-    .where("companyId", "=", args.companyId)
-    .orderBy("createdAt", "asc")
-    .orderBy("id", "asc")
-    .execute();
-  return rows.map(toChangeRequestItem);
-}
-
-/**
- * A change request with its items, the live plan and the plan as the change
- * request would leave it. Null when it is not a change request of the
- * project.
- */
-export async function loadChangeRequestOverlay(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectId: string; changeRequestId: string }
-) {
-  const [changeRequest, items, live] = await Promise.all([
-    db
-      .selectFrom("projectChangeRequest")
-      .select(["id", "projectId", "readableId", "title", "status"])
-      .where("id", "=", args.changeRequestId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst(),
-    loadChangeRequestItems(db, args),
-    loadPlanSnapshot(db, args)
-  ]);
-  if (!changeRequest || changeRequest.projectId !== args.projectId) {
-    return null;
-  }
-  return {
-    changeRequest,
-    items,
-    live,
-    overlay: applyChangeRequestItems(live, items)
-  };
-}
-
-export type ChangeRequestOverlay = NonNullable<
-  Awaited<ReturnType<typeof loadChangeRequestOverlay>>
->;
-
-/**
- * Writes changes into a Draft change request, in one transaction. Each change
- * folds into the item of its row (`mergeChangeRequestItem`). Deleting an
- * element the change request added also drops the rows it added under that
- * element. Refuses unless the change request is a Draft of the project.
- */
-export async function upsertChangeRequestItems(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    changeRequestId: string;
-    changes: ChangeRequestChange[];
-  }
-) {
-  return db.transaction().execute(async (trx) => {
-    const changeRequest = await trx
-      .selectFrom("projectChangeRequest")
-      .select(["projectId", "status", "readableId"])
-      .where("id", "=", args.changeRequestId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!changeRequest || changeRequest.projectId !== args.projectId) {
-      throw new ProjectChangeRequestError("The change request does not exist");
-    }
-    if (changeRequest.status !== "Draft") {
-      throw new ProjectChangeRequestError(
-        `${changeRequest.readableId} is ${changeRequest.status}. Only a Draft change request takes changes.`
-      );
-    }
-
-    const existing = await loadChangeRequestItems(trx, args);
-    const items = new Map<string, ChangeRequestItem & { rowId?: string }>(
-      existing.map((item) => [
-        itemKey(item.targetTable, item.targetId),
-        { ...item, rowId: item.id }
-      ])
-    );
-
-    // The live rows a change touches for the first time: one query per table.
-    const firstTouch = new Map<ProjectPlanTable, Set<string>>();
-    for (const change of args.changes) {
-      if (change.operation === "Add") continue;
-      if (items.has(itemKey(change.targetTable, change.targetId))) continue;
-      const ids = firstTouch.get(change.targetTable) ?? new Set<string>();
-      ids.add(change.targetId);
-      firstTouch.set(change.targetTable, ids);
-    }
-    const liveRows = new Map<string, Record<string, unknown>>();
-    await Promise.all(
-      [...firstTouch.entries()].map(async ([table, ids]) => {
-        const rows = (await trx
-          .selectFrom(table as "projectElement")
-          .select(PLAN_LAYER_FIELDS[table] as never)
-          .where("id", "in", [...ids])
-          .where("projectId", "=", args.projectId)
-          .where("companyId", "=", args.companyId)
-          .execute()) as Record<string, unknown>[];
-        for (const row of rows) {
-          liveRows.set(itemKey(table, row.id as string), row);
-        }
-      })
-    );
-
-    const removedAddedElements = new Set<string>();
-    const changedKeys = new Set<string>();
-    const deletedRowIds: string[] = [];
-    for (const change of args.changes) {
-      const key = itemKey(change.targetTable, change.targetId);
-      const current = items.get(key) ?? null;
-      const merged = mergeChangeRequestItem(
-        current,
-        change,
-        liveRows.get(key) ?? null
-      );
-      if ("error" in merged) throw new ProjectChangeRequestError(merged.error);
-      if (merged.item) {
-        items.set(key, { ...merged.item, rowId: current?.rowId });
-        changedKeys.add(key);
-        continue;
-      }
-      if (!current) continue;
-      items.delete(key);
-      changedKeys.delete(key);
-      if (current.rowId) deletedRowIds.push(current.rowId);
-      if (
-        current.operation === "Add" &&
-        current.targetTable === "projectElement"
-      ) {
-        removedAddedElements.add(current.targetId);
-      }
-    }
-
-    // Rows the change request added under a removed added element go too.
-    let dropped = removedAddedElements.size > 0;
-    while (dropped) {
-      dropped = false;
-      for (const [key, item] of items) {
-        if (item.operation !== "Add") continue;
-        const parents = planRowParentIds(item.targetTable, item.payload ?? {});
-        if (!parents.some((id) => removedAddedElements.has(id))) continue;
-        items.delete(key);
-        changedKeys.delete(key);
-        if (item.rowId) deletedRowIds.push(item.rowId);
-        if (item.targetTable === "projectElement") {
-          removedAddedElements.add(item.targetId);
-          dropped = true;
-        }
-      }
-    }
-    for (const item of items.values()) {
-      const parents = planRowParentIds(item.targetTable, item.payload ?? {});
-      if (parents.some((id) => removedAddedElements.has(id))) {
-        throw new ProjectChangeRequestError(
-          "A change in this change request still uses the element. Change it first."
-        );
-      }
-    }
-
-    if (deletedRowIds.length > 0) {
-      await trx
-        .deleteFrom("projectChangeRequestItem")
-        .where("id", "in", deletedRowIds)
-        .where("companyId", "=", args.companyId)
-        .execute();
-    }
-    const upserts = [...changedKeys].map((key) => items.get(key)!);
-    if (upserts.length > 0) {
-      await trx
-        .insertInto("projectChangeRequestItem")
-        .values(
-          upserts.map((item) => ({
-            companyId: args.companyId,
-            changeRequestId: args.changeRequestId,
-            operation: item.operation,
-            targetTable: item.targetTable,
-            targetId: item.targetId,
-            payload: (item.payload ? toJson(item.payload) : null) as never,
-            baseRow: (item.baseRow ? toJson(item.baseRow) : null) as never,
-            createdBy: args.userId
-          }))
-        )
-        .onConflict((oc) =>
-          oc
-            .columns([
-              "changeRequestId",
-              "targetTable",
-              "targetId",
-              "companyId"
-            ])
-            .doUpdateSet((eb) => ({
-              operation: eb.ref("excluded.operation"),
-              payload: eb.ref("excluded.payload"),
-              baseRow: eb.ref("excluded.baseRow"),
-              updatedBy: args.userId,
-              updatedAt: sql`NOW()`
-            }))
-        )
-        .execute();
-    }
-    await trx
-      .updateTable("projectChangeRequest")
-      .set({ updatedBy: args.userId, updatedAt: sql`NOW()` })
-      .where("id", "=", args.changeRequestId)
-      .where("companyId", "=", args.companyId)
-      .execute();
-  });
-}
-
-function overlayElement(overlay: ChangeRequestOverlay, id: string | null) {
-  return id ? overlay.overlay.elements.find((row) => row.id === id) : undefined;
-}
-
-function nextSortOrder(overlay: ChangeRequestOverlay, parentId: string | null) {
-  const siblings = overlay.overlay.elements.filter(
-    (row) => ((row.parentId as string | null) ?? null) === parentId
-  );
-  return (
-    siblings.reduce(
-      (max, row) => Math.max(max, Number(row.sortOrder ?? 0)),
-      0
-    ) + 1
-  );
-}
-
-async function requireOverlay(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectId: string; changeRequestId: string }
-) {
-  const overlay = await loadChangeRequestOverlay(db, args);
-  if (!overlay) {
-    throw new ProjectChangeRequestError("The change request does not exist");
-  }
-  return overlay;
-}
-
-type ChangeRequestWriteArgs = {
-  companyId: string;
-  userId: string;
-  projectId: string;
-  changeRequestId: string;
-};
-
-/**
- * Adds an element to a change request. Its id is made now and kept; its
- * readable id stays empty until the apply step numbers it. An empty state
- * takes the default Unstarted state, as `insertProjectElement` does.
- */
-export async function addElementToChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & {
-    element: Omit<z.infer<typeof projectElementValidator>, "id">;
-  }
-) {
-  const overlay = await requireOverlay(db, args);
-  const { element } = args;
-  const parentId = element.parentId ?? null;
-  if (parentId) {
-    const parent = overlayElement(overlay, parentId);
-    if (!parent)
-      throw new ProjectChangeRequestError("The parent element does not exist");
-    if (parent.type === "Parameter" && element.type !== "Parameter") {
-      throw new ProjectChangeRequestError(
-        "A Parameter can only have Parameters as children"
-      );
-    }
-  }
-
-  let stateId = element.stateId ?? null;
-  if (!stateId) {
-    const state = await db
-      .selectFrom("projectState")
-      .select("id")
-      .where("companyId", "=", args.companyId)
-      .where("group", "=", "Unstarted")
-      .orderBy("isDefault", "desc")
-      .orderBy("sortOrder", "asc")
-      .limit(1)
-      .executeTakeFirst();
-    if (!state)
-      throw new ProjectChangeRequestError(
-        "The company has no Unstarted state (Settings → Projects)"
-      );
-    stateId = state.id;
-  }
-
-  const id = makeCopyId(projectCopyIdPrefixes.element);
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: [
-      {
-        operation: "Add",
-        targetTable: "projectElement",
-        targetId: id,
-        payload: {
-          projectId: args.projectId,
-          parentId,
-          readableId: "",
-          sortOrder: nextSortOrder(overlay, parentId),
-          type: element.type,
-          name: element.name,
-          stateId,
-          ownerId: element.ownerId ?? null,
-          priority: element.priority ?? "None",
-          milestoneId: element.milestoneId ?? null,
-          startDate: element.startDate ?? null,
-          targetDate: element.targetDate ?? null,
-          estimatedHours: element.estimatedHours ?? null,
-          isChargeable:
-            element.type === "Parameter"
-              ? false
-              : (element.isChargeable ?? chargeableByDefault[element.type]),
-          budget: element.budget ?? null,
-          itemId: element.itemId ?? null
-        }
-      }
-    ]
-  });
-  return { id, readableId: "" };
-}
-
-/**
- * Sets one plan-layer field on elements in a change request. The value is
- * parsed as the live update parses it, and a type-specific field is refused on
- * an element of another type.
- */
-export async function updateElementFieldInChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & {
-    ids: string[];
-    field: ProjectElementEditableField;
-    value: string | null | undefined;
-  }
-) {
-  const raw = args.value === undefined || args.value === "" ? null : args.value;
-  const parsed = parseElementPlanFieldValue(args.field, raw);
-  if ("error" in parsed) throw new ProjectChangeRequestError(parsed.error);
-
-  const overlay = await requireOverlay(db, args);
-  const elements = args.ids.map((id) => {
-    const row = overlayElement(overlay, id);
-    if (!row) throw new ProjectChangeRequestError("The element does not exist");
-    return row;
-  });
-  const requiredType = typeSpecificElementFields[args.field];
-  const other = requiredType
-    ? elements.find((row) => row.type !== requiredType)
-    : undefined;
-  if (other) {
-    throw new ProjectChangeRequestError(
-      `${other.readableId || other.name} is a ${other.type}, not a ${requiredType}`
-    );
-  }
-  const parameter = elements.find((row) => row.type === "Parameter");
-  if (parameter && args.field === "isChargeable" && parsed.value === true) {
-    throw new ProjectChangeRequestError("A Parameter cannot take charges");
-  }
-  if (
-    parameter &&
-    (args.field === "itemId" || args.field === "trackedEntityId") &&
-    parsed.value !== null
-  ) {
-    throw new ProjectChangeRequestError("A Parameter cannot link a part");
-  }
-
-  const payload: Record<string, unknown> = { [args.field]: parsed.value };
-  // A new part drops the serial of the old one.
-  if (args.field === "itemId") payload.trackedEntityId = null;
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: args.ids.map((id) => ({
-      operation: "Update" as const,
-      targetTable: "projectElement" as const,
-      targetId: id,
-      payload
-    }))
-  });
-}
-
-/**
- * Moves an element in a change request, after its new last sibling. Refuses
- * a parent in its own subtree and a Parameter parent for another type.
- */
-export async function moveElementInChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & { elementId: string; parentId: string | null }
-) {
-  const overlay = await requireOverlay(db, args);
-  const element = overlayElement(overlay, args.elementId);
-  if (!element)
-    throw new ProjectChangeRequestError("The element does not exist");
-  if (args.parentId) {
-    const parent = overlayElement(overlay, args.parentId);
-    if (!parent)
-      throw new ProjectChangeRequestError("The parent element does not exist");
-    let current: PlanRow | undefined = parent;
-    const seen = new Set<string>();
-    while (current && !seen.has(current.id)) {
-      if (current.id === args.elementId) {
-        throw new ProjectChangeRequestError(
-          "An element cannot move under itself or one of its descendants"
-        );
-      }
-      seen.add(current.id);
-      current = overlayElement(overlay, current.parentId as string | null);
-    }
-    if (parent.type === "Parameter" && element.type !== "Parameter") {
-      throw new ProjectChangeRequestError(
-        "A Parameter can only have Parameters as children"
-      );
-    }
-  }
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: [
-      {
-        operation: "Update",
-        targetTable: "projectElement",
-        targetId: args.elementId,
-        payload: {
-          parentId: args.parentId,
-          sortOrder: nextSortOrder(overlay, args.parentId)
-        }
-      }
-    ]
-  });
-}
-
-/** Saves a drag-sort order of sibling elements in a change request. */
-export async function orderElementsInChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & {
-    updates: { id: string; sortOrder: number }[];
-  }
-) {
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: args.updates.map((update) => ({
-      operation: "Update" as const,
-      targetTable: "projectElement" as const,
-      targetId: update.id,
-      payload: { sortOrder: update.sortOrder }
-    }))
-  });
-}
-
-/** Deletes an element (with its subtree) in a change request. */
-export async function deleteElementInChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & { elementId: string }
-) {
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: [
-      {
-        operation: "Delete",
-        targetTable: "projectElement",
-        targetId: args.elementId,
-        payload: null
-      }
-    ]
-  });
-}
-
-/** Adds a trace link in a change request; `canLink` checks the overlaid plan. */
-export async function addLinkToChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & {
-    link: z.infer<typeof projectElementLinkValidator>;
-  }
-) {
-  const overlay = await requireOverlay(db, args);
-  const from = overlayElement(overlay, args.link.fromElementId);
-  const to = overlayElement(overlay, args.link.toElementId);
-  if (!from || !to) {
-    throw new ProjectChangeRequestError(
-      "Both elements must be in this project"
-    );
-  }
-  const check = canLink(
-    { id: from.id, type: from.type as ProjectElementType },
-    { id: to.id, type: to.type as ProjectElementType },
-    args.link.linkType,
-    overlay.overlay.links as unknown as Parameters<typeof canLink>[3]
-  );
-  if (!check.ok) throw new ProjectChangeRequestError(check.reason);
-
-  const id = makeCopyId(projectCopyIdPrefixes.link);
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: [
-      {
-        operation: "Add",
-        targetTable: "projectElementLink",
-        targetId: id,
-        payload: { projectId: args.projectId, ...args.link }
-      }
-    ]
-  });
-  return { id };
-}
-
-/** Deletes a trace link in a change request. A `feeds` link is refused. */
-export async function deleteLinkInChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & { linkId: string }
-) {
-  const overlay = await requireOverlay(db, args);
-  const link = overlay.overlay.links.find((row) => row.id === args.linkId);
-  if (!link) throw new ProjectChangeRequestError("The link does not exist");
-  if (link.linkType === "feeds") {
-    throw new ProjectChangeRequestError(
-      "A formula writes this link. Edit the formula instead."
-    );
-  }
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: [
-      {
-        operation: "Delete",
-        targetTable: "projectElementLink",
-        targetId: args.linkId,
-        payload: null
-      }
-    ]
-  });
-}
-
-const PLAN_LINE_PREFIXES = {
-  projectElementMaterial: projectCopyIdPrefixes.material,
-  projectElementLabor: projectCopyIdPrefixes.labor,
-  projectElementCost: projectCopyIdPrefixes.cost
-} as const;
-
-export type PlanLineTable = keyof typeof PLAN_LINE_PREFIXES;
-
-/**
- * Adds (no `id`) or updates a plan line of an element in a change request.
- * `fields` are the line's validated plan-layer columns.
- */
-export async function upsertPlanLineInChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & {
-    table: PlanLineTable;
-    id?: string;
-    elementId: string;
-    fields: Record<string, unknown>;
-  }
-) {
-  const overlay = await requireOverlay(db, args);
-  if (!overlayElement(overlay, args.elementId)) {
-    throw new ProjectChangeRequestError("The element does not exist");
-  }
-  const id = args.id ?? makeCopyId(PLAN_LINE_PREFIXES[args.table]);
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: [
-      {
-        operation: args.id ? "Update" : "Add",
-        targetTable: args.table,
-        targetId: id,
-        payload: {
-          ...args.fields,
-          projectId: args.projectId,
-          projectElementId: args.elementId
-        }
-      }
-    ]
-  });
-  return { id };
-}
-
-/** Deletes a plan line in a change request. */
-export async function deletePlanLineInChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: ChangeRequestWriteArgs & { table: PlanLineTable; id: string }
-) {
-  await upsertChangeRequestItems(db, {
-    ...args,
-    changes: [
-      {
-        operation: "Delete",
-        targetTable: args.table,
-        targetId: args.id,
-        payload: null
-      }
-    ]
-  });
-}
-
-/** The item ids of each table that a change request updates. */
-function updatedIdsOf(items: ChangeRequestItem[], table: ProjectPlanTable) {
-  return new Set(
-    items
-      .filter(
-        (item) => item.targetTable === table && item.operation === "Update"
-      )
-      .map((item) => item.targetId)
-  );
-}
-
-function liveIdsOf(overlay: ChangeRequestOverlay, table: ProjectPlanTable) {
-  return new Set(overlay.live[planSnapshotKeys[table]].map((row) => row.id));
-}
-
-function addPayloadsOf(items: ChangeRequestItem[], table: ProjectPlanTable) {
-  return new Map(
-    items
-      .filter((item) => item.targetTable === table && item.operation === "Add")
-      .map((item) => [item.targetId, item.payload ?? {}])
-  );
-}
-
-/**
- * Lays a change request over the element list of a page: changed rows take
- * the overlaid plan-layer fields, added rows are built from their payload
- * with the project's state, and every row carries its `changeOperation`.
- */
-export async function overlayElementList<
-  T extends { id: string; sortOrder: number | null }
->(
-  client: SupabaseClient<Database>,
-  overlay: ChangeRequestOverlay,
-  rows: T[],
-  args: { companyId: string; projectId: string }
-) {
-  const payloads = addPayloadsOf(overlay.items, "projectElement");
-  const stateIds = [
-    ...new Set(
-      [...payloads.values()]
-        .map((payload) => payload.stateId)
-        .filter((id): id is string => typeof id === "string")
-    )
-  ];
-  const states =
-    stateIds.length > 0
-      ? await client
-          .from("projectState")
-          .select("id, name, group, color")
-          .in("id", stateIds)
-          .eq("companyId", args.companyId)
-      : { data: [], error: null };
-  if (states.error) throw states.error;
-  const stateById = new Map((states.data ?? []).map((s) => [s.id, s]));
-
-  const merged = overlayPlanRows(
-    rows,
-    overlay.overlay.elements,
-    liveIdsOf(overlay, "projectElement"),
-    updatedIdsOf(overlay.items, "projectElement"),
-    (row) => {
-      const payload = payloads.get(row.id) ?? {};
-      return {
-        ...payload,
-        ...row,
-        projectId: args.projectId,
-        sequence: 0,
-        completedAt: null,
-        verdict: null,
-        verdictAt: null,
-        verdictBy: null,
-        createdAt: null,
-        updatedAt: null,
-        state: stateById.get(payload.stateId as string) ?? null,
-        labels: []
-      } as unknown as T;
-    }
-  );
-  return merged.sort(
-    (a, b) =>
-      Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0) ||
-      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
-  );
-}
-
-/** Lays a change request over the links a page loaded. */
-export function overlayLinkList<T extends { id: string }>(
-  overlay: ChangeRequestOverlay,
-  rows: T[]
-) {
-  return overlayPlanRows(
-    rows,
-    overlay.overlay.links,
-    liveIdsOf(overlay, "projectElementLink"),
-    updatedIdsOf(overlay.items, "projectElementLink"),
-    (row) =>
-      ({
-        suspectSince: null,
-        reviewedAt: null,
-        reviewedBy: null,
-        ...row
-      }) as unknown as T
-  );
-}
-
-/**
- * Lays a change request over the plan lines of one element. Added material
- * lines read their item's readable id and name in one query.
- */
-export async function overlayPlanLines<
-  M extends { id: string },
-  L extends { id: string },
-  C extends { id: string }
->(
-  client: SupabaseClient<Database>,
-  overlay: ChangeRequestOverlay,
-  planLines: { materials: M[]; labor: L[]; costs: C[] },
-  args: { companyId: string; elementId: string }
-) {
-  const ofElement = (rows: PlanRow[]) =>
-    rows.filter((row) => row.projectElementId === args.elementId);
-  const materialPayloads = addPayloadsOf(
-    overlay.items,
-    "projectElementMaterial"
-  );
-  const itemIds = [
-    ...new Set(
-      [...materialPayloads.values()]
-        .map((payload) => payload.itemId)
-        .filter((id): id is string => typeof id === "string")
-    )
-  ];
-  const items =
-    itemIds.length > 0
-      ? await client
-          .from("item")
-          .select("id, readableIdWithRevision, name")
-          .in("id", itemIds)
-          .eq("companyId", args.companyId)
-      : { data: [], error: null };
-  if (items.error) throw items.error;
-  const itemById = new Map((items.data ?? []).map((item) => [item.id, item]));
-  const categoryIds = [
-    ...new Set(
-      [...addPayloadsOf(overlay.items, "projectElementLabor").values()]
-        .map((payload) => payload.laborCategoryId)
-        .filter((id): id is string => typeof id === "string")
-    )
-  ];
-  const categories =
-    categoryIds.length > 0
-      ? await client
-          .from("laborCategory")
-          .select("id, name")
-          .in("id", categoryIds)
-          .eq("companyId", args.companyId)
-      : { data: [], error: null };
-  if (categories.error) throw categories.error;
-  const categoryById = new Map(
-    (categories.data ?? []).map((category) => [category.id, category])
-  );
-
-  return {
-    materials: overlayPlanRows(
-      planLines.materials,
-      ofElement(overlay.overlay.materials),
-      liveIdsOf(overlay, "projectElementMaterial"),
-      updatedIdsOf(overlay.items, "projectElementMaterial"),
-      (row) =>
-        ({
-          ...row,
-          quantityIssued: 0,
-          jobId: null,
-          purchaseOrderLineId: null,
-          item: itemById.get(row.itemId as string) ?? null,
-          job: null,
-          purchaseOrderLine: null
-        }) as unknown as M
-    ),
-    labor: overlayPlanRows(
-      planLines.labor,
-      ofElement(overlay.overlay.labor),
-      liveIdsOf(overlay, "projectElementLabor"),
-      updatedIdsOf(overlay.items, "projectElementLabor"),
-      (row) =>
-        ({
-          ...row,
-          laborCategory: categoryById.get(row.laborCategoryId as string) ?? null
-        }) as unknown as L
-    ),
-    costs: overlayPlanRows(
-      planLines.costs,
-      ofElement(overlay.overlay.costs),
-      liveIdsOf(overlay, "projectElementCost"),
-      updatedIdsOf(overlay.items, "projectElementCost"),
-      (row) => ({ ...row }) as unknown as C
-    )
-  };
-}
-
-/**
- * Creates a Draft change request, in one transaction: takes the next
- * `project.nextChangeRequestSequence` for its readable id
- * (`<identifier>-CR-<n>`) and a baseline of the plan it starts from.
- */
-export async function createChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    title: string;
-    reason?: unknown;
-  }
-): Promise<{ id: string; readableId: string }> {
-  return db.transaction().execute(async (trx) => {
-    const project = await trx
-      .updateTable("project")
-      .set({
-        nextChangeRequestSequence: sql`"nextChangeRequestSequence" + 1`,
-        identifier: sql`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
-      })
-      .where("id", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .returning([
-        sql<number>`"nextChangeRequestSequence" - 1`.as("sequence"),
-        "identifier"
-      ])
-      .executeTakeFirst();
-    if (!project) throw new Error("The project does not exist");
-
-    const readableId = `${project.identifier}-CR-${project.sequence}`;
-    const changeRequest = await trx
-      .insertInto("projectChangeRequest")
-      .values({
-        companyId: args.companyId,
-        projectId: args.projectId,
-        readableId,
-        title: args.title,
-        reason: (args.reason == null ? null : toJson(args.reason)) as never,
-        createdBy: args.userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-
-    const baseline = await insertProjectBaseline(trx, {
-      companyId: args.companyId,
-      userId: args.userId,
-      projectId: args.projectId,
-      name: `Before ${readableId}`,
-      source: "Change Request",
-      changeRequestId: changeRequest.id
-    });
-    await trx
-      .updateTable("projectChangeRequest")
-      .set({ baseBaselineId: baseline.id })
-      .where("id", "=", changeRequest.id)
-      .where("companyId", "=", args.companyId)
-      .execute();
-
-    return { id: changeRequest.id, readableId };
-  });
-}
-
-/**
- * Moves a change request from one of `from` to `to`, with the extra columns
- * in `set`. Returns false when it is in another status or is not a change
- * request of the project.
- */
-export async function setChangeRequestStatus(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    changeRequestId: string;
-    from: readonly ProjectChangeRequestStatus[];
-    to: ProjectChangeRequestStatus;
-    set?: {
-      submittedAt?: boolean;
-      decided?: boolean;
-      decisionNotes?: string | null;
-      clearDecision?: boolean;
-    };
-  }
-) {
-  const now = sql<string>`NOW()`;
-  const row = await db
-    .updateTable("projectChangeRequest")
-    .set({
-      status: args.to,
-      updatedBy: args.userId,
-      updatedAt: now,
-      ...(args.set?.submittedAt ? { submittedAt: now } : {}),
-      ...(args.set?.decided
-        ? {
-            decidedBy: args.userId,
-            decidedAt: now,
-            decisionNotes: args.set.decisionNotes ?? null
-          }
-        : {}),
-      ...(args.set?.clearDecision
-        ? { decidedBy: null, decidedAt: null, decisionNotes: null }
-        : {})
-    })
-    .where("id", "=", args.changeRequestId)
-    .where("projectId", "=", args.projectId)
-    .where("companyId", "=", args.companyId)
-    .where("status", "in", [...args.from])
-    .returning("id")
-    .executeTakeFirst();
-  return Boolean(row);
-}
-
-/**
- * Reopens a Rejected change request, or an Approved one whose apply hit a
- * conflict, as a Draft. The items are brought onto the live plan with
- * `rebaseChangeRequestItems`: the author then fixes what the live plan
- * changed. Returns the number of items it dropped.
- */
-export async function reopenChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    changeRequestId: string;
-  }
-): Promise<{ dropped: number }> {
-  return db.transaction().execute(async (trx) => {
-    const changeRequest = await trx
-      .selectFrom("projectChangeRequest")
-      .select(["status", "projectId"])
-      .where("id", "=", args.changeRequestId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!changeRequest || changeRequest.projectId !== args.projectId) {
-      throw new ProjectChangeRequestError("The change request does not exist");
-    }
-    if (!["Rejected", "Approved"].includes(changeRequest.status)) {
-      throw new ProjectChangeRequestError(
-        `A ${changeRequest.status} change request cannot reopen`
-      );
-    }
-
-    const [items, live] = await Promise.all([
-      loadChangeRequestItems(trx, args),
-      loadPlanSnapshot(trx, args)
-    ]);
-    const { keep, drop } = rebaseChangeRequestItems(items, live);
-    const dropIds = drop
-      .map((item) => (item as ChangeRequestItemRow).id)
-      .filter(Boolean);
-    if (dropIds.length > 0) {
-      await trx
-        .deleteFrom("projectChangeRequestItem")
-        .where("id", "in", dropIds)
-        .where("companyId", "=", args.companyId)
-        .execute();
-    }
-    const rebased = keep.filter((item) => item.operation !== "Add");
-    if (rebased.length > 0) {
-      await sql`
-        UPDATE "projectChangeRequestItem" AS i
-        SET "payload" = v."payload",
-            "baseRow" = v."baseRow",
-            "updatedBy" = ${args.userId},
-            "updatedAt" = NOW()
-        FROM jsonb_to_recordset(${JSON.stringify(
-          rebased.map((item) => ({
-            id: (item as ChangeRequestItemRow).id,
-            payload: item.payload,
-            baseRow: item.baseRow
-          }))
-        )}::jsonb) AS v("id" TEXT, "payload" JSONB, "baseRow" JSONB)
-        WHERE i."id" = v."id" AND i."companyId" = ${args.companyId}
-      `.execute(trx);
-    }
-    await trx
-      .updateTable("projectChangeRequest")
-      .set({
-        status: "Draft",
-        decidedBy: null,
-        decidedAt: null,
-        decisionNotes: null,
-        submittedAt: null,
-        updatedBy: args.userId,
-        updatedAt: sql`NOW()`
-      })
-      .where("id", "=", args.changeRequestId)
-      .where("companyId", "=", args.companyId)
-      .execute();
-    return { dropped: drop.length };
-  });
-}
-
-/** An apply refused because the live plan changed under the change request. */
-export class ProjectChangeConflictError extends Error {
-  status = 409;
-  constructor(public conflicts: ChangeRequestConflict[]) {
-    super(
-      `The current plan changed under ${conflicts.length} row(s) of the change request`
-    );
-  }
-}
-
-/** The element columns an Add may set: the plan layer and the progress fields. */
-const ADDED_ELEMENT_FIELDS = [
-  ...PLAN_LAYER_FIELDS.projectElement.filter((field) => field !== "readableId"),
-  "stateId",
-  "ownerId",
-  "priority",
-  "milestoneId",
-  "startDate",
-  "targetDate"
-];
-
-/** Columns an Update never writes: identity and the project. */
-const FIXED_PLAN_FIELDS = new Set(["id", "readableId", "projectId"]);
-
-function presentFields(
-  payload: Record<string, unknown> | null,
-  fields: readonly string[]
-) {
-  const values: Record<string, unknown> = {};
-  for (const field of fields) {
-    if (payload && field in payload) values[field] = payload[field];
-  }
-  return values;
-}
-
-/**
- * Applies an Approved change request to the live plan, in one transaction,
- * and marks it Applied. It refuses with `ProjectChangeConflictError` when
- * the live plan changed under an item (`findConflicts`); the status stays
- * Approved. Order: element Adds (parents first, numbered from
- * `project.nextElementSequence`), element Updates, plan-line and link Adds
- * and Updates, link and plan-line Deletes, element Deletes. An element
- * Delete refuses when the element or one below it has a charge. A baseline
- * of the result is stored as `appliedBaselineId`. The plan lock does not
- * apply here: this is the one writer allowed to change a locked plan.
- */
-export async function applyChangeRequest(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; userId: string; changeRequestId: string }
-): Promise<{ applied: boolean }> {
-  return db.transaction().execute(async (trx) => {
-    const changeRequest = await trx
-      .selectFrom("projectChangeRequest")
-      .select(["projectId", "status", "readableId"])
-      .where("id", "=", args.changeRequestId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!changeRequest || changeRequest.status !== "Approved") {
-      return { applied: false };
-    }
-    const { projectId } = changeRequest;
-    const scope = { companyId: args.companyId, projectId };
-
-    // Lock the project first, so no live write lands between the conflict
-    // check and the apply.
-    await trx
-      .selectFrom("project")
-      .select("id")
-      .where("id", "=", projectId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .executeTakeFirstOrThrow();
-
-    const [items, live] = await Promise.all([
-      loadChangeRequestItems(trx, args),
-      loadPlanSnapshot(trx, scope)
-    ]);
-    const conflicts = findConflicts(items, live);
-    if (conflicts.length > 0) throw new ProjectChangeConflictError(conflicts);
-
-    const ofTable = (
-      table: ProjectPlanTable,
-      operation: ProjectChangeOperation
-    ) =>
-      items.filter(
-        (item) => item.targetTable === table && item.operation === operation
-      );
-
-    // 1. Element Adds, parents first.
-    const pending = ofTable("projectElement", "Add");
-    const ordered: ChangeRequestItemRow[] = [];
-    const placed = new Set<string>();
-    const addedIds = new Set(pending.map((item) => item.targetId));
-    while (ordered.length < pending.length) {
-      const ready = pending.filter(
-        (item) =>
-          !placed.has(item.targetId) &&
-          (!item.payload?.parentId ||
-            !addedIds.has(item.payload.parentId as string) ||
-            placed.has(item.payload.parentId as string))
-      );
-      if (ready.length === 0) {
-        throw new ProjectChangeRequestError(
-          "The added elements form a loop of parents"
-        );
-      }
-      for (const item of ready) {
-        ordered.push(item);
-        placed.add(item.targetId);
-      }
-    }
-    if (ordered.length > 0) {
-      const project = await trx
-        .updateTable("project")
-        .set({
-          nextElementSequence: sql`"nextElementSequence" + ${ordered.length}`,
-          identifier: sql`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
-        })
-        .where("id", "=", projectId)
-        .where("companyId", "=", args.companyId)
-        .returning([
-          sql<number>`"nextElementSequence" - ${ordered.length}`.as("start"),
-          "identifier"
-        ])
-        .executeTakeFirstOrThrow();
-      await trx
-        .insertInto("projectElement")
-        .values(
-          ordered.map((item, index) => {
-            const values = presentFields(item.payload, ADDED_ELEMENT_FIELDS);
-            return {
-              ...values,
-              description:
-                values.description == null ? null : toJson(values.description),
-              id: item.targetId,
-              projectId,
-              companyId: args.companyId,
-              readableId: `${project.identifier}-${project.start + index}`,
-              sequence: project.start + index,
-              createdBy: args.userId
-            } as never;
-          })
-        )
-        .execute();
-    }
-
-    // 2–3. Updates: one statement per table. `jsonb_populate_recordset`
-    // casts each value to its column's type.
-    const updateRows = async (table: ProjectPlanTable) => {
-      const updates = ofTable(table, "Update");
-      if (updates.length === 0) return;
-      const columns = PLAN_LAYER_FIELDS[table].filter(
-        (field) => !FIXED_PLAN_FIELDS.has(field)
-      );
-      const rows = updates.map((item) => ({
-        ...presentFields(item.payload, columns),
-        id: item.targetId
-      }));
-      await sql`
-        UPDATE ${sql.table(table)}
-        SET ${sql.join(
-          columns.map(
-            (column) => sql`${sql.ref(column)} = v.${sql.ref(column)}`
-          )
-        )},
-            "updatedBy" = ${args.userId},
-            "updatedAt" = NOW()
-        FROM jsonb_populate_recordset(NULL::${sql.table(table)}, ${JSON.stringify(rows)}::jsonb) AS v
-        WHERE ${sql.table(table)}."id" = v."id"
-          AND ${sql.table(table)}."companyId" = ${args.companyId}
-          AND ${sql.table(table)}."projectId" = ${projectId}
-      `.execute(trx);
-    };
-    await updateRows("projectElement");
-
-    const insertRows = async (
-      table: Exclude<ProjectPlanTable, "projectElement">
-    ) => {
-      const adds = ofTable(table, "Add");
-      if (adds.length === 0) return;
-      await trx
-        .insertInto(table as "projectElementCost")
-        .values(
-          adds.map(
-            (item) =>
-              ({
-                ...presentFields(item.payload, PLAN_LAYER_FIELDS[table]),
-                id: item.targetId,
-                projectId,
-                companyId: args.companyId,
-                createdBy: args.userId
-              }) as never
-          )
-        )
-        .execute();
-    };
-    const lineTables = [
-      "projectElementLink",
-      "projectElementMaterial",
-      "projectElementLabor",
-      "projectElementCost"
-    ] as const;
-    for (const table of lineTables) {
-      await insertRows(table);
-      await updateRows(table);
-    }
-
-    // 4. Link and plan-line Deletes.
-    for (const table of lineTables) {
-      const ids = ofTable(table, "Delete").map((item) => item.targetId);
-      if (ids.length === 0) continue;
-      await trx
-        .deleteFrom(table as "projectElementCost")
-        .where("id", "in", ids)
-        .where("projectId", "=", projectId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-    }
-
-    // 5. Element Deletes. The parent FK cascades to the children, so one
-    // statement removes every subtree; first refuse any subtree with charges.
-    const deleted = ofTable("projectElement", "Delete").map(
-      (item) => item.targetId
-    );
-    if (deleted.length > 0) {
-      // Refuse a delete that removes the base of an Apportioned element
-      // outside the deleted subtrees (its CHECK refuses the FK's SET NULL).
-      const projectElements = await trx
-        .selectFrom("projectElement")
-        .select([
-          "id",
-          "parentId",
-          "readableId",
-          "name",
-          "earnedValueTechnique",
-          "apportionedToElementId"
-        ])
-        .where("projectId", "=", projectId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      const apportioned = apportionedBaseRefusal(
-        deleted.flatMap((id) => elementSubtreeIds(projectElements, id)),
-        projectElements
-      );
-      if (apportioned) throw new ProjectChangeRequestError(apportioned);
-
-      const charged = await sql<{ readableId: string; source: string }>`
-        WITH RECURSIVE subtree AS (
-          SELECT "id", "readableId" FROM "projectElement"
-          WHERE "id" IN (${sql.join(deleted)})
-            AND "projectId" = ${projectId}
-            AND "companyId" = ${args.companyId}
-          UNION
-          SELECT e."id", e."readableId" FROM "projectElement" e
-          JOIN subtree s ON e."parentId" = s."id"
-          WHERE e."projectId" = ${projectId}
-            AND e."companyId" = ${args.companyId}
-        )
-        SELECT s."readableId", 'costs' AS "source" FROM subtree s
-          WHERE EXISTS (SELECT 1 FROM "projectLedger" l
-            WHERE l."projectElementId" = s."id" AND l."companyId" = ${args.companyId})
-        UNION ALL
-        SELECT s."readableId", 'time' FROM subtree s
-          WHERE EXISTS (SELECT 1 FROM "timesheetEntry" t
-            WHERE t."projectElementId" = s."id" AND t."companyId" = ${args.companyId})
-        UNION ALL
-        SELECT s."readableId", 'a job' FROM subtree s
-          WHERE EXISTS (SELECT 1 FROM "job" j
-            WHERE j."projectElementId" = s."id" AND j."companyId" = ${args.companyId})
-        UNION ALL
-        SELECT s."readableId", 'a purchase order line' FROM subtree s
-          WHERE EXISTS (SELECT 1 FROM "purchaseOrderLine" p
-            WHERE p."projectElementId" = s."id" AND p."companyId" = ${args.companyId})
-        UNION ALL
-        SELECT s."readableId", 'earned value' FROM subtree s
-          WHERE EXISTS (SELECT 1 FROM "earnedValuePeriod" v
-            WHERE (v."projectElementId" = s."id" OR v."controlAccountId" = s."id")
-              AND v."companyId" = ${args.companyId})
-        LIMIT 1
-      `.execute(trx);
-      const first = charged.rows[0];
-      if (first) {
-        throw new ProjectChangeRequestError(
-          first.source === "earned value"
-            ? `${first.readableId} has earned value recorded. The change request cannot delete it.`
-            : `${first.readableId} has ${first.source} charged to it. The change request cannot delete it.`
-        );
-      }
-      await trx
-        .deleteFrom("projectElement")
-        .where("id", "in", deleted)
-        .where("projectId", "=", projectId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-    }
-
-    const baseline = await insertProjectBaseline(trx, {
-      companyId: args.companyId,
-      userId: args.userId,
-      projectId,
-      name: `After ${changeRequest.readableId}`,
-      source: "Change Request",
-      changeRequestId: args.changeRequestId
-    });
-    const applied = await trx
-      .updateTable("projectChangeRequest")
-      .set({
-        status: "Applied",
-        appliedBaselineId: baseline.id,
-        appliedAt: sql`NOW()`,
-        updatedBy: args.userId,
-        updatedAt: sql`NOW()`
-      })
-      .where("id", "=", args.changeRequestId)
-      .where("companyId", "=", args.companyId)
-      .where("status", "=", "Approved")
-      .returning("id")
-      .executeTakeFirst();
-    if (!applied) throw new Error("The change request is no longer Approved");
-    return { applied: true };
-  });
-}
-
-/** The element a change request item belongs to: its card on the review page. */
-export function changeRequestItemElementId(item: ChangeRequestItem) {
-  if (item.targetTable === "projectElement") return item.targetId;
-  const row = item.payload ?? item.baseRow ?? {};
-  const id =
-    item.targetTable === "projectElementLink"
-      ? row.fromElementId
-      : row.projectElementId;
-  return typeof id === "string" ? id : null;
-}
-
-/**
- * Everything the change request review page shows: the change request, the
- * diff it makes (the live plan against the overlay; for an Applied one, its
- * Before and After baselines), its comments, the elements the user marked
- * viewed since their last change, and the conflicts of an Approved one.
- */
-export async function getChangeRequestReview(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    projectId: string;
-    changeRequestId: string;
-    userId: string;
-  }
-) {
-  const db = getDatabaseClient();
-  const [changeRequest, overlay, comments, views] = await Promise.all([
-    getProjectChangeRequest(client, args.changeRequestId, args.companyId),
-    loadChangeRequestOverlay(db, args),
-    client
-      .from("projectChangeRequestComment")
-      .select("*")
-      .eq("changeRequestId", args.changeRequestId)
-      .eq("companyId", args.companyId)
-      .order("createdAt", { ascending: true }),
-    client
-      .from("projectChangeRequestView")
-      .select("targetTable, targetId, viewedAt")
-      .eq("changeRequestId", args.changeRequestId)
-      .eq("companyId", args.companyId)
-      .eq("userId", args.userId)
-  ]);
-  if (changeRequest.error) return { data: null, error: changeRequest.error };
-  if (!overlay) return { data: null, error: null };
-  if (comments.error) return { data: null, error: comments.error };
-  if (views.error) return { data: null, error: views.error };
-
-  let diff = diffPlanSnapshots(overlay.live, overlay.overlay);
-  const { baseBaselineId, appliedBaselineId, status } = changeRequest.data;
-  if (status === "Applied" && baseBaselineId && appliedBaselineId) {
-    const [before, after] = await Promise.all([
-      getProjectBaseline(client, baseBaselineId, args.companyId),
-      getProjectBaseline(client, appliedBaselineId, args.companyId)
-    ]);
-    if (before.error || after.error) {
-      return { data: null, error: before.error ?? after.error };
-    }
-    diff = diffPlanSnapshots(
-      parsePlanSnapshot(before.data.snapshot),
-      parsePlanSnapshot(after.data.snapshot)
-    );
-  }
-
-  // A Viewed mark counts until a change of its element is newer than it.
-  const lastChange = new Map<string, number>();
-  for (const item of overlay.items) {
-    const elementId = changeRequestItemElementId(item);
-    if (!elementId) continue;
-    const at = Date.parse(item.updatedAt ?? item.createdAt);
-    lastChange.set(elementId, Math.max(lastChange.get(elementId) ?? 0, at));
-  }
-  const viewedElementIds = (views.data ?? [])
-    .filter(
-      (view) =>
-        view.targetTable === "projectElement" &&
-        Date.parse(view.viewedAt) >= (lastChange.get(view.targetId) ?? 0)
-    )
-    .map((view) => view.targetId);
-
-  const laborCategoryIds = [
-    ...new Set(
-      diff.labor
-        .flatMap((entry) => [
-          entry.before?.laborCategoryId,
-          entry.after?.laborCategoryId
-        ])
-        .filter((id): id is string => typeof id === "string")
-    )
-  ];
-  const laborCategories =
-    laborCategoryIds.length > 0
-      ? await getLaborCategoryNames(client, laborCategoryIds, args.companyId)
-      : null;
-  if (laborCategories?.error) {
-    return { data: null, error: laborCategories.error };
-  }
-
-  // A conflict names its element by the readable id it has now.
-  const elementLabel = new Map(
-    [...overlay.live.elements, ...overlay.overlay.elements].map((row) => [
-      row.id,
-      String(row.readableId || row.name || "")
-    ])
-  );
-  const conflicts =
-    status === "Approved"
-      ? findConflicts(overlay.items, overlay.live).map((conflict) => {
-          const item = overlay.items.find(
-            (i) =>
-              i.targetTable === conflict.targetTable &&
-              i.targetId === conflict.targetId
-          );
-          const elementId = item ? changeRequestItemElementId(item) : null;
-          return {
-            ...conflict,
-            elementId,
-            elementLabel: elementId ? (elementLabel.get(elementId) ?? "") : ""
-          };
-        })
-      : [];
-
-  return {
-    data: {
-      changeRequest: changeRequest.data,
-      diff,
-      laborCategoryNames: Object.fromEntries(
-        (laborCategories?.data ?? []).map((c) => [c.id, c.name])
-      ) as Record<string, string>,
-      comments: comments.data ?? [],
-      viewedElementIds,
-      conflicts,
-      liveElementIds: overlay.live.elements.map((row) => row.id)
-    },
-    error: null
-  };
-}
-
-export type ChangeRequestReview = NonNullable<
-  Awaited<ReturnType<typeof getChangeRequestReview>>["data"]
->;
-
-// --- Plan lock (Phase 1c) -------------------------------------------------------
-
-/**
- * Null when a plan-layer write may run: the plan is not locked, or the write
- * goes into a Draft change request of the project. Otherwise the refusal
- * message (`projectPlanLockedMessage`). `applyChangeRequest` never calls it:
- * the apply is the one writer allowed to change a locked plan.
- */
-export async function requireProjectPlanEditable(
-  client: SupabaseClient<Database>,
-  args: {
-    projectId: string;
-    companyId: string;
-    changeRequestId: string | null;
-  }
-): Promise<string | null> {
-  const project = await client
-    .from("project")
-    .select(
-      "lockPlanAfterMilestoneId, lockMilestone:projectMilestone!project_lockMilestone_fkey(name, completedAt)"
-    )
-    .eq("id", args.projectId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (project.error) throw project.error;
-  const lockMilestone = project.data?.lockMilestone ?? null;
-  if (!isProjectPlanLocked({ lockMilestone })) return null;
-
-  if (args.changeRequestId) {
-    const changeRequest = await client
-      .from("projectChangeRequest")
-      .select("status")
-      .eq("id", args.changeRequestId)
-      .eq("projectId", args.projectId)
-      .eq("companyId", args.companyId)
-      .maybeSingle();
-    if (changeRequest.error) throw changeRequest.error;
-    if (changeRequest.data?.status === "Draft") return null;
-  }
-  return projectPlanLockedMessage(lockMilestone?.name ?? "");
-}
-
-/**
- * The route form of `requireProjectPlanEditable`: null, or a refusal with
- * `error.message` and, unless `withFlash` is false, a flash.
- */
-export async function requireEditablePlanRoute(
-  request: Request,
-  args: {
-    client: SupabaseClient<Database>;
-    projectId: string;
-    companyId: string;
-    changeRequestId: string | null;
-    /** False for the routes whose fetchers toast `error.message` themselves. */
-    withFlash?: boolean;
-  }
-) {
-  const message = await requireProjectPlanEditable(args.client, args);
-  if (!message) return null;
-  const body = { success: false, error: { message } };
-  return args.withFlash === false
-    ? data(body)
-    : data(body, await flash(request, error(null, message)));
-}
-
-/**
- * What a job created on a charge number builds into: the project's cost
- * treatment and, for Capitalize, the asset under construction (the element's
- * own when it is a final asset, else its nearest final-asset ancestor's, else
- * the project's), as `getChargeNumbers` resolves it. One query.
- */
-export async function getJobChargeTarget(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    projectId: string;
-    projectElementId: string | null;
-  }
-): Promise<{
-  costTreatment: Database["public"]["Enums"]["projectCostTreatment"];
-  fixedAssetId: string | null;
-} | null> {
-  const result = await sql<{
-    costTreatment: Database["public"]["Enums"]["projectCostTreatment"];
-    fixedAssetId: string | null;
-  }>`
-    WITH RECURSIVE chain AS (
-      SELECT e."id", e."parentId", e."isFinalAsset", e."fixedAssetId", 0 AS depth
-      FROM "projectElement" e
-      WHERE e."id" = ${args.projectElementId}
-        AND e."projectId" = ${args.projectId}
-        AND e."companyId" = ${args.companyId}
-      UNION ALL
-      SELECT p."id", p."parentId", p."isFinalAsset", p."fixedAssetId", chain.depth + 1
-      FROM "projectElement" p
-      JOIN chain ON p."id" = chain."parentId"
-      WHERE p."companyId" = ${args.companyId} AND chain.depth < 100
-    )
-    SELECT
-      pr."costTreatment",
-      CASE
-        WHEN pr."costTreatment" <> 'Capitalize' THEN NULL
-        -- The nearest final asset decides, even before its asset exists.
-        WHEN EXISTS (SELECT 1 FROM chain c WHERE c."isFinalAsset") THEN
-          (SELECT c."fixedAssetId" FROM chain c WHERE c."isFinalAsset" ORDER BY c.depth LIMIT 1)
-        ELSE pr."fixedAssetId"
-      END AS "fixedAssetId"
-    FROM "project" pr
-    WHERE pr."id" = ${args.projectId} AND pr."companyId" = ${args.companyId}
-  `.execute(db);
-  return result.rows[0] ?? null;
-}
-
-/**
- * Creates the CIP assets of a capital project, in one transaction: the
- * project's own asset, and one asset per final-asset element that has none.
- * Each asset starts Under Construction at cost 0 in the project's CIP class,
- * with the class's depreciation settings. Does nothing for a project that is
- * not Capitalize or has no CIP class. Safe to call again: an element or a
- * project that already holds an asset keeps it.
- */
-export async function ensureCapitalAssets(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; userId: string; projectId: string }
-): Promise<void> {
-  await db.transaction().execute(async (trx) => {
-    const project = await trx
-      .selectFrom("project")
-      .select([
-        "id",
-        "identifier",
-        "name",
-        "costTreatment",
-        "fixedAssetClassId",
-        "fixedAssetId",
-        "locationId"
-      ])
-      .where("id", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (
-      !project ||
-      project.costTreatment !== "Capitalize" ||
-      !project.fixedAssetClassId
-    ) {
-      return;
-    }
-
-    const assetClass = await trx
-      .selectFrom("fixedAssetClass")
-      .select([
-        "id",
-        "isConstructionInProgress",
-        "depreciationMethod",
-        "usefulLifeMonths",
-        "residualValuePercent",
-        "taxDepreciationMethod",
-        "taxUsefulLifeMonths",
-        "taxResidualValuePercent",
-        "macrsPropertyClass",
-        "macrsConvention",
-        "bonusDepreciationPercent"
-      ])
-      .where("id", "=", project.fixedAssetClassId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-    if (!assetClass?.isConstructionInProgress) {
-      throw new Error(
-        "The project's fixed asset class is not a Construction in Progress class"
-      );
-    }
-
-    const elements = await trx
-      .selectFrom("projectElement")
-      .select(["id", "readableId", "name"])
-      .where("projectId", "=", project.id)
-      .where("companyId", "=", args.companyId)
-      .where("isFinalAsset", "=", true)
-      .where("fixedAssetId", "is", null)
-      .orderBy("readableId")
-      .execute();
-
-    const wanted: { elementId: string | null; name: string }[] = [
-      ...(project.fixedAssetId
-        ? []
-        : [
-            {
-              elementId: null,
-              name: [project.identifier, project.name].filter(Boolean).join(" ")
-            }
-          ]),
-      ...elements.map((element) => ({
-        elementId: element.id,
-        name: `${element.readableId} ${element.name}`
-      }))
-    ];
-    if (wanted.length === 0) return;
-
-    // One statement allocates every id and asset number.
-    const allocated = await sql<{ id: string; fixedAssetId: string }>`
-      SELECT xid() AS "id",
-        get_next_sequence('fixedAsset', ${args.companyId}) AS "fixedAssetId"
-      FROM generate_series(1, ${wanted.length})
-    `.execute(trx);
-    const assets = wanted.map((asset, index) => ({
-      ...asset,
-      id: allocated.rows[index]!.id,
-      fixedAssetId: allocated.rows[index]!.fixedAssetId
-    }));
-
-    await trx
-      .insertInto("fixedAsset")
-      .values(
-        assets.map((asset) => ({
-          id: asset.id,
-          fixedAssetId: asset.fixedAssetId,
-          fixedAssetClassId: assetClass.id,
-          name: asset.name,
-          status: "Under Construction" as const,
-          acquisitionCost: 0,
-          depreciationMethod: assetClass.depreciationMethod,
-          usefulLifeMonths: assetClass.usefulLifeMonths,
-          residualValuePercent: assetClass.residualValuePercent,
-          taxDepreciationMethod: assetClass.taxDepreciationMethod,
-          taxUsefulLifeMonths: assetClass.taxUsefulLifeMonths,
-          taxResidualValuePercent: assetClass.taxResidualValuePercent,
-          macrsPropertyClass: assetClass.macrsPropertyClass,
-          macrsConvention: assetClass.macrsConvention,
-          bonusDepreciationPercent: assetClass.bonusDepreciationPercent,
-          locationId: project.locationId,
-          companyId: args.companyId,
-          createdBy: args.userId,
-          updatedBy: args.userId
-        }))
-      )
-      .execute();
-
-    const projectAsset = assets.find((asset) => asset.elementId === null);
-    if (projectAsset) {
-      await trx
-        .updateTable("project")
-        .set({
-          fixedAssetId: projectAsset.id,
-          updatedBy: args.userId,
-          updatedAt: datetime.timestamp()
-        })
-        .where("id", "=", project.id)
-        .where("companyId", "=", args.companyId)
-        .execute();
-    }
-
-    const elementAssets = assets.filter(
-      (asset): asset is typeof asset & { elementId: string } =>
-        asset.elementId !== null
-    );
-    if (elementAssets.length > 0) {
-      await sql`
-        UPDATE "projectElement" e
-        SET "fixedAssetId" = v."fixedAssetId",
-          "updatedBy" = ${args.userId},
-          "updatedAt" = NOW()
-        FROM (VALUES ${sql.join(
-          elementAssets.map((asset) => sql`(${asset.elementId}, ${asset.id})`)
-        )}) AS v("elementId", "fixedAssetId")
-        WHERE e."id" = v."elementId"
-          AND e."companyId" = ${args.companyId}
-          AND e."projectId" = ${project.id}
-      `.execute(trx);
-    }
-  });
-}
-
-export type ProjectCapitalAsset = {
-  id: string;
-  fixedAssetId: string;
-  name: string;
-  status: Database["public"]["Enums"]["fixedAssetStatus"];
-  className: string;
-  /** Σ fixedAssetCipCost: what a capitalization moves. */
-  cipTotal: number;
-  /** The final-asset element that holds the asset; null for the project's. */
-  elementId: string | null;
-  elementReadableId: string | null;
-};
-
-/**
- * The capital assets of a project: its own asset and the asset of each
- * final-asset element, with each asset's CIP total. One query.
- */
-export async function getProjectCapitalAssets(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectId: string }
-): Promise<ProjectCapitalAsset[]> {
-  const rows = await sql<{
-    id: string;
-    fixedAssetId: string;
-    name: string;
-    status: Database["public"]["Enums"]["fixedAssetStatus"];
-    className: string;
-    cipTotal: number | null;
-    elementId: string | null;
-    elementReadableId: string | null;
-  }>`
-    WITH holders AS (
-      SELECT p."fixedAssetId", NULL::text AS "elementId", NULL::text AS "elementReadableId"
-      FROM "project" p
-      WHERE p."id" = ${args.projectId} AND p."companyId" = ${args.companyId}
-        AND p."fixedAssetId" IS NOT NULL
-      UNION ALL
-      SELECT e."fixedAssetId", e."id", e."readableId"
-      FROM "projectElement" e
-      WHERE e."projectId" = ${args.projectId} AND e."companyId" = ${args.companyId}
-        AND e."isFinalAsset" AND e."fixedAssetId" IS NOT NULL
-    )
-    SELECT a."id", a."fixedAssetId", a."name", a."status", c."name" AS "className",
-      (SELECT SUM(cc."amount") FROM "fixedAssetCipCost" cc
-        WHERE cc."fixedAssetId" = a."id" AND cc."companyId" = a."companyId"
-          AND NOT cc."postCapitalization") AS "cipTotal",
-      h."elementId", h."elementReadableId"
-    FROM holders h
-    JOIN "fixedAsset" a ON a."id" = h."fixedAssetId" AND a."companyId" = ${args.companyId}
-    JOIN "fixedAssetClass" c ON c."id" = a."fixedAssetClassId"
-    ORDER BY h."elementReadableId" NULLS FIRST
-  `.execute(db);
-  return rows.rows.map((row) => ({
-    ...row,
-    cipTotal: Number(row.cipTotal ?? 0)
-  }));
-}
-
-/**
- * Moves elements and all their descendants to the project's default
- * Completed state (else its first Completed state), in one statement. Used
- * when their asset goes into service.
- */
-export async function completeElementSubtrees(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    projectId: string;
-    elementIds: string[];
-    userId: string;
-  }
-): Promise<void> {
-  if (args.elementIds.length === 0) return;
-  await sql`
-    WITH RECURSIVE subtree AS (
-      SELECT e."id" FROM "projectElement" e
-      WHERE e."id" IN (${sql.join(args.elementIds)})
-        AND e."projectId" = ${args.projectId}
-        AND e."companyId" = ${args.companyId}
-      UNION
-      SELECT c."id" FROM "projectElement" c
-      JOIN subtree s ON c."parentId" = s."id"
-      WHERE c."companyId" = ${args.companyId}
-    ), completed AS (
-      SELECT st."id" FROM "projectState" st
-      WHERE st."companyId" = ${args.companyId}
-        AND st."group" = 'Completed'
-      ORDER BY st."isDefault" DESC, st."sortOrder", st."id"
-      LIMIT 1
-    )
-    UPDATE "projectElement" e
-    SET "stateId" = completed."id",
-      "completedAt" = COALESCE(e."completedAt", NOW()),
-      "updatedBy" = ${args.userId},
-      "updatedAt" = NOW()
-    FROM completed
-    WHERE e."id" IN (SELECT "id" FROM subtree)
-      AND e."companyId" = ${args.companyId}
-  `.execute(db);
-}
-
-/**
- * Inserts an element, in one transaction. The project's sequence gives the
- * element its readable id (`ST-12`). An empty state takes the project's
- * default Unstarted state. An absent `isChargeable` takes the type's
- * default. The element goes after its last sibling.
- */
-export async function insertProjectElement(
-  db: Kysely<KyselyDatabase>,
-  args: Omit<z.infer<typeof projectElementValidator>, "id"> & {
-    projectId: string;
-    companyId: string;
-    userId: string;
-  }
-): Promise<{ id: string; readableId: string }> {
-  return db.transaction().execute(async (trx) => {
-    const project = await trx
-      .updateTable("project")
-      .set({ nextElementSequence: sql`"nextElementSequence" + 1` })
-      .where("id", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .returning([
-        sql<number>`"nextElementSequence" - 1`.as("seq"),
-        "identifier",
-        "name"
-      ])
-      .executeTakeFirst();
-    if (!project) throw new Error("The project does not exist");
-
-    let identifier = project.identifier;
-    if (!identifier) {
-      const derived = await trx
-        .updateTable("project")
-        .set({
-          identifier: sql<string>`derive_project_identifier(${project.name}, ${args.companyId})`
-        })
-        .where("id", "=", args.projectId)
-        .where("companyId", "=", args.companyId)
-        .returning("identifier")
-        .executeTakeFirstOrThrow();
-      identifier = derived.identifier;
-    }
-
-    if (args.parentId) {
-      const parent = await trx
-        .selectFrom("projectElement")
-        .select("type")
-        .where("id", "=", args.parentId)
-        .where("projectId", "=", args.projectId)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirst();
-      if (!parent) throw new Error("The parent element does not exist");
-      // A Parameter's children are Parameters: they roll up into it.
-      if (parent.type === "Parameter" && args.type !== "Parameter") {
-        throw new Error("A Parameter can only have Parameters as children");
-      }
-    }
-
-    let stateId = args.stateId;
-    if (!stateId) {
-      // The default Unstarted state; else the first Unstarted state.
-      const state = await trx
-        .selectFrom("projectState")
-        .select("id")
-        .where("companyId", "=", args.companyId)
-        .where("group", "=", "Unstarted")
-        .orderBy("isDefault", "desc")
-        .orderBy("sortOrder", "asc")
-        .limit(1)
-        .executeTakeFirst();
-      if (!state)
-        throw new Error(
-          "The company has no Unstarted state (Settings → Projects)"
-        );
-      stateId = state.id;
-    }
-
-    let siblings = trx
-      .selectFrom("projectElement")
-      .select(sql<number>`COALESCE(MAX("sortOrder"), 0)`.as("maxSortOrder"))
-      .where("projectId", "=", args.projectId)
-      .where("companyId", "=", args.companyId);
-    siblings = args.parentId
-      ? siblings.where("parentId", "=", args.parentId)
-      : siblings.where("parentId", "is", null);
-    const { maxSortOrder } = await siblings.executeTakeFirstOrThrow();
-
-    const isChargeable =
-      args.type === "Parameter"
-        ? false
-        : (args.isChargeable ?? chargeableByDefault[args.type]);
-    const readableId = `${identifier}-${project.seq}`;
-
-    const element = await trx
-      .insertInto("projectElement")
-      .values({
-        projectId: args.projectId,
-        companyId: args.companyId,
-        readableId,
-        sequence: project.seq,
-        type: args.type,
-        parentId: args.parentId ?? null,
-        name: args.name,
-        stateId,
-        ownerId: args.ownerId ?? null,
-        priority: args.priority ?? "None",
-        milestoneId: args.milestoneId ?? null,
-        startDate: args.startDate ?? null,
-        targetDate: args.targetDate ?? null,
-        estimatedHours: args.estimatedHours ?? null,
-        isChargeable,
-        budget: args.budget ?? null,
-        itemId: args.itemId ?? null,
-        sortOrder: Number(maxSortOrder) + 1,
-        createdBy: args.userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-
-    return { id: element.id, readableId };
-  });
-}
-
-// --- Build from part ------------------------------------------------------------
-
-export type BuildFromPartArgs = {
-  companyId: string;
-  projectId: string;
-  parentId: string | null;
-  source:
-    | { trackedEntityId: string }
-    | { itemId: string }
-    | { templateProjectId: string };
-  depth: number;
-  includeBought: boolean;
-  /**
-   * A Template source also copies the plan lines (materials, labor, other
-   * costs) of the elements it copies. A service order takes them, so its
-   * estimate has prices; Projects' Build from part does not.
-   */
-  includePlanLines?: boolean;
-};
-
-/**
- * The upstream build of a serial: what was consumed to make it, then what was
- * consumed to make each of those, one level at a time. Each level is two RPC
- * calls for all its entities, one read of the activity types and one read of
- * the entities' items, never one per entity.
- * `get_direct_descendants_of_tracked_entities_strict` returns the inputs of
- * the activities that output a seed (the upstream side, despite its name).
- * `netBuildComponents` decides what is still in the build: a Consume or a
- * Service input not given back by a later Unconsume (the ancestors RPC
- * returns those as the Unconsume's outputs), not scrapped, and not removed
- * from the customer asset by a later service order. One more query per level
- * reads those removals.
- */
-async function loadSerialBuildNodes(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  args: { companyId: string; trackedEntityId: string; depth: number }
-): Promise<BuildSourceNode[]> {
-  const seed = await db
-    .selectFrom("trackedEntity")
-    .select("id")
-    .where("id", "=", args.trackedEntityId)
-    .where("companyId", "=", args.companyId)
-    .executeTakeFirst();
-  if (!seed) throw new Error("The serial was not found");
-
-  const nodes: BuildSourceNode[] = [];
-  // The node keys of each entity on the current level (the seed has none).
-  let level = new Map<string, (string | null)[]>([[seed.id, [null]]]);
-  const visited = new Set<string>([seed.id]);
-
-  for (let depth = 1; depth <= args.depth && level.size > 0; depth++) {
-    const ids = [...level.keys()];
-    const [consumed, given] = await Promise.all([
-      sql<BuildTraceRow>`
-        SELECT "sourceEntityId", "trackedActivityId", "id", "status"
-        FROM get_direct_descendants_of_tracked_entities_strict(${ids}::text[], ${args.companyId})
-      `.execute(db),
-      sql<BuildTraceRow>`
-        SELECT "sourceEntityId", "trackedActivityId", "id", "status"
-        FROM get_direct_ancestors_of_tracked_entities_strict(${ids}::text[], ${args.companyId})
-      `.execute(db)
-    ]);
-    const activityIds = [
-      ...new Set(
-        [...consumed.rows, ...given.rows].map((row) => row.trackedActivityId)
-      )
-    ];
-    if (activityIds.length === 0) break;
-    // The removal read: components a later service order removed from the
-    // assembly's customer asset (every component row of the pair removed).
-    const [activities, removedRows] = await Promise.all([
-      db
-        .selectFrom("trackedActivity")
-        .select(["id", "type"])
-        .where("id", "in", activityIds)
-        .where("companyId", "=", args.companyId)
-        .execute(),
-      sql<{ assembly: string; component: string }>`
-        SELECT ca."trackedEntityId" AS "assembly", c."trackedEntityId" AS "component"
-        FROM "customerAssetComponent" c
-        JOIN "customerAsset" ca
-          ON ca."id" = c."customerAssetId" AND ca."companyId" = c."companyId"
-        WHERE c."companyId" = ${args.companyId}
-          AND ca."trackedEntityId" = ANY(${ids}::text[])
-          AND c."trackedEntityId" IS NOT NULL
-        GROUP BY ca."trackedEntityId", c."trackedEntityId"
-        HAVING bool_and(c."removedDate" IS NOT NULL)
-      `.execute(db)
-    ]);
-    const typeOf = new Map(activities.map((a) => [a.id, a.type]));
-    const pairs = netBuildComponents({
-      consumed: consumed.rows,
-      given: given.rows,
-      typeOf,
-      removed: new Set(
-        removedRows.rows.map((row) => `${row.assembly} ${row.component}`)
-      )
-    });
-    if (pairs.length === 0) break;
-
-    const componentIds = [...new Set(pairs.map((pair) => pair.component))];
-    const entities = await db
-      .selectFrom("trackedEntity as te")
-      .leftJoin("item as i", "i.id", "te.itemId")
-      .select([
-        "te.id",
-        "te.readableId",
-        "te.itemId",
-        "i.name",
-        "i.readableIdWithRevision",
-        "i.itemTrackingType",
-        "i.replenishmentSystem"
-      ])
-      .where("te.id", "in", componentIds)
-      .where("te.companyId", "=", args.companyId)
-      .execute();
-    const entityById = new Map(entities.map((e) => [e.id, e]));
-
-    const next = new Map<string, (string | null)[]>();
-    for (const { assembly, component } of pairs) {
-      const entity = entityById.get(component);
-      if (!entity) continue;
-      const isSerial = entity.itemTrackingType === "Serial";
-      const itemName =
-        entity.name ?? entity.readableIdWithRevision ?? entity.readableId ?? "";
-      for (const parentKey of level.get(assembly) ?? []) {
-        if (nodes.length >= BUILD_FROM_PART_MAX_NODES) break;
-        const key = `${parentKey ?? ""}/${component}`;
-        nodes.push({
-          key,
-          parentKey,
-          itemId: entity.itemId,
-          trackedEntityId: isSerial ? entity.id : null,
-          name:
-            isSerial && entity.readableId
-              ? `${itemName} ${entity.readableId}`
-              : itemName,
-          replenishment: entity.replenishmentSystem === "Buy" ? "Buy" : "Make"
-        });
-        if (!visited.has(component)) {
-          next.set(component, [...(next.get(component) ?? []), key]);
-        }
-      }
-    }
-    for (const id of next.keys()) visited.add(id);
-    if (nodes.length >= BUILD_FROM_PART_MAX_NODES) break;
-    level = next;
-  }
-  return nodes;
-}
-
-type MethodTreeNode = NonNullable<
-  Awaited<ReturnType<typeof getMethodTree>>["data"]
->[number];
-
-/**
- * The make method tree of an item: Make to Order lines are Make nodes, every
- * other line a Buy node. The lines below a Pull from Inventory line
- * (`isPickDescendant`) are left out. `get_method_tree` inner-joins
- * `itemCost`, so a line whose item has no cost row is missing:
- * `skippedLines` counts them on the make methods the walk reached.
- */
-async function loadItemBuildNodes(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; itemId: string; depth: number }
-): Promise<{ nodes: BuildSourceNode[]; skippedLines: number }> {
-  const makeMethod = await client
-    .from("activeMakeMethods")
-    .select("id")
-    .eq("itemId", args.itemId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (makeMethod.error) throw makeMethod.error;
-  if (!makeMethod.data?.id) throw new Error("The item has no make method");
-
-  const tree = await getMethodTree(client, makeMethod.data.id);
-  if (tree.error) throw tree.error;
-  const root = tree.data?.[0] as MethodTreeNode | undefined;
-
-  const nodes: BuildSourceNode[] = [];
-  const shownByMethod = new Map<string, Set<string>>();
-  const walkedMethods = new Set<string>([makeMethod.data.id]);
-  const walk = (
-    children: MethodTreeNode[],
-    parentKey: string | null,
-    level: number
-  ) => {
-    for (const child of children) {
-      const row = child.data;
-      if (!row || row.isPickDescendant) continue;
-      if (nodes.length >= BUILD_FROM_PART_MAX_NODES) return;
-      const shown = shownByMethod.get(row.makeMethodId) ?? new Set<string>();
-      shown.add(row.methodMaterialId);
-      shownByMethod.set(row.makeMethodId, shown);
-      const isMade = row.methodType === "Make to Order";
-      nodes.push({
-        key: child.id,
-        parentKey,
-        itemId: row.itemId,
-        trackedEntityId: null,
-        name: row.description || row.itemReadableId,
-        replenishment: isMade ? "Make" : "Buy"
-      });
-      if (isMade && level < args.depth) {
-        if (row.materialMakeMethodId) {
-          walkedMethods.add(row.materialMakeMethodId);
-        }
-        walk(child.children ?? [], child.id, level + 1);
-      }
-    }
-  };
-  walk(root?.children ?? [], null, 1);
-
-  // The lines get_method_tree dropped for a missing itemCost row.
-  const lines = await client
-    .from("methodMaterial")
-    .select("id, makeMethodId")
-    .in("makeMethodId", [...walkedMethods])
-    .eq("companyId", args.companyId);
-  if (lines.error) throw lines.error;
-  const skippedLines = (lines.data ?? []).filter(
-    (line) => !shownByMethod.get(line.makeMethodId)?.has(line.id)
-  ).length;
-
-  return { nodes, skippedLines };
-}
-
-/** One table of a template project, every column. */
-function ofTemplate(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  table:
-    | "projectElement"
-    | "projectElementLink"
-    | "projectElementMaterial"
-    | "projectElementLabor"
-    | "projectElementCost",
-  args: { companyId: string; templateProjectId: string }
-) {
-  return db
-    .selectFrom(table as "projectElement")
-    .selectAll()
-    .where("projectId", "=", args.templateProjectId)
-    .where("companyId", "=", args.companyId)
-    .execute();
-}
-
-/** A preview row of Build from part: one element it would create. */
-export type BuildFromPartPreviewRow = {
-  id: string;
-  parentId: string | null;
-  type: ProjectElementType;
-  name: string;
-  readableId: string;
-  itemId: string | null;
-  trackedEntityId: string | null;
-};
-
-type BuildRow = Record<string, unknown> & {
-  id: string;
-  parentId: string | null;
-  type: ProjectElementType;
-  name: string;
-  readableId: string;
-};
-
-type BuildTarget = {
-  identifier: string;
-  startSequence: number;
-  startSortOrder: number;
-  states: { id: string; group: ProjectStateGroup; isDefault: boolean }[];
-};
-
-/**
- * Plans the elements Build from part makes under `parentId`. A Template
- * source copies the template's elements down to `depth` levels with
- * `planProjectCopy`; they keep their states, which are company-wide. Returns the element rows (parents first), the template's links
- * between them, and the count of BOM lines the source could not read.
- */
-async function planBuildFromPart(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  args: BuildFromPartArgs & BuildTarget
-): Promise<{
-  rows: BuildRow[];
-  links: Record<string, unknown>[];
-  planLines?: {
-    materials: Record<string, unknown>[];
-    labor: Record<string, unknown>[];
-    costs: Record<string, unknown>[];
-  };
-  skippedLines: number;
-}> {
-  const stateOfGroup = (group: ProjectStateGroup) =>
-    args.states.find((s) => s.group === group && s.isDefault)?.id ??
-    args.states.find((s) => s.group === group)?.id;
-  const defaultStateId = stateOfGroup("Unstarted");
-  if (!defaultStateId)
-    throw new Error("The company has no Unstarted state (Settings → Projects)");
-
-  if ("templateProjectId" in args.source) {
-    const source = {
-      companyId: args.companyId,
-      templateProjectId: args.source.templateProjectId
-    };
-    const template = await db
-      .selectFrom("project")
-      .select(["id", "isTemplate"])
-      .where("id", "=", source.templateProjectId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-    if (!template?.isTemplate) throw new Error("The template was not found");
-    const noRows = Promise.resolve([] as Record<string, unknown>[]);
-    const [elements, links, materials, labor, costs] = await Promise.all([
-      ofTemplate(db, "projectElement", source),
-      ofTemplate(db, "projectElementLink", source),
-      args.includePlanLines
-        ? ofTemplate(db, "projectElementMaterial", source)
-        : noRows,
-      args.includePlanLines
-        ? ofTemplate(db, "projectElementLabor", source)
-        : noRows,
-      args.includePlanLines
-        ? ofTemplate(db, "projectElementCost", source)
-        : noRows
-    ]);
-
-    // Keep the template's elements down to `depth` levels.
-    const byId = new Map(elements.map((e) => [e.id, e]));
-    const levelOf = (id: string) => {
-      let level = 1;
-      let current = byId.get(id);
-      const seen = new Set<string>();
-      while (current?.parentId && !seen.has(current.id)) {
-        seen.add(current.id);
-        current = byId.get(current.parentId);
-        level++;
-      }
-      return level;
-    };
-    const keptElements = elements.filter((e) => levelOf(e.id) <= args.depth);
-    // States are company-wide: a template element keeps its state.
-    const stateIds = new Set(args.states.map((state) => state.id));
-
-    const plan = planProjectCopy(
-      {
-        milestones: [],
-        elements: keptElements as unknown as ProjectCopyElement[],
-        elementLabels: [],
-        links: links as unknown as ProjectCopySource["links"],
-        materials: materials as unknown as ProjectCopySource["materials"],
-        labor: labor as unknown as ProjectCopySource["labor"],
-        costs: costs as unknown as ProjectCopySource["costs"]
-      },
-      args.projectId,
-      args.identifier,
-      makeCopyId,
-      args.startSequence
-    );
-    let rootSort = args.startSortOrder;
-    const rows = plan.elements.map((element) => {
-      const isRoot = element.parentId === null;
-      return {
-        ...element,
-        // The template's pinned codes would collide with the project's own;
-        // the built elements derive theirs from where they land.
-        wbsCode: null,
-        parentId: element.parentId ?? args.parentId,
-        stateId: stateIds.has(element.stateId)
-          ? element.stateId
-          : defaultStateId,
-        sortOrder: isRoot
-          ? ++rootSort
-          : (element as Record<string, unknown>).sortOrder
-      } as unknown as BuildRow;
-    });
-    return {
-      rows,
-      links: plan.links,
-      planLines: args.includePlanLines
-        ? {
-            materials: plan.materials,
-            labor: plan.labor,
-            costs: plan.costs
-          }
-        : undefined,
-      skippedLines: 0
-    };
-  }
-
-  let nodes: BuildSourceNode[];
-  let skippedLines = 0;
-  if ("trackedEntityId" in args.source) {
-    nodes = await loadSerialBuildNodes(db, {
-      companyId: args.companyId,
-      trackedEntityId: args.source.trackedEntityId,
-      depth: args.depth
-    });
-  } else {
-    const loaded = await loadItemBuildNodes(client, {
-      companyId: args.companyId,
-      itemId: args.source.itemId,
-      depth: args.depth
-    });
-    nodes = loaded.nodes;
-    skippedLines = loaded.skippedLines;
-  }
-  const rows: PlannedBuildElement[] = planElementsFromSource({
-    nodes,
-    parentId: args.parentId,
-    depth: args.depth,
-    includeBought: args.includeBought,
-    makeId: () => makeCopyId(projectCopyIdPrefixes.element),
-    startSequence: args.startSequence,
-    identifier: args.identifier,
-    defaultStateId,
-    startSortOrder: args.startSortOrder
-  });
-  return { rows, links: [], skippedLines };
-}
-
-/** Reads the project, its states and the parent for a build. */
-async function loadBuildTarget(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  args: { companyId: string; projectId: string; parentId: string | null },
-  lock: boolean
-): Promise<BuildTarget> {
-  let projectQuery = db
-    .selectFrom("project")
-    .select(["identifier", "nextElementSequence"])
-    .where("id", "=", args.projectId)
-    .where("companyId", "=", args.companyId);
-  if (lock) projectQuery = projectQuery.forUpdate();
-  const project = await projectQuery.executeTakeFirst();
-  if (!project) throw new Error("The project does not exist");
-  if (!project.identifier) throw new Error("The project has no identifier");
-
-  const siblings = db
-    .selectFrom("projectElement")
-    .select(sql<number>`COALESCE(MAX("sortOrder"), 0)`.as("maxSortOrder"))
-    .where("projectId", "=", args.projectId)
-    .where("companyId", "=", args.companyId);
-  const [states, parent, sortOrder] = await Promise.all([
-    db
-      .selectFrom("projectState")
-      .select(["id", "group", "isDefault"])
-      .where("companyId", "=", args.companyId)
-      .orderBy("sortOrder", "asc")
-      .execute(),
-    args.parentId
-      ? db
-          .selectFrom("projectElement")
-          .select("type")
-          .where("id", "=", args.parentId)
-          .where("projectId", "=", args.projectId)
-          .where("companyId", "=", args.companyId)
-          .executeTakeFirst()
-      : Promise.resolve(null),
-    (args.parentId
-      ? siblings.where("parentId", "=", args.parentId)
-      : siblings.where("parentId", "is", null)
-    ).executeTakeFirstOrThrow()
-  ]);
-  if (args.parentId && !parent) {
-    throw new Error("The parent element does not exist");
-  }
-  if (parent?.type === "Parameter") {
-    throw new Error("A Parameter cannot have child elements");
-  }
-  return {
-    identifier: project.identifier,
-    startSequence: Number(project.nextElementSequence),
-    startSortOrder: Number(sortOrder.maxSortOrder),
-    states
-  };
-}
-
-/**
- * The elements Build from part would create, with no insert: the Build from
- * part drawer's preview.
- */
-export async function previewBuildFromPart(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  args: BuildFromPartArgs
-): Promise<{ rows: BuildFromPartPreviewRow[]; skippedLines: number }> {
-  const target = await loadBuildTarget(db, args, false);
-  const plan = await planBuildFromPart(client, db, { ...args, ...target });
-  return {
-    rows: plan.rows.map((row) => ({
-      id: row.id,
-      parentId: row.parentId ?? null,
-      type: row.type,
-      name: row.name,
-      readableId: row.readableId,
-      itemId: (row.itemId as string | null | undefined) ?? null,
-      trackedEntityId:
-        (row.trackedEntityId as string | null | undefined) ?? null
-    })),
-    skippedLines: plan.skippedLines
-  };
-}
-
-/** Rows per insert statement of a build. */
-const BUILD_INSERT_CHUNK = 500;
-
-/**
- * Creates elements under `parentId` from a serial's build history, an item's
- * make method or a template, in one transaction. It locks the project row,
- * numbers the elements from `nextElementSequence`, inserts them parents first
- * in chunks of 500 (a template's links after them), and advances the
- * sequence. Returns the number of elements created.
- */
-export async function buildElementsFromPart(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  args: BuildFromPartArgs & { userId: string }
-): Promise<{ count: number; skippedLines: number }> {
-  return db
-    .transaction()
-    .execute((trx) => insertElementsFromPart(client, trx, args));
-}
-
-/**
- * The body of `buildElementsFromPart`, in the caller's transaction: a new
- * service order builds its tree in the transaction that creates its project.
- * `client` reads only an item's make method, never the project.
- */
-export async function insertElementsFromPart(
-  client: SupabaseClient<Database>,
-  trx: KyselyTx,
-  args: BuildFromPartArgs & { userId: string }
-): Promise<{ count: number; skippedLines: number }> {
-  const target = await loadBuildTarget(trx, args, true);
-  const plan = await planBuildFromPart(client, trx, { ...args, ...target });
-  if (plan.rows.length === 0) {
-    return { count: 0, skippedLines: plan.skippedLines };
-  }
-
-  const audit = {
-    companyId: args.companyId,
-    projectId: args.projectId,
-    createdBy: args.userId
-  };
-  const insertRows = async (
-    table:
-      | "projectElement"
-      | "projectElementLink"
-      | "projectElementMaterial"
-      | "projectElementLabor"
-      | "projectElementCost",
-    rows: Record<string, unknown>[]
-  ) => {
-    for (let i = 0; i < rows.length; i += BUILD_INSERT_CHUNK) {
-      await trx
-        .insertInto(table as "projectElement")
-        .values(
-          rows
-            .slice(i, i + BUILD_INSERT_CHUNK)
-            .map((row) => ({ ...row, ...audit })) as never
-        )
-        .execute();
-    }
-  };
-  await insertRows("projectElement", plan.rows);
-  await insertRows("projectElementLink", plan.links);
-  if (plan.planLines) {
-    await insertRows("projectElementMaterial", plan.planLines.materials);
-    await insertRows("projectElementLabor", plan.planLines.labor);
-    await insertRows("projectElementCost", plan.planLines.costs);
-  }
-
-  await trx
-    .updateTable("project")
-    .set({ nextElementSequence: target.startSequence + plan.rows.length })
-    .where("id", "=", args.projectId)
-    .where("companyId", "=", args.companyId)
-    .execute();
-
-  return { count: plan.rows.length, skippedLines: plan.skippedLines };
-}
-
-export type ProjectVerification = {
-  links: ProjectElementLink[];
-  /** By element id: a Parameter's value or a Requirement's own status. */
-  verification: Record<string, ElementVerification>;
-  /** By Requirement id: the status rolled up over its child Requirements. */
-  requirementStatus: Record<string, RequirementStatus>;
-};
-
-/**
- * Loads a project's trace links and computes the verification of its
- * Parameters and Requirements. Pass the unfiltered elements when the caller
- * already has them; a filtered list would leave out the inputs of a value.
- * The linked parts give their unit cost and custom field values
- * (`getProjectItemValues`).
- */
-export async function getProjectVerification(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    projectId: string;
-    elements?: VerificationElement[];
-  }
-): Promise<{ data: ProjectVerification | null; error: unknown }> {
-  const [links, loaded] = await Promise.all([
-    getProjectElementLinks(client, args.projectId, args.companyId),
-    args.elements
-      ? Promise.resolve({ data: args.elements, error: null })
-      : getProjectElements(client, args.projectId, args.companyId)
-  ]);
-  if (links.error) return { data: null, error: links.error };
-  if (loaded.error) return { data: null, error: loaded.error };
-  const elements = (loaded.data ?? []) as VerificationElement[];
-
-  const itemIds = elements
-    .map((element) => element.itemId)
-    .filter((id): id is string => Boolean(id));
-  const itemValues = await getProjectItemValues(
-    client,
-    args.companyId,
-    itemIds
-  );
-  if (itemValues.error) return { data: null, error: itemValues.error };
-
-  const verification = computeVerification(
-    elements,
-    links.data ?? [],
-    itemValues.data
-  );
-  return {
-    data: {
-      links: links.data ?? [],
-      verification: Object.fromEntries(verification),
-      requirementStatus: Object.fromEntries(
-        rollUpRequirementStatus(elements, verification)
-      )
-    },
-    error: null
-  };
-}
-
-/**
- * Saves a Parameter's formula, in one transaction. It refuses a parse error,
- * a ref that is not a Parameter of the project, and a cycle of `feeds` links.
- * Then it sets the Formula source and replaces the element's incoming `feeds`
- * links with one link from each ref. Formula values recompute live, so the
- * links only record the dependency.
- */
-export async function saveParameterFormula(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    elementId: string;
-    formula: string;
-    /** When set, the element must belong to this project. */
-    projectId?: string;
-  }
-): Promise<{ error: string; position?: number } | { refs: string[] }> {
-  const formula = args.formula.trim();
-  const parsed = parseParameterFormula(formula);
-  if ("error" in parsed) {
-    return { error: parsed.error, position: parsed.position };
-  }
-
-  return db.transaction().execute(async (trx) => {
-    const element = await trx
-      .selectFrom("projectElement")
-      .select(["id", "projectId", "type"])
-      .where("id", "=", args.elementId)
-      .where("companyId", "=", args.companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!element || (args.projectId && element.projectId !== args.projectId)) {
-      return { error: "The element does not exist" };
-    }
-    if (element.type !== "Parameter") {
-      return { error: "Only a Parameter has a formula" };
-    }
-
-    const targets =
-      parsed.refs.length === 0
-        ? []
-        : await trx
-            .selectFrom("projectElement")
-            .select(["id", "readableId", "type"])
-            .where("projectId", "=", element.projectId)
-            .where("companyId", "=", args.companyId)
-            .where("readableId", "in", parsed.refs)
-            .execute();
-    for (const ref of parsed.refs) {
-      const target = targets.find((t) => t.readableId === ref);
-      if (!target) return { error: `${ref} is not in this project` };
-      if (target.type !== "Parameter") {
-        return { error: `${ref} is a ${target.type}, not a Parameter` };
-      }
-      if (target.id === element.id) {
-        return { error: "A formula cannot refer to its own Parameter" };
-      }
-    }
-
-    // Walk the project's feeds links with the element's incoming links
-    // replaced by the new refs. Reaching the element again is a cycle.
-    const feeds = await trx
-      .selectFrom("projectElementLink")
-      .select(["fromElementId", "toElementId"])
-      .where("projectId", "=", element.projectId)
-      .where("companyId", "=", args.companyId)
-      .where("linkType", "=", "feeds")
-      .execute();
-    const next = new Map<string, string[]>();
-    const addEdge = (from: string, to: string) => {
-      const list = next.get(from) ?? [];
-      list.push(to);
-      next.set(from, list);
-    };
-    for (const link of feeds) {
-      if (link.toElementId !== element.id) {
-        addEdge(link.fromElementId, link.toElementId);
-      }
-    }
-    for (const target of targets) addEdge(target.id, element.id);
-    const seen = new Set<string>();
-    const stack = [...(next.get(element.id) ?? [])];
-    while (stack.length > 0) {
-      const id = stack.pop()!;
-      if (id === element.id) {
-        return { error: "This formula would make a circular formula" };
-      }
-      if (seen.has(id)) continue;
-      seen.add(id);
-      stack.push(...(next.get(id) ?? []));
-    }
-
-    await trx
-      .updateTable("projectElement")
-      .set({
-        parameterFormula: formula,
-        parameterSource: "Formula",
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", element.id)
-      .where("companyId", "=", args.companyId)
-      .execute();
-
-    await trx
-      .deleteFrom("projectElementLink")
-      .where("toElementId", "=", element.id)
-      .where("linkType", "=", "feeds")
-      .where("companyId", "=", args.companyId)
-      .execute();
-
-    if (targets.length > 0) {
-      await trx
-        .insertInto("projectElementLink")
-        .values(
-          targets.map((target) => ({
-            companyId: args.companyId,
-            projectId: element.projectId,
-            fromElementId: target.id,
-            toElementId: element.id,
-            linkType: "feeds" as const,
-            createdBy: args.userId
-          }))
-        )
-        .execute();
-    }
-
-    return { refs: parsed.refs };
-  });
-}
-
-/**
- * Moves an element under a new parent (or to the top level). Refuses a
- * parent that is the element itself or one of its descendants, and a
- * Parameter parent for an element that is not a Parameter.
- */
-export async function moveProjectElement(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    projectId: string;
-    elementId: string;
-    parentId: string | null;
-    sortOrder: number;
-  }
-) {
-  return db.transaction().execute(async (trx) => {
-    if (args.parentId) {
-      if (args.parentId === args.elementId) {
-        throw new Error("An element cannot be its own parent");
-      }
-
-      const descendant = await sql<{ id: string }>`
-        WITH RECURSIVE subtree AS (
-          SELECT "id" FROM "projectElement"
-          WHERE "id" = ${args.elementId}
-            AND "projectId" = ${args.projectId}
-            AND "companyId" = ${args.companyId}
-          UNION
-          SELECT e."id" FROM "projectElement" e
-          JOIN subtree s ON e."parentId" = s."id"
-          WHERE e."projectId" = ${args.projectId}
-            AND e."companyId" = ${args.companyId}
-        )
-        SELECT "id" FROM subtree WHERE "id" = ${args.parentId}
-      `.execute(trx);
-      if (descendant.rows.length > 0) {
-        throw new Error("An element cannot move under one of its descendants");
-      }
-
-      const [parent, element] = await Promise.all([
-        trx
-          .selectFrom("projectElement")
-          .select("type")
-          .where("id", "=", args.parentId)
-          .where("projectId", "=", args.projectId)
-          .where("companyId", "=", args.companyId)
-          .executeTakeFirst(),
-        trx
-          .selectFrom("projectElement")
-          .select("type")
-          .where("id", "=", args.elementId)
-          .where("projectId", "=", args.projectId)
-          .where("companyId", "=", args.companyId)
-          .executeTakeFirst()
-      ]);
-      if (!parent) throw new Error("The parent element does not exist");
-      // A Parameter's children are Parameters: they roll up into it.
-      if (parent.type === "Parameter" && element?.type !== "Parameter") {
-        throw new Error("A Parameter can only have Parameters as children");
-      }
-    }
-
-    const moved = await trx
-      .updateTable("projectElement")
-      .set({
-        parentId: args.parentId,
-        sortOrder: args.sortOrder,
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", args.elementId)
-      .where("projectId", "=", args.projectId)
-      .where("companyId", "=", args.companyId)
-      .returning("id")
-      .executeTakeFirst();
-    if (!moved) throw new Error("The element does not exist");
-    return moved.id;
-  });
-}
-
-/**
- * The first charge on an Unstarted element moves it to the project's
- * default Started state. Call it inside the charging transaction.
- */
-export async function startElementOnFirstCharge(
-  db: Kysely<KyselyDatabase> | KyselyTx,
-  args: { companyId: string; projectElementId: string }
-) {
-  await sql`
-    UPDATE "projectElement" e
-    SET "stateId" = started."id",
-        "updatedAt" = NOW()
-    FROM "projectState" current, "projectState" started
-    WHERE e."id" = ${args.projectElementId}
-      AND e."companyId" = ${args.companyId}
-      AND current."id" = e."stateId"
-      AND current."companyId" = e."companyId"
-      AND current."group" = 'Unstarted'
-      AND started."companyId" = e."companyId"
-      AND started."group" = 'Started'
-      AND started."isDefault"
-  `.execute(db);
-}
-
-export type ProjectCostTotals = {
-  budget: number;
-  committed: number;
-  actual: number;
-};
-
-/**
- * Sums `get_project_cost_summary` per project for a page of projects, in one
- * query. Budget is the plan material, labor and other cost. A project with no
- * rows gets zeros.
- */
-export async function getProjectCostTotals(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectIds: string[] }
-): Promise<Record<string, ProjectCostTotals>> {
-  if (args.projectIds.length === 0) return {};
-
-  const result = await sql<{
-    projectId: string;
-    budget: number | null;
-    committed: number | null;
-    actual: number | null;
-  }>`
-    SELECT p."id" AS "projectId",
-      SUM(s."planMaterial" + s."planLabor" + s."planOther") AS "budget",
-      SUM(s."committed") AS "committed",
-      SUM(s."actual") AS "actual"
-    FROM unnest(${args.projectIds}::text[]) AS p("id")
-    CROSS JOIN LATERAL get_project_cost_summary(p."id", ${args.companyId}) s
-    GROUP BY p."id"
-  `.execute(db);
-
-  return Object.fromEntries(
-    result.rows.map((row) => [
-      row.projectId,
-      {
-        budget: Number(row.budget ?? 0),
-        committed: Number(row.committed ?? 0),
-        actual: Number(row.actual ?? 0)
-      }
-    ])
-  );
-}
-
-/**
- * Everything the element page (the peek and the full page) shows, read in
- * parallel: the element, every element of its project (for the children,
- * the parent pickers and the subtree roll-up), its comments, its plan lines,
- * the project's cost summary, the active labor categories, the subtree's
- * ledger rows and open time, and the user's default labor category. Returns
- * no data when the element does not exist or belongs to another project.
- */
-export async function getProjectElementPage(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    projectId: string;
-    elementId: string;
-    userId: string;
-    /** An element a change request adds: it has no row to read yet. */
-    element?: ProjectElementRow;
-  }
-) {
-  const [
-    element,
-    elements,
-    comments,
-    planLines,
-    costSummary,
-    laborCategories,
-    laborCategoryRates,
-    timeZone,
-    employeeJob,
-    timeAndMaterials
-  ] = await Promise.all([
-    args.element
-      ? Promise.resolve({ data: args.element, error: null })
-      : getProjectElement(client, args.elementId, args.companyId),
-    getProjectElements(client, args.projectId, args.companyId),
-    getProjectElementComments(client, args.elementId, args.companyId),
-    getProjectElementPlanLines(client, args.elementId, args.companyId),
-    getProjectCostSummary(client, args.projectId, args.companyId),
-    getLaborCategoriesList(client, args.companyId),
-    client
-      .from("laborCategoryRate")
-      .select("laborCategoryId, costRate, effectiveFrom")
-      .eq("companyId", args.companyId)
-      .order("effectiveFrom", { ascending: false }),
-    getCompanyTimeZone(client, args.companyId),
-    client
-      .from("employeeJob")
-      .select("laborCategoryId")
-      .eq("id", args.userId)
-      .eq("companyId", args.companyId)
-      .maybeSingle(),
-    getElementTimeAndMaterials(getDatabaseClient(), args)
-  ]);
-
-  const error =
-    element.error ??
-    elements.error ??
-    comments.error ??
-    planLines.error ??
-    costSummary.error ??
-    laborCategories.error ??
-    laborCategoryRates.error ??
-    employeeJob.error;
-  if (error) return { data: null, error };
-  if (!element.data || element.data.projectId !== args.projectId) {
-    return { data: null, error: null };
-  }
-
-  // Each category's cost rate in effect today, as the plan cost uses it: a
-  // labor plan line's amount is its hours at that rate.
-  const today = datetime.today(timeZone).toString();
-  const costRates = new Map<string, number>();
-  for (const rate of laborCategoryRates.data ?? []) {
-    if (rate.effectiveFrom > today || costRates.has(rate.laborCategoryId)) {
-      continue;
-    }
-    costRates.set(rate.laborCategoryId, Number(rate.costRate));
-  }
-
-  const [verification, qualityDocuments, itemHistory] = await Promise.all([
-    getProjectVerification(client, {
-      companyId: args.companyId,
-      projectId: args.projectId,
-      elements: (elements.data ?? []) as VerificationElement[]
-    }),
-    // A Test Case names the quality procedure it runs.
-    element.data.type === "Test Case"
-      ? client
-          .from("qualityDocument")
-          .select("id, name, version")
-          .eq("companyId", args.companyId)
-          .order("name", { ascending: true })
-          .order("version", { ascending: false })
-      : Promise.resolve({ data: [], error: null }),
-    // A linked part: what other elements on the same part have charged.
-    element.data.itemId
-      ? getElementHistoryByItem(client, args.companyId, element.data.itemId)
-      : Promise.resolve({ data: null, error: null })
-  ]);
-  if (itemHistory.error) {
-    logger.error("Failed to load the element history by part", {
-      companyId: args.companyId,
-      elementId: args.elementId,
-      error: itemHistory.error
-    });
-  }
-  if (verification.error || !verification.data) {
-    return {
-      data: null,
-      error: (verification.error ?? new Error("No verification")) as Error
-    };
-  }
-  if (qualityDocuments.error) {
-    return { data: null, error: qualityDocuments.error };
-  }
-
-  // A Parameter reads the nearest linked part: offer its type's Numeric
-  // custom fields as the Part field.
-  let itemFields: { id: string; name: string }[] = [];
-  if (element.data.type === "Parameter") {
-    const byId = new Map((elements.data ?? []).map((e) => [e.id, e]));
-    let current = byId.get(element.data.id);
-    const seen = new Set<string>();
-    let nearestItemId: string | null = null;
-    while (current && !seen.has(current.id)) {
-      seen.add(current.id);
-      if (current.itemId) {
-        nearestItemId = current.itemId;
-        break;
-      }
-      current = current.parentId ? byId.get(current.parentId) : undefined;
-    }
-    if (nearestItemId) {
-      const item = await client
-        .from("item")
-        .select("type")
-        .eq("id", nearestItemId)
-        .eq("companyId", args.companyId)
-        .maybeSingle();
-      if (item.error) return { data: null, error: item.error };
-      if (item.data) {
-        const fields = await getItemNumericCustomFields(
-          client,
-          args.companyId,
-          item.data.type
-        );
-        if (fields.error) return { data: null, error: fields.error };
-        itemFields = fields.data ?? [];
-      }
-    }
-  }
-
-  // A final asset's asset under construction (or in service), for its status.
-  const capitalAsset = element.data.fixedAssetId
-    ? await client
-        .from("fixedAsset")
-        .select("id, fixedAssetId, name, status")
-        .eq("id", element.data.fixedAssetId)
-        .eq("companyId", args.companyId)
-        .maybeSingle()
-    : null;
-  if (capitalAsset?.error) return { data: null, error: capitalAsset.error };
-
-  return {
-    data: {
-      element: element.data,
-      capitalAsset: capitalAsset?.data ?? null,
-      elements: elements.data ?? [],
-      comments: comments.data ?? [],
-      planLines: planLines.data ?? { materials: [], labor: [], costs: [] },
-      costSummary: costSummary.data ?? [],
-      laborCategories: (laborCategories.data ?? []).map((category) => ({
-        ...category,
-        costRate: costRates.get(category.id) ?? null
-      })),
-      defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
-      ledger: timeAndMaterials.ledger,
-      openTime: timeAndMaterials.openTime,
-      planActuals: timeAndMaterials.planActuals,
-      ...verification.data,
-      qualityDocuments: qualityDocuments.data ?? [],
-      itemFields,
-      itemHistory: itemHistory.data ?? null
-    },
-    error: null
-  };
-}
-
-export type ProjectElementPage = NonNullable<
-  Awaited<ReturnType<typeof getProjectElementPage>>["data"]
->;
-
-type ProjectElementRow = NonNullable<
-  Awaited<ReturnType<typeof getProjectElement>>["data"]
->;
-
-/**
- * The element page, with `changeRequestId` laid over it when set: the
- * element, the element list, its plan lines and the links show as the change
- * request would leave them, each row with its `changeOperation`. An element
- * the change request adds is built from its payload.
- */
-export async function getProjectElementPageInChangeRequest(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    projectId: string;
-    elementId: string;
-    userId: string;
-    changeRequestId: string | null;
-  }
-) {
-  if (!args.changeRequestId) {
-    const page = await getProjectElementPage(client, args);
-    return page.data
-      ? {
-          data: {
-            ...page.data,
-            changeRequest: null,
-            changeOperation: null as ChangeOperationMark
-          },
-          error: null
-        }
-      : { data: null, error: page.error };
-  }
-
-  const overlay = await loadChangeRequestOverlay(getDatabaseClient(), {
-    companyId: args.companyId,
-    projectId: args.projectId,
-    changeRequestId: args.changeRequestId
-  });
-  if (!overlay) {
-    return {
-      data: null,
-      error: new Error("The change request does not exist")
-    };
-  }
-
-  const added = overlay.items.find(
-    (item) =>
-      item.operation === "Add" &&
-      item.targetTable === "projectElement" &&
-      item.targetId === args.elementId
-  );
-  let element: ProjectElementRow | undefined;
-  if (added) {
-    const row = overlay.overlay.elements.find((e) => e.id === args.elementId);
-    if (!row) return { data: null, error: null };
-    const payload = added.payload ?? {};
-    const parentRow = row.parentId
-      ? overlay.overlay.elements.find((e) => e.id === row.parentId)
-      : undefined;
-    const state = await client
-      .from("projectState")
-      .select("id, name, group, color")
-      .eq("id", String(payload.stateId ?? ""))
-      .eq("companyId", args.companyId)
-      .maybeSingle();
-    if (state.error) return { data: null, error: state.error };
-    element = {
-      ...payload,
-      ...row,
-      projectId: args.projectId,
-      companyId: args.companyId,
-      sequence: 0,
-      completedAt: null,
-      fixedAssetId: null,
-      isFinalAsset: false,
-      verdict: null,
-      verdictAt: null,
-      verdictBy: null,
-      state: state.data,
-      owner: null,
-      milestone: null,
-      labels: [],
-      item: null,
-      trackedEntity: null,
-      parent: parentRow
-        ? {
-            id: parentRow.id,
-            readableId: String(parentRow.readableId ?? ""),
-            name: String(parentRow.name ?? "")
-          }
-        : null
-    } as unknown as ProjectElementRow;
-  }
-
-  const page = await getProjectElementPage(client, { ...args, element });
-  if (!page.data) return { data: null, error: page.error };
-
-  const elements = await overlayElementList(
-    client,
-    overlay,
-    page.data.elements,
-    args
-  );
-  const planLines = await overlayPlanLines(
-    client,
-    overlay,
-    page.data.planLines,
-    args
-  );
-  const current = elements.find((e) => e.id === args.elementId);
-  return {
-    data: {
-      ...page.data,
-      element: current
-        ? {
-            ...page.data.element,
-            ...pickPlanLayerFields("projectElement", current)
-          }
-        : page.data.element,
-      changeOperation: (current?.changeOperation ??
-        null) as ChangeOperationMark,
-      elements,
-      planLines,
-      links: overlayLinkList(overlay, page.data.links),
-      changeRequest: overlay.changeRequest
-    },
-    error: null
-  };
-}
+import * as utils from "./projects.utils";
 
 const logger = getLogger("erp", "projects");
 
+// --- Projects, states, labels, milestones, members, costs ----------------------
+
+// --- Projects ----------------------------------------------------------------
+
 /**
- * Posts Submitted timesheet entries through the `post-timesheet` server
- * function. Returns an error message for the caller's flash, or null.
- * System: the caller has already authorized the change.
+ * Get a project.
+ *
+ * @remarks
+ * Gets one project of the company, with every column.
+ *
+ * @mcp read
  */
-export async function postTimesheetEntries(args: {
-  timesheetEntryIds: string[];
-  companyId: string;
-  userId: string;
-}): Promise<string | null> {
-  if (args.timesheetEntryIds.length === 0) return null;
-  const { timesheetEntryIds, companyId, userId } = args;
-  const posting = await invokePosting(
-    { db: getDatabaseClient(), companyId, userId },
-    "post-timesheet",
-    { timesheetEntryIds },
-    service.postTimesheet
-  );
-  if (posting.error) {
-    logger.error("Failed to post timesheet entries", {
-      companyId,
-      timesheetEntryIds,
-      error: posting.error
-    });
-    return posting.error.message || "Failed to post the time";
+export const getProject = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProject(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.projectId
+      )
+    );
   }
-  return null;
-}
+});
 
 /**
- * Saves one timesheet entry through the `save-timesheet-entry` server
- * function, which applies the DCAA rules in one place for the ERP and the
- * MES. `mode: "add"` (Log time, service time) always adds a new entry with
- * `status` and `serviceVisitId`; the default edits the grid cell. Returns
- * the saved entry, or the refusal message.
- * System: the caller has already authorized the change.
+ * Get the projects the project switcher lists.
+ *
+ * @remarks
+ * The projects the project workspace's switcher lists: id, identifier and
+ * name of the active Standard projects that are not templates, by
+ * identifier, at most 200.
+ *
+ * @mcp read
  */
-export async function saveTimesheetEntry(args: {
-  employeeId: string;
-  entryDate: string;
-  projectId: string;
-  projectElementId?: string | null;
-  laborCategoryId: string;
-  hours: number;
-  note?: string;
-  lateReason?: string;
-  reason?: string;
-  mode?: "cell" | "add";
-  status?: "Draft" | "Submitted";
-  serviceVisitId?: string | null;
-  /** R&D tax: left out takes the default; "" or null is none. */
-  workLocationId?: string | null;
-  rdActivityRole?: RdActivityRole | "" | null;
-  companyId: string;
-  userId: string;
-}): Promise<
-  | { data: SaveTimesheetEntryResult; error: null }
-  | { data: null; error: string }
-> {
-  const { companyId, userId, ...input } = args;
-  const saved = await invokePosting(
-    { db: getDatabaseClient(), companyId, userId },
-    "save-timesheet-entry",
-    {
-      ...input,
-      projectElementId: input.projectElementId || null,
-      workLocationId:
-        input.workLocationId === undefined
-          ? undefined
-          : input.workLocationId || null,
-      rdActivityRole:
-        input.rdActivityRole === undefined
-          ? undefined
-          : input.rdActivityRole || null
-    },
-    service.saveTimesheetEntry
-  );
-  if (saved.error || !saved.data) {
-    logger.error("Failed to save a timesheet entry", {
-      companyId,
-      employeeId: input.employeeId,
-      error: saved.error
-    });
-    return {
-      data: null,
-      error: saved.error?.message || "Failed to save the time"
-    };
+export const getProjectSwitcherOptions = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getProjectSwitcherOptions(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
   }
-  return { data: saved.data, error: null };
-}
+});
 
 /**
- * Submits a week of an employee's timesheet through the
- * `submit-timesheet-week` server function. DCAA mode also certifies it.
- * Returns the submitted entry ids and the warnings, or the refusal message.
- * System: the caller has already authorized the change.
+ * Get the company's projects.
+ *
+ * @remarks
+ * Lists the active Standard projects of the company. A Service project
+ * belongs to its service order and is listed in Service.
+ *
+ * @param search - Matches the name, identifier or description.
+ * @param status - Only projects in these statuses.
+ * @param costTreatment - Only projects with these cost treatments.
+ * @param ownerId - Only projects this user owns.
+ *
+ * @mcp read
  */
-export async function submitTimesheetWeek(args: {
-  employeeId: string;
-  weekStart: string;
-  certificationText?: string;
-  companyId: string;
-  userId: string;
-}): Promise<
-  | { data: SubmitTimesheetWeekResult; error: null }
-  | { data: null; error: string }
-> {
-  const { companyId, userId, ...input } = args;
-  const submitted = await invokePosting(
-    { db: getDatabaseClient(), companyId, userId },
-    "submit-timesheet-week",
-    input,
-    service.submitTimesheetWeek
-  );
-  if (submitted.error || !submitted.data) {
-    logger.error("Failed to submit a timesheet week", {
-      companyId,
-      employeeId: input.employeeId,
-      error: submitted.error
-    });
-    return {
-      data: null,
-      error: submitted.error?.message || "Failed to submit the week"
-    };
+export const getProjects = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().default(null),
+    status: z
+      .array(z.enum(Constants.public.Enums.projectStatus))
+      .nullable()
+      .optional(),
+    costTreatment: z
+      .array(z.enum(Constants.public.Enums.projectCostTreatment))
+      .nullable()
+      .optional(),
+    ownerId: z.string().nullable().optional()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProjects(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
   }
-  return { data: submitted.data, error: null };
-}
+});
 
 /**
- * Issues stock to a project, or returns it, through the `post-project-issue`
- * server function. Returns an error message (a `ProjectChargeError` refusal
- * reads as its own message), or null.
+ * Create a project.
+ *
+ * @remarks
+ * Creates a Draft project in one transaction: from scratch, as a copy of
+ * `sourceProjectId` (its milestones, elements, labels, links and plan lines),
+ * or with the elements of the MIL-STD-881F template `wbsTemplateKey`. Under
+ * DCAA timekeeping every project needs a cost objective.
  */
-export async function postProjectIssue(
-  args: z.infer<typeof projectIssueValidator> & {
-    companyId: string;
-    userId: string;
+export const createProject = defineServiceFn({
+  input: projectValidator.safeExtend({
+    sourceProjectId: z.string().optional(),
+    wbsTemplateKey: z.string().optional()
+  }),
+  permission: { create: "projects" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const { id: _id, sourceProjectId, wbsTemplateKey, ...project } = input;
+
+    // DCAA timekeeping: every project needs a cost objective.
+    if (!project.costObjective) {
+      const settings = await getCompanySettings(
+        ctx.asCaller.supabase,
+        companyId
+      );
+      if (settings.data?.timekeepingControls === "DCAA") {
+        return ctx.error("validation", COST_OBJECTIVE_REQUIRED);
+      }
+    }
+
+    try {
+      const projectId = sourceProjectId
+        ? await service.copyProject(ctx.asSystem.pg, {
+            ...project,
+            companyId,
+            userId: ctx.auditUserId,
+            sourceProjectId
+          })
+        : await service.createProject(ctx.asSystem.pg, {
+            ...project,
+            companyId,
+            userId: ctx.auditUserId,
+            wbsTemplateKey
+          });
+      return { projectId };
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        "Failed to create the project. Check that its identifier is not in use.",
+        err
+      );
+    }
   }
-): Promise<string | null> {
-  const { companyId, userId, ...input } = args;
-  const posting = await invokePosting(
-    { db: getDatabaseClient(), companyId, userId },
-    "post-project-issue",
-    {
-      ...input,
-      projectElementId: input.projectElementId ?? null,
-      storageUnitId: input.storageUnitId ?? null,
-      trackedEntityId: input.trackedEntityId ?? null
-    },
-    service.postProjectIssue
-  );
-  if (posting.error) {
-    logger.error("Failed to post project issue", {
-      companyId,
-      projectId: input.projectId,
-      error: posting.error
-    });
-    return posting.error.message || "Failed to issue the material";
-  }
-  return null;
-}
+});
 
 /**
- * Charges a cost to an element: inserts a `projectExpenseEntry` and posts it
- * through `post-project-expense` (Dr the project account / Cr GRNI, one
- * Other Direct ledger row). An entry that does not post is deleted again, so
- * a refusal (a closed element, a Capitalize project) leaves nothing behind.
- * Returns an error message, or null.
+ * Create or update a project.
+ *
+ * @remarks
+ * Creates or updates a project. A project created here gets no states; the
+ * app creates projects with `createProject`, which seeds them. With `id` it
+ * updates that project, else it creates one.
+ *
+ * @mcp
  */
-export async function addProjectExpense(
-  db: Kysely<KyselyDatabase>,
-  args: z.infer<typeof projectExpenseValidator> & {
-    companyId: string;
-    userId: string;
-  }
-): Promise<string | null> {
-  const { companyId, userId } = args;
-  const entry = await db
-    .insertInto("projectExpenseEntry")
-    .values({
-      companyId,
-      projectId: args.projectId,
-      projectElementId: args.projectElementId,
-      employeeId: userId,
-      entryDate: args.entryDate,
-      description: args.description,
-      amount: args.amount,
-      createdBy: userId
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-
-  const posting = await invokePosting(
-    { db, companyId, userId },
-    "post-project-expense",
-    { projectExpenseEntryId: entry.id },
-    service.postProjectExpense
-  );
-  if (!posting.error) return null;
-
-  logger.error("Failed to post a project expense", {
-    companyId,
-    projectExpenseEntryId: entry.id,
-    error: posting.error
-  });
-  // The posting rolled back, so the entry has no journal or ledger row.
-  try {
-    await db
-      .deleteFrom("projectExpenseEntry")
-      .where("id", "=", entry.id)
-      .where("companyId", "=", companyId)
-      .where("journalId", "is", null)
-      .execute();
-  } catch (deleteError) {
-    logger.error("Failed to delete an expense that did not post", {
-      companyId,
-      projectExpenseEntryId: entry.id,
-      error: deleteError
-    });
-  }
-  return posting.error.message || "Failed to charge the cost";
-}
-
-/**
- * A project's own stock: on-hand per item, location, storage unit and lot,
- * summed from its stripe of `itemLedger` in one query. Rows that net to zero
- * drop out.
- */
-export async function getProjectStockOnHand(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectId: string }
-) {
-  const rows = await db
-    .selectFrom("itemLedger")
-    .leftJoin("storageUnit", "storageUnit.id", "itemLedger.storageUnitId")
-    .leftJoin("trackedEntity", "trackedEntity.id", "itemLedger.trackedEntityId")
-    .select([
-      "itemLedger.itemId",
-      "itemLedger.locationId",
-      "itemLedger.storageUnitId",
-      "storageUnit.name as storageUnitName",
-      "itemLedger.trackedEntityId",
-      "trackedEntity.readableId as trackedEntityReadableId",
-      (eb) => eb.fn.sum<number>("itemLedger.quantity").as("quantity")
-    ])
-    .where("itemLedger.companyId", "=", args.companyId)
-    .where("itemLedger.projectId", "=", args.projectId)
-    .groupBy([
-      "itemLedger.itemId",
-      "itemLedger.locationId",
-      "itemLedger.storageUnitId",
-      "storageUnit.name",
-      "itemLedger.trackedEntityId",
-      "trackedEntity.readableId"
-    ])
-    .having((eb) => eb.fn.sum("itemLedger.quantity"), "<>", 0)
-    .orderBy("itemLedger.itemId")
-    .orderBy("storageUnit.name")
-    .execute();
-
-  return rows.map((row) => ({ ...row, quantity: Number(row.quantity) }));
-}
-
-/**
- * Posts an Approved project stock transfer through the
- * `post-project-stock-transfer` server function. Returns an error message
- * (a refusal reads as its own message, such as the government-furnished
- * guard or too little stock), or null. System: the route has already
- * checked `update: projects`.
- */
-export async function postProjectStockTransfer(args: {
-  projectStockTransferId: string;
-  companyId: string;
-  userId: string;
-}): Promise<string | null> {
-  const { projectStockTransferId, companyId, userId } = args;
-  const posting = await invokePosting(
-    { db: getDatabaseClient(), companyId, userId },
-    "post-project-stock-transfer",
-    { projectStockTransferId },
-    service.postProjectStockTransfer
-  );
-  if (posting.error) {
-    logger.error("Failed to post project stock transfer", {
-      companyId,
-      projectStockTransferId,
-      error: posting.error
-    });
-    return posting.error.message || "Failed to post the transfer";
-  }
-  return null;
-}
-
-export type ElementLedgerRow = {
-  id: string;
-  postingDate: string;
-  costType: string;
-  documentType: string;
-  documentId: string;
-  quantity: number | null;
-  unitOfMeasureCode: string | null;
-  amount: number;
-  itemId: string | null;
-  laborCategoryId: string | null;
-  employeeId: string | null;
-  /** An expense's own description (`projectExpenseEntry`). */
-  description: string | null;
-  readableId: string | null;
-};
-
-export type ElementOpenTimeRow = {
-  id: string;
-  entryDate: string;
-  employeeId: string;
-  laborCategoryId: string;
-  hours: number;
-  status: string;
-  readableId: string | null;
-};
-
-/**
- * What has been charged to the element itself (not its subtree), summed by
- * the key a plan line has: a material's item, a labor category, and an
- * expense's description (lower case, trimmed). The element page's Estimated
- * cards show each plan line's share beside its estimate.
- */
-export type ElementPlanActuals = {
-  materials: { itemId: string; amount: number }[];
-  labor: {
-    laborCategoryId: string;
-    hours: number;
-    openHours: number;
-    amount: number;
-  }[];
-  costs: { description: string; amount: number }[];
-};
-
-/** The most recent rows each list of the Time & materials section shows. */
-const TIME_AND_MATERIALS_LIMIT = 200;
-
-/**
- * The project ledger rows and the timesheet entries that are not Posted, of
- * an element and every element below it, newest first. Two queries, each
- * walking the subtree in SQL, so no id list leaves the database.
- */
-export async function getElementTimeAndMaterials(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectId: string; elementId: string }
-): Promise<{
-  ledger: ElementLedgerRow[];
-  openTime: ElementOpenTimeRow[];
-  planActuals: ElementPlanActuals;
-}> {
-  const subtree = sql`
-    WITH RECURSIVE subtree AS (
-      SELECT "id" FROM "projectElement"
-      WHERE "id" = ${args.elementId}
-        AND "projectId" = ${args.projectId}
-        AND "companyId" = ${args.companyId}
-      UNION
-      SELECT e."id" FROM "projectElement" e
-      JOIN subtree s ON e."parentId" = s."id"
-      WHERE e."projectId" = ${args.projectId}
-        AND e."companyId" = ${args.companyId}
-    )
-  `;
-
-  const [ledger, openTime, ledgerByLine, timeByCategory, expenses] =
-    await Promise.all([
-      sql<ElementLedgerRow>`
-      ${subtree}
-      SELECT l."id", l."postingDate", l."costType", l."documentType",
-        l."documentId", l."quantity", l."unitOfMeasureCode", l."amount",
-        l."itemId", l."laborCategoryId", l."employeeId", x."description",
-        e."readableId"
-      FROM "projectLedger" l
-      JOIN subtree s ON s."id" = l."projectElementId"
-      LEFT JOIN "projectExpenseEntry" x
-        ON l."documentType" = 'Project Expense'
-        AND x."id" = l."documentId" AND x."companyId" = l."companyId"
-      LEFT JOIN "projectElement" e
-        ON e."id" = l."projectElementId" AND e."companyId" = l."companyId"
-      WHERE l."companyId" = ${args.companyId}
-        AND l."projectId" = ${args.projectId}
-      ORDER BY l."postingDate" DESC, l."createdAt" DESC
-      LIMIT ${TIME_AND_MATERIALS_LIMIT}
-    `.execute(db),
-      sql<ElementOpenTimeRow>`
-      ${subtree}
-      SELECT t."id", t."entryDate", t."employeeId", t."laborCategoryId",
-        t."hours", t."status", e."readableId"
-      FROM "timesheetEntry" t
-      JOIN subtree s ON s."id" = t."projectElementId"
-      LEFT JOIN "projectElement" e
-        ON e."id" = t."projectElementId" AND e."companyId" = t."companyId"
-      WHERE t."companyId" = ${args.companyId}
-        AND t."projectId" = ${args.projectId}
-        AND t."status" <> 'Posted'
-      ORDER BY t."entryDate" DESC, t."createdAt" DESC
-      LIMIT ${TIME_AND_MATERIALS_LIMIT}
-    `.execute(db),
-      // The plan-line keys, on the element's own rows and with no limit:
-      // material cost by item, labor cost by category.
-      sql<{ kind: "material" | "labor"; key: string; amount: number }>`
-      SELECT
-        CASE WHEN l."costType" = 'Labor' THEN 'labor' ELSE 'material' END
-          AS "kind",
-        CASE WHEN l."costType" = 'Labor' THEN l."laborCategoryId"
-          ELSE l."itemId" END AS "key",
-        SUM(l."amount") AS "amount"
-      FROM "projectLedger" l
-      WHERE l."companyId" = ${args.companyId}
-        AND l."projectId" = ${args.projectId}
-        AND l."projectElementId" = ${args.elementId}
-        AND (
-          (l."costType" = 'Labor' AND l."laborCategoryId" IS NOT NULL)
-          OR (l."costType" IN ('Material', 'Material Variance')
-            AND l."itemId" IS NOT NULL)
+export const upsertProject = defineServiceFn({
+  input: projectValidator,
+  permission: { create: "projects", update: "projects" },
+  async run(ctx, { id, ...project }) {
+    if (id) {
+      return unwrap(
+        ctx,
+        await service.upsertProject(
+          ctx.asCaller.supabase,
+          payload(ctx, { ...project, id }).forUpdate() as never
         )
-      GROUP BY 1, 2
-    `.execute(db),
-      // Hours by category: Posted (a correction's reversal is negative) and
-      // not posted yet. A Statistical project posts time with no ledger row,
-      // so the hours come from the entries.
-      sql<{ laborCategoryId: string; hours: number; openHours: number }>`
-      SELECT t."laborCategoryId",
-        COALESCE(SUM(t."hours") FILTER (WHERE t."status" = 'Posted'), 0)
-          AS "hours",
-        COALESCE(SUM(t."hours") FILTER (
-          WHERE t."status" NOT IN ('Posted', 'Rejected')
-        ), 0) AS "openHours"
-      FROM "timesheetEntry" t
-      WHERE t."companyId" = ${args.companyId}
-        AND t."projectId" = ${args.projectId}
-        AND t."projectElementId" = ${args.elementId}
-      GROUP BY t."laborCategoryId"
-    `.execute(db),
-      // Posted expenses by description (a reversal carries a negative amount).
-      sql<{ description: string; amount: number }>`
-      SELECT LOWER(BTRIM(x."description")) AS "description",
-        SUM(x."amount") AS "amount"
-      FROM "projectExpenseEntry" x
-      WHERE x."companyId" = ${args.companyId}
-        AND x."projectId" = ${args.projectId}
-        AND x."projectElementId" = ${args.elementId}
-        AND x."journalId" IS NOT NULL
-      GROUP BY 1
-    `.execute(db)
-    ]);
-
-  const laborAmounts = new Map(
-    ledgerByLine.rows
-      .filter((row) => row.kind === "labor")
-      .map((row) => [row.key, Number(row.amount)])
-  );
-  const laborCategoryIds = new Set([
-    ...laborAmounts.keys(),
-    ...timeByCategory.rows.map((row) => row.laborCategoryId)
-  ]);
-  const hoursByCategory = new Map(
-    timeByCategory.rows.map((row) => [row.laborCategoryId, row])
-  );
-
-  return {
-    ledger: ledger.rows.map((row) => ({
-      ...row,
-      quantity: row.quantity === null ? null : Number(row.quantity),
-      amount: Number(row.amount)
-    })),
-    openTime: openTime.rows.map((row) => ({
-      ...row,
-      hours: Number(row.hours)
-    })),
-    planActuals: {
-      materials: ledgerByLine.rows
-        .filter((row) => row.kind === "material")
-        .map((row) => ({ itemId: row.key, amount: Number(row.amount) })),
-      labor: [...laborCategoryIds].map((laborCategoryId) => ({
-        laborCategoryId,
-        hours: Number(hoursByCategory.get(laborCategoryId)?.hours ?? 0),
-        openHours: Number(hoursByCategory.get(laborCategoryId)?.openHours ?? 0),
-        amount: laborAmounts.get(laborCategoryId) ?? 0
-      })),
-      costs: expenses.rows.map((row) => ({
-        description: row.description,
-        amount: Number(row.amount)
-      }))
+      );
     }
-  };
-}
-
-/** The form field of the `ChargeNumber` picker, for its field errors. */
-const CHARGE_NUMBER_FIELD = "projectId__projectElementId";
+    return unwrap(
+      ctx,
+      await service.upsertProject(
+        ctx.asCaller.supabase,
+        payload(ctx, project).forCreate() as never
+      )
+    );
+  }
+});
 
 /**
- * Checks the charge numbers of a document's lines in two queries: every
- * project is the company's, and every element belongs to its line's project.
- * Returns the first refusal, or null.
+ * Update the details of a project.
+ *
+ * @remarks
+ * Saves the project's fields; the identifier is fixed once the project
+ * exists. Under DCAA timekeeping every project needs a cost objective. The
+ * lock milestone must be one of the project's milestones. Project stock is
+ * chosen while Draft only. Only a project with project stock may join a
+ * planning group, and only a group at the project's location. A released
+ * project that becomes Capitalize gets its assets under construction; when
+ * that fails the project is saved and `warning` says so.
+ *
+ * @mcp
  */
-export async function chargeNumbersError(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  refs: { projectId?: string | null; projectElementId?: string | null }[]
-): Promise<string | null> {
-  if (refs.some((ref) => ref.projectElementId && !ref.projectId)) {
-    return "An element needs its project";
-  }
-  const projectIds = [
-    ...new Set(refs.map((ref) => ref.projectId).filter(Boolean))
-  ] as string[];
-  const elementIds = [
-    ...new Set(refs.map((ref) => ref.projectElementId).filter(Boolean))
-  ] as string[];
-  if (projectIds.length === 0) return null;
+export const updateProject = defineServiceFn({
+  input: projectValidator.safeExtend({ id: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const projectId = input.id;
+    // The identifier is fixed once the project exists: every element's
+    // stored readable id starts with it.
+    const { id: _id, identifier: _identifier, ...fields } = input;
 
-  const [projects, elements] = await Promise.all([
-    client
-      .from("project")
-      .select("id")
-      .eq("companyId", companyId)
-      .in("id", projectIds),
-    elementIds.length > 0
-      ? client
-          .from("projectElement")
-          .select("id, projectId")
-          .eq("companyId", companyId)
-          .in("id", elementIds)
-      : Promise.resolve({
-          data: [] as { id: string; projectId: string }[],
-          error: null
-        })
-  ]);
-  if (projects.error || elements.error) {
-    logger.error("Failed to check the charge numbers", {
+    // DCAA timekeeping: every project needs a cost objective.
+    if (!fields.costObjective) {
+      const settings = await getCompanySettings(client, companyId);
+      if (settings.data?.timekeepingControls === "DCAA") {
+        return ctx.error("validation", COST_OBJECTIVE_REQUIRED);
+      }
+    }
+
+    // The lock milestone must be one of this project's milestones.
+    if (fields.lockPlanAfterMilestoneId) {
+      const milestone = await client
+        .from("projectMilestone")
+        .select("id")
+        .eq("id", fields.lockPlanAfterMilestoneId)
+        .eq("projectId", projectId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (milestone.error || !milestone.data) {
+        return ctx.error("validation", "Choose a milestone of this project");
+      }
+    }
+
+    // Project stock is chosen while Draft only: after that the switch is
+    // disabled, so its absent value never turns it off.
+    const current = await service.getProject(client, companyId, projectId);
+    if (current.error) {
+      return ctx.error("internal", "Failed to load the project", current.error);
+    }
+    const { projectStock, planningGroupId, planningPriority, ...rest } = fields;
+
+    // Planning group (Projects Phase 3): only a project with project stock
+    // may join, and only a group at the project's location. Joining or
+    // leaving changes planning only; open stock stays in the project's stripe.
+    const hasProjectStock =
+      current.data.status === "Draft"
+        ? (projectStock ?? false)
+        : current.data.projectStock;
+    if (planningGroupId) {
+      if (!hasProjectStock) {
+        return ctx.error(
+          "validation",
+          "Only a project with project stock can join a group"
+        );
+      }
+      const group = await client
+        .from("planningGroup")
+        .select("id, locationId")
+        .eq("id", planningGroupId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (group.error || !group.data) {
+        return ctx.error("validation", "Choose a planning group");
+      }
+      if (group.data.locationId !== fields.locationId) {
+        return ctx.error(
+          "validation",
+          "The group must be at the project's location"
+        );
+      }
+    }
+
+    const update = await service.updateProject(client, {
+      ...rest,
+      ...(current.data.status === "Draft"
+        ? { projectStock: projectStock ?? false }
+        : {}),
+      planningGroupId: hasProjectStock
+        ? (planningGroupId ?? undefined)
+        : undefined,
+      ...(planningPriority !== undefined ? { planningPriority } : {}),
+      id: projectId,
       companyId,
-      error: projects.error ?? elements.error
+      updatedBy: ctx.auditUserId
     });
-    return "Failed to check the charge numbers";
-  }
-  const known = new Set((projects.data ?? []).map((row) => row.id));
-  if (projectIds.some((id) => !known.has(id))) {
-    return "The project does not exist";
-  }
-  const projectOf = new Map(
-    (elements.data ?? []).map((row) => [row.id, row.projectId])
-  );
-  for (const ref of refs) {
+    if (update.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the project",
+        update.error
+      );
+    }
+
+    // A released project that becomes Capitalize needs its assets under
+    // construction before it takes charges.
     if (
-      ref.projectElementId &&
-      projectOf.get(ref.projectElementId) !== ref.projectId
+      fields.costTreatment === "Capitalize" &&
+      current.data.status !== "Draft"
     ) {
-      return "The element is not part of the project";
-    }
-  }
-  return null;
-}
-
-/**
- * Checks a charge number a form sends with a document (a job, a purchase
- * order line, a purchase invoice line): the project is this company's, the
- * element is one of its elements, and a job that consumes to the project has
- * an account to post to (not Statistical). Returns the field and refusal, or
- * null. Two reads at most.
- */
-export async function chargeNumberError(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: {
-    projectId?: string | null;
-    projectElementId?: string | null;
-    consumeToProject?: boolean;
-    receiveToProjectStock?: boolean;
-  }
-): Promise<{ field: string; message: string } | null> {
-  if (!args.projectId) {
-    if (args.projectElementId) {
-      return {
-        field: CHARGE_NUMBER_FIELD,
-        message: "An element needs its project"
-      };
-    }
-    return null;
-  }
-
-  const [project, element] = await Promise.all([
-    client
-      .from("project")
-      .select("id, costTreatment, projectStock")
-      .eq("id", args.projectId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    args.projectElementId
-      ? client
-          .from("projectElement")
-          .select("id")
-          .eq("id", args.projectElementId)
-          .eq("projectId", args.projectId)
-          .eq("companyId", companyId)
-          .maybeSingle()
-      : null
-  ]);
-
-  if (project.error || !project.data) {
-    return {
-      field: CHARGE_NUMBER_FIELD,
-      message: "The project does not exist"
-    };
-  }
-  if (element && (element.error || !element.data)) {
-    return {
-      field: CHARGE_NUMBER_FIELD,
-      message: "The element is not part of the project"
-    };
-  }
-  if (args.consumeToProject && project.data.costTreatment === "Statistical") {
-    return {
-      field: "consumeToProject",
-      message:
-        "A Statistical project has no account, so a job cannot consume to it"
-    };
-  }
-  if (args.consumeToProject && project.data.costTreatment === "Capitalize") {
-    return {
-      field: "consumeToProject",
-      message:
-        "A capital project's job builds its asset under construction, so it cannot consume to the project"
-    };
-  }
-  if (args.receiveToProjectStock && !project.data.projectStock) {
-    return {
-      field: "receiveToProjectStock",
-      message:
-        "The project has no project stock, so a job cannot receive into it"
-    };
-  }
-  return null;
-}
-
-/**
- * Runs the budget availability check (Government Contracting 5c) and formats
- * its overruns in the company's base currency. Without `GOVERNMENT_CONTRACTING`
- * the ee check returns "ok", so the message is empty. Routes decide what a
- * `warn` or a `block` does (decision C4).
- */
-export async function checkProjectBudget(
-  db: Kysely<KyselyDatabase>,
-  client: SupabaseClient<Database>,
-  input: BudgetCheckInput
-): Promise<BudgetCheckResult & { message: string }> {
-  const result = await checkBudgetAvailability(db, client, input);
-  return {
-    ...result,
-    message: await formatBudgetCheckMessage(db, input.companyId, result)
-  };
-}
-
-/**
- * The budget warning of a saved timesheet entry (Government Contracting 5c).
- * A timesheet is never refused for budget (DCAAM 7641.90): the entry is
- * already saved, so this returns the overrun text or null, and sends the
- * `ProjectBudgetExceeded` notice to the owner of each Block project. Any
- * failure is logged and returns null, so it never fails the entry.
- */
-export async function timesheetBudgetWarning(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    projectId: string;
-    projectElementId?: string | null;
-    laborCategoryId: string;
-    entryDate: string;
-    hours: number;
-  }
-): Promise<string | null> {
-  try {
-    const budget = await checkTimesheetBudget(getDatabaseClient(), client, {
-      ...args,
-      projectElementId: args.projectElementId || null
-    });
-    for (const notice of budget.notices) {
       try {
-        await trigger("notify", {
-          event: NotificationEvent.ProjectBudgetExceeded,
-          companyId: args.companyId,
-          documentId: notice.projectId,
-          recipient: { type: "user", userId: notice.ownerId },
-          title: notice.title,
-          body: notice.body
+        await service.ensureCapitalAssets(ctx.asSystem.pg, {
+          companyId,
+          userId: ctx.auditUserId,
+          projectId
         });
       } catch (err) {
-        logger.error("Failed to send the budget exceeded notice", {
-          companyId: args.companyId,
-          projectId: notice.projectId,
+        logger.error("Failed to create the capital assets", {
+          companyId,
+          projectId,
           error: err
         });
+        return {
+          id: projectId,
+          warning: "Failed to create the assets under construction"
+        };
       }
     }
-    return budget.status === "warn" ? budget.message : null;
-  } catch (err) {
-    logger.error("Failed to check the timesheet budget", {
-      companyId: args.companyId,
-      projectId: args.projectId,
-      error: err
-    });
-    return null;
+
+    return { id: projectId, warning: null };
   }
-}
+});
 
 /**
- * The Transfer half of a planning Apply, shared by the purchasing and the
- * production planning routes. Creating a project stock transfer needs
- * `update: projects`, the permission of the transfer pages, on top of the
- * route's own. Returns what the route reports: the applied action ids, the
- * transfers created, and one message per action it could not apply.
- */
-export async function applyTransferPlanningActions(args: {
-  companyId: string;
-  userId: string;
-  planningActionIds: string[];
-}): Promise<{
-  applied: string[];
-  transfers: { id: string; projectStockTransferId: string }[];
-  errors: string[];
-}> {
-  const { companyId, userId, planningActionIds } = args;
-  if (planningActionIds.length === 0) {
-    return { applied: [], transfers: [], errors: [] };
-  }
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "projects", "update", companyId)) {
-    return {
-      applied: [],
-      transfers: [],
-      errors: planningActionIds.map(
-        (id) =>
-          `Planning action ${id} creates a project stock transfer, which needs projects permission`
-      )
-    };
-  }
-  const result = await createProjectStockTransfersFromActions(
-    getDatabaseClient(),
-    { companyId, userId, planningActionIds }
-  );
-  if (result.error) {
-    logger.error("Failed to create project stock transfers from planning", {
-      companyId,
-      userId,
-      planningActionIds,
-      error: result.error
-    });
-    return {
-      applied: [],
-      transfers: [],
-      errors: [`Failed to create project stock transfers: ${result.error}`]
-    };
-  }
-  return {
-    applied: result.created.map((c) => c.planningActionId),
-    transfers: result.created.map(({ id, projectStockTransferId }) => ({
-      id,
-      projectStockTransferId
-    })),
-    errors: result.alreadyApplied.map(
-      (id) => `Planning action ${id} was already applied`
-    )
-  };
-}
-
-/**
- * Applies Transfer and Borrow planning actions, set-based in one transaction:
- * 1. claim the actions (Open → Actioned; the claim is the lock),
- * 2. create one Draft project stock transfer per claimed action, of the
- *    action's type, with one line for the action's item and quantity. A
- *    Borrow takes its payback date from `triggerValues.paybackDueDate`
- *    (Projects Phase 3: a member's stock lent to a short sibling),
- * 3. record each transfer on its action (`projectStockTransferId`).
+ * Mark a project as a template, or unmark it.
  *
- * An action someone else applied first is returned in `alreadyApplied` and
- * gets no transfer. A failure rolls the whole batch back. Approving and
- * posting the transfers stay with the transfer pages.
+ * @remarks
+ * A template is listed first in the new project form's Copy from.
  */
-export async function createProjectStockTransfersFromActions(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; userId: string; planningActionIds: string[] }
-): Promise<{
-  created: {
-    planningActionId: string;
-    id: string;
-    projectStockTransferId: string;
-  }[];
-  alreadyApplied: string[];
-  error: string | null;
-}> {
-  const { companyId, userId, planningActionIds } = args;
-  if (planningActionIds.length === 0) {
-    return { created: [], alreadyApplied: [], error: null };
+export const updateProjectTemplate = defineServiceFn({
+  input: z.object({ projectId: z.string(), isTemplate: z.boolean() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const result = await service.updateProjectTemplate(ctx.asCaller.supabase, {
+      id: input.projectId,
+      companyId: ctx.company.id,
+      isTemplate: input.isTemplate,
+      updatedBy: ctx.auditUserId
+    });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to change the template flag",
+        result.error
+      );
+    }
+    return { id: input.projectId };
   }
-  try {
-    return await db.transaction().execute(async (trx) => {
-      const claimed = await claimPlanningActions(trx, {
-        ids: planningActionIds,
-        companyId,
-        userId,
-        now: datetime.timestamp()
-      });
-      const alreadyApplied = planningActionIds.filter((id) => !claimed.has(id));
-      const ids = planningActionIds.filter((id) => claimed.has(id));
-      if (ids.length === 0) return { created: [], alreadyApplied, error: null };
+});
 
-      const actions = await trx
-        .selectFrom("planningAction")
-        .select([
-          "id",
-          "type",
-          "itemId",
-          "locationId",
-          "fromProjectId",
-          "toProjectId",
-          "reason",
-          "triggerValues"
-        ])
-        .where("id", "in", ids)
-        .where("companyId", "=", companyId)
-        .orderBy("id")
-        .execute();
-      const rows = actions.map((action) => {
-        if (action.type !== "Transfer" && action.type !== "Borrow") {
-          throw new Error(
-            `Planning action ${action.id} is not a Transfer or a Borrow`
+/**
+ * Change the status of a project.
+ *
+ * @remarks
+ * Refuses any status but On Hold while the project has a stop-work order
+ * (use Resume), and a change the project's current status does not allow.
+ * Releasing a capital project first creates its assets under construction.
+ * Closing refuses while the project has an open purchase order line or an
+ * open job.
+ *
+ * @mcp
+ */
+export const updateProjectStatus = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    status: z.enum(projectStatuses)
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { projectId, status }) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    const project = await service.getProject(client, companyId, projectId);
+    if (project.error || !project.data) {
+      return ctx.error("internal", "Failed to load project", project.error);
+    }
+
+    // C16: the building block refuses this too. Asking first means a stopped
+    // project creates no capital assets below.
+    const stopped = stopWorkStatusRefusal(project.data.stopWorkDate, status);
+    if (stopped) return ctx.error("rule", stopped);
+
+    if (!canChangeProjectStatus(project.data.status, status)) {
+      return ctx.error(
+        "rule",
+        `A ${project.data.status} project cannot change to ${status}`
+      );
+    }
+
+    // A capital project needs its assets under construction before it takes
+    // charges. Create them before the status changes: the call is safe to
+    // repeat, so a failed status change leaves nothing wrong behind.
+    if (status === "Released") {
+      try {
+        await service.ensureCapitalAssets(ctx.asSystem.pg, {
+          companyId,
+          userId: ctx.auditUserId,
+          projectId
+        });
+      } catch (err) {
+        return ctx.error(
+          "internal",
+          "Failed to create the assets under construction",
+          err
+        );
+      }
+    }
+
+    const update = await service.updateProjectStatus(client, {
+      id: projectId,
+      companyId,
+      status,
+      updatedBy: ctx.auditUserId
+    });
+    if (update.error) {
+      // A refusal of the building block has a message and no code.
+      return "code" in update.error && update.error.code
+        ? ctx.error(
+            "internal",
+            update.error.message ?? "Failed to update the project status",
+            update.error
+          )
+        : ctx.error("rule", update.error.message);
+    }
+    return { projectId, status };
+  }
+});
+
+/**
+ * Deactivate a project.
+ *
+ * @remarks
+ * Deactivates a project. The row stays so its history still resolves.
+ *
+ * @mcp destructive
+ */
+export const deleteProject = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { delete: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deleteProject(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.projectId,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+// --- Stop work (Government Contracting 5c) ------------------------------------
+
+/**
+ * Issue a stop-work order on a project.
+ *
+ * @remarks
+ * FAR 52.242-15: sets a Released Direct project On Hold with the order
+ * date. Government Contracting is a commercial feature: without it the call
+ * is refused.
+ */
+export const stopProjectWork = defineServiceFn({
+  input: stopWorkValidator,
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    try {
+      const result = await stopWork(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        projectId: input.projectId,
+        orderDate: input.orderDate
+      });
+      if (result.error) {
+        return "code" in result.error && result.error.code
+          ? ctx.error(
+              "internal",
+              result.error.message ?? "Failed to stop work",
+              result.error
+            )
+          : ctx.error("rule", result.error.message ?? "Failed to stop work");
+      }
+      return { projectId: input.projectId };
+    } catch (err) {
+      if (err instanceof EntitlementError) {
+        return ctx.error("entitlement", err.message);
+      }
+      throw err;
+    }
+  }
+});
+
+/**
+ * Resume work on a project with a stop-work order.
+ *
+ * @remarks
+ * Returns the project to Released and clears the order. Not gated, so a
+ * company that loses Government Contracting can still release a stopped
+ * project.
+ */
+export const resumeProjectWork = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const result = await resumeWork(ctx.asCaller.supabase, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      projectId: input.projectId
+    });
+    if (result.error) {
+      return "code" in result.error && result.error.code
+        ? ctx.error(
+            "internal",
+            result.error.message ?? "Failed to resume work",
+            result.error
+          )
+        : ctx.error("rule", result.error.message ?? "Failed to resume work");
+    }
+    return { projectId: input.projectId };
+  }
+});
+
+/**
+ * Save the project control settings of a project.
+ *
+ * @remarks
+ * Budget control, its tolerance and the material measurement point
+ * (Government Contracting 5c). A commercial feature: without it the call is
+ * refused.
+ */
+export const updateProjectControlSettings = defineServiceFn({
+  input: projectControlSettingsValidator,
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    try {
+      const result = await updateControlSettings(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      if (result.error) {
+        return ctx.error(
+          "internal",
+          "Failed to save the control settings",
+          result.error
+        );
+      }
+      return { projectId: input.projectId };
+    } catch (err) {
+      if (err instanceof EntitlementError) {
+        return ctx.error("entitlement", err.message);
+      }
+      throw err;
+    }
+  }
+});
+
+// --- Members -----------------------------------------------------------------
+
+/**
+ * Get a project's members.
+ *
+ * @remarks
+ * Lists the members of a project: the employees who may charge time to it
+ * when it restricts charging.
+ *
+ * @mcp read
+ */
+export const getProjectMembers = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectMembers(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Add an employee to a project's members.
+ *
+ * @remarks
+ * The member must be an employee of the company. Adding a member twice
+ * changes nothing.
+ *
+ * @param userId - The employee's user id.
+ *
+ * @mcp
+ */
+export const addProjectMember = defineServiceFn({
+  input: projectMemberValidator,
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    // A member must be an employee of this company.
+    const employee = await client
+      .from("employee")
+      .select("id")
+      .eq("id", input.userId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (employee.error || !employee.data) {
+      return ctx.error("validation", "Choose an employee of this company");
+    }
+
+    const result = await service.addProjectMember(client, {
+      projectId: input.projectId,
+      userId: input.userId,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (result.error) {
+      return ctx.error("internal", "Failed to add the member", result.error);
+    }
+    return { projectId: input.projectId, userId: input.userId };
+  }
+});
+
+/**
+ * Remove an employee from a project's members.
+ *
+ * @param userId - The employee's user id.
+ *
+ * @mcp destructive
+ */
+export const removeProjectMember = defineServiceFn({
+  input: projectMemberValidator,
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const result = await service.removeProjectMember(ctx.asCaller.supabase, {
+      projectId: input.projectId,
+      userId: input.userId,
+      companyId: ctx.company.id
+    });
+    if (result.error) {
+      return ctx.error("internal", "Failed to remove the member", result.error);
+    }
+    return { projectId: input.projectId, userId: input.userId };
+  }
+});
+
+// --- Charge numbers ----------------------------------------------------------
+
+/**
+ * Get the charge numbers a user can charge.
+ *
+ * @remarks
+ * Lists what a user can charge: each Released project, and each chargeable
+ * element of a Released project whose state is Unstarted or Started. When
+ * the company requires an element, the project-only rows are left out.
+ *
+ * @mcp read
+ */
+export const getChargeNumbers = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getChargeNumbers(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+// --- States (Settings → Projects) --------------------------------------------
+
+/**
+ * Get the company's project states.
+ *
+ * @remarks
+ * Lists the company's project states in board order. States are
+ * company-wide: every project and service order uses them.
+ *
+ * @mcp read
+ */
+export const getProjectStates = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getProjectStates(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Create or update a project state.
+ *
+ * @remarks
+ * Creates or updates a project state of the company. A new state goes after
+ * the last state. With `id` it updates that state, else it creates one.
+ *
+ * @mcp
+ */
+export const upsertProjectState = defineServiceFn({
+  input: projectStateValidator,
+  permission: { update: "settings" },
+  async run(ctx, { id, ...state }) {
+    const result = id
+      ? await service.upsertProjectState(ctx.asCaller.supabase, {
+          ...state,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertProjectState(ctx.asCaller.supabase, {
+          ...state,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (result.error) {
+      return result.error.code === "23505"
+        ? ctx.error("conflict", "A state with this name already exists")
+        : ctx.error("internal", "Failed to save the state", result.error);
+    }
+    return result.data;
+  }
+});
+
+/**
+ * Delete a project state.
+ *
+ * @remarks
+ * Deletes a project state of the company. Refuses when an element of any
+ * project uses the state or when it is the last state of its group. When the
+ * state is its group's default, the next state of the group becomes the
+ * default.
+ *
+ * @mcp destructive
+ */
+export const deleteProjectState = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const result = await service.deleteProjectState(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      id: input.id
+    });
+    if (result.error) return ctx.error("rule", result.error.message);
+    return result.data;
+  }
+});
+
+/**
+ * Make a project state the default of its group.
+ *
+ * @remarks
+ * Makes a state the default of its group, in one transaction. The group's
+ * previous default stops being the default. A new element of the group's
+ * kind takes the default state.
+ *
+ * @mcp
+ */
+export const setProjectStateDefault = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const result = await service.setProjectStateDefault(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      id: input.id,
+      updatedBy: ctx.auditUserId
+    });
+    if (result.error) return ctx.error("rule", result.error.message);
+    return result.data;
+  }
+});
+
+// --- Labels (Settings → Projects) --------------------------------------------
+
+/**
+ * Get the company's project labels.
+ *
+ * @remarks
+ * Lists the company's project labels. Labels are company-wide.
+ *
+ * @mcp read
+ */
+export const getProjectLabels = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getProjectLabels(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Create or update a project label.
+ *
+ * @remarks
+ * Creates or updates a project label of the company. With `id` it updates
+ * that label, else it creates one.
+ *
+ * @mcp
+ */
+export const upsertProjectLabel = defineServiceFn({
+  input: projectLabelValidator,
+  permission: { update: "settings" },
+  async run(ctx, { id, ...label }) {
+    const result = id
+      ? await service.upsertProjectLabel(ctx.asCaller.supabase, {
+          ...label,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertProjectLabel(ctx.asCaller.supabase, {
+          ...label,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (result.error) {
+      return result.error.code === "23505"
+        ? ctx.error("conflict", "A label with this name already exists")
+        : ctx.error("internal", "Failed to save the label", result.error);
+    }
+    return result.data;
+  }
+});
+
+/**
+ * Delete a project label.
+ *
+ * @remarks
+ * Deletes a project label of the company. Its element links go with it.
+ *
+ * @mcp destructive
+ */
+export const deleteProjectLabel = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "settings" },
+  async run(ctx, input) {
+    const result = await service.deleteProjectLabel(
+      ctx.asCaller.supabase,
+      input.id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error("internal", "Failed to delete the label", result.error);
+    }
+    return { id: input.id };
+  }
+});
+
+// --- Milestones --------------------------------------------------------------
+
+/**
+ * Get a project's milestones.
+ *
+ * @remarks
+ * Lists the milestones of a project by date.
+ *
+ * @mcp read
+ */
+export const getProjectMilestones = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectMilestones(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create or update a project milestone.
+ *
+ * @remarks
+ * Creates or updates a milestone of a project. With `id` it updates that
+ * milestone, else it creates one on `projectId`.
+ *
+ * @mcp
+ */
+export const upsertProjectMilestone = defineServiceFn({
+  input: projectMilestoneValidator.safeExtend({ projectId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, { id, projectId, ...milestone }) {
+    const result = id
+      ? await service.upsertProjectMilestone(ctx.asCaller.supabase, {
+          ...milestone,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertProjectMilestone(ctx.asCaller.supabase, {
+          ...milestone,
+          projectId,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to save the milestone",
+        result.error
+      );
+    }
+    return result.data;
+  }
+});
+
+/**
+ * Complete a project milestone, or reopen it.
+ *
+ * @remarks
+ * Completes a milestone now, or reopens it when `completed` is false. A
+ * completed milestone writes a baseline of the plan layer. The milestone is
+ * already saved then, so a failed baseline only sets `baselineFailed`.
+ *
+ * @mcp
+ */
+export const completeProjectMilestone = defineServiceFn({
+  input: z.object({ id: z.string(), completed: z.boolean() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const result = await service.completeProjectMilestone(
+      ctx.asCaller.supabase,
+      {
+        id: input.id,
+        companyId,
+        completed: input.completed,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the milestone",
+        result.error
+      );
+    }
+    if (!input.completed) return { ...result.data, baselineFailed: false };
+
+    try {
+      await service.createProjectBaseline(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        projectId: result.data.projectId,
+        name: `${result.data.name} (completed)`,
+        source: "Milestone",
+        milestoneId: result.data.id
+      });
+    } catch (err) {
+      logger.error("Failed to write the milestone baseline", {
+        err,
+        milestoneId: result.data.id
+      });
+      return { ...result.data, baselineFailed: true };
+    }
+    return { ...result.data, baselineFailed: false };
+  }
+});
+
+/**
+ * Delete a project milestone.
+ *
+ * @remarks
+ * Deletes a milestone of a project. Elements on it lose the milestone.
+ *
+ * @mcp destructive
+ */
+export const deleteProjectMilestone = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const result = await service.deleteProjectMilestone(
+      ctx.asCaller.supabase,
+      input.id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to delete the milestone",
+        result.error
+      );
+    }
+    return { id: input.id };
+  }
+});
+
+// --- Ledger, costs and reports -----------------------------------------------
+
+/**
+ * Get a project's ledger rows.
+ *
+ * @remarks
+ * Lists project ledger rows, newest posting first. Filters are the project,
+ * element ids and cost type.
+ *
+ * @mcp read
+ */
+export const getProjectLedger = defineServiceFn({
+  input: z.looseObject({
+    projectId: z.string(),
+    projectElementIds: z.array(z.string()).nullable().optional(),
+    costType: z.enum(projectCostTypes).nullable().optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProjectLedger(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get the budget and estimate of every element of a project.
+ *
+ * @remarks
+ * Lists every element of a project with its budget and estimate at
+ * completion, for the Costs tab. Pages through the rows.
+ *
+ * @mcp read
+ */
+export const getProjectElementCosts = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectElementCosts(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get a project's timesheet entries that are not posted.
+ *
+ * @remarks
+ * Lists the timesheet entries of a project that are not Posted yet, newest
+ * first (at most 500).
+ *
+ * @mcp read
+ */
+export const getProjectOpenTimesheetEntries = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectOpenTimesheetEntries(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get a project's cost summary.
+ *
+ * @remarks
+ * Gets plan, committed, actual and hours per element of a project, plus one
+ * row with no element for charges to the project itself.
+ *
+ * @mcp read
+ */
+export const getProjectCostSummary = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectCostSummary(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get a project's burden summary.
+ *
+ * @remarks
+ * Gets the burden of a project per element and indirect pool, with its
+ * unallowable part (government contracting Phase 5b). Empty for a project
+ * the burden run never burdened.
+ *
+ * @mcp read
+ */
+export const getProjectBurdenSummary = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectBurdenSummary(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get the company's business components.
+ *
+ * @remarks
+ * The business components of the company (R&D tax): id, readable id, name,
+ * component type and software type.
+ *
+ * @mcp read
+ */
+export const getRdComponents = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getRdComponents(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Pin a project report for the caller, or unpin it.
+ *
+ * @remarks
+ * The pins share `reportPin` with the accounting reports, so a project
+ * report's key is stored with the `projects:` prefix to keep the two sets
+ * apart. Refuses a key that names no project report.
+ */
+export const upsertProjectReportPin = defineServiceFn({
+  input: z.object({ reportKey: z.string().min(1), pinned: z.boolean() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    if (!isProjectReportKey(input.reportKey)) {
+      return ctx.error("notFound", "The report could not be found");
+    }
+    const result = await upsertReportPin(ctx.asCaller.supabase, {
+      reportKey: `projects:${input.reportKey}`,
+      pinned: input.pinned,
+      userId: ctx.auditUserId,
+      companyId: ctx.company.id
+    });
+    if (result.error) {
+      return ctx.error("internal", "Failed to update pin", result.error);
+    }
+    return { reportKey: input.reportKey, pinned: input.pinned };
+  }
+});
+
+// --- Change requests, baselines, WBS -------------------------------------------
+
+// --- Baselines ---------------------------------------------------------------
+
+/**
+ * Get a project's baselines.
+ *
+ * @remarks
+ * Lists the baselines of a project, newest first, without their snapshots.
+ *
+ * @mcp read
+ */
+export const getProjectBaselines = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectBaselines(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get a project baseline.
+ *
+ * @remarks
+ * Loads one baseline with its plan snapshot.
+ *
+ * @mcp read
+ */
+export const getProjectBaseline = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectBaseline(
+        ctx.asCaller.supabase,
+        input.id,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Take a baseline of a project's plan.
+ *
+ * @remarks
+ * Snapshots the plan layer (elements, links and plan lines) as a Manual
+ * baseline, numbered from the project's next baseline sequence, in one
+ * transaction.
+ */
+export const createProjectBaseline = defineServiceFn({
+  input: projectBaselineValidator.extend({ projectId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    try {
+      return await service.createProjectBaseline(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        projectId: input.projectId,
+        name: input.name,
+        source: "Manual"
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to take the baseline", err);
+    }
+  }
+});
+
+// --- Change requests -----------------------------------------------------------
+
+/**
+ * Get a project's change requests.
+ *
+ * @remarks
+ * Lists the change requests of a project, newest first, with their item
+ * counts.
+ *
+ * @mcp read
+ */
+export const getProjectChangeRequests = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectChangeRequests(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get a project change request.
+ *
+ * @remarks
+ * Loads one change request with its title, reason, status and decision.
+ *
+ * @mcp read
+ */
+export const getProjectChangeRequest = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectChangeRequest(
+        ctx.asCaller.supabase,
+        input.id,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Open a change request on a project.
+ *
+ * @remarks
+ * Creates a Draft change request with the next `<identifier>-CR-<n>` id and
+ * a baseline of the plan it starts from, in one transaction. A Closed
+ * project cannot change.
+ */
+export const createProjectChangeRequest = defineServiceFn({
+  input: projectChangeRequestValidator.extend({ projectId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const project = await service.getProject(
+      ctx.asCaller.supabase,
+      companyId,
+      input.projectId
+    );
+    if (project.error || !project.data) {
+      return ctx.error("notFound", "Failed to load the project", project.error);
+    }
+    if (project.data.status === "Closed") {
+      return ctx.error("rule", "A Closed project cannot change");
+    }
+
+    try {
+      return await service.createChangeRequest(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        projectId: input.projectId,
+        title: input.title,
+        reason: input.reason
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to open the change request", err);
+    }
+  }
+});
+
+/**
+ * Move a change request through its lifecycle.
+ *
+ * @remarks
+ * `intent` picks the step:
+ * - `submit` (Draft → In Review) refuses an empty change request, opens an
+ *   approval request when a rule applies and notifies its approvers;
+ * - `approve` and `reject` decide through the approval request when one is
+ *   pending (only its approvers may), else directly; an approval then
+ *   applies the change request to the live plan. An apply the live plan
+ *   changed under is refused and the change request stays Approved;
+ * - `cancel` (Draft or In Review → Cancelled) cancels a pending approval
+ *   request;
+ * - `reopen` (Rejected, or Approved after a conflict → Draft) drops the
+ *   changes that no longer fit the current plan.
+ * Returns the message to show.
+ */
+export const updateProjectChangeRequestStatus = defineServiceFn({
+  input: projectChangeRequestStatusValidator.extend({
+    projectId: z.string(),
+    changeRequestId: z.string()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const { projectId, changeRequestId, intent, notes } = input;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const client = ctx.asCaller.supabase;
+    const serviceRole = ctx.asSystem.supabase;
+    const db = ctx.asSystem.pg;
+
+    const changeRequest = await service.getProjectChangeRequest(
+      client,
+      changeRequestId,
+      companyId
+    );
+    if (changeRequest.error || changeRequest.data.projectId !== projectId) {
+      return ctx.error(
+        "notFound",
+        "The change request does not exist",
+        changeRequest.error
+      );
+    }
+    const { status, readableId } = changeRequest.data;
+    if (!projectChangeRequestIntentFrom[intent].includes(status)) {
+      return ctx.error(
+        "conflict",
+        `A ${status} change request cannot ${intent}`
+      );
+    }
+
+    const scope = { companyId, userId, projectId, changeRequestId };
+    // The notification carries the project too, so its link can open the page.
+    const notificationDocumentId = `${projectId}:${changeRequestId}`;
+
+    // The pending approval request of this change request, proven to be this
+    // company's: the service role reads it by an id the caller sent.
+    const latest =
+      intent === "reopen"
+        ? null
+        : await getLatestApprovalRequestForDocument(
+            serviceRole,
+            "projectChangeRequest",
+            changeRequestId
+          );
+    const pendingApproval =
+      latest?.data && latest.data.companyId === companyId ? latest.data : null;
+
+    switch (intent) {
+      case "submit": {
+        const items = await service.countChangeRequestItems(
+          client,
+          changeRequestId,
+          companyId
+        );
+        if (items.error) {
+          return ctx.error("internal", "Failed to submit", items.error);
+        }
+        if ((items.count ?? 0) === 0) {
+          return ctx.error("rule", "Change the plan before you submit");
+        }
+
+        if (
+          !pendingApproval &&
+          (await isApprovalRequired(
+            serviceRole,
+            "projectChangeRequest",
+            companyId
+          ))
+        ) {
+          const created = await createApprovalRequest(serviceRole, {
+            documentType: "projectChangeRequest",
+            documentId: changeRequestId,
+            companyId,
+            requestedBy: userId,
+            createdBy: userId
+          });
+          if (created.error) {
+            return ctx.error(
+              "internal",
+              "Failed to request approval",
+              created.error
+            );
+          }
+          const rule = await getApprovalRuleByAmount(
+            serviceRole,
+            "projectChangeRequest",
+            companyId
+          );
+          const approverIds = rule.data
+            ? await getApproverUserIdsForRule(serviceRole, rule.data)
+            : [];
+          if (approverIds.length > 0) {
+            try {
+              await trigger("notify", {
+                event: NotificationEvent.ApprovalRequested,
+                companyId,
+                documentId: notificationDocumentId,
+                documentType: "projectChangeRequest",
+                recipient: { type: "users", userIds: approverIds },
+                from: userId
+              });
+            } catch (e) {
+              logger.error("Failed to trigger approval notification", {
+                error: e
+              });
+            }
+          }
+        }
+
+        const moved = await service.setChangeRequestStatus(db, {
+          ...scope,
+          from: ["Draft"],
+          to: "In Review",
+          set: { submittedAt: true }
+        });
+        if (!moved) return ctx.error("conflict", "Failed to submit");
+        return { message: `${readableId} submitted for review` };
+      }
+
+      case "approve":
+      case "reject": {
+        const approved = intent === "approve";
+        if (pendingApproval?.id) {
+          const canApprove = await canApproveRequest(
+            serviceRole,
+            {
+              amount: pendingApproval.amount,
+              documentType: pendingApproval.documentType,
+              companyId: pendingApproval.companyId
+            },
+            userId
+          );
+          if (!canApprove) {
+            return ctx.error(
+              "forbidden",
+              "You do not have permission to approve this request"
+            );
+          }
+          // The approvals engine moves the change request to Approved or
+          // Rejected in its own transaction.
+          const result = approved
+            ? await approveRequest(
+                db,
+                pendingApproval.id,
+                userId,
+                notes || undefined
+              )
+            : await rejectRequest(
+                db,
+                pendingApproval.id,
+                userId,
+                notes || undefined
+              );
+          if (result.error) {
+            return ctx.error(
+              "rule",
+              result.error.message ?? "Failed to record the decision",
+              result.error
+            );
+          }
+          if (
+            pendingApproval.requestedBy &&
+            pendingApproval.requestedBy !== userId
+          ) {
+            try {
+              await trigger("notify", {
+                event: approved
+                  ? NotificationEvent.ApprovalApproved
+                  : NotificationEvent.ApprovalRejected,
+                companyId,
+                documentId: notificationDocumentId,
+                documentType: "projectChangeRequest",
+                recipient: {
+                  type: "user",
+                  userId: pendingApproval.requestedBy
+                },
+                from: userId
+              });
+            } catch (e) {
+              logger.error("Failed to trigger approval decision notification", {
+                error: e
+              });
+            }
+          }
+        } else {
+          // No approval rule applies: a user with `update: projects` decides.
+          const moved = await service.setChangeRequestStatus(db, {
+            ...scope,
+            from: ["In Review"],
+            to: approved ? "Approved" : "Rejected",
+            set: { decided: true, decisionNotes: notes ?? null }
+          });
+          if (!moved) {
+            return ctx.error("conflict", "Failed to record the decision");
+          }
+        }
+        if (!approved) return { message: `${readableId} rejected` };
+
+        // Applies the Approved change request. A conflict keeps it Approved
+        // and lists the rows the live plan changed; the author reopens it.
+        try {
+          const { applied } = await service.applyChangeRequest(db, {
+            companyId,
+            userId,
+            changeRequestId
+          });
+          return {
+            message: applied
+              ? `${readableId} applied`
+              : `${readableId} approved`
+          };
+        } catch (err) {
+          if (err instanceof service.ProjectChangeConflictError) {
+            return ctx.error(
+              "conflict",
+              `${readableId} is approved but cannot apply: the current plan changed under ${err.conflicts.length} of its rows. Reopen it to fix them.`,
+              err
+            );
+          }
+          if (err instanceof service.ProjectChangeRequestError) {
+            return ctx.error(
+              "rule",
+              `${readableId} is approved but cannot apply: ${err.message}`,
+              err
+            );
+          }
+          return ctx.error(
+            "internal",
+            `${readableId} is approved but failed to apply`,
+            err
           );
         }
-        // the quantity as it is at the claim, not as the page read it
-        const quantity = Number(claimed.get(action.id)?.suggestedQuantity);
-        if (!(quantity > 0)) {
-          throw new Error(`Planning action ${action.id} has no quantity`);
-        }
-        const payback = (action.triggerValues as Record<string, unknown> | null)
-          ?.paybackDueDate;
-        const paybackDueDate =
-          action.type === "Borrow" && typeof payback === "string"
-            ? payback
-            : null;
-        if (action.type === "Borrow" && !paybackDueDate) {
-          throw new Error(`Planning action ${action.id} has no payback date`);
-        }
-        return { ...action, type: action.type, quantity, paybackDueDate };
-      });
-
-      // One readable id per transfer, from the projectStockTransfer sequence.
-      const sequence = await sql<{ id: string }>`
-        SELECT get_next_sequence('projectStockTransfer', ${companyId}) AS id
-        FROM generate_series(1, ${rows.length}::int)
-      `.execute(trx);
-      const readableIds = sequence.rows.map((row) => row.id);
-      if (readableIds.length !== rows.length || readableIds.some((id) => !id)) {
-        throw new Error("Failed to get the next transfer ids");
       }
 
-      const headers = await trx
-        .insertInto("projectStockTransfer")
-        .values(
-          rows.map((action, i) => ({
-            companyId,
-            projectStockTransferId: readableIds[i]!,
-            type: action.type,
-            fromProjectId: action.fromProjectId,
-            toProjectId: action.toProjectId,
-            paybackDueDate: action.paybackDueDate,
-            locationId: action.locationId,
-            reason: action.reason ?? "Planning action",
-            planningActionId: action.id,
-            createdBy: userId
-          }))
-        )
-        .returning(["id", "planningActionId", "projectStockTransferId"])
-        .execute();
-      const headerByAction = new Map(
-        headers.map((header) => [header.planningActionId, header])
+      case "cancel": {
+        if (pendingApproval?.id) {
+          const cancelled = await cancelApprovalRequest(
+            serviceRole,
+            pendingApproval.id,
+            userId
+          );
+          if (cancelled.error) {
+            return ctx.error("rule", cancelled.error.message, cancelled.error);
+          }
+        }
+        const moved = await service.setChangeRequestStatus(db, {
+          ...scope,
+          from: ["Draft", "In Review"],
+          to: "Cancelled"
+        });
+        if (!moved) return ctx.error("conflict", "Failed to cancel");
+        return { message: `${readableId} cancelled` };
+      }
+
+      case "reopen": {
+        try {
+          const { dropped } = await service.reopenChangeRequest(db, scope);
+          return {
+            message:
+              dropped > 0
+                ? `${readableId} reopened. ${dropped} change(s) no longer fit the current plan and were removed.`
+                : `${readableId} reopened`
+          };
+        } catch (err) {
+          if (err instanceof service.ProjectChangeRequestError) {
+            return ctx.error("rule", err.message, err);
+          }
+          return ctx.error(
+            "internal",
+            err instanceof Error ? err.message : "Failed to reopen",
+            err
+          );
+        }
+      }
+    }
+  }
+});
+
+/**
+ * Comment on a change request.
+ *
+ * @remarks
+ * On the change request, on an element (`targetTable` + `targetId`) or on
+ * one changed field of it (`field`).
+ */
+export const createProjectChangeRequestComment = defineServiceFn({
+  input: projectChangeRequestCommentValidator.extend({
+    projectId: z.string(),
+    changeRequestId: z.string()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    const changeRequest = await service.getProjectChangeRequest(
+      ctx.asCaller.supabase,
+      input.changeRequestId,
+      ctx.company.id
+    );
+    if (
+      changeRequest.error ||
+      changeRequest.data.projectId !== input.projectId
+    ) {
+      return ctx.error(
+        "notFound",
+        "The change request does not exist",
+        changeRequest.error
       );
-
-      await trx
-        .insertInto("projectStockTransferLine")
-        .values(
-          rows.map((action) => ({
-            companyId,
-            projectStockTransferId: headerByAction.get(action.id)!.id,
-            itemId: action.itemId,
-            quantity: action.quantity,
-            createdBy: userId
-          }))
-        )
-        .execute();
-
-      await sql`
-        UPDATE "planningAction" AS a
-        SET "projectStockTransferId" = v."transferId"
-        FROM (VALUES ${sql.join(
-          headers.map((h) => sql`(${h.planningActionId}, ${h.id})`)
-        )}) AS v("actionId", "transferId")
-        WHERE a."id" = v."actionId" AND a."companyId" = ${companyId}
-      `.execute(trx);
-
-      return {
-        created: headers.map((header) => ({
-          planningActionId: header.planningActionId!,
-          id: header.id,
-          projectStockTransferId: header.projectStockTransferId
-        })),
-        alreadyApplied,
-        error: null
-      };
-    });
-  } catch (err) {
-    return {
-      created: [],
-      alreadyApplied: [],
-      error: err instanceof Error ? err.message : String(err)
-    };
+    }
+    const inserted = await service.insertProjectChangeRequestComment(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        changeRequestId: input.changeRequestId,
+        comment: input.comment,
+        targetTable: input.targetTable,
+        targetId: input.targetId,
+        field: input.field
+      }
+    );
+    if (inserted.error) {
+      return ctx.error("internal", "Failed to comment", inserted.error);
+    }
+    return { changeRequestId: input.changeRequestId };
   }
-}
+});
 
 /**
- * Projects Phase 3: the owners of the netting segments a planning order
- * names. A segment is a project with project stock or a planning group of the
- * company; '' (common) is left out. Returns the segments it found of each
- * kind, and the ones it did not find.
+ * Resolve a comment of a change request.
+ *
+ * @remarks
+ * Any reviewer who may change the project resolves a comment, not only its
+ * author.
  */
-export async function getPlanningSegmentOwners(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  segmentIds: string[]
-): Promise<{
-  projectIds: Set<string>;
-  planningGroupIds: Set<string>;
-  unknownIds: string[];
-  error: string | null;
-}> {
-  const ids = [...new Set(segmentIds.filter(Boolean))];
-  if (ids.length === 0) {
-    return {
-      projectIds: new Set(),
-      planningGroupIds: new Set(),
-      unknownIds: [],
-      error: null
-    };
+export const resolveProjectChangeRequestComment = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    changeRequestId: z.string(),
+    id: z.string().min(1, { message: "No comment" })
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const changeRequest = await service.getProjectChangeRequest(
+      ctx.asCaller.supabase,
+      input.changeRequestId,
+      ctx.company.id
+    );
+    if (
+      changeRequest.error ||
+      changeRequest.data.projectId !== input.projectId
+    ) {
+      return ctx.error(
+        "notFound",
+        "The change request does not exist",
+        changeRequest.error
+      );
+    }
+    const resolved = await service.resolveProjectChangeRequestComment(
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        changeRequestId: input.changeRequestId,
+        id: input.id
+      }
+    );
+    if (!resolved) {
+      return ctx.error("notFound", "Failed to resolve the comment");
+    }
+    return { id: input.id };
   }
-  const [projects, groups] = await Promise.all([
-    client
-      .from("project")
-      .select("id")
-      .in("id", ids)
-      .eq("companyId", companyId)
-      .eq("projectStock", true),
-    client
-      .from("planningGroup")
-      .select("id")
-      .in("id", ids)
-      .eq("companyId", companyId)
-  ]);
-  const projectIds = new Set((projects.data ?? []).map((row) => row.id));
-  const planningGroupIds = new Set((groups.data ?? []).map((row) => row.id));
-  return {
-    projectIds,
-    planningGroupIds,
-    unknownIds: ids.filter(
-      (id) => !projectIds.has(id) && !planningGroupIds.has(id)
-    ),
-    error: projects.error?.message ?? groups.error?.message ?? null
-  };
-}
+});
 
 /**
- * Projects Phase 3: an applied grouped Order or Make moves the pegs of its
- * planning action to the PO line or job it created, so the project costs
- * show the commitment at once instead of at the next MRP run. One
- * transaction for the whole batch:
- * 1. supersede the actions' current pegs,
- * 2. insert copies on the new supply.
- * A peg is never updated in place; the history keeps the planned peg.
+ * Delete your own comment of a change request.
+ *
+ * @remarks
+ * Only the comment's author deletes it.
  */
-export async function moveActionPegsToSupply(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    userId: string;
-    moves: {
-      planningActionId: string;
-      supplyType: "Purchase Order Line" | "Job";
-      supplyId: string;
-    }[];
+export const deleteProjectChangeRequestComment = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    changeRequestId: z.string(),
+    id: z.string().min(1, { message: "No comment" })
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    const changeRequest = await service.getProjectChangeRequest(
+      ctx.asCaller.supabase,
+      input.changeRequestId,
+      ctx.company.id
+    );
+    if (
+      changeRequest.error ||
+      changeRequest.data.projectId !== input.projectId
+    ) {
+      return ctx.error(
+        "notFound",
+        "The change request does not exist",
+        changeRequest.error
+      );
+    }
+    const deleted = await service.deleteProjectChangeRequestComment(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        changeRequestId: input.changeRequestId,
+        id: input.id
+      }
+    );
+    if (deleted.error) {
+      return ctx.error("internal", "Failed to delete", deleted.error);
+    }
+    return { id: input.id };
   }
-): Promise<{ moved: number; error: string | null }> {
-  const { companyId, userId } = args;
-  const supplyByAction = new Map(
-    args.moves.map((move) => [move.planningActionId, move])
-  );
-  if (supplyByAction.size === 0) return { moved: 0, error: null };
-  try {
-    const moved = await db.transaction().execute(async (trx) => {
-      const superseded = await trx
-        .updateTable("projectPeg")
-        .set({ supersededAt: sql<string>`now()` })
-        .where("companyId", "=", companyId)
-        .where("supplyType", "=", "Planning Action")
-        .where("supplyId", "in", [...supplyByAction.keys()])
-        .where("supersededAt", "is", null)
-        .returning([
-          "planningGroupId",
-          "itemId",
-          "locationId",
-          "supplyId",
-          "projectId",
-          "projectElementId",
-          "demandSourceType",
-          "demandSourceId",
-          "parentPegId",
-          "quantity",
-          "needDate",
-          "state"
-        ])
-        .execute();
-      if (superseded.length === 0) return 0;
-      await trx
-        .insertInto("projectPeg")
-        .values(
-          superseded.map((peg) => {
-            const move = supplyByAction.get(peg.supplyId)!;
-            return {
-              companyId,
-              planningGroupId: peg.planningGroupId,
-              itemId: peg.itemId,
-              locationId: peg.locationId,
-              supplyType: move.supplyType,
-              supplyId: move.supplyId,
-              projectId: peg.projectId,
-              projectElementId: peg.projectElementId,
-              demandSourceType: peg.demandSourceType,
-              demandSourceId: peg.demandSourceId,
-              parentPegId: peg.parentPegId,
-              quantity: peg.quantity,
-              needDate: peg.needDate,
-              state: peg.state,
-              createdBy: userId
-            };
-          })
-        )
-        .execute();
-      return superseded.length;
-    });
-    return { moved, error: null };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error("Failed to move planning action pegs to their supply", {
+});
+
+/**
+ * Mark a changed row of a change request viewed, or clear the mark.
+ *
+ * @remarks
+ * The mark is the user's own. A later change of the row makes it stale (the
+ * review compares `viewedAt` with the items' last change).
+ */
+export const updateProjectChangeRequestView = defineServiceFn({
+  input: z.object({
+    changeRequestId: z.string(),
+    targetTable: z.enum(projectPlanTables),
+    targetId: z.string().min(1),
+    viewed: z.boolean()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    const result = await service.setProjectChangeRequestView(
+      ctx.asCaller.supabase,
+      { ...input, companyId: ctx.company.id, userId: ctx.auditUserId }
+    );
+    if (result.error) {
+      return ctx.error("internal", "Failed to save the mark", result.error);
+    }
+    return { viewed: input.viewed };
+  }
+});
+
+// --- WBS -----------------------------------------------------------------------
+
+/**
+ * Import a WBS CSV into a project.
+ *
+ * @remarks
+ * `rows` are the CSV's rows, keyed by column header. With `apply` false it
+ * reads them and writes nothing, returning what each row would do and its
+ * errors; with `apply` true it creates, updates and links in one transaction
+ * when no row has an error. Never deletes. Refused on a Closed project and
+ * on a locked plan: import is a setup step. At most 5000 rows.
+ */
+export const importProjectWbs = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    rows: z.array(z.record(z.string(), z.string().optional())),
+    apply: z.boolean()
+  }),
+  // A row without an Element ID creates an element, as New element does.
+  permission: { create: "projects", update: "projects" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const client = ctx.asCaller.supabase;
+    const project = await service.getProject(
+      client,
       companyId,
-      planningActionIds: [...supplyByAction.keys()],
-      error: message
+      input.projectId
+    );
+    if (project.error || !project.data) {
+      return ctx.error("notFound", "Failed to load the project", project.error);
+    }
+    if (project.data.status === "Closed") {
+      return ctx.error("rule", "A Closed project cannot change");
+    }
+
+    const locked = await service.requireProjectPlanEditable(client, {
+      projectId: input.projectId,
+      companyId,
+      changeRequestId: null
     });
-    return { moved: 0, error: message };
+    if (locked) return ctx.error("rule", locked);
+
+    if (input.rows.length === 0) {
+      return ctx.error("validation", "The file has no rows");
+    }
+    // The largest file the import reads.
+    if (input.rows.length > 5000) {
+      return ctx.error("validation", "The file has more than 5000 rows");
+    }
+
+    try {
+      return await service.importProjectWbs(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        projectId: input.projectId,
+        rows: input.rows,
+        apply: input.apply
+      });
+    } catch (err) {
+      return ctx.error(
+        "internal",
+        err instanceof Error ? err.message : "Failed to import the WBS",
+        err
+      );
+    }
   }
-}
+});
 
 /**
- * One employee's timesheet week for the grid (My Timesheet and the manager's
- * employee page). The week runs Monday to Sunday on the company calendar, as
- * the timecard does, so the two line up day by day. Returns the entries as
- * grid rows, the hours clocked per day, the labor categories, the company
- * settings and, in DCAA mode, the entries that have a correction trail. A
- * failed read is logged and shows as empty.
+ * Pin a project's WBS codes.
+ *
+ * @remarks
+ * Pins every derived WBS code of the project, as a contractor does at award:
+ * afterwards a move keeps each element's code. Refuses while 2 elements have
+ * the same code, and on a locked plan. Returns how many codes it pinned.
  */
-export async function getTimesheetWeekView(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; employeeId: string; weekOffset: number }
-) {
-  const { companyId, employeeId } = args;
-  const offset = Number.isFinite(args.weekOffset) ? args.weekOffset : 0;
-  const timeZone = await getCompanyTimeZone(client, companyId);
-  const { weekStart, weekEnd, days, today, from, to } = timesheetWeek(
-    timeZone,
-    offset
+export const pinProjectWbsCodes = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId: input.projectId, companyId, changeRequestId: null }
+    );
+    if (locked) return ctx.error("rule", locked);
+
+    try {
+      const count = await service.pinProjectWbsCodes(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        projectId: input.projectId
+      });
+      return { count };
+    } catch (err) {
+      return ctx.error("internal", "Failed to pin the WBS codes", err);
+    }
+  }
+});
+
+/**
+ * Unpin the WBS codes of an element and its subtree.
+ *
+ * @remarks
+ * Clears the pinned WBS codes of the element and its descendants, so they
+ * derive from the tree again. Refused on a locked plan. Returns how many
+ * codes it unpinned.
+ */
+export const renumberProjectWbsSubtree = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    elementId: z.string().min(1, { message: "Choose an element" })
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId: input.projectId, companyId, changeRequestId: null }
+    );
+    if (locked) return ctx.error("rule", locked);
+
+    try {
+      const count = await service.renumberWbsSubtree(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        projectId: input.projectId,
+        elementId: input.elementId
+      });
+      return { count };
+    } catch (err) {
+      return ctx.error("internal", "Failed to renumber the WBS", err);
+    }
+  }
+});
+
+// --- Elements, links, comments -------------------------------------------------
+
+/** The Draft change request a plan-layer write goes into; null writes live. */
+const changeRequestIdField = z
+  .string()
+  .nullish()
+  .describe(
+    "A Draft change request of the project: the change goes into it instead of the live plan. Required to change a locked plan."
   );
 
-  const [entries, timecard, laborCategories, settings, job] = await Promise.all(
-    [
-      getTimesheetWeek(client, {
+/** A drag-sort order of sibling elements. */
+const sortOrderUpdates = z.array(
+  z.object({ id: z.string().min(1), sortOrder: z.number() })
+);
+
+// --- Elements -----------------------------------------------------------------
+
+/**
+ * Get a project's elements.
+ *
+ * @remarks
+ * Lists every element of a project with its state and label ids. Pages
+ * through the rows, because a project can have more than 1000 elements.
+ *
+ * @param projectId - The project.
+ * @param search - Matches the element's name or readable id.
+ * @mcp read
+ */
+export const getProjectElements = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    type: z.array(z.enum(projectElementTypes)).nullish(),
+    stateGroup: z.array(z.enum(projectStateGroups)).nullish(),
+    ownerId: z.array(z.string()).nullish(),
+    milestoneId: z.array(z.string()).nullish(),
+    labelId: z.array(z.string()).nullish(),
+    search: z.string().nullish()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, { projectId, ...filters }) {
+    return unwrap(
+      ctx,
+      await service.getProjectElements(
+        ctx.asCaller.supabase,
+        projectId,
+        ctx.company.id,
+        filters
+      )
+    );
+  }
+});
+
+/**
+ * Get the descriptions of a project's elements.
+ *
+ * @remarks
+ * The descriptions of every element of a project, for the Reader. The list
+ * query leaves them out, because a description can be large.
+ *
+ * @mcp read
+ */
+export const getProjectElementDescriptions = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectElementDescriptions(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get a project element.
+ *
+ * @remarks
+ * Gets one element with its state, owner, milestone, labels and parent.
+ *
+ * @mcp read
+ */
+export const getProjectElement = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectElement(
+        ctx.asCaller.supabase,
+        input.id,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create a project element.
+ *
+ * @remarks
+ * The project's sequence gives the element its readable id. An empty state
+ * takes the default Unstarted state; an absent `isChargeable` the type's
+ * default. With a change request the element goes into it, and its readable
+ * id stays empty until the change request is applied. A locked plan takes a
+ * new element only through a change request; a Closed project takes none.
+ */
+export const createProjectElement = defineServiceFn({
+  input: projectElementValidator.safeExtend({
+    projectId: z.string(),
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { create: "projects" },
+  async run(ctx, input) {
+    const { id: _id, projectId, changeRequestId, ...element } = input;
+    // A locked plan takes plan-layer changes only through a change request.
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      {
+        projectId,
+        companyId: ctx.company.id,
+        changeRequestId: changeRequestId ?? null
+      }
+    );
+    if (locked) return ctx.error("rule", locked);
+
+    const project = await service.requireOpenProject(
+      ctx,
+      projectId,
+      "A Closed project cannot take new elements"
+    );
+    if (project instanceof CarbonError) return project;
+
+    return run(ctx, "createProjectElement", () =>
+      changeRequestId
+        ? service.addElementToChangeRequest(ctx.asSystem.pg, {
+            companyId: ctx.company.id,
+            userId: ctx.auditUserId,
+            projectId,
+            changeRequestId,
+            element
+          })
+        : service.insertProjectElement(ctx.asSystem.pg, {
+            ...element,
+            projectId,
+            companyId: ctx.company.id,
+            userId: ctx.auditUserId
+          })
+    );
+  }
+});
+
+/**
+ * Set one field on project elements.
+ *
+ * @remarks
+ * Sets one field on one or more elements. Moving into a Completed state
+ * stamps `completedAt`; moving to any other state clears it. A change to a
+ * field in `suspectLinkFields` makes the incoming trace links suspect. With a
+ * change request a plan-layer field goes into it; a progress field always
+ * writes live. A locked plan takes a plan-layer field only through a change
+ * request. A new final asset on a released project gets its asset under
+ * construction.
+ */
+export const updateProjectElementField = defineServiceFn({
+  input: projectElementFieldUpdateValidator.safeExtend({
+    projectId: z.string(),
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const { ids, field, value, projectId } = input;
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+
+    const planLayer = isPlanLayerField("projectElement", field);
+    const changeRequestId = input.changeRequestId ?? null;
+    if (planLayer) {
+      // A locked plan takes plan-layer changes only through a change request.
+      const locked = await service.requireProjectPlanEditable(
+        ctx.asCaller.supabase,
+        { projectId, companyId: ctx.company.id, changeRequestId }
+      );
+      if (locked) return ctx.error("rule", locked);
+    }
+    if (changeRequestId && planLayer) {
+      const queued = await run(ctx, "updateProjectElementField", () =>
+        service.updateElementFieldInChangeRequest(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          projectId,
+          changeRequestId,
+          ids,
+          field,
+          value
+        })
+      );
+      if (queued instanceof CarbonError) return queued;
+      return { ids };
+    }
+
+    const updated = unwrap(
+      ctx,
+      await service.updateProjectElementField(ctx.asCaller.supabase, {
+        ids,
+        field,
+        value,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+    if (updated instanceof CarbonError) return updated;
+
+    // A new final asset on a released project gets its asset under
+    // construction now, so its costs can post.
+    if (
+      field === "isFinalAsset" &&
+      (value === "true" || value === "on") &&
+      project.status !== "Draft"
+    ) {
+      const assets = await run(ctx, "updateProjectElementField", () =>
+        service.ensureCapitalAssets(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          projectId
+        })
+      );
+      if (assets instanceof CarbonError) return assets;
+    }
+    return { ids };
+  }
+});
+
+/**
+ * Make project elements billing elements, or stop them being one.
+ *
+ * @remarks
+ * A billing element is the element a Time & Materials or Cost Plus contract
+ * line bills, with its subtree. Only a Contract project has billing
+ * elements. A branch has one billing element, and an element a contract line
+ * bills stays one. The flag is not a plan-layer field: it always writes live.
+ *
+ * @mcp
+ */
+export const updateProjectElementBilling = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    ids: z.array(z.string().min(1)).min(1, { message: "Choose an element" }),
+    isBilling: z.boolean()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const project = await service.requireOpenProject(ctx, input.projectId);
+    if (project instanceof CarbonError) return project;
+    if (input.isBilling && project.costTreatment !== "Contract") {
+      return ctx.error("rule", "Only a Contract project has billing elements");
+    }
+    const updated = unwrap(
+      ctx,
+      await service.updateProjectElementBilling(ctx.asCaller.supabase, {
+        ids: input.ids,
+        isBilling: input.isBilling,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+    if (updated instanceof CarbonError) return updated;
+    return { ids: input.ids };
+  }
+});
+
+/**
+ * Replace the labels of a project element.
+ *
+ * @remarks
+ * Replaces the labels of an element with the given set: labels not in it are
+ * removed. A Closed project cannot change.
+ *
+ * @mcp destructive
+ */
+export const setProjectElementLabels = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    projectElementId: z.string(),
+    labelIds: z.array(z.string())
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const project = await service.requireOpenProject(ctx, input.projectId);
+    if (project instanceof CarbonError) return project;
+    return unwrap(
+      ctx,
+      await service.setProjectElementLabels(ctx.asCaller.supabase, {
+        projectElementId: input.projectElementId,
+        labelIds: input.labelIds,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Move a project element under a new parent.
+ *
+ * @remarks
+ * Puts the element under `parentId` (the top level when empty), after its
+ * new last sibling; with `order`, then saves the new siblings' order (a drop
+ * between two rows of the tree). Refuses a parent in the element's own
+ * subtree and a Parameter parent for another type. With a change request the
+ * move goes into it. A locked plan moves only through a change request.
+ */
+export const moveProjectElement = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    elementId: z.string().min(1, { message: "No element was given" }),
+    parentId: z.string().nullish(),
+    order: sortOrderUpdates.default([]),
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const { projectId, elementId, order } = input;
+    const parentId = input.parentId || null;
+    const changeRequestId = input.changeRequestId ?? null;
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+    // A locked plan takes plan-layer changes only through a change request.
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId, companyId: ctx.company.id, changeRequestId }
+    );
+    if (locked) return ctx.error("rule", locked);
+
+    const write = {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      projectId
+    };
+    if (changeRequestId) {
+      const queued = await run(ctx, "moveProjectElement", async () => {
+        await service.moveElementInChangeRequest(ctx.asSystem.pg, {
+          ...write,
+          changeRequestId,
+          elementId,
+          parentId
+        });
+        if (order.length > 0) {
+          await service.orderElementsInChangeRequest(ctx.asSystem.pg, {
+            ...write,
+            changeRequestId,
+            updates: order
+          });
+        }
+      });
+      if (queued instanceof CarbonError) return queued;
+      return { elementId };
+    }
+
+    const sortOrder = unwrap(
+      ctx,
+      await service.getNextElementSortOrder(ctx.asCaller.supabase, {
+        projectId,
+        companyId: ctx.company.id,
+        parentId
+      })
+    );
+    if (sortOrder instanceof CarbonError) return sortOrder;
+
+    const moved = await run(ctx, "moveProjectElement", async () => {
+      await service.moveProjectElement(ctx.asSystem.pg, {
+        ...write,
+        elementId,
+        parentId,
+        sortOrder: sortOrder ?? 1
+      });
+      if (order.length > 0) {
+        await service.updateProjectElementOrder(
+          ctx.asSystem.pg,
+          ctx.company.id,
+          ctx.auditUserId,
+          projectId,
+          order
+        );
+      }
+    });
+    if (moved instanceof CarbonError) return moved;
+    return { elementId };
+  }
+});
+
+/**
+ * Save the order of sibling project elements.
+ *
+ * @remarks
+ * Saves the drag-sort order of sibling elements. With a change request the
+ * order goes into it. A locked plan takes a new order only through a change
+ * request.
+ *
+ * @mcp
+ */
+export const updateProjectElementOrder = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    updates: sortOrderUpdates,
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const { projectId, updates } = input;
+    const changeRequestId = input.changeRequestId ?? null;
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+    // A locked plan takes plan-layer changes only through a change request.
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId, companyId: ctx.company.id, changeRequestId }
+    );
+    if (locked) return ctx.error("rule", locked);
+    if (updates.length === 0) return { count: 0 };
+
+    const saved = await run(ctx, "updateProjectElementOrder", async () => {
+      if (changeRequestId) {
+        await service.orderElementsInChangeRequest(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          projectId,
+          changeRequestId,
+          updates
+        });
+        return;
+      }
+      await service.updateProjectElementOrder(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        ctx.auditUserId,
+        projectId,
+        updates
+      );
+    });
+    if (saved instanceof CarbonError) return saved;
+    return { count: updates.length };
+  }
+});
+
+/**
+ * Delete a project element and its descendants.
+ *
+ * @remarks
+ * Refuses when the element or a descendant has a project ledger row, a
+ * timesheet entry, a job, a purchase order line or an earned value snapshot,
+ * or is the base of an Apportioned element outside the subtree. With a
+ * change request the delete goes into it, and the apply step refuses it on
+ * the same grounds. A locked plan deletes only through a change request.
+ *
+ * @mcp destructive
+ */
+export const deleteProjectElement = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    elementId: z.string(),
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { delete: "projects" },
+  async run(ctx, input) {
+    const { projectId, elementId } = input;
+    const changeRequestId = input.changeRequestId ?? null;
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+    // A locked plan takes plan-layer changes only through a change request.
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId, companyId: ctx.company.id, changeRequestId }
+    );
+    if (locked) return ctx.error("rule", locked);
+
+    if (changeRequestId) {
+      const queued = await run(ctx, "deleteProjectElement", () =>
+        service.deleteElementInChangeRequest(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          projectId,
+          changeRequestId,
+          elementId
+        })
+      );
+      if (queued instanceof CarbonError) return queued;
+      return { elementId, changeRequestId };
+    }
+
+    const deleted = unwrap(
+      ctx,
+      await service.deleteProjectElement(
+        ctx.asCaller.supabase,
+        elementId,
+        ctx.company.id
+      )
+    );
+    if (deleted instanceof CarbonError) return deleted;
+    return { elementId, changeRequestId: null };
+  }
+});
+
+/**
+ * Save the earned value fields of a project element.
+ *
+ * @remarks
+ * Government Contracting: the control account flag, its manager, and the
+ * earned value technique of a work package. A refusal of the fields (no
+ * control account above, not chargeable) is a `validation` refusal.
+ */
+export const updateProjectElementEarnedValue = defineServiceFn({
+  input: elementEarnedValueValidator.safeExtend({ projectId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, { projectId, ...fields }) {
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+    try {
+      const result = await updateElementEarnedValue(ctx.asCaller.supabase, {
+        ...fields,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      if (result.error) {
+        // A database failure stays one; the ee function's own refusals
+        // carry no code.
+        if ("code" in result.error && result.error.code) {
+          return unwrap(ctx, result);
+        }
+        return ctx.error(
+          "validation",
+          result.error.message ?? "Failed to save the earned value fields"
+        );
+      }
+      return { elementId: fields.elementId };
+    } catch (err) {
+      if (err instanceof EntitlementError) {
+        return ctx.error("entitlement", err.message, err);
+      }
+      throw err;
+    }
+  }
+});
+
+// --- Trace links ----------------------------------------------------------------
+
+/**
+ * Get a project's trace links.
+ *
+ * @remarks
+ * Lists every trace link of a project. Pages through the rows, because a
+ * large project can have more than 1000 links.
+ *
+ * @mcp read
+ */
+export const getProjectElementLinks = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectElementLinks(
+        ctx.asCaller.supabase,
+        input.projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Add a trace link between two project elements.
+ *
+ * @remarks
+ * Both elements must be in the project, and `canLink` decides with the
+ * project's links: a `feeds` link is refused, because only a formula save
+ * writes them. With a change request the link goes into it. A locked plan
+ * takes a new link only through a change request.
+ *
+ * @mcp
+ */
+export const upsertProjectElementLink = defineServiceFn({
+  input: projectElementLinkValidator.safeExtend({
+    projectId: z.string(),
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const { projectId, changeRequestId: crId, ...link } = input;
+    const changeRequestId = crId ?? null;
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+    // A locked plan takes link changes only through a change request.
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId, companyId: ctx.company.id, changeRequestId }
+    );
+    if (locked) return ctx.error("rule", locked);
+
+    if (changeRequestId) {
+      return run(ctx, "upsertProjectElementLink", () =>
+        service.addLinkToChangeRequest(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          projectId,
+          changeRequestId,
+          link
+        })
+      );
+    }
+    return unwrap(
+      ctx,
+      await service.upsertProjectElementLink(ctx.asCaller.supabase, {
+        ...link,
+        projectId,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete a trace link.
+ *
+ * @remarks
+ * A `feeds` link belongs to a formula and is refused: edit the formula
+ * instead. With a change request the delete goes into it. A locked plan
+ * deletes a link only through a change request.
+ *
+ * @mcp destructive
+ */
+export const deleteProjectElementLink = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    id: z.string().min(1, { message: "No link selected" }),
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const { projectId, id } = input;
+    const changeRequestId = input.changeRequestId ?? null;
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+    // A locked plan takes link changes only through a change request.
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId, companyId: ctx.company.id, changeRequestId }
+    );
+    if (locked) return ctx.error("rule", locked);
+
+    if (changeRequestId) {
+      const queued = await run(ctx, "deleteProjectElementLink", () =>
+        service.deleteLinkInChangeRequest(ctx.asSystem.pg, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          projectId,
+          changeRequestId,
+          linkId: id
+        })
+      );
+      if (queued instanceof CarbonError) return queued;
+      return { id };
+    }
+    const deleted = unwrap(
+      ctx,
+      await service.deleteProjectElementLink(
+        ctx.asCaller.supabase,
+        id,
+        ctx.company.id
+      )
+    );
+    if (deleted instanceof CarbonError) return deleted;
+    return { id };
+  }
+});
+
+/**
+ * Mark a suspect trace link reviewed.
+ *
+ * @remarks
+ * Clears `suspectSince` and records who reviewed it and when. Reviewing is
+ * progress, not a plan change: it writes live, also on a locked plan.
+ *
+ * @mcp
+ */
+export const clearSuspectLink = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    id: z.string().min(1, { message: "No link selected" })
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const project = await service.requireOpenProject(ctx, input.projectId);
+    if (project instanceof CarbonError) return project;
+    return unwrap(
+      ctx,
+      await service.clearSuspectLink(ctx.asCaller.supabase, {
+        id: input.id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Save a Parameter's formula.
+ *
+ * @remarks
+ * Refuses a parse error, a ref that is not a Parameter of the project, and a
+ * cycle of `feeds` links. Then sets the Formula source and replaces the
+ * element's incoming `feeds` links with one link from each ref, in one
+ * transaction. A change request does not carry a formula, and a locked plan
+ * takes none.
+ */
+export const saveParameterFormula = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    elementId: z.string(),
+    formula: z.string(),
+    changeRequestId: changeRequestIdField
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const { projectId } = input;
+    const changeRequestId = input.changeRequestId ?? null;
+    const project = await service.requireOpenProject(ctx, projectId);
+    if (project instanceof CarbonError) return project;
+    // A locked plan takes formula changes only through a change request.
+    const locked = await service.requireProjectPlanEditable(
+      ctx.asCaller.supabase,
+      { projectId, companyId: ctx.company.id, changeRequestId }
+    );
+    if (locked) return ctx.error("rule", locked);
+    // A formula rewrites its feeds links, which a change request does not
+    // carry yet.
+    if (changeRequestId) {
+      return ctx.error(
+        "rule",
+        "A formula cannot change in a change request. Leave the change request to edit it."
+      );
+    }
+
+    const saved = await service.saveParameterFormula(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      elementId: input.elementId,
+      formula: input.formula,
+      projectId
+    });
+    if ("error" in saved) return ctx.error("validation", saved.error);
+    return saved;
+  }
+});
+
+// --- Comments -------------------------------------------------------------------
+
+/**
+ * Get the comments on a project element.
+ *
+ * @remarks
+ * Lists the comments on an element, oldest first.
+ *
+ * @mcp read
+ */
+export const getProjectElementComments = defineServiceFn({
+  input: z.object({ projectElementId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectElementComments(
+        ctx.asCaller.supabase,
+        input.projectElementId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Add a comment to a project element.
+ *
+ * @remarks
+ * `content` is the editor's JSON document, as a string.
+ *
+ * @mcp
+ */
+export const insertProjectElementComment = defineServiceFn({
+  input: projectElementCommentValidator,
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.insertProjectElementComment(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Delete a comment on a project element.
+ *
+ * @remarks
+ * Only its author can delete it.
+ *
+ * @mcp destructive
+ */
+export const deleteProjectElementComment = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1, { message: "No comment was given" })
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.deleteProjectElementComment(
+        ctx.asCaller.supabase,
+        input.id,
+        ctx.company.id,
+        ctx.auditUserId
+      )
+    );
+  }
+});
+
+// --- Plan lines, build from part, jobs and PO lines, capital assets ------------
+
+// --- Plan lines --------------------------------------------------------------
+
+/**
+ * Get the plan lines of an element.
+ *
+ * @remarks
+ * Gets the material, labor and other-cost plan lines of an element.
+ *
+ * @mcp read
+ */
+export const getProjectElementPlanLines = defineServiceFn({
+  input: z.object({ projectElementId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectElementPlanLines(
+        ctx.asCaller.supabase,
+        input.projectElementId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create or update a material plan line of an element.
+ *
+ * @remarks
+ * Creates the line when `id` is empty, else updates it. Refused while the
+ * project is Closed, and while its plan is locked unless the write goes into
+ * a Draft change request (`changeRequestId`), where the line changes instead
+ * of the live plan.
+ *
+ * @mcp
+ */
+export const upsertProjectElementMaterial = defineServiceFn({
+  input: projectElementMaterialValidator.extend({
+    projectId: z.string(),
+    changeRequestId: z.string().nullish()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { projectId, changeRequestId, id, ...line }) {
+    const refusal = await service.planLineWriteRefusal(ctx, {
+      projectId,
+      changeRequestId: changeRequestId ?? null
+    });
+    if (refusal) return refusal;
+
+    if (changeRequestId) {
+      const { projectElementId, ...fields } = line;
+      return service.stagePlanLineChange(
+        ctx,
+        {
+          projectId,
+          changeRequestId,
+          table: "projectElementMaterial",
+          id,
+          elementId: projectElementId,
+          fields
+        },
+        "Failed to save the material"
+      );
+    }
+
+    const saved = id
+      ? await service.upsertProjectElementMaterial(ctx.asCaller.supabase, {
+          ...line,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertProjectElementMaterial(ctx.asCaller.supabase, {
+          ...line,
+          projectId,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (saved.error || !saved.data) {
+      return ctx.error("internal", "Failed to save the material", saved.error);
+    }
+    return { id: saved.data.id };
+  }
+});
+
+/**
+ * Delete a material plan line.
+ *
+ * @remarks
+ * Refused while the project is Closed, and while its plan is locked unless
+ * the delete goes into a Draft change request (`changeRequestId`).
+ *
+ * @mcp destructive
+ */
+export const deleteProjectElementMaterial = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    projectId: z.string(),
+    changeRequestId: z.string().nullish()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { id, projectId, changeRequestId }) {
+    const refusal = await service.planLineWriteRefusal(ctx, {
+      projectId,
+      changeRequestId: changeRequestId ?? null
+    });
+    if (refusal) return refusal;
+
+    if (changeRequestId) {
+      return service.stagePlanLineChange(
+        ctx,
+        {
+          projectId,
+          changeRequestId,
+          table: "projectElementMaterial",
+          id,
+          remove: true
+        },
+        "Failed to delete the line"
+      );
+    }
+
+    const deleted = await service.deleteProjectElementMaterial(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (deleted.error) {
+      return ctx.error("internal", "Failed to delete the line", deleted.error);
+    }
+    return { id };
+  }
+});
+
+/**
+ * Create or update a labor plan line of an element.
+ *
+ * @remarks
+ * Creates the line when `id` is empty, else updates it. Refused while the
+ * project is Closed, and while its plan is locked unless the write goes into
+ * a Draft change request (`changeRequestId`), where the line changes instead
+ * of the live plan.
+ *
+ * @mcp
+ */
+export const upsertProjectElementLabor = defineServiceFn({
+  input: projectElementLaborValidator.extend({
+    projectId: z.string(),
+    changeRequestId: z.string().nullish()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { projectId, changeRequestId, id, ...line }) {
+    const refusal = await service.planLineWriteRefusal(ctx, {
+      projectId,
+      changeRequestId: changeRequestId ?? null
+    });
+    if (refusal) return refusal;
+
+    if (changeRequestId) {
+      const { projectElementId, ...fields } = line;
+      return service.stagePlanLineChange(
+        ctx,
+        {
+          projectId,
+          changeRequestId,
+          table: "projectElementLabor",
+          id,
+          elementId: projectElementId,
+          fields
+        },
+        "Failed to save the labor"
+      );
+    }
+
+    const saved = id
+      ? await service.upsertProjectElementLabor(ctx.asCaller.supabase, {
+          ...line,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertProjectElementLabor(ctx.asCaller.supabase, {
+          ...line,
+          projectId,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (saved.error || !saved.data) {
+      return ctx.error("internal", "Failed to save the labor", saved.error);
+    }
+    return { id: saved.data.id };
+  }
+});
+
+/**
+ * Delete a labor plan line.
+ *
+ * @remarks
+ * Refused while the project is Closed, and while its plan is locked unless
+ * the delete goes into a Draft change request (`changeRequestId`).
+ *
+ * @mcp destructive
+ */
+export const deleteProjectElementLabor = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    projectId: z.string(),
+    changeRequestId: z.string().nullish()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { id, projectId, changeRequestId }) {
+    const refusal = await service.planLineWriteRefusal(ctx, {
+      projectId,
+      changeRequestId: changeRequestId ?? null
+    });
+    if (refusal) return refusal;
+
+    if (changeRequestId) {
+      return service.stagePlanLineChange(
+        ctx,
+        {
+          projectId,
+          changeRequestId,
+          table: "projectElementLabor",
+          id,
+          remove: true
+        },
+        "Failed to delete the line"
+      );
+    }
+
+    const deleted = await service.deleteProjectElementLabor(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (deleted.error) {
+      return ctx.error("internal", "Failed to delete the line", deleted.error);
+    }
+    return { id };
+  }
+});
+
+/**
+ * Create or update an other-cost plan line of an element.
+ *
+ * @remarks
+ * Creates the line when `id` is empty, else updates it. Refused while the
+ * project is Closed, and while its plan is locked unless the write goes into
+ * a Draft change request (`changeRequestId`), where the line changes instead
+ * of the live plan.
+ *
+ * @mcp
+ */
+export const upsertProjectElementCost = defineServiceFn({
+  input: projectElementCostValidator.extend({
+    projectId: z.string(),
+    changeRequestId: z.string().nullish()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { projectId, changeRequestId, id, ...line }) {
+    const refusal = await service.planLineWriteRefusal(ctx, {
+      projectId,
+      changeRequestId: changeRequestId ?? null
+    });
+    if (refusal) return refusal;
+
+    if (changeRequestId) {
+      const { projectElementId, ...fields } = line;
+      return service.stagePlanLineChange(
+        ctx,
+        {
+          projectId,
+          changeRequestId,
+          table: "projectElementCost",
+          id,
+          elementId: projectElementId,
+          fields
+        },
+        "Failed to save the cost"
+      );
+    }
+
+    const saved = id
+      ? await service.upsertProjectElementCost(ctx.asCaller.supabase, {
+          ...line,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertProjectElementCost(ctx.asCaller.supabase, {
+          ...line,
+          projectId,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (saved.error || !saved.data) {
+      return ctx.error("internal", "Failed to save the cost", saved.error);
+    }
+    return { id: saved.data.id };
+  }
+});
+
+/**
+ * Delete an other-cost plan line.
+ *
+ * @remarks
+ * Refused while the project is Closed, and while its plan is locked unless
+ * the delete goes into a Draft change request (`changeRequestId`).
+ *
+ * @mcp destructive
+ */
+export const deleteProjectElementCost = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    projectId: z.string(),
+    changeRequestId: z.string().nullish()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { id, projectId, changeRequestId }) {
+    const refusal = await service.planLineWriteRefusal(ctx, {
+      projectId,
+      changeRequestId: changeRequestId ?? null
+    });
+    if (refusal) return refusal;
+
+    if (changeRequestId) {
+      return service.stagePlanLineChange(
+        ctx,
+        {
+          projectId,
+          changeRequestId,
+          table: "projectElementCost",
+          id,
+          remove: true
+        },
+        "Failed to delete the line"
+      );
+    }
+
+    const deleted = await service.deleteProjectElementCost(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (deleted.error) {
+      return ctx.error("internal", "Failed to delete the line", deleted.error);
+    }
+    return { id };
+  }
+});
+
+// --- Item values for Parameters ----------------------------------------------
+
+/**
+ * Get the values a Parameter reads from linked parts.
+ *
+ * @remarks
+ * The unit cost (`itemCost`) and the custom field values of each item, keyed
+ * by item id, then by `customField.id`. The custom fields live on the typed
+ * item table (`part`, `material`, `tool`, `consumable`), whose `id` is the
+ * item's `readableId`. Values stay as stored (form data stores strings).
+ *
+ * @param itemIds - The items to read.
+ *
+ * @mcp read
+ */
+export const getProjectItemValues = defineServiceFn({
+  input: z.object({ itemIds: z.array(z.string()) }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    const values = unwrap(
+      ctx,
+      await service.getProjectItemValues(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.itemIds
+      )
+    );
+    if (values instanceof CarbonError) return values;
+    // A Map does not serialize: the tool returns an object keyed by item id.
+    return Object.fromEntries(values);
+  }
+});
+
+/**
+ * Get what the elements linked to an item have charged.
+ *
+ * @remarks
+ * Averaged per element: labor hours, material cost and the last posting date
+ * (`get_element_history_by_item`). Only elements with a ledger row count.
+ *
+ * @mcp read
+ */
+export const getElementHistoryByItem = defineServiceFn({
+  input: z.object({ itemId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getElementHistoryByItem(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.itemId
+      )
+    );
+  }
+});
+
+/**
+ * Get the Numeric custom fields of an item type.
+ *
+ * @remarks
+ * The active Numeric custom fields of an item type, for a Parameter's
+ * **Part field**. A type with no typed custom field table has none.
+ *
+ * @mcp read
+ */
+export const getItemNumericCustomFields = defineServiceFn({
+  input: z.object({
+    itemType: z.enum([
+      "Part",
+      "Material",
+      "Tool",
+      "Service",
+      "Consumable",
+      "Fixture"
+    ])
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getItemNumericCustomFields(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input.itemType
+      )
+    );
+  }
+});
+
+// --- Build from part ---------------------------------------------------------
+
+/**
+ * Create elements under a parent from a serial, an item or a template.
+ *
+ * @remarks
+ * Build from part: a serial's build history, an item's make method or a
+ * template project's elements, down to `depth` levels, become planned
+ * elements under `parentId` (the top level when empty), in one transaction.
+ * Returns the number of elements created and the count of BOM lines the
+ * source could not read.
+ */
+export const buildElementsFromPart = defineServiceFn({
+  input: buildFromPartValidator.safeExtend({ projectId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, { projectId, ...data }) {
+    try {
+      return await service.buildElementsFromPart(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        {
+          ...service.toBuildFromPartArgs(data, ctx.company.id, projectId),
+          userId: ctx.auditUserId
+        }
+      );
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        getErrorMessage(error, "The elements could not be created"),
+        error
+      );
+    }
+  }
+});
+
+// --- Jobs and purchase order lines from plan-line materials ------------------
+
+/**
+ * Create a job for a Make to Order plan-line material.
+ *
+ * @remarks
+ * The job is charged to the material's element. An Expense or Contract
+ * project consumes the job; a Capitalize project builds the element's asset
+ * under construction, so it must be released first. Refused for an item an
+ * unreleased change notice holds, for a Make to Asset item that cannot
+ * complete to the asset, and for a charge number that cannot take the job.
+ * The material remembers the job.
+ */
+export const createJobFromMaterial = defineServiceFn({
+  input: createJobFromMaterialValidator.extend({
+    projectId: z.string(),
+    projectElementId: z.string()
+  }),
+  permission: { create: "production", view: "projects" },
+  async run(
+    ctx,
+    { projectId, projectElementId, materialId, quantity, dueDate, locationId }
+  ) {
+    const companyId = ctx.company.id;
+
+    const material = await ctx.asCaller.supabase
+      .from("projectElementMaterial")
+      .select(
+        "id, itemId, methodType, unitOfMeasureCode, jobId, item:item!projectElementMaterial_itemId_fkey(unitOfMeasureCode, itemTrackingType)"
+      )
+      .eq("id", materialId)
+      .eq("projectId", projectId)
+      .eq("projectElementId", projectElementId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (material.error || !material.data) {
+      if (material.error) {
+        logger.error("Failed to load the plan-line material", {
+          companyId,
+          projectId,
+          materialId,
+          error: material.error
+        });
+      }
+      return ctx.error("notFound", "The material is not on this element");
+    }
+    if (material.data.methodType !== "Make to Order") {
+      return ctx.error("rule", "Only a Make to Order material makes a job");
+    }
+    if (material.data.jobId) {
+      return ctx.error("conflict", "This material already has a job");
+    }
+
+    const target = await service.getJobChargeTarget(ctx.asSystem.pg, {
+      companyId,
+      projectId,
+      projectElementId
+    });
+    if (!target) return ctx.error("notFound", "The project does not exist");
+    const isCapital = target.costTreatment === "Capitalize";
+    if (isCapital && !target.fixedAssetId) {
+      return ctx.error(
+        "rule",
+        "Release the project first: its assets under construction are created on release"
+      );
+    }
+    const consumeToProject =
+      target.costTreatment === "Expense" || target.costTreatment === "Contract";
+    const fixedAssetId = isCapital ? target.fixedAssetId : null;
+
+    // The job is written with the service role: the location must be this
+    // company's, no unreleased change notice may hold the item, and a Make to
+    // Asset item must be able to complete to its asset.
+    const refusal = await jobCreationRefusal(ctx, {
+      itemId: material.data.itemId,
+      quantity,
+      locationId,
+      fixedAssetId
+    });
+    if (refusal) return refusal;
+
+    const chargeError = await service.chargeNumberError(
+      ctx.asSystem.supabase,
+      companyId,
+      { projectId, projectElementId, consumeToProject }
+    );
+    if (chargeError) return ctx.error("validation", chargeError.message);
+
+    const job = await insertJob(
+      ctx.asSystem.supabase,
+      ctx.asSystem.pg,
+      {
+        itemId: material.data.itemId,
+        quantity,
+        dueDate: dueDate || undefined,
+        deadlineType: dueDate ? "Soft Deadline" : "No Deadline",
+        locationId,
+        unitOfMeasureCode:
+          material.data.unitOfMeasureCode ??
+          material.data.item?.unitOfMeasureCode ??
+          undefined,
+        projectId,
+        projectElementId,
+        consumeToProject,
+        fixedAssetId,
         companyId,
-        employeeId,
-        from: weekStart,
-        to: weekEnd
-      }),
+        createdBy: ctx.auditUserId
+      },
+      { source: "erp" }
+    );
+    if (job.error || !job.data) {
+      return ctx.error("internal", "Failed to create the job", job.error);
+    }
+
+    // The service role: creating a job needs no right to edit the plan.
+    const stamp = await ctx.asSystem.supabase
+      .from("projectElementMaterial")
+      .update({
+        jobId: job.data.id,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", materialId)
+      .eq("companyId", companyId);
+    if (stamp.error) {
+      // The job exists; only the plan line's pointer to it failed.
+      logger.error("Failed to link the job to its plan-line material", {
+        companyId,
+        projectId,
+        materialId,
+        jobId: job.data.id,
+        error: stamp.error
+      });
+    }
+
+    return { jobId: job.data.id };
+  }
+});
+
+/**
+ * Create a purchase order line for a Purchase to Order plan-line material.
+ *
+ * @remarks
+ * The line is charged to the material's element, on a Draft purchase order
+ * of the supplier (`purchaseOrderId`) or a new one (`purchaseOrderId` =
+ * `new`). The quantity is in the plan line's unit and becomes purchase units
+ * through the supplier part's conversion factor, raised to its minimum order
+ * quantity; the price is the supplier part's, in the order's currency.
+ * Refused while purchasing is blocked for the item. The material remembers
+ * the line.
+ */
+export const createPurchaseOrderLineFromMaterial = defineServiceFn({
+  input: createPurchaseOrderLineFromMaterialValidator.extend({
+    projectId: z.string(),
+    projectElementId: z.string()
+  }),
+  permission: { create: "purchasing", view: "projects" },
+  async run(
+    ctx,
+    {
+      projectId,
+      projectElementId,
+      materialId,
+      supplierId,
+      quantity,
+      requiredDate,
+      purchaseOrderId
+    }
+  ) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+    const companyGroupId = ctx.company.groupId;
+
+    const [material, project, supplier] = await Promise.all([
       client
-        .from("timeCardEntry")
-        .select("clockIn, clockOut")
-        .eq("employeeId", employeeId)
+        .from("projectElementMaterial")
+        .select(
+          "id, itemId, methodType, unitOfMeasureCode, purchaseOrderLineId, item:item!projectElementMaterial_itemId_fkey(name, unitOfMeasureCode)"
+        )
+        .eq("id", materialId)
+        .eq("projectId", projectId)
+        .eq("projectElementId", projectElementId)
         .eq("companyId", companyId)
-        .gte("clockIn", from)
-        .lte("clockIn", to),
-      getLaborCategoriesList(client, companyId),
-      client.from("companySettings").select("*").eq("id", companyId).single(),
-      // R&D tax: a new row's work location defaults to the job location.
+        .maybeSingle(),
       client
-        .from("employeeJob")
+        .from("project")
         .select("locationId")
-        .eq("id", employeeId)
+        .eq("id", projectId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      client
+        .from("supplier")
+        .select("id, taxPercent, currencyCode")
+        .eq("id", supplierId)
         .eq("companyId", companyId)
         .maybeSingle()
-    ]
-  );
-  for (const [what, result] of [
-    ["the timesheet", entries],
-    ["the timecard", timecard],
-    ["labor categories", laborCategories],
-    ["company settings", settings],
-    ["the employee job", job]
-  ] as const) {
-    if (result.error) {
-      logger.error("Failed to load the timesheet week", {
+    ]);
+    if (material.error || !material.data) {
+      if (material.error) {
+        logger.error("Failed to load the plan-line material", {
+          companyId,
+          projectId,
+          materialId,
+          error: material.error
+        });
+      }
+      return ctx.error("notFound", "The material is not on this element");
+    }
+    if (material.data.methodType !== "Purchase to Order") {
+      return ctx.error(
+        "rule",
+        "Only a Purchase to Order material makes a PO line"
+      );
+    }
+    if (material.data.purchaseOrderLineId) {
+      return ctx.error("conflict", "This material already has a PO line");
+    }
+    if (supplier.error || !supplier.data) {
+      return ctx.error("notFound", "The supplier does not exist");
+    }
+    const chargeError = await service.chargeNumberError(client, companyId, {
+      projectId,
+      projectElementId
+    });
+    if (chargeError) return ctx.error("validation", chargeError.message);
+
+    const itemId = material.data.itemId;
+    const [supplierPart, replenishment] = await Promise.all([
+      client
+        .from("supplierPart")
+        .select(
+          "id, companyId, currencyCode, supplierUnitPrice, supplierUnitOfMeasureCode, conversionFactor, minimumOrderQuantity"
+        )
+        .eq("itemId", itemId)
+        .eq("supplierId", supplierId)
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: true })
+        .limit(1),
+      client
+        .from("itemReplenishment")
+        .select("purchasingBlocked")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (replenishment.data?.purchasingBlocked) {
+      return ctx.error("rule", "Purchasing is blocked for this item");
+    }
+    if (supplierPart.error) {
+      logger.error("Failed to load the supplier part", {
         companyId,
-        what,
+        itemId,
+        supplierId,
+        error: supplierPart.error
+      });
+    }
+    const part = supplierPart.data?.[0];
+    const conversionFactor = Number(part?.conversionFactor ?? 1) || 1;
+    const minimumOrderQuantity = Number(part?.minimumOrderQuantity ?? 0);
+    const purchaseQuantity = Math.max(
+      round(quantity / conversionFactor),
+      minimumOrderQuantity
+    );
+    const inventoryUnit =
+      material.data.unitOfMeasureCode ??
+      material.data.item?.unitOfMeasureCode ??
+      "EA";
+
+    const [company, currencies] = await Promise.all([
+      client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", companyId)
+        .single(),
+      client
+        .from("currencies")
+        .select("code, decimalPlaces")
+        .eq("companyGroupId", companyGroupId)
+    ]);
+    const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+    const currencyCode = supplier.data.currencyCode ?? baseCurrencyCode;
+    const locationId = project.data?.locationId ?? undefined;
+
+    let orderId = purchaseOrderId;
+    // The order's currency and rate (foreign per base): the line's price is in it.
+    let order = { currencyCode, exchangeRate: 1 };
+    if (purchaseOrderId === NEW_PURCHASE_ORDER) {
+      const created = await insertPurchaseOrder(client, {
+        status: "Draft",
+        supplierId,
+        purchaseOrderType: "Purchase",
+        currencyCode,
+        locationId,
+        companyId,
+        companyGroupId,
+        createdBy: ctx.auditUserId
+      });
+      if (created.error || !created.data) {
+        return ctx.error(
+          "internal",
+          "Failed to create the purchase order",
+          created.error
+        );
+      }
+      orderId = created.data.id;
+      order = { currencyCode, exchangeRate: created.data.exchangeRate };
+    } else {
+      const draft = await client
+        .from("purchaseOrder")
+        .select("id, currencyCode, exchangeRate")
+        .eq("id", purchaseOrderId)
+        .eq("supplierId", supplierId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .maybeSingle();
+      if (draft.error || !draft.data) {
+        return ctx.error(
+          "rule",
+          "The purchase order is not a Draft of this supplier"
+        );
+      }
+      order = {
+        currencyCode: draft.data.currencyCode ?? baseCurrencyCode,
+        exchangeRate: Number(draft.data.exchangeRate ?? 1)
+      };
+    }
+    const decimals =
+      (currencies.data ?? []).find((c) => c.code === order.currencyCode)
+        ?.decimalPlaces ?? SCALE;
+
+    // The supplier part's price is in its own currency; convert it into the
+    // order's, as every purchase document does (resolveSupplierPrice).
+    const pricing = part
+      ? await getSupplierPartPricing(
+          client,
+          part,
+          baseCurrencyCode,
+          order.currencyCode
+        )
+      : null;
+    if (pricing?.error) return ctx.error("rule", pricing.error.message);
+    const supplierUnitPrice = resolveSupplierPrice(
+      pricing?.data ?? null,
+      purchaseQuantity,
+      order,
+      0
+    );
+    const taxPercent = Number(supplier.data.taxPercent ?? 0);
+    const line = await upsertPurchaseOrderLine(client, {
+      purchaseOrderId: orderId,
+      itemId,
+      description: material.data.item?.name ?? undefined,
+      purchaseOrderLineType: "Part",
+      purchaseQuantity,
+      purchaseUnitOfMeasureCode:
+        part?.supplierUnitOfMeasureCode ?? inventoryUnit,
+      inventoryUnitOfMeasureCode: inventoryUnit,
+      conversionFactor,
+      supplierUnitPrice,
+      exchangeRate: order.exchangeRate,
+      taxPercent,
+      supplierTaxAmount: applyRate(
+        taxableBase(supplierUnitPrice, purchaseQuantity, 0),
+        taxPercent,
+        decimals
+      ),
+      supplierShippingCost: 0,
+      requiredDate: requiredDate || undefined,
+      locationId,
+      projectId,
+      projectElementId,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (line.error || !line.data) {
+      return ctx.error(
+        "internal",
+        "Failed to create the purchase order line",
+        line.error
+      );
+    }
+
+    // The service role: creating a PO line needs no right to edit the plan.
+    const stamp = await ctx.asSystem.supabase
+      .from("projectElementMaterial")
+      .update({
+        purchaseOrderLineId: line.data.id,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", materialId)
+      .eq("companyId", companyId);
+    if (stamp.error) {
+      // The line exists; only the plan line's pointer to it failed.
+      logger.error("Failed to link the PO line to its plan-line material", {
+        companyId,
+        projectId,
+        materialId,
+        purchaseOrderLineId: line.data.id,
+        error: stamp.error
+      });
+    }
+
+    return { purchaseOrderId: orderId, purchaseOrderLineId: line.data.id };
+  }
+});
+
+// --- Pegging -----------------------------------------------------------------
+
+/**
+ * Replace a Soft peg of a project with a Manual peg.
+ *
+ * @remarks
+ * A planner's override: the peg's demand is fixed to an open purchase order
+ * line or job (`supplyType`, `supplyId`) of the same planning group and item,
+ * for `quantity`, with a reason. Needs the planning groups feature. The ee
+ * function writes past row-level security, so the caller needs
+ * `update: projects`.
+ */
+export const createManualPeg = defineServiceFn({
+  input: z.object({
+    projectId: z.string(),
+    pegId: z.string().min(1),
+    supplyType: z.enum(manualPegSupplyTypes),
+    supplyId: z.string().min(1),
+    quantity: z.number().positive(),
+    manualReason: z.string().trim().min(1)
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    let result: Awaited<ReturnType<typeof pegging.createManualPeg>>;
+    try {
+      result = await pegging.createManualPeg(
+        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
+        { ...input, companyId: ctx.company.id, userId: ctx.auditUserId }
+      );
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use planning groups", err);
+    }
+    if (result.error || !result.id) {
+      logger.error("Failed to create a manual peg", {
+        companyId: ctx.company.id,
+        projectId: input.projectId,
         error: result.error
       });
+      return ctx.error(
+        "rule",
+        result.error ?? "The peg has changed. Reload the page."
+      );
     }
+    return { id: result.id };
   }
+});
 
-  // Hours clocked per day: each closed clock entry counts on the day it
-  // started. Comparing two stored instants needs no time zone.
-  const timecardHours: Record<string, number> = {};
-  for (const entry of timecard.data ?? []) {
-    if (!entry.clockOut) continue;
-    const day = datetime.businessDay(entry.clockIn, timeZone).toString();
-    const hours =
-      (Date.parse(entry.clockOut) - Date.parse(entry.clockIn)) / 3_600_000;
-    timecardHours[day] = (timecardHours[day] ?? 0) + Math.max(hours, 0);
-  }
+// --- Place in service --------------------------------------------------------
 
-  // DCAA mode (5a): the cells that have a correction trail.
-  const isDcaa = settings.data?.timekeepingControls === "DCAA";
-  const entryIds = (entries.data ?? []).map((entry) => entry.id);
-  let revisedEntryIds: string[] = [];
-  if (isDcaa && entryIds.length > 0) {
-    const revised = await client
-      .from("timesheetEntryRevision")
-      .select("timesheetEntryId")
-      .eq("companyId", companyId)
-      .in("timesheetEntryId", entryIds);
-    if (revised.error) {
-      logger.error("Failed to load the timesheet revisions", {
+/**
+ * Place a capital project's assets under construction in service.
+ *
+ * @remarks
+ * Capitalizes each selected asset into the in-service class `toClassId`
+ * (post-asset-transfer `capitalizeCip`), one transfer document per asset, each
+ * in its own transaction: an asset that fails stays under construction, the
+ * others stay capitalized. A final-asset element whose asset went into
+ * service moves, with its descendants, to the default Completed state.
+ * Returns one result per asset, with the refusal of each that failed.
+ */
+export const placeProjectAssetsInService = defineServiceFn({
+  input: placeInServiceValidator.extend({ projectId: z.string() }),
+  permission: { update: "projects", create: "accounting" },
+  async run(ctx, { projectId, fixedAssetIds, toClassId, inServiceDate }) {
+    const companyId = ctx.company.id;
+    const db = ctx.asSystem.pg;
+    const assets = await service.getProjectCapitalAssets(db, {
+      companyId,
+      projectId
+    });
+    const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+
+    const results: {
+      fixedAssetId: string;
+      label: string;
+      error: string | null;
+    }[] = [];
+    for (const fixedAssetId of fixedAssetIds) {
+      const asset = assetById.get(fixedAssetId);
+      if (!asset) {
+        results.push({
+          fixedAssetId,
+          label: fixedAssetId,
+          error: "The asset is not part of this project"
+        });
+        continue;
+      }
+      const label = `${asset.fixedAssetId} ${asset.name}`;
+      // One posting per asset by design: each is its own transfer document.
+      const result = await invokeAssetTransfer(ctx.asCaller.supabase, db, {
+        type: "capitalizeCip",
         companyId,
-        error: revised.error
+        userId: ctx.auditUserId,
+        fixedAssetId,
+        toClassId,
+        inServiceDate
+      });
+      if (result.error) {
+        logger.error("Failed to place an asset in service", {
+          companyId,
+          projectId,
+          fixedAssetId,
+          error: result.error
+        });
+      }
+      results.push({
+        fixedAssetId,
+        label,
+        error: result.error
+          ? getErrorMessage(result.error, "Failed to capitalize the asset")
+          : null
       });
     }
-    revisedEntryIds = [
-      ...new Set((revised.data ?? []).map((row) => row.timesheetEntryId))
-    ];
-  }
 
-  return {
-    week: {
-      weekOffset: offset,
-      weekStart,
-      weekEnd,
-      days,
-      rows: groupTimesheetRows(entries.data ?? []),
-      timecardHours,
-      laborCategories: laborCategories.data ?? [],
-      jobLocationId: job.data?.locationId ?? null
-    },
-    settings: settings.data,
-    isDcaa,
-    today,
-    revisedEntryIds
-  };
-}
+    const placedElementIds = results
+      .filter((result) => !result.error)
+      .map((result) => assetById.get(result.fixedAssetId)?.elementId)
+      .filter((id): id is string => Boolean(id));
+    try {
+      await service.completeElementSubtrees(db, {
+        companyId,
+        projectId,
+        elementIds: placedElementIds,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      logger.error("Failed to complete the placed elements", {
+        companyId,
+        projectId,
+        error: err
+      });
+    }
+
+    return { results };
+  }
+});
+
+// --- Labor categories, timesheets, issues and expenses -------------------------
+
+// --- Labor categories ----------------------------------------------------------
 
 /**
- * The count the Projects sidebar shows on Approvals: the Submitted timesheet
- * entries, for a user who may approve them (`update: projects`). Any other
- * user, or a failed read, gets 0, so the sidebar shows no count.
+ * List the labor categories of the company.
+ *
+ * @remarks
+ * Each category carries its cost rates (`costRate`, `billRate`,
+ * `effectiveFrom`). `search` matches the name.
+ *
+ * @mcp read
  */
-export async function getApprovalCountForUser(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
-): Promise<number> {
-  const canApprove = hasPermission(
-    (await getUserClaims(args.userId, args.companyId))?.permissions,
-    "projects",
-    "update",
-    args.companyId
-  );
-  if (!canApprove) return 0;
-  const result = await getTimesheetApprovalCount(client, args.companyId);
-  if (result.error) {
-    logger.error("Failed to count the timesheet entries waiting for approval", {
-      companyId: args.companyId,
-      error: result.error
+export const getLaborCategories = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getLaborCategories(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, {
+          ...input,
+          search: input.search ?? null
+        }).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get one labor category.
+ *
+ * @mcp read
+ */
+export const getLaborCategory = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { view: "projects" },
+  async run(ctx, { id }) {
+    return unwrap(
+      ctx,
+      await service.getLaborCategory(ctx.asCaller.supabase, id, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * List the active labor categories of the company, for a picker.
+ *
+ * @mcp read
+ */
+export const getLaborCategoriesList = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await service.getLaborCategoriesList(
+        ctx.asCaller.supabase,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create or update a labor category.
+ *
+ * @remarks
+ * With `id` it updates that category (needs `update: projects`); without, it
+ * creates one (needs `create: projects`).
+ *
+ * @mcp
+ */
+export const upsertLaborCategory = defineServiceFn({
+  input: laborCategoryValidator,
+  // Create and update need different permissions: the body decides.
+  permission: {},
+  async run(ctx, { id, ...fields }) {
+    if (!ctx.can(id ? { update: "projects" } : { create: "projects" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
+    const result = id
+      ? await service.upsertLaborCategory(ctx.asCaller.supabase, {
+          ...fields,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertLaborCategory(ctx.asCaller.supabase, {
+          ...fields,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        id
+          ? "Failed to update the labor category"
+          : "Failed to create the labor category",
+        result.error
+      );
+    }
+    return { id: result.data.id };
+  }
+});
+
+/**
+ * List the cost rates of a labor category, newest first.
+ *
+ * @mcp read
+ */
+export const getLaborCategoryRates = defineServiceFn({
+  input: z.object({ laborCategoryId: z.string().min(1) }),
+  permission: { view: "projects" },
+  async run(ctx, { laborCategoryId }) {
+    return unwrap(
+      ctx,
+      await service.getLaborCategoryRates(
+        ctx.asCaller.supabase,
+        laborCategoryId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create or update a cost rate of a labor category.
+ *
+ * @remarks
+ * An effective-dated cost rate, with its default bill rate (the price of an
+ * hour on a Time & Materials contract line with no contract rate). With `id`
+ * it updates that rate.
+ *
+ * @mcp
+ */
+export const upsertLaborCategoryRate = defineServiceFn({
+  input: laborCategoryRateValidator,
+  permission: { update: "projects" },
+  async run(ctx, { id, ...rate }) {
+    const result = id
+      ? await service.upsertLaborCategoryRate(ctx.asCaller.supabase, {
+          ...rate,
+          id,
+          companyId: ctx.company.id,
+          updatedBy: ctx.auditUserId
+        })
+      : await service.upsertLaborCategoryRate(ctx.asCaller.supabase, {
+          ...rate,
+          companyId: ctx.company.id,
+          createdBy: ctx.auditUserId
+        });
+    if (result.error) {
+      return ctx.error("internal", "Failed to save the rate", result.error);
+    }
+    return { id: result.data.id };
+  }
+});
+
+// --- Timesheets ----------------------------------------------------------------
+
+/**
+ * Get an employee's timesheet entries between two dates.
+ *
+ * @remarks
+ * Both dates are inclusive. Each entry has the project, element and labor
+ * category names; a Service project carries its service order. Left out,
+ * `employeeId` is the caller.
+ *
+ * @mcp read
+ */
+export const getTimesheetWeek = defineServiceFn({
+  input: z.object({
+    employeeId: z.string().min(1).optional(),
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getTimesheetWeek(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        employeeId: input.employeeId ?? ctx.auditUserId,
+        from: input.from,
+        to: input.to
+      })
+    );
+  }
+});
+
+/**
+ * Save one timesheet entry.
+ *
+ * @remarks
+ * Runs `save-timesheet-entry`: one cell of the grid (employee, date, charge
+ * number, labor category), or a new entry in `add` mode. Saving never posts.
+ * Left out, `employeeId` is the caller. Another employee's week can be
+ * changed by their manager or by a user with `update: projects` (in DCAA
+ * mode the entry then waits in Pending Employee Review). An empty element,
+ * work location or R&D role is none. A budget overrun never refuses the
+ * entry: it comes back as `warning`.
+ */
+export const saveTimesheetEntry = defineServiceFn({
+  input: saveTimesheetEntryInput.extend({
+    employeeId: z.string().min(1).optional(),
+    projectElementId: z.string().nullable().optional(),
+    workLocationId: z.string().nullable().optional(),
+    rdActivityRole: z
+      .union([z.enum(rdActivityRoles), z.literal("")])
+      .nullable()
+      .optional()
+  }),
+  // Your own time needs company membership; another employee's is decided
+  // in the body (their manager, or `update: projects`).
+  permission: {},
+  async run(ctx, input) {
+    const employeeId = input.employeeId ?? ctx.auditUserId;
+    if (
+      employeeId !== ctx.auditUserId &&
+      !ctx.can({ update: "projects" }) &&
+      !(
+        ctx.can({ view: "projects" }) &&
+        (await service.managesEmployee(ctx.asCaller.supabase, {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          employeeId
+        }))
+      )
+    ) {
+      return ctx.error(
+        "forbidden",
+        "You can open the timesheet of an employee you manage only"
+      );
+    }
+
+    const saved = await run(ctx, "save-timesheet-entry", () =>
+      service.saveTimesheetEntry(
+        ctx,
+        service.saveTimesheetEntryPostingInput({ ...input, employeeId })
+      )
+    );
+    if (saved instanceof CarbonError) return saved;
+
+    // Budget control (Government Contracting 5c): a timesheet only warns.
+    const warning = await service.timesheetBudgetWarning(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        projectId: input.projectId,
+        projectElementId: input.projectElementId,
+        laborCategoryId: input.laborCategoryId,
+        entryDate: input.entryDate,
+        hours: input.hours
+      }
+    );
+    return { ...saved, warning };
+  }
+});
+
+/**
+ * Log time on an element as a new entry for the caller.
+ *
+ * @remarks
+ * Adds an entry through `save-timesheet-entry` (`add` mode, so DCAA mode
+ * applies its controls). In Standard mode the entry is Submitted: with
+ * approvals off it posts at once (`post-timesheet`), with approvals on it
+ * waits in Approvals. In DCAA mode the entry is Draft until the week is
+ * certified. `outcome` says which happened; a failed post leaves the entry
+ * logged and comes back as `postingError`. A budget overrun is `warning`.
+ */
+export const logTimesheetEntry = defineServiceFn({
+  input: logTimeValidator,
+  permission: {},
+  async run(ctx, input) {
+    const settings = await getCompanySettings(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
+    if (settings.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the company settings",
+        settings.error
+      );
+    }
+
+    const saved = await run(ctx, "save-timesheet-entry", () =>
+      service.saveTimesheetEntry(
+        ctx,
+        service.saveTimesheetEntryPostingInput({
+          ...input,
+          mode: "add",
+          status: "Submitted",
+          employeeId: ctx.auditUserId
+        })
+      )
+    );
+    if (saved instanceof CarbonError) return saved;
+    if (!saved.entryId) return ctx.error("internal", "Failed to log the time");
+    const entryId = saved.entryId;
+
+    // Budget control (Government Contracting 5c): a timesheet only warns
+    // (DCAAM 7641.90).
+    const warning = await service.timesheetBudgetWarning(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
+        projectId: input.projectId,
+        projectElementId: input.projectElementId,
+        laborCategoryId: input.laborCategoryId,
+        entryDate: input.entryDate,
+        hours: input.hours
+      }
+    );
+
+    // DCAA mode: the entry is Draft until the employee certifies the week.
+    if (saved.status !== "Submitted") {
+      return {
+        entryId,
+        status: saved.status,
+        outcome: "saved" as const,
+        warning,
+        postingError: null
+      };
+    }
+    if (settings.data.timesheetApprovalRequired) {
+      return {
+        entryId,
+        status: saved.status,
+        outcome: "submitted" as const,
+        warning,
+        postingError: null
+      };
+    }
+
+    const postingError = await service.postTimesheetEntries(ctx, {
+      timesheetEntryIds: [entryId]
     });
-    return 0;
+    return {
+      entryId,
+      status: saved.status,
+      outcome: "posted" as const,
+      warning,
+      postingError
+    };
   }
-  return result.count ?? 0;
-}
+});
 
 /**
- * The contract billable items that wait for review (Unbilled or On Hold), for
- * a user who may review them (`update: projects` and `view: sales`, what the
- * Billing tab of Approvals needs). The Projects sidebar shows Approvals while
- * there are any, and adds them to its count. Any other user, or a failed
- * read, gets 0.
+ * Submit one week of the caller's timesheet.
+ *
+ * @remarks
+ * Runs `submit-timesheet-week` on the caller's Draft entries in the ISO week
+ * that starts on `weekStart`; DCAA mode also certifies the week with
+ * `certificationText`. Refuses a week with no draft hours. With approvals off
+ * the entries post at once (`post-timesheet`); a failed post leaves them
+ * submitted and comes back as `postingError`. `warnings` (the timecard check)
+ * never stop the week.
  */
-export async function getBillingReviewCountForUser(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
-): Promise<number> {
-  const permissions = (await getUserClaims(args.userId, args.companyId))
-    ?.permissions;
-  const canReview =
-    hasPermission(permissions, "projects", "update", args.companyId) &&
-    hasPermission(permissions, "sales", "view", args.companyId);
-  if (!canReview) return 0;
-  const result = await client
-    .from("projectBillableItem")
-    .select("id", { count: "exact", head: true })
-    .eq("companyId", args.companyId)
-    .not("customerContractLineId", "is", null)
-    .in("status", ["Unbilled", "On Hold"]);
-  if (result.error) {
-    logger.error("Failed to count the billable items waiting for review", {
-      companyId: args.companyId,
-      error: result.error
+export const submitTimesheetWeek = defineServiceFn({
+  input: z.object({
+    weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    certificationText: z.string().optional()
+  }),
+  permission: {},
+  async run(ctx, input) {
+    const submitted = await run(ctx, "submit-timesheet-week", () =>
+      service.submitTimesheetWeek(ctx, {
+        employeeId: ctx.auditUserId,
+        weekStart: input.weekStart,
+        certificationText: input.certificationText || undefined
+      })
+    );
+    if (submitted instanceof CarbonError) return submitted;
+    const { entryIds, warnings } = submitted;
+    if (entryIds.length === 0) {
+      return ctx.error("rule", "This week has no draft hours to submit");
+    }
+
+    const settings = await getCompanySettings(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
+    if (settings.error) {
+      logger.error("Failed to load company settings", {
+        companyId: ctx.company.id,
+        error: settings.error
+      });
+    }
+    if (settings.data?.timesheetApprovalRequired ?? true) {
+      return { entryIds, warnings, posted: false, postingError: null };
+    }
+
+    const postingError = await service.postTimesheetEntries(ctx, {
+      timesheetEntryIds: entryIds
     });
-    return 0;
+    return { entryIds, warnings, posted: !postingError, postingError };
   }
-  return result.count ?? 0;
-}
-
-// --- Projects → Reports ---------------------------------------------------------
-
-/** A `YYYY-MM-DD` search param, or null when it is missing or not a date. */
-function dateParam(value: string | null) {
-  if (!value) return null;
-  try {
-    return parseDate(value).toString();
-  } catch {
-    return null;
-  }
-}
+});
 
 /**
- * The dates of a range report from its `startDate` and `endDate` search
- * params, and the fiscal year's start month for the range presets. A
- * missing or bad pair falls back to this month on the company's calendar,
- * the range the report page opens on.
+ * Post Submitted or Approved timesheet entries.
+ *
+ * @remarks
+ * Runs `post-timesheet`: the cost goes Dr the project account / Cr
+ * laborAbsorptionAccount, one projectLedger row per entry, and each entry is
+ * stamped Posted. Entries that are not postable are skipped. It does not
+ * check approval routing: the approval operations do.
  */
-export async function getProjectReportRange(
-  db: Kysely<KyselyDatabase>,
-  request: Request,
-  companyId: string
-) {
-  const params = new URL(request.url).searchParams;
-  const [timeZone, settings] = await Promise.all([
-    getCompanyTimeZone(db, companyId),
-    db
-      .selectFrom("fiscalYearSettings")
-      .select("startMonth")
-      .where("companyId", "=", companyId)
-      .executeTakeFirst()
-  ]);
-  const fiscalStartMonth = monthNumber(settings?.startMonth);
-  const startDate = dateParam(params.get("startDate"));
-  const endDate = dateParam(params.get("endDate"));
-  if (startDate && endDate && startDate <= endDate) {
-    return { startDate, endDate, fiscalStartMonth };
+export const postTimesheet = defineServiceFn({
+  input: postTimesheetInput,
+  permission: service.postTimesheetPermission,
+  async run(ctx, input) {
+    return run(ctx, "post-timesheet", () => service.postTimesheet(ctx, input));
   }
-  const today = datetime.today(timeZone);
-  return {
-    startDate: today.set({ day: 1 }).toString(),
-    endDate: endOfMonth(today).toString(),
-    fiscalStartMonth
-  };
-}
-
-/** A `taxYear` search param, or null when it is missing or not a year. */
-export function taxYearParam(value: string | null) {
-  const taxYear = Number(value);
-  return value &&
-    Number.isInteger(taxYear) &&
-    taxYear >= 1900 &&
-    taxYear <= 9999
-    ? taxYear
-    : null;
-}
+});
 
 /**
- * The inputs of the R&D tax reports (§174A and Form 6765 Section G) for one
- * tax year. A null `taxYear` reads the tax year that holds today. A tax year
- * starts in the company's tax start month and is named by the calendar year
- * in which it starts.
+ * Approve Submitted timesheet entries and post them.
+ *
+ * @remarks
+ * In DCAA mode a labor transfer needs an approver other than the requester;
+ * every entry is checked before any status changes. The approved entries
+ * post at once (`post-timesheet`); a failed post leaves them Approved and
+ * comes back as `postingError`. Refuses when no entry could be approved.
+ *
+ * @mcp
  */
-export async function getRdTaxReport(
-  db: Kysely<KyselyDatabase>,
-  client: SupabaseClient<Database>,
-  args: { companyId: string; taxYear: number | null; withEmployees: boolean }
-) {
-  const [settings, company, timeZone] = await Promise.all([
-    db
-      .selectFrom("fiscalYearSettings")
-      .select("taxStartMonth")
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst(),
-    db
-      .selectFrom("company")
-      .select("taxId")
-      .where("id", "=", args.companyId)
-      .executeTakeFirst(),
-    getCompanyTimeZone(db, args.companyId)
-  ]);
-  const taxStartMonth = monthNumber(settings?.taxStartMonth);
-  const currentTaxYear = taxYearOf(
-    datetime.today(timeZone).toString(),
-    taxStartMonth
-  );
-  const taxYear = args.taxYear ?? currentTaxYear;
-  const range = {
-    companyId: args.companyId,
-    ...taxYearBounds(taxYear, taxStartMonth)
-  };
-  const [rows, employees, components] = await Promise.all([
-    getRdLedgerRows(db, range),
-    args.withEmployees ? getRdEmployeeYear(db, range) : Promise.resolve([]),
-    getRdComponents(client, args.companyId)
-  ]);
-  if (components.error) throw components.error;
-  return {
-    taxYear,
-    currentTaxYear,
-    rows,
-    employees,
-    components: components.data ?? [],
-    ein: company?.taxId ?? null
-  };
-}
+export const approveTimesheetEntries = defineServiceFn({
+  input: z.object({ ids: z.array(z.string().min(1)).min(1) }),
+  permission: { update: "projects" },
+  async run(ctx, { ids }) {
+    const refusal = await service.timesheetApprovalRefusal(
+      ctx.asCaller.supabase,
+      { companyId: ctx.company.id, approverId: ctx.auditUserId, ids }
+    );
+    if (refusal) return ctx.error("rule", refusal);
+
+    const approved = await service.approveTimesheetEntries(
+      ctx.asCaller.supabase,
+      { ids, companyId: ctx.company.id, approvedBy: ctx.auditUserId }
+    );
+    if (approved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to approve the time",
+        approved.error
+      );
+    }
+    const approvedIds = (approved.data ?? []).map((row) => row.id);
+    if (approvedIds.length === 0) {
+      return ctx.error(
+        "conflict",
+        "No entry could be approved. Reload the page."
+      );
+    }
+
+    const postingError = await service.postTimesheetEntries(ctx, {
+      timesheetEntryIds: approvedIds
+    });
+    return { approvedIds, postingError };
+  }
+});
+
+/**
+ * Reject Submitted timesheet entries with a note.
+ *
+ * @remarks
+ * The employee can edit them again. A note is required.
+ *
+ * @mcp
+ */
+export const rejectTimesheetEntries = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string().min(1)).min(1),
+    note: z.string()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const note = input.note.trim();
+    if (!note) {
+      return ctx.error("validation", "A note is required to reject time");
+    }
+    const rejected = await service.rejectTimesheetEntries(
+      ctx.asCaller.supabase,
+      {
+        ids: input.ids,
+        companyId: ctx.company.id,
+        note,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (rejected.error) {
+      return ctx.error("internal", "Failed to reject the time", rejected.error);
+    }
+    return { rejectedIds: (rejected.data ?? []).map((row) => row.id) };
+  }
+});
+
+/**
+ * Correct one of the caller's posted timesheet entries.
+ *
+ * @remarks
+ * Writes a Submitted reversal of the posted hours and, when `hours` is not 0,
+ * a Submitted replacement, both with the reason. A replacement on another
+ * charge number (`projectId`, `projectElementId`) or labor category is a
+ * labor transfer. In DCAA mode the correction writes one revision on the
+ * original, and a labor transfer always waits for another user's approval.
+ * Otherwise, with approvals off both post at once (`post-timesheet`); a failed
+ * post comes back as `postingError`. `outcome` says which happened.
+ *
+ * @mcp
+ */
+export const createTimesheetCorrection = defineServiceFn({
+  input: timesheetCorrectionValidator,
+  permission: {},
+  async run(ctx, input) {
+    // The correction runs over Kysely (no RLS), so the entry must be the
+    // caller's own.
+    const entry = await ctx.asCaller.supabase
+      .from("timesheetEntry")
+      .select("id")
+      .eq("id", input.timesheetEntryId)
+      .eq("companyId", ctx.company.id)
+      .eq("employeeId", ctx.auditUserId)
+      .maybeSingle();
+    if (entry.error || !entry.data) {
+      return ctx.error("notFound", "The timesheet entry does not exist");
+    }
+
+    let correction: Awaited<
+      ReturnType<typeof service.createTimesheetCorrection>
+    >;
+    try {
+      correction = await service.createTimesheetCorrection(ctx.asSystem.pg, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      logger.error("Failed to correct a timesheet entry", {
+        companyId: ctx.company.id,
+        error: err
+      });
+      return ctx.error(
+        "rule",
+        err instanceof Error ? err.message : "Failed to correct the entry",
+        err
+      );
+    }
+
+    const settings = await getCompanySettings(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
+    if (settings.error) {
+      logger.error("Failed to load company settings", {
+        companyId: ctx.company.id,
+        error: settings.error
+      });
+    }
+    // DCAA mode: a labor transfer needs an approver other than the requester
+    // (`assertCanApprove`), so it never posts on its own.
+    if (
+      correction.isTransfer &&
+      settings.data?.timekeepingControls === "DCAA"
+    ) {
+      return {
+        ...correction,
+        outcome: "transferAwaitingApproval" as const,
+        postingError: null
+      };
+    }
+    if (settings.data?.timesheetApprovalRequired ?? true) {
+      return {
+        ...correction,
+        outcome: "awaitingApproval" as const,
+        postingError: null
+      };
+    }
+
+    const postingError = await service.postTimesheetEntries(ctx, {
+      timesheetEntryIds: [
+        correction.reversalId,
+        ...(correction.replacementId ? [correction.replacementId] : [])
+      ]
+    });
+    return { ...correction, outcome: "posted" as const, postingError };
+  }
+});
+
+/**
+ * Accept the changes another user made to the caller's timesheet.
+ *
+ * @remarks
+ * DCAA mode. Each entry, which must be the caller's and in Pending Employee
+ * Review, returns to Draft with one revision "Accepted by employee".
+ */
+export const acceptTimesheetReview = defineServiceFn({
+  input: timesheetReviewAcceptValidator,
+  permission: {},
+  async run(ctx, { ids }) {
+    try {
+      const acceptedIds = await service.acceptTimesheetReview(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        employeeId: ctx.auditUserId,
+        ids,
+        userId: ctx.auditUserId
+      });
+      return { acceptedIds };
+    } catch (err) {
+      logger.error("Failed to accept timesheet changes", {
+        companyId: ctx.company.id,
+        error: err
+      });
+      return ctx.error(
+        "rule",
+        err instanceof Error ? err.message : "Failed to accept",
+        err
+      );
+    }
+  }
+});
+
+/**
+ * List the revisions of one timesheet entry, oldest first.
+ *
+ * @remarks
+ * Who changed it, when, why, and the fields before and after.
+ *
+ * @mcp read
+ */
+export const getTimesheetRevisions = defineServiceFn({
+  input: z.object({ timesheetEntryId: z.string().min(1) }),
+  permission: { view: "projects" },
+  async run(ctx, { timesheetEntryId }) {
+    return unwrap(
+      ctx,
+      await service.getTimesheetRevisions(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        timesheetEntryId
+      })
+    );
+  }
+});
+
+/**
+ * List an employee's entries in Pending Employee Review.
+ *
+ * @remarks
+ * Each entry has its latest revision: the change the employee must accept.
+ * Left out, `employeeId` is the caller.
+ *
+ * @mcp read
+ */
+export const getPendingReviewEntries = defineServiceFn({
+  input: z.object({ employeeId: z.string().min(1).optional() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getPendingReviewEntries(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        employeeId: input.employeeId ?? ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Count the Submitted timesheet entries of the company.
+ *
+ * @remarks
+ * The items waiting in Projects → Approvals.
+ *
+ * @mcp read
+ */
+export const getTimesheetApprovalCount = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    const result = await service.getTimesheetApprovalCount(
+      ctx.asCaller.supabase,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to count the timesheet approvals",
+        result.error
+      );
+    }
+    return { count: result.count ?? 0 };
+  }
+});
+
+/**
+ * List the Submitted timesheet entries, grouped by employee and week.
+ *
+ * @remarks
+ * Weeks start on Monday. When `ownerId` is set, only entries on projects that
+ * user owns are listed.
+ *
+ * @mcp read
+ */
+export const getTimesheetApprovals = defineServiceFn({
+  input: z.object({ ownerId: z.string().min(1).nullable().optional() }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getTimesheetApprovals(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        { ownerId: input.ownerId ?? null }
+      )
+    );
+  }
+});
+
+/**
+ * Remind employees of the days they have entered no time.
+ *
+ * @remarks
+ * The Missing Time report's reminder. The dates are read again for the range;
+ * an employee with none gets no reminder. Returns how many were sent.
+ */
+export const sendMissingTimeReminders = defineServiceFn({
+  input: z.object({
+    employeeIds: z.array(z.string().min(1)),
+    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  }),
+  permission: { view: ["projects"] },
+  async run(ctx, { employeeIds, startDate, endDate }) {
+    // The dates come from the database again, not from the caller.
+    const employees = await service.getMissingTimeByEmployee(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      from: startDate,
+      to: endDate,
+      excluded: false
+    });
+    const chosen = employees.filter(
+      (employee) =>
+        employeeIds.includes(employee.employeeId) && employee.dates.length > 0
+    );
+
+    // A reminder names five dates, then "and N more".
+    try {
+      await Promise.all(
+        chosen.map((employee) => {
+          const shown = employee.dates
+            .slice(0, 5)
+            .map((date) => formatDate(date))
+            .join(", ");
+          const more = employee.dates.length - 5;
+          return trigger("notify", {
+            event: NotificationEvent.TimesheetMissing,
+            companyId: ctx.company.id,
+            documentId: employee.dates[employee.dates.length - 1]!,
+            recipient: { type: "users", userIds: [employee.employeeId] },
+            from: ctx.auditUserId,
+            body:
+              more > 0
+                ? `No time entered for ${shown} and ${more} more days`
+                : `No time entered for ${shown}`
+          });
+        })
+      );
+    } catch (err) {
+      logger.error("Failed to send the missing time reminders", {
+        companyId: ctx.company.id,
+        employeeIds,
+        error: err
+      });
+      return ctx.error("internal", "Failed to send the reminders", err);
+    }
+    return { sent: chosen.length };
+  }
+});
+
+/**
+ * Take an employee out of the Missing Time report, or back in.
+ *
+ * @remarks
+ * Sets `timesheetRequired` on the employee's job record. Refuses an employee
+ * with no job record.
+ */
+export const updateTimesheetRequired = defineServiceFn({
+  input: z.object({
+    employeeId: z.string().min(1),
+    timesheetRequired: z.boolean()
+  }),
+  permission: { view: ["projects"], update: "people" },
+  async run(ctx, { employeeId, timesheetRequired }) {
+    try {
+      const updated = await service.updateTimesheetRequired(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        employeeId,
+        timesheetRequired,
+        updatedBy: ctx.auditUserId
+      });
+      if (!updated) {
+        return ctx.error(
+          "rule",
+          "Set up the person's job before you change this"
+        );
+      }
+    } catch (err) {
+      logger.error("Failed to update timesheetRequired", {
+        companyId: ctx.company.id,
+        employeeId,
+        error: err
+      });
+      return ctx.error("internal", "Failed to update", err);
+    }
+    return { employeeId, timesheetRequired };
+  }
+});
+
+// --- Charges: expenses and issues --------------------------------------------------
+
+/**
+ * Charge a cost to a project element.
+ *
+ * @remarks
+ * Inserts a project expense entry and posts it (`post-project-expense`: Dr
+ * the project account / Cr GRNI, one Other Direct ledger row). An entry that
+ * does not post is deleted again, so a refusal leaves nothing behind. Budget
+ * control (Government Contracting 5c): a Block budget refuses the charge, a
+ * Warn budget posts it and returns the overrun as `budgetWarning`.
+ */
+export const createProjectExpense = defineServiceFn({
+  input: projectExpenseValidator,
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const budget = await service.checkProjectBudget(
+      ctx.asSystem.pg,
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        source: "purchase",
+        charges: [
+          {
+            projectId: input.projectId,
+            projectElementId: input.projectElementId,
+            amount: input.amount
+          }
+        ]
+      }
+    );
+    if (budget.status === "block") return ctx.error("rule", budget.message);
+
+    const postingError = await service.addProjectExpense(ctx, input);
+    if (postingError) return ctx.error("rule", postingError);
+    return {
+      budgetWarning: budget.status === "warn" ? budget.message : null
+    };
+  }
+});
+
+/**
+ * Issue stock to a project, or return it.
+ *
+ * @remarks
+ * Runs `post-project-issue`: the stock leaves (or re-enters) inventory at its
+ * carrying cost and the offset posts to the project account. Budget control
+ * (Government Contracting 5c): an Issue charges the item's unit cost to the
+ * element, so a Block budget refuses it and a Warn budget posts it and
+ * returns the overrun as `budgetWarning`. A Return is never checked.
+ */
+export const postProjectIssue = defineServiceFn({
+  input: projectIssueValidator,
+  permission: { update: ["inventory", "projects"] },
+  async run(ctx, input) {
+    let budgetWarning: string | null = null;
+    if (input.direction === "Issue") {
+      const cost = await ctx.asSystem.pg
+        .selectFrom("itemCost")
+        .select("unitCost")
+        .where("itemId", "=", input.itemId)
+        .where("companyId", "=", ctx.company.id)
+        .executeTakeFirst();
+      const budget = await service.checkProjectBudget(
+        ctx.asSystem.pg,
+        ctx.asCaller.supabase,
+        {
+          companyId: ctx.company.id,
+          source: "issue",
+          charges: [
+            {
+              projectId: input.projectId,
+              projectElementId: input.projectElementId ?? null,
+              amount: input.quantity * Number(cost?.unitCost ?? 0)
+            }
+          ]
+        }
+      );
+      if (budget.status === "block") return ctx.error("rule", budget.message);
+      if (budget.status === "warn") budgetWarning = budget.message;
+    }
+
+    const posted = await run(ctx, "post-project-issue", () =>
+      service.postProjectIssue(ctx, service.projectIssuePostingInput(input))
+    );
+    if (posted instanceof CarbonError) return posted;
+    return { ...posted, budgetWarning };
+  }
+});
+
+// --- Billing, planning groups, project stock transfers, indirect rates ---------
+
+// --- Contract billing --------------------------------------------------------
+
+/**
+ * Get a project's billing elements.
+ *
+ * @remarks
+ * Lists the billing elements of one project (`isBilling`), for a contract
+ * line's billing element. Only a Contract-treatment project has them.
+ *
+ * @mcp read
+ */
+export const getProjectBillingElements = defineServiceFn({
+  input: z.object({ projectId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, { projectId }) {
+    return unwrap(
+      ctx,
+      await service.getProjectBillingElements(
+        ctx.asCaller.supabase,
+        projectId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get the billable items of contract billing lines.
+ *
+ * @remarks
+ * Lists the billable items of contract billing lines, with the ledger row's
+ * posting date and cost type, and the invoice that billed each one. Filter
+ * by contract line, project or status.
+ *
+ * @mcp read
+ */
+export const getContractBillableItems = defineServiceFn({
+  input: z.looseObject({
+    customerContractLineId: z.string().nullable().optional(),
+    projectId: z.string().nullable().optional(),
+    status: z
+      .array(z.enum(Constants.public.Enums.projectBillableItemStatus))
+      .nullable()
+      .optional(),
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: ["projects", "sales"] },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getContractBillableItems(
+        ctx.asCaller.supabase,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get the Time & Materials and Cost Plus contract lines.
+ *
+ * @remarks
+ * Lists the Time & Materials and Cost Plus contract lines, of one project or
+ * of the company, with their contract, billing element and funding terms.
+ *
+ * @mcp read
+ */
+export const getContractBillingLines = defineServiceFn({
+  input: z.object({ projectId: z.string().nullable().optional() }),
+  permission: { view: ["projects", "sales"] },
+  async run(ctx, { projectId }) {
+    return unwrap(
+      ctx,
+      await service.getContractBillingLines(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        projectId
+      })
+    );
+  }
+});
+
+/**
+ * Review contract billable items.
+ *
+ * @remarks
+ * Reviews contract billable items before they are billed: hold them with a
+ * reason, release a hold, write them off with a reason, or change one item's
+ * unit price (the amount follows; a "No bill rate" hold is released). Billed
+ * and Written Off items are refused. Each change reaches the audit log
+ * ("Billable Item").
+ *
+ * @param ids - The billable items to change.
+ * @param action - `hold`, `release`, `writeOff` or `price`.
+ * @param reason - Required to hold or write off.
+ * @param unitPrice - The new unit price (`price`, one item only).
+ *
+ * @mcp
+ */
+export const updateProjectBillableItems = defineServiceFn({
+  input: billableItemActionValidator,
+  // Billing review is contract billing: it also needs the sales permission.
+  permission: { update: "projects", view: "sales" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.updateProjectBillableItems(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+    );
+  }
+});
+
+// --- Planning groups ---------------------------------------------------------
+
+/**
+ * Get the planning groups.
+ *
+ * @remarks
+ * Lists the planning groups of the company, with their location, the
+ * exception project and the count of member projects.
+ *
+ * @mcp read
+ */
+export const getPlanningGroups = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getPlanningGroups(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get a planning group.
+ *
+ * @mcp read
+ */
+export const getPlanningGroup = defineServiceFn({
+  input: z.object({ planningGroupId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, { planningGroupId }) {
+    return unwrap(
+      ctx,
+      await service.getPlanningGroup(
+        ctx.asCaller.supabase,
+        planningGroupId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Get the active planning groups, for a picker.
+ *
+ * @remarks
+ * Lists the active planning groups of the company: id, name and location.
+ *
+ * @mcp read
+ */
+export const getPlanningGroupsList = defineServiceFn({
+  input: z.object({}),
+  permission: { view: "projects" },
+  async run(ctx) {
+    return unwrap(
+      ctx,
+      await utils.getPlanningGroupsList(ctx.asCaller.supabase, ctx.company.id)
+    );
+  }
+});
+
+/**
+ * Get the member projects of a planning group.
+ *
+ * @remarks
+ * Membership is shown on the group, so no project can hoard the group's
+ * stock out of sight.
+ *
+ * @mcp read
+ */
+export const getPlanningGroupMembers = defineServiceFn({
+  input: z.object({ planningGroupId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, { planningGroupId }) {
+    return unwrap(
+      ctx,
+      await service.getPlanningGroupMembers(
+        ctx.asCaller.supabase,
+        planningGroupId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create or update a planning group.
+ *
+ * @remarks
+ * Planning groups are a commercial feature (PLANNING_GROUPS). Creating needs
+ * `create: projects`, updating `update: projects`.
+ */
+export const upsertPlanningGroup = defineServiceFn({
+  input: z
+    .object({
+      id: z.string().optional(),
+      name: z.string().trim().min(1, { message: "Name is required" }),
+      locationId: z.string().min(1, { message: "Location is required" }),
+      excessRule: z.enum(planningGroupExcessRules),
+      exceptionProjectId: z.string().optional(),
+      priorityRule: z.enum(planningGroupPriorityRules),
+      active: z.boolean()
+    })
+    .refine(
+      (data) =>
+        data.excessRule !== "Exception Project" || !!data.exceptionProjectId,
+      {
+        message: "Choose the project that takes the excess",
+        path: ["exceptionProjectId"]
+      }
+    ),
+  permission: {},
+  async run(ctx, { id, ...fields }) {
+    if (!ctx.can(id ? { update: "projects" } : { create: "projects" })) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
+    try {
+      const result = id
+        ? await eeUpsertPlanningGroup(ctx.asCaller.supabase, {
+            ...fields,
+            id,
+            companyId: ctx.company.id,
+            updatedBy: ctx.auditUserId
+          })
+        : await eeUpsertPlanningGroup(ctx.asCaller.supabase, {
+            ...fields,
+            companyId: ctx.company.id,
+            createdBy: ctx.auditUserId
+          });
+      // A refusal of the ee service carries no code: its message is for the person.
+      if (result.error && !result.error.code) {
+        return ctx.error("rule", result.error.message);
+      }
+      return unwrap(ctx, result);
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use planning groups");
+    }
+  }
+});
+
+/**
+ * Delete a planning group.
+ *
+ * @remarks
+ * It refuses while a project is a member, or a purchase order line or job is
+ * made for the group. Deleting is not plan-gated: a company whose plan lapsed
+ * can still clean up.
+ *
+ * @mcp destructive
+ */
+export const deletePlanningGroup = defineServiceFn({
+  input: z.object({ planningGroupId: z.string() }),
+  permission: { delete: "projects" },
+  async run(ctx, { planningGroupId }) {
+    const deleted = await service.deletePlanningGroup(
+      ctx.asCaller.supabase,
+      planningGroupId,
+      ctx.company.id
+    );
+    if (deleted.error) return unwrap(ctx, deleted);
+    return { planningGroupId };
+  }
+});
+
+// --- Project stock transfers -------------------------------------------------
+
+/**
+ * Get the project stock transfers.
+ *
+ * @remarks
+ * Lists the project stock transfers of the company, newest first. With a
+ * project, only the transfers from or to it.
+ *
+ * @mcp read
+ */
+export const getProjectStockTransfers = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0),
+    search: z.string().nullable().optional(),
+    projectId: z.string().nullable().optional()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getProjectStockTransfers(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * Get a project stock transfer.
+ *
+ * @remarks
+ * Loads one project stock transfer with its owners.
+ *
+ * @mcp read
+ */
+export const getProjectStockTransfer = defineServiceFn({
+  input: z.object({ projectStockTransferId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, { projectStockTransferId }) {
+    return unwrap(
+      ctx,
+      await service.getProjectStockTransfer(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        projectStockTransferId
+      )
+    );
+  }
+});
+
+/**
+ * Get the lines of a project stock transfer.
+ *
+ * @remarks
+ * Lists the lines of a project stock transfer, oldest first.
+ *
+ * @mcp read
+ */
+export const getProjectStockTransferLines = defineServiceFn({
+  input: z.object({ projectStockTransferId: z.string() }),
+  permission: { view: "projects" },
+  async run(ctx, { projectStockTransferId }) {
+    return unwrap(
+      ctx,
+      await service.getProjectStockTransferLines(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        projectStockTransferId
+      )
+    );
+  }
+});
+
+/**
+ * Create or update a project stock transfer.
+ *
+ * @remarks
+ * Creates a Draft project stock transfer with the next readable id, or
+ * updates a Draft one (without `id` it creates). A transfer past Draft is
+ * not changed, and its type never changes. A Payback runs from the borrower
+ * back to the lender, at the borrow's location: it takes its owners and
+ * location from the open borrow it settles, on create and on update. Common
+ * stock is the owner `common`.
+ *
+ * @mcp
+ */
+export const upsertProjectStockTransfer = defineServiceFn({
+  input: projectStockTransferValidator,
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    const client = ctx.asCaller.supabase;
+    const companyId = ctx.company.id;
+
+    if (!input.id) {
+      const { type, reason, settlesBorrowId } = input;
+      let fromProjectId = toStockOwner(input.fromProjectId);
+      let toProjectId = toStockOwner(input.toProjectId);
+      let locationId = input.locationId ?? "";
+
+      // The header names both owners (the owner CHECK needs one).
+      if (type === "Payback") {
+        const borrow = await client
+          .from("projectBorrow")
+          .select("borrowerProjectId, lenderProjectId, locationId, status")
+          .eq("id", settlesBorrowId!)
+          .eq("companyId", companyId)
+          .single();
+        if (borrow.error || borrow.data.status !== "Open") {
+          return ctx.error(
+            "validation",
+            "Select an open borrow to pay back",
+            borrow.error
+          );
+        }
+        fromProjectId = borrow.data.borrowerProjectId;
+        toProjectId = borrow.data.lenderProjectId;
+        locationId = borrow.data.locationId;
+      }
+
+      return unwrap(
+        ctx,
+        await service.upsertProjectStockTransfer(client, {
+          type,
+          fromProjectId,
+          toProjectId,
+          locationId,
+          reason,
+          paybackDueDate:
+            type === "Borrow" ? (input.paybackDueDate ?? null) : null,
+          settlesBorrowId:
+            type === "Payback" ? (settlesBorrowId ?? null) : null,
+          companyId,
+          createdBy: ctx.auditUserId
+        })
+      );
+    }
+
+    const current = await service.getProjectStockTransfer(
+      client,
+      companyId,
+      input.id
+    );
+    if (current.error) {
+      return ctx.error(
+        "notFound",
+        "Failed to load the transfer",
+        current.error
+      );
+    }
+
+    // A Payback keeps the owners and location of its borrow.
+    const isPayback = current.data.type === "Payback";
+    return unwrap(
+      ctx,
+      await service.upsertProjectStockTransfer(client, {
+        id: input.id,
+        companyId,
+        updatedBy: ctx.auditUserId,
+        fromProjectId: isPayback
+          ? current.data.fromProjectId
+          : toStockOwner(input.fromProjectId),
+        toProjectId: isPayback
+          ? current.data.toProjectId
+          : toStockOwner(input.toProjectId),
+        locationId: isPayback
+          ? current.data.locationId
+          : (input.locationId ?? current.data.locationId),
+        reason: input.reason,
+        paybackDueDate:
+          current.data.type === "Borrow"
+            ? (input.paybackDueDate ?? null)
+            : null,
+        settlesBorrowId: current.data.settlesBorrowId
+      })
+    );
+  }
+});
+
+/**
+ * Add or change a line of a Draft project stock transfer.
+ *
+ * @remarks
+ * Without `id` the line is added. A transfer past Draft is refused.
+ *
+ * @mcp
+ */
+export const upsertProjectStockTransferLine = defineServiceFn({
+  input: projectStockTransferLineValidator.extend({
+    projectStockTransferId: z.string()
+  }),
+  permission: { update: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.upsertProjectStockTransferLine(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Remove a line from a Draft project stock transfer.
+ *
+ * @remarks
+ * A transfer past Draft is refused.
+ *
+ * @mcp destructive
+ */
+export const deleteProjectStockTransferLine = defineServiceFn({
+  input: z.object({ id: z.string(), projectStockTransferId: z.string() }),
+  permission: { update: "projects" },
+  async run(ctx, { id, projectStockTransferId }) {
+    const deleted = await service.deleteProjectStockTransferLine(
+      ctx.asCaller.supabase,
+      { id, projectStockTransferId, companyId: ctx.company.id }
+    );
+    if (deleted.error) return unwrap(ctx, deleted);
+    return { id };
+  }
+});
+
+/**
+ * Post an Approved project stock transfer.
+ *
+ * @remarks
+ * Stock moves between stock stripes at the same bin, at cost. A Transfer or
+ * a Borrow moves the from-owner's cost layers to the to-owner (a Borrow
+ * opens a project borrow); a Payback returns the borrowed cost to the lender
+ * and books the borrower's Payback Variance. Government-furnished stock never
+ * leaves for common stock or for a project of another customer.
+ */
+export const postProjectStockTransfer = defineServiceFn({
+  input: service.postProjectStockTransferInput,
+  permission: service.postProjectStockTransferPermission,
+  async run(ctx, input) {
+    return run(ctx, "post-project-stock-transfer", () =>
+      service.postProjectStockTransfer(ctx, input)
+    );
+  }
+});
+
+/**
+ * Approve, post or cancel a project stock transfer.
+ *
+ * @remarks
+ * `approve` approves a Draft transfer: it refuses a transfer without lines,
+ * and moves the government-furnished refusal of posting up to approval.
+ * `post` posts an Approved transfer (see `postProjectStockTransfer`).
+ * `cancel` cancels a Draft or Approved one.
+ *
+ * @param id - The project stock transfer.
+ * @param action - `approve`, `post` or `cancel`.
+ *
+ * @mcp
+ */
+export const updateProjectStockTransferStatus = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    action: z.enum(projectStockTransferActions)
+  }),
+  permission: { update: "projects" },
+  async run(ctx, { id, action }) {
+    if (action === "post") {
+      return run(ctx, "post-project-stock-transfer", () =>
+        service.postProjectStockTransfer(ctx, { projectStockTransferId: id })
+      );
+    }
+    return unwrap(
+      ctx,
+      await service.updateProjectStockTransferStatus(ctx.asCaller.supabase, {
+        id,
+        action,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Get the project borrows.
+ *
+ * @remarks
+ * Lists the borrows of the company, oldest due first. With a project, the
+ * borrows it owes or lent; with statuses, only those.
+ *
+ * @param locationId - Only the borrows at this location.
+ * @param dueBefore - Only the borrows due before this date (`YYYY-MM-DD`):
+ * the overdue ones, when it is today.
+ *
+ * @mcp read
+ */
+export const getProjectBorrows = defineServiceFn({
+  input: z.object({
+    projectId: z.string().nullable().optional(),
+    status: z.array(z.enum(projectBorrowStatuses)).nullable().optional(),
+    locationId: z.string().nullable().optional(),
+    dueBefore: z.string().nullable().optional()
+  }),
+  permission: { view: "projects" },
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.getProjectBorrows(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        input
+      )
+    );
+  }
+});
+
+// --- Indirect rates (Government Contracting, @carbon/ee) ---------------------
+
+/**
+ * Create or update an indirect pool.
+ *
+ * @remarks
+ * Government Contracting is a commercial feature: without it the call is
+ * refused. Creating needs `create: accounting`, updating
+ * `update: accounting`. A duplicate name or sequence is refused with the
+ * field's message.
+ */
+export const upsertIndirectPool = defineServiceFn({
+  input: z
+    .object({
+      id: z.string().optional(),
+      name: z.string().min(1, { message: "Name is required" }),
+      poolType: z.enum(indirectPoolTypes),
+      sequence: z
+        .number()
+        .int({ message: "Sequence must be a whole number" })
+        .min(1, { message: "Sequence must be 1 or more" }),
+      baseType: z.enum(indirectBaseTypes),
+      appliedAccountId: z.string().optional(),
+      appliesToProjects: z.boolean(),
+      offsetAbsorbedOverhead: z.boolean(),
+      active: z.boolean()
+    })
+    .refine(
+      (data) => !data.offsetAbsorbedOverhead || data.poolType === "Overhead",
+      {
+        message: "Only an Overhead pool can offset absorbed overhead",
+        path: ["offsetAbsorbedOverhead"]
+      }
+    )
+    .refine(
+      (data) => data.poolType !== "Service Center" || !data.appliesToProjects,
+      {
+        message: "A Service Center pool cannot apply to projects",
+        path: ["appliesToProjects"]
+      }
+    ),
+  permission: {},
+  async run(ctx, input) {
+    if (
+      !ctx.can(input.id ? { update: "accounting" } : { create: "accounting" })
+    ) {
+      return ctx.error("forbidden", "You do not have permission to do this");
+    }
+    try {
+      const result = await eeUpsertIndirectPool(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      if (result.error) {
+        const fieldErrors = indirectRatesFieldErrors(result.error);
+        if (fieldErrors) {
+          return ctx.error(
+            "conflict",
+            Object.values(fieldErrors)[0]!,
+            result.error
+          );
+        }
+      }
+      return unwrap(ctx, result);
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+  }
+});
+
+/**
+ * Delete an indirect pool.
+ *
+ * @remarks
+ * A pool with rates or burden is refused: deactivate it instead.
+ */
+export const deleteIndirectPool = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { delete: "accounting" },
+  async run(ctx, { id }) {
+    try {
+      const deleted = await eeDeleteIndirectPool(ctx.asCaller.supabase, {
+        id,
+        companyId: ctx.company.id
+      });
+      if (deleted.error) {
+        // A refusal of the ee service carries no code: its message is for the person.
+        if (!("code" in deleted.error) || !deleted.error.code) {
+          return ctx.error("rule", deleted.error.message);
+        }
+        return unwrap(ctx, deleted);
+      }
+      return { id };
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+  }
+});
+
+/**
+ * Add an account to an indirect pool, as a Cost or Base account.
+ *
+ * @remarks
+ * A project account cannot be a Base account; one account and dimension
+ * cell is a Cost account of at most one pool.
+ */
+export const upsertIndirectPoolAccount = defineServiceFn({
+  input: indirectPoolAccountValidator,
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    try {
+      const result = await eeUpsertIndirectPoolAccount(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      if (result.error) {
+        const fieldErrors = indirectRatesFieldErrors(result.error);
+        if (fieldErrors) {
+          return ctx.error(
+            "conflict",
+            Object.values(fieldErrors)[0]!,
+            result.error
+          );
+        }
+        // A refusal of the ee service carries no code: its message is for the person.
+        if (!("code" in result.error) || !result.error.code) {
+          return ctx.error("rule", result.error.message);
+        }
+      }
+      return unwrap(ctx, result);
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+  }
+});
+
+/**
+ * Remove an account from an indirect pool.
+ */
+export const deleteIndirectPoolAccount = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { id }) {
+    try {
+      const deleted = await eeDeleteIndirectPoolAccount(ctx.asCaller.supabase, {
+        id,
+        companyId: ctx.company.id
+      });
+      if (deleted.error) return unwrap(ctx, deleted);
+      return { id };
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+  }
+});
+
+/**
+ * Set an indirect rate of a pool, from a period of a fiscal year onward.
+ *
+ * @remarks
+ * Actual rates come from the rate run: enter a Provisional, Target or Final
+ * rate.
+ */
+export const setIndirectRate = defineServiceFn({
+  input: indirectRateEntryValidator,
+  permission: { update: "accounting" },
+  async run(ctx, input) {
+    try {
+      const result = await eeSetIndirectRate(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      // A refusal of the ee service carries no code: its message is for the person.
+      if (result.error && (!("code" in result.error) || !result.error.code)) {
+        return ctx.error("rule", result.error.message);
+      }
+      return unwrap(ctx, result);
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+  }
+});
+
+/**
+ * Run the indirect rates of a locked period.
+ *
+ * @remarks
+ * Computes the period's indirect rates, the project burden and its billing.
+ */
+export const runIndirectRatePeriod = defineServiceFn({
+  input: z.object({
+    accountingPeriodId: z.string().min(1, { message: "Choose a locked period" })
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, { accountingPeriodId }) {
+    try {
+      const result = await eeRunIndirectRatePeriod(
+        ctx.asSystem.pg,
+        ctx.asCaller.supabase,
+        {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          accountingPeriodId
+        }
+      );
+      if (result.error) return ctx.error("rule", result.error.message);
+      return { accountingPeriodId, completed: true as const };
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+  }
+});
+
+/**
+ * Run the year-end true-up at Final rates.
+ *
+ * @remarks
+ * The burden catch-up of `fiscalYear` at the Final rate of period 12, posted
+ * into the given Locked period, then the burden billing.
+ */
+export const runFinalTrueUp = defineServiceFn({
+  input: z.object({
+    fiscalYear: z.number().int({ message: "Choose a fiscal year" }),
+    accountingPeriodId: z.string().min(1, { message: "Choose a locked period" })
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, { fiscalYear, accountingPeriodId }) {
+    try {
+      const result = await eeRunFinalTrueUp(
+        ctx.asSystem.pg,
+        ctx.asCaller.supabase,
+        {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          fiscalYear,
+          accountingPeriodId
+        }
+      );
+      if (result.error) return ctx.error("rule", result.error.message);
+      return { accountingPeriodId, fiscalYear, completed: true as const };
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return ctx.error("entitlement", "Upgrade to use indirect rates");
+    }
+  }
+});

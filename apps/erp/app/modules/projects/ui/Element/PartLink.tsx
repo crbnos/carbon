@@ -10,7 +10,7 @@ import { useSerialNumbers } from "~/modules/inventory/ui/Shipments/ShipmentLines
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
-import type { ProjectElementPage } from "../../projects.server";
+import type { ProjectElementPage } from "../../projects.service";
 import { useElementField } from "../Elements/ElementProperties";
 import { PropertyCombobox } from "./PropertyFields";
 

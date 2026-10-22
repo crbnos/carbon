@@ -32,7 +32,7 @@ import type {
 } from "~/modules/projects/ui/Costs/ProjectEarnedValue.ee";
 import ProjectEarnedValue from "~/modules/projects/ui/Costs/ProjectEarnedValue.ee";
 import type { ServiceOrderCostRow } from "~/modules/projects/ui/Costs/ServiceOrderCosts";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-costs");
