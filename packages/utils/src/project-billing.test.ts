@@ -167,6 +167,52 @@ describe("takeWithinFunding", () => {
     expect(held.map((i) => i.id)).toEqual(["b"]);
   });
 
+  it("takes a credit posted after an item that would exceed funding", () => {
+    // Billed 900.00 of 1,000.00: the -150.00 credit makes room for the
+    // +200.00 item, so both are billed and the line ends at 950.00.
+    const items = [
+      { id: "charge", amount: 200, postingDate: "2026-10-01" },
+      { id: "credit", amount: -150, postingDate: "2026-10-02" }
+    ];
+    const { take, held } = takeWithinFunding(items, {
+      billed: 900,
+      fundedAmount: 1000
+    });
+    expect(take.map((i) => i.id)).toEqual(["charge", "credit"]);
+    expect(held).toEqual([]);
+  });
+
+  it("never holds a credit, and a held item does not block a later one that fits", () => {
+    const items = [
+      { id: "big", amount: 500, postingDate: "2026-10-01" },
+      { id: "small", amount: 100, postingDate: "2026-10-02" },
+      { id: "credit", amount: -50, postingDate: "2026-10-03" },
+      { id: "late", amount: 100, postingDate: "2026-10-04" }
+    ];
+    const { take, held } = takeWithinFunding(items, {
+      billed: 900,
+      fundedAmount: 1000
+    });
+    // 900 - 50 = 850; big (1,350) does not fit; small (950) does; late
+    // (1,050) does not.
+    expect(take.map((i) => i.id)).toEqual(["small", "credit"]);
+    expect(held.map((i) => i.id)).toEqual(["big", "late"]);
+    const billedAfter = 900 + take.reduce((sum, item) => sum + item.amount, 0);
+    expect(billedAfter).toBeLessThanOrEqual(1000);
+  });
+
+  it("takes credits when the line is already billed above its funding", () => {
+    const { take, held } = takeWithinFunding(
+      [
+        { id: "charge", amount: 10 },
+        { id: "credit", amount: -20 }
+      ],
+      { billed: 1100, fundedAmount: 1000 }
+    );
+    expect(take.map((i) => i.id)).toEqual(["credit"]);
+    expect(held.map((i) => i.id)).toEqual(["charge"]);
+  });
+
   it("takes every item with no funded amount", () => {
     const { take } = takeWithinFunding([{ amount: 1 }, { amount: 2 }], {
       billed: 0,

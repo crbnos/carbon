@@ -301,9 +301,16 @@ export function fundingNotice(args: {
 
 /**
  * The items one invoice takes within the line's funding. Items arrive in
- * posting date order, then id. Billing stops before the first item that would
- * take the billed amount above `fundedAmount`; that item and every later one
- * are held. A null `fundedAmount` takes every item.
+ * posting date order, then id, and keep that order in `take` and `held`.
+ * Every credit (an amount of 0 or less) is taken: it needs no funding, and
+ * holding one would bill the customer more than the work they owe for. The
+ * credits are counted first, then each positive item, in order, is taken
+ * when it still fits: `billed` + the credits + the items taken so far stays
+ * at or below `fundedAmount`. An item that does not fit is held, and the
+ * next one is tried. So the line never bills above its funding (unless it
+ * already did before this invoice), and one large item never holds back a
+ * later credit or a later smaller item. A null `fundedAmount` takes every
+ * item.
  */
 export function takeWithinFunding<T extends { amount: number }>(
   items: T[],
@@ -313,14 +320,29 @@ export function takeWithinFunding<T extends { amount: number }>(
 
   const funded = Number(args.fundedAmount);
   let billed = Number(args.billed);
-  for (let i = 0; i < items.length; i++) {
-    const next = round(billed + Number(items[i]!.amount));
+  for (const item of items) {
+    const amount = Number(item.amount);
+    if (amount <= 0) billed += amount;
+  }
+  billed = round(billed);
+
+  const take: T[] = [];
+  const held: T[] = [];
+  for (const item of items) {
+    const amount = Number(item.amount);
+    if (amount <= 0) {
+      take.push(item);
+      continue;
+    }
+    const next = round(billed + amount);
     if (next > funded && !equals(next, funded)) {
-      return { take: items.slice(0, i), held: items.slice(i) };
+      held.push(item);
+      continue;
     }
     billed = next;
+    take.push(item);
   }
-  return { take: [...items], held: [] };
+  return { take, held };
 }
 
 export type ProjectInvoicePlanItem = {

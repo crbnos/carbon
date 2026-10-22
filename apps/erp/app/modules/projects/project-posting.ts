@@ -1590,8 +1590,9 @@ export async function loadContractBillingContext(
     elementIds: elementsByLine.get(line.id) ?? new Set()
   }));
 
-  // Rates only matter for labor under a line. The backfill bills rows posted
-  // before the line's start, so the date is not part of this test.
+  // Rates only matter for labor under a line. The caller picks the line for
+  // a row by date (`contractLineForRow`, or the backfill's start filter), so
+  // the date is not part of this test.
   const labor = charged.filter(
     (row) =>
       row.costType === "Labor" &&
@@ -1880,8 +1881,8 @@ export async function insertProjectLedgerRows(
 
 /**
  * The T&M backfill of one line: items for the ledger rows of its billing
- * element subtree posted on or before `through` that have none yet
- * (`selectRowsToBill`). Returns 0 when the line is not a live Time &
+ * element subtree posted from the line's start through `through` that have
+ * none yet (`selectRowsToBill`). Returns 0 when the line is not a live Time &
  * Materials line on `through` (P8). Confirm, an amend `add`, the line's
  * Generate billable items and the project billing invoice source call it;
  * the last one also catches rows the job-completion SQL writes, which skip
@@ -1953,7 +1954,13 @@ export async function generateTimeAndMaterialsItems(
     .where("reversalOfId", "is", null)
     .execute();
   const billed = new Set(withItem.map((item) => item.projectLedgerId));
-  const toBill = selectRowsToBill(rows, billed);
+  // Pair reversals over every row first, then bill only the rows the line
+  // is live for (P8). Posting gives no T&M item to a row dated before the
+  // line starts: an earlier line (Fixed Price, say) covered that cost. A
+  // reversal dated after the start of such a row must not bill it either.
+  const toBill = selectRowsToBill(rows, billed).filter(
+    (row) => row.postingDate >= line.startDate
+  );
   if (toBill.length === 0) return 0;
 
   const context = await loadContractBillingContext(trx, {
