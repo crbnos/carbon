@@ -385,9 +385,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   - `changeInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
     plan rows for re-resolution.
   - `dispositionInspection` — per-feature gating when the lot has features (Accept: every
-    feature `recorded >= n && failed <= Ac`; Reject: some feature `failed >= Re`, a failed
-    sample, or a `reason` — a lot can be rejected with nothing failed, e.g. a suspected
-    counterfeit, and the reason is stored as the lot's `notes`); Accept releases every non-failed lot entity to Available (un-sampled AND
+    feature `recorded >= n && failed <= Ac`; Reject: the pure `isRejectableWithoutReason`
+    (some feature `failed >= Re` or a failed sample; with no features, failed samples > Ac —
+    the rule both apps' Reject buttons apply, pinned by `packages/database/src/quality.test.ts`)
+    or a `reason`, so a lot can be rejected with nothing failed, e.g. a suspected counterfeit,
+    and the reason is stored as the lot's `notes`); Accept releases every non-failed lot entity to Available (un-sampled AND
     partially-inspected Pending samples included); Reject flips all lot entities to
     Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
     negative adjustment); Partial leaves entities; always writes `inspectionHistory`.

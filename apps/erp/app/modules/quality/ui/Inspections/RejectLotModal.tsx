@@ -126,6 +126,8 @@ const RejectLotModal = ({
               <Textarea
                 id="rejectReason"
                 value={reason}
+                // rejectInspection takes at most 2,000 characters.
+                maxLength={2000}
                 onChange={(event) => setReason(event.target.value)}
                 placeholder={t`e.g. Suspected counterfeit, wrong part, damaged in transit`}
               />

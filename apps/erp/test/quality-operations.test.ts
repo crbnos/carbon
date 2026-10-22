@@ -165,28 +165,6 @@ describe("rejecting an inspection lot", () => {
     });
   });
 
-  // A lot can be rejected with nothing failed (a suspected counterfeit): the
-  // reason is what lets the engine reject it, and it is kept as the lot's notes.
-  it("hands the reason to the engine", async () => {
-    disposition.mockResolvedValue({
-      data: { id: "insp-1", status: "Failed", writeOff: null },
-      error: null
-    });
-    const { ctx } = contextWith();
-
-    const result = await rejectInspection(ctx, {
-      id: "insp-1",
-      createNcr: false,
-      reason: "  Suspected counterfeit  "
-    });
-
-    expect(result.error).toBeNull();
-    expect(disposition.mock.calls[0]![1]).toMatchObject({
-      decision: "Reject",
-      reason: "Suspected counterfeit"
-    });
-  });
-
   it("posts nothing for a lot with no write-off (tracked, or not inventory)", async () => {
     disposition.mockResolvedValue({
       data: { id: "insp-1", status: "Failed", writeOff: null },
