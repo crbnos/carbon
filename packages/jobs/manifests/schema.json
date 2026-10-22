@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-22T08:22:55.223Z",
+  "exportedAt": "2026-10-22T08:34:38.694Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -2446,7 +2446,8 @@
         "updatedAt",
         "updatedBy",
         "grantsAbilityId",
-        "guidePath"
+        "guidePath",
+        "videoUrl"
       ]
     },
     {

@@ -9159,6 +9159,9 @@ msgstr "Wpisz ilość na co najmniej jednej pozycji lub zaznacz sztukę."
 msgid "Enter a web address, such as https://example.com"
 msgstr "Wprowadź adres internetowy, np. https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "Wpisz artykuł i ilość samodzielnie."
 
@@ -15323,6 +15326,9 @@ msgstr "Brak dostępnych zmiennych"
 msgid "No versions available"
 msgstr "Brak dostępnych wersji"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
 
@@ -16568,6 +16574,9 @@ msgstr "Zaległy"
 
 msgid "Past end date"
 msgstr "Po dacie końcowej"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Wklej kod XML metadanych, jeśli Twój dostawca tożsamości nie publikuje adresu URL metadanych"
@@ -18854,6 +18863,9 @@ msgstr "Usuń z listy uwierzytelnianie dwuskładnikowe"
 
 msgid "Remove Unit"
 msgstr "Usuń Sztukę"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "Usunięte"
@@ -22384,8 +22396,14 @@ msgstr "Zmień moduł"
 msgid "Switch to pan mode"
 msgstr "Przełącz na tryb panoramy"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Przełącz na tryb wyboru"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Przełącz na zawartość pisemną"
@@ -24155,8 +24173,11 @@ msgstr "Ten Kwartał"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "To przyjęcie nie ma żadnych linii. Wybierz dokument źródłowy, aby je dodać."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "To usunie PDF. Pracownicy będą widzieć zawartość pisemną zamiast tego."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "To usuwa ich aplikację uwierzytelniającą, więc ich następny login potrzebuje tylko magicznego linku. Użyj tego, gdy stracili dostęp do swojej aplikacji uwierzytelniającej. To wpływa na ich logowanie dla każdej firmy, do której należą."
@@ -24768,6 +24789,9 @@ msgstr "Plan szkoleniowy"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Szkolenie przeprowadzone poza Carbon, takie jak kurs od dostawcy. Przypisanie ma tylko nazwę. Administrator oznacza każdego pracownika za ukańczonego i może załączyć jego certyfikat."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Szkolenie zespołu za pośrednictwem Academy i przewodników w aplikacji"
@@ -26152,8 +26176,8 @@ msgstr "Wartość każdego aktywa, czas jego użytkowania i co się z nim stanie
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Jaka jest płatność za każdy okres dla tego aktywa w pierwszym roku"
 
-msgid "What employees read before the questions"
-msgstr "Co pracownicy czytają przed pytaniami"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Co się stanie z fakturą po jej utworzeniu"
@@ -26931,6 +26955,12 @@ msgstr "Twoja lista dostawców"
 
 msgid "yourself"
 msgstr "siebie"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 poziom kontroli (I / II / III); wyższe poziomy oznaczają większe wielkości próbek dla tej samej partii."

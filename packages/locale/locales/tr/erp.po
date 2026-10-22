@@ -9159,6 +9159,9 @@ msgstr "En az bir satırda miktarı girin veya bir Adet'i işaretleyin."
 msgid "Enter a web address, such as https://example.com"
 msgstr "Bir web adresi girin, örneğin https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "Bir stok kartı ve miktar kendiniz girin."
 
@@ -15323,6 +15326,9 @@ msgstr "Kullanılabilir değişken yok"
 msgid "No versions available"
 msgstr "Kullanılabilir sürüm yok"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden düzenlenene kadar eldeki stok negatif olacaktır, ancak yine de alabilirsiniz."
 
@@ -16568,6 +16574,9 @@ msgstr "Vadesi geçmiş"
 
 msgid "Past end date"
 msgstr "Bitiş Tarihinden Sonra"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Kimlik sağlayıcınız bir meta veri URL'si yayınlamıyorsa meta veri XML'sini yapıştırın"
@@ -18854,6 +18863,9 @@ msgstr "İki Faktörlü Kimlik Doğrulamayı Kaldır"
 
 msgid "Remove Unit"
 msgstr "Adet'i Kaldır"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "Kaldırıldı"
@@ -22384,8 +22396,14 @@ msgstr "Modülü değiştir"
 msgid "Switch to pan mode"
 msgstr "Pan moduna geç"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Seçim moduna geç"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Yazılı İçeriğe Geç"
@@ -24155,8 +24173,11 @@ msgstr "Bu Çeyrek"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "Bu girişte satır yok. Bunları eklemek için bir kaynak belge seçin."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "Bu, PDF'yi kaldırır. Çalışanlar yerine yazılı içeriği görecekler."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Bu işlem onların kimlik doğrulayıcı uygulamasını kaldırır, bu nedenle sonraki oturum açışları yalnızca sihirli bir bağlantı gerektirir. Kimlik doğrulayıcılarına erişimini kaybettikleri zaman bunu kullanın. Ait oldukları her şirket için oturum açışlarını etkiler."
@@ -24768,6 +24789,9 @@ msgstr "Eğitim Planı"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbon dışında alınan eğitim, satıcı kursu gibi. Görev sadece bir ada sahiptir. Yönetici her çalışanı tamamlandı olarak işaretler ve sertifikasını ekleyebilir."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Ekibinizi Academy ve uygulama içi kılavuzlar aracılığıyla eğitin"
@@ -26152,8 +26176,8 @@ msgstr "Her varlığın değeri, ne kadar sürdüğü ve dönem sonunda ona ne o
 msgid "What each period's payment is for this asset in the first year"
 msgstr "İlk yılda bu varlık için her dönemin ödeme tutarı"
 
-msgid "What employees read before the questions"
-msgstr "Çalışanların sorulardan önce okuduğu şey"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Fatura oluşturulduktan sonra ne olur"
@@ -26931,6 +26955,12 @@ msgstr "Satıcı listeniz"
 
 msgid "yourself"
 msgstr "kendiniz"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 muayene seviyesi (I / II / III); daha yüksek seviyeler aynı lot için daha büyük örneklem büyüklüğü anlamına gelir."

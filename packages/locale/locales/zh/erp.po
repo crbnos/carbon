@@ -9159,6 +9159,9 @@ msgstr "请在至少一行上输入收货数量或勾选一个件。"
 msgid "Enter a web address, such as https://example.com"
 msgstr "请输入网址，例如 https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "自己输入物料和数量。"
 
@@ -15323,6 +15326,9 @@ msgstr "没有可用的变量"
 msgid "No versions available"
 msgstr "没有可用的版本"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
 
@@ -16568,6 +16574,9 @@ msgstr "逾期"
 
 msgid "Past end date"
 msgstr "已过截止日期"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML"
@@ -18854,6 +18863,9 @@ msgstr "移除双因素认证"
 
 msgid "Remove Unit"
 msgstr "移除单位"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "已移除"
@@ -22384,8 +22396,14 @@ msgstr "切换模块"
 msgid "Switch to pan mode"
 msgstr "切换到平移模式"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "切换到选择模式"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "切换到书面内容"
@@ -24155,8 +24173,11 @@ msgstr "本季度"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "此收货单没有行。请选择源单据以添加行。"
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "这将移除 PDF。员工将改为查看书面内容。"
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔法链接。当他们无法访问其身份验证器时使用此选项。它影响其所属每个公司的登录。"
@@ -24768,6 +24789,9 @@ msgstr "培训计划"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "在 Carbon 外进行的培训，例如供应商课程。该作业仅有名称。管理员将每位员工标记为完成，并可附加其证书。"
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "通过 Academy 和应用内指南培训班组"
@@ -26152,8 +26176,8 @@ msgstr "每项资产的价值、使用期限以及租期结束时的处理方式
 msgid "What each period's payment is for this asset in the first year"
 msgstr "第一年内该资产每个期间的付款是多少"
 
-msgid "What employees read before the questions"
-msgstr "员工答题前阅读的内容"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "发票创建后会发生什么"
@@ -26934,6 +26958,12 @@ msgstr "您的供应商列表"
 
 msgid "yourself"
 msgstr "你自己"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4检验水平(I / II / III);较高级别意味着同一批次的样本量更大。"

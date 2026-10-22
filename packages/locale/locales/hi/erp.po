@@ -9159,6 +9159,9 @@ msgstr "कम से कम एक पंक्ति पर एक प्र�
 msgid "Enter a web address, such as https://example.com"
 msgstr "वेब पता दर्ज करें, जैसे https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "आइटम और मात्रा स्वयं दर्ज करें।"
 
@@ -15323,6 +15326,9 @@ msgstr "कोई चर उपलब्ध नहीं"
 msgid "No versions available"
 msgstr "कोई संस्करण उपलब्ध नहीं है"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — गणना के समाधान तक हाथ पर नकारात्मक हो जाएगा।"
 
@@ -16568,6 +16574,9 @@ msgstr "अतिदेय"
 
 msgid "Past end date"
 msgstr "समाप्ति तारीख के बाद"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "मेटाडेटा XML को पेस्ट करें यदि आपका आइडेंटिटी प्रदाता मेटाडेटा URL प्रकाशित नहीं करता है"
@@ -18854,6 +18863,9 @@ msgstr "दो-कारक प्रमाणीकरण निकालें
 
 msgid "Remove Unit"
 msgstr "इकाई निकालें"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "हटाया गया"
@@ -22384,8 +22396,14 @@ msgstr "मॉड्यूल स्विच करें"
 msgid "Switch to pan mode"
 msgstr "पैन मोड में स्विच करें"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "चयन मोड में स्विच करें"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "लिखित सामग्री पर स्विच करें"
@@ -24155,8 +24173,11 @@ msgstr "इस त्रैमासिक"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "इस प्राप्ति में कोई पंक्तियाँ नहीं हैं। स्रोत दस्तावेज़ चुनकर पंक्तियाँ जोड़ें।"
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "यह PDF को हटाता है। कर्मचारी इसके बजाय लिखित सामग्री देखेंगे।"
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
@@ -24768,6 +24789,9 @@ msgstr "प्रशिक्षण योजना"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbon के बाहर लिया गया प्रशिक्षण, जैसे विक्रेता पाठ्यक्रम। असाइनमेंट के पास केवल एक नाम है। एक प्रशासक प्रत्येक कर्मचारी को पूर्ण करता है और उनके प्रमाण पत्र को संलग्न कर सकता है।"
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Academy और इन-ऐप गाइड के माध्यम से अपनी टीम को प्रशिक्षण दें"
@@ -26152,8 +26176,8 @@ msgstr "प्रत्येक संपत्ति का मूल्य �
 msgid "What each period's payment is for this asset in the first year"
 msgstr "पहले वर्ष में इस संपत्ति के लिए प्रत्येक अवधि का भुगतान क्या है"
 
-msgid "What employees read before the questions"
-msgstr "कर्मचारी प्रश्नों से पहले क्या पढ़ते हैं"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "एक चालान बनाए जाने के बाद क्या होता है"
@@ -26934,6 +26958,12 @@ msgstr "आपकी विक्रेता सूची"
 
 msgid "yourself"
 msgstr "अपने आप"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 निरीक्षण स्तर (I / II / III); उच्च स्तर का मतलब एक ही लॉट के लिए बड़े नमूने आकार।"

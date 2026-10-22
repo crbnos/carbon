@@ -9159,6 +9159,9 @@ msgstr "Inserisci una quantità ricevuta o spunta un'unità su almeno una riga."
 msgid "Enter a web address, such as https://example.com"
 msgstr "Inserisci un indirizzo web, ad esempio https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "Inserisci un articolo e una quantità tu stesso."
 
@@ -15323,6 +15326,9 @@ msgstr "Nessuna variabile disponibile"
 msgid "No versions available"
 msgstr "Nessuna versione disponibile"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non c'è giacenza in deposito registrata per questo articolo. Puoi comunque farne un prelievo — la giacenza andrà negativa fino a quando il conteggio non sarà riconciliato."
 
@@ -16568,6 +16574,9 @@ msgstr "Scaduto"
 
 msgid "Past end date"
 msgstr "Oltre la data di fine"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Incolla l'XML dei metadati se il tuo provider di identità non pubblica un URL di metadati"
@@ -18854,6 +18863,9 @@ msgstr "Rimuovi autenticazione a due fattori"
 
 msgid "Remove Unit"
 msgstr "Rimuovi unità"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "Rimosso"
@@ -22384,8 +22396,14 @@ msgstr "Cambia modulo"
 msgid "Switch to pan mode"
 msgstr "Passa alla modalità panorama"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Passa alla modalità selezione"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Passa al contenuto scritto"
@@ -24155,8 +24173,11 @@ msgstr "Questo Trimestre"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "Questa ricezione non ha righe. Scegliere un documento di origine per aggiungerle."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "Questo rimuove il PDF. I dipendenti vedranno il contenuto scritto."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Questo rimuove la loro app autenticatore, quindi il loro prossimo accesso ha bisogno solo di un collegamento magico. Usalo quando hanno perso l'accesso al loro autenticatore. Influisce sul loro accesso per ogni azienda a cui appartengono."
@@ -24768,6 +24789,9 @@ msgstr "Piano di Formazione"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Formazione seguita all'esterno di Carbon, come un corso di un fornitore. L'incarico ha solo un nome. Un amministratore contrassegna ogni dipendente come completato e può allegare il certificato."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Formazione del tuo team tramite l'Academy e le guide in-app"
@@ -26152,8 +26176,8 @@ msgstr "Il valore di ogni cespite, la sua durata e cosa accade al termine del pe
 msgid "What each period's payment is for this asset in the first year"
 msgstr "L'importo del pagamento di ogni periodo per questo cespite nel primo anno"
 
-msgid "What employees read before the questions"
-msgstr "Quello che i dipendenti leggono prima delle domande"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Cosa accade a una fattura una volta creata"
@@ -26931,6 +26955,12 @@ msgstr "Il tuo elenco di fornitori"
 
 msgid "yourself"
 msgstr "te stesso"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Livello di controllo Z1.4 (I / II / III); i livelli più alti significano dimensioni del campione più grandi per lo stesso lotto."

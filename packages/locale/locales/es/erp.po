@@ -9159,6 +9159,9 @@ msgstr "Ingresa una cantidad recibida, o marca una unidad, en al menos una líne
 msgid "Enter a web address, such as https://example.com"
 msgstr "Ingrese una dirección web, por ejemplo https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "Ingrese un artículo y cantidad usted mismo."
 
@@ -15323,6 +15326,9 @@ msgstr "No hay variables disponibles"
 msgid "No versions available"
 msgstr "No hay versiones disponibles"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
 
@@ -16568,6 +16574,9 @@ msgstr "Vencido"
 
 msgid "Past end date"
 msgstr "Más allá de la fecha de finalización"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Pegue el XML de metadatos si su proveedor de identidad no publica una URL de metadatos"
@@ -18854,6 +18863,9 @@ msgstr "Quitar autenticación de dos factores"
 
 msgid "Remove Unit"
 msgstr "Quitar unidad"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "Eliminado"
@@ -22384,8 +22396,14 @@ msgstr "Cambiar módulo"
 msgid "Switch to pan mode"
 msgstr "Cambiar a modo panorámico"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Cambiar a modo selección"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Cambiar a contenido escrito"
@@ -24155,8 +24173,11 @@ msgstr "Este Trimestre"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "Esta recepción no tiene líneas. Elija un documento de origen para agregarlas."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "Esto quita el PDF. Los empleados verán el contenido escrito en su lugar."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Esto elimina su aplicación autenticadora, por lo que su próximo inicio de sesión solo necesita un enlace mágico. Usa esto cuando hayan perdido acceso a su autenticador. Afecta su inicio de sesión en cada empresa a la que pertenecen."
@@ -24768,6 +24789,9 @@ msgstr "Plan de Capacitación"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Capacitación realizada fuera de Carbon, como un curso de proveedor. La asignación solo tiene un nombre. Un administrador marca como completado a cada empleado y puede adjuntar su certificado."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Capacitar a tu equipo a través de la Academia y guías en la aplicación"
@@ -26152,8 +26176,8 @@ msgstr "Cuál es el valor de cada activo, cuánto dura y qué sucede al final de
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Cuál es el pago de cada período para este activo en el primer año"
 
-msgid "What employees read before the questions"
-msgstr "Lo que los empleados leen antes de las preguntas"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Qué sucede a una factura una vez que se crea"
@@ -26931,6 +26955,12 @@ msgstr "Tu lista de proveedores"
 
 msgid "yourself"
 msgstr "ti mismo"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Nivel de inspección Z1.4 (I / II / III); los niveles más altos significan tamaños de muestra más grandes para el mismo lote."

@@ -85,6 +85,40 @@ describe("isValidTrainingGuideKey", async () => {
   });
 });
 
+describe("getYouTubeVideoId", async () => {
+  const { getYouTubeVideoId } = await import("./resources.models");
+
+  it("reads the id from every YouTube link form", () => {
+    for (const url of [
+      "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "https://youtube.com/watch?v=dQw4w9WgXcQ&t=42s",
+      "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
+      "https://youtu.be/dQw4w9WgXcQ?si=abc",
+      "https://www.youtube.com/shorts/dQw4w9WgXcQ",
+      "https://www.youtube.com/live/dQw4w9WgXcQ",
+      "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+      "  https://www.youtube.com/watch?v=dQw4w9WgXcQ  "
+    ]) {
+      expect(getYouTubeVideoId(url)).toBe("dQw4w9WgXcQ");
+    }
+  });
+
+  it("refuses links that are not a YouTube video", () => {
+    for (const url of [
+      "",
+      "not a url",
+      "https://vimeo.com/123456789",
+      "https://www.youtube.com/",
+      "https://www.youtube.com/watch?v=short",
+      "https://evil.com/watch?v=dQw4w9WgXcQ",
+      "https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ",
+      "javascript:alert(1)//youtu.be/dQw4w9WgXcQ"
+    ]) {
+      expect(getYouTubeVideoId(url)).toBeNull();
+    }
+  });
+});
+
 describe("validateTrainingCertificate", async () => {
   const { TRAINING_CERTIFICATE_MAX_BYTES, validateTrainingCertificate } =
     await import("./resources.models");

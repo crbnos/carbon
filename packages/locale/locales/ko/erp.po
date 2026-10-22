@@ -9159,6 +9159,9 @@ msgstr "최소한 하나의 라인에 수량을 입력하거나 개를 체크하
 msgid "Enter a web address, such as https://example.com"
 msgstr "웹 주소를 입력하세요(예: https://example.com)"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "품목과 수량을 직접 입력하세요."
 
@@ -15323,6 +15326,9 @@ msgstr "사용 가능한 변수가 없습니다."
 msgid "No versions available"
 msgstr "가용한 버전이 없습니다"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
@@ -16568,6 +16574,9 @@ msgstr "기한 초과"
 
 msgid "Past end date"
 msgstr "종료 날짜 지남"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "자격 증명 공급자가 메타데이터 URL을 게시하지 않는 경우 메타데이터 XML을 붙여넣으세요"
@@ -18854,6 +18863,9 @@ msgstr "2단계 인증 제거"
 
 msgid "Remove Unit"
 msgstr "단위 제거"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "제거됨"
@@ -22384,8 +22396,14 @@ msgstr "모듈 전환"
 msgid "Switch to pan mode"
 msgstr "팬 모드로 전환"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "선택 모드로 전환"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "작성된 콘텐츠로 전환"
@@ -24155,8 +24173,11 @@ msgstr "이번 분기"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "이 입고에는 항목이 없습니다. 추가하려면 원본 문서를 선택하십시오."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "이렇게 하면 PDF가 제거됩니다. 직원들은 대신 작성된 콘텐츠를 보게 됩니다."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 그들이 인증 수단에 대한 접근을 잃었을 때 이것을 사용하세요. 이것은 그들이 속한 모든 회사에 대한 로그인에 영향을 미칩니다."
@@ -24768,6 +24789,9 @@ msgstr "교육 계획"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbon 외부에서 수행된 교육(예: 공급업체 과정). 할당은 이름만 있습니다. 관리자가 각 직원을 완료 처리하고 인증서를 첨부할 수 있습니다."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
@@ -26152,8 +26176,8 @@ msgstr "각 자산의 가치, 지속 기간, 계약 종료 시 처리 방법입�
 msgid "What each period's payment is for this asset in the first year"
 msgstr "첫 해에 이 자산에 대한 각 기간의 지불액"
 
-msgid "What employees read before the questions"
-msgstr "직원들이 질문 전에 읽는 내용"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "송장이 생성된 후 어떤 일이 일어나는지"
@@ -26931,6 +26955,12 @@ msgstr "공급업체 목록"
 
 msgid "yourself"
 msgstr "본인"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 검사 수준(I / II / III)으로, 수준이 높을수록 동일 로트에 대한 샘플 크기가 커집니다."

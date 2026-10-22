@@ -9159,6 +9159,9 @@ msgstr "少なくとも1つの明細で、受取数量を入力するか個を�
 msgid "Enter a web address, such as https://example.com"
 msgstr "Webアドレスを入力してください（例: https://example.com）"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "品目と数量を手動で入力してください。"
 
@@ -15323,6 +15326,9 @@ msgstr "利用可能な変数がありません"
 msgid "No versions available"
 msgstr "利用可能なバージョンがありません"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。実在庫がマイナスになり、数量が調整されるまで続きます。"
 
@@ -16568,6 +16574,9 @@ msgstr "期限切れ"
 
 msgid "Past end date"
 msgstr "終了日を超過"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "IDプロバイダーがメタデータURLを公開していない場合は、メタデータXMLを貼り付けてください"
@@ -18854,6 +18863,9 @@ msgstr "二要素認証を除去"
 
 msgid "Remove Unit"
 msgstr "個を除去"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "削除済み"
@@ -22384,8 +22396,14 @@ msgstr "モジュールを切り替える"
 msgid "Switch to pan mode"
 msgstr "パンモードに切り替え"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "選択モードに切り替え"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "記述内容に切り替える"
@@ -24155,8 +24173,11 @@ msgstr "今四半期"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "この入荷には明細がありません。参照伝票を選択して追加してください。"
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "これはPDFを除去します。従業員は代わりに記述内容を表示します。"
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
@@ -24768,6 +24789,9 @@ msgstr "教育訓練計画"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbonの外で実施された教育訓練（例：ベンダーコース）。割り当ては名前のみです。管理者が各従業員を完了にし、証明書を添付できます。"
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "アカデミーとアプリ内ガイドを使用してチームを教育訓練します。"
@@ -26152,8 +26176,8 @@ msgstr "各資産の価値、耐用年数、および期間終了時の処遇。
 msgid "What each period's payment is for this asset in the first year"
 msgstr "このアセットの初年度における各期の支払額"
 
-msgid "What employees read before the questions"
-msgstr "従業員が問題前に読む内容"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "請求書が作成されたら何が起こるか"
@@ -26931,6 +26955,12 @@ msgstr "あなたのベンダーリスト"
 
 msgid "yourself"
 msgstr "自分自身"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4検査水準（I / II / III）；高いレベルほど、同じロットのサンプルサイズが大きくなります。"

@@ -9159,6 +9159,9 @@ msgstr "Введите полученное количество или отме
 msgid "Enter a web address, such as https://example.com"
 msgstr "Введите веб-адрес, например https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "Введите номенклатуру и количество самостоятельно."
 
@@ -15323,6 +15326,9 @@ msgstr "Нет доступных переменных"
 msgid "No versions available"
 msgstr "Нет доступных версий"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -16568,6 +16574,9 @@ msgstr "Просрочено"
 
 msgid "Past end date"
 msgstr "После даты завершения"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Вставьте XML метаданных, если ваш поставщик удостоверений не публикует URL метаданных"
@@ -18854,6 +18863,9 @@ msgstr "Убрать двухфакторную аутентификацию"
 
 msgid "Remove Unit"
 msgstr "Убрать единицу"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "Удалено"
@@ -22384,8 +22396,14 @@ msgstr "Переключить модуль"
 msgid "Switch to pan mode"
 msgstr "Переключиться в режим панорамы"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Переключиться в режим выделения"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Переключиться на письменный контент"
@@ -24155,8 +24173,11 @@ msgstr "Этот квартал"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "В этом поступлении нет строк. Выберите документ-основание, чтобы добавить их."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "Это удаляет PDF. Сотрудники вместо этого увидят письменный контент."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Это удаляет их приложение аутентификатора, поэтому их следующий вход требует только волшебной ссылки. Используйте это, когда они потеряли доступ к своему аутентификатору. Это влияет на их вход для каждой организации, которой они принадлежат."
@@ -24768,6 +24789,9 @@ msgstr "План обучения"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Обучение, пройденное вне Carbon, например курс поставщика. Задание содержит только название. Администратор отмечает каждого сотрудника завершённым и может прикрепить его сертификат."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Обучение вашей команды через Academy и встроенные руководства"
@@ -26152,8 +26176,8 @@ msgstr "Стоимость каждого актива, продолжитель
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Размер платежа каждого периода для этого актива в первый год"
 
-msgid "What employees read before the questions"
-msgstr "То, что сотрудники читают перед вопросами"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Что происходит со счетом-фактурой после его создания"
@@ -26931,6 +26955,12 @@ msgstr "Ваш список поставщиков"
 
 msgid "yourself"
 msgstr "себя"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 уровень контроля (I / II / III); более высокие уровни означают больший объем выборки для одной партии."

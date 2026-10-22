@@ -9159,6 +9159,9 @@ msgstr "Saisissez une quantité reçue ou cochez une unité sur au moins une lig
 msgid "Enter a web address, such as https://example.com"
 msgstr "Entrez une adresse web, par exemple https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "Entrez un article et une quantité vous-même."
 
@@ -15323,6 +15326,9 @@ msgstr "Aucune variable disponible"
 msgid "No versions available"
 msgstr "Aucune version disponible"
 
+msgid "No video added"
+msgstr ""
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Aucun stock d'entrepôt n'est enregistré pour cet article. Vous pouvez toujours le prélever — le stock disponible deviendra négatif jusqu'à ce que le décompte soit rapproché."
 
@@ -16568,6 +16574,9 @@ msgstr "Dépassé"
 
 msgid "Past end date"
 msgstr "Après la date de fin"
+
+msgid "Paste a YouTube video link"
+msgstr ""
 
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Collez le XML de métadonnées si votre fournisseur d'identité ne publie pas d'URL de métadonnées"
@@ -18854,6 +18863,9 @@ msgstr "Retirer l'authentification à deux facteurs"
 
 msgid "Remove Unit"
 msgstr "Retirer l'unité"
+
+msgid "Remove Video"
+msgstr ""
 
 msgid "Removed"
 msgstr "Supprimé"
@@ -22384,8 +22396,14 @@ msgstr "Changer de module"
 msgid "Switch to pan mode"
 msgstr "Passer en mode panoramique"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Passer en mode sélection"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Passer au contenu écrit"
@@ -24155,8 +24173,11 @@ msgstr "Ce trimestre"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "Cette réception n'a pas de lignes. Choisissez un document d'origine pour les ajouter."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "Cela supprime le PDF. Les employés verront le contenu écrit à la place."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Ceci supprime leur application d'authentification, de sorte que leur prochain accès ne nécessite qu'un lien magique. Utilisez cette option lorsqu'ils ont perdu l'accès à leur authentificateur. Cela affecte leur accès pour chaque société à laquelle ils appartiennent."
@@ -24768,6 +24789,9 @@ msgstr "Plan de formation"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Formation suivie en dehors de Carbon, comme une formation de fournisseur. L'affectation n'a qu'un nom. Un administrateur marque chaque employé comme terminé et peut joindre son certificat."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Formation de votre équipe via l'Academy et les guides intégrés"
@@ -26152,8 +26176,8 @@ msgstr "La valeur de chaque immobilisation, sa durée de vie et ce qui s'en pass
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Quel est le paiement de chaque période pour cette immobilisation la première année"
 
-msgid "What employees read before the questions"
-msgstr "Ce que les employés lisent avant les questions"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Ce qui se passe pour une facture une fois créée"
@@ -26931,6 +26955,12 @@ msgstr "Votre liste de fournisseurs"
 
 msgid "yourself"
 msgstr "vous-même"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Niveau de contrôle Z1.4 (I / II / III) ; les niveaux supérieurs signifient des tailles d'échantillon plus grandes pour le même lot."
