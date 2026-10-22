@@ -231,6 +231,59 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
+  it("leaves a seed holding several units unnumbered on a single-unit touch", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "single", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+
+      const numbered = await f.db.transaction().execute((trx) =>
+        assignSerialNumberIfMissing(trx, {
+          trackedEntityId: seedUnit!.id,
+          companyId: f.companyId,
+          onlyIfSingleUnit: true
+        })
+      );
+
+      expect(numbered).toBeNull();
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ readableId: null, quantity: 3 })
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("numbers a Batch lot when the job is created, whatever the timing", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await serialSetup(f, "production");
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("item")
+          .set({ itemTrackingType: "Batch" })
+          .where("id", "=", f.assemblyId)
+          .execute();
+      });
+      const job = await untouchedSerialJob(f, "batch", 3);
+
+      await assignJobSerialNumbers(client!, f.db, {
+        jobId: job.jobId,
+        itemId: f.assemblyId,
+        companyId: f.companyId,
+        userId: USER,
+        moment: "creation"
+      });
+
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ readableId: "SN-001", quantity: 3 })
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
   it("splits and numbers the units a completion takes, and receives them", async () => {
     const f = await alwaysPostFixture();
     try {

@@ -47,7 +47,7 @@ $function$;
 -- Reserve and format the next p_count serial numbers of an item's
 -- itemSerialSequence. Empty when the item has no sequence. Runs as the caller:
 -- the ERP and MES call it on a direct connection, and the completion below as
--- its owner.
+-- whoever runs the completion.
 CREATE OR REPLACE FUNCTION public.get_next_serial_numbers(
   p_item_id text,
   p_company_id text,
@@ -130,6 +130,12 @@ $function$;
 -- time, so after it the rows cover fewer units than the job quantity. Those
 -- units are created here, up to the job quantity less the units already in
 -- rows (a scrapped unit does not count: the job still owes it).
+--
+-- SECURITY INVOKER, like backflush_job_materials: its callers are the
+-- sync_finish_job_operation interceptor, which the event dispatcher runs as the
+-- owner, and completeJob on a direct connection. Called through the API it runs
+-- under the caller's RLS, so it cannot split or number units the caller could
+-- not update.
 CREATE OR REPLACE FUNCTION public.number_serial_units_for_completion(
   p_job_id text,
   p_quantity_complete numeric,
@@ -137,7 +143,7 @@ CREATE OR REPLACE FUNCTION public.number_serial_units_for_completion(
 )
  RETURNS integer
  LANGUAGE plpgsql
- SECURITY DEFINER
+ SECURITY INVOKER
  SET search_path TO 'public'
 AS $function$
 DECLARE

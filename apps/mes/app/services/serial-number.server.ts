@@ -14,6 +14,10 @@ const log = getLogger("mes", "serial-number");
  * company's). A no-op for a unit that already has a number, which is every unit
  * under the `jobCreation` and `jobRelease` timings, so it is safe on every start.
  *
+ * Only a unit already on its own is numbered here. The job's first unit is
+ * still the unsplit seed holding every unit, and a start leaves it whole, so
+ * its number comes from its first completion or scrap, which cut it to one unit.
+ *
  * Best-effort: a failure never stops a timer from starting, and the ERP's
  * completion and scrap postings number the unit later if this was lost. It
  * writes as the system: the caller has already admitted the operator to start
@@ -26,7 +30,9 @@ export async function assignSerialNumberOnFirstTouch(args: {
   try {
     await getDatabaseClient()
       .transaction()
-      .execute((trx) => assignSerialNumberIfMissing(trx, args));
+      .execute((trx) =>
+        assignSerialNumberIfMissing(trx, { ...args, onlyIfSingleUnit: true })
+      );
   } catch (error) {
     log.error("Failed to assign a serial number on first touch", {
       error,

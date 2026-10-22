@@ -235,20 +235,29 @@ export async function getSerialNumberTiming(
  * first one's number instead of reserving and burning another. Runs inside the
  * caller's transaction, so the counter reservation commits or rolls back with
  * the write that prompted it.
+ *
+ * `onlyIfSingleUnit` leaves an entity holding more than one unit unnumbered.
+ * A caller that does not cut the entity to one unit in the same transaction
+ * passes it, or a job's unsplit seed would carry one serial for every unit.
  */
 export async function assignSerialNumberIfMissing(
   trx: Transaction<KyselyDatabase>,
-  args: { trackedEntityId: string; companyId: string }
+  args: {
+    trackedEntityId: string;
+    companyId: string;
+    onlyIfSingleUnit?: boolean;
+  }
 ): Promise<string | null> {
   const entity = await trx
     .selectFrom("trackedEntity")
-    .select(["id", "itemId", "readableId", "attributes"])
+    .select(["id", "itemId", "readableId", "attributes", "quantity"])
     .where("id", "=", args.trackedEntityId)
     .where("companyId", "=", args.companyId)
     .forUpdate()
     .executeTakeFirst();
 
   if (!entity || entity.readableId || !entity.itemId) return null;
+  if (args.onlyIfSingleUnit && Number(entity.quantity) !== 1) return null;
 
   const [readableId] = await getNextSerialNumbers(trx, {
     itemId: entity.itemId,

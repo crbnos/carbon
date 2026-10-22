@@ -3841,7 +3841,19 @@ export async function assignJobSerialNumbers(
     return;
   }
   if (!serialSequence.data) return;
-  const timing = await getSerialNumberTiming(db, args.companyId, args.itemId);
+  // The timing is for serial units. A Batch job's one lot is numbered when the
+  // job is created, as before: number_serial_units_for_completion numbers
+  // serial units only, so a deferred lot would be received with no number.
+  const item = await db
+    .selectFrom("item")
+    .select("itemTrackingType")
+    .where("id", "=", args.itemId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  const timing =
+    item?.itemTrackingType === "Batch"
+      ? "jobCreation"
+      : await getSerialNumberTiming(db, args.companyId, args.itemId);
   if (
     timing !==
     ((args.moment ?? "creation") === "creation" ? "jobCreation" : "jobRelease")
