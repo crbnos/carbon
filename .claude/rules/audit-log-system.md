@@ -147,8 +147,7 @@ lookup per target table), and writes via `client.rpc("insert_audit_log_batch", {
 `auditArchiveFunction` in `packages/jobs/src/inngest/functions/scheduled/audit-archive.ts`
 (Inngest id `audit-log-archive`, cron `0 2 * * *`): per company, fetch rows older than `retentionDays`,
 gzip to JSONL, upload to the company's own bucket, record an `auditLogArchive` row, then delete the rows.
-`getArchiveDownloadUrl` reads the company bucket only. Archives written to the retired shared `private`
-bucket were moved there, and their `archivePath` rewritten, by `scripts/one-off/relocate-legacy-audit-archives.ts`.
+`getArchiveDownloadUrl` reads the company bucket only.
 
 GOTCHA: the runtime path is `{companyId}/audit-logs/{year}/{month}/{YYYY-MM-DD}.jsonl.gz`, which does
 **not** match `auditConfig.archivePath` (`.../{month}.jsonl.gz`) — the job builds the path inline rather

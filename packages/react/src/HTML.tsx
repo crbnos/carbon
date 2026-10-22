@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { TiptapText } from "@carbon/files/markdown";
 import { Mention } from "@carbon/tiptap";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
@@ -15,14 +16,25 @@ import { cn } from "./utils/cn";
 
 const { sanitize } = pkg;
 
+// Rows written before the API stored documents can hold a JSON string scalar.
+// `"type" in "text"` throws and crashes the page, so read strings as documents.
+// Objects pass as they are: `isRichTextEmpty` walks child nodes through here.
+const toRichTextDoc = (content: unknown): JSONContent | null =>
+  typeof content === "string"
+    ? content.trim()
+      ? TiptapText(content).toDocument()
+      : null
+    : ((content as JSONContent | null | undefined) ?? null);
+
 const generateHTML = (content: JSONContent) => {
   if (typeof window === "undefined") {
     return "";
   }
-  if (!content || !("type" in content)) {
+  const doc = toRichTextDoc(content);
+  if (!doc || !("type" in doc)) {
     return "";
   }
-  const raw = DefaultGenerateHTML(content, [
+  const raw = DefaultGenerateHTML(doc, [
     ...defaultExtensions,
     TextStyle,
     StarterKit,
@@ -71,7 +83,8 @@ const CONTAINER_NODES = new Set([
  * other leaf. Reads the JSON, not the HTML, so the server (where
  * `generateHTML` returns "") agrees with the browser.
  */
-const isRichTextEmpty = (content?: JSONContent | null): boolean => {
+const isRichTextEmpty = (value?: JSONContent | null): boolean => {
+  const content = toRichTextDoc(value);
   if (!content) return true;
   if (content.type === "text") return !content.text?.trim();
   if (content.type && !CONTAINER_NODES.has(content.type)) return false;

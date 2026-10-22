@@ -488,7 +488,7 @@ export const updateDocument = defineServiceFn({
 });
 
 /**
- * Create a presigned upload URL for a document in the "private" bucket
+ * Create a presigned upload URL for a document in the company's bucket
  *
  * @mcp
  */

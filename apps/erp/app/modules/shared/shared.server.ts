@@ -58,9 +58,10 @@ import {
   importRequiresCreate,
   importSchemas
 } from "./imports.models";
-import { assignableTables } from "./shared.models";
+import { assignableTables, noteFields, noteTables } from "./shared.models";
 import * as service from "./shared.service";
 import { invokeCreate } from "./shared.service";
+import type { MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
 // ── Operations ──────────────────────────────────────────────────────────────
@@ -150,6 +151,61 @@ export const assignRecord = defineServiceFn({
   }
 });
 
+/**
+ * Set a record's internal, external or general notes.
+ *
+ * @remarks
+ * Replaces one notes field of the record of `table` with `id`, as the caller:
+ * row-level security decides what they may change, and a row they cannot
+ * change is `notFound`. The tables and fields are the notes a person edits in
+ * the app: internal and external notes on sales and purchasing documents and
+ * their lines, internal notes on purchase invoices and receipts, and notes on
+ * jobs, items, fixed assets, picking lists and stock transfers.
+ *
+ * @param table - The record's table, e.g. `salesOrder` or `purchaseOrderLine`.
+ * @param id - The record's id.
+ * @param field - `internalNotes` or `externalNotes`, or `notes` on a job,
+ *   item, fixed asset, picking list or stock transfer.
+ * @param text - The notes as Markdown: headings, **bold**, _italic_, lists,
+ *   links, quotes and code. Empty text clears them.
+ *
+ * @mcp
+ */
+export const setNotes = defineServiceFn({
+  input: z.object({
+    table: z.enum(noteTables),
+    id: z.string().min(1),
+    field: z.enum(["internalNotes", "externalNotes", "notes"]),
+    text: z.string()
+  }),
+  permission: {},
+
+  async run(ctx, { table, id, field, text }) {
+    const fields: readonly string[] = noteFields[table];
+    if (!fields.includes(field)) {
+      return ctx.error(
+        "validation",
+        `${table} has no ${field}; it takes ${fields.join(" or ")}`
+      );
+    }
+    const updated = await service.setRecordNotes(ctx.asCaller.supabase, {
+      table,
+      id,
+      field,
+      text,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (updated.error) {
+      return ctx.error("internal", "Failed to save the notes", updated.error);
+    }
+    if (!updated.data?.length) {
+      return ctx.error("notFound", "No record was found to update");
+    }
+    return { id };
+  }
+});
+
 type ImportTable = keyof typeof importPermissions;
 
 const importTables = Object.keys(importPermissions) as [
@@ -231,12 +287,18 @@ export const importCsvFile = defineServiceFn({
       updated?: number;
       errors?: RowIssue[];
       skipped?: RowIssue[];
+      added?: MethodRowsAdded | null;
+      warnings?: string[];
     };
     return {
       inserted: summary.inserted ?? 0,
       updated: summary.updated ?? 0,
       errors: summary.errors ?? [],
-      skipped: summary.skipped ?? []
+      skipped: summary.skipped ?? [],
+      // Method imports only: inserted and updated count parts there.
+      added: summary.added ?? null,
+      // Method imports only: parts written under a release-control warning.
+      warnings: summary.warnings ?? []
     };
   }
 });

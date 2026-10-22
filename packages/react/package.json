@@ -3,6 +3,7 @@
   "dependencies": {
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
+    "@carbon/files": "workspace:*",
     "@carbon/content": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/tiptap": "workspace:*",
@@ -99,6 +100,7 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@types/react-window": "1.8.8",
+    "jsdom": "26.1.0",
     "react": "catalog:",
     "sst": "catalog:",
     "tailwindcss": "catalog:",

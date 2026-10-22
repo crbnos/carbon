@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
+import { TiptapText } from "@carbon/files/markdown";
 import { validator } from "@carbon/form";
-import { redirect, round, tiptapToText } from "@carbon/utils";
+import { redirect, round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -90,10 +91,7 @@ export default function ContractSetupDetailsRoute() {
         invoiceAutomation: contract.invoiceAutomation ?? undefined,
         paymentTermId: contract.paymentTermId ?? undefined,
         currencyCode: contract.currencyCode,
-        notes:
-          tiptapToText(
-            (contract.notes ?? null) as Parameters<typeof tiptapToText>[0]
-          ) || undefined,
+        notes: TiptapText(contract.notes).toString() || undefined,
         ...getCustomFields(contract.customFields)
       }}
     />

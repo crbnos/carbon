@@ -7,7 +7,7 @@ Developer CLI (`crbn` command) — worktree management, Docker Compose stacks, m
 - **Use the `crbn` CLI for stack operations** — `crbn up` boots Docker + apps, `crbn down` tears down, `crbn new` creates worktrees, `crbn status` shows state
 - **Bash router handles `checkout`** — the `bin/crbn` shell script routes lightweight commands; heavy commands delegate to `tsx packages/dev/src/main.ts` (citty)
 - **Respect the slot system** — `resolveSlot()` / `getSlot()` manage port allocation per worktree to avoid conflicts
-- **Guard platform compatibility** — `bin/crbn` validates OS (POSIX only: Linux, macOS, WSL, Git Bash) and Node 22+
+- **Guard platform compatibility** — `bin/crbn` validates OS (POSIX only: Linux, macOS, WSL, Git Bash) and Node 24.22.1+
 
 ## Ask First
 

@@ -7,7 +7,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SyncOnshapeElementInput } from "./onshape-sync-element";
 import {
   runOnshapeDrawingSync,
-  runOnshapeElementSync
+  runOnshapeElementSync,
+  translationEventCondition
 } from "./onshape-sync-element";
 
 const mocks = vi.hoisted(() => ({
@@ -19,24 +20,32 @@ const mocks = vi.hoisted(() => ({
     downloadExternalData: vi.fn(),
     downloadExternalDataToFile: vi.fn(),
     externalDataDownload: vi.fn(),
-    getElementThumbnail: vi.fn()
+    getCurrentMicroversion: vi.fn(),
+    createWebhook: vi.fn(),
+    deleteWebhook: vi.fn()
   },
   attach: vi.fn(),
-  thumbnail: vi.fn(),
   assemblerEnabled: vi.fn(),
   invoke: vi.fn(),
-  existingModel: null as { id: string; name: string } | null
+  existingModel: null as { id: string; name: string } | null,
+  modelSource: null as {
+    externalId: string;
+    metadata: { modelUploadId: string };
+  } | null,
+  itemModelUploadId: null as string | null,
+  upserts: [] as Record<string, unknown>[]
 }));
 vi.mock("@carbon/ee/onshape", () => ({
   getOnshapeClient: vi.fn(async () => ({ client: mocks.client })),
   OnshapeAssetTooLargeError: class extends Error {}
 }));
 vi.mock("@carbon/utils", () => ({
-  getFileSizeLimit: () => ({ bytes: 100000 })
+  getFileSizeLimit: () => ({ bytes: 100000 }),
+  datetime: { timestamp: () => "2026-10-20T00:00:00Z" }
 }));
+vi.mock("@carbon/env", () => ({ getAppUrl: () => "https://app.carbon.test" }));
 vi.mock("./onshape-attach", () => ({
-  attachOnshapeAssetsToItem: mocks.attach,
-  attachModelThumbnail: mocks.thumbnail
+  attachOnshapeAssetsToItem: mocks.attach
 }));
 vi.mock("../tasks/assembler-client", () => ({
   assemblerEnabled: mocks.assemblerEnabled
@@ -50,15 +59,26 @@ vi.mock("./onshape-fetch", () => ({
 const step = {
   run: async (_id: string, fn: () => unknown) => fn(),
   sleep: vi.fn(async () => undefined),
+  waitForEvent: vi.fn(async () => null),
   invoke: mocks.invoke
 };
 
 const carbon = {
-  from: () => {
+  from: (table: string) => {
+    const row = () =>
+      table === "externalIntegrationMapping"
+        ? mocks.modelSource
+        : table === "item"
+          ? { modelUploadId: mocks.itemModelUploadId }
+          : mocks.existingModel;
     const query = {
       select: () => query,
       eq: () => query,
-      maybeSingle: async () => ({ data: mocks.existingModel, error: null })
+      maybeSingle: async () => ({ data: row(), error: null }),
+      upsert: async (values: Record<string, unknown>) => {
+        mocks.upserts.push(values);
+        return { error: null };
+      }
     };
     return query;
   },
@@ -87,6 +107,11 @@ const sync = (args: SyncOnshapeElementInput = input) =>
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.existingModel = null;
+  mocks.modelSource = null;
+  mocks.itemModelUploadId = null;
+  mocks.upserts = [];
+  mocks.client.getCurrentMicroversion.mockResolvedValue("microversion-1");
+  mocks.client.createWebhook.mockResolvedValue({ id: "webhook-1" });
   mocks.assemblerEnabled.mockReturnValue(false);
   mocks.client.createPartStudioTranslation.mockResolvedValue({ id: "model-t" });
   mocks.client.createAssemblyTranslation.mockResolvedValue({ id: "model-t" });
@@ -110,7 +135,6 @@ beforeEach(() => {
     url: "https://cad.onshape.test/api/v10/documents/d/export-document/externaldata/file",
     authorization: "Bearer onshape-token"
   });
-  mocks.client.getElementThumbnail.mockResolvedValue(new ArrayBuffer(1));
   mocks.attach.mockResolvedValue({
     modelUploadId: "new-model",
     documentIds: [],
@@ -142,13 +166,6 @@ describe("released model exports", () => {
     });
   });
 
-  it("never attaches a whole-studio thumbnail to a part", async () => {
-    const result = await sync();
-    expect(mocks.client.getElementThumbnail).not.toHaveBeenCalled();
-    expect(mocks.thumbnail).not.toHaveBeenCalled();
-    expect(result.thumbnailAttached).toBe(false);
-  });
-
   it.each([undefined, null, "", " ", "part-one,part-two"])(
     "refuses unsafe individual-part selection %s before any export or attach",
     async (partId) => {
@@ -163,7 +180,7 @@ describe("released model exports", () => {
   );
 
   it("keeps whole-assembly exports and forwards their configuration", async () => {
-    const result = await sync({
+    await sync({
       ...input,
       modelElementKind: "assembly",
       partId: undefined
@@ -175,20 +192,6 @@ describe("released model exports", () => {
       expect.objectContaining({ configuration: input.configuration })
     );
     expect(mocks.client.createPartStudioTranslation).not.toHaveBeenCalled();
-    // The element thumbnail cannot select a non-default assembly configuration.
-    expect(mocks.client.getElementThumbnail).not.toHaveBeenCalled();
-    expect(result.thumbnailAttached).toBe(false);
-  });
-
-  it("retains the inexpensive element thumbnail for an unconfigured assembly", async () => {
-    const result = await sync({
-      ...input,
-      modelElementKind: "assembly",
-      partId: undefined,
-      configuration: undefined
-    });
-    expect(mocks.client.getElementThumbnail).toHaveBeenCalledOnce();
-    expect(result.thumbnailAttached).toBe(true);
   });
 
   it("gives exact-source replays a stable generation, distinct from another part/configuration", async () => {
@@ -258,6 +261,140 @@ describe("export economy", () => {
     await sync();
     expect(step.sleep).toHaveBeenCalledTimes(2);
     expect(mocks.attach).toHaveBeenCalledOnce();
+  });
+});
+
+describe("unchanged assemblies", () => {
+  const workspaceAssembly = {
+    ...input,
+    modelElementKind: "assembly",
+    partId: undefined,
+    sourceWvm: "w",
+    versionId: "workspace"
+  } as const;
+
+  // Pushes once, then points the item at the model that push recorded.
+  async function pushOnce() {
+    await sync(workspaceAssembly);
+    const recorded = mocks.upserts.at(-1)!;
+    mocks.modelSource = {
+      externalId: recorded.externalId as string,
+      metadata: recorded.metadata as { modelUploadId: string }
+    };
+    mocks.itemModelUploadId = "new-model";
+    mocks.existingModel = { id: "new-model", name: "SADDLE.A.step" };
+    vi.clearAllMocks();
+  }
+
+  it("records the source an assembly's model was exported from", async () => {
+    await sync(workspaceAssembly);
+    expect(mocks.upserts).toEqual([
+      expect.objectContaining({
+        entityType: "modelSource",
+        entityId: "saddle-item",
+        integration: "onshape",
+        metadata: { modelUploadId: "new-model" }
+      })
+    ]);
+  });
+
+  it("skips the export when the workspace has not changed", async () => {
+    await pushOnce();
+    await sync(workspaceAssembly);
+    expect(mocks.client.getCurrentMicroversion).toHaveBeenCalledWith(
+      "released-document",
+      "workspace"
+    );
+    expect(mocks.client.createAssemblyTranslation).not.toHaveBeenCalled();
+    expect(mocks.client.getTranslation).not.toHaveBeenCalled();
+    expect(mocks.attach.mock.calls[0]![1]).toMatchObject({
+      existingModelId: "new-model"
+    });
+  });
+
+  it("exports again after any edit to the document", async () => {
+    await pushOnce();
+    mocks.client.getCurrentMicroversion.mockResolvedValue("microversion-2");
+    await sync(workspaceAssembly);
+    expect(mocks.client.createAssemblyTranslation).toHaveBeenCalledOnce();
+  });
+
+  it("exports again when the item's model was replaced since", async () => {
+    await pushOnce();
+    mocks.itemModelUploadId = "uploaded-by-hand";
+    await sync(workspaceAssembly);
+    expect(mocks.client.createAssemblyTranslation).toHaveBeenCalledOnce();
+  });
+
+  it("exports when the microversion cannot be read", async () => {
+    await pushOnce();
+    mocks.client.getCurrentMicroversion.mockRejectedValue(new Error("down"));
+    await sync(workspaceAssembly);
+    expect(mocks.client.createAssemblyTranslation).toHaveBeenCalledOnce();
+  });
+});
+
+describe("waiting on a long translation", () => {
+  const running = { id: "model-t", requestState: "ACTIVE" };
+
+  it("waits for the translation webhook once the quick polls are spent", async () => {
+    for (let i = 0; i < 7; i++) {
+      mocks.client.getTranslation.mockResolvedValueOnce(running);
+    }
+    await sync();
+    expect(step.sleep).toHaveBeenCalledTimes(5);
+    expect(mocks.client.createWebhook).toHaveBeenCalledWith({
+      url: "https://app.carbon.test/api/webhook/onshape/company",
+      events: ["onshape.model.translation.complete"],
+      documentId: "released-document",
+      isTransient: true
+    });
+    expect(step.waitForEvent).toHaveBeenCalledOnce();
+    expect(step.waitForEvent).toHaveBeenCalledWith(
+      "element-wait-6",
+      expect.objectContaining({
+        event: "carbon/onshape-translation-complete",
+        timeout: 5 * 60 * 1000
+      })
+    );
+    expect(mocks.client.deleteWebhook).toHaveBeenCalledWith("webhook-1");
+    expect(mocks.attach).toHaveBeenCalledOnce();
+  });
+
+  it("keeps polling when no webhook can be registered", async () => {
+    mocks.client.createWebhook.mockRejectedValue(new Error("unreachable"));
+    for (let i = 0; i < 8; i++) {
+      mocks.client.getTranslation.mockResolvedValueOnce(running);
+    }
+    await sync();
+    expect(step.waitForEvent).not.toHaveBeenCalled();
+    expect(step.sleep).toHaveBeenCalledTimes(8);
+    expect(mocks.client.deleteWebhook).not.toHaveBeenCalled();
+  });
+
+  it("gives up after an hour, and removes its webhook", async () => {
+    mocks.client.getTranslation.mockResolvedValue(running);
+    let now = 0;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => {
+      now += 10 * 60 * 1000;
+      return now;
+    });
+    try {
+      await expect(sync()).rejects.toThrow(/within an hour/);
+    } finally {
+      clock.mockRestore();
+    }
+    expect(mocks.client.deleteWebhook).toHaveBeenCalledWith("webhook-1");
+    expect(mocks.attach).not.toHaveBeenCalled();
+  });
+
+  it("matches only this company's translations", () => {
+    expect(translationEventCondition({ companyId: "co" }, ["t1", "t2"])).toBe(
+      'async.data.companyId == "co" && (async.data.translationId == "t1" || async.data.translationId == "t2")'
+    );
+    expect(translationEventCondition({ companyId: "co" }, ['t" || true'])).toBe(
+      null
+    );
   });
 });
 

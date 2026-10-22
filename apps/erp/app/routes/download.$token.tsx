@@ -51,8 +51,8 @@ export async function loader({ params }: LoaderFunctionArgs) {
     if (doc.error || !doc.data?.path) return fail("unavailable");
 
     // Access already proven above; fetch the bytes with the service role.
-    // Documents live in the company's private bucket (legacy `private`
-    // fallback), keyed directly by `document.path` (mirrors useDocument.ts).
+    // Documents live in the company's own bucket, keyed directly by
+    // `document.path` (mirrors useDocument.ts).
     const file = await storage(getCarbonServiceRole())
       .company(companyId)
       .download(doc.data.path);

@@ -334,9 +334,9 @@ const methodBomFields = {
     required: false,
     type: "enum",
     enumData: {
-      description: "The unit of measure of the component (default EA)",
-      fetcher: unitOfMeasureFetcher,
-      default: "EA"
+      description:
+        "The unit of measure of the component. Blank takes the component's own unit",
+      fetcher: unitOfMeasureFetcher
     }
   },
   kit: {
@@ -357,9 +357,8 @@ const methodBopFields = {
     type: "enum",
     enumData: {
       description:
-        "The operation's classification: Process, Assembly, and Inspection run in-house; Outside Processing is subcontracted",
-      options: operationTypes,
-      default: "Process"
+        "The operation's classification: Process and Assembly run in-house; Outside Processing is subcontracted. Blank takes the process's type. Inspection operations need an Inspection Plan, so add them in the app",
+      options: operationTypes
     }
   },
   operationOrder: {

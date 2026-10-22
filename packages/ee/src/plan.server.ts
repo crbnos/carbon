@@ -2,7 +2,12 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
+import {
+  CarbonEdition,
+  error,
+  INTEGRATION_EARLY_ACCESS_USER_IDS,
+  STRIPE_BYPASS_COMPANY_IDS
+} from "@carbon/auth";
 import {
   getCompanyPlanId,
   isCarbonOwnedCompany
@@ -14,6 +19,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   defaultUpgradeMessage,
   type GateSpec,
+  isListedUserId,
   planMeetsRequirement,
   resolveRequirement
 } from "./plan";
@@ -23,6 +29,16 @@ function isBypassCompany(companyId: string): boolean {
   return STRIPE_BYPASS_COMPANY_IDS.split(",")
     .map((id) => id.trim())
     .includes(companyId);
+}
+
+/**
+ * Whether this user may install an `internalOnly` integration on Carbon Cloud
+ * without a Carbon email (`isIntegrationComingSoon`): their id is listed in
+ * `INTEGRATION_EARLY_ACCESS_USER_IDS`. The list is deployment configuration,
+ * so no customer's id is in the code.
+ */
+export function hasIntegrationEarlyAccess(userId: string): boolean {
+  return isListedUserId(INTEGRATION_EARLY_ACCESS_USER_IDS, userId);
 }
 
 // The plan read is `getCompanyPlanId` (`@carbon/auth`): service role, cached, and

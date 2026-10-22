@@ -263,38 +263,6 @@ async function upsertSyncedDocument(
   return inserted.data.id;
 }
 
-// Store an Onshape-rendered thumbnail for a modelUpload, matching the
-// model-thumbnail pipeline's path convention
-// ({companyId}/thumbnails/{modelId}/{modelId}.png) so both producers are
-// interchangeable to consumers of modelUpload.thumbnailPath.
-export async function attachModelThumbnail(
-  carbon: CarbonClient,
-  input: { companyId: string; modelUploadId: string; pngBytes: Uint8Array }
-): Promise<void> {
-  const thumbnailPath = `${input.companyId}/thumbnails/${input.modelUploadId}/${input.modelUploadId}.png`;
-  const uploaded = await storage(carbon)
-    .company(input.companyId)
-    .upload(thumbnailPath, input.pngBytes, {
-      upsert: true,
-      contentType: "image/png"
-    });
-  if (uploaded.error) {
-    throw new Error(
-      `attachModelThumbnail: upload failed (${thumbnailPath}): ${uploaded.error.message}`
-    );
-  }
-  const updated = await carbon
-    .from("modelUpload")
-    .update({ thumbnailPath })
-    .eq("id", input.modelUploadId)
-    .eq("companyId", input.companyId);
-  if (updated.error) {
-    throw new Error(
-      `attachModelThumbnail: modelUpload update failed: ${updated.error.message}`
-    );
-  }
-}
-
 export async function attachOnshapeAssetsToItem(
   carbon: CarbonClient,
   input: AttachOnshapeAssetsInput

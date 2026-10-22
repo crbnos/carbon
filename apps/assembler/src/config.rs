@@ -119,9 +119,9 @@ pub fn verify_tls() -> bool {
 pub fn validate_url(url: &str) -> Result<(), ApiError> {
     let parsed = reqwest::Url::parse(url).map_err(|_| ApiError::invalid("invalid URL"))?;
     let scheme = parsed.scheme();
-    if require_https() && scheme != "https" {
-        return Err(ApiError::invalid("URLs must use https"));
-    }
+    // http is allowed: in a BYOC cluster the jobs layer signs storage URLs
+    // against the in-cluster Supabase gateway (SUPABASE_INTERNAL_URL), which
+    // is plain http and never leaves the namespace.
     if scheme != "http" && scheme != "https" {
         return Err(ApiError::invalid(format!(
             "unsupported URL scheme: {scheme}"
