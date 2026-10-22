@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   isShippableEntityStatus,
-  shippableEntityStatuses
+  shippableEntityStatuses,
+  writeOffRestoreQuantity
 } from "./inventory.utils";
 
 // Shipment tracking, the shipment page and the post modal all read this one
@@ -38,5 +39,36 @@ describe("shippableEntityStatuses", () => {
       expect(isShippableEntityStatus(source, "Rejected")).toBe(false);
     }
     expect(isShippableEntityStatus("Sales Order", null)).toBe(false);
+  });
+});
+
+// A non-tracked lot an inspection rejected is written off at the reject, so a
+// return shipment puts those units back before shipping them — once.
+describe("writeOffRestoreQuantity", () => {
+  it("puts back every written-off unit the shipment ships", () => {
+    expect(
+      writeOffRestoreQuantity({ shipped: 2, writtenOff: 2, shippedBefore: 0 })
+    ).toBe(2);
+  });
+
+  it("puts back no more than the shipment ships", () => {
+    expect(
+      writeOffRestoreQuantity({ shipped: 1, writtenOff: 3, shippedBefore: 0 })
+    ).toBe(1);
+  });
+
+  it("leaves out units the line's earlier shipments already put back", () => {
+    expect(
+      writeOffRestoreQuantity({ shipped: 3, writtenOff: 3, shippedBefore: 1 })
+    ).toBe(2);
+    expect(
+      writeOffRestoreQuantity({ shipped: 2, writtenOff: 3, shippedBefore: 3 })
+    ).toBe(0);
+  });
+
+  it("puts back only written-off units when the line also returns good stock", () => {
+    expect(
+      writeOffRestoreQuantity({ shipped: 5, writtenOff: 2, shippedBefore: 0 })
+    ).toBe(2);
   });
 });

@@ -31,6 +31,24 @@ export function shippableEntityStatuses(
   return ["Available"];
 }
 
+/**
+ * How many units a supplier return shipment line puts back before shipping
+ * them: the line's units an inspection reject already wrote off, less what
+ * the line's earlier shipments already put back. The written-off units are
+ * the first the line ships.
+ */
+export function writeOffRestoreQuantity({
+  shipped,
+  writtenOff,
+  shippedBefore
+}: {
+  shipped: number;
+  writtenOff: number;
+  shippedBefore: number;
+}): number {
+  return Math.max(0, Math.min(shipped, writtenOff - shippedBefore));
+}
+
 export function isShippableEntityStatus(
   sourceDocument: string | null | undefined,
   status: string | null | undefined
