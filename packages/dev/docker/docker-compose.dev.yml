@@ -11,7 +11,7 @@
 # terminal had died back to life on each Docker start.
 services:
   postgres:
-    image: supabase/postgres:15.14.1.112
+    image: supabase/postgres:17.11.0.005
     restart: on-failure
     deploy:
       resources:
