@@ -743,7 +743,12 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     const interactionId = quote.data.supplierInteractionId;
     const attachments = [
       ...(interactionId
-        ? await service.interactionAttachments(client, companyId, interactionId)
+        ? await service.interactionAttachments(
+            client,
+            companyId,
+            interactionId,
+            { withoutPurchaseOrderPdfs: true }
+          )
         : []),
       ...(await service.getSupplierInteractionLineAttachments(
         client,
@@ -2470,11 +2475,15 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
             ]
           });
           const attachments = [
+            ...(await service.signedAttachments(system, companyId, [
+              { filename: pdf.fileName, path: pdf.path }
+            ])),
             ...(interactionId
               ? await service.interactionAttachments(
                   system,
                   companyId,
-                  interactionId
+                  interactionId,
+                  { withoutPurchaseOrderPdfs: true }
                 )
               : []),
             ...(await service.signedAttachments(

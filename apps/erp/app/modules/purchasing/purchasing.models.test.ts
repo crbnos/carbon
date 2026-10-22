@@ -23,6 +23,7 @@ import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  isStoredPurchaseOrderPdf,
   leaseClassificationValidator,
   leaseDetailsValidator,
   leaseDurationOf,
@@ -37,6 +38,7 @@ import {
   lockedReturnLineField,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
+  purchaseOrderPdfFileName,
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
@@ -647,5 +649,45 @@ describe("splitRfqModelAttachments", () => {
     const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
     expect(attach).toEqual([]);
     expect(link.map((m) => m.id)).toEqual(["a"]);
+  });
+});
+
+describe("isStoredPurchaseOrderPdf", () => {
+  // Two orders converted from one supplier quote share the interaction folder.
+  const orders = ["PO000146", "PO000148"];
+  const stored = (displayId: string) =>
+    purchaseOrderPdfFileName(displayId, "2026-10-22T14:03:22.123Z");
+
+  it("names a stored PDF by display id and the UTC second", () => {
+    expect(stored("PO000148-1")).toBe("PO000148-1 - 2026-10-22T14:03:22.pdf");
+  });
+
+  it("matches every order's stored PDF, at any revision", () => {
+    expect(isStoredPurchaseOrderPdf(stored("PO000146"), orders)).toBe(true);
+    expect(isStoredPurchaseOrderPdf(stored("PO000148"), orders)).toBe(true);
+    expect(isStoredPurchaseOrderPdf(stored("PO000148-2"), orders)).toBe(true);
+  });
+
+  it("keeps the files a person added", () => {
+    for (const name of [
+      "drawing.pdf",
+      "PO000148 notes.pdf",
+      "PO000148 - signed copy.pdf",
+      "PO000148 - 2026-10-22T14:03:22.step"
+    ]) {
+      expect(isStoredPurchaseOrderPdf(name, orders)).toBe(false);
+    }
+  });
+
+  it("leaves another order's PDF alone when only the id prefix matches", () => {
+    expect(isStoredPurchaseOrderPdf(stored("PO0001480"), orders)).toBe(false);
+    expect(isStoredPurchaseOrderPdf(stored("PO000146"), ["PO00014"])).toBe(
+      false
+    );
+  });
+
+  it("matches nothing without orders", () => {
+    expect(isStoredPurchaseOrderPdf(stored("PO000146"), [])).toBe(false);
+    expect(isStoredPurchaseOrderPdf(stored("PO000146"), [""])).toBe(false);
   });
 });

@@ -30,7 +30,8 @@ import {
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteraction,
-  getSupplierInteractionDocuments
+  getSupplierInteractionDocuments,
+  withoutStoredPurchaseOrderPdfs
 } from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseOrderExplorer,
@@ -212,7 +213,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
   const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
   // One listing feeds both the documents panel and the attachment list, and
-  // neither holds up the page.
+  // neither holds up the page. The attachment list leaves out the stored PO
+  // PDFs, as the finalize email does: it attaches this order's new PDF itself.
   const files = supplierInteractionId
     ? getSupplierInteractionDocuments(
         serviceRole,
@@ -226,7 +228,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       supplierId: purchaseOrder.data?.supplierId ?? null,
       itemIds
     }),
-    files
+    supplierInteractionId
+      ? files.then((docs) =>
+          withoutStoredPurchaseOrderPdfs(
+            serviceRole,
+            companyId,
+            supplierInteractionId,
+            docs
+          )
+        )
+      : files
   ])
     .then(([defaults, adHocDocs]) => [
       ...defaults,

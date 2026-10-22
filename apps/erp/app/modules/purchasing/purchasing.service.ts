@@ -122,7 +122,6 @@ import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -172,6 +171,7 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
+  isStoredPurchaseOrderPdf,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
@@ -181,6 +181,7 @@ import {
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
+  purchaseOrderPdfFileName,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -6011,18 +6012,70 @@ export async function draftLeaseSetupPath(
   return path.to.leaseSetup(id, "assets");
 }
 
+/**
+ * A supplier interaction's files without the PDFs finalize stored for its
+ * purchase orders. Every order converted from one supplier quote shares the
+ * interaction's folder, so attaching the whole listing sent a supplier the
+ * other orders' PDFs and every earlier copy of the order's own. Throws when
+ * the orders cannot be read, rather than let those PDFs through.
+ */
+export async function withoutStoredPurchaseOrderPdfs<
+  T extends { name: string }
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  interactionId: string,
+  docs: T[]
+): Promise<T[]> {
+  if (docs.length === 0) return docs;
+  const orders = await client
+    .from("purchaseOrder")
+    .select("purchaseOrderId")
+    .eq("companyId", companyId)
+    .eq("supplierInteractionId", interactionId);
+  if (orders.error) {
+    logger.error("Failed to read the supplier interaction's purchase orders", {
+      companyId,
+      interactionId,
+      error: orders.error
+    });
+    throw new Error(
+      "Failed to read the supplier interaction's purchase orders"
+    );
+  }
+  const purchaseOrderIds = orders.data.flatMap((order) =>
+    order.purchaseOrderId ? [order.purchaseOrderId] : []
+  );
+  return docs.filter(
+    (doc) => !isStoredPurchaseOrderPdf(doc.name, purchaseOrderIds)
+  );
+}
+
 /** Signed links to a supplier interaction's documents, for an email. A file
- *  that cannot be signed is logged and left out. */
+ *  that cannot be signed is logged and left out. With
+ *  `withoutPurchaseOrderPdfs`, the PDFs finalize stored for the interaction's
+ *  purchase orders are left out too (`withoutStoredPurchaseOrderPdfs`). */
 export async function interactionAttachments(
   client: SupabaseClient<Database>,
   companyId: string,
-  interactionId: string
+  interactionId: string,
+  {
+    withoutPurchaseOrderPdfs = false
+  }: { withoutPurchaseOrderPdfs?: boolean } = {}
 ): Promise<{ filename: string; path: string; size?: number }[]> {
-  const docs = await getSupplierInteractionDocuments(
+  const listed = await getSupplierInteractionDocuments(
     client,
     companyId,
     interactionId
   );
+  const docs = withoutPurchaseOrderPdfs
+    ? await withoutStoredPurchaseOrderPdfs(
+        client,
+        companyId,
+        interactionId,
+        listed
+      )
+    : listed;
   return signedAttachments(
     client,
     companyId,
@@ -6480,10 +6533,9 @@ export async function attachPurchaseOrderPdf(
     return ctx.error("internal", "Failed to generate PDF", err);
   }
 
-  const fileName = stripSpecialCharacters(
-    `${getPurchaseOrderDisplayId(purchaseOrder)} - ${datetime
-      .timestamp()
-      .slice(0, -5)}.pdf`
+  const fileName = purchaseOrderPdfFileName(
+    getPurchaseOrderDisplayId(purchaseOrder),
+    datetime.timestamp()
   );
   const path = `${companyId}/supplier-interaction/${purchaseOrder.supplierInteractionId}/${fileName}`;
   const upload = await storage(ctx.asSystem.supabase)

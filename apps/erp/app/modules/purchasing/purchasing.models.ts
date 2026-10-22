@@ -9,6 +9,7 @@ import {
   bicMatchesCountry,
   getBankFieldConfig,
   isValidSwiftBic,
+  stripSpecialCharacters,
   type TaxPair,
   taxableBase,
   taxPairFromAmount,
@@ -889,6 +890,36 @@ export function canCreatePurchaseOrderRevision(transition: {
     isPurchaseOrderLocked(transition.currentStatus) &&
     Boolean(transition.orderDate)
   );
+}
+
+/**
+ * The name finalize gives the PDF it stores with a purchase order's supplier
+ * interaction files: `<display id> - <UTC time to the second>.pdf`, such as
+ * `PO000123-1 - 2026-10-22T14:03:22.pdf`. `timestamp` is an ISO instant.
+ */
+export function purchaseOrderPdfFileName(displayId: string, timestamp: string) {
+  return stripSpecialCharacters(`${displayId} - ${timestamp.slice(0, 19)}.pdf`);
+}
+
+const STORED_PDF_SUFFIX =
+  /^(-\d+)? - \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.pdf$/;
+
+/**
+ * Whether a file in a supplier interaction's folder is a PDF finalize stored
+ * (`purchaseOrderPdfFileName`) for one of `purchaseOrderIds`, at any revision.
+ */
+export function isStoredPurchaseOrderPdf(
+  fileName: string,
+  purchaseOrderIds: string[]
+) {
+  return purchaseOrderIds.some((purchaseOrderId) => {
+    const prefix = stripSpecialCharacters(purchaseOrderId);
+    return (
+      prefix.length > 0 &&
+      fileName.startsWith(prefix) &&
+      STORED_PDF_SUFFIX.test(fileName.slice(prefix.length))
+    );
+  });
 }
 
 /**
