@@ -152,20 +152,65 @@ databaseTest(
         .executeTakeFirstOrThrow();
       expect(element.stateId).toEqual(f.state("doing"));
 
-      // More than is on hand is refused.
-      const tooMany = await invokePosting(
-        handlesOf(f.ctx),
-        "post-project-issue",
-        {
-          projectId: f.projectId,
-          itemId,
-          locationId,
-          quantity: 100,
-          direction: "Issue"
-        },
-        postProjectIssue
-      );
-      expect(tooMany.error?.status).toEqual(400);
+      const issue = (quantity: number, item = itemId) =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-project-issue",
+          {
+            projectId: f.projectId,
+            itemId: item,
+            locationId,
+            quantity,
+            direction: "Issue"
+          },
+          postProjectIssue
+        );
+      const onHand = async (item = itemId) =>
+        Number(
+          (
+            await f.db
+              .selectFrom("itemLedger")
+              .select((eb) => eb.fn.sum<string>("quantity").as("quantity"))
+              .where("itemId", "=", item)
+              .where("companyId", "=", f.companyId)
+              .executeTakeFirstOrThrow()
+          ).quantity ?? 0
+        );
+
+      // More than is on hand goes below zero while the company does not
+      // prevent negative stock, and still charges the project a cost.
+      expect(await onHand()).toEqual(7);
+      const short = await issue(9);
+      expect(short.error).toBeNull();
+      expect(await onHand()).toEqual(-2);
+      const shortCharge = await f.db
+        .selectFrom("projectLedger")
+        .select("amount")
+        .where("documentId", "=", short.data!.itemLedgerId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(shortCharge.amount)).toBeGreaterThan(0);
+
+      // A unit with no cost is refused, and nothing is booked.
+      const free = await f.addStockedItem("washer", {
+        quantity: 0,
+        unitCost: 0
+      });
+      const noCost = await issue(1, free.itemId);
+      expect(noCost.error?.status).toEqual(400);
+      expect(noCost.error?.message).toContain("has no cost");
+      expect(await onHand(free.itemId)).toEqual(0);
+
+      // Strict backflush with Prevent negative stock refuses the shortfall.
+      await f.db
+        .updateTable("companySettings")
+        .set({ requireBackflushStorageUnit: true, preventNegativeBackflush: true })
+        .where("id", "=", f.companyId)
+        .execute();
+      const prevented = await issue(1);
+      expect(prevented.error?.status).toEqual(400);
+      expect(prevented.error?.message).toContain("Prevent negative stock");
+      expect(await onHand()).toEqual(-2);
     } finally {
       await f.cleanup();
     }

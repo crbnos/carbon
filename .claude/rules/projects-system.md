@@ -356,6 +356,12 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
 - **Issue to Project.** `post-project-issue` splits an untracked issue across the project's
   stripes at the bin (`splitAcrossStripes`), one `bookAdjustment` per stripe sharing one
   journal and one `projectLedger` row. A Return goes back to the project's stock.
+  What the stripes do not cover comes out of the first stripe, below zero, unless the
+  company prevents negative stock (`getStrictBackflushSettings` without a location:
+  Strict backflush and Prevent negative stock both on), which refuses it naming the item
+  and its on-hand (Brad, 2026-10-21). A serial or batch never goes below zero. An Issue
+  whose units carry no cost (`booked.cost <= 0`, zero-cost layers or an item with no unit
+  cost) is refused inside the transaction, so nothing is booked.
 - **`projectStockTransfer`** (Draft → Approved → Posted, or Cancelled) with lines;
   `projectBorrow` records an open borrow. Transfers open from the project's Stock page;
   its "All transfers" link opens the list (`projects+/transfers.tsx`, `transfers.new.tsx`),

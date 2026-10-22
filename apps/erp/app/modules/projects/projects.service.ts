@@ -50,6 +50,7 @@ import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
 import { completedAtForGroup } from "@carbon/database/project-plan";
 import { inOrder, rpcRows, single } from "@carbon/database/rows";
+import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
 import type {
   BudgetCheckInput,
   BudgetCheckResult
@@ -7533,7 +7534,14 @@ export async function postProjectIssue(
           db,
           "item",
           { id: itemId, companyId },
-          { columns: ["name", "itemTrackingType", "replenishmentSystem"] }
+          {
+            columns: [
+              "name",
+              "readableIdWithRevision",
+              "itemTrackingType",
+              "replenishmentSystem"
+            ]
+          }
         ),
       () =>
         single(
@@ -7593,6 +7601,10 @@ export async function postProjectIssue(
   if (quantities.error) throw new Error("Failed to fetch current quantities");
   if (!accountDefaults) throw new Error("Error getting account defaults");
 
+  const itemLabel =
+    itemResult.data.readableIdWithRevision ??
+    itemResult.data.name ??
+    "The item";
   const isTracked =
     itemResult.data.itemTrackingType === "Serial" ||
     itemResult.data.itemTrackingType === "Batch";
@@ -7634,8 +7646,13 @@ export async function postProjectIssue(
         row.trackedEntityId === trackedEntityId &&
         (row.projectId ?? null) === stripe
     );
+    // A serial or batch is one real unit: it never goes below zero.
     if (round(quantity) > round(source?.quantity ?? 0)) {
-      throw new InvalidInputError("Insufficient quantity to issue");
+      throw new InvalidInputError(
+        `${itemLabel} has ${round(source?.quantity ?? 0)} of this ${
+          itemResult.data.itemTrackingType === "Serial" ? "serial" : "batch"
+        } on hand, not ${quantity}`
+      );
     }
     if (!stripes.includes(stripe)) {
       const entity = await single(
@@ -7668,13 +7685,38 @@ export async function postProjectIssue(
     }));
     const split = splitAcrossStripes(quantity, available);
     if (round(split.remaining) > 0) {
-      throw new InvalidInputError("Insufficient quantity to issue");
+      // Short stock goes below zero, unless the company prevents negative
+      // stock (Settings → Items: Strict backflush with Prevent negative
+      // stock on).
+      const { strict, preventNegative } = await getStrictBackflushSettings(
+        db,
+        companyId
+      );
+      if (strict && preventNegative) {
+        const onHand = round(
+          available.reduce((sum, stripe) => sum + stripe.quantity, 0)
+        );
+        throw new InvalidInputError(
+          `${itemLabel} has ${onHand} on hand ${
+            storageUnitId ? "in this storage unit" : "outside a storage unit"
+          }, not ${quantity}. Prevent negative stock is on.`
+        );
+      }
     }
-    // One stripe (no project stock) books the quantity as given.
-    draws =
-      stripes.length === 1
-        ? [{ stripe: stripes[0] ?? null, quantity }]
-        : split.draws;
+    // One stripe (no project stock) books the quantity as given; with
+    // several, what no stripe covers comes out of the first one.
+    if (stripes.length === 1) {
+      draws = [{ stripe: stripes[0] ?? null, quantity }];
+    } else {
+      draws = split.draws.map((draw) => ({ ...draw }));
+      const shortfall = round(split.remaining);
+      if (shortfall > 0) {
+        const first = stripes[0] ?? null;
+        const own = draws.find((draw) => draw.stripe === first);
+        if (own) own.quantity += shortfall;
+        else draws.unshift({ stripe: first, quantity: shortfall });
+      }
+    }
   }
 
   const dimensionMap: Record<string, string> = {};
@@ -7887,6 +7929,13 @@ export async function postProjectIssue(
           ?.offsetJournalLineId ?? null,
       cost: round(bookedRows.reduce((sum, row) => sum + row.cost, 0))
     };
+    // A unit with no cost would charge the project nothing: the item needs a
+    // cost first. The throw rolls the whole issue back.
+    if (isIssue && booked.cost <= 0) {
+      throw new InvalidInputError(
+        `${itemLabel} has no cost. Set its unit cost before you issue it.`
+      );
+    }
 
     let projectLedgerId: string | null = null;
     if (!isStatistical) {
