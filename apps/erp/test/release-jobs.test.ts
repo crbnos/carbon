@@ -76,14 +76,12 @@ vi.mock("../app/modules/production/production.service", async (importOriginal) =
     events.push("notify");
   })
 }));
-vi.mock("../app/modules/production/production.mcp.server", () => ({
-  runMRP: vi.fn(async () => ({ data: null, error: null }))
-}));
 
 import { runLocationSchedule } from "@carbon/planning";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
+  runMRP,
   updateJobStatus
 } from "../app/modules/production/production.service";
 import {

@@ -6,17 +6,17 @@
 // and Schedules A, B, G and H read the seeded values back. The feature check
 // reads the company's plan; it is the one stubbed boundary.
 
-import { projectBillingTestFixture } from "@carbon/server-functions/lib/project-billing-test-fixture";
-import { databaseTest } from "@carbon/server-functions/test-fixture";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { expect, vi } from "vitest";
+import { databaseTest } from "../../fixtures/local-database";
+import { projectBillingTestFixture } from "../../fixtures/project-billing";
 
-vi.mock("../plan.server", () => ({
+vi.mock("@carbon/ee/plan.server", () => ({
   companyHasFeature: vi.fn(async () => true)
 }));
 
-import { buildIceSchedule } from "./ice.server";
-import { ICE_SCHEDULES } from "./models";
+import { ICE_SCHEDULES } from "@carbon/ee/indirect-rates";
+import { buildIceSchedule } from "@carbon/ee/indirect-rates.server";
 
 // requireEntitlement passes the client to the stubbed feature check only.
 const client = {} as SupabaseClient;

@@ -7,6 +7,10 @@
 // so both show the re-costed cost. The feature check reads the company's
 // plan; it is the one stubbed boundary.
 
+import { sql } from "kysely";
+import { expect, vi } from "vitest";
+import { postProjectIssue } from "../../../../app/modules/projects/projects.service";
+import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import {
   activationFixture,
   addReleasedProject,
@@ -15,20 +19,18 @@ import {
   moveBeforeCutover,
   receiveFiveParts,
   USER
-} from "@carbon/server-functions/activate-accounting/activation-test-fixture";
-import postProjectIssue from "@carbon/server-functions/post-project-issue";
-import { databaseTest } from "@carbon/server-functions/test-fixture";
-import { sql } from "kysely";
-import { expect, vi } from "vitest";
+} from "../../fixtures/activation";
+import { handlesOf } from "../../fixtures/handles";
+import { databaseTest } from "../../fixtures/local-database";
 
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: () => ({})
 }));
-vi.mock("../plan.server", () => ({
+vi.mock("@carbon/ee/plan.server", () => ({
   companyHasFeature: vi.fn(async () => true)
 }));
 
-import { generateCostPlusItems } from "./service.server";
+import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
 
 /** A Cost Plus line (fee 8 %) billing the project's element. */
 async function costPlusLine(
@@ -93,14 +95,19 @@ databaseTest(
       await costPlusLine(f, { projectId, elementId });
 
       // After the cutover 5 go to the project from the 8.00 layer: 40.00.
-      const issued = await postProjectIssue(f.ctx, {
-        projectId,
-        projectElementId: elementId,
-        itemId: f.partId,
-        locationId: f.locationId,
-        quantity: 5,
-        direction: "Issue"
-      });
+      const issued = await invokePosting(
+        handlesOf(f.ctx),
+        "post-project-issue",
+        {
+          projectId,
+          projectElementId: elementId,
+          itemId: f.partId,
+          locationId: f.locationId,
+          quantity: 5,
+          direction: "Issue"
+        },
+        postProjectIssue
+      );
       expect(issued.error).toBeNull();
       expect(issued.data?.cost).toBe(40);
 

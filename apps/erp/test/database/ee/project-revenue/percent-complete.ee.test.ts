@@ -8,24 +8,24 @@
 // relieves each ledger row once, and the degrade without PROJECT_REVENUE.
 // The feature check reads the company's plan; it is the one stubbed boundary.
 
-import { projectBillingTestFixture } from "@carbon/server-functions/lib/project-billing-test-fixture";
-import postProjectIssue from "@carbon/server-functions/post-project-issue";
-import proposeRevenueRecognitionRun from "@carbon/server-functions/propose-revenue-recognition-run";
-import { databaseTest } from "@carbon/server-functions/test-fixture";
 import { datetime } from "@carbon/utils";
 import { endOfMonth } from "@internationalized/date";
 import { beforeEach, expect, vi } from "vitest";
+import { proposeRevenueRecognitionRun } from "../../../../app/modules/accounting/accounting.service";
+import { postProjectIssue } from "../../../../app/modules/projects/projects.service";
+import { invokePosting } from "../../../../app/modules/shared/shared.service";
+import { handlesOf } from "../../fixtures/handles";
+import { databaseTest } from "../../fixtures/local-database";
+import { projectBillingTestFixture } from "../../fixtures/project-billing";
 
 const plan = vi.hoisted(() => ({ hasProjectRevenue: true }));
 
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: () => ({})
 }));
-vi.mock("../plan.server", () => ({
+vi.mock("@carbon/ee/plan.server", () => ({
   companyHasFeature: vi.fn(async () => plan.hasProjectRevenue)
 }));
-
-import { projectRevenueSynthesizers } from "./service.server";
 
 type Fixture = Awaited<ReturnType<typeof projectBillingTestFixture>>;
 
@@ -34,9 +34,10 @@ beforeEach(() => {
 });
 
 async function fixture() {
-  const f = await projectBillingTestFixture({
-    revenueRunSynthesizers: projectRevenueSynthesizers
-  });
+  // The revenue run always runs the commercial synthesizers
+  // (`runRowSynthesizers`); the stubbed feature check decides whether they
+  // write anything.
+  const f = await projectBillingTestFixture();
   await f.addAccounting();
   return f;
 }
@@ -50,7 +51,12 @@ async function cleanup(f: Fixture) {
 }
 
 async function propose(f: Fixture, periodEnd: string) {
-  const result = await proposeRevenueRecognitionRun(f.ctx, { periodEnd });
+  const result = await invokePosting(
+    handlesOf(f.ctx),
+    "propose-revenue-recognition-run",
+    { periodEnd },
+    proposeRevenueRecognitionRun
+  );
   if (result.error) throw result.error;
   return result.data?.id ?? null;
 }
@@ -435,14 +441,19 @@ databaseTest(
         quantity: 10,
         unitCost: 10
       });
-      const issued = await postProjectIssue(f.ctx, {
-        projectId: project.projectId,
-        projectElementId: project.rootId,
-        itemId,
-        locationId: f.locationId,
-        quantity: 5,
-        direction: "Issue"
-      });
+      const issued = await invokePosting(
+        handlesOf(f.ctx),
+        "post-project-issue",
+        {
+          projectId: project.projectId,
+          projectElementId: project.rootId,
+          itemId,
+          locationId: f.locationId,
+          quantity: 5,
+          direction: "Issue"
+        },
+        postProjectIssue
+      );
       expect(issued.error).toBeNull();
       expect(issued.data?.cost).toBe(50);
 

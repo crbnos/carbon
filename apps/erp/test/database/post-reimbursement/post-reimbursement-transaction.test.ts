@@ -4,9 +4,10 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
+import { postReimbursementTransaction } from "../../../app/modules/accounting/accounting.service";
 import { databaseTest } from "../fixtures/local-database";
 import { reimbursementFixture } from "../fixtures/post-reimbursement";
-import { postReimbursementTransaction } from "../../../app/modules/accounting/accounting.service";
+import { projectPostingFixture } from "../fixtures/project-posting";
 
 type Fixture = Awaited<ReturnType<typeof reimbursementFixture>>;
 

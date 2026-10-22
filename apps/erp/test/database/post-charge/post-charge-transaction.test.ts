@@ -5,9 +5,10 @@
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { allocateJournalLineIds } from "~/modules/shared/shared.service";
+import { postChargeTransaction } from "../../../app/modules/accounting/accounting.service";
 import { databaseTest } from "../fixtures/local-database";
 import { chargeFixture } from "../fixtures/post-charge";
-import { postChargeTransaction } from "../../../app/modules/accounting/accounting.service";
+import { projectPostingFixture } from "../fixtures/project-posting";
 
 databaseTest(
   "posting creates a missing month from the stored transaction date",

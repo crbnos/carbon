@@ -9714,7 +9714,10 @@ const positionKey = (row: StockPosition) =>
  * The positions the reversal would drive below zero. A tracked row is checked
  * per serial or batch, so a unit that left its bin is caught even when the bin
  * holds other stock of the item. Reversal rows that add stock (a negative
- * receipt line) need nothing.
+ * receipt line) need nothing, and they offset the rows of the same reversal at
+ * their position: a line consumed by its project at receipt wrote a Project
+ * Issue row against the receipt, and the void puts that stock back as it takes
+ * the receipt's stock out.
  */
 export function findVoidShortfalls(
   reversingRows: ReversingRow[],
@@ -9722,7 +9725,6 @@ export function findVoidShortfalls(
 ): (StockPosition & { required: number; onHand: number })[] {
   const required = new Map<string, StockPosition & { required: number }>();
   for (const row of reversingRows) {
-    if (row.quantity >= 0) continue;
     const key = positionKey(row);
     const entry = required.get(key) ?? { ...row, required: 0 };
     entry.required += -row.quantity;
@@ -9730,6 +9732,7 @@ export function findVoidShortfalls(
   }
 
   return [...required.entries()].flatMap(([key, entry]) => {
+    if (entry.required <= EPSILON) return [];
     const available = onHand.get(key) ?? 0;
     return available + EPSILON < entry.required
       ? [
@@ -9789,7 +9792,7 @@ export async function assertReceivedStockOnHand(
     onHand.set(positionKey(row), Number(row.quantity ?? 0));
   }
 
-  if (findVoidShortfalls(removing, onHand).length > 0) {
+  if (findVoidShortfalls(reversingRows, onHand).length > 0) {
     throw new InvalidInputError(
       "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead."
     );

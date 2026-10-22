@@ -6,18 +6,18 @@
 // ledger cost, and writes the Actual rates, the statement and the period run.
 // The feature check reads the company's plan; it is the one stubbed boundary.
 
+import { sql } from "kysely";
+import { expect, vi } from "vitest";
 import {
   connectLocalTestDatabase,
   databaseTest
-} from "@carbon/server-functions/test-fixture";
-import { sql } from "kysely";
-import { expect, vi } from "vitest";
+} from "../../fixtures/local-database";
 
-vi.mock("../plan.server", () => ({
+vi.mock("@carbon/ee/plan.server", () => ({
   companyHasFeature: vi.fn(async () => true)
 }));
 
-import { computeIndirectRates } from "./service.server";
+import { computeIndirectRates } from "@carbon/ee/indirect-rates.server";
 
 const USER = "system";
 

@@ -13,20 +13,20 @@ import { CONTRACT_HOLD_ADJUSTMENT, round } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { expect } from "vitest";
 import {
-  createContractInvoices,
-  type ContractCancellationResult,
-  postCustomerContract
-} from "../../../app/modules/sales/sales.service";
-import {
   buildProjectLedgerRow,
   insertProjectLedgerRows
-} from "../lib/project-posting";
+} from "../../../app/modules/projects/project-posting";
+import {
+  type ContractCancellationResult,
+  createContractInvoices,
+  postCustomerContract
+} from "../../../app/modules/sales/sales.service";
+import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { handlesOf } from "../fixtures/handles";
 import {
   connectLocalTestDatabase,
   databaseTest
 } from "../fixtures/local-database";
-import { invokePosting } from "../../../app/modules/shared/shared.service";
-import { handlesOf } from "../fixtures/handles";
 
 const USER = "system";
 
@@ -2359,11 +2359,16 @@ databaseTest(
     try {
       const billing = await projectBillingFixture(f);
       const confirm = (customerContractId: string) =>
-        postCustomerContract(ctx, {
-          type: "confirm",
-          customerContractId,
-          asOf: "2026-01-01"
-        });
+        invokePosting(
+          handlesOf(ctx),
+          "post-customer-contract",
+          {
+            type: "confirm",
+            customerContractId,
+            asOf: "2026-01-01"
+          },
+          postCustomerContract
+        );
 
       const contract = await billing.addProject("contract", "PB", "Contract");
       const first = await billing.addTimeAndMaterialsContract({
@@ -2455,11 +2460,16 @@ databaseTest(
           .execute();
       expect(await itemsOf()).toEqual([]);
 
-      const confirmed = await postCustomerContract(ctx, {
-        type: "confirm",
-        customerContractId: contractId,
-        asOf: "2026-01-01"
-      });
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
 
       const items = await itemsOf();
@@ -2539,11 +2549,16 @@ databaseTest(
           .execute();
       });
 
-      const confirmed = await postCustomerContract(ctx, {
-        type: "confirm",
-        customerContractId: contractId,
-        asOf: "2026-01-01"
-      });
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "confirm",
+          customerContractId: contractId,
+          asOf: "2026-01-01"
+        },
+        postCustomerContract
+      );
       expect(confirmed.error).toBeNull();
 
       const { status } = await db
