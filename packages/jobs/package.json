@@ -18,7 +18,7 @@
     "@carbon/utils": "workspace:*",
     "@carbon/viewer": "workspace:*",
     "@internationalized/date": "catalog:",
-    "@react-email/components": "catalog:",
+    "react-email": "catalog:",
     "@react-pdf/renderer": "catalog:",
     "@slack/web-api": "catalog:",
     "@supabase/functions-js": "catalog:",

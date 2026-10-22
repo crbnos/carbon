@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authEmails } from "@carbon/documents/email";
-import { renderAsync } from "@react-email/components";
 import { createElement } from "react";
+import { render } from "react-email";
 import type { LoaderFunctionArgs } from "react-router";
 
 /**
@@ -22,7 +22,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return new Response("Not found", { status: 404 });
   }
   const Email = authEmails[file as keyof typeof authEmails];
-  const html = await renderAsync(createElement(Email));
+  const html = await render(createElement(Email));
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",

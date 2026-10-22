@@ -149,7 +149,6 @@ import {
   startOfMonth,
   startOfWeek
 } from "@internationalized/date";
-import { render, renderAsync } from "@react-email/components";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -158,6 +157,7 @@ import type {
 import type { Selectable } from "kysely";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { createCookieSessionStorage, data } from "react-router";
 import { z } from "zod";
 import {
@@ -1235,8 +1235,8 @@ export async function sendSalesOrderEmail(args: {
     paymentTerms: paymentTerms.data
   });
 
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
+  const html = await render(emailTemplate);
+  const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
     .createSignedUrl(documentFilePath, 3600);

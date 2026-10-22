@@ -6,7 +6,7 @@ import { VerificationEmail } from "@carbon/documents/email";
 import { redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { render } from "@react-email/components";
+import { render } from "react-email";
 
 const log = getLogger("auth");
 

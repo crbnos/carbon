@@ -40,7 +40,7 @@ vi.mock("@carbon/lib/email.server", () => ({
 vi.mock("@carbon/documents/email", () => ({
   VerificationEmail: vi.fn(() => null)
 }));
-vi.mock("@react-email/components", () => ({
+vi.mock("react-email", () => ({
   render: vi.fn().mockResolvedValue("<html>code</html>")
 }));
 vi.mock("@simplewebauthn/server", () => ({

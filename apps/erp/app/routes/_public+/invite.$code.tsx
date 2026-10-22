@@ -32,9 +32,9 @@ import {
   redirectExternal
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { render } from "@react-email/components";
 import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,

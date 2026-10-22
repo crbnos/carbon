@@ -32,8 +32,8 @@ import {
 } from "@carbon/notifications";
 import { chunkArray, datetime } from "@carbon/utils";
 import { now } from "@internationalized/date";
-import { render } from "@react-email/components";
 import { NonRetriableError } from "inngest";
+import { render } from "react-email";
 import { inngest } from "../../client";
 import {
   buildNotificationLink,

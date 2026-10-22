@@ -6,7 +6,7 @@ import { ChangelogEntryEmail } from "@carbon/documents/email";
 import { ERP_URL } from "@carbon/env";
 import { DEFAULT_FROM, sendEmail } from "@carbon/lib/email.server";
 import { NotificationTopic } from "@carbon/notifications";
-import { render } from "@react-email/components";
+import { render } from "react-email";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {

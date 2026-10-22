@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { renderAsync } from "@react-email/components";
+import { render } from "react-email";
 import { describe, expect, it } from "vitest";
 import { authEmails } from ".";
 
@@ -29,7 +29,7 @@ const placeholders: Record<keyof typeof authEmails, string[]> = {
 describe("auth emails", () => {
   for (const [file, Email] of Object.entries(authEmails)) {
     it(`${file} carries Auth's placeholders intact`, async () => {
-      const html = await renderAsync(<Email />);
+      const html = await render(<Email />);
       for (const expected of placeholders[file as keyof typeof authEmails]) {
         expect(html).toContain(expected);
       }

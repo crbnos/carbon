@@ -4,16 +4,20 @@
 
 import {
   Body,
-  Button,
   Container,
   Heading,
   Link,
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
+import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
-import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "./components/Theme";
 
 // Single source for the reminder-status union ("Overdue" renders red,
 // "Pending" muted) — jobs consumers import it via the email barrel since they
@@ -77,11 +81,6 @@ const weeklyReminderStyles = `
   .wr-status-overdue {
     color: #dc2626 !important;
   }
-  .wr-cta {
-    background-color: #0e0e0e !important;
-    color: #ffffff !important;
-    border-color: #0e0e0e !important;
-  }
   .wr-fallback {
     color: #6b7280 !important;
   }
@@ -111,11 +110,6 @@ const weeklyReminderStyles = `
     }
     .wr-status-overdue {
       color: #f87171 !important;
-    }
-    .wr-cta {
-      background-color: #fefefe !important;
-      color: #0C0C0C !important;
-      border-color: #fefefe !important;
     }
     .wr-fallback {
       color: #a1a1aa !important;
@@ -162,13 +156,6 @@ const weeklyReminderStyles = `
   [data-darkmode="true"] .wr-status-overdue {
     color: #f87171 !important;
   }
-  .gmail_dark .wr-cta,
-  .gmail_dark_theme .wr-cta,
-  [data-darkmode="true"] .wr-cta {
-    background-color: #fefefe !important;
-    color: #0C0C0C !important;
-    border-color: #fefefe !important;
-  }
   .gmail_dark .wr-fallback,
   .gmail_dark_theme .wr-fallback,
   [data-darkmode="true"] .wr-fallback {
@@ -196,11 +183,6 @@ const weeklyReminderStyles = `
   [data-ogsc] .wr-status-overdue {
     color: #f87171 !important;
   }
-  [data-ogsc] .wr-cta {
-    background-color: #fefefe !important;
-    color: #0C0C0C !important;
-    border-color: #fefefe !important;
-  }
   [data-ogsc] .wr-fallback {
     color: #a1a1aa !important;
   }
@@ -222,7 +204,7 @@ export const WeeklyReminderEmail = ({
   return (
     <EmailThemeProvider
       preview={preview ? <Preview>{preview}</Preview> : undefined}
-      additionalHeadContent={<style>{weeklyReminderStyles}</style>}
+      additionalHeadContent={<HeadStyle css={weeklyReminderStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans wr-body ${themeClasses.body}`}
@@ -355,26 +337,7 @@ export const WeeklyReminderEmail = ({
           {ctaUrl && (
             <>
               <Section className="text-center mb-[24px]">
-                <Button
-                  href={ctaUrl}
-                  className="wr-cta"
-                  style={{
-                    backgroundColor: "#0e0e0e",
-                    borderColor: "#0e0e0e",
-                    borderRadius: 10,
-                    borderStyle: "solid",
-                    borderWidth: 1,
-                    color: "#ffffff",
-                    display: "inline-block",
-                    fontSize: 14,
-                    fontWeight: 500,
-                    padding: "13px 24px",
-                    textAlign: "center",
-                    textDecoration: "none"
-                  }}
-                >
-                  <span style={{ verticalAlign: "middle" }}>{ctaLabel}</span>
-                </Button>
+                <Button href={ctaUrl}>{ctaLabel}</Button>
               </Section>
 
               <Text

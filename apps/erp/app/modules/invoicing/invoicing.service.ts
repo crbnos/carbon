@@ -155,11 +155,11 @@ import {
   type VarianceAllocation
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -5319,8 +5319,8 @@ export async function sendPostedSalesInvoice(
           lastName: seller.data.lastName
         }
       });
-      const html = await renderAsync(template);
-      const text = await renderAsync(template, { plainText: true });
+      const html = await render(template);
+      const text = await render(template, { plainText: true });
       const signed = await storage(serviceRole)
         .company(companyId)
         .createSignedUrl(filed.path, 3600);

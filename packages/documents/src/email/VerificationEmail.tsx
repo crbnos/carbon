@@ -2,14 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  Body,
-  Container,
-  Heading,
-  Preview,
-  Section,
-  Text
-} from "@react-email/components";
+import { Body, Container, Heading, Preview, Section, Text } from "react-email";
 import { Logo } from "./components/Logo";
 import {
   EmailThemeProvider,
@@ -62,6 +55,7 @@ export const VerificationEmail = ({
 
           <Section className="text-center my-[40px]">
             <div
+              className="email-panel"
               style={{
                 display: "inline-block",
                 padding: "20px 40px",
@@ -71,7 +65,7 @@ export const VerificationEmail = ({
               }}
             >
               <Text
-                className="text-center font-mono"
+                className="text-center font-mono email-panel-text"
                 style={{
                   fontSize: "32px",
                   fontWeight: "bold",

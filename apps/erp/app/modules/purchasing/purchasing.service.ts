@@ -97,7 +97,6 @@ import {
   searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
 import {
   PostgrestError,
   type PostgrestResponse,
@@ -106,6 +105,7 @@ import {
 } from "@supabase/supabase-js";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
@@ -6588,8 +6588,8 @@ export async function purchaseOrderEmail(
     to: [buyer.data.email, supplierEmail],
     from: buyer.data.email,
     subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
-    html: await renderAsync(template),
-    text: await renderAsync(template, { plainText: true }),
+    html: await render(template),
+    text: await render(template, { plainText: true }),
     purchaseOrder: purchaseOrder.data,
     lines: lines.data ?? []
   };

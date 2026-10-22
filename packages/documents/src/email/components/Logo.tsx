@@ -3,10 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl } from "@carbon/env";
-import { Img, Section } from "@react-email/components";
+import type React from "react";
+import { Img, Section } from "react-email";
 
 const baseUrl = getAppUrl();
 
+// Two wordmarks. The outlined dark one reads on either background, so it
+// is what a client shows when it inverts colours on its own (Gmail, classic
+// Outlook). A client that runs the theme's dark CSS swaps it for the white
+// one: `.dark-mode-hide` hides the first, `.dark-mode-show` reveals the
+// second, which stays hidden everywhere else (mso-hide for classic Outlook).
 export function Logo() {
   return (
     <Section className="mt-[32px]">
@@ -15,8 +21,20 @@ export function Logo() {
         width="auto"
         height="45"
         alt="Carbon"
-        className="mb-4 mx-auto block"
+        className="mb-4 mx-auto block dark-mode-hide"
       />
+      <div
+        className="dark-mode-show"
+        style={{ display: "none", msoHide: "all" } as React.CSSProperties}
+      >
+        <Img
+          src={`${baseUrl}/carbon-word-dark.png`}
+          width="auto"
+          height="44"
+          alt="Carbon"
+          className="mb-4 mx-auto block"
+        />
+      </div>
     </Section>
   );
 }

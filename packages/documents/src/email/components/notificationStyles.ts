@@ -10,7 +10,8 @@
 // web/iOS, Outlook web/mobile) honor this; Outlook desktop renders light-mode
 // only, matching the rest of the system.
 export const notificationStyles = `
-  .nf-body {
+  .nf-body,
+  .nf-body > table > tbody > tr > td {
     background-color: #f5f5f7;
     background-image: linear-gradient(180deg, #f5f5f7 0%, #ececef 100%);
   }
@@ -32,17 +33,13 @@ export const notificationStyles = `
   .nf-callout-accent {
     background-color: #0e0e0e !important;
   }
-  .nf-cta {
-    background-color: #0e0e0e !important;
-    color: #ffffff !important;
-    border-color: #0e0e0e !important;
-  }
   .nf-fallback {
     color: #6b7280 !important;
   }
 
   @media (prefers-color-scheme: dark) {
-    .nf-body {
+    .nf-body,
+    .nf-body > table > tbody > tr > td {
       background-color: #0C0C0C !important;
       background-image: linear-gradient(180deg, #0C0C0C 0%, #161618 100%) !important;
     }
@@ -64,11 +61,6 @@ export const notificationStyles = `
     .nf-callout-accent {
       background-color: #fefefe !important;
     }
-    .nf-cta {
-      background-color: #fefefe !important;
-      color: #0C0C0C !important;
-      border-color: #fefefe !important;
-    }
     .nf-fallback {
       color: #a1a1aa !important;
     }
@@ -76,8 +68,11 @@ export const notificationStyles = `
 
   /* Gmail desktop dark mode targeting */
   .gmail_dark .nf-body,
+  .gmail_dark .nf-body > table > tbody > tr > td,
   .gmail_dark_theme .nf-body,
-  [data-darkmode="true"] .nf-body {
+  .gmail_dark_theme .nf-body > table > tbody > tr > td,
+  [data-darkmode="true"] .nf-body,
+  [data-darkmode="true"] .nf-body > table > tbody > tr > td {
     background-color: #0C0C0C !important;
     background-image: linear-gradient(180deg, #0C0C0C 0%, #161618 100%) !important;
   }
@@ -109,13 +104,6 @@ export const notificationStyles = `
   [data-darkmode="true"] .nf-callout-accent {
     background-color: #fefefe !important;
   }
-  .gmail_dark .nf-cta,
-  .gmail_dark_theme .nf-cta,
-  [data-darkmode="true"] .nf-cta {
-    background-color: #fefefe !important;
-    color: #0C0C0C !important;
-    border-color: #fefefe !important;
-  }
   .gmail_dark .nf-fallback,
   .gmail_dark_theme .nf-fallback,
   [data-darkmode="true"] .nf-fallback {
@@ -123,7 +111,8 @@ export const notificationStyles = `
   }
 
   /* Outlook web/mobile dark mode targeting */
-  [data-ogsb] .nf-body {
+  [data-ogsb] .nf-body,
+  [data-ogsb] .nf-body > table > tbody > tr > td {
     background-color: #0C0C0C !important;
   }
   [data-ogsb] .nf-card {
@@ -139,11 +128,6 @@ export const notificationStyles = `
   }
   [data-ogsc] .nf-callout-accent {
     background-color: #fefefe !important;
-  }
-  [data-ogsc] .nf-cta {
-    background-color: #fefefe !important;
-    color: #0C0C0C !important;
-    border-color: #fefefe !important;
   }
   [data-ogsc] .nf-fallback {
     color: #a1a1aa !important;

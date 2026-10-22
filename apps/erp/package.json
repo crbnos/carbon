@@ -46,7 +46,7 @@
     "@orpc/server": "catalog:",
     "@paper-design/shaders-react": "^0.0.57",
     "@react-aria/i18n": "catalog:",
-    "@react-email/components": "catalog:",
+    "react-email": "catalog:",
     "@react-pdf/renderer": "catalog:",
     "@react-router/remix-routes-option-adapter": "catalog:",
     "@react-types/datepicker": "3.13.5",

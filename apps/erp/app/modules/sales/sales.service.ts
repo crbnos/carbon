@@ -114,7 +114,6 @@ import {
   wholeRateUnits
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
@@ -124,6 +123,7 @@ import type {
 import { generateText, Output } from "ai";
 import { type Selectable, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -12210,8 +12210,8 @@ export async function emailQuote(
       lastName: user.data.lastName
     }
   });
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
+  const html = await render(emailTemplate);
+  const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
     .createSignedUrl(args.documentFilePath, 3600);

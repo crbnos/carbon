@@ -70,8 +70,8 @@ vi.mock("@carbon/lib/sales-invoice-document.server", () => ({
 vi.mock("@carbon/documents/email", () => ({
   SalesInvoiceEmail: (props: unknown) => props
 }));
-vi.mock("@react-email/components", () => ({
-  renderAsync: async () => "<p>invoice</p>"
+vi.mock("react-email", () => ({
+  render: async () => "<p>invoice</p>"
 }));
 vi.mock("@carbon/files", () => ({
   getDocumentType: () => "PDF",

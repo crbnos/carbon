@@ -14,7 +14,7 @@ import {
   Row,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
 import type { Email } from "../types";
 import {
   getLineDescription,
@@ -157,7 +157,7 @@ const SalesOrderEmail = ({
             </Text>
           </Section>
           <ExternalNotes content={salesOrder.externalNotes} />
-          <Section className={`bg-gray-50 rounded-lg text-xs`}>
+          <Section className="bg-gray-50 rounded-[8px] text-xs email-panel">
             <Row>
               <Column className="p-5 align-top" colSpan={2}>
                 <Section>

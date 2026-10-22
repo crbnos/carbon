@@ -10,7 +10,7 @@ import {
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
 import { Button } from "../components/Button";
 import { Logo } from "../components/Logo";
 import {
@@ -84,6 +84,7 @@ export function AuthEmail({
           {showCode ? (
             <Section className="text-center my-[32px]">
               <div
+                className="email-panel"
                 style={{
                   display: "inline-block",
                   padding: "20px 40px",
@@ -93,7 +94,7 @@ export function AuthEmail({
                 }}
               >
                 <Text
-                  className="text-center font-mono"
+                  className="text-center font-mono email-panel-text"
                   style={{
                     fontSize: "32px",
                     fontWeight: "bold",

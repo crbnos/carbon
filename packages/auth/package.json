@@ -64,7 +64,7 @@
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
-    "@react-email/components": "catalog:",
+    "react-email": "catalog:",
     "@simplewebauthn/server": "^13.3.2",
     "botid": "catalog:",
     "cookie": "catalog:",
