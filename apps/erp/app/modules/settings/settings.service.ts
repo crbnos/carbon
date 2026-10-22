@@ -4231,14 +4231,21 @@ export async function ensureDraftMakeMethod(
   }
   const version = (highest.data?.version ?? 0) + 1;
 
-  // Also copies the BOM and routing; a failed copy leaves no Draft behind.
-  const draft = await createMakeMethodVersion(client, db, {
-    copyFromId: activeMethodId,
-    // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
-    version,
-    companyId,
-    createdBy: userId
-  });
+  // Also copies the BOM and routing; a failed copy leaves no Draft behind. The
+  // copy runs as the system: get-method is gated on production update, which a
+  // parts user pushing from Onshape need not hold.
+  const draft = await createMakeMethodVersion(
+    client,
+    db,
+    {
+      copyFromId: activeMethodId,
+      // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
+      version,
+      companyId,
+      createdBy: userId
+    },
+    serviceRole
+  );
   if (draft.error || !draft.data?.id) {
     return {
       ok: false,
