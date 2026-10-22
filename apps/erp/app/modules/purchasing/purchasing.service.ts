@@ -51,7 +51,9 @@ import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
   getFileExtension,
+  isStoredDocumentPdf,
   storage,
+  storedDocumentPdfName,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { isModelRawDownloadable } from "@carbon/files/cad";
@@ -171,7 +173,6 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
-  isStoredPurchaseOrderPdf,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
@@ -181,7 +182,6 @@ import {
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
-  purchaseOrderPdfFileName,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -6051,9 +6051,7 @@ export async function withoutStoredPurchaseOrderPdfs<
   const purchaseOrderIds = orders.data.flatMap((order) =>
     order.purchaseOrderId ? [order.purchaseOrderId] : []
   );
-  return docs.filter(
-    (doc) => !isStoredPurchaseOrderPdf(doc.name, purchaseOrderIds)
-  );
+  return docs.filter((doc) => !isStoredDocumentPdf(doc.name, purchaseOrderIds));
 }
 
 /** Signed links to a supplier interaction's documents, for an email. A file
@@ -6538,7 +6536,7 @@ export async function attachPurchaseOrderPdf(
     return ctx.error("internal", "Failed to generate PDF", err);
   }
 
-  const fileName = purchaseOrderPdfFileName(
+  const fileName = storedDocumentPdfName(
     getPurchaseOrderDisplayId(purchaseOrder),
     datetime.timestamp()
   );

@@ -73,7 +73,11 @@ import {
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
+import {
+  storage,
+  storedDocumentPdfName,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -151,7 +155,6 @@ import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -11934,9 +11937,7 @@ export async function attachDocumentPdf(
   }
   const companyId = ctx.company.id;
   const file = await args.pdf.arrayBuffer();
-  const fileName = stripSpecialCharacters(
-    `${args.identifier} - ${datetime.timestamp().slice(0, -5)}.pdf`
-  );
+  const fileName = storedDocumentPdfName(args.identifier, datetime.timestamp());
   const documentFilePath = `${companyId}/${args.folder}/${fileName}`;
 
   const upload = await storage(ctx.asSystem.supabase)
