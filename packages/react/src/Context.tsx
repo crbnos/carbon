@@ -128,7 +128,7 @@ const DesktopContextMenuItem = forwardRef<
         inset && "pl-8",
         shortcut && !asChild && "whitespace-nowrap",
         destructive &&
-          "text-red-500 focus:text-red-500 hover:bg-destructive/20 active:bg-destructive/20",
+          "text-destructive focus:text-destructive hover:bg-destructive/20 active:bg-destructive/20",
         className
       )}
       {...props}
