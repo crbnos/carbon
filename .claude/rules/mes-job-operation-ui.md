@@ -83,7 +83,9 @@ banner.
   finish, step records, material issue, inspection verdicts) and skips timer
   auto-start; pausing a running timer stays enabled. Every write route calls
   `abilityBlockRefusal` before it writes: `event` (Start only), `start.$operationId`,
-  `complete`, `finish`, `scrap`, `rework`, `record`, `record.$id.delete`, `issue`,
+  `end.$operationId` (the kanban complete scan), `batch.$batchId.complete`,
+  `batch.$batchId.record` (one member checked: every member runs the batch's one
+  process), `complete`, `finish`, `scrap`, `rework`, `record`, `record.$id.delete`, `issue`,
   `issue-tracked-entity` (single operation), `unconsume`, `entity+/…scrap`, and the
   inspection `sample`, `measurement`, `disposition` and `complete-passed` routes.
   Not gated: `steps.complete-all` (a manager override), `steps.inspection` (an

@@ -27,13 +27,13 @@ A **process** is a capability a work center can perform; work centers and proces
 
 ### Requiring an ability
 
-Turn on **"Requires Ability"** on a process and only qualified people can be scheduled for it and run it on the shop floor. The process has one ability of its own, with the same name; the toggle's description names it. People get it by completing a [training](/docs/reference/training#training-can-grant-an-ability) that grants it, or a manager adds it on their Abilities page.
+Turn on **"Requires Ability"** on a process and only qualified people can be scheduled for it. What the shop floor does with someone who isn't qualified depends on the setting below. The process has one ability of its own, with the same name; the toggle's description names it. People get it by completing a [training](/docs/reference/training#training-can-grant-an-ability) that grants it, or a manager adds it on their Abilities page.
 
 While the toggle is on, **"If an operator isn't qualified"** decides what the shop floor does when someone without the ability opens an operation of this process:
 
 <FieldTable>
   <Field name="Warn">The operator sees a warning on the operation and can still work. This is the default.</Field>
-  <Field name="Block">The operator sees why they can't work on it, and every production action is refused: starting the timer, logging completed, scrap or rework, marking it done, recording steps, issuing material, and inspection verdicts. Pausing a timer that is already running, maintenance and quality issues stay available.</Field>
+  <Field name="Block">The operator sees why they can't work on it, and these production actions are refused: starting the timer, logging completed, scrap or rework, marking it done, recording steps, issuing material, and inspection verdicts. Pausing a timer that is already running, maintenance and quality issues stay available. Two actions are not blocked: a manager's **"Complete all steps"** override, and picking material for a whole batch at once.</Field>
 </FieldTable>
 
 See [running an operation without the ability](/docs/reference/mes#when-you-dont-have-the-required-ability) for what the operator sees.
