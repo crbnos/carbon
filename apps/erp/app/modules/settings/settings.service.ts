@@ -188,7 +188,10 @@ import {
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
 import { isIntegrationComingSoon } from "@carbon/ee/plan";
-import { companyHasFeature } from "@carbon/ee/plan.server";
+import {
+  companyHasFeature,
+  hasIntegrationEarlyAccess
+} from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { trigger } from "@carbon/jobs";
@@ -591,13 +594,18 @@ export async function isIntegrationInstallWithheld(
   {
     companyId,
     integrationId,
-    email
-  }: { companyId: string; integrationId: string; email: string }
+    email,
+    userId
+  }: { companyId: string; integrationId: string; email: string; userId: string }
 ): Promise<boolean> {
   const integration = availableIntegrations.find((i) => i.id === integrationId);
   if (
     !integration ||
-    !isIntegrationComingSoon(integration, { edition: CarbonEdition, email })
+    !isIntegrationComingSoon(integration, {
+      edition: CarbonEdition,
+      email,
+      hasEarlyAccess: hasIntegrationEarlyAccess(userId)
+    })
   ) {
     return false;
   }

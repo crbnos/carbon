@@ -57,7 +57,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await isIntegrationInstallWithheld(client, {
       companyId,
       integrationId,
-      email
+      email,
+      userId
     })
   ) {
     return redirectExternal(

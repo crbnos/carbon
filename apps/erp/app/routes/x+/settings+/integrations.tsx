@@ -10,6 +10,7 @@ import {
   getIntegrationIdsByRole,
   quickInstallConnectors
 } from "@carbon/ee";
+import { hasIntegrationEarlyAccess } from "@carbon/ee/plan.server";
 import { RecordOutlet, toast } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -26,7 +27,7 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "settings"
   });
 
@@ -75,7 +76,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return data({
     integrations: items,
-    activeRoles
+    activeRoles,
+    // Decided here so the early access list never reaches the browser.
+    hasEarlyAccess: hasIntegrationEarlyAccess(userId)
     // No OAuth state here. Every OAuth install now starts at
     // `api+/integrations.$id.connect`, which issues a SIGNED, browser-bound,
     // single-use state — strictly better than the unsigned correlation value this
@@ -84,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function IntegrationsRoute() {
-  const { integrations } = useLoaderData<typeof loader>();
+  const { integrations, hasEarlyAccess } = useLoaderData<typeof loader>();
   const { i18n } = useLingui();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -125,6 +128,7 @@ export default function IntegrationsRoute() {
         // @ts-expect-error TS2322 - TODO: fix type
         availableIntegrations={availableIntegrations}
         quickInstallConnectors={quickInstallConnectors}
+        hasEarlyAccess={hasEarlyAccess}
       />
       <RecordOutlet />
     </>

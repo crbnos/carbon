@@ -21,7 +21,8 @@ async function authorize(request: Request) {
     await isIntegrationInstallWithheld(client, {
       companyId,
       integrationId: ONSHAPE_V2_INTEGRATION_ID,
-      email
+      email,
+      userId
     })
   ) {
     return { ok: false as const, reason: "coming-soon" as const };
