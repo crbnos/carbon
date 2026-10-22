@@ -9,11 +9,17 @@
 # stages build in parallel with the JavaScript install, which keeps the whole
 # build inside the scanner's 45-minute limit.
 
-# ---- OpenCASCADE, static (as apps/assembler/occt.Dockerfile) ----
-FROM debian:bookworm AS occt
+# ---- Shared toolchain ----
+# The Node image already has git, g++, make and perl. Every native build and the
+# final image start here, so the package mirror is hit once, not once per stage:
+# four parallel toolchain installs from a slow mirror took 25 minutes on their own.
+FROM node:24.22.1-bookworm AS toolchain
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git cmake g++ make ninja-build ca-certificates perl \
+      cmake ninja-build libeigen3-dev libopenblas-dev gfortran \
     && rm -rf /var/lib/apt/lists/*
+
+# ---- OpenCASCADE, static (as apps/assembler/occt.Dockerfile) ----
+FROM toolchain AS occt
 RUN git clone --depth 1 --branch V8_0_0_p1 https://github.com/Open-Cascade-SAS/OCCT.git /occt
 COPY apps/assembler/occt-patches /occt-patches
 RUN /occt-patches/apply.sh /occt
@@ -34,10 +40,7 @@ RUN cmake -S /occt -B /occt/build -G Ninja \
     && cmake --build /occt/build --target install
 
 # ---- FCL + libccd, static (as apps/assembler/Dockerfile) ----
-FROM debian:bookworm AS fcl
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git cmake ninja-build g++ libeigen3-dev ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+FROM toolchain AS fcl
 RUN git clone --depth 1 --branch v2.1 https://github.com/danfis/libccd.git /ccd \
     && cmake -S /ccd -B /ccd/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/fcl -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
@@ -52,10 +55,7 @@ RUN git clone --depth 1 --branch 0.7.0 https://github.com/flexible-collision-lib
     && cmake --build /fcl/b --target install
 
 # ---- Draco encoder, static (as apps/assembler/Dockerfile) ----
-FROM debian:bookworm AS draco
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git cmake ninja-build g++ ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+FROM toolchain AS draco
 RUN git clone --depth 1 --branch 1.5.7 https://github.com/google/draco.git /draco \
     && cmake -S /draco -B /draco/b -G Ninja -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/opt/draco -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
@@ -66,12 +66,8 @@ RUN git clone --depth 1 --branch 1.5.7 https://github.com/google/draco.git /drac
 FROM rust:1.99-bookworm AS rust
 
 # ---- The image the scanner audits ----
-FROM node:24.22.1-bookworm
-
-# Eigen for the collision shim, OpenBLAS and gfortran for the planner.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      libeigen3-dev libopenblas-dev gfortran cmake ninja-build \
-    && rm -rf /var/lib/apt/lists/*
+# Eigen (collision shim), OpenBLAS and gfortran (planner) come from the toolchain.
+FROM toolchain
 
 ENV CI=1 \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
