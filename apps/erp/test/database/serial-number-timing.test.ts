@@ -390,6 +390,37 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
+  it("spends no number when the completion is refused after numbering", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "refused", 3);
+
+      // The receipt into a storage unit that does not exist fails after the
+      // units are split and numbered.
+      const result = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 2,
+        storageUnitId: "no-such-storage-unit",
+        locationId: f.locationId
+      });
+
+      expect(result.error?.category).toBe("rule");
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ readableId: null, quantity: 3 })
+      ]);
+      const sequence = await f.db
+        .selectFrom("itemSerialSequence")
+        .select("next")
+        .where("itemId", "=", f.assemblyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(sequence.next)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
   it("creates the units no row holds when a completion follows the shop floor", async () => {
     const f = await alwaysPostFixture();
     try {

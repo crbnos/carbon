@@ -12807,7 +12807,8 @@ export async function assignSerialNumbers(
  * the `sync_finish_job_operation` interceptor (an operation marked Done) share
  * one implementation. It is a no-op when every unit taken is numbered, for an
  * item with no serial sequence, and when the job cannot cover the completion.
- * It commits on its own, before the RPC.
+ * `completeJob` runs it in the completion's own transaction, so a refused
+ * completion rolls the numbering back.
  */
 export async function numberSerialUnitsForCompletion(
   db: Kysely<KyselyDatabase>,
@@ -12821,6 +12822,34 @@ export async function numberSerialUnitsForCompletion(
     ) AS numbered
   `.execute(db);
   return { numbered: Number(result.rows[0]?.numbered ?? 0) };
+}
+
+/**
+ * Receive a job's completion through `complete_job_to_inventory`, on the given
+ * connection or transaction. It throws when the function refuses; the message
+ * says what to fix.
+ */
+export async function completeJobToInventory(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    jobId: string;
+    quantityComplete: number;
+    storageUnitId?: string;
+    locationId?: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  await sql`
+    SELECT complete_job_to_inventory(
+      p_job_id := ${args.jobId},
+      p_quantity_complete := ${args.quantityComplete}::numeric,
+      p_storage_unit_id := ${args.storageUnitId ?? null},
+      p_location_id := ${args.locationId ?? null},
+      p_company_id := ${args.companyId},
+      p_user_id := ${args.userId}
+    )
+  `.execute(db);
 }
 
 const sandboxLogger = getLogger("erp", "configuration-rule");
