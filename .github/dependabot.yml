@@ -62,6 +62,19 @@ updates:
     directories:
       - "/"
       - "/apps/assembler"
+      - "/packages/database/supabase/edge-runtime"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+
+  # Images pinned in the dev and self-host compose files
+  - package-ecosystem: "docker-compose"
+    directories:
+      - "/packages/dev/docker"
+      - "/contrib/deploying/simple-docker-caddy"
     schedule:
       interval: "weekly"
       day: "monday"

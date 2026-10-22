@@ -9,6 +9,9 @@ on:
     paths: ["packages/database/supabase/functions/**"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   functions:
     name: Deploy Self-Hosted Functions
