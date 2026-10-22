@@ -9,8 +9,8 @@ import * as cookie from "cookie";
 const cookieName = "theme";
 
 /**
- * The theme to render: the cookie's, unless a seasonal theme is forced, or
- * the default when it names none we offer now (`resolveTheme`).
+ * The theme to render: a seasonal theme while in season, for everyone;
+ * otherwise the cookie's, or the default (`resolveTheme`).
  */
 export function getTheme(request: Request): ThemeName {
   const cookieHeader = request.headers.get("cookie");

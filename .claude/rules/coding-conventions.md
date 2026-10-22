@@ -226,23 +226,20 @@ variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
 The choice is a `theme` cookie per browser, never a database column. Each app's
 `getTheme` (`services/theme.server.ts`) resolves through `resolveTheme`, which
 returns the default for a name no longer in `themes`, so removing a theme
-needs no migration and breaks no browser that still holds it. A seasonal
-theme marked `forced` wins over any stored name while in season, so every
-browser renders it; the pickers still write the cookie, and it takes effect
-again once the season ends.
+needs no migration and breaks no browser that still holds it.
 
-A seasonal theme lives in `seasonalThemes`, not `themes`, and carries an
-`available` window (`ThemeWindow`, month and day, inside one calendar year).
-The server has no time zone for the user, so the window is open while it is in
-season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has not left `to`); a
-fixed UTC check opened it hours late east of UTC. `themes` stays the everyday
-list every picker shows (avatar menu, mobile profile, onboarding); only
-Account settings → Appearance lists `selectableThemes()`, the everyday themes
-plus any seasonal one in its window. Outside the window `themeColorValidator`
-refuses it and `resolveTheme` (which every app's `Document` renders from)
-falls back to the default. A seasonal theme lives in its own file
+A seasonal theme (`seasonalThemes`, never in `themes`) is not a choice: while
+it is in season it replaces every theme for everyone, and when the season
+ends everyone is back on their own cookie. No picker lists it and
+`themeColorValidator` refuses it. Its season is the `available` window on the
+theme (`ThemeWindow`, month and day inside one calendar year; Halloween is
+October 31 only), and that window is the only switch: no flag, no deploy on
+the day. The server has no time zone for the user, so `isInSeason` is true
+while it is the season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has
+not left `to`); a fixed UTC check turned it on hours late east of UTC. To
+preview one locally, widen its window. A seasonal theme lives in its own file
 (`halloween-theme.ts`) and declares everything about itself on the
-`SeasonalTheme` object (`forced`, its `mesh` colors, read through
+`SeasonalTheme` object (its window, its `mesh` colors read through
 `seasonalMeshColors`), so no other code names it: removing it is that file,
 its `seasonalThemes` entry and its `index.ts` export. `themes.test.ts` tests
 the window on a fixture and loops over `seasonalThemes`, so it survives the

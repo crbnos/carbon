@@ -4,14 +4,14 @@
 
 import { halloweenTheme } from "@carbon/utils";
 import { useSyncExternalStore } from "react";
-import { useFetchers } from "react-router";
 import { useRouteData } from "../hooks/useRouteData";
 
-// The one check every Halloween decoration sits behind: the root loader's
-// theme is Halloween. While it is in season the theme is forced for everyone
-// (`forced` on `halloweenTheme`); out of season the server renders the
-// stored or default theme instead (`resolveTheme`), so everything switches
-// itself off on time and nothing is rendered, styled or listened to.
+// The one check every Halloween decoration sits behind, the sign-in page's
+// Night Shift included: the root loader's theme is Halloween. That is the
+// case for everyone on Halloween (`available` on `halloweenTheme`, applied by
+// `resolveTheme`) and for no one on any other day, so everything switches on
+// and off by itself, and the rest of the year nothing is rendered, styled or
+// listened to.
 
 // Hydration never reverses, so there is nothing to listen to.
 function subscribe() {
@@ -26,15 +26,10 @@ function subscribe() {
  */
 export function useHalloween() {
   const root = useRouteData<{ theme?: string }>("/");
-  // A theme being saved from the Appearance pane counts at once.
-  const pending = useFetchers()
-    .find((fetcher) => fetcher.formData?.has("theme"))
-    ?.formData?.get("theme");
-  const theme = typeof pending === "string" ? pending : root?.theme;
   const hydrated = useSyncExternalStore(
     subscribe,
     () => true,
     () => false
   );
-  return hydrated && theme === halloweenTheme.name;
+  return hydrated && root?.theme === halloweenTheme.name;
 }

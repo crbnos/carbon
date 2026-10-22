@@ -19,8 +19,9 @@ import { useHalloween } from "./season";
 import { BatFlyby, SuccessBats } from "./Visitors";
 
 // Seasonal decoration, shared by the ERP and the MES (`@carbon/react/Halloween`).
-// Everything renders only while the Halloween theme is on (`useHalloween`,
-// season.ts); for everyone else this returns nothing.
+// Everything renders only on Halloween, when the theme is on for everyone
+// (`useHalloween`, season.ts); on any other day this returns nothing. The
+// day is `available` in packages/utils/src/halloween-theme.ts.
 //
 // To remove Halloween, the theme and every decoration:
 //   1. Delete this folder and the `./Halloween` export in
@@ -31,7 +32,7 @@ import { BatFlyby, SuccessBats } from "./Visitors";
 //   3. Delete packages/utils/src/halloween-theme.ts, its export in
 //      packages/utils/src/index.ts and its entry in `seasonalThemes`
 //      (packages/utils/src/themes.ts). The theme carries everything else
-//      (forced for everyone, its mesh colors), so nothing reads it by name.
+//      (its day, its mesh colors), so nothing reads it by name.
 //   4. Run `pnpm run lingui:extract` to drop its strings from the catalogs.
 // Typecheck flags any mount or import left behind. The `data-user-menu`,
 // `data-date` and `data-app-card` attributes the styles hang off, and
