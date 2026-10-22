@@ -5,7 +5,7 @@ paths:
   - "apps/erp/app/modules/inventory/{inventory.server,inventory.service,types}.ts"
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
-  - "apps/erp/app/modules/projects/projects.server.ts"
+  - "apps/erp/app/modules/projects/projects.service.ts"
 ---
 
 # Traceability / Genealogy Model
@@ -78,10 +78,10 @@ and MES services — NOT a single `post-production`:
   the activity its issue wrote (`uninstallServicePart`). See `field-service.md`.
 - RMA **Repair** lines (depot repair, `field-service.md`): the unit stays the customer's,
   so its serial stays `Consumed` through the whole repair; no receipt or shipment flips
-  it to `On Hold` or back. `post-receipt` (`post-receipt/repair.ts`) writes a
+  it to `On Hold` or back. `post-receipt` (`inventory/receipt-repair.ts`) writes a
   `Return Receipt` activity per serial with `{ "Sales Return Order", Receipt, Employee,
   "At Depot": true, "Service Order": <id> }` and the serial as its output. `post-shipment`
-  (`post-shipment/repair.ts`) writes one `Return Shipment` activity with
+  (`inventory/shipment-repair.ts`) writes one `Return Shipment` activity with
   `"At Depot": false` and the units as inputs. Neither writes an `itemLedger` row, and
   both voids leave the serial `Consumed`.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
@@ -118,11 +118,11 @@ other way round from what they return** — check the joins, not the name:
 
 Non-strict variants exist but include same-activity siblings — prefer strict.
 
-An `Unconsume` activity (`issue` server function) has the assembly as its input and the
+An `Unconsume` activity (the `issue` posting) has the assembly as its input and the
 returned components as its outputs, so a component given back shows up on the assembly's
 "ancestors" side. To list what an assembly still contains, net each component's `Consume`
 rows (descendants RPC) against its `Unconsume` rows (ancestors RPC), as MES
-`getTrackedInputs` and projects `loadSerialBuildNodes` (`projects.server.ts`, Build from
+`getTrackedInputs` and projects `loadSerialBuildNodes` (`projects.service.ts`, Build from
 part) do. Projects also counts a `Service` activity (a part a service order installed,
 input = the part, output = the customer asset's serial) as a `Consume`, and drops a
 component whose `customerAssetComponent` rows on the asset are all removed
@@ -239,7 +239,7 @@ sweep (the lineside bin is shared per work center). Spec:
 Projects Phase 2a stripes stock by owner on `itemLedger.projectId` (NULL = unassigned stock; see
 `inventory-system.md` → *Project stock*). `trackedEntity` has **no** `projectId`: a partial
 transfer can leave one lot in two stripes. A lot's stripe is the stripe of its ledger rows
-with the most net on-hand (`trackedEntityStripe`, `server-functions/src/lib/stock-stripes.ts`;
+with the most net on-hand (`trackedEntityStripe`, `packages/api/src/stock-stripes.ts`;
 `loadTrackedEntityStripe(s)` read it).
 
 - Every split, consumption, scrap, unconsume and convert row of a lot carries the lot's

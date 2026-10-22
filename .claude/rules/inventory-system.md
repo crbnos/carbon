@@ -1,6 +1,7 @@
 ---
 paths:
   - "apps/erp/app/modules/inventory/**"
+  - "packages/api/src/stock-stripes.ts"
   - "packages/database/supabase/migrations/**"
 ---
 
@@ -50,8 +51,8 @@ Key service functions (verified):
   decreases, the three `post-shipment` COGS calls (`leavingTrackedEntityIds` over the
   shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
-  Pinned by `lib/cost-layer-order.test.ts` and the database test
-  `lib/calculate-cogs.test.ts`. **Children of a layer** (`appliesToCostLedgerId`,
+  Pinned by `apps/erp/test/database/lib/cost-layer-order.test.ts` and the database test
+  `apps/erp/test/database/lib/calculate-cogs.test.ts`. **Children of a layer** (`appliesToCostLedgerId`,
   `adjustment = true`: purchase price variance, a refurbishment's `Revaluation` and
   write-down) are applied with their parent. On an unstamped layer the children cover
   its units in turn (`createdAt` order, each only up to the quantity taken). On a layer
@@ -60,19 +61,16 @@ Key service functions (verified):
   it issues only untracked material, so it takes unstamped layers first and a stamped
   layer last, and it applies every open child of a stamped layer in full. Pinned by
   `supabase/tests/backflush-layer-children.test.sql`.
-  **Refurbishment** (`complete-service-order`, Field Service Phase C): a serial with no
+  **Refurbishment** (`completeServiceOrder`, `service.service.ts`, Field Service Phase C): a serial with no
   layer of its own gets one by a **split** of the layer `calculateCOGS` takes next
   (oldest unstamped under FIFO, newest under LIFO): 1 unit of quantity, remaining
   quantity and cost moves to a new stamped layer, and the unit's share of the source's
   open children moves with it (`planRefurbishmentCompletion`,
-  `complete-service-order/plan.ts`). No value changes and no journal posts; the WIP then
+  `service/refurbishment-completion-plan.ts`). No value changes and no journal posts; the WIP then
   lands as a `Revaluation` child. **`get_inventory_valuation`** (migration
   `20261021003000_valuation-child-rows.sql`) counts only parent rows as layers and adds each
   open child's remaining cost to its parent; it counted an open child as a layer of its
   own before.
-  **Serial unit cost and Recost.** `preview-serial-unit-costs` (`{ itemId,
-  Pinned by `apps/erp/test/database/lib/cost-layer-order.test.ts` and the database test
-  `apps/erp/test/database/lib/calculate-cogs.test.ts`.
   **Serial unit cost and Recost.** `previewSerialUnitCosts` (`inventory.service.ts`,
   ported from the `preview-serial-unit-costs` server function; `{ itemId,
   locationId? }`, `view: accounting`) values every on-hand serial of an item
@@ -228,7 +226,7 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
 - **The stripe set of a demand.** A job or a plan line of a project with project stock draws
   that project's stock, then unassigned stock. Every other demand draws unassigned stock only.
   Another project's stock needs a Transfer or a Borrow first. The helpers are in
-  `packages/server-functions/src/lib/stock-stripes.ts`: `stripesForDemand`,
+  `packages/api/src/stock-stripes.ts` (`@carbon/api/stock-stripes`, shared with the MES): `stripesForDemand`,
   `loadDemandStripes`, `splitAcrossStripes` / `drawFromStripes` (one row per stripe drawn),
   `itemLedgerInStripes`, `stripeKey` (`''` for unassigned stock), `assertEntitiesInStripes`,
   `assertEntitiesInCommonStock`, `loadProjectStock`, `withStripe`.
@@ -239,7 +237,8 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   `itemLedger` insert fails, so they always apply together.
 - **Costing.** `calculateCOGS` takes `projectId` and relieves only that stripe's layers; the SQL
   backflush (`20261021003900`) and job completion (`20261021004100`) follow it.
-  `bookAdjustment`, `buildItemLedgerRow` and `buildCostLedgerRow` take `projectId`.
+  `bookAdjustment`, `buildItemLedgerRow` and `buildCostLedgerRow` take `projectId` (all in
+  `shared/shared.service.ts`).
 - **Pickers.** `get_available_tracked_entities` takes `p_project_ids`;
   `get_item_quantities_by_tracking_id` returns `projectId`; the picking-list RPCs and
   `get_picking_schedule` read the line's or job's stripes (`20261021004000`,
@@ -256,17 +255,19 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   with a trailing `projectId`. `get_inventory_tie_out`, `get_item_ledger_balance` and
   `get_inventory_value_by_location` still sum every stripe. The quantities page takes
   `?project` (absent, `common` or a project id) and the item's storage-unit card groups rows
-  by owner. `post-inventory-adjustment` takes `projectId` for untracked stock and a new lot.
+  by owner. `postInventoryAdjustment` takes `projectId` for untracked stock and a new lot
+  (`postInventoryAdjustmentInput`, `@carbon/api/postings`).
 - **Planning** nets a project with project stock in its own segment, and a planning group's
   members in the group's segment (Projects Phase 2b and 3, `mrp-system.md`).
 - **Grouped receipts and completions** (Projects Phase 3). A PO line or job with
   `planningGroupId` is received or completed into its members' stripes by its pegs:
   `harden_pegs_for_supply` returns one row per member plus the excess (the exception project,
-  else unassigned stock), and `post-receipt` / `complete_job_to_inventory` write one item ledger
+  else unassigned stock), and `postReceipt` (`inventory/grouped-receipt.ts`) /
+  `complete_job_to_inventory` write one item ledger
   row and one cost layer per row, at the receipt's or the job's unit cost. A negative receipt
   takes units back through `soften_pegs_for_return`. Details: `projects-system.md` →
   *Planning groups, pegging and distribution*.
-- **Transfer, Borrow, Payback** post through `post-project-stock-transfer`; the costing is in
+- **Transfer, Borrow, Payback** post through `postProjectStockTransfer` (`projects.service.ts`); the costing is in
   `projects-system.md` → *Project stock*.
 
 ## Gotchas
@@ -283,10 +284,8 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
 - **`get_inventory_quantities` has many revisions.** Always read the newest (`20261021004300`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
-- **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —
-  it still lists `getShelf`/`getDefaultShelfForJob`. The real service exports `getStorageUnit*` /
-  `getDefaultStorageUnitForJob`. Trust the service file.
-- **An RMA Repair line moves no stock.** `post-receipt` and `post-shipment` branch on
+- **An RMA Repair line moves no stock.** `postReceipt` and `postShipment` (`inventory.service.ts`,
+  helpers `receipt-repair.ts` / `shipment-repair.ts`) branch on
   `salesReturnOrderLine.disposition = 'Repair'`: no `itemLedger` row, no cost layer, no
   journal, and the serial stays `Consumed`. The receipt still counts `quantityReceived`;
   the shipment ships only units whose Depot Repair order is Completed or Closed. Every

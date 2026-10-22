@@ -61,7 +61,7 @@ ledger cost without Burden rows, and Soft or Manual `projectPeg` rows on open PO
 lines (as `get_project_cost_summary` counts them). A saved PO line's own
 commitment is left out (`excludePurchaseOrderLineIds`).
 
-Where it runs, through `checkProjectBudget` (`projects.server.ts`):
+Where it runs, through `checkProjectBudget` (`projects.service.ts`):
 
 - PO line save (`$orderId.new.tsx`, `$orderId.$lineId.details.tsx`) and PO
   finalize (`$orderId.finalize.tsx`);
@@ -75,7 +75,7 @@ Block refuses the save; Warn saves and adds the overrun to the flash (C4).
 6-404.6(10)). `checkTimesheetBudget` costs hours at the labor category rate on the
 entry date. Warn and Block both give a warning; Block also sends
 `NotificationEvent.ProjectBudgetExceeded` to the project owner. Each app wraps it
-in a `timesheetBudgetWarning` that never throws (ERP `projects.server.ts`, MES
+in a `timesheetBudgetWarning` that never throws (ERP `projects.service.ts`, MES
 `services/project-budget.server.ts`). The callers are My Time
 (`timesheet.update.tsx`), Log time, the manager edit route
 (`timesheets.$employeeId.tsx`), service time (`service-order+/$id.charge.tsx`,
@@ -154,8 +154,8 @@ menu and the MCP tool cannot bypass Resume. The header shows the order date, the
 90-day end (`stopWorkEnd`) and the days left (`stopWorkDaysLeft`).
 
 On Hold refuses new time (`heldProjectRefusal`, `@carbon/utils` `timekeeping.ts`):
-the charge-number picker lists only Released projects; `save-timesheet-entry`
-refuses more hours on a row already on a timesheet; `createTimesheetCorrection`
+the charge-number picker lists only Released projects; the `save-timesheet-entry`
+posting refuses more hours on a row already on a timesheet; `createTimesheetCorrection`
 refuses a transfer onto the project or more hours on it. Under a stop-work order
 only time dated on or after `stopWorkDate` is refused. Fewer hours is a
 correction and is allowed. A PO line or a job on an On Hold project is not

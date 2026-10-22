@@ -15,7 +15,7 @@ paths:
   - "packages/database/supabase/migrations/*rental-agreements*"
   - "packages/database/supabase/migrations/*lease-enum*"
   - "packages/database/supabase/migrations/*lessor-schedule*"
-  - "packages/server-functions/src/lib/project-cip.ts"
+  - "apps/erp/app/modules/projects/project-cip.ts"
 ---
 
 # Fixed Asset Lifecycle
@@ -425,18 +425,19 @@ Closed; `$fixedAssetId.capitalize` offers only non-CIP classes.
 
 **Capital projects** (projects Phase 1b, `.claude/rules/projects-system.md`). A
 project with `costTreatment` Capitalize names a CIP class (`project.fixedAssetClassId`).
-`ensureCapitalAssets` (`projects.server.ts`) creates one Under Construction asset
+`ensureCapitalAssets` (`projects.service.ts`) creates one Under Construction asset
 for the project and one per element with `isFinalAsset`, at cost 0 in that class,
 on release and when an element becomes a final asset; it is safe to call again.
 Every project cost source writes a CIP row next to its `projectLedger` row through
-`writeProjectCipRows` (`server-functions/src/lib/project-cip.ts`), which also raises
+`writeProjectCipRows` (`apps/erp/app/modules/projects/project-cip.ts`), which also raises
 `acquisitionCost`: `post-timesheet` (`'Timesheet'`), `post-project-issue`
 (`'Project Issue'`), `post-receipt` / `post-purchase-invoice` (`'Receipt'` /
 `'Purchase Invoice'`), charges and reimbursements. A job whose charge number
 resolves to Capitalize carries `job.fixedAssetId` and uses the job-to-CIP sweep
 above. The asset a cost lands on is the nearest final-asset ancestor's, else the
-project's (`capitalAssetId`, `lib/project-posting.ts`; SQL `project_posting_account`).
-**Place in service** (`$projectId.place-in-service.tsx`) runs `capitalizeCip` once
+project's (`capitalAssetId`, `projects/project-posting.ts`; SQL `project_posting_account`).
+**Place in service** (`$projectId.place-in-service.tsx` → the
+`placeProjectAssetsInService` operation) runs a `capitalizeCip` asset transfer once
 per selected asset, then completes the final-asset elements and their descendants.
 A cost posted after its asset went into service debits the in-service class
 account, writes a CIP row with `postCapitalization` true and raises
@@ -454,8 +455,6 @@ rest of the life. Every other asset keeps the `depreciableBase / life` schedule 
 for byte; applying the basis to all assets would shift existing schedules by rounding
 and change mid-life registrations (an open decision, see the projects Phase 1b plan).
 
-**post-asset-transfer** (`packages/server-functions/src/post-asset-transfer/index.ts`,
-`validators.ts` = the zod contract + pure helpers). One `fixedAssetTransfer`
 **post-asset-transfer** (`postAssetTransfer` in `accounting.service.ts`, ported
 from the server function, with its zod contract and pure helpers). One `fixedAssetTransfer`
 document per call, created and Posted in ONE transaction; the function's permissions are keyed by

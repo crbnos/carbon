@@ -126,8 +126,9 @@ Phase-7 write) and throws on failure.
    `runMRP(client, db, params)` lives in
    `apps/erp/app/modules/production/production.service.ts`; it dynamic-imports
    `runMrp` from `@carbon/planning`, calls it **in-process** with the Kysely
-   handle the route passed in (never built in the service file), and preserves
-   the `{ data, error }` shape (catching the throw). The planning tables submit
+   handle the route passed in (never built in the service file) and the
+   planning group deps (`planningGroupMrpDeps`, `@carbon/ee/pegging.server`), and
+   preserves the `{ data, error }` shape (catching the throw). The planning tables submit
    to this via `path.to.api.mrp(locationId)`. The API / MCP's `production_runMRP`
    (`runMRP` in `production.server.ts`) runs the same with the service role and
    the same `update: "inventory"`.
@@ -337,7 +338,7 @@ project stock gets output identical to before, row for row.
 - **Apply.** An Order or Make in a segment is placed through the grids'
   `order` intent with the row's `planningSegmentId`: the PO line gets
   `projectId`, the job gets `projectId` and `receiveToProjectStock`. Apply of a
-  Transfer runs `applyTransferPlanningActions` (`projects.server.ts`, needs
+  Transfer runs `applyTransferPlanningActions` (`projects.service.ts`, needs
   `update: projects`): one transaction claims the actions and creates a Draft
   `projectStockTransfer` with one line each, readable ids from the
   `projectStockTransfer` sequence, and sets `planningAction.projectStockTransferId`.
@@ -359,7 +360,8 @@ The pure functions are in `packages/ee/src/pegging/mrp-pegging.ts`
 (`@carbon/ee/pegging`) and the writer in `peg-writer.ts`
 (`@carbon/ee/pegging.server`). `@carbon/planning` imports the pure functions
 lazily. It never imports a `.server` module: the caller injects the feature
-check and the writer as `runMrp`'s `deps` (`planningGroupMrpDeps`). It is the
+check and the writer as `runMrp`'s `deps` (`planningGroupMrpDeps`, passed by
+`runMRP` in `production.service.ts`). It is the
 one gate in this package (`packages/planning/AGENTS.md`). The posting side
 (receipt, completion, variance) is in `projects-system.md`.
 
@@ -409,9 +411,10 @@ one gate in this package (`packages/planning/AGENTS.md`). The posting side
   its own shortfall lends nothing. `applyMemberMoves` moves the stock in the
   peg input before pegging; the group total does not change.
 - **Apply.** An Order or Make in a group segment creates a PO line or job with
-  `planningGroupId` and no project (`getPlanningSegmentOwners`). The route
-  matches each settled action to its new supply and calls
-  `moveActionPegsToSupply` (`projects.server.ts`): one transaction supersedes
+  `planningGroupId` and no project (`getPlanningSegmentOwners`). The order
+  operation (`orderPlannedPurchases` in `purchasing.server.ts`, `orderPlannedJobs`
+  in `production.server.ts`) matches each settled action to its new supply and calls
+  `moveActionPegsToSupply` (`projects.service.ts`): one transaction supersedes
   the action's pegs and copies them onto the PO line or job. If it fails, the
   order stands and the next run re-pegs.
 - **History.** Every peg row stays. The pegs current at an instant are

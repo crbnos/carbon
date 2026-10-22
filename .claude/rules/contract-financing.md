@@ -23,7 +23,7 @@ Feature `GOVERNMENT_CONTRACTING`. The engine is ee code:
 | Module | What it holds |
 |---|---|
 | `@carbon/ee/contract-financing` (`index.ts`) | Client-safe: the pure engine (`compute.ts`: `computeSf1443`, `lossRatio`, `rateOn`, `expectedLiquidation`, `unliquidatedBalance`, `buildPbpRequest`), validators and labels (`models.ts`), row types (`types.ts`, from `@carbon/database` only) |
-| `@carbon/ee/contract-financing.server` (`server.ts`) | Authoring (each calls `requireEntitlement` first), the readers `getContractFinancing`, `getFinancingRequest`, `loadSf1443Inputs`, and the degrading `getExpectedLiquidation` |
+| `@carbon/ee/contract-financing.server` (`server.ts`, re-exports `service.server.ts`) | Authoring (each calls `requireEntitlement` first), the readers `getContractFinancing`, `getFinancingRequest`, `loadSf1443Inputs`, and the degrading `getExpectedLiquidation` |
 
 Refusals are `FinancingError`; the routes flash its message. The UI is
 `ContractFinancing.ee.tsx` (terms, rates, events, requests) and
@@ -63,7 +63,7 @@ The government's payment is a customer deposit held against the contract:
 `payment.customerContractId`, the third deposit scope beside the sales order
 and the rental agreement (`payment_deposit_document_check` allows one). It
 posts to `accountDefault.prepaymentAccount` like any deposit
-(`journal-input.ts` `isDeposit`).
+(`isDeposit` in `paymentKind`, `invoicing.service.ts`).
 
 A contract's invoices are those with the contract on the header, on a line,
 or on a line of the contract's own sales order (`customerContract.salesOrderId`).

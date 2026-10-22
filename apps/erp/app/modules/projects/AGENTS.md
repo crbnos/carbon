@@ -3,6 +3,19 @@
 Engineering and contract projects: a tree of typed elements, the charge numbers that
 jobs, PO lines, invoices, time and issues post to, and the project ledger that sums them.
 
+Files (`.claude/rules/module-files.md`): `projects.server.ts` holds only the module's
+`defineServiceFn` operations (`api.projects.<name>`, MCP `projects_<name>` when tagged
+`@mcp`); `projects.service.ts` holds every building block, including the posting bodies
+`postTimesheet`, `saveTimesheetEntry`, `submitTimesheetWeek`, `postProjectIssue`,
+`postProjectExpense`, `postProjectStockTransfer`, `reclassProjectCoverage` and
+`postProjectBurden` (each with its `<name>Input` and `<name>Permission`);
+`projects.models.ts` the validators and pure helpers; `types.ts` the shared types; `projects.utils.ts` the two reads a
+component runs in the browser (`getCipFixedAssetClasses`, `getPlanningGroupsList`).
+Plain server-only files: `project-posting.ts` (the posting context, accounts, charge
+gates, ledger rows and contract billable items every module's posting uses),
+`project-cip.ts` (CIP rows), `project-journal.ts` (`postProjectJournal`),
+`timesheet-posting-plan.ts`, `stock-transfer-plan.ts`, `service-part-issue.ts`.
+
 ## Key Domain Concepts
 
 - **Project** — `project` row with an `identifier` (`^[A-Z][A-Z0-9]{1,5}$`, unique per
@@ -16,7 +29,7 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   (`trackedEntityId`).
 - **State** — company-wide `projectState` in five groups (Backlog, Unstarted, Started,
   Completed, Cancelled), one default per group per company, edited in Settings → Projects
-  (`ProjectStatesGrid`). `seed-company` inserts the six `projectStates` of
+  (`ProjectStatesGrid`). `seedCompany` (`settings.service.ts`) inserts the six `projectStates` of
   `@carbon/database/seed-data`; a project or service order seeds none. Labels
   (`projectLabel`) are company-wide too (`ProjectLabelsGrid`).
 - **Charge number** — a project, or a project plus element (`ChargeNumber` picker,
@@ -69,9 +82,10 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 ## Safety
 
 ### Always
-- MUST create a project with `createProject` (`projects.server.ts`) — it inserts the Draft
+- MUST create a project with `createProject` (`projects.service.ts`, behind the
+  `createProject` operation) — it inserts the Draft
   project in one transaction. States are company-wide, so it seeds none;
-  `insertProjectElement` needs the company's default Unstarted state (`seed-company` inserts
+  `insertProjectElement` needs the company's default Unstarted state (`seedCompany` inserts
   it).
 - MUST insert elements with `insertProjectElement` and move them with `moveProjectElement` —
   they allocate `readableId`, refuse a cycle, and refuse a non-Parameter child under a
@@ -79,16 +93,25 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   and advance `nextElementSequence` in the same transaction.
 - MUST call `ensureCapitalAssets` before a Capitalize project becomes Released — a
   Capitalize charge with no asset under construction is refused.
-- MUST post time with `postTimesheetEntries` and issues with `postProjectIssue` — they call
-  the `post-timesheet` / `post-project-issue` server functions with `serverFns.system`.
-- MUST validate a document's charge number with `chargeNumberError` in the route action.
-- MUST post a project stock transfer with `postProjectStockTransfer` (`projects.server.ts`,
-  `post-project-stock-transfer`) and approve or cancel it with
-  `updateProjectStockTransferStatus` — Approve runs the government-furnished guard.
+- MUST post time with `postTimesheetEntries(ctx, { timesheetEntryIds })` and issues with
+  `invokePostProjectIssue(ctx, input)` (both `projects.service.ts`) — they run the
+  `post-timesheet` / `post-project-issue` bodies through `invokePosting` and return an
+  error message or null. An operation that runs one body itself uses `run(ctx, …)`.
+- MUST validate a document's charge number with `chargeNumberError` / `chargeNumbersError`
+  (`projects.service.ts`) before the write: in the operation (`createJob`,
+  `updateJobDetails`, `createPurchaseInvoiceLine`, `saveReimbursement`, …), or in the route
+  action where the route still calls a building block (the PO line routes).
+- MUST post a project stock transfer through the `updateProjectStockTransferStatus`
+  operation (`action: "post"`, which runs `postProjectStockTransfer`, the
+  `post-project-stock-transfer` posting) and approve or cancel it with the same
+  operation — Approve runs the government-furnished guard.
 - MUST store unassigned stock as a null owner: the owner pickers send `COMMON_STOCK_OWNER`
   (`common`), and the routes map it with `toStockOwner`.
 - MUST pass `db` (Kysely) from the route to `deleteProjectState`, `setProjectStateDefault`
-  (both called by `settings+/projects.tsx`) and the `projects.server.ts` functions.
+  (both called by `settings+/projects.tsx`) and to the building blocks that take one
+  (`getProjectElementPage`, `getChangeRequestReview`, `timesheetBudgetWarning`,
+  `applyTransferPlanningActions`, …); an operation passes `ctx.asSystem.pg`. A service
+  file never builds a DB client (`no-db-client-in-service`).
 - MUST route every plan-layer write through `readChangeRequestId` +
   `requireEditablePlanRoute`, and send the open change request from the UI with
   `withChangeRequest` — a write that skips them bypasses the draft and the plan lock.
@@ -104,21 +127,26 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   `postCapitalization` CIP row; applying it to all assets changes existing schedules.
 
 ### Never
-- Never write `projectLedger` from the ERP — only the server functions and the job SQL do.
-- Never write `itemLedger` / `costLedger` rows of a project stock move from the ERP — only
-  `post-project-stock-transfer` does. Never change `projectStock` past Draft.
+- Never write `projectLedger` outside a posting body — only the posting bodies (through
+  `insertProjectLedgerRows`, `project-posting.ts`) and the job SQL do.
+- Never write `itemLedger` / `costLedger` rows of a project stock move outside
+  `postProjectStockTransfer` (the `post-project-stock-transfer` posting). Never change `projectStock` past Draft.
 - Never update a Posted `timesheetEntry` — use `createTimesheetCorrection`.
 - Never write a bare PostgREST embed from `job` or `purchaseOrderLine` — name the FK
   (`item!job_itemId_fkey`). The project FKs push bare embeds past TS2589.
 - Never write a `feeds` link outside `saveParameterFormula` — the formula owns them.
 - Never call projects code from `packages/ee` — the approvals engine only flips the change
-  request status; the ERP route runs `applyChangeRequest`.
+  request status; the `updateProjectChangeRequestStatus` operation runs `applyChangeRequest`.
 
 ## Validation Commands
 ```bash
 pnpm exec turbo run typecheck --filter=erp
-pnpm --filter erp test   # apps/erp/test/projects-*.test.ts
-pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-issue, project-*.test.ts
+pnpm --filter erp test   # apps/erp/test/projects-*.test.ts and the module's pure tests
+# live-database posting tests (need the local stack):
+cd apps/erp && npx vitest run test/database/post-timesheet test/database/save-timesheet-entry \
+  test/database/submit-timesheet-week test/database/post-project-issue test/database/post-project-expense \
+  test/database/post-project-stock-transfer test/database/reclass-project-coverage \
+  test/database/post-project-burden test/database/lib/project-posting.test.ts
 ```
 
 ## Key Data Model
@@ -155,64 +183,70 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `projectPeg` | Versioned pegs: supply (`supplyType`, `supplyId`), member demand, `state`, `supersededAt`, `hardenedAt`, `itemLedgerId` |
 
 ## Key Service Functions
+Building blocks in `projects.service.ts` unless marked (models, utils). Most have an
+operation of the same name in `projects.server.ts`.
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
 - `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs page. `getChildServiceProjectCosts` (`get_child_service_project_costs`) adds the service orders of a contract project; their actual goes to the project total through `buildProjectCostFigures`'s third argument.
-- `getProjectElementPage` (`.server`) — everything the element page loads, in parallel.
+- `getProjectElementPage` — everything the element page loads, in parallel.
 - `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
-- `saveTimesheetEntry`, `submitTimesheetWeek` (`.server`) — the grid saves a cell and
-  submits a week through the `save-timesheet-entry` and `submit-timesheet-week` server
-  functions, which hold the DCAA rules for the ERP and the MES. Log time and service
-  time call `saveTimesheetEntry` with `mode: "add"`: one new entry each time (Log time
-  Submitted in Standard mode, service time Draft with its visit); the route posts it.
-  In DCAA mode the server function saves the owner's Log time entry as Draft, so it
-  waits for the weekly certification, and the route does not post it.
+- `saveTimesheetEntry`, `submitTimesheetWeek` — the posting bodies of
+  `save-timesheet-entry` and `submit-timesheet-week`, which hold the DCAA rules for the
+  ERP and the MES. The grid saves a cell and submits a week through the operations of the
+  same name. Log time (the `logTimesheetEntry` operation) and service time (the service
+  module's `logServiceTime`) save with `mode: "add"`: one new entry each time (Log time
+  Submitted in Standard mode, service time Draft with its visit); the operation then posts
+  it. In DCAA mode the body saves the owner's Log time entry as Draft, so it waits for the
+  weekly certification, and the operation does not post it. `invokeSaveTimesheetEntry` +
+  `saveTimesheetEntryPostingInput` (form blanks to null) wrap the body for other callers.
 - `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the
   rest of the timesheet flow. A correction on another charge number is a labor transfer
   (`correctionOfId`); `assertCanApprove` refuses its requester as approver in DCAA mode.
 - `updateProjectStatus` — refuses Close while a PO or job of the project is open.
-- `getProjectVerification` (`.server`) — links, item values (`getProjectItemValues`) and
+- `getProjectVerification` — links, item values (`getProjectItemValues`) and
   `computeVerification` for a project.
-- `saveParameterFormula` (`.server`) — parses a formula, refuses a cycle, rewrites the
+- `saveParameterFormula` — parses a formula, refuses a cycle, rewrites the
   `feeds` links.
-- `ensureCapitalAssets`, `getProjectCapitalAssets`, `completeElementSubtrees` (`.server`) —
+- `ensureCapitalAssets`, `getProjectCapitalAssets`, `completeElementSubtrees` —
   capital project assets and Place in service.
-- `copyProject` (`.server`) / `planProjectCopy` (models) — templates.
-- `buildElementsFromPart`, `previewBuildFromPart` (`.server`) / `planElementsFromSource`
+- `copyProject` / `planProjectCopy` (models) — templates.
+- `buildElementsFromPart`, `previewBuildFromPart` / `planElementsFromSource`
   (models) — Build from part.
 - `parseElementFilters`, `canonicalElementsParams`, `elementLayoutFromParams`
   (models) — the Plan page's filters (`filter=type:eq:…` for the Type filter;
   the old `?type=` still reads) and its layouts (List, Tree, Reader).
 - `getProjectWbsNodes` (service); `pinProjectWbsCodes`, `renumberWbsSubtree`,
   `insertElementsFromWbsTemplate` (via `createProject`'s `wbsTemplateKey`),
-  `importProjectWbs` (`.server`); `elementWbsCodes`, `toWbsCsvRows`, `readWbsCsv`,
+  `importProjectWbs`; `elementWbsCodes`, `toWbsCsvRows`, `readWbsCsv`,
   `buildMspdiXml` (models) — WBS codes, CSV import and export, MS Project XML.
-- `loadPlanSnapshot`, `createProjectBaseline` / `insertProjectBaseline` (`.server`),
+- `loadPlanSnapshot`, `createProjectBaseline` / `insertProjectBaseline`,
   `getProjectBaselines`, `getProjectBaseline`, `diffPlanSnapshots` (models) — baselines.
 - `createChangeRequest`, `upsertChangeRequestItems`, `loadChangeRequestOverlay`,
   `applyChangeRequest`, `reopenChangeRequest`, `setChangeRequestStatus`,
-  `getChangeRequestReview` (`.server`); `applyChangeRequestItems`,
+  `getChangeRequestReview`; `applyChangeRequestItems`,
   `mergeChangeRequestItem`, `findConflicts`, `rebaseChangeRequestItems` (models) — change
   requests.
-- `requireProjectPlanEditable`, `requireEditablePlanRoute` (`.server`),
+- `requireProjectPlanEditable`, `requireEditablePlanRoute`,
   `isProjectPlanLocked` (models) — the plan lock.
 - `getProjectStockTransfers`, `getProjectStockTransfer`, `getProjectStockTransferLines`,
   `upsertProjectStockTransfer` (Draft only), `upsertProjectStockTransferLine`,
   `deleteProjectStockTransferLine`, `updateProjectStockTransferStatus`, `getProjectBorrows`,
-  `getStockOwnerProjects`; `postProjectStockTransfer`, `getProjectStockOnHand` (`.server`);
+  `getStockOwnerProjects`; `postProjectStockTransfer`, `getProjectStockOnHand`;
   `projectStockTransferValidator`, `projectStockTransferLineValidator`,
   `governmentFurnishedRefusal`, `isBorrowOverdue` (models) — project stock.
   `getProjectBorrows` filters by project, status, `locationId` and `dueBefore` (the
   overdue borrows of the project Overview and the planning worklists).
-- `applyTransferPlanningActions`, `createProjectStockTransfersFromActions` (`.server`) —
+- `applyTransferPlanningActions`, `createProjectStockTransfersFromActions` —
   Apply of Transfer planning actions from both planning routes: needs `update: projects`;
   one transaction claims the actions and creates one Draft transfer each, readable ids
-  from the `projectStockTransfer` sequence. Kept out of the service so it is no MCP tool.
+  from the `projectStockTransfer` sequence. The planning operations call it with
+  `ctx.asSystem.pg`; no operation of its own publishes it, so it is no MCP tool.
 - `getPlanningGroups`, `getPlanningGroupsList`, `getPlanningGroup`, `getPlanningGroupMembers`,
   `deletePlanningGroup` (no plan check), `getProjectPegs` (current, or `asOf` for history),
   `getPlanningGroupOpenSupplies`; `planningGroupValidator`, `manualPegValidator` (models) —
   Phase 3. The commercial writes live in `@carbon/ee/pegging.server`: `upsertPlanningGroup`
-  and `createManualPeg` call `requireEntitlement` first; routes call `requireFeature` and turn
-  an `EntitlementError` into a flash.
+  and `createManualPeg` call `requireEntitlement` first. The operations of the same name
+  (`projects.server.ts`) turn an `EntitlementError` into an `entitlement` refusal; the
+  routes also call `requireFeature`.
 - `getContractBillableItems` (rows typed `ContractBillableItemRow`), `getContractBillingLines`,
   `getProjectBillingElements`, `updateProjectBillableItems` (hold, release, write off,
   price; refuses Billed and Written Off items); `billableItemActionValidator` (models) —
@@ -233,7 +267,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   `ContractProjectBilling`.
 - `getProjectMembers`, `addProjectMember`, `removeProjectMember`;
   `getTimesheetRevisions`, `getPendingReviewEntries`, `acceptTimesheetReview`;
-  `getTimesheetWeekView` (`.server`, shared by My Time and the manager's employee
+  `getTimesheetWeekView` (shared by My Time and the manager's employee
   timesheet page `projects+/timesheets.$employeeId.tsx`) — DCAA timekeeping (5a).
 - `getLateTimesheetEntries`, `getMissingTimesheetDays`, `getLaborTransfers`,
   `getTimesheetAuditRows`, `getLaborDistributionRows`, `getLaborDistributionPeriods`,
@@ -247,7 +281,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   (Government Contracting 5d). The role and type labels are hooks in
   `ui/RdTax/useRdTaxLabels.ts`; the element page's type pickers use `PropertySelect`
   (`ui/Element/PropertyFields.tsx`).
-- `getPlanningSegmentOwners`, `moveActionPegsToSupply` (`.server`) — the planning routes'
+- `getPlanningSegmentOwners`, `moveActionPegsToSupply` — the planning routes'
   Apply in a group segment: the owner of each segment, and one transaction that moves an
   action's pegs onto the PO line or job it created.
 
@@ -256,7 +290,7 @@ The screens open in layers (`.claude/rules/projects-system.md` → *Information 
 plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
 - `ui/useProjectsSubmodules.tsx` — the module sidebar: Projects, My Time, Approvals (with a
   count, while time approval or DCAA is on or contract billable items wait for review;
-  `getBillingReviewCountForUser`, `projects.server.ts`), Reports; Setup: Labor Categories, Planning
+  `getBillingReviewCountForUser`, `projects.service.ts`), Reports; Setup: Labor Categories, Planning
   Groups. `ui/useGovernmentContracting.ts` — shows the government fields (Layer 5):
   `useGovernmentContracting` (DCAA or the feature) for most screens, and
   `useGovernmentContractingFields` for the element page's group (DCAA and the feature; DCAA
@@ -311,14 +345,16 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
   Project Expense; journal sources `Timesheet` and `Project Issue`; CIP assets, `capitalizeCip`
   and the remaining-life Straight Line for capital projects.
 - **items / inventory** — part links, `getMethodTree` and the lineage RPCs for Build from part,
-  `getMethodMaterialsByMakeMethod` for the Issue Material BOM picks; project stock stripes
-  (`inventory-system.md` → *Project stock*), the quantities page's owner filter and the
+  the `methodMaterial` read of the Issue Material BOM picks (`IssueMaterialModal`); project
+  stock stripes (`@carbon/api/stock-stripes`, `inventory-system.md` → *Project stock*),
+  the quantities page's owner filter and the
   count lines' Stock Owner column.
 - **integrations (ee issue-sync)** — any element links to one Linear or Jira issue from
   the element page header (`ElementView`, the shared `components/ActionTasks` dialogs);
   the engine is `@carbon/ee/issue-sync` (`.claude/rules/issue-sync.md`).
-- **MES** — saves and submits time through the same `save-timesheet-entry` and
-  `submit-timesheet-week` server functions (`serverFns.system`).
+- **MES** — saves, submits and posts time through the same `save-timesheet-entry`,
+  `submit-timesheet-week` and `post-timesheet` postings, with `erpPosting`
+  (`apps/mes/app/services/erp.ts`, as the system; the schemas are in `@carbon/api/postings`).
 
 ## Rules References
 - `.claude/rules/projects-system.md` — posting, charge gates, ids, consume-to-project jobs,
@@ -333,5 +369,6 @@ plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
 - `.claude/rules/government-contracting.md` — cost objectives, unallowable cost, DCAA
   timekeeping, dilution, labor transfers, payroll totals, CLIN funding and the reports.
 - `.claude/rules/accounting-sync-handlers.md` — how the new journal sources sync.
-- `.claude/rules/database-patterns.md` — Kysely transactions and server functions.
+- `.claude/rules/database-patterns.md` — Kysely transactions.
+- `.claude/rules/module-files.md` — operations, building blocks and ported postings.
 - `.claude/rules/issue-sync.md` — the Linear and Jira sync of elements.

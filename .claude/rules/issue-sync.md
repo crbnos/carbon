@@ -29,7 +29,7 @@ names each table that can link to an issue, and the columns the sync reads:
 | `projectElement` (every type) | `projectId` | `description` | title (`name`), description, status (state group), assignee (`ownerId`), priority, dueDate (`targetDate`) | `update: projects` |
 
 It replaced `@carbon/ee/action-task-entity` (`actionTaskEntities`); the routes and
-`getActionTaskWithParent` (`shared.server.ts`) read it. `detailPath(parentId, id)`
+`getActionTaskWithParent` (`shared.service.ts`) read it. `detailPath(parentId, id)`
 is the Carbon back-link on the issue.
 
 ## The link and its sync snapshot
@@ -77,7 +77,7 @@ drops the snapshot.
    fields (`trackers/linear.server.ts`, `trackers/jira.server.ts`), reads the issue
    back, and stores what the tracker really holds as `remote`.
 
-So any writer reaches the tracker: routes, MCP, the API, workflows, server functions
+So any writer reaches the tracker: routes, MCP, the API, workflows, postings
 and the supplier portal. `dispatch_event_batch` skips `ISSUE_SYNC` while
 `app.sync_in_progress` is set, so a dataset apply or a restore pushes nothing.
 
@@ -146,10 +146,10 @@ issue.
   (`ElementPlanLines` `toolbarExtras`, from `ElementView.tsx`); a Parameter, which has
   no Plan section, shows them in the header. The project element page and the service
   order work page (`service-order+/$id_.work.$elementId.tsx`) read the links with
-  `getRecordIssueLinks` (`shared.server.ts`).
+  `getRecordIssueLinks` (`shared.service.ts`).
 - Link Existing opens with the 10 most recently updated issues (`listRecentIssues`;
   Jira: `searchIssues` with no text) and searches as the user types. Create New starts
   from the record's title and description (`getNewIssueDefaults`, Markdown). `projectElementLinkRefusal`
-  (`shared.server.ts`) refuses a link on a Closed project.
+  (`shared.service.ts`) refuses a link on a Closed project.
 - Start date, labels, milestone and the parent link do not sync.
 

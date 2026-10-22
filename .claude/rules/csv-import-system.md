@@ -98,7 +98,7 @@ The import's own `table` enum (`importCsvInput`, `shared.service.ts`) accepts: `
 ### Payroll totals import (upsert per employee and period)
 
 `payrollPeriodTotal` (Government Contracting 5a, `government-contracting.md`) is handled
-by `import-csv/payroll-total-import.ts`. The wizard sends column names, so
+by `importPayrollTotals` (`apps/erp/app/modules/shared/payroll-total-import.ts`). The wizard sends column names, so
 `importSchemas.payrollPeriodTotal` declares each field as a required column string; the
 pure `readPayrollTotalRow` checks the values: a real `YYYY-MM-DD` for both dates,
 `periodEnd >= periodStart`, and wages and hours of 0 or more ("4,200.00" and "$4,200.00"
@@ -241,7 +241,7 @@ individual `UPDATE`s outside the insert transaction, so a parent defined further
 down the same file resolves and an unresolved or self-referencing parent reports
 one row error instead of rolling back the batch. Same shape as the storage-unit
 parent pass. `CONFIGS[table].parentField` is what gates it; only `department` sets
-one, and `config-lookup-import.test.ts` pins that.
+one, and `shared.config-lookup-import.test.ts` pins that.
 
 ### Material-property imports (skip-duplicate, create-only)
 

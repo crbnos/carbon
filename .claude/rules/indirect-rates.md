@@ -1,7 +1,7 @@
 ---
 paths:
   - "packages/ee/src/indirect-rates/**"
-  - "packages/server-functions/src/post-project-burden/**"
+  - "apps/erp/app/modules/projects/projects.service.ts"
   - "packages/jobs/src/inngest/functions/tasks/indirect-rates.ts"
   - "apps/erp/app/modules/accounting/ui/IndirectRates/**"
   - "apps/erp/app/routes/x+/accounting+/indirect-*.tsx"
@@ -24,12 +24,21 @@ Feature `GOVERNMENT_CONTRACTING` (Business, Partner). The engine is ee code:
 |---|---|
 | `@carbon/ee/indirect-rates` (`index.ts`) | Client-safe: validators and enum lists (`models.ts`), the pure rate, burden and billing engine (`compute.ts`), the pure ICE builders (`ice.ts`), row types |
 | `@carbon/ee/indirect-rates.server` (`server.ts`) | Authoring (`upsertIndirectPool`, `setIndirectRate`, ceilings, `updateBurdenSettings`), the runs and the readers (`service.server.ts`), `buildIceSchedule` (`ice.server.ts`) |
-| `post-project-burden` (community server function) | Writes the Burden rows and the optional applied burden journal in one transaction |
+| `post-project-burden` posting (`postProjectBurden`, community, `projects.service.ts`) | Writes the Burden rows and the optional applied burden journal in one transaction |
 
 Every authoring function and every run calls `requireEntitlement` first. The
-readers do not. The monthly job degrades with `companyHasFeature`. A server
-function cannot import `@carbon/ee`, so the ee run computes the rows and calls
-`post-project-burden` through `serverFns`.
+readers do not. The monthly job degrades with `companyHasFeature`. The posting
+body is community code, so the ee run computes the rows and calls
+`posting("post-project-burden", { db, companyId, userId }, …)`
+(`@carbon/api/postings.server`).
+
+The ERP routes reach the ee functions through operations, not directly: the
+Indirect Pools and Indirect Rates actions call `api.projects.*`
+(`upsertIndirectPool`, `deleteIndirectPool`, `upsertIndirectPoolAccount`,
+`deleteIndirectPoolAccount`, `setIndirectRate`, `runIndirectRatePeriod`,
+`runFinalTrueUp` in `projects.server.ts`); the period close page calls
+`api.accounting.computePeriodBurden` and `closePeriodEarnedValue`
+(`accounting.server.ts`).
 
 UI: Accounting → **Indirect Pools** (Configure) and **Indirect Rates** (Closing),
 `IndirectRatesUpgradeOverlay` for a gated company; the rate ceilings grid on a Cost
@@ -51,13 +60,13 @@ run, the list shows `Empty`. The route's intents are `set-rate`, `run` and `true
 - **Statement** (`indirect-rates.statement.tsx`) and **ICE Export**
   (`indirect-rates.ice.tsx`) are drawers. With no `fiscalYear` in the URL they open
   the current fiscal year: `getCurrentFiscalYear(client, companyId)`
-  (`accounting.server.ts`: today in the company time zone, counted from the fiscal
+  (`accounting.service.ts`: today in the company time zone, counted from the fiscal
   year's start month). The runs page uses the same helper.
 - **Burden Settings** (`burdenRateType`, `postAppliedBurden`) are a card in Settings →
   Accounting (`settings+/accounting.tsx`, `BurdenSettingsForm`). Its intent
-  `burdenSettings` needs `update: settings` and calls `requireFeature`, then
-  `updateBurdenSettings`. A gated company sees one `UpgradeOverlayRow` (Business) in
-  place of the card.
+  `burdenSettings` calls the `updateBurdenSettings` operation (`accounting.server.ts`,
+  needs `update: settings`), which returns an entitlement error without the feature. A
+  gated company sees one `UpgradeOverlayRow` (Business) in place of the card.
 
 ## The run order
 
@@ -74,7 +83,8 @@ stops the run and is written to `indirectRateRun.error`:
 
 `runFinalTrueUp` runs steps 2 and 3 at the Final rate of period 12 of a fiscal
 year, posted into a Locked period that may sit in the next year. The lock of a
-period sends `carbon/indirect-rates.compute` (`periods.$periodId.close.tsx`);
+period sends `carbon/indirect-rates.compute` (the `lockPeriod` operation,
+`accounting.server.ts`, only when an active pool applies to projects);
 the `indirect-rates` job skips a company without the feature or with no active
 pool that applies to projects. The close task "Compute burden for the period"
 (`burden-computed`, `burdenComputedCheck`) passes when the period has a run
@@ -183,3 +193,9 @@ journal lines behind it. The claimed rate of a year is the Final rate of period
   derive them with `fiscalYearAndPeriodFor` (B14).
 - The demo datasets seed pools and Provisional and Target rates in satellite
   only (`seedIndirectPools`, tier 09), with no Burden rows and no Actual rates.
+- The live-database tests (`compute-indirect-rates`, `compute-project-burden`,
+  `ice.server`) are in `apps/erp/test/database/ee/indirect-rates/*.ee.test.ts`, not in
+  `packages/ee`: the burden posts through the ERP's postings, so
+  `compute-project-burden` calls `registerPostings(postings)` first. The `.ee.` infix
+  keeps their commercial license header. The pure tests (`compute.test.ts`,
+  `ice.test.ts`, `service.server.test.ts`) stay in `packages/ee/src/indirect-rates/`.

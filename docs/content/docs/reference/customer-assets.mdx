@@ -136,11 +136,11 @@ The tab needs `service_view`.
 ## Internals
 - Tables: `customerAsset` (id prefix `cas`, unique on `trackedEntityId` per company, no readable id; the page title is the serial) and `customerAssetComponent` (`cac`, `removedDate`, `removedByServiceOrderId`).
 - `customerAssetStatus` enum: In Service, At Depot, Returned. `source` is TEXT: Shipment (default) or Manual. The source is not shown in the UI.
-- Shipment creation: `upsertShippedCustomerAssets` (`packages/server-functions/src/post-shipment/customer-assets.ts`), called only for Sales Order shipments, inside the post transaction. Warranty months come from the oldest `itemUnitSalePrice` row of the item. A reshipped serial keeps its `source`.
+- Shipment creation: `upsertShippedCustomerAssets` (`apps/erp/app/modules/inventory/shipment-customer-assets.ts`, called by `postShipment`), called only for Sales Order shipments, inside the post transaction. Warranty months come from the oldest `itemUnitSalePrice` row of the item. A reshipped serial keeps its `source`.
 - Void of a Sales Order shipment sets every asset with that `shipmentId` to Returned; it does not restore the previous customer. Voiding an RMA return shipment changes no asset.
-- Manual registration: `registerCustomerAsset` (`service.server.ts`) inserts a Consumed `trackedEntity` (source document Item) and the asset with source Manual.
-- Repair receipt: `ensureCustomerAssets` (`@carbon/server-functions/lib/service-orders`) inserts an asset with source Manual for a received Repair serial that has none, and `createDepotRepairOrders` (`post-receipt/repair.ts`) sets it At Depot. `shipRepairedUnits` (`post-shipment/repair.ts`) sets it In Service at the RMA's site with the ship date and shipment.
+- Manual registration: `registerCustomerAsset` (`service.service.ts`, behind the operation of the same name) inserts a Consumed `trackedEntity` (source document Item) and the asset with source Manual.
+- Repair receipt: `ensureCustomerAssets` (`apps/erp/app/modules/service/service-orders.ts`) inserts an asset with source Manual for a received Repair serial that has none, and `createDepotRepairOrders` (`inventory/receipt-repair.ts`) sets it At Depot. `shipRepairedUnits` (`inventory/shipment-repair.ts`) sets it In Service at the RMA's site with the ship date and shipment.
 - Warranty status: `warrantyStatus(asset, today)` in `service.models.ts`.
-- Installed components: `post-project-issue/service.ts`; the Service `trackedActivity` carries the attribute "Project Issue".
+- Installed components: `installServicePart` (`apps/erp/app/modules/projects/service-part-issue.ts`, run by `postProjectIssue`); the Service `trackedActivity` carries the attribute "Project Issue".
 - Routes: list `/x/service-orders/assets`, register `/x/service-orders/assets/new`, page `/x/customer-asset/<id>`, customer tab `/x/customer/<id>/assets`.
 </AgentContext>

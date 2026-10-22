@@ -1,14 +1,12 @@
 ---
 paths:
   - "apps/erp/app/modules/projects/**"
-  - "packages/server-functions/src/post-timesheet/**"
-  - "packages/server-functions/src/post-project-issue/**"
-  - "packages/server-functions/src/post-project-expense/**"
-  - "packages/server-functions/src/lib/project-posting.ts"
-  - "packages/server-functions/src/lib/project-cip.ts"
-  - "packages/server-functions/src/post-project-stock-transfer/**"
-  - "packages/server-functions/src/lib/stock-stripes.ts"
-  - "packages/server-functions/src/post-receipt/grouped-receipt.ts"
+  - "apps/erp/test/database/post-timesheet/**"
+  - "apps/erp/test/database/post-project-issue/**"
+  - "apps/erp/test/database/post-project-expense/**"
+  - "apps/erp/test/database/post-project-stock-transfer/**"
+  - "packages/api/src/stock-stripes.ts"
+  - "apps/erp/app/modules/inventory/grouped-receipt.ts"
   - "packages/ee/src/pegging/**"
 ---
 
@@ -102,7 +100,7 @@ opens in layers. Each layer shows the least that a user needs.
 The cost treatment decides the GL account when the cost is posted, not later. There
 is no month-end sweep.
 
-`resolveProjectPostingAccount(ctx, postingDate)` (`lib/project-posting.ts`) is the
+`resolveProjectPostingAccount(ctx, postingDate)` (`projects/project-posting.ts`) is the
 one decision:
 
 1. The nearest node with a treatment in effect on `postingDate` decides: the element,
@@ -146,11 +144,11 @@ One row per cost that reaches a project: `costType` (Material, Labor, Machine,
 Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
 `journalLineId` when a journal exists. Build rows with `buildProjectLedgerRow`.
 
-- Only server functions and the job-completion SQL write it. The ERP only reads it
+- Only the postings and the job-completion SQL write it. The ERP only reads it
   (`getProjectLedger`, `getElementTimeAndMaterials`, `get_project_cost_summary`,
   `get_child_service_project_costs`).
 - A Statistical charge writes no row. Neither does a Statistical timesheet: the entry is
-  only stamped Posted, with no journal (`post-timesheet/plan.ts`).
+  only stamped Posted, with no journal (`projects/timesheet-posting-plan.ts`).
 - A void or repost writes negative rows with `reversalOfId`
   (`reverseProjectLedgerRows`). Never delete or update a row.
 - `unallowable` is stamped at posting by `isUnallowableCharge` (the account's
@@ -160,7 +158,7 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
   main's always-post rule (`.ai/specs/implemented/2026-10-08-accounting-cutover.md`):
   `journalPostingStatus` makes it Provisional, with no accounting period, before the
   company's accounting cutover, and Posted after it. No project path reads
-  `accountingEnabled`. `postProjectJournal` (`lib/project-journal.ts`) decides the status
+  `accountingEnabled`. `postProjectJournal` (`projects/project-journal.ts`) decides the status
   and the period for the expense and reclass journals.
 - An empty `laborAbsorptionAccount` on a timesheet becomes a stand-in line on retained
   earnings before the cutover (`resolveDefaultAccount`) and refuses the posting after it.
@@ -204,7 +202,7 @@ only in DCAA mode and only for a new entry.
 `new` charge moves an Unstarted element to its project's default Started state
 (`startElementsOnFirstCharge`; ERP `startElementOnFirstCharge`).
 
-In the ERP, `chargeNumberError` (`projects.server.ts`) checks a document's charge number
+In the ERP, `chargeNumberError` (`projects.service.ts`) checks a document's charge number
 in the route action: the project is the company's, the element belongs to it, and a
 consume-to-project job's project is not Statistical. `updateProjectStatus` refuses Close
 while a purchase order or job of the project is open, and refuses any status but On Hold
@@ -257,7 +255,7 @@ and `parentProjectId` names a coverage contract's project. Field service owns th
 - **Expense entries.** `projectExpenseEntry` (mileage, a meal, a part bought on a card)
   posts through `post-project-expense` for any project: Dr the project account (a
   Statistical project: `indirectCostAccount`, no ledger row) / Cr GRNI. A Capitalize
-  project is refused. The shared `postProjectJournal` (`lib/project-journal.ts`) posts
+  project is refused. The shared `postProjectJournal` (`projects/project-journal.ts`) posts
   it and the coverage reclass.
 - **Billable items.** `projectBillableItem` is what a charge will bill. Service
   projects write them (`buildBillableItem`, `reverseBillableItem`), and so does a
@@ -369,11 +367,11 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   Approve refuses a transfer without lines and runs the government-furnished guard
   (`governmentFurnishedRefusal`): stock of a `governmentFurnished` project moves only to a
   project of the same customer. The posting checks it again.
-- **Posting** (`post-project-stock-transfer`, called by `postProjectStockTransfer` with
-  `serverFns.system`): one transaction locks the Approved header, checks the from-stripe's
-  on-hand per (item, bin, lot), draws it with `calculateCOGS({ projectId })`, writes the
-  `Project Transfer` Transfer pair at the line's bin and a relief `costLedger` row, and stamps
-  the line's `unitCost`.
+- **Posting** (`postProjectStockTransfer`, `projects.service.ts`; the
+  `updateProjectStockTransferStatus` operation runs it for `post`): one transaction locks
+  the Approved header, checks the from-stripe's on-hand per (item, bin, lot), draws it
+  with `calculateCOGS({ projectId })`, writes the `Project Transfer` Transfer pair at the
+  line's bin and a relief `costLedger` row, and stamps the line's `unitCost`.
   - **Transfer** opens a layer in the to-stripe at the drawn cost. No journal.
   - **Borrow** opens the borrower's layer at the lender's cost (`costLedger.projectBorrowId`)
     and an Open `projectBorrow` with `borrowedUnitCost` and the due date. No journal.
@@ -404,7 +402,7 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   segment draws unassigned stock only from the unassigned segment's true surplus, and
   only through a **Transfer** planning action. Applying it creates a Draft
   transfer (`applyTransferPlanningActions` → `createProjectStockTransfersFromActions`,
-  `projects.server.ts`, `planningActionId` on the header). An Order or Make in the
+  `projects.service.ts`, `planningActionId` on the header). An Order or Make in the
   segment creates a PO line charged to the project or a job with
   `receiveToProjectStock`. The project's manager owns its planning actions.
   Details: `mrp-system.md` → *Project netting segments*.
@@ -425,10 +423,9 @@ for `upsertPlanningGroup`, `createManualPeg` and `writeGroupPegs`). The MRP side
 The MRP run gets the commercial functions by dependency injection: every server-side caller
 passes `planningGroupMrpDeps` (`@carbon/ee/pegging.server`: the `companyHasFeature`
 check and `writeGroupPegs`) as `runMrp`'s fourth argument. The callers are the ERP's
-`runMRP` (`production.mcp.server.ts`, not the service, because it imports a `.server`
-module), the jobs MRP cron, and `planDemoCompany`. Without the deps, a run degrades as it does
-for a company without `PLANNING_GROUPS`. A new caller that forgets them silently plans
-without groups.
+`runMRP` (`production.service.ts`), the jobs MRP cron, and `planDemoCompany`. Without the
+deps, a run degrades as it does for a company without `PLANNING_GROUPS`. A new caller
+that forgets them silently plans without groups.
 
 - **The group.** `planningGroup` has a location, an excess rule (`Common Stock` or
   `Exception Project` with `exceptionProjectId`), a priority rule (`Earliest Need` or
@@ -444,7 +441,7 @@ without groups.
   location. `project_planning_segment` returns the group id for a member of an active group.
 - **Grouped supply.** A PO line or job made for the group carries `planningGroupId` and no
   `projectId` (`purchaseOrderLine_owner_check`, `job_owner_check`). Applying an Order or Make in
-  a group segment creates it (`getPlanningSegmentOwners`, `projects.server.ts`), and
+  a group segment creates it (`getPlanningSegmentOwners`, `projects.service.ts`), and
   `moveActionPegsToSupply` moves the action's pegs onto the new supply in one transaction.
 - **Peg states.** `projectPeg` rows are versioned: a row is never updated in place. A new row
   supersedes the old one (`supersededAt`, `supersededByRunId`). The writes in place are
@@ -464,13 +461,14 @@ without groups.
   `complete_job_to_inventory` both call it. The reverse for a negative receipt is
   `soften_pegs_for_return` (`20261021005700`): the excess first, then the Hard pegs, latest
   first.
-- **Distribution at receipt.** `post-receipt` (`post-receipt/grouped-receipt.ts`) calls
-  `hardenPegsForSupply` per receipt line of a grouped PO line in the posting transaction, then
-  splits the line's item ledger rows and cost layers into the returned stripes
-  (`allocateToStripes`, `stripeItemLedgerRows`, `stripeCostLedgerRows`). The last piece of a
-  layer takes the rounding rest. The journal does not change: one inventory debit per line.
-  `linkPegsToItemLedger` sets each Hard peg's `itemLedgerId`. A void softens the Hard pegs of
-  the receipt's rows (`softenPegsOfItemLedger`).
+- **Distribution at receipt.** `postReceipt` (`inventory.service.ts`) calls
+  `hardenPegsForSupply` (`inventory/grouped-receipt.ts`) per receipt line of a grouped PO
+  line in the posting transaction, then splits the line's item ledger rows and cost
+  layers into the returned stripes (`allocateToStripes`, `stripeItemLedgerRows`,
+  `stripeCostLedgerRows`). The last piece of a layer takes the rounding rest. The journal
+  does not change: one inventory debit per line. `linkPegsToItemLedger` sets each Hard
+  peg's `itemLedgerId`. A void softens the Hard pegs of the receipt's rows
+  (`softenPegsOfItemLedger`).
 - **Distribution at completion.** `complete_job_to_inventory` (`20261021005500`) loops over a
   stripe list: one stripe for an ungrouped job, the harden rows for a grouped job. The Output
   layer is written per stripe at the job's unit cost, so scrap spreads through the unit cost
@@ -479,14 +477,14 @@ without groups.
 - **Price variance.** At invoice, `allocateVarianceAcrossLayers` spreads the variance over the
   striped layers. For a PO line with `planningGroupId`, the share of units already consumed goes
   to each member's project account as a `Material Variance` `projectLedger` row
-  (`stripeVarianceCharge`, `post-purchase-invoice/project-charges.ts`). A Statistical member's
+  (`stripeVarianceCharge`, `invoicing/project-charges.ts`). A Statistical member's
   share stays in purchase price variance.
 - **Commitments.** `get_project_cost_summary` (`20261021005600`) adds each Soft and Manual peg on
   an open PO line to the project's committed cost, valued at
   `quantity / conversionFactor × unitPrice`, by the peg's element (none is the project root).
 - **Member moves.** MRP proposes a **Transfer** from a sibling's permanent excess and a
   **Borrow** (with a payback date in `triggerValues`) from the rest of a sibling's stock, when
-  the sibling needs it later. `createProjectStockTransfersFromActions` (`projects.server.ts`)
+  the sibling needs it later. `createProjectStockTransfersFromActions` (`projects.service.ts`)
   makes a Draft transfer of the action's type. It refuses a Borrow with no payback date.
 - **The Pegging page** (`$projectId.pegging.tsx`, `ProjectPegging`, under Costs in the project
   sidebar while the project has a current peg) lists the project's current pegs by item (`getProjectPegs`). With **As of**
@@ -501,7 +499,7 @@ without groups.
 `timesheetEntry` status: Draft → Submitted → (Approved) → Posted, or Rejected; in DCAA
 mode also Pending Employee Review (an entry someone else changed). A
 Rejected entry is editable and returns to Draft on save. Every save goes through the
-`save-timesheet-entry` server function and every week submit through
+`save-timesheet-entry` posting and every week submit through
 `submit-timesheet-week`, from the ERP and the MES; the DCAA rules (Government
 Contracting 5a) live there, see `.claude/rules/government-contracting.md`. A Posted entry changes only by
 `createTimesheetCorrection`: a negative reversal (`reversalOfId`, `correctionReason`)
@@ -550,12 +548,13 @@ Service project's Draft entry.
 (`laborCategoryRate.effectiveFrom`), Dr the project account / Cr
 `laborAbsorptionAccount`. After the cutover it writes one journal per accounting period;
 before it, one Provisional journal with no period. A reversal uses
-its original's `costRate`. The ERP and the MES call it with `serverFns.system`, because
-it requires `projects_update` and an operator does not hold it; the routes check
-ownership first.
+its original's `costRate`. The MES calls it through `erpPosting` with system scope,
+because it requires `projects_update` and an operator does not hold it; the routes check
+ownership first. The ERP calls it through `postTimesheetEntries` (`projects.service.ts`,
+`invokePosting`) after the calling operation's own permission check.
 
 RLS: an employee may insert and update only their own Draft rows. Save and submit
-(the two server functions), correct (`createTimesheetCorrection`) and post run over
+(the two postings), correct (`createTimesheetCorrection`) and post run over
 Kysely, so they bypass that check. Approve and reject use the Supabase client and need
 `projects_update`.
 
@@ -565,12 +564,12 @@ Kysely, so they bypass that check. Approve and reject use the Supabase client an
 form reads CIP classes with `getCipFixedAssetClasses`, because
 `CONSTRUCTION_IN_PROGRESS_ENABLED` stays false.
 
-- `ensureCapitalAssets` (`projects.server.ts`) creates the Under Construction assets:
+- `ensureCapitalAssets` (`projects.service.ts`) creates the Under Construction assets:
   one for the project and one per `isFinalAsset` element without one, all ids and
   numbers in one statement. The status route calls it before every change to
   Released; the element update route calls it when `isFinalAsset` turns on past Draft.
 - Each poster writes a CIP row right after its `projectLedger` row
-  (`writeProjectCipRows`, `server-functions/src/lib/project-cip.ts`), for every company.
+  (`writeProjectCipRows`, `projects/project-cip.ts`), for every company.
 - A capital job (`loadJobProjectCharge` returns `keepsWip: true`) keeps its WIP lines
   and builds `job.fixedAssetId` through the job-to-CIP sweep; SQL
   `project_cost_treatment` mirrors `resolveProjectTreatment`
@@ -725,7 +724,7 @@ have no charge buttons (the order posts through its own charge route).
 
 **Charge cost** (`x+/projects+/expense.tsx`, `path.to.projectExpense`, `update: projects`)
 checks the budget (source `purchase`: Block refuses, Warn flashes), then `addProjectExpense`
-(`projects.server.ts`) inserts a `projectExpenseEntry` and posts it through
+(`projects.service.ts`) inserts a `projectExpenseEntry` and posts it through
 `post-project-expense` (Dr the project account / Cr GRNI, one Other Direct ledger row). An
 entry that does not post is deleted again, so a refusal leaves nothing behind.
 

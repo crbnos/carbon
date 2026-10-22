@@ -3,8 +3,10 @@ paths:
   - "packages/utils/src/timekeeping.ts"
   - "packages/utils/src/contract-funding.ts"
   - "packages/utils/src/rd-tax.ts"
-  - "packages/server-functions/src/save-timesheet-entry/**"
-  - "packages/server-functions/src/submit-timesheet-week/**"
+  - "apps/erp/app/modules/projects/projects.service.ts"
+  - "apps/erp/app/modules/projects/timesheet-posting-plan.ts"
+  - "apps/erp/test/database/save-timesheet-entry/**"
+  - "apps/erp/test/database/submit-timesheet-week/**"
   - "apps/erp/app/modules/projects/ui/Timesheet/**"
   - "apps/mes/app/routes/x+/timesheet.tsx"
   - "apps/mes/app/components/Timesheet/**"
@@ -79,7 +81,7 @@ it: its Government contracting group shows only under DCAA (below).
   fields and earned value. The group shows only with `timekeepingControls = 'DCAA'` and
   the feature; with DCAA on and the feature gated, only earned value's locked row shows.
   A Parameter element shows none.
-- `isUnallowableCharge(ctx, accountId)` (`lib/project-posting.ts`) is true when the
+- `isUnallowableCharge(ctx, accountId)` (`projects/project-posting.ts`) is true when the
   account is not Allowable or the element or an ancestor is unallowable. Every posting
   path stamps `projectLedger.unallowable` with it; a reversal copies its original's
   flag. The ledger keeps the flag, so a later account edit never changes history.
@@ -94,8 +96,8 @@ it: its Government contracting group shows only under DCAA (below).
 The pure rules are in `@carbon/utils` (`timekeeping.ts`): `isEntryDateAllowed` (no
 future date unless the element is leave; older than the window is `late`),
 `nextEntryStatus`, `weekStartOf` (ISO Monday), `dilutionFactor`,
-`timecardShortfall`. Both server functions below use them; the ERP and the MES call the
-server functions, so the rules live in one place (P9).
+`timecardShortfall`. Both postings below use them; the ERP and the MES call the
+postings, so the rules live in one place (P9).
 
 **`save-timesheet-entry`** (`update: projects`). `mode: "cell"` edits the one entry of
 a cell; `mode: "add"` always inserts (Log time, service time). In DCAA mode
@@ -157,7 +159,7 @@ entry; a reversal is never refused.
 ## Dilution
 
 In DCAA mode an `Exempt` employee's week (`employeeJob.flsaStatus`) posts at factor
-`min(1, standardWeeklyHours ÷ week hours)` (`planDilution`, `post-timesheet/plan.ts`).
+`min(1, standardWeeklyHours ÷ week hours)` (`planDilution`, `projects/timesheet-posting-plan.ts`).
 `timesheetEntry.dilutionFactor` stores the factor an entry posted at (P4, null = 1). A
 later correction re-dilutes the week's other posted entries and posts the difference
 (`planRedilutionPostings`) in the same transaction. A dilution adjustment changes cost,
@@ -226,7 +228,7 @@ privileged Kysely client, so the count does not depend on the closing user's acc
   sums (`sumFunding`), and the line form stops writing them.
 - A Cost Plus or Time & Materials invoice with numbered lines gets a Comment line per
   CLIN and `salesInvoiceFundingAllocation` rows (P7): `planClinSections` and
-  `acrnPositions` (`create-project-billing-invoices/clin.ts`) allocate each CLIN's amount
+  `acrnPositions` (`sales/contract-clin.ts`) allocate each CLIN's amount
   oldest funds first (`allocateToAcrns`), net of the allocations of invoices that are not
   Voided.
 

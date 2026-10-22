@@ -6,15 +6,11 @@ paths:
   - "apps/erp/app/routes/x+/customer-asset+/**"
   - "apps/erp/app/routes/file+/service-estimate+/**"
   - "packages/utils/src/service-coverage.ts"
-  - "packages/server-functions/src/create-service-order-invoice/**"
-  - "packages/server-functions/src/post-project-expense/**"
-  - "packages/server-functions/src/reclass-project-coverage/**"
-  - "packages/server-functions/src/post-project-issue/service.ts"
-  - "packages/server-functions/src/post-shipment/customer-assets.ts"
-  - "packages/server-functions/src/post-receipt/repair.ts"
-  - "packages/server-functions/src/post-shipment/repair.ts"
-  - "packages/server-functions/src/lib/service-orders.ts"
-  - "packages/server-functions/src/complete-service-order/**"
+  - "apps/erp/app/modules/projects/projects.service.ts"
+  - "apps/erp/app/modules/projects/service-part-issue.ts"
+  - "apps/erp/app/modules/inventory/shipment-customer-assets.ts"
+  - "apps/erp/app/modules/inventory/receipt-repair.ts"
+  - "apps/erp/app/modules/inventory/shipment-repair.ts"
   - "packages/documents/src/pdf/ServiceEstimatePDF.tsx"
   - "apps/erp/app/routes/x+/contract+/$id.service-orders.tsx"
   - "apps/erp/app/modules/projects/ui/Costs/ServiceOrderCosts.tsx"
@@ -111,7 +107,7 @@ page). The asset page is its own folder,
   at `x+/service-work+/$projectId.*`: `new`, `update` (`{ ids, field, value }`, only the
   fields a service element shows), `move`, `$elementId.delete`, `$elementId.plan` and
   `$elementId.comments`. They check `service` permissions, not `projects`, and call
-  `requireServiceWork` (`service.server.ts`) first: a Service project, not Closed, and
+  `requireServiceWork` (`service.service.ts`) first: a Service project, not Closed, and
   every element id in it. The project routes are untouched (Brad: "it's ok to have
   different code in two places").
 - **Service template page** (`templates_.$id.tsx`): a standard `RecordHeader` with the
@@ -141,7 +137,7 @@ charge it" (the project is Draft, so `assertChargeable` would refuse anyway). Sc
 a visit on a Draft order rolls it to Scheduled, which releases it too. Resume and Reopen
 move to Planned.
 
-`syncServiceOrderStatus` (`service.server.ts`) saves the roll-up and the project status
+`syncServiceOrderStatus` (`service.service.ts`) saves the roll-up and the project status
 (`projectStatusOfOrder`: Draft → Draft, On Hold → On Hold, Completed → Technically
 Complete, Closed / Cancelled → Closed, else Released). `insertServiceProject` inserts
 the project Draft, as its order. Migration `20261021013000` moved each existing Draft
@@ -181,7 +177,7 @@ A coverage contract with a project (`customerContract.projectId`) is the parent 
 Service project of every order it covers (`project.parentProjectId`).
 
 - **Set at creation** by `insertServiceOrder` (`contractProjectId`).
-- **Kept in step** by `updateServiceOrderCoverageContract` (`service.server.ts`, one
+- **Kept in step** by `updateServiceOrderCoverageContract` (`service.service.ts`, one
   transaction): the order's `customerContractId` and its project's `parentProjectId`
   change together. It refuses while a Contract charge stands (`openChargeIds` over the
   order's Contract ledger rows): that cost already posted to the old contract's account,
@@ -211,21 +207,23 @@ Service project of every order it covers (`project.parentProjectId`).
   visits). Total Cost is the roll-up's actual; a contract with no project shows the
   posted cost (`getServiceOrderCosts`). The tab shows no billed amount.
 
-## Charges post through server functions
+## Charges post through postings
 
 Every charge goes through the order's charge route (`$id.charge.tsx`, `intent` = `time`,
-`part`, `expense`, `reclass`, `reverse`) and a server function. Never insert ledger rows, billable
-items or components directly.
+`part`, `expense`, `reclass`, `reverse`). The route calls a `service` operation
+(`service.server.ts`: `logServiceTime`, `issueServicePart`, `addServiceExpense`,
+`reclassServiceCharge`, `reverseServiceCharge`). The operation runs a posting through
+`invokePosting`. Never insert ledger rows, billable items or components directly.
 
-Each server function below, and the Refurbishment completion, writes its journal for every
+Each posting below, and the Refurbishment completion, writes its journal for every
 company, as main's always-post rule says: Provisional with no accounting period before the
 company's accounting cutover, Posted after it (`journalPostingStatus`). None reads
 `accountingEnabled`.
 
-| Charge | Server function | Notes |
+| Charge | Posting | Notes |
 |---|---|---|
-| Time | `post-timesheet` | `saveTimesheetEntry` (`mode: "add"`, `save-timesheet-entry`) writes a Draft entry with the visit; a Service project's Draft entry posts at once. Journal line "Service Labor" with the Customer dimension. |
-| Part | `post-project-issue` | `post-project-issue/service.ts`: billable item, installed component, replacement of the element's component, and the `Service` genealogy activity. A return reverses one whole open issue (`findServiceIssueToReturn`). |
+| Time | `post-timesheet` | `logServiceTime` runs `save-timesheet-entry` (`mode: "add"`), which writes a Draft entry with the visit; then `postTimesheetEntries` (`projects.service.ts`) posts it at once. Journal line "Service Labor" with the Customer dimension. |
+| Part | `post-project-issue` | `projects/service-part-issue.ts`: billable item, installed component, replacement of the element's component, and the `Service` genealogy activity. A return reverses one whole open issue (`findServiceIssueToReturn`). |
 | Expense | `post-project-expense` | `addServiceExpense`; Dr the coverage account / Cr GRNI. |
 | Reclass | `reclass-project-coverage` | Refuses Capitalized either way. |
 | Reverse | `post-timesheet` / `post-project-expense` | `reverseServiceCharge`, with a reason (`serviceChargeReversalValidator`). Time: `createTimesheetCorrection` to 0 hours (`correctionReason`; the correction keeps the entry's `serviceVisitId`), posted at once. Expense: `buildExpenseReversal`, a `projectExpenseEntry` with `reversalOfId` and `reversalReason`. Both post at the original's coverage and reverse its billable item. A reversal saved but not posted is posted again on the next Reverse, never written twice. |
@@ -235,7 +233,7 @@ offers **Reverse** in a time or expense row's menu (`canReverseCharge`: not a re
 returned with Issue Part. Reversing the last standing charge is what lets
 `cancelServiceOrder` through.
 
-`loadServicePostingContexts` (`lib/project-posting.ts`) loads the order, its asset's
+`loadServicePostingContexts` (`projects/project-posting.ts`) loads the order, its asset's
 warranty dates, the labor item's price and the element's installed component in 3 queries
 for any number of charges. `buildBillableItem` builds the item: a covered item is priced
 0 and its description says "(Covered by warranty)" or "(Covered by contract)".
@@ -263,10 +261,10 @@ back. The unit never enters company stock or stock value. Every branch keys on
 - **Receipt** (`post-receipt`, case Sales Return Order): a Repair line writes no
   `itemLedger`, no cost layer and no journal, and its serials stay Consumed. It needs one
   serial per received unit. Under the RMA lock the posting re-reads the dispositions and
-  refuses one that changed. `createDepotRepairOrders` (`post-receipt/repair.ts`) refuses a
+  refuses one that changed. `createDepotRepairOrders` (`inventory/receipt-repair.ts`) refuses a
   serial with an open order, finds or creates its asset (`ensureCustomerAssets`, source
   Manual) and sets it At Depot, inserts one Draft Depot Repair order per serial
-  (`insertServiceOrder`, `lib/service-orders.ts`: the RMA's customer, site and contact, the
+  (`insertServiceOrder`, `service/service-orders.ts`: the RMA's customer, site and contact, the
   receiving location, the customer's only Active contract), and writes a `Return Receipt`
   activity with `At Depot` and the order's id.
 - **Receipt void**: `voidDepotRepairOrders` cancels the orders of this receipt's serials
@@ -274,11 +272,11 @@ back. The unit never enters company stock or stock value. Every branch keys on
   an order with a charge that stands (`openChargeIds`) and a unit already shipped back.
 - **Return shipment** (`create`, `post-shipment`): a Repair line ships the units whose order
   is Completed or Closed and whose asset is At Depot. `shipRepairedUnits`
-  (`post-shipment/repair.ts`) re-checks that under the posting lock, writes no ledger, no
+  (`inventory/shipment-repair.ts`) re-checks that under the posting lock, writes no ledger, no
   cost and no journal, keeps the serial Consumed, writes a `Return Shipment` activity with
   `At Depot: false`, and sets the asset In Service at the RMA's site with the ship date and
   shipment. The void (`unshipRepairedUnits`) sets the asset At Depot again.
-- **Guards** (`sales.service.ts`, MCP tools): `getCreditableQuantities` leaves Repair lines
+- **Guards** (`sales.service.ts`; MCP tools in `sales.server.ts`): `getCreditableQuantities` leaves Repair lines
   out, `createSalesReturnOrderCredit` refuses one (`REPAIR_LINE_CREDIT_MESSAGE`),
   `createReplacementSalesOrder` skips them and refuses an RMA of Repair lines only
   (`REPAIR_ONLY_REPLACEMENT_MESSAGE`).
@@ -288,7 +286,8 @@ back. The unit never enters company stock or stock value. Every branch keys on
   offers Complete with no visit and offers Ship Back in its ⋯ menu.
 
 Pinned by `post-receipt/sales-return-repair.test.ts` and
-`post-shipment/sales-return-repair.test.ts` (fixture `lib/sales-return-test-fixture.ts`).
+`post-shipment/sales-return-repair.test.ts` under `apps/erp/test/database/` (fixture
+`fixtures/sales-return.ts`).
 
 ## Refurbishment of a serial in stock
 
@@ -305,12 +304,12 @@ The company refurbishes a serial it owns. Labor, parts and expenses collect in W
   issue writes no billable item and no installed component; `installServicePart` writes a
   `Service` activity from the issued serial or batch to the subject serial (a later Build
   from part shows the new parts). A return deletes the activity.
-- **Guard** (`assertNoOpenRefurbishment`, `lib/service-orders.ts`): `post-shipment` (Sales
+- **Guard** (`assertNoOpenRefurbishment`, `service/service-orders.ts`): `post-shipment` (Sales
   Order) and `post-picking` (serial case) refuse a serial with an open Refurbishment order.
 - **Complete** (`complete-service-order`, one transaction, from Draft, Planned, Scheduled
-  or In Progress): `loadRefurbishmentCompletion` (`load.ts`) reads the WIP by element, the item cost,
+  or In Progress): `loadRefurbishmentCompletion` (`refurbishment-completion-load.ts`) reads the WIP by element, the item cost,
   the open layers and children as `calculateCOGS` selects them, the on-hand (Average) and
-  the cap; `planRefurbishmentCompletion` (`plan.ts`, pure, tested) decides:
+  the cap; `planRefurbishmentCompletion` (`refurbishment-completion-plan.ts`, pure, tested) decides:
 
   | Case | Effect |
   |---|---|
@@ -327,8 +326,9 @@ The company refurbishes a serial it owns. Labor, parts and expenses collect in W
   Available with a `Service` activity, and the order saves `capitalizedAmount`,
   `writeDownAmount`, `completionJournalId` and `completionCostingMethod`
   (`serviceOrder_refurbishment_check`: only a Refurbishment has amounts).
-- **One path**: the status route sends every Complete through `completeServiceOrder`
-  (`service.server.ts`). `syncServiceOrderStatus` refuses to complete a Refurbishment,
+- **One path**: the status route calls `setServiceOrderStatus` (`service.server.ts`). It
+  sends every Complete through the `completeServiceOrder` operation, which runs the
+  `complete-service-order` posting (`completeServiceOrder`, `service.service.ts`). `syncServiceOrderStatus` refuses to complete a Refurbishment,
   ignores a visit's Work complete? for it, and refuses to reopen a completed one.
 - **UI**: Complete opens `CompleteRefurbishmentModal`, which loads the preview from
   `$id.complete.tsx` (`previewRefurbishmentCompletion`: the same reads without locks, the
@@ -336,19 +336,20 @@ The company refurbishes a serial it owns. Labor, parts and expenses collect in W
   edit **Expected Selling Price** and **Abnormal Rework** until completion
   (`updateServiceOrder` refuses them on other types and after completion).
 
-Pinned by `complete-service-order/plan.test.ts`, `complete-service-order.test.ts`,
+Pinned by `service/refurbishment-completion-plan.test.ts` and, under
+`apps/erp/test/database/`, `complete-service-order/complete-service-order.test.ts`,
 `lib/calculate-cogs.test.ts`, `post-picking/refurbishment-guard.test.ts` and
 `post-shipment/customer-assets.test.ts`.
 
 ## Customer assets
 
-- **At shipment:** `upsertShippedCustomerAssets` (`post-shipment/customer-assets.ts`) is
+- **At shipment:** `upsertShippedCustomerAssets` (`inventory/shipment-customer-assets.ts`) is
   one `INSERT … SELECT … ON CONFLICT` per posted shipment. The warranty ends are the ship
   date plus the item's `itemUnitSalePrice.laborWarrantyMonths` / `partsWarrantyMonths`.
   A reshipped serial moves to the new customer and starts its warranty again; its
   `source` stays. A voided shipment sets the asset Returned.
 - **At an RMA repair:** At Depot at the receipt, In Service at the return shipment (above).
-- **By hand:** `registerCustomerAsset` (`service.server.ts`) inserts a Consumed
+- **By hand:** `registerCustomerAsset` (`service.service.ts`) inserts a Consumed
   `trackedEntity` for the typed serial (source document Item) and the asset with source
   Manual. It refuses an item that is not serial-tracked and a serial the item already
   has.
@@ -365,7 +366,7 @@ closes the order (`serviceOrder.salesInvoiceId`). Tax is 0.
 
 - `post-sales-invoice` skips stock and COGS on a line a billable item stamps
   (`billedServiceLineIds`): the part left stock at issue.
-- Deleting the Draft invoice runs `releaseServiceOrderStamps` (`sales.server.ts`): the
+- Deleting the Draft invoice runs `releaseServiceOrderStamps` (`sales.service.ts`): the
   items go back to Unbilled and the order from Closed back to Completed.
 - The Billing tab (`$id.billing.tsx`, `BillableItemsTable`) reviews an item before it is
   billed: **Edit Price**, **Hold** / **Release**, **Write Off** with a reason

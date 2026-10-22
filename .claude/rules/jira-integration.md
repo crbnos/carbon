@@ -72,15 +72,14 @@ Every write and delete uses `getCarbonServiceRole()` (`writeLinks`,
   `getAccessibleResources` for `cloudId`/`siteUrl` (uses the first resource),
   `upsertCompanyIntegration({ id:"jira", active:true, ... })`, then the server
   `onInstall` hook (converges the `jira-issue-sync` subscriptions), else `config.onInstall`.
-- `integrations.jira.issue.link.ts` — POST links an existing issue (`linkExistingIssue`:
-  pulls the issue's fields, pushes the task's notes as the description, then a Carbon
-  `upsertCompanyIntegration({ id:"jira", active:true, ... })`, then `config.onInstall`.
 - The POST/DELETE writes below are operations in `apps/erp/app/modules/shared/shared.server.ts`
   (`createJiraIssue` / `linkJiraIssue` / `unlinkJiraIssue`, called as
-  `api.shared.linkJiraIssue(input)`), gated on the task's module
-  (`actionTaskPermissions`) and refused on a change notice whose workflow is locked.
-- `integrations.jira.issue.link.ts` — POST links an existing issue (syncs assignee by
-  email→`user`, pushes the task's notes as the Jira description, creates a Carbon
+  `api.shared.linkJiraIssue(input)`), for an NCR action task, a change notice action task
+  or a project element (`entityType`). Each is gated on the record's module
+  (`syncedEntityPermissions`, `@carbon/ee/issue-sync`) and refused on a change notice
+  whose workflow is locked or an element of a Closed project (`editableActionTask`).
+- `integrations.jira.issue.link.ts` — POST links an existing issue (`linkExistingIssue`:
+  pulls the issue's fields, pushes the task's notes as the description, then a Carbon
   remote link); DELETE unlinks (Carbon DB first, then best-effort remote-link cleanup —
   finds the Carbon link by `application.name === "Carbon"` or
   `globalId.startsWith("carbon-")`, not by reconstructing the URL); GET searches issues.

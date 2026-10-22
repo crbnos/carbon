@@ -39,7 +39,7 @@ to plan materials.
   `@carbon/ee/pegging` (pure functions, `WriteGroupPegs` type) is allowed.
   Every server-side `runMrp` caller passes `planningGroupMrpDeps`
   (`@carbon/ee/pegging.server`): the ERP's `runMRP`
-  (`production.mcp.server.ts`), the jobs MRP cron, and `planDemoCompany`
+  (`production.service.ts`, which every ERP caller reaches MRP through), the jobs MRP cron, and `planDemoCompany`
   (which loads it lazily, because under plain tsx `@carbon/auth` does not
   load and the run then degrades). Verify with `pnpm --filter erp build`.
 - Never construct a connection/pool inside this package.

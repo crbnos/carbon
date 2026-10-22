@@ -1,9 +1,9 @@
 ---
 paths:
-  - "packages/server-functions/src/create-project-billing-invoices/**"
-  - "packages/server-functions/src/generate-contract-billable-items/**"
+  - "apps/erp/app/modules/sales/sales.service.ts"
+  - "apps/erp/app/modules/sales/contract-clin.ts"
   - "packages/ee/src/project-revenue/**"
-  - "packages/server-functions/src/lib/project-revenue.ts"
+  - "apps/erp/app/modules/accounting/project-revenue.ts"
   - "apps/erp/app/modules/accounting/ui/RevenueRecognition/ProjectRevenueProgress.ee.tsx"
   - "packages/utils/src/project-billing.ts"
   - "packages/jobs/src/invoicing/contract-funding.ts"
@@ -82,17 +82,18 @@ On Hold with `BILLABLE_REASON_NO_BILL_RATE`. RLS of `customerContractLaborRate`:
 `statusReason` (P3; no `holdReason` column): "No bill rate", "No hours", "Funding
 limit" or a user's note.
 
-- **T&M at posting.** `insertProjectLedgerRows` (`lib/project-posting.ts`) loads the
+- **T&M at posting.** `insertProjectLedgerRows` (`projects/project-posting.ts`) loads the
   live billing lines once (`loadContractBillingContext`) and writes an item per row
   under a T&M line (`buildContractBillableItem`, `priceTimeAndMaterialsItem`): Labor
   = hours × bill rate, Material and other direct cost × (1 + handling), Machine,
   Overhead and Burden not billed. A reversal (`reverseProjectLedgerRows`) reverses
   the item.
-- **Cost Plus from the commercial generator** (P1). `@carbon/server-functions`
-  cannot import `@carbon/ee`, so posting writes no Cost Plus item.
+- **Cost Plus from the commercial generator** (P1). Posting writes no Cost Plus
+  item: `buildContractBillableItem` returns null for a Cost Plus line.
   `generateCostPlusItems` (`@carbon/ee/project-revenue.server`) prices cost × (1 +
   fee) for every cost type; it degrades (`gated: true`) without `PROJECT_REVENUE`.
-  The nightly job and the line's **Generate Billable Items** call it.
+  The nightly job and the line's **Generate Billable Items** (the
+  `generateContractBillableItems` operation, `sales.server.ts`) call it.
 - **The T&M backfill.** `generateTimeAndMaterialsItems` writes items for subtree
   rows posted on or before `through` that have none (`selectRowsToBill`). It runs
   at confirm and at an amend `add` (P15), from **Generate Billable Items**
@@ -115,7 +116,7 @@ with no status filter shows Unbilled and On Hold). The tab needs what the page n
 `update: projects`. `projects+/billing.tsx` is a loader-only redirect to that tab that
 keeps the query (`redirectBeforeLoaders`). The sidebar lists Approvals while time
 approval or DCAA is on, or while contract billable items are Unbilled or On Hold
-(`useProjectsSubmodules`): `getBillingReviewCountForUser` (`projects.server.ts`, one
+(`useProjectsSubmodules`): `getBillingReviewCountForUser` (`projects.service.ts`, one
 `count: exact, head: true` read on `projectBillableItem` with `customerContractLineId` set)
 returns that count, 0 for a user without `update: projects` and `view: sales`. Both
 projects layouts (`projects+/_layout.tsx`, `project+/_layout.tsx`) load it as
@@ -159,7 +160,7 @@ report (`contract+/$id.billing-backup.$invoiceId.tsx`, `getProjectBillingBackup`
 from the table).
 
 **Invoice** on a project contract's page (`$id.invoice.tsx` → `generateContractInvoicesNow`,
-`sales.server.ts`) runs `create-project-billing-invoices` for that contract, then
+`sales.service.ts`) runs `create-project-billing-invoices` for that contract, then
 `create-contract-invoices` (its Fixed Price billing events), in the nightly job's order.
 
 ## The nightly job
@@ -189,24 +190,23 @@ Percent Complete. Each month of such a line is a `customerContractRevenue` row w
 through the contract position like a planned month: a Deferral row for what Deferred
 Revenue covers, an Accrual row into Contract Assets for the rest.
 
-**Run order (R1).** `runRowSynthesizers(extra)`
-(`propose-revenue-recognition-run/index.ts`) returns `synthesizeRentalAccruals`, the
-caller's `extra`, `synthesizeProjectRevenue`, then `synthesizeContractRevenue`. The
-caller passes `extra` as `revenueRunSynthesizers` on the server function fields
-(`ServerFnContext`, `serverFns.system`). `@carbon/server-functions` cannot import
-`@carbon/ee`, so the commercial synthesizer reaches the run only this way.
+**Run order (R1).** `runRowSynthesizers(type, extra)` (`accounting.service.ts`)
+builds the list. A revenue recognition run gets `extra`, `synthesizeProjectRevenue`,
+then `synthesizeContractRevenue`; a lease run gets `synthesizeRentalAccruals` only.
+`extra` defaults to `projectRevenueSynthesizers(projectRevenueWriters)`
+(`@carbon/ee/project-revenue.server`); only a test passes its own. The propose,
+preview and recalculate postings all call `runRowSynthesizers(type)`, so every caller
+gets the commercial synthesizer: the run routes, the close checklist preview
+(`getPeriodRunPreview`), the MCP tools and the job `revenue-recognition-proposal`.
+Pinned by `apps/erp/test/database/propose-revenue-recognition-run/synthesizer-order.test.ts`.
+The Percent Complete and cutover recost tests are `apps/erp/test/database/ee/project-revenue/{percent-complete,cutover-recost}.ee.test.ts`
+(they call ERP posting bodies, which `packages/ee` cannot import).
 
-**Every run call site passes `projectRevenueSynthesizers`** (`@carbon/ee/project-revenue.server`):
-the routes `revenue-recognition-runs.new`, `$runId.repeat`, `$runId.recalculate` and
-`periods.$periodId.close` (propose and the close checklist preview), and the job
-`revenue-recognition-proposal`. A call site that leaves it out writes no Percent
-Complete month, and the next call site that passes it rebuilds the month (R5).
-`getPeriodRunPreview` (`accounting.service.ts`, browser-bundled) takes the
-synthesizers as an argument. The 3 MCP tools that reach it (`closeAccountingPeriod`,
-`getPeriodCloseChecklist`, `getPeriodCloseReadiness`) pass `[]`.
-
-The shared writers live in `@carbon/server-functions/lib/project-revenue`
-(`src/lib/project-revenue.ts`). A synthesizer:
+`projectRevenueSynthesizers(writers)` and `synthesizeCommercialProjectRevenue(writers)`
+are factories. They take the ERP's community writers as an argument, so ee never
+imports the ERP. The shared writers live in
+`apps/erp/app/modules/accounting/project-revenue.ts` (`projectRevenueWriters`, beside
+`synthesizeProjectRevenue`). A synthesizer:
 
 1. takes `lockProjectRevenue` (the contract position lock);
 2. reads its lines with `loadProgressLines` (contract not Draft, line started by the
@@ -277,10 +277,11 @@ account, a negative amount on the swapped sides, rendered by `JournalPreview`
 lock is P1 (Cost Plus items only from ee code), and the Percent Complete synthesizer
 and the loss provision run only in ee code (R1). The routes call
 `requireProjectRevenueEntitlement` for Cost Plus or Percent Complete through
-`projectRevenueRefusal` (`sales.server.ts`; `lines.new`, `$lineId.details`, `amend`)
-and flash `defaultUpgradeMessage`. The forms keep both choices visible with an
-upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
-`upsertContractLine` skips the route check; the ee generator still bills nothing.
+`projectRevenueRefusal` (`sales.service.ts`; routes `lines.new`, `$lineId.details` and
+`$lineId.update`) and flash `defaultUpgradeMessage`. The `amendContract`,
+`createContractLine` and `updateContractLine` operations (`sales.server.ts`, also MCP
+tools) call it too and return the message as an `entitlement` error. The forms keep
+both choices visible with an upgrade notice (`ProjectRevenueUpgrade`) and Save disabled.
 
 ## UI
 
@@ -339,9 +340,6 @@ upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
 
 - Billing lines need the contract currency to equal the base currency (P5);
   multi-currency bill rates are out of scope.
-- Through MCP or the API, the close checklist's revenue run preview leaves out the
-  Percent Complete rows: the 3 MCP tools pass no synthesizers (above). The ERP close
-  page and every run call site include them.
 - The project **Billing** page and the contract's **Project Billing** card list billing
   lines only, so a Fixed Percent Complete line shows its figures in the run review only.
 - The run page's **Amount** sums every line, cost relief and loss provision included.
