@@ -4217,6 +4217,9 @@ msgstr "Blind"
 msgid "Blind Count"
 msgstr "Blind Count"
 
+msgid "Block"
+msgstr "Block"
+
 msgid "Block with an error"
 msgstr "Block with an error"
 
@@ -8124,6 +8127,9 @@ msgstr "Dollar Utilization"
 msgid "Don't Cancel"
 msgstr "Don't Cancel"
 
+msgid "Don't let them work on this process until they have the ability."
+msgstr "Don't let them work on this process until they have the ability."
+
 msgid "Don't see a serial number?"
 msgstr "Don't see a serial number?"
 
@@ -11333,6 +11339,9 @@ msgstr "IDs and descriptions are generated for raw materials."
 
 msgid "If"
 msgstr "If"
+
+msgid "If an operator isn't qualified"
+msgstr "If an operator isn't qualified"
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
@@ -15761,6 +15770,9 @@ msgstr "Only Draft procedures are editable. Create a new version to change an Ac
 
 msgid "Only employees can post receipts."
 msgstr "Only employees can post receipts."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr "Only employees with the {processName} ability can be scheduled for and run this process"
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
@@ -21186,6 +21198,9 @@ msgstr "Show a readable Customer ID column on the customer list, customer forms,
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr "Show a warning on the shop floor, but let them work."
 
 msgid "Show All"
 msgstr "Show All"

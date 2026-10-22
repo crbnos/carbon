@@ -226,6 +226,9 @@ msgstr "Вы уверены, что хотите покинуть эту стр�
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Вы уверены, что хотите отметить эту операцию как выполненную? Это завершит все активные производственные события для этой операции."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Шаги сборки"
 
@@ -450,6 +453,9 @@ msgstr "Завершить партию"
 
 msgid "Complete passed"
 msgstr "Завершить пройденные"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "Завершено"
@@ -2257,8 +2263,20 @@ msgstr "Напишите примечание…"
 msgid "Yes"
 msgstr "Да"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."

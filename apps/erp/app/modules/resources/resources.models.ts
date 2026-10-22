@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants } from "@carbon/database";
 import { isUnsafeStoragePath } from "@carbon/files";
 import {
   type BatchRules,
@@ -332,6 +333,11 @@ export const partnerValidator = z.object({
   // abilityId: z.string().min(1, { message: "Invalid ability" }),
 });
 
+// What MES does when an operator lacks the ability a process requires.
+// 'Warn' shows a banner; 'Block' refuses production work on the operation.
+export const processAbilityPolicies =
+  Constants.public.Enums.processAbilityPolicy;
+
 export const processValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -354,6 +360,7 @@ export const processValidator = z
       .optional()
       .default("Sequential"),
     requiresAbility: zfd.checkbox(),
+    abilityPolicy: z.enum(processAbilityPolicies).optional(),
     batchRuleItem: z.enum(batchRuleLevels).optional(),
     batchRuleSubstance: z.enum(batchRuleLevels).optional(),
     batchRuleGrade: z.enum(batchRuleLevels).optional(),

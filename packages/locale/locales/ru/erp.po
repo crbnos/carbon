@@ -4217,6 +4217,9 @@ msgstr "Слепой"
 msgid "Blind Count"
 msgstr "Слепой подсчет"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Заблокировать с ошибкой"
 
@@ -8124,6 +8127,9 @@ msgstr "Использование в долларах"
 msgid "Don't Cancel"
 msgstr "Не отменять"
 
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
+
 msgid "Don't see a serial number?"
 msgstr "Не видите серийный номер?"
 
@@ -11333,6 +11339,9 @@ msgstr "Идентификаторы и описания генерируютс�
 
 msgid "If"
 msgstr "Если"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Если амортизация уже была рассчитана, следующий расчет выровняет периоды, в течение которых актив с линейным методом амортизации учитывался по старой себестоимости."
@@ -15761,6 +15770,9 @@ msgstr "Редактировать можно только процедуры в
 
 msgid "Only employees can post receipts."
 msgstr "Только сотрудники могут провести поступление."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
@@ -21186,6 +21198,9 @@ msgstr "Показывать столбец с читаемым ID Покупа�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
 
 msgid "Show All"
 msgstr "Показать все"
