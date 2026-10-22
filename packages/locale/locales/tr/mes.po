@@ -287,6 +287,9 @@ msgstr "Parti Detayları"
 msgid "Batch is not available"
 msgstr "Parti kullanılabilir değil"
 
+msgid "Batch notes"
+msgstr "Parti Notları"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Lot Numarası {0}"

@@ -151,23 +151,35 @@ export function BatchOverview({
       return next;
     });
 
+  // The planner's notes from the batch builder: plain text, shown first so the
+  // operator reads them before the steps.
+  const notes = batch.notes?.trim() ? batch.notes : null;
+
   if (view === "instructions") {
     return (
       <>
+        {notes && (
+          <Section divider={false} title={t`Batch notes`}>
+            <div className="prose dark:prose-invert whitespace-pre-wrap break-words">
+              {notes}
+            </div>
+          </Section>
+        )}
         {workInstructions && (
           <Suspense fallback={<TableSkeleton />}>
             <Await resolve={workInstructions}>
               {(resolved) => (
                 <>
                   {resolved.steps.length === 0 &&
-                    resolved.parameters.length === 0 && (
+                    resolved.parameters.length === 0 &&
+                    !notes && (
                       <p className="p-6 text-sm text-muted-foreground">
                         <Trans>This batch has no work instructions.</Trans>
                       </p>
                     )}
                   {resolved.steps.length > 0 && (
                     <Section
-                      divider={false}
+                      divider={Boolean(notes)}
                       title={t`Work instructions`}
                       description={t`Every job in the batch follows these steps. Record a step for all of them at once.`}
                     >

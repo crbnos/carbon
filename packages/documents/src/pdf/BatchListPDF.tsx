@@ -4,6 +4,7 @@
 
 import { formatDate } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
+import { DEFAULT_THEME } from "../template";
 import type { Company } from "../types";
 import { tw } from "./blocks/jobTraveler/tw";
 import { Header, Template } from "./components";
@@ -16,6 +17,26 @@ const COL_JOB = "w-2/12 text-left pr-4";
 const COL_ITEM = "w-2/12 text-left pr-4";
 const COL_DESCRIPTION = "w-5/12 text-left pr-4";
 const COL_QUANTITY = "w-2/12 text-right";
+
+// The traveler's Job Notes look (components/Note.tsx): a ruled uppercase
+// title over 9pt body text, in the default document theme's colors.
+const NOTES_TITLE = `flex flex-row items-center mt-[20px] mb-[10px] py-[6px] px-[3px] border-t border-b border-[#CCCCCC] text-[9px] font-bold uppercase text-[${DEFAULT_THEME.heading}]`;
+const NOTES_BODY = `text-[9px] text-[${DEFAULT_THEME.text}]`;
+
+// react-pdf breaks a line only between words or at the English hyphenation
+// points it finds, so an unbroken string wider than the page (a URL, a file
+// path) printed past the margin. Notes break at spaces, and a longer word
+// every NOTES_WORD_CHUNK characters.
+const NOTES_WORD_CHUNK = 40;
+
+export function breakLongNotesWord(word: string): string[] {
+  if (word.length <= NOTES_WORD_CHUNK) return [word];
+  const parts: string[] = [];
+  for (let start = 0; start < word.length; start += NOTES_WORD_CHUNK) {
+    parts.push(word.slice(start, start + NOTES_WORD_CHUNK));
+  }
+  return parts;
+}
 
 export interface BatchListMember {
   id: string;
@@ -39,6 +60,8 @@ interface BatchListPDFProps {
   processName: string | null;
   workCenterName: string | null;
   members: BatchListMember[];
+  // The planner's plain-text notes from the batch builder.
+  notes?: string | null;
   locale?: string;
 }
 
@@ -54,6 +77,7 @@ export const BatchListPDF = ({
   processName,
   workCenterName,
   members,
+  notes,
   locale
 }: BatchListPDFProps) => {
   const totalQuantity = members.reduce((sum, m) => sum + (m.quantity ?? 0), 0);
@@ -177,6 +201,19 @@ export const BatchListPDF = ({
           <Text style={tw(COL_QUANTITY)}>{totalQuantity}</Text>
         </View>
       </View>
+
+      {/* Placed like the traveler's Job Notes, after the table. Plain text,
+          so its line breaks print as typed. */}
+      {notes?.trim() ? (
+        <View style={tw("mb-6")}>
+          <View style={tw(NOTES_TITLE)} minPresenceAhead={30}>
+            <Text>Batch Notes</Text>
+          </View>
+          <Text style={tw(NOTES_BODY)} hyphenationCallback={breakLongNotesWord}>
+            {notes}
+          </Text>
+        </View>
+      ) : null}
     </Template>
   );
 };

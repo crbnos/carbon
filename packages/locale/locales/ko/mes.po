@@ -287,6 +287,9 @@ msgstr "배치 상세정보"
 msgid "Batch is not available"
 msgstr "배치는 가용하지 않습니다"
 
+msgid "Batch notes"
+msgstr "배치 메모"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "배치 번호 {0}"

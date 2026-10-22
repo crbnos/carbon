@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const batch = await serviceRole
     .from("jobOperationBatch")
     .select(
-      "id, readableId, status, createdAt, process(name), workCenter(name)"
+      "id, readableId, status, notes, createdAt, process(name), workCenter(name)"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -104,6 +104,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }}
       processName={batch.data.process?.name ?? null}
       workCenterName={workCenterName}
+      notes={batch.data.notes}
       members={(members.data ?? [])
         .map((m): BatchListMember => {
           const thumbnailPath =

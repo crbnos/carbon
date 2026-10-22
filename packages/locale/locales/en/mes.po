@@ -287,6 +287,9 @@ msgstr "Batch Details"
 msgid "Batch is not available"
 msgstr "Batch is not available"
 
+msgid "Batch notes"
+msgstr "Batch notes"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Batch Number {0}"

@@ -287,6 +287,9 @@ msgstr "Los-Details"
 msgid "Batch is not available"
 msgstr "Charge ist nicht verfügbar"
 
+msgid "Batch notes"
+msgstr "Los-Notizen"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Chargennummer {0}"
