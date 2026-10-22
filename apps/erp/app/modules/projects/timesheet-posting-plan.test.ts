@@ -14,6 +14,7 @@ import {
   planDilution,
   planTimesheetPosting,
   type TimesheetLaborRate,
+  type TimesheetOriginal,
   type TimesheetPostingEntry
 } from "./timesheet-posting-plan";
 
@@ -109,7 +110,7 @@ describe("planTimesheetPosting", () => {
       [reversal],
       contexts("Expense"),
       rates,
-      new Map([["tse-1", { id: "tse-1", costRate: 85, ledgerRowId: "pjl-1" }]]),
+      new Map([["tse-1", booked({ costRate: 85, accountId: "6100" })]]),
       options
     );
     expect(plan.lines.map((line) => [line.accountId, line.amount])).toEqual([
@@ -172,6 +173,110 @@ describe("planTimesheetPosting", () => {
     expect(plan.lines).toEqual([]);
     expect(plan.ledgerRows).toEqual([]);
     expect(plan.stamps).toHaveLength(1);
+  });
+});
+
+/** What a posted 6 h entry booked: 510.00 on one ledger row. */
+function booked(overrides: Partial<TimesheetOriginal> = {}): TimesheetOriginal {
+  return {
+    id: "tse-1",
+    costRate: 85,
+    hours: 6,
+    ledgerRowId: "pjl-1",
+    postedAmount: 510,
+    accountId: "1400",
+    unallowable: false,
+    fixedAssetId: null,
+    postCapitalization: false,
+    ...overrides
+  };
+}
+
+describe("a correction follows what the original booked", () => {
+  const reversal: TimesheetPostingEntry = {
+    ...entry,
+    id: "tse-2",
+    hours: -6,
+    reversalOfId: "tse-1"
+  };
+
+  it("credits the account the original debited, and keeps its unallowable flag, after the project moved from Contract to Expense", () => {
+    const plan = planTimesheetPosting(
+      [reversal],
+      contexts("Expense"),
+      rates,
+      new Map([["tse-1", booked({ accountId: "1400", unallowable: true })]]),
+      options
+    );
+    expect(plan.lines.map((line) => [line.accountId, line.amount])).toEqual([
+      ["1400", -510],
+      ["5030", 510]
+    ]);
+    expect(plan.ledgerRows[0]).toMatchObject({
+      amount: -510,
+      reversalOfId: "pjl-1",
+      unallowable: true
+    });
+  });
+
+  it("posts nothing for a reversal whose original posted nothing (a Statistical original)", () => {
+    const plan = planTimesheetPosting(
+      [reversal],
+      contexts("Expense"),
+      rates,
+      new Map([
+        [
+          "tse-1",
+          booked({ ledgerRowId: null, postedAmount: 0, accountId: null })
+        ]
+      ]),
+      options
+    );
+    expect(plan.lines).toEqual([]);
+    expect(plan.ledgerRows).toEqual([]);
+    expect(plan.stamps).toEqual([
+      { entryId: "tse-2", costRate: 85, treatment: "Expense" }
+    ]);
+  });
+
+  it("reverses a diluted entry by exactly what it posted", () => {
+    // 7 h at 85.00 diluted by 40/47: the original posted
+    // round(7 × 85 × 40/47) = 506.38298 at the stamped rate 72.34043, and
+    // round(7 × 72.34043) would be 506.38301.
+    const plan = planTimesheetPosting(
+      [{ ...reversal, hours: -7 }],
+      contexts("Expense"),
+      rates,
+      new Map([
+        [
+          "tse-1",
+          booked({
+            hours: 7,
+            costRate: 72.34043,
+            postedAmount: 506.38298,
+            accountId: "6100"
+          })
+        ]
+      ]),
+      options
+    );
+    expect(plan.ledgerRows[0]?.amount).toEqual(-506.38298);
+    expect(plan.lines.map((line) => line.amount)).toEqual([
+      -506.38298, 506.38298
+    ]);
+  });
+
+  it("rebooks a replacement at the rate its original booked, not today's rate for the date", () => {
+    // The rate for 2026-11-02 is 90.00 now; the original booked 85.00.
+    const plan = planTimesheetPosting(
+      [{ ...entry, id: "tse-3", entryDate: "2026-11-02", bookedRate: 85 }],
+      contexts("Expense"),
+      rates,
+      new Map(),
+      options
+    );
+    expect(plan.ledgerRows[0]?.amount).toEqual(510);
+    expect(plan.stamps[0]?.costRate).toEqual(85);
   });
 });
 

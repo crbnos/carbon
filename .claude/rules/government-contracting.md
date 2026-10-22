@@ -163,12 +163,15 @@ In DCAA mode an `Exempt` employee's week (`employeeJob.flsaStatus`) posts at fac
 `timesheetEntry.dilutionFactor` stores the factor an entry posted at (P4, null = 1). A
 later correction re-dilutes the week's other posted entries and posts the difference
 (`planRedilutionPostings`) in the same transaction. A dilution adjustment changes cost,
-never hours, so it adds no Time & Materials billable item.
+never hours, so it adds no Time & Materials billable item, and it posts to the account
+its entry booked. A reversal negates what the entry posted, adjustments included.
 
 ## Labor transfers
 
 A correction whose charge number changes (P3): the replacement carries
-`correctionOfId`. In DCAA mode `assertCanApprove` refuses the requester as approver
+`correctionOfId`. On the original's labor category it rebooks at the original's
+undiluted booked rate, so a rate edited since leaves no residual in labor absorption;
+the reversal credits the account the original debited. In DCAA mode `assertCanApprove` refuses the requester as approver
 (`LABOR_TRANSFER_SAME_APPROVER`), the approvals action counts the reversal as part of
 the transfer (`laborTransferRefusal`), and a transfer never posts without approval, even
 with approvals off. The approvals list shows a **Transfer** badge.

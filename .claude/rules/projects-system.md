@@ -355,8 +355,14 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   variance journal and the Payback Variance row cannot move with it.
 - **Issue to Project.** `post-project-issue` splits an untracked issue across the project's
   stripes at the bin (`splitAcrossStripes`), one `bookAdjustment` per stripe sharing one
-  journal and one `projectLedger` row. A Return goes back to the project's stock.
-  What the stripes do not cover comes out of the first stripe, below zero, unless the
+  journal and one `projectLedger` row. A Return goes back to the project's stock at the
+  cost the issues it reverses charged, not the item's current cost: `issueReturnUnitCost`
+  over `loadReturnableIssueRows` (`project-posting.ts`) — the net outstanding Project
+  Issue Material cost over quantity for the item (and serial or batch) to the element, or
+  the one issue a Service return names — passed to `bookAdjustment` as `fixedUnitCost`,
+  the Unscrap rule. So an issue and its return net to 0 in the project and in WIP. With
+  nothing outstanding (a Statistical project writes no ledger row) it books at current
+  cost. What the stripes do not cover comes out of the first stripe, below zero, unless the
   company prevents negative stock (`getStrictBackflushSettings` without a location:
   Strict backflush and Prevent negative stock both on), which refuses it naming the item
   and its on-hand (Brad, 2026-10-21). A serial or batch never goes below zero. An Issue
@@ -553,8 +559,17 @@ Service project's Draft entry.
 `post-timesheet` costs hours × the labor category's rate on the entry date
 (`laborCategoryRate.effectiveFrom`), Dr the project account / Cr
 `laborAbsorptionAccount`. After the cutover it writes one journal per accounting period;
-before it, one Provisional journal with no period. A reversal uses
-its original's `costRate`. The MES calls it through `erpPosting` with system scope,
+before it, one Provisional journal with no period. A reversal undoes what
+its original booked (`loadTimesheetBookings`, `pushReversal`), never what the project
+would book today: the negated Σ of the entry's Timesheet rows (dilution adjustments
+included, so it nets to 0 exactly), on the account of the original posting row's
+journal debit line, with its `unallowable` flag. An original that built an asset follows
+the asset (its CIP class, or the in-service class once Active). The posting row is the
+entry's earliest live row with hours, never a 0-hour dilution adjustment, so its Time &
+Materials item is the one reversed. An original with no posting row (Statistical)
+reverses nothing. A correction's replacement on the original's labor category rebooks
+at the original's undiluted booked rate (`bookedRate`), not today's rate for the date.
+`post-project-expense` reverses to its original's debit account and flag the same way. The MES calls it through `erpPosting` with system scope,
 because it requires `projects_update` and an operator does not hold it; the routes check
 ownership first. The ERP calls it through `postTimesheetEntries` (`projects.service.ts`,
 `invokePosting`) after the calling operation's own permission check.

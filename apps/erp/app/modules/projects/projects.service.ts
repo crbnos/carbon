@@ -131,8 +131,10 @@ import {
   buildBillableItem,
   buildProjectLedgerRow,
   insertProjectLedgerRows,
+  issueReturnUnitCost,
   isUnallowableCharge,
   loadProjectPostingContexts,
+  loadReturnableIssueRows,
   loadServicePostingContext,
   loadServicePostingContexts,
   ProjectChargeError,
@@ -6307,6 +6309,7 @@ export async function postTimesheet(
         "status",
         "postedAt",
         "reversalOfId",
+        "correctionOfId",
         "note",
         "coverage",
         "coverageReason",
@@ -6341,11 +6344,13 @@ export async function postTimesheet(
         laborCategoryId: entry.laborCategoryId,
         hours: Number(entry.hours),
         reversalOfId: entry.reversalOfId,
+        correctionOfId: entry.correctionOfId,
         isService: entry.projectType === "Service",
         note: entry.note,
         coverage: entry.coverage as ServiceCoverage | null,
         coverageReason: entry.coverageReason,
-        customerId: null as string | null
+        customerId: null as string | null,
+        bookedRate: null as number | null
       }));
     if (entries.length === 0) {
       return { success: true, postedEntryIds: [], journalIds: [] };
@@ -6369,6 +6374,19 @@ export async function postTimesheet(
         })
       : null;
     const redilutedEntries = dilution?.posted ?? [];
+    // What each reversed or re-diluted entry booked, and the rate a
+    // correction's original booked.
+    const bookedIds = [
+      ...new Set([...originalIds, ...redilutedEntries.map((e) => e.id)])
+    ];
+    const rateSourceIds = [
+      ...new Set([
+        ...originalIds,
+        ...entries
+          .filter((e) => !e.reversalOfId && e.correctionOfId)
+          .map((e) => e.correctionOfId as string)
+      ])
+    ];
 
     const serviceEntries = entries.filter((e) => e.isService);
     const serviceRefs = [
@@ -6403,48 +6421,32 @@ export async function postTimesheet(
           .where("companyId", "=", companyId)
           .execute(),
       async () =>
-        originalIds.length === 0
+        rateSourceIds.length === 0
           ? ([] as Pick<
               Selectable<DB["timesheetEntry"]>,
-              "id" | "costRate" | "coverage" | "coverageReason"
+              | "id"
+              | "costRate"
+              | "hours"
+              | "dilutionFactor"
+              | "laborCategoryId"
+              | "coverage"
+              | "coverageReason"
             >[])
           : trx
               .selectFrom("timesheetEntry")
-              .select(["id", "costRate", "coverage", "coverageReason"])
-              .where("id", "in", originalIds)
+              .select([
+                "id",
+                "costRate",
+                "hours",
+                "dilutionFactor",
+                "laborCategoryId",
+                "coverage",
+                "coverageReason"
+              ])
+              .where("id", "in", rateSourceIds)
               .where("companyId", "=", companyId)
               .execute(),
-      async () =>
-        originalIds.length === 0
-          ? ([] as Pick<Selectable<DB["projectLedger"]>, "id" | "documentId">[])
-          : trx
-              .selectFrom("projectLedger")
-              .select(["id", "documentId"])
-              .where("documentType", "=", "Timesheet")
-              .where("documentId", "in", originalIds)
-              .where("reversalOfId", "is", null)
-              // Not reversed by a later row: a coverage reclass reverses
-              // a service row and writes its replacement.
-              .where(({ not, exists, selectFrom }) =>
-                not(
-                  exists(
-                    selectFrom("projectLedger as reversal")
-                      .select("reversal.id")
-                      .whereRef(
-                        "reversal.reversalOfId",
-                        "=",
-                        "projectLedger.id"
-                      )
-                      .whereRef(
-                        "reversal.companyId",
-                        "=",
-                        "projectLedger.companyId"
-                      )
-                  )
-                )
-              )
-              .where("companyId", "=", companyId)
-              .execute(),
+      () => loadTimesheetBookings(trx, companyId, bookedIds),
       () =>
         trx
           .selectFrom("accountDefault")
@@ -6474,6 +6476,23 @@ export async function postTimesheet(
     const originalCoverage = new Map(
       originals.map((original) => [original.id, original])
     );
+    // A correction's replacement on its original's labor category rebooks
+    // at the rate the original booked, undiluted: a rate edited since must
+    // not leave a residual in labor absorption.
+    for (const entry of entries) {
+      if (entry.reversalOfId || !entry.correctionOfId) continue;
+      const original = originalCoverage.get(entry.correctionOfId);
+      if (
+        !original ||
+        original.costRate === null ||
+        original.laborCategoryId !== entry.laborCategoryId
+      ) {
+        continue;
+      }
+      entry.bookedRate = round(
+        Number(original.costRate) / Number(original.dilutionFactor ?? 1)
+      );
+    }
     for (const entry of serviceEntries) {
       const service = services.get(
         projectPostingKey(entry.projectId, entry.projectElementId)
@@ -6500,20 +6519,27 @@ export async function postTimesheet(
       }
     }
 
-    const ledgerRowByEntry = new Map(
-      originalLedger.map((row) => [row.documentId, row.id])
-    );
-    const originalById = new Map<string, TimesheetOriginal>(
-      originals.map((original) => [
-        original.id,
-        {
-          id: original.id,
-          costRate:
-            original.costRate === null ? null : Number(original.costRate),
-          ledgerRowId: ledgerRowByEntry.get(original.id) ?? null
-        }
-      ])
-    );
+    const bookedById = new Map<string, TimesheetOriginal>();
+    const reversedIds = new Set(originalIds);
+    for (const original of originals) {
+      if (!reversedIds.has(original.id)) continue;
+      const booking = originalLedger.get(original.id);
+      bookedById.set(original.id, {
+        id: original.id,
+        costRate: original.costRate === null ? null : Number(original.costRate),
+        hours: Number(original.hours),
+        ...(booking ?? emptyTimesheetBooking)
+      });
+    }
+    // A re-diluted entry with no posting row posted nothing to adjust.
+    for (const entry of redilutedEntries) {
+      bookedById.set(entry.id, {
+        id: entry.id,
+        costRate: null,
+        hours: entry.hours,
+        ...(originalLedger.get(entry.id) ?? emptyTimesheetBooking)
+      });
+    }
 
     const plan = planTimesheetPosting(
       entries,
@@ -6523,7 +6549,7 @@ export async function postTimesheet(
         effectiveFrom: rate.effectiveFrom,
         costRate: Number(rate.costRate)
       })),
-      originalById,
+      bookedById,
       {
         ...journalOptions,
         dilutionFactors: dilution?.factorByEntry,
@@ -6544,7 +6570,8 @@ export async function postTimesheet(
           amount: adjustment.amount
         })),
         contexts,
-        journalOptions
+        journalOptions,
+        bookedById
       );
       plan.lines.push(...redilution.lines);
       plan.ledgerRows.push(...redilution.ledgerRows);
@@ -6806,6 +6833,119 @@ type PostingEntry = TimesheetPostingEntry & {
   isService: boolean;
   note: string | null;
 };
+
+type TimesheetBooking = Pick<
+  TimesheetOriginal,
+  | "ledgerRowId"
+  | "postedAmount"
+  | "accountId"
+  | "unallowable"
+  | "fixedAssetId"
+  | "postCapitalization"
+>;
+
+const emptyTimesheetBooking: TimesheetBooking = {
+  ledgerRowId: null,
+  postedAmount: 0,
+  accountId: null,
+  unallowable: false,
+  fixedAssetId: null,
+  postCapitalization: false
+};
+
+/**
+ * What each posted timesheet entry booked, in 2 queries: its own posting
+ * row (the earliest live row with hours: not a dilution adjustment, not a
+ * reversal, not reversed by a coverage reclass), the account of that row's
+ * journal debit line and its unallowable flag, the Σ of all its Timesheet
+ * rows, and the asset its CIP row built. An entry with no live posting row
+ * is absent.
+ */
+async function loadTimesheetBookings(
+  trx: Transaction<DB>,
+  companyId: string,
+  entryIds: string[]
+): Promise<Map<string, TimesheetBooking>> {
+  const bookings = new Map<string, TimesheetBooking>();
+  if (entryIds.length === 0) return bookings;
+  const [rows, cipRows] = await inOrder([
+    () =>
+      trx
+        .selectFrom("projectLedger")
+        .leftJoin("journalLine", (join) =>
+          join
+            .onRef("journalLine.id", "=", "projectLedger.journalLineId")
+            .onRef("journalLine.companyId", "=", "projectLedger.companyId")
+        )
+        .select((eb) => [
+          "projectLedger.id",
+          "projectLedger.documentId",
+          "projectLedger.amount",
+          "projectLedger.quantity",
+          "projectLedger.reversalOfId",
+          "projectLedger.unallowable",
+          "journalLine.accountId",
+          eb
+            .exists(
+              eb
+                .selectFrom("projectLedger as reversal")
+                .select("reversal.id")
+                .whereRef("reversal.reversalOfId", "=", "projectLedger.id")
+                .whereRef("reversal.companyId", "=", "projectLedger.companyId")
+            )
+            .as("reversed")
+        ])
+        .where("projectLedger.documentType", "=", "Timesheet")
+        .where("projectLedger.documentId", "in", entryIds)
+        .where("projectLedger.companyId", "=", companyId)
+        .orderBy("projectLedger.createdAt")
+        .orderBy("projectLedger.id")
+        .execute(),
+    () =>
+      trx
+        .selectFrom("fixedAssetCipCost")
+        .select(["sourceDocumentId", "fixedAssetId", "postCapitalization"])
+        .where("sourceType", "=", "Timesheet")
+        .where("sourceDocumentId", "in", entryIds)
+        .where("companyId", "=", companyId)
+        .orderBy("createdAt")
+        .execute()
+  ]);
+
+  const postedAmount = new Map<string, number>();
+  for (const row of rows) {
+    postedAmount.set(
+      row.documentId,
+      (postedAmount.get(row.documentId) ?? 0) + Number(row.amount)
+    );
+  }
+  const cipByEntry = new Map<
+    string,
+    { fixedAssetId: string; postCapitalization: boolean }
+  >();
+  for (const row of cipRows) {
+    if (row.sourceDocumentId && !cipByEntry.has(row.sourceDocumentId)) {
+      cipByEntry.set(row.sourceDocumentId, row);
+    }
+  }
+  for (const row of rows) {
+    if (bookings.has(row.documentId)) continue;
+    // A dilution adjustment (0 hours) changes the cost, never the posting.
+    if (row.reversalOfId || row.reversed || Number(row.quantity) === 0) {
+      continue;
+    }
+    const cip = cipByEntry.get(row.documentId);
+    bookings.set(row.documentId, {
+      ledgerRowId: row.id,
+      postedAmount: round(postedAmount.get(row.documentId) ?? 0),
+      accountId: row.accountId ?? null,
+      unallowable: row.unallowable,
+      fixedAssetId: cip?.fixedAssetId ?? null,
+      postCapitalization: cip?.postCapitalization ?? false
+    });
+  }
+  return bookings;
+}
 
 /**
  * The dilution of every (exempt employee, ISO week) the call touches, in DCAA
@@ -7191,15 +7331,21 @@ export async function postProjectExpense(
     assertChargeable(context, isReversal ? "commitment" : "new");
 
     // The original's open ledger row: not reversed by a later row (a
-    // coverage reclass reverses and replaces it).
+    // coverage reclass reverses and replaces it), with the account of its
+    // journal debit line and its unallowable flag.
     const original = entry.reversalOfId
       ? await sql<{
           id: string;
           coverage: ServiceCoverage | null;
           coverageReason: string | null;
+          unallowable: boolean;
+          accountId: string | null;
         }>`
-            SELECT pl."id", pl."coverage", pl."coverageReason"
+            SELECT pl."id", pl."coverage", pl."coverageReason",
+              pl."unallowable", jl."accountId"
             FROM "projectLedger" pl
+            LEFT JOIN "journalLine" jl
+              ON jl."id" = pl."journalLineId" AND jl."companyId" = pl."companyId"
             WHERE pl."documentType" = 'Project Expense'
               AND pl."documentId" = ${entry.reversalOfId}
               AND pl."companyId" = ${companyId}
@@ -7243,17 +7389,21 @@ export async function postProjectExpense(
       }
     }
 
-    const resolved = resolveProjectPostingAccount(
-      context,
-      entry.entryDate,
-      coverage
-    );
-    if (resolved.treatment === "Capitalize") {
+    // A reversal undoes what its original booked: the account its debit
+    // line was on, whatever the project's treatment is today.
+    const resolved = original?.accountId
+      ? {
+          treatment: resolveProjectTreatment(context, entry.entryDate),
+          accountId: original.accountId
+        }
+      : resolveProjectPostingAccount(context, entry.entryDate, coverage);
+    if (!original?.accountId && resolved.treatment === "Capitalize") {
       throw new ProjectChargeError(
         "An expense entry cannot charge a capital project. Use a charge or a purchase invoice."
       );
     }
-    const isStatistical = resolved.treatment === "Statistical";
+    const isStatistical =
+      !original?.accountId && resolved.treatment === "Statistical";
     const amount = round(Number(entry.amount));
 
     let journalId: string | null = null;
@@ -7338,7 +7488,10 @@ export async function postProjectExpense(
               reversalOfId: original?.id ?? null,
               coverage,
               coverageReason,
-              unallowable: isUnallowableCharge(context, resolved.accountId),
+              // A reversal copies its original's flag.
+              unallowable:
+                original?.unallowable ??
+                isUnallowableCharge(context, resolved.accountId),
               createdBy: userId
             })
           ]
@@ -7468,9 +7621,11 @@ export const postProjectIssuePermission = {
  * projectLedger Material row records the same cost. A Statistical project
  * charges indirectCostAccount and writes no ledger row.
  *
- * A Return values the stock at the item's current cost (the increase rule of
- * `bookAdjustment`), and the ledger row uses that same cost, so the project
- * total equals the GL.
+ * A Return values the stock at the cost the issues it reverses charged
+ * (`issueReturnUnitCost`: net outstanding issue cost over quantity, the
+ * Unscrap rule), else at the item's current cost, and the ledger row uses
+ * that same cost, so the project total equals the GL and a round trip nets
+ * to 0.
  *
  * On a Service project (By Coverage) the charge's coverage decides the
  * account: the user's override with a reason, else `resolveCoverage` for a
@@ -7853,6 +8008,23 @@ export async function postProjectIssue(
       context.project.identifier || context.project.name || projectId
     }`;
 
+    // A Return books at the cost the issues it reverses charged (C3), so an
+    // issue and its return net to 0 in the project and in WIP. With no
+    // outstanding issue (a Statistical project writes no ledger row) it
+    // books at the item's current cost.
+    const returnUnitCost = isIssue
+      ? null
+      : issueReturnUnitCost(
+          await loadReturnableIssueRows(trx, {
+            companyId,
+            projectId,
+            projectElementId,
+            itemId,
+            trackedEntityId,
+            returnOfProjectLedgerId: returnedIssue?.id ?? null
+          })
+        );
+
     // One adjustment per stripe drawn; the project is charged their sum.
     const bookedRows: {
       itemLedgerId: string;
@@ -7881,6 +8053,7 @@ export async function postProjectIssue(
           itemPostingGroupId: itemCostResult.data.itemPostingGroupId
         },
         itemCost: itemCostResult.data,
+        fixedUnitCost: returnUnitCost ?? undefined,
         accounting: {
           postingStatus,
           accountingPeriodId,

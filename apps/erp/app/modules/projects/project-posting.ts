@@ -15,6 +15,7 @@ import { inOrder } from "@carbon/database/rows";
 import {
   type CoverageChargeType,
   datetime,
+  EPSILON,
   priceTimeAndMaterialsItem,
   resolveBillRate,
   resolveCoverage,
@@ -1093,6 +1094,65 @@ export async function reverseProjectLedgerRows(
     userId: args.userId,
     rows: reversals
   });
+}
+
+/**
+ * The unit cost a project issue Return books at: the cost the issues it
+ * reverses charged, never the item's carrying cost on the return date (the
+ * Unscrap and maintenance-return rule). `rows` are the Project Issue
+ * Material rows the return can reverse — issues positive, earlier returns
+ * negative — so the result is the net outstanding cost over the net
+ * outstanding quantity. Null when nothing is outstanding: the caller then
+ * books at current cost.
+ */
+export function issueReturnUnitCost(
+  rows: ReadonlyArray<{ quantity: number | null; amount: number }>
+): number | null {
+  let quantity = 0;
+  let cost = 0;
+  for (const row of rows) {
+    quantity += Number(row.quantity ?? 0);
+    cost += Number(row.amount);
+  }
+  if (quantity <= EPSILON || cost <= EPSILON) return null;
+  return cost / quantity;
+}
+
+/**
+ * The Project Issue Material rows a Return of `itemId` (and serial or
+ * batch) to the project element reverses: `returnOfProjectLedgerId` alone
+ * when the return names its issue (a Service project), else every issue and
+ * return of the item to the element. Feed them to `issueReturnUnitCost`.
+ */
+export async function loadReturnableIssueRows(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    projectId: string;
+    projectElementId: string | null;
+    itemId: string;
+    trackedEntityId: string | null;
+    returnOfProjectLedgerId: string | null;
+  }
+): Promise<{ quantity: number | null; amount: number }[]> {
+  const { rows } = await sql<{ quantity: number | null; amount: number }>`
+    SELECT pl."quantity", pl."amount"
+    FROM "projectLedger" pl
+    JOIN "itemLedger" il ON il."id" = pl."documentId" AND il."companyId" = pl."companyId"
+    WHERE pl."companyId" = ${args.companyId}
+      AND pl."projectId" = ${args.projectId}
+      AND pl."itemId" = ${args.itemId}
+      AND pl."documentType" = 'Project Issue'
+      AND pl."costType" = 'Material'
+      AND il."trackedEntityId" IS NOT DISTINCT FROM ${args.trackedEntityId}
+      AND (
+        CASE WHEN ${args.returnOfProjectLedgerId}::text IS NULL
+          THEN pl."projectElementId" IS NOT DISTINCT FROM ${args.projectElementId}
+          ELSE pl."id" = ${args.returnOfProjectLedgerId}
+        END
+      )
+  `.execute(trx);
+  return rows;
 }
 
 // ─── Service projects: coverage inputs and billable items ────────────────────

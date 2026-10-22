@@ -2,8 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
-import { postTimesheet } from "../../../app/modules/projects/projects.service";
+import {
+  createTimesheetCorrection,
+  postTimesheet
+} from "../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
@@ -665,6 +669,327 @@ databaseTest(
       expect(lines.reduce((sum, line) => sum + Number(line.amount), 0)).toEqual(
         0
       );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+async function post(
+  f: Awaited<ReturnType<typeof projectPostingFixture>>,
+  timesheetEntryIds: string[]
+) {
+  const result = await invokePosting(
+    handlesOf(f.ctx),
+    "post-timesheet",
+    { timesheetEntryIds },
+    postTimesheet
+  );
+  expect(result.error).toBeNull();
+  return result;
+}
+
+async function submittedEntry(
+  f: Awaited<ReturnType<typeof projectPostingFixture>>,
+  hours: number
+) {
+  const entry = await f.db
+    .insertInto("timesheetEntry")
+    .values({
+      employeeId: "system",
+      entryDate: "2026-10-05",
+      projectId: f.projectId,
+      projectElementId: f.elementId,
+      laborCategoryId: f.laborCategoryId,
+      hours,
+      status: "Submitted",
+      companyId: f.companyId,
+      createdBy: "system"
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return entry.id;
+}
+
+databaseTest(
+  "a reversal credits the account its original debited and keeps its unallowable flag after the project's treatment changes",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      // 8 h × 85.00 = Dr Project WIP 680.00 on a Contract project.
+      const entryId = await submittedEntry(f, 8);
+      await post(f, [entryId]);
+
+      // The project moves to Expense and the element becomes unallowable.
+      await f.db
+        .updateTable("project")
+        .set({ costTreatment: "Expense" })
+        .where("id", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await f.db
+        .updateTable("projectElement")
+        .set({ isUnallowable: true })
+        .where("id", "=", f.elementId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const { reversalId } = await createTimesheetCorrection(f.db, {
+        companyId: f.companyId,
+        userId: "system",
+        timesheetEntryId: entryId,
+        hours: 0,
+        correctionReason: "Charged in error"
+      });
+      await post(f, [reversalId]);
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("documentId", "=", reversalId)
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        lines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("labor-absorption"), 680],
+        [f.account("project-wip"), -680]
+      ]);
+
+      const reversalRow = await f.db
+        .selectFrom("projectLedger")
+        .select(["amount", "unallowable", "reversalOfId"])
+        .where("documentId", "=", reversalId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(reversalRow.amount)).toEqual(-680);
+      expect(reversalRow.unallowable).toBe(false);
+      expect(reversalRow.reversalOfId).not.toBeNull();
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a labor transfer rebooks at the rate the original booked, not the rate edited since",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const entryId = await submittedEntry(f, 8);
+      await post(f, [entryId]);
+
+      // The rate for the entry's date is edited after it posted at 85.00.
+      await f.db
+        .updateTable("laborCategoryRate")
+        .set({ costRate: 90 })
+        .where("laborCategoryId", "=", f.laborCategoryId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const otherElementId = `${f.prefix}-element-2`;
+      await f.db
+        .insertInto("projectElement")
+        .values({
+          id: otherElementId,
+          projectId: f.projectId,
+          readableId: "TP-2",
+          sequence: 2,
+          type: "Task",
+          name: "Build",
+          stateId: f.state("todo"),
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+
+      const { reversalId, replacementId, isTransfer } =
+        await createTimesheetCorrection(f.db, {
+          companyId: f.companyId,
+          userId: "system",
+          timesheetEntryId: entryId,
+          hours: 8,
+          correctionReason: "Wrong charge number",
+          projectId: f.projectId,
+          projectElementId: otherElementId
+        });
+      expect(isTransfer).toBe(true);
+      await post(f, [reversalId, replacementId!]);
+
+      const rows = await f.db
+        .selectFrom("projectLedger")
+        .select(["documentId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const amountOf = (id: string) =>
+        Number(rows.find((row) => row.documentId === id)?.amount);
+      expect(amountOf(reversalId)).toEqual(-680);
+      expect(amountOf(replacementId!)).toEqual(680);
+
+      // Labor absorption holds exactly the 680.00 the time booked.
+      const absorption = await f.db
+        .selectFrom("journalLine")
+        .select("amount")
+        .where("accountId", "=", f.account("labor-absorption"))
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        absorption.reduce((sum, line) => sum + Number(line.amount), 0)
+      ).toEqual(-680);
+
+      const replacement = await f.db
+        .selectFrom("timesheetEntry")
+        .select("costRate")
+        .where("id", "=", replacementId!)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(replacement.costRate)).toEqual(85);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA: a correction after a re-dilution reverses the entry's own row and writes off its Time & Materials item",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      const customerId = `${f.prefix}-customer`;
+      const itemId = `${f.prefix}-item`;
+      const contractId = `${f.prefix}-contract`;
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .updateTable("laborCategoryRate")
+          .set({ billRate: 150 })
+          .where("laborCategoryId", "=", f.laborCategoryId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        await trx
+          .insertInto("customer")
+          .values({ id: customerId, name: f.prefix, companyId: f.companyId })
+          .execute();
+        await trx
+          .insertInto("item")
+          .values({
+            id: itemId,
+            readableId: `${f.prefix}-ENG`,
+            name: "Engineering services",
+            type: "Service",
+            itemTrackingType: "Non-Inventory",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("customerContract")
+          .values({
+            id: contractId,
+            customerContractId: `CON-${f.prefix}`,
+            name: "T&M",
+            customerId,
+            status: "Active",
+            closeDate: "2026-01-01",
+            startDate: "2026-01-01",
+            endDate: "2026-12-31",
+            billingFrequency: "Month",
+            billingAlignment: "Calendar",
+            billingTiming: "Arrears",
+            currencyCode: "USD",
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("customerContractLine")
+          .values({
+            id: `${contractId}-line`,
+            customerContractId: contractId,
+            revenueType: "One-time",
+            itemId,
+            description: "Engineering T&M",
+            quantity: 1,
+            rate: 0,
+            startDate: "2026-01-01",
+            billingMethod: "Time & Materials",
+            revenueMethod: "Right to Invoice",
+            materialHandlingPercent: 0.1,
+            projectId: f.projectId,
+            projectElementId: f.elementId,
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+      });
+
+      const ids = await exemptWeek(f, "DCAA");
+      await post(f, ids);
+      const itemOf = async (entryId: string) =>
+        f.db
+          .selectFrom("projectBillableItem")
+          .innerJoin(
+            "projectLedger",
+            "projectLedger.id",
+            "projectBillableItem.projectLedgerId"
+          )
+          .select([
+            "projectBillableItem.status",
+            "projectBillableItem.statusReason"
+          ])
+          .where("projectLedger.documentId", "=", entryId)
+          .where("projectBillableItem.companyId", "=", f.companyId)
+          .execute();
+      expect(await itemOf(ids[1]!)).toEqual([
+        { status: "Unbilled", statusReason: null }
+      ]);
+
+      // Removing the first day re-dilutes the other four: each gets a
+      // quantity 0 adjustment row.
+      const first = await createTimesheetCorrection(f.db, {
+        companyId: f.companyId,
+        userId: PROJECT_TEST_USER,
+        timesheetEntryId: ids[0]!,
+        hours: 0,
+        correctionReason: "Charged to the wrong week"
+      });
+      await post(f, [first.reversalId]);
+
+      const second = await createTimesheetCorrection(f.db, {
+        companyId: f.companyId,
+        userId: PROJECT_TEST_USER,
+        timesheetEntryId: ids[1]!,
+        hours: 0,
+        correctionReason: "Charged to the wrong week"
+      });
+      await post(f, [second.reversalId]);
+
+      const originalRow = await f.db
+        .selectFrom("projectLedger")
+        .select("id")
+        .where("documentId", "=", ids[1]!)
+        .where("quantity", "<>", 0)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const reversalRow = await f.db
+        .selectFrom("projectLedger")
+        .select("reversalOfId")
+        .where("documentId", "=", second.reversalId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(reversalRow.reversalOfId).toEqual(originalRow.id);
+      expect(await itemOf(ids[1]!)).toEqual([
+        { status: "Written Off", statusReason: "Reversed" }
+      ]);
+
+      // The entry's rows (its post, its adjustment, its reversal) net to 0.
+      const net = await f.db
+        .selectFrom("projectLedger")
+        .select("amount")
+        .where("documentId", "in", [ids[1]!, second.reversalId])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(net.reduce((sum, row) => sum + Number(row.amount), 0)).toEqual(0);
     } finally {
       await f.cleanup();
     }

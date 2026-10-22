@@ -13,7 +13,7 @@ import { databaseTest } from "../fixtures/local-database";
 import { projectPostingFixture } from "../fixtures/project-posting";
 
 databaseTest(
-  "issuing stock to an Expense project relieves FIFO cost to the project, and a return reverses it at current cost",
+  "issuing stock to an Expense project relieves FIFO cost to the project, and a return reverses it at the issue's cost",
   async () => {
     const f = await projectPostingFixture({ costTreatment: "Expense" });
     try {
@@ -834,6 +834,84 @@ databaseTest(
       expect(back.map((row) => [Number(row.quantity), row.projectId])).toEqual([
         [1, f.projectId]
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Return is valued at the cost the issue charged, not the item's current cost",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("shim", {
+        quantity: 10,
+        unitCost: 5
+      });
+      const post = (direction: "Issue" | "Return") =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-project-issue",
+          {
+            projectId: f.projectId,
+            projectElementId: f.elementId,
+            itemId,
+            locationId,
+            quantity: 10,
+            direction
+          },
+          postProjectIssue
+        );
+
+      const issued = await post("Issue");
+      expect(issued.error).toBeNull();
+      expect(issued.data?.cost).toEqual(50);
+
+      // The item's carrying cost moves on after the issue.
+      await f.addStripeStock({
+        itemId,
+        locationId,
+        projectId: null,
+        quantity: 10,
+        unitCost: 8,
+        postingDate: "2026-01-02"
+      });
+
+      const returned = await post("Return");
+      expect(returned.error).toBeNull();
+      expect(returned.data?.cost).toEqual(50);
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("journalId", "=", returned.data!.journalId!)
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        lines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("inventory"), 50],
+        [f.account("project-wip"), -50]
+      ]);
+
+      const layer = await f.db
+        .selectFrom("costLedger")
+        .select(["quantity", "cost"])
+        .where("companyId", "=", f.companyId)
+        .where("documentType", "=", "Project Issue")
+        .where("quantity", ">", 0)
+        .executeTakeFirstOrThrow();
+      expect([Number(layer.quantity), Number(layer.cost)]).toEqual([10, 50]);
+
+      const net = await f.db
+        .selectFrom("projectLedger")
+        .select((eb) => eb.fn.sum<string>("amount").as("amount"))
+        .where("projectId", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(net.amount)).toEqual(0);
     } finally {
       await f.cleanup();
     }

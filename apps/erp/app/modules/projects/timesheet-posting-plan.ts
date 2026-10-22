@@ -3,9 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Pure planner for timesheet postings. Each entry costs hours × its labor
-// category's rate on the entry date (a reversal reuses the rate its original
-// posted at), and posts Dr the project account / Cr labor absorption. A
-// Statistical project posts nothing: the entry is only stamped Posted.
+// category's rate on the entry date, and posts Dr the project account / Cr
+// labor absorption. A Statistical project posts nothing: the entry is only
+// stamped Posted. A reversal undoes what its original booked: its amount,
+// the account its debit line was on and its unallowable flag, whatever the
+// project's treatment is today. A correction's replacement rebooks at the
+// rate its original booked (`bookedRate`).
 // The journal is Provisional before the company's accounting cutover and
 // Posted after it; an empty laborAbsorptionAccount becomes a stand-in line
 // before the cutover and refuses the posting after it (resolveDefaultAccount).
@@ -28,7 +31,8 @@ import {
   type ProjectCostTreatment,
   type ProjectPostingContext,
   projectPostingKey,
-  resolveProjectPostingAccount
+  resolveProjectPostingAccount,
+  resolveProjectTreatment
 } from "./project-posting";
 
 export type TimesheetPostingEntry = {
@@ -45,6 +49,12 @@ export type TimesheetPostingEntry = {
   coverageReason?: string | null;
   /** A Service project's customer, for the Customer dimension. */
   customerId?: string | null;
+  /**
+   * A correction's replacement on its original's labor category: the
+   * undiluted rate the original booked, used instead of the rate on the
+   * entry date (a rate edited since must not leave a residual).
+   */
+  bookedRate?: number | null;
 };
 
 export type TimesheetLaborRate = {
@@ -53,11 +63,24 @@ export type TimesheetLaborRate = {
   costRate: number;
 };
 
-/** The entry a reversal reverses, and the ledger row it posted. */
+/**
+ * The entry a reversal reverses, and what it booked. `ledgerRowId` is its
+ * own live posting row (not a dilution adjustment, not reversed); null when
+ * it posted no row (a Statistical project), so the reversal posts nothing.
+ */
 export type TimesheetOriginal = {
   id: string;
   costRate: number | null;
+  hours: number;
   ledgerRowId: string | null;
+  /** Σ amount of the entry's Timesheet ledger rows, adjustments included. */
+  postedAmount: number;
+  /** The account of the posting row's journal debit line. */
+  accountId: string | null;
+  unallowable: boolean;
+  /** The asset the original built (its CIP row), else null. */
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
 };
 
 export type TimesheetJournalLine = {
@@ -229,9 +252,6 @@ export function planTimesheetPosting(
         : undefined
     );
 
-    const { treatment, accountId, fixedAssetId, postCapitalization } =
-      resolveProjectPostingAccount(ctx, entry.entryDate, entry.coverage);
-
     const original = entry.reversalOfId
       ? originals.get(entry.reversalOfId)
       : undefined;
@@ -241,14 +261,19 @@ export function planTimesheetPosting(
       );
     }
 
+    if (original) {
+      pushReversal(plan, { entry, ctx, original, options });
+      continue;
+    }
+
+    const { treatment, accountId, fixedAssetId, postCapitalization } =
+      resolveProjectPostingAccount(ctx, entry.entryDate, entry.coverage);
+
     const rate =
-      original?.costRate ??
+      entry.bookedRate ??
       laborRateOn(rates, entry.laborCategoryId, entry.entryDate)?.costRate ??
       null;
-    // A reversal keeps its original's (already diluted) rate.
-    const factor = entry.reversalOfId
-      ? undefined
-      : options.dilutionFactors?.get(entry.id);
+    const factor = options.dilutionFactors?.get(entry.id);
     const diluted =
       rate !== null && factor !== undefined
         ? dilutedCost(entry.hours, rate, factor)
@@ -275,12 +300,109 @@ export function planTimesheetPosting(
       resolved: { treatment, accountId, fixedAssetId, postCapitalization },
       quantity: entry.hours,
       cost,
-      reversalOfId: original?.ledgerRowId ?? null,
+      reversalOfId: null,
       options
     });
   }
 
   return plan;
+}
+
+/**
+ * A reversal undoes what its original booked, never what the project would
+ * book today (the treatment or an unallowable flag may have changed since):
+ * - nothing when the original posted no ledger row;
+ * - the negated posted amount (its dilution adjustments included), so a
+ *   diluted entry nets to 0 exactly; a partial reversal costs its hours at
+ *   the original's rate;
+ * - the account, asset and unallowable flag the original booked
+ *   (`bookedAccount`).
+ */
+function pushReversal(
+  plan: TimesheetPostingPlan,
+  args: {
+    entry: TimesheetPostingEntry;
+    ctx: ProjectPostingContext;
+    original: TimesheetOriginal;
+    options: TimesheetJournalOptions;
+  }
+): void {
+  const { entry, ctx, original, options } = args;
+  const booked = bookedAccount(ctx, entry, original);
+  const stamp = {
+    entryId: entry.id,
+    costRate: original.costRate,
+    treatment: booked.treatment
+  };
+  if (original.ledgerRowId === null) {
+    plan.stamps.push(stamp);
+    return;
+  }
+
+  if (entry.hours !== -original.hours && original.costRate === null) {
+    throw new ProjectChargeError(
+      "The reversed timesheet entry has no cost rate"
+    );
+  }
+  const cost =
+    entry.hours === -original.hours
+      ? -original.postedAmount
+      : round(entry.hours * (original.costRate ?? 0));
+
+  plan.stamps.push(stamp);
+  pushCost(plan, {
+    entry,
+    ctx,
+    resolved: booked,
+    quantity: entry.hours,
+    cost,
+    reversalOfId: original.ledgerRowId,
+    unallowable: original.unallowable,
+    options
+  });
+}
+
+/**
+ * The account a later posting against `original`'s cost uses (its reversal,
+ * a re-dilution adjustment): the account of the original's debit line. An
+ * original that built an asset follows that asset: its CIP class while Under
+ * Construction, its in-service class (a late cost) once Active. With no
+ * debit line (a 0 cost) the account resolves as it would today.
+ */
+function bookedAccount(
+  ctx: ProjectPostingContext,
+  entry: TimesheetPostingEntry,
+  original: TimesheetOriginal
+): {
+  treatment: ProjectCostTreatment;
+  accountId: string | null;
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
+} {
+  const treatment = resolveProjectTreatment(ctx, entry.entryDate);
+  const asset = original.fixedAssetId
+    ? ctx.assets.get(original.fixedAssetId)
+    : undefined;
+  if (asset?.status === "Under Construction" || asset?.status === "Active") {
+    return {
+      treatment,
+      accountId: asset.classAssetAccountId,
+      fixedAssetId: asset.id,
+      postCapitalization: asset.status === "Active"
+    };
+  }
+  const accountId =
+    original.accountId ??
+    (original.ledgerRowId === null
+      ? null
+      : resolveProjectPostingAccount(ctx, entry.entryDate, entry.coverage)
+          .accountId);
+  return {
+    treatment,
+    accountId,
+    fixedAssetId: original.fixedAssetId,
+    postCapitalization: original.postCapitalization
+  };
 }
 
 /**
@@ -294,13 +416,16 @@ function pushCost(
     ctx: ProjectPostingContext;
     resolved: {
       treatment: ProjectCostTreatment;
-      accountId: string;
+      /** Null only for a 0 cost, which writes no journal line. */
+      accountId: string | null;
       fixedAssetId: string | null;
       postCapitalization: boolean;
     };
     quantity: number;
     cost: number;
     reversalOfId: string | null;
+    /** A reversal copies its original's flag; else `isUnallowableCharge`. */
+    unallowable?: boolean;
     options: TimesheetJournalOptions;
   }
 ): void {
@@ -321,10 +446,15 @@ function pushCost(
     coverage: treatment === "By Coverage" ? (entry.coverage ?? null) : null,
     coverageReason:
       treatment === "By Coverage" ? (entry.coverageReason ?? null) : null,
-    unallowable: isUnallowableCharge(ctx, accountId)
+    unallowable: args.unallowable ?? isUnallowableCharge(ctx, accountId)
   });
 
   if (cost === 0) return;
+  if (accountId === null) {
+    throw new ProjectChargeError(
+      "The account the timesheet entry posted to is not known"
+    );
+  }
   const absorption = resolveDefaultAccount(
     options.accountDefaults,
     "laborAbsorptionAccount",
@@ -363,13 +493,16 @@ function pushCost(
 /**
  * The postings of re-dilution adjustments: for each posted entry whose
  * diluted cost changed, a ledger row of the difference with quantity 0 and
- * the journal lines of the entry's own account, lines and dimensions. A
+ * the journal lines of the entry's own account, lines and dimensions. An
+ * entry in `booked` posts to the account it booked and keeps its unallowable
+ * flag (`bookedAccount`); one that posted no row posts nothing. A
  * Statistical entry posts nothing.
  */
 export function planRedilutionPostings(
   adjustments: { entry: TimesheetPostingEntry; amount: number }[],
   contexts: Map<string, ProjectPostingContext>,
-  options: TimesheetJournalOptions
+  options: TimesheetJournalOptions,
+  booked: Map<string, TimesheetOriginal> = new Map()
 ): Pick<TimesheetPostingPlan, "lines" | "ledgerRows"> {
   const plan: Pick<TimesheetPostingPlan, "lines" | "ledgerRows"> = {
     lines: [],
@@ -383,6 +516,21 @@ export function planRedilutionPostings(
       throw new ProjectChargeError(
         "The project or element of a timesheet entry does not exist"
       );
+    }
+    const original = booked.get(entry.id);
+    if (original) {
+      if (original.ledgerRowId === null) continue;
+      pushCost(plan, {
+        entry,
+        ctx,
+        resolved: bookedAccount(ctx, entry, original),
+        quantity: 0,
+        cost: amount,
+        reversalOfId: null,
+        unallowable: original.unallowable,
+        options
+      });
+      continue;
     }
     const resolved = resolveProjectPostingAccount(
       ctx,
