@@ -1077,14 +1077,15 @@ export const manifest = {
   }),
   notification: policies({ select: owner("userId"), update: owner("userId") }),
   notificationDelivery: policies({ select: owner("userId") }),
+  // A NULL companyId is an account-level preference (the changelog newsletter).
   notificationPreference: policies({
-    select: and(owner("userId"), member("companyId")),
-    insert: and(owner("userId"), member("companyId")),
+    select: and(owner("userId"), or(isNull("companyId"), member("companyId"))),
+    insert: and(owner("userId"), or(isNull("companyId"), member("companyId"))),
     update: {
       using: owner("userId"),
-      check: and(owner("userId"), member("companyId"))
+      check: and(owner("userId"), or(isNull("companyId"), member("companyId")))
     },
-    delete: and(owner("userId"), member("companyId"))
+    delete: and(owner("userId"), or(isNull("companyId"), member("companyId")))
   }),
   oauthClient: serviceOnly(),
   oauthCode: serviceOnly(),

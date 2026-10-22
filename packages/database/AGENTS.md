@@ -17,7 +17,12 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
   `PRIMARY KEY ("id")` and no `createdBy`/`updatedBy`. A row belongs to one user and only that
   user writes it, so the audit columns would always repeat `userId`. They keep `companyId`
   (FK, `ON DELETE CASCADE`) for tenant attribution and the RLS rule `owner("userId")` +
-  `member("companyId")`. `pushSubscription` is unique per browser `endpoint`, not per company
+  `member("companyId")`. `notificationPreference.companyId` is NULL for an account-level topic
+  (only the changelog newsletter, `getNotificationTopicScope` in `@carbon/notifications`): one
+  row per user, unique `NULLS NOT DISTINCT`, RLS `owner("userId")` alone for that row. No CHECK
+  names the topics: `getNotificationTopicScope` is the only place that decides, and every reader
+  and writer goes through `notificationPreferenceCompanyId`, so a row stored under the wrong scope
+  (a per-company newsletter row from an older backup) is never read. `pushSubscription` is unique per browser `endpoint`, not per company
   (one browser, one owner); see `.ai/specs/2026-10-08-web-push-notifications.md`.
   It is intentionally NOT tenant-scoped so `selectWipeableTables` (company-backup.ts) cannot
   select it and a company restore cannot erase it. A migration landing in this package is

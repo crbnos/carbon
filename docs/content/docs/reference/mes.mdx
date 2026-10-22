@@ -5,7 +5,7 @@ description: The shop-floor surface where operators run operations, report quant
 
 The <Term>MES</Term> app is Carbon's shop-floor interface. Planners release and schedule work in the ERP; operators execute and report that work from tablets or shared stations in MES. See the [run the floor tour](/guides/floor) for a walkthrough and [jobs](/docs/reference/jobs), [picking lists](/docs/reference/picking), and [quality](/docs/reference/quality) for the underlying records.
 
-MES requires a network connection for all writes. It caches item and people picker data in IndexedDB for faster reads, but it has **no offline mode**. Operators cannot start work, report output, or issue material while disconnected.
+MES requires a network connection for all writes. It caches item and people picker data in IndexedDB for faster reads, but it has **no offline mode**. Operators cannot start work, report output, or issue material while disconnected. A page opened without a connection shows an offline page instead of the browser's error, and Carbon reloads it once the connection is back.
 
 ## Getting onto the floor
 

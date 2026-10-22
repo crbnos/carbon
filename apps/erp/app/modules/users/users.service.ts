@@ -40,7 +40,12 @@ import {
 import { redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import type { NotificationPreferenceChannel } from "@carbon/notifications";
+import {
+  isNotificationTopic,
+  type NotificationPreferenceChannel,
+  type NotificationTopic,
+  notificationPreferenceCompanyId
+} from "@carbon/notifications";
 import { datetime, getClientIp } from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
 import { render } from "@react-email/components";
@@ -2427,11 +2432,25 @@ export async function getNotificationPreferences(
   userId: string,
   companyId: string
 ) {
-  return client
+  // This company's rows plus the user's account-level rows (companyId NULL).
+  const rows = await client
     .from("notificationPreference")
-    .select("topic, channel, enabled")
+    .select("companyId, topic, channel, enabled")
     .eq("userId", userId)
-    .eq("companyId", companyId);
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+  if (rows.error) return rows;
+  return {
+    ...rows,
+    data: rows.data
+      .filter(
+        (row) =>
+          row.companyId ===
+          (isNotificationTopic(row.topic)
+            ? notificationPreferenceCompanyId(row.topic, companyId)
+            : companyId)
+      )
+      .map(({ topic, channel, enabled }) => ({ topic, channel, enabled }))
+  };
 }
 
 export async function upsertNotificationPreference(
@@ -2439,7 +2458,7 @@ export async function upsertNotificationPreference(
   preference: {
     userId: string;
     companyId: string;
-    topic: string;
+    topic: NotificationTopic;
     channel: NotificationPreferenceChannel;
     enabled: boolean;
   }
@@ -2447,6 +2466,10 @@ export async function upsertNotificationPreference(
   return client.from("notificationPreference").upsert(
     {
       ...preference,
+      companyId: notificationPreferenceCompanyId(
+        preference.topic,
+        preference.companyId
+      ),
       updatedAt: new Date().toISOString()
     },
     { onConflict: "userId,companyId,channel,topic" }

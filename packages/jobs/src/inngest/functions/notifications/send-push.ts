@@ -55,6 +55,43 @@ export const sendPushFunction = inngest.createFunction(
       return { skipped: "subscription not found" };
     }
 
+    // The installed app's icon badge: the user's unread notifications in every
+    // company they work in, as the open tab counts them (useAppBadge).
+    // Read after the in-app row exists, so it includes this one. A failed read
+    // sends no badge rather than failing the push.
+    const badge = await step.run("count-unread", async () => {
+      const client = getCarbonServiceRole();
+      const memberships = await client
+        .from("userToCompany")
+        .select("companyId")
+        .eq("userId", userId)
+        .eq("role", "employee");
+      if (memberships.error) {
+        log.warn("Failed to read the user's companies for the badge", {
+          error: memberships.error,
+          userId
+        });
+        return null;
+      }
+      const companyIds = (memberships.data ?? []).map((row) => row.companyId);
+      if (companyIds.length === 0) return 0;
+      const { count, error } = await client
+        .from("notification")
+        .select("id", { count: "exact", head: true })
+        .eq("userId", userId)
+        .in("companyId", companyIds)
+        .is("readAt", null)
+        .is("digestedInto", null);
+      if (error) {
+        log.warn("Failed to count unread notifications for the badge", {
+          error,
+          userId
+        });
+        return null;
+      }
+      return count ?? null;
+    });
+
     const sent = await step.run("send-push", async () => {
       try {
         const result = await webpush.sendNotification(
@@ -62,7 +99,7 @@ export const sendPushFunction = inngest.createFunction(
             endpoint: subscription.endpoint,
             keys: { auth: subscription.auth, p256dh: subscription.p256dh }
           },
-          JSON.stringify({ body, tag, title, url }),
+          JSON.stringify({ badge, body, tag, title, url }),
           {
             TTL: PUSH_TTL_SECONDS,
             urgency: "normal",
