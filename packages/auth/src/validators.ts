@@ -39,9 +39,7 @@ export const magicLinkValidator = z.object({
 });
 
 // The 6-digit code a sign-in email carries beside its link (Auth's
-// {{ .Token }}): the same one-time token, typed instead of followed. A mail
-// scanner can follow a link, using it up before the person does; it cannot
-// type a code.
+// {{ .Token }}): the same one-time token, typed instead of followed.
 export const signInCodeValidator = z.object({
   email: z
     .string()

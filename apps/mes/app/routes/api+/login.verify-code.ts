@@ -32,12 +32,11 @@ const UNAVAILABLE_MESSAGE =
 
 /**
  * Signs in with the 6-digit code from a sign-in email, the alternative to
- * following its link. Corporate mail scanners (Microsoft Defender, Mimecast)
- * open links to inspect them, which can use a one-time link up before the
- * person clicks it; they cannot type a code.
+ * following its link, for when the email and the sign-in are not in the same
+ * browser.
  *
  * The code is Auth's own one-time token, so it shares the link's lifetime and
- * single use. A verified code answers with the session, which the browser
+ * single use: whatever spends the link spends the code. A verified code answers with the session, which the browser
  * hands to /callback exactly as the link's redirect does — company choice,
  * SSO enforcement, MFA and the lockout reset all happen there, once, for both.
  *

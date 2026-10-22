@@ -914,11 +914,12 @@ function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 /**
- * The code from the sign-in email, as an alternative to its link. A mail
- * scanner that opens the link first leaves the person an expired one; it
- * cannot type the code. A verified code yields the same session the link's
- * redirect does, handed to /callback the same way, so everything after —
- * company, SSO, MFA — is one path for both.
+ * The code from the sign-in email, as an alternative to its link. It is
+ * the link's own one-time token: a mail scanner that only opens the link
+ * leaves it usable, one that presses the link page's button spends both
+ * (MAGIC_LINK_SAME_BROWSER hides that button from it). A verified code
+ * yields the same session the link's redirect does, handed to /callback the
+ * same way, so everything after — company, SSO, MFA — is one path for both.
  */
 function SignInCode({
   email,
@@ -941,7 +942,7 @@ function SignInCode({
     formData.append("refreshToken", refreshToken);
     formData.append("userId", userId);
     if (redirectTo) formData.append("redirectTo", redirectTo);
-    callback.submit(formData, { method: "post", action: "/callback" });
+    callback.submit(formData, { method: "post", action: path.to.callback });
   }, [code.data, redirectTo, callback.submit]);
 
   return (
@@ -950,7 +951,7 @@ function SignInCode({
       validator={signInCodeValidator}
       defaultValues={{ email }}
       method="post"
-      action="/api/login/verify-code"
+      action={path.to.api.loginVerifyCode}
       className="w-full"
     >
       <Hidden name="email" value={email} />
