@@ -12586,6 +12586,14 @@ export const closeJobInput = z.object({
  * variance, so the job's WIP nets to zero. Nothing to do when the residual is
  * under a cent. The journal is Provisional before the company's accounting
  * cutover and Posted after it.
+ *
+ * A line that charged a project in place of WIP (a consume-to-project job's
+ * material, labor, overhead and scrap: every one has a projectLedger row
+ * naming it) is the project's cost, not the job's, and is left out: for a
+ * Contract project Project WIP is the WIP account, and the revenue run
+ * relieves it. A capital job keeps WIP (`keepsWip` in
+ * `loadJobProjectCharge`) and its completion sweeps it, so its project rows
+ * stay in the residual.
  */
 export async function closeJob(
   ctx: ServiceContext,
@@ -12618,6 +12626,20 @@ export async function closeJob(
     // Read inside the transaction so the FOR SHARE lock holds until commit.
     const postingStatus = await journalPostingStatus(trx, companyId);
 
+    const job = await trx
+      .selectFrom("job")
+      .where("id", "=", jobId)
+      .where("companyId", "=", companyId)
+      .select([
+        "jobId",
+        "itemId",
+        "locationId",
+        "consumeToProject",
+        "fixedAssetId"
+      ])
+      .executeTakeFirstOrThrow();
+    const keepsWip = !job.consumeToProject && Boolean(job.fixedAssetId);
+
     const wipBalance = await trx
       .selectFrom("journalLine")
       .innerJoin("journal", "journal.id", "journalLine.journalId")
@@ -12630,18 +12652,24 @@ export async function closeJob(
       .where("journalLine.documentId", "=", jobId)
       .where("journal.companyId", "=", companyId)
       .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .$if(!keepsWip, (qb) =>
+        qb.where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("projectLedger")
+                .select("projectLedger.id")
+                .whereRef("projectLedger.journalLineId", "=", "journalLine.id")
+                .where("projectLedger.companyId", "=", companyId)
+            )
+          )
+        )
+      )
       .executeTakeFirst();
 
     const remainingWip = Number(wipBalance?.balance ?? 0);
 
     if (Math.abs(remainingWip) < 0.01) return;
-
-    const job = await trx
-      .selectFrom("job")
-      .where("id", "=", jobId)
-      .where("companyId", "=", companyId)
-      .select(["jobId", "itemId", "locationId"])
-      .executeTakeFirstOrThrow();
 
     // Resolve the item dimensions so the WIP variance lines are attributable
     // to the finished good (mirrors the WIP lines posted during completion).
