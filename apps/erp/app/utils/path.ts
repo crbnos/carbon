@@ -216,6 +216,7 @@ export const path = {
       locationEmployees: (locationId: string) =>
         generatePath(`${api}/people/employees/${locationId}`),
       locations: `${api}/resources/locations`,
+      loginVerifyCode: `${api}/login/verify-code`,
       maintenanceDispatches: `${api}/resources/maintenance`,
       maintenanceSchedules: `${api}/resources/scheduled-maintenance`,
       materialDimensions: (formId: string) =>
@@ -518,6 +519,7 @@ export const path = {
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
     bulkUpdateTraining: `${x}/training/update`,
     calibrations: `${x}/quality/calibrations`,
+    callback: "/callback",
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
     // The `?app=` hint lets the docs' Subscribe popover link to this instance.

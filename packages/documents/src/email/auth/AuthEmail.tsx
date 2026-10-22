@@ -6,6 +6,7 @@ import {
   Body,
   Container,
   Heading,
+  Hr,
   Link,
   Preview,
   Section,
@@ -13,37 +14,39 @@ import {
 } from "react-email";
 import { Button } from "../components/Button";
 import { Logo } from "../components/Logo";
-import {
-  EmailThemeProvider,
-  getEmailInlineStyles,
-  getEmailThemeClasses
-} from "../components/Theme";
+import { notificationStyles } from "../components/notificationStyles";
+import { EmailThemeProvider, getEmailThemeClasses } from "../components/Theme";
 
 /**
  * The emails Auth (GoTrue) sends — sign-in, invite, confirmation, password
- * reset, email change, reauthentication — in Carbon's email design.
+ * reset, email change — on Carbon's notification card.
  *
  * Auth fills these in itself: the ERP serves them rendered with Auth's Go
  * template placeholders left as text ({{ .Token }}, {{ .SiteURL }}…), and
  * Auth downloads them when it sends mail (routes/templates.$file.ts). Each
  * placeholder is one string literal: a JSX expression beside other text
  * would put React's comment markers inside it.
+ *
+ * No greeting: Auth knows the recipient only by email address.
  */
 export const AUTH_TOKEN = "{{ .Token }}";
 
 type AuthEmailProps = {
   preview: string;
+  eyebrow: string;
   heading: string;
+  /** What to do, in the callout. */
   intro: string;
-  /** The 6-digit code, when this email has one. */
+  /** The 6-digit code, under the intro, when this email has one. */
   showCode?: boolean;
-  /** The link, when this email has one. */
-  action?: { href: string; label: string };
+  action: { href: string; label: string };
+  /** Why they got it, in the footer. */
   footnote?: string;
 };
 
 export function AuthEmail({
   preview,
+  eyebrow,
   heading,
   intro,
   showCode = false,
@@ -51,100 +54,102 @@ export function AuthEmail({
   footnote
 }: AuthEmailProps) {
   const themeClasses = getEmailThemeClasses();
-  const lightStyles = getEmailInlineStyles("light");
-  const text = { color: lightStyles.text.color };
-  const muted = { color: lightStyles.mutedText.color };
 
   return (
-    <EmailThemeProvider preview={<Preview>{preview}</Preview>}>
+    <EmailThemeProvider
+      preview={<Preview>{preview}</Preview>}
+      additionalHeadContent={<style>{notificationStyles}</style>}
+    >
       <Body
-        className={`my-auto mx-auto font-sans ${themeClasses.body}`}
-        style={lightStyles.body}
+        className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
       >
         <Container
-          className={`my-[40px] mx-auto p-[20px] max-w-[600px] text-center ${themeClasses.container}`}
+          className={`my-[40px] mx-auto p-[36px] max-w-[560px] rounded-[16px] nf-card ${themeClasses.container}`}
           style={{
+            borderRadius: 16,
             borderStyle: "solid",
-            borderWidth: 1,
-            borderColor: lightStyles.container.borderColor
+            borderWidth: 1
           }}
         >
           <Logo />
+
+          <Text
+            className={`text-[11px] leading-[16px] uppercase text-center font-medium m-0 mt-[40px] mb-[10px] nf-eyebrow ${themeClasses.mutedText}`}
+            style={{ letterSpacing: "0.14em" }}
+          >
+            {eyebrow}
+          </Text>
+
           <Heading
-            className={`text-[21px] font-normal text-center p-0 my-[30px] mx-0 ${themeClasses.text}`}
-            style={text}
+            className={`text-[26px] font-medium text-center tracking-tight p-0 mt-0 mb-[32px] mx-0 ${themeClasses.heading}`}
           >
             {heading}
           </Heading>
 
-          <Text className={`text-center ${themeClasses.text}`} style={text}>
-            {intro}
+          <Section
+            className="nf-callout"
+            style={{
+              backgroundColor: "#fafafa",
+              borderColor: "#ececef",
+              borderRadius: 12,
+              borderStyle: "solid",
+              borderWidth: 1,
+              marginBottom: 28,
+              padding: "18px 20px"
+            }}
+          >
+            <table
+              role="presentation"
+              cellPadding={0}
+              cellSpacing={0}
+              width="100%"
+              style={{ borderCollapse: "collapse", width: "100%" }}
+            >
+              <tr>
+                <td style={{ verticalAlign: "middle" }}>
+                  <Text
+                    className={`text-[15px] leading-[24px] m-0 ${themeClasses.text}`}
+                  >
+                    {intro}
+                  </Text>
+                  {showCode ? (
+                    <Text
+                      className={`text-[32px] leading-[40px] font-mono font-medium text-center m-0 mt-[16px] ${themeClasses.heading}`}
+                      style={{ letterSpacing: "0.3em" }}
+                    >
+                      {AUTH_TOKEN}
+                    </Text>
+                  ) : null}
+                </td>
+              </tr>
+            </table>
+          </Section>
+
+          <Section className="text-center mb-[24px]">
+            <Button href={action.href}>{action.label}</Button>
+          </Section>
+
+          <Text
+            className={`text-[13px] leading-[20px] m-0 text-center break-all nf-fallback ${themeClasses.mutedText}`}
+          >
+            Or open this link in your browser:{" "}
+            <Link
+              href={action.href}
+              className={`${themeClasses.mutedText} underline nf-fallback`}
+            >
+              {action.href}
+            </Link>
           </Text>
 
-          {showCode ? (
-            <Section className="text-center my-[32px]">
-              <div
-                className="email-panel"
-                style={{
-                  display: "inline-block",
-                  padding: "20px 40px",
-                  backgroundColor: "#f8f9fa",
-                  borderRadius: "8px",
-                  border: "1px solid #e9ecef"
-                }}
-              >
-                <Text
-                  className="text-center font-mono email-panel-text"
-                  style={{
-                    fontSize: "32px",
-                    fontWeight: "bold",
-                    letterSpacing: "8px",
-                    color: "#333",
-                    margin: 0
-                  }}
-                >
-                  {AUTH_TOKEN}
-                </Text>
-              </div>
-            </Section>
-          ) : null}
-
-          {action ? (
+          {footnote ? (
             <>
-              {showCode ? (
-                <Text
-                  className={`text-center ${themeClasses.mutedText}`}
-                  style={muted}
-                >
-                  Or use the button:
-                </Text>
-              ) : null}
-              <Section className="mb-[32px] mt-[16px] text-center">
-                <Button href={action.href}>{action.label}</Button>
-              </Section>
+              <Hr className={`my-[32px] nf-divider ${themeClasses.border}`} />
               <Text
-                className={`text-[14px] leading-[24px] break-all ${themeClasses.mutedText}`}
-                style={muted}
+                className={`text-[12px] leading-[18px] m-0 nf-fallback ${themeClasses.mutedText}`}
               >
-                If the button doesn't work, copy this link into your browser:{" "}
-                <Link
-                  href={action.href}
-                  className={`${themeClasses.mutedText} underline`}
-                  style={muted}
-                >
-                  {action.href}
-                </Link>
+                {footnote}
               </Text>
             </>
-          ) : null}
-
-          {footnote ? (
-            <Text
-              className={`text-center text-sm mt-[32px] ${themeClasses.mutedText}`}
-              style={{ ...muted, fontSize: "14px" }}
-            >
-              {footnote}
-            </Text>
           ) : null}
         </Container>
       </Body>

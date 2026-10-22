@@ -21406,6 +21406,9 @@ msgstr "Wyloguj sie"
 msgid "Sign out instead"
 msgstr "Zamiast tego wyloguj się"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Przegląd zatwierdzający przed przejściem do następnego kroku"
 

@@ -23,7 +23,6 @@ export {
   AuthEmailChangeEmail,
   AuthInviteEmail,
   AuthMagicLinkEmail,
-  AuthReauthenticationEmail,
   AuthRecoveryEmail,
   authEmails
 } from "./auth";

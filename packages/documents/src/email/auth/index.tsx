@@ -14,8 +14,9 @@ const IGNORE = "If you didn't ask for this, you can ignore this email.";
 export const AuthMagicLinkEmail = () => (
   <AuthEmail
     preview={`Your Carbon sign-in code is ${AUTH_TOKEN}`}
+    eyebrow="Sign in"
     heading="Sign in to Carbon"
-    intro="Enter this code on the sign-in screen:"
+    intro="Enter this code on the sign-in screen, or use the button below."
     showCode
     action={{
       href: `${SITE_URL}/magic-link?token=${TOKEN_HASH}`,
@@ -28,6 +29,7 @@ export const AuthMagicLinkEmail = () => (
 export const AuthInviteEmail = () => (
   <AuthEmail
     preview="You have been invited to Carbon"
+    eyebrow="Invitation"
     heading="You've been invited to Carbon"
     intro="You've been invited to create an account on Carbon."
     action={{
@@ -37,22 +39,26 @@ export const AuthInviteEmail = () => (
   />
 );
 
+// When this reaches someone signing in, the sign-in screen's code field
+// accepts its code: type "email" covers confirmation tokens.
 export const AuthConfirmationEmail = () => (
   <AuthEmail
-    preview={`Your Carbon confirmation code is ${AUTH_TOKEN}`}
+    preview={`Your Carbon sign-in code is ${AUTH_TOKEN}`}
+    eyebrow="Sign in"
     heading="Confirm your email"
-    intro="Enter this code to confirm your email address:"
+    intro="Enter this code on the sign-in screen, or use the button below to confirm your email address."
     showCode
     action={{ href: CONFIRMATION_URL, label: "Confirm your email" }}
+    footnote={IGNORE}
   />
 );
 
 export const AuthRecoveryEmail = () => (
   <AuthEmail
-    preview={`Your Carbon password reset code is ${AUTH_TOKEN}`}
+    preview="Reset your Carbon password"
+    eyebrow="Security"
     heading="Reset your password"
-    intro="Enter this code to reset your password:"
-    showCode
+    intro="Use the button below to reset your password."
     action={{ href: CONFIRMATION_URL, label: "Reset your password" }}
     footnote={IGNORE}
   />
@@ -61,30 +67,23 @@ export const AuthRecoveryEmail = () => (
 export const AuthEmailChangeEmail = () => (
   <AuthEmail
     preview="Confirm your new email for Carbon"
+    eyebrow="Security"
     heading="Confirm your new email"
-    intro="Confirm the change of your Carbon email from {{ .Email }} to {{ .NewEmail }} with this code:"
-    showCode
+    intro="Confirm the change of your Carbon email from {{ .Email }} to {{ .NewEmail }}."
     action={{ href: CONFIRMATION_URL, label: "Confirm the new email" }}
     footnote={IGNORE}
   />
 );
 
-export const AuthReauthenticationEmail = () => (
-  <AuthEmail
-    preview={`Your Carbon code is ${AUTH_TOKEN}`}
-    heading="Confirm it's you"
-    intro="Enter this code in Carbon to continue:"
-    showCode
-    footnote={IGNORE}
-  />
-);
-
-/** Auth's six emails, by the file name Auth downloads each from. */
+/**
+ * Auth's emails, by the file name Auth downloads each from. Not
+ * reauthentication: that email is only a code, and Carbon has no screen to
+ * enter it, so Auth keeps its own.
+ */
 export const authEmails = {
   "magic-link.html": AuthMagicLinkEmail,
   "invite.html": AuthInviteEmail,
   "confirmation.html": AuthConfirmationEmail,
   "recovery.html": AuthRecoveryEmail,
-  "email-change.html": AuthEmailChangeEmail,
-  "reauthentication.html": AuthReauthenticationEmail
+  "email-change.html": AuthEmailChangeEmail
 } as const;

@@ -15,9 +15,11 @@ import {
   AccountLockout,
   maxAttemptsForRateLimit,
   Ratelimit,
-  redis
+  redis,
+  SIGN_IN_CODE_LOCKOUT_PREFIX
 } from "@carbon/kv";
 import { getClientIp } from "@carbon/utils";
+import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -25,21 +27,25 @@ const LOCKED_MESSAGE =
   "For your security, sign-in for this account is temporarily paused. Please try again later.";
 const WRONG_CODE_MESSAGE =
   "That code is wrong or has expired. Check the newest email, or request a new one.";
+const UNAVAILABLE_MESSAGE =
+  "We couldn't check your code just now. Please try again in a moment.";
 
 /**
  * Signs in with the 6-digit code from a sign-in email, the alternative to
- * following its link. Corporate mail scanners (Microsoft Defender, Mimecast)
- * open links to inspect them, which can use a one-time link up before the
- * person clicks it; they cannot type a code.
+ * following its link, for when the email and the sign-in are not in the same
+ * browser.
  *
  * The code is Auth's own one-time token, so it shares the link's lifetime and
- * single use. A verified code answers with the session, which the browser
+ * single use: whatever spends the link spends the code. A verified code answers with the session, which the browser
  * hands to /callback exactly as the link's redirect does — company choice,
  * SSO enforcement, MFA and the lockout reset all happen there, once, for both.
  *
- * Guarded like the login action: the per-IP rate limit, and the per-account
- * lockout, where every wrong code counts as a failed attempt — six digits are
- * otherwise a million guesses.
+ * Guarded like the login action, with buckets of its own: a per-IP rate limit
+ * and a per-account lockout where every code counts — six digits are
+ * otherwise a million guesses. Its own, so guessing at someone's code locks
+ * code sign-in only and never stops them asking for a link, and signing in
+ * with a code does not spend the IP's login budget. /callback resets both
+ * lockouts on success.
  */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -48,7 +54,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
-    analytics: true
+    analytics: true,
+    prefix: "@carbon/ratelimit-code"
   });
   if (!(await ratelimit.limit(ip)).success) {
     logAuthEvent("login_rate_limited", { ip });
@@ -65,18 +72,20 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { email, code } = validation.data;
 
-  // The login action's allowance, so a code and a link request count alike.
   const lockout = new AccountLockout({
     redis,
-    maxAttempts: maxAttemptsForRateLimit(RATE_LIMIT)
+    maxAttempts: maxAttemptsForRateLimit(RATE_LIMIT),
+    prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
   });
-  const lockStatus = await lockout.status(email);
-  if (lockStatus.locked) {
+  // Counted before the check, so a burst of guesses cannot all slip past a
+  // read-only status check; an outage gives its attempt back below.
+  const attempt = await lockout.recordFailure(email);
+  if (attempt.locked) {
     logAuthEvent("login_locked", {
       actor: email,
       ip,
-      reason: "account temporarily locked",
-      retryAfterSeconds: lockStatus.retryAfterSeconds
+      reason: "sign-in code temporarily locked",
+      retryAfterSeconds: attempt.retryAfterSeconds
     });
     return data(error(null, LOCKED_MESSAGE), { status: 429 });
   }
@@ -88,17 +97,25 @@ export async function action({ request }: ActionFunctionArgs) {
       type: "email"
     });
 
+  // Auth down or throttling: the code was never checked, so it is neither
+  // wrong nor a guess.
+  if (
+    verifyError &&
+    (isAuthRetryableFetchError(verifyError) ||
+      (verifyError.status ?? 0) >= 500 ||
+      verifyError.status === 429)
+  ) {
+    await lockout.refund(email);
+    return data(error(verifyError, UNAVAILABLE_MESSAGE), { status: 503 });
+  }
+
   if (verifyError || !verified.session) {
-    const attempt = await lockout.recordFailure(email);
     logAuthEvent("login_failed", {
       actor: email,
       ip,
       reason: "sign-in code rejected"
     });
-    return data(
-      error(verifyError, attempt.locked ? LOCKED_MESSAGE : WRONG_CODE_MESSAGE),
-      { status: 400 }
-    );
+    return data(error(verifyError, WRONG_CODE_MESSAGE), { status: 400 });
   }
 
   return {

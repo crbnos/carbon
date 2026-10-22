@@ -48,6 +48,12 @@ export function maxAttemptsForRateLimit(ratePerHour: number): number {
 const DEFAULT_PREFIX = "@carbon/lockout";
 
 /**
+ * The sign-in code's own lockout. Wrong codes lock code sign-in only, so
+ * guessing at someone's code cannot also stop them asking for a link.
+ */
+export const SIGN_IN_CODE_LOCKOUT_PREFIX = "@carbon/lockout-code";
+
+/**
  * Normalize an email into the lockout key: trim + lowercase so `Foo@x.com `,
  * `foo@x.com`, and `FOO@X.COM` all count against ONE account. Keys are derived
  * only from this — never the raw input.
@@ -218,6 +224,16 @@ export class AccountLockout {
     } catch {
       return NOT_LOCKED; // fail open
     }
+  }
+
+  /**
+   * Give back the attempt the last `recordFailure` counted, for callers that
+   * count BEFORE the check (so a concurrent burst cannot all pass) and then
+   * learn the check never ran — an outage is not a wrong guess. An attempt
+   * that engaged a lock is not undone; the caller never runs the check then.
+   */
+  async refund(email: string): Promise<void> {
+    await this.ratelimit.refund(normalizeLoginIdentifier(email));
   }
 
   /**

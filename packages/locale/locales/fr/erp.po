@@ -21406,6 +21406,9 @@ msgstr "Se déconnecter"
 msgid "Sign out instead"
 msgstr "Se déconnecter à la place"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Revue de validation avant de passer à l'étape suivante"
 

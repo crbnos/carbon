@@ -21406,6 +21406,9 @@ msgstr "साइन आउट"
 msgid "Sign out instead"
 msgstr "बजाय इसके साइन आउट करें"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "अगले चरण में जाने से पहले साइन-ऑफ समीक्षा"
 

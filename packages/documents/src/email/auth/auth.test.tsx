@@ -17,14 +17,15 @@ const placeholders: Record<keyof typeof authEmails, string[]> = {
     'href="{{ .SiteURL }}/confirm-invite?token={{ .TokenHash }}"'
   ],
   "confirmation.html": ["{{ .Token }}", 'href="{{ .ConfirmationURL }}"'],
-  "recovery.html": ["{{ .Token }}", 'href="{{ .ConfirmationURL }}"'],
+  "recovery.html": ['href="{{ .ConfirmationURL }}"'],
   "email-change.html": [
-    "{{ .Token }}",
     "{{ .Email }} to {{ .NewEmail }}",
     'href="{{ .ConfirmationURL }}"'
-  ],
-  "reauthentication.html": ["{{ .Token }}"]
+  ]
 };
+
+// A code is offered only where a Carbon screen takes it.
+const withCode = new Set(["magic-link.html", "confirmation.html"]);
 
 describe("auth emails", () => {
   for (const [file, Email] of Object.entries(authEmails)) {
@@ -34,6 +35,9 @@ describe("auth emails", () => {
         expect(html).toContain(expected);
       }
       expect(html).not.toMatch(/\{\{[^}]*<!--/);
+      expect(html.includes("{{ .Token }}")).toBe(withCode.has(file));
+      // The card's dark-mode classes.
+      expect(html).toContain("nf-card");
     });
   }
 });

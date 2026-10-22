@@ -1883,6 +1883,9 @@ msgstr "साइन आउट"
 msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
 
