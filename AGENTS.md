@@ -140,6 +140,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |
 | Realtime (broadcast, `handle.realtime`, live lists, change log) | `.claude/rules/realtime-system.md` + `packages/query/AGENTS.md` |
+| Service workers, offline page, app icon badge, installing the app | `.claude/rules/service-workers.md` |
 | Event triggers and interceptors (attachments manifest) | `.claude/rules/authz-manifest.md` |
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |

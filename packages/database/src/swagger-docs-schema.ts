@@ -148648,15 +148648,7 @@ export default {
       type: "object"
     },
     notificationPreference: {
-      required: [
-        "id",
-        "userId",
-        "companyId",
-        "channel",
-        "topic",
-        "enabled",
-        "updatedAt"
-      ],
+      required: ["id", "userId", "channel", "topic", "enabled", "updatedAt"],
       properties: {
         id: {
           default: "public.xid()",

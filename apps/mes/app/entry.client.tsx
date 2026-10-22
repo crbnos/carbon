@@ -7,6 +7,7 @@ import {
   POSTHOG_API_HOST,
   POSTHOG_PROJECT_PUBLIC_KEY
 } from "@carbon/auth";
+import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import posthog from "posthog-js";
 import { startTransition } from "react";
@@ -50,6 +51,24 @@ if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
   throw new Error(
     "Analytics initialized in a controlled environment — refusing to boot"
   );
+}
+
+// Caches the build files and shows an offline page when a tablet loses the
+// network (public/service-worker.js). Also in dev: the dev server serves no
+// /assets/ URL, so its modules never reach the cache. After the page has
+// loaded, so the worker's own download does not compete with the page's; this
+// module can run after "load" has fired (the dev server imports it late), so
+// check first.
+if ("serviceWorker" in navigator) {
+  const register = () => {
+    navigator.serviceWorker
+      .register("/service-worker.js", { scope: "/" })
+      .catch((error) =>
+        getLogger("mes", "service-worker").warn("not registered", { error })
+      );
+  };
+  if (document.readyState === "complete") register();
+  else window.addEventListener("load", register, { once: true });
 }
 
 // The catalog is no longer in loader data, so fetch the active language's

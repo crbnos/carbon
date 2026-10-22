@@ -134,6 +134,41 @@ export function isNotificationTopicEnabledByDefault(
   }
 }
 
+// Who a topic's preference belongs to. A company topic is set per company. An
+// account topic belongs to the person (the newsletter is the same email from
+// every company), so one switch covers every company they belong to.
+export type NotificationTopicScope = "company" | "account";
+
+export function getNotificationTopicScope(
+  topic: NotificationTopic
+): NotificationTopicScope {
+  switch (topic) {
+    case NotificationTopic.Changelog:
+      return "account";
+    default:
+      return "company";
+  }
+}
+
+// The companyId a topic's preference row is stored under, read and written:
+// null for an account topic, the current company otherwise. A per-company row
+// of an account topic (left by a backup older than the change) is never read.
+export function notificationPreferenceCompanyId(
+  topic: NotificationTopic,
+  companyId: string
+): string | null {
+  return getNotificationTopicScope(topic) === "account" ? null : companyId;
+}
+
+const NOTIFICATION_TOPICS: ReadonlySet<string> = new Set(
+  Object.values(NotificationTopic)
+);
+
+// Narrows a stored `topic` (a TEXT column) to the enum.
+export function isNotificationTopic(value: string): value is NotificationTopic {
+  return NOTIFICATION_TOPICS.has(value);
+}
+
 // What a Recurring invoicing notification lists, which decides where its link
 // lands: the sales invoices the run posted or held, or the lease purchase
 // invoices it drafted. The two are never mixed in one notification.

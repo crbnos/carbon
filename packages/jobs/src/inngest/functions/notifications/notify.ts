@@ -27,6 +27,7 @@ import {
   isRecurringNotificationEvent,
   NotificationDestination,
   NotificationEvent,
+  notificationPreferenceCompanyId,
   renderInlineLinks,
   renderSlackMrkdwn
 } from "@carbon/notifications";
@@ -380,20 +381,30 @@ export const notifyFunction = inngest.createFunction(
 
     // Per-user channel opt-outs: absence of a row = enabled; enabled=false
     // mutes that (topic, channel). In-app delivery is never filtered.
+    // An account-level topic's row has no company.
+    const preferenceCompanyId = notificationPreferenceCompanyId(
+      topic,
+      payload.companyId
+    );
     const { emailRecipientIds, slackRecipientIds } =
       wantsEmail || wantsSlack
         ? await step.run("filter-recipients-by-preference", async () => {
             const { data: prefs, error } = await fetchAllByIds(
               userIds,
-              (batch) =>
-                client
+              (batch) => {
+                const query = client
                   .from("notificationPreference")
                   .select("userId, channel, enabled")
                   .in("userId", batch)
-                  .eq("companyId", payload.companyId)
-                  .eq("topic", topic)
+                  .eq("topic", topic);
+                return (
+                  preferenceCompanyId === null
+                    ? query.is("companyId", null)
+                    : query.eq("companyId", preferenceCompanyId)
+                )
                   .order("userId")
-                  .order("channel")
+                  .order("channel");
+              }
             );
             if (error) {
               console.error("Failed to load notification preferences", error);

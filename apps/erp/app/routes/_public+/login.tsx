@@ -83,6 +83,7 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import type { Result } from "~/types";
+import { setAppBadge } from "~/utils/app-badge";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -314,8 +315,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   // A signed-out user lands here however the session ended (sign out, expiry,
-  // a revoked account), so this is where the lists kept on the device go.
+  // a revoked account), so this is where the lists kept on the device go, and
+  // the app icon's unread badge with them.
   useEffect(() => {
+    setAppBadge(0);
     import("localforage")
       .then((storage) => storage.default.clear())
       .catch((error) =>
