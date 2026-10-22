@@ -426,7 +426,7 @@ services:
   # Internal only — never publish a port: direct imgproxy access reads the
   # storage volume with no RLS.
   imgproxy:
-    image: darthsim/imgproxy:v3.8.0
+    image: darthsim/imgproxy:v4.0.18
     networks: [internal]
     environment:
       IMGPROXY_BIND: ":5001"
