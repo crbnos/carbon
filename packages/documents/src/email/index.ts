@@ -19,11 +19,19 @@ import WeeklyReminderEmail from "./WeeklyReminderEmail";
 import WelcomeEmail from "./WelcomeEmail";
 
 export {
+  AuthConfirmationEmail,
+  AuthEmailChangeEmail,
+  AuthInviteEmail,
+  AuthMagicLinkEmail,
+  AuthReauthenticationEmail,
+  AuthRecoveryEmail,
+  authEmails
+} from "./auth";
+export {
   isReminderItemStatus,
   type ReminderItemStatus,
   reminderItemStatuses
 } from "./WeeklyReminderEmail";
-
 export {
   ChangelogEntryEmail,
   CompanyDeletionWarningEmail,

@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { renderAsync } from "@react-email/components";
+import { describe, expect, it } from "vitest";
+import { authEmails } from ".";
+
+// What Auth fills in, by email. A placeholder React split with a comment
+// marker, or escaped, would reach the recipient as the raw braces.
+const placeholders: Record<keyof typeof authEmails, string[]> = {
+  "magic-link.html": [
+    "{{ .Token }}",
+    'href="{{ .SiteURL }}/magic-link?token={{ .TokenHash }}"'
+  ],
+  "invite.html": [
+    'href="{{ .SiteURL }}/confirm-invite?token={{ .TokenHash }}"'
+  ],
+  "confirmation.html": ["{{ .Token }}", 'href="{{ .ConfirmationURL }}"'],
+  "recovery.html": ["{{ .Token }}", 'href="{{ .ConfirmationURL }}"'],
+  "email-change.html": [
+    "{{ .Token }}",
+    "{{ .Email }} to {{ .NewEmail }}",
+    'href="{{ .ConfirmationURL }}"'
+  ],
+  "reauthentication.html": ["{{ .Token }}"]
+};
+
+describe("auth emails", () => {
+  for (const [file, Email] of Object.entries(authEmails)) {
+    it(`${file} carries Auth's placeholders intact`, async () => {
+      const html = await renderAsync(<Email />);
+      for (const expected of placeholders[file as keyof typeof authEmails]) {
+        expect(html).toContain(expected);
+      }
+      expect(html).not.toMatch(/\{\{[^}]*<!--/);
+    });
+  }
+});
