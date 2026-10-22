@@ -633,7 +633,7 @@ async function upsertRateRun(
  * Posts the YTD burden catch-up of one Locked period (B8, B10): for each
  * element of a burdened project, the target burden at the period's YTD rate
  * less the Burden rows the fiscal year already holds. The rows go through
- * the `post-project-burden` server function, which writes them and, when
+ * the `post-project-burden` posting, which writes them and, when
  * `postAppliedBurden` is set, the applied burden journal.
  *
  * `rateType` defaults to `companySettings.burdenRateType`. A `rateType` of

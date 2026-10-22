@@ -1443,9 +1443,9 @@ export function reverseBillableItem(
 
 // ─── Contract billing: Time & Materials items at posting ─────────────────────
 // Plan: .ai/plans/2026-10-09-project-billing-phase-4a.md (Task 8, P1, P8, P15).
-// Posting writes Time & Materials items only. Cost Plus items come from the
-// commercial generator (`@carbon/ee/project-revenue.server`), which this
-// package cannot import.
+// Posting writes Time & Materials items only. Cost Plus items come only from
+// the commercial generator (`@carbon/ee/project-revenue.server`), so a Cost
+// Plus line bills nothing without commercial code.
 
 type ProjectLedgerRow = Selectable<DB["projectLedger"]>;
 type ContractBillingMethod =
