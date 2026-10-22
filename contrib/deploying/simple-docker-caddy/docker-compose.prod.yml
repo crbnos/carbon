@@ -197,7 +197,7 @@ services:
 
   # ──────────────────────────── Data plane ───────────────────────────────────
   postgres:
-    image: supabase/postgres:15.14.1.112
+    image: supabase/postgres:17.11.0.005
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     # Image's own entrypoint+cmd. Do NOT override shared_preload_libraries here:
     # the image's postgresql.conf already preloads the full set Carbon needs
