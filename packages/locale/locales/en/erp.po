@@ -68,6 +68,10 @@ msgstr "{0, plural, one {# bill of materials line is left out: its item has no c
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# blocking record} other {# blocking records}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr "{0, plural, one {# BOM line} other {# BOM lines}}"
+
 #. placeholder {0}: entries.length
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
@@ -75,10 +79,6 @@ msgstr "{0, plural, one {# change to your timesheet waits for your review} other
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# comment} other {# comments}}"
-
-#. placeholder {0}: added.materials
-msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
-msgstr "{0, plural, one {# BOM line} other {# BOM lines}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -129,13 +129,13 @@ msgstr "{0, plural, one {# link} other {# links}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 
-#. placeholder {0}: progress.overdue
-msgid "{0, plural, one {# overdue} other {# overdue}}"
-msgstr "{0, plural, one {# overdue} other {# overdue}}"
-
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
 msgstr "{0, plural, one {# operation} other {# operations}}"
+
+#. placeholder {0}: progress.overdue
+msgid "{0, plural, one {# overdue} other {# overdue}}"
+msgstr "{0, plural, one {# overdue} other {# overdue}}"
 
 #. placeholder {0}: added.parameters
 msgid "{0, plural, one {# parameter} other {# parameters}}"
@@ -157,13 +157,13 @@ msgstr "{0, plural, one {# row links to data outside this company, so a safety c
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 
-#. placeholder {0}: linkCount.count
-msgid "{0, plural, one {# test} other {# tests}}"
-msgstr "{0, plural, one {# test} other {# tests}}"
-
 #. placeholder {0}: added.steps
 msgid "{0, plural, one {# step} other {# steps}}"
 msgstr "{0, plural, one {# step} other {# steps}}"
+
+#. placeholder {0}: linkCount.count
+msgid "{0, plural, one {# test} other {# tests}}"
+msgstr "{0, plural, one {# test} other {# tests}}"
 
 #. placeholder {0}: added.tools
 msgid "{0, plural, one {# tool} other {# tools}}"
@@ -17242,9 +17242,6 @@ msgstr "No changes yet."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 
-msgid "No charges match the filters."
-msgstr "No charges match the filters."
-
 #. placeholder {0}: lotEntities.length
 msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
 msgstr "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
@@ -17252,6 +17249,9 @@ msgstr "No characteristic has failed, so say why the lot is rejected. All {0} en
 #. placeholder {0}: inspection.lotSize
 msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
 msgstr "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+
+msgid "No charges match the filters."
+msgstr "No charges match the filters."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
@@ -18067,14 +18067,14 @@ msgstr "No variables available"
 msgid "No versions available"
 msgstr "No versions available"
 
+msgid "No video added"
+msgstr "No video added"
+
 msgid "No visits planned"
 msgstr "No visits planned"
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "No visits yet. Schedule one to send a technician."
-
-msgid "No video added"
-msgstr "No video added"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
@@ -28148,8 +28148,6 @@ msgstr "This receipt has no lines. Choose a source document to add them."
 msgid "This refurbishment cannot be completed"
 msgstr "This refurbishment cannot be completed"
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "This removes the PDF. Employees will see the written content instead."
 msgid "This removes the PDF. Employees will see the new content instead."
 msgstr "This removes the PDF. Employees will see the new content instead."
 

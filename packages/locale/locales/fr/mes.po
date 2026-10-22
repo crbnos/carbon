@@ -2300,7 +2300,7 @@ msgid "Updated {0}"
 msgstr "Mis à jour {0}"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "Avatar mis à jour"
 
 msgid "Updated successfully"
 msgstr "Mis à jour avec succès"
