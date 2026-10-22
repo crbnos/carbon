@@ -11,7 +11,12 @@ import {
 import { logAuthEvent } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
-import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
+import {
+  AccountLockout,
+  maxAttemptsForRateLimit,
+  Ratelimit,
+  redis
+} from "@carbon/kv";
 import { getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -60,7 +65,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { email, code } = validation.data;
 
-  const lockout = new AccountLockout({ redis });
+  // The login action's allowance, so a code and a link request count alike.
+  const lockout = new AccountLockout({
+    redis,
+    maxAttempts: maxAttemptsForRateLimit(RATE_LIMIT)
+  });
   const lockStatus = await lockout.status(email);
   if (lockStatus.locked) {
     logAuthEvent("login_locked", {

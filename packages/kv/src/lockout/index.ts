@@ -16,5 +16,6 @@ export {
   DEFAULT_WINDOW,
   evaluateLockFromPttl,
   lockDurationSeconds,
+  maxAttemptsForRateLimit,
   normalizeLoginIdentifier
 } from "./lockout";

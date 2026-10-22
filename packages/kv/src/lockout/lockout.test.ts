@@ -7,9 +7,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AccountLockout,
   DEFAULT_BASE_LOCK_SECONDS,
+  DEFAULT_MAX_ATTEMPTS,
   DEFAULT_MAX_LOCK_SECONDS,
   evaluateLockFromPttl,
   lockDurationSeconds,
+  maxAttemptsForRateLimit,
   normalizeLoginIdentifier
 } from "./lockout";
 
@@ -269,5 +271,14 @@ describe("AccountLockout", () => {
       locked: false,
       retryAfterSeconds: 0
     });
+  });
+});
+
+describe("maxAttemptsForRateLimit", () => {
+  it("is a quarter of the hourly RATE_LIMIT, never below the default", () => {
+    expect(maxAttemptsForRateLimit(5)).toBe(DEFAULT_MAX_ATTEMPTS);
+    expect(maxAttemptsForRateLimit(1000)).toBe(250);
+    expect(maxAttemptsForRateLimit(30)).toBe(8);
+    expect(maxAttemptsForRateLimit(Number.NaN)).toBe(DEFAULT_MAX_ATTEMPTS);
   });
 });
