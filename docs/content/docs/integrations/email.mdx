@@ -1,28 +1,30 @@
 ---
 title: Email
-description: Send outbound email through Carbon-managed Resend or your own SMTP server.
+description: Send outbound email through this server's mail settings, Resend, or your own SMTP server.
 ---
 
 ## Email
 
-Carbon uses email for transactional messages such as order confirmations and notifications. Email is available on **every plan** and supports Resend or SMTP delivery.
+Carbon uses email for transactional messages such as order confirmations and notifications. Email is available on **every plan** and supports server mail, Resend, or SMTP delivery.
+
+When the server has mail settings, every company can email quotes, orders, invoices and RFQs without installing this integration: they go out through the server's mail settings, from the server's sender address. Install the integration to use your own sender address or your own Resend or SMTP account. If the server has no mail settings, ask your administrator to set them up, or use Resend or SMTP.
 
 <Steps>
   <Step>
   ### Choose a provider
 
-  Select **Resend** or **SMTP**. The configuration fields change for the selected provider.
+  Select **Server mail**, **Resend** or **SMTP**. Server mail is the default when the server has mail settings, and is not offered when it has none. The configuration fields change for the selected provider.
   </Step>
   <Step>
   ### Fill in the provider fields
 
-  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. Configure the **from address** for either provider.
+  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. Server mail needs no credentials. Configure the **from address** for any provider; with server mail, leave it empty to use the server's sender address.
   </Step>
 </Steps>
 
 <FieldTable>
-  <Field name="Provider">**Resend** (Carbon-managed) or **SMTP** (your own server).</Field>
-  <Field name="From address">The address outbound mail is sent from.</Field>
+  <Field name="Provider">**Server mail** (this server's mail settings), **Resend** (Carbon-managed) or **SMTP** (your own server).</Field>
+  <Field name="From address">The address outbound mail is sent from. Optional with server mail.</Field>
   <Field name="API key">*(Resend)* Your Resend API key.</Field>
   <Field name="Host / Port">*(SMTP)* Your mail server and port (default `587`).</Field>
   <Field name="Username / Password">*(SMTP)* Credentials for the SMTP server.</Field>

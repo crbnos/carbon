@@ -156,6 +156,15 @@ describe("sendEmail", () => {
     );
   });
 
+  it("reports server mail as configured by SMTP_HOST or RESEND_API_KEY", async () => {
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
+    vi.stubEnv("RESEND_API_KEY", "re_123");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(true);
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("SMTP_HOST", "mail.example.com");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(true);
+  });
+
   it("no-ops without error when nothing is configured", async () => {
     const { sendEmail } = await loadMailer();
     const result = await sendEmail({ to: "a@b.com", subject: "hi", text: "x" });

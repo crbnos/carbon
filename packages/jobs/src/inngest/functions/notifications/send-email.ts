@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { sendEmail } from "@carbon/lib/email.server";
+import { resolveEmailDelivery } from "@carbon/ee";
+import { SERVER_MAIL_CONFIGURED, sendEmail } from "@carbon/lib/email.server";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 import { emailDeliveryFailure } from "./delivery-failure";
@@ -43,7 +44,23 @@ export const sendEmailFunction = inngest.createFunction(
 
     const result = await step.run("send-email", async () => {
       logger.info("Email Job");
+      // A company on server mail may set its own sender; otherwise (no
+      // integration, or no From set) the server's SMTP_FROM is used.
+      const integration = payload.companyId
+        ? await getCarbonServiceRole()
+            .from("companyIntegration")
+            .select("active, metadata")
+            .eq("id", "email")
+            .eq("companyId", payload.companyId)
+            .maybeSingle()
+        : null;
+      if (integration?.error) throw integration.error;
+      const delivery = resolveEmailDelivery(
+        integration?.data,
+        SERVER_MAIL_CONFIGURED
+      );
       const response = await sendEmail({
+        from: delivery?.provider === "server" ? delivery.fromEmail : undefined,
         attachments: payload.attachments,
         cc: ccRecipients,
         html: payload.html,

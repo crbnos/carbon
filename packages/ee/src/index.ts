@@ -21,6 +21,8 @@ import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 
 export { Email } from "./email/config";
+export type { EmailDelivery } from "./email/delivery";
+export { resolveEmailDelivery } from "./email/delivery";
 export { defineIntegration } from "./fns";
 export type {
   Integration,

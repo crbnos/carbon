@@ -39,6 +39,14 @@ export type SendEmailResult = {
 export const DEFAULT_FROM =
   SMTP_FROM ?? `Carbon <no-reply@${process.env.RESEND_DOMAIN ?? "carbon.ms"}>`;
 
+/**
+ * Whether this server can send mail: SMTP_* set, or the legacy RESEND_API_KEY
+ * fallback below.
+ */
+export const SERVER_MAIL_CONFIGURED = Boolean(
+  SMTP_HOST || process.env.RESEND_API_KEY
+);
+
 /** Domain of the default from-address, e.g. "carbon.ms". */
 export const EMAIL_DOMAIN =
   DEFAULT_FROM.match(/@([^>\s]+)/)?.[1] ?? "carbon.ms";
