@@ -18661,7 +18661,10 @@ function rangesOverlap(
  * 1. the contract must be in the company's base currency (plan P5);
  * 2. a billing line needs a billing element of a Contract-treatment project;
  * 3. its element must not be the same as, above or below the element of
- *    another billing line of an Active contract whose dates overlap (P7);
+ *    another billing line or Fixed Percent Complete line of an Active
+ *    contract whose dates overlap (P7): both would earn revenue on, and
+ *    relieve, the same cost. A Fixed Percent Complete line takes part in
+ *    this check only;
  * 4. a Time & Materials line recognizes revenue by Right to Invoice (P6).
  * Other lines are read with their stored end dates, so an amendment checks
  * after it writes the end dates of the lines it ends.
@@ -18709,7 +18712,7 @@ async function checkBillingLines(
     }
   }
 
-  const placed = billing.filter(
+  const placed = progress.filter(
     (
       line
     ): line is BillingLineCheck & {
@@ -18748,7 +18751,12 @@ async function checkBillingLines(
       "c.customerContractId as contractReadableId"
     ])
     .where("l.companyId", "=", companyId)
-    .where("l.billingMethod", "<>", "Fixed")
+    .where((eb) =>
+      eb.or([
+        eb("l.billingMethod", "<>", "Fixed"),
+        eb("l.revenueMethod", "=", "Percent Complete")
+      ])
+    )
     .where("c.status", "=", "Active")
     .where("l.projectId", "in", projectIds)
     .execute();
@@ -18786,17 +18794,22 @@ async function checkBillingLines(
   );
 
   placed.forEach((line, index) => {
-    if (treatmentById.get(line.projectId) !== "Contract") {
+    const isBilling = line.billingMethod !== "Fixed";
+    if (isBilling && treatmentById.get(line.projectId) !== "Contract") {
       problems.push(
         `${line.label}: the project's cost treatment must be Contract`
       );
     }
     const element = elementById.get(line.projectElementId);
     if (!element) {
-      problems.push(`${line.label}: the billing element is not on the project`);
+      if (isBilling) {
+        problems.push(
+          `${line.label}: the billing element is not on the project`
+        );
+      }
       return;
     }
-    if (!element.isBilling) {
+    if (isBilling && !element.isBilling) {
       problems.push(
         `${line.label}: ${elementLabel(element.id)} is not a billing element`
       );

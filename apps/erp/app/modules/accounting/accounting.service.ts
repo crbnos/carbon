@@ -11081,11 +11081,16 @@ export async function postRevenueRecognitionRun(
               )
             )
             .executeTakeFirst();
+    // Only a contract month's Deferral or Accrual row names its month row; a
+    // Cost Relief or Loss Provision row is written with the line and no month
+    // row by design (Phase 4b decision R6).
     const drifted = rows.some(
       (row) =>
         row.scheduleStatus !== "Planned" ||
         !equals(Number(row.amount), Number(row.scheduleAmount)) ||
-        (row.customerContractLineId && !row.customerContractRevenueId)
+        ((row.type === "Deferral" || row.type === "Accrual") &&
+          row.customerContractLineId &&
+          !row.customerContractRevenueId)
     );
     if (unclaimed || unsynthesizedContractRevenue || drifted) {
       throw new RunOutOfDateError(

@@ -29,7 +29,7 @@ import {
   sumSubtree
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sql } from "kysely";
+import { type RawBuilder, sql } from "kysely";
 import { requireEntitlement } from "../entitlements.server";
 import { companyHasFeature } from "../plan.server";
 import { priceCostPlusItem } from "./pricing";
@@ -70,6 +70,13 @@ export type ProgressLine = {
   projectElementId: string | null;
   feePercent: number | null;
   ceilingAmount: number | null;
+  /** The first day the line owns cost (a `change` copy: the replaced line's
+   *  start). */
+  startDate: string;
+  /** The last day the line owns cost; null runs open. */
+  endDate: string | null;
+  /** The line and the lines it replaced: their months and provision. */
+  historyLineIds: string[];
 };
 
 /** One line's month of progress revenue, and the figures behind it. */
@@ -96,7 +103,7 @@ export type ProjectRevenueWriters = {
   clearProgressMonth(
     trx: KyselyTx,
     ctx: RunProposalContext,
-    args: { lineIds: string[]; monthStart: string }
+    args: { lines: ProgressLine[]; monthStart: string }
   ): Promise<string[]>;
   loadProgressLines(
     trx: KyselyTx,
@@ -108,13 +115,20 @@ export type ProjectRevenueWriters = {
   ): Promise<ProgressLine[]>;
   lockProjectRevenue(trx: KyselyTx, companyId: string): Promise<void>;
   monthStartOf(periodEnd: string): string;
+  /** The ledger rows each line owns through `through`: its subtree within
+   *  its own dates, each row owned by one line. */
+  progressLedgerRows(args: {
+    companyId: string;
+    lines: ProgressLine[];
+    through: string;
+  }): RawBuilder<{ customerContractLineId: string; projectLedgerId: string }>;
   recognizedBefore(
     trx: KyselyTx,
-    args: { companyId: string; lineIds: string[]; monthStart: string }
+    args: { companyId: string; lines: ProgressLine[]; monthStart: string }
   ): Promise<Map<string, number>>;
   selectUnrelievedCost(
     trx: KyselyTx,
-    args: { companyId: string; lineIds: string[]; through: string }
+    args: { companyId: string; lines: ProgressLine[]; through: string }
   ): Promise<UnrelievedCost[]>;
   writeCostRelief(
     trx: KyselyTx,
@@ -162,13 +176,14 @@ type LedgerRow = {
 };
 
 /**
- * Creates the billable items of the live Cost Plus lines (or the one line
- * asked for) for the ledger rows of their billing element subtrees posted on
- * or before `through`. A line is live when its contract is Active and
- * `startDate <= through <= endDate` (no end date: open). Only allowable rows of
- * Contract-treatment projects bill; a row that already has an item, and a
- * reversed pair, are skipped (`selectRowsToBill`). Each item is cost × (1 +
- * fee), Unbilled.
+ * Creates the billable items of the Cost Plus lines (or the one line asked
+ * for) for the ledger rows of their billing element subtrees posted within
+ * the line's own dates and on or before `through`: `startDate <= postingDate
+ * <= min(through, endDate)`. A line bills while its contract is Active and it
+ * started by `through`; an ended line still bills a row of its own dates
+ * that was posted after it ended. Only allowable rows of Contract-treatment
+ * projects bill; a row that already has an item, and a reversed pair, are
+ * skipped (`selectRowsToBill`). Each item is cost × (1 + fee), Unbilled.
  */
 export async function generateCostPlusItems(
   db: Kysely<KyselyDatabase>,
@@ -196,10 +211,7 @@ export async function generateCostPlusItems(
       .where("l.companyId", "=", companyId)
       .where("l.billingMethod", "=", "Cost Plus")
       .where("c.status", "=", "Active")
-      .where("l.startDate", "<=", through)
-      .where((eb) =>
-        eb.or([eb("l.endDate", "is", null), eb("l.endDate", ">=", through)])
-      );
+      .where("l.startDate", "<=", through);
     if (args.customerContractLineId) {
       linesQuery = linesQuery.where("l.id", "=", args.customerContractLineId);
     }
@@ -216,10 +228,13 @@ export async function generateCostPlusItems(
              pl."projectElementId", pl."costType", pl."amount", pl."quantity",
              pl."itemId", pl."reversalOfId", pl."documentType"
       FROM get_contract_line_subtree(${companyId}, ${lineIds}::text[]) s
+      JOIN "customerContractLine" l
+        ON l."id" = s."customerContractLineId" AND l."companyId" = ${companyId}
       JOIN "projectLedger" pl
         ON pl."projectElementId" = s."projectElementId" AND pl."companyId" = ${companyId}
       JOIN "project" p ON p."id" = pl."projectId" AND p."companyId" = pl."companyId"
-      WHERE pl."postingDate" <= ${through}::date
+      WHERE pl."postingDate" >= l."startDate"
+        AND pl."postingDate" <= LEAST(${through}::date, COALESCE(l."endDate", ${through}::date))
         AND pl."unallowable" = false
         -- Burden bills through computeBurdenBilling (5b decision B5).
         AND pl."costType" <> 'Burden'
@@ -299,9 +314,12 @@ type CostSummaryRow = {
  *   (1 + fee) capped at the ceiling;
  * - the EAC: the billing element's override, else the subtree roll-up of
  *   `get_project_cost_summary` (the Costs tab's figure);
- * - progress = the subtree's actual cost to the period end ÷ EAC, capped at 1;
+ * - progress = the cost the line owns to the period end (its subtree, its
+ *   own dates) ÷ EAC, capped at 1; the EAC leaves out the subtree cost
+ *   posted outside the line's dates;
  * - the month = price × progress less what is recognized before the month;
- * - the loss provision change, to (EAC − price) × (1 − progress);
+ * - the loss provision change, to (EAC − price) × (1 − progress), from what
+ *   earlier months and this month's posted rows carry;
  * - the relief of every unrelieved WIP row of the subtree (cost-to-cost).
  * A company without `PROJECT_REVENUE` degrades: the run writes nothing here.
  */
@@ -313,6 +331,7 @@ export function synthesizeCommercialProjectRevenue(
     loadProgressLines,
     lockProjectRevenue,
     monthStartOf,
+    progressLedgerRows,
     recognizedBefore,
     selectUnrelievedCost,
     writeCostRelief,
@@ -335,10 +354,7 @@ export function synthesizeCommercialProjectRevenue(
     if (lines.length === 0) return;
 
     const monthStart = monthStartOf(periodEnd);
-    const openIds = await clearProgressMonth(trx, ctx, {
-      lineIds: lines.map((line) => line.id),
-      monthStart
-    });
+    const openIds = await clearProgressMonth(trx, ctx, { lines, monthStart });
     if (openIds.length === 0) return;
     const open = lines.filter(
       (
@@ -355,20 +371,41 @@ export function synthesizeCommercialProjectRevenue(
     const lineIds = open.map((line) => line.id);
     const projectIds = [...new Set(open.map((line) => line.projectId))];
 
-    // 1. The subtree's actual cost to the period end, per line.
+    // 1. The cost each line owns to the period end (`progressLedgerRows`),
+    //    and the subtree cost another line owns at any date, which leaves
+    //    the line's EAC.
     const { rows: actualRows } = await sql<{
       customerContractLineId: string;
       actual: number;
     }>`
-    SELECT s."customerContractLineId", COALESCE(SUM(pl."amount"), 0) AS "actual"
-    FROM get_contract_line_subtree(${companyId}, ${lineIds}::text[]) s
+    SELECT o."customerContractLineId", COALESCE(SUM(pl."amount"), 0) AS "actual"
+    FROM (${progressLedgerRows({ companyId, lines: open, through: periodEnd })}) o
     JOIN "projectLedger" pl
-      ON pl."projectElementId" = s."projectElementId" AND pl."companyId" = ${companyId}
-    WHERE pl."postingDate" <= ${periodEnd}::date
-    GROUP BY s."customerContractLineId"
+      ON pl."id" = o."projectLedgerId" AND pl."companyId" = ${companyId}
+    GROUP BY o."customerContractLineId"
   `.execute(trx);
     const actualByLine = new Map(
       actualRows.map((row) => [row.customerContractLineId, Number(row.actual)])
+    );
+    const { rows: outsideRows } = await sql<{
+      customerContractLineId: string;
+      outside: number;
+    }>`
+    SELECT s."customerContractLineId",
+           COALESCE(SUM(pl."amount"), 0) AS "outside"
+    FROM get_contract_line_subtree(${companyId}, ${lineIds}::text[]) s
+    JOIN "projectLedger" pl
+      ON pl."projectElementId" = s."projectElementId" AND pl."companyId" = ${companyId}
+    JOIN (${progressLedgerRows({ companyId, lines: open, through: "9999-12-31" })}) o
+      ON o."projectLedgerId" = pl."id"
+      AND o."customerContractLineId" <> s."customerContractLineId"
+    GROUP BY s."customerContractLineId"
+  `.execute(trx);
+    const outsideByLine = new Map(
+      outsideRows.map((row) => [
+        row.customerContractLineId,
+        Number(row.outside)
+      ])
     );
 
     // 2. Each project's cost summary (one statement for every project) and
@@ -417,7 +454,15 @@ export function synthesizeCommercialProjectRevenue(
       scheduled.map((row) => [row.customerContractLineId, Number(row.amount)])
     );
 
-    // 4. The loss provision each line carries from earlier months.
+    // 4. The loss provision each line (and the lines it replaced) carries:
+    //    earlier months, and this month's rows an earlier run already posted
+    //    (`clearProgressMonth` removed only the Planned ones). A month with
+    //    no revenue writes no month row, so it stays open to a second run.
+    const lineIdByHistoryId = new Map(
+      open.flatMap((line) =>
+        line.historyLineIds.map((id) => [id, line.id] as const)
+      )
+    );
     const provisions = await trx
       .selectFrom("revenueRecognitionSchedule")
       .select([
@@ -426,17 +471,23 @@ export function synthesizeCommercialProjectRevenue(
       ])
       .where("companyId", "=", companyId)
       .where("type", "=", "Loss Provision")
-      .where("customerContractLineId", "in", lineIds)
-      .where("periodStart", "<", monthStart)
+      .where("customerContractLineId", "in", [...lineIdByHistoryId.keys()])
+      .where("periodStart", "<=", monthStart)
       .groupBy("customerContractLineId")
       .execute();
-    const provisionByLine = new Map(
-      provisions.map((row) => [row.customerContractLineId!, Number(row.amount)])
-    );
+    const provisionByLine = new Map<string, number>();
+    for (const row of provisions) {
+      const lineId = lineIdByHistoryId.get(row.customerContractLineId!);
+      if (!lineId) continue;
+      provisionByLine.set(
+        lineId,
+        (provisionByLine.get(lineId) ?? 0) + Number(row.amount)
+      );
+    }
 
     const before = await recognizedBefore(trx, {
       companyId,
-      lineIds,
+      lines: open,
       monthStart
     });
 
@@ -446,18 +497,26 @@ export function synthesizeCommercialProjectRevenue(
       const override = elementById.get(
         line.projectElementId
       )?.estimateAtCompletion;
+      // The subtree's EAC, less the cost another line owns (posted outside
+      // this line's dates): an ended line and its follow-on each reach 100 %
+      // on their own cost.
       const eac = round(
-        estimateAtCompletion({
-          ...sumSubtree(
-            summaries.get(line.projectId) ?? [],
-            elements.filter((element) => element.projectId === line.projectId),
-            line.projectElementId
-          ),
-          override:
-            override === null || override === undefined
-              ? null
-              : Number(override)
-        })
+        Math.max(
+          estimateAtCompletion({
+            ...sumSubtree(
+              summaries.get(line.projectId) ?? [],
+              elements.filter(
+                (element) => element.projectId === line.projectId
+              ),
+              line.projectElementId
+            ),
+            override:
+              override === null || override === undefined
+                ? null
+                : Number(override)
+          }) - (outsideByLine.get(line.id) ?? 0),
+          0
+        )
       );
       const price = percentCompletePrice({
         billingMethod: line.billingMethod,
@@ -532,7 +591,7 @@ export function synthesizeCommercialProjectRevenue(
 
     const reliefs = await selectUnrelievedCost(trx, {
       companyId,
-      lineIds,
+      lines: open,
       through: periodEnd
     });
     await writeCostRelief(trx, ctx, reliefs);

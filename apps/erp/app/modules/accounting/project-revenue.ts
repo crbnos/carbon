@@ -19,7 +19,7 @@
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { formatIsoDate, parseIsoDate, round } from "@carbon/utils";
-import { sql } from "kysely";
+import { type RawBuilder, sql } from "kysely";
 import {
   lockContractPositions,
   syncDraftRecognitionRuns
@@ -50,6 +50,14 @@ export type ProgressLine = {
   projectElementId: string | null;
   feePercent: number | null;
   ceilingAmount: number | null;
+  /** The first day the line owns cost: its own start, or for an amendment's
+   *  `change` copy the start of the first line it replaced. */
+  startDate: string;
+  /** The last day the line owns cost; null runs open. */
+  endDate: string | null;
+  /** The line and the lines it replaced through amendment `change`s (same
+   *  revenue method): the copy carries their months and loss provision. */
+  historyLineIds: string[];
 };
 
 export type ProgressMonth = {
@@ -86,7 +94,13 @@ export async function lockProjectRevenue(
   await lockContractPositions(trx, companyId);
 }
 
-/** The lines with one of `revenueMethods` on contracts that are not Draft. */
+/**
+ * The lines with one of `revenueMethods` on contracts that are not Draft,
+ * that started by `periodEnd`. A line an amendment replaced is left out: its
+ * `change` copy (`amendsLineId`) carries it on, from the replaced line's
+ * start and with its months (`historyLineIds`), so one cost is never earned
+ * by both.
+ */
 export async function loadProgressLines(
   trx: KyselyTx,
   args: {
@@ -102,7 +116,7 @@ export async function loadProgressLines(
         .onRef("c.id", "=", "l.customerContractId")
         .onRef("c.companyId", "=", "l.companyId")
     )
-    .select([
+    .select((eb) => [
       "l.id",
       "l.customerContractId",
       "l.billingMethod",
@@ -110,56 +124,175 @@ export async function loadProgressLines(
       "l.projectId",
       "l.projectElementId",
       "l.feePercent",
-      "l.ceilingAmount"
+      "l.ceilingAmount",
+      "l.startDate",
+      "l.endDate",
+      "l.amendsLineId",
+      eb
+        .exists(
+          eb
+            .selectFrom("customerContractLine as n")
+            .select("n.id")
+            .whereRef("n.amendsLineId", "=", "l.id")
+            .whereRef("n.companyId", "=", "l.companyId")
+        )
+        .as("replaced")
     ])
     .where("l.companyId", "=", args.companyId)
     .where("l.revenueMethod", "in", args.revenueMethods)
-    .where("l.startDate", "<=", args.periodEnd)
     .where("c.status", "<>", "Draft")
     .orderBy("l.id")
     .execute();
-  return rows.map((row) => ({
-    ...row,
-    feePercent: row.feePercent === null ? null : Number(row.feePercent),
-    ceilingAmount: row.ceilingAmount === null ? null : Number(row.ceilingAmount)
-  }));
+
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return rows.flatMap((row) => {
+    if (row.replaced) return [];
+    // Walk back through the lines this one replaced, while they recognize
+    // by the same method.
+    const history = [row.id];
+    let startDate = row.startDate;
+    let previous = row.amendsLineId ? byId.get(row.amendsLineId) : undefined;
+    while (
+      previous &&
+      previous.revenueMethod === row.revenueMethod &&
+      !history.includes(previous.id)
+    ) {
+      history.push(previous.id);
+      if (previous.startDate < startDate) startDate = previous.startDate;
+      previous = previous.amendsLineId
+        ? byId.get(previous.amendsLineId)
+        : undefined;
+    }
+    if (startDate > args.periodEnd) return [];
+    return [
+      {
+        id: row.id,
+        customerContractId: row.customerContractId,
+        billingMethod: row.billingMethod,
+        revenueMethod: row.revenueMethod,
+        projectId: row.projectId,
+        projectElementId: row.projectElementId,
+        feePercent: row.feePercent === null ? null : Number(row.feePercent),
+        ceilingAmount:
+          row.ceilingAmount === null ? null : Number(row.ceilingAmount),
+        startDate,
+        endDate: row.endDate,
+        historyLineIds: history
+      }
+    ];
+  });
 }
 
 /**
- * Rebuilds the month starting `monthStart` for each line (R5). A line whose
- * month row is Recognized is left alone. For the others, the Planned schedule
- * rows of the month go first (through `syncDraftRecognitionRuns`, so a Draft
- * run that holds one stays consistent); their contract ledger entries and
- * `projectCostRelief` rows cascade. Then the Planned month rows go. Returns
- * the ids of the lines still open for the month.
+ * The ledger rows each line owns, posted on or before `through`. A row of a
+ * billing element subtree belongs to exactly one of the lines on it: the line
+ * with the latest start on or before the row's posting date, so a follow-on
+ * line takes over from the line it follows (and, when two lines' dates
+ * overlap, which Confirm and Amend refuse (P7), the later one wins). A row
+ * posted before every line started belongs to the earliest line, and one
+ * posted after a line ended with no follow-on stays with it, so a single
+ * line owns all of its subtree's cost and none is left in WIP. Selects
+ * `customerContractLineId` and `projectLedgerId`.
+ */
+export function progressLedgerRows(args: {
+  companyId: string;
+  lines: ProgressLine[];
+  through: string;
+}): RawBuilder<{ customerContractLineId: string; projectLedgerId: string }> {
+  const { companyId, lines, through } = args;
+  const ids = lines.map((line) => line.id);
+  return sql<{ customerContractLineId: string; projectLedgerId: string }>`
+    SELECT DISTINCT ON (pl."id")
+      w."lineId" AS "customerContractLineId", pl."id" AS "projectLedgerId"
+    FROM unnest(
+      ${ids}::text[],
+      ${lines.map((line) => line.startDate)}::date[]
+    ) AS w("lineId", "startDate")
+    JOIN get_contract_line_subtree(${companyId}, ${ids}::text[]) s
+      ON s."customerContractLineId" = w."lineId"
+    JOIN "projectLedger" pl
+      ON pl."projectElementId" = s."projectElementId" AND pl."companyId" = ${companyId}
+    WHERE pl."postingDate" <= ${through}::date
+    ORDER BY pl."id",
+      (w."startDate" <= pl."postingDate") DESC,
+      CASE WHEN w."startDate" <= pl."postingDate" THEN w."startDate" END DESC NULLS LAST,
+      w."startDate",
+      w."lineId"
+  `;
+}
+
+/**
+ * Rebuilds the month starting `monthStart` for each line (R5). A line is
+ * left alone when its month row is Recognized, or when it (or a line it
+ * replaced) already has a month row or a Cost Relief or Loss Provision row
+ * for a LATER month: that month's cumulative catch-up already covers this
+ * one, and writing it again would recognize it twice. For the others, the
+ * Planned schedule rows of the month go first (through
+ * `syncDraftRecognitionRuns`, so a Draft run that holds one stays
+ * consistent); their contract ledger entries and `projectCostRelief` rows
+ * cascade. Then the Planned month rows go. Returns the ids of the lines
+ * still open for the month.
  */
 export async function clearProgressMonth(
   trx: KyselyTx,
   ctx: RunProposalContext,
-  args: { lineIds: string[]; monthStart: string }
+  args: { lines: ProgressLine[]; monthStart: string }
 ): Promise<string[]> {
   const { companyId, userId } = ctx;
-  if (args.lineIds.length === 0) return [];
+  const { lines, monthStart } = args;
+  if (lines.length === 0) return [];
+  const lineIdByHistoryId = new Map(
+    lines.flatMap((line) =>
+      line.historyLineIds.map((id) => [id, line.id] as const)
+    )
+  );
+  const historyIds = [...lineIdByHistoryId.keys()];
 
-  const recognized = await trx
-    .selectFrom("customerContractRevenue")
-    .select("customerContractLineId")
-    .where("companyId", "=", companyId)
-    .where("customerContractLineId", "in", args.lineIds)
-    .where("periodStart", "=", args.monthStart)
-    .where("status", "=", "Recognized")
-    .execute();
-  const closed = new Set(recognized.map((row) => row.customerContractLineId));
-  const open = args.lineIds.filter((id) => !closed.has(id));
-  if (open.length === 0) return [];
+  const [recognized, laterMonths, laterRows] = await Promise.all([
+    trx
+      .selectFrom("customerContractRevenue")
+      .select("customerContractLineId")
+      .where("companyId", "=", companyId)
+      .where("customerContractLineId", "in", historyIds)
+      .where("periodStart", "=", monthStart)
+      .where("status", "=", "Recognized")
+      .execute(),
+    trx
+      .selectFrom("customerContractRevenue")
+      .select("customerContractLineId")
+      .where("companyId", "=", companyId)
+      .where("customerContractLineId", "in", historyIds)
+      .where("periodStart", ">", monthStart)
+      .execute(),
+    trx
+      .selectFrom("revenueRecognitionSchedule")
+      .select("customerContractLineId")
+      .where("companyId", "=", companyId)
+      .where("customerContractLineId", "in", historyIds)
+      .where("periodStart", ">", monthStart)
+      .where("type", "in", ["Cost Relief", "Loss Provision"])
+      .execute()
+  ]);
+  const closed = new Set(
+    [...recognized, ...laterMonths, ...laterRows].flatMap((row) => {
+      const lineId = row.customerContractLineId
+        ? lineIdByHistoryId.get(row.customerContractLineId)
+        : undefined;
+      return lineId ? [lineId] : [];
+    })
+  );
+  const openLines = lines.filter((line) => !closed.has(line.id));
+  if (openLines.length === 0) return [];
+  const open = openLines.map((line) => line.id);
+  const openHistoryIds = openLines.flatMap((line) => line.historyLineIds);
 
   const planned = await trx
     .selectFrom("revenueRecognitionSchedule")
     .select("id")
     .where("companyId", "=", companyId)
     .where("status", "=", "Planned")
-    .where("customerContractLineId", "in", open)
-    .where("periodStart", "=", args.monthStart)
+    .where("customerContractLineId", "in", openHistoryIds)
+    .where("periodStart", "=", monthStart)
     .where("type", "in", [...PROGRESS_SCHEDULE_TYPES])
     .execute();
   if (planned.length > 0) {
@@ -179,21 +312,27 @@ export async function clearProgressMonth(
   await trx
     .deleteFrom("customerContractRevenue")
     .where("companyId", "=", companyId)
-    .where("customerContractLineId", "in", open)
-    .where("periodStart", "=", args.monthStart)
+    .where("customerContractLineId", "in", openHistoryIds)
+    .where("periodStart", "=", monthStart)
     .where("status", "=", "Planned")
     .execute();
 
   return open;
 }
 
-/** Σ month rows per line that start before `monthStart`, any status. */
+/** Σ month rows per line (and the lines it replaced) that start before
+ *  `monthStart`, any status. */
 export async function recognizedBefore(
   trx: KyselyTx,
-  args: { companyId: string; lineIds: string[]; monthStart: string }
+  args: { companyId: string; lines: ProgressLine[]; monthStart: string }
 ): Promise<Map<string, number>> {
   const result = new Map<string, number>();
-  if (args.lineIds.length === 0) return result;
+  if (args.lines.length === 0) return result;
+  const lineIdByHistoryId = new Map(
+    args.lines.flatMap((line) =>
+      line.historyLineIds.map((id) => [id, line.id] as const)
+    )
+  );
   const rows = await trx
     .selectFrom("customerContractRevenue")
     .select([
@@ -201,12 +340,14 @@ export async function recognizedBefore(
       sql<number>`COALESCE(SUM("amount"), 0)`.as("amount")
     ])
     .where("companyId", "=", args.companyId)
-    .where("customerContractLineId", "in", args.lineIds)
+    .where("customerContractLineId", "in", [...lineIdByHistoryId.keys()])
     .where("periodStart", "<", args.monthStart)
     .groupBy("customerContractLineId")
     .execute();
   for (const row of rows) {
-    result.set(row.customerContractLineId, Number(row.amount));
+    const lineId = lineIdByHistoryId.get(row.customerContractLineId);
+    if (!lineId) continue;
+    result.set(lineId, (result.get(lineId) ?? 0) + Number(row.amount));
   }
   return result;
 }
@@ -249,36 +390,36 @@ export async function writeProgressMonths(
 }
 
 /**
- * The cost under each line's billing element subtree that no relief covers
- * yet (R3, R4): ledger rows posted on or before `through` whose journal line
- * is on an Asset account. A row with no journal line (accounting off) or an
- * expensed row has nothing in WIP. Grouped per line and account.
+ * The cost each line owns (`progressLedgerRows`: its subtree, its own dates)
+ * that no relief covers yet (R3, R4): ledger rows posted on or before
+ * `through` whose journal line is on an Asset account. A row with no journal
+ * line (accounting off) or an expensed row has nothing in WIP. Grouped per
+ * line and account.
  */
 export async function selectUnrelievedCost(
   trx: KyselyTx,
-  args: { companyId: string; lineIds: string[]; through: string }
+  args: { companyId: string; lines: ProgressLine[]; through: string }
 ): Promise<UnrelievedCost[]> {
-  const { companyId, lineIds, through } = args;
-  if (lineIds.length === 0) return [];
+  const { companyId, lines, through } = args;
+  if (lines.length === 0) return [];
   const { rows } = await sql<{
     customerContractLineId: string;
     accountId: string;
     id: string;
     amount: number;
   }>`
-    SELECT s."customerContractLineId", jl."accountId", pl."id", pl."amount"
-    FROM get_contract_line_subtree(${companyId}, ${lineIds}::text[]) s
+    SELECT o."customerContractLineId", jl."accountId", pl."id", pl."amount"
+    FROM (${progressLedgerRows({ companyId, lines, through })}) o
     JOIN "projectLedger" pl
-      ON pl."projectElementId" = s."projectElementId" AND pl."companyId" = ${companyId}
+      ON pl."id" = o."projectLedgerId" AND pl."companyId" = ${companyId}
     JOIN "journalLine" jl
       ON jl."id" = pl."journalLineId" AND jl."companyId" = pl."companyId"
     JOIN "account" a ON a."id" = jl."accountId" AND a."class" = 'Asset'
-    WHERE pl."postingDate" <= ${through}::date
-      AND NOT EXISTS (
+    WHERE NOT EXISTS (
         SELECT 1 FROM "projectCostRelief" r
         WHERE r."projectLedgerId" = pl."id" AND r."companyId" = pl."companyId"
       )
-    ORDER BY s."customerContractLineId", jl."accountId", pl."postingDate", pl."id"
+    ORDER BY o."customerContractLineId", jl."accountId", pl."postingDate", pl."id"
   `.execute(trx);
 
   const groups = new Map<string, UnrelievedCost>();
@@ -380,8 +521,8 @@ export async function writeCostRelief(
  * The Right to Invoice synthesizer (community). Per line, earned to date is
  * Σ the line's billable items that are not Written Off, whose ledger row
  * posted on or before the period end. The month is earned to date less what
- * is recognized before the month. Then every unrelieved WIP row of the
- * subtree is relieved (R3).
+ * is recognized before the month. Then every unrelieved WIP row the line owns
+ * (`progressLedgerRows`) is relieved (R3).
  */
 export async function synthesizeProjectRevenue(
   trx: KyselyTx,
@@ -398,10 +539,7 @@ export async function synthesizeProjectRevenue(
   if (lines.length === 0) return;
 
   const monthStart = monthStartOf(periodEnd);
-  const openIds = await clearProgressMonth(trx, ctx, {
-    lineIds: lines.map((line) => line.id),
-    monthStart
-  });
+  const openIds = await clearProgressMonth(trx, ctx, { lines, monthStart });
   if (openIds.length === 0) return;
   const open = lines.filter((line) => openIds.includes(line.id));
 
@@ -432,7 +570,7 @@ export async function synthesizeProjectRevenue(
   );
   const before = await recognizedBefore(trx, {
     companyId,
-    lineIds: openIds,
+    lines: open,
     monthStart
   });
 
@@ -451,7 +589,7 @@ export async function synthesizeProjectRevenue(
 
   const reliefs = await selectUnrelievedCost(trx, {
     companyId,
-    lineIds: openIds,
+    lines: open,
     through: periodEnd
   });
   await writeCostRelief(trx, ctx, reliefs);
@@ -464,6 +602,7 @@ export const projectRevenueWriters = {
   loadProgressLines,
   lockProjectRevenue,
   monthStartOf,
+  progressLedgerRows,
   recognizedBefore,
   selectUnrelievedCost,
   writeCostRelief,

@@ -11,7 +11,11 @@
 import { datetime } from "@carbon/utils";
 import { endOfMonth } from "@internationalized/date";
 import { beforeEach, expect, vi } from "vitest";
-import { proposeRevenueRecognitionRun } from "../../../../app/modules/accounting/accounting.service";
+import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
+import {
+  postRevenueRecognitionRun,
+  proposeRevenueRecognitionRun
+} from "../../../../app/modules/accounting/accounting.service";
 import { postProjectIssue } from "../../../../app/modules/projects/projects.service";
 import { invokePosting } from "../../../../app/modules/shared/shared.service";
 import { handlesOf } from "../../fixtures/handles";
@@ -50,15 +54,13 @@ async function cleanup(f: Fixture) {
   await f.cleanup();
 }
 
+/** The proposal on the system's service context, so a failure surfaces
+ *  with its own message. */
 async function propose(f: Fixture, periodEnd: string) {
-  const result = await invokePosting(
-    handlesOf(f.ctx),
-    "propose-revenue-recognition-run",
-    { periodEnd },
-    proposeRevenueRecognitionRun
-  );
-  if (result.error) throw result.error;
-  return result.data?.id ?? null;
+  const proposal = await proposeRevenueRecognitionRun(f.service, {
+    periodEnd
+  });
+  return proposal?.id ?? null;
 }
 
 /** A project with a billing element and a Percent Complete line on it. The
@@ -85,34 +87,82 @@ async function percentCompleteLine(
   });
   await setEstimate(f, project.rootId, input.estimateAtCompletion);
   if (input.scheduledTotal !== undefined) {
-    // One Planned schedule row: the Fixed line's contract value.
-    const invoice = await f.db
-      .insertInto("customerContractInvoice")
-      .values({
-        companyId: f.companyId,
-        customerContractId: contractId,
-        invoiceDate: "2026-12-31",
-        createdBy: f.userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    await f.db
-      .insertInto("customerContractInvoiceLine")
-      .values({
-        companyId: f.companyId,
-        customerContractId: contractId,
-        customerContractInvoiceId: invoice.id,
-        customerContractLineId: lineId,
-        periodStart: "2026-12-01",
-        periodEnd: "2026-12-31",
-        units: 1,
-        unitPrice: input.scheduledTotal,
-        amount: input.scheduledTotal,
-        createdBy: f.userId
-      })
-      .execute();
+    await addScheduledTotal(f, contractId, lineId, input.scheduledTotal);
   }
   return { project, lineId };
+}
+
+/** One Planned schedule row: a Fixed line's contract value. */
+async function addScheduledTotal(
+  f: Fixture,
+  contractId: string,
+  lineId: string,
+  amount: number
+) {
+  const invoice = await f.db
+    .insertInto("customerContractInvoice")
+    .values({
+      companyId: f.companyId,
+      customerContractId: contractId,
+      invoiceDate: "2026-12-31",
+      createdBy: f.userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  await f.db
+    .insertInto("customerContractInvoiceLine")
+    .values({
+      companyId: f.companyId,
+      customerContractId: contractId,
+      customerContractInvoiceId: invoice.id,
+      customerContractLineId: lineId,
+      periodStart: "2026-12-01",
+      periodEnd: "2026-12-31",
+      units: 1,
+      unitPrice: amount,
+      amount,
+      createdBy: f.userId
+    })
+    .execute();
+}
+
+/** Sets a line's dates, as an amendment `end` and an added line do. */
+async function setLineDates(
+  f: Fixture,
+  lineId: string,
+  dates: { startDate: string; endDate: string | null }
+) {
+  await f.db
+    .updateTable("customerContractLine")
+    .set(dates)
+    .where("id", "=", lineId)
+    .where("companyId", "=", f.companyId)
+    .execute();
+}
+
+/** Posts a Draft run in an accounting period of its month. */
+async function postRun(
+  f: Fixture,
+  runId: string,
+  month: { startDate: string; endDate: string }
+) {
+  const period = await f.db
+    .insertInto("accountingPeriod")
+    .values({ ...month, companyId: f.companyId, createdBy: f.userId })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return postRevenueRecognitionRun(f.db, {
+    runId,
+    companyId: f.companyId,
+    userId: f.userId,
+    periods: new Map([
+      [
+        month.endDate,
+        { accountingPeriodId: period.id, postingDate: month.endDate }
+      ]
+    ]),
+    dimensionIds: {}
+  });
 }
 
 async function setEstimate(
@@ -479,6 +529,334 @@ databaseTest(
       expect(await reliefs(f)).toEqual([
         { projectLedgerId: ledger.id, amount: expect.anything() }
       ]);
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+/** The month rows and schedule rows of a month, per line. */
+async function monthRows(f: Fixture, periodStart: string) {
+  const revenue = await f.db
+    .selectFrom("customerContractRevenue")
+    .select(["customerContractLineId", "amount"])
+    .where("companyId", "=", f.companyId)
+    .where("periodStart", "=", periodStart)
+    .execute();
+  const schedule = await f.db
+    .selectFrom("revenueRecognitionSchedule")
+    .select(["customerContractLineId", "type", "amount"])
+    .where("companyId", "=", f.companyId)
+    .where("periodStart", "=", periodStart)
+    .execute();
+  return {
+    revenue: revenue.map((row) => ({
+      lineId: row.customerContractLineId,
+      amount: Number(row.amount)
+    })),
+    schedule: schedule.map((row) => ({
+      lineId: row.customerContractLineId,
+      type: row.type,
+      amount: Number(row.amount)
+    }))
+  };
+}
+
+databaseTest(
+  "an ended Percent Complete line and its follow-on on one element each earn and relieve only the cost of their own dates",
+  async () => {
+    const f = await fixture();
+    try {
+      const project = await f.addProject("pcf", "PCF");
+      const ended = await f.addContract({
+        key: "pcf-ended",
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        billingMethod: "Fixed",
+        revenueMethod: "Percent Complete",
+        materialHandlingPercent: null
+      });
+      const next = await f.addContract({
+        key: "pcf-next",
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        billingMethod: "Fixed",
+        revenueMethod: "Percent Complete",
+        materialHandlingPercent: null
+      });
+      await setLineDates(f, ended.lineId, {
+        startDate: "2026-01-01",
+        endDate: "2026-08-31"
+      });
+      await setLineDates(f, next.lineId, {
+        startDate: "2026-09-01",
+        endDate: null
+      });
+      await addScheduledTotal(f, ended.contractId, ended.lineId, 30000);
+      await addScheduledTotal(f, next.contractId, next.lineId, 40000);
+      await setEstimate(f, project.rootId, 30000);
+      const august = await postCost(f, project, 6000, "2026-08-20");
+      const september = await postCost(f, project, 12000, "2026-09-10");
+
+      // No August run: both rows are unrelieved when September runs.
+      const runId = await propose(f, "2026-09-30");
+      expect(runId).not.toBeNull();
+
+      const relieved = await f.db
+        .selectFrom("projectCostRelief as r")
+        .innerJoin("revenueRecognitionSchedule as s", (join) =>
+          join
+            .onRef("s.id", "=", "r.revenueRecognitionScheduleId")
+            .onRef("s.companyId", "=", "r.companyId")
+        )
+        .select(["r.projectLedgerId", "s.customerContractLineId"])
+        .where("r.companyId", "=", f.companyId)
+        .execute();
+      expect(
+        relieved
+          .map((row) => [row.projectLedgerId, row.customerContractLineId])
+          .sort()
+      ).toEqual(
+        [
+          [august.id, ended.lineId],
+          [september.id, next.lineId]
+        ].sort()
+      );
+
+      // Each line's EAC leaves out the other line's cost: the ended line
+      // 6,000 of 30,000 − 12,000; the follow-on 12,000 of 30,000 − 6,000.
+      const { revenue } = await monthRows(f, "2026-09-01");
+      expect(revenue.sort((a, b) => a.lineId!.localeCompare(b.lineId!))).toEqual(
+        [
+          { lineId: ended.lineId, amount: 10000 },
+          { lineId: next.lineId, amount: 20000 }
+        ].sort((a, b) => a.lineId.localeCompare(b.lineId))
+      );
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+databaseTest(
+  "an amendment's change copy of a Fixed Percent Complete line carries the replaced line's months on",
+  async () => {
+    const f = await fixture();
+    try {
+      const { project, lineId } = await percentCompleteLine(f, {
+        key: "pca",
+        billingMethod: "Fixed",
+        estimateAtCompletion: 100000,
+        scheduledTotal: 100000
+      });
+      const september = await postCost(f, project, 40000, "2026-09-10");
+      await propose(f, "2026-09-30");
+      expect((await month(f, "2026-09-01")).amount).toBe(40000);
+
+      // The amendment `change` of a One-time line: the old line ends the day
+      // before it starts, and the copy starts on the same day at a new price.
+      const line = await f.db
+        .selectFrom("customerContractLine")
+        .selectAll()
+        .where("id", "=", lineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      const amendment = await f.db
+        .insertInto("customerContractAmendment")
+        .values({
+          customerContractId: line.customerContractId,
+          amendmentDate: "2026-10-01",
+          contractType: "Expansion",
+          reason: "Scope added",
+          companyId: f.companyId,
+          createdBy: f.userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const copyId = `${lineId}-copy`;
+      await f.db
+        .insertInto("customerContractLine")
+        .values({
+          ...line,
+          id: copyId,
+          amendmentId: amendment.id,
+          amendsLineId: lineId,
+          createdAt: undefined,
+          updatedAt: undefined
+        })
+        .execute();
+      await setLineDates(f, lineId, {
+        startDate: "2026-01-01",
+        endDate: "2025-12-31"
+      });
+      await addScheduledTotal(f, line.customerContractId, copyId, 120000);
+
+      const october = await postCost(f, project, 10000, "2026-10-05");
+      await propose(f, "2026-10-31");
+
+      // 50 % of 120,000 is 60,000 earned; the replaced line recognized 40,000.
+      const { revenue } = await monthRows(f, "2026-10-01");
+      expect(revenue).toEqual([{ lineId: copyId, amount: 20000 }]);
+      const relieved = await f.db
+        .selectFrom("projectCostRelief as r")
+        .innerJoin("revenueRecognitionSchedule as s", (join) =>
+          join
+            .onRef("s.id", "=", "r.revenueRecognitionScheduleId")
+            .onRef("s.companyId", "=", "r.companyId")
+        )
+        .select(["r.projectLedgerId", "s.customerContractLineId"])
+        .where("r.companyId", "=", f.companyId)
+        .execute();
+      expect(
+        relieved
+          .map((row) => [row.projectLedgerId, row.customerContractLineId])
+          .sort()
+      ).toEqual(
+        [
+          [september.id, lineId],
+          [october.id, copyId]
+        ].sort()
+      );
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+databaseTest(
+  "running an earlier month after a later month has a row writes no revenue and no loss provision for it",
+  async () => {
+    const f = await fixture();
+    try {
+      const { project } = await percentCompleteLine(f, {
+        key: "pco",
+        billingMethod: "Fixed",
+        estimateAtCompletion: 110000,
+        scheduledTotal: 100000
+      });
+      await postCost(f, project, 44000, "2026-09-10");
+      await postCost(f, project, 22000, "2026-10-10");
+
+      // October first: 60 % complete, 60,000 earned, 4,000 of provision.
+      await propose(f, "2026-10-31");
+      const october = await monthRows(f, "2026-10-01");
+      expect(october.revenue.map((row) => row.amount)).toEqual([60000]);
+      expect(
+        october.schedule
+          .filter((row) => row.type === "Loss Provision")
+          .map((row) => row.amount)
+      ).toEqual([4000]);
+
+      await propose(f, "2026-09-30");
+      expect(await monthRows(f, "2026-09-01")).toEqual({
+        revenue: [],
+        schedule: []
+      });
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+databaseTest(
+  "a second run in a month with no revenue books no more loss provision",
+  async () => {
+    const f = await fixture();
+    try {
+      await percentCompleteLine(f, {
+        key: "pcl",
+        billingMethod: "Fixed",
+        estimateAtCompletion: 1200,
+        scheduledTotal: 1000
+      });
+      const september = { startDate: "2026-09-01", endDate: "2026-09-30" };
+      const first = await propose(f, september.endDate);
+      expect((await runTotals(f, first!)).totals).toEqual({
+        "Loss Provision": 200
+      });
+      await postRun(f, first!, september);
+
+      await propose(f, september.endDate);
+      const provisions = await f.db
+        .selectFrom("revenueRecognitionSchedule")
+        .select("amount")
+        .where("companyId", "=", f.companyId)
+        .where("type", "=", "Loss Provision")
+        .execute();
+      expect(provisions.map((row) => Number(row.amount))).toEqual([200]);
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+/** A Cost Plus line on a project's billing element, with these dates. */
+async function costPlusLine(
+  f: Fixture,
+  key: string,
+  identifier: string,
+  dates: { startDate: string; endDate: string | null }
+) {
+  const project = await f.addProject(key, identifier);
+  const { lineId } = await f.addContract({
+    key,
+    projectId: project.projectId,
+    projectElementId: project.rootId,
+    billingMethod: "Cost Plus",
+    materialHandlingPercent: null
+  });
+  await setLineDates(f, lineId, dates);
+  return { project, lineId };
+}
+
+databaseTest(
+  "Cost Plus bills no row posted before the line starts",
+  async () => {
+    const f = await fixture();
+    try {
+      const { project } = await costPlusLine(f, "cpstart", "CPS", {
+        startDate: "2026-09-01",
+        endDate: null
+      });
+      await postCost(f, project, 1000, "2026-08-15");
+      const september = await postCost(f, project, 2000, "2026-09-10");
+
+      await generateCostPlusItems(f.db, {
+        companyId: f.companyId,
+        userId: f.userId,
+        through: "2026-09-30"
+      });
+      const items = await f.items(project.projectId);
+      expect(
+        items.map((item) => [item.projectLedgerId, Number(item.amount)])
+      ).toEqual([[september.id, 2160]]);
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+databaseTest(
+  "an ended Cost Plus line still bills a row of its own dates generated after it ends",
+  async () => {
+    const f = await fixture();
+    try {
+      const { project } = await costPlusLine(f, "cpend", "CPE", {
+        startDate: "2026-01-01",
+        endDate: "2026-08-31"
+      });
+      const august = await postCost(f, project, 1000, "2026-08-20");
+      await postCost(f, project, 2000, "2026-09-10");
+
+      await generateCostPlusItems(f.db, {
+        companyId: f.companyId,
+        userId: f.userId,
+        through: "2026-09-30"
+      });
+      const items = await f.items(project.projectId);
+      expect(
+        items.map((item) => [item.projectLedgerId, Number(item.amount)])
+      ).toEqual([[august.id, 1080]]);
     } finally {
       await cleanup(f);
     }

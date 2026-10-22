@@ -2573,3 +2573,127 @@ databaseTest(
     }
   }
 );
+
+// Two progress lines on one branch earn revenue and relieve WIP on the same
+// cost, so a Fixed Percent Complete line takes part in the P7 overlap check
+// like a billing line (audit A2).
+databaseTest(
+  "confirm refuses a billing line that overlaps a Fixed Percent Complete line, either way round",
+  async () => {
+    const f = await contractFixture();
+    const { ctx, db, companyId } = f;
+    try {
+      const billing = await projectBillingFixture(f);
+      const itemId = await contractItemId(db, companyId, f.oneTimeLineId);
+      const { customerId } = await db
+        .selectFrom("customerContract")
+        .select("customerId")
+        .where("id", "=", f.contractId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      const addFixedPercentComplete = async (input: {
+        key: string;
+        projectId: string;
+        projectElementId: string;
+      }) => {
+        const contractId = `${companyId}-${input.key}`;
+        await db.transaction().execute(async (trx) => {
+          await trx
+            .insertInto("customerContract")
+            .values({
+              id: contractId,
+              customerContractId: `CON-${input.key}`,
+              name: input.key,
+              customerId,
+              billingBasis: "Project",
+              projectId: input.projectId,
+              closeDate: "2026-01-01",
+              startDate: "2026-01-01",
+              endDate: "2026-12-31",
+              billingFrequency: "Month",
+              billingAlignment: "Calendar",
+              billingTiming: "Arrears",
+              renewal: "End",
+              currencyCode: "USD",
+              companyId,
+              createdBy: USER
+            })
+            .execute();
+          await trx
+            .insertInto("customerContractLine")
+            .values({
+              id: `${contractId}-line`,
+              customerContractId: contractId,
+              revenueType: "One-time",
+              itemId,
+              description: "Fixed Price build",
+              quantity: 1,
+              rate: 90000,
+              startDate: "2026-01-01",
+              billingMethod: "Fixed",
+              revenueMethod: "Percent Complete",
+              projectId: input.projectId,
+              projectElementId: input.projectElementId,
+              companyId,
+              createdBy: USER
+            })
+            .execute();
+        });
+        return contractId;
+      };
+      const confirm = (customerContractId: string) =>
+        invokePosting(
+          handlesOf(ctx),
+          "post-customer-contract",
+          { type: "confirm", customerContractId, asOf: "2026-01-01" },
+          postCustomerContract
+        );
+
+      // An Active Fixed Percent Complete line, then a billing line on it.
+      const fixedFirst = await billing.addProject("pc-first", "PQ", "Contract");
+      expect(
+        (
+          await confirm(
+            await addFixedPercentComplete({
+              key: "pc-first",
+              projectId: fixedFirst.projectId,
+              projectElementId: fixedFirst.rootId
+            })
+          )
+        ).error
+      ).toBeNull();
+      const tm = await billing.addTimeAndMaterialsContract({
+        key: "tm-after-pc",
+        projectId: fixedFirst.projectId,
+        projectElementId: fixedFirst.rootId
+      });
+      expect((await confirm(tm)).error?.message).toContain(
+        "overlaps the billing element"
+      );
+
+      // An Active billing line, then a Fixed Percent Complete line below it.
+      const billingFirst = await billing.addProject("tm-first", "PR", "Contract");
+      expect(
+        (
+          await confirm(
+            await billing.addTimeAndMaterialsContract({
+              key: "tm-first-pc",
+              projectId: billingFirst.projectId,
+              projectElementId: billingFirst.rootId
+            })
+          )
+        ).error
+      ).toBeNull();
+      const fixedAfter = await addFixedPercentComplete({
+        key: "pc-after-tm",
+        projectId: billingFirst.projectId,
+        projectElementId: billingFirst.childId
+      });
+      expect((await confirm(fixedAfter)).error?.message).toContain(
+        "overlaps the billing element"
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

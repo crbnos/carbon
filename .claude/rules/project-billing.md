@@ -60,7 +60,10 @@ are in `apps/erp/app/modules/sales/AGENTS.md` → Contracts → "Billing basis".
 Confirm and amend (`post-customer-contract`, `checkBillingLines`) refuse a billing
 line whose element is the same as, an ancestor of or a descendant of another live
 billing line's element (P7), a non-Contract project, and a contract currency other
-than the base currency (P5). Amend refuses a `change` of a billing line and allows
+than the base currency (P5). A Fixed Percent Complete line takes part in the P7
+overlap check (both ways round), though not in the billing-element and cost
+treatment checks: two progress lines on one branch over the same dates would earn
+revenue on, and relieve, the same cost. Amend refuses a `change` of a billing line and allows
 `add` and `end` (P9). Funding changes through **Edit Funding**
 (`updateContractLineFunding`, Draft or Active). Confirm's revenue check
 (`refuseRevenueResiduals`) and the contract page's `revenueResiduals` skip Right to
@@ -92,10 +95,17 @@ limit" or a user's note.
   item: `buildContractBillableItem` returns null for a Cost Plus line.
   `generateCostPlusItems` (`@carbon/ee/project-revenue.server`) prices cost × (1 +
   fee) for every cost type; it degrades (`gated: true`) without `PROJECT_REVENUE`.
+  It bills only the rows of the line's own dates, `startDate <= postingDate <=
+  min(through, endDate)`: a row an earlier line on the element covered is never
+  billed again, and an ended line still bills a row of its dates posted after it
+  ended (the T&M path clamps `through` the same way).
   The nightly job and the line's **Generate Billable Items** (the
   `generateContractBillableItems` operation, `sales.server.ts`) call it.
 - **The T&M backfill.** `generateTimeAndMaterialsItems` writes items for subtree
-  rows posted on or before `through` that have none (`selectRowsToBill`). It runs
+  rows posted from the line's `startDate` through `through` that have none
+  (`selectRowsToBill`, which pairs reversals over every row first). A row dated
+  before the start gets no item, as at posting (P8): an earlier line on the
+  element (an ended Fixed Price line, say) covered it. It runs
   at confirm and at an amend `add` (P15), from **Generate Billable Items**
   (`generate-contract-billable-items`), and inside `create-project-billing-invoices`
   before it reads items.
@@ -141,8 +151,11 @@ with a billing line that started on or before `asOf`:
 
 1. the period end is the latest billing grid date on or before `asOf`;
 2. the T&M backfill runs for each T&M line through the period end;
-3. Unbilled items posted on or before it are taken in posting-date order within
-   `fundedAmount` (`takeWithinFunding`); the rest are stamped "Funding limit";
+3. Unbilled items posted on or before it are taken within `fundedAmount`
+   (`takeWithinFunding`): every credit is taken, then each positive item in
+   posting-date order that still fits after the credits and the items before it;
+   the rest are stamped "Funding limit". An item that does not fit never holds a
+   later credit or a later item that fits;
 4. one Draft invoice per contract through `insertDraftContractInvoice`, lines from
    `planProjectInvoiceLines` (P11: T&M labor by category and unit price, Cost Plus
    labor by category, other cost by cost type), `invoiceLineType 'Service'`;
@@ -210,14 +223,30 @@ imports the ERP. The shared writers live in
 
 1. takes `lockProjectRevenue` (the contract position lock);
 2. reads its lines with `loadProgressLines` (contract not Draft, line started by the
-   period end);
+   period end). A line an amendment replaced (another line names it in
+   `amendsLineId`) is left out: its `change` copy carries it on, from the replaced
+   line's start (`ProgressLine.startDate`) and with its months and loss provision
+   (`historyLineIds`, through replaced lines of the same revenue method);
 3. rebuilds the run's month with `clearProgressMonth` (R5): it deletes the line's
    Planned schedule rows of the month (`Deferral`, `Accrual`, `Cost Relief`,
    `Loss Provision`, through `syncDraftRecognitionRuns`), then the Planned month row.
-   A Recognized month is never touched;
+   A Recognized month is never touched, and neither is a month of a line that (or
+   whose replaced lines) already has a month row, a `Cost Relief` or a `Loss
+   Provision` row for a LATER month: the later month's cumulative catch-up covers
+   it, so running the earlier month writes nothing for that line;
 4. writes the month with `writeProgressMonths` (`recognizedBefore` gives what earlier
-   months recognized, any status);
+   months recognized, any status, the replaced lines' months included);
 5. relieves cost with `selectUnrelievedCost` and `writeCostRelief`.
+
+**Which line owns a ledger row.** `progressLedgerRows` (`project-revenue.ts`, passed
+to ee as a writer) is the one definition: a line owns the rows of its billing
+element subtree posted within its own dates (`startDate <= postingDate <=
+min(through, endDate)`), and a row belongs to at most one line (with two lines on
+one branch over the same dates, which P7 refuses, the line that started last). The
+cost relief and the Percent Complete actual both read it, so an ended line and its
+follow-on on one element each earn and relieve only their own cost. Before it, both
+lines selected the same row and the relief insert failed on
+`projectCostRelief_ledger_key`, failing the whole run.
 
 **Right to Invoice** (`synthesizeProjectRevenue`, community). Earned to date = Σ the
 line's billable items whose ledger row posted on or before the period end, other than
@@ -230,19 +259,20 @@ without `PROJECT_REVENUE` (`projectRevenueEnabledForCompany`). It first runs
 
 | Figure | Rule |
 |---|---|
-| EAC | the billing element's `estimateAtCompletion` override, else `estimateAtCompletion(sumSubtree(…))` over `get_project_cost_summary` |
+| EAC | the billing element's `estimateAtCompletion` override, else `estimateAtCompletion(sumSubtree(…))` over `get_project_cost_summary`, less the subtree cost posted outside the line's own dates (another line's cost), floored at 0 |
 | Price | Fixed: Σ the line's `customerContractInvoiceLine.amount`. Cost Plus: EAC × (1 + fee), capped at `ceilingAmount` (`percentCompletePrice`) |
-| Progress | `min(actual ÷ EAC, 1)`, 0 when EAC is 0; actual = the subtree's ledger rows to the period end (R8) |
+| Progress | `min(actual ÷ EAC, 1)`, 0 when EAC is 0; actual = the ledger rows the line owns to the period end (`progressLedgerRows`, R8) |
 | Earned to date | price × actual ÷ EAC, rounded once (`percentCompleteRevenue`) |
-| Loss provision | target `(EAC − price) × (1 − progress)` when EAC > price, else 0 (`lossProvisionBalance`); the run writes the change from the earlier `Loss Provision` rows |
+| Loss provision | target `(EAC − price) × (1 − progress)` when EAC > price, else 0 (`lossProvisionBalance`); the run writes the change from the `Loss Provision` rows of earlier months and this month's already posted ones (a zero-revenue month writes no month row, so it stays open to a second run, which must not book the change again) |
 
 The math is pure in `packages/ee/src/project-revenue/progress.ts`.
 
-**Cost relief (R2–R4).** Both methods relieve every subtree ledger row posted on or
-before the period end that has no `projectCostRelief` row and whose journal debit line
-is on an Asset account. A row with no journal line, or an expensed row, is never
-relieved. Every charge writes its journal for every company (Provisional before the
-accounting cutover, Posted after it), but a Project Issue row carries no `journalLineId`. One `Cost Relief` schedule row per line and account: Dr
+**Cost relief (R2–R4).** Both methods relieve every ledger row the line owns
+(`progressLedgerRows`) posted on or before the period end that has no
+`projectCostRelief` row and whose journal debit line is on an Asset account. A row
+with no journal line, or an expensed row, is never relieved. Every charge writes its
+journal for every company (Provisional before the accounting cutover, Posted after
+it), and its ledger row carries the `journalLineId` (a Project Issue included). One `Cost Relief` schedule row per line and account: Dr
 `costOfGoodsSoldAccount` / Cr that account. `projectCostRelief` records each ledger row
 with its schedule row (`UNIQUE (projectLedgerId, companyId)`, FK to the schedule row
 `ON DELETE CASCADE`), so a rebuilt month frees its rows and none is relieved twice.
@@ -254,7 +284,10 @@ its sides.
 
 **Posting.** `Cost Relief` and `Loss Provision` rows carry `customerContractLineId` and
 no `customerContractRevenueId` (R6), and post in the run's `Revenue Recognition`
-journal (off external ledgers by default, `POSTING_POLICY`). `postRevenueRecognitionRun`
+journal (off external ledgers by default, `POSTING_POLICY`). The out-of-date check of
+`postRevenueRecognitionRun` reads a missing month row as stale for `Deferral` and
+`Accrual` rows only; applied to every contract row it refused every run that held a
+relief or provision row, and Recalculate rewrote the same rows. `postRevenueRecognitionRun`
 adds the Project and Project Element dimensions to contract rows; the descriptions come
 from `revenueRowDescriptions` (`accounting.utils.ts`). The orphan cleanup of
 `synthesizeContractRevenue` reads only `Deferral` and `Accrual` rows, or it would
@@ -337,6 +370,14 @@ both choices visible with an upgrade notice (`ProjectRevenueUpgrade`) and Save d
   Rate, **Bill Rate**). Rates have no delete endpoint, so the grid has no delete.
 
 ## Known gaps
+
+- Subtree cost posted outside every progress line's dates (before the first line
+  starts, after the last one ends) is owned by no line, so the run never relieves it
+  from Project WIP; see the project close gap (audit D11).
+- The split of an element's EAC between an ended line and its follow-on is a
+  heuristic (the subtree EAC less the cost outside the line's dates): until the
+  follow-on's cost is in, the ended line's EAC still holds the follow-on's remaining
+  estimate.
 
 - Billing lines need the contract currency to equal the base currency (P5);
   multi-currency bill rates are out of scope.
