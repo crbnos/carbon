@@ -16027,6 +16027,9 @@ msgstr "Ramp 連携を開き、設定を完了するためにもう一度接続�
 msgid "Open the Setup Map"
 msgstr "セットアップマップを開く"
 
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr ""
+
 msgid "Open transactions"
 msgstr "未処理トランザクション"
 
@@ -21372,6 +21375,9 @@ msgstr "このルールが失敗したときにユーザーに表示されます
 
 msgid "Shuffle"
 msgstr "シャッフル"
+
+msgid "Sign in here instead"
+msgstr ""
 
 msgid "Sign in to Carbon"
 msgstr "Carbonにサインイン"

@@ -16027,6 +16027,9 @@ msgstr "Ramp एकीकरण खोलें और कॉन्फ़िग�
 msgid "Open the Setup Map"
 msgstr "सेटअप मैप खोलें"
 
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr ""
+
 msgid "Open transactions"
 msgstr "खुले लेनदेन"
 
@@ -21372,6 +21375,9 @@ msgstr "जब यह नियम विफल हो तब उपयोगक
 
 msgid "Shuffle"
 msgstr "शफ़ल करें"
+
+msgid "Sign in here instead"
+msgstr ""
 
 msgid "Sign in to Carbon"
 msgstr "Carbon में साइन इन करें"

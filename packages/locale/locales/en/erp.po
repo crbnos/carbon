@@ -16027,6 +16027,9 @@ msgstr "Open the Ramp integration and try connecting again to finish setup."
 msgid "Open the Setup Map"
 msgstr "Open the Setup Map"
 
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+
 msgid "Open transactions"
 msgstr "Open transactions"
 
@@ -21372,6 +21375,9 @@ msgstr "Shown to the user when this rule fails."
 
 msgid "Shuffle"
 msgstr "Shuffle"
+
+msgid "Sign in here instead"
+msgstr "Sign in here instead"
 
 msgid "Sign in to Carbon"
 msgstr "Sign in to Carbon"

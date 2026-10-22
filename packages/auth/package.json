@@ -18,6 +18,7 @@
     "./download-token.server": "./src/lib/download-token.server.ts",
     "./erp-proxy.server": "./src/services/erp-proxy.server.ts",
     "./oauth-state.server": "./src/lib/oauth-state.server.ts",
+    "./sign-in-browser.server": "./src/lib/sign-in-browser.server.ts",
     "./company.server": "./src/services/company.server.ts",
     "./console-pin.server": "./src/services/console-pin.server.ts",
     "./mfa.server": "./src/services/mfa.server.ts",

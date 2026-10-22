@@ -16027,6 +16027,9 @@ msgstr "Ramp entegrasyonunu açın ve kurulumu tamamlamak için yeniden bağlanm
 msgid "Open the Setup Map"
 msgstr "Kurulum Haritasını Aç"
 
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr ""
+
 msgid "Open transactions"
 msgstr "Açık işlemler"
 
@@ -21372,6 +21375,9 @@ msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
 msgid "Shuffle"
 msgstr "Karıştır"
+
+msgid "Sign in here instead"
+msgstr ""
 
 msgid "Sign in to Carbon"
 msgstr "Carbon'a giriş yapın"

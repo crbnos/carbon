@@ -36,6 +36,7 @@ import {
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { sendVerificationCode } from "@carbon/auth/verification.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
@@ -258,7 +259,11 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     logAuthEvent("magic_link_sent", { actor: email, ip });
-    return { success: true, mode: "login", email };
+    // This browser asked: the link completes here (MAGIC_LINK_SAME_BROWSER).
+    return data(
+      { success: true, mode: "login", email },
+      { headers: { "Set-Cookie": await markSignInBrowser() } }
+    );
   } else if (CarbonEdition === Edition.Enterprise) {
     logAuthEvent("login_failed", {
       actor: email,

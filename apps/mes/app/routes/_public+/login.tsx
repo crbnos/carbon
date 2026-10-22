@@ -31,6 +31,7 @@ import {
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import {
@@ -251,7 +252,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return { success: true, email };
+  // This browser asked: the link completes here (MAGIC_LINK_SAME_BROWSER).
+  return data(
+    { success: true, email },
+    { headers: { "Set-Cookie": await markSignInBrowser() } }
+  );
 }
 
 export default function LoginRoute() {
