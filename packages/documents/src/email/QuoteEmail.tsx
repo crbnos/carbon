@@ -17,6 +17,7 @@ import {
 } from "@react-email/components";
 import type { CompanySettings, Email } from "../types";
 import { getQuoteDisplayId } from "../utils/quote";
+import { detailText, labelText } from "./components/documentStyles";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   Button,
@@ -56,7 +57,7 @@ const QuoteEmail = ({
         style={lightStyles.body}
       >
         <Container
-          className={`mx-auto py-5 px-0 w-[660px] max-w-full ${themeClasses.container}`}
+          className={`mx-auto py-5 px-5 w-full max-w-[600px] ${themeClasses.container}`}
           style={{
             borderStyle: "solid",
             borderWidth: "1px",
@@ -84,8 +85,14 @@ const QuoteEmail = ({
               </Column>
               <Column className="text-right">
                 <Text
-                  className={`text-3xl font-light ${themeClasses.mutedText}`}
-                  style={{ color: lightStyles.mutedText.color }}
+                  className={themeClasses.text}
+                  style={{
+                    margin: 0,
+                    paddingLeft: "16px",
+                    fontSize: "22px",
+                    lineHeight: "28px",
+                    color: lightStyles.text.color
+                  }}
                 >
                   Quote
                 </Text>
@@ -113,38 +120,49 @@ const QuoteEmail = ({
           <ExternalNotes content={quote.externalNotes} />
           <Section className="bg-gray-50 rounded-lg text-xs">
             <Row>
-              <Column className="p-5" colSpan={2}>
+              <Column className="p-5 align-top" colSpan={2}>
                 <Section>
                   <Row>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Reference Number
                       </Text>
-                      <Text>{quote.customerReference ?? "-"}</Text>
+                      <Text style={detailText}>
+                        {quote.customerReference ?? "-"}
+                      </Text>
                     </Column>
                   </Row>
 
                   <Row>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Quote ID
                       </Text>
-                      <Text>{getQuoteDisplayId(quote)}</Text>
+                      <Text style={detailText}>{getQuoteDisplayId(quote)}</Text>
                     </Column>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Expiration Date
                       </Text>
-                      <Text>
+                      <Text style={detailText}>
                         {quote.expirationDate
                           ? formatDate(quote.expirationDate, undefined, locale)
                           : "-"}
