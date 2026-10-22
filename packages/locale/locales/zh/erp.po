@@ -341,14 +341,14 @@ msgstr "{0}库存；剩余的{1}将按{2}拣货"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} 张发票已在您的上一个系统中开票，不会再次起草"
 
-#. placeholder {0}: item.description
-msgid "{0} is never billed. Its cost stays on the order."
-msgstr "{0} 从不计费。其成本保留在订单上。"
-
 #. placeholder {0}: skipped.readableId
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
+
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr "{0} 从不计费。其成本保留在订单上。"
 
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
@@ -932,6 +932,9 @@ msgstr "{value, plural, one {# 天} other {# 天}}"
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {#行与预期数量不同} other {#行与预期数量不同}}"
 
+msgid "{warnings} need a follow-up"
+msgstr ""
+
 msgid "{who} commented on {element}"
 msgstr "{who} 在 {element} 上发表了评论"
 
@@ -940,9 +943,6 @@ msgstr "{who} 在 {element} 上记录了 {quantity}"
 
 msgid "{who} reversed {amount} on {element}"
 msgstr "{who} 在 {element} 上冲销了 {amount}"
-
-msgid "{warnings} need a follow-up"
-msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -3467,14 +3467,14 @@ msgstr "外观"
 msgid "Applied"
 msgstr "已应用"
 
-msgid "Applied Account"
-msgstr "应用账户"
-
 msgid "Applied {applied} planning actions"
 msgstr ""
 
 msgid "Applied 1 planning action"
 msgstr ""
+
+msgid "Applied Account"
+msgstr "应用账户"
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "应用的金额采用公司基础货币（{baseCurrency}）。"
@@ -5220,6 +5220,9 @@ msgstr "分摊费用按计费费率和上限中的较低者计费。没有上限
 
 msgid "Burden by pool"
 msgstr "按资源池分摊"
+
+msgid "Burden computed"
+msgstr ""
 
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr "按其最终费率分摊会计年度{fiscalYear}，将差额过账到期间，并在成本加成行上计费。"
@@ -7014,12 +7017,12 @@ msgstr "转换中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
 
-msgid "Copied {readableId}"
-msgstr "已复制 {readableId}"
-
 #. placeholder {0}: counts.copied ?? 0
 msgid "Copied {0} assignments"
 msgstr ""
+
+msgid "Copied {readableId}"
+msgstr "已复制 {readableId}"
 
 msgid "Copied ID to clipboard"
 msgstr "已复制ID到剪贴板"
@@ -8020,9 +8023,6 @@ msgstr "当前"
 
 msgid "Current Net Book Value:"
 msgstr "当前账面净值："
-
-msgid "Current Password"
-msgstr "当前密码"
 
 msgid "Current plan"
 msgstr "当前计划"
@@ -10015,6 +10015,14 @@ msgstr "挣值 ÷ 实际成本。低于 1，完成的工作成本超过其预算
 msgid "Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date."
 msgstr "挣值 ÷ 计划值。低于 1，到该日期完成的工作少于基线计划。"
 
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} project"
+msgstr ""
+
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} projects"
+msgstr ""
+
 msgid "Earned value rolls up to this element"
 msgstr "赚取值汇总到此元素"
 
@@ -10518,9 +10526,6 @@ msgstr "员工"
 msgid "Employees"
 msgstr "员工"
 
-msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
-msgstr "从人工成本估算工资的员工: {estimatedEmployeeCount}。当未导入薪资时，Carbon 从人工分类账估算工资，估算可能超过员工的 W-2 工资。"
-
 msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
 msgstr "已分配此培训的员工可以打开它。内容、指南和问题不再能更改。"
 
@@ -10529,6 +10534,9 @@ msgstr "员工无法再打开此培训"
 
 msgid "Employees complete a training in Carbon"
 msgstr "员工在 Carbon 中完成培训"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr "从人工成本估算工资的员工: {estimatedEmployeeCount}。当未导入薪资时，Carbon 从人工分类账估算工资，估算可能超过员工的 W-2 工资。"
 
 msgid "Empty"
 msgstr "空"
@@ -10828,11 +10836,11 @@ msgstr "实体类型无法更改"
 msgid "Entry"
 msgstr "条目"
 
-msgid "Entry Date"
-msgstr "条目日期"
-
 msgid "Entry added"
 msgstr ""
+
+msgid "Entry Date"
+msgstr "条目日期"
 
 msgid "Entry deleted"
 msgstr ""
@@ -10840,14 +10848,14 @@ msgstr ""
 msgid "Entry Type"
 msgstr "条目类型"
 
+msgid "Entry updated"
+msgstr ""
+
 msgid "Entry window (days)"
 msgstr "输入窗口（天）"
 
 msgid "Environmental"
 msgstr "环境的"
-
-msgid "Entry updated"
-msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -11036,14 +11044,14 @@ msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不
 msgid "Every condition must match"
 msgstr "每个条件都必须匹配"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "每个投递都携带使用此密钥签名的 Carbon-Signature 标头。验证该标头以确认请求来自 Carbon。"
+
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
 msgstr "每个要素保持其当前WBS代码，即使在移动时也是如此。当代码与合同WBS匹配时执行此操作。"
 
 msgid "Every entry in the range and every change made to it"
 msgstr "范围内的每个条目和对其所做的每项更改"
-
-msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
-msgstr "每个投递都携带使用此密钥签名的 Carbon-Signature 标头。验证该标头以确认请求来自 Carbon。"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
@@ -11718,14 +11726,14 @@ msgstr "调整图像大小失败：{errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "未能检索 CSV 列数据。"
 
-msgid "Failed to save"
-msgstr "保存失败"
-
 msgid "Failed to reveal the secret"
 msgstr "无法显示该密钥"
 
 msgid "Failed to roll the secret"
 msgstr "无法轮换该密钥"
+
+msgid "Failed to save"
+msgstr "保存失败"
 
 msgid "Failed to save configuration rule"
 msgstr "保存配置规则失败"
@@ -11808,14 +11816,17 @@ msgstr "更新物料失败"
 msgid "Failed to update the price"
 msgstr "更新价格失败"
 
-msgid "Failed to update the visit"
-msgstr "更新访问失败"
-
 msgid "Failed to update the setting"
 msgstr ""
 
+msgid "Failed to update the visit"
+msgstr "更新访问失败"
+
 msgid "Failed to update thumbnail path"
 msgstr "无法更新缩略图路径"
+
+msgid "Failed to update timecard settings"
+msgstr ""
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -14177,11 +14188,11 @@ msgstr "问题"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "已审批但无法应用。重新打开它，检查这些行，然后再次提交。"
 
-msgid "It shows with no hours until you add some."
-msgstr "添加工时后才会显示。"
-
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "即将推出。请联系 Carbon 为您的公司进行设置。"
+
+msgid "It shows with no hours until you add some."
+msgstr "添加工时后才会显示。"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
@@ -15093,9 +15104,6 @@ msgstr "关联销售订单行"
 
 msgid "Link type"
 msgstr "链接类型"
-
-msgid "Linked"
-msgstr "已链接"
 
 msgid "Linked"
 msgstr "已链接"
@@ -17220,11 +17228,11 @@ msgstr "还没有组件"
 msgid "No condition may match"
 msgstr "没有条件可以匹配"
 
-msgid "No contract rates. Hours bill at the default rates."
-msgstr "没有合同费率。小时按默认费率计费。"
-
 msgid "No content"
 msgstr "无内容"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr "没有合同费率。小时按默认费率计费。"
 
 msgid "No control account has a balance at the cutover."
 msgstr "截至结转日期，无控制帐户有余额"
@@ -17274,14 +17282,14 @@ msgstr "未收到此协议的押金。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "在截断前不进行折旧计算。输入每项资产截断前一天的累计折旧。"
 
-msgid "No differences."
-msgstr "没有区别。"
-
 msgid "No devices found"
 msgstr "未找到设备"
 
 msgid "No devices match your search"
 msgstr "没有与搜索匹配的设备"
+
+msgid "No differences."
+msgstr "没有区别。"
 
 msgid "No dimension slots configured"
 msgstr "未配置维度插槽"
@@ -17677,6 +17685,9 @@ msgstr "还没有付款。"
 msgid "No payroll imported"
 msgstr "未导入工资单"
 
+msgid "No PDF uploaded"
+msgstr "未上传 PDF"
+
 msgid "No pegs on that day"
 msgstr "该天没有需求挂钩"
 
@@ -17685,9 +17696,6 @@ msgstr "还没有需求挂钩"
 
 msgid "No photos."
 msgstr "没有照片。"
-
-msgid "No PDF uploaded"
-msgstr "未上传 PDF"
 
 msgid "No planned invoices are removed."
 msgstr "未删除已计划的发票。"
@@ -17830,11 +17838,11 @@ msgstr "这里没有行。"
 msgid "No rules assigned"
 msgstr "没有已分配的规则"
 
-msgid "No runs yet"
-msgstr "还没有运行"
-
 msgid "No running job to cancel"
 msgstr ""
+
+msgid "No runs yet"
+msgstr "还没有运行"
 
 msgid "No schedule lines."
 msgstr "无日程行。"
@@ -18195,14 +18203,14 @@ msgstr "MES中尚未完成任何内容"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "当天 {workCenterName} 上没有其他运行记录。"
+
 msgid "Nothing has been charged yet."
 msgstr "尚未收取任何费用。"
 
 msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
 msgstr "尚未收取任何费用。记录时间、领料或向此元素收费工单或采购订单。"
-
-msgid "Nothing else ran on {workCenterName} that day."
-msgstr "当天 {workCenterName} 上没有其他运行记录。"
 
 msgid "Nothing here matches your search and filters."
 msgstr "没有与您的搜索和过滤条件匹配的内容。"
@@ -18347,11 +18355,11 @@ msgstr "关闭 — 已下达修订版保持可编辑"
 msgid "Officer"
 msgstr "主管"
 
-msgid "Offset Absorbed Overhead"
-msgstr "抵消吸收的制造费用"
-
 msgid "Offline"
 msgstr "离线"
+
+msgid "Offset Absorbed Overhead"
+msgstr "抵消吸收的制造费用"
 
 msgid "Offset Account"
 msgstr "抵消账户"
@@ -19705,11 +19713,11 @@ msgstr "期末"
 msgid "Period lock policy"
 msgstr "期间锁定政策"
 
-msgid "Period of Performance"
-msgstr "履行期间"
-
 msgid "Period locked"
 msgstr ""
+
+msgid "Period of Performance"
+msgstr "履行期间"
 
 msgid "Period Start"
 msgstr "期间开始"
@@ -20992,15 +21000,6 @@ msgstr "发布不包含维度的凭证"
 msgid "Push to accounting"
 msgstr "推送到会计系统"
 
-msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
-msgstr "将合同项目根据停工令搁置，包含其90天结束日期，当订单结束时恢复。"
-
-msgid "Put on hold"
-msgstr "搁置"
-
-msgid "Put on Hold"
-msgstr "搁置"
-
 msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "推送不会更改此物料的字段，所以在此处进行的编辑保留。"
 
@@ -21009,6 +21008,15 @@ msgstr "来自 Onshape 的推送停止更新此物料。再次从 Onshape 推送
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "推送仅替换 Onshape 的 Fields 页面在每次推送时设置为更新的字段。"
+
+msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
+msgstr "将合同项目根据停工令搁置，包含其90天结束日期，当订单结束时恢复。"
+
+msgid "Put on hold"
+msgstr "搁置"
+
+msgid "Put on Hold"
+msgstr "搁置"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "将此费用单独放在发票上，在过账之前保留以待评审。否则，它将放在协议的下一张发票上。"
@@ -21304,11 +21312,11 @@ msgstr "Ramp 未返回授权代码"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp 拒绝了授权"
 
-msgid "Range"
-msgstr "范围"
-
 msgid "Ran at the time"
 msgstr "当时在运行"
+
+msgid "Range"
+msgstr "范围"
 
 msgid "Rate"
 msgstr "汇率"
@@ -22301,15 +22309,15 @@ msgstr "使用今天的规则和成本重新定价得到<0>{0}</0>。"
 msgid "Reprint"
 msgstr "重新打印"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request"
 msgstr "请求"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
 msgstr "请求{0}"
-
-msgid "Reprint job created"
-msgstr ""
 
 msgid "Request a new invite"
 msgstr "请求新邀请"
@@ -22440,6 +22448,9 @@ msgstr "改期容差"
 msgid "Reschedule Tolerance"
 msgstr "重新安排容差"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reschedule Visit"
 msgstr "重新排程访问"
 
@@ -22451,9 +22462,6 @@ msgstr "每个业务部门的研究成本，国内和国外"
 
 msgid "Research role"
 msgstr "研究角色"
-
-msgid "Reschedule tolerance updated"
-msgstr ""
 
 msgid "Reserve floor"
 msgstr "储备下限"
@@ -23349,14 +23357,14 @@ msgstr "抽样 — 特性{featureLabel}"
 msgid "Sampling Standard"
 msgstr "抽样正常检验"
 
+msgid "Sampling standard updated"
+msgstr ""
+
 msgid "Satisfied by"
 msgstr "由...满足"
 
 msgid "Satisfies"
 msgstr "满足"
-
-msgid "Sampling standard updated"
-msgstr ""
 
 msgid "Saturday"
 msgstr "星期六"
@@ -23652,11 +23660,11 @@ msgstr "搜索客户和类型..."
 msgid "Search customers or types..."
 msgstr "搜索客户或类型..."
 
-msgid "Search elements"
-msgstr "搜索元素"
-
 msgid "Search devices"
 msgstr "搜索设备"
+
+msgid "Search elements"
+msgstr "搜索元素"
 
 msgid "Search employees..."
 msgstr "搜索员工..."
@@ -23745,12 +23753,12 @@ msgstr "密码已复制到剪贴板"
 msgid "Section"
 msgstr "部分"
 
+msgid "Section deleted"
+msgstr ""
+
 #. placeholder {0}: format.money(officerWages)
 msgid "Section E line 38, officers' wage QREs: {0}"
 msgstr "第E部分第38行，管理人员工资QRE：{0}"
-
-msgid "Section deleted"
-msgstr ""
 
 msgid "Section saved"
 msgstr ""
@@ -24190,6 +24198,9 @@ msgstr "服务人工"
 msgid "Service Labor Item"
 msgstr "服务人工物料"
 
+msgid "Service labor item updated"
+msgstr ""
+
 msgid "Service lines"
 msgstr "服务行"
 
@@ -24223,6 +24234,9 @@ msgstr "服务提供商详情"
 msgid "Service start"
 msgstr "服务开始"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "Service template"
 msgstr "服务模板"
 
@@ -24231,9 +24245,6 @@ msgstr "服务模板"
 
 msgid "Service Templates"
 msgstr "服务模板"
-
-msgid "Service supplier created"
-msgstr ""
 
 msgid "services"
 msgstr "服务"
@@ -24939,11 +24950,11 @@ msgstr "已售出"
 msgid "Solutions Engineer"
 msgstr "解决方案工程师"
 
-msgid "Some inputs have another unit and are left out"
-msgstr "某些输入具有另一个单位并被排除"
-
 msgid "Some balances have no Carbon account"
 msgstr "某些余额没有 Carbon 账户"
+
+msgid "Some inputs have another unit and are left out"
+msgstr "某些输入具有另一个单位并被排除"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "某些行的开票金额比总额多或少。确认前修复金额。"
@@ -25224,9 +25235,6 @@ msgstr "正在启动…"
 
 msgid "Starts"
 msgstr "开始"
-
-msgid "State"
-msgstr "州"
 
 msgid "State"
 msgstr "状态"
@@ -26750,14 +26758,14 @@ msgstr "递延收入默认账户为空。"
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "设备所在站点位于 {siteTimezone}；Carbon 使用 {locationTimezone}"
+
 msgid "The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account."
 msgstr "借方当前支付的库存成本与其借入成本之间的差异，计入借方的项目和库存调整差异账户。"
 
 msgid "The direct cost in the project ledger of a work package and the elements below it."
 msgstr "项目分类账中工作包及其下方元素的直接成本。"
-
-msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
-msgstr "设备所在站点位于 {siteTimezone}；Carbon 使用 {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
@@ -28034,11 +28042,11 @@ msgstr "此采购订单"
 msgid "This Quarter"
 msgstr "本季度"
 
-msgid "This refurbishment cannot be completed"
-msgstr "此翻新无法完成"
-
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "此收货单没有行。请选择源单据以添加行。"
+
+msgid "This refurbishment cannot be completed"
+msgstr "此翻新无法完成"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "这将移除 PDF。员工将改为查看书面内容。"
@@ -28319,6 +28327,9 @@ msgstr "休假时间计入休假元素。"
 
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "此类别的时间在有费率之前不能过账到费用或合同项目。"
+
+msgid "Time settings updated"
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "时间利用率"
@@ -28801,9 +28812,6 @@ msgstr "出差"
 msgid "Travel started <0/>"
 msgstr "出差开始<0/>"
 
-msgid "Traveling"
-msgstr "出差中"
-
 msgid "Traveler materials disabled"
 msgstr ""
 
@@ -28815,6 +28823,9 @@ msgstr ""
 
 msgid "Traveler operations enabled"
 msgstr ""
+
+msgid "Traveling"
+msgstr "出差中"
 
 msgid "Treatment"
 msgstr "处理"

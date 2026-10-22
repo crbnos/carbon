@@ -341,14 +341,14 @@ msgstr "{0} in giacenza; il rimanente {1} sarà prelevato come {2}"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} fatture sono state fatturate nel vostro sistema precedente e non vengono redatte di nuovo."
 
-#. placeholder {0}: item.description
-msgid "{0} is never billed. Its cost stays on the order."
-msgstr "{0} non viene mai fatturato. Il suo costo rimane sull'ordine."
-
 #. placeholder {0}: skipped.readableId
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
+
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr "{0} non viene mai fatturato. Il suo costo rimane sull'ordine."
 
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
@@ -932,6 +932,9 @@ msgstr "{value, plural, one {# giorno} other {# giorni}}"
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# riga differisce dalla quantità prevista} other {# righe differiscono dalla quantità prevista}}"
 
+msgid "{warnings} need a follow-up"
+msgstr ""
+
 msgid "{who} commented on {element}"
 msgstr "{who} ha commentato su {element}"
 
@@ -940,9 +943,6 @@ msgstr "{who} ha registrato {quantity} su {element}"
 
 msgid "{who} reversed {amount} on {element}"
 msgstr "{who} ha stornato {amount} su {element}"
-
-msgid "{warnings} need a follow-up"
-msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}ann"
@@ -3467,14 +3467,14 @@ msgstr "Aspetto"
 msgid "Applied"
 msgstr "Applicato"
 
-msgid "Applied Account"
-msgstr "Conto applicato"
-
 msgid "Applied {applied} planning actions"
 msgstr ""
 
 msgid "Applied 1 planning action"
 msgstr ""
+
+msgid "Applied Account"
+msgstr "Conto applicato"
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Gli importi applicati sono in valuta base aziendale ({baseCurrency})."
@@ -5220,6 +5220,9 @@ msgstr "L'onere viene fatturato al minore tra la tariffa di fatturazione e il ma
 
 msgid "Burden by pool"
 msgstr "Onere per pool"
+
+msgid "Burden computed"
+msgstr ""
 
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr "Onere dell'esercizio fiscale {fiscalYear} alle sue tariffe finali, registra la differenza nel periodo e fatturala sulle righe Cost Plus."
@@ -7014,12 +7017,12 @@ msgstr "Conversione in corso…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte l'unità di acquisto di un fornitore nella tua unità di inventario su una linea di ordine, ricevuta o fattura — acquista in scatole di 12, stoccaggio in unità singole."
 
-msgid "Copied {readableId}"
-msgstr "Copiato {readableId}"
-
 #. placeholder {0}: counts.copied ?? 0
 msgid "Copied {0} assignments"
 msgstr ""
+
+msgid "Copied {readableId}"
+msgstr "Copiato {readableId}"
 
 msgid "Copied ID to clipboard"
 msgstr "ID copiato negli appunti"
@@ -8020,9 +8023,6 @@ msgstr "Attuale"
 
 msgid "Current Net Book Value:"
 msgstr "Valore Netto Contabile Corrente:"
-
-msgid "Current Password"
-msgstr "Password Attuale"
 
 msgid "Current plan"
 msgstr "Piano attuale"
@@ -10015,6 +10015,14 @@ msgstr "Valore acquisito ÷ costo effettivo. Sotto 1, il lavoro eseguito è cost
 msgid "Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date."
 msgstr "Valore acquisito ÷ valore pianificato. Sotto 1, meno lavoro è stato completato rispetto alla linea di base pianificata in quella data."
 
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} project"
+msgstr ""
+
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} projects"
+msgstr ""
+
 msgid "Earned value rolls up to this element"
 msgstr "Il Valore Guadagnato si accumula in questo elemento"
 
@@ -10518,9 +10526,6 @@ msgstr "dipendenti"
 msgid "Employees"
 msgstr "Dipendenti"
 
-msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
-msgstr "Dipendenti con salari stimati dal costo della manodopera: {estimatedEmployeeCount}. Carbon stima i salari dal registro della manodopera quando nessuna busta paga viene importata, e una stima può superare i salari W-2 del dipendente."
-
 msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
 msgstr "I dipendenti assegnati a questa formazione possono aprirla. Il contenuto, la guida e le domande non possono più cambiare."
 
@@ -10529,6 +10534,9 @@ msgstr "I dipendenti non possono più aprire questa formazione."
 
 msgid "Employees complete a training in Carbon"
 msgstr "I dipendenti completano una formazione in Carbon"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr "Dipendenti con salari stimati dal costo della manodopera: {estimatedEmployeeCount}. Carbon stima i salari dal registro della manodopera quando nessuna busta paga viene importata, e una stima può superare i salari W-2 del dipendente."
 
 msgid "Empty"
 msgstr "Vuoto"
@@ -10828,11 +10836,11 @@ msgstr "Il tipo di entità non può essere modificato"
 msgid "Entry"
 msgstr "Registrazione"
 
-msgid "Entry Date"
-msgstr "Data di inserimento"
-
 msgid "Entry added"
 msgstr ""
+
+msgid "Entry Date"
+msgstr "Data di inserimento"
 
 msgid "Entry deleted"
 msgstr ""
@@ -10840,14 +10848,14 @@ msgstr ""
 msgid "Entry Type"
 msgstr "Tipo di Voce"
 
+msgid "Entry updated"
+msgstr ""
+
 msgid "Entry window (days)"
 msgstr "Finestra di voce (giorni)"
 
 msgid "Environmental"
 msgstr "Ambientale"
-
-msgid "Entry updated"
-msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -11036,14 +11044,14 @@ msgstr "Tutti i record dell'azienda. Credenziali, token di integrazione e webhoo
 msgid "Every condition must match"
 msgstr "Ogni condizione deve corrispondere"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Ogni consegna contiene un'intestazione Carbon-Signature firmata con questa chiave. Verificala per assicurarti che la consegna provenga da Carbon."
+
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
 msgstr "Ogni elemento mantiene il suo codice WBS attuale, anche quando si sposta. Fallo quando i codici corrispondono al WBS del contratto."
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Ogni voce nell'intervallo e ogni modifica apportata ad essa"
-
-msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
-msgstr "Ogni consegna contiene un'intestazione Carbon-Signature firmata con questa chiave. Verificala per assicurarti che la consegna provenga da Carbon."
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Ogni test nell'ambito passa nel tuo sistema configurato, con i tuoi dati."
@@ -11718,14 +11726,14 @@ msgstr "Impossibile ridimensionare l'immagine: {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "Impossibile recuperare i dati delle colonne CSV."
 
-msgid "Failed to save"
-msgstr "Impossibile salvare"
-
 msgid "Failed to reveal the secret"
 msgstr "Impossibile rivelare la chiave"
 
 msgid "Failed to roll the secret"
 msgstr "Impossibile rigenerare la chiave"
+
+msgid "Failed to save"
+msgstr "Impossibile salvare"
 
 msgid "Failed to save configuration rule"
 msgstr "Impossibile salvare la regola di configurazione"
@@ -11808,14 +11816,17 @@ msgstr "Impossibile aggiornare gli articoli"
 msgid "Failed to update the price"
 msgstr "Impossibile aggiornare il prezzo"
 
-msgid "Failed to update the visit"
-msgstr "Impossibile aggiornare la visita"
-
 msgid "Failed to update the setting"
 msgstr ""
 
+msgid "Failed to update the visit"
+msgstr "Impossibile aggiornare la visita"
+
 msgid "Failed to update thumbnail path"
 msgstr "Impossibile aggiornare il percorso della miniatura"
+
+msgid "Failed to update timecard settings"
+msgstr ""
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -14177,11 +14188,11 @@ msgstr "Problemi"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "È approvato ma non può essere applicato. Riaprilo, controlla queste righe, quindi invialo di nuovo."
 
-msgid "It shows with no hours until you add some."
-msgstr "Viene visualizzato senza ore fino a quando non ne aggiungi."
-
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Sarà disponibile presto. Contatta Carbon per farla configurare per la tua azienda."
+
+msgid "It shows with no hours until you add some."
+msgstr "Viene visualizzato senza ore fino a quando non ne aggiungi."
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Si interromperà fino a quando non pubblichi di nuovo una versione. Nulla viene eliminato."
@@ -15093,9 +15104,6 @@ msgstr "Collega alla riga dell'ordine di vendita"
 
 msgid "Link type"
 msgstr "Tipo di collegamento"
-
-msgid "Linked"
-msgstr "Collegato"
 
 msgid "Linked"
 msgstr "Collegato"
@@ -17220,11 +17228,11 @@ msgstr "Nessun componente ancora"
 msgid "No condition may match"
 msgstr "Nessuna condizione può corrispondere"
 
-msgid "No contract rates. Hours bill at the default rates."
-msgstr "Nessuna tariffa contrattuale. Le ore vengono fatturate alle tariffe predefinite."
-
 msgid "No content"
 msgstr "Nessun contenuto"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr "Nessuna tariffa contrattuale. Le ore vengono fatturate alle tariffe predefinite."
 
 msgid "No control account has a balance at the cutover."
 msgstr "Nessun conto di controllo ha un saldo al cambio."
@@ -17274,14 +17282,14 @@ msgstr "Nessun deposito è stato ricevuto per questo accordo."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Non viene eseguito nessun ammortamento prima della transizione contabile. Inserisci il fondo ammortamento di ogni asset al giorno precedente la transizione contabile."
 
-msgid "No differences."
-msgstr "Nessuna differenza."
-
 msgid "No devices found"
 msgstr "Nessun dispositivo trovato"
 
 msgid "No devices match your search"
 msgstr "Nessun dispositivo corrisponde alla ricerca"
+
+msgid "No differences."
+msgstr "Nessuna differenza."
 
 msgid "No dimension slots configured"
 msgstr "Nessuno slot dimensionale configurato"
@@ -17677,6 +17685,9 @@ msgstr "Nessun pagamento ancora."
 msgid "No payroll imported"
 msgstr "Nessuna busta paga importata"
 
+msgid "No PDF uploaded"
+msgstr "Nessun PDF caricato"
+
 msgid "No pegs on that day"
 msgstr "Nessun collegamento in quel giorno"
 
@@ -17685,9 +17696,6 @@ msgstr "Nessun collegamento ancora"
 
 msgid "No photos."
 msgstr "Nessuna foto."
-
-msgid "No PDF uploaded"
-msgstr "Nessun PDF caricato"
 
 msgid "No planned invoices are removed."
 msgstr "Nessuna fattura pianificata viene rimossa."
@@ -17830,11 +17838,11 @@ msgstr "Nessuna riga qui."
 msgid "No rules assigned"
 msgstr "Nessuna regola assegnata"
 
-msgid "No runs yet"
-msgstr "Nessuna esecuzione ancora"
-
 msgid "No running job to cancel"
 msgstr ""
+
+msgid "No runs yet"
+msgstr "Nessuna esecuzione ancora"
 
 msgid "No schedule lines."
 msgstr "Nessuna riga di scadenzario."
@@ -18195,14 +18203,14 @@ msgstr "Nulla ancora completato in MES"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Niente altro in questa posizione ha stock da cui prelevare."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "Nient'altro ha lavorato su {workCenterName} quel giorno."
+
 msgid "Nothing has been charged yet."
 msgstr "Niente è stato addebitato ancora."
 
 msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
 msgstr "Niente è stato addebitato ancora. Registra il tempo, scarica il materiale o addebita un ordine di produzione o un ordine di acquisto a questo elemento."
-
-msgid "Nothing else ran on {workCenterName} that day."
-msgstr "Nient'altro ha lavorato su {workCenterName} quel giorno."
 
 msgid "Nothing here matches your search and filters."
 msgstr "Niente qui corrisponde alla tua ricerca e ai tuoi filtri."
@@ -18347,11 +18355,11 @@ msgstr "Disattivato — le revisioni rilasciate rimangono modificabili"
 msgid "Officer"
 msgstr "Funzionario"
 
-msgid "Offset Absorbed Overhead"
-msgstr "Costi generali assorbiti compensati"
-
 msgid "Offline"
 msgstr "Non in linea"
+
+msgid "Offset Absorbed Overhead"
+msgstr "Costi generali assorbiti compensati"
 
 msgid "Offset Account"
 msgstr "Conto di compensazione"
@@ -19705,11 +19713,11 @@ msgstr "Fine Periodo"
 msgid "Period lock policy"
 msgstr "Politica di blocco del periodo"
 
-msgid "Period of Performance"
-msgstr "Periodo di prestazione"
-
 msgid "Period locked"
 msgstr ""
+
+msgid "Period of Performance"
+msgstr "Periodo di prestazione"
 
 msgid "Period Start"
 msgstr "Inizio del periodo"
@@ -20992,15 +21000,6 @@ msgstr "Registra la prima nota senza la dimensione"
 msgid "Push to accounting"
 msgstr "Invia alla contabilità"
 
-msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
-msgstr "Metti un progetto contrattuale in sospeso secondo un ordine di sospensione dei lavori, con la sua data di fine di 90 giorni, e riprendi quando l'ordine termina."
-
-msgid "Put on hold"
-msgstr "Metti in sospeso"
-
-msgid "Put on Hold"
-msgstr "Metti in Sospeso"
-
 msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "I push non modificano i campi di questo articolo, quindi le modifiche apportate qui rimangono."
 
@@ -21009,6 +21008,15 @@ msgstr "I push da Onshape smettono di aggiornare questo articolo. Eseguendo nuov
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "I push sostituiscono solo i campi che la pagina Campi di Onshape imposta su Aggiorna a ogni push."
+
+msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
+msgstr "Metti un progetto contrattuale in sospeso secondo un ordine di sospensione dei lavori, con la sua data di fine di 90 giorni, e riprendi quando l'ordine termina."
+
+msgid "Put on hold"
+msgstr "Metti in sospeso"
+
+msgid "Put on Hold"
+msgstr "Metti in Sospeso"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Inserisci questo addebito su una propria fattura, in sospeso in attesa di revisione prima che sia registrata. Altrimenti verrà inclusa sulla prossima fattura dell'accordo."
@@ -21304,11 +21312,11 @@ msgstr "Ramp non ha restituito un codice di autorizzazione"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp ha rifiutato l'autorizzazione"
 
-msgid "Range"
-msgstr "Intervallo"
-
 msgid "Ran at the time"
 msgstr "In lavorazione in quel momento"
+
+msgid "Range"
+msgstr "Intervallo"
 
 msgid "Rate"
 msgstr "Tasso"
@@ -22301,15 +22309,15 @@ msgstr "Il riprezzamento con le regole e i costi di oggi dà <0>{0}</0>."
 msgid "Reprint"
 msgstr "Ristampa"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request"
 msgstr "Richiesta"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
 msgstr "Richiesta {0}"
-
-msgid "Reprint job created"
-msgstr ""
 
 msgid "Request a new invite"
 msgstr "Richiedi un nuovo invito"
@@ -22440,6 +22448,9 @@ msgstr "Tolleranza di riprogrammazione"
 msgid "Reschedule Tolerance"
 msgstr "Tolleranza di Riprogrammazione"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reschedule Visit"
 msgstr "Riprogramma Visita"
 
@@ -22451,9 +22462,6 @@ msgstr "Costo della ricerca di ogni componente aziendale, nazionale ed estero"
 
 msgid "Research role"
 msgstr "Ruolo di ricerca"
-
-msgid "Reschedule tolerance updated"
-msgstr ""
 
 msgid "Reserve floor"
 msgstr "Limite di riserva"
@@ -23349,14 +23357,14 @@ msgstr "Campionamento — Caratteristica {featureLabel}"
 msgid "Sampling Standard"
 msgstr "Standard di Campionamento"
 
+msgid "Sampling standard updated"
+msgstr ""
+
 msgid "Satisfied by"
 msgstr "Soddisfatto da"
 
 msgid "Satisfies"
 msgstr "Soddisfa"
-
-msgid "Sampling standard updated"
-msgstr ""
 
 msgid "Saturday"
 msgstr "Sabato"
@@ -23652,11 +23660,11 @@ msgstr "Cerca clienti e tipi..."
 msgid "Search customers or types..."
 msgstr "Cerca clienti o tipi..."
 
-msgid "Search elements"
-msgstr "Cerca elementi"
-
 msgid "Search devices"
 msgstr "Cerca dispositivi"
+
+msgid "Search elements"
+msgstr "Cerca elementi"
 
 msgid "Search employees..."
 msgstr "Cerca dipendenti..."
@@ -23745,12 +23753,12 @@ msgstr "Segreto copiato negli appunti"
 msgid "Section"
 msgstr "Sezione"
 
+msgid "Section deleted"
+msgstr ""
+
 #. placeholder {0}: format.money(officerWages)
 msgid "Section E line 38, officers' wage QREs: {0}"
 msgstr "Sezione E riga 38, QRE salari degli ufficiali: {0}"
-
-msgid "Section deleted"
-msgstr ""
 
 msgid "Section saved"
 msgstr ""
@@ -24190,6 +24198,9 @@ msgstr "Manodopera di Servizio"
 msgid "Service Labor Item"
 msgstr "Articolo di Manodopera di Servizio"
 
+msgid "Service labor item updated"
+msgstr ""
+
 msgid "Service lines"
 msgstr "Righe di servizio"
 
@@ -24223,6 +24234,9 @@ msgstr "Dettagli del Provider di Servizio"
 msgid "Service start"
 msgstr "Inizio servizio"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "Service template"
 msgstr "Modello di servizio"
 
@@ -24231,9 +24245,6 @@ msgstr "Modello di Servizio"
 
 msgid "Service Templates"
 msgstr "Modelli di Servizio"
-
-msgid "Service supplier created"
-msgstr ""
 
 msgid "services"
 msgstr "servizi"
@@ -24939,11 +24950,11 @@ msgstr "Venduto"
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
 
-msgid "Some inputs have another unit and are left out"
-msgstr "Alcuni input hanno un'altra unità e vengono omessi"
-
 msgid "Some balances have no Carbon account"
 msgstr "Alcuni saldi non hanno un account Carbon"
+
+msgid "Some inputs have another unit and are left out"
+msgstr "Alcuni input hanno un'altra unità e vengono omessi"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Alcune righe sono fatturate per più o meno di quanto ammontano. Correggi gli importi prima di confermare."
@@ -26747,14 +26758,14 @@ msgstr "L'account predefinito Ricavi Differiti è vuoto."
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Il reparto sotto il quale questo si aggrega per la reportistica e le gerarchie organizzative; lasciare vuoto per un reparto di primo livello."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Il sito del dispositivo è in {siteTimezone}; Carbon usa {locationTimezone}"
+
 msgid "The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account."
 msgstr "La differenza tra il costo attuale dello stock che il mutuante ripaga e il costo al quale ha preso in prestito, addebitato al progetto del mutuante e al conto della varianza di rettifica di magazzino."
 
 msgid "The direct cost in the project ledger of a work package and the elements below it."
 msgstr "Il costo diretto nel libro mastro del progetto di un pacchetto di lavoro e degli elementi sottostanti."
-
-msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
-msgstr "Il sito del dispositivo è in {siteTimezone}; Carbon usa {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Le prime ore, {name}."
@@ -28031,11 +28042,11 @@ msgstr "questo ordine di acquisto"
 msgid "This Quarter"
 msgstr "Questo Trimestre"
 
-msgid "This refurbishment cannot be completed"
-msgstr "Questo ricondizionamento non può essere completato"
-
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "Questa ricezione non ha righe. Scegliere un documento di origine per aggiungerle."
+
+msgid "This refurbishment cannot be completed"
+msgstr "Questo ricondizionamento non può essere completato"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "Questo rimuove il PDF. I dipendenti vedranno il contenuto scritto."
@@ -28316,6 +28327,9 @@ msgstr "Il tempo libero è addebitato a un elemento di congedo."
 
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "L'orario su questa categoria non può registrarsi a un progetto Spesa o Contratto finché non dispone di una tariffa."
+
+msgid "Time settings updated"
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "Utilizzo temporale"
@@ -28798,9 +28812,6 @@ msgstr "Viaggio"
 msgid "Travel started <0/>"
 msgstr "Viaggio iniziato <0/>"
 
-msgid "Traveling"
-msgstr "In viaggio"
-
 msgid "Traveler materials disabled"
 msgstr ""
 
@@ -28812,6 +28823,9 @@ msgstr ""
 
 msgid "Traveler operations enabled"
 msgstr ""
+
+msgid "Traveling"
+msgstr "In viaggio"
 
 msgid "Treatment"
 msgstr "Trattamento"

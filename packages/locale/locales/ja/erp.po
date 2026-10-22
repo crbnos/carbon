@@ -341,14 +341,14 @@ msgstr "{0}在庫あり；残り{1}は{2}としてピッキング"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}件の請求書は前のシステムで請求済みであり、再度作成されません。"
 
-#. placeholder {0}: item.description
-msgid "{0} is never billed. Its cost stays on the order."
-msgstr "{0}は請求されません。その原価は発注書に残ります。"
-
 #. placeholder {0}: skipped.readableId
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
+
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr "{0}は請求されません。その原価は発注書に残ります。"
 
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
@@ -932,6 +932,9 @@ msgstr "{value, plural, one {# 日} other {# 日}}"
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# 行が予想数量と異なります} other {# 行が予想数量と異なります}}"
 
+msgid "{warnings} need a follow-up"
+msgstr ""
+
 msgid "{who} commented on {element}"
 msgstr "{who} が {element} にコメントしました"
 
@@ -940,9 +943,6 @@ msgstr "{who} が {element} に {quantity} をログしました"
 
 msgid "{who} reversed {amount} on {element}"
 msgstr "{who} が {element} で {amount} を反対仕訳しました"
-
-msgid "{warnings} need a follow-up"
-msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}年"
@@ -3467,14 +3467,14 @@ msgstr "外観"
 msgid "Applied"
 msgstr "適用"
 
-msgid "Applied Account"
-msgstr "適用済みアカウント"
-
 msgid "Applied {applied} planning actions"
 msgstr ""
 
 msgid "Applied 1 planning action"
 msgstr ""
+
+msgid "Applied Account"
+msgstr "適用済みアカウント"
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "適用金額は会社基本通貨（{baseCurrency}）です。"
@@ -5220,6 +5220,9 @@ msgstr "負担は請求レートとシーリングの低い方で請求します
 
 msgid "Burden by pool"
 msgstr "プール別負担"
+
+msgid "Burden computed"
+msgstr ""
 
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr "会計年度 {fiscalYear} をその最終レートで負担し、差を期間に転記し、Cost Plus 明細で請求します。"
@@ -7014,12 +7017,12 @@ msgstr "変換中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
-msgid "Copied {readableId}"
-msgstr "{readableId} をコピーしました"
-
 #. placeholder {0}: counts.copied ?? 0
 msgid "Copied {0} assignments"
 msgstr ""
+
+msgid "Copied {readableId}"
+msgstr "{readableId} をコピーしました"
 
 msgid "Copied ID to clipboard"
 msgstr "IDをクリップボードにコピーしました"
@@ -8020,9 +8023,6 @@ msgstr "現在"
 
 msgid "Current Net Book Value:"
 msgstr "現在の未償却残高:"
-
-msgid "Current Password"
-msgstr "現在のパスワード"
 
 msgid "Current plan"
 msgstr "現在の計画"
@@ -10015,6 +10015,14 @@ msgstr "獲得価値 ÷ 実際原価。1未満の場合、実施工事が予算�
 msgid "Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date."
 msgstr "獲得価値 ÷ 計画価値。1未満の場合、その日までの計画ベースラインより少ない工事が実施されます。"
 
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} project"
+msgstr ""
+
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} projects"
+msgstr ""
+
 msgid "Earned value rolls up to this element"
 msgstr "実績値はこの要素にロールアップします"
 
@@ -10518,9 +10526,6 @@ msgstr "従業員"
 msgid "Employees"
 msgstr "従業員"
 
-msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
-msgstr "労務原価から推定された賃金を持つ従業員: {estimatedEmployeeCount}。給与がインポートされない場合、Carbonは労務台帳から賃金を推定します。推定は従業員のW-2賃金を超える可能性があります。"
-
 msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
 msgstr "この教育訓練に割り当てられた従業員は開くことができます。コンテンツ、ガイド、質問は変更できません。"
 
@@ -10529,6 +10534,9 @@ msgstr "従業員はこの教育訓練を開くことができなくなりまし
 
 msgid "Employees complete a training in Carbon"
 msgstr "従業員がCarbonで教育訓練を完了する"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr "労務原価から推定された賃金を持つ従業員: {estimatedEmployeeCount}。給与がインポートされない場合、Carbonは労務台帳から賃金を推定します。推定は従業員のW-2賃金を超える可能性があります。"
 
 msgid "Empty"
 msgstr "空"
@@ -10828,11 +10836,11 @@ msgstr "エンティティタイプは変更できません"
 msgid "Entry"
 msgstr "仕訳"
 
-msgid "Entry Date"
-msgstr "エントリー日"
-
 msgid "Entry added"
 msgstr ""
+
+msgid "Entry Date"
+msgstr "エントリー日"
 
 msgid "Entry deleted"
 msgstr ""
@@ -10840,14 +10848,14 @@ msgstr ""
 msgid "Entry Type"
 msgstr "エントリータイプ"
 
+msgid "Entry updated"
+msgstr ""
+
 msgid "Entry window (days)"
 msgstr "エントリウィンドウ（日）"
 
 msgid "Environmental"
 msgstr "環境"
-
-msgid "Entry updated"
-msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -11036,14 +11044,14 @@ msgstr "会社に属するすべてのレコード。認証情報、連携トー
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "すべての配信にはこのシークレットで署名されたCarbon-Signatureヘッダーが含まれます。Carbonからのリクエストであることを検証してください。"
+
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
 msgstr "すべての要素は、移動した場合でも現在のWBSコードを保持します。コードが契約WBSと一致する場合にこれを実行してください。"
 
 msgid "Every entry in the range and every change made to it"
 msgstr "範囲内のすべてのエントリーと、それに加えられたすべての変更"
-
-msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
-msgstr "すべての配信にはこのシークレットで署名されたCarbon-Signatureヘッダーが含まれます。Carbonからのリクエストであることを検証してください。"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
@@ -11718,14 +11726,14 @@ msgstr "画像のリサイズに失敗しました: {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "CSVの列データの取得に失敗しました。"
 
-msgid "Failed to save"
-msgstr "保存に失敗しました"
-
 msgid "Failed to reveal the secret"
 msgstr "シークレットの表示に失敗しました"
 
 msgid "Failed to roll the secret"
 msgstr "シークレットのロールに失敗しました"
+
+msgid "Failed to save"
+msgstr "保存に失敗しました"
 
 msgid "Failed to save configuration rule"
 msgstr "設定ルールの保存に失敗しました"
@@ -11808,14 +11816,17 @@ msgstr "品目の更新に失敗しました"
 msgid "Failed to update the price"
 msgstr "価格の更新に失敗しました"
 
-msgid "Failed to update the visit"
-msgstr "訪問の更新に失敗しました"
-
 msgid "Failed to update the setting"
 msgstr ""
 
+msgid "Failed to update the visit"
+msgstr "訪問の更新に失敗しました"
+
 msgid "Failed to update thumbnail path"
 msgstr "サムネイルパスの更新に失敗しました"
+
+msgid "Failed to update timecard settings"
+msgstr ""
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -14177,11 +14188,11 @@ msgstr "問題"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "承認済ですが適用できません。再オープンしてこれらの行を確認してから、もう一度提出してください。"
 
-msgid "It shows with no hours until you add some."
-msgstr "時間が追加されるまで表示されません"
-
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "近日公開予定です。会社向けに設定するには Carbon にお問い合わせください。"
+
+msgid "It shows with no hours until you add some."
+msgstr "時間が追加されるまで表示されません"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "バージョンを再度公開するまで実行は停止します。削除されるものはありません。"
@@ -15093,9 +15104,6 @@ msgstr "受注明細へのリンク"
 
 msgid "Link type"
 msgstr "リンクタイプ"
-
-msgid "Linked"
-msgstr "リンク済み"
 
 msgid "Linked"
 msgstr "リンク済み"
@@ -17220,11 +17228,11 @@ msgstr "まだコンポーネントがない"
 msgid "No condition may match"
 msgstr "条件が一致しない"
 
-msgid "No contract rates. Hours bill at the default rates."
-msgstr "契約レートなし。時間はデフォルトレートで請求されます。"
-
 msgid "No content"
 msgstr "コンテンツなし"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr "契約レートなし。時間はデフォルトレートで請求されます。"
 
 msgid "No control account has a balance at the cutover."
 msgstr "カットオーバー時に残高がある管理勘定がありません"
@@ -17274,14 +17282,14 @@ msgstr "この契約の前受金が受け取られていません。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "会計開始日前には減価償却は実行されません。会計開始日の前日時点での各資産の減価償却累計額を入力してください。"
 
-msgid "No differences."
-msgstr "違いはありません。"
-
 msgid "No devices found"
 msgstr "デバイスが見つかりません"
 
 msgid "No devices match your search"
 msgstr "検索に一致するデバイスはありません"
+
+msgid "No differences."
+msgstr "違いはありません。"
 
 msgid "No dimension slots configured"
 msgstr "ディメンションスロットが構成されていません"
@@ -17677,6 +17685,9 @@ msgstr "まだ支払いはありません。"
 msgid "No payroll imported"
 msgstr "給与がインポートされていません"
 
+msgid "No PDF uploaded"
+msgstr "PDFがアップロードされていません"
+
 msgid "No pegs on that day"
 msgstr "その日にペグがありません"
 
@@ -17685,9 +17696,6 @@ msgstr "ペグがまだありません"
 
 msgid "No photos."
 msgstr "写真はありません。"
-
-msgid "No PDF uploaded"
-msgstr "PDFがアップロードされていません"
 
 msgid "No planned invoices are removed."
 msgstr "計画済請求書は削除されません。"
@@ -17830,11 +17838,11 @@ msgstr "ここに行はありません。"
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
 
-msgid "No runs yet"
-msgstr "実行がまだありません"
-
 msgid "No running job to cancel"
 msgstr ""
+
+msgid "No runs yet"
+msgstr "実行がまだありません"
 
 msgid "No schedule lines."
 msgstr "スケジュール明細がありません。"
@@ -18195,14 +18203,14 @@ msgstr "MESでまだ何も完了していません"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "その日、{workCenterName} では他に何も稼働していません。"
+
 msgid "Nothing has been charged yet."
 msgstr "まだ何も請求されていません"
 
 msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
 msgstr "まだ何も請求されていません。時間を記録するか、材料を出庫するか、製造指図または発注書をこのエレメントに請求してください。"
-
-msgid "Nothing else ran on {workCenterName} that day."
-msgstr "その日、{workCenterName} では他に何も稼働していません。"
 
 msgid "Nothing here matches your search and filters."
 msgstr "検索と絞り込み条件に一致するものがありません"
@@ -18347,11 +18355,11 @@ msgstr "オフ - リリースされたリビジョンは編集可能なままで
 msgid "Officer"
 msgstr "役員"
 
-msgid "Offset Absorbed Overhead"
-msgstr "相殺吸収間接費"
-
 msgid "Offline"
 msgstr "オフライン"
+
+msgid "Offset Absorbed Overhead"
+msgstr "相殺吸収間接費"
 
 msgid "Offset Account"
 msgstr "相殺勘定"
@@ -19705,11 +19713,11 @@ msgstr "期間終了"
 msgid "Period lock policy"
 msgstr "期間ロックポリシー"
 
-msgid "Period of Performance"
-msgstr "実施期間"
-
 msgid "Period locked"
 msgstr ""
+
+msgid "Period of Performance"
+msgstr "実施期間"
 
 msgid "Period Start"
 msgstr "期間開始"
@@ -20992,15 +21000,6 @@ msgstr "ディメンションなしで仕訳を転記する"
 msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
-msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
-msgstr "停止命令下の契約プロジェクトを保留中にし、90日の終了日を設定して、命令が終わったら再開します。"
-
-msgid "Put on hold"
-msgstr "保留中にする"
-
-msgid "Put on Hold"
-msgstr "保留中"
-
 msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "プッシュはこの品目のフィールドを変更しないため、ここで行われた編集は保持されます。"
 
@@ -21009,6 +21008,15 @@ msgstr "Onshapeからのプッシュがこの品目を更新しなくなりま�
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "プッシュは、Onshapeの [フィールド] ページで [毎回プッシュで更新] に設定されたフィールドのみを置き換えます。"
+
+msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
+msgstr "停止命令下の契約プロジェクトを保留中にし、90日の終了日を設定して、命令が終わったら再開します。"
+
+msgid "Put on hold"
+msgstr "保留中にする"
+
+msgid "Put on Hold"
+msgstr "保留中"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "この請求項目を独自の請求書に配置し、転記前にレビューで保留します。そうでなければ、契約の次の請求書に記載されます。"
@@ -21304,11 +21312,11 @@ msgstr "Ramp が認可コードを返しませんでした"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp が認可を拒否しました"
 
-msgid "Range"
-msgstr "範囲"
-
 msgid "Ran at the time"
 msgstr "その時間に稼働"
+
+msgid "Range"
+msgstr "範囲"
 
 msgid "Rate"
 msgstr "レート"
@@ -22301,15 +22309,15 @@ msgstr "本日のルールとコストで再価格設定すると <0>{0}</0> に
 msgid "Reprint"
 msgstr "再印刷"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request"
 msgstr "リクエスト"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
 msgstr "リクエスト{0}"
-
-msgid "Reprint job created"
-msgstr ""
 
 msgid "Request a new invite"
 msgstr "新しい招待をリクエストする"
@@ -22440,6 +22448,9 @@ msgstr "再スケジュール許容日数"
 msgid "Reschedule Tolerance"
 msgstr "スケジュール変更許容値"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reschedule Visit"
 msgstr "訪問をスケジュール変更"
 
@@ -22451,9 +22462,6 @@ msgstr "各事業コンポーネントの研究コスト（国内および国外
 
 msgid "Research role"
 msgstr "研究ロール"
-
-msgid "Reschedule tolerance updated"
-msgstr ""
 
 msgid "Reserve floor"
 msgstr "予備床"
@@ -23349,14 +23357,14 @@ msgstr "抜取検査 — 特性 {featureLabel}"
 msgid "Sampling Standard"
 msgstr "抜取検査基準"
 
+msgid "Sampling standard updated"
+msgstr ""
+
 msgid "Satisfied by"
 msgstr "～により満たされる"
 
 msgid "Satisfies"
 msgstr "満たす"
-
-msgid "Sampling standard updated"
-msgstr ""
 
 msgid "Saturday"
 msgstr "土曜日"
@@ -23652,11 +23660,11 @@ msgstr "得意先とタイプを検索..."
 msgid "Search customers or types..."
 msgstr "得意先またはタイプを検索..."
 
-msgid "Search elements"
-msgstr "エレメントを検索"
-
 msgid "Search devices"
 msgstr "デバイスを検索"
+
+msgid "Search elements"
+msgstr "エレメントを検索"
 
 msgid "Search employees..."
 msgstr "従業員を検索..."
@@ -23745,12 +23753,12 @@ msgstr "シークレットをクリップボードにコピーしました"
 msgid "Section"
 msgstr "セクション"
 
+msgid "Section deleted"
+msgstr ""
+
 #. placeholder {0}: format.money(officerWages)
 msgid "Section E line 38, officers' wage QREs: {0}"
 msgstr "セクション E ライン 38、役員給与 QRE：{0}"
-
-msgid "Section deleted"
-msgstr ""
 
 msgid "Section saved"
 msgstr ""
@@ -24190,6 +24198,9 @@ msgstr "外注サービス労務"
 msgid "Service Labor Item"
 msgstr "外注サービス労務品目"
 
+msgid "Service labor item updated"
+msgstr ""
+
 msgid "Service lines"
 msgstr "外注サービス明細"
 
@@ -24223,6 +24234,9 @@ msgstr "サービスプロバイダーの詳細"
 msgid "Service start"
 msgstr "サービス開始日"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "Service template"
 msgstr "サービステンプレート"
 
@@ -24231,9 +24245,6 @@ msgstr "サービステンプレート"
 
 msgid "Service Templates"
 msgstr "サービステンプレート"
-
-msgid "Service supplier created"
-msgstr ""
 
 msgid "services"
 msgstr "サービス"
@@ -24939,11 +24950,11 @@ msgstr "売却"
 msgid "Solutions Engineer"
 msgstr "ソリューションズエンジニア"
 
-msgid "Some inputs have another unit and are left out"
-msgstr "一部の入力は別の単位を持っており、除外されています"
-
 msgid "Some balances have no Carbon account"
 msgstr "いくつかの残高にはCarbonアカウントがありません"
+
+msgid "Some inputs have another unit and are left out"
+msgstr "一部の入力は別の単位を持っており、除外されています"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "いくつかの明細は、合計より多くまたは少なく請求されています。確認する前に金額を修正してください。"
@@ -26747,14 +26758,14 @@ msgstr "繰延売上高のデフォルトアカウントが空です。"
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "デバイスのサイトは {siteTimezone} にあります。Carbon は {locationTimezone} を使用します"
+
 msgid "The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account."
 msgstr "借り手が返済する在庫の現在のコストと、借り受けたコストの差。借り手のプロジェクトおよび在庫調整差異勘定に課金されます。"
 
 msgid "The direct cost in the project ledger of a work package and the elements below it."
 msgstr "プロジェクト台帳のワークパッケージおよびそれ以下の要素の直接原価。"
-
-msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
-msgstr "デバイスのサイトは {siteTimezone} にあります。Carbon は {locationTimezone} を使用します"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -28031,11 +28042,11 @@ msgstr "この発注書"
 msgid "This Quarter"
 msgstr "今四半期"
 
-msgid "This refurbishment cannot be completed"
-msgstr "このリニューアルは完了できません"
-
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "この入荷には明細がありません。参照伝票を選択して追加してください。"
+
+msgid "This refurbishment cannot be completed"
+msgstr "このリニューアルは完了できません"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "これはPDFを除去します。従業員は代わりに記述内容を表示します。"
@@ -28316,6 +28327,9 @@ msgstr "休暇はリーブ要素に請求されます。"
 
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "このカテゴリの時間は、料金が設定されるまで費用またはコントラクトプロジェクトに転記できません。"
+
+msgid "Time settings updated"
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "時間利用率"
@@ -28798,9 +28812,6 @@ msgstr "旅行"
 msgid "Travel started <0/>"
 msgstr "旅行開始 <0/>"
 
-msgid "Traveling"
-msgstr "旅行中"
-
 msgid "Traveler materials disabled"
 msgstr ""
 
@@ -28812,6 +28823,9 @@ msgstr ""
 
 msgid "Traveler operations enabled"
 msgstr ""
+
+msgid "Traveling"
+msgstr "旅行中"
 
 msgid "Treatment"
 msgstr "会計処理"

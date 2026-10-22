@@ -341,14 +341,14 @@ msgstr "{0} in stock; the remaining {1} will be picked as {2}"
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} invoices were billed in your previous system and are not drafted again."
 
-#. placeholder {0}: item.description
-msgid "{0} is never billed. Its cost stays on the order."
-msgstr "{0} is never billed. Its cost stays on the order."
-
 #. placeholder {0}: skipped.readableId
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} is {1}, not Draft or Planned"
+
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr "{0} is never billed. Its cost stays on the order."
 
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
@@ -932,6 +932,9 @@ msgstr "{value, plural, one {# day} other {# days}}"
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 
+msgid "{warnings} need a follow-up"
+msgstr "{warnings} need a follow-up"
+
 msgid "{who} commented on {element}"
 msgstr "{who} commented on {element}"
 
@@ -940,9 +943,6 @@ msgstr "{who} logged {quantity} on {element}"
 
 msgid "{who} reversed {amount} on {element}"
 msgstr "{who} reversed {amount} on {element}"
-
-msgid "{warnings} need a follow-up"
-msgstr "{warnings} need a follow-up"
 
 msgid "{years}yr"
 msgstr "{years}yr"
@@ -3467,14 +3467,14 @@ msgstr "Appearance"
 msgid "Applied"
 msgstr "Applied"
 
-msgid "Applied Account"
-msgstr "Applied Account"
-
 msgid "Applied {applied} planning actions"
 msgstr "Applied {applied} planning actions"
 
 msgid "Applied 1 planning action"
 msgstr "Applied 1 planning action"
+
+msgid "Applied Account"
+msgstr "Applied Account"
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Applied amounts are in company base currency ({baseCurrency})."
@@ -5220,6 +5220,9 @@ msgstr "Burden bills at the lower of the billing rate and the ceiling. With no c
 
 msgid "Burden by pool"
 msgstr "Burden by pool"
+
+msgid "Burden computed"
+msgstr "Burden computed"
 
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
@@ -7014,12 +7017,12 @@ msgstr "Converting…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 
-msgid "Copied {readableId}"
-msgstr "Copied {readableId}"
-
 #. placeholder {0}: counts.copied ?? 0
 msgid "Copied {0} assignments"
 msgstr "Copied {0} assignments"
+
+msgid "Copied {readableId}"
+msgstr "Copied {readableId}"
 
 msgid "Copied ID to clipboard"
 msgstr "Copied ID to clipboard"
@@ -8020,9 +8023,6 @@ msgstr "Current"
 
 msgid "Current Net Book Value:"
 msgstr "Current Net Book Value:"
-
-msgid "Current Password"
-msgstr "Current Password"
 
 msgid "Current plan"
 msgstr "Current plan"
@@ -10015,6 +10015,14 @@ msgstr "Earned value ÷ actual cost. Below 1, the work done cost more than its b
 msgid "Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date."
 msgstr "Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date."
 
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} project"
+msgstr "Earned value closed for {0} project"
+
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} projects"
+msgstr "Earned value closed for {0} projects"
+
 msgid "Earned value rolls up to this element"
 msgstr "Earned value rolls up to this element"
 
@@ -10518,9 +10526,6 @@ msgstr "employees"
 msgid "Employees"
 msgstr "Employees"
 
-msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
-msgstr "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
-
 msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
 msgstr "Employees assigned to this training can open it. The content, guide and questions can no longer change."
 
@@ -10529,6 +10534,9 @@ msgstr "Employees can no longer open this training."
 
 msgid "Employees complete a training in Carbon"
 msgstr "Employees complete a training in Carbon"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
 
 msgid "Empty"
 msgstr "Empty"
@@ -10828,11 +10836,11 @@ msgstr "Entity type cannot be changed"
 msgid "Entry"
 msgstr "Entry"
 
-msgid "Entry Date"
-msgstr "Entry Date"
-
 msgid "Entry added"
 msgstr "Entry added"
+
+msgid "Entry Date"
+msgstr "Entry Date"
 
 msgid "Entry deleted"
 msgstr "Entry deleted"
@@ -10840,14 +10848,14 @@ msgstr "Entry deleted"
 msgid "Entry Type"
 msgstr "Entry Type"
 
+msgid "Entry updated"
+msgstr "Entry updated"
+
 msgid "Entry window (days)"
 msgstr "Entry window (days)"
 
 msgid "Environmental"
 msgstr "Environmental"
-
-msgid "Entry updated"
-msgstr "Entry updated"
 
 msgid "EORI"
 msgstr "EORI"
@@ -11036,14 +11044,14 @@ msgstr "Every company-scoped record. Credentials, integration tokens and webhook
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
 msgstr "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Every entry in the range and every change made to it"
-
-msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
-msgstr "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Every in-scope test passes in your configured system, with your data."
@@ -11718,14 +11726,14 @@ msgstr "Failed to resize image: {errorMessage}"
 msgid "Failed to retrieve CSV column data."
 msgstr "Failed to retrieve CSV column data."
 
-msgid "Failed to save"
-msgstr "Failed to save"
-
 msgid "Failed to reveal the secret"
 msgstr "Failed to reveal the secret"
 
 msgid "Failed to roll the secret"
 msgstr "Failed to roll the secret"
+
+msgid "Failed to save"
+msgstr "Failed to save"
 
 msgid "Failed to save configuration rule"
 msgstr "Failed to save configuration rule"
@@ -11808,14 +11816,17 @@ msgstr "Failed to update the items"
 msgid "Failed to update the price"
 msgstr "Failed to update the price"
 
-msgid "Failed to update the visit"
-msgstr "Failed to update the visit"
-
 msgid "Failed to update the setting"
 msgstr "Failed to update the setting"
 
+msgid "Failed to update the visit"
+msgstr "Failed to update the visit"
+
 msgid "Failed to update thumbnail path"
 msgstr "Failed to update thumbnail path"
+
+msgid "Failed to update timecard settings"
+msgstr "Failed to update timecard settings"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -14177,11 +14188,11 @@ msgstr "Issues"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 
-msgid "It shows with no hours until you add some."
-msgstr "It shows with no hours until you add some."
-
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "It is coming soon. Contact Carbon to have it set up for your company."
+
+msgid "It shows with no hours until you add some."
+msgstr "It shows with no hours until you add some."
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "It will stop running until you publish a version again. Nothing is deleted."
@@ -15093,9 +15104,6 @@ msgstr "Link to sales order line"
 
 msgid "Link type"
 msgstr "Link type"
-
-msgid "Linked"
-msgstr "Linked"
 
 msgid "Linked"
 msgstr "Linked"
@@ -17220,11 +17228,11 @@ msgstr "No components yet"
 msgid "No condition may match"
 msgstr "No condition may match"
 
-msgid "No contract rates. Hours bill at the default rates."
-msgstr "No contract rates. Hours bill at the default rates."
-
 msgid "No content"
 msgstr "No content"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr "No contract rates. Hours bill at the default rates."
 
 msgid "No control account has a balance at the cutover."
 msgstr "No control account has a balance at the cutover."
@@ -17274,14 +17282,14 @@ msgstr "No deposit has been received for this agreement."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 
-msgid "No differences."
-msgstr "No differences."
-
 msgid "No devices found"
 msgstr "No devices found"
 
 msgid "No devices match your search"
 msgstr "No devices match your search"
+
+msgid "No differences."
+msgstr "No differences."
 
 msgid "No dimension slots configured"
 msgstr "No dimension slots configured"
@@ -17677,6 +17685,9 @@ msgstr "No payments yet."
 msgid "No payroll imported"
 msgstr "No payroll imported"
 
+msgid "No PDF uploaded"
+msgstr "No PDF uploaded"
+
 msgid "No pegs on that day"
 msgstr "No pegs on that day"
 
@@ -17685,9 +17696,6 @@ msgstr "No pegs yet"
 
 msgid "No photos."
 msgstr "No photos."
-
-msgid "No PDF uploaded"
-msgstr "No PDF uploaded"
 
 msgid "No planned invoices are removed."
 msgstr "No planned invoices are removed."
@@ -17830,11 +17838,11 @@ msgstr "No rows here."
 msgid "No rules assigned"
 msgstr "No rules assigned"
 
-msgid "No runs yet"
-msgstr "No runs yet"
-
 msgid "No running job to cancel"
 msgstr "No running job to cancel"
+
+msgid "No runs yet"
+msgstr "No runs yet"
 
 msgid "No schedule lines."
 msgstr "No schedule lines."
@@ -18195,14 +18203,14 @@ msgstr "Nothing completed in MES yet"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "Nothing else ran on {workCenterName} that day."
+
 msgid "Nothing has been charged yet."
 msgstr "Nothing has been charged yet."
 
 msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
 msgstr "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
-
-msgid "Nothing else ran on {workCenterName} that day."
-msgstr "Nothing else ran on {workCenterName} that day."
 
 msgid "Nothing here matches your search and filters."
 msgstr "Nothing here matches your search and filters."
@@ -18347,11 +18355,11 @@ msgstr "Off — released revisions stay editable"
 msgid "Officer"
 msgstr "Officer"
 
-msgid "Offset Absorbed Overhead"
-msgstr "Offset Absorbed Overhead"
-
 msgid "Offline"
 msgstr "Offline"
+
+msgid "Offset Absorbed Overhead"
+msgstr "Offset Absorbed Overhead"
 
 msgid "Offset Account"
 msgstr "Offset Account"
@@ -19705,11 +19713,11 @@ msgstr "Period End"
 msgid "Period lock policy"
 msgstr "Period lock policy"
 
-msgid "Period of Performance"
-msgstr "Period of Performance"
-
 msgid "Period locked"
 msgstr "Period locked"
+
+msgid "Period of Performance"
+msgstr "Period of Performance"
 
 msgid "Period Start"
 msgstr "Period Start"
@@ -20992,15 +21000,6 @@ msgstr "Push the journal without the dimension"
 msgid "Push to accounting"
 msgstr "Push to accounting"
 
-msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
-msgstr "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
-
-msgid "Put on hold"
-msgstr "Put on hold"
-
-msgid "Put on Hold"
-msgstr "Put on Hold"
-
 msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "Pushes don't change this item's fields, so edits made here stay."
 
@@ -21009,6 +21008,15 @@ msgstr "Pushes from Onshape stop updating this item. Pushing this part from Onsh
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+
+msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
+msgstr "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
+
+msgid "Put on hold"
+msgstr "Put on hold"
+
+msgid "Put on Hold"
+msgstr "Put on Hold"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
@@ -21304,11 +21312,11 @@ msgstr "Ramp didn't return an authorization code"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp rejected the authorization"
 
-msgid "Range"
-msgstr "Range"
-
 msgid "Ran at the time"
 msgstr "Ran at the time"
+
+msgid "Range"
+msgstr "Range"
 
 msgid "Rate"
 msgstr "Rate"
@@ -22301,15 +22309,15 @@ msgstr "Repricing with today's rules and costs gives <0>{0}</0>."
 msgid "Reprint"
 msgstr "Reprint"
 
+msgid "Reprint job created"
+msgstr "Reprint job created"
+
 msgid "Request"
 msgstr "Request"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
 msgstr "Request {0}"
-
-msgid "Reprint job created"
-msgstr "Reprint job created"
 
 msgid "Request a new invite"
 msgstr "Request a new invite"
@@ -22440,6 +22448,9 @@ msgstr "Reschedule tolerance"
 msgid "Reschedule Tolerance"
 msgstr "Reschedule Tolerance"
 
+msgid "Reschedule tolerance updated"
+msgstr "Reschedule tolerance updated"
+
 msgid "Reschedule Visit"
 msgstr "Reschedule Visit"
 
@@ -22451,9 +22462,6 @@ msgstr "Research cost of each business component, domestic and foreign"
 
 msgid "Research role"
 msgstr "Research role"
-
-msgid "Reschedule tolerance updated"
-msgstr "Reschedule tolerance updated"
 
 msgid "Reserve floor"
 msgstr "Reserve floor"
@@ -23349,14 +23357,14 @@ msgstr "Sampling — Characteristic {featureLabel}"
 msgid "Sampling Standard"
 msgstr "Sampling Standard"
 
+msgid "Sampling standard updated"
+msgstr "Sampling standard updated"
+
 msgid "Satisfied by"
 msgstr "Satisfied by"
 
 msgid "Satisfies"
 msgstr "Satisfies"
-
-msgid "Sampling standard updated"
-msgstr "Sampling standard updated"
 
 msgid "Saturday"
 msgstr "Saturday"
@@ -23652,11 +23660,11 @@ msgstr "Search customers and types..."
 msgid "Search customers or types..."
 msgstr "Search customers or types..."
 
-msgid "Search elements"
-msgstr "Search elements"
-
 msgid "Search devices"
 msgstr "Search devices"
+
+msgid "Search elements"
+msgstr "Search elements"
 
 msgid "Search employees..."
 msgstr "Search employees..."
@@ -23745,12 +23753,12 @@ msgstr "Secret copied to clipboard"
 msgid "Section"
 msgstr "Section"
 
+msgid "Section deleted"
+msgstr "Section deleted"
+
 #. placeholder {0}: format.money(officerWages)
 msgid "Section E line 38, officers' wage QREs: {0}"
 msgstr "Section E line 38, officers' wage QREs: {0}"
-
-msgid "Section deleted"
-msgstr "Section deleted"
 
 msgid "Section saved"
 msgstr "Section saved"
@@ -24190,6 +24198,9 @@ msgstr "Service Labor"
 msgid "Service Labor Item"
 msgstr "Service Labor Item"
 
+msgid "Service labor item updated"
+msgstr "Service labor item updated"
+
 msgid "Service lines"
 msgstr "Service lines"
 
@@ -24223,6 +24234,9 @@ msgstr "Service Provider Details"
 msgid "Service start"
 msgstr "Service start"
 
+msgid "Service supplier created"
+msgstr "Service supplier created"
+
 msgid "Service template"
 msgstr "Service template"
 
@@ -24231,9 +24245,6 @@ msgstr "Service Template"
 
 msgid "Service Templates"
 msgstr "Service Templates"
-
-msgid "Service supplier created"
-msgstr "Service supplier created"
 
 msgid "services"
 msgstr "services"
@@ -24939,11 +24950,11 @@ msgstr "Sold"
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
 
-msgid "Some inputs have another unit and are left out"
-msgstr "Some inputs have another unit and are left out"
-
 msgid "Some balances have no Carbon account"
 msgstr "Some balances have no Carbon account"
+
+msgid "Some inputs have another unit and are left out"
+msgstr "Some inputs have another unit and are left out"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
@@ -26747,14 +26758,14 @@ msgstr "The Deferred Revenue default account is empty."
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+
 msgid "The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account."
 msgstr "The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account."
 
 msgid "The direct cost in the project ledger of a work package and the elements below it."
 msgstr "The direct cost in the project ledger of a work package and the elements below it."
-
-msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
-msgstr "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
@@ -28031,11 +28042,11 @@ msgstr "this purchase order"
 msgid "This Quarter"
 msgstr "This Quarter"
 
-msgid "This refurbishment cannot be completed"
-msgstr "This refurbishment cannot be completed"
-
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "This receipt has no lines. Choose a source document to add them."
+
+msgid "This refurbishment cannot be completed"
+msgstr "This refurbishment cannot be completed"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "This removes the PDF. Employees will see the written content instead."
@@ -28316,6 +28327,9 @@ msgstr "Time off is charged to a leave element."
 
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "Time on this category cannot post to an Expense or Contract project until it has a rate."
+
+msgid "Time settings updated"
+msgstr "Time settings updated"
 
 msgid "Time Utilization"
 msgstr "Time Utilization"
@@ -28798,9 +28812,6 @@ msgstr "Travel"
 msgid "Travel started <0/>"
 msgstr "Travel started <0/>"
 
-msgid "Traveling"
-msgstr "Traveling"
-
 msgid "Traveler materials disabled"
 msgstr "Traveler materials disabled"
 
@@ -28812,6 +28823,9 @@ msgstr "Traveler operations disabled"
 
 msgid "Traveler operations enabled"
 msgstr "Traveler operations enabled"
+
+msgid "Traveling"
+msgstr "Traveling"
 
 msgid "Treatment"
 msgstr "Treatment"

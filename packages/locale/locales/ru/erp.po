@@ -341,14 +341,14 @@ msgstr "{0} в наличии; остаток {1} будет отобран ка
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0} счета-фактур были выставлены в вашей предыдущей системе и не создаются снова."
 
-#. placeholder {0}: item.description
-msgid "{0} is never billed. Its cost stays on the order."
-msgstr "{0} никогда не выставляется счёт. Её себестоимость остаётся в заказе."
-
 #. placeholder {0}: skipped.readableId
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
 msgstr ""
+
+#. placeholder {0}: item.description
+msgid "{0} is never billed. Its cost stays on the order."
+msgstr "{0} никогда не выставляется счёт. Её себестоимость остаётся в заказе."
 
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
@@ -932,6 +932,9 @@ msgstr "{value, plural, one {# день} few {# дня} many {# дней} other 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"
 
+msgid "{warnings} need a follow-up"
+msgstr ""
+
 msgid "{who} commented on {element}"
 msgstr "{who} оставил комментарий на {element}"
 
@@ -940,9 +943,6 @@ msgstr "{who} записал {quantity} на {element}"
 
 msgid "{who} reversed {amount} on {element}"
 msgstr "{who} сторнировал {amount} на {element}"
-
-msgid "{warnings} need a follow-up"
-msgstr ""
 
 msgid "{years}yr"
 msgstr "{years}год"
@@ -3467,14 +3467,14 @@ msgstr "Внешний вид"
 msgid "Applied"
 msgstr "Применено"
 
-msgid "Applied Account"
-msgstr "Применённый счёт"
-
 msgid "Applied {applied} planning actions"
 msgstr ""
 
 msgid "Applied 1 planning action"
 msgstr ""
+
+msgid "Applied Account"
+msgstr "Применённый счёт"
 
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Применённые суммы указаны в базовой валюте организации ({baseCurrency})."
@@ -5220,6 +5220,9 @@ msgstr "Обремение выставляет счета по наименьш
 
 msgid "Burden by pool"
 msgstr "Обремение по пулу"
+
+msgid "Burden computed"
+msgstr ""
 
 msgid "Burden fiscal year {fiscalYear} at its Final rates, post the difference into the period and bill it on Cost Plus lines."
 msgstr "Обремение финансовый год {fiscalYear} по его окончательным ставкам, проведите разницу в периоде и выставьте счета по строкам Cost Plus."
@@ -7014,12 +7017,12 @@ msgstr "Преобразование…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Преобразует единицу покупки поставщика в единицу инвентаря в строке заказа на покупку, квитанции или счета — покупайте в картонах по 12 штук, запасайте в единицах."
 
-msgid "Copied {readableId}"
-msgstr "Скопировано {readableId}"
-
 #. placeholder {0}: counts.copied ?? 0
 msgid "Copied {0} assignments"
 msgstr ""
+
+msgid "Copied {readableId}"
+msgstr "Скопировано {readableId}"
 
 msgid "Copied ID to clipboard"
 msgstr "ID скопирован в буфер обмена"
@@ -8020,9 +8023,6 @@ msgstr "Текущее"
 
 msgid "Current Net Book Value:"
 msgstr "Текущая остаточная стоимость:"
-
-msgid "Current Password"
-msgstr "Текущий пароль"
 
 msgid "Current plan"
 msgstr "Текущий план"
@@ -10015,6 +10015,14 @@ msgstr "Полученная стоимость ÷ фактическая себ
 msgid "Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date."
 msgstr "Полученная стоимость ÷ плановая стоимость. Ниже 1 означает, что выполнено меньше работы, чем было запланировано в базовом плане на эту дату."
 
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} project"
+msgstr ""
+
+#. placeholder {0}: data.projects
+msgid "Earned value closed for {0} projects"
+msgstr ""
+
 msgid "Earned value rolls up to this element"
 msgstr "Заработанная стоимость суммируется на этот элемент"
 
@@ -10518,9 +10526,6 @@ msgstr "сотрудники"
 msgid "Employees"
 msgstr "Сотрудники"
 
-msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
-msgstr "Сотрудники с заработной платой, рассчитанной на основе затрат труда: {estimatedEmployeeCount}. Carbon рассчитывает заработную плату из реестра труда, когда расчетная ведомость не импортирована, и оценка может превышать заработную плату W-2 сотрудника."
-
 msgid "Employees assigned to this training can open it. The content, guide and questions can no longer change."
 msgstr "Сотрудники, назначенные на это обучение, могут открыть его. Содержание, руководство и вопросы больше нельзя менять."
 
@@ -10529,6 +10534,9 @@ msgstr "Сотрудники больше не могут открыть это 
 
 msgid "Employees complete a training in Carbon"
 msgstr "Сотрудники завершают обучение в Carbon"
+
+msgid "Employees with wages estimated from labor cost: {estimatedEmployeeCount}. Carbon estimates wages from the Labor ledger when no payroll is imported, and an estimate can exceed the employee's W-2 wages."
+msgstr "Сотрудники с заработной платой, рассчитанной на основе затрат труда: {estimatedEmployeeCount}. Carbon рассчитывает заработную плату из реестра труда, когда расчетная ведомость не импортирована, и оценка может превышать заработную плату W-2 сотрудника."
 
 msgid "Empty"
 msgstr "Пусто"
@@ -10828,11 +10836,11 @@ msgstr "Тип сущности не может быть изменён"
 msgid "Entry"
 msgstr "Запись"
 
-msgid "Entry Date"
-msgstr "Дата записи"
-
 msgid "Entry added"
 msgstr ""
+
+msgid "Entry Date"
+msgstr "Дата записи"
 
 msgid "Entry deleted"
 msgstr ""
@@ -10840,14 +10848,14 @@ msgstr ""
 msgid "Entry Type"
 msgstr "Тип записи"
 
+msgid "Entry updated"
+msgstr ""
+
 msgid "Entry window (days)"
 msgstr "Окно ввода (дни)"
 
 msgid "Environmental"
 msgstr "Экологический"
-
-msgid "Entry updated"
-msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -11036,14 +11044,14 @@ msgstr "Все записи компании. Учётные данные, то�
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
+msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
+msgstr "Каждая доставка содержит заголовок Carbon-Signature, подписанный этим секретом. Проверьте его, чтобы узнать, что запрос поступил от Carbon."
+
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
 msgstr "Каждый элемент сохраняет свой текущий код WBS даже при перемещении. Используйте эту опцию, когда коды совпадают с WBS контракта."
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Каждая запись в диапазоне и каждое внесенное в нее изменение"
-
-msgid "Every delivery carries a Carbon-Signature header signed with this secret. Verify it to know a request came from Carbon."
-msgstr "Каждая доставка содержит заголовок Carbon-Signature, подписанный этим секретом. Проверьте его, чтобы узнать, что запрос поступил от Carbon."
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
@@ -11718,14 +11726,14 @@ msgstr "Не удалось изменить размер изображения
 msgid "Failed to retrieve CSV column data."
 msgstr "Не удалось получить данные столбцов CSV."
 
-msgid "Failed to save"
-msgstr "Не удалось сохранить"
-
 msgid "Failed to reveal the secret"
 msgstr "Не удалось показать секрет"
 
 msgid "Failed to roll the secret"
 msgstr "Не удалось обновить секрет"
+
+msgid "Failed to save"
+msgstr "Не удалось сохранить"
 
 msgid "Failed to save configuration rule"
 msgstr "Ошибка при сохранении правила конфигурации"
@@ -11808,14 +11816,17 @@ msgstr "Не удалось обновить номенклатуры"
 msgid "Failed to update the price"
 msgstr "Не удалось обновить цену"
 
-msgid "Failed to update the visit"
-msgstr "Не удалось обновить посещение"
-
 msgid "Failed to update the setting"
 msgstr ""
 
+msgid "Failed to update the visit"
+msgstr "Не удалось обновить посещение"
+
 msgid "Failed to update thumbnail path"
 msgstr "Не удалось обновить путь миниатюры"
+
+msgid "Failed to update timecard settings"
+msgstr ""
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
@@ -14177,11 +14188,11 @@ msgstr "Проблемы"
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Оно утверждено, но не может быть применено. Откройте его заново, проверьте эти строки, затем отправьте снова."
 
-msgid "It shows with no hours until you add some."
-msgstr "Отображается без часов, пока вы не добавите часы."
-
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Скоро она станет доступна. Свяжитесь с Carbon, чтобы её настроили для вашей компании."
+
+msgid "It shows with no hours until you add some."
+msgstr "Отображается без часов, пока вы не добавите часы."
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Он перестанет работать, пока вы не опубликуете версию снова. Ничего не удаляется."
@@ -15093,9 +15104,6 @@ msgstr "Ссылка на строку заказа покупателя"
 
 msgid "Link type"
 msgstr "Тип связи"
-
-msgid "Linked"
-msgstr "Связанный"
 
 msgid "Linked"
 msgstr "Связано"
@@ -17220,11 +17228,11 @@ msgstr "Компонентов еще нет"
 msgid "No condition may match"
 msgstr "Ни одно условие не должно совпадать"
 
-msgid "No contract rates. Hours bill at the default rates."
-msgstr "Нет контрактных ставок. Часы выставляются по умолчанию ставкам."
-
 msgid "No content"
 msgstr "Нет содержания"
+
+msgid "No contract rates. Hours bill at the default rates."
+msgstr "Нет контрактных ставок. Часы выставляются по умолчанию ставкам."
 
 msgid "No control account has a balance at the cutover."
 msgstr "Ни один контрольный счет не имеет остатка на дату переходу."
@@ -17274,14 +17282,14 @@ msgstr "Авансовый платеж не получен по этому со
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "До даты перехода не производится расчет амортизации. Введите накопленную амортизацию каждого актива на день перед датой перехода."
 
-msgid "No differences."
-msgstr "Нет различий."
-
 msgid "No devices found"
 msgstr "Устройства не найдены"
 
 msgid "No devices match your search"
 msgstr "Нет устройств, соответствующих поиску"
+
+msgid "No differences."
+msgstr "Нет различий."
 
 msgid "No dimension slots configured"
 msgstr "Слоты измерений не настроены"
@@ -17677,6 +17685,9 @@ msgstr "Платежей пока нет."
 msgid "No payroll imported"
 msgstr "Нет импортированной зарплаты"
 
+msgid "No PDF uploaded"
+msgstr "PDF не загружен"
+
 msgid "No pegs on that day"
 msgstr "Нет привязок в этот день"
 
@@ -17685,9 +17696,6 @@ msgstr "Нет привязок"
 
 msgid "No photos."
 msgstr "Нет фотографий."
-
-msgid "No PDF uploaded"
-msgstr "PDF не загружен"
 
 msgid "No planned invoices are removed."
 msgstr "Запланированные счета-фактуры не удаляются."
@@ -17830,11 +17838,11 @@ msgstr "Нет строк здесь."
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
 
-msgid "No runs yet"
-msgstr "Нет запусков"
-
 msgid "No running job to cancel"
 msgstr ""
+
+msgid "No runs yet"
+msgstr "Нет запусков"
 
 msgid "No schedule lines."
 msgstr "Нет строк графика."
@@ -18195,14 +18203,14 @@ msgstr "В MES пока ничего не завершено"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "В тот день на {workCenterName} больше ничего не работало."
+
 msgid "Nothing has been charged yet."
 msgstr "Ничего еще не начислено."
 
 msgid "Nothing has been charged yet. Log time, issue material, or charge a job or purchase order to this element."
 msgstr "Ничего еще не начислено. Запишите время, списание материала или начислите производственный заказ или заказ поставщику на этот элемент."
-
-msgid "Nothing else ran on {workCenterName} that day."
-msgstr "В тот день на {workCenterName} больше ничего не работало."
 
 msgid "Nothing here matches your search and filters."
 msgstr "Здесь нет ничего, соответствующего вашему поиску и фильтрам."
@@ -18347,11 +18355,11 @@ msgstr "Отключено — выпущенные ревизии остают�
 msgid "Officer"
 msgstr "Офицер"
 
-msgid "Offset Absorbed Overhead"
-msgstr "Смещение поглощенных накладных расходов"
-
 msgid "Offline"
 msgstr "Отключено"
+
+msgid "Offset Absorbed Overhead"
+msgstr "Смещение поглощенных накладных расходов"
 
 msgid "Offset Account"
 msgstr "Счет компенсации"
@@ -19705,11 +19713,11 @@ msgstr "Конец периода"
 msgid "Period lock policy"
 msgstr "Политика блокировки периода"
 
-msgid "Period of Performance"
-msgstr "Период выполнения"
-
 msgid "Period locked"
 msgstr ""
+
+msgid "Period of Performance"
+msgstr "Период выполнения"
 
 msgid "Period Start"
 msgstr "Начало периода"
@@ -20992,15 +21000,6 @@ msgstr "Провести операцию без измерения"
 msgid "Push to accounting"
 msgstr "Отправить в бухгалтерию"
 
-msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
-msgstr "Приостановить проект контракта в соответствии с приказом об остановке работ с 90-дневной датой окончания и возобновить его по окончании приказа."
-
-msgid "Put on hold"
-msgstr "Приостановить"
-
-msgid "Put on Hold"
-msgstr "Приостановить"
-
 msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "Отправки не изменяют поля этой номенклатуры, поэтому сделанные здесь изменения остаются."
 
@@ -21009,6 +21008,15 @@ msgstr "Отправки из Onshape прекращают обновление 
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Отправки заменяют только поля, для которых на странице параметров Onshape установлено обновление при каждой отправке."
+
+msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
+msgstr "Приостановить проект контракта в соответствии с приказом об остановке работ с 90-дневной датой окончания и возобновить его по окончании приказа."
+
+msgid "Put on hold"
+msgstr "Приостановить"
+
+msgid "Put on Hold"
+msgstr "Приостановить"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "Поместить это начисление на отдельный счет-фактуру, находящуюся на рассмотрение перед проведением. В противном случае оно переходит на следующий счет-фактуру по соглашению."
@@ -21304,11 +21312,11 @@ msgstr "Ramp не вернул код авторизации"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp отклонил авторизацию"
 
-msgid "Range"
-msgstr "Диапазон"
-
 msgid "Ran at the time"
 msgstr "Работало в это время"
+
+msgid "Range"
+msgstr "Диапазон"
 
 msgid "Rate"
 msgstr "Курс"
@@ -22301,15 +22309,15 @@ msgstr "Переоценка с сегодняшними правилами и �
 msgid "Reprint"
 msgstr "Перепечать"
 
+msgid "Reprint job created"
+msgstr ""
+
 msgid "Request"
 msgstr "Запрос"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
 msgstr "Запрос {0}"
-
-msgid "Reprint job created"
-msgstr ""
 
 msgid "Request a new invite"
 msgstr "Запросить новое приглашение"
@@ -22440,6 +22448,9 @@ msgstr "Допуск переноса"
 msgid "Reschedule Tolerance"
 msgstr "Допуск переноса"
 
+msgid "Reschedule tolerance updated"
+msgstr ""
+
 msgid "Reschedule Visit"
 msgstr "Перенести визит"
 
@@ -22451,9 +22462,6 @@ msgstr "Стоимость исследований каждого бизнес-
 
 msgid "Research role"
 msgstr "Исследовательская роль"
-
-msgid "Reschedule tolerance updated"
-msgstr ""
 
 msgid "Reserve floor"
 msgstr "Минимальный уровень запаса"
@@ -23349,14 +23357,14 @@ msgstr "Выборочный контроль — Характеристика {
 msgid "Sampling Standard"
 msgstr "Стандарт выборочного контроля"
 
+msgid "Sampling standard updated"
+msgstr ""
+
 msgid "Satisfied by"
 msgstr "Удовлетворяется"
 
 msgid "Satisfies"
 msgstr "Удовлетворяет"
-
-msgid "Sampling standard updated"
-msgstr ""
 
 msgid "Saturday"
 msgstr "Суббота"
@@ -23652,11 +23660,11 @@ msgstr "Поиск покупателей и типов..."
 msgid "Search customers or types..."
 msgstr "Поиск покупателей или типов..."
 
-msgid "Search elements"
-msgstr "Поиск элементов"
-
 msgid "Search devices"
 msgstr "Поиск устройств"
+
+msgid "Search elements"
+msgstr "Поиск элементов"
 
 msgid "Search employees..."
 msgstr "Поиск сотрудников..."
@@ -23745,12 +23753,12 @@ msgstr "Секрет скопирован в буфер обмена"
 msgid "Section"
 msgstr "Раздел"
 
+msgid "Section deleted"
+msgstr ""
+
 #. placeholder {0}: format.money(officerWages)
 msgid "Section E line 38, officers' wage QREs: {0}"
 msgstr "Раздел E строка 38, зарплата должностных лиц QREs: {0}"
-
-msgid "Section deleted"
-msgstr ""
 
 msgid "Section saved"
 msgstr ""
@@ -24190,6 +24198,9 @@ msgstr "Услуга — труд"
 msgid "Service Labor Item"
 msgstr "Номенклатура услуги труда"
 
+msgid "Service labor item updated"
+msgstr ""
+
 msgid "Service lines"
 msgstr "Строки услуг"
 
@@ -24223,6 +24234,9 @@ msgstr "Детали поставщика услуг"
 msgid "Service start"
 msgstr "Начало обслуживания"
 
+msgid "Service supplier created"
+msgstr ""
+
 msgid "Service template"
 msgstr "Шаблон обслуживания"
 
@@ -24231,9 +24245,6 @@ msgstr "Шаблон обслуживания"
 
 msgid "Service Templates"
 msgstr "Шаблоны обслуживания"
-
-msgid "Service supplier created"
-msgstr ""
 
 msgid "services"
 msgstr "услуги"
@@ -24939,11 +24950,11 @@ msgstr "Продано"
 msgid "Solutions Engineer"
 msgstr "Инженер решений"
 
-msgid "Some inputs have another unit and are left out"
-msgstr "Некоторые входные данные имеют другую единицу и исключены"
-
 msgid "Some balances have no Carbon account"
 msgstr "Некоторые остатки не имеют счета Carbon"
+
+msgid "Some inputs have another unit and are left out"
+msgstr "Некоторые входные данные имеют другую единицу и исключены"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Некоторые строки выставлены счетом на сумму, большую или меньшую, чем их итоговая сумма. Исправьте суммы перед подтверждением."
@@ -26747,14 +26758,14 @@ msgstr "Счет отложенной выручки по умолчанию п�
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
 
+msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
+msgstr "Площадка устройства находится в {siteTimezone}; Carbon использует {locationTimezone}"
+
 msgid "The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account."
 msgstr "Разница между текущей стоимостью запаса, который заемщик возвращает, и стоимостью, при которой он его взял в долг, начисленная на проект заемщика и счет отклонения корректировки запасов."
 
 msgid "The direct cost in the project ledger of a work package and the elements below it."
 msgstr "Прямая стоимость в проектном журнале пакета работ и элементов ниже него."
-
-msgid "The device's site is in {siteTimezone}; Carbon uses {locationTimezone}"
-msgstr "Площадка устройства находится в {siteTimezone}; Carbon использует {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -28031,11 +28042,11 @@ msgstr "этот заказ поставщику"
 msgid "This Quarter"
 msgstr "Этот квартал"
 
-msgid "This refurbishment cannot be completed"
-msgstr "Это переоборудование не может быть завершено"
-
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "В этом поступлении нет строк. Выберите документ-основание, чтобы добавить их."
+
+msgid "This refurbishment cannot be completed"
+msgstr "Это переоборудование не может быть завершено"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "Это удаляет PDF. Сотрудники вместо этого увидят письменный контент."
@@ -28316,6 +28327,9 @@ msgstr "Время отпуска относится на элемент отп�
 
 msgid "Time on this category cannot post to an Expense or Contract project until it has a rate."
 msgstr "Время по этой категории не может быть проведено на проект Расход или Договор, пока у него нет ставки."
+
+msgid "Time settings updated"
+msgstr ""
 
 msgid "Time Utilization"
 msgstr "Использование времени"
@@ -28798,9 +28812,6 @@ msgstr "Деловая поездка"
 msgid "Travel started <0/>"
 msgstr "Деловая поездка началась <0/>"
 
-msgid "Traveling"
-msgstr "В пути"
-
 msgid "Traveler materials disabled"
 msgstr ""
 
@@ -28812,6 +28823,9 @@ msgstr ""
 
 msgid "Traveler operations enabled"
 msgstr ""
+
+msgid "Traveling"
+msgstr "В пути"
 
 msgid "Treatment"
 msgstr "Учет"
