@@ -1862,6 +1862,9 @@ msgstr "Mélanger"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Connectez-vous avec la biométrie au lieu d'un lien magique. Les clés d'accès sont sécurisées par Face ID, Touch ID ou votre code PIN d'appareil."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Se connecter avec Google"
 
@@ -2230,8 +2233,8 @@ msgstr "Voir l'intervention de maintenance"
 msgid "View or open"
 msgstr "Afficher ou ouvrir"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Nous vous avons envoyé un lien magique pour vous connecter à votre compte."
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Qu'est-ce que {translatedTerm} ?"

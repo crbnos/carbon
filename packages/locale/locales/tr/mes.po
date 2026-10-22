@@ -1862,6 +1862,9 @@ msgstr "Karıştır"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bir bağlantı yerine biyometrik veriler ile oturum açın. Geçiş anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
 
@@ -2230,8 +2233,8 @@ msgstr "Bakım emrini Görüntüle"
 msgid "View or open"
 msgstr "Görüntüle veya aç"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"

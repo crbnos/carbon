@@ -12,7 +12,8 @@ import {
   getRedirectTo,
   isAuthProviderEnabled,
   magicLinkValidator,
-  RATE_LIMIT
+  RATE_LIMIT,
+  signInCodeValidator
 } from "@carbon/auth";
 import {
   botProtection,
@@ -32,7 +33,14 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
-import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
+import {
+  Hidden,
+  Input,
+  InputOTP,
+  Submit,
+  ValidatedForm,
+  validator
+} from "@carbon/form";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import {
@@ -235,7 +243,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return { success: true };
+  return { success: true, email };
 }
 
 export default function LoginRoute() {
@@ -263,7 +271,7 @@ export default function LoginRoute() {
   const emailParam = searchParams.get("email") ?? undefined;
 
   const fetcher = useFetcher<
-    { success: true } | { success: false; message: string }
+    { success: true; email?: string } | { success: false; message: string }
   >();
   const bot = useBotProtection("/login", botProtection, fetcher.data);
 
@@ -495,11 +503,18 @@ export default function LoginRoute() {
               <Heading size="h3">
                 <Trans>Check your email</Trans>
               </Heading>
-              <p className="text-muted-foreground tracking-tight text-sm">
+              <p className="text-muted-foreground tracking-tight text-sm text-center">
                 <Trans>
-                  We've sent you a magic link to sign in to your account.
+                  We've emailed you a sign-in link and a 6-digit code. Follow
+                  the link, or enter the code here.
                 </Trans>
               </p>
+              {fetcher.data.email ? (
+                <SignInCode
+                  email={fetcher.data.email}
+                  redirectTo={redirectTo}
+                />
+              ) : null}
             </VStack>
           </>
         ) : (
@@ -765,5 +780,73 @@ function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
       />
       <path d="M1362.667 255.5h383.25v383.25h-383.25z" fill="#50D9FF" />
     </svg>
+  );
+}
+
+/**
+ * The code from the sign-in email, as an alternative to its link. A mail
+ * scanner that opens the link first leaves the person an expired one; it
+ * cannot type the code. A verified code yields the same session the link's
+ * redirect does, handed to /callback the same way, so everything after —
+ * company, SSO, MFA — is one path for both.
+ */
+function SignInCode({
+  email,
+  redirectTo
+}: {
+  email: string;
+  redirectTo?: string;
+}) {
+  const code = useFetcher<{
+    success: boolean;
+    message?: string;
+    refreshToken?: string;
+    userId?: string;
+  }>();
+  const callback = useFetcher();
+  const signingIn = callback.state !== "idle";
+
+  useEffect(() => {
+    const { refreshToken, userId } = code.data ?? {};
+    if (!code.data?.success || !refreshToken || !userId) return;
+    const formData = new FormData();
+    formData.append("refreshToken", refreshToken);
+    formData.append("userId", userId);
+    if (redirectTo) formData.append("redirectTo", redirectTo);
+    callback.submit(formData, { method: "post", action: "/callback" });
+  }, [code.data, redirectTo, callback.submit]);
+
+  return (
+    <ValidatedForm
+      fetcher={code}
+      validator={signInCodeValidator}
+      defaultValues={{ email }}
+      method="post"
+      action="/api/login/verify-code"
+      className="w-full"
+    >
+      <Hidden name="email" value={email} />
+      <VStack spacing={3} className="items-center">
+        {code.data?.success === false && code.data.message ? (
+          <Alert variant="destructive">
+            <LuCircleAlert className="w-4 h-4" />
+            <AlertTitle>
+              <Trans>Authentication Error</Trans>
+            </AlertTitle>
+            <AlertDescription>{code.data.message}</AlertDescription>
+          </Alert>
+        ) : null}
+        <InputOTP name="code" label="" autoFocus />
+        <Submit
+          isDisabled={code.state !== "idle" || signingIn}
+          isLoading={code.state !== "idle" || signingIn}
+          hideShortcutKey
+          size="lg"
+          className="w-full"
+        >
+          <Trans>Sign in with code</Trans>
+        </Submit>
+      </VStack>
+    </ValidatedForm>
   );
 }

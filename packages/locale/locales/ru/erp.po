@@ -21379,6 +21379,9 @@ msgstr "Войти в Carbon"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с использованием биометрии вместо волшебной ссылки. Ключи доступа защищены Face ID, Touch ID или PIN-кодом вашего устройства."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Войти с помощью Google"
 
@@ -26097,14 +26100,14 @@ msgstr "Мы автоматически сопоставили каждый ст
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "Мы быстро разбираемся с проблемами и их решаем, пока ваша команда адаптируется"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
+
 msgid "We've sent a verification code to {email}"
 msgstr "Мы отправили код подтверждения на {email}"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "Мы отправили код подтверждения на {signupEmail}"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Мы отправили вам волшебную ссылку для входа в ваш аккаунт."
 
 msgid "Webhook"
 msgstr "Вебхук"

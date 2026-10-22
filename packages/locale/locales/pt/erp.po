@@ -21379,6 +21379,9 @@ msgstr "Entrar no Carbon"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Inicie sessão com biometria em vez de uma ligação mágica. As chaves de acesso são protegidas por Face ID, Touch ID ou o PIN do seu dispositivo."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Entrar com Google"
 
@@ -26097,14 +26100,14 @@ msgstr "Correspondemos automaticamente cada coluna. Revise os valores abaixo ant
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "Triamos e corrigimos problemas rapidamente enquanto sua equipe se adapta"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
+
 msgid "We've sent a verification code to {email}"
 msgstr "Enviámos um código de verificação para {email}"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "Enviámos um código de verificação para {signupEmail}"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Enviámos-lhe um link mágico para iniciar sessão na sua conta."
 
 msgid "Webhook"
 msgstr "Webhook"

@@ -21379,6 +21379,9 @@ msgstr "Carbonにサインイン"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
 
@@ -26097,14 +26100,14 @@ msgstr "各列を自動マッチングしました。続行する前に下の値
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "チームが新しいシステムに慣れている間、問題を素早く分類して修正します"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
+
 msgid "We've sent a verification code to {email}"
 msgstr "検証コードを {email} に送信しました"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "検証コードを {signupEmail} に送信しました"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "あなたのアカウントにサインインするためのマジックリンクを送信しました。"
 
 msgid "Webhook"
 msgstr "Webhook"
