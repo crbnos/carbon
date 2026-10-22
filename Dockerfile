@@ -5,7 +5,7 @@ ARG APP
 # reads them at runtime (no --enable-source-maps), so they go by default.
 ARG SOURCEMAPS=0
 
-# slim, not node:22 — every native dep ships prebuilt, nothing needs the toolchain.
+# slim, not the full node image — every native dep ships prebuilt, nothing needs the toolchain.
 FROM node:24.22.1-slim AS deps
 WORKDIR /repo
 RUN corepack enable
