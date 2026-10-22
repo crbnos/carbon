@@ -6028,11 +6028,16 @@ export async function withoutStoredPurchaseOrderPdfs<
   docs: T[]
 ): Promise<T[]> {
   if (docs.length === 0) return docs;
-  const orders = await client
-    .from("purchaseOrder")
-    .select("purchaseOrderId")
-    .eq("companyId", companyId)
-    .eq("supplierInteractionId", interactionId);
+  // Paged: a page missing would let that order's PDF through.
+  const orders = await fetchAllFromTable<{
+    id: string;
+    purchaseOrderId: string;
+  }>(client, "purchaseOrder", "id, purchaseOrderId", (query) =>
+    query
+      .eq("companyId", companyId)
+      .eq("supplierInteractionId", interactionId)
+      .order("id")
+  );
   if (orders.error) {
     logger.error("Failed to read the supplier interaction's purchase orders", {
       companyId,
