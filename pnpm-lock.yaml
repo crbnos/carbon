@@ -1904,8 +1904,8 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2(mkdirp@3.0.1)
       '@lingui/swc-plugin':
-        specifier: 6.6.0
-        version: 6.6.0(@lingui/core@6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0))(next@16.4.2(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@22.19.7)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
+        specifier: 6.7.1
+        version: 6.7.1(@lingui/core@6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0))
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.3.1
@@ -6104,17 +6104,10 @@ packages:
       babel-plugin-macros:
         optional: true
 
-  '@lingui/swc-plugin@6.6.0':
-    resolution: {integrity: sha512-8D3dSUXGlxe8QnwPNbI1o8mgXgUnh4ExVqvYMrdZ0F/lHeR9Ao3+WyN38oghGnDA8Zq03+hZSQub/Vw05egpZg==}
+  '@lingui/swc-plugin@6.7.1':
+    resolution: {integrity: sha512-AgfQCypr6VhWCoJTO033j+8LqcPHAYuV5YYoqLQgRZDVB5kjpBqun8WdrRLMkprag0g2lnCUd51KWU7yZywC8w==}
     peerDependencies:
       '@lingui/core': 5 || 6
-      '@swc/core': '*'
-      next: '*'
-    peerDependenciesMeta:
-      '@swc/core':
-        optional: true
-      next:
-        optional: true
 
   '@lingui/vite-plugin@6.9.0':
     resolution: {integrity: sha512-CrOjXhhxV+qpbSt1EVqO8+LD37K4M/87w5Xajic0m4K8opcS+B2h+4H4a/ZThu3LnqPkL50ZlOPDYLQpuRwY+Q==}
@@ -19800,12 +19793,10 @@ snapshots:
     transitivePeerDependencies:
       - '@babel/core'
 
-  '@lingui/swc-plugin@6.6.0(@lingui/core@6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0))(next@16.4.2(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@22.19.7)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))':
+  '@lingui/swc-plugin@6.7.1(@lingui/core@6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0))':
     dependencies:
       '@lingui/conf': 6.9.0
       '@lingui/core': 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)
-    optionalDependencies:
-      next: 16.4.2(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@22.19.7)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   '@lingui/vite-plugin@6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.27.7)(rolldown@1.2.12)(vite@8.3.3)':
     dependencies:
