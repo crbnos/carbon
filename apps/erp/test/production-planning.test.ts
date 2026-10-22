@@ -163,7 +163,9 @@ describe("applyPlanningActions", () => {
       applied: [],
       requiresManualAction: [{ id: "pa1", jobId: "j1" }],
       warnings: [],
-      errors: []
+      errors: [],
+      // Applied Transfer actions answer the Draft transfers they created.
+      transfers: []
     });
     expect(markPlanningActionsActioned).not.toHaveBeenCalled();
   });

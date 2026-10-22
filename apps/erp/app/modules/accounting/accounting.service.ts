@@ -14098,6 +14098,25 @@ async function repointReferences(
     pairs.map((p) => sql`(${p.source}, ${p.target})`)
   )}) AS m(source, target)`;
   const inCompanies = sql`t."companyId" IN (${sql.join(companyIds)})`;
+
+  // A pool account row that a merge would put on top of another (same pool,
+  // account, dimension value and role) goes first; the target's own row stays.
+  await sql`DELETE FROM "indirectPoolAccount" AS t
+    WHERE t."id" IN (
+      SELECT x."id" FROM (
+        SELECT r."id", ROW_NUMBER() OVER (
+          PARTITION BY r."companyId", r."indirectPoolId",
+            COALESCE(m.target, r."accountId"),
+            COALESCE(r."dimensionValueId", ''), r."role"
+          ORDER BY (m.source IS NOT NULL), r."id"
+        ) AS n
+        FROM "indirectPoolAccount" AS r
+        LEFT JOIN ${m} ON m.source = r."accountId"
+        WHERE r."companyId" IN (${sql.join(companyIds)})
+      ) x
+      WHERE x.n > 1
+    )`.execute(trx);
+
   for (const ref of REFERENCE_POLICY) {
     const t = sql.table(ref.table);
     const col = sql.id(ref.column);

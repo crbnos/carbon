@@ -158,14 +158,9 @@ export type AccountReference = { table: string; column: string } & (
  * `externalIntegrationMapping` and `companyIntegration.metadata`
  * (account-import-reads.ts, apply-account-import).
  *
- * The projects branch (projects-wbs-research-spec) adds 5 more. Whichever of
- * the two branches merges second adds them here:
- *   project.costAccountId, projectElement.costAccountId: repoint
- *   indirectPool.appliedAccountId: repoint
- *   indirectPoolAccount.accountId: repoint, and the apply must first remove
- *     the rows that would become duplicates (same pool, account, dimension
- *     value and role)
- *   indirectExpenseStatement.accountId: history (a period snapshot)
+ * `indirectPoolAccount.accountId` repoints after the apply removes the rows a
+ * merge would make duplicates (same pool, account, dimension value and role),
+ * keeping the target's own row.
  */
 export const REFERENCE_POLICY: readonly AccountReference[] = [
   { table: "shippingMethod", column: "carrierAccountId", policy: "repoint" },
@@ -208,7 +203,14 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
     statuses: ["Draft", "Provisional"]
   },
   { table: "accountingPeriodBalance", column: "accountId", policy: "history" },
-  { table: "accountingSyncTieOut", column: "accountId", policy: "history" }
+  { table: "accountingSyncTieOut", column: "accountId", policy: "history" },
+  // Projects: a treatment's explicit account, and the indirect rate pools.
+  { table: "project", column: "costAccountId", policy: "repoint" },
+  { table: "projectElement", column: "costAccountId", policy: "repoint" },
+  { table: "indirectPool", column: "appliedAccountId", policy: "repoint" },
+  { table: "indirectPoolAccount", column: "accountId", policy: "repoint" },
+  // A period's statement is a snapshot.
+  { table: "indirectExpenseStatement", column: "accountId", policy: "history" }
 ];
 
 /** The `fixedAssetClass` columns that name an account. All NOT NULL. */
