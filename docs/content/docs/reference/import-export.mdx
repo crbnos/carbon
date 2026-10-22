@@ -36,10 +36,14 @@ Bulk import is available only for supported entities. Import each entity from th
   <Field name="Inventory, Batch, and Serial Quantities">From **Inventory → Quantities**. Adds opening stock for items that already exist, one import per <Term id="item-tracking-type">tracking type</Term>. See [Opening stock](#opening-stock).</Field>
 </FieldTable>
 
-Beyond these table buttons, the importer also understands three **method** formats used to load bills of materials and operations against parts: a focused BOM file, a focused Operations file, and a combined part-with-method file that creates parts and their full BOM and routing together. These are richer, row-typed CSVs (each row is tagged `PART`, `BOM`, `BOP`, `STEP`, `TOOL`, or `PARAM`) driven from the method-building UI rather than a plain list screen.
+The **Bulk Import** menu on the parts and tools lists also offers three **method** imports that load bills of materials and operations: **BOM**, **Operations**, and **Parts with Methods**, which creates parts and their full BOM and routing together. These are row-typed CSVs: each row is tagged `PART`, `BOM`, `BOP`, `STEP`, `TOOL`, or `PARAM` and names its parent part.
 
-<Callout type="warn" title="Fixed assets and BOM components aren't importable here">
-The models list a `fixedAsset` import shape, but the import function's own table list omits it, so a fixed-asset CSV is rejected. Individual BOM material lines (`methodMaterial`) are likewise not wired up. Import the entities above; create assets and one-off BOM lines in the app.
+A method import adds to the make method that is already there. With **Make Method Version** blank it writes into the highest version that is not archived; a version you name must be a number above 0 with at most 2 decimals. New BOM lines go after the existing ones. An **Op No** is the operation's order, so it must be a number: one that matches an existing operation's order adds its steps, tools, and parameters to that operation, and `10`, `10.0` and `010` all name the same operation. Rows already on the method (the same material, operation, step name, tool, or parameter key) are skipped and listed, so a file can run again safely. The import changes only a Draft version and follows the same change notice and release locks as the BOM and BOP editors. A part it refuses is listed with the reason, and none of its rows are written. When release control is set to warn, the import writes into a released revision as the editors do, and the results list that part under a warning.
+
+Blank cells take the values the editors fill in: a BOM line with no **Unit of Measure** takes the material's own unit, and an operation with no **Operation Type** or **Operation Description** takes its process's type and name. The import also refuses what the editors refuse: a BOM line that is the part itself or a tool or service, a tool that is not a tool item, a negative quantity, time or cost, and a step whose maximum is below its minimum. An Inspection operation needs an Inspection Plan, which a CSV cannot carry, so add Inspection operations in the app.
+
+<Callout type="warn" title="Fixed assets aren't importable here">
+The models list a `fixedAsset` import shape, but the import function's own table list omits it, so a fixed-asset CSV is rejected. Create fixed assets in the app. BOM lines have no table import of their own (`methodMaterial`); add them with the **BOM** method import above or in the app.
 </Callout>
 
 ## The import flow
@@ -113,6 +117,8 @@ Import handles validation failures per row. Invalid rows are reported while vali
 - **inserted** and **updated** — counts of records written.
 - **errors** — rows you should fix and re-import (missing required data), each with its row number, a reason, and the original cell values.
 - **skipped** — rows intentionally not written (in-file duplicates, already-existing), same shape.
+
+A BOM, Operations, or Parts with Methods import counts **parts** as inserted and updated, and also reports how many BOM lines, operations, steps, tools, and parameters it added. The results read, for example, "4 parts updated. Added: 6 BOM lines. 0 rows need fixing, 2 rows skipped."
 
 Because the results carry each failed row's original cells, the wizard's results view shows you exactly which rows to fix without re-parsing your file. A hard failure (the file can't be downloaded, or an unexpected database error) is the only case that fails the whole import and returns an error message instead of a per-row report.
 

@@ -10,6 +10,7 @@ import {
   type ProjectStateGroup,
   pickStateForGroup
 } from "@carbon/database/project-plan";
+import { TiptapText } from "@carbon/files/markdown";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -19,7 +20,6 @@ import { issueToMapping } from "../jira/lib/service";
 import type { JiraIssue } from "../jira/lib/types";
 import { mapJiraStatusToCarbonStatus } from "../jira/lib/utils";
 import { getLinearClient } from "../linear/lib/client";
-import { markdownToTiptap } from "../linear/lib/richtext";
 import { getCompanyEmployees } from "../linear/lib/service";
 import { type LinearIssue, LinearIssueSchema } from "../linear/lib/types";
 import { mapLinearStatusToCarbonStatus } from "../linear/lib/utils";
@@ -734,7 +734,7 @@ export async function applyIssue(
       case "description":
         patch[entity.textColumn] =
           fetched.tracker === "linear"
-            ? markdownToTiptap(fetched.issue.description)
+            ? TiptapText(fetched.issue.description).toDocument()
             : adfToTiptap(fetched.issue.fields.description);
         break;
       default:

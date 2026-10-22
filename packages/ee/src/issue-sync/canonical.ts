@@ -3,9 +3,12 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { ProjectStateGroup } from "@carbon/database/project-plan";
-import { adfToTiptap } from "../jira/lib/richtext";
+import {
+  adfToTiptap,
+  isTiptapEmpty,
+  type TiptapDocument
+} from "../jira/lib/richtext";
 import type { JiraIssue } from "../jira/lib/types";
-import { isTiptapEmpty, type TiptapDocument } from "../linear/lib/richtext";
 import type { LinearIssue } from "../linear/lib/types";
 import { syncedEntities } from "./entities";
 import { hashText } from "./maps";

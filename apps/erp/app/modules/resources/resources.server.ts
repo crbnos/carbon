@@ -25,6 +25,7 @@ import { invokePosting } from "../shared/shared.service";
 import {
   abilityValidator,
   employeeAbilityCellValidator,
+  getYouTubeVideoId,
   isMaintenanceDispatchLocked,
   isValidTrainingGuideKey,
   locationValidator,
@@ -35,7 +36,8 @@ import {
   processValidator,
   trainingAssignmentValidator,
   trainingGuideKeyPrefix,
-  workCenterValidator
+  workCenterValidator,
+  youTubeWatchUrl
 } from "./resources.models";
 import * as service from "./resources.service";
 
@@ -1370,7 +1372,8 @@ const trainingFields = [
   "estimatedDuration",
   "description",
   "grantsAbilityId",
-  "guidePath"
+  "guidePath",
+  "videoUrl"
 ] as const;
 
 /**
@@ -1382,7 +1385,10 @@ const trainingFields = [
  * as well. An empty `grantsAbilityId` clears it. `guidePath` is the PDF that
  * replaces the written content: it takes one training, must be a key under
  * that training's folder (empty clears it), and changes only while the
- * training is Draft. Refused when a training is not the company's.
+ * training is Draft. `videoUrl` is a YouTube video that replaces the written
+ * content the same way: any YouTube link is stored as its watch link. Setting
+ * the PDF clears the video and setting the video clears the PDF. Refused when
+ * a training is not the company's.
  *
  * @mcp
  */
@@ -1407,24 +1413,48 @@ export const updateTrainingField = defineServiceFn({
       updatedAt: datetime.timestamp()
     };
 
-    if (field === "guidePath") {
+    if (field === "guidePath" || field === "videoUrl") {
       const [trainingId] = ids;
-      if (
-        ids.length !== 1 ||
-        !trainingId ||
-        (value !== "" &&
+      const isGuide = field === "guidePath";
+      if (ids.length !== 1 || !trainingId) {
+        return ctx.error(
+          "validation",
+          isGuide ? "Invalid guide file" : "Invalid video link"
+        );
+      }
+
+      // A training's content is one PDF or one video, never both: setting
+      // either clears the other.
+      let content: { guidePath?: string | null; videoUrl?: string | null };
+      if (isGuide) {
+        if (
+          value !== "" &&
           !isValidTrainingGuideKey(
             value,
             trainingGuideKeyPrefix(companyId, trainingId)
-          ))
-      ) {
-        return ctx.error("validation", "Invalid guide file");
+          )
+        ) {
+          return ctx.error("validation", "Invalid guide file");
+        }
+        content = value
+          ? { guidePath: value, videoUrl: null }
+          : { guidePath: null };
+      } else {
+        const videoId = value === "" ? null : getYouTubeVideoId(value);
+        if (value !== "" && !videoId) {
+          return ctx.error("validation", "Enter a YouTube video link");
+        }
+        content = videoId
+          ? { videoUrl: youTubeWatchUrl(videoId), guidePath: null }
+          : { videoUrl: null };
       }
-      // The guide is the training's content, so it changes only while Draft.
-      // Filtering the update on status makes the check and the write one step.
+
+      // The guide and the video are the training's content, so they change
+      // only while Draft. Filtering the update on status makes the check and
+      // the write one step.
       const updated = await client
         .from("training")
-        .update({ guidePath: value || null, ...audit })
+        .update({ ...content, ...audit })
         .eq("id", trainingId)
         .eq("companyId", companyId)
         .eq("status", "Draft")
@@ -1439,7 +1469,9 @@ export const updateTrainingField = defineServiceFn({
       if (updated.data.length === 0) {
         return ctx.error(
           "rule",
-          "The guide can only change while the training is Draft"
+          isGuide
+            ? "The guide can only change while the training is Draft"
+            : "The video can only change while the training is Draft"
         );
       }
       return { ids };

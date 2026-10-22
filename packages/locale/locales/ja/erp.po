@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# タイムシートへの変更があなたのレビ�
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# コメント} other {# コメント}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {このグループ内の # 個のコンポーネント} other {このグループ内の # 個のコンポーネント}}"
@@ -129,6 +133,14 @@ msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標
 msgid "{0, plural, one {# overdue} other {# overdue}}"
 msgstr "{0, plural, one {# 期限超過} other {# 期限超過}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 件のレコードが対応を要しています} other {# 件のレコードが対応を要しています}}"
@@ -148,6 +160,14 @@ msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンク�
 #. placeholder {0}: linkCount.count
 msgid "{0, plural, one {# test} other {# tests}}"
 msgstr "{0, plural, one {# テスト} other {# テスト}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -691,6 +711,9 @@ msgstr "{documentTypeLabel}承認ルール"
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -714,6 +737,9 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -872,6 +898,9 @@ msgstr "{selectedCount} 件が選択されています"
 msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
 msgstr "{serialLabel} にはCarbonに記録されたコンポーネントがありません。品目の部品表から構築してください。"
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -922,6 +951,9 @@ msgstr "{unread}件未読"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}はスケジュール化できません"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} がアップロードされました — フィールドは文書から入力されました。"
@@ -2824,6 +2856,9 @@ msgstr "この得意先に追加済み"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "選択値に対する単価への加算で、値引およびマークアップの前に適用されます。クレジットには負の金額を使用してください。"
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "デモレコードを追加中"
@@ -9873,6 +9908,9 @@ msgstr "例：MI"
 msgid "e.g. Suite 200"
 msgstr "例：Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "例: 偽造品の疑い、部品違い、輸送中の破損"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例：最初の3～4週間"
 
@@ -10751,6 +10789,9 @@ msgstr "少なくとも1つの明細で、受取数量を入力するか個を�
 
 msgid "Enter a web address, such as https://example.com"
 msgstr "Webアドレスを入力してください（例: https://example.com）"
+
+msgid "Enter a YouTube video link"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "品目と数量を手動で入力してください。"
@@ -13679,6 +13720,15 @@ msgstr "検査"
 msgid "Inspection · {itemReadableId}"
 msgstr "検査·{itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "検査 {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "検査 {0} · {1}"
+
 msgid "Inspection document"
 msgstr "検査文書"
 
@@ -16355,6 +16405,15 @@ msgstr "MRP は、既存の注文の日付がこの日数以上ずれている�
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "複数の製造指図がこの工法上で同時に実行できます—例：レーザーテーブル、炉、またはめっき槽"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "{minValue} {unitLabel} 以上である必要があります"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "{maxValue} {unitLabel} 以下である必要があります"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "{minValue} から {maxValue} {unitLabel} の間である必要があります"
+
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
 
@@ -17186,6 +17245,14 @@ msgstr "変更がまだありません。リースが有効になると、「修
 msgid "No charges match the filters."
 msgstr "絞り込み条件に一致する請求がありません"
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "不合格の特性がないため、ロットを却下する理由を入力してください。{0}件のエンティティすべてが却下済みになります。"
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "不合格の特性がないため、ロットを却下する理由を入力してください。{0}のロット全体が却下されます。"
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "請求がありません。走行距離、損傷、配送、クリーニング料金は次の請求書に含まれます。"
 
@@ -17661,6 +17728,9 @@ msgstr "パーツIDなし"
 msgid "No parts"
 msgstr "部品がありません"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "登録済のパスキーがまだありません。"
 
@@ -18002,6 +18072,9 @@ msgstr "計画されている訪問がありません"
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "まだビジットがありません。1つスケジュール設定して技術者を送ってください。"
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。実在庫がマイナスになり、数量が調整されるまで続きます。"
@@ -19461,6 +19534,9 @@ msgstr "期限切れ"
 msgid "Past end date"
 msgstr "終了日を超過"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "IDプロバイダーがメタデータURLを公開していない場合は、メタデータXMLを貼り付けてください"
 
@@ -19904,6 +19980,9 @@ msgstr "ピン留めまたはピン留め解除"
 
 msgid "Pin WBS codes"
 msgstr "WBSコードをピン留め"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ピンチまたはスクロールで拡大縮小 · ドラッグで移動 · ダブルタップでリセット"
 
 msgid "Pinned"
 msgstr "ピン留め"
@@ -21450,6 +21529,9 @@ msgstr "実現為替損失"
 msgid "Reason"
 msgstr "理由"
 
+msgid "Reason (optional)"
+msgstr "理由(任意)"
+
 msgid "Reason Account"
 msgstr "理由アカウント"
 
@@ -21757,6 +21839,9 @@ msgstr "ゆるい検査"
 
 msgid "Reference"
 msgstr "参照"
+
+msgid "Reference image"
+msgstr "参照画像"
 
 msgid "Refresh"
 msgstr "更新"
@@ -22106,6 +22191,9 @@ msgstr "二要素認証を除去"
 msgid "Remove Unit"
 msgstr "個を除去"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "削除済み"
 
@@ -22432,6 +22520,12 @@ msgstr "対応が必要"
 
 msgid "Requires Adjustment"
 msgstr "調整が必要"
+
+msgid "Requires inspection"
+msgstr "検査が必要"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "検査が必要です。領収書の転記時にロットが作成されます。"
 
 msgid "Requires Repair"
 msgstr "修理が必要"
@@ -26031,8 +26125,14 @@ msgstr "プロジェクトを切り替え"
 msgid "Switch to pan mode"
 msgstr "パンモードに切り替え"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "選択モードに切り替え"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "記述内容に切り替える"
@@ -28050,6 +28150,11 @@ msgstr "このリニューアルは完了できません"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "これはPDFを除去します。従業員は代わりに記述内容を表示します。"
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
@@ -28745,6 +28850,9 @@ msgstr "教育訓練計画"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbonの外で実施された教育訓練（例：ベンダーコース）。割り当ては名前のみです。管理者が各従業員を完了にし、証明書を添付できます。"
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "アカデミーとアプリ内ガイドを使用してチームを教育訓練します。"
@@ -29841,6 +29949,9 @@ msgstr "得意先を表示"
 msgid "View Employees"
 msgstr "従業員を表示"
 
+msgid "View full size"
+msgstr "フルサイズで表示"
+
 msgid "View History"
 msgstr "履歴を表示"
 
@@ -30295,8 +30406,8 @@ msgstr "各外注サービス注文全体での各コンポーネントのコス
 msgid "What each period's payment is for this asset in the first year"
 msgstr "このアセットの初年度における各期の支払額"
 
-msgid "What employees read before the questions"
-msgstr "従業員が問題前に読む内容"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "請求書が作成されたら何が起こるか"
@@ -30943,6 +31054,9 @@ msgstr "資産の価値を耐用年数にわたって減額する―毎月作成
 msgid "Written Off"
 msgstr "償却済み"
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -31162,6 +31276,12 @@ msgstr "本日から今後7日間の訪問予定がここに表示されます�
 
 msgid "yourself"
 msgstr "自分自身"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4検査水準（I / II / III）；高いレベルほど、同じロットのサンプルサイズが大きくなります。"

@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# изменение в вашу учётную вед�
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# комментарий} few {# комментария} other {# комментариев}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# компонент в этой группе} other {# компонентов в этой группе}}"
@@ -129,6 +133,14 @@ msgstr "{0, plural, one {# операция не имеет временных �
 msgid "{0, plural, one {# overdue} other {# overdue}}"
 msgstr "{0, plural, one {# просрочено} other {# просрочено}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# запись требует внимания} other {# записей требуют внимания}}"
@@ -148,6 +160,14 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 #. placeholder {0}: linkCount.count
 msgid "{0, plural, one {# test} other {# tests}}"
 msgstr "{0, plural, one {# тест} few {# теста} other {# тестов}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -691,6 +711,9 @@ msgstr "{documentTypeLabel} правило утверждения"
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -714,6 +737,9 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} ч"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -872,6 +898,9 @@ msgstr "{selectedCount} выбрано"
 msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
 msgstr "{serialLabel} не содержит компонентов, записанных в Carbon. Используйте спецификацию товара вместо этого."
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -922,6 +951,9 @@ msgstr "{unread} непрочитанных"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
@@ -2824,6 +2856,9 @@ msgstr "Добавлено для этого покупателя"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Добавляется к цене за единицу для выбранных значений, до скидок и надбавок. Используйте отрицательную сумму для кредита."
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "Добавление демо-записей"
@@ -9873,6 +9908,9 @@ msgstr "например MI"
 msgid "e.g. Suite 200"
 msgstr "например Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "например: подозрение на подделку, не та деталь, повреждено при транспортировке"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "например, первые 3-4 недели"
 
@@ -10751,6 +10789,9 @@ msgstr "Введите полученное количество или отме
 
 msgid "Enter a web address, such as https://example.com"
 msgstr "Введите веб-адрес, например https://example.com"
+
+msgid "Enter a YouTube video link"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "Введите номенклатуру и количество самостоятельно."
@@ -13679,6 +13720,15 @@ msgstr "Контроль"
 msgid "Inspection · {itemReadableId}"
 msgstr "Контроль · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Контроль {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Контроль {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Документ контроля"
 
@@ -16355,6 +16405,15 @@ msgstr "MRP предлагает переместить существующий
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Несколько производственных заказов могут выполняться на этом процессе одновременно — например, лазерный станок, печь или ванна для гальваники"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "Должно быть не менее {minValue} {unitLabel}"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "Должно быть не более {maxValue} {unitLabel}"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "Должно быть между {minValue} и {maxValue} {unitLabel}"
+
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
 
@@ -17186,6 +17245,14 @@ msgstr "Изменений еще нет. Когда аренда активна
 msgid "No charges match the filters."
 msgstr "Нет начислений, соответствующих фильтрам."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Ни одна характеристика не забракована, поэтому укажите, почему партия отклоняется. Все {0} единиц будут отмечены как отклонённые."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Ни одна характеристика не забракована, поэтому укажите, почему партия отклоняется. Вся партия из {0} будет отклонена."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
 
@@ -17661,6 +17728,9 @@ msgstr "Нет ID детали"
 msgid "No parts"
 msgstr "Нет деталей"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Ключи доступа еще не зарегистрированы."
 
@@ -18002,6 +18072,9 @@ msgstr "Нет запланированных визитов"
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "Посещений еще нет. Запланируйте одно, чтобы отправить техника."
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
@@ -19461,6 +19534,9 @@ msgstr "Просрочено"
 msgid "Past end date"
 msgstr "После даты завершения"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Вставьте XML метаданных, если ваш поставщик удостоверений не публикует URL метаданных"
 
@@ -19904,6 +19980,9 @@ msgstr "Прикрепить или открепить"
 
 msgid "Pin WBS codes"
 msgstr "Зафиксировать коды WBS"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Сведите пальцы или прокрутите для масштабирования · перетащите для перемещения · коснитесь дважды для сброса"
 
 msgid "Pinned"
 msgstr "Закреплено"
@@ -21450,6 +21529,9 @@ msgstr "Реализованный убыток от обмена валют"
 msgid "Reason"
 msgstr "Причина"
 
+msgid "Reason (optional)"
+msgstr "Причина (необязательно)"
+
 msgid "Reason Account"
 msgstr "Счет причины"
 
@@ -21757,6 +21839,9 @@ msgstr "Ослабленный"
 
 msgid "Reference"
 msgstr "Ссылка"
+
+msgid "Reference image"
+msgstr "Справочное изображение"
 
 msgid "Refresh"
 msgstr "Обновить"
@@ -22106,6 +22191,9 @@ msgstr "Убрать двухфакторную аутентификацию"
 msgid "Remove Unit"
 msgstr "Убрать единицу"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "Удалено"
 
@@ -22432,6 +22520,12 @@ msgstr "Требует действия"
 
 msgid "Requires Adjustment"
 msgstr "Требует корректировки"
+
+msgid "Requires inspection"
+msgstr "Требует контроля"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Требует контроля. Партия открывается при проведении квитанции."
 
 msgid "Requires Repair"
 msgstr "Требует ремонта"
@@ -26031,8 +26125,14 @@ msgstr "Переключить проект"
 msgid "Switch to pan mode"
 msgstr "Переключиться в режим панорамы"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Переключиться в режим выделения"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Переключиться на письменный контент"
@@ -28050,6 +28150,11 @@ msgstr "Это переоборудование не может быть зав�
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "Это удаляет PDF. Сотрудники вместо этого увидят письменный контент."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Это удаляет их приложение аутентификатора, поэтому их следующий вход требует только волшебной ссылки. Используйте это, когда они потеряли доступ к своему аутентификатору. Это влияет на их вход для каждой организации, которой они принадлежат."
@@ -28745,6 +28850,9 @@ msgstr "План обучения"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Обучение, пройденное вне Carbon, например курс поставщика. Задание содержит только название. Администратор отмечает каждого сотрудника завершённым и может прикрепить его сертификат."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Обучение вашей команды через Academy и встроенные руководства"
@@ -29841,6 +29949,9 @@ msgstr "Просмотр Покупателей"
 msgid "View Employees"
 msgstr "Просмотр сотрудников"
 
+msgid "View full size"
+msgstr "Открыть в полном размере"
+
 msgid "View History"
 msgstr "Просмотр истории"
 
@@ -30295,8 +30406,8 @@ msgstr "Что каждый компонент стоил во всех зака
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Размер платежа каждого периода для этого актива в первый год"
 
-msgid "What employees read before the questions"
-msgstr "То, что сотрудники читают перед вопросами"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Что происходит со счетом-фактурой после его создания"
@@ -30943,6 +31054,9 @@ msgstr "Уменьшение стоимости актива в течение �
 msgid "Written Off"
 msgstr "Списано"
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -31162,6 +31276,12 @@ msgstr "Ваши посещения на сегодня и следующие 7 
 
 msgid "yourself"
 msgstr "себя"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 уровень контроля (I / II / III); более высокие уровни означают больший объем выборки для одной партии."

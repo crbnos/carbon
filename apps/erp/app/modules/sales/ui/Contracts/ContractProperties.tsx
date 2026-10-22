@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Json } from "@carbon/database";
+import { TiptapText } from "@carbon/files/markdown";
 import {
   DatePicker,
   InputControlled,
@@ -18,7 +19,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP, round, tiptapToText } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -196,9 +197,7 @@ const ContractProperties = () => {
   const isDisabled = contract.status !== "Draft" || !canUpdate;
   const isEnded = contract.status === "Ended";
   const billTo = contract.invoiceCustomerId ?? contract.customerId ?? "";
-  const notesText = tiptapToText(
-    (contract.notes ?? null) as Parameters<typeof tiptapToText>[0]
-  );
+  const notesText = TiptapText(contract.notes).toString();
   const renewalUpliftPoints = round(Number(contract.renewalUplift ?? 0) * 100);
   // A project contract has a period of performance instead of a term, and
   // only its billing period is the user's choice: alignment and timing are

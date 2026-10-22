@@ -416,9 +416,9 @@ import { VStack } from "./VStack";
 export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
+export * from "./ImageZoomViewer";
 export * from "./InlineTrigger";
 export * from "./RecordOutlet";
-export { createSignatureDrawing };
 export type {
   ActionPresentation,
   AvatarProps,
@@ -544,6 +544,7 @@ export {
   CreatableMultiSelect,
   cn,
   copyToClipboard,
+  createSignatureDrawing,
   DatePicker,
   DateRangePicker,
   DateTime,
@@ -748,11 +749,11 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SignaturePad,
   Skeleton,
   Slider,
   Spinner,
   SplitButton,
-  SignaturePad,
   Status,
   Subheading,
   Switch,

@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -27,10 +28,15 @@ import {
   ReceiptDocuments,
   ReceiptHeader
 } from "~/modules/inventory/ui/Receipts";
-import { getReceiptInspections } from "~/modules/quality/quality.service";
+import {
+  getReceiptInspectedItemIds,
+  getReceiptInspections
+} from "~/modules/quality/quality.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "receipt");
 
 export const handle: Handle = {
   realtime: [
@@ -134,6 +140,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
   }
 
+  // Only a purchase receipt opens inspection lots, for the lines whose item
+  // has a Receipt-usage inspection plan. Once posted, the lots themselves
+  // (receiptInspections) say which lines were inspected.
+  const inspectedItemIds =
+    receipt.data.sourceDocument === "Purchase Order" &&
+    receipt.data.status !== "Posted"
+      ? await getReceiptInspectedItemIds(serviceRole, companyId, [
+          ...new Set(
+            (receiptLines.data ?? [])
+              .map((line) => line.itemId)
+              .filter((itemId): itemId is string => Boolean(itemId))
+          )
+        ])
+      : { data: [] as string[], error: null };
+  // The marks only inform: a failed lookup leaves them off rather than
+  // failing the receipt, but it must not pass silently for "none needed".
+  if (inspectedItemIds.error) {
+    logger.error("Failed to load the receipt's inspected items", {
+      companyId,
+      receiptId,
+      error: inspectedItemIds.error
+    });
+  }
+
   let rentalLines: RentalReceiptLine[] = [];
 
   if (receipt.data.sourceDocument === "Rental Agreement") {
@@ -192,6 +222,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
     receiptInspections: receiptInspections.data ?? [],
+    inspectedItemIds: inspectedItemIds.data ?? [],
     fixedAssetLines,
     rentalLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],

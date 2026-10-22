@@ -112,6 +112,7 @@ import {
   createDocumentUploadUrl,
   upsertDocument
 } from "~/modules/documents/documents.service";
+import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import {
   getCompany,
@@ -4482,11 +4483,18 @@ export async function getReturnableLinesForSupplier(
   });
 }
 
+/** The statuses a supplier return ships (`shippableEntityStatuses`). */
+const RETURNABLE_ENTITY_STATUSES = shippableEntityStatuses(
+  "Purchase Return Order"
+);
+
 /**
  * Entity picker source for supplier return lines: serials/batches on hand
- * that were received from this supplier. Provenance is the Receipt attribute
- * (written by the receipt tracking route) resolved to the receipt's supplier
- * — no code writes a Supplier attribute onto tracked entities.
+ * that were received from this supplier, Available or Rejected (by an
+ * inspection or an issue — the units most worth sending back). Provenance is
+ * the Receipt attribute (written by the receipt tracking route) resolved to
+ * the receipt's supplier — no code writes a Supplier attribute onto tracked
+ * entities.
  */
 export async function getReturnableEntitiesForSupplier(
   client: SupabaseClient<Database>,
@@ -4512,12 +4520,12 @@ export async function getReturnableEntitiesForSupplier(
     .select("id, readableId, quantity, status, attributes")
     .eq("companyId", companyId)
     .eq("itemId", itemId)
-    .eq("status", "Available")
+    .in("status", RETURNABLE_ENTITY_STATUSES)
     .in("attributes ->> Receipt", receiptIds);
 }
 
 /**
- * The Available tracked entities that came in on ONE receipt line, for the item.
+ * The Available or Rejected tracked entities that came in on ONE receipt line, for the item.
  * Used to pre-select the batch/serial when a return line is added from a specific
  * receipt — provenance is the `Receipt Line` attribute stamped at receipt.
  */
@@ -4532,7 +4540,7 @@ export async function getReturnableEntitiesForReceiptLine(
     .select("id, readableId, quantity, status")
     .eq("companyId", companyId)
     .eq("itemId", itemId)
-    .eq("status", "Available")
+    .in("status", RETURNABLE_ENTITY_STATUSES)
     .eq("attributes ->> Receipt Line", receiptLineId);
 }
 

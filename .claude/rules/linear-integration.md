@@ -40,9 +40,9 @@ shared engine in `issue-sync.md`.
   `mapLinearStatusToCarbonStatus` / `mapCarbonStatusToLinearStatus`. `started`→"In
   Progress", `completed`→"Completed", `canceled`→"Skipped", else (triage/backlog/todo/
   unstarted)→"Pending".
-- **Rich text:** `lib/richtext.ts` — `markdownToTiptap` / `tiptapToMarkdown`
-  (+ `tiptapDocumentsEqual`, `isTiptapEmpty`). Linear description (markdown) ↔ Carbon
-  task `notes` (Tiptap JSON).
+- **Rich text:** `TiptapText` (`@carbon/files/markdown`) — `TiptapText(description).toDocument()`
+  reads a Linear description (Markdown) into Carbon task `notes` (Tiptap JSON);
+  `TiptapText(notes).toMarkdown()` writes it back.
 - **Types:** `lib/types.ts` — `LinearIssueSchema` (zod): `id, title, description?, url,
   state{name,color,type}, identifier, dueDate?, priority?, assignee{email}?, team{id}?`.
   `updateIssue` returns `null` on failure; `removeIssueLink` removes one issue's back-link.

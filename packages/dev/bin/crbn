@@ -19,19 +19,22 @@ case "$(uname -s)" in
     ;;
 esac
 
-# Node 22+ required (import.meta, native fetch, fs.glob, etc).
+# Node 24.22.1+ required: the October 2026 security release, and the floor in
+# the root package.json `engines`. `sort -V -C` succeeds when the minimum sorts
+# first, so nightly and RC builds of a newer major still pass.
+NODE_MIN="24.22.1"
 if command -v node >/dev/null 2>&1; then
   node_ver="$(node -v)"
-  node_major="${node_ver#v}"
-  node_major="${node_major%%.*}"
-  # Guard non-numeric majors (nightly/RC builds) so the arithmetic test below
-  # doesn't abort with a cryptic "unbound variable" under `set -u`.
-  if ! [[ "$node_major" =~ ^[0-9]+$ ]] || (( node_major < 22 )); then
-    printf '\033[1;31m✗\033[0m crbn requires Node.js 22+ (found %s)\n' "$node_ver" >&2
+  node_num="${node_ver#v}"
+  # A prerelease of the minimum itself (24.22.1-rc.1) predates it, though sort
+  # -V orders it after.
+  if ! printf '%s\n' "$NODE_MIN" "$node_num" | sort -V -C ||
+     [[ "${node_num%%-*}" == "$NODE_MIN" && "$node_num" == *-* ]]; then
+    printf '\033[1;31m✗\033[0m crbn requires Node.js %s+ (found %s)\n' "$NODE_MIN" "$node_ver" >&2
     exit 1
   fi
 else
-  printf '\033[1;31m✗\033[0m crbn requires Node.js 22+ but node is not in PATH\n' >&2
+  printf '\033[1;31m✗\033[0m crbn requires Node.js %s+ but node is not in PATH\n' "$NODE_MIN" >&2
   exit 1
 fi
 

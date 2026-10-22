@@ -56,13 +56,21 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   LuCalendar,
   LuCircleAlert,
+  LuClipboardCheck,
   LuEllipsisVertical,
   LuGroup,
   LuSplit,
   LuTrash,
   LuX
 } from "react-icons/lu";
-import { Await, Outlet, useFetchers, useParams, useSubmit } from "react-router";
+import {
+  Await,
+  Link,
+  Outlet,
+  useFetchers,
+  useParams,
+  useSubmit
+} from "react-router";
 import { z } from "zod";
 import {
   DocumentPreview,
@@ -76,7 +84,7 @@ import FileDropzone from "~/components/FileDropzone";
 import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
-import { useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   BatchProperty,
@@ -116,6 +124,8 @@ const ReceiptLines = () => {
       serialNumber: string | null;
     }[];
     rentalLines: RentalReceiptLine[];
+    receiptInspections: ReceiptLineInspection[];
+    inspectedItemIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -274,11 +284,20 @@ const ReceiptLines = () => {
                   const tracking =
                     trackingCandidates.find((t) => t.expirationDate) ??
                     trackingCandidates[0];
+                  const inspection = routeData?.receiptInspections?.find(
+                    (i) => i.sourceDocumentLineId === line.id
+                  );
                   return (
                     <ReceiptLineItem
                       key={line.id}
                       line={line}
                       receipt={routeData?.receipt}
+                      inspection={inspection}
+                      requiresInspection={
+                        !!inspection ||
+                        (!!line.itemId &&
+                          !!routeData?.inspectedItemIds?.includes(line.itemId))
+                      }
                       isReadOnly={isPosted}
                       onUpdate={onUpdateReceiptLine}
                       files={routeData?.receiptFiles}
@@ -586,9 +605,64 @@ function ReceiptRentalLineItem({
   );
 }
 
+/** An inspection lot posting the receipt opened for one of its lines. */
+type ReceiptLineInspection = {
+  id: string;
+  inspectionId: string;
+  sourceDocumentLineId: string | null;
+  status: string;
+};
+
+/**
+ * A small red mark beside a line whose item is inspected at receipt: before
+ * posting, the item has a Receipt-usage inspection plan; after, the lot posting
+ * opened, which the mark links to.
+ */
+function ReceiptLineInspectionMark({
+  inspection
+}: {
+  inspection?: ReceiptLineInspection;
+}) {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const icon = <LuClipboardCheck className="size-4 shrink-0 text-red-500" />;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {inspection && permissions.can("view", "quality") ? (
+          <Link
+            to={path.to.inspection(inspection.id)}
+            aria-label={t`Inspection ${inspection.inspectionId}`}
+          >
+            {icon}
+          </Link>
+        ) : (
+          <span role="img" aria-label={t`Requires inspection`}>
+            {icon}
+          </span>
+        )}
+      </TooltipTrigger>
+      <TooltipContent>
+        {inspection ? (
+          <Trans>
+            Inspection {inspection.inspectionId} · {inspection.status}
+          </Trans>
+        ) : (
+          <Trans>
+            Requires inspection. A lot opens when the receipt posts.
+          </Trans>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function ReceiptLineItem({
   line,
   receipt,
+  inspection,
+  requiresInspection,
   className,
   isReadOnly,
   onUpdate,
@@ -604,6 +678,8 @@ function ReceiptLineItem({
 }: {
   line: ReceiptLine;
   receipt?: Receipt;
+  inspection?: ReceiptLineInspection;
+  requiresInspection: boolean;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -698,12 +774,17 @@ function ReceiptLineItem({
               type={(item?.type as "Part") ?? "Part"}
             />
             <VStack spacing={0} className="flex-1 min-w-0">
-              <span
-                className="text-sm font-medium truncate block w-full"
-                title={item?.name}
-              >
-                {item?.name}
-              </span>
+              <HStack spacing={1} className="w-full min-w-0">
+                <span
+                  className="text-sm font-medium truncate block min-w-0"
+                  title={item?.name}
+                >
+                  {item?.name}
+                </span>
+                {requiresInspection && (
+                  <ReceiptLineInspectionMark inspection={inspection} />
+                )}
+              </HStack>
               <span className="text-xs text-muted-foreground line-clamp-2">
                 {item?.readableIdWithRevision}
               </span>

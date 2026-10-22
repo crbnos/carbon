@@ -328,12 +328,6 @@ msgstr "batch total"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Behind target by {daysBehindTarget} day(s)"
 
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "Between {0} and {1} {2}"
-
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
@@ -1167,11 +1161,11 @@ msgstr "More options"
 msgid "Move column: {0}"
 msgstr "Move column: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Must be < {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "Must be at least {minValue} {unitOfMeasureCode}"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Must be > {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "Must be at most {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
@@ -1549,6 +1543,9 @@ msgstr "Pin or unpin"
 msgid "Pin Out"
 msgstr "Pin Out"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+
 msgid "Planned"
 msgstr "Planned"
 
@@ -1676,6 +1673,9 @@ msgstr "Record Partial"
 
 msgid "Recorded"
 msgstr "Recorded"
+
+msgid "Reference image"
+msgstr "Reference image"
 
 msgid "Registration failed"
 msgstr "Registration failed"

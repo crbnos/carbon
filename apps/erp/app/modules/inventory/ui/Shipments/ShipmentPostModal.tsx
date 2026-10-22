@@ -37,7 +37,7 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { getShipmentTracking } from "../../inventory.utils";
 import type { Shipment, ShipmentLine } from "../../types";
-import { expectedEntityStatus } from "./ShipmentLines";
+import { isShippable } from "./ShipmentLines";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -62,13 +62,16 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const companyToday = useCompanyToday();
   const [postingDate, setPostingDate] = useState(companyToday);
 
-  // Return-to-customer shipments (source "Sales Return Order") ship returned
-  // stock, which is deliberately On Hold until shipped back, and a Repair
-  // line's unit, which stays Consumed — mirror the status lines.tracking
-  // required when the entity was assigned.
-  const statusFor = (line: ShipmentLine) =>
-    expectedEntityStatus(
+  // Mirror the statuses lines.tracking accepted when the entity was assigned:
+  // On Hold on a return to a customer (Consumed for a Repair line's unit),
+  // Available or Rejected on a return to a supplier, Available otherwise.
+  const isLineShippable = (
+    line: ShipmentLine,
+    status: string | null | undefined
+  ) =>
+    isShippable(
       routeData?.shipment,
+      status,
       !!line.lineId && (routeData?.repairLineIds ?? []).includes(line.lineId)
     );
 
@@ -175,7 +178,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Shipment Line"] === line.id;
         });
 
-        if (trackedEntity?.status !== statusFor(line)) {
+        if (!isLineShippable(line, trackedEntity?.status)) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,
@@ -214,7 +217,8 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           const trackingQuantity = Number(tracking.quantity);
 
           return (
-            acc + (tracking.status === statusFor(line) ? trackingQuantity : 0)
+            acc +
+            (isLineShippable(line, tracking.status) ? trackingQuantity : 0)
           );
         }, 0);
 

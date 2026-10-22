@@ -121,6 +121,10 @@ export const MAINTENANCE_MODE = parseBoolean(getEnv("MAINTENANCE_MODE"), false);
 
 export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
 
+export const INTEGRATION_EARLY_ACCESS_USER_IDS = getEnv(
+  "INTEGRATION_EARLY_ACCESS_USER_IDS"
+);
+
 // Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
 // `docHash` stamped onto every ITAR certification, and the target of the
 // "View the full Rider" link. `ITAR_RIDER_SHA256` is the sha256 of the Rider PDF

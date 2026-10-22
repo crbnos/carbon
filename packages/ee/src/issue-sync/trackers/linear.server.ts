@@ -2,10 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { TiptapText } from "@carbon/files/markdown";
 import { getLogger } from "@carbon/logger";
 import { getLinearClient } from "../../linear/lib/client";
-import type { TiptapDocument } from "../../linear/lib/richtext";
-import { tiptapToMarkdown } from "../../linear/lib/richtext";
 import { mapCarbonStatusToLinearStatus } from "../../linear/lib/utils";
 import type { SyncedRow } from "../canonical";
 import { syncedEntities } from "../entities";
@@ -95,9 +94,9 @@ export async function pushToLinear(args: {
         break;
       }
       case "description": {
-        input.description = tiptapToMarkdown(
-          args.row[entity.textColumn] as TiptapDocument | null
-        );
+        input.description = TiptapText(
+          args.row[entity.textColumn]
+        ).toMarkdown();
         sent.push(field);
         break;
       }

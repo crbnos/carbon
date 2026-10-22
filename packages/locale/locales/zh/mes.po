@@ -328,12 +328,6 @@ msgstr "生产批次总计"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "落后于目标 {daysBehindTarget} 天"
 
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "{0} 至 {1} {2}"
-
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻塞"
@@ -1167,11 +1161,11 @@ msgstr "更多选项"
 msgid "Move column: {0}"
 msgstr "移动列：{0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "必须小于 {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "必须不小于 {minValue} {unitOfMeasureCode}"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "必须大于 {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "必须不大于 {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "必须在 {minValue} 到 {maxValue} {unitOfMeasureCode} 之间"
@@ -1549,6 +1543,9 @@ msgstr "固定或取消固定"
 msgid "Pin Out"
 msgstr "退出登录"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "双指捏合或滚动以缩放 · 拖动以平移 · 双击以重置"
+
 msgid "Planned"
 msgstr "已计划"
 
@@ -1676,6 +1673,9 @@ msgstr "记录部分"
 
 msgid "Recorded"
 msgstr "已记录"
+
+msgid "Reference image"
+msgstr "参考图像"
 
 msgid "Registration failed"
 msgstr "注册失败"

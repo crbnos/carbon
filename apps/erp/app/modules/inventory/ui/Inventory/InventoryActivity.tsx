@@ -109,11 +109,19 @@ const getActivityText = (
           : ""
       }`;
     case "Purchase Return Shipment":
-      return `returned ${ledgerRecord.quantity} units to supplier${
-        ledgerRecord.storageUnit?.name
-          ? ` from ${ledgerRecord.storageUnit.name}`
-          : ""
-      }`;
+      // A return shipment's own positive rows put stock back: units an
+      // inspection reject wrote off (restored to ship them), or a void.
+      return ledgerRecord.quantity < 0
+        ? `returned ${-1 * ledgerRecord.quantity} units to supplier${
+            ledgerRecord.storageUnit?.name
+              ? ` from ${ledgerRecord.storageUnit.name}`
+              : ""
+          }`
+        : `added back ${ledgerRecord.quantity} units for a supplier return${
+            ledgerRecord.storageUnit?.name
+              ? ` to ${ledgerRecord.storageUnit.name}`
+              : ""
+          }`;
     case "Sales Credit Memo":
       return `credited ${ledgerRecord.quantity} units for sale${
         ledgerRecord.storageUnit?.name

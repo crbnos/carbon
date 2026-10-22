@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { TiptapText } from "@carbon/files/markdown";
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -21,7 +22,6 @@ import {
   ModalDrawerTitle,
   Textarea
 } from "@carbon/react";
-import { tiptapToText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo, useState } from "react";
 import {
@@ -122,7 +122,7 @@ const ChangeRequestReview = ({
         (comment.field ?? null) === field
     );
 
-  const reason = tiptapToText(changeRequest.reason as never);
+  const reason = TiptapText(changeRequest.reason).toString();
   const liveElementIds = new Set(review.liveElementIds);
 
   return (

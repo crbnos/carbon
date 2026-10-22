@@ -11,6 +11,7 @@ import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
 import { safeStorageFileName, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { validator } from "@carbon/form";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
@@ -25,7 +26,6 @@ import {
   getSalesOrderStatus,
   round,
   suggestContractType,
-  textToTiptap,
   unchecked
 } from "@carbon/utils";
 import { z } from "zod";
@@ -50,6 +50,10 @@ import {
   getNextSequence as getNextSequenceNumber
 } from "~/modules/settings/settings.service";
 import {
+  inspectionPlanRequired,
+  optionalTiptapDoc
+} from "~/modules/shared/shared.models";
+import {
   getCompanyTimeZone,
   getLocationTimeZone,
   refuseUnlessOwned,
@@ -63,9 +67,11 @@ import { sanitize } from "~/utils/supabase";
 import {
   invokeCreate,
   invokePosting,
-  setOperationWorkInstruction
+  setOperationWorkInstruction,
+  withOperationStandards
 } from "../shared/shared.service";
 import {
+  baseQuoteOperationValidator,
   contractAmendmentChangeValidator,
   contractDurationOf,
   contractLaborRateValidator,
@@ -81,7 +87,6 @@ import {
   projectContractTermDefaults,
   quoteLineValidator,
   quoteMaterialValidator,
-  quoteOperationValidator,
   quoteStatusType,
   quoteValidator,
   REPAIR_DISPOSITION_LOCKED_MESSAGE,
@@ -3282,17 +3287,26 @@ export const deleteQuoteMaterialsAndReprice = defineServiceFn({
     return { ids };
   }
 });
-const quoteOperationInput = quoteOperationValidator.safeExtend({
-  quoteId: z.string(),
-  quoteLineId: z.string(),
-  customFields: customFieldValues.optional()
-});
+// The bill of process form requires times, units and rates; the API fills a
+// new operation's from its work center or process, and an update leaves out
+// what it was not sent.
+const quoteOperationInput = baseQuoteOperationValidator
+  .extend({
+    quoteId: z.string(),
+    quoteLineId: z.string(),
+    customFields: customFieldValues.optional()
+  })
+  .refine(...inspectionPlanRequired);
 
 /**
  * Add an operation to a quote line's method, then reprice the line.
  *
  * @remarks
- * The line and its make method must be this company's and the line's.
+ * The line and its make method must be this company's and the line's. Times,
+ * units and rates left out are filled as the bill of process form fills them:
+ * from the work center, else the process's default standard factor and the
+ * average of its active work centers, with times 0; an outside operation's
+ * minimum cost and lead time come from its supplier process.
  *
  * @mcp
  */
@@ -3300,7 +3314,9 @@ export const createQuoteOperation = defineServiceFn({
   input: quoteOperationInput,
   permission: { create: "sales" },
 
-  async run(ctx, { customFields, ...operation }) {
+  async run(ctx, { customFields, ...input }) {
+    const operation = await withOperationStandards(ctx, input);
+    if (operation instanceof CarbonError) return operation;
     const { quoteId, quoteLineId } = operation;
     const refused = await service.refuseUnlessQuoteMethodRows(ctx, {
       quoteId,
@@ -3330,6 +3346,9 @@ export const createQuoteOperation = defineServiceFn({
 /**
  * Change an operation on a quote line's method, then reprice the line.
  *
+ * @remarks
+ * A field left out keeps its value.
+ *
  * @mcp
  */
 export const updateQuoteOperation = defineServiceFn({
@@ -3353,7 +3372,8 @@ export const updateQuoteOperation = defineServiceFn({
       ...operation,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId,
-      customFields
+      // Left out, the custom fields are kept (sanitize writes undefined as null).
+      ...(customFields !== undefined && { customFields })
     });
     if (updated.error || !updated.data?.id) {
       return ctx.error(
@@ -3375,8 +3395,8 @@ export const updateQuoteOperation = defineServiceFn({
  * the line's price are unchanged.
  *
  * @param id - The quote operation's id.
- * @param text - The work instruction as plain text: each line is a paragraph,
- *   `**text**` is bold. Empty text clears it.
+ * @param text - The work instruction as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code. Empty text clears it.
  *
  * @mcp
  */
@@ -3739,7 +3759,11 @@ export const setContractTerm = defineServiceFn({
       return ctx.error("notFound", "Contract not found");
     }
     const contract = current.data;
-    const notesDoc = value ? textToTiptap(value) : null;
+    // Notes are a plain textarea read back with `TiptapText(…).toString()`,
+    // so they are stored as typed: Markdown would not survive the round trip.
+    const notesDoc = value
+      ? TiptapText(value, { format: "text" }).toDocument()
+      : null;
 
     if (contract.status !== "Draft") {
       if (field !== "notes") {
@@ -8690,8 +8714,8 @@ export const createSalesRFQ = defineServiceFn({
     customerId: z.string().min(1),
     customerReference: z.string().optional(),
     expirationDate: z.string().optional(),
-    externalNotes: z.string().optional(),
-    internalNotes: z.string().optional(),
+    externalNotes: optionalTiptapDoc,
+    internalNotes: optionalTiptapDoc,
     locationId: z.string().optional(),
     rfqDate: z.string().min(1),
     status: z.enum(["Draft", "Ready for Quote", "Quoted", "Closed"]).optional(),
@@ -8732,8 +8756,8 @@ export const updateSalesRFQ = defineServiceFn({
       customerId: z.string().min(1),
       customerReference: z.string().optional(),
       expirationDate: z.string().optional(),
-      externalNotes: z.string().optional(),
-      internalNotes: z.string().optional(),
+      externalNotes: optionalTiptapDoc,
+      internalNotes: optionalTiptapDoc,
       locationId: z.string().optional(),
       rfqDate: z.string().min(1),
       status: z

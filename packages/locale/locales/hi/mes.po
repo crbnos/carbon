@@ -328,12 +328,6 @@ msgstr "बैच कुल"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
 
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "{0} और {1} के बीच {2}"
-
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
@@ -1167,11 +1161,11 @@ msgstr "अधिक विकल्प"
 msgid "Move column: {0}"
 msgstr "कॉलम को स्थानांतरित करें: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "{maxValue} {unitOfMeasureCode} से कम होना चाहिए"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "कम से कम {minValue} {unitOfMeasureCode} होना चाहिए"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "{minValue} से अधिक होना चाहिए {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "अधिकतम {maxValue} {unitOfMeasureCode} होना चाहिए"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "{minValue} और {maxValue} के बीच होना चाहिए {unitOfMeasureCode}"
@@ -1549,6 +1543,9 @@ msgstr "पिन करें या अनपिन करें"
 msgid "Pin Out"
 msgstr "पिन आउट"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ज़ूम करने के लिए पिंच या स्क्रॉल करें · खिसकाने के लिए खींचें · रीसेट करने के लिए दो बार टैप करें"
+
 msgid "Planned"
 msgstr "नियोजित"
 
@@ -1676,6 +1673,9 @@ msgstr "आंशिक रिकॉर्ड करें"
 
 msgid "Recorded"
 msgstr "रिकॉर्ड किया गया"
+
+msgid "Reference image"
+msgstr "संदर्भ छवि"
 
 msgid "Registration failed"
 msgstr "पंजीकरण विफल"

@@ -328,12 +328,6 @@ msgstr "итого серии"
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Отставание на {daysBehindTarget} дн."
 
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "Между {0} и {1} {2}"
-
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
@@ -1167,11 +1161,11 @@ msgstr "Дополнительные действия"
 msgid "Move column: {0}"
 msgstr "Переместить столбец: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Должно быть < {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "Должно быть не менее {minValue} {unitOfMeasureCode}"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Должно быть > {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "Должно быть не более {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "Должно быть между {minValue} и {maxValue} {unitOfMeasureCode}"
@@ -1549,6 +1543,9 @@ msgstr "Закрепить или открепить"
 msgid "Pin Out"
 msgstr "Выход по PIN"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Сведите пальцы или прокрутите для масштабирования · перетащите для перемещения · коснитесь дважды для сброса"
+
 msgid "Planned"
 msgstr "Плановое"
 
@@ -1676,6 +1673,9 @@ msgstr "Записать частичный результат"
 
 msgid "Recorded"
 msgstr "Записано"
+
+msgid "Reference image"
+msgstr "Справочное изображение"
 
 msgid "Registration failed"
 msgstr "Регистрация не удалась"

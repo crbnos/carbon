@@ -34,14 +34,17 @@ overrides:
   "brace-expansion@2": 2.1.7
   "brace-expansion@5": 5.0.12
   fast-uri: 3.1.8
+  follow-redirects: 1.16.1
   "form-data@3": 3.0.5
   "form-data@4": 4.0.6
   hono: 4.13.7
   ip-address: 10.7.1
   js-cookie: 3.0.7
   js-yaml: 4.3.2
+  jsondiffpatch: 0.7.6
   linkify-it: 5.0.2
   lodash: 4.18.1
+  markdown-it: 14.3.3
   "nanoid@3": 3.3.18
   "nanoid@5": 5.1.16
   "next@15": 15.5.27
@@ -52,11 +55,11 @@ overrides:
   shell-quote: 1.11.0
   "socket.io-parser": 4.2.7
   source-map-js: 1.2.2
-  tar: 7.5.19
+  tar: 7.5.21
   tmp: 0.2.7
   turbo-stream: 3.0.0
   valibot: 1.4.2
-  "vite@7": 7.3.5
+  "vite@7": 7.3.7
   "ws@8": 8.21.0
 
 catalog:
@@ -175,7 +178,7 @@ catalog:
   tsup: 8.5.1
   tsx: 4.21.0
   typescript: 5.8.3
-  vite: 8.3.1
+  vite: 8.3.3
   vitest: 4.1.11
   wait-on: 7.2.0
   zbsearch: 4.0.0

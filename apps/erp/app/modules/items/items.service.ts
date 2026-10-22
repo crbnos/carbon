@@ -25,13 +25,17 @@ import type {
   KyselyTx
 } from "@carbon/database/client";
 import { insertRows, many, maybeSingle } from "@carbon/database/rows";
-import { hasPendingApproval } from "@carbon/ee/approvals.server";
+import {
+  hasPendingApproval,
+  pendingApprovalDocumentIds
+} from "@carbon/ee/approvals.server";
 import {
   isUnsafeStoragePath,
   storage,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -43,7 +47,6 @@ import {
   pick,
   pluckUnique,
   searchFilter,
-  textToTiptap,
   withPathIds
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -9378,20 +9381,54 @@ async function getChangeNoticeEngineeringLock(
   changeNoticeId: string,
   status: string | null | undefined
 ): Promise<string | null> {
+  return engineeringLockMessage(
+    status,
+    needsApprovalLookup(status) &&
+      (await hasPendingApproval(
+        getCarbonServiceRole(),
+        "changeOrder",
+        changeNoticeId
+      ))
+  );
+}
+
+/**
+ * getChangeNoticeEngineeringLock for several notices, with one approval
+ * lookup for all of them: notice id → why it is locked, or null.
+ */
+export async function getChangeNoticeEngineeringLocks(
+  companyId: string,
+  notices: Array<{ id: string; status: string | null }>
+): Promise<Map<string, string | null>> {
+  const awaitingApproval = await pendingApprovalDocumentIds(
+    getCarbonServiceRole(),
+    {
+      documentType: "changeOrder",
+      documentIds: notices
+        .filter((notice) => needsApprovalLookup(notice.status))
+        .map((notice) => notice.id),
+      companyId
+    }
+  );
+  return new Map(
+    notices.map((notice) => [
+      notice.id,
+      engineeringLockMessage(notice.status, awaitingApproval.has(notice.id))
+    ])
+  );
+}
+
+const needsApprovalLookup = (status: string | null | undefined) =>
+  status === "Engineering Complete";
+
+function engineeringLockMessage(
+  status: string | null | undefined,
+  awaitingApproval: boolean
+): string | null {
   if (!canEditChangeNoticeEngineering(status)) {
     return changeNoticeLockedMessage(status);
   }
-  if (
-    status === "Engineering Complete" &&
-    (await hasPendingApproval(
-      getCarbonServiceRole(),
-      "changeOrder",
-      changeNoticeId
-    ))
-  ) {
-    return changeNoticeAwaitingApprovalMessage;
-  }
-  return null;
+  return awaitingApproval ? changeNoticeAwaitingApprovalMessage : null;
 }
 
 // One status read + predicate. Mutation routes call this before writing; the
@@ -10086,11 +10123,11 @@ export const isMakeMethodId = (id: string) => id.startsWith("make_");
 
 // ── Change notices ──────────────────────────────────────────────────────────
 
-// Reason and description arrive as plain text; the columns are tiptap JSON, so
+// Reason and description arrive as Markdown; the columns are tiptap JSON, so
 // non-empty text becomes a doc the detail page's editor can edit.
 export function toRichText(value: string | undefined): Json | undefined {
   if (!value) return undefined;
-  return textToTiptap(value) as unknown as Json;
+  return TiptapText(value).toDocument() as unknown as Json;
 }
 
 const onShapeDataValidator = z.object({

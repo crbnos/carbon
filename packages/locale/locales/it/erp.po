@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# modifica al tuo foglio presenze in attesa della tua r
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# commento} other {# commenti}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# componente in questo gruppo} other {# componenti in questo gruppo}}"
@@ -129,6 +133,14 @@ msgstr "{0, plural, one {# operazione senza standard di tempo} other {# operazio
 msgid "{0, plural, one {# overdue} other {# overdue}}"
 msgstr "{0, plural, one {# scaduto} other {# scaduti}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# record richiede attenzione} other {# record richiedono attenzione}}"
@@ -148,6 +160,14 @@ msgstr "{0, plural, one {# riga si collega ai dati al di fuori di questa Azienda
 #. placeholder {0}: linkCount.count
 msgid "{0, plural, one {# test} other {# tests}}"
 msgstr "{0, plural, one {# test} other {# test}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -691,6 +711,9 @@ msgstr "{documentTypeLabel} regola di approvazione"
 msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -714,6 +737,9 @@ msgstr "{hiddenCount} altri: {hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -872,6 +898,9 @@ msgstr "{selectedCount} selezionati"
 msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
 msgstr "{serialLabel} non ha componenti registrati in Carbon. Costruisci dalla distinta base dell'articolo."
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -922,6 +951,9 @@ msgstr "{unread} non letti"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} non può essere programmato"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} caricato — campi compilati dal documento."
@@ -2824,6 +2856,9 @@ msgstr "Aggiunto per questo cliente"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Aggiunto al prezzo unitario per i valori scelti, prima degli sconti e degli aumenti. Utilizzare un importo negativo per un avere."
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "Aggiunta di record demo"
@@ -9873,6 +9908,9 @@ msgstr "ad es. MI"
 msgid "e.g. Suite 200"
 msgstr "ad es. Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "es. Sospetta contraffazione, parte errata, danneggiato durante il trasporto"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "ad es. le prime 3-4 settimane"
 
@@ -10751,6 +10789,9 @@ msgstr "Inserisci una quantità ricevuta o spunta un'unità su almeno una riga."
 
 msgid "Enter a web address, such as https://example.com"
 msgstr "Inserisci un indirizzo web, ad esempio https://example.com"
+
+msgid "Enter a YouTube video link"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "Inserisci un articolo e una quantità tu stesso."
@@ -13679,6 +13720,15 @@ msgstr "Controllo"
 msgid "Inspection · {itemReadableId}"
 msgstr "Controllo · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Controllo {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Controllo {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Documento di controllo"
 
@@ -16355,6 +16405,15 @@ msgstr "MRP suggerisce di spostare un ordine esistente solo quando la sua data d
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Più ordini di produzione possono essere eseguiti su questo processo contemporaneamente — ad esempio, un tavolo laser, un forno o un bagno di galvanica"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "Deve essere almeno {minValue} {unitLabel}"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "Deve essere al massimo {maxValue} {unitLabel}"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "Deve essere compreso tra {minValue} e {maxValue} {unitLabel}"
+
 msgid "Must be in the same location"
 msgstr "Deve essere nella stessa posizione"
 
@@ -17186,6 +17245,14 @@ msgstr "Nessuna modifica al momento. Una volta che il contratto di leasing è at
 msgid "No charges match the filters."
 msgstr "Nessun addebito corrisponde ai filtri."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Nessuna caratteristica è fallita, quindi indica perché il lotto viene rifiutato. Tutte le {0} entità saranno contrassegnate come rifiutate."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Nessuna caratteristica è fallita, quindi indica perché il lotto viene rifiutato. L'intero lotto di {0} sarà rifiutato."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Nessun addebito. Gli addebiti per chilometraggio, danni, consegna o pulizia verranno addebitati sulla fattura successiva."
 
@@ -17661,6 +17728,9 @@ msgstr "Nessun ID parte"
 msgid "No parts"
 msgstr "Nessun componente"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Nessuna passkey registrata finora."
 
@@ -18002,6 +18072,9 @@ msgstr "Nessuna visita pianificata"
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "Nessuna visita per ora. Programma una per inviare un tecnico."
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non c'è giacenza in deposito registrata per questo articolo. Puoi comunque farne un prelievo — la giacenza andrà negativa fino a quando il conteggio non sarà riconciliato."
@@ -19461,6 +19534,9 @@ msgstr "Scaduto"
 msgid "Past end date"
 msgstr "Oltre la data di fine"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Incolla l'XML dei metadati se il tuo provider di identità non pubblica un URL di metadati"
 
@@ -19904,6 +19980,9 @@ msgstr "Fissa o scollega"
 
 msgid "Pin WBS codes"
 msgstr "Fissa codici WBS"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pizzica o scorri per ingrandire · trascina per spostare · tocca due volte per ripristinare"
 
 msgid "Pinned"
 msgstr "Fissato"
@@ -21450,6 +21529,9 @@ msgstr "Perdita di cambio realizzata"
 msgid "Reason"
 msgstr "Motivo"
 
+msgid "Reason (optional)"
+msgstr "Motivo (facoltativo)"
+
 msgid "Reason Account"
 msgstr "Conto Motivo"
 
@@ -21757,6 +21839,9 @@ msgstr "Ridotto"
 
 msgid "Reference"
 msgstr "Riferimento"
+
+msgid "Reference image"
+msgstr "Immagine di riferimento"
 
 msgid "Refresh"
 msgstr "Aggiorna"
@@ -22106,6 +22191,9 @@ msgstr "Rimuovi autenticazione a due fattori"
 msgid "Remove Unit"
 msgstr "Rimuovi unità"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "Rimosso"
 
@@ -22432,6 +22520,12 @@ msgstr "Richiede Azione"
 
 msgid "Requires Adjustment"
 msgstr "Richiede rettifica"
+
+msgid "Requires inspection"
+msgstr "Richiede controllo"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Richiede controllo. Alla registrazione della ricevuta si apre un lotto."
 
 msgid "Requires Repair"
 msgstr "Richiede Riparazione"
@@ -26031,8 +26125,14 @@ msgstr "Cambia progetto"
 msgid "Switch to pan mode"
 msgstr "Passa alla modalità panorama"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Passa alla modalità selezione"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Passa al contenuto scritto"
@@ -28050,6 +28150,11 @@ msgstr "Questo ricondizionamento non può essere completato"
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "Questo rimuove il PDF. I dipendenti vedranno il contenuto scritto."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Questo rimuove la loro app autenticatore, quindi il loro prossimo accesso ha bisogno solo di un collegamento magico. Usalo quando hanno perso l'accesso al loro autenticatore. Influisce sul loro accesso per ogni azienda a cui appartengono."
@@ -28745,6 +28850,9 @@ msgstr "Piano di Formazione"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Formazione seguita all'esterno di Carbon, come un corso di un fornitore. L'incarico ha solo un nome. Un amministratore contrassegna ogni dipendente come completato e può allegare il certificato."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Formazione del tuo team tramite l'Academy e le guide in-app"
@@ -29841,6 +29949,9 @@ msgstr "Visualizza Clienti"
 msgid "View Employees"
 msgstr "Visualizza Dipendenti"
 
+msgid "View full size"
+msgstr "Visualizza a grandezza intera"
+
 msgid "View History"
 msgstr "Visualizza Cronologia"
 
@@ -30295,8 +30406,8 @@ msgstr "Qual è stato il costo di ogni componente in tutti gli ordini di servizi
 msgid "What each period's payment is for this asset in the first year"
 msgstr "L'importo del pagamento di ogni periodo per questo cespite nel primo anno"
 
-msgid "What employees read before the questions"
-msgstr "Quello che i dipendenti leggono prima delle domande"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Cosa accade a una fattura una volta creata"
@@ -30943,6 +31054,9 @@ msgstr "Ammortamento del valore di un bene nel corso della sua vita — un lotto
 msgid "Written Off"
 msgstr "Cancellato"
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -31162,6 +31276,12 @@ msgstr "Le tue visite per oggi e i prossimi 7 giorni vengono visualizzate qui."
 
 msgid "yourself"
 msgstr "te stesso"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Livello di controllo Z1.4 (I / II / III); i livelli più alti significano dimensioni del campione più grandi per lo stesso lotto."

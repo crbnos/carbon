@@ -28,7 +28,6 @@
     "dompurify": "catalog:",
     "linkifyjs": "4.3.2",
     "nanoid": "catalog:",
-    "react-markdown": "9.1.0",
     "react-moveable": "0.56.0",
     "tippy.js": "6.3.7",
     "tiptap-extension-global-drag-handle": "0.1.18",

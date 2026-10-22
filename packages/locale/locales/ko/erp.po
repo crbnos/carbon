@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# 타임시트 변경이 검토를 대기 중} other {#
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# 코멘트} other {# 코멘트}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {이 그룹의 # 부품} other {이 그룹의 # 부품}}"
@@ -129,6 +133,14 @@ msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공�
 msgid "{0, plural, one {# overdue} other {# overdue}}"
 msgstr "{0, plural, one {# 기한 초과} other {# 기한 초과}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 기록에 주의가 필요합니다} other {# 기록에 주의가 필요합니다}}"
@@ -148,6 +160,14 @@ msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어
 #. placeholder {0}: linkCount.count
 msgid "{0, plural, one {# test} other {# tests}}"
 msgstr "{0, plural, one {# 테스트} other {# 테스트}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -691,6 +711,9 @@ msgstr "{documentTypeLabel} 승인 규칙"
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -714,6 +737,9 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -872,6 +898,9 @@ msgstr "{selectedCount}개 선택됨"
 msgid "{serialLabel} has no components recorded in Carbon. Build from the item's bill of materials instead."
 msgstr "{serialLabel}에 기록된 구성 요소가 없습니다. 대신 품목의 자재 명세서로 빌드하세요."
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -922,6 +951,9 @@ msgstr "{unread} 미읽음"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
@@ -2824,6 +2856,9 @@ msgstr "이 고객을 위해 추가됨"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "선택한 값에 대해 단가에 추가되며, 할인 및 마크업 전입니다. 대변을 위해 음수 금액을 사용하세요."
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "데모 레코드 추가 중"
@@ -9873,6 +9908,9 @@ msgstr "예: MI"
 msgid "e.g. Suite 200"
 msgstr "예: Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "예: 위조품 의심, 잘못된 부품, 운송 중 파손"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "예: 처음 3~4주"
 
@@ -10751,6 +10789,9 @@ msgstr "최소한 하나의 라인에 수량을 입력하거나 개를 체크하
 
 msgid "Enter a web address, such as https://example.com"
 msgstr "웹 주소를 입력하세요(예: https://example.com)"
+
+msgid "Enter a YouTube video link"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "품목과 수량을 직접 입력하세요."
@@ -13679,6 +13720,15 @@ msgstr "검사"
 msgid "Inspection · {itemReadableId}"
 msgstr "검사 · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "검사 {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "검사 {0} · {1}"
+
 msgid "Inspection document"
 msgstr "검사 문서"
 
@@ -16355,6 +16405,15 @@ msgstr "MRP는 주문의 날짜가 이 일수보다 더 차이날 때만 기존 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "여러 작업 지시가 이 공법에서 동시에 실행될 수 있습니다 — 예: 레이저 테이블, 용광로 또는 도금 조에"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "{minValue} {unitLabel} 이상이어야 합니다"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "{maxValue} {unitLabel} 이하여야 합니다"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "{minValue}에서 {maxValue} {unitLabel} 사이여야 합니다"
+
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
 
@@ -17186,6 +17245,14 @@ msgstr "변경 사항이 없습니다. 리스가 활성화되면 수정은 헤�
 msgid "No charges match the filters."
 msgstr "필터와 일치하는 요금이 없습니다."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "불합격된 특성이 없으므로 로트를 거부하는 사유를 입력하세요. {0}개 엔터티가 모두 거부됨으로 표시됩니다."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "불합격된 특성이 없으므로 로트를 거부하는 사유를 입력하세요. {0}개 로트 전체가 거부됩니다."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "요금이 없습니다. 주행 거리, 손상, 배송 또는 청소 요금은 다음 송장에 포함됩니다."
 
@@ -17661,6 +17728,9 @@ msgstr "품목 ID 없음"
 msgid "No parts"
 msgstr "부품 없음"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "등록된 패스키가 없습니다."
 
@@ -18002,6 +18072,9 @@ msgstr "계획된 방문이 없습니다"
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "아직 방문이 없습니다. 기술자를 보내기 위해 하나를 예약하세요."
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
@@ -19461,6 +19534,9 @@ msgstr "기한 초과"
 msgid "Past end date"
 msgstr "종료 날짜 지남"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "자격 증명 공급자가 메타데이터 URL을 게시하지 않는 경우 메타데이터 XML을 붙여넣으세요"
 
@@ -19904,6 +19980,9 @@ msgstr "고정 또는 고정 해제"
 
 msgid "Pin WBS codes"
 msgstr "WBS 코드 고정"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "핀치하거나 스크롤하여 확대/축소 · 드래그하여 이동 · 두 번 탭하여 초기화"
 
 msgid "Pinned"
 msgstr "고정됨"
@@ -21450,6 +21529,9 @@ msgstr "실현 환차손"
 msgid "Reason"
 msgstr "사유"
 
+msgid "Reason (optional)"
+msgstr "사유(선택)"
+
 msgid "Reason Account"
 msgstr "사유 계정"
 
@@ -21757,6 +21839,9 @@ msgstr "수월한 검사"
 
 msgid "Reference"
 msgstr "참조"
+
+msgid "Reference image"
+msgstr "참조 이미지"
 
 msgid "Refresh"
 msgstr "새로고침"
@@ -22106,6 +22191,9 @@ msgstr "2단계 인증 제거"
 msgid "Remove Unit"
 msgstr "단위 제거"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "제거됨"
 
@@ -22432,6 +22520,12 @@ msgstr "조치 필요"
 
 msgid "Requires Adjustment"
 msgstr "조정 필요"
+
+msgid "Requires inspection"
+msgstr "검사 필요"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "검사가 필요합니다. 입고를 전기하면 로트가 생성됩니다."
 
 msgid "Requires Repair"
 msgstr "수리 필요"
@@ -26031,8 +26125,14 @@ msgstr "프로젝트 전환"
 msgid "Switch to pan mode"
 msgstr "팬 모드로 전환"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "선택 모드로 전환"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "작성된 콘텐츠로 전환"
@@ -28050,6 +28150,11 @@ msgstr "이 재정비는 완료될 수 없습니다."
 
 msgid "This removes the PDF. Employees will see the written content instead."
 msgstr "이렇게 하면 PDF가 제거됩니다. 직원들은 대신 작성된 콘텐츠를 보게 됩니다."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 그들이 인증 수단에 대한 접근을 잃었을 때 이것을 사용하세요. 이것은 그들이 속한 모든 회사에 대한 로그인에 영향을 미칩니다."
@@ -28745,6 +28850,9 @@ msgstr "교육 계획"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbon 외부에서 수행된 교육(예: 공급업체 과정). 할당은 이름만 있습니다. 관리자가 각 직원을 완료 처리하고 인증서를 첨부할 수 있습니다."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
@@ -29841,6 +29949,9 @@ msgstr "고객 보기"
 msgid "View Employees"
 msgstr "직원 보기"
 
+msgid "View full size"
+msgstr "전체 크기로 보기"
+
 msgid "View History"
 msgstr "이력 보기"
 
@@ -30295,8 +30406,8 @@ msgstr "각 구성 요소가 모든 서비스 주문에서 비용이 얼마인�
 msgid "What each period's payment is for this asset in the first year"
 msgstr "첫 해에 이 자산에 대한 각 기간의 지불액"
 
-msgid "What employees read before the questions"
-msgstr "직원들이 질문 전에 읽는 내용"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "송장이 생성된 후 어떤 일이 일어나는지"
@@ -30943,6 +31054,9 @@ msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 �
 msgid "Written Off"
 msgstr "제거됨"
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -31162,6 +31276,12 @@ msgstr "오늘 및 향후 7일간의 방문 내역이 여기에 표시됩니다.
 
 msgid "yourself"
 msgstr "본인"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 검사 수준(I / II / III)으로, 수준이 높을수록 동일 로트에 대한 샘플 크기가 커집니다."

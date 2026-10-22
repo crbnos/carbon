@@ -7,14 +7,14 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { processImage } from "@carbon/files/media";
 import { initNodeImageCodecs } from "@carbon/files/media/node";
 import { getLogger } from "@carbon/logger";
 import {
   getMaterialDescription,
   getMaterialId,
-  openAiCategorizationModel,
-  textToTiptap
+  openAiCategorizationModel
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateText, Output } from "ai";
@@ -2120,7 +2120,7 @@ export async function createPartFromComponent(
             machineTime: (operation.runtime ?? 0) * 60,
             machineUnit: "Minutes/Piece",
             workInstruction: operation.notes
-              ? textToTiptap(operation.notes)
+              ? TiptapText(operation.notes, { format: "text" }).toDocument()
               : {}
           });
         }
@@ -2757,10 +2757,14 @@ export async function insertOrderLines(
                 ? new Date(promisedDate ?? orderItem.ships_on!).toISOString()
                 : null,
             internalNotes: orderItem.private_notes
-              ? textToTiptap(orderItem.private_notes)
+              ? TiptapText(orderItem.private_notes, {
+                  format: "text"
+                }).toDocument()
               : null,
             externalNotes: orderItem.public_notes
-              ? textToTiptap(orderItem.public_notes)
+              ? TiptapText(orderItem.public_notes, {
+                  format: "text"
+                }).toDocument()
               : null
           };
 
@@ -3010,10 +3014,14 @@ export async function insertQuoteLines(
           companyId,
           createdBy,
           internalNotes: quoteItem.private_notes
-            ? textToTiptap(quoteItem.private_notes)
+            ? TiptapText(quoteItem.private_notes, {
+                format: "text"
+              }).toDocument()
             : null,
           externalNotes: quoteItem.public_notes
-            ? textToTiptap(quoteItem.public_notes)
+            ? TiptapText(quoteItem.public_notes, {
+                format: "text"
+              }).toDocument()
             : null
         };
 
@@ -3138,7 +3146,9 @@ export async function insertQuoteLines(
                       overheadRate: operationRates.overheadRate,
                       machineRate: operationRates.machineRate,
                       workInstruction: operation.notes
-                        ? textToTiptap(operation.notes)
+                        ? TiptapText(operation.notes, {
+                            format: "text"
+                          }).toDocument()
                         : {},
                       companyId,
                       createdBy
