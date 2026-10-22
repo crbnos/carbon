@@ -21406,6 +21406,9 @@ msgstr "Oturumu Kapat"
 msgid "Sign out instead"
 msgstr "Bunun yerine Oturumu Kapat"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Bir sonraki adıma geçmeden önce onay incelemesi"
 

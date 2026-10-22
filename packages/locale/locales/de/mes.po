@@ -1883,6 +1883,9 @@ msgstr "Abmelden"
 msgid "Sign out instead"
 msgstr "Stattdessen abmelden"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "Angemeldet als {stationName}"
 

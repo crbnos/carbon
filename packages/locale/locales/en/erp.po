@@ -21406,6 +21406,9 @@ msgstr "Sign Out"
 msgid "Sign out instead"
 msgstr "Sign out instead"
 
+msgid "Sign-in code"
+msgstr "Sign-in code"
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Sign-off review before moving to the next step"
 

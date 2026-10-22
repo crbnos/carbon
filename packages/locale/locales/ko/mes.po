@@ -1883,6 +1883,9 @@ msgstr "로그아웃"
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
 

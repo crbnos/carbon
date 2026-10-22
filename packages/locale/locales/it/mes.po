@@ -1883,6 +1883,9 @@ msgstr "Esci"
 msgid "Sign out instead"
 msgstr "Esci invece"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
 

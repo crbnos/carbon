@@ -21406,6 +21406,9 @@ msgstr "로그아웃"
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "다음 단계로 넘어가기 전 서명 검토"
 

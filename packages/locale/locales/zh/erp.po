@@ -21406,6 +21406,9 @@ msgstr "登出"
 msgid "Sign out instead"
 msgstr "改为登出"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "在进入下一步骤前进行签署评审"
 

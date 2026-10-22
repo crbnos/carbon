@@ -21406,6 +21406,9 @@ msgstr "Sair"
 msgid "Sign out instead"
 msgstr "Sair em vez disso"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Revisão de aprovação antes de passar para a próxima etapa"
 

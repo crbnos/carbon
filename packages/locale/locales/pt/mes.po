@@ -1883,6 +1883,9 @@ msgstr "Sair"
 msgid "Sign out instead"
 msgstr "Sair da sessão em vez disso"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Signed in as {stationName}"
 msgstr "Conectado como {stationName}"
 

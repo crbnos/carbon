@@ -21406,6 +21406,9 @@ msgstr "Cerrar sesión"
 msgid "Sign out instead"
 msgstr "Cerrar sesión en su lugar"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Revisión de aprobación antes de pasar al siguiente paso"
 

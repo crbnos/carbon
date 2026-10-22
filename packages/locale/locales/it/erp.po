@@ -21406,6 +21406,9 @@ msgstr "Esci"
 msgid "Sign out instead"
 msgstr "Esci invece"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Revisione di approvazione prima di passare al passaggio successivo"
 

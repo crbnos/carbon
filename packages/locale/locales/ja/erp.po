@@ -21406,6 +21406,9 @@ msgstr "サインアウト"
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
 
+msgid "Sign-in code"
+msgstr ""
+
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
 

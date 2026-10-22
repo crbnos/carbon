@@ -810,6 +810,7 @@ function SignInCode({
   email: string;
   redirectTo?: string;
 }) {
+  const { t } = useLingui();
   const code = useFetcher<{
     success: boolean;
     message?: string;
@@ -849,7 +850,7 @@ function SignInCode({
             <AlertDescription>{code.data.message}</AlertDescription>
           </Alert>
         ) : null}
-        <InputOTP name="code" label="" autoFocus />
+        <InputOTP name="code" label={t`Sign-in code`} autoFocus />
         <Submit
           isDisabled={code.state !== "idle" || signingIn}
           isLoading={code.state !== "idle" || signingIn}
