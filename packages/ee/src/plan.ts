@@ -90,7 +90,7 @@ export function isListedUserId(
   if (!list || !userId) return false;
   return list
     .split(",")
-    .some((entry) => entry.trim().replace(/^["']+|["']+$/g, "") === userId);
+    .some((entry) => entry.replace(/^[\s"']+|[\s"']+$/g, "") === userId);
 }
 
 export type PlanRequirement = Plan | Plan[];

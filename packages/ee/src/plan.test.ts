@@ -99,6 +99,8 @@ describe("isListedUserId", () => {
     expect(isListedUserId('"user-a,user-b"', "user-a")).toBe(true);
     expect(isListedUserId('"user-a,user-b"', "user-b")).toBe(true);
     expect(isListedUserId("'user-a'", "user-a")).toBe(true);
+    expect(isListedUserId('" user-a "', "user-a")).toBe(true);
+    expect(isListedUserId('"user-a" , " user-b"', "user-b")).toBe(true);
   });
 
   it("matches whole ids only", () => {
