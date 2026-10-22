@@ -48,11 +48,11 @@ describe("findUnsyncedDocumentSequences", () => {
   it("flags a new counter that is neither covered nor exempt", () => {
     expect(
       messages({
-        seedData: seedData("salesOrder", "serviceOrder"),
+        seedData: seedData("salesOrder", "widgetOrder"),
         attachments: attachments("salesOrder"),
         interceptor: interceptor("salesOrder")
       })
-    ).toEqual(['seed-data.ts: table: "serviceOrder"']);
+    ).toEqual(['seed-data.ts: table: "widgetOrder"']);
   });
 
   it("accepts an exempt counter, and flags one that is also covered", () => {
