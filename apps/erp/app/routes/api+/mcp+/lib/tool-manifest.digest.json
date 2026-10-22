@@ -1128,7 +1128,7 @@
     {"name":"quality_insertGauge","classification":"WRITE","schema":"8d2ada8f5f52","response":"3269d4609ad2","permission":"quality:create","paginates":false},
     {"name":"quality_insertIssue","classification":"WRITE","schema":"ea632d40582e","response":"bf12cbd0f560","permission":"quality:create","paginates":false},
     {"name":"quality_insertIssueReviewer","classification":"WRITE","schema":"83d8aaae61eb","response":"bcde375ebd4c","permission":"quality:create","paginates":false},
-    {"name":"quality_rejectInspection","classification":"WRITE","schema":"d7fc4d660b91","response":"c1beaadbde90","permission":"quality:update","paginates":false},
+    {"name":"quality_rejectInspection","classification":"WRITE","schema":"9cd95b44e07a","response":"c1beaadbde90","permission":"quality:update","paginates":false},
     {"name":"quality_reorderIssueActionTasks","classification":"WRITE","schema":"e27ca9c14dfd","response":"0eb0c2be01ed","permission":"quality:update","paginates":false},
     {"name":"quality_saveInspectionDocument","classification":"WRITE","schema":"ce666421c179","response":"f67a43378af0","permission":"quality:update","paginates":false},
     {"name":"quality_saveInspectionDocumentAtomic","classification":"WRITE","schema":"7a3138ccf220","response":"none","permission":"quality:update","paginates":false},

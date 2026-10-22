@@ -8394,6 +8394,9 @@ msgstr "p. ex. MI"
 msgid "e.g. Suite 200"
 msgstr "p. ex. Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "p. ex. Contrefaçon suspectée, mauvaise pièce, endommagé pendant le transport"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "par exemple les 3 à 4 premières semaines"
 
@@ -14701,6 +14704,14 @@ msgstr "Aucune modification pour le moment."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Aucun changement pour le moment. Une fois le bail actif, Modifier est dans l'en-tête et Résilier et Acheter se trouvent sur la page de chaque actif."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Aucune caractéristique n'a échoué : indiquez pourquoi le lot est rejeté. Les {0} entités seront marquées comme rejetées."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Aucune caractéristique n'a échoué : indiquez pourquoi le lot est rejeté. L'ensemble du lot de {0} sera rejeté."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Aucun frais. Les frais de kilométrage, dommages, livraison ou nettoyage seront reportés sur la facture suivante."
 
@@ -18252,6 +18263,9 @@ msgstr "Perte de change réalisée"
 
 msgid "Reason"
 msgstr "Raison"
+
+msgid "Reason (optional)"
+msgstr "Raison (facultatif)"
 
 msgid "Reason Account"
 msgstr "Compte de raison"

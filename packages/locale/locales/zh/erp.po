@@ -8394,6 +8394,9 @@ msgstr "例：MI"
 msgid "e.g. Suite 200"
 msgstr "例：Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "例如：疑似假冒、零件错误、运输中损坏"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例如前3到4周"
 
@@ -14701,6 +14704,14 @@ msgstr "还没有变更。"
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "暂无更改。租赁启用后，修改在页眉中，终止和购买在每个资产的页面上。"
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "没有特性不合格，请说明拒绝该批次的原因。全部 {0} 个实体将被标记为已拒绝。"
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "没有特性不合格，请说明拒绝该批次的原因。整个批次 {0} 将被拒绝。"
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "无费用。里程、损毁、交付或清洁费用计入下一张发票。"
 
@@ -18252,6 +18263,9 @@ msgstr "已实现汇兑损失"
 
 msgid "Reason"
 msgstr "原因"
+
+msgid "Reason (optional)"
+msgstr "原因（可选）"
 
 msgid "Reason Account"
 msgstr "原因账户"

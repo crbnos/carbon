@@ -8394,6 +8394,9 @@ msgstr "e.g. MI"
 msgid "e.g. Suite 200"
 msgstr "e.g. Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "e.g. Suspected counterfeit, wrong part, damaged in transit"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "e.g. the first 3 to 4 weeks"
 
@@ -14701,6 +14704,14 @@ msgstr "No changes yet."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 
@@ -18252,6 +18263,9 @@ msgstr "Realized Exchange Loss"
 
 msgid "Reason"
 msgstr "Reason"
+
+msgid "Reason (optional)"
+msgstr "Reason (optional)"
 
 msgid "Reason Account"
 msgstr "Reason Account"

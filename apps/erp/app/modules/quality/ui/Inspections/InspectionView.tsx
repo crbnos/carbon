@@ -400,8 +400,10 @@ const InspectionView = ({
   // Gating. Feature-driven lots gate per feature (mirrors the
   // server-side disposition guards); lots without features gate at the lot
   // level on the "Overall result" pass/fail counts.
+  // A lot can be rejected for any reason (a suspected counterfeit, the wrong
+  // part); without a statistical failure the inspector must give one.
   let canAccept: boolean;
-  let canReject: boolean;
+  let failedStatistically: boolean;
   if (hasFeatures) {
     const allFeaturesSatisfied = liveFeatures.every((feature) => {
       const counts = featureCounts.get(feature.inspectionFeatureId) ?? {
@@ -418,17 +420,16 @@ const InspectionView = ({
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
     canAccept = isReceiptSource && !lotClosed && allFeaturesSatisfied;
-    canReject =
-      isReceiptSource && !lotClosed && (anyFeatureRejectable || fails > 0);
+    failedStatistically = anyFeatureRejectable || fails > 0;
   } else {
     canAccept =
       isReceiptSource &&
       !lotClosed &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
-    canReject =
-      isReceiptSource && !lotClosed && fails > inspection.acceptanceNumber;
+    failedStatistically = fails > inspection.acceptanceNumber;
   }
+  const canReject = isReceiptSource && !lotClosed;
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -825,10 +826,15 @@ const InspectionView = ({
         <RejectLotModal
           action={path.to.inspectionReject(inspection.id)}
           issueTypes={issueTypes}
+          requiresReason={!failedStatistically}
           summary={
-            isSerial
-              ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
-              : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
+            failedStatistically
+              ? isSerial
+                ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
+                : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
+              : isSerial
+                ? t`No characteristic has failed, so say why the lot is rejected. All ${lotEntities.length} entities will be marked Rejected.`
+                : t`No characteristic has failed, so say why the lot is rejected. The entire lot of ${inspection.lotSize} will be rejected.`
           }
           failedFeatureSummary={failedFeatureSummary}
           onCancel={rejectConfirmDisclosure.onClose}

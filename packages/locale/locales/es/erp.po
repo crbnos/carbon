@@ -8394,6 +8394,9 @@ msgstr "p. ej. MI"
 msgid "e.g. Suite 200"
 msgstr "p. ej. Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "p. ej. Sospecha de falsificación, pieza incorrecta, dañado en tránsito"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "p. ej. las primeras 3 a 4 semanas"
 
@@ -14701,6 +14704,14 @@ msgstr "Sin cambios aún."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Sin cambios aún. Una vez que el arrendamiento es activo, Modificar se encuentra en el encabezado y Terminar y Comprar se encuentran en la página de cada activo."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Ninguna característica ha fallado, así que indique por qué se rechaza el lote. Las {0} entidades se marcarán como rechazadas."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Ninguna característica ha fallado, así que indique por qué se rechaza el lote. Se rechazará el lote completo de {0}."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Sin cargos. Los cargos por kilometraje, daños, entrega o limpieza se incluyen en la siguiente factura."
 
@@ -18252,6 +18263,9 @@ msgstr "Pérdida por Cambio de Divisas Realizada"
 
 msgid "Reason"
 msgstr "Razón"
+
+msgid "Reason (optional)"
+msgstr "Razón (opcional)"
 
 msgid "Reason Account"
 msgstr "Cuenta de Razón"

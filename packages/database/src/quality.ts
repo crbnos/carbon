@@ -57,6 +57,11 @@ export type InspectionDispositionInput = {
   id: string;
   decision: "Accept" | "Reject" | "Partial";
   notes?: string;
+  // Why a lot is rejected when no characteristic reached its rejection number
+  // and no sample failed — a suspected counterfeit, the wrong part, transit
+  // damage. A Reject with a reason needs no failure; it is stored as the lot's
+  // notes when `notes` is empty.
+  reason?: string;
   companyId: string;
   dispositionedBy: string;
   // One-shot mode: refuse to disposition a lot that is already terminal
@@ -547,7 +552,7 @@ export async function dispositionInspection(
           }
         }
 
-        if (args.decision === "Reject") {
+        if (args.decision === "Reject" && !args.reason?.trim()) {
           const rejectable =
             lotFeatures.some((f) => {
               const counts = countsByFeature.get(f.inspectionFeatureId);
@@ -555,7 +560,7 @@ export async function dispositionInspection(
             }) || existingSamples.some((s) => s.status === "Failed");
           if (!rejectable) {
             throw new Error(
-              "Cannot reject: no feature has reached its rejection number and no sample has failed"
+              "Cannot reject: no feature has reached its rejection number and no sample has failed. Give a reason to reject the lot anyway."
             );
           }
         }
@@ -621,7 +626,7 @@ export async function dispositionInspection(
         .updateTable("inspection")
         .set({
           status: lotStatus,
-          notes: args.notes ?? null,
+          notes: args.notes || args.reason?.trim() || null,
           dispositionedBy: args.dispositionedBy,
           dispositionedAt: nowIso,
           updatedBy: args.dispositionedBy,

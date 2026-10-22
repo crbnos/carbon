@@ -8394,6 +8394,9 @@ msgstr "örn. MI"
 msgid "e.g. Suite 200"
 msgstr "örn. Daire 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "örn. Sahte olduğundan şüpheleniliyor, yanlış parça, taşımada hasar görmüş"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "örn. ilk 3 ila 4 hafta"
 
@@ -14701,6 +14704,14 @@ msgstr "Henüz değişiklik yok."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Henüz değişiklik yok. Kiralama aktif olduktan sonra, Değiştir başlık kısmında ve Sonlandır ile Satın Al her varlığın sayfasında yer alır."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Başarısız olan bir özellik yok, bu yüzden lotun neden reddedildiğini belirtin. {0} varlığın tamamı Reddedildi olarak işaretlenecek."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Başarısız olan bir özellik yok, bu yüzden lotun neden reddedildiğini belirtin. {0} adetlik lotun tamamı reddedilecek."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Herhangi bir ücret yok. Kilometre, hasar, teslimat veya temizlik ücretleri sonraki faturaya dahil edilir."
 
@@ -18252,6 +18263,9 @@ msgstr "Gerçekleşen Döviz Kaybı"
 
 msgid "Reason"
 msgstr "Neden"
+
+msgid "Reason (optional)"
+msgstr "Neden (isteğe bağlı)"
 
 msgid "Reason Account"
 msgstr "Neden Hesabı"

@@ -8394,6 +8394,9 @@ msgstr "ad es. MI"
 msgid "e.g. Suite 200"
 msgstr "ad es. Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "es. Sospetta contraffazione, parte errata, danneggiato durante il trasporto"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "ad es. le prime 3-4 settimane"
 
@@ -14701,6 +14704,14 @@ msgstr "Nessuna modifica ancora."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Nessuna modifica al momento. Una volta che il contratto di leasing è attivo, Modifica si trova nell'intestazione e Termina e Acquista si trovano sulla pagina di ogni asset."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Nessuna caratteristica è fallita, quindi indica perché il lotto viene rifiutato. Tutte le {0} entità saranno contrassegnate come rifiutate."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Nessuna caratteristica è fallita, quindi indica perché il lotto viene rifiutato. L'intero lotto di {0} sarà rifiutato."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Nessun addebito. Gli addebiti per chilometraggio, danni, consegna o pulizia verranno addebitati sulla fattura successiva."
 
@@ -18252,6 +18263,9 @@ msgstr "Perdita di cambio realizzata"
 
 msgid "Reason"
 msgstr "Motivo"
+
+msgid "Reason (optional)"
+msgstr "Motivo (facoltativo)"
 
 msgid "Reason Account"
 msgstr "Conto Motivo"

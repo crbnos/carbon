@@ -8394,6 +8394,9 @@ msgstr "उदा. MI"
 msgid "e.g. Suite 200"
 msgstr "उदा. Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "उदा. संदिग्ध नकली, गलत पार्ट, परिवहन में क्षतिग्रस्त"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "उदाहरण के लिए पहले 3 से 4 सप्ताह"
 
@@ -14701,6 +14704,14 @@ msgstr "अभी तक कोई परिवर्तन नहीं।"
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "अभी कोई परिवर्तन नहीं है। एक बार लीज सक्रिय हो जाए, तो संशोधन शीर्षलेख में है और समाप्त तथा खरीद प्रत्येक संपत्ति पृष्ठ पर हैं।"
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "कोई विशेषता विफल नहीं हुई है, इसलिए बताएं कि लॉट क्यों अस्वीकार किया जा रहा है। सभी {0} इकाइयाँ अस्वीकृत चिह्नित की जाएंगी।"
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "कोई विशेषता विफल नहीं हुई है, इसलिए बताएं कि लॉट क्यों अस्वीकार किया जा रहा है। {0} का पूरा लॉट अस्वीकार किया जाएगा।"
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "कोई शुल्क नहीं। माइलेज, क्षति, डिलीवरी या सफाई शुल्क अगले चालान में शामिल होंगे।"
 
@@ -18252,6 +18263,9 @@ msgstr "वास्तविक विनिमय हानि"
 
 msgid "Reason"
 msgstr "कारण"
+
+msgid "Reason (optional)"
+msgstr "कारण (वैकल्पिक)"
 
 msgid "Reason Account"
 msgstr "कारण खाता"

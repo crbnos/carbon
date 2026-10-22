@@ -8394,6 +8394,9 @@ msgstr "например MI"
 msgid "e.g. Suite 200"
 msgstr "например Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "например: подозрение на подделку, не та деталь, повреждено при транспортировке"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "например, первые 3-4 недели"
 
@@ -14701,6 +14704,14 @@ msgstr "Пока нет изменений."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Изменений еще нет. Когда аренда активна, кнопка \"Изменить\" находится в заголовке, а кнопки \"Завершить\" и \"Приобрести\" находятся на странице каждого актива."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Ни одна характеристика не забракована, поэтому укажите, почему партия отклоняется. Все {0} единиц будут отмечены как отклонённые."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Ни одна характеристика не забракована, поэтому укажите, почему партия отклоняется. Вся партия из {0} будет отклонена."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
 
@@ -18252,6 +18263,9 @@ msgstr "Реализованный убыток от обмена валют"
 
 msgid "Reason"
 msgstr "Причина"
+
+msgid "Reason (optional)"
+msgstr "Причина (необязательно)"
 
 msgid "Reason Account"
 msgstr "Счет причины"

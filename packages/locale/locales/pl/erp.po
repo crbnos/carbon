@@ -8394,6 +8394,9 @@ msgstr "np. mazowieckie"
 msgid "e.g. Suite 200"
 msgstr "np. lok. 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "np. Podejrzenie podróbki, niewłaściwa część, uszkodzenie w transporcie"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "np. pierwsze 3 do 4 tygodnie"
 
@@ -14701,6 +14704,14 @@ msgstr "Brak zmian."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Brak zmian. Gdy leasing będzie aktywny, Modyfikuj znajduje się w nagłówku, a Zakończ i Kup znajdują się na stronie każdego zasobu."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Żadna cecha nie została odrzucona, więc podaj, dlaczego partia jest odrzucana. Wszystkie {0} jednostki zostaną oznaczone jako odrzucone."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Żadna cecha nie została odrzucona, więc podaj, dlaczego partia jest odrzucana. Cała partia {0} zostanie odrzucona."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Brak opłat. Opłaty za przebieg, uszkodzenie, dostawę lub czyszczenie pojawią się na następnej fakturze."
 
@@ -18252,6 +18263,9 @@ msgstr "Zrealizowana strata walutowa"
 
 msgid "Reason"
 msgstr "Powód"
+
+msgid "Reason (optional)"
+msgstr "Powód (opcjonalnie)"
 
 msgid "Reason Account"
 msgstr "Konto przyczyny"
