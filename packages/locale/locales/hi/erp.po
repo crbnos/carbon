@@ -10997,6 +10997,9 @@ msgstr "निर्देशित"
 msgid "Guided implementation"
 msgstr "निर्देशित कार्यान्वयन"
 
+msgid "Halloween surprise"
+msgstr "हैलोवीन सरप्राइज़"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "आवर्ती और उलट जर्नल प्रविष्टियों को संभालें"
 
@@ -11008,6 +11011,9 @@ msgstr "हैंड्स-ऑन"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "पहले 3–4 हफ्तों के लिए व्यावहारिक, तेज़ प्रतिक्रिया समर्थन"
+
+msgid "Happy Halloween"
+msgstr "हैप्पी हैलोवीन"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "किसी काम पर सच्ची लागत या मार्जिन देखना मुश्किल है"
@@ -17131,6 +17137,9 @@ msgstr "PO संख्या"
 
 msgid "PO PDF"
 msgstr "पीओ पीडीएफ"
+
+msgid "Poke the spider… if you dare"
+msgstr "मकड़ी को छुएँ… अगर हिम्मत है"
 
 msgid "Policy"
 msgstr "नीति"

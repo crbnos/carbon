@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { cn, useMode } from "@carbon/react";
+import { seasonalMeshColors } from "@carbon/utils";
 import { MeshGradient } from "@paper-design/shaders-react";
 import { useEffect, useState } from "react";
 import { useTheme } from "~/hooks/useTheme";
@@ -50,9 +51,13 @@ const meshColorsByTheme: Record<
   }
 };
 
-export function getMeshColors(theme: string, mode: string) {
-  const colors = meshColorsByTheme[theme] ?? meshColorsByTheme.blue;
-  return mode === "light" ? colors.light : colors.dark;
+export function getMeshColors(theme: string, mode: string): string[] {
+  // A seasonal theme carries its own colors (`seasonalMeshColors`).
+  const colors =
+    meshColorsByTheme[theme] ??
+    seasonalMeshColors(theme) ??
+    meshColorsByTheme.blue;
+  return [...(mode === "light" ? colors.light : colors.dark)];
 }
 
 export function getMeshBackgroundGradient(theme: string, mode: string) {

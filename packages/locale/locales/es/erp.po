@@ -10997,6 +10997,9 @@ msgstr "Guiado"
 msgid "Guided implementation"
 msgstr "Implementación guiada"
 
+msgid "Halloween surprise"
+msgstr "Sorpresa de Halloween"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gestionar asientos de diario recurrentes e inversores"
 
@@ -11008,6 +11011,9 @@ msgstr "Práctico"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Soporte práctico y de respuesta rápida durante las primeras 3–4 semanas"
+
+msgid "Happy Halloween"
+msgstr "Feliz Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Difícil ver el costo real o margen en un trabajo"
@@ -17131,6 +17137,9 @@ msgstr "Número de OC"
 
 msgid "PO PDF"
 msgstr "PDF de PO"
+
+msgid "Poke the spider… if you dare"
+msgstr "Toca la araña… si te atreves"
 
 msgid "Policy"
 msgstr "Política"

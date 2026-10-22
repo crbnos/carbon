@@ -10997,6 +10997,9 @@ msgstr "ガイド付き"
 msgid "Guided implementation"
 msgstr "ガイド付き実施"
 
+msgid "Halloween surprise"
+msgstr "ハロウィンのサプライズ"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "繰り返しおよび逆仕訳の処理"
 
@@ -11008,6 +11011,9 @@ msgstr "ハンズオン"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "最初の3～4週間のハンズオン、迅速対応サポート"
+
+msgid "Happy Halloween"
+msgstr "ハッピーハロウィン"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "ジョブの真の原価またはマージンを確認するのが難しい"
@@ -17131,6 +17137,9 @@ msgstr "発注番号"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "クモをつついてみて…勇気があれば"
 
 msgid "Policy"
 msgstr "ポリシー"

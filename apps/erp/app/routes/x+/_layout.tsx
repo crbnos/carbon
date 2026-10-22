@@ -42,6 +42,7 @@ import {
   useNProgress,
   useViewport
 } from "@carbon/react";
+import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -592,6 +593,9 @@ export default function AuthenticatedRoute() {
                         />
                       )}
                     </main>
+                    {/* Seasonal: shows only with the Halloween theme. Remove
+                        with packages/react/src/Halloween/. */}
+                    <HalloweenLayer />
                     {isPhone && (
                       <MobileBottomChrome>
                         <MobileDock />

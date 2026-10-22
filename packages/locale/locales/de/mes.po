@@ -800,6 +800,12 @@ msgstr "Zurück zur Operation"
 msgid "Go to onboarding"
 msgstr "Gehen Sie zum Onboarding"
 
+msgid "Halloween surprise"
+msgstr "Halloween-Überraschung"
+
+msgid "Happy Halloween"
+msgstr "Fröhliches Halloween"
+
 msgid "Heading {level}"
 msgstr "Überschrift {level}"
 
@@ -1481,6 +1487,9 @@ msgstr "Bitte wählen Sie einen Artikel aus"
 
 msgid "PM schedule lapsed"
 msgstr "Wartungsplan abgelaufen"
+
+msgid "Poke the spider… if you dare"
+msgstr "Stupsen Sie die Spinne an… wenn Sie sich trauen"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Drücken Sie ? auf jeder Seite, um diese Liste zu öffnen. Tastaturverknüpfungen werden ignoriert, während Sie in einem Feld tippen."

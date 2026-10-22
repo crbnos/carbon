@@ -43,6 +43,7 @@ import {
   useNProgress,
   VStack
 } from "@carbon/react";
+import { HalloweenLayer } from "@carbon/react/Halloween";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
@@ -558,6 +559,7 @@ export default function AuthenticatedRoute() {
                   {/* From lg the shell does not scroll, so the page area stops at the
                       screen and each page's own scroller takes the overflow. */}
                   <div
+                    data-app-card
                     className={cn(
                       "flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border lg:max-h-[calc(100dvh-1rem)]",
                       showTabBar && "max-md:pb-[var(--mes-tab-bar-h)]"
@@ -575,6 +577,9 @@ export default function AuthenticatedRoute() {
                       defaultLinkLabel={t`Learn more`}
                     />
                     <Outlet key={companyId} />
+                    {/* Seasonal: shows only with the Halloween theme. Remove
+                        with packages/react/src/Halloween/. */}
+                    <HalloweenLayer />
                   </div>
                   <MesTabBar
                     activeEvents={activeEvents}

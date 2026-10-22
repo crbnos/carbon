@@ -469,7 +469,10 @@ const AvatarMenu = () => {
   return (
     <>
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger className="outline-none focus-visible:outline-none">
+        <DropdownMenuTrigger
+          data-user-menu
+          className="outline-none focus-visible:outline-none"
+        >
           <Avatar path={user.avatarUrl} name={name} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">

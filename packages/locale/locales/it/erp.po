@@ -10997,6 +10997,9 @@ msgstr "Guidato"
 msgid "Guided implementation"
 msgstr "Implementazione guidata"
 
+msgid "Halloween surprise"
+msgstr "Sorpresa di Halloween"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gestisci registrazioni di prima nota ricorrenti e di storno"
 
@@ -11008,6 +11011,9 @@ msgstr "Pratico"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Supporto pratico e a risposta rapida per le prime 3–4 settimane"
+
+msgid "Happy Halloween"
+msgstr "Buon Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Difficile vedere il vero costo o margine su un lavoro"
@@ -17131,6 +17137,9 @@ msgstr "Numero OD"
 
 msgid "PO PDF"
 msgstr "PDF OdA"
+
+msgid "Poke the spider… if you dare"
+msgstr "Tocca il ragno… se hai il coraggio"
 
 msgid "Policy"
 msgstr "Politica"

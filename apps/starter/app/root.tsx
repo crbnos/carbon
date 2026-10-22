@@ -24,14 +24,13 @@ import {
   Toaster,
   useMode
 } from "@carbon/react";
-import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
   getPreferenceHeaders,
   modeValidator,
   prefetchCacheMiddleware,
-  themeColorValidator,
-  themes
+  resolveTheme,
+  themeColorValidator
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
@@ -194,9 +193,7 @@ function Document({
   lang?: string;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
-  const selectedTheme = themes.find((t) => t.name === theme) as
-    | Theme
-    | undefined;
+  const selectedTheme = resolveTheme(theme);
 
   // Create style objects for both light and dark modes
   const lightVars: Record<string, string> = {};
