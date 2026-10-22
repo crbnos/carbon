@@ -11,7 +11,6 @@ import type { Database } from "@carbon/database";
 import {
   integrations as availableIntegrations,
   Email,
-  emailDomain,
   getIntegrationConfigById,
   type IntegrationID,
   resolveIntegrationTopology
@@ -69,11 +68,7 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
-import {
-  DEFAULT_FROM,
-  EMAIL_DOMAIN,
-  SERVER_MAIL_CONFIGURED
-} from "@carbon/lib/email.server";
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
 import {
@@ -1542,24 +1537,9 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
 
   await invalidateIntegrationHealthCache(integrationId, companyId);
 
-  // Server mail sends only as the server's own domain, so a From on another
-  // domain becomes the reply-to address; say so rather than let it surprise.
-  const serverMailFrom = usesServerMail
-    ? String(metadata.fromEmail ?? "").trim()
-    : "";
-  const fromIsReplyTo =
-    serverMailFrom !== "" && emailDomain(serverMailFrom) !== EMAIL_DOMAIN;
-
   throw redirect(
     path.to.integrations,
-    await flash(
-      request,
-      success(
-        fromIsReplyTo
-          ? `Installed ${integration.name} integration. ${serverMailFrom} is not on this server's mail domain (${EMAIL_DOMAIN}), so emails are sent from ${DEFAULT_FROM} and ${serverMailFrom} is used as the reply-to address.`
-          : `Installed ${integration.name} integration`
-      )
-    )
+    await flash(request, success(`Installed ${integration.name} integration`))
   );
 }
 

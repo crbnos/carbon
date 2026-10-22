@@ -42,7 +42,7 @@ export const Email = defineIntegration({
           value: "server",
           label: "Server mail",
           description:
-            "The default. Uses this server's mail settings, so no credentials are needed."
+            "The default. Documents are sent from this server's address under your company's name, so no credentials are needed."
         },
         {
           value: "resend",
@@ -60,7 +60,7 @@ export const Email = defineIntegration({
       name: "fromEmail",
       label: "From email",
       description:
-        "The sender address your customers will see. Must be a domain you control. With Server mail, leave it empty to use this server's sender address; an address on another domain than the server's is used as the reply-to address instead.",
+        "The sender address your customers will see. Must be a domain you control. With Server mail, documents are sent from this server's address under your company's name, and replies go to the address you enter here.",
       type: "text",
       // Required for Resend and Custom SMTP; the schema enforces that.
       required: false,

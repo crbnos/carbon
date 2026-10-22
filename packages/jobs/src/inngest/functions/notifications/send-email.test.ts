@@ -5,17 +5,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sendEmail = vi.fn();
-const maybeSingle = vi.fn();
+const integration = vi.fn();
+const company = vi.fn();
 
 vi.mock("@carbon/lib/email.server", () => ({
-  EMAIL_DOMAIN: "acme.co",
+  DEFAULT_FROM: "Carbon <no-reply@acme.co>",
   SERVER_MAIL_CONFIGURED: true,
   sendEmail
 }));
 
 vi.mock("@carbon/auth/client.server", () => {
-  const query = { select: () => query, eq: () => query, maybeSingle };
-  return { getCarbonServiceRole: () => ({ from: () => query }) };
+  const query = (maybeSingle: () => unknown) => {
+    const q = { select: () => q, eq: () => q, maybeSingle };
+    return q;
+  };
+  return {
+    getCarbonServiceRole: () => ({
+      from: (table: string) =>
+        query(table === "company" ? company : integration)
+    })
+  };
 });
 
 // The real delivery rules, without the rest of @carbon/ee (it opens clients).
@@ -47,11 +56,15 @@ const send = (data: Record<string, unknown>) =>
     logger: { info: vi.fn(), error: vi.fn() }
   });
 
-const companyFrom = (fromEmail: string) =>
-  maybeSingle.mockResolvedValue({
+const companyFrom = (fromEmail: string, name: string | null = "Acme") => {
+  integration.mockResolvedValue({
     data: { active: true, metadata: { provider: "server", fromEmail } },
     error: null
   });
+  company.mockResolvedValue({ data: { name }, error: null });
+};
+
+const serverAs = (name: string) => ({ name, address: "no-reply@acme.co" });
 
 describe("send-email From and Reply-To", () => {
   beforeEach(() => {
@@ -59,21 +72,35 @@ describe("send-email From and Reply-To", () => {
     sendEmail.mockResolvedValue({ data: { id: "m1" }, error: null });
   });
 
-  it("sends a document from the company's address on the server's domain", async () => {
+  it("never sends a document from the company's address on the server's domain", async () => {
     companyFrom("sales@acme.co");
     await send({ companyId: "c1", document: true, from: "rep@acme.co" });
     expect(sendEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ from: "sales@acme.co", replyTo: "rep@acme.co" })
+      expect.objectContaining({
+        from: serverAs("Acme"),
+        replyTo: "rep@acme.co, sales@acme.co"
+      })
     );
   });
 
-  it("moves a company address on another domain to the Reply-To", async () => {
+  it("replies to the company's address on another domain too", async () => {
     companyFrom("ceo@bank.com");
     await send({ companyId: "c1", document: true, from: "rep@acme.co" });
     expect(sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: undefined,
+        from: serverAs("Acme"),
         replyTo: "rep@acme.co, ceo@bank.com"
+      })
+    );
+  });
+
+  it("falls back to the server's name when the company has none", async () => {
+    companyFrom("", null);
+    await send({ companyId: "c1", document: true, from: "rep@acme.co" });
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: serverAs("Carbon"),
+        replyTo: "rep@acme.co"
       })
     );
   });
@@ -81,7 +108,8 @@ describe("send-email From and Reply-To", () => {
   it("sends system mail from the server whatever the company sets", async () => {
     companyFrom("sales@acme.co");
     await send({ companyId: "c1" });
-    expect(maybeSingle).not.toHaveBeenCalled();
+    expect(integration).not.toHaveBeenCalled();
+    expect(company).not.toHaveBeenCalled();
     expect(sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({ from: undefined, replyTo: undefined })
     );

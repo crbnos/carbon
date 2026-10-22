@@ -16,8 +16,8 @@ import nodemailer from "nodemailer";
 const log = getLogger("lib", "email");
 
 export type SendEmailPayload = {
-  /** Defaults to DEFAULT_FROM (SMTP_FROM). */
-  from?: string;
+  /** Defaults to DEFAULT_FROM (SMTP_FROM). An object's name is quoted for you. */
+  from?: string | { name: string; address: string };
   to: string | string[];
   cc?: string | string[];
   bcc?: string | string[];

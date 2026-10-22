@@ -5,7 +5,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { documentSender, resolveEmailDelivery } from "@carbon/ee";
 import {
-  EMAIL_DOMAIN,
+  DEFAULT_FROM,
   SERVER_MAIL_CONFIGURED,
   sendEmail
 } from "@carbon/lib/email.server";
@@ -50,9 +50,10 @@ export const sendEmailFunction = inngest.createFunction(
       logger.info("Email Job");
       // Only document emails follow the company's Email settings; sign-in,
       // security and notification mail always goes from the server's address.
-      let sender: { from?: string; replyTo?: string } = {};
+      let sender: ReturnType<typeof documentSender> = {};
       if (payload.document && payload.companyId) {
-        const integration = await getCarbonServiceRole()
+        const client = getCarbonServiceRole();
+        const integration = await client
           .from("companyIntegration")
           .select("active, metadata")
           .eq("id", "email")
@@ -65,13 +66,28 @@ export const sendEmailFunction = inngest.createFunction(
           });
           throw integration.error;
         }
-        sender = documentSender(
-          resolveEmailDelivery(integration.data, SERVER_MAIL_CONFIGURED),
-          EMAIL_DOMAIN
+        const delivery = resolveEmailDelivery(
+          integration.data,
+          SERVER_MAIL_CONFIGURED
         );
+        if (delivery?.provider === "server") {
+          const company = await client
+            .from("company")
+            .select("name")
+            .eq("id", payload.companyId)
+            .maybeSingle();
+          if (company.error) {
+            logger.error("Failed to read the company's name", {
+              companyId: payload.companyId,
+              error: company.error
+            });
+            throw company.error;
+          }
+          sender = documentSender(delivery, company.data?.name, DEFAULT_FROM);
+        }
       }
-      // Replies reach the person who sent the document and, when the
-      // company's address could not be the From, the company too.
+      // Replies reach the person who sent the document and the company's
+      // address, which server mail never sends from.
       const replyTo = [payload.from, sender.replyTo].filter(Boolean).join(", ");
       const response = await sendEmail({
         from: sender.from,

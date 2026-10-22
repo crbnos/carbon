@@ -15,9 +15,9 @@ const logger = getLogger("ee", "email");
  * provider without actually sending a message:
  *
  * - `server`: healthy when this server has mail settings. The company's From
- *   cannot make it undeliverable: one on another domain than the server's is
- *   sent as the Reply-To beside the server's From (see `documentSender`), so
- *   the relay only ever sees its own sender.
+ *   cannot make it undeliverable: it is only ever the Reply-To beside the
+ *   server's own From (see `documentSender`), so the relay only ever sees its
+ *   own sender.
  * - `resend`: hits `GET https://api.resend.com/domains` with the API key.
  *   A 2xx means the key is valid and has read access; a 401
  *   `restricted_api_key` means a valid "Sending access" key, also healthy.

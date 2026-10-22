@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { documentSender, emailDomain, resolveEmailDelivery } from "./delivery";
+import { documentSender, resolveEmailDelivery } from "./delivery";
 
 const installed = (metadata: Record<string, unknown>) => ({
   active: true,
@@ -69,39 +69,48 @@ describe("documentSender", () => {
     provider: "server" as const,
     fromEmail
   });
+  const serverFrom = "Carbon <no-reply@acme.co>";
 
-  it("sends as the company's address on the server's own domain", () => {
-    expect(documentSender(server("Sales@Acme.co"), "acme.co")).toEqual({
-      from: "Sales@Acme.co"
+  it("never sends from the company's address, even on the server's domain", () => {
+    expect(documentSender(server("ceo@acme.co"), "Acme", serverFrom)).toEqual({
+      from: { name: "Acme", address: "no-reply@acme.co" },
+      replyTo: "ceo@acme.co"
     });
-  });
-
-  it("moves a company address on another domain to the Reply-To", () => {
-    expect(documentSender(server("ceo@bank.com"), "acme.co")).toEqual({
+    expect(documentSender(server("ceo@bank.com"), "Acme", serverFrom)).toEqual({
+      from: { name: "Acme", address: "no-reply@acme.co" },
       replyTo: "ceo@bank.com"
     });
-    // A subdomain is another domain to the relay.
-    expect(documentSender(server("a@mail.acme.co"), "acme.co")).toEqual({
-      replyTo: "a@mail.acme.co"
+  });
+
+  it("keeps a name with quotes or brackets as data, not address syntax", () => {
+    expect(
+      documentSender(server(), 'Acme "Evil" <x@y.z>', serverFrom).from
+    ).toEqual({ name: 'Acme "Evil" <x@y.z>', address: "no-reply@acme.co" });
+  });
+
+  it("falls back to the server's name without a company name", () => {
+    expect(documentSender(server(), null, serverFrom)).toEqual({
+      from: { name: "Carbon", address: "no-reply@acme.co" },
+      replyTo: undefined
+    });
+    expect(
+      documentSender(server(), "  ", '"Carbon" <no-reply@acme.co>').from
+    ).toEqual({ name: "Carbon", address: "no-reply@acme.co" });
+    // A bare server address has no name to borrow: the server's From stands.
+    expect(documentSender(server(), null, "no-reply@acme.co")).toEqual({
+      from: undefined,
+      replyTo: undefined
     });
   });
 
-  it("uses the server's sender without a company address", () => {
-    expect(documentSender(server(), "acme.co")).toEqual({});
-    expect(documentSender(null, "acme.co")).toEqual({});
-  });
-
-  it("never sets a sender for Resend or SMTP integrations", () => {
+  it("never sets a sender for Resend or SMTP integrations, or no delivery", () => {
     expect(
-      documentSender({ provider: "smtp", fromEmail: "a@acme.co" }, "acme.co")
+      documentSender(
+        { provider: "smtp", fromEmail: "a@acme.co" },
+        "Acme",
+        serverFrom
+      )
     ).toEqual({});
-  });
-});
-
-describe("emailDomain", () => {
-  it("reads the domain of a bare or named address", () => {
-    expect(emailDomain("a@Acme.co")).toBe("acme.co");
-    expect(emailDomain("Acme <a@acme.co>")).toBe("acme.co");
-    expect(emailDomain("nobody")).toBeUndefined();
+    expect(documentSender(null, "Acme", serverFrom)).toEqual({});
   });
 });
