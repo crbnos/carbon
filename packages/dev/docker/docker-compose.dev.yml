@@ -327,7 +327,7 @@ services:
       - inbucket:/storage
 
   edge-runtime:
-    image: supabase/edge-runtime:v1.74.0
+    image: supabase/edge-runtime:v1.77.4
     restart: on-failure
     profiles: ["full"]
     deploy:
