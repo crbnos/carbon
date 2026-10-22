@@ -89,7 +89,7 @@ describe("computePoolRates", () => {
         mapping("fringe", "6100", "Base")
       ],
       glCells: [gl("5000", 30_000), gl("6100", 20_000)],
-      projectCells: [project("Direct", "Labor", 80_000)],
+      elements: elementsOf([project("Direct", "Labor", 80_000)]),
       absorbedOverhead: 0
     });
     const fringe = byPool(results, "fringe");
@@ -107,7 +107,7 @@ describe("computePoolRates", () => {
         mapping("overhead", "6100", "Cost")
       ],
       glCells: [gl("5000", 30_000), gl("6100", 20_000)],
-      projectCells: [project("Direct", "Labor", 80_000)],
+      elements: elementsOf([project("Direct", "Labor", 80_000)]),
       absorbedOverhead: 0
     });
     const overhead = byPool(results, "overhead");
@@ -134,10 +134,10 @@ describe("computePoolRates", () => {
       pools: [pool("ga", 1, "G&A", "Total Cost Input")],
       mappings: [mapping("ga", "7000", "Cost"), mapping("ga", "7100", "Cost")],
       glCells: [gl("7000", 50_000), gl("7100", 5_000, 5_000)],
-      projectCells: [
+      elements: elementsOf([
         project("Direct", "Labor", 300_000, 10_000),
         project("Direct", "Material", 200_000)
-      ],
+      ]),
       absorbedOverhead: 0
     });
     const ga = byPool(results, "ga");
@@ -162,10 +162,10 @@ describe("computePoolRates", () => {
         mapping("ga", "7000", "Cost")
       ],
       glCells: [gl("5000", 30_000), gl("6100", 20_000), gl("7000", 50_000)],
-      projectCells: [
+      elements: elementsOf([
         project("Direct", "Labor", 80_000),
         project("Direct", "Material", 20_000)
-      ],
+      ]),
       absorbedOverhead: 0
     });
     // 80,000 labor + 20,000 material + 24,000 fringe + 26,000 overhead
@@ -187,10 +187,10 @@ describe("computePoolRates", () => {
         mapping("ga", "7000", "Cost")
       ],
       glCells: [gl("5500", 8_000), gl("6200", 6_000), gl("7000", 10_000)],
-      projectCells: [
+      elements: elementsOf([
         project("Direct", "Labor", 60_000),
         project("Direct", "Material", 40_000)
-      ],
+      ]),
       absorbedOverhead: 0
     });
     expect(byPool(results, "mh").ytdRate).toEqual(0.2);
@@ -207,10 +207,10 @@ describe("computePoolRates", () => {
         mapping("ga", "7000", "Cost")
       ],
       glCells: [gl("5000", 30_000), gl("7000", 40_000)],
-      projectCells: [
+      elements: elementsOf([
         project("Direct", "Labor", 80_000),
         project("IR&D", "Labor", 20_000)
-      ],
+      ]),
       absorbedOverhead: 0
     });
     const fringe = byPool(results, "fringe");
@@ -245,7 +245,7 @@ describe("computePoolRates", () => {
       pools: [FRINGE, OVERHEAD],
       mappings,
       glCells: [tagged, other],
-      projectCells: [project("Direct", "Labor", 10_000)],
+      elements: elementsOf([project("Direct", "Labor", 10_000)]),
       absorbedOverhead: 0
     });
     expect(byPool(results, "fringe").poolCost).toEqual(1_000);
@@ -260,7 +260,7 @@ describe("computePoolRates", () => {
     const input = {
       mappings: [mapping("overhead", "6200", "Cost")],
       glCells: [gl("6200", 30_000)],
-      projectCells: [project("Direct", "Labor", 100_000)],
+      elements: elementsOf([project("Direct", "Labor", 100_000)]),
       absorbedOverhead: -4_000,
       absorbedOverheadAccountId: "5900"
     };
@@ -336,7 +336,9 @@ describe("projectBurdenTargets and burdenCatchUp", () => {
       new Map([["overhead", 0.25]]),
       month2
     );
-    expect(burdenCatchUp(targets, posted, month2)).toEqual([
+    expect(
+      burdenCatchUp(targets, posted, month2, new Set(["overhead"]))
+    ).toEqual([
       {
         projectId: "p1",
         projectElementId: "e1",
@@ -363,7 +365,9 @@ describe("projectBurdenTargets and burdenCatchUp", () => {
         amount: 2_000
       }
     ];
-    expect(burdenCatchUp(targets, posted, cells)).toEqual([]);
+    expect(
+      burdenCatchUp(targets, posted, cells, new Set(["overhead"]))
+    ).toEqual([]);
   });
 
   it("offsetAbsorbedOverhead takes the absorbed overhead off the target, never below 0", () => {
@@ -395,7 +399,7 @@ describe("projectBurdenTargets and burdenCatchUp", () => {
       new Map([["overhead", 0.2]]),
       cells
     );
-    const rows = burdenCatchUp(targets, [], cells);
+    const rows = burdenCatchUp(targets, [], cells, new Set(["overhead"]));
     expect(rows).toHaveLength(2);
     expect(rows.find((r) => !r.unallowable)?.amount).toEqual(2_000);
     expect(rows.find((r) => r.unallowable)?.amount).toEqual(200);
@@ -411,6 +415,7 @@ function billingLine(
     projectElementId: "e1",
     feePercent: 0,
     baseByYear: new Map([[2026, { Labor: 10_000 }]]),
+    absorbedOverheadByYear: new Map(),
     ceilings: new Map(),
     existing: new Map(),
     ...overrides
@@ -459,5 +464,223 @@ describe("burden billing", () => {
       rates: new Map([["overhead|2026", { final: null, provisional: 0.25 }]])
     });
     expect(adjustments.map((a) => a.amount)).toEqual([2_700]);
+  });
+});
+
+// One element per cost objective, as the rate run's loaders would hand over.
+function elementsOf(
+  cells: ProjectCell[],
+  absorbedOverhead: Partial<Record<ProjectCell["costObjective"], number>> = {}
+): ElementCells[] {
+  const byObjective = new Map<string, ElementCells>();
+  for (const cell of cells) {
+    const e =
+      byObjective.get(cell.costObjective) ??
+      element(
+        {},
+        {
+          projectId: `p-${cell.costObjective}`,
+          costObjective: cell.costObjective,
+          absorbedOverhead: absorbedOverhead[cell.costObjective] ?? 0
+        }
+      );
+    const bucket = e.buckets[cell.bucket] ?? {
+      amount: 0,
+      unallowableAmount: 0
+    };
+    bucket.amount += cell.amount;
+    bucket.unallowableAmount += cell.unallowableAmount;
+    e.buckets[cell.bucket] = bucket;
+    byObjective.set(cell.costObjective, e);
+  }
+  return [...byObjective.values()];
+}
+
+describe("the rate run's base agrees with the applied burden", () => {
+  it("E3: a TCI base carries the earlier pool's full burden, its own carried-in burden included", () => {
+    const elements = elementsOf([project("Direct", "Labor", 100)]);
+    const pools = [
+      pool("fringe", 1, "Fringe", "Direct Labor Dollars"),
+      pool("overhead", 2, "Overhead", "Value Added"),
+      pool("ga", 3, "G&A", "Total Cost Input")
+    ];
+    const results = computePoolRates({
+      pools,
+      mappings: [
+        mapping("fringe", "5000", "Cost"),
+        mapping("overhead", "6000", "Cost"),
+        mapping("ga", "7000", "Cost")
+      ],
+      glCells: [gl("5000", 30), gl("6000", 130), gl("7000", 26)],
+      elements,
+      absorbedOverhead: 0
+    });
+    expect(byPool(results, "fringe").ytdRate).toEqual(0.3);
+    // 100 labor + 30 fringe
+    expect(byPool(results, "overhead").baseAmount).toEqual(130);
+    expect(byPool(results, "overhead").ytdRate).toEqual(1);
+    // 100 labor + 30 fringe + 130 overhead (1.0 × (100 + 30))
+    const ga = byPool(results, "ga");
+    expect(ga.baseAmount).toEqual(260);
+    expect(ga.ytdRate).toEqual(0.1);
+
+    // The applied G&A base of the same cost is the same 260.
+    const rates = new Map(results.map((r) => [r.indirectPoolId, r.ytdRate]));
+    const targets = projectBurdenTargets(pools, rates, elements[0]!);
+    expect(targets.get("ga")?.allowable).toBeCloseTo(26, 5);
+  });
+
+  it("E1: with offsetAbsorbedOverhead the G&A base carries the overhead burden net of the job Overhead rows", () => {
+    // Labor 100, job Overhead rows 40, Overhead pool 100 at 1.0, G&A pool 24.
+    const elements = elementsOf(
+      [project("Direct", "Labor", 100), project("Direct", "Other", 40)],
+      { Direct: 40 }
+    );
+    const pools = [
+      pool("overhead", 1, "Overhead", "Direct Labor Dollars", {
+        offsetAbsorbedOverhead: true
+      }),
+      pool("ga", 2, "G&A", "Total Cost Input")
+    ];
+    const results = computePoolRates({
+      pools,
+      mappings: [
+        mapping("overhead", "6000", "Cost"),
+        mapping("ga", "7000", "Cost")
+      ],
+      glCells: [gl("6000", 100), gl("7000", 24)],
+      elements,
+      absorbedOverhead: -40
+    });
+    expect(byPool(results, "overhead").ytdRate).toEqual(1);
+    // 100 labor + 40 Overhead rows + max(0, 1.0 × 100 − 40)
+    const ga = byPool(results, "ga");
+    expect(ga.baseAmount).toEqual(200);
+    expect(ga.ytdRate).toEqual(0.12);
+  });
+
+  it("E3: an IR&D project's fringe burden reaches G&A cost with the overhead on it", () => {
+    const elements = elementsOf([
+      project("Direct", "Labor", 100),
+      project("IR&D", "Labor", 50)
+    ]);
+    const results = computePoolRates({
+      pools: [
+        pool("fringe", 1, "Fringe", "Direct Labor Dollars"),
+        pool("overhead", 2, "Overhead", "Value Added"),
+        pool("ga", 3, "G&A", "Total Cost Input")
+      ],
+      mappings: [
+        mapping("fringe", "5000", "Cost"),
+        mapping("overhead", "6000", "Cost"),
+        mapping("ga", "7000", "Cost")
+      ],
+      glCells: [gl("5000", 45), gl("6000", 195), gl("7000", 0)],
+      elements,
+      absorbedOverhead: 0
+    });
+    // Overhead base: 150 labor + 45 fringe = 195, so a rate of 1.0.
+    expect(byPool(results, "overhead").baseAmount).toEqual(195);
+    expect(byPool(results, "overhead").ytdRate).toEqual(1);
+    // G&A cost: IR&D fringe 15 + IR&D overhead 1.0 × (50 + 15) = 80.
+    expect(byPool(results, "ga").poolCost).toEqual(80);
+  });
+});
+
+describe("burdenCatchUp of a pool that no longer applies", () => {
+  it("E4: posted burden of a pool outside the applied set is left as it is", () => {
+    const cells = element({ Labor: { amount: 10_000, unallowableAmount: 0 } });
+    const posted = [
+      {
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "inactive",
+        unallowable: false,
+        amount: 2_000
+      }
+    ];
+    const targets = projectBurdenTargets(
+      [OVERHEAD],
+      new Map([["overhead", 0.2]]),
+      cells
+    );
+    expect(
+      burdenCatchUp(targets, posted, cells, new Set(["overhead"]))
+    ).toEqual([
+      {
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "overhead",
+        unallowable: false,
+        amount: 2_000
+      }
+    ]);
+  });
+
+  it("an applied pool with posted burden and no target still catches up to zero", () => {
+    const cells = element({}, { costObjective: "IR&D" });
+    const ga = pool("ga", 1, "G&A", "Total Cost Input");
+    const posted = [
+      {
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "ga",
+        unallowable: false,
+        amount: 500
+      }
+    ];
+    const targets = projectBurdenTargets([ga], new Map([["ga", 0.1]]), cells);
+    expect(burdenCatchUp(targets, posted, cells, new Set(["ga"]))).toEqual([
+      {
+        projectId: "p1",
+        projectElementId: "e1",
+        indirectPoolId: "ga",
+        unallowable: false,
+        amount: -500
+      }
+    ]);
+  });
+});
+
+describe("burden billing with offsetAbsorbedOverhead", () => {
+  it("E2: an offset Overhead pool bills its burden net of the line's Overhead rows", () => {
+    const { adjustments } = burdenBillingAdjustments({
+      pools: [{ ...OVERHEAD, offsetAbsorbedOverhead: true }],
+      lines: [
+        billingLine({
+          baseByYear: new Map([[2026, { Labor: 10_000, Other: 1_000 }]]),
+          absorbedOverheadByYear: new Map([[2026, 1_000]])
+        })
+      ],
+      rates: new Map([["overhead|2026", { final: null, provisional: 0.3 }]])
+    });
+    // 0.3 × 10,000 − 1,000 of Overhead rows already billed at cost
+    expect(adjustments.map((a) => a.amount)).toEqual([2_000]);
+  });
+
+  it("E2: the G&A billing base carries the net overhead burden, as the applied burden does", () => {
+    const pools = [
+      { ...OVERHEAD, sequence: 1, offsetAbsorbedOverhead: true },
+      pool("ga", 2, "G&A", "Total Cost Input")
+    ];
+    const { adjustments } = burdenBillingAdjustments({
+      pools,
+      lines: [
+        billingLine({
+          baseByYear: new Map([[2026, { Labor: 100, Other: 40 }]]),
+          absorbedOverheadByYear: new Map([[2026, 40]])
+        })
+      ],
+      rates: new Map([
+        ["overhead|2026", { final: null, provisional: 1 }],
+        ["ga|2026", { final: null, provisional: 0.12 }]
+      ])
+    });
+    expect(
+      adjustments.map((a) => [a.indirectPoolId, a.burdenBase, a.amount])
+    ).toEqual([
+      ["overhead", 100, 60],
+      ["ga", 200, 24]
+    ]);
   });
 });

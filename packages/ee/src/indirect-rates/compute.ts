@@ -107,8 +107,36 @@ export function matchMapping(
  */
 export function projectCellInBase(pool: PoolDef, cell: ProjectCell): boolean {
   if (!BASE_TYPE_BUCKETS[pool.baseType].includes(cell.bucket)) return false;
-  if (isDirectObjective(cell.costObjective)) return true;
-  return isIndependentResearch(cell.costObjective) && pool.poolType !== "G&A";
+  return objectiveInBase(pool, cell.costObjective);
+}
+
+function objectiveInBase(
+  pool: Pick<PoolDef, "poolType">,
+  objective: BurdenedCostObjective
+): boolean {
+  if (isDirectObjective(objective)) return true;
+  return isIndependentResearch(objective) && pool.poolType !== "G&A";
+}
+
+/** The elements' cost summed by objective and bucket. */
+function projectCellsOf(elements: ElementCells[]): ProjectCell[] {
+  const cells = new Map<string, ProjectCell>();
+  for (const element of elements) {
+    for (const [bucket, value] of Object.entries(element.buckets)) {
+      if (!value) continue;
+      const key = `${element.costObjective}|${bucket}`;
+      const cell = cells.get(key) ?? {
+        costObjective: element.costObjective,
+        bucket: bucket as BaseBucket,
+        amount: 0,
+        unallowableAmount: 0
+      };
+      cell.amount += value.amount;
+      cell.unallowableAmount += value.unallowableAmount;
+      cells.set(key, cell);
+    }
+  }
+  return [...cells.values()];
 }
 
 /** B3: a Total Cost Input base takes every earlier pool's burden; Value Added all but Material Handling. */
@@ -131,25 +159,34 @@ export function sortPools<T extends Pick<PoolDef, "sequence">>(
 
 /**
  * The YTD Actual rate of every pool, in cascade order (B2, B3, B7).
- * `absorbedOverhead` is the YTD debit-positive total of the overhead
- * absorption account (negative while it holds credits).
+ * `elements` is the YTD project cost of every burdened element, as the burden
+ * run reads it. `absorbedOverhead` is the YTD debit-positive total of the
+ * overhead absorption account (negative while it holds credits).
+ *
+ * The burden an earlier pool carries into a later one (3.2, 3.3) is the burden
+ * it applies to the projects: `projectBurdenTargets` of each element at the
+ * rates computed so far. So a base takes an earlier pool's own carried-in
+ * burden, net of the absorbed overhead of an offset pool (B7), and the rate
+ * run's base is the base the burden run applies the rate to.
  */
 export function computePoolRates({
   pools,
   mappings,
   glCells,
-  projectCells,
+  elements,
   absorbedOverhead,
   absorbedOverheadAccountId = null
 }: {
   pools: PoolDef[];
   mappings: PoolMapping[];
   glCells: GlCell[];
-  projectCells: ProjectCell[];
+  elements: ElementCells[];
   absorbedOverhead: number;
   absorbedOverheadAccountId?: string | null;
 }): PoolRateResult[] {
   const ordered = sortPools(pools);
+  const projectPools = ordered.filter((p) => p.appliesToProjects);
+  const projectCells = projectCellsOf(elements);
 
   // The pool each GL cell is Cost of: one at most (B4, a unique index).
   const costPoolOf = glCells.map(
@@ -204,7 +241,12 @@ export function computePoolRates({
       if (projectCellInBase(pool, cell)) baseAmount += cell.amount;
     }
 
-    // 3. Carry-in from every earlier pool (B3).
+    // 3. Carry-in from every earlier pool (B3). `rateOf` holds the earlier
+    // pools only, so the targets are their burden on each element.
+    const applied = elements.map((element) => ({
+      element,
+      targets: projectBurdenTargets(projectPools, rateOf, element)
+    }));
     for (const earlier of results) {
       const source = ordered.find((p) => p.id === earlier.indirectPoolId)!;
       const rate = rateOf.get(source.id) ?? 0;
@@ -219,22 +261,36 @@ export function computePoolRates({
         carriedUnallowable += rate * cell.unallowableAmount;
       });
 
-      // 3.2 The earlier burden on IR&D and B&P cost goes into G&A cost.
+      // 3.2 The earlier burden on IR&D and B&P cost goes into G&A cost: the
+      // burden applied to it, or the rate on its base for a pool that
+      // applies to no project.
       if (pool.poolType === "G&A" && source.poolType !== "G&A") {
-        for (const cell of projectCells) {
-          if (!isIndependentResearch(cell.costObjective)) continue;
-          if (!projectCellInBase(source, cell)) continue;
-          carried += rate * (cell.amount - cell.unallowableAmount);
-          carriedUnallowable += rate * cell.unallowableAmount;
+        if (source.appliesToProjects) {
+          for (const { element, targets } of applied) {
+            if (!isIndependentResearch(element.costObjective)) continue;
+            const target = targets.get(source.id);
+            if (!target) continue;
+            carried += target.allowable;
+            carriedUnallowable += target.unallowable;
+          }
+        } else {
+          for (const cell of projectCells) {
+            if (!isIndependentResearch(cell.costObjective)) continue;
+            if (!projectCellInBase(source, cell)) continue;
+            carried += rate * (cell.amount - cell.unallowableAmount);
+            carriedUnallowable += rate * cell.unallowableAmount;
+          }
         }
       }
 
-      // 3.3 TCI and Value Added bases take the earlier burden on direct cost.
+      // 3.3 TCI and Value Added bases take the earlier burden applied to the
+      // project cost in their base.
       if (source.appliesToProjects && carriesBurdenIntoBase(pool, source)) {
-        for (const cell of projectCells) {
-          if (!isDirectObjective(cell.costObjective)) continue;
-          if (!projectCellInBase(source, cell)) continue;
-          baseAmount += rate * cell.amount;
+        for (const { element, targets } of applied) {
+          if (!objectiveInBase(pool, element.costObjective)) continue;
+          const target = targets.get(source.id);
+          if (!target) continue;
+          baseAmount += target.allowable + target.unallowable;
         }
       }
 
@@ -344,7 +400,7 @@ export type PostedBurden = {
   projectElementId: string | null;
   indirectPoolId: string;
   unallowable: boolean;
-  amount: number; // Σ Burden rows for the fiscal year
+  amount: number; // Σ Burden rows of the fiscal year in the run's window
 };
 
 export type BurdenRow = {
@@ -411,18 +467,25 @@ export function projectBurdenTargets(
 
 /**
  * The YTD catch-up: each pool × unallowable flag posts its target less what
- * the fiscal year already posted. A pool with posted burden and no target any
- * more posts it back to zero.
+ * the fiscal year already posted. An applied pool with posted burden and no
+ * target any more posts it back to zero.
+ *
+ * `appliedPoolIds` are the pools the run applies (active, applying to
+ * projects). The posted burden of any other pool is left as it is: a pool
+ * deactivated mid-year keeps the burden it posted, as its billing keeps the
+ * burden it billed (`burdenBillingAdjustments` bills applied pools only).
  */
 export function burdenCatchUp(
   targets: Map<string, BurdenTarget>,
   posted: PostedBurden[],
-  element: Pick<ElementCells, "projectId" | "projectElementId">
+  element: Pick<ElementCells, "projectId" | "projectElementId">,
+  appliedPoolIds: ReadonlySet<string>
 ): BurdenRow[] {
   const postedByKey = new Map<string, number>();
   for (const row of posted) {
     if (row.projectId !== element.projectId) continue;
     if (row.projectElementId !== element.projectElementId) continue;
+    if (!appliedPoolIds.has(row.indirectPoolId)) continue;
     const key = `${row.indirectPoolId}|${row.unallowable}`;
     postedByKey.set(key, (postedByKey.get(key) ?? 0) + row.amount);
   }
@@ -477,6 +540,8 @@ export type BillingInput = {
     feePercent: number;
     // Σ ledger cost of the line's billable items that are not Written Off, by fiscal year and bucket
     baseByYear: Map<number, Partial<Record<BaseBucket, number>>>;
+    // The Overhead ledger rows among them, by fiscal year (B7): already billed at cost
+    absorbedOverheadByYear: Map<number, number>;
     ceilings: Map<string, number>; // poolId → ceiling rate
     existing: Map<string, number>; // `${poolId}|${fiscalYear}` → Σ amount of the line's burden items
   }[];
@@ -540,7 +605,14 @@ export function burdenBillingAdjustments(input: BillingInput): {
           if (carriesBurdenIntoBase(pool, earlier.pool)) base += earlier.burden;
         }
 
-        const burden = rate * base;
+        // B7, as projectBurdenTargets: the line's Overhead rows are billed at
+        // cost, so an offset pool bills only the burden above them.
+        const burden = pool.offsetAbsorbedOverhead
+          ? Math.max(
+              0,
+              rate * base - (line.absorbedOverheadByYear.get(fiscalYear) ?? 0)
+            )
+          : rate * base;
         applied.push({ pool, burden });
 
         const existing = line.existing.get(`${pool.id}|${fiscalYear}`) ?? 0;

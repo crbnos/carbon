@@ -367,11 +367,30 @@ export function toElementCells(groups: ElementGroup[]): ElementCells[] {
   return [...elements.values()];
 }
 
-/** Σ Burden rows of the fiscal year by project, element, pool and flag (B8). */
+/**
+ * Σ Burden rows of the fiscal year by project, element, pool and flag (B8),
+ * over the same window as the target they are netted against.
+ *
+ * A period run's target is the YTD burden through its period, so it counts
+ * only the year's rows dated on or before the period end, and never the Final
+ * true-up's: re-running or relocking an earlier period then posts that
+ * period's correction alone, and a Provisional re-run of period 12 leaves the
+ * true-up standing. The true-up (`through` null) targets the whole year at
+ * Final rates, so it counts every row of the year, wherever it was posted.
+ */
 export async function loadPostedBurden(
   db: Db,
-  { companyId, fiscalYear }: { companyId: string; fiscalYear: number }
+  {
+    companyId,
+    fiscalYear,
+    through
+  }: { companyId: string; fiscalYear: number; through: string | null }
 ): Promise<PostedBurden[]> {
+  const window =
+    through === null
+      ? sql``
+      : sql`AND pl."postingDate" <= ${through}::date
+      AND pl."indirectRateType" <> 'Final'`;
   const result = await sql<PostedBurden>`
     SELECT
       pl."projectId",
@@ -383,6 +402,7 @@ export async function loadPostedBurden(
     WHERE pl."companyId" = ${companyId}
       AND pl."costType" = 'Burden'
       AND pl."burdenFiscalYear" = ${fiscalYear}
+      ${window}
     GROUP BY pl."projectId", pl."projectElementId", pl."indirectPoolId", pl."unallowable"
   `.execute(db);
 

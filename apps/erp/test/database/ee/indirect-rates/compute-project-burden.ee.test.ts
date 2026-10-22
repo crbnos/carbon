@@ -97,6 +97,54 @@ async function burdenFixture() {
     userId: f.userId,
     accountingPeriodId: period.id
   };
+
+  const addPeriod = async (
+    startDate: string,
+    endDate: string,
+    fiscalYear: number,
+    periodNumber: number
+  ) => {
+    const row = await f.db
+      .insertInto("accountingPeriod")
+      .values({
+        startDate,
+        endDate,
+        fiscalYear,
+        periodNumber,
+        status: "Inactive",
+        closeStatus: "Locked",
+        companyId: f.companyId,
+        createdBy: f.userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    return { ...args, accountingPeriodId: row.id };
+  };
+
+  const labor = (amount: number, postingDate: string) =>
+    f.post([
+      {
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        costType: "Labor",
+        amount,
+        quantity: 1,
+        postingDate
+      }
+    ]);
+
+  const burdenRows = async () =>
+    (
+      await f.db
+        .selectFrom("projectLedger")
+        .select(["indirectRateType", "postingDate", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("costType", "=", "Burden")
+        .orderBy("createdAt")
+        .orderBy("postingDate")
+        .execute()
+    ).map((row) => ({ ...row, amount: Number(row.amount) }));
+
   return {
     f,
     project,
@@ -104,7 +152,10 @@ async function burdenFixture() {
     poolId: pool.id,
     periodId: period.id,
     setRate,
-    args
+    args,
+    addPeriod,
+    labor,
+    burdenRows
   };
 }
 
@@ -276,3 +327,136 @@ databaseTest("the burden run refuses a pool with no rate", async () => {
     await b.f.cleanup();
   }
 });
+
+databaseTest(
+  "re-running an earlier period posts only that period's correction and leaves later burden alone",
+  async () => {
+    const b = await burdenFixture();
+    try {
+      await b.setRate("Provisional", [1, 2], 0.5);
+      const january = await b.addPeriod("2026-01-01", "2026-01-31", 2026, 1);
+      await b.labor(10000, "2026-01-15");
+      await b.labor(10000, "2026-02-10");
+
+      expect((await computeProjectBurden(b.f.db, client, january)).error).toBeNull();
+      expect((await computeProjectBurden(b.f.db, client, b.args)).error).toBeNull();
+
+      // Nothing changed in January: re-running it posts nothing.
+      const rerun = await computeProjectBurden(b.f.db, client, january);
+      expect(rerun.error).toBeNull();
+      expect(rerun.data?.burdenRowCount).toEqual(0);
+
+      // Cost backdated into January: the re-run posts January's correction only.
+      await b.labor(2000, "2026-01-20");
+      const corrected = await computeProjectBurden(b.f.db, client, january);
+      expect(corrected.data?.burdenRowCount).toEqual(1);
+      expect(await b.burdenRows()).toEqual([
+        { indirectRateType: "Provisional", postingDate: "2026-01-31", amount: 5000 },
+        { indirectRateType: "Provisional", postingDate: "2026-02-28", amount: 5000 },
+        { indirectRateType: "Provisional", postingDate: "2026-01-31", amount: 1000 }
+      ]);
+
+      // February is still whole: re-running it posts nothing.
+      const february = await computeProjectBurden(b.f.db, client, b.args);
+      expect(february.data?.burdenRowCount).toEqual(0);
+    } finally {
+      await b.f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Provisional re-run of period 12 after the Final true-up does not undo the true-up",
+  async () => {
+    const b = await burdenFixture();
+    try {
+      const periods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      await b.setRate("Provisional", periods, 0.5);
+      await b.setRate("Final", [12], 0.4);
+      const december = await b.addPeriod("2026-12-01", "2026-12-31", 2026, 12);
+      const nextJanuary = await b.addPeriod("2027-01-01", "2027-01-31", 2027, 1);
+      await b.labor(10000, "2026-12-10");
+
+      expect((await computeProjectBurden(b.f.db, client, december)).error).toBeNull();
+      const trueUp = await computeProjectBurden(b.f.db, client, {
+        ...nextJanuary,
+        rateType: "Final",
+        fiscalYear: 2026
+      });
+      expect(trueUp.error).toBeNull();
+      expect(trueUp.data?.burdenRowCount).toEqual(1);
+
+      // Relocking December runs the Provisional catch-up again.
+      const relock = await computeProjectBurden(b.f.db, client, december);
+      expect(relock.data?.burdenRowCount).toEqual(0);
+
+      // The true-up itself stays idempotent.
+      const again = await computeProjectBurden(b.f.db, client, {
+        ...nextJanuary,
+        rateType: "Final",
+        fiscalYear: 2026
+      });
+      expect(again.data?.burdenRowCount).toEqual(0);
+      expect(await b.burdenRows()).toEqual([
+        { indirectRateType: "Provisional", postingDate: "2026-12-31", amount: 5000 },
+        { indirectRateType: "Final", postingDate: "2027-01-31", amount: -1000 }
+      ]);
+    } finally {
+      await b.f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a Provisional re-run of period 12 leaves a true-up posted into period 12 itself",
+  async () => {
+    const b = await burdenFixture();
+    try {
+      const periods = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      await b.setRate("Provisional", periods, 0.5);
+      await b.setRate("Final", [12], 0.4);
+      const december = await b.addPeriod("2026-12-01", "2026-12-31", 2026, 12);
+      await b.labor(10000, "2026-12-10");
+
+      expect((await computeProjectBurden(b.f.db, client, december)).error).toBeNull();
+      const trueUp = await computeProjectBurden(b.f.db, client, {
+        ...december,
+        rateType: "Final"
+      });
+      expect(trueUp.data?.burdenRowCount).toEqual(1);
+
+      const relock = await computeProjectBurden(b.f.db, client, december);
+      expect(relock.data?.burdenRowCount).toEqual(0);
+    } finally {
+      await b.f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "deactivating a pool keeps the burden it already posted, and its billing",
+  async () => {
+    const b = await burdenFixture();
+    try {
+      await b.setRate("Provisional", [1, 2], 0.5);
+      await b.labor(10000, "2026-02-10");
+      expect((await computeProjectBurden(b.f.db, client, b.args)).error).toBeNull();
+
+      await b.f.db
+        .updateTable("indirectPool")
+        .set({ active: false })
+        .where("id", "=", b.poolId)
+        .where("companyId", "=", b.f.companyId)
+        .execute();
+
+      const rerun = await computeProjectBurden(b.f.db, client, b.args);
+      expect(rerun.error).toBeNull();
+      expect(rerun.data?.burdenRowCount).toEqual(0);
+      expect(await b.burdenRows()).toEqual([
+        { indirectRateType: "Provisional", postingDate: "2026-02-28", amount: 5000 }
+      ]);
+    } finally {
+      await b.f.cleanup();
+    }
+  }
+);

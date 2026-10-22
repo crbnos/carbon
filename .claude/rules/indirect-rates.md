@@ -117,6 +117,18 @@ The cascade carries burden 3 ways:
    takes every earlier pool's burden except Material Handling. Single-element
    bases take none. Only pools that apply to projects carry burden into a base.
 
+In ways 2 and 3 the carried burden is the burden the earlier pool APPLIES:
+`computePoolRates` reads the period's element cells (`loadElementCells`, the
+burden run's reader) and calls `projectBurdenTargets` for each element at the
+rates computed so far. So an earlier pool carries its own carried-in burden too
+(fringe → overhead on Value Added → G&A on Total Cost Input), net of the
+absorbed overhead of an offset pool (B7), and the rate run's base is the base
+the burden run applies the rate to. Carrying `rate × raw base` instead
+under-stated the G&A base by the burden-on-burden and over-stated it by the
+absorbed overhead, so G&A was systematically mis-applied. Only a pool that
+applies to no project still carries `rate × base` into G&A cost (way 2): it has
+no targets.
+
 Unallowable cost leaves the numerator (it shows in its own column) and stays in
 the base (CAS 405-40(e)). The GL readers count journals with status Posted or
 Reversed (`GL_JOURNAL_STATUSES`).
@@ -134,6 +146,21 @@ element with posted burden and no cost catches up to zero.
 Burden rows are `projectLedger` rows with `costType = 'Burden'`,
 `indirectPoolId`, `indirectRateType` and `burdenFiscalYear`. The Final true-up
 can post after the year ends, so the year never comes from `postingDate`.
+
+"Already posted" (`loadPostedBurden`) covers the same window as the target. A
+period run counts the year's rows dated on or before its period end, and never
+the Final rows; the true-up counts every row of the year. So re-running or
+relocking an earlier period posts that period's correction alone, and a
+Provisional relock of period 12 leaves the true-up standing, wherever the
+true-up was posted. Summing the whole year undid every later period's burden,
+and the true-up, as a negative catch-up.
+
+The catch-up runs over the applied pools only (active, applying to projects).
+A pool deactivated mid-year keeps the burden it posted, and its billing keeps
+what it billed (billing also reads applied pools only); later pools stop
+carrying its burden into their bases in the rate run, the burden and the
+billing alike. Before, the catch-up reversed the pool's whole year of burden
+while its billing stayed.
 `companySettings.burdenRateType` (Provisional or Actual, default Provisional)
 picks the rate.
 
@@ -171,7 +198,11 @@ The billing readers left-join `projectLedger` and date an item by
 
 `offsetAbsorbedOverhead` (Overhead pools only): the rate uses the gross pool
 cost. A project's target burden on that pool = max(0, rate × base − the
-project's YTD Overhead ledger rows). The statement shows the absorbed overhead
+project's YTD Overhead ledger rows). Burden billing applies the same offset
+(`absorbedOverheadByYear`: the Overhead rows among the line's billable base),
+since the Cost Plus generator already bills those rows at cost; the net burden
+is also what a later Total Cost Input or Value Added pool carries, in billing
+and in the rate run. The statement shows the absorbed overhead
 as an `'Absorbed Overhead'` credit line on `accountDefault.overheadAbsorptionAccount`;
 it never reduces the numerator and is never claimed.
 

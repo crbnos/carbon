@@ -37,7 +37,6 @@ import {
   loadElementCells,
   loadGlCells,
   loadPostedBurden,
-  loadProjectCells,
   loadRatePeriod
 } from "./loaders.server";
 import {
@@ -402,9 +401,9 @@ export async function computeIndirectRates(
           .execute();
 
   const range = { companyId, from: fyStart, to: periodEnd };
-  const [glCells, projectCells, absorbed, previousRows] = await Promise.all([
+  const [glCells, elements, absorbed, previousRows] = await Promise.all([
     loadGlCells(db, { ...range, mappings }),
-    loadProjectCells(db, range),
+    loadElementCells(db, range),
     loadAbsorbedOverhead(db, range),
     periodNumber > 1 && poolIds.length > 0
       ? db
@@ -423,7 +422,7 @@ export async function computeIndirectRates(
     pools,
     mappings,
     glCells,
-    projectCells,
+    elements,
     absorbedOverhead: absorbed.amount,
     absorbedOverheadAccountId: absorbed.accountId
   });
@@ -722,7 +721,11 @@ export async function computeProjectBurden(
 
   const [elements, posted] = await Promise.all([
     loadElementCells(db, { companyId, ...range }),
-    loadPostedBurden(db, { companyId, fiscalYear })
+    loadPostedBurden(db, {
+      companyId,
+      fiscalYear,
+      through: isTrueUp ? null : ratePeriod.periodEnd
+    })
   ]);
 
   // An element with posted burden and no cost in the range still catches up
@@ -731,8 +734,10 @@ export async function computeProjectBurden(
     projectId: string;
     projectElementId: string | null;
   }) => `${row.projectId}|${row.projectElementId ?? ""}`;
+  const appliedPoolIds = new Set(pools.map((pool) => pool.id));
   const allElements = new Map(elements.map((e) => [elementKey(e), e]));
   for (const row of posted) {
+    if (!appliedPoolIds.has(row.indirectPoolId)) continue;
     if (allElements.has(elementKey(row))) continue;
     allElements.set(elementKey(row), {
       projectId: row.projectId,
@@ -747,7 +752,8 @@ export async function computeProjectBurden(
     burdenCatchUp(
       projectBurdenTargets(pools, rates, element),
       posted,
-      element
+      element,
+      appliedPoolIds
     ).map((row) => ({
       ...row,
       indirectRateType: type,
@@ -980,8 +986,16 @@ export async function computeBurdenBilling(
           number,
           Partial<Record<BaseBucket, number>>
         >();
+        const absorbedOverheadByYear = new Map<number, number>();
         for (const row of baseRows.rows) {
           if (row.customerContractLineId !== line.id) continue;
+          if (row.costType === "Overhead") {
+            absorbedOverheadByYear.set(
+              row.fiscalYear,
+              (absorbedOverheadByYear.get(row.fiscalYear) ?? 0) +
+                Number(row.amount)
+            );
+          }
           const buckets = baseByYear.get(row.fiscalYear) ?? {};
           for (const bucket of PROJECT_BASE_BUCKETS[row.costType] ?? []) {
             const value = Number(
@@ -997,6 +1011,7 @@ export async function computeBurdenBilling(
           projectElementId: line.projectElementId!,
           feePercent: Number(line.feePercent ?? 0),
           baseByYear,
+          absorbedOverheadByYear,
           ceilings: new Map(
             ceilingRows
               .filter((row) => row.customerContractLineId === line.id)
