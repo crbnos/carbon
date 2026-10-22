@@ -18,7 +18,7 @@
     "supabase": "catalog:",
     "ts-morph": "28.0.0",
     "tsx": "catalog:",
-    "turbo": "2.11.7",
+    "turbo": "2.11.9",
     "typescript": "catalog:",
     "vite": "catalog:",
     "zod": "catalog:"
