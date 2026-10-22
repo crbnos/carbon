@@ -1,0 +1,13 @@
+<h2>Confirm your new email for Carbon</h2>
+
+<p>Confirm the change of your email from {{ .Email }} to {{ .NewEmail }}.</p>
+
+<p>Enter this code:</p>
+
+<p style="font-family: monospace; font-size: 28px; font-weight: 600; letter-spacing: 6px">{{ .Token }}</p>
+
+<p>Or follow this link:</p>
+
+<p>
+  <a href="{{ .ConfirmationURL }}">Confirm the new email</a>
+</p>
