@@ -106,7 +106,10 @@ FROM bootstrap AS ops
 # the supabase CLI and its fix is unpublished), packages the lockfile hydrates
 # but nothing links (a frozen install materializes every importer, docs/
 # included — hence next/@mui; react-icons is inlined via ssr.noExternal), and
-# sourcemaps/.d.ts/readmes. Verify additions the same way — monaco-editor looks
+# sourcemaps/.d.ts/readmes. react-email 6 ships its CLI in the runtime package:
+# the runtime entry imports only @react-email/render, css-tree, marked, prismjs
+# and tailwindcss, so the preview UI and the CLI-only deps nothing else in the
+# lockfile uses go. Verify additions the same way — monaco-editor looks
 # strippable but the server bundle imports @monaco-editor/react.
 FROM deps AS pruned
 ARG SOURCEMAPS
@@ -122,7 +125,10 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         -name '@turbo+*' -o \
         -name '@rolldown+binding-*' -o \
         -name 'vitest@*' -o -name '@vitest+*' -o \
-        -name '@react-email+preview-server@*' -o \
+        -name '@react-email+ui@*' -o \
+        -name 'socket.io@*' -o -name 'socket.io-adapter@*' -o -name 'engine.io@*' -o \
+        -name 'conf@*' -o -name 'nypm@*' -o -name 'picospinner@*' -o -name 'prompts@*' -o \
+        -name 'tsconfig-paths@*' -o \
         -name 'next@*' -o -name '@next+*' -o \
         -name '@mui+*' -o \
         -name 'react-icons@*' \
