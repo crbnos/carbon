@@ -142,10 +142,13 @@ import {
   untranslatedOptions
 } from "./standard-fields";
 import {
+  BOM_LINE_FIELDS,
   type BomLineField,
+  IDENTITY_FIELDS,
   IDENTITY_VALUE_TYPES,
   type IdentityField,
-  isIdentityProperty
+  isIdentityProperty,
+  ONSHAPE_PROPERTIES
 } from "./standard-sources";
 import type { PanelPartStatus } from "./status";
 
@@ -253,6 +256,14 @@ type PanelFieldsData = {
   descriptionModes: DescriptionModes;
   /** What a push gives a new item when nothing maps a field. */
   pushDefaults: OnshapePushDefaults;
+  /** An assembly's BOM columns; null on a Part Studio or an unread BOM. */
+  bom?: {
+    columns: Pick<PanelFieldsProperty, "propertyId" | "name" | "valueType">[];
+    /** The column the panel finds on its own, per line field. */
+    detected: Record<BomLineField, string | null>;
+  } | null;
+  /** Carbon items linked to Onshape parts: a new part number source re-matches them. */
+  linkedItems?: number;
 };
 
 type FieldsDraftEntry = PropertyMapEntry;
@@ -794,13 +805,16 @@ function PanelLoadError({
   failure,
   stale,
   retrying,
-  onRetry
+  onRetry,
+  action
 }: {
   title: string;
   failure: LoadFailure;
   stale?: boolean;
   retrying?: boolean;
   onRetry?: () => void;
+  /** A way out beside Retry, such as the Fields page. */
+  action?: ReactNode;
 }) {
   if (failure.forbidden) {
     return (
@@ -824,21 +838,40 @@ function PanelLoadError({
           <PanelDiagnostics diagnostics={failure.diagnostics} />
         ) : null}
       </AlertDescription>
-      {onRetry ? (
+      {onRetry || action ? (
         <HStack className="mt-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={onRetry}
-            isDisabled={retrying}
-            isLoading={retrying}
-          >
-            Retry
-          </Button>
+          {action}
+          {onRetry ? (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onRetry}
+              isDisabled={retrying}
+              isLoading={retrying}
+            >
+              Retry
+            </Button>
+          ) : null}
         </HStack>
       ) : null}
     </Alert>
   );
+}
+
+/**
+ * The required BOM columns a status or plan refusal names, from its
+ * diagnostics; null for any other failure.
+ */
+function missingBomColumns(diagnostics: unknown): string[] | null {
+  const missing =
+    diagnostics && typeof diagnostics === "object"
+      ? (diagnostics as { missingColumns?: unknown }).missingColumns
+      : null;
+  return Array.isArray(missing) &&
+    missing.length > 0 &&
+    missing.every((name) => typeof name === "string")
+    ? missing
+    : null;
 }
 
 function PanelEmpty({ children }: { children: ReactNode }) {
@@ -1520,9 +1553,10 @@ export function OnshapePanel({
     [canLoadParts, context, paths.fields]
   );
 
+  // True once the map is saved.
   const saveFields = useCallback(
-    async (token: string) => {
-      if (fields.status !== "ready" || fields.saving) return;
+    async (token: string): Promise<boolean> => {
+      if (fields.status !== "ready" || fields.saving) return false;
       const current = fields;
       setFields({
         ...current,
@@ -1568,7 +1602,7 @@ export function OnshapePanel({
                 ? indexFieldErrors(body.fieldErrors)
                 : {}
           });
-          return;
+          return false;
         }
         land({
           ...current,
@@ -1588,12 +1622,14 @@ export function OnshapePanel({
           warning: body.warning,
           fieldErrors: {}
         });
+        return true;
       } catch (error) {
         if (error instanceof PanelUnauthorizedError) {
           setSession({ status: "signed-out" });
-          return;
+          return false;
         }
         land({ ...current, saving: false, error: thrownMessage(error) });
+        return false;
       }
     },
     [fields, paths.fields]
@@ -1729,6 +1765,10 @@ export function OnshapePanel({
         : current
     );
 
+  // A BOM missing a required column opens Fields too: the column is chosen there.
+  const missingColumnsError =
+    parts.status === "error" && !!missingBomColumns(parts.diagnostics);
+
   // A drawing has no parts but its document has releases. Fields needs an
   // element with properties and settings update.
   const availableTabs = useMemo<PanelTab[]>(() => {
@@ -1739,12 +1779,20 @@ export function OnshapePanel({
     if (
       canLoadParts &&
       session.me.canEditFields &&
-      (parts.status === "ready" || parts.status === "ready-assembly")
+      (parts.status === "ready" ||
+        parts.status === "ready-assembly" ||
+        missingColumnsError)
     ) {
       tabs.push("fields");
     }
     return tabs;
-  }, [session, canLoadParts, context.documentId, parts.status]);
+  }, [
+    session,
+    canLoadParts,
+    context.documentId,
+    parts.status,
+    missingColumnsError
+  ]);
 
   // Opening the Fields page loads it, so a panel that never opens it spends no Onshape reads.
   useEffect(() => {
@@ -1972,6 +2020,11 @@ export function OnshapePanel({
                   outcome={partsOutcome}
                   onRefresh={() => loadParts(session.token)}
                   onPush={(partIds) => planParts(session.token, partIds)}
+                  onOpenFields={
+                    availableTabs.includes("fields")
+                      ? () => setTab("fields")
+                      : undefined
+                  }
                 />
               )
             ) : null}
@@ -2015,7 +2068,15 @@ export function OnshapePanel({
               onDescriptionMode={setDescriptionMode}
               onPushDefaults={setPushDefaults}
               onRefresh={() => loadFields(session.token)}
-              onSave={() => saveFields(session.token)}
+              onSave={async () => {
+                // A chosen column can clear the status error it was chosen for.
+                if (
+                  (await saveFields(session.token)) &&
+                  parts.status === "error"
+                ) {
+                  void loadParts(session.token);
+                }
+              }}
             />
           ) : null}
         </TabsContent>
@@ -2276,7 +2337,8 @@ function PartsSection({
   pushOutcome,
   outcome,
   onRefresh,
-  onPush
+  onPush,
+  onOpenFields
 }: {
   parts:
     | { status: "idle" }
@@ -2300,6 +2362,8 @@ function PartsSection({
   outcome: PushOutcome | null;
   onRefresh: () => void;
   onPush: (partIds: string[]) => void;
+  /** Opens the Fields page; absent when this user can't edit fields. */
+  onOpenFields?: () => void;
 }) {
   // A stale HMR closure can deliver ready without rows.
   const rows =
@@ -2351,6 +2415,13 @@ function PartsSection({
             diagnostics: parts.diagnostics
           }}
           onRetry={onRefresh}
+          action={
+            onOpenFields && missingBomColumns(parts.diagnostics) ? (
+              <Button size="sm" onClick={onOpenFields}>
+                Choose columns
+              </Button>
+            ) : null
+          }
         />
       ) : null}
 
@@ -2738,14 +2809,19 @@ function FieldsSection({
         property.mappable && !isIdentityProperty(property)
     )
     .sort((a, b) => a.name.localeCompare(b.name));
-  // Item fields with a row of their own are set in that row.
+  // Item fields and standard sources with a row of their own are set in that row.
   const otherEntries = state.entries.filter(
     (entry) =>
       !(
-        entry.target.kind === "item" &&
-        ITEM_FIELD_ROW_FIELDS.has(entry.target.field)
+        (entry.target.kind === "item" &&
+          ITEM_FIELD_ROW_FIELDS.has(entry.target.field)) ||
+        entry.target.kind === "identity" ||
+        entry.target.kind === "bomLine"
       )
   );
+  const bom = data.bom ?? null;
+  const savedSource = (target: PropertyMapTarget) =>
+    data.map.find((entry) => targetKey(entry.target) === targetKey(target));
   // Every entry has a row, so an error naming another property is a stray.
   const listed = new Set(state.entries.map((entry) => entry.onshapePropertyId));
   const strayErrors = Object.entries(state.fieldErrors)
@@ -2829,40 +2905,66 @@ function FieldsSection({
       ))}
 
       <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
-        <FieldRow
-          source={<SourceText>Part number</SourceText>}
-          carbon="Part ID"
-          control={<AlwaysTag />}
-        />
-        <FieldRow
-          source={<SourceText>Revision</SourceText>}
-          carbon="Revision"
-          control={<AlwaysTag />}
-        />
-        <FieldRow
-          source={<SourceText>Name</SourceText>}
-          carbon="Short Description"
-          control={
-            <ModeSelect
-              mode={state.descriptionModes.name}
-              label="Short Description: when Onshape writes it"
+        {IDENTITY_FIELDS.map((field) => {
+          const target: PropertyMapTarget = { kind: "identity", field };
+          const entry = mappedFrom.get(targetKey(target));
+          return (
+            <IdentityRow
+              key={field}
+              field={field}
+              entry={entry}
+              saved={savedSource(target)}
+              candidates={candidatesFor(target, entry)}
+              mappingOf={mappingOf}
+              definitions={data.definitions}
+              linkedItems={data.linkedItems ?? 0}
+              errors={
+                entry ? state.fieldErrors[entry.onshapePropertyId] : undefined
+              }
               disabled={busy}
-              onChange={(mode) => onDescriptionMode("name", mode)}
+              control={
+                field === "name" || field === "description" ? (
+                  <ModeSelect
+                    mode={state.descriptionModes[field]}
+                    label={`${STANDARD_TARGET_LABEL[field]}: when Onshape writes it`}
+                    disabled={busy}
+                    onChange={(mode) => onDescriptionMode(field, mode)}
+                  />
+                ) : (
+                  <AlwaysTag />
+                )
+              }
+              onSource={(property) => onTargetSource(target, property)}
             />
-          }
-        />
-        <FieldRow
-          source={<SourceText>Description</SourceText>}
-          carbon="Long Description"
-          control={
-            <ModeSelect
-              mode={state.descriptionModes.description}
-              label="Long Description: when Onshape writes it"
-              disabled={busy}
-              onChange={(mode) => onDescriptionMode("description", mode)}
-            />
-          }
-        />
+          );
+        })}
+        {bom
+          ? BOM_LINE_FIELDS.map((field) => {
+              const target: PropertyMapTarget = { kind: "bomLine", field };
+              const entry = mappedFrom.get(targetKey(target));
+              return (
+                <BomLineRow
+                  key={field}
+                  field={field}
+                  entry={entry}
+                  columns={bom.columns}
+                  detected={bom.detected[field]}
+                  errors={
+                    entry
+                      ? state.fieldErrors[entry.onshapePropertyId]
+                      : undefined
+                  }
+                  disabled={busy}
+                  onSource={(column) =>
+                    onTargetSource(
+                      target,
+                      column ? { ...column, mappable: true } : null
+                    )
+                  }
+                />
+              );
+            })
+          : null}
         {ITEM_FIELD_ROWS.map((row) => {
           const target: PropertyMapTarget | null = row.field
             ? { kind: "item", field: row.field }
@@ -3392,6 +3494,218 @@ function ValuesButton({
 
 // Unmapped, the control is the push default's value. Mapped, it is the mode, and
 // a list field's default moves into its values window.
+/**
+ * Part number, Revision, Name or Description: Onshape's own property unless a
+ * text or list property is chosen. A new Part number or Revision source warns
+ * when items are linked, since the next push matches parts by it.
+ */
+function IdentityRow({
+  field,
+  entry,
+  saved,
+  candidates,
+  mappingOf,
+  definitions,
+  linkedItems,
+  errors,
+  disabled,
+  control,
+  onSource
+}: {
+  field: IdentityField;
+  entry: FieldsDraftEntry | undefined;
+  /** The saved source, to tell a change from the page's starting state. */
+  saved: PropertyMapEntry | undefined;
+  candidates: PanelFieldsProperty[];
+  mappingOf: Map<string, FieldsDraftEntry>;
+  definitions: PlanCustomFieldDefinition[];
+  linkedItems: number;
+  errors: string[] | undefined;
+  disabled: boolean;
+  control: ReactNode;
+  onSource: (property: PanelFieldsProperty | null) => void;
+}) {
+  const own = ONSHAPE_PROPERTIES[field].label;
+  const carbon = STANDARD_TARGET_LABEL[field];
+  const matchesItems = field === "partNumber" || field === "revision";
+  const changed =
+    (entry?.onshapePropertyId ?? null) !== (saved?.onshapePropertyId ?? null);
+  const sourceName = entry?.onshapeName || own;
+  return (
+    <FieldRow
+      source={
+        <SourceSelect
+          value={
+            entry
+              ? `${SOURCE_PROPERTY}${entry.onshapePropertyId}`
+              : SOURCE_DEFAULT
+          }
+          label={`${carbon}: source`}
+          groups={[
+            {
+              options: [
+                {
+                  value: SOURCE_DEFAULT,
+                  label: own,
+                  helper: "Onshape's own property"
+                }
+              ]
+            },
+            {
+              label: "Onshape property",
+              options: propertyOptions(
+                candidates,
+                entry,
+                mappingOf,
+                definitions
+              )
+            }
+          ]}
+          disabled={disabled}
+          onChange={(value) => {
+            if (value === SOURCE_DEFAULT) {
+              if (entry) onSource(null);
+              return;
+            }
+            const chosen = candidates.find(
+              (c) => c.propertyId === value.slice(SOURCE_PROPERTY.length)
+            );
+            if (chosen) onSource(chosen);
+          }}
+        />
+      }
+      carbon={carbon}
+      control={control}
+      notes={
+        <>
+          {matchesItems && changed && linkedItems > 0 ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              {linkedItems === 1
+                ? "1 Carbon item is"
+                : `${linkedItems} Carbon items are`}{" "}
+              linked to Onshape. After you save, pushes match parts to items by{" "}
+              {sourceName}, so a part whose {sourceName} differs links to
+              another item or creates one.
+            </p>
+          ) : null}
+          {matchesItems && entry ? (
+            <p className="text-xs text-muted-foreground">
+              Release pushes keep Onshape's {own}.
+            </p>
+          ) : null}
+          {rowErrors(errors)}
+        </>
+      }
+    />
+  );
+}
+
+/**
+ * Item or Quantity: the BOM column the panel finds on its own, or, when it
+ * finds none, the column chosen here.
+ */
+function BomLineRow({
+  field,
+  entry,
+  columns,
+  detected,
+  errors,
+  disabled,
+  onSource
+}: {
+  field: BomLineField;
+  entry: FieldsDraftEntry | undefined;
+  columns: Pick<PanelFieldsProperty, "propertyId" | "name" | "valueType">[];
+  detected: string | null;
+  errors: string[] | undefined;
+  disabled: boolean;
+  onSource: (
+    column: Pick<
+      PanelFieldsProperty,
+      "propertyId" | "name" | "valueType"
+    > | null
+  ) => void;
+}) {
+  const own = ONSHAPE_PROPERTIES[field].label;
+  const carbon = STANDARD_TARGET_LABEL[field];
+  const found = detected
+    ? columns.find((column) => column.propertyId === detected)
+    : undefined;
+  if (found && !entry) {
+    return (
+      <FieldRow
+        source={<SourceText>{found.name}</SourceText>}
+        carbon={carbon}
+        control={
+          <span className="flex items-center gap-1.5 px-1 text-sm text-muted-foreground">
+            <LuCircleCheck aria-hidden className="size-3.5" />
+            Found
+          </span>
+        }
+      />
+    );
+  }
+  return (
+    <FieldRow
+      source={
+        <SourceSelect
+          value={
+            entry ? `${SOURCE_PROPERTY}${entry.onshapePropertyId}` : undefined
+          }
+          label={`${carbon}: source`}
+          placeholder="Choose the column"
+          groups={[
+            ...(entry && found
+              ? [
+                  {
+                    options: [
+                      {
+                        value: SOURCE_DEFAULT,
+                        label: found.name,
+                        helper: `Onshape's ${own} column`
+                      }
+                    ]
+                  }
+                ]
+              : []),
+            {
+              label: "BOM column",
+              options: columns.map((column) => ({
+                value: `${SOURCE_PROPERTY}${column.propertyId}`,
+                label: column.name
+              }))
+            }
+          ]}
+          disabled={disabled}
+          onChange={(value) => {
+            if (value === SOURCE_DEFAULT) {
+              if (entry) onSource(null);
+              return;
+            }
+            const chosen = columns.find(
+              (c) => c.propertyId === value.slice(SOURCE_PROPERTY.length)
+            );
+            if (chosen) onSource(chosen);
+          }}
+        />
+      }
+      carbon={carbon}
+      control={<AlwaysTag />}
+      notes={
+        <>
+          {!entry ? (
+            <p className="text-xs text-destructive">
+              This BOM has no {own} column the panel recognises. Choose the
+              column that holds it.
+            </p>
+          ) : null}
+          {rowErrors(errors)}
+        </>
+      }
+    />
+  );
+}
+
 function ItemFieldRow({
   row,
   defaults,

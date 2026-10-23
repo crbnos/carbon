@@ -289,6 +289,7 @@ export {
   onshapePropertyField,
   releaseSources,
   sourceLabel,
+  standardSourceErrors,
   standardSources,
   withIdentitySources
 } from "./onshape/panel/standard-sources";

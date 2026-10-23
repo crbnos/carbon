@@ -5,9 +5,9 @@
 A company BOM template, a language or a customised property setup must not stop the
 panel from reading the values every push needs. Today the panel finds Part number,
 Revision, Name, Description, Item and Quantity by label (since `85b3216ff4`, by
-`propertyName` then label ignoring case). This change gives those reads one resolver
-and lets an admin point each of them at another Onshape property or BOM column on the
-Fields page, the same page that maps custom fields.
+`propertyName` then label ignoring case). This change gives those reads one resolver.
+An admin can point each read at another Onshape property or BOM column. The admin
+does this on the Fields page, which already maps custom fields.
 
 ## Design
 
@@ -42,20 +42,28 @@ Fields page, the same page that maps custom fields.
 
 ## Tasks
 
-- [ ] `standard-sources.ts` with the resolver and tests (default, all-caps and
+- [x] `standard-sources.ts` with the resolver and tests (default, all-caps and
       renamed label sets with real ids and `propertyName`; overrides).
-- [ ] `bom.ts` uses `bomColumnIds`; `parseBomTree(payload, sources)`; missing columns
+- [x] `bom.ts` uses `bomColumnIds`; `parseBomTree(payload, sources)`; missing columns
       named by the override's label; message points to the Fields page.
-- [ ] `properties.ts`: `onshapePropertyField` replaces the reserved set; new targets
+- [x] `properties.ts`: `onshapePropertyField` replaces the reserved set; new targets
       in `parsePropertyMap`, `targetKey`, `resolveMappedFields` (skipped, but used).
-- [ ] Metadata reads: `identityValue` in the status and plan-assembly routes and
+- [x] Metadata reads: `identityValue` in the status and plan-assembly routes and
       `buildReleasePlan`; release package items by property id, then label.
-- [ ] `loadStandardSources` (`lib/panel-plan-data.ts`); status, plan-assembly,
+- [x] `loadStandardSources` (`lib/panel-plan-data.ts`); status, plan-assembly,
       plan-part and plan-release pass the sources; Part Studio identity overrides.
-- [ ] Save validation for the new targets (`saveOnshapePropertyMap`), with tests.
-- [ ] Fields route: BOM columns and detection on assemblies, linked item count.
-- [ ] Fields page UI: identity source pickers, Item/Quantity rows, change warning,
+- [x] Save validation for the new targets (`saveOnshapePropertyMap`), with tests.
+- [x] Fields route: BOM columns and detection on assemblies, linked item count.
+- [x] Fields page UI: identity source pickers, Item/Quantity rows, change warning,
       release note; Fields tab and a button on the missing-columns error.
-- [ ] v1 BOM route reads Onshape's own columns by `propertyName`.
-- [ ] Update `.claude/rules/onshape-panel.md` (Property map, Onshape API facts).
-- [ ] Typecheck `@carbon/ee` and `erp`, ee onshape tests, Biome.
+- [x] v1 BOM route reads Onshape's own columns by `propertyName`.
+- [x] Update `.claude/rules/onshape-panel.md` (Property map, Onshape API facts).
+- [x] Typecheck `@carbon/ee` and `erp`, ee onshape tests, Biome.
+
+## Open points
+
+- No fixture or live response confirms that release package properties carry
+  `propertyId`. The release read takes the id first and keeps the label as a
+  fallback.
+- Nobody has run the Fields page in a browser yet. The review needs a stack
+  with an `onshape-v2` connection and the panel extension pointed at it.

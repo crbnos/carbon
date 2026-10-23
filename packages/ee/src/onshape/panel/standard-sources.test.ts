@@ -14,6 +14,7 @@ import {
   ONSHAPE_PROPERTIES,
   onshapePropertyField,
   releaseSources,
+  standardSourceErrors,
   standardSources,
   withIdentitySources
 } from "./standard-sources";
@@ -205,6 +206,18 @@ describe("bomColumnIds and parseBomTree", () => {
     );
     expect(root?.partNumber).toBe("E-100");
     expect(lines.map((line) => line.partNumber)).toEqual(["E-200", "E-400"]);
+  });
+
+  it("finds an overridden column by its label when its id differs", () => {
+    const sources = standardSources([
+      entry({ target: { kind: "identity", field: "partNumber" } })
+    ]);
+    const relabelled = headers(LABEL_SETS.default).map((header) =>
+      header.id === ERP_NUMBER_ID
+        ? { ...header, id: "col-erp", name: "ERP NUMBER" }
+        : header
+    );
+    expect(bomColumnIds(relabelled, sources).partNumber).toBe("col-erp");
   });
 
   it("reports an overridden part number column the BOM lacks by its name", () => {
@@ -444,5 +457,74 @@ describe("resolveMappedFields with standard sources", () => {
       problems: [],
       unmapped: []
     });
+  });
+});
+
+describe("standardSourceErrors", () => {
+  it("takes a text or list property for an identity field", () => {
+    expect(
+      standardSourceErrors(
+        entry({ target: { kind: "identity", field: "partNumber" } })
+      )
+    ).toEqual([]);
+    expect(
+      standardSourceErrors(
+        entry({
+          valueType: "ENUM",
+          target: { kind: "identity", field: "name" }
+        })
+      )
+    ).toEqual([]);
+  });
+
+  it("refuses another type and another of Onshape's own properties", () => {
+    expect(
+      standardSourceErrors(
+        entry({
+          valueType: "DOUBLE",
+          target: { kind: "identity", field: "revision" }
+        })
+      )
+    ).toEqual(["Revision is read from a text or list property, not DOUBLE."]);
+    expect(
+      standardSourceErrors(
+        entry({
+          onshapePropertyId: P.description.propertyId,
+          target: { kind: "identity", field: "name" }
+        })
+      )
+    ).toEqual([
+      "That is Onshape's Description. Choose the property that holds Name."
+    ]);
+  });
+
+  it("takes any BOM column for Item or Quantity but Onshape's other columns", () => {
+    expect(
+      standardSourceErrors(
+        entry({
+          onshapePropertyId: "col-count",
+          valueType: "DOUBLE",
+          target: { kind: "bomLine", field: "quantity" }
+        })
+      )
+    ).toEqual([]);
+    expect(
+      standardSourceErrors(
+        entry({
+          onshapePropertyId: P.partNumber.propertyId,
+          target: { kind: "bomLine", field: "item" }
+        })
+      )
+    ).toEqual([
+      "That is Onshape's Part number. Choose the column that holds Item."
+    ]);
+  });
+
+  it("has nothing to say about other targets", () => {
+    expect(
+      standardSourceErrors(
+        entry({ valueType: "BLOB", target: { kind: "item", field: "mpn" } })
+      )
+    ).toEqual([]);
   });
 });

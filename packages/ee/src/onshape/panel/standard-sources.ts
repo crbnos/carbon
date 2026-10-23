@@ -229,9 +229,10 @@ type BomHeaderLike = { id: string; name?: unknown; propertyName?: unknown };
 
 /**
  * The BOM column id for each field the parser reads, null when the BOM has
- * none. An identity override names its own column and has no fallback: a part
- * number read from another property would link other items. A line override
- * whose column is gone falls back to Onshape's own.
+ * none. An identity override names its own column (by id, then its label) and
+ * never falls back to Onshape's: a part number read from another property
+ * would link other items. A line override whose column is gone falls back to
+ * Onshape's own.
  */
 export function bomColumnIds(
   headers: readonly BomHeaderLike[],
@@ -260,9 +261,19 @@ export function bomColumnIds(
   }
   const identity = (field: IdentityField) => {
     const override = sources.identity[field];
-    if (override)
-      return ids.has(override.propertyId) ? override.propertyId : null;
-    return own.get(field) ?? null;
+    if (!override) return own.get(field) ?? null;
+    if (ids.has(override.propertyId)) return override.propertyId;
+    // A column whose id is not the property id still matches by its label,
+    // as a mapped custom field's cell does (`resolveMappedFields`).
+    const label = override.name ? labelKey(override.name) : null;
+    return (
+      headers.find(
+        (header) =>
+          label !== null &&
+          typeof header.name === "string" &&
+          labelKey(header.name) === label
+      )?.id ?? null
+    );
   };
   const line = (field: BomLineField) => {
     const override = sources.bomLine[field];
@@ -358,4 +369,35 @@ export function withIdentitySources<
       ...(description !== undefined ? { description } : {})
     };
   });
+}
+
+/**
+ * Why the Fields save refuses a standard source entry; empty when it takes
+ * it, and for any other target. Guards a hand-made payload: the editor offers
+ * neither case.
+ */
+export function standardSourceErrors(
+  entry: Pick<PropertyMapEntry, "onshapePropertyId" | "valueType" | "target">
+): string[] {
+  const { target } = entry;
+  if (target.kind !== "identity" && target.kind !== "bomLine") return [];
+  const label = ONSHAPE_PROPERTIES[target.field].label;
+  const own = onshapePropertyField({ propertyId: entry.onshapePropertyId });
+  const errors: string[] = [];
+  if (own && own !== target.field) {
+    errors.push(
+      `That is Onshape's ${ONSHAPE_PROPERTIES[own].label}. Choose the ${
+        target.kind === "identity" ? "property" : "column"
+      } that holds ${label}.`
+    );
+  }
+  if (
+    target.kind === "identity" &&
+    !IDENTITY_VALUE_TYPES.includes(entry.valueType)
+  ) {
+    errors.push(
+      `${label} is read from a text or list property, not ${entry.valueType}.`
+    );
+  }
+  return errors;
 }
