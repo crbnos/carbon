@@ -3741,7 +3741,7 @@ export async function deletePlanningGroup(
 // --- Timesheets --------------------------------------------------------------
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), hours, note, status, createdAt, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), hours, note, status, createdAt, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name), jobId, jobOperationId, job:job!timesheetEntry_job_fkey(id, jobId), jobOperation:jobOperation!timesheetEntry_jobOperation_fkey(id, description)" as const;
 
 /**
  * Gets an employee's timesheet entries between two dates (inclusive), with
@@ -3968,6 +3968,11 @@ export async function createTimesheetCorrection(
       rdActivityRole: original.rdActivityRole,
       // A service entry's correction stays on the visit the time was for.
       serviceVisitId: original.serviceVisitId,
+      // Shop time stays on its job and keeps its production event, so the
+      // event's hours remain the sum of its entries (post-production-event).
+      jobId: original.jobId,
+      jobOperationId: original.jobOperationId,
+      productionEventId: original.productionEventId,
       note: original.note,
       correctionReason: args.correctionReason,
       // A service entry's coverage override travels to the replacement.
@@ -4033,7 +4038,13 @@ export async function createTimesheetCorrection(
           // The visit and the coverage override belong to the original
           // project: a transfer to another project drops them.
           ...(movesProject
-            ? { serviceVisitId: null, coverage: null, coverageReason: null }
+            ? {
+                serviceVisitId: null,
+                coverage: null,
+                coverageReason: null,
+                jobId: null,
+                jobOperationId: null
+              }
             : {}),
           hours: args.hours,
           reversalOfId: null,
@@ -6011,6 +6022,11 @@ async function save(
       ? existingQuery.where("jobId", "=", input.jobId)
       : existingQuery.where("jobId", "is", null);
   }
+  if (input.jobOperationId !== undefined) {
+    existingQuery = input.jobOperationId
+      ? existingQuery.where("jobOperationId", "=", input.jobOperationId)
+      : existingQuery.where("jobOperationId", "is", null);
+  }
   const rows = await existingQuery.orderBy("id").forUpdate().execute();
   const current = currentEntry(rows);
   // Fewer hours on a held project is a correction; more is a new charge.
@@ -6050,6 +6066,7 @@ async function save(
         projectElementId: input.projectElementId,
         laborCategoryId: input.laborCategoryId,
         jobId: input.jobId ?? null,
+        jobOperationId: input.jobOperationId ?? null,
         workLocationId: input.workLocationId,
         rdActivityRole: input.rdActivityRole,
         hours: input.hours,
@@ -6267,6 +6284,7 @@ async function addEntry(
     hours: input.hours,
     serviceVisitId: input.serviceVisitId ?? null,
     jobId: input.jobId ?? null,
+    jobOperationId: input.jobOperationId ?? null,
     workLocationId: input.workLocationId,
     rdActivityRole: input.rdActivityRole,
     note: input.note ?? null,
@@ -6309,6 +6327,9 @@ export async function insertTimesheetDraft(
     hours: number;
     serviceVisitId?: string | null;
     jobId?: string | null;
+    /** Shop time: the job operation and the production event it came from. */
+    jobOperationId?: string | null;
+    productionEventId?: string | null;
     workLocationId?: string | null;
     rdActivityRole?: RdActivityRole | null;
     note?: string | null;
@@ -6333,6 +6354,8 @@ export async function insertTimesheetDraft(
       projectElementId: args.projectElementId,
       serviceVisitId: args.serviceVisitId ?? null,
       jobId: args.jobId ?? null,
+      jobOperationId: args.jobOperationId ?? null,
+      productionEventId: args.productionEventId ?? null,
       laborCategoryId: args.laborCategoryId,
       workLocationId:
         args.workLocationId === undefined
@@ -6412,6 +6435,7 @@ async function saveStandard(
         projectElementId: input.projectElementId,
         laborCategoryId: input.laborCategoryId,
         jobId: input.jobId ?? null,
+        jobOperationId: input.jobOperationId ?? null,
         workLocationId: input.workLocationId,
         rdActivityRole: input.rdActivityRole,
         hours: input.hours,
@@ -14383,6 +14407,9 @@ export type SaveTimesheetEntryArgs = {
   /** R&D tax: left out takes the default; "" or null is none. */
   workLocationId?: string | null;
   rdActivityRole?: RdActivityRole | "" | null;
+  /** Shop time: left out matches any job; "" or null is none. */
+  jobId?: string | null;
+  jobOperationId?: string | null;
 };
 
 /**
@@ -14400,7 +14427,12 @@ export function saveTimesheetEntryPostingInput(input: SaveTimesheetEntryArgs) {
     rdActivityRole:
       input.rdActivityRole === undefined
         ? undefined
-        : input.rdActivityRole || null
+        : input.rdActivityRole || null,
+    jobId: input.jobId === undefined ? undefined : input.jobId || null,
+    jobOperationId:
+      input.jobOperationId === undefined
+        ? undefined
+        : input.jobOperationId || null
   };
 }
 

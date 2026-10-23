@@ -595,6 +595,8 @@ export const saveTimesheetEntryInput = z.object({
    * entry whatever the job, as it did before jobs.
    */
   jobId: z.string().min(1).nullable().optional(),
+  /** The job operation of shop time; part of the cell's key as `jobId` is. */
+  jobOperationId: z.string().min(1).nullable().optional(),
   /**
    * Where the work took place (R&D tax). Left out, it is the employee's job
    * location; null means no location.

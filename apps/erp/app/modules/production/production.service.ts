@@ -123,6 +123,7 @@ import {
   credit,
   datetime,
   debit,
+  equals,
   getErrorMessage,
   groupBy,
   HOUR_MS,
@@ -22781,6 +22782,10 @@ export const postProductionEventPermission = {
 export const SHOP_LABOR_CATEGORY_REQUIRED =
   "Set a labor category on this person before they record project time";
 
+/** A shop-time edit that would change hours the employee has submitted. */
+export const shopTimesheetSubmittedMessage = (hours: number) =>
+  `These hours are on a submitted timesheet. Correct the timesheet entry to ${hours} hours first.`;
+
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
 export async function postProductionEvent(
   ctx: ServiceContext,
@@ -22911,31 +22916,37 @@ export async function postProductionEvent(
 
   // DCAA timekeeping (D38): project labor is certified time. The Labor leg
   // is skipped; the hours go to the employee's timesheet as a Draft entry
-  // with the job, and post-timesheet posts their cost when the week is
-  // certified. The Machine and Overhead legs post as before. Only the
-  // first post writes the entry: an event has no link to it, so a repost
-  // or a reversal leaves the entry for the employee to correct.
+  // with the job operation, and post-timesheet posts their cost when the
+  // week is certified. The Machine and Overhead legs post as before. The
+  // entry is linked to the event, so every post and reversal brings it in
+  // step with the event (`syncShopTimesheet`).
   const timesheetLabor = shopLabor?.isDcaa ?? false;
-  const timesheetHours =
-    timesheetLabor && projectCharge && !reverse && !event.postedToGL
-      ? round((event.duration ?? 0) / 3600)
-      : 0;
-  if (timesheetHours > 0 && !shopLabor?.laborCategoryId) {
-    throw new InvalidInputError(SHOP_LABOR_CATEGORY_REQUIRED);
-  }
-  const timesheetDraft =
-    timesheetHours > 0 && projectCharge && shopLabor?.laborCategoryId
-      ? {
-          companyId,
-          employeeId: event.employeeId!,
-          entryDate: shopLabor.entryDate,
-          projectId: projectCharge.projectId,
-          projectElementId: projectCharge.projectElementId,
-          laborCategoryId: shopLabor.laborCategoryId,
-          hours: timesheetHours,
-          jobId,
-          createdBy: userId
-        }
+  const timesheetSync =
+    timesheetLabor && projectCharge && shopLabor && event.employeeId
+      ? (() => {
+          const hours = reverse ? 0 : round((event.duration ?? 0) / 3600);
+          if (hours > 0 && !shopLabor.laborCategoryId) {
+            throw new InvalidInputError(SHOP_LABOR_CATEGORY_REQUIRED);
+          }
+          return {
+            companyId,
+            productionEventId,
+            createdBy: userId,
+            wanted:
+              hours > 0 && shopLabor.laborCategoryId
+                ? {
+                    employeeId: event.employeeId,
+                    entryDate: shopLabor.entryDate,
+                    projectId: projectCharge.projectId,
+                    projectElementId: projectCharge.projectElementId,
+                    laborCategoryId: shopLabor.laborCategoryId,
+                    hours,
+                    jobId,
+                    jobOperationId: event.jobOperationId
+                  }
+                : null
+          };
+        })()
       : null;
 
   let cost = 0;
@@ -23048,12 +23059,12 @@ export async function postProductionEvent(
   if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
     // Nothing to post and nothing to reverse. On a reversal this clears the
     // flag so the event can be deleted; on a post it marks it done.
-    if (timesheetDraft) {
+    if (timesheetSync) {
       await db.transaction().execute(async (trx) => {
-        await insertTimesheetDraft(trx, timesheetDraft);
+        await syncShopTimesheet(trx, timesheetSync);
         await trx
           .updateTable("productionEvent")
-          .set({ postedToGL: true })
+          .set({ postedToGL: !reverse })
           .where("id", "=", productionEventId)
           .where("companyId", "=", companyId)
           .execute();
@@ -23479,7 +23490,7 @@ export async function postProductionEvent(
       });
     }
 
-    if (timesheetDraft) await insertTimesheetDraft(trx, timesheetDraft);
+    if (timesheetSync) await syncShopTimesheet(trx, timesheetSync);
 
     await trx
       .updateTable("productionEvent")
@@ -23523,6 +23534,97 @@ async function loadShopLabor(
     isDcaa: row.timekeepingControls === "DCAA",
     entryDate: row.entryDate
   };
+}
+
+/**
+ * Brings the timesheet entries of a production event in step with it (D38).
+ * The event's hours are the truth while its entries are the employee's to
+ * edit (Draft or Rejected): they are replaced by one Draft entry with the
+ * wanted hours, or removed when `wanted` is null. Once the employee has
+ * submitted them, the entries change only through a timesheet correction,
+ * which copies the link: when their net hours already equal the event's,
+ * nothing changes; otherwise the post is refused with the hours to correct
+ * to.
+ */
+async function syncShopTimesheet(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    productionEventId: string;
+    createdBy: string;
+    wanted: {
+      employeeId: string;
+      entryDate: string;
+      projectId: string;
+      projectElementId: string | null;
+      laborCategoryId: string;
+      hours: number;
+      jobId: string;
+      jobOperationId: string | null;
+    } | null;
+  }
+): Promise<void> {
+  const { companyId, productionEventId, wanted } = args;
+  const linked = await trx
+    .selectFrom("timesheetEntry")
+    .select(["id", "status", "hours"])
+    .where("productionEventId", "=", productionEventId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  const wantedHours = wanted?.hours ?? 0;
+
+  const editable = linked.every(
+    (entry) => entry.status === "Draft" || entry.status === "Rejected"
+  );
+  if (!editable) {
+    const net = linked.reduce((sum, entry) => sum + Number(entry.hours), 0);
+    if (equals(net, wantedHours)) return;
+    throw new InvalidInputError(shopTimesheetSubmittedMessage(wantedHours));
+  }
+
+  const [kept, ...rest] = linked;
+  if (rest.length > 0 || (kept && !wanted)) {
+    await trx
+      .deleteFrom("timesheetEntry")
+      .where(
+        "id",
+        "in",
+        (wanted ? rest : linked).map((entry) => entry.id)
+      )
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  if (!wanted) return;
+  if (kept) {
+    // Updated in place, so a revision written on it keeps its entry.
+    await trx
+      .updateTable("timesheetEntry")
+      .set({
+        entryDate: wanted.entryDate,
+        projectId: wanted.projectId,
+        projectElementId: wanted.projectElementId,
+        laborCategoryId: wanted.laborCategoryId,
+        hours: wanted.hours,
+        jobId: wanted.jobId,
+        jobOperationId: wanted.jobOperationId,
+        status: "Draft",
+        updatedBy: args.createdBy,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", kept.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+  await insertTimesheetDraft(trx, {
+    companyId,
+    ...wanted,
+    productionEventId,
+    createdBy: args.createdBy
+  });
 }
 const recalculateRequirementsLogger = getLogger(
   "server-functions",

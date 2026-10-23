@@ -11869,6 +11869,9 @@ msgstr "सामग्री सहेजने में विफल"
 msgid "Failed to save the cost"
 msgstr "लागत सहेजने में विफल"
 
+msgid "Failed to save the earned value"
+msgstr ""
+
 msgid "Failed to save the fixed price"
 msgstr "निश्चित मूल्य सहेजने में विफल"
 

@@ -829,7 +829,11 @@ export const timesheetCellValidator = z.object({
   // is not sent takes its default in save-timesheet-entry; an empty one is
   // none.
   workLocationId: z.string().optional(),
-  rdActivityRole: z.union([z.enum(rdActivityRoles), z.literal("")]).optional()
+  rdActivityRole: z.union([z.enum(rdActivityRoles), z.literal("")]).optional(),
+  // Shop time (DCAA): the row's job and job operation. Part of the cell's
+  // key; an empty one is none, a field that is not sent matches any.
+  jobId: z.string().optional(),
+  jobOperationId: z.string().optional()
 });
 
 /** A project member: who may charge time to a project that restricts it. */
@@ -910,8 +914,9 @@ export function timesheetRowKey(row: {
   laborCategoryId: string;
   workLocationId?: string | null;
   rdActivityRole?: RdActivityRole | null;
-  /** Shop time under DCAA: the job the hours were worked on. */
+  /** Shop time under DCAA: the job and operation the hours were worked on. */
   jobId?: string | null;
+  jobOperationId?: string | null;
 }): string {
   return [
     row.projectId,
@@ -919,7 +924,8 @@ export function timesheetRowKey(row: {
     row.laborCategoryId,
     row.workLocationId ?? "",
     row.rdActivityRole ?? "",
-    row.jobId ?? ""
+    row.jobId ?? "",
+    row.jobOperationId ?? ""
   ].join("\u001f");
 }
 
@@ -1347,6 +1353,7 @@ export type TimesheetRow<T> = {
   workLocationId: string | null;
   rdActivityRole: RdActivityRole | null;
   jobId: string | null;
+  jobOperationId: string | null;
   /** The first entry of the row, for its display fields. */
   entry: T;
   cells: Record<string, TimesheetCell>;
@@ -1355,7 +1362,7 @@ export type TimesheetRow<T> = {
 
 /**
  * Groups timesheet entries into grid rows: one row per project, element,
- * labor category, work location, research role and job, with one cell per date. Two entries on the same date (a
+ * labor category, work location, research role, job and job operation, with one cell per date. Two entries on the same date (a
  * correction and its reversal) add up in one cell; the cell names the Draft
  * entry when there is one, because that is the entry a user can edit.
  */
@@ -1368,6 +1375,7 @@ export function groupTimesheetRows<
     workLocationId?: string | null;
     rdActivityRole?: RdActivityRole | null;
     jobId?: string | null;
+    jobOperationId?: string | null;
     entryDate: string;
     hours: number;
     status: TimesheetEntryStatus;
@@ -1387,6 +1395,7 @@ export function groupTimesheetRows<
         workLocationId: entry.workLocationId ?? null,
         rdActivityRole: entry.rdActivityRole ?? null,
         jobId: entry.jobId ?? null,
+        jobOperationId: entry.jobOperationId ?? null,
         entry,
         cells: {},
         total: 0

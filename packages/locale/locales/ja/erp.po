@@ -11869,6 +11869,9 @@ msgstr "コンテンツの保存に失敗しました"
 msgid "Failed to save the cost"
 msgstr "原価の保存に失敗しました"
 
+msgid "Failed to save the earned value"
+msgstr ""
+
 msgid "Failed to save the fixed price"
 msgstr "固定価格の保存に失敗しました"
 

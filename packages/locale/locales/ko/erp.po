@@ -11869,6 +11869,9 @@ msgstr "콘텐츠를 저장하지 못했습니다"
 msgid "Failed to save the cost"
 msgstr "원가 저장 실패"
 
+msgid "Failed to save the earned value"
+msgstr ""
+
 msgid "Failed to save the fixed price"
 msgstr "고정 가격 저장 실패"
 

@@ -11869,6 +11869,9 @@ msgstr "无法保存内容"
 msgid "Failed to save the cost"
 msgstr "保存成本失败"
 
+msgid "Failed to save the earned value"
+msgstr ""
+
 msgid "Failed to save the fixed price"
 msgstr "保存固定价格失败"
 

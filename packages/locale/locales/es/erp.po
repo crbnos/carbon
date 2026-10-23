@@ -11869,6 +11869,9 @@ msgstr "No se pudo guardar el contenido"
 msgid "Failed to save the cost"
 msgstr "Error al Guardar el Costo"
 
+msgid "Failed to save the earned value"
+msgstr ""
+
 msgid "Failed to save the fixed price"
 msgstr "No se pudo guardar el precio fijo"
 

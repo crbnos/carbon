@@ -3,17 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { elementEarnedValueValidator } from "@carbon/ee/project-control";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import {
   type ActionFunctionArgs,
-  data,
   type LoaderFunctionArgs,
   useLoaderData,
   useParams
@@ -90,9 +89,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 /**
  * Saves the earned value fields of the element (intent `earned-value`,
- * Government Contracting 5c). Commercial: `requireFeature` is the upgrade
- * redirect; `requireEntitlement` in the ee function is the lock. A refusal
- * (no control account above, not chargeable) comes back as a field error.
+ * Government Contracting 5c), all of them on each inline change.
+ * Commercial: `requireFeature` is the upgrade redirect; `requireEntitlement`
+ * in the ee function is the lock. A refusal (no control account above, not
+ * chargeable) comes back as the error the sidebar toasts.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -105,10 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   if (formData.get("intent") !== "earned-value") {
-    return data(
-      { success: false },
-      await flash(request, error(null, "Unknown action"))
-    );
+    return { success: false, error: { message: "Unknown action" } };
   }
 
   await requireFeature({
@@ -123,7 +120,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const validation = await validator(elementEarnedValueValidator).validate(
     formData
   );
-  if (validation.error) return validationError(validation.error);
+  if (validation.error) {
+    return {
+      success: false,
+      error: {
+        message:
+          Object.values(validation.error.fieldErrors)[0] ??
+          "Invalid earned value fields"
+      }
+    };
+  }
 
   const api = await carbon(request);
   const result = await api.projects.updateProjectElementEarnedValue({
@@ -131,26 +137,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     projectId
   });
   if (result.error) {
-    // A refusal of the fields shows on the field it is about.
-    if (result.error.category === "validation") {
-      return validationError({
-        fieldErrors: {
-          [validation.data.isControlAccount
-            ? "isControlAccount"
-            : "earnedValueTechnique"]: result.error.message
-        }
-      });
-    }
-    return data(
-      { success: false },
-      await flash(request, error(null, result.error.message))
-    );
+    return { success: false, error: { message: result.error.message } };
   }
 
-  return data(
-    { success: true },
-    await flash(request, success("Earned value saved"))
-  );
+  return { success: true };
 }
 
 /** The element as a full page inside the project. */

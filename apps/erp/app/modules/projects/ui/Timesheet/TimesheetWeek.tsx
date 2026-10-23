@@ -265,6 +265,9 @@ export default function TimesheetWeek({
         laborCategoryId: row.laborCategoryId,
         workLocationId: row.workLocationId ?? "",
         rdActivityRole: row.rdActivityRole ?? "",
+        // Shop time: the row's job and operation; an empty one is none.
+        jobId: row.jobId ?? "",
+        jobOperationId: row.jobOperationId ?? "",
         hours: String(hours)
       };
 
@@ -477,7 +480,9 @@ export default function TimesheetWeek({
                       <span className="truncate text-xs text-muted-foreground">
                         {row.isService
                           ? t`Posted from the service order`
-                          : row.laborCategory}
+                          : row.jobLabel
+                            ? `${row.jobLabel} · ${row.laborCategory}`
+                            : row.laborCategory}
                       </span>
                     </div>
                   </div>

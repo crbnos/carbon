@@ -21,6 +21,11 @@ export type GridRow = {
   workLocationId: string | null;
   workLocationName: string | null;
   rdActivityRole: RdActivityRole | null;
+  /** Shop time (DCAA): the job and job operation, and their label. */
+  jobId: string | null;
+  jobOperationId: string | null;
+  /** "J000022 · Machining"; null when the row has no job. */
+  jobLabel: string | null;
   /**
    * The project identifier, or the element's readable id; on a service
    * order, the order's readable id.
@@ -50,6 +55,8 @@ export type TimesheetGridProps = {
     laborCategoryId: string;
     workLocationId: string | null;
     rdActivityRole: RdActivityRole | null;
+    jobId?: string | null;
+    jobOperationId?: string | null;
     cells: Record<string, TimesheetCell>;
     total: number;
     entry: {
@@ -62,6 +69,8 @@ export type TimesheetGridProps = {
       element: { readableId: string; name: string; isLeave?: boolean } | null;
       laborCategory: { name: string } | null;
       workLocation?: { id: string; name: string } | null;
+      job?: { jobId: string } | null;
+      jobOperation?: { description: string | null } | null;
     };
   }[];
   timecardHours: Record<string, number>;
@@ -114,6 +123,13 @@ export function useTimesheetRows({
         workLocationId: row.workLocationId,
         workLocationName: row.entry.workLocation?.name ?? null,
         rdActivityRole: row.rdActivityRole,
+        jobId: row.jobId ?? null,
+        jobOperationId: row.jobOperationId ?? null,
+        jobLabel: row.entry.job
+          ? [row.entry.job.jobId, row.entry.jobOperation?.description]
+              .filter(Boolean)
+              .join(" · ")
+          : null,
         readableId: isService
           ? (serviceOrder?.serviceOrderId ?? "")
           : (row.entry.element?.readableId ?? project?.identifier ?? ""),
@@ -144,6 +160,9 @@ export function useTimesheetRows({
         );
         return {
           ...row,
+          jobId: null,
+          jobOperationId: null,
+          jobLabel: null,
           workLocationName:
             locations.find((location) => location.value === row.workLocationId)
               ?.label ?? null,

@@ -11869,6 +11869,9 @@ msgstr "İçeriği kaydetme başarısız oldu"
 msgid "Failed to save the cost"
 msgstr "Maliyet kaydedilemedi"
 
+msgid "Failed to save the earned value"
+msgstr ""
+
 msgid "Failed to save the fixed price"
 msgstr "Sabit fiyat kaydı başarısız"
 

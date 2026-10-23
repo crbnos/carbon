@@ -78656,11 +78656,13 @@ export type Database = {
           hours: number
           id: string
           jobId: string | null
+          jobOperationId: string | null
           journalId: string | null
           laborCategoryId: string
           lateReason: string | null
           note: string | null
           postedAt: string | null
+          productionEventId: string | null
           projectElementId: string | null
           projectId: string
           rdActivityRole: Database["public"]["Enums"]["rdActivityRole"] | null
@@ -78690,11 +78692,13 @@ export type Database = {
           hours: number
           id?: string
           jobId?: string | null
+          jobOperationId?: string | null
           journalId?: string | null
           laborCategoryId: string
           lateReason?: string | null
           note?: string | null
           postedAt?: string | null
+          productionEventId?: string | null
           projectElementId?: string | null
           projectId: string
           rdActivityRole?: Database["public"]["Enums"]["rdActivityRole"] | null
@@ -78724,11 +78728,13 @@ export type Database = {
           hours?: number
           id?: string
           jobId?: string | null
+          jobOperationId?: string | null
           journalId?: string | null
           laborCategoryId?: string
           lateReason?: string | null
           note?: string | null
           postedAt?: string | null
+          productionEventId?: string | null
           projectElementId?: string | null
           projectId?: string
           rdActivityRole?: Database["public"]["Enums"]["rdActivityRole"] | null
@@ -78897,6 +78903,34 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "timesheetEntry_jobOperation_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_jobOperation_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationQueueTime"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_jobOperation_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithDependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_jobOperation_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "timesheetEntry_job_fkey"
             columns: ["jobId"]
             isOneToOne: false
@@ -78929,6 +78963,13 @@ export type Database = {
             columns: ["journalId"]
             isOneToOne: false
             referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_productionEvent_fkey"
+            columns: ["productionEventId"]
+            isOneToOne: false
+            referencedRelation: "productionEvent"
             referencedColumns: ["id"]
           },
           {

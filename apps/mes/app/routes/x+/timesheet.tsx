@@ -398,6 +398,9 @@ export default function MESTimesheetPage() {
         );
         return {
           ...row,
+          jobId: null,
+          jobOperationId: null,
+          job: "",
           readableId: chargeNumber?.readableId ?? "",
           name: chargeNumber?.name ?? "",
           laborCategory:
@@ -483,6 +486,9 @@ export default function MESTimesheetPage() {
       // entry. "" is none.
       workLocationId: row.workLocationId ?? "",
       rdActivityRole: row.rdActivityRole ?? "",
+      // Shop time: the row's job and operation; "" is none.
+      jobId: row.jobId ?? "",
+      jobOperationId: row.jobOperationId ?? "",
       hours: String(hours)
     };
     if (controls) {
@@ -648,6 +654,8 @@ export default function MESTimesheetPage() {
                         <span className="truncate font-medium">{row.name}</span>
                       </span>
                       <span className="truncate text-sm text-muted-foreground">
+                        {/* Shop time: the job and operation it was worked on. */}
+                        {row.job && `${row.job} · `}
                         {row.laborCategory}
                         {row.workLocation &&
                           row.workLocationId !== jobLocationId &&

@@ -4,31 +4,26 @@
 
 import {
   type EarnedValueTechnique,
-  earnedValueTechniques,
-  elementEarnedValueValidator
+  earnedValueTechniques
 } from "@carbon/ee/project-control";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   LabelWithHelp,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  toast,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChartNoAxesCombined, LuLock } from "react-icons/lu";
-import { useFetcher } from "react-router";
-import {
-  Boolean,
-  Employee,
-  Hidden,
-  Number,
-  Select,
-  Submit
-} from "~/components/Form";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { Employee } from "~/components/Form";
 import {
   UpgradeOverlayContent,
   UpgradeOverlayDescription,
@@ -39,6 +34,13 @@ import {
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import type { ProjectElementPage } from "../../projects.service";
+import {
+  PropertyNumber,
+  type PropertySave,
+  PropertySaveProvider,
+  PropertySelect,
+  PropertySwitch
+} from "./PropertyFields";
 
 type Element = ProjectElementPage["element"];
 type ListElement = ProjectElementPage["elements"][number];
@@ -76,7 +78,8 @@ export default function ElementEarnedValue(props: ElementEarnedValueProps) {
 
   if (isGated) return <EarnedValueLockedRow />;
 
-  return <EarnedValueForm {...props} />;
+  // Keyed by element: a held-back choice belongs to one element.
+  return <EarnedValueForm key={props.element.id} {...props} />;
 }
 
 /** A property row with a lock: the upgrade copy opens in a popover. */
@@ -120,6 +123,62 @@ function EarnedValueLockedRow() {
   );
 }
 
+/** The earned value fields of the element, as one row of the update. */
+type EarnedValues = {
+  isControlAccount: boolean;
+  controlAccountManagerId: string | null;
+  earnedValueTechnique: EarnedValueTechnique | null;
+  earnedValuePercent: number | null;
+  apportionedToElementId: string | null;
+  apportionedFactor: number | null;
+};
+
+type EarnedValueField = keyof EarnedValues;
+
+function savedValues(element: Element): EarnedValues {
+  return {
+    isControlAccount: element.isControlAccount,
+    controlAccountManagerId: element.controlAccountManagerId,
+    earnedValueTechnique: element.earnedValueTechnique,
+    earnedValuePercent:
+      element.earnedValuePercent === null
+        ? null
+        : Number(element.earnedValuePercent),
+    apportionedToElementId: element.apportionedToElementId,
+    apportionedFactor:
+      element.apportionedFactor === null
+        ? null
+        : Number(element.apportionedFactor)
+  };
+}
+
+/** The values a save in flight is sending, read back from its form data. */
+function submittedValues(formData: FormData): EarnedValues {
+  const text = (name: EarnedValueField) => {
+    const value = formData.get(name);
+    return typeof value === "string" && value !== "" ? value : null;
+  };
+  const numeric = (name: EarnedValueField) => {
+    const value = text(name);
+    return value === null ? null : Number(value);
+  };
+  return {
+    isControlAccount: formData.get("isControlAccount") === "on",
+    controlAccountManagerId: text("controlAccountManagerId"),
+    earnedValueTechnique: text("earnedValueTechnique") as EarnedValueTechnique,
+    earnedValuePercent: numeric("earnedValuePercent"),
+    apportionedToElementId: text("apportionedToElementId"),
+    apportionedFactor: numeric("apportionedFactor")
+  };
+}
+
+/**
+ * Each field saves on change, in the inline pattern of the sidebar's other
+ * properties. The earned value route saves the fields together (the ee lock
+ * checks them as one), so every change sends all of them: the saved values,
+ * under the save in flight, under the change. Apportioned waits for its base
+ * element and factor before it saves.
+ */
 function EarnedValueForm({
   projectId,
   element,
@@ -127,24 +186,86 @@ function EarnedValueForm({
   isDisabled
 }: ElementEarnedValueProps) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
-  // The user's choices before Save; the saved values otherwise.
-  const [controlAccountChoice, setControlAccountChoice] = useState<
-    boolean | null
-  >(null);
-  const [techniqueChoice, setTechniqueChoice] = useState<
-    EarnedValueTechnique | "" | null
-  >(null);
+  const fetcher = useAction<{
+    success?: boolean;
+    error?: { message: string } | null;
+  }>({
+    key: `earned-value:${element.id}`,
+    onError: (data) =>
+      toast.error(data.error?.message ?? t`Failed to save the earned value`, {
+        id: `earned-value:${element.id}`
+      })
+  });
+  // A choice held back until the fields it needs are set (Apportioned).
+  const [draft, setDraft] = useState<Partial<EarnedValues>>({});
 
-  const isControlAccount = controlAccountChoice ?? element.isControlAccount;
-  const technique =
-    techniqueChoice === null
-      ? (element.earnedValueTechnique ?? "")
-      : techniqueChoice;
+  const values: EarnedValues = {
+    ...(fetcher.formData
+      ? submittedValues(fetcher.formData)
+      : savedValues(element)),
+    ...draft
+  };
+
+  const change = (patch: Partial<EarnedValues>) => {
+    const next = { ...values, ...patch };
+    if (
+      !next.isControlAccount &&
+      next.earnedValueTechnique === "Apportioned" &&
+      !(next.apportionedToElementId && (next.apportionedFactor ?? 0) > 0)
+    ) {
+      setDraft((current) => ({ ...current, ...patch }));
+      return;
+    }
+    setDraft({});
+    const formData = new FormData();
+    formData.set("intent", "earned-value");
+    formData.set("elementId", element.id);
+    if (next.isControlAccount) formData.set("isControlAccount", "on");
+    for (const field of [
+      "controlAccountManagerId",
+      "earnedValueTechnique",
+      "earnedValuePercent",
+      "apportionedToElementId",
+      "apportionedFactor"
+    ] as const) {
+      const value = next[field];
+      if (value !== null) formData.set(field, String(value));
+    }
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.projectElement(projectId, element.id)
+    });
+  };
+
+  // The sidebar's property fields, saving into `change`.
+  const save = (
+    _projectId: string,
+    _elementId: string,
+    field: string
+  ): PropertySave => ({
+    pending: undefined,
+    submit: (value) => {
+      const name = field as EarnedValueField;
+      if (name === "isControlAccount") {
+        change({ isControlAccount: value === "true" });
+      } else if (
+        name === "earnedValuePercent" ||
+        name === "apportionedFactor"
+      ) {
+        change({ [name]: value === null ? null : Number(value) });
+      } else {
+        change({ [name]: value } as Partial<EarnedValues>);
+      }
+    }
+  });
+
+  const technique = values.earnedValueTechnique;
   const canTakeTechnique =
     element.isChargeable && hasControlAccountAbove(element.id, elements);
   const showTechnique =
-    !isControlAccount && (canTakeTechnique || !!element.earnedValueTechnique);
+    !values.isControlAccount &&
+    (canTakeTechnique || !!element.earnedValueTechnique);
+  const common = { projectId, elementId: element.id, isDisabled };
 
   const techniqueLabels: Record<EarnedValueTechnique, string> = {
     "0/100": t`0/100`,
@@ -159,103 +280,106 @@ function EarnedValueForm({
     .filter(
       (e) =>
         e.id !== element.id &&
-        (!!e.earnedValueTechnique || e.id === element.apportionedToElementId)
+        (!!e.earnedValueTechnique || e.id === values.apportionedToElementId)
     )
     .map((e) => ({ value: e.id, label: `${e.readableId} ${e.name}` }));
 
   return (
-    <div className="mt-4 flex flex-col gap-2">
+    <div className="mt-4 flex flex-col gap-4">
       <h2 className="text-sm font-medium">
         <LabelWithHelp termId="earned-value" variant="inline">
           <Trans>Earned Value</Trans>
         </LabelWithHelp>
       </h2>
-      <ValidatedForm
-        key={element.id}
-        method="post"
-        action={path.to.projectElement(projectId, element.id)}
-        validator={elementEarnedValueValidator}
-        defaultValues={{
-          elementId: element.id,
-          isControlAccount: element.isControlAccount,
-          controlAccountManagerId: element.controlAccountManagerId ?? undefined,
-          earnedValueTechnique: element.earnedValueTechnique ?? undefined,
-          earnedValuePercent: element.earnedValuePercent ?? undefined,
-          apportionedToElementId: element.apportionedToElementId ?? undefined,
-          apportionedFactor: element.apportionedFactor ?? undefined
-        }}
-        fetcher={fetcher}
-        isDisabled={isDisabled}
-      >
-        <Hidden name="intent" value="earned-value" />
-        <Hidden name="elementId" />
-        <VStack spacing={3}>
-          {/* Drawn as the sidebar's other switches (`PropertySwitch`). */}
-          <Boolean
-            name="isControlAccount"
-            label={t`Control account`}
-            termId="control-account"
-            variant="small"
-            isOptional={false}
-            onChange={setControlAccountChoice}
-          />
-          {isControlAccount && (
+      <PropertySaveProvider value={save}>
+        {/* Drawn as the sidebar's other switches. */}
+        <PropertySwitch
+          {...common}
+          field="isControlAccount"
+          label={t`Control account`}
+          termId="control-account"
+          value={values.isControlAccount}
+        />
+        {values.isControlAccount && (
+          <ValidatedForm
+            key={`controlAccountManagerId:${values.controlAccountManagerId ?? ""}`}
+            defaultValues={{
+              controlAccountManagerId: values.controlAccountManagerId ?? ""
+            }}
+            validator={z.object({
+              controlAccountManagerId: zfd.text(z.string().optional())
+            })}
+            className="w-full"
+          >
             <Employee
               name="controlAccountManagerId"
               label={t`Control account manager`}
+              inline
+              isOptional
+              isReadOnly={isDisabled}
+              onChange={(option) => {
+                const next = option?.value || null;
+                if (next !== values.controlAccountManagerId) {
+                  change({ controlAccountManagerId: next });
+                }
+              }}
             />
-          )}
-          {showTechnique && (
-            <Select
-              name="earnedValueTechnique"
+          </ValidatedForm>
+        )}
+        {showTechnique && (
+          <VStack spacing={1}>
+            <PropertySelect
+              {...common}
+              field="earnedValueTechnique"
               label={t`Technique`}
-              helperText={
-                canTakeTechnique
-                  ? undefined
-                  : t`Needs a chargeable element below a control account`
-              }
+              value={technique}
               options={earnedValueTechniques.map((value) => ({
                 value,
                 label: techniqueLabels[value]
               }))}
-              onChange={(option) =>
-                setTechniqueChoice(
-                  (option?.value as EarnedValueTechnique | undefined) ?? ""
-                )
-              }
             />
-          )}
-          {showTechnique && technique === "Percent Complete" && (
-            <Number
-              name="earnedValuePercent"
-              label={t`Percent complete`}
-              formatOptions={INPUT_FORMAT.percent}
-              step={INPUT_STEP.percent}
+            {!canTakeTechnique && (
+              <p className="text-xs text-muted-foreground">
+                <Trans>
+                  Needs a chargeable element below a control account
+                </Trans>
+              </p>
+            )}
+          </VStack>
+        )}
+        {showTechnique && technique === "Percent Complete" && (
+          <PropertyNumber
+            {...common}
+            field="earnedValuePercent"
+            label={t`Percent complete`}
+            value={values.earnedValuePercent}
+            formatOptions={INPUT_FORMAT.percent}
+            step={INPUT_STEP.percent}
+            minValue={0}
+            maxValue={1}
+          />
+        )}
+        {showTechnique && technique === "Apportioned" && (
+          <>
+            <PropertySelect
+              {...common}
+              field="apportionedToElementId"
+              label={t`Base element`}
+              value={values.apportionedToElementId}
+              options={baseOptions}
+            />
+            <PropertyNumber
+              {...common}
+              field="apportionedFactor"
+              label={t`Factor`}
+              value={values.apportionedFactor}
+              formatOptions={INPUT_FORMAT.quantity}
+              step={INPUT_STEP.quantity}
               minValue={0}
-              maxValue={1}
             />
-          )}
-          {showTechnique && technique === "Apportioned" && (
-            <>
-              <Select
-                name="apportionedToElementId"
-                label={t`Base element`}
-                options={baseOptions}
-              />
-              <Number
-                name="apportionedFactor"
-                label={t`Factor`}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-                minValue={0}
-              />
-            </>
-          )}
-          <Submit isDisabled={isDisabled}>
-            <Trans>Save</Trans>
-          </Submit>
-        </VStack>
-      </ValidatedForm>
+          </>
+        )}
+      </PropertySaveProvider>
     </div>
   );
 }

@@ -522,5 +522,9 @@ export const timesheetCellValidator = z.object({
       ] satisfies [RdActivityRole, ...RdActivityRole[]]),
       z.literal("")
     ])
-    .optional()
+    .optional(),
+  // Shop time (DCAA): the row's job and job operation, part of the cell's
+  // key. An empty one is none; a field that is not sent matches any.
+  jobId: z.string().optional(),
+  jobOperationId: z.string().optional()
 });

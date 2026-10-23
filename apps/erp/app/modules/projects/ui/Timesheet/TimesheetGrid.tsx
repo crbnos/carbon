@@ -244,6 +244,9 @@ export default function TimesheetGrid({
         // R&D tax: the row's own values; an empty one is none.
         workLocationId: row.workLocationId ?? "",
         rdActivityRole: row.rdActivityRole ?? "",
+        // Shop time: the row's job and operation; an empty one is none.
+        jobId: row.jobId ?? "",
+        jobOperationId: row.jobOperationId ?? "",
         hours: String(hours)
       };
       if (controls) {
@@ -350,6 +353,8 @@ export default function TimesheetGrid({
             </span>
             <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
               <span className="truncate">
+                {/* Shop time: the job and operation it was worked on. */}
+                {row.original.jobLabel && `${row.original.jobLabel} · `}
                 {row.original.laborCategory}
                 {/* R&D tax: the place, when it is not the job's. */}
                 {row.original.workLocationName &&

@@ -140,7 +140,7 @@ export async function getLaborCategoriesList(
 }
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, hours, status, createdAt, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, hours, status, createdAt, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name), jobId, jobOperationId, job:job!timesheetEntry_job_fkey(id, jobId), jobOperation:jobOperation!timesheetEntry_jobOperation_fkey(id, description)" as const;
 
 function timesheetWeekQuery(client: Client) {
   return client.from("timesheetEntry").select(TIMESHEET_ENTRY_COLUMNS);
@@ -179,6 +179,11 @@ export type TimesheetRow = {
   /** R&D tax: part of the row's key, sent with every save of the row. */
   workLocationId: string | null;
   rdActivityRole: RdActivityRole | null;
+  /** Shop time (DCAA): part of the row's key, sent with every save. */
+  jobId: string | null;
+  jobOperationId: string | null;
+  /** "J000022 · Machining"; empty when the row has no job. */
+  job: string;
   readableId: string;
   name: string;
   laborCategory: string;
@@ -190,8 +195,9 @@ export type TimesheetRow = {
 };
 
 /**
- * The grid key of a row: project, element, labor category, work location and
- * research role, as the cell key of `save-timesheet-entry`.
+ * The grid key of a row: project, element, labor category, work location,
+ * research role, job and job operation, as the cell key of
+ * `save-timesheet-entry`.
  */
 export function timesheetRowKey(row: {
   projectId: string;
@@ -199,19 +205,23 @@ export function timesheetRowKey(row: {
   laborCategoryId: string;
   workLocationId?: string | null;
   rdActivityRole?: RdActivityRole | null;
+  jobId?: string | null;
+  jobOperationId?: string | null;
 }) {
   return [
     row.projectId,
     row.projectElementId ?? "",
     row.laborCategoryId,
     row.workLocationId ?? "",
-    row.rdActivityRole ?? ""
+    row.rdActivityRole ?? "",
+    row.jobId ?? "",
+    row.jobOperationId ?? ""
   ].join("\u001f");
 }
 
 /**
  * Groups entries into rows: one per project, element, labor category, work
- * location and research role, one cell per date. A correction and its reversal add up in one cell; the
+ * location, research role, job and job operation, one cell per date. A correction and its reversal add up in one cell; the
  * cell takes the Draft status when there is one, because that is the entry a
  * user can edit.
  */
@@ -230,6 +240,13 @@ export function groupTimesheetRows(
         laborCategoryId: entry.laborCategoryId,
         workLocationId: entry.workLocationId ?? null,
         rdActivityRole: entry.rdActivityRole ?? null,
+        jobId: entry.jobId ?? null,
+        jobOperationId: entry.jobOperationId ?? null,
+        job: entry.job
+          ? [entry.job.jobId, entry.jobOperation?.description]
+              .filter(Boolean)
+              .join(" · ")
+          : "",
         readableId:
           entry.element?.readableId ?? entry.project?.identifier ?? "",
         name: entry.element?.name ?? entry.project?.name ?? "",
@@ -300,7 +317,12 @@ export async function saveTimesheetEntry(
       rdActivityRole:
         input.rdActivityRole === undefined
           ? undefined
-          : input.rdActivityRole || null
+          : input.rdActivityRole || null,
+      jobId: input.jobId === undefined ? undefined : input.jobId || null,
+      jobOperationId:
+        input.jobOperationId === undefined
+          ? undefined
+          : input.jobOperationId || null
     }
   );
 }
