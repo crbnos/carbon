@@ -291,6 +291,9 @@ msgstr "Avatar stili"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Avatarlar <0>{0}</0> kaynağından {1} tarafından, <1>{2}</1> lisansı altında."
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "Back"
 msgstr "Geri"
 
@@ -327,6 +330,9 @@ msgstr "parti toplamı"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
+
+msgid "Billable"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -512,6 +518,9 @@ msgstr "Tüketildi süresi doldu"
 msgid "Continue"
 msgstr "Devam Et"
 
+msgid "Contract"
+msgstr ""
+
 msgid "Copied!"
 msgstr "Kopyalandı!"
 
@@ -524,6 +533,9 @@ msgstr "Panoya kopyala"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
+
+msgid "Coverage"
+msgstr ""
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -543,6 +555,9 @@ msgstr "Mevcut iş"
 
 msgid "Customer"
 msgstr "Müşteri"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "Dark"
 msgstr "Koyu"
@@ -573,6 +588,9 @@ msgstr "Adımı Sil"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Zaman Kartını Sil (<0/>)"
+
+msgid "Depot"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Sorunu açıklayın..."
@@ -895,6 +913,9 @@ msgstr "Açık bir menüde"
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
+msgid "In warranty"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size e-posta veya Slack aracılığıyla ulaşacağını seçin."
 
@@ -921,6 +942,9 @@ msgstr "Stok düzeltme tamamlandı"
 
 msgid "Inventory Adjustments"
 msgstr "Stok düzeltmeleri"
+
+msgid "Invoiced"
+msgstr ""
 
 msgid "is"
 msgstr "eşittir"
@@ -984,6 +1008,9 @@ msgstr "İşçilik"
 
 msgid "Labor category"
 msgstr "İşçilik kategorisi"
+
+msgid "Labor ended"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
@@ -1185,6 +1212,9 @@ msgstr "Gezinti"
 msgid "New"
 msgstr "Yeni"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Record"
 msgstr "Yeni Kayıt"
 
@@ -1263,6 +1293,9 @@ msgstr "Bu Partide Malzeme yok."
 msgid "No open jobs"
 msgstr "Açık iş emirleri yok"
 
+msgid "No open service jobs at this location"
+msgstr ""
+
 msgid "No open units to allocate"
 msgstr "Tahsis edilecek açık birim yok"
 
@@ -1310,6 +1343,9 @@ msgstr "Seri numarası yok"
 
 msgid "No serial numbers found"
 msgstr "Seri numarası bulunamadı"
+
+msgid "No service jobs assigned to you today"
+msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "Bu sayfada kullanılabilir kısayol yoktur."
@@ -1372,6 +1408,9 @@ msgstr "Çevrimdışı"
 msgid "Oldest first"
 msgstr "En eski önce"
 
+msgid "On Hold"
+msgstr ""
+
 msgid "one combined lot · planned"
 msgstr "bir birleştirilmiş Lot · planlandı"
 
@@ -1399,6 +1438,9 @@ msgstr "Bu partizeki bir iş emrini aç"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için NCR aç"
+
+msgid "Open at this location"
+msgstr ""
 
 msgid "Open ERP"
 msgstr "ERP'yi aç"
@@ -1914,6 +1956,9 @@ msgstr "Seri Numaraları"
 msgid "Serialized"
 msgstr "Serileştirildi"
 
+msgid "Service"
+msgstr ""
+
 msgid "Session locked"
 msgstr "Oturum kilitlendi"
 
@@ -2346,6 +2391,9 @@ msgstr "Bakım emrini Görüntüle"
 msgid "View or open"
 msgstr "Görüntüle veya aç"
 
+msgid "Warranty"
+msgstr ""
+
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
 
@@ -2366,6 +2414,9 @@ msgstr "İş Merkezi Ekranları"
 
 msgid "Work instructions"
 msgstr "İş talimatları"
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Write a note…"
 msgstr "Bir not yazın…"

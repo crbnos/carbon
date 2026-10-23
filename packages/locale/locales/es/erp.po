@@ -374,6 +374,15 @@ msgstr "{0} facturas se facturaron en su sistema anterior y no se vuelven a gene
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} es {1}, no Borrador o Planificado"
 
+#. placeholder {0}: chipName(active.id)
+msgid "{0} is no longer over a cell"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} is over {1}"
+msgstr ""
+
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0} artículos marcados como preparados"
@@ -554,6 +563,15 @@ msgstr "{0} valores"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} valores faltantes"
+
+#. placeholder {0}: chipName(active.id)
+msgid "{0} was dropped"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} was dropped on {1}"
+msgstr ""
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
@@ -820,6 +838,9 @@ msgstr "{missingCount} asientos faltantes en el proveedor"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} asientos faltantes y {mismatchCount} meses desajustados"
 
+msgid "{name} at {station}"
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} eliminado"
 
@@ -831,6 +852,9 @@ msgstr "{name} termina {end} (fue abierto)"
 
 msgid "{name} needs an account number."
 msgstr "{name} necesita un número de cuenta."
+
+msgid "{name} on {day}"
+msgstr ""
 
 msgid "{name} path"
 msgstr "{name} trayectoria"
@@ -1289,6 +1313,9 @@ msgstr "Un límite en la tasa de facturación de un grupo para una línea de con
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Una migración de datos ejecutada por Carbon — usted carga sus propios datos"
+
+msgid "a cell"
+msgstr ""
 
 msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
 msgstr "Un aviso de cambio rastrea un cambio de ingeniería o manufactura controlado a través de revisión e implementación."
@@ -16381,6 +16408,10 @@ msgstr "Cuenta movida"
 msgid "Movements"
 msgstr "Movimientos"
 
+#. placeholder {0}: chipName(active.id)
+msgid "Moving {0} was cancelled"
+msgstr ""
+
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
 msgstr "Se canceló el movimiento del paso {0}"
@@ -19882,6 +19913,10 @@ msgstr "Seleccionado y consumido como componentes separados"
 
 msgid "Picked quantity"
 msgstr "Cantidad recogida"
+
+#. placeholder {0}: chipName(active.id)
+msgid "Picked up {0}"
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
@@ -26497,6 +26532,9 @@ msgstr "La autorización se rechazó en Ramp. Vuelve a intentar la conexión."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
 msgstr "El costo promedio del Artículo. Cambiar esto requiere Permiso para editar Piezas."
+
+msgid "the backlog"
+msgstr ""
 
 msgid "The backup job reported this error."
 msgstr "El trabajo de copia de seguridad reportó este error."

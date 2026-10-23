@@ -291,6 +291,9 @@ msgstr "अवतार शैली"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "<0>{0}</0> से अवतार {1} द्वारा, <1>{2}</1> के अंतर्गत लाइसेंस प्राप्त।"
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "Back"
 msgstr "वापस"
 
@@ -327,6 +330,9 @@ msgstr "बैच कुल"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
+
+msgid "Billable"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -512,6 +518,9 @@ msgstr "खपत की गई समाप्त"
 msgid "Continue"
 msgstr "जारी रखें"
 
+msgid "Contract"
+msgstr ""
+
 msgid "Copied!"
 msgstr "कॉपी हो गया!"
 
@@ -524,6 +533,9 @@ msgstr "क्लिपबोर्ड पर कॉपी करें"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
+
+msgid "Coverage"
+msgstr ""
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -543,6 +555,9 @@ msgstr "वर्तमान कार्य"
 
 msgid "Customer"
 msgstr "ग्राहक"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "Dark"
 msgstr "गहरा"
@@ -573,6 +588,9 @@ msgstr "चरण हटाएं"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "टाइमकार्ड हटाएं (<0/>)"
+
+msgid "Depot"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "समस्या का वर्णन करें..."
@@ -895,6 +913,9 @@ msgstr "खुले मेनू में"
 msgid "In Progress"
 msgstr "प्रगति में"
 
+msgid "In warranty"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "इन-ऐप सूचनाएं हमेशा वितरित की जाती हैं। चुनें कि कौन से विषय आपको ईमेल या Slack द्वारा भी पहुंचते हैं।"
 
@@ -921,6 +942,9 @@ msgstr "इन्वेंटरी समायोजन पूर्ण हु
 
 msgid "Inventory Adjustments"
 msgstr "इन्वेंटरी समायोजन"
+
+msgid "Invoiced"
+msgstr ""
 
 msgid "is"
 msgstr "है"
@@ -984,6 +1008,9 @@ msgstr "श्रम"
 
 msgid "Labor category"
 msgstr "श्रम श्रेणी"
+
+msgid "Labor ended"
+msgstr ""
 
 msgid "Last completed"
 msgstr "अंतिम पूर्ण"
@@ -1185,6 +1212,9 @@ msgstr "नेविगेशन"
 msgid "New"
 msgstr "नया"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Record"
 msgstr "नया रिकॉर्ड"
 
@@ -1263,6 +1293,9 @@ msgstr "इस बैच पर कोई सामग्री नहीं ह
 msgid "No open jobs"
 msgstr "कोई खुली जॉब नहीं"
 
+msgid "No open service jobs at this location"
+msgstr ""
+
 msgid "No open units to allocate"
 msgstr "आवंटित करने के लिए कोई खुली इकाई नहीं"
 
@@ -1310,6 +1343,9 @@ msgstr "कोई सीरियल नंबर नहीं"
 
 msgid "No serial numbers found"
 msgstr "कोई सीरियल नंबर नहीं मिला"
+
+msgid "No service jobs assigned to you today"
+msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "इस पृष्ठ पर कोई शॉर्टकट उपलब्ध नहीं हैं।"
@@ -1372,6 +1408,9 @@ msgstr "ऑफलाइन"
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
 
+msgid "On Hold"
+msgstr ""
+
 msgid "one combined lot · planned"
 msgstr "एक संयुक्त लॉट · योजनाबद्ध"
 
@@ -1399,6 +1438,9 @@ msgstr "इस बैच में एक जॉब खोलें"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
+
+msgid "Open at this location"
+msgstr ""
 
 msgid "Open ERP"
 msgstr "ERP खोलें"
@@ -1914,6 +1956,9 @@ msgstr "सीरियल नंबर"
 msgid "Serialized"
 msgstr "क्रमांकित"
 
+msgid "Service"
+msgstr ""
+
 msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
@@ -2346,6 +2391,9 @@ msgstr "रखरखाव कार्य देखें"
 msgid "View or open"
 msgstr "देखें या खोलें"
 
+msgid "Warranty"
+msgstr ""
+
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
 
@@ -2366,6 +2414,9 @@ msgstr "वर्क सेंटर डिस्प्ले"
 
 msgid "Work instructions"
 msgstr "कार्य निर्देश"
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Write a note…"
 msgstr "एक नोट लिखें…"

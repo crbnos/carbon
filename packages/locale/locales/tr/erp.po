@@ -374,6 +374,15 @@ msgstr "{0} fatura önceki sisteminizde faturalandırıldı ve tekrar taslak ola
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} {1}, Taslak veya Planlandı değildir"
 
+#. placeholder {0}: chipName(active.id)
+msgid "{0} is no longer over a cell"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} is over {1}"
+msgstr ""
+
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0} stok kartı toplandı olarak işaretlendi"
@@ -554,6 +563,15 @@ msgstr "{0} değer"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
+
+#. placeholder {0}: chipName(active.id)
+msgid "{0} was dropped"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} was dropped on {1}"
+msgstr ""
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
@@ -820,6 +838,9 @@ msgstr "{missingCount} muhasebe fişi sağlayıcıda eksik"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} eksik muhasebe fişi ve {mismatchCount} uyumsuz ay"
 
+msgid "{name} at {station}"
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} silindi"
 
@@ -831,6 +852,9 @@ msgstr "{name} {end} tarihinde sona eriyor (daha önce açıktı)"
 
 msgid "{name} needs an account number."
 msgstr "{name} bir hesap numarasına ihtiyaç duyuyor."
+
+msgid "{name} on {day}"
+msgstr ""
 
 msgid "{name} path"
 msgstr "{name} yolu"
@@ -1289,6 +1313,9 @@ msgstr "Bir havuzun bir Cost Plus sözleşme satırı için faturalandırma oran
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Bir Carbon tarafından yönetilen veri taşıması — kendi verilerinizi yüklersiniz"
+
+msgid "a cell"
+msgstr ""
 
 msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
 msgstr "Değişiklik bildirimi, kontrollü bir mühendislik veya üretim değişikliğini inceleme ve uygulama aşamalarından takip eder."
@@ -16381,6 +16408,10 @@ msgstr "Taşınan hesap"
 msgid "Movements"
 msgstr "Hareketler"
 
+#. placeholder {0}: chipName(active.id)
+msgid "Moving {0} was cancelled"
+msgstr ""
+
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
 msgstr "Taşınan adım {0} iptal edildi"
@@ -19882,6 +19913,10 @@ msgstr "Ayrı bileşenler olarak toplanmış ve tüketilmiş"
 
 msgid "Picked quantity"
 msgstr "Alınan miktar"
+
+#. placeholder {0}: chipName(active.id)
+msgid "Picked up {0}"
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
@@ -26497,6 +26532,9 @@ msgstr "Yetkilendirme Ramp'te reddedildi. Yeniden bağlanmayı deneyin."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
 msgstr "Stok kartının ortalama maliyeti. Bunu değiştirmek parçaları düzenleme izni gerektirir."
+
+msgid "the backlog"
+msgstr ""
 
 msgid "The backup job reported this error."
 msgstr "Yedekleme işi bu hatayı bildirdi."

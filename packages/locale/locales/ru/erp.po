@@ -374,6 +374,15 @@ msgstr "{0} счета-фактур были выставлены в вашей 
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} имеет статус {1}, а не Черновик или Запланировано"
 
+#. placeholder {0}: chipName(active.id)
+msgid "{0} is no longer over a cell"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} is over {1}"
+msgstr ""
+
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0} номенклатур отмечено как отобрано"
@@ -554,6 +563,15 @@ msgstr "{0} значений"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
+
+#. placeholder {0}: chipName(active.id)
+msgid "{0} was dropped"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} was dropped on {1}"
+msgstr ""
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
@@ -820,6 +838,9 @@ msgstr "{missingCount} операций не найдено в поставщи�
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} не найдено операций и {mismatchCount} несовпадающих месяцев"
 
+msgid "{name} at {station}"
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} удален"
 
@@ -831,6 +852,9 @@ msgstr "{name} заканчивается {end} (было открыто)"
 
 msgid "{name} needs an account number."
 msgstr "{name} требует номера счета."
+
+msgid "{name} on {day}"
+msgstr ""
 
 msgid "{name} path"
 msgstr "{name} траектория"
@@ -1289,6 +1313,9 @@ msgstr "Ограничение на ставку выставления счет
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Миграция данных, управляемая Carbon — вы загружаете свои собственные данные"
+
+msgid "a cell"
+msgstr ""
 
 msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
 msgstr "Извещение об изменении отслеживает контролируемое техническое или производственное изменение на протяжении рассмотрения и внедрения."
@@ -16381,6 +16408,10 @@ msgstr "Перемещённый счёт"
 msgid "Movements"
 msgstr "Движения"
 
+#. placeholder {0}: chipName(active.id)
+msgid "Moving {0} was cancelled"
+msgstr ""
+
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
 msgstr "Перемещение шага {0} было отменено"
@@ -19882,6 +19913,10 @@ msgstr "Подобрано и потреблено как отдельные к�
 
 msgid "Picked quantity"
 msgstr "Выбранное количество"
+
+#. placeholder {0}: chipName(active.id)
+msgid "Picked up {0}"
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
@@ -26497,6 +26532,9 @@ msgstr "Авторизация была отклонена в Ramp. Попроб
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
 msgstr "Средняя себестоимость номенклатуры. Изменение требует права доступа на редактирование деталей."
+
+msgid "the backlog"
+msgstr ""
 
 msgid "The backup job reported this error."
 msgstr "Задача резервного копирования сообщила об этой ошибке."

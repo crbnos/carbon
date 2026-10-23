@@ -374,6 +374,15 @@ msgstr "{0} fatture sono state fatturate nel vostro sistema precedente e non ven
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} è {1}, non Bozza o Pianificato"
 
+#. placeholder {0}: chipName(active.id)
+msgid "{0} is no longer over a cell"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} is over {1}"
+msgstr ""
+
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0} articoli marcati come prelevati"
@@ -554,6 +563,15 @@ msgstr "{0} valori"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} valori mancanti"
+
+#. placeholder {0}: chipName(active.id)
+msgid "{0} was dropped"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} was dropped on {1}"
+msgstr ""
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
@@ -820,6 +838,9 @@ msgstr "{missingCount} prima nota mancanti nel provider"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} prima nota mancanti e {mismatchCount} mesi non corrispondenti"
 
+msgid "{name} at {station}"
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} eliminato"
 
@@ -831,6 +852,9 @@ msgstr "{name} termina {end} (era senza data di fine)"
 
 msgid "{name} needs an account number."
 msgstr "{name} necessita un numero di conto."
+
+msgid "{name} on {day}"
+msgstr ""
 
 msgid "{name} path"
 msgstr "{name} percorso"
@@ -1289,6 +1313,9 @@ msgstr "Un limite al tasso di fatturazione di una pool per una riga di contratto
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Una migrazione dati gestita da Carbon — tu carichi i tuoi dati"
+
+msgid "a cell"
+msgstr ""
 
 msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
 msgstr "Un avviso di modifica traccia un cambiamento controllato di ingegneria o produzione attraverso la revisione e l'implementazione."
@@ -16381,6 +16408,10 @@ msgstr "Account spostato"
 msgid "Movements"
 msgstr "Movimenti"
 
+#. placeholder {0}: chipName(active.id)
+msgid "Moving {0} was cancelled"
+msgstr ""
+
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
 msgstr "Lo spostamento del passo {0} è stato annullato"
@@ -19882,6 +19913,10 @@ msgstr "Prelevato e consumato come componenti separati"
 
 msgid "Picked quantity"
 msgstr "Quantità prelevata"
+
+#. placeholder {0}: chipName(active.id)
+msgid "Picked up {0}"
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
@@ -26497,6 +26532,9 @@ msgstr "L'autorizzazione è stata rifiutata in Ramp. Prova a connetterti di nuov
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
 msgstr "Il costo medio dell'articolo. Modificarlo richiede l'autorizzazione di modificare i componenti."
+
+msgid "the backlog"
+msgstr ""
 
 msgid "The backup job reported this error."
 msgstr "Il lavoro di backup ha segnalato questo errore."

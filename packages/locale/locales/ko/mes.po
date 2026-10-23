@@ -291,6 +291,9 @@ msgstr "아바타 스타일"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "<0>{0}</0>의 아바타는 {1}이 만들었으며 <1>{2}</1> 라이선스로 제공됩니다."
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "Back"
 msgstr "뒤로"
 
@@ -327,6 +330,9 @@ msgstr "배치 총계"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "목표에서 {daysBehindTarget}일 뒤짐"
+
+msgid "Billable"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -512,6 +518,9 @@ msgstr "소모됨 만료됨"
 msgid "Continue"
 msgstr "계속"
 
+msgid "Contract"
+msgstr ""
+
 msgid "Copied!"
 msgstr "복사되었습니다!"
 
@@ -524,6 +533,9 @@ msgstr "클립보드에 복사"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
+
+msgid "Coverage"
+msgstr ""
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -543,6 +555,9 @@ msgstr "현재 작업"
 
 msgid "Customer"
 msgstr "고객"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "Dark"
 msgstr "다크"
@@ -573,6 +588,9 @@ msgstr "단계 삭제"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "타임카드 삭제 (<0/>)"
+
+msgid "Depot"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
@@ -895,6 +913,9 @@ msgstr "열린 메뉴에서"
 msgid "In Progress"
 msgstr "진행 중"
 
+msgid "In warranty"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "앱 내 알림은 항상 전달됩니다. 이메일이나 Slack으로도 받을 주제를 선택하세요."
 
@@ -921,6 +942,9 @@ msgstr "재고 조정이 완료되었습니다"
 
 msgid "Inventory Adjustments"
 msgstr "재고 조정"
+
+msgid "Invoiced"
+msgstr ""
 
 msgid "is"
 msgstr "같음"
@@ -984,6 +1008,9 @@ msgstr "노무"
 
 msgid "Labor category"
 msgstr "노무 분류"
+
+msgid "Labor ended"
+msgstr ""
 
 msgid "Last completed"
 msgstr "마지막 완료"
@@ -1185,6 +1212,9 @@ msgstr "탐색"
 msgid "New"
 msgstr "신규"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Record"
 msgstr "새 레코드"
 
@@ -1263,6 +1293,9 @@ msgstr "이 배치에 자재가 없습니다."
 msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
 
+msgid "No open service jobs at this location"
+msgstr ""
+
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
 
@@ -1310,6 +1343,9 @@ msgstr "시리얼 번호 없음"
 
 msgid "No serial numbers found"
 msgstr "시리얼 번호를 찾을 수 없습니다"
+
+msgid "No service jobs assigned to you today"
+msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서는 사용 가능한 바로가기가 없습니다."
@@ -1372,6 +1408,9 @@ msgstr "오프라인"
 msgid "Oldest first"
 msgstr "오래된순"
 
+msgid "On Hold"
+msgstr ""
+
 msgid "one combined lot · planned"
 msgstr "결합된 로트 하나 · 계획됨"
 
@@ -1399,6 +1438,9 @@ msgstr "이 배치에서 작업 지시 열기"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
+
+msgid "Open at this location"
+msgstr ""
 
 msgid "Open ERP"
 msgstr "ERP 열기"
@@ -1914,6 +1956,9 @@ msgstr "시리얼 번호"
 msgid "Serialized"
 msgstr "일련화됨"
 
+msgid "Service"
+msgstr ""
+
 msgid "Session locked"
 msgstr "세션 잠김"
 
@@ -2346,6 +2391,9 @@ msgstr "유지보수 지시 보기"
 msgid "View or open"
 msgstr "보기 또는 열기"
 
+msgid "Warranty"
+msgstr ""
+
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
 
@@ -2366,6 +2414,9 @@ msgstr "작업장 화면"
 
 msgid "Work instructions"
 msgstr "작업 표준서"
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Write a note…"
 msgstr "메모 작성…"

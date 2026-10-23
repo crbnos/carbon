@@ -38,6 +38,8 @@
   - "Keep at zero value" did NOT ship, per the plan's escape hatch: no server path adds a tracked unit to stock at zero cost. After a no-charge replacement, the old unit can only be scrapped.
 - 2026-10-23: Tasks 22–25 committed. The job page gets time, parts and charges, the estimate (send, record response, PDF), and Complete, Reopen, coverage change and Create Invoice. New operations `issueServiceJobPart` and `unissueServiceJobPart` wrap the issue posting. The customer asset pages move to `/x/service-jobs/assets` and show the asset's open jobs, its jobs and its RMA lines, plus "New Service Job".
   - Checks: the erp and documents typecheck passes. ERP unit tests pass (710), as do the PDF test, the post-service-job, invoice and issue tests (13) and conformance.
+- 2026-10-23: Task 33 committed. The shared `~/components/ScheduleMatrix` (`@dnd-kit/core`) and People matrix drag and drop, backed by the `movePersonCell` operation (`update: production`), which reschedules like the existing move. Clicking a cell still opens the hours modal.
+  - Checks: the erp typecheck passes. `schedule-matrix.test.ts` passes (5 tests), and so do the ERP unit tests and the permission tests. There is no live database test: `apps/erp/test/database` has no people-assignment harness.
 
 ## Decisions made without Brad
 
@@ -77,6 +79,7 @@
 | 22 | A charge line is editable (`$jobId.item.$itemId.tsx`), and one delete route serves both parts (Return to Stock) and charges | Time and estimate lines are editable, so charges are too. |
 | 24 | Start, Send Estimate, Complete and Create Invoice submit with no confirm dialog. A refused Complete shows an error toast | Maintenance's Complete does the same. |
 | 24 | The properties panel shows the estimate's status and who responded, read-only | After acceptance, nothing else on the page shows it. |
+| 33 | **For Brad:** dragging a chip onto a day where the person already works a different station is refused, with "This person already works another work center that day. Open the day to split their hours." Same station merges. | `peopleAssignment_person_day_key` allows one row per person, day and shift, and the plan did not cover this case. The first drag to "the next day" often hits it, so Brad may want another behavior. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

@@ -291,6 +291,9 @@ msgstr "Style d'avatar"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Avatars de <0>{0}</0> par {1}, sous licence <1>{2}</1>."
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "Back"
 msgstr "Retour"
 
@@ -327,6 +330,9 @@ msgstr "total du lot de production"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "En retard de {daysBehindTarget} jour(s)"
+
+msgid "Billable"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -512,6 +518,9 @@ msgstr "Consommé expiré"
 msgid "Continue"
 msgstr "Continuer"
 
+msgid "Contract"
+msgstr ""
+
 msgid "Copied!"
 msgstr "Copié !"
 
@@ -524,6 +533,9 @@ msgstr "Copier dans le presse-papiers"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Coût de la maintenance imprévue, {0} derniers jours"
+
+msgid "Coverage"
+msgstr ""
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -543,6 +555,9 @@ msgstr "Travail actuel"
 
 msgid "Customer"
 msgstr "Client"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "Dark"
 msgstr "Sombre"
@@ -573,6 +588,9 @@ msgstr "Supprimer l'étape"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Supprimer la feuille de temps (<0/>)"
+
+msgid "Depot"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Décrivez le problème..."
@@ -895,6 +913,9 @@ msgstr "Dans un menu déroulant"
 msgid "In Progress"
 msgstr "En cours"
 
+msgid "In warranty"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Les notifications dans l'application sont toujours remises. Choisissez les sujets qui vous atteignent également par e-mail ou Slack."
 
@@ -921,6 +942,9 @@ msgstr "Ajustement de stock terminé"
 
 msgid "Inventory Adjustments"
 msgstr "Ajustements de stock"
+
+msgid "Invoiced"
+msgstr ""
 
 msgid "is"
 msgstr "est"
@@ -984,6 +1008,9 @@ msgstr "Main-d'œuvre"
 
 msgid "Labor category"
 msgstr "Catégorie de main-d'œuvre"
+
+msgid "Labor ended"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Dernier complété"
@@ -1185,6 +1212,9 @@ msgstr "Navigation"
 msgid "New"
 msgstr "Nouveau"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Record"
 msgstr "Nouvel enregistrement"
 
@@ -1263,6 +1293,9 @@ msgstr "Aucune matière sur ce lot de production."
 msgid "No open jobs"
 msgstr "Aucun ordre de fabrication ouvert"
 
+msgid "No open service jobs at this location"
+msgstr ""
+
 msgid "No open units to allocate"
 msgstr "Aucune unité ouverte à allouer"
 
@@ -1310,6 +1343,9 @@ msgstr "Aucun numéro de série"
 
 msgid "No serial numbers found"
 msgstr "Aucun numéro de série trouvé"
+
+msgid "No service jobs assigned to you today"
+msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "Aucun raccourci disponible sur cette page."
@@ -1372,6 +1408,9 @@ msgstr "Hors ligne"
 msgid "Oldest first"
 msgstr "Le plus ancien en premier"
 
+msgid "On Hold"
+msgstr ""
+
 msgid "one combined lot · planned"
 msgstr "un lot combiné · planifié"
 
@@ -1399,6 +1438,9 @@ msgstr "Ouvrir un ordre de fabrication dans ce lot de production"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Ouvrir une NCR pour le traitement du MRB"
+
+msgid "Open at this location"
+msgstr ""
 
 msgid "Open ERP"
 msgstr "Ouvrir l'ERP"
@@ -1914,6 +1956,9 @@ msgstr "Numéros de série"
 msgid "Serialized"
 msgstr "Sérialisé"
 
+msgid "Service"
+msgstr ""
+
 msgid "Session locked"
 msgstr "Session verrouillée"
 
@@ -2346,6 +2391,9 @@ msgstr "Voir l'intervention de maintenance"
 msgid "View or open"
 msgstr "Afficher ou ouvrir"
 
+msgid "Warranty"
+msgstr ""
+
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Nous vous avons envoyé un lien magique pour vous connecter à votre compte."
 
@@ -2366,6 +2414,9 @@ msgstr "Affichages des postes de travail"
 
 msgid "Work instructions"
 msgstr "Modes opératoires"
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Write a note…"
 msgstr "Écrire une note…"

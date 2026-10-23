@@ -1,5 +1,5 @@
 {
-  "totalTools": 1745,
+  "totalTools": 1746,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -805,6 +805,7 @@
     {"name":"production_matchAssemblyBom","classification":"WRITE","schema":"3797626bd17e","response":"7d2129b72e71","permission":"production:update","paginates":false},
     {"name":"production_mergeBatchOutputs","classification":"WRITE","schema":"49385ebfc807","response":"305ef06ceb72","permission":"production:update","paginates":false},
     {"name":"production_movePerson","classification":"WRITE","schema":"a726aa587ccc","response":"3797626bd17e","permission":"production:update","paginates":false},
+    {"name":"production_movePersonCell","classification":"WRITE","schema":"540cc2538165","response":"3797626bd17e","permission":"production:update","paginates":false},
     {"name":"production_movePersonWeek","classification":"WRITE","schema":"c790955c93cc","response":"3d90cb5d0437","permission":"production:update","paginates":false},
     {"name":"production_moveScheduleJob","classification":"WRITE","schema":"6e18ba72229f","response":"3797626bd17e","permission":"production:update","paginates":false},
     {"name":"production_notifyScheduleInputsChanged","classification":"WRITE","schema":"a2cb3b753e9c","response":"b520ca8e3ab4","permission":"production:update","paginates":false},

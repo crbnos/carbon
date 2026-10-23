@@ -374,6 +374,15 @@ msgstr "{0} चालान आपकी पिछली प्रणाली �
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} {1} है, ड्राफ्ट या योजनाबद्ध नहीं है"
 
+#. placeholder {0}: chipName(active.id)
+msgid "{0} is no longer over a cell"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} is over {1}"
+msgstr ""
+
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0} आइटम पिक किए गए के रूप में चिह्नित"
@@ -554,6 +563,15 @@ msgstr "{0} मान"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} मान गायब हैं"
+
+#. placeholder {0}: chipName(active.id)
+msgid "{0} was dropped"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} was dropped on {1}"
+msgstr ""
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
@@ -820,6 +838,9 @@ msgstr "प्रदाता में {missingCount} जर्नल गाय
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} गायब जर्नल और {mismatchCount} असमान महीने"
 
+msgid "{name} at {station}"
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
@@ -831,6 +852,9 @@ msgstr "{name} {end} को समाप्त होता है (पहले
 
 msgid "{name} needs an account number."
 msgstr "{name} को खाता संख्या की आवश्यकता है।"
+
+msgid "{name} on {day}"
+msgstr ""
 
 msgid "{name} path"
 msgstr "{name} मार्ग"
@@ -1289,6 +1313,9 @@ msgstr "एक पूल की बिलिंग दर पर एक सी�
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "एक कार्बन-चलाया गया डेटा माइग्रेशन — आप अपना डेटा लोड करते हैं"
+
+msgid "a cell"
+msgstr ""
 
 msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
 msgstr "एक परिवर्तन सूचना समीक्षा और कार्यान्वयन के माध्यम से एक नियंत्रित इंजीनियरिंग या विनिर्माण परिवर्तन को ट्रैक करती है।"
@@ -16381,6 +16408,10 @@ msgstr "खाता स्थानांतरित किया गया"
 msgid "Movements"
 msgstr "मूवमेंट्स"
 
+#. placeholder {0}: chipName(active.id)
+msgid "Moving {0} was cancelled"
+msgstr ""
+
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
 msgstr "चरण {0} को स्थानांतरित करना रद्द कर दिया गया"
@@ -19882,6 +19913,10 @@ msgstr "अलग घटकों के रूप में चुना और
 
 msgid "Picked quantity"
 msgstr "चुना गया मात्रा"
+
+#. placeholder {0}: chipName(active.id)
+msgid "Picked up {0}"
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
@@ -26497,6 +26532,9 @@ msgstr "Ramp में प्राधिकरण अस्वीकार क�
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
 msgstr "आइटम की औसत लागत। इसे बदलने के लिए पार्ट्स संपादित करने की अनुमति की आवश्यकता है।"
+
+msgid "the backlog"
+msgstr ""
 
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"

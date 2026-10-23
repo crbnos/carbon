@@ -1874,6 +1874,13 @@ export const peopleMoveValidator = z.object({
   workCenterId: z.string().min(1, { message: "Work center is required" })
 });
 
+// The matrix's drag: one assignment to another person and/or day, same station
+export const peopleMoveCellValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  date: z.string().min(1, { message: "Date is required" })
+});
+
 // One atomic edit of a person's whole day: the given rows become the day's
 // assignments (update/insert/delete reconciliation in one transaction)
 export const peopleDayValidator = z.object({

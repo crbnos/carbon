@@ -17,15 +17,25 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import {
   today as calendarToday,
   getLocalTimeZone
 } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuInfo } from "react-icons/lu";
+import { useSubmit } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
+import {
+  MatrixCell,
+  MatrixChip,
+  type MatrixMove,
+  type MatrixPlace,
+  ScheduleMatrixDnd
+} from "~/components/ScheduleMatrix";
 import { usePermissions } from "~/hooks";
+import { path } from "~/utils/path";
 import { PeopleChip } from "./PeopleChip";
 import { PeopleHoursModal } from "./PeopleHoursModal";
 import {
@@ -119,7 +129,9 @@ export function PeopleMatrix({
   defaultShiftStart,
   defaultShiftEnd
 }: PeopleMatrixProps) {
+  const { t } = useLingui();
   const permissions = usePermissions();
+  const submit = useSubmit();
   const canEdit = permissions.can("update", "production");
   const [tab, setTab] = useState<"assignments" | "coverage">("assignments");
 
@@ -170,6 +182,76 @@ export function PeopleMatrix({
   }, [visibleAssignments]);
 
   const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
+  const assignmentById = useMemo(
+    () => new Map(assignments.map((a) => [a.id, a])),
+    [assignments]
+  );
+  const employeeNameById = useMemo(
+    () => new Map(employees.map((e) => [e.id, e.name ?? ""])),
+    [employees]
+  );
+
+  // A chip dropped on another cell moves that assignment to the cell's person
+  // and day; the station stays. The write reschedules the station, and
+  // usePeopleBoardFeedback toasts a refusal.
+  const onMove = ({ chipId, to }: MatrixMove) => {
+    if (!canEdit || to === "outside") return;
+    submit(
+      { intent: "move-cell", id: chipId, employeeId: to.rowId, date: to.date },
+      {
+        method: "post",
+        action: path.to.priorityPeopleUpdate,
+        navigate: false,
+        fetcherKey: `people-matrix:${chipId}`
+      }
+    );
+  };
+
+  const chipLabel = (assignment: MatrixAssignment) => (
+    <>
+      {workCenterById.get(assignment.workCenterId)?.name ??
+        assignment.workCenterId}
+      {assignment.hours != null && (
+        <span className="ml-1 tabular-nums opacity-80">
+          {assignment.hours}h
+        </span>
+      )}
+    </>
+  );
+
+  const renderOverlay = (chipId: string) => {
+    const assignment = assignmentById.get(chipId);
+    if (!assignment) return null;
+    return (
+      <PeopleChip
+        className={cn(
+          "shadow-md",
+          chipClassByWorkCenter.get(assignment.workCenterId)
+        )}
+      >
+        {chipLabel(assignment)}
+      </PeopleChip>
+    );
+  };
+
+  const describeChip = (chipId: string) => {
+    const assignment = assignmentById.get(chipId);
+    if (!assignment) return t`Assignment`;
+    const name = employeeNameById.get(assignment.employeeId) ?? "";
+    const station = workCenterById.get(assignment.workCenterId)?.name ?? "";
+    return t`${name} at ${station}`;
+  };
+
+  const describePlace = (place: MatrixPlace) => {
+    if (place === "outside") return t`the backlog`;
+    const name = employeeNameById.get(place.rowId) ?? "";
+    const day = formatDate(place.date, {
+      weekday: "long",
+      month: "short",
+      day: "numeric"
+    });
+    return t`${name} on ${day}`;
+  };
   const absenceIdByKey = useMemo(
     () => new Map(absences.map((a) => [`${a.employeeId}:${a.date}`, a.id])),
     [absences]
@@ -289,172 +371,183 @@ export function PeopleMatrix({
 
       <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-border bg-card shadow-sm">
         {tab === "assignments" ? (
-          <Table full>
-            <Thead>
-              <Tr>
-                <Th
-                  className={cn(
-                    STICKY_HEADER,
-                    STICKY_FIRST_COL,
-                    "z-20 min-w-[200px]"
-                  )}
-                >
-                  <Trans>Employee</Trans>
-                </Th>
-                {dayHeaders}
-                <Th className={cn(STICKY_HEADER, "text-center min-w-[70px]")}>
-                  <Trans>Hours</Trans>
-                </Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {rows.length === 0 && (
+          <ScheduleMatrixDnd
+            onMove={onMove}
+            renderOverlay={renderOverlay}
+            describeChip={describeChip}
+            describePlace={describePlace}
+          >
+            <Table full>
+              <Thead>
                 <Tr>
-                  <Td
-                    colSpan={weekDates.length + 2}
-                    className="text-center text-muted-foreground py-8"
+                  <Th
+                    className={cn(
+                      STICKY_HEADER,
+                      STICKY_FIRST_COL,
+                      "z-20 min-w-[200px]"
+                    )}
                   >
-                    <Trans>No employees assigned this week</Trans>
-                  </Td>
+                    <Trans>Employee</Trans>
+                  </Th>
+                  {dayHeaders}
+                  <Th className={cn(STICKY_HEADER, "text-center min-w-[70px]")}>
+                    <Trans>Hours</Trans>
+                  </Th>
                 </Tr>
-              )}
-              {rows.map((employee) => {
-                const byDate = assignmentsByEmployeeDate.get(employee.id);
-                let assignedHours = 0;
-                const cells = weekDates.map((date) => {
-                  const absent = absentSet.has(`${employee.id}:${date}`);
-                  const dayAssignments = byDate?.get(date) ?? [];
-                  if (!absent) {
-                    for (const assignment of dayAssignments) {
-                      assignedHours += hoursFor(assignment);
-                    }
-                    assignedHours += dayOvertime(dayAssignments);
-                  }
-                  const cellContent = absent ? (
-                    <PeopleChip className="bg-muted text-muted-foreground">
-                      <Trans>Absent</Trans>
-                    </PeopleChip>
-                  ) : dayAssignments.length > 0 ? (
-                    <span className="inline-flex flex-col items-center gap-1">
-                      {dayAssignments.map((assignment) => {
-                        const workCenter = workCenterById.get(
-                          assignment.workCenterId
-                        );
-                        return (
-                          <PeopleChip
-                            key={assignment.id}
-                            className={chipClassByWorkCenter.get(
-                              assignment.workCenterId
-                            )}
-                          >
-                            {workCenter?.name ?? assignment.workCenterId}
-                            {assignment.hours != null && (
-                              <span className="ml-1 tabular-nums opacity-80">
-                                {assignment.hours}h
-                              </span>
-                            )}
-                          </PeopleChip>
-                        );
-                      })}
-                      {/* overtime is the day's, not any one station's */}
-                      {dayOvertime(dayAssignments) > 0 && (
-                        <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 tabular-nums">
-                          +{dayOvertime(dayAssignments)}h OT
-                        </span>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground/50">—</span>
-                  );
-                  return (
+              </Thead>
+              <Tbody>
+                {rows.length === 0 && (
+                  <Tr>
                     <Td
-                      key={date}
-                      className={cn(
-                        "text-center",
-                        date === today && "bg-muted/30"
-                      )}
+                      colSpan={weekDates.length + 2}
+                      className="text-center text-muted-foreground py-8"
                     >
-                      {canEdit ? (
-                        // grid-cell anchor: clicking the day opens the same
-                        // Working-hours editor the board's hours chip uses
-                        <PeopleHoursModal
-                          trigger={
-                            <button
-                              type="button"
-                              className="w-full rounded-md px-1 py-1 transition-colors hover:bg-muted/60"
-                            >
-                              {cellContent}
-                            </button>
-                          }
-                          employeeId={employee.id}
-                          employeeName={employee.name}
-                          date={date}
-                          shiftId={employeeShiftId[employee.id] ?? null}
-                          locationId={locationId}
-                          locationTimeZone={locationTimeZone}
-                          workCenters={workCenters}
-                          rows={dayAssignments.map((assignment) => ({
-                            workCenterId: assignment.workCenterId,
-                            hours: assignment.hours
-                          }))}
-                          note={
-                            dayAssignments.find((a) => a.note)?.note ?? null
-                          }
-                          overtimeHours={dayOvertime(dayAssignments)}
-                          baseHours={ladderShiftHours(
-                            shiftId,
-                            employee.id,
-                            hoursLadder
-                          )}
-                          dayStartTime={ladderShiftTime(
-                            dayAssignments[0]?.shiftId,
-                            employee.id,
-                            {
-                              byShift: shiftStartById,
-                              byEmployee: employeeShiftStart,
-                              fallback: defaultShiftStart
-                            }
-                          )}
-                          dayEndTime={ladderShiftTime(
-                            dayAssignments[0]?.shiftId,
-                            employee.id,
-                            {
-                              byShift: shiftEndById,
-                              byEmployee: employeeShiftEnd,
-                              fallback: defaultShiftEnd
-                            }
-                          )}
-                          isAbsent={absent}
-                          absenceId={
-                            absenceIdByKey.get(`${employee.id}:${date}`) ?? null
-                          }
-                        />
-                      ) : (
-                        cellContent
-                      )}
-                    </Td>
-                  );
-                });
-                return (
-                  <Tr
-                    key={employee.id}
-                    className="border-b border-border/50 last:border-0 hover:bg-muted/40"
-                  >
-                    <Td className={STICKY_FIRST_COL}>
-                      <EmployeeAvatar employeeId={employee.id} size="xs" />
-                    </Td>
-                    {cells}
-                    <Td className="text-center text-xs text-muted-foreground tabular-nums">
-                      {Number.isInteger(assignedHours)
-                        ? assignedHours
-                        : assignedHours.toFixed(1)}
-                      h
+                      <Trans>No employees assigned this week</Trans>
                     </Td>
                   </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
+                )}
+                {rows.map((employee) => {
+                  const byDate = assignmentsByEmployeeDate.get(employee.id);
+                  let assignedHours = 0;
+                  const cells = weekDates.map((date) => {
+                    const absent = absentSet.has(`${employee.id}:${date}`);
+                    const dayAssignments = byDate?.get(date) ?? [];
+                    if (!absent) {
+                      for (const assignment of dayAssignments) {
+                        assignedHours += hoursFor(assignment);
+                      }
+                      assignedHours += dayOvertime(dayAssignments);
+                    }
+                    const cellContent = absent ? (
+                      <PeopleChip className="bg-muted text-muted-foreground">
+                        <Trans>Absent</Trans>
+                      </PeopleChip>
+                    ) : dayAssignments.length > 0 ? (
+                      <span className="inline-flex flex-col items-center gap-1">
+                        {dayAssignments.map((assignment) => (
+                          <MatrixChip
+                            key={assignment.id}
+                            chipId={assignment.id}
+                            rowId={employee.id}
+                            date={date}
+                            disabled={!canEdit}
+                          >
+                            <PeopleChip
+                              className={chipClassByWorkCenter.get(
+                                assignment.workCenterId
+                              )}
+                            >
+                              {chipLabel(assignment)}
+                            </PeopleChip>
+                          </MatrixChip>
+                        ))}
+                        {/* overtime is the day's, not any one station's */}
+                        {dayOvertime(dayAssignments) > 0 && (
+                          <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                            +{dayOvertime(dayAssignments)}h OT
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground/50">—</span>
+                    );
+                    return (
+                      <Td
+                        key={date}
+                        className={cn(
+                          "text-center",
+                          date === today && "bg-muted/30"
+                        )}
+                      >
+                        <MatrixCell
+                          rowId={employee.id}
+                          date={date}
+                          disabled={absent || !canEdit}
+                        >
+                          {canEdit ? (
+                            // grid-cell anchor: clicking the day opens the same
+                            // Working-hours editor the board's hours chip uses
+                            <PeopleHoursModal
+                              trigger={
+                                <button
+                                  type="button"
+                                  className="w-full rounded-md px-1 py-1 transition-colors hover:bg-muted/60"
+                                >
+                                  {cellContent}
+                                </button>
+                              }
+                              employeeId={employee.id}
+                              employeeName={employee.name}
+                              date={date}
+                              shiftId={employeeShiftId[employee.id] ?? null}
+                              locationId={locationId}
+                              locationTimeZone={locationTimeZone}
+                              workCenters={workCenters}
+                              rows={dayAssignments.map((assignment) => ({
+                                workCenterId: assignment.workCenterId,
+                                hours: assignment.hours
+                              }))}
+                              note={
+                                dayAssignments.find((a) => a.note)?.note ?? null
+                              }
+                              overtimeHours={dayOvertime(dayAssignments)}
+                              baseHours={ladderShiftHours(
+                                shiftId,
+                                employee.id,
+                                hoursLadder
+                              )}
+                              dayStartTime={ladderShiftTime(
+                                dayAssignments[0]?.shiftId,
+                                employee.id,
+                                {
+                                  byShift: shiftStartById,
+                                  byEmployee: employeeShiftStart,
+                                  fallback: defaultShiftStart
+                                }
+                              )}
+                              dayEndTime={ladderShiftTime(
+                                dayAssignments[0]?.shiftId,
+                                employee.id,
+                                {
+                                  byShift: shiftEndById,
+                                  byEmployee: employeeShiftEnd,
+                                  fallback: defaultShiftEnd
+                                }
+                              )}
+                              isAbsent={absent}
+                              absenceId={
+                                absenceIdByKey.get(`${employee.id}:${date}`) ??
+                                null
+                              }
+                            />
+                          ) : (
+                            cellContent
+                          )}
+                        </MatrixCell>
+                      </Td>
+                    );
+                  });
+                  return (
+                    <Tr
+                      key={employee.id}
+                      className="border-b border-border/50 last:border-0 hover:bg-muted/40"
+                    >
+                      <Td className={STICKY_FIRST_COL}>
+                        <EmployeeAvatar employeeId={employee.id} size="xs" />
+                      </Td>
+                      {cells}
+                      <Td className="text-center text-xs text-muted-foreground tabular-nums">
+                        {Number.isInteger(assignedHours)
+                          ? assignedHours
+                          : assignedHours.toFixed(1)}
+                        h
+                      </Td>
+                    </Tr>
+                  );
+                })}
+              </Tbody>
+            </Table>
+          </ScheduleMatrixDnd>
         ) : (
           <Table full>
             <Thead>

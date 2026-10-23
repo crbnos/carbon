@@ -88,6 +88,7 @@ import {
   peopleAssignmentValidator,
   peopleDayValidator,
   peopleHoursValidator,
+  peopleMoveCellValidator,
   peopleMoveValidator,
   peopleOvertimeBulkValidator,
   peopleWeekAssignValidator,
@@ -3756,6 +3757,55 @@ export const movePerson = defineServiceFn({
       moved.previousWorkCenterId
     ]);
     return { id };
+  }
+});
+
+/**
+ * Move a person's assignment to another person or another day, at the same
+ * work center.
+ *
+ * @remarks
+ * A move onto a day where that person already works the same work center
+ * merges the two (hours add). Refused when the person is absent that day, or
+ * already works another work center in that shift. The work center is
+ * rescheduled.
+ *
+ * @mcp
+ */
+export const movePersonCell = defineServiceFn({
+  input: peopleMoveCellValidator,
+  permission: { update: "production" },
+
+  async run(ctx, { id, employeeId, date }) {
+    const refused = await service.requireBoardReferences(ctx, {
+      employee: [employeeId]
+    });
+    if (refused) return refused;
+
+    const moved = await service.catchInternal(
+      ctx,
+      "Failed to move assignment",
+      () =>
+        service.movePeopleAssignmentCell(ctx.asSystem.pg, {
+          id,
+          companyId: ctx.company.id,
+          employeeId,
+          date
+        })
+    );
+    if (moved instanceof CarbonError) return moved;
+    if ("refused" in moved) {
+      return moved.refused === "absent"
+        ? ctx.error("rule", "This person is absent that day.")
+        : ctx.error(
+            "conflict",
+            "This person already works another work center that day. Open the day to split their hours."
+          );
+    }
+    await service.notifyPeopleChange(ctx, "People assignment moved", [
+      moved.workCenterId
+    ]);
+    return { id: moved.id };
   }
 });
 

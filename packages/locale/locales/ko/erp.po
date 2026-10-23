@@ -374,6 +374,15 @@ msgstr "{0}개 송장이 이전 시스템에서 청구되었으며 다시 초안
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0}은 {1}이며 초안 또는 계획됨이 아닙니다"
 
+#. placeholder {0}: chipName(active.id)
+msgid "{0} is no longer over a cell"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} is over {1}"
+msgstr ""
+
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0}개 품목이 피킹 완료로 표시됨"
@@ -554,6 +563,15 @@ msgstr "{0}개 값"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
+
+#. placeholder {0}: chipName(active.id)
+msgid "{0} was dropped"
+msgstr ""
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} was dropped on {1}"
+msgstr ""
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
@@ -820,6 +838,9 @@ msgstr "{missingCount}개의 전표가 공급자에서 누락됨"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount}개의 누락된 전표 및 {mismatchCount}개의 불일치 월"
 
+msgid "{name} at {station}"
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
@@ -831,6 +852,9 @@ msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
 
 msgid "{name} needs an account number."
 msgstr "{name}은 계정 번호가 필요합니다."
+
+msgid "{name} on {day}"
+msgstr ""
 
 msgid "{name} path"
 msgstr "{name} 경로"
@@ -1289,6 +1313,9 @@ msgstr "비용 가산 계약 라인에 대한 풀의 청구 요금 상한선으�
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon이 진행하는 데이터 마이그레이션 — 직접 데이터를 업로드"
+
+msgid "a cell"
+msgstr ""
 
 msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
 msgstr "변경 통지는 제어된 엔지니어링 또는 제조 변경사항을 검토 및 실행을 통해 추적합니다."
@@ -16381,6 +16408,10 @@ msgstr "이동된 계정"
 msgid "Movements"
 msgstr "이동"
 
+#. placeholder {0}: chipName(active.id)
+msgid "Moving {0} was cancelled"
+msgstr ""
+
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
 msgstr "단계 {0} 이동이 취소됨"
@@ -19882,6 +19913,10 @@ msgstr "별도의 구성품으로 피킹 및 소비됨"
 
 msgid "Picked quantity"
 msgstr "피킹 수량"
+
+#. placeholder {0}: chipName(active.id)
+msgid "Picked up {0}"
+msgstr ""
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
@@ -26497,6 +26532,9 @@ msgstr "Ramp에서 인증이 거부되었습니다. 다시 연결해 보세요."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
 msgstr "품목의 평균 원가입니다. 변경하려면 부품을 편집할 권한이 필요합니다."
+
+msgid "the backlog"
+msgstr ""
 
 msgid "The backup job reported this error."
 msgstr "백업 작업이 이 오류를 보고했습니다."

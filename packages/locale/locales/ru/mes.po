@@ -291,6 +291,9 @@ msgstr "Стиль аватара"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Аватары из <0>{0}</0> от {1}, лицензировано под <1>{2}</1>."
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "Back"
 msgstr "Назад"
 
@@ -327,6 +330,9 @@ msgstr "итого серии"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Отставание на {daysBehindTarget} дн."
+
+msgid "Billable"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -512,6 +518,9 @@ msgstr "Израсходовано - истек срок"
 msgid "Continue"
 msgstr "Продолжить"
 
+msgid "Contract"
+msgstr ""
+
 msgid "Copied!"
 msgstr "Скопировано!"
 
@@ -524,6 +533,9 @@ msgstr "Копировать в буфер обмена"
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
+
+msgid "Coverage"
+msgstr ""
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -543,6 +555,9 @@ msgstr "Текущая работа"
 
 msgid "Customer"
 msgstr "Покупатель"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "Dark"
 msgstr "Темный"
@@ -573,6 +588,9 @@ msgstr "Удалить шаг"
 
 msgid "Delete Timecard (<0/>)"
 msgstr "Удалить табель учета рабочего времени (<0/>)"
+
+msgid "Depot"
+msgstr ""
 
 msgid "Describe the problem..."
 msgstr "Опишите проблему..."
@@ -895,6 +913,9 @@ msgstr "В открытом меню"
 msgid "In Progress"
 msgstr "В работе"
 
+msgid "In warranty"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны поступать вам по электронной почте или Slack."
 
@@ -921,6 +942,9 @@ msgstr "Корректировка запасов выполнена"
 
 msgid "Inventory Adjustments"
 msgstr "Корректировка запасов"
+
+msgid "Invoiced"
+msgstr ""
 
 msgid "is"
 msgstr "равно"
@@ -984,6 +1008,9 @@ msgstr "Трудозатраты"
 
 msgid "Labor category"
 msgstr "Категория труда"
+
+msgid "Labor ended"
+msgstr ""
 
 msgid "Last completed"
 msgstr "Последнее завершено"
@@ -1185,6 +1212,9 @@ msgstr "Навигация"
 msgid "New"
 msgstr "Новое"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Record"
 msgstr "Новая запись"
 
@@ -1263,6 +1293,9 @@ msgstr "На этой серии нет материалов."
 msgid "No open jobs"
 msgstr "Нет открытых производственных заказов"
 
+msgid "No open service jobs at this location"
+msgstr ""
+
 msgid "No open units to allocate"
 msgstr "Нет открытых единиц для распределения"
 
@@ -1310,6 +1343,9 @@ msgstr "Нет серийных номеров"
 
 msgid "No serial numbers found"
 msgstr "Серийные номера не найдены"
+
+msgid "No service jobs assigned to you today"
+msgstr ""
 
 msgid "No shortcuts available on this page."
 msgstr "На этой странице нет доступных сокращений."
@@ -1372,6 +1408,9 @@ msgstr "Отключено"
 msgid "Oldest first"
 msgstr "Самые старые первыми"
 
+msgid "On Hold"
+msgstr ""
+
 msgid "one combined lot · planned"
 msgstr "одна объединённая партия · запланировано"
 
@@ -1399,6 +1438,9 @@ msgstr "Открыть производственный заказ в этой �
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
+
+msgid "Open at this location"
+msgstr ""
 
 msgid "Open ERP"
 msgstr "Открыть ERP"
@@ -1914,6 +1956,9 @@ msgstr "Серийные номера"
 msgid "Serialized"
 msgstr "С серийными номерами"
 
+msgid "Service"
+msgstr ""
+
 msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
@@ -2346,6 +2391,9 @@ msgstr "Просмотреть заявку на техобслуживание"
 msgid "View or open"
 msgstr "Просмотр или открытие"
 
+msgid "Warranty"
+msgstr ""
+
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Мы отправили вам ссылку для входа в ваш аккаунт."
 
@@ -2366,6 +2414,9 @@ msgstr "Дисплеи рабочего центра"
 
 msgid "Work instructions"
 msgstr "Рабочие инструкции"
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Write a note…"
 msgstr "Напишите примечание…"

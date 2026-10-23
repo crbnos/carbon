@@ -374,6 +374,15 @@ msgstr "{0} invoices were billed in your previous system and are not drafted aga
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} is {1}, not Draft or Planned"
 
+#. placeholder {0}: chipName(active.id)
+msgid "{0} is no longer over a cell"
+msgstr "{0} is no longer over a cell"
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} is over {1}"
+msgstr "{0} is over {1}"
+
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0} items marked as picked"
@@ -554,6 +563,15 @@ msgstr "{0} values"
 #. placeholder {0}: unmatchedValues.length
 msgid "{0} values missing"
 msgstr "{0} values missing"
+
+#. placeholder {0}: chipName(active.id)
+msgid "{0} was dropped"
+msgstr "{0} was dropped"
+
+#. placeholder {0}: chipName(active.id)
+#. placeholder {1}: placeName(over.data.current)
+msgid "{0} was dropped on {1}"
+msgstr "{0} was dropped on {1}"
 
 #. placeholder {0}: itemOf(entry.itemId)
 msgid "{0} was issued to {element}"
@@ -820,6 +838,9 @@ msgstr "{missingCount} journals missing in the provider"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} missing journals and {mismatchCount} mismatched months"
 
+msgid "{name} at {station}"
+msgstr "{name} at {station}"
+
 msgid "{name} deleted"
 msgstr "{name} deleted"
 
@@ -831,6 +852,9 @@ msgstr "{name} ends {end} (was open-ended)"
 
 msgid "{name} needs an account number."
 msgstr "{name} needs an account number."
+
+msgid "{name} on {day}"
+msgstr "{name} on {day}"
 
 msgid "{name} path"
 msgstr "{name} path"
@@ -1289,6 +1313,9 @@ msgstr "A cap on a pool's billing rate for one Cost Plus contract line, set unde
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "A Carbon-run data migration — you load your own data"
+
+msgid "a cell"
+msgstr "a cell"
 
 msgid "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
 msgstr "A change notice tracks a controlled engineering or manufacturing change through review and implementation."
@@ -16381,6 +16408,10 @@ msgstr "Moved account"
 msgid "Movements"
 msgstr "Movements"
 
+#. placeholder {0}: chipName(active.id)
+msgid "Moving {0} was cancelled"
+msgstr "Moving {0} was cancelled"
+
 #. placeholder {0}: plainTitle(active.id)
 msgid "Moving step {0} was cancelled"
 msgstr "Moving step {0} was cancelled"
@@ -19882,6 +19913,10 @@ msgstr "Picked and consumed as separate components"
 
 msgid "Picked quantity"
 msgstr "Picked quantity"
+
+#. placeholder {0}: chipName(active.id)
+msgid "Picked up {0}"
+msgstr "Picked up {0}"
 
 #. placeholder {0}: plainTitle(active.id)
 msgid "Picked up step {0}"
@@ -26497,6 +26532,9 @@ msgstr "The authorization was refused in Ramp. Try connecting again."
 
 msgid "The average cost of the item. Changing it needs permission to edit parts."
 msgstr "The average cost of the item. Changing it needs permission to edit parts."
+
+msgid "the backlog"
+msgstr "the backlog"
 
 msgid "The backup job reported this error."
 msgstr "The backup job reported this error."

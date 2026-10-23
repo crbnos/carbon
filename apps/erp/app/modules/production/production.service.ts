@@ -6073,6 +6073,121 @@ export async function movePeopleAssignment(
 }
 
 /**
+ * Move one assignment row to another person and/or date at the SAME station
+ * (the matrix's drag). If the person already has a row at that station for
+ * the same effective shift on that date, the rows merge (hours add; a
+ * whole-shift row absorbs the other). Refused, with nothing written, when the
+ * person is absent that day (`"absent"`) or already holds that day's shift at
+ * another station (`"taken"` — one row per person, day and shift).
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
+ */
+export async function movePeopleAssignmentCell(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; employeeId: string; date: string }
+): Promise<
+  | { id: string; workCenterId: string; merged: boolean }
+  | { refused: "absent" | "taken" }
+> {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    employeeId: args.employeeId
+  });
+  return db.transaction().execute(async (trx) => {
+    const source = await trx
+      .selectFrom("peopleAssignment")
+      .selectAll()
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+
+    if (source.employeeId === args.employeeId && source.date === args.date) {
+      return {
+        id: source.id,
+        workCenterId: source.workCenterId,
+        merged: false
+      };
+    }
+
+    // the boards mark a person-day absent whatever the shift
+    const absence = await trx
+      .selectFrom("peopleAbsence")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .executeTakeFirst();
+    if (absence) return { refused: "absent" };
+
+    // merge with target rows sharing the row's EFFECTIVE shift for the new
+    // person — a shift-less row belongs to that person's own shift
+    const effectiveShiftId =
+      source.shiftId ??
+      (
+        await trx
+          .selectFrom("employeeShift")
+          .select("shiftId")
+          .where("employeeId", "=", args.employeeId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst()
+      )?.shiftId ??
+      null;
+    let targetQuery = trx
+      .selectFrom("peopleAssignment")
+      .select(["id", "hours"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .where("workCenterId", "=", source.workCenterId);
+    targetQuery = effectiveShiftId
+      ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
+      : targetQuery.where("shiftId", "is", null);
+    const target = await targetQuery.executeTakeFirst();
+
+    if (target) {
+      const mergedHours =
+        source.hours === null || target.hours === null
+          ? null
+          : Number(source.hours) + Number(target.hours);
+      await trx
+        .updateTable("peopleAssignment")
+        .set({ hours: mergedHours })
+        .where("id", "=", target.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      await trx
+        .deleteFrom("peopleAssignment")
+        .where("id", "=", source.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return { id: target.id, workCenterId: source.workCenterId, merged: true };
+    }
+
+    // peopleAssignment_person_day_key: one row per person, date and stored
+    // shift — a row at another station holds the slot this one would take
+    let takenQuery = trx
+      .selectFrom("peopleAssignment")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .where("id", "!=", source.id);
+    takenQuery = source.shiftId
+      ? takenQuery.where("shiftId", "=", source.shiftId)
+      : takenQuery.where("shiftId", "is", null);
+    if (await takenQuery.executeTakeFirst()) return { refused: "taken" };
+
+    const moved = await trx
+      .updateTable("peopleAssignment")
+      .set({ employeeId: args.employeeId, date: args.date })
+      .where("id", "=", source.id)
+      .where("companyId", "=", args.companyId)
+      .returning(["id", "workCenterId"])
+      .executeTakeFirstOrThrow();
+    return { ...moved, merged: false };
+  });
+}
+
+/**
  * Atomically make the given rows a person's day: existing rows at kept
  * stations are updated (hours/overtime), new stations inserted, stations
  * not in `rows` deleted. Scoped to the shift when one is given. One
