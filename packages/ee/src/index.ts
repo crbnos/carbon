@@ -223,6 +223,7 @@ export {
   MAPPABLE_VALUE_TYPES,
   MAPPING_MODES,
   mappedFieldValues,
+  mapsPartProperties,
   mergeCustomFieldValues,
   parseDescriptionModes,
   parseProperties,

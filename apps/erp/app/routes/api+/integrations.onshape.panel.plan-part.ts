@@ -14,6 +14,7 @@ import type {
 import {
   buildPartPlan,
   hasIdentityOverride,
+  mapsPartProperties,
   normalizeConfiguration,
   withIdentitySources
 } from "@carbon/ee";
@@ -242,7 +243,11 @@ export async function action({ request }: ActionFunctionArgs) {
   // No map means no extra Onshape read. Unchanged parts are read too: a
   // property mapped after the last push must reach Carbon.
   let propertiesByPartId = identityProperties;
-  if (!propertiesByPartId && mapping.map.length > 0 && requested.length > 0) {
+  if (
+    !propertiesByPartId &&
+    mapsPartProperties(mapping.map) &&
+    requested.length > 0
+  ) {
     try {
       propertiesByPartId = await readPartProperties(
         onshape.client,

@@ -16,6 +16,7 @@ import {
   drawingModels,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
+  mapsPartProperties,
   missingBomColumnsMessage,
   parseBomTree,
   parseProperties,
@@ -353,7 +354,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // theirs on the BOM row.
   const propertiesByPartNumber = new Map<string, OnshapePropertyValue[]>();
   const needsProperties =
-    mapping.map.length > 0 ||
+    mapsPartProperties(mapping.map) ||
+    sources.identity.name !== undefined ||
+    sources.identity.description !== undefined ||
     mapping.descriptionModes.name === "everyPush" ||
     mapping.descriptionModes.description === "everyPush";
   if (needsProperties) {
