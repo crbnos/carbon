@@ -268,6 +268,10 @@ import {
 } from "./receipt-repair";
 import { upsertShippedCustomerAssets } from "./shipment-customer-assets";
 import {
+  postContractShipment,
+  voidContractShipment
+} from "./shipment-customer-contract";
+import {
   loadRepairLineIds,
   type RepairUnit,
   shipRepairedUnits,
@@ -17487,6 +17491,17 @@ export async function postShipment(
             break;
           }
 
+          case "Customer Contract": {
+            await postContractShipment(db, {
+              shipmentId,
+              companyId,
+              userId,
+              today,
+              postingDate
+            });
+            break;
+          }
+
           default: {
             throw new Error(
               `Invalid source document type: ${shipmentHeader.sourceDocument}`
@@ -19251,6 +19266,11 @@ export async function postShipment(
 
           case "Rental Agreement": {
             await voidRentalShipment(db, { shipmentId, companyId, userId });
+            break;
+          }
+
+          case "Customer Contract": {
+            await voidContractShipment(db, { shipmentId, companyId, userId });
             break;
           }
 
