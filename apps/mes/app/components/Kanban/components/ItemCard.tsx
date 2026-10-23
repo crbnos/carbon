@@ -263,7 +263,9 @@ export function ItemCard({
           {item.batchId && item.batchNotes && (
             <HStack className="items-start justify-start space-x-2 max-md:col-span-2">
               <LuStickyNote className="mt-0.5 shrink-0 text-muted-foreground" />
-              <span className="text-sm line-clamp-2">{item.batchNotes}</span>
+              <span className="min-w-0 break-words text-sm line-clamp-2">
+                {item.batchNotes}
+              </span>
             </HStack>
           )}
 
