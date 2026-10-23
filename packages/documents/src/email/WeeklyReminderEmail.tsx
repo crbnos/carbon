@@ -16,6 +16,7 @@ import { Logo } from "./components/Logo";
 import { flatCardOnPhones } from "./components/notificationStyles";
 import {
   EmailThemeProvider,
+  emailTheme,
   getEmailThemeClasses,
   HeadStyle
 } from "./components/Theme";
@@ -56,6 +57,8 @@ interface Props {
 // Dark-mode-aware styles. Same approach as NotificationEmail: backgrounds via
 // CSS classes (not inline styles) so `!important` overrides in dark-mode media
 // queries can flip them. Outlook desktop renders light-mode only.
+const dark = emailTheme.dark;
+
 const weeklyReminderStyles = `
   .wr-card {
     border-color: #e5e7eb;
@@ -82,30 +85,30 @@ const weeklyReminderStyles = `
 
   @media (prefers-color-scheme: dark) {
     .wr-body {
-      background-color: #0C0C0C !important;
+      background-color: ${dark.background} !important;
     }
     .wr-card {
-      background-color: #161618 !important;
-      border-color: #1D1D1D !important;
+      background-color: ${dark.background} !important;
+      border-color: ${dark.border} !important;
     }
     .wr-eyebrow {
-      color: #a1a1aa !important;
+      color: ${dark.muted} !important;
     }
     .wr-callout {
-      background-color: #0F0F10 !important;
-      border-color: #1D1D1D !important;
+      background-color: ${dark.panel} !important;
+      border-color: ${dark.border} !important;
     }
     .wr-row-divider {
-      border-top-color: #1D1D1D !important;
+      border-top-color: ${dark.border} !important;
     }
     .wr-status {
-      color: #a1a1aa !important;
+      color: ${dark.muted} !important;
     }
     .wr-status-overdue {
       color: #f87171 !important;
     }
     .wr-fallback {
-      color: #a1a1aa !important;
+      color: ${dark.muted} !important;
     }
   }
 
@@ -113,34 +116,34 @@ const weeklyReminderStyles = `
   .gmail_dark .wr-body,
   .gmail_dark_theme .wr-body,
   [data-darkmode="true"] .wr-body {
-    background-color: #0C0C0C !important;
+    background-color: ${dark.background} !important;
   }
   .gmail_dark .wr-card,
   .gmail_dark_theme .wr-card,
   [data-darkmode="true"] .wr-card {
-    background-color: #161618 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.background} !important;
+    border-color: ${dark.border} !important;
   }
   .gmail_dark .wr-callout,
   .gmail_dark_theme .wr-callout,
   [data-darkmode="true"] .wr-callout {
-    background-color: #0F0F10 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.panel} !important;
+    border-color: ${dark.border} !important;
   }
   .gmail_dark .wr-row-divider,
   .gmail_dark_theme .wr-row-divider,
   [data-darkmode="true"] .wr-row-divider {
-    border-top-color: #1D1D1D !important;
+    border-top-color: ${dark.border} !important;
   }
   .gmail_dark .wr-eyebrow,
   .gmail_dark_theme .wr-eyebrow,
   [data-darkmode="true"] .wr-eyebrow {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
   .gmail_dark .wr-status,
   .gmail_dark_theme .wr-status,
   [data-darkmode="true"] .wr-status {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
   .gmail_dark .wr-status-overdue,
   .gmail_dark_theme .wr-status-overdue,
@@ -150,34 +153,34 @@ const weeklyReminderStyles = `
   .gmail_dark .wr-fallback,
   .gmail_dark_theme .wr-fallback,
   [data-darkmode="true"] .wr-fallback {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
 
   /* Outlook web/mobile dark mode targeting */
   [data-ogsb] .wr-body {
-    background-color: #0C0C0C !important;
+    background-color: ${dark.background} !important;
   }
   [data-ogsb] .wr-card {
-    background-color: #161618 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.background} !important;
+    border-color: ${dark.border} !important;
   }
   [data-ogsb] .wr-callout {
-    background-color: #0F0F10 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.panel} !important;
+    border-color: ${dark.border} !important;
   }
   [data-ogsc] .wr-eyebrow {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
   [data-ogsc] .wr-status {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
   [data-ogsc] .wr-status-overdue {
     color: #f87171 !important;
   }
   [data-ogsc] .wr-fallback {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
-${flatCardOnPhones("wr-card", "#0C0C0C")}
+${flatCardOnPhones("wr-card")}
 `;
 
 // Content props get no sample defaults — fabricated data must never reach a

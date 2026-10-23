@@ -21,13 +21,17 @@ export const emailTheme = {
     accent: "#0e0e0e",
     secondary: "#9ca3af"
   },
+  // What Gmail's apps make of the light palette when they recolour an email
+  // for dark mode (measured), so a client that runs this theme's dark CSS
+  // (Apple Mail, Outlook) shows the same email as one that inverts it.
   dark: {
-    background: "#0C0C0C",
+    background: "#131314",
     foreground: "#fefefe", // Slightly off-white to prevent auto-inversion
-    muted: "#a1a1aa",
-    border: "#1D1D1D",
-    panel: "#161618",
-    accent: "#fefefe",
+    muted: "#9fa7b6",
+    border: "#2e2f33",
+    panel: "#242527",
+    accent: "#f3f3f3",
+    accentForeground: "#202124",
     secondary: "#6b7280"
   }
 } as const;
@@ -77,7 +81,7 @@ export const getEmailDarkModeCSS = () => {
       .email-button {
         background-color: ${emailTheme.dark.accent} !important;
         border-color: ${emailTheme.dark.accent} !important;
-        color: ${emailTheme.dark.background} !important;
+        color: ${emailTheme.dark.accentForeground} !important;
       }
       
       /* Image swapping for dark mode */
@@ -127,7 +131,7 @@ export const getEmailDarkModeCSS = () => {
       [data-darkmode="true"] .email-button {
         background-color: ${emailTheme.dark.accent} !important;
         border-color: ${emailTheme.dark.accent} !important;
-        color: ${emailTheme.dark.background} !important;
+        color: ${emailTheme.dark.accentForeground} !important;
       }
     }
 
@@ -178,7 +182,7 @@ export const getEmailDarkModeCSS = () => {
       display: block !important;
     }
     [data-ogsc] .email-button {
-      color: ${emailTheme.dark.background} !important;
+      color: ${emailTheme.dark.accentForeground} !important;
     }
     [data-ogsb] .email-button {
       background-color: ${emailTheme.dark.accent} !important;
@@ -250,7 +254,7 @@ export function EmailThemeProvider({
               {/* Additional Gmail dark mode hints */}
               <meta
                 name="theme-color"
-                content="#0C0C0C"
+                content={emailTheme.dark.background}
                 media="(prefers-color-scheme: dark)"
               />
               <meta
@@ -258,7 +262,10 @@ export function EmailThemeProvider({
                 content="#ffffff"
                 media="(prefers-color-scheme: light)"
               />
-              <meta name="msapplication-navbutton-color" content="#0C0C0C" />
+              <meta
+                name="msapplication-navbutton-color"
+                content={emailTheme.dark.background}
+              />
 
               {/* Dark mode styles */}
               <HeadStyle css={getEmailDarkModeCSS()} />

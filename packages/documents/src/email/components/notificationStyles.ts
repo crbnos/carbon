@@ -2,14 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { emailTheme } from "./Theme";
+
+const dark = emailTheme.dark;
+
 /**
  * On a phone the card is the whole screen: no border, corners or outer
  * margin, and less padding. A rounded border hugging the screen's edges
- * reads as a mistake. `darkPage` is the page colour the card takes in dark
- * mode, so it does not sit as a lighter band; leave it out for an email that
- * renders light only.
+ * reads as a mistake.
  */
-export function flatCardOnPhones(card: string, darkPage?: string) {
+export function flatCardOnPhones(card: string) {
   return `
   @media only screen and (max-width: 600px) {
     .${card} {
@@ -21,15 +23,6 @@ export function flatCardOnPhones(card: string, darkPage?: string) {
     .${card} > tbody > tr > td {
       padding: 32px 20px !important;
     }
-  }${
-    darkPage
-      ? `
-  @media only screen and (max-width: 600px) and (prefers-color-scheme: dark) {
-    .${card} {
-      background-color: ${darkPage} !important;
-    }
-  }`
-      : ""
   }
 `;
 }
@@ -47,6 +40,8 @@ export function flatCardOnPhones(card: string, darkPage?: string) {
 // inverts a background image: a gradient kept the card white while the text
 // on it turned white. With no page colour the light card sits on the mail
 // app's own background, and the inverted card matches the dark app around it.
+// The dark colours (`emailTheme.dark`) are what Gmail's inversion produces,
+// so the dark card is the page's colour too, set off by its border.
 export const notificationStyles = `
   .nf-card {
     border-color: #e5e7eb;
@@ -71,27 +66,27 @@ export const notificationStyles = `
   @media (prefers-color-scheme: dark) {
     .nf-body,
     .nf-body > table > tbody > tr > td {
-      background-color: #0C0C0C !important;
+      background-color: ${dark.background} !important;
     }
     .nf-card {
-      background-color: #161618 !important;
-      border-color: #1D1D1D !important;
+      background-color: ${dark.background} !important;
+      border-color: ${dark.border} !important;
     }
     .nf-divider {
-      border-color: #1D1D1D !important;
+      border-color: ${dark.border} !important;
     }
     .nf-eyebrow {
-      color: #a1a1aa !important;
+      color: ${dark.muted} !important;
     }
     .nf-callout {
-      background-color: #0F0F10 !important;
-      border-color: #1D1D1D !important;
+      background-color: ${dark.panel} !important;
+      border-color: ${dark.border} !important;
     }
     .nf-callout-accent {
       background-color: #fefefe !important;
     }
     .nf-fallback {
-      color: #a1a1aa !important;
+      color: ${dark.muted} !important;
     }
   }
 
@@ -102,29 +97,29 @@ export const notificationStyles = `
   .gmail_dark_theme .nf-body > table > tbody > tr > td,
   [data-darkmode="true"] .nf-body,
   [data-darkmode="true"] .nf-body > table > tbody > tr > td {
-    background-color: #0C0C0C !important;
+    background-color: ${dark.background} !important;
   }
   .gmail_dark .nf-card,
   .gmail_dark_theme .nf-card,
   [data-darkmode="true"] .nf-card {
-    background-color: #161618 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.background} !important;
+    border-color: ${dark.border} !important;
   }
   .gmail_dark .nf-divider,
   .gmail_dark_theme .nf-divider,
   [data-darkmode="true"] .nf-divider {
-    border-color: #1D1D1D !important;
+    border-color: ${dark.border} !important;
   }
   .gmail_dark .nf-eyebrow,
   .gmail_dark_theme .nf-eyebrow,
   [data-darkmode="true"] .nf-eyebrow {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
   .gmail_dark .nf-callout,
   .gmail_dark_theme .nf-callout,
   [data-darkmode="true"] .nf-callout {
-    background-color: #0F0F10 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.panel} !important;
+    border-color: ${dark.border} !important;
   }
   .gmail_dark .nf-callout-accent,
   .gmail_dark_theme .nf-callout-accent,
@@ -134,29 +129,29 @@ export const notificationStyles = `
   .gmail_dark .nf-fallback,
   .gmail_dark_theme .nf-fallback,
   [data-darkmode="true"] .nf-fallback {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
 
   /* Outlook web/mobile dark mode targeting */
   [data-ogsb] .nf-body,
   [data-ogsb] .nf-body > table > tbody > tr > td {
-    background-color: #0C0C0C !important;
+    background-color: ${dark.background} !important;
   }
   [data-ogsb] .nf-card {
-    background-color: #161618 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.background} !important;
+    border-color: ${dark.border} !important;
   }
   [data-ogsb] .nf-callout {
-    background-color: #0F0F10 !important;
-    border-color: #1D1D1D !important;
+    background-color: ${dark.panel} !important;
+    border-color: ${dark.border} !important;
   }
   [data-ogsc] .nf-eyebrow {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
   [data-ogsc] .nf-callout-accent {
     background-color: #fefefe !important;
   }
   [data-ogsc] .nf-fallback {
-    color: #a1a1aa !important;
+    color: ${dark.muted} !important;
   }
-${flatCardOnPhones("nf-card", "#0C0C0C")}`;
+${flatCardOnPhones("nf-card")}`;
