@@ -13,10 +13,12 @@ import { breakLongNotesWord } from "../../notesText";
 import { tw } from "./tw";
 import type { JobOperationWithSteps, JobTravelerData } from "./types";
 
+/** Starts a timer on the operation in MES; `?type=` picks Setup, Labor or Machine. */
 function getStartPath(operationId: string) {
   return `${getMESUrl()}/x/start/${operationId}`;
 }
 
+/** Records completed quantity on the operation in MES, finishing it at its target. */
 function getEndPath(operationId: string) {
   return `${getMESUrl()}/x/end/${operationId}`;
 }
@@ -44,6 +46,10 @@ const SUB_SECTION_TITLE = {
   textTransform: "uppercase"
 } as const;
 
+/**
+ * The sequence number printed for an operation. One that runs With Previous
+ * shares the number of the operation it runs with.
+ */
 function getParallelizedOrder(
   index: number,
   item: JobOperationWithSteps,
