@@ -389,6 +389,9 @@ msgstr "Характеристика"
 msgid "Characteristics"
 msgstr "Характеристики"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "Номера операций"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "Завершить"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "Завершить {0}?"
 
@@ -811,6 +815,7 @@ msgstr "Не удалось отправить неделю"
 msgid "Failed to upload {0}"
 msgstr "Не удалось загрузить {0}"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Не удалось загрузить файл: {0}"
@@ -832,6 +837,9 @@ msgstr "Фильтровать"
 
 msgid "Filter by location"
 msgstr "Фильтровать по площадке"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "Завершить"
@@ -1285,6 +1293,9 @@ msgstr "Вам не назначены никакие заявки на техо
 msgid "No files"
 msgstr "Нет файлов"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "Средства измерения не найдены."
 
@@ -1327,8 +1338,14 @@ msgstr "Опция не найдена."
 msgid "No options found."
 msgstr "Варианты не найдены."
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Пока нет зарегистрированных ключей доступа."
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "Листы отбора не назначены"
@@ -1341,6 +1358,9 @@ msgstr "Нет недавних операций"
 
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "Нет результатов"
@@ -1528,6 +1548,9 @@ msgstr "Частичный"
 msgid "Partial Disposition"
 msgstr "Частичное решение"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "Прошла контроль"
 
@@ -1557,6 +1580,9 @@ msgstr "Телефон"
 
 msgid "Photo uploaded successfully"
 msgstr "Фото успешно загружено"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "Выбрать"
@@ -1780,6 +1806,9 @@ msgstr "Переименовать"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Открыть заново узел и создать единицу для замены"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требуется 6-значный код из приложения аутентификации при входе."
 
@@ -1789,11 +1818,17 @@ msgstr "Требуется"
 msgid "Reset"
 msgstr "Сбросить"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "Результат"
 
 msgid "Retry Completion"
 msgstr "Повторить выполнение"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "Доработка"
@@ -1806,6 +1841,9 @@ msgstr "Количество для доработки"
 
 msgid "Running"
 msgstr "Работает"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "Продажи"
@@ -2130,6 +2168,9 @@ msgstr "Шаги"
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Единица хранения"
 
@@ -2237,6 +2278,9 @@ msgstr "Эта серия не имеет рабочих инструкций."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
 
@@ -2248,6 +2292,12 @@ msgstr "Эта деталь была произведена на заказ. С�
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Эта часть будет списана со склада. Её требование остается открытым, чтобы вы могли выдать замену."
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Эта единица будет окончательно списана, и будет создан новый серийный номер замены."
@@ -2279,6 +2329,10 @@ msgstr "Для запуска"
 
 msgid "Today"
 msgstr "Сегодня"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "Переключить труд"
@@ -2316,6 +2370,10 @@ msgstr "Общее количество"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "Общее время: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "Загрузить"
 msgid "Upload completed but no file path returned"
 msgstr "Загрузка завершена, но путь файла не возвращен"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Загружено: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Загрузка {0}"
@@ -2484,6 +2544,10 @@ msgstr "Вы находились на работе {hoursElapsed} часов. �
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."

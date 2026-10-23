@@ -389,6 +389,9 @@ msgstr "विशेषता"
 msgid "Characteristics"
 msgstr "विशेषताएं"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "चार्ज नंबर"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "पूर्ण करें"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "पूर्ण करें {0}?"
 
@@ -811,6 +815,7 @@ msgstr "सप्ताह सबमिट करने में विफल �
 msgid "Failed to upload {0}"
 msgstr "{0} अपलोड करने में विफल"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "फाइल अपलोड करने में विफल: {0}"
@@ -832,6 +837,9 @@ msgstr "फ़िल्टर करें"
 
 msgid "Filter by location"
 msgstr "स्थान के अनुसार फ़िल्टर करें"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "समाप्त करें"
@@ -1285,6 +1293,9 @@ msgstr "आपको कोई असाइन किया गया रखर�
 msgid "No files"
 msgstr "कोई फ़ाइलें नहीं"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "कोई गेज नहीं मिला।"
 
@@ -1327,8 +1338,14 @@ msgstr "कोई विकल्प नहीं मिला।"
 msgid "No options found."
 msgstr "कोई विकल्प नहीं मिला।"
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "अभी तक कोई पासकी पंजीकृत नहीं है।"
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "कोई पिकिंग सूची असाइन नहीं की गई"
@@ -1341,6 +1358,9 @@ msgstr "कोई हाल की ऑपरेशन नहीं"
 
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण करने के लिए कोई शेष इकाई नहीं है।"
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "कोई परिणाम नहीं"
@@ -1528,6 +1548,9 @@ msgstr "आंशिक"
 msgid "Partial Disposition"
 msgstr "आंशिक निपटान"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "निरीक्षण उत्तीर्ण"
 
@@ -1557,6 +1580,9 @@ msgstr "फोन"
 
 msgid "Photo uploaded successfully"
 msgstr "फोटो सफलतापूर्वक अपलोड हुई"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "चुनें"
@@ -1780,6 +1806,9 @@ msgstr "नाम बदलें"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "सब-असेंबली को फिर से खोलें और एक रिप्लेसमेंट इकाई बनाएँ"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय प्रमाणकर्ता ऐप्लिकेशन से 6-अंकीय कोड की आवश्यकता है।"
 
@@ -1789,11 +1818,17 @@ msgstr "आवश्यक"
 msgid "Reset"
 msgstr "रीसेट करें"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "परिणाम"
 
 msgid "Retry Completion"
 msgstr "समापन पुनः प्रयास करें"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "पुनः कार्य"
@@ -1806,6 +1841,9 @@ msgstr "पुनः कार्य की मात्रा"
 
 msgid "Running"
 msgstr "चल रहा है"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "बिक्री"
@@ -2130,6 +2168,9 @@ msgstr "चरण"
 msgid "Steps are missing"
 msgstr "चरण गायब हैं"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
 
@@ -2237,6 +2278,9 @@ msgstr "इस बैच के पास कोई कार्य निर्
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "यह जानकारी सभी उपयोगकर्ताओं के लिए दृश्यमान होगी, इसलिए सावधान रहें कि आप क्या साझा करते हैं।"
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
 
@@ -2248,6 +2292,12 @@ msgstr "यह पार्ट ऑर्डर के अनुसार बन�
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "यह हिस्सा स्टॉक से स्क्रैप किया जाएगा। इसकी आवश्यकता खुली रहती है ताकि आप एक प्रतिस्थापन जारी कर सकें।"
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट सीरियल नंबर बनाया जाएगा।"
@@ -2279,6 +2329,10 @@ msgstr "चलाने के लिए"
 
 msgid "Today"
 msgstr "आज"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "श्रम टॉगल करें"
@@ -2316,6 +2370,10 @@ msgstr "कुल मात्रा"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "कुल समय: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "अपलोड करें"
 msgid "Upload completed but no file path returned"
 msgstr "अपलोड पूर्ण लेकिन कोई फाइल पथ नहीं दिया गया"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "अपलोड किया गया: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "अपलोड किया जा रहा है {0}"
@@ -2484,6 +2544,10 @@ msgstr "आप {hoursElapsed} घंटों से कार्य पर ह�
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूर्ण करें।"
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"

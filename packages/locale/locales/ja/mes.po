@@ -389,6 +389,9 @@ msgstr "特性"
 msgid "Characteristics"
 msgstr "特性"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "チャージ番号"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "完了"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "{0}を完了しますか?"
 
@@ -811,6 +815,7 @@ msgstr "週の提出に失敗しました"
 msgid "Failed to upload {0}"
 msgstr "{0}のアップロードに失敗しました"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "ファイルのアップロードに失敗しました: {0}"
@@ -832,6 +837,9 @@ msgstr "絞り込み"
 
 msgid "Filter by location"
 msgstr "拠点で絞り込み"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "完了"
@@ -1285,6 +1293,9 @@ msgstr "あなたに割り当てられた保全指示はありません。"
 msgid "No files"
 msgstr "ファイルなし"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "測定器が見つかりません。"
 
@@ -1327,8 +1338,14 @@ msgstr "オプションが見つかりません。"
 msgid "No options found."
 msgstr "オプションが見つかりません。"
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "登録済のパスキーはまだありません。"
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "ピッキングリストが割り当てられていません"
@@ -1341,6 +1358,9 @@ msgstr "最近の工程はありません"
 
 msgid "No remaining entities to inspect."
 msgstr "検査するエンティティが残っていません。"
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "結果なし"
@@ -1528,6 +1548,9 @@ msgstr "一部"
 msgid "Partial Disposition"
 msgstr "一部処置"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "検査合格"
 
@@ -1557,6 +1580,9 @@ msgstr "電話"
 
 msgid "Photo uploaded successfully"
 msgstr "写真がアップロードされました"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "ピック"
@@ -1780,6 +1806,9 @@ msgstr "名前変更"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "サブアセンブリを再オープンし、代替品を作成"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリからの6桁コードが必要です。"
 
@@ -1789,11 +1818,17 @@ msgstr "必須"
 msgid "Reset"
 msgstr "リセット"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "結果"
 
 msgid "Retry Completion"
 msgstr "完了を再試行"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "手直し"
@@ -1806,6 +1841,9 @@ msgstr "手直し数量"
 
 msgid "Running"
 msgstr "実行中"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "販売"
@@ -2130,6 +2168,9 @@ msgstr "ステップ"
 msgid "Steps are missing"
 msgstr "ステップが未記録です"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "保管ユニット"
 
@@ -2237,6 +2278,9 @@ msgstr "このバッチには作業手順書がありません。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
 
@@ -2248,6 +2292,12 @@ msgstr "この部品は受注生産で製造されました。スクラップす
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "この部品は在庫からスクラップされます。その要求事項は開いたままなので、代替品を出庫できます。"
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
@@ -2279,6 +2329,10 @@ msgstr "実行待ち"
 
 msgid "Today"
 msgstr "今日"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "労務を切り替える"
@@ -2316,6 +2370,10 @@ msgstr "合計数量"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "合計時間: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "アップロード"
 msgid "Upload completed but no file path returned"
 msgstr "アップロードが完了しましたがファイルパスが返されません"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "アップロード完了: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} をアップロード中"
@@ -2484,6 +2544,10 @@ msgstr "作業開始から{hoursElapsed}時間が経過しています。作業�
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "あなたのアカウントはまだ会社に属していません。継続するには、Carbon ERP でオンボーディングを完了してください。"
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"

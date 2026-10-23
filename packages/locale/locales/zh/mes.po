@@ -389,6 +389,9 @@ msgstr "特性"
 msgid "Characteristics"
 msgstr "特性"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "费用编号"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "完成"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "完成 {0}?"
 
@@ -811,6 +815,7 @@ msgstr "周提交失败"
 msgid "Failed to upload {0}"
 msgstr "上传 {0} 失败"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "文件上传失败：{0}"
@@ -832,6 +837,9 @@ msgstr "筛选"
 
 msgid "Filter by location"
 msgstr "按位置筛选"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "完成"
@@ -1285,6 +1293,9 @@ msgstr "没有分配给您的维护工单"
 msgid "No files"
 msgstr "无文件"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "未找到量具。"
 
@@ -1327,8 +1338,14 @@ msgstr "未找到选项。"
 msgid "No options found."
 msgstr "未找到选项。"
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "还未注册任何通行密钥。"
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "没有分配的拣货单"
@@ -1341,6 +1358,9 @@ msgstr "无近期工序"
 
 msgid "No remaining entities to inspect."
 msgstr "没有剩余实体要检验。"
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "无结果"
@@ -1528,6 +1548,9 @@ msgstr "部分"
 msgid "Partial Disposition"
 msgstr "部分处置"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "已通过检验"
 
@@ -1557,6 +1580,9 @@ msgstr "电话"
 
 msgid "Photo uploaded successfully"
 msgstr "照片上传成功"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "拣货"
@@ -1780,6 +1806,9 @@ msgstr "重命名"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "重新打开子装配件并创建替代件"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要输入身份验证应用中的6位数代码。"
 
@@ -1789,11 +1818,17 @@ msgstr "必填"
 msgid "Reset"
 msgstr "重置"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "结果"
 
 msgid "Retry Completion"
 msgstr "重试完成"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "返工"
@@ -1806,6 +1841,9 @@ msgstr "返工数量"
 
 msgid "Running"
 msgstr "运行中"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "销售"
@@ -2130,6 +2168,9 @@ msgstr "步骤"
 msgid "Steps are missing"
 msgstr "缺少步骤"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "存储单元"
 
@@ -2237,6 +2278,9 @@ msgstr "此生产批次没有作业指导书。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "此信息将对所有用户可见，请谨慎分享。"
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
 
@@ -2248,6 +2292,12 @@ msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "此零件将从库存报废。其要求保持未结，以便您可以领料替代品。"
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "此单元将被永久报废，并将创建替换序列号。"
@@ -2279,6 +2329,10 @@ msgstr "待启动"
 
 msgid "Today"
 msgstr "今天"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "切换人工"
@@ -2316,6 +2370,10 @@ msgstr "总数量"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "总耗时：{0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "上传"
 msgid "Upload completed but no file path returned"
 msgstr "上传完成但未返回文件路径"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "已上传：{0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "正在上传 {0}"
@@ -2484,6 +2544,10 @@ msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"

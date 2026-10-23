@@ -389,6 +389,9 @@ msgstr "Característica"
 msgid "Characteristics"
 msgstr "Características"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "Números de carregamento"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "Concluir"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "Concluir {0}?"
 
@@ -811,6 +815,7 @@ msgstr "Falha ao enviar a semana"
 msgid "Failed to upload {0}"
 msgstr "Falha ao enviar arquivo {0}"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Falha ao enviar arquivo: {0}"
@@ -832,6 +837,9 @@ msgstr "Filtro"
 
 msgid "Filter by location"
 msgstr "Filtrar por localização"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "Concluir"
@@ -1285,6 +1293,9 @@ msgstr "Nenhuma ordem de manutenção atribuída a você"
 msgid "No files"
 msgstr "Nenhum arquivo"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "Nenhum instrumento de medição encontrado."
 
@@ -1327,8 +1338,14 @@ msgstr "Nenhuma opção encontrada."
 msgid "No options found."
 msgstr "Nenhuma opção encontrada."
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Nenhuma chave de acesso registrada ainda."
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "Nenhuma lista de separação atribuída"
@@ -1341,6 +1358,9 @@ msgstr "Nenhuma operação recente"
 
 msgid "No remaining entities to inspect."
 msgstr "Nenhuma entidade restante para inspecionar."
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "Nenhum resultado"
@@ -1528,6 +1548,9 @@ msgstr "Parcial"
 msgid "Partial Disposition"
 msgstr "Disposição Parcial"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "Aprovado na inspeção"
 
@@ -1557,6 +1580,9 @@ msgstr "Telefone"
 
 msgid "Photo uploaded successfully"
 msgstr "Foto enviada com sucesso"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "Apanhar"
@@ -1780,6 +1806,9 @@ msgstr "Renomear"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Reabrir o subconjunto e criar uma unidade de substituição"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Exigir um código de 6 dígitos de um aplicativo autenticador ao fazer login."
 
@@ -1789,11 +1818,17 @@ msgstr "Obrigatório"
 msgid "Reset"
 msgstr "Redefinir"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "Resultado"
 
 msgid "Retry Completion"
 msgstr "Tentar Conclusão Novamente"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "Retrabalho"
@@ -1806,6 +1841,9 @@ msgstr "Quantidade de retrabalho"
 
 msgid "Running"
 msgstr "Em execução"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "Vendas"
@@ -2130,6 +2168,9 @@ msgstr "Etapas"
 msgid "Steps are missing"
 msgstr "Etapas ausentes"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Unidade de Armazenamento"
 
@@ -2237,6 +2278,9 @@ msgstr "Este lote de produção não possui instruções de trabalho."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Essas informações serão visíveis para todos os usuários, portanto, tenha cuidado com o que você compartilha."
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote está vencido e não pode ser separado."
 
@@ -2248,6 +2292,12 @@ msgstr "Esta peça foi fabricada sob encomenda. Refugá-la pode reabrir seu rote
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Esta peça será descartada do estoque. Seu requisito permanece aberto para que você possa emitir uma substituição."
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Esta unidade será permanentemente descartada e um novo número de série de substituição será criado."
@@ -2279,6 +2329,10 @@ msgstr "Para executar"
 
 msgid "Today"
 msgstr "Hoje"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "Alternar mão de obra"
@@ -2316,6 +2370,10 @@ msgstr "Quantidade Total"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "Tempo total: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "Enviar arquivo"
 msgid "Upload completed but no file path returned"
 msgstr "Envio de arquivo concluído, mas nenhum caminho de arquivo foi retornado"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Enviado: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Enviando {0}"
@@ -2484,6 +2544,10 @@ msgstr "Você está apontando há {hoursElapsed} horas. Você esqueceu de aponta
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Sua conta ainda não faz parte de uma empresa. Conclua o onboarding no Carbon ERP para continuar."
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carbon e retorne aqui."

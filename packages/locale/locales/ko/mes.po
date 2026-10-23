@@ -389,6 +389,9 @@ msgstr "특성"
 msgid "Characteristics"
 msgstr "특성"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "청구 번호"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "완료"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "{0}를 완료 처리합니까?"
 
@@ -811,6 +815,7 @@ msgstr "주 제출 실패"
 msgid "Failed to upload {0}"
 msgstr "{0} 업로드 실패"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "파일을 업로드하지 못했습니다: {0}"
@@ -832,6 +837,9 @@ msgstr "필터"
 
 msgid "Filter by location"
 msgstr "위치별 필터"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "마감"
@@ -1285,6 +1293,9 @@ msgstr "당신에게 할당된 유지보수 지시가 없습니다"
 msgid "No files"
 msgstr "파일 없음"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "계측기가 없습니다."
 
@@ -1327,8 +1338,14 @@ msgstr "옵션이 없습니다."
 msgid "No options found."
 msgstr "옵션이 없습니다."
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "등록된 패스키가 없습니다."
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "할당된 피킹 리스트가 없습니다"
@@ -1341,6 +1358,9 @@ msgstr "최근 공정작업이 없습니다"
 
 msgid "No remaining entities to inspect."
 msgstr "검사할 나머지 엔터티가 없습니다."
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "결과 없음"
@@ -1528,6 +1548,9 @@ msgstr "부분"
 msgid "Partial Disposition"
 msgstr "부분 처분 결정"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "검사 통과"
 
@@ -1557,6 +1580,9 @@ msgstr "전화"
 
 msgid "Photo uploaded successfully"
 msgstr "사진이 성공적으로 업로드됨"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "피킹"
@@ -1780,6 +1806,9 @@ msgstr "이름 바꾸기"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인할 때 인증 앱에서 6자리 코드를 요구합니다."
 
@@ -1789,11 +1818,17 @@ msgstr "필수"
 msgid "Reset"
 msgstr "재설정"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "결과"
 
 msgid "Retry Completion"
 msgstr "완료 다시 시도"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "재작업"
@@ -1806,6 +1841,9 @@ msgstr "재작업 수량"
 
 msgid "Running"
 msgstr "실행 중"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "영업"
@@ -2130,6 +2168,9 @@ msgstr "단계"
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "보관 단위"
 
@@ -2237,6 +2278,9 @@ msgstr "이 배치는 작업 표준서가 없습니다."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "이 정보는 모든 사용자에게 표시되므로 공유 내용을 주의하십시오."
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
 
@@ -2248,6 +2292,12 @@ msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라�
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
@@ -2279,6 +2329,10 @@ msgstr "실행할"
 
 msgid "Today"
 msgstr "오늘"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "노무 전환"
@@ -2316,6 +2370,10 @@ msgstr "총 수량"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "총 시간: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "업로드"
 msgid "Upload completed but no file path returned"
 msgstr "업로드가 완료되었지만 파일 경로가 반환되지 않았습니다."
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "업로드됨: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} 업로드 중"
@@ -2484,6 +2544,10 @@ msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온보딩을 완료해 주시기 바랍니다."
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."

@@ -313,9 +313,13 @@ msgstr "{0} lançamentos para reconhecer · {amount}"
 msgid "{0} finishes {finish}"
 msgstr "{0} termina {finish}"
 
+#. placeholder {0}: assignment.jobReadableId
+msgid "{0} for {name}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
-#. placeholder {0}: formatQuantity(rate.baseAmount, locale)
+#. placeholder {0}: formatQuantity(hours)
 msgid "{0} h"
 msgstr "{0} h"
 
@@ -373,6 +377,10 @@ msgstr "{0} faturas foram faturadas em seu sistema anterior e não são criadas 
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} é {1}, não Rascunho ou Planejado"
+
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
 
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
@@ -2780,6 +2788,9 @@ msgstr "Adicionar Amostra"
 
 msgid "Add Selector"
 msgstr "Adicionar Seletor"
+
+msgid "Add Service Job"
+msgstr ""
 
 msgid "Add Services"
 msgstr "Adicionar Serviços"
@@ -6203,9 +6214,8 @@ msgstr "Conta de compensação para recebimento de mercadorias / correspondênci
 msgid "Clearing demo data"
 msgstr "Limpando dados de demonstração"
 
-#. placeholder {0}: selected.readableId
-msgid "Click a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "Clique em um dia para adicionar tempo a {0}. Arraste a borda inferior de uma barra para alterar suas horas."
+msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "Clique novamente para desconectar"
@@ -17444,6 +17454,9 @@ msgstr "Nenhum funcionário"
 msgid "No employees assigned this week"
 msgstr "Nenhum funcionário atribuído esta semana"
 
+msgid "No employees at this location"
+msgstr ""
+
 msgid "No employees found"
 msgstr "Nenhum funcionário encontrado"
 
@@ -18047,6 +18060,9 @@ msgstr "Nenhuma transação neste período"
 
 msgid "No transfers"
 msgstr "Nenhuma transferência"
+
+msgid "No unassigned jobs"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Nenhuma unidade ainda. Adicione uma unidade de frota da lista de Unidades antes de ativar o contrato."
@@ -18780,6 +18796,9 @@ msgstr "Problemas Abertos"
 msgid "Open items"
 msgstr "Itens abertos"
 
+msgid "Open job"
+msgstr ""
+
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Demanda aberta de ordem de produção mais transferências pendentes deste compartimento"
 
@@ -18791,6 +18810,9 @@ msgstr "Ordens de Produção Abertas"
 
 msgid "Open Jobs Missing a Storage Unit"
 msgstr "Ordens de produção abertas sem unidade de armazenamento"
+
+msgid "Open jobs with no technician appear here."
+msgstr ""
 
 msgid "Open menu"
 msgstr "Abrir menu"
@@ -20026,6 +20048,9 @@ msgstr "Planejado a partir das faturas. Editar uma célula salva o plano."
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "Planejado a partir das linhas. Editar uma célula salva a programação."
+
+msgid "Planned Hours"
+msgstr ""
 
 msgid "Planned invoices"
 msgstr "Faturas Planejadas"
@@ -24301,6 +24326,9 @@ msgstr "Fim do Serviço"
 msgid "Service ID"
 msgstr "ID do Serviço"
 
+msgid "Service job"
+msgstr ""
+
 msgid "Service Job"
 msgstr ""
 
@@ -26375,6 +26403,9 @@ msgstr "Detalhes técnicos"
 msgid "Technical support"
 msgstr "Suporte técnico"
 
+msgid "Technician"
+msgstr ""
+
 msgid "Technique"
 msgstr "Técnica"
 
@@ -27026,6 +27057,9 @@ msgstr ""
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "as horas de trabalho devidas naquele dia (com base na data de vencimento, não no dia em que o trabalho é executado), com trabalho atrasado em Vencido."
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "O trabalho cuja operação cobre essa linha de processamento externo; o recebimento da linha fecha a operação contra esse trabalho."
@@ -31068,6 +31102,9 @@ msgstr "Você efetivamente compra o ativo. Os juros e amortização do ativo de 
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "Você tem {0} linhas extraídas de um PDF que não estão mapeadas para nenhum item de inventário."
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "Ainda não criou nenhum contacto."

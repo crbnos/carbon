@@ -389,6 +389,9 @@ msgstr "Merkmal"
 msgid "Characteristics"
 msgstr "Merkmale"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "Chargennummern"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "Abschließen"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "Abschließen {0}?"
 
@@ -811,6 +815,7 @@ msgstr "Fehler beim Einreichen der Woche"
 msgid "Failed to upload {0}"
 msgstr "Fehler beim Hochladen von {0}"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Fehler beim Hochladen der Datei: {0}"
@@ -832,6 +837,9 @@ msgstr "Filter"
 
 msgid "Filter by location"
 msgstr "Nach Standort filtern"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "Fertig"
@@ -1285,6 +1293,9 @@ msgstr "Keine Instandhaltungsaufträge an Sie zugewiesen"
 msgid "No files"
 msgstr "Keine Dateien"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "Keine Prüfmittel gefunden."
 
@@ -1327,8 +1338,14 @@ msgstr "Keine Option gefunden."
 msgid "No options found."
 msgstr "Keine Optionen gefunden."
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Noch keine Passkeys registriert."
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "Keine Kommissionierlisten zugewiesen"
@@ -1341,6 +1358,9 @@ msgstr "Keine kürzlichen Arbeitsgänge"
 
 msgid "No remaining entities to inspect."
 msgstr "Keine verbleibenden Einheiten zu prüfen."
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "Keine Ergebnisse"
@@ -1528,6 +1548,9 @@ msgstr "Teilweise"
 msgid "Partial Disposition"
 msgstr "Teilweise Verwendungsentscheid"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "Prüfung bestanden"
 
@@ -1557,6 +1580,9 @@ msgstr "Telefon"
 
 msgid "Photo uploaded successfully"
 msgstr "Foto erfolgreich hochgeladen"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "Kommissionieren"
@@ -1780,6 +1806,9 @@ msgstr "Umbenennen"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Baugruppe wieder öffnen und Ersatzeinheit erstellen"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Einen 6-stelligen Code aus einer Authentifizierungs-App bei der Anmeldung erforderlich."
 
@@ -1789,11 +1818,17 @@ msgstr "Erforderlich"
 msgid "Reset"
 msgstr "Zurücksetzen"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "Ergebnis"
 
 msgid "Retry Completion"
 msgstr "Fertigstellung wiederholen"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "Nacharbeit"
@@ -1806,6 +1841,9 @@ msgstr "Nacharbeitsmenge"
 
 msgid "Running"
 msgstr "Läuft"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "Vertrieb"
@@ -2130,6 +2168,9 @@ msgstr "Schritte"
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Lagereinheit"
 
@@ -2237,6 +2278,9 @@ msgstr "Dieses Los hat keine Arbeitsanweisung."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Diese Informationen sind für alle Benutzer sichtbar, seien Sie also vorsichtig, was Sie teilen."
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
 
@@ -2248,6 +2292,12 @@ msgstr "Dieses Teil wurde auf Bestellung gefertigt. Es als Ausschuss zu kennzeic
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Dieses Teil wird als Ausschuss aus dem Bestand verbucht. Seine Anforderung bleibt offen, damit Sie einen Ersatz entnehmen können."
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Seriennummer erstellt."
@@ -2279,6 +2329,10 @@ msgstr "Zu laufen"
 
 msgid "Today"
 msgstr "Heute"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "Personal umschalten"
@@ -2316,6 +2370,10 @@ msgstr "Gesamtmenge"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "Gesamtzeit: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "Hochladen"
 msgid "Upload completed but no file path returned"
 msgstr "Upload abgeschlossen, aber kein Dateipfad zurückgegeben"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Hochgeladen: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} wird hochgeladen"
@@ -2484,6 +2544,10 @@ msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie das Ausste
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ihr Konto ist noch nicht Teil eines Unternehmens. Schließen Sie das Onboarding in Carbon ERP ab, um fortzufahren."
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ihre Organisation erfordert eine Authentifizierungs-App. Richten Sie sie in Carbon ein und kommen Sie dann hierher zurück."

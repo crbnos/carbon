@@ -10,7 +10,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { EPSILON, round } from "../precision.ts";
+import { EPSILON, RoundingMode, round } from "../precision.ts";
 import {
   accounts,
   changeOrderRequiredActions,
@@ -2366,7 +2366,7 @@ function isServiceReturnLine(line: SalesReturnLineSpec): boolean {
  * pure validator has no anchor.
  */
 function maxCalendarDaysBack(workdaysBack: number): number {
-  return workdaysBack + 2 * Math.ceil(workdaysBack / 5) + 2;
+  return workdaysBack + 2 * round(workdaysBack / 5, 0, RoundingMode.Up) + 2;
 }
 
 const DONE_SERVICE_JOB_STATUSES = new Set(["Completed", "Invoiced"]);

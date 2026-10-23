@@ -313,9 +313,13 @@ msgstr "{0} 项待确认分录 · {amount}"
 msgid "{0} finishes {finish}"
 msgstr "{0} 于 {finish} 完成"
 
+#. placeholder {0}: assignment.jobReadableId
+msgid "{0} for {name}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
-#. placeholder {0}: formatQuantity(rate.baseAmount, locale)
+#. placeholder {0}: formatQuantity(hours)
 msgid "{0} h"
 msgstr "{0} 小时"
 
@@ -373,6 +377,10 @@ msgstr "{0} 张发票已在您的上一个系统中开票，不会再次起草"
 #. placeholder {1}: skipped.status
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0} 为 {1}，不是草稿或已计划"
+
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
 
 #. placeholder {0}: chipName(active.id)
 msgid "{0} is no longer over a cell"
@@ -2780,6 +2788,9 @@ msgstr "添加样品"
 
 msgid "Add Selector"
 msgstr "添加选择器"
+
+msgid "Add Service Job"
+msgstr ""
 
 msgid "Add Services"
 msgstr "添加服务"
@@ -6203,9 +6214,8 @@ msgstr "商品收据/发票收据匹配的清算账户"
 msgid "Clearing demo data"
 msgstr "正在清除演示数据"
 
-#. placeholder {0}: selected.readableId
-msgid "Click a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "点击一天为 {0} 添加时间。拖动条形的下边缘以更改其小时数。"
+msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "Click again to disconnect"
 msgstr "再次单击以断开连接"
@@ -17444,6 +17454,9 @@ msgstr "没有员工"
 msgid "No employees assigned this week"
 msgstr "本周没有分配员工"
 
+msgid "No employees at this location"
+msgstr ""
+
 msgid "No employees found"
 msgstr "未找到员工"
 
@@ -18047,6 +18060,9 @@ msgstr "此期间无交易"
 
 msgid "No transfers"
 msgstr "没有调拨"
+
+msgid "No unassigned jobs"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "还没有单位。在启用协议前，从单位列表中添加一个车队单位。"
@@ -18780,6 +18796,9 @@ msgstr "未结领料"
 msgid "Open items"
 msgstr "未结项目"
 
+msgid "Open job"
+msgstr ""
+
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "未结工单需求加上从此料箱转出的未清调拨"
 
@@ -18791,6 +18810,9 @@ msgstr "未结工单"
 
 msgid "Open Jobs Missing a Storage Unit"
 msgstr "未结工单缺少存储单元"
+
+msgid "Open jobs with no technician appear here."
+msgstr ""
 
 msgid "Open menu"
 msgstr "打开菜单"
@@ -20026,6 +20048,9 @@ msgstr "从发票计划。编辑单元格保存计划。"
 
 msgid "Planned from the lines. Editing a cell saves the schedule."
 msgstr "从行计划。编辑单元格保存排程。"
+
+msgid "Planned Hours"
+msgstr ""
 
 msgid "Planned invoices"
 msgstr "已计划发票"
@@ -24301,6 +24326,9 @@ msgstr "服务结束"
 msgid "Service ID"
 msgstr "服务ID"
 
+msgid "Service job"
+msgstr ""
+
 msgid "Service Job"
 msgstr ""
 
@@ -26375,6 +26403,9 @@ msgstr "技术细节"
 msgid "Technical support"
 msgstr "技术支持"
 
+msgid "Technician"
+msgstr ""
+
 msgid "Technique"
 msgstr "技术"
 
@@ -27026,6 +27057,9 @@ msgstr ""
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "该天到期的任务小时数（以截止日期为基础，而不是工作运行的日期），逾期工作在逾期中。"
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
@@ -31071,6 +31105,9 @@ msgstr "您实际上购买该资产。使用权资产的利息和摊销每月分
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "您有从 PDF 中提取的 {0} 行未映射到任何库存物料。"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You haven't created any contacts yet."
 msgstr "你还没有创建任何联系人。"

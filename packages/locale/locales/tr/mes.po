@@ -389,6 +389,9 @@ msgstr "Özellik"
 msgid "Characteristics"
 msgstr "Özellikler"
 
+msgid "Charge"
+msgstr ""
+
 msgid "Charge numbers"
 msgstr "Masraf numaraları"
 
@@ -485,6 +488,7 @@ msgid "Complete"
 msgstr "Tamamla"
 
 #. placeholder {0}: dispatch.maintenanceDispatchId
+#. placeholder {0}: job.serviceJobId
 msgid "Complete {0}?"
 msgstr "Tamamla {0}?"
 
@@ -811,6 +815,7 @@ msgstr "Hafta gönderilemedi"
 msgid "Failed to upload {0}"
 msgstr "{0} yüklenemedi"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
 msgstr "Dosyayı yüklemede başarısız oldu: {0}"
@@ -832,6 +837,9 @@ msgstr "Filtrele"
 
 msgid "Filter by location"
 msgstr "Konuma göre filtrele"
+
+msgid "Findings"
+msgstr ""
 
 msgid "Finish"
 msgstr "Bitir"
@@ -1285,6 +1293,9 @@ msgstr "Size atanmış bakım emri yok"
 msgid "No files"
 msgstr "Dosya yok"
 
+msgid "No findings"
+msgstr ""
+
 msgid "No gauges found."
 msgstr "Ölçüm aleti bulunamadı."
 
@@ -1327,8 +1338,14 @@ msgstr "Hiç seçenek bulunamadı."
 msgid "No options found."
 msgstr "Seçenek bulunamadı."
 
+msgid "No parts added yet"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Henüz hiçbir geçiş anahtarı kaydedilmedi."
+
+msgid "No photos yet"
+msgstr ""
 
 msgid "No picking lists assigned"
 msgstr "Atanmış toplama listesi yok"
@@ -1341,6 +1358,9 @@ msgstr "Son operasyon yok"
 
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "Sonuç bulunamadı"
@@ -1528,6 +1548,9 @@ msgstr "Kısmi"
 msgid "Partial Disposition"
 msgstr "Kısmi Karar"
 
+msgid "Parts"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
 
@@ -1557,6 +1580,9 @@ msgstr "Telefon"
 
 msgid "Photo uploaded successfully"
 msgstr "Fotoğraf başarıyla yüklendi"
+
+msgid "Photos"
+msgstr ""
 
 msgid "Pick"
 msgstr "Topla"
@@ -1780,6 +1806,9 @@ msgstr "Yeniden adlandır"
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 
+msgid "Repairable"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod iste."
 
@@ -1789,11 +1818,17 @@ msgstr "Gerekli"
 msgid "Reset"
 msgstr "Sıfırla"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Result"
 msgstr "Sonuç"
 
 msgid "Retry Completion"
 msgstr "Tamamlanmayı Yeniden Dene"
+
+msgid "Return part"
+msgstr ""
 
 msgid "Rework"
 msgstr "Yeniden işleme"
@@ -1806,6 +1841,9 @@ msgstr "Yeniden işleme miktarı"
 
 msgid "Running"
 msgstr "Çalışıyor"
+
+msgid "Running since <0/>"
+msgstr ""
 
 msgid "Sales"
 msgstr "Satış"
@@ -2130,6 +2168,9 @@ msgstr "Adımlar"
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
 
+msgid "Stop"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
 
@@ -2237,6 +2278,9 @@ msgstr "Bu partinin iş talimatı yok."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Bu bilgiler tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
 
+msgid "This job needs an accepted estimate before it can be completed."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot'un süresi doldu ve toplanamaz."
 
@@ -2248,6 +2292,12 @@ msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapma
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böylece bir yedek sağlayabilirsiniz."
+
+msgid "This posts the job's time. The job can no longer change."
+msgstr ""
+
+msgid "This stops your clock and posts the job's time. The job can no longer change."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
@@ -2279,6 +2329,10 @@ msgstr "Çalıştırılacak"
 
 msgid "Today"
 msgstr "Bugün"
+
+#. placeholder {0}: quantity(todayHours)
+msgid "Today: {0} h"
+msgstr ""
 
 msgid "Toggle labor"
 msgstr "İşçiliği Aç/Kapat"
@@ -2316,6 +2370,10 @@ msgstr "Toplam Miktar"
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
 msgstr "Toplam süre: {0}"
+
+#. placeholder {0}: quantity(totalHours)
+msgid "Total time: {0} h"
+msgstr ""
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2411,11 +2469,13 @@ msgstr "Yükle"
 msgid "Upload completed but no file path returned"
 msgstr "Yükleme tamamlandı ancak dosya yolu döndürülmedi"
 
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Yüklendi: {0}"
 
 #. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Yükleniyor {0}"
@@ -2484,6 +2544,10 @@ msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmay
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."
+
+#. placeholder {0}: runningClock.serviceJob?.serviceJobId
+msgid "Your clock is running on <0>{0}</0>. Stop it there first."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."
