@@ -10,15 +10,20 @@ import type {
   ProjectElementType,
   RequirementStatus
 } from "../../projects.models";
-import type { ProjectElementListItem } from "../../projects.service";
+import type {
+  ProjectElementListItem,
+  ProjectElementPage
+} from "../../projects.service";
 import type { ProjectLabel, ProjectState } from "../../types";
 import { ElementRow } from "../Elements/ElementList";
 import { useElementRoutes } from "../Elements/ElementRoutes";
+import { ElementJobs } from "./ElementJobs";
 import { QuickAddRow } from "./QuickAddRow";
 
 /**
- * The direct children of an element as the Plan list's rows, and an
- * "+ Add child" row at the end that opens a one-line form.
+ * The direct children of an element as the Plan list's rows, then the jobs
+ * charged to it, and an "+ Add child" row that opens a one-line form. With
+ * `onAddJob`, an "+ Add Job" row under it opens the job form.
  */
 export function ElementChildren({
   projectId,
@@ -31,7 +36,9 @@ export function ElementChildren({
   canCreate,
   isAdding,
   onAddingChange,
-  quickAddRef
+  quickAddRef,
+  jobs = [],
+  onAddJob
 }: {
   projectId: string;
   parent: { id: string; type: ProjectElementType };
@@ -44,6 +51,8 @@ export function ElementChildren({
   isAdding: boolean;
   onAddingChange: (adding: boolean) => void;
   quickAddRef: RefObject<HTMLInputElement>;
+  jobs?: ProjectElementPage["jobs"];
+  onAddJob?: () => void;
 }) {
   const routes = useElementRoutes(projectId);
   const [type, setType] = useState<ProjectElementType>("Task");
@@ -71,6 +80,7 @@ export function ElementChildren({
           className="rounded-md px-3"
         />
       ))}
+      <ElementJobs jobs={jobs} />
       {canCreate &&
         (isAdding ? (
           <QuickAddRow
@@ -95,6 +105,16 @@ export function ElementChildren({
             <Trans>Add child</Trans>
           </button>
         ))}
+      {onAddJob && (
+        <button
+          type="button"
+          onClick={onAddJob}
+          className="flex h-9 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <LuPlus className="size-3.5" />
+          <Trans>Add Job</Trans>
+        </button>
+      )}
     </div>
   );
 }

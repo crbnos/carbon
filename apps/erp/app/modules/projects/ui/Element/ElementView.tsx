@@ -25,7 +25,6 @@ import {
   LuChevronRight,
   LuCornerDownRight,
   LuEllipsisVertical,
-  LuFactory,
   LuLink,
   LuListOrdered,
   LuPackageMinus,
@@ -42,6 +41,7 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useResolved } from "~/hooks/useResolved";
+import { JobForm } from "~/modules/production/ui/Jobs";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import {
@@ -73,7 +73,6 @@ import { ElementTimeAndMaterials } from "./ElementTimeAndMaterials";
 import { ElementTypeBlock, hasTypeBlock } from "./ElementTypeBlock";
 import { IssueMaterialModal } from "./IssueMaterialModal";
 import { LogTimeModal } from "./LogTimeModal";
-import { NewJobModal } from "./NewJobModal";
 
 type ElementViewProps = ProjectElementPage & {
   projectId: string;
@@ -122,6 +121,7 @@ export function ElementView({
   ledger,
   openTime,
   planActuals,
+  jobs,
   links,
   verification,
   requirementStatus,
@@ -139,6 +139,7 @@ export function ElementView({
 }: ElementViewProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const { defaults } = useUser();
   const integrations = useIntegrations();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -184,10 +185,13 @@ export function ElementView({
   const canChargeCost =
     usesProjectCharges && canCharge && permissions.can("update", "projects");
   const canAddChild = canCreate && element.type !== "Parameter";
-  // New Job: a job for a Make part, charged to this element, with a plan
-  // line added for it. A project's, not a service order's.
-  const showNewJob = isProject && element.type !== "Parameter";
-  const canCreateJob = canCharge && permissions.can("create", "production");
+  // Add Job: the job form in a modal, charged to this element. A project's,
+  // not a service order's.
+  const canAddJob =
+    isProject &&
+    element.type !== "Parameter" &&
+    canCharge &&
+    permissions.can("create", "production");
   // After the lock milestone completes, the plan changes only through a
   // Draft change request: "Add line" is off, with the Plan page's reason.
   const lockMilestone = milestones.find(
@@ -364,17 +368,6 @@ export function ElementView({
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <Copy text={element.readableId} />
-          {showNewJob && (
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<LuFactory />}
-              isDisabled={!canCreateJob}
-              onClick={() => setCreatingJob(true)}
-            >
-              <Trans>New Job</Trans>
-            </Button>
-          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -493,10 +486,21 @@ export function ElementView({
                 />
               </div>
 
-              {(showChildren || canAddChild) && (
+              {(showChildren ||
+                canAddChild ||
+                jobs.length > 0 ||
+                canAddJob) && (
                 <Section
-                  title={showChildren ? t`Children` : undefined}
-                  count={children.length}
+                  title={
+                    showChildren && jobs.length > 0
+                      ? t`Children and jobs`
+                      : showChildren
+                        ? t`Children`
+                        : jobs.length > 0
+                          ? t`Jobs`
+                          : undefined
+                  }
+                  count={children.length + jobs.length}
                 >
                   <ElementChildren
                     projectId={projectId}
@@ -510,6 +514,10 @@ export function ElementView({
                     isAdding={addingChild}
                     onAddingChange={setAddingChild}
                     quickAddRef={childQuickAddRef}
+                    jobs={jobs}
+                    onAddJob={
+                      canAddJob ? () => setCreatingJob(true) : undefined
+                    }
                   />
                 </Section>
               )}
@@ -656,11 +664,33 @@ export function ElementView({
         />
       )}
       {creatingJob && (
-        <NewJobModal
-          projectId={projectId}
-          element={element}
-          defaultLocationId={project?.locationId}
+        <JobForm
+          type="modal"
           onClose={() => setCreatingJob(false)}
+          validItemTypes={["Part", "Service", "Tool"]}
+          initialValues={{
+            customerId: "",
+            deadlineType: element.targetDate ? "Hard Deadline" : "No Deadline",
+            description: "",
+            dueDate: element.targetDate ?? "",
+            fixedAssetClassId: "",
+            fixedAssetId: "",
+            projectId,
+            projectElementId: element.id,
+            // An Expense or Contract project's job consumes to it.
+            consumeToProject:
+              project?.costTreatment === "Expense" ||
+              project?.costTreatment === "Contract",
+            receiveToProjectStock: false,
+            itemId: "",
+            itemType: "Part",
+            jobId: undefined,
+            locationId: project?.locationId ?? defaults?.locationId ?? "",
+            quantity: 1,
+            scrapQuantity: 0,
+            status: "Draft",
+            unitOfMeasureCode: "EA"
+          }}
         />
       )}
       {charging && (

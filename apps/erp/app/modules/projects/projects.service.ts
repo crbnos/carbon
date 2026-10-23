@@ -13177,7 +13177,8 @@ export async function getProjectElementPage(
     laborCategoryRates,
     timeZone,
     employeeJob,
-    timeAndMaterials
+    timeAndMaterials,
+    jobs
   ] = await Promise.all([
     args.element
       ? Promise.resolve({ data: args.element, error: null })
@@ -13199,7 +13200,15 @@ export async function getProjectElementPage(
       .eq("id", args.userId)
       .eq("companyId", args.companyId)
       .maybeSingle(),
-    getElementTimeAndMaterials(db, args)
+    getElementTimeAndMaterials(db, args),
+    // The jobs charged to the element, from the moment they exist.
+    client
+      .from("job")
+      .select("id, jobId, itemId, status, quantity, quantityComplete, dueDate")
+      .eq("projectElementId", args.elementId)
+      .eq("companyId", args.companyId)
+      .neq("status", "Cancelled")
+      .order("createdAt", { ascending: true })
   ]);
 
   const error =
@@ -13210,7 +13219,8 @@ export async function getProjectElementPage(
     costSummary.error ??
     laborCategories.error ??
     laborCategoryRates.error ??
-    employeeJob.error;
+    employeeJob.error ??
+    jobs.error;
   if (error) return { data: null, error };
   if (!element.data || element.data.projectId !== args.projectId) {
     return { data: null, error: null };
@@ -13327,6 +13337,7 @@ export async function getProjectElementPage(
       ledger: timeAndMaterials.ledger,
       openTime: timeAndMaterials.openTime,
       planActuals: timeAndMaterials.planActuals,
+      jobs: jobs.data ?? [],
       ...verification.data,
       qualityDocuments: qualityDocuments.data ?? [],
       itemFields,
@@ -14886,22 +14897,32 @@ export async function getRdTaxReport(
 }
 
 /**
- * The project's jobs, by the task whose plan line made each one
- * (`projectElementMaterial.jobId`). The Tree's job badge and the Overview's
- * job rows read it. A job a plan line does not name is not here.
+ * The project's jobs, by the task each is charged to
+ * (`job.projectElementId`). The Tree's job badge and the Overview's job rows
+ * read it. A job charged to the project but no task is not here.
  */
 export async function getProjectJobs(
   client: Client,
   projectId: string,
   companyId: string
 ) {
-  return client
-    .from("projectElementMaterial")
+  // Every job charged to a task: made from a plan line, by Build, or from
+  // the job form with the task as its charge number.
+  const jobs = await client
+    .from("job")
     .select(
-      "projectElementId, job:job!projectElementMaterial_jobId_fkey!inner(id, jobId, status, quantity, quantityComplete, dueDate, projectedCompletionAt, customerContractLineId)"
+      "id, jobId, status, quantity, quantityComplete, dueDate, projectedCompletionAt, customerContractLineId, projectElementId"
     )
     .eq("projectId", projectId)
     .eq("companyId", companyId)
-    .not("jobId", "is", null)
+    .not("projectElementId", "is", null)
     .order("createdAt", { ascending: true });
+  if (jobs.error) return { data: null, error: jobs.error };
+  return {
+    data: jobs.data.map(({ projectElementId, ...job }) => ({
+      projectElementId: projectElementId!,
+      job
+    })),
+    error: null
+  };
 }

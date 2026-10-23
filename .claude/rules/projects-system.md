@@ -252,14 +252,23 @@ project the job's cost object in place of WIP:
   (`government-contracting.md` → Shop labor under DCAA).
 
 **`createProjectJob`** (`projects.service.ts`) is the one path that makes a job for a
-project element. Three operations call it: a Make to Order plan line's **Create Job**
-(`projects.createJobFromMaterial`, with the plan line's `materialId`), the task header's
-**New Job** (`projects.createProjectElementJob`; `NewJobModal`, `ElementView`, project tasks
-only, needs `create: production`: a part you make, the quantity, the due date (the task's
-target date) and the location (the project's); `newProjectJobValidator`; no plan line, so
-step 3 adds one) — both through the route `$projectId.elements.$elementId.create-job.tsx` —
-and a part CLIN's **Build** (`sales.buildContractLineJob`, route
-`x+/contract+/$id.$lineId.build.tsx`, spec section 10.2). It does these steps:
+project element from a plan line or a CLIN. Three operations call it: a Make to Order
+plan line's **Create Job** (`projects.createJobFromMaterial`, with the plan line's
+`materialId`), `projects.createProjectElementJob` (API only since the task's **+ Add Job**
+replaced its modal; `newProjectJobValidator`; no plan line, so step 3 adds one) — both
+through the route `$projectId.elements.$elementId.create-job.tsx` — and a part CLIN's
+**Build** (`sales.buildContractLineJob`, route `x+/contract+/$id.$lineId.build.tsx`, spec
+section 10.2).
+
+The task page's **+ Add Job** (under **+ Add child**, `ElementChildren`, project tasks
+with `create: production`) does not call it: it opens the ordinary job form as a modal
+(`JobForm type="modal"`, Part / Tool / Service) with the task as its charge number,
+"Consume to project" on for an Expense or Contract project and the due date at the task's
+target date, and posts to `x+/job+/new` (`production.createJob`), which opens the job. No
+plan line is added. The task lists every job charged to it (`job.projectElementId`, not
+Cancelled; `jobs` on `getProjectElementPage`, rendered by `ElementJobs` in the same list
+as its children) from the moment it exists, and `getProjectJobs` (Tree badge, Overview
+rows) reads jobs by `job.projectElementId` too. It does these steps:
 
 1. It checks the location (the service role writes the job) and the item, refuses an
    item with an unreleased change order, and reads the charge target
@@ -267,7 +276,7 @@ and a part CLIN's **Build** (`sales.buildContractLineJob`, route
 2. It sets `consumeToProject` for an Expense or Contract project, and `fixedAssetId`
    for a Capitalize project (refused before release). It never sets project stock: a
    prototype job always consumes to the project (D30, D33).
-3. With no `materialId` (Build, New Job), it adds a Make to Order `projectElementMaterial` row on
+3. With no `materialId` (Build, the API operation), it adds a Make to Order `projectElementMaterial` row on
    the task at `itemCost.unitCost` × quantity. A locked plan refuses
    (`requireProjectPlanEditable`, no change request).
 4. It calls `insertJob` with `projectId`, `projectElementId` and
@@ -277,7 +286,7 @@ and a part CLIN's **Build** (`sales.buildContractLineJob`, route
 
 `job.customerContractLineId` (migration `20261023024353_prototype-clins.sql`, composite
 FK to `customerContractLine`, ON DELETE SET NULL) names the CLIN whose part the job
-builds. Build sets it. Create Job and New Job set it through `findPartContractLine`: the line of a
+builds. Build sets it. Create Job sets it through `findPartContractLine`: the line of a
 Draft or Active project contract with the plan line's item, whose `projectElementId` is
 the task or an ancestor, not replaced by an amendment, and only when exactly one
 matches. The CLIN reads its jobs by this column (`apps/erp/app/modules/sales/AGENTS.md`
