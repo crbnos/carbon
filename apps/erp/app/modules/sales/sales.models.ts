@@ -1262,6 +1262,7 @@ export const salesRuleValidator = z
 export const salesReturnOrderStatusType = [
   "Draft",
   "To Receive",
+  "In Progress",
   "Completed",
   "Cancelled"
 ] as const;

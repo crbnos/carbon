@@ -82,10 +82,10 @@ Phase 0 — remove the old service module
 
 Phase 1 — RMA and the depot service job
 
-- [ ] Task 8: Add the new enum values
-- [ ] Task 9: Create the service job tables and the new columns
-- [ ] Task 10: Wire RLS, events, the sequence and backups for the new tables
-- [ ] Task 11: Add the Cost of Service account default
+- [x] Task 8: Add the new enum values
+- [x] Task 9: Create the service job tables and the new columns
+- [x] Task 10: Wire RLS, events, the sequence and backups for the new tables
+- [x] Task 11: Add the Cost of Service account default
 - [ ] Task 12: Write the service models and their pure rules
 - [ ] Task 13: Write the service job service functions
 - [ ] Task 14: Add the `serviceJob*` issue types
@@ -1073,7 +1073,7 @@ In the browser, run the spec's phase 1 RMA criteria: add 2 assets, receive, see 
 1. In each dataset, add 5 jobs that cover the statuses Open, Awaiting Approval, In Progress, Completed (Warranty) and Invoiced (Billable). Each names a seeded customer asset. Use day offsets for dates.
 2. Give the satellite "bus-repair" RMA line `returnType` Return for Service and link its job.
 3. A Completed or Invoiced job carries its time rows, its completion journal (built the way `post-service-job` builds it) and, for Invoiced, its invoice with `serviceJobId` on the lines.
-4. Add a `COVERAGE.serviceJob` status set in `validate.ts`. Add floors for `serviceJob`, `serviceJobTime` and `serviceJobItem` in `coverage.ts`, measured after a seed.
+4. Remove the temporary 'In Progress' exclusion from the `salesReturnOrderStatus` coverage set in `validate.ts` (added in Task 10 because no dataset had an In Progress RMA yet), and seed one In Progress RMA. Add a `COVERAGE.serviceJob` status set in `validate.ts`. Add floors for `serviceJob`, `serviceJobTime` and `serviceJobItem` in `coverage.ts`, measured after a seed.
 5. Add the job tables to `wipe.ts` only if the generic FK pass cannot delete them. Run the re-apply check to find out.
 
 **Verify:**

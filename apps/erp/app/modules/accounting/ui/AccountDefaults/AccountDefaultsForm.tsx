@@ -570,6 +570,12 @@ export function useAccountDefaultGroups(): CategoryGroup[] {
             badgeType: "Expense"
           },
           {
+            name: "costOfServiceAccount",
+            label: t`Cost of Service`,
+            description: t`Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold.`,
+            badgeType: "Expense"
+          },
+          {
             name: "assetDepreciationExpenseAccount",
             label: t`Depreciation Expense`,
             description: t`Periodic depreciation expense for fixed assets`,

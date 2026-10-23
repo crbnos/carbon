@@ -385,6 +385,15 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   salesRfqLine: { statement: ["broadcast_table_changes"] },
+  serviceJob: {
+    after: ["sync_advance_document_sequence"],
+    events: true,
+    statement: ["broadcast_table_changes"]
+  },
+  serviceJobAssignment: { events: true },
+  serviceJobEstimateLine: { events: true },
+  serviceJobItem: { events: true },
+  serviceJobTime: { events: true },
   shipment: {
     after: ["sync_advance_document_sequence"],
     events: true,

@@ -1609,6 +1609,25 @@ export const manifest = {
   searchIndexRegistry: serviceOnly(),
   sequence: company("settings", { read: "settings_view" }),
   service: company("parts"),
+  // Same rule as maintenanceDispatch: a technician without service_update can log time
+  // and parts from the MES.
+  serviceJob: company("service", { create: "employee", update: "employee" }),
+  serviceJobAssignment: company("service", {
+    create: "employee",
+    update: "employee"
+  }),
+  serviceJobEstimateLine: company("service", {
+    create: "employee",
+    update: "employee"
+  }),
+  serviceJobItem: company("service", {
+    create: "employee",
+    update: "employee"
+  }),
+  serviceJobTime: company("service", {
+    create: "employee",
+    update: "employee"
+  }),
   shift: company("people"),
   shipment: company("inventory", {
     read: anyOf("inventory_view", "sales_view"),

@@ -596,6 +596,14 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // A service job's completion journal: its labor and parts cost to Cost of
+  // Service or Warranty Expense. Off by default for the same reason as
+  // 'Revenue Recognition'.
+  "Service Job": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   // Inventory ↔ fixed-asset transfers and job completions to an asset. Off by
   // default for the same reason as 'Revenue Recognition'.
   "Asset Transfer": {

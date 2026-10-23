@@ -584,6 +584,7 @@ export const defaultIncomeAcountValidator = z.object({
   warrantyExpenseAccount: z.string().min(1, {
     message: "Warranty expense account is required"
   }),
+  costOfServiceAccount: z.string().optional(),
   assetDepreciationExpenseAccount: z.string().min(1, {
     message: "Depreciation expense account is required"
   }),
@@ -765,6 +766,7 @@ export const journalEntrySourceTypes = [
   "Burden",
   "Project Close",
   "Service Order",
+  "Service Job",
   "Asset Depreciation",
   "Asset Disposal",
   "Asset Transfer",

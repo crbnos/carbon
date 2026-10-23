@@ -655,6 +655,7 @@ export const JournalEntrySourceTypeIcon = ({
     case "Project Close":
       return <LuFolderKanban className={className} />;
     case "Service Order":
+    case "Service Job":
       return <LuHardHat className={className} />;
     case "Asset Depreciation":
       return <LuClock className={className} />;

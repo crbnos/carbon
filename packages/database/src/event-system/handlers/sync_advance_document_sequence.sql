@@ -43,6 +43,7 @@ BEGIN
     WHEN 'salesOrder' THEN 'salesOrderId'
     WHEN 'salesReturnOrder' THEN 'salesReturnOrderId'
     WHEN 'salesRfq' THEN 'rfqId'
+    WHEN 'serviceJob' THEN 'serviceJobId'
     WHEN 'shipment' THEN 'shipmentId'
     WHEN 'stockTransfer' THEN 'stockTransferId'
     WHEN 'supplier' THEN 'readableId'

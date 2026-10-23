@@ -72,6 +72,7 @@ export async function assertPostingStatusUnchanged(
 export const OPTIONAL_DEFAULT_ROLES = [
   "accumulatedRightOfUseAmortizationAccount",
   "contractAssetAccount",
+  "costOfServiceAccount",
   "deferredRevenueAccount",
   "deferredTaxExpenseAccountId",
   "deferredTaxLiabilityAccountId",
@@ -103,6 +104,7 @@ export type OptionalDefaultRole = (typeof OPTIONAL_DEFAULT_ROLES)[number];
  * enable does not require them.
  */
 export const DEFAULT_FALLBACKS = {
+  costOfServiceAccount: "costOfGoodsSoldAccount",
   employeeReimbursementsPayableAccount: "payablesAccount",
   intercompanyPayablesAccount: "payablesAccount",
   intercompanyReceivablesAccount: "receivablesAccount",
@@ -123,6 +125,7 @@ export function hasDefaultFallback(role: string): role is FallbackRole {
  */
 export const OPTIONAL_DEFAULT_LABELS: Record<OptionalDefaultRole, string> = {
   contractAssetAccount: "Contract Assets",
+  costOfServiceAccount: "Cost of Service",
   deferredRevenueAccount: "Deferred Revenue",
   deferredTaxExpenseAccountId: "Deferred Tax Expense",
   deferredTaxLiabilityAccountId: "Deferred Tax Liability",

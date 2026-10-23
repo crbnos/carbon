@@ -325,6 +325,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "serviceJob",
+    name: "Service Job",
+    prefix: "SJ",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "nonConformance",
     name: "Issue",
     prefix: "NCR",

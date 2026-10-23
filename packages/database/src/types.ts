@@ -370,6 +370,7 @@ export type Database = {
           contractAssetAccount: string | null
           contractLossProvisionAccount: string | null
           costOfGoodsSoldAccount: string
+          costOfServiceAccount: string | null
           currencyTranslationAccount: string
           customerPaymentDiscountAccount: string
           customerWriteOffAccount: string
@@ -446,6 +447,7 @@ export type Database = {
           contractAssetAccount?: string | null
           contractLossProvisionAccount?: string | null
           costOfGoodsSoldAccount: string
+          costOfServiceAccount?: string | null
           currencyTranslationAccount: string
           customerPaymentDiscountAccount: string
           customerWriteOffAccount: string
@@ -522,6 +524,7 @@ export type Database = {
           contractAssetAccount?: string | null
           contractLossProvisionAccount?: string | null
           costOfGoodsSoldAccount?: string
+          costOfServiceAccount?: string | null
           currencyTranslationAccount?: string
           customerPaymentDiscountAccount?: string
           customerWriteOffAccount?: string
@@ -775,6 +778,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_costOfGoodsSoldAccount_fkey"
             columns: ["costOfGoodsSoldAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_costOfServiceAccount_fkey"
+            columns: ["costOfServiceAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_costOfServiceAccount_fkey"
+            columns: ["costOfServiceAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -67218,6 +67235,7 @@ export type Database = {
           salesOrderId: string | null
           salesOrderLineId: string | null
           serviceEndDate: string | null
+          serviceJobId: string | null
           serviceStartDate: string | null
           setupPrice: number
           shippingCost: number
@@ -67273,6 +67291,7 @@ export type Database = {
           salesOrderId?: string | null
           salesOrderLineId?: string | null
           serviceEndDate?: string | null
+          serviceJobId?: string | null
           serviceStartDate?: string | null
           setupPrice?: number
           shippingCost?: number
@@ -67328,6 +67347,7 @@ export type Database = {
           salesOrderId?: string | null
           salesOrderLineId?: string | null
           serviceEndDate?: string | null
+          serviceJobId?: string | null
           serviceStartDate?: string | null
           setupPrice?: number
           shippingCost?: number
@@ -67605,6 +67625,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrderLines"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesInvoiceLine_storageUnitId_fkey"
@@ -68263,6 +68290,7 @@ export type Database = {
           saleQuantity: number | null
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
+          salesReturnOrderLineId: string | null
           sentComplete: boolean
           sentDate: string | null
           serviceEndDate: string | null
@@ -68312,6 +68340,7 @@ export type Database = {
           saleQuantity?: number | null
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
+          salesReturnOrderLineId?: string | null
           sentComplete?: boolean
           sentDate?: string | null
           serviceEndDate?: string | null
@@ -68361,6 +68390,7 @@ export type Database = {
           saleQuantity?: number | null
           salesOrderId?: string
           salesOrderLineType?: Database["public"]["Enums"]["salesOrderLineType"]
+          salesReturnOrderLineId?: string | null
           sentComplete?: boolean
           sentDate?: string | null
           serviceEndDate?: string | null
@@ -68509,6 +68539,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrders"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_salesReturnOrderLineId_fkey"
+            columns: ["salesReturnOrderLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesReturnOrderLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesOrderLine_storageUnitId_fkey"
@@ -69599,15 +69636,19 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          customerAssetId: string | null
           customFields: Json | null
           disposition: Database["public"]["Enums"]["disposition"]
           id: string
           itemId: string
           lineNumber: number
+          problem: string | null
           quantity: number
           quantityReceived: number
+          quantityShipped: number
           restockFeePercent: number
           returnReasonId: string | null
+          returnType: Database["public"]["Enums"]["returnType"]
           salesInvoiceLineId: string | null
           salesOrderLineId: string | null
           salesReturnOrderId: string
@@ -69622,15 +69663,19 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          customerAssetId?: string | null
           customFields?: Json | null
           disposition?: Database["public"]["Enums"]["disposition"]
           id?: string
           itemId: string
           lineNumber?: number
+          problem?: string | null
           quantity: number
           quantityReceived?: number
+          quantityShipped?: number
           restockFeePercent?: number
           returnReasonId?: string | null
+          returnType?: Database["public"]["Enums"]["returnType"]
           salesInvoiceLineId?: string | null
           salesOrderLineId?: string | null
           salesReturnOrderId: string
@@ -69645,15 +69690,19 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          customerAssetId?: string | null
           customFields?: Json | null
           disposition?: Database["public"]["Enums"]["disposition"]
           id?: string
           itemId?: string
           lineNumber?: number
+          problem?: string | null
           quantity?: number
           quantityReceived?: number
+          quantityShipped?: number
           restockFeePercent?: number
           returnReasonId?: string | null
+          returnType?: Database["public"]["Enums"]["returnType"]
           salesInvoiceLineId?: string | null
           salesOrderLineId?: string | null
           salesReturnOrderId?: string
@@ -69726,6 +69775,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesReturnOrderLine_customerAssetId_fkey"
+            columns: ["customerAssetId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerAsset"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "salesReturnOrderLine_itemId_fkey"
@@ -71136,6 +71192,1306 @@ export type Database = {
           },
           {
             foreignKeyName: "service_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      serviceJob: {
+        Row: {
+          assignee: string | null
+          billingMethod: Database["public"]["Enums"]["serviceBillingMethod"]
+          companyId: string
+          completedAt: string | null
+          completionJournalId: string | null
+          coverage: Database["public"]["Enums"]["serviceCoverage"]
+          createdAt: string
+          createdBy: string
+          customerAssetId: string | null
+          customerContactId: string | null
+          customerId: string
+          customerLocationId: string | null
+          customFields: Json | null
+          dueDate: string | null
+          estimateRespondedAt: string | null
+          estimateRespondedBy: string | null
+          estimateSentAt: string | null
+          estimateStatus:
+            | Database["public"]["Enums"]["serviceEstimateStatus"]
+            | null
+          findings: Json | null
+          fixedPrice: number | null
+          id: string
+          itemId: string | null
+          locationId: string
+          priority: Database["public"]["Enums"]["serviceJobPriority"]
+          problem: string | null
+          repairable: boolean | null
+          resolution: Json | null
+          salesInvoiceId: string | null
+          salesReturnOrderLineId: string | null
+          serviceItemId: string | null
+          serviceJobId: string
+          signaturePath: string | null
+          signedByName: string | null
+          status: Database["public"]["Enums"]["serviceJobStatus"]
+          trackedEntityId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+          workSite: Database["public"]["Enums"]["serviceWorkSite"]
+        }
+        Insert: {
+          assignee?: string | null
+          billingMethod?: Database["public"]["Enums"]["serviceBillingMethod"]
+          companyId: string
+          completedAt?: string | null
+          completionJournalId?: string | null
+          coverage?: Database["public"]["Enums"]["serviceCoverage"]
+          createdAt?: string
+          createdBy: string
+          customerAssetId?: string | null
+          customerContactId?: string | null
+          customerId: string
+          customerLocationId?: string | null
+          customFields?: Json | null
+          dueDate?: string | null
+          estimateRespondedAt?: string | null
+          estimateRespondedBy?: string | null
+          estimateSentAt?: string | null
+          estimateStatus?:
+            | Database["public"]["Enums"]["serviceEstimateStatus"]
+            | null
+          findings?: Json | null
+          fixedPrice?: number | null
+          id?: string
+          itemId?: string | null
+          locationId: string
+          priority?: Database["public"]["Enums"]["serviceJobPriority"]
+          problem?: string | null
+          repairable?: boolean | null
+          resolution?: Json | null
+          salesInvoiceId?: string | null
+          salesReturnOrderLineId?: string | null
+          serviceItemId?: string | null
+          serviceJobId: string
+          signaturePath?: string | null
+          signedByName?: string | null
+          status?: Database["public"]["Enums"]["serviceJobStatus"]
+          trackedEntityId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workSite?: Database["public"]["Enums"]["serviceWorkSite"]
+        }
+        Update: {
+          assignee?: string | null
+          billingMethod?: Database["public"]["Enums"]["serviceBillingMethod"]
+          companyId?: string
+          completedAt?: string | null
+          completionJournalId?: string | null
+          coverage?: Database["public"]["Enums"]["serviceCoverage"]
+          createdAt?: string
+          createdBy?: string
+          customerAssetId?: string | null
+          customerContactId?: string | null
+          customerId?: string
+          customerLocationId?: string | null
+          customFields?: Json | null
+          dueDate?: string | null
+          estimateRespondedAt?: string | null
+          estimateRespondedBy?: string | null
+          estimateSentAt?: string | null
+          estimateStatus?:
+            | Database["public"]["Enums"]["serviceEstimateStatus"]
+            | null
+          findings?: Json | null
+          fixedPrice?: number | null
+          id?: string
+          itemId?: string | null
+          locationId?: string
+          priority?: Database["public"]["Enums"]["serviceJobPriority"]
+          problem?: string | null
+          repairable?: boolean | null
+          resolution?: Json | null
+          salesInvoiceId?: string | null
+          salesReturnOrderLineId?: string | null
+          serviceItemId?: string | null
+          serviceJobId?: string
+          signaturePath?: string | null
+          signedByName?: string | null
+          status?: Database["public"]["Enums"]["serviceJobStatus"]
+          trackedEntityId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workSite?: Database["public"]["Enums"]["serviceWorkSite"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serviceJob_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJob_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJob_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJob_completionJournalId_fkey"
+            columns: ["completionJournalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_completionJournalId_fkey"
+            columns: ["completionJournalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJob_customerAssetId_fkey"
+            columns: ["customerAssetId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerAsset"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJob_customerContactId_fkey"
+            columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_customerLocationId_fkey"
+            columns: ["customerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoiceLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_salesReturnOrderLineId_fkey"
+            columns: ["salesReturnOrderLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesReturnOrderLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJob_serviceItemId_fkey"
+            columns: ["serviceItemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_serviceItemId_fkey"
+            columns: ["serviceItemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_serviceItemId_fkey"
+            columns: ["serviceItemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_serviceItemId_fkey"
+            columns: ["serviceItemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_serviceItemId_fkey"
+            columns: ["serviceItemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_serviceItemId_fkey"
+            columns: ["serviceItemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJob_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      serviceJobAssignment: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          employeeId: string
+          id: string
+          note: string | null
+          plannedHours: number | null
+          scheduledDate: string
+          serviceJobId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          employeeId: string
+          id?: string
+          note?: string | null
+          plannedHours?: number | null
+          scheduledDate: string
+          serviceJobId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          employeeId?: string
+          id?: string
+          note?: string | null
+          plannedHours?: number | null
+          scheduledDate?: string
+          serviceJobId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serviceJobAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      serviceJobEstimateLine: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string | null
+          id: string
+          itemId: string
+          quantity: number
+          serviceJobId: string
+          sortOrder: number
+          unitPrice: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description?: string | null
+          id?: string
+          itemId: string
+          quantity: number
+          serviceJobId: string
+          sortOrder?: number
+          unitPrice: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string | null
+          id?: string
+          itemId?: string
+          quantity?: number
+          serviceJobId?: string
+          sortOrder?: number
+          unitPrice?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serviceJobEstimateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobEstimateLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      serviceJobItem: {
+        Row: {
+          billable: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string | null
+          id: string
+          itemId: string
+          lineType: Database["public"]["Enums"]["serviceJobItemLineType"]
+          purchaseInvoiceLineId: string | null
+          quantity: number
+          reimbursementLineId: string | null
+          serviceJobId: string
+          storageUnitId: string | null
+          unitCost: number
+          unitOfMeasureCode: string | null
+          unitPrice: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          billable?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description?: string | null
+          id?: string
+          itemId: string
+          lineType: Database["public"]["Enums"]["serviceJobItemLineType"]
+          purchaseInvoiceLineId?: string | null
+          quantity: number
+          reimbursementLineId?: string | null
+          serviceJobId: string
+          storageUnitId?: string | null
+          unitCost?: number
+          unitOfMeasureCode?: string | null
+          unitPrice?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          billable?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string | null
+          id?: string
+          itemId?: string
+          lineType?: Database["public"]["Enums"]["serviceJobItemLineType"]
+          purchaseInvoiceLineId?: string | null
+          quantity?: number
+          reimbursementLineId?: string | null
+          serviceJobId?: string
+          storageUnitId?: string | null
+          unitCost?: number
+          unitOfMeasureCode?: string | null
+          unitPrice?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serviceJobItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_purchaseInvoiceLineId_fkey"
+            columns: ["purchaseInvoiceLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoiceLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_purchaseInvoiceLineId_fkey"
+            columns: ["purchaseInvoiceLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoiceLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_reimbursementLineId_fkey"
+            columns: ["reimbursementLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "reimbursementLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_storageUnitId_fkey"
+            columns: ["storageUnitId"]
+            isOneToOne: false
+            referencedRelation: "storageUnit"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobItem_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      serviceJobTime: {
+        Row: {
+          billable: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          employeeId: string
+          endTime: string | null
+          entryDate: string
+          hours: number
+          id: string
+          laborItemId: string
+          note: string | null
+          serviceJobId: string
+          startTime: string | null
+          unitCost: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          billable?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          employeeId: string
+          endTime?: string | null
+          entryDate: string
+          hours?: number
+          id?: string
+          laborItemId: string
+          note?: string | null
+          serviceJobId: string
+          startTime?: string | null
+          unitCost?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          billable?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          employeeId?: string
+          endTime?: string | null
+          entryDate?: string
+          hours?: number
+          id?: string
+          laborItemId?: string
+          note?: string | null
+          serviceJobId?: string
+          startTime?: string | null
+          unitCost?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serviceJobTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_employeeId_fkey"
+            columns: ["employeeId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_laborItemId_fkey"
+            columns: ["laborItemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_laborItemId_fkey"
+            columns: ["laborItemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_laborItemId_fkey"
+            columns: ["laborItemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_laborItemId_fkey"
+            columns: ["laborItemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_laborItemId_fkey"
+            columns: ["laborItemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_laborItemId_fkey"
+            columns: ["laborItemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serviceJobTime_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -105349,6 +106705,7 @@ export type Database = {
         | "Rental Agreement"
         | "Project Issue"
         | "Project Transfer"
+        | "Service Job Consumption"
       itemLedgerType:
         | "Purchase"
         | "Sale"
@@ -105439,6 +106796,7 @@ export type Database = {
         | "Project Transfer"
         | "Burden"
         | "Project Close"
+        | "Service Job"
       journalEntryStatus:
         | "Draft"
         | "Posted"
@@ -105483,6 +106841,8 @@ export type Database = {
         | "Project Transfer"
         | "Burden"
         | "Project Close"
+        | "Service Job Consumption"
+        | "Service Job"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       leaseEventType: "Modification" | "Termination" | "Purchase"
@@ -105816,6 +107176,10 @@ export type Database = {
         | "Analysis"
         | "Inspection"
         | "Demonstration"
+      returnType:
+        | "Return to Stock"
+        | "Return for Service"
+        | "Return for Warranty"
       revenueScheduleStatus: "Planned" | "Posted"
       revenueScheduleType:
         | "Deferral"
@@ -105885,11 +107249,30 @@ export type Database = {
         | "Approved"
         | "Reject"
         | "Request Approval"
-      salesReturnOrderStatus: "Draft" | "To Receive" | "Completed" | "Cancelled"
+      salesReturnOrderStatus:
+        | "Draft"
+        | "To Receive"
+        | "In Progress"
+        | "Completed"
+        | "Cancelled"
       salesRfqStatus: "Draft" | "Ready for Quote" | "Closed" | "Quoted"
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
+      serviceBillingMethod: "Time and Materials" | "Fixed Price"
+      serviceCoverage: "Billable" | "Warranty" | "Contract"
+      serviceEstimateStatus: "Draft" | "Sent" | "Accepted" | "Declined"
+      serviceJobItemLineType: "Part" | "Charge"
+      serviceJobPriority: "Low" | "Medium" | "High" | "Critical"
+      serviceJobStatus:
+        | "Open"
+        | "Awaiting Approval"
+        | "In Progress"
+        | "On Hold"
+        | "Completed"
+        | "Invoiced"
+        | "Cancelled"
       serviceType: "Internal" | "External"
+      serviceWorkSite: "Depot" | "Customer Site"
       shelfLifeMode: "Fixed Duration" | "Calculated" | "Set on Receipt"
       shelfLifeTriggerTiming: "Before" | "After"
       shipmentSourceDocument:
@@ -107084,6 +108467,7 @@ export const Constants = {
         "Rental Agreement",
         "Project Issue",
         "Project Transfer",
+        "Service Job Consumption",
       ],
       itemLedgerType: [
         "Purchase",
@@ -107181,6 +108565,7 @@ export const Constants = {
         "Project Transfer",
         "Burden",
         "Project Close",
+        "Service Job",
       ],
       journalEntryStatus: [
         "Draft",
@@ -107227,6 +108612,8 @@ export const Constants = {
         "Project Transfer",
         "Burden",
         "Project Close",
+        "Service Job Consumption",
+        "Service Job",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
@@ -107590,6 +108977,11 @@ export const Constants = {
         "Inspection",
         "Demonstration",
       ],
+      returnType: [
+        "Return to Stock",
+        "Return for Service",
+        "Return for Warranty",
+      ],
       revenueScheduleStatus: ["Planned", "Posted"],
       revenueScheduleType: [
         "Deferral",
@@ -107666,11 +109058,32 @@ export const Constants = {
         "Reject",
         "Request Approval",
       ],
-      salesReturnOrderStatus: ["Draft", "To Receive", "Completed", "Cancelled"],
+      salesReturnOrderStatus: [
+        "Draft",
+        "To Receive",
+        "In Progress",
+        "Completed",
+        "Cancelled",
+      ],
       salesRfqStatus: ["Draft", "Ready for Quote", "Closed", "Quoted"],
       samplingPlanType: ["All", "First", "Percentage", "AQL"],
       samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],
+      serviceBillingMethod: ["Time and Materials", "Fixed Price"],
+      serviceCoverage: ["Billable", "Warranty", "Contract"],
+      serviceEstimateStatus: ["Draft", "Sent", "Accepted", "Declined"],
+      serviceJobItemLineType: ["Part", "Charge"],
+      serviceJobPriority: ["Low", "Medium", "High", "Critical"],
+      serviceJobStatus: [
+        "Open",
+        "Awaiting Approval",
+        "In Progress",
+        "On Hold",
+        "Completed",
+        "Invoiced",
+        "Cancelled",
+      ],
       serviceType: ["Internal", "External"],
+      serviceWorkSite: ["Depot", "Customer Site"],
       shelfLifeMode: ["Fixed Duration", "Calculated", "Set on Receipt"],
       shelfLifeTriggerTiming: ["Before", "After"],
       shipmentSourceDocument: [

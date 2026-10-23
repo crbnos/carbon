@@ -111,6 +111,7 @@ export const ROLE_NAMES = {
   maintenanceAccount: "Maintenance Expense",
   projectExpenseAccount: "Project Expense",
   warrantyExpenseAccount: "Warranty Expense",
+  costOfServiceAccount: "Cost of Service",
   assetDepreciationExpenseAccount: "Depreciation Expense",
   assetGainOnDisposalAccount: "Gain on Disposal",
   assetLossOnDisposalAccount: "Loss on Disposal",

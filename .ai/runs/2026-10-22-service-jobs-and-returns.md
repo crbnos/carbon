@@ -19,6 +19,8 @@
 - 2026-10-23: Tasks 4–6 committed as `3a7c43341d`. Migrations `20261023065359_remove-service-order-rls` and `20261023065804_remove-service-orders`, applied to the kelowna-port database. `loadSerialBuildNodes` no longer reads `customerAssetComponent`.
   - Checks: the scoped typecheck passes (9 tasks). `src/authz` passes 35/35. `db:check:datasets` and `db:check:backups` pass. `test/database/`: 944 tests, 3 failures. Two were parallel deadlocks that pass on a rerun. `method-import-guards.test.ts` › "refuses a Draft an editor activates while the import waits for it" fails every time ("The import never waited for the row lock"). It touches no table this run changed. Flagged for Brad.
 - 2026-10-23: Task 7 committed: the old spec is archived and the old rule, AGENTS file and service-orders reference page are deleted. Service-order sentences are removed from 9 rules, 2 module AGENTS files and 7 docs pages.
+- 2026-10-23: Tasks 8–11 committed. Migrations `20261023070940_service-job-enum-values`, `20261023071039_service-jobs` and `20261023071226_service-jobs-rls`. The SJ sequence exists for all 34 local companies. Each new table has 4 policies.
+  - Checks: typecheck erp, database, api, ee, mes, jobs and documents pass. Database tests pass (121), and so do the ee accounting core tests (372). `db:check:datasets` and `db:check:backups` pass. `check:manifest`: digest current.
 
 ## Decisions made without Brad
 
@@ -31,6 +33,9 @@
 | 3 | The validator's "tracked item return line must be Repair" check now applies only to Completed returns | The satellite "bus-repair" line is a serial-tracked unit and is no longer Repair. Receipts are seeded only for Completed returns. |
 | 5 | The migration sets `projectId` to NULL on `itemLedger`, `costLedger`, `pickingListLine` and `inventoryCountLine` rows of a Service project, instead of deleting them | Deleting would change stock history. The local database had none. A database with jobs or PO, charge or invoice lines on a Service project's elements stops the migration with an error. |
 | 5 | `openProjectMaterialLines` uses `CREATE OR REPLACE VIEW`, not drop and recreate | Nothing depends on the view, and its columns are unchanged. `clobbers` passes. |
+| 10 | The dataset validator excludes the new RMA status 'In Progress' until Task 27 seeds one | Every enum value must be exhibited by a dataset, and none had an In Progress RMA. Task 27's step 4 now removes the exclusion. |
+| 10 | 'Service Job' added to `journalEntrySourceTypes`, `Icons.tsx`, the RMA status badge (yellow) and the ee `POSTING_POLICY` (off by default, like every new journal type) | The new enum values broke exhaustive maps in the ERP typecheck. |
+| 9 | Composite foreign keys with `ON DELETE SET NULL ("col")` for `customerAsset`, `salesReturnOrderLine`, `reimbursementLine` | Copies the existing `memo` and `reimbursementLine` pattern for composite-key tables. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

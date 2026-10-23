@@ -209,7 +209,12 @@ export const COVERAGE = {
     missing: matrix("sales status matrix", "salesInvoice with status")
   },
   salesReturn: {
-    values: enumValues("salesReturnOrderStatus", { Cancelled: OPTIONAL }),
+    values: enumValues("salesReturnOrderStatus", {
+      Cancelled: OPTIONAL,
+      // Remove when the datasets seed service jobs (service jobs plan, Task 27).
+      "In Progress":
+        "needs a received Service or Warranty line with an open service job, which the datasets do not seed yet"
+    }),
     missing: matrix("sales status matrix", "salesReturn with status")
   },
   arAgingBucket: {
