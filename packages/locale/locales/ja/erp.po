@@ -311,7 +311,7 @@ msgstr "{0}件の認識対象明細 · {amount}"
 
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
-msgstr ""
+msgstr "{0}は{finish}に完了する"
 
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
@@ -417,7 +417,7 @@ msgstr "{0} / {1} {2} を発行しました"
 #. placeholder {0}: formatQuantity(job.quantityComplete)
 #. placeholder {1}: formatQuantity(job.quantity)
 msgid "{0} of {1} complete"
-msgstr ""
+msgstr "{0}/{1}完了"
 
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
@@ -527,7 +527,7 @@ msgstr "{0}個の未サンプリングエンティティが利用可能にリリ
 
 #. placeholder {0}: formatQuantity(quantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0}個"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -653,7 +653,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
 msgid "{complete} of {quantity}"
-msgstr ""
+msgstr "{complete}/{quantity}個"
 
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
@@ -770,10 +770,10 @@ msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# 変更} other {# 変更}}"
 
 msgid "{jobId} finishes after {elementName}'s target date"
-msgstr ""
+msgstr "{jobId}は{elementName}の目標日付より後に完了する"
 
 msgid "{jobId} is complete. Is {name} done?"
-msgstr ""
+msgstr "{jobId}は完了しました。{name}は完了ですか？"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に保管ユニットがない材料があります} other {#個のオープン製造指図に保管ユニットがない材料があります}}"
@@ -901,7 +901,7 @@ msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
-msgstr ""
+msgstr "{remaining, plural, one {{jobId}は完了しました。#個が納品されていません} other {{jobId}は完了しました。#個が納品されていません}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
@@ -5238,7 +5238,7 @@ msgid "Bugs and changes"
 msgstr "バグと変更"
 
 msgid "Build"
-msgstr ""
+msgstr "製造"
 
 msgid "Build any net-new integrations or customizations"
 msgstr "新規の連携またはカスタマイズを構築"
@@ -9232,7 +9232,7 @@ msgstr "配送日"
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "配信は新しいシークレットで直ちに署名されます。エンドポイントを更新してください。"
 msgid "Deliveries"
-msgstr ""
+msgstr "納品"
 
 msgid "Delivery Date"
 msgstr "納期"
@@ -11151,7 +11151,7 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
 
 msgid "Every job of {name} is complete. Is it done?"
-msgstr ""
+msgstr "{name}のすべての製造指図が完了しました。完了ですか？"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "すべての明細は完全に請求済みであり、請求する金額を認識しています。"
@@ -17576,7 +17576,7 @@ msgstr "ここにはまだアイテムの在庫活動がありません。"
 msgid "No job at this location has an open operation."
 msgstr "この拠点の製造指図にはオープン状態の工程がありません。"
 msgid "No job builds this line yet."
-msgstr ""
+msgstr "この明細を製造する製造指図がまだありません。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "この拠点ではまだ製造指図がスケジュール化されていません — 製造指図をリリースして作業区負荷を確認してください。"
@@ -18320,7 +18320,7 @@ msgid "Nothing completed in MES yet"
 msgstr "MESでまだ何も完了していません"
 
 msgid "Nothing delivered yet."
-msgstr ""
+msgstr "まだ何も納品されていません。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
@@ -27118,7 +27118,7 @@ msgid "The job's cost goes to the project when it completes, instead of into sto
 msgstr "製造指図が完了したとき、原価がプロジェクトに計上され、在庫に入らない"
 
 msgid "The job's cost reports to this task"
-msgstr ""
+msgstr "この製造指図の原価はこのタスクに配分される。"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "製造指図の出力は未割り当て在庫ではなくプロジェクト在庫に入ります"
@@ -27827,7 +27827,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "購入、在庫、販売する単位"
 
 msgid "The units to deliver"
-msgstr ""
+msgstr "配送予定の個"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "<0>{name}</0>のアップロードが{stopped}%で停止しました。同じファイルを再度ドロップして続行してください。"

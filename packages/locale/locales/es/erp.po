@@ -311,7 +311,7 @@ msgstr "{0} asientos a reconocer · {amount}"
 
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
-msgstr ""
+msgstr "{0} termina en {finish}"
 
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
@@ -417,7 +417,7 @@ msgstr "{0} de {1} {2} emitido"
 #. placeholder {0}: formatQuantity(job.quantityComplete)
 #. placeholder {1}: formatQuantity(job.quantity)
 msgid "{0} of {1} complete"
-msgstr ""
+msgstr "{0} de {1} completado"
 
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
@@ -527,7 +527,7 @@ msgstr "{0} entidades no muestreadas serán liberadas a Disponible. Los pases mu
 
 #. placeholder {0}: formatQuantity(quantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0} unidades"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -653,7 +653,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. Considere apuntar esta pieza directamente al sucesor final."
 
 msgid "{complete} of {quantity}"
-msgstr ""
+msgstr "{complete} de {quantity}"
 
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
@@ -770,10 +770,10 @@ msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# cambio} other {# cambios}}"
 
 msgid "{jobId} finishes after {elementName}'s target date"
-msgstr ""
+msgstr "{jobId} termina después de la fecha objetivo de {elementName}"
 
 msgid "{jobId} is complete. Is {name} done?"
-msgstr ""
+msgstr "{jobId} está completado. ¿{name} está hecho?"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# orden de trabajo abierta tiene materiales sin unidad de almacenamiento} other {# órdenes de trabajo abiertas tienen materiales sin unidad de almacenamiento}}"
@@ -901,7 +901,7 @@ msgid "{ref} not found"
 msgstr "{ref} no encontrado"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
-msgstr ""
+msgstr "{remaining, plural, one {{jobId} está completado. # unidad no está entregada} other {{jobId} está completado. # unidades no están entregadas}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
@@ -5238,7 +5238,7 @@ msgid "Bugs and changes"
 msgstr "Errores y cambios"
 
 msgid "Build"
-msgstr ""
+msgstr "Fabricar"
 
 msgid "Build any net-new integrations or customizations"
 msgstr "Crear cualquier integración nueva o personalización"
@@ -9232,7 +9232,7 @@ msgstr "Entregado el"
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "Las entregas se firman con el nuevo secreto inmediatamente. Actualiza tu punto final con él."
 msgid "Deliveries"
-msgstr ""
+msgstr "Entregas"
 
 msgid "Delivery Date"
 msgstr "Fecha de Entrega"
@@ -11151,7 +11151,7 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Todas las pruebas dentro del alcance se aprueban en su sistema configurado, con sus datos."
 
 msgid "Every job of {name} is complete. Is it done?"
-msgstr ""
+msgstr "Todas las órdenes de trabajo de {name} están completas. ¿Está hecho?"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Cada línea está completamente facturada y reconoce lo que factura."
@@ -17576,7 +17576,7 @@ msgstr "Aún no hay actividad de inventario de artículos aquí."
 msgid "No job at this location has an open operation."
 msgstr "Ninguna orden de trabajo en esta ubicación tiene una operación abierta."
 msgid "No job builds this line yet."
-msgstr ""
+msgstr "Ninguna orden de trabajo fabrica esta línea aún."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "No hay órdenes de trabajo programadas en esta ubicación aún — libera una orden de trabajo para ver la carga del centro de trabajo."
@@ -18320,7 +18320,7 @@ msgid "Nothing completed in MES yet"
 msgstr "Aún no se ha completado nada en MES"
 
 msgid "Nothing delivered yet."
-msgstr ""
+msgstr "Nada entregado aún."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nada más en esta ubicación tiene stock para extraer."
@@ -27118,7 +27118,7 @@ msgid "The job's cost goes to the project when it completes, instead of into sto
 msgstr "El costo de la orden de trabajo va al proyecto cuando se completa, en lugar de a las existencias"
 
 msgid "The job's cost reports to this task"
-msgstr ""
+msgstr "El costo de esta orden de trabajo se asigna a esta tarea."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "La salida del orden de trabajo entra en las existencias del proyecto en lugar de existencias no asignadas"
@@ -27827,7 +27827,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Las unidades de medida en las que compras, almacenas y vendes"
 
 msgid "The units to deliver"
-msgstr ""
+msgstr "Las unidades a entregar"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "La subida de <0>{name}</0> se detuvo en {stopped}%. Suelta el mismo archivo nuevamente para continuar."

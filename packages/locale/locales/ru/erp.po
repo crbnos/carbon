@@ -311,7 +311,7 @@ msgstr "{0} записей к признанию · {amount}"
 
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
-msgstr ""
+msgstr "{0} завершается {finish}"
 
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
@@ -417,7 +417,7 @@ msgstr "{0} из {1} {2} отпущено"
 #. placeholder {0}: formatQuantity(job.quantityComplete)
 #. placeholder {1}: formatQuantity(job.quantity)
 msgid "{0} of {1} complete"
-msgstr ""
+msgstr "{0} из {1} завершено"
 
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
@@ -527,7 +527,7 @@ msgstr "{0} необследованные единицы будут перев�
 
 #. placeholder {0}: formatQuantity(quantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0} единиц"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -653,7 +653,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
 msgid "{complete} of {quantity}"
-msgstr ""
+msgstr "{complete} из {quantity}"
 
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
@@ -770,10 +770,10 @@ msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# изменение} few {# изменения} other {# изменений}}"
 
 msgid "{jobId} finishes after {elementName}'s target date"
-msgstr ""
+msgstr "{jobId} завершается после целевой даты {elementName}"
 
 msgid "{jobId} is complete. Is {name} done?"
-msgstr ""
+msgstr "{jobId} завершен. {name} готово?"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# открытый производственный заказ имеет материалы без единицы хранения} other {# открытых производственных заказов имеют материалы без единиц хранения}}"
@@ -901,7 +901,7 @@ msgid "{ref} not found"
 msgstr "{ref} не найден"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
-msgstr ""
+msgstr "{remaining, plural, one {{jobId} завершен. # единица не доставлена} other {{jobId} завершен. # единиц не доставлено}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
@@ -5238,7 +5238,7 @@ msgid "Bugs and changes"
 msgstr "Ошибки и изменения"
 
 msgid "Build"
-msgstr ""
+msgstr "Производство"
 
 msgid "Build any net-new integrations or customizations"
 msgstr "Создайте любые новые интеграции или настройки"
@@ -9232,7 +9232,7 @@ msgstr "Доставлено"
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "Доставки подписаны новым секретом сразу же. Обновите конечную точку этим секретом."
 msgid "Deliveries"
-msgstr ""
+msgstr "Поставки"
 
 msgid "Delivery Date"
 msgstr "Дата поставки"
@@ -11151,7 +11151,7 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Все тесты в области действия проходят в вашей настроенной системе с вашими данными."
 
 msgid "Every job of {name} is complete. Is it done?"
-msgstr ""
+msgstr "Все производственные заказы {name} завершены. Готово?"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "По каждой строке полностью выставлена счет-фактура и полностью признана выручка."
@@ -17576,7 +17576,7 @@ msgstr "Здесь еще нет активности с товарами."
 msgid "No job at this location has an open operation."
 msgstr "Ни один производственный заказ на этой площадке не имеет открытой операции."
 msgid "No job builds this line yet."
-msgstr ""
+msgstr "Никакой производственный заказ еще не производит эту строку."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "На этой площадке еще не запланированы производственные заказы — запустите производственный заказ в работу, чтобы увидеть нагрузку на рабочий центр."
@@ -18320,7 +18320,7 @@ msgid "Nothing completed in MES yet"
 msgstr "В MES пока ничего не завершено"
 
 msgid "Nothing delivered yet."
-msgstr ""
+msgstr "Ничего не доставлено."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
@@ -27118,7 +27118,7 @@ msgid "The job's cost goes to the project when it completes, instead of into sto
 msgstr "Себестоимость производственного заказа переходит в проект при его завершении вместо поступления на запас"
 
 msgid "The job's cost reports to this task"
-msgstr ""
+msgstr "Себестоимость производственного заказа относится к этой задаче."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "Результат производственного заказа поступает в запас проекта вместо неназначенного запаса"
@@ -27827,7 +27827,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "Единицы измерения, в которых вы покупаете, храните и продаете"
 
 msgid "The units to deliver"
-msgstr ""
+msgstr "Единицы для доставки"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "Загрузка <0>{name}</0> остановлена на {stopped}%. Перетащите тот же файл снова, чтобы продолжить."

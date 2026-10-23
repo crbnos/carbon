@@ -311,7 +311,7 @@ msgstr "{0} 项待确认分录 · {amount}"
 
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
-msgstr ""
+msgstr "{0} 于 {finish} 完成"
 
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
@@ -417,7 +417,7 @@ msgstr "已发放 {0} / {1} {2}"
 #. placeholder {0}: formatQuantity(job.quantityComplete)
 #. placeholder {1}: formatQuantity(job.quantity)
 msgid "{0} of {1} complete"
-msgstr ""
+msgstr "{0} / {1} 已完成"
 
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
@@ -527,7 +527,7 @@ msgstr "{0}个未采样的实体将转为可用。已采样的合格品保持可
 
 #. placeholder {0}: formatQuantity(quantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0} 件"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -653,7 +653,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
 msgid "{complete} of {quantity}"
-msgstr ""
+msgstr "{complete} / {quantity} 已完成"
 
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
@@ -770,10 +770,10 @@ msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# 更改} other {# 更改}}"
 
 msgid "{jobId} finishes after {elementName}'s target date"
-msgstr ""
+msgstr "{jobId} 在 {elementName} 的目标日期后完成"
 
 msgid "{jobId} is complete. Is {name} done?"
-msgstr ""
+msgstr "{jobId} 已完成。{name} 完成了吗？"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有存储单元} other {# 个未结工单的物料没有存储单元}}"
@@ -901,7 +901,7 @@ msgid "{ref} not found"
 msgstr "未找到 {ref}"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
-msgstr ""
+msgstr "{remaining, plural, one {{jobId} 已完成。# 件未交付} other {{jobId} 已完成。# 件未交付}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
@@ -5238,7 +5238,7 @@ msgid "Bugs and changes"
 msgstr "错误和更改"
 
 msgid "Build"
-msgstr ""
+msgstr "生产"
 
 msgid "Build any net-new integrations or customizations"
 msgstr "构建任何全新的集成或自定义"
@@ -9232,7 +9232,7 @@ msgstr "交付于"
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "投递将立即使用新密钥进行签名。请使用此密钥配置您的端点。"
 msgid "Deliveries"
-msgstr ""
+msgstr "交付"
 
 msgid "Delivery Date"
 msgstr "交货日期"
@@ -11151,7 +11151,7 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
 
 msgid "Every job of {name} is complete. Is it done?"
-msgstr ""
+msgstr "{name} 的所有工单都已完成。完成了吗？"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "每行都完全开票并确认其计费内容"
@@ -17576,7 +17576,7 @@ msgstr "此处尚无物料库存活动。"
 msgid "No job at this location has an open operation."
 msgstr "此地点没有工单有未结工序。"
 msgid "No job builds this line yet."
-msgstr ""
+msgstr "还没有工单生产此行。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "此地点还没有排程工单——下达工单以查看工作中心负荷。"
@@ -18320,7 +18320,7 @@ msgid "Nothing completed in MES yet"
 msgstr "MES中尚未完成任何内容"
 
 msgid "Nothing delivered yet."
-msgstr ""
+msgstr "尚未交付。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
@@ -27118,7 +27118,7 @@ msgid "The job's cost goes to the project when it completes, instead of into sto
 msgstr "工单完成时，其成本进入项目而不是库存"
 
 msgid "The job's cost reports to this task"
-msgstr ""
+msgstr "此工单的成本计入此任务。"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "工作的输出进入项目的库存而不是未分配的库存"
@@ -27827,7 +27827,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "您购买、库存和销售的计量单位"
 
 msgid "The units to deliver"
-msgstr ""
+msgstr "待交付的件"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "上传<0>{name}</0>在{stopped}%处停止。拖放同一文件以继续。"

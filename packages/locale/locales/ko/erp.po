@@ -311,7 +311,7 @@ msgstr "{0}개의 인식할 항목 · {amount}"
 
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
-msgstr ""
+msgstr "{0}는 {finish}에 완료됨"
 
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
@@ -417,7 +417,7 @@ msgstr "{0}/{1} {2} 발급됨"
 #. placeholder {0}: formatQuantity(job.quantityComplete)
 #. placeholder {1}: formatQuantity(job.quantity)
 msgid "{0} of {1} complete"
-msgstr ""
+msgstr "{0}/{1} 완료됨"
 
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
@@ -527,7 +527,7 @@ msgstr "{0}개의 미검사 항목이 가용으로 릴리스됩니다. 검사 �
 
 #. placeholder {0}: formatQuantity(quantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0}개"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -653,7 +653,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
 msgid "{complete} of {quantity}"
-msgstr ""
+msgstr "{complete}개/{quantity}개"
 
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
@@ -770,10 +770,10 @@ msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# 변경} other {# 변경}}"
 
 msgid "{jobId} finishes after {elementName}'s target date"
-msgstr ""
+msgstr "{jobId}는 {elementName}의 목표 날짜 이후에 완료됨"
 
 msgid "{jobId} is complete. Is {name} done?"
-msgstr ""
+msgstr "{jobId}는 완료 처리되었습니다. {name}은(는) 완료되었습니까?"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
@@ -901,7 +901,7 @@ msgid "{ref} not found"
 msgstr "{ref} 찾을 수 없음"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
-msgstr ""
+msgstr "{remaining, plural, one {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음} other {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
@@ -5238,7 +5238,7 @@ msgid "Bugs and changes"
 msgstr "버그와 변경 사항"
 
 msgid "Build"
-msgstr ""
+msgstr "생산"
 
 msgid "Build any net-new integrations or customizations"
 msgstr "완전히 새로운 연동이나 커스터마이징 구축"
@@ -9232,7 +9232,7 @@ msgstr "배송일"
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "전달이 즉시 새 비밀키로 서명됩니다. 엔드포인트를 업데이트하세요."
 msgid "Deliveries"
-msgstr ""
+msgstr "배송"
 
 msgid "Delivery Date"
 msgstr "납기일"
@@ -11151,7 +11151,7 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테스트를 통과합니다."
 
 msgid "Every job of {name} is complete. Is it done?"
-msgstr ""
+msgstr "{name}의 모든 작업 지시가 완료 처리되었습니다. 완료되었습니까?"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "모든 라인이 완전히 송장 발행되었으며 청구한 것을 인식합니다."
@@ -17576,7 +17576,7 @@ msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 msgid "No job at this location has an open operation."
 msgstr "이 사업장에는 미결 공정이 있는 작업 지시가 없습니다."
 msgid "No job builds this line yet."
-msgstr ""
+msgstr "아직 이 라인을 생산하는 작업 지시가 없습니다."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "아직 이 사업장에 스케줄된 작업 지시가 없습니다 — 작업 지시를 릴리스하여 작업장 부하를 확인하세요."
@@ -18320,7 +18320,7 @@ msgid "Nothing completed in MES yet"
 msgstr "MES에서 아직 완료된 항목이 없습니다"
 
 msgid "Nothing delivered yet."
-msgstr ""
+msgstr "아직 배송된 항목이 없습니다."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
@@ -27118,7 +27118,7 @@ msgid "The job's cost goes to the project when it completes, instead of into sto
 msgstr "작업 지시가 완료될 때 원가가 재고로 들어가지 않고 프로젝트로 이동합니다."
 
 msgid "The job's cost reports to this task"
-msgstr ""
+msgstr "작업 지시의 원가는 이 작업에 계상됩니다."
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "작업 지시의 출력이 미할당 재고 대신 프로젝트의 재고에 들어갑니다"
@@ -27827,7 +27827,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "구매, 재고, 판매 시 사용하는 측정 단위"
 
 msgid "The units to deliver"
-msgstr ""
+msgstr "배송 개수"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "파일 <0>{name}</0>의 업로드가 {stopped}%에서 중지되었습니다. 계속하려면 같은 파일을 다시 드롭하세요."

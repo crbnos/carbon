@@ -311,7 +311,7 @@ msgstr "{0} प्रविष्टियों को पहचानने �
 
 #. placeholder {0}: job.jobId
 msgid "{0} finishes {finish}"
-msgstr ""
+msgstr "{0} {finish} को समाप्त होता है"
 
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
@@ -417,7 +417,7 @@ msgstr "{0} में से {1} {2} जारी किया गया"
 #. placeholder {0}: formatQuantity(job.quantityComplete)
 #. placeholder {1}: formatQuantity(job.quantity)
 msgid "{0} of {1} complete"
-msgstr ""
+msgstr "{1} में से {0} पूर्ण"
 
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
@@ -527,7 +527,7 @@ msgstr "{0} नमूना न किए गए इकाइयों को �
 
 #. placeholder {0}: formatQuantity(quantity)
 msgid "{0} units"
-msgstr ""
+msgstr "{0} इकाई"
 
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
@@ -653,7 +653,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
 msgid "{complete} of {quantity}"
-msgstr ""
+msgstr "{quantity} में से {complete}"
 
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
@@ -770,10 +770,10 @@ msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# परिवर्तन} other {# परिवर्तन}}"
 
 msgid "{jobId} finishes after {elementName}'s target date"
-msgstr ""
+msgstr "{jobId} {elementName} की लक्ष्य तारीख के बाद समाप्त होता है"
 
 msgid "{jobId} is complete. Is {name} done?"
-msgstr ""
+msgstr "{jobId} पूर्ण है। क्या {name} हो गया है?"
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
@@ -901,7 +901,7 @@ msgid "{ref} not found"
 msgstr "{ref} नहीं मिला"
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
-msgstr ""
+msgstr "{remaining, plural, one {{jobId} पूर्ण है। # इकाई वितरित नहीं की गई है} other {{jobId} पूर्ण है। # इकाइयां वितरित नहीं की गई हैं}}"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -5238,7 +5238,7 @@ msgid "Bugs and changes"
 msgstr "बग और परिवर्तन"
 
 msgid "Build"
-msgstr ""
+msgstr "निर्माण"
 
 msgid "Build any net-new integrations or customizations"
 msgstr "कोई भी नया एकीकरण या अनुकूलन बनाएँ"
@@ -9232,7 +9232,7 @@ msgstr "को डिलीवर किया गया"
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "डिलीवरीज़ नए रहस्य के साथ तुरंत हस्ताक्षरित की जाती हैं। अपना एंडपॉइंट इससे अपडेट करें।"
 msgid "Deliveries"
-msgstr ""
+msgstr "डिलीवरी"
 
 msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
@@ -11151,7 +11151,7 @@ msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
 
 msgid "Every job of {name} is complete. Is it done?"
-msgstr ""
+msgstr "{name} का हर जॉब पूर्ण है। क्या यह हो गया है?"
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "प्रत्येक पंक्ति पूरी तरह से चालान किया गया है और जो बिल करती है उसे स्वीकार करती है।"
@@ -17576,7 +17576,7 @@ msgstr "अभी तक यहाँ कोई आइटम इन्वें�
 msgid "No job at this location has an open operation."
 msgstr "इस स्थान पर कोई जॉब खुला ऑपरेशन नहीं है।"
 msgid "No job builds this line yet."
-msgstr ""
+msgstr "अभी तक कोई जॉब इस पंक्ति को नहीं बनाता।"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "इस स्थान पर अभी तक कोई जॉब शेड्यूल नहीं किया गया है — वर्क-सेंटर लोड देखने के लिए एक जॉब जारी करें।"
@@ -18320,7 +18320,7 @@ msgid "Nothing completed in MES yet"
 msgstr "MES में अभी तक कुछ भी पूर्ण नहीं हुआ"
 
 msgid "Nothing delivered yet."
-msgstr ""
+msgstr "अभी तक कुछ भी वितरित नहीं हुआ है।"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
@@ -27118,7 +27118,7 @@ msgid "The job's cost goes to the project when it completes, instead of into sto
 msgstr "जॉब की लागत पूरा होने पर परियोजना को जाती है, स्टॉक में जाने की बजाय"
 
 msgid "The job's cost reports to this task"
-msgstr ""
+msgstr "जॉब की लागत इस कार्य को रिपोर्ट करती है।"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "जॉब का आउटपुट प्रोजेक्ट के स्टॉक में प्रवेश करता है बजाय अनुदेशित स्टॉक के"
@@ -27827,7 +27827,7 @@ msgid "The units of measure you buy, stock, and sell in"
 msgstr "आप जो इकाइयाँ खरीदते, स्टॉक करते और बेचते हैं"
 
 msgid "The units to deliver"
-msgstr ""
+msgstr "डिलीवर की जाने वाली इकाई"
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "<0>{name}</0> का अपलोड {stopped}% पर रुक गया। जारी रखने के लिए एक ही फ़ाइल को फिर से ड्रॉप करें।"
