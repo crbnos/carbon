@@ -24,7 +24,7 @@ import {
   isApprovalRequired,
   rejectRequest
 } from "@carbon/ee/approvals.server";
-import { storage } from "@carbon/files";
+import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -67,7 +67,6 @@ import {
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
-import { stripSpecialCharacters } from "~/utils/string";
 import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
@@ -744,7 +743,12 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     const interactionId = quote.data.supplierInteractionId;
     const attachments = [
       ...(interactionId
-        ? await service.interactionAttachments(client, companyId, interactionId)
+        ? await service.interactionAttachments(
+            client,
+            companyId,
+            interactionId,
+            { withoutPurchaseOrderPdfs: true }
+          )
         : []),
       ...(await service.getSupplierInteractionLineAttachments(
         client,
@@ -2472,11 +2476,15 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
             ]
           });
           const attachments = [
+            ...(await service.signedAttachments(system, companyId, [
+              { filename: pdf.fileName, path: pdf.path }
+            ])),
             ...(interactionId
               ? await service.interactionAttachments(
                   system,
                   companyId,
-                  interactionId
+                  interactionId,
+                  { withoutPurchaseOrderPdfs: true }
                 )
               : []),
             ...(await service.signedAttachments(
@@ -2697,10 +2705,9 @@ export const confirmReturnOrder = defineServiceFn({
         purchaseReturnOrderId,
         locale: locale ?? "en-US"
       });
-      const fileName = stripSpecialCharacters(
-        `${order.data.purchaseReturnOrderId ?? ""} - ${datetime
-          .timestamp()
-          .slice(0, -5)}.pdf`
+      const fileName = storedDocumentPdfName(
+        order.data.purchaseReturnOrderId ?? "",
+        datetime.timestamp()
       );
       const path = `${companyId}/purchase-return-order/${purchaseReturnOrderId}/${fileName}`;
       const upload = await storage(system)

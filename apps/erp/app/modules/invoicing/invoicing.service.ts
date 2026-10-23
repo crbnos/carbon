@@ -82,7 +82,7 @@ import {
   evaluateSalesRuleLines,
   isBlocked
 } from "@carbon/ee/rules.server";
-import { storage } from "@carbon/files";
+import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import {
   loadSalesInvoiceDocument,
@@ -212,7 +212,6 @@ import {
 import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -5237,8 +5236,9 @@ export async function sendPostedSalesInvoice(
       storageUrl: SUPABASE_URL ?? ""
     });
     const file = await renderSalesInvoicePdf(document.pdfProps);
-    const fileName = stripSpecialCharacters(
-      `${salesInvoice.data.invoiceId} - ${datetime.timestamp().slice(0, -5)}.pdf`
+    const fileName = storedDocumentPdfName(
+      salesInvoice.data.invoiceId ?? "",
+      datetime.timestamp()
     );
     const { opportunityId } = salesInvoice.data;
     const path = `${companyId}/${opportunityId ? `opportunity/${opportunityId}` : `sales-invoice/${invoiceId}`}/${fileName}`;

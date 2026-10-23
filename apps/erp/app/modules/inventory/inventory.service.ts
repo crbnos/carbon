@@ -84,7 +84,7 @@ import {
 } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
-import { storage } from "@carbon/files";
+import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
@@ -192,7 +192,6 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { ruleError, sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 import { rescheduleJob } from "../production/production.service";
@@ -5147,8 +5146,9 @@ export async function savePackingSlip(
     if (pdf.headers.get("content-type") !== "application/pdf") return;
 
     const file = await pdf.arrayBuffer();
-    const fileName = stripSpecialCharacters(
-      `${shipment.data.shipmentId} - ${datetime.timestamp().slice(0, -5)}.pdf`
+    const fileName = storedDocumentPdfName(
+      shipment.data.shipmentId,
+      datetime.timestamp()
     );
     const documentFilePath = `${companyId}/opportunity/${salesOrder.data.opportunityId}/${fileName}`;
     const upload = await storage(serviceRole)
