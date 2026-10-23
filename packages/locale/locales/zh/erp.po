@@ -10010,6 +10010,9 @@ msgstr "每个为此行提供资金的合同修改（按 ACRN）。"
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "每个最终资产都在此\"在建工程\"类别中建立"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "每项都从变更日期起作为定期行添加，并在表格中定价。"
 
@@ -17705,6 +17708,9 @@ msgstr "此地点没有销售订单相关的未结工单。"
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "没有在 Carbon 记录成本之前已产生成本的未结工单"
+
+msgid "No open lines. Add a line to amend."
+msgstr ""
 
 msgid "No open lines. Add a service to amend."
 msgstr "没有未结行。添加服务以进行修改。"

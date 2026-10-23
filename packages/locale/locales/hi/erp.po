@@ -10010,6 +10010,9 @@ msgstr "प्रत्येक अनुबंध संशोधन जो �
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "प्रत्येक अंतिम संपत्ति इस निर्माणाधीन कक्षा में बनाई जाती है"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "प्रत्येक को परिवर्तन तिथि से एक आवर्ती पंक्ति के रूप में जोड़ा जाता है, जिसकी कीमत ग्रिड में तय की जाती है।"
 
@@ -17705,6 +17708,9 @@ msgstr "इस स्थान पर विक्रय आदेशों क�
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "Carbon के लागत दर्ज करने से पहले की लागत वाला कोई खुला जॉब नहीं"
+
+msgid "No open lines. Add a line to amend."
+msgstr ""
 
 msgid "No open lines. Add a service to amend."
 msgstr "कोई खुली पंक्ति नहीं। संशोधन के लिए एक सेवा जोड़ें।"

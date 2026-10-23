@@ -10010,6 +10010,9 @@ msgstr "이 라인에 자금을 제공하는 각 계약 수정사항(ACRN별)"
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "각 최종 자산은 이 건설 중(CIP) 분류에서 생성됩니다"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "각 항목은 변경일부터 반복 라인으로 추가되며 그리드에서 가격을 설정합니다."
 
@@ -17705,6 +17708,9 @@ msgstr "이 사업장의 수주 관련 미결 작업 지시가 없습니다."
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "Carbon이 기록하기 전의 원가가 있는 미결 작업 지시가 없습니다."
+
+msgid "No open lines. Add a line to amend."
+msgstr ""
 
 msgid "No open lines. Add a service to amend."
 msgstr "열린 라인이 없습니다. 변경하려면 서비스를 추가하세요."

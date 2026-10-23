@@ -10010,6 +10010,9 @@ msgstr "Каждое изменение контракта, финансирую
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Каждый финальный актив построен в этом классе Construction in Progress"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Каждая добавляется как повторяющаяся строка с даты изменения, цена задаётся в таблице."
 
@@ -17705,6 +17708,9 @@ msgstr "На этой площадке нет открытых производ�
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "Нет открытых производственных заказов с затратами до того, как Carbon начал их записывать"
+
+msgid "No open lines. Add a line to amend."
+msgstr ""
 
 msgid "No open lines. Add a service to amend."
 msgstr "Нет открытых строк. Добавьте услугу, чтобы внести изменение."

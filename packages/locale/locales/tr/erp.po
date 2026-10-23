@@ -10010,6 +10010,9 @@ msgstr "Bu satırı finanse eden her sözleşme değişikliği, ACRN'ye göre."
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Her nihai varlık bu İnşaat Sürüyor sınıfında yapılır"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Her biri değişiklik tarihinden itibaren yinelenen bir satır olarak eklenir ve tabloda fiyatlandırılır."
 
@@ -17705,6 +17708,9 @@ msgstr "Bu lokasyonda satış siparişleri için açık iş emri yok."
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "Carbon'un kaydetmesinden önceki maliyetleri olan açık iş emri yok"
+
+msgid "No open lines. Add a line to amend."
+msgstr ""
 
 msgid "No open lines. Add a service to amend."
 msgstr "Açık satır yok. Değişiklik için bir hizmet ekleyin."

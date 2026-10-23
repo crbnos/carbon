@@ -10010,6 +10010,9 @@ msgstr "Chaque modification de contrat qui finance cette ligne, par ACRN."
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Chaque actif final est construit dans cette classe Construction en cours"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Chacun est ajouté comme ligne récurrente à partir de la date de modification, à tarifer dans la grille."
 
@@ -17705,6 +17708,9 @@ msgstr "Aucune ordre de fabrication ouverte pour les commandes client sur ce sit
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "Aucun ordre de fabrication ouvert avec des coûts antérieurs à leur enregistrement par Carbon"
+
+msgid "No open lines. Add a line to amend."
+msgstr ""
 
 msgid "No open lines. Add a service to amend."
 msgstr "Aucune ligne ouverte. Ajoutez un service pour modifier."

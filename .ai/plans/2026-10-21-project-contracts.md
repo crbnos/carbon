@@ -46,7 +46,7 @@
 - [x] Task 37: Keep the demo datasets valid
 - [x] Task 38: Update the docs, rules and translations, then verify in the browser
 - [x] Task 39: Keep a delivered billing event through an amendment
-- [ ] Task 40: Add parts in the amend modal
+- [x] Task 40: Add parts in the amend modal
 - [ ] Task 41: Link shop time to its production event and job operation
 - [ ] Task 42: Show the job and operation on My Time and the MES timesheet
 - [ ] Task 43: Add New Job on the task

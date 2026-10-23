@@ -10010,6 +10010,9 @@ msgstr "この明細に資金を提供する契約変更書（ACRN 別）。"
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "各最終資産はこの「建設進行中」クラスで構築されます"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr ""
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "それぞれ変更日から定期明細として追加され、グリッドで価格を設定します。"
 
@@ -17705,6 +17708,9 @@ msgstr "この拠点にはオープン受注用製造指図がありません。
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "Carbon が記録する前の原価があるオープン製造指図がありません"
+
+msgid "No open lines. Add a line to amend."
+msgstr ""
 
 msgid "No open lines. Add a service to amend."
 msgstr "未完了の明細はありません。変更するにはサービスを追加してください。"

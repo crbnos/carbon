@@ -10010,6 +10010,9 @@ msgstr "Each contract modification that funds this line, by ACRN."
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Each final asset is built in this Construction in Progress class"
 
+msgid "Each is added as a one-time line from the change date, to be priced in the grid."
+msgstr "Each is added as a one-time line from the change date, to be priced in the grid."
+
 msgid "Each is added as a recurring line from the change date, to be priced in the grid."
 msgstr "Each is added as a recurring line from the change date, to be priced in the grid."
 
@@ -17705,6 +17708,9 @@ msgstr "No open jobs for sales orders at this location."
 
 msgid "No open jobs with costs from before Carbon recorded them"
 msgstr "No open jobs with costs from before Carbon recorded them"
+
+msgid "No open lines. Add a line to amend."
+msgstr "No open lines. Add a line to amend."
 
 msgid "No open lines. Add a service to amend."
 msgstr "No open lines. Add a service to amend."
