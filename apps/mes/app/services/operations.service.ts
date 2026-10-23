@@ -498,7 +498,7 @@ export async function getJobOperationBatchMembers(
   return client
     .from("jobOperation")
     .select(
-      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId)"
+      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId), jobOperationBatch(notes)"
     )
     .in("jobOperationBatchId", batchIds)
     .eq("companyId", companyId);

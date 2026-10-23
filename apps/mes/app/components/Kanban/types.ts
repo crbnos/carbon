@@ -78,6 +78,9 @@ const itemValidator = z.object({
   // The member jobs' readable ids, in collapse order — shown on the collapsed
   // batch card so it names every job in the batch, not just the first member.
   batchJobReadableIds: z.array(z.string()).optional(),
+  // The planner's notes from the batch builder, shown on the collapsed card so
+  // the operator choosing the next run sees there is something to read.
+  batchNotes: z.string().nullable().optional(),
   hasConflict: z.boolean().optional(),
   conflictReason: z.string().optional()
 });

@@ -74,6 +74,7 @@ type BatchTotals = {
   quantity: number;
   targetQuantity: number;
   jobReadableIds: string[];
+  notes: string | null;
 };
 
 function getBatchTotals(
@@ -88,7 +89,10 @@ function getBatchTotals(
       size: 0,
       quantity: 0,
       targetQuantity: 0,
-      jobReadableIds: []
+      jobReadableIds: [],
+      notes: member.jobOperationBatch?.notes?.trim()
+        ? member.jobOperationBatch.notes
+        : null
     };
     total.size += 1;
     total.quantity += member.operationQuantity ?? 0;
@@ -152,6 +156,7 @@ function collapseBatches(
       batchSize: total?.size ?? members.length,
       batchJobReadableIds:
         total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),
+      batchNotes: total?.notes ?? null,
       quantity:
         total?.quantity ??
         members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),

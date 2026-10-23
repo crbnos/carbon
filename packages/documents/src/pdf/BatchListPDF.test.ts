@@ -5,8 +5,9 @@
 import type { ReactElement, ReactNode } from "react";
 import { Children, isValidElement } from "react";
 import { describe, expect, it } from "vitest";
-import { BatchListPDF, breakLongNotesWord } from "./BatchListPDF";
+import { BatchListPDF } from "./BatchListPDF";
 import { SAMPLE_JOB_TRAVELER } from "./jobTraveler.samples";
+import { breakLongNotesWord } from "./notesText";
 
 // Every string the batch list prints, read off its element tree.
 function printedText(notes: string | null | undefined): string[] {

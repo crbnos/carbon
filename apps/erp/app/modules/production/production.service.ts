@@ -2062,7 +2062,7 @@ export async function getJobOperationsList(
 }
 
 const JOB_OPERATION_DETAIL_COLUMNS =
-  "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))" as const;
+  "*, jobOperationBatch(id, readableId, status, notes), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))" as const;
 
 export async function getJobOperationsByMethodId(
   client: SupabaseClient<Database>,

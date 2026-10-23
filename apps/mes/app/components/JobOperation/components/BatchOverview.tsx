@@ -151,20 +151,23 @@ export function BatchOverview({
       return next;
     });
 
-  // The planner's notes from the batch builder: plain text, shown first so the
-  // operator reads them before the steps.
+  // The planner's notes from the batch builder: plain text, shown before the
+  // steps on Instructions, and before the load list on Details, the tab the
+  // batch opens on, so an operator who loads and starts from Details reads them.
   const notes = batch.notes?.trim() ? batch.notes : null;
+  const notesSection = (divider: boolean) =>
+    notes && (
+      <Section divider={divider} title={t`Batch notes`}>
+        <div className="prose dark:prose-invert whitespace-pre-wrap break-words">
+          {notes}
+        </div>
+      </Section>
+    );
 
   if (view === "instructions") {
     return (
       <>
-        {notes && (
-          <Section divider={false} title={t`Batch notes`}>
-            <div className="prose dark:prose-invert whitespace-pre-wrap break-words">
-              {notes}
-            </div>
-          </Section>
-        )}
+        {notesSection(false)}
         {workInstructions && (
           <Suspense fallback={<TableSkeleton />}>
             <Await resolve={workInstructions}>
@@ -470,6 +473,8 @@ export function BatchOverview({
           </Card>
         </div>
       </div>
+
+      {notesSection(true)}
 
       {/* Always shown in batch mode so the operator can see the jobs, parts
           and quantities that belong in the run — a laser nest or an oven load
