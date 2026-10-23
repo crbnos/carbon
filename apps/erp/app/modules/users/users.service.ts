@@ -982,8 +982,17 @@ export async function acceptInvite(
       logger.warn("[invite] audit write skipped for accept", { error: err });
     }
 
+    // The invite is accepted by now: a billing failure must not report it as
+    // not accepted.
     if (CarbonEdition === Edition.Cloud) {
-      await updateSubscriptionQuantityForCompany(companyId);
+      try {
+        await updateSubscriptionQuantityForCompany(companyId);
+      } catch (err) {
+        logger.error("Failed to update seats after invite accept", {
+          error: err,
+          companyId
+        });
+      }
     }
 
     return { data: acceptedInvite, error: null };
