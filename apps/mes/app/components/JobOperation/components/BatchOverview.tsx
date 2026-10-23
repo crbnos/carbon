@@ -157,6 +157,7 @@ export function BatchOverview({
   // steps on Instructions, and before the load list on Details, the tab the
   // batch opens on, so an operator who loads and starts from Details reads them.
   const notes = batch.notes?.trim() ? batch.notes : null;
+  /** The notes as a section of this tab, or nothing when there are none. */
   const notesSection = (divider: boolean) =>
     notes && (
       <Section divider={divider} title={t`Batch notes`}>

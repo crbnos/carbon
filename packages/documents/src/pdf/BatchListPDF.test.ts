@@ -55,16 +55,11 @@ describe("breakLongNotesWord", () => {
     expect(breakLongNotesWord("x".repeat(40))).toEqual(["x".repeat(40)]);
   });
 
-  it("lets a longer word break every 40 characters, at a soft hyphen", () => {
+  it("lets a longer word break every 40 characters", () => {
     const url = `https://example.com/${"a".repeat(80)}`;
     const parts = breakLongNotesWord(url);
-    const pieces = parts.map((part) => part.replace("\u00AD", ""));
-    expect(pieces.join("")).toBe(url);
-    expect(pieces.every((piece) => piece.length <= 40)).toBe(true);
+    expect(parts.join("")).toBe(url);
+    expect(parts.every((part) => part.length <= 40)).toBe(true);
     expect(parts).toHaveLength(3);
-    expect(parts.slice(0, -1).every((part) => part.endsWith("\u00AD"))).toBe(
-      true
-    );
-    expect(parts.at(-1)).not.toContain("\u00AD");
   });
 });
