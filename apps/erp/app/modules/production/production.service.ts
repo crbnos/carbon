@@ -3696,6 +3696,8 @@ export async function insertJob(
     receiveToProjectStock?: boolean;
     /** Projects Phase 3: a job made for a planning group (no project). */
     planningGroupId?: string | null;
+    /** The project contract line (CLIN) whose part the job builds. */
+    customerContractLineId?: string | null;
   },
   options?: {
     skipMethod?: boolean;
@@ -3824,6 +3826,7 @@ export async function insertJob(
       consumeToProject: input.consumeToProject ?? false,
       receiveToProjectStock: input.receiveToProjectStock ?? false,
       planningGroupId: input.planningGroupId ?? null,
+      customerContractLineId: input.customerContractLineId ?? null,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,

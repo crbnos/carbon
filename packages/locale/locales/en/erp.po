@@ -5216,6 +5216,9 @@ msgstr "Buffer stock the demand-based policy holds back to absorb consumption sp
 msgid "Bugs and changes"
 msgstr "Bugs and changes"
 
+msgid "Build"
+msgstr "Build"
+
 msgid "Build any net-new integrations or customizations"
 msgstr "Build any net-new integrations or customizations"
 
@@ -27082,6 +27085,9 @@ msgstr "The job whose operation this outside-processing line covers; the line's 
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "The job's cost goes to the project when it completes, instead of into stock"
+
+msgid "The job's cost reports to this task"
+msgstr "The job's cost reports to this task"
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "The job's output enters the project's stock instead of unassigned stock"

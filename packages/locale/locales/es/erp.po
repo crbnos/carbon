@@ -5216,6 +5216,9 @@ msgstr "Stock amortiguador que la política basada en la demanda mantiene para a
 msgid "Bugs and changes"
 msgstr "Errores y cambios"
 
+msgid "Build"
+msgstr ""
+
 msgid "Build any net-new integrations or customizations"
 msgstr "Crear cualquier integración nueva o personalización"
 
@@ -27082,6 +27085,9 @@ msgstr "El trabajo cuya operación cubre esta línea de procesamiento externo; e
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "El costo de la orden de trabajo va al proyecto cuando se completa, en lugar de a las existencias"
+
+msgid "The job's cost reports to this task"
+msgstr ""
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "La salida del orden de trabajo entra en las existencias del proyecto en lugar de existencias no asignadas"

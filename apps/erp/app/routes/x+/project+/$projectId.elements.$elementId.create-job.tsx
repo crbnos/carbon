@@ -14,7 +14,9 @@ export type CreateJobFromMaterialResult = { error: { message: string } };
 
 /**
  * Create Job: a job for a Make to Order plan-line material, charged to its
- * element (`projects.createJobFromMaterial`). The action redirects to the job.
+ * element (`projects.createJobFromMaterial`). When one part CLIN of a
+ * project contract has the same item and bills this element, the job builds
+ * that CLIN's part. The action redirects to the job.
  */
 export async function action({
   request,

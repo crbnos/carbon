@@ -672,6 +672,8 @@ export const path = {
       generatePath(`${x}/contract/${id}/${lineId}/details`),
     contractLineBilling: (id: string, lineId: string) =>
       generatePath(`${x}/contract/${id}/${lineId}/billing`),
+    contractLineBuild: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/build`),
     contractLineFunding: (id: string, lineId: string) =>
       generatePath(`${x}/contract/${id}/${lineId}/funding`),
     contractLineFundingActions: (id: string, lineId: string) =>

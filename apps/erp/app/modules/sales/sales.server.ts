@@ -40,6 +40,7 @@ import {
 } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { runMRP } from "~/modules/production/production.service";
+import { createProjectJob } from "~/modules/projects/projects.service";
 import {
   deleteIssue,
   getIssueTypesList,
@@ -75,6 +76,7 @@ import {
   contractAmendmentChangeValidator,
   contractDurationOf,
   contractLaborRateValidator,
+  contractLineBuildValidator,
   contractLineFundingValidator,
   customerContractAmendmentValidator,
   customerContractTypes,
@@ -10128,6 +10130,69 @@ export const getContractLine = defineServiceFn({
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Build a part CLIN: a job for the line's part.
+ *
+ * @remarks
+ * The job is charged to the task the user picks under the line's project
+ * and linked to the CLIN (spec section 10.2). It consumes to the project and
+ * gets its own Make to Order plan line on the task, so the user sets nothing
+ * but the task, quantity, due date and location. Only a line that names a
+ * part, on an Active contract.
+ */
+export const buildContractLineJob = defineServiceFn({
+  input: contractLineBuildValidator.extend({
+    customerContractId: z.string(),
+    customerContractLineId: z.string()
+  }),
+  permission: { update: "sales", create: "production" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const [line, contract] = await Promise.all([
+      service.getContractLine(
+        ctx.asCaller.supabase,
+        input.customerContractLineId,
+        companyId
+      ),
+      ctx.asCaller.supabase
+        .from("customerContract")
+        .select("status, billingBasis, projectId")
+        .eq("id", input.customerContractId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (
+      line.error ||
+      !contract.data ||
+      line.data.customerContractId !== input.customerContractId
+    ) {
+      return ctx.error(
+        "notFound",
+        "The line was not found",
+        line.error ?? contract.error
+      );
+    }
+    if (line.data.item?.type !== "Part") {
+      return ctx.error("rule", "Only a line that names a part is built");
+    }
+    if (contract.data.status !== "Active") {
+      return ctx.error("rule", "Confirm the contract before you build");
+    }
+    const projectId = line.data.projectId ?? contract.data.projectId;
+    if (!projectId) return ctx.error("rule", "The line has no project");
+
+    return createProjectJob(ctx, {
+      projectId,
+      elementId: input.elementId,
+      itemId: line.data.itemId,
+      quantity: input.quantity,
+      dueDate: input.dueDate,
+      locationId: input.locationId,
+      customerContractLineId: line.data.id
+    });
   }
 });
 

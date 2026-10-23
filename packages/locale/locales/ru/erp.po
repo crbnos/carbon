@@ -5216,6 +5216,9 @@ msgstr "Страховой запас, который политика на ос
 msgid "Bugs and changes"
 msgstr "Ошибки и изменения"
 
+msgid "Build"
+msgstr ""
+
 msgid "Build any net-new integrations or customizations"
 msgstr "Создайте любые новые интеграции или настройки"
 
@@ -27082,6 +27085,9 @@ msgstr "Работа, операция которой охватывает эт�
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "Себестоимость производственного заказа переходит в проект при его завершении вместо поступления на запас"
+
+msgid "The job's cost reports to this task"
+msgstr ""
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "Результат производственного заказа поступает в запас проекта вместо неназначенного запаса"

@@ -5216,6 +5216,9 @@ msgstr "蓄積期間内で消費スパイクを吸収するために需要ベー
 msgid "Bugs and changes"
 msgstr "バグと変更"
 
+msgid "Build"
+msgstr ""
+
 msgid "Build any net-new integrations or customizations"
 msgstr "新規の連携またはカスタマイズを構築"
 
@@ -27082,6 +27085,9 @@ msgstr "この外部加工明細が対象とする作業。行の受領はこの
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "製造指図が完了したとき、原価がプロジェクトに計上され、在庫に入らない"
+
+msgid "The job's cost reports to this task"
+msgstr ""
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "製造指図の出力は未割り当て在庫ではなくプロジェクト在庫に入ります"

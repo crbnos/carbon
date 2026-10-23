@@ -5216,6 +5216,9 @@ msgstr "누적 기간 내에 소모 스파이크를 흡수하기 위해 수요 �
 msgid "Bugs and changes"
 msgstr "버그와 변경 사항"
 
+msgid "Build"
+msgstr ""
+
 msgid "Build any net-new integrations or customizations"
 msgstr "완전히 새로운 연동이나 커스터마이징 구축"
 
@@ -27082,6 +27085,9 @@ msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "작업 지시가 완료될 때 원가가 재고로 들어가지 않고 프로젝트로 이동합니다."
+
+msgid "The job's cost reports to this task"
+msgstr ""
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "작업 지시의 출력이 미할당 재고 대신 프로젝트의 재고에 들어갑니다"

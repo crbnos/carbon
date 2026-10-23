@@ -5216,6 +5216,9 @@ msgstr "बफर स्टॉक जिसे मांग-आधारित �
 msgid "Bugs and changes"
 msgstr "बग और परिवर्तन"
 
+msgid "Build"
+msgstr ""
+
 msgid "Build any net-new integrations or customizations"
 msgstr "कोई भी नया एकीकरण या अनुकूलन बनाएँ"
 
@@ -27082,6 +27085,9 @@ msgstr "वह काम जिसका संचालन यह बाहर�
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "जॉब की लागत पूरा होने पर परियोजना को जाती है, स्टॉक में जाने की बजाय"
+
+msgid "The job's cost reports to this task"
+msgstr ""
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "जॉब का आउटपुट प्रोजेक्ट के स्टॉक में प्रवेश करता है बजाय अनुदेशित स्टॉक के"

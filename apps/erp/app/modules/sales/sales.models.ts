@@ -2020,6 +2020,17 @@ const contractLineFundingFields = {
 };
 
 /** The funding of one billing line, edited on an Active contract (P9). */
+/** Build on a part CLIN (spec section 10.2): the job's task, quantity, due
+ *  date and location. Every other job setting follows from the CLIN. */
+export const contractLineBuildValidator = z.object({
+  elementId: z.string().min(1, { message: "Task is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be greater than 0" })
+  ),
+  dueDate: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" })
+});
+
 export const contractLineFundingValidator = z.object({
   id: z.string().min(1, { message: "Line is required" }),
   ...contractLineFundingFields

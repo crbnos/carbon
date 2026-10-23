@@ -5216,6 +5216,9 @@ msgstr "Pufferlagerbestand, den die nachfragbasierte Richtlinie während des Ans
 msgid "Bugs and changes"
 msgstr "Fehler und Änderungen"
 
+msgid "Build"
+msgstr ""
+
 msgid "Build any net-new integrations or customizations"
 msgstr "Erstellen Sie neue Integrationen oder Anpassungen"
 
@@ -27082,6 +27085,9 @@ msgstr "Der Auftrag, dessen Operation diese Außenbearbeitungslinie abdeckt; der
 
 msgid "The job's cost goes to the project when it completes, instead of into stock"
 msgstr "Die Kosten des Fertigungsauftrags gehen an das Projekt, wenn er abgeschlossen wird, statt in den Bestand"
+
+msgid "The job's cost reports to this task"
+msgstr ""
 
 msgid "The job's output enters the project's stock instead of unassigned stock"
 msgstr "Die Ausgabe des Fertigungsauftrags wird zum Projektbestand statt zu nicht zugewiesenem Bestand"

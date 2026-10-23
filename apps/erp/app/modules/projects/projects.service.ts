@@ -102,8 +102,12 @@ import {
 import { customAlphabet, nanoid } from "nanoid";
 import { data } from "react-router";
 import { z } from "zod";
-import { getMethodTree } from "~/modules/items/items.service";
+import {
+  getMethodTree,
+  jobCreationRefusal
+} from "~/modules/items/items.service";
 import { claimPlanningActions } from "~/modules/production/planning-action-claims";
+import { insertJob } from "~/modules/production/production.service";
 import {
   allocateJournalLineIds,
   assertCompanyRecords,
@@ -12276,6 +12280,234 @@ export async function getJobChargeTarget(
     WHERE pr."id" = ${args.projectId} AND pr."companyId" = ${args.companyId}
   `.execute(db);
   return result.rows[0] ?? null;
+}
+
+/**
+ * A job for a part, charged to a project element: the one path behind a plan
+ * line's Create Job and a CLIN's Build (spec section 10). An Expense or
+ * Contract project consumes the job; a Capitalize project builds the
+ * element's asset under construction. A prototype job always consumes to the
+ * project, whatever the CLIN's billing method (D30, D33), so the user sets no
+ * flag. With no `materialId` it adds the element's Make to Order plan line
+ * first, which the job then reports to; that refuses on a locked plan. The
+ * job and the plan line cannot share a transaction (`insertJob` writes
+ * through its own client), so a failed job deletes the plan line it added.
+ */
+export async function createProjectJob(
+  ctx: ServiceContext,
+  args: {
+    projectId: string;
+    elementId: string;
+    itemId: string;
+    quantity: number;
+    dueDate?: string | null;
+    locationId: string;
+    /** The plan line the job builds; omitted, a plan line is added. */
+    materialId?: string | null;
+    /** The plan line's unit; the item's when omitted. */
+    unitOfMeasureCode?: string | null;
+    /** The CLIN whose part the job builds. */
+    customerContractLineId?: string | null;
+  }
+): Promise<CarbonError | { jobId: string }> {
+  const { projectId, elementId } = args;
+  const companyId = ctx.company.id;
+  const serviceRole = ctx.asSystem.supabase;
+  const db = ctx.asSystem.pg;
+
+  const item = await serviceRole
+    .from("item")
+    .select("id, unitOfMeasureCode")
+    .eq("id", args.itemId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (item.error || !item.data) {
+    return ctx.error("notFound", "The part could not be found", item.error);
+  }
+
+  const target = await getJobChargeTarget(db, {
+    companyId,
+    projectId,
+    projectElementId: elementId
+  });
+  if (!target) return ctx.error("notFound", "The project does not exist");
+  const isCapital = target.costTreatment === "Capitalize";
+  if (isCapital && !target.fixedAssetId) {
+    return ctx.error(
+      "rule",
+      "Release the project first: its assets under construction are created on release"
+    );
+  }
+  const consumeToProject =
+    target.costTreatment === "Expense" || target.costTreatment === "Contract";
+  const fixedAssetId = isCapital ? target.fixedAssetId : null;
+
+  // The job is written with the service role: the location must be this
+  // company's, no unreleased change notice may hold the item, and a Make to
+  // Asset item must be able to complete to its asset.
+  const refusal = await jobCreationRefusal(ctx, {
+    itemId: args.itemId,
+    quantity: args.quantity,
+    locationId: args.locationId,
+    fixedAssetId
+  });
+  if (refusal) return refusal;
+
+  const chargeError = await chargeNumberError(serviceRole, companyId, {
+    projectId,
+    projectElementId: elementId,
+    consumeToProject
+  });
+  if (chargeError) return ctx.error("validation", chargeError.message);
+
+  // Build adds the plan line the job reports to. The service role: making a
+  // job needs no right to edit the plan, but a locked plan still refuses.
+  let materialId = args.materialId ?? null;
+  let addedMaterialId: string | null = null;
+  if (!materialId) {
+    const locked = await requireProjectPlanEditable(serviceRole, {
+      projectId,
+      companyId,
+      changeRequestId: null
+    });
+    if (locked) return ctx.error("rule", locked);
+    const cost = await serviceRole
+      .from("itemCost")
+      .select("unitCost")
+      .eq("itemId", args.itemId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    const line = await upsertProjectElementMaterial(serviceRole, {
+      projectId,
+      projectElementId: elementId,
+      itemId: args.itemId,
+      methodType: "Make to Order",
+      quantity: args.quantity,
+      unitOfMeasureCode: item.data.unitOfMeasureCode ?? undefined,
+      unitCost:
+        cost.data?.unitCost === null || cost.data?.unitCost === undefined
+          ? undefined
+          : Number(cost.data.unitCost),
+      requiredDate: args.dueDate || undefined,
+      companyId,
+      createdBy: ctx.auditUserId
+    });
+    if (line.error || !line.data) {
+      return ctx.error(
+        "internal",
+        "Failed to add the plan line for the job",
+        line.error
+      );
+    }
+    materialId = line.data.id;
+    addedMaterialId = line.data.id;
+  }
+
+  const job = await insertJob(
+    serviceRole,
+    db,
+    {
+      itemId: args.itemId,
+      quantity: args.quantity,
+      dueDate: args.dueDate || undefined,
+      deadlineType: args.dueDate ? "Soft Deadline" : "No Deadline",
+      locationId: args.locationId,
+      unitOfMeasureCode:
+        args.unitOfMeasureCode ?? item.data.unitOfMeasureCode ?? undefined,
+      projectId,
+      projectElementId: elementId,
+      consumeToProject,
+      fixedAssetId,
+      customerContractLineId: args.customerContractLineId ?? null,
+      companyId,
+      createdBy: ctx.auditUserId
+    },
+    { source: "erp" }
+  );
+  if (job.error || !job.data) {
+    if (addedMaterialId) {
+      const removed = await deleteProjectElementMaterial(
+        serviceRole,
+        addedMaterialId,
+        companyId
+      );
+      if (removed.error) {
+        logger.error("Failed to remove the plan line of a failed job", {
+          companyId,
+          materialId: addedMaterialId,
+          error: removed.error
+        });
+      }
+    }
+    return ctx.error("internal", "Failed to create the job", job.error);
+  }
+
+  const stamp = await serviceRole
+    .from("projectElementMaterial")
+    .update({
+      jobId: job.data.id,
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", materialId)
+    .eq("companyId", companyId);
+  if (stamp.error) {
+    // The job exists; only the plan line's pointer to it failed.
+    logger.error("Failed to link the job to its plan line", {
+      companyId,
+      projectId,
+      materialId,
+      jobId: job.data.id,
+      error: stamp.error
+    });
+  }
+
+  return { jobId: job.data.id };
+}
+
+/**
+ * The live Part CLIN of a project contract whose item is `itemId` and whose
+ * billing element is `elementId` or one of its ancestors, when exactly one
+ * exists: a plan line's Create Job links its job to that CLIN.
+ */
+export async function findPartContractLine(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    projectId: string;
+    elementId: string;
+    itemId: string;
+  }
+): Promise<string | null> {
+  const result = await sql<{ id: string }>`
+    WITH RECURSIVE chain AS (
+      SELECT e."id", e."parentId", 0 AS depth
+      FROM "projectElement" e
+      WHERE e."id" = ${args.elementId}
+        AND e."projectId" = ${args.projectId}
+        AND e."companyId" = ${args.companyId}
+      UNION ALL
+      SELECT p."id", p."parentId", chain.depth + 1
+      FROM "projectElement" p
+      JOIN chain ON p."id" = chain."parentId"
+      WHERE p."companyId" = ${args.companyId} AND chain.depth < 100
+    )
+    SELECT l."id"
+    FROM "customerContractLine" l
+    JOIN "customerContract" c
+      ON c."id" = l."customerContractId" AND c."companyId" = l."companyId"
+    WHERE l."companyId" = ${args.companyId}
+      AND l."itemId" = ${args.itemId}
+      AND l."projectElementId" IN (SELECT "id" FROM chain)
+      AND c."billingBasis" = 'Project'
+      AND c."status" IN ('Draft', 'Active')
+      AND NOT EXISTS (
+        SELECT 1 FROM "customerContractLine" a
+        WHERE a."amendsLineId" = l."id" AND a."companyId" = l."companyId"
+      )
+    LIMIT 2
+  `.execute(db);
+  return result.rows.length === 1 ? (result.rows[0]?.id ?? null) : null;
 }
 
 /**

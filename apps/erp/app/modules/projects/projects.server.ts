@@ -67,9 +67,7 @@ import {
   invokeAssetTransfer,
   upsertReportPin
 } from "~/modules/accounting/accounting.service";
-import { jobCreationRefusal } from "~/modules/items/items.service";
 import { getSupplierPartPricing } from "~/modules/items/items.utils";
-import { insertJob } from "~/modules/production/production.service";
 import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
@@ -3391,7 +3389,8 @@ export const buildElementsFromPart = defineServiceFn({
  * under construction, so it must be released first. Refused for an item an
  * unreleased change notice holds, for a Make to Asset item that cannot
  * complete to the asset, and for a charge number that cannot take the job.
- * The material remembers the job.
+ * When one part CLIN of a project contract has the same item and bills this
+ * element, the job builds that CLIN's part. The material remembers the job.
  */
 export const createJobFromMaterial = defineServiceFn({
   input: createJobFromMaterialValidator.extend({
@@ -3433,89 +3432,31 @@ export const createJobFromMaterial = defineServiceFn({
       return ctx.error("conflict", "This material already has a job");
     }
 
-    const target = await service.getJobChargeTarget(ctx.asSystem.pg, {
-      companyId,
-      projectId,
-      projectElementId
-    });
-    if (!target) return ctx.error("notFound", "The project does not exist");
-    const isCapital = target.costTreatment === "Capitalize";
-    if (isCapital && !target.fixedAssetId) {
-      return ctx.error(
-        "rule",
-        "Release the project first: its assets under construction are created on release"
-      );
-    }
-    const consumeToProject =
-      target.costTreatment === "Expense" || target.costTreatment === "Contract";
-    const fixedAssetId = isCapital ? target.fixedAssetId : null;
-
-    // The job is written with the service role: the location must be this
-    // company's, no unreleased change notice may hold the item, and a Make to
-    // Asset item must be able to complete to its asset.
-    const refusal = await jobCreationRefusal(ctx, {
-      itemId: material.data.itemId,
-      quantity,
-      locationId,
-      fixedAssetId
-    });
-    if (refusal) return refusal;
-
-    const chargeError = await service.chargeNumberError(
-      ctx.asSystem.supabase,
-      companyId,
-      { projectId, projectElementId, consumeToProject }
-    );
-    if (chargeError) return ctx.error("validation", chargeError.message);
-
-    const job = await insertJob(
-      ctx.asSystem.supabase,
+    // A part CLIN that bills this task: the job builds its part (section 10).
+    const customerContractLineId = await service.findPartContractLine(
       ctx.asSystem.pg,
       {
-        itemId: material.data.itemId,
-        quantity,
-        dueDate: dueDate || undefined,
-        deadlineType: dueDate ? "Soft Deadline" : "No Deadline",
-        locationId,
-        unitOfMeasureCode:
-          material.data.unitOfMeasureCode ??
-          material.data.item?.unitOfMeasureCode ??
-          undefined,
-        projectId,
-        projectElementId,
-        consumeToProject,
-        fixedAssetId,
         companyId,
-        createdBy: ctx.auditUserId
-      },
-      { source: "erp" }
+        projectId,
+        elementId: projectElementId,
+        itemId: material.data.itemId
+      }
     );
-    if (job.error || !job.data) {
-      return ctx.error("internal", "Failed to create the job", job.error);
-    }
 
-    // The service role: creating a job needs no right to edit the plan.
-    const stamp = await ctx.asSystem.supabase
-      .from("projectElementMaterial")
-      .update({
-        jobId: job.data.id,
-        updatedBy: ctx.auditUserId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", materialId)
-      .eq("companyId", companyId);
-    if (stamp.error) {
-      // The job exists; only the plan line's pointer to it failed.
-      logger.error("Failed to link the job to its plan-line material", {
-        companyId,
-        projectId,
-        materialId,
-        jobId: job.data.id,
-        error: stamp.error
-      });
-    }
-
-    return { jobId: job.data.id };
+    return service.createProjectJob(ctx, {
+      projectId,
+      elementId: projectElementId,
+      itemId: material.data.itemId,
+      quantity,
+      dueDate,
+      locationId,
+      materialId,
+      unitOfMeasureCode:
+        material.data.unitOfMeasureCode ??
+        material.data.item?.unitOfMeasureCode ??
+        null,
+      customerContractLineId
+    });
   }
 });
 
