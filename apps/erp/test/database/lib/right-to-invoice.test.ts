@@ -7,6 +7,7 @@
 import { expect } from "vitest";
 import { proposeRevenueRecognitionRun } from "../../../app/modules/accounting/accounting.service";
 import { reverseProjectLedgerRows } from "../../../app/modules/projects/project-posting";
+import { createProjectBillingInvoices } from "../../../app/modules/sales/sales.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
@@ -517,6 +518,99 @@ databaseTest(
           .map((row) => row.id)
           .sort()
       );
+    } finally {
+      await dropRecognitionRuns(f.db, f.companyId);
+      await f.cleanup();
+    }
+  }
+);
+
+/** The invoice run of the project billing lines, as the nightly job runs it. */
+async function invoiceProjectBilling(f: Fixture, asOf: string) {
+  const result = await invokePosting(
+    handlesOf(f.ctx),
+    "create-project-billing-invoices",
+    { asOf },
+    createProjectBillingInvoices
+  );
+  if (result.error) throw result.error;
+  expect(result.data?.failures).toEqual([]);
+  return result.data!;
+}
+
+databaseTest(
+  "Right to Invoice earns no item held for the funding limit until funding covers it (audit A6)",
+  async () => {
+    const f = await projectBillingTestFixture();
+    try {
+      await f.addAccounting();
+      const project = await f.addProject("fund", "P102");
+      const { lineId } = await f.addContract({
+        key: "fund",
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        materialHandlingPercent: 0,
+        fundedAmount: 1000
+      });
+      await f.post([
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Material",
+          amount: 1000,
+          postingDate: "2026-02-10"
+        },
+        {
+          projectId: project.projectId,
+          projectElementId: project.childId,
+          costType: "Material",
+          amount: 200,
+          postingDate: "2026-02-11"
+        }
+      ]);
+
+      // February's invoice bills 1,000.00 and holds 200.00 for the funding.
+      await invoiceProjectBilling(f, "2026-03-05");
+      const held = (await f.items(project.projectId)).find(
+        (item) => Number(item.amount) === 200
+      )!;
+      expect(held.statusReason).toBe("Funding limit");
+
+      await propose(f, "2026-02-28");
+      const february = await f.db
+        .selectFrom("customerContractRevenue")
+        .select(["amount", "earnedToDate"])
+        .where("companyId", "=", f.companyId)
+        .where("customerContractLineId", "=", lineId)
+        .where("periodStart", "=", "2026-02-01")
+        .executeTakeFirstOrThrow();
+      expect(Number(february.earnedToDate)).toBe(1000);
+      expect(Number(february.amount)).toBe(1000);
+
+      // Funding covers the rest: the next invoice bills it, and the next
+      // month earns it (cumulative).
+      await f.db
+        .updateTable("customerContractLine")
+        .set({ fundedAmount: 1200 })
+        .where("id", "=", lineId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await invoiceProjectBilling(f, "2026-04-05");
+      const released = (await f.items(project.projectId)).find(
+        (item) => item.id === held.id
+      )!;
+      expect(released.status).toBe("Billed");
+
+      await propose(f, "2026-03-31");
+      const march = await f.db
+        .selectFrom("customerContractRevenue")
+        .select(["amount", "earnedToDate"])
+        .where("companyId", "=", f.companyId)
+        .where("customerContractLineId", "=", lineId)
+        .where("periodStart", "=", "2026-03-01")
+        .executeTakeFirstOrThrow();
+      expect(Number(march.earnedToDate)).toBe(1200);
+      expect(Number(march.amount)).toBe(200);
     } finally {
       await dropRecognitionRuns(f.db, f.companyId);
       await f.cleanup();

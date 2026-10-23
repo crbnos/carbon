@@ -106,7 +106,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    order tables (`SERVICE_ORDER_TABLES`) go first too: nulling `serviceOrder.customerId`
    breaks `serviceOrder_customer_check`. Any other seeded table with a CHECK that needs
    one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
-   `customerContractInvoiceLine`: an invoice OR a credit memo; `projectStockTransfer`:
+   `customerContractInvoiceLine`: an invoice OR a credit memo; `projectCostRelief`: a Cost
+   Relief schedule row OR a project close journal; `projectStockTransfer`:
    two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
    re-apply with "new row … violates check constraint", while a first apply onto an
    empty company still works.

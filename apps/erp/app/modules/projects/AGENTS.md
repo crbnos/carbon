@@ -14,6 +14,7 @@ component runs in the browser (`getCipFixedAssetClasses`, `getPlanningGroupsList
 Plain server-only files: `project-posting.ts` (the posting context, accounts, charge
 gates, ledger rows and contract billable items every module's posting uses),
 `project-cip.ts` (CIP rows), `project-journal.ts` (`postProjectJournal`),
+`project-close.ts` (WIP relief at close),
 `timesheet-posting-plan.ts`, `stock-transfer-plan.ts`, `service-part-issue.ts`.
 
 ## Key Domain Concepts
@@ -202,7 +203,11 @@ operation of the same name in `projects.server.ts`.
 - `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the
   rest of the timesheet flow. A correction on another charge number is a labor transfer
   (`correctionOfId`); `assertCanApprove` refuses its requester as approver in DCAA mode.
-- `updateProjectStatus` — refuses Close while a PO or job of the project is open.
+- `updateProjectStatus` — refuses Close while a PO or job of the project is open, then
+  `closeProject`: refuses a borrow not paid back, project stock on hand and (Capitalize)
+  an asset Under Construction, and for a Contract project relieves the Project WIP no
+  progress contract line owns to cost of goods sold (`relieveProjectWipAtClose`,
+  `project-close.ts`; `.claude/rules/projects-system.md` → *Project close*).
 - `getProjectVerification` — links, item values (`getProjectItemValues`) and
   `computeVerification` for a project.
 - `saveParameterFormula` — parses a formula, refuses a cycle, rewrites the

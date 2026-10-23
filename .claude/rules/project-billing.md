@@ -51,7 +51,17 @@ A billing line lives on a **project contract** (`customerContract.billingBasis =
 `Fixed` lines, and every project contract line is One-time; a project contract's `Fixed`
 line is labelled "Fixed Price", has quantity 1 and its `rate` as the price, and bills on
 its schedule rows ("billing events", edited in `ContractInvoiceGrid` on the Invoicing
-step). `billingBasisMismatch` (`@carbon/database/contract-schedule`) is the one test:
+step). An amend `change` of a Fixed Price line (any One-time line, either kind of
+contract) ends it the day before it starts and its copy bills only the new price less
+what the line and the lines it replaced (`amendsLineId`) billed — `Invoiced` and
+`Billed Externally` rows, `chainBilled` / `replacedLineBilled` in
+`reconcileContractSchedule` — as ONE row on the first invoice date from the change; the
+remaining events are not kept. Amend refuses a new price below what was billed (a
+one-time line has no credit adjustment) and an `end` of an invoiced one-time line. The
+old line keeps its revenue window (`revenueEndDate` is set to its old end), so each line
+earns what it bills over the same days; a Percent Complete copy is priced at the
+chain's total (ee: the copy's schedule rows plus the replaced lines' billed rows).
+`billingBasisMismatch` (`@carbon/database/contract-schedule`) is the one test:
 `upsertContractLine` and `insertContractLines` refuse with
 `CONTRACT_BILLING_BASIS_MISMATCH`, and `post-customer-contract` refuses at Confirm and for
 an added line at Amend, with `billingBasisMismatchMessages`. The project contract screens
@@ -250,8 +260,14 @@ lines selected the same row and the relief insert failed on
 
 **Right to Invoice** (`synthesizeProjectRevenue`, community). Earned to date = Σ the
 line's billable items whose ledger row posted on or before the period end, other than
-Written Off. The month = earned to date − recognized before; a write-off gives a
-negative month.
+Written Off and other than an item the invoice run holds for the funding limit
+(`statusReason` = `BILLABLE_REASON_FUNDING_LIMIT` and not Billed; audit A6, Brad
+2026-10-22): work the funding does not cover is not yet a right to invoice. The invoice
+run decides that hold again each time, so once funding covers the item it is billed and
+the next month earns it (cumulative). Other holds (No bill rate, No hours, a user's note)
+are still earned. The month = earned to date − recognized before; a write-off gives a
+negative month. The hold is stamped by the invoice run only, so an item over funding
+that no invoice run has seen yet is still earned by a run before it.
 
 **Percent Complete** (`synthesizeCommercialProjectRevenue`, ee). It returns at once
 without `PROJECT_REVENUE` (`projectRevenueEnabledForCompany`). It first runs
@@ -279,7 +295,11 @@ journal for every company (Provisional before the accounting cutover, Posted aft
 it), and its ledger row carries the `journalLineId` (a Project Issue included). One `Cost Relief` schedule row per line and account: Dr
 `costOfGoodsSoldAccount` / Cr that account. `projectCostRelief` records each ledger row
 with its schedule row (`UNIQUE (projectLedgerId, companyId)`, FK to the schedule row
-`ON DELETE CASCADE`), so a rebuilt month frees its rows and none is relieved twice.
+`ON DELETE CASCADE`), so a rebuilt month frees its rows and none is relieved twice. A
+row is relieved by the run OR by its project's close (`projects-system.md` → *Project
+close*): a close's rows carry `journalId` instead of the schedule row
+(`projectCostRelief_source_check`: exactly one of the two, migration
+`20261023020301`), and the same unique key keeps the run from relieving them again.
 
 **Loss provision.** A `Loss Provision` schedule row: Dr `costOfGoodsSoldAccount` / Cr
 `contractLossProvisionAccount` (seeded `2165 Contract Loss Provision`, set under
@@ -375,9 +395,13 @@ both choices visible with an upgrade notice (`ProjectRevenueUpgrade`) and Save d
 
 ## Known gaps
 
-- Subtree cost posted outside every progress line's dates (before the first line
-  starts, after the last one ends) is owned by no line, so the run never relieves it
-  from Project WIP; see the project close gap (audit D11).
+- Cost a progress line owns is relieved only by the run. A Contract project's WIP that no
+  progress line owns (no billing element, a Fixed Daily or Even Period line's subtree,
+  project-level burden) waits in Project WIP until the project closes, which relieves it
+  (`relieveProjectWipAtClose`, audit D11). A Fixed Daily / Even Period line's cost is
+  therefore expensed at close, not as its revenue is earned (audit A10).
+- A Percent Complete line owns its subtree's rows at close even without
+  `PROJECT_REVENUE`, when the run cannot relieve them.
 - The split of an element's EAC between an ended line and its follow-on is a
   heuristic (the subtree EAC less the cost outside the line's dates): until the
   follow-on's cost is in, the ended line's EAC still holds the follow-on's remaining

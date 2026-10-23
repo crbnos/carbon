@@ -125,6 +125,7 @@ import {
 import { ruleError, sanitize } from "~/utils/supabase";
 import { updateSortOrder } from "../shared/sort-order";
 import { buildProjectCipRow, writeProjectCipRows } from "./project-cip";
+import { ProjectCloseError, relieveProjectWipAtClose } from "./project-close";
 import { postProjectJournal } from "./project-journal";
 import {
   assertChargeable,
@@ -486,6 +487,7 @@ export async function updateProjectTemplate(
  */
 export async function updateProjectStatus(
   client: Client,
+  db: Kysely<KyselyDatabase>,
   args: {
     id: string;
     companyId: string;
@@ -548,6 +550,12 @@ export async function updateProjectStatus(
         `The project has ${openJobs.count} open job(s). Complete or cancel them before you close the project.`
       );
     }
+
+    return closeProject(db, {
+      id: args.id,
+      companyId: args.companyId,
+      updatedBy: args.updatedBy
+    });
   }
 
   return client
@@ -561,6 +569,146 @@ export async function updateProjectStatus(
     .eq("companyId", args.companyId)
     .select("id")
     .single();
+}
+
+/**
+ * Closes a project in one transaction, after `updateProjectStatus` has
+ * checked its open purchase order lines and jobs. Refuses while a borrow the
+ * project owes or lent is not paid back, while the project holds project
+ * stock, and, for Capitalize, while one of its assets is still Under
+ * Construction (spec `.ai/specs/2026-10-03-projects.md` → Lifecycle). A
+ * Contract project then relieves its Project WIP that no progress contract
+ * line owns to cost of goods sold, dated the company's day
+ * (`relieveProjectWipAtClose`, audit D11). Returns the close journal, null
+ * when there was nothing to relieve.
+ */
+export async function closeProject(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; updatedBy: string }
+): Promise<
+  | { data: { id: string; journalId: string | null }; error: null }
+  | ReturnType<typeof refusal>
+> {
+  const { companyId } = args;
+  try {
+    return await db.transaction().execute(async (trx) => {
+      const project = await trx
+        .selectFrom("project")
+        .select(["id", "identifier", "costTreatment", "fixedAssetId"])
+        .where("id", "=", args.id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!project) return refusal("The project was not found");
+
+      const refused = await projectCloseRefusal(trx, {
+        companyId,
+        projectId: project.id,
+        costTreatment: project.costTreatment,
+        fixedAssetId: project.fixedAssetId
+      });
+      if (refused) return refusal(refused);
+
+      const closeDate = datetime
+        .today(await getCompanyTimeZone(trx, companyId))
+        .toString();
+      const relief =
+        project.costTreatment === "Contract"
+          ? await relieveProjectWipAtClose(trx, {
+              companyId,
+              userId: args.updatedBy,
+              projectId: project.id,
+              identifier: project.identifier,
+              closeDate
+            })
+          : null;
+
+      await trx
+        .updateTable("project")
+        .set({
+          status: "Closed",
+          updatedBy: args.updatedBy,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", project.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      return {
+        data: { id: project.id, journalId: relief?.journalId ?? null },
+        error: null
+      };
+    });
+  } catch (err) {
+    if (err instanceof ProjectCloseError) return refusal(err.message);
+    throw err;
+  }
+}
+
+/** Why a project cannot close yet (after its open PO lines and jobs), or
+ *  null. Each message says what to do. */
+async function projectCloseRefusal(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    projectId: string;
+    costTreatment: ProjectCostTreatment;
+    fixedAssetId: string | null;
+  }
+): Promise<string | null> {
+  const { companyId, projectId } = args;
+  const borrows = await trx
+    .selectFrom("projectBorrow")
+    .select((eb) => eb.fn.countAll<number>().as("count"))
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Open")
+    .where((eb) =>
+      eb.or([
+        eb("borrowerProjectId", "=", projectId),
+        eb("lenderProjectId", "=", projectId)
+      ])
+    )
+    .executeTakeFirstOrThrow();
+  const openBorrows = Number(borrows.count);
+  if (openBorrows > 0) {
+    return `The project has ${openBorrows} borrow(s) not paid back. Pay them back from the project's Stock page before you close the project.`;
+  }
+
+  const stock = await getProjectStockOnHand(trx, { companyId, projectId });
+  if (stock.length > 0) {
+    return `The project still holds project stock (${stock.length} item(s)). Transfer it to unassigned stock or another project before you close the project.`;
+  }
+
+  if (args.costTreatment === "Capitalize") {
+    const elements = await trx
+      .selectFrom("projectElement")
+      .select("fixedAssetId")
+      .where("companyId", "=", companyId)
+      .where("projectId", "=", projectId)
+      .where("fixedAssetId", "is not", null)
+      .execute();
+    const assetIds = [
+      ...new Set(
+        [args.fixedAssetId, ...elements.map((e) => e.fixedAssetId)].filter(
+          (id): id is string => Boolean(id)
+        )
+      )
+    ];
+    if (assetIds.length > 0) {
+      const building = await trx
+        .selectFrom("fixedAsset")
+        .select((eb) => eb.fn.countAll<number>().as("count"))
+        .where("companyId", "=", companyId)
+        .where("id", "in", assetIds)
+        .where("status", "=", "Under Construction")
+        .executeTakeFirstOrThrow();
+      const underConstruction = Number(building.count);
+      if (underConstruction > 0) {
+        return `The project has ${underConstruction} asset(s) still under construction. Place them in service before you close the project.`;
+      }
+    }
+  }
+
+  return null;
 }
 
 // --- Charge numbers ----------------------------------------------------------

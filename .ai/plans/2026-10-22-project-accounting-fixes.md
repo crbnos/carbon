@@ -51,6 +51,10 @@ Gates (after each wave, by the lead, nothing running in parallel)
   earliest line" (not strictly the line's own dates), so a single line still owns cost posted before
   its start and nothing is stranded in WIP. Pinned by `lib/project-revenue-run.test.ts`.
 - f808d82bdc (C2, migration `20261023011138`). Datasets 4/4 apply; backups restorable.
+- A6 and D11 (+ D12) approved by Brad 2026-10-22 and done: Right to Invoice skips
+  Funding limit holds; `closeProject` refuses borrows / project stock / assets Under
+  Construction and relieves unowned Contract WIP (migration `20261023020301`,
+  `lib/project-close.test.ts`, `lib/right-to-invoice.test.ts`).
 - Left open: E6 (concurrent burden runs need a
   lock across the community posting function), and the three decisions (D11, A6, B2).
 - Gates: typecheck erp/ee/utils green; Biome clean on changed files; 183 files / 2103 tests green.

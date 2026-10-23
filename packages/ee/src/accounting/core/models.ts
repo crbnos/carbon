@@ -563,6 +563,14 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  // Project close (audit D11): Dr cost of goods sold / Cr Project WIP for the
+  // cost no progress contract line relieves. Off by default for the same
+  // reason as 'Revenue Recognition'.
+  "Project Close": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Asset Depreciation": {
     representation: "journal",
     defaultEnabled: true,

@@ -205,7 +205,8 @@ only in DCAA mode and only for a new entry.
 In the ERP, `chargeNumberError` (`projects.service.ts`) checks a document's charge number
 in the route action: the project is the company's, the element belongs to it, and a
 consume-to-project job's project is not Statistical. `updateProjectStatus` refuses Close
-while a purchase order or job of the project is open, and refuses any status but On Hold
+while a purchase order or job of the project is open (then `closeProject`, see *Project
+close*), and refuses any status but On Hold
 while the project has a stop-work order (`stopWorkStatusRefusal`, decision C16 of
 Government Contracting 5c): only **Resume** (`$projectId.stop-work.tsx`) clears
 `stopWorkDate` and releases the project. The CHECK `project_stopWork_check` backs it.
@@ -298,6 +299,48 @@ Contract project's billing element and its subtree. The whole subsystem is in
   Invoice and Percent Complete lines and relieves Project WIP to cost of goods sold:
   every subtree ledger row whose journal debit line is on an Asset account, once
   (`projectCostRelief`). Details, the run order and the call-site rule: `project-billing.md`.
+  What no progress line owns is relieved when the project closes (*Project close*).
+
+## Project close
+
+`updateProjectStatus` checks the open PO lines and jobs, then `closeProject`
+(`projects.service.ts`) runs the rest in one Kysely transaction (the project row
+`FOR UPDATE`). It refuses (spec `.ai/specs/2026-10-03-projects.md` → Lifecycle, Brad
+2026-10-22), each message saying what to do:
+
+- a `projectBorrow` still Open that the project owes OR lent ("Pay them back from the
+  project's Stock page");
+- project stock on hand (`getProjectStockOnHand` non-empty: "Transfer it to unassigned
+  stock or another project");
+- Capitalize: the project's or an element's `fixedAssetId` still Under Construction
+  ("Place them in service").
+
+A **Contract** project then posts one `Project Close` journal (`relieveProjectWipAtClose`,
+`projects/project-close.ts`; source and document type `Project Close`, migration
+`20261023020301`, off external ledgers by default in `POSTING_POLICY`): Dr
+`costOfGoodsSoldAccount` / Cr the account each row's journal line debited, grouped by that
+account, dated the company's day, Provisional before the accounting cutover and Posted in
+that day's period after it (`postProjectJournal`), tagged with the Project dimension. The
+rows are the revenue run's eligibility (an Asset account other than Raw Materials /
+Finished Goods, so a relocation pair relieves only its project side), posted on or before
+the close date, with no `projectCostRelief` row, and NOT owned by a progress line
+(`progressLedgerRows` over every Right to Invoice / Percent Complete line of the project,
+whenever it starts): those stay for the run. Each relieved row gets a `projectCostRelief`
+row with `journalId`, so neither the run nor a second close relieves it again. A group
+that nets to 0 writes nothing. The close takes the run's lock (`lockProjectRevenue`).
+
+**Service orders (D12).** A Contract coverage charge of a Service project posts to its
+contract project's account (*Service projects*) on elements no line of the parent can
+bill. The PARENT's close relieves them: rows of a Service project whose `parentProjectId` is
+the closing project with `coverage = 'Contract'`. The parent is the cost object (its
+account holds the debit, and a Closed parent refuses new Contract charges); a Service
+project's own close relieves nothing, since its treatment is By Coverage, not Contract. Capitalized (refurbishment) rows are
+left alone: they move into the serial's cost.
+
+Closed is final in the UI (`projectStatusTransitions`). Nothing reverses the close
+journal; the close relieves only unrelieved rows, so a cost that reaches the project after a
+close (only through a direct status change today) is relieved at the next close or by the
+run. Pinned by `apps/erp/test/database/lib/project-close.test.ts`.
 
 ## Burden (Government Contracting Phase 5b)
 

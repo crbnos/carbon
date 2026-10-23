@@ -41887,6 +41887,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectCostRelief.createdAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectCostRelief.journalId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -41964,6 +41967,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectCostRelief.createdAt"
           },
           {
+            $ref: "#/parameters/rowFilter.projectCostRelief.journalId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -41993,6 +41999,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectCostRelief.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectCostRelief.journalId"
           },
           {
             $ref: "#/parameters/body.projectCostRelief"
@@ -137832,7 +137841,8 @@ export default {
             "Project Expense",
             "Service Order",
             "Project Transfer",
-            "Burden"
+            "Burden",
+            "Project Close"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -151656,14 +151666,7 @@ export default {
       type: "object"
     },
     projectCostRelief: {
-      required: [
-        "id",
-        "companyId",
-        "projectLedgerId",
-        "revenueRecognitionScheduleId",
-        "amount",
-        "createdAt"
-      ],
+      required: ["id", "companyId", "projectLedgerId", "amount", "createdAt"],
       properties: {
         id: {
           default: "public.id('pcr'::text)",
@@ -151692,6 +151695,12 @@ export default {
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
+          type: "string"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
           type: "string"
         }
       },
@@ -152657,7 +152666,8 @@ export default {
             "Project Expense",
             "Service Order",
             "Project Transfer",
-            "Burden"
+            "Burden",
+            "Project Close"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -153548,7 +153558,8 @@ export default {
             "Project Expense",
             "Service Order",
             "Project Transfer",
-            "Burden"
+            "Burden",
+            "Project Close"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -169743,7 +169754,8 @@ export default {
             "Project Expense",
             "Service Order",
             "Project Transfer",
-            "Burden"
+            "Burden",
+            "Project Close"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -169872,7 +169884,8 @@ export default {
             "Project Expense",
             "Service Order",
             "Project Transfer",
-            "Burden"
+            "Burden",
+            "Project Close"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -169958,7 +169971,8 @@ export default {
             "Project Expense",
             "Service Order",
             "Project Transfer",
-            "Burden"
+            "Burden",
+            "Project Close"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -209617,6 +209631,12 @@ export default {
     },
     "rowFilter.projectCostRelief.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectCostRelief.journalId": {
+      name: "journalId",
       required: false,
       in: "query",
       type: "string"

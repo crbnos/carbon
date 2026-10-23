@@ -123,7 +123,10 @@ const PARENT_CHECK_TABLES = [
   "projectBorrow",
   "projectStockTransfer",
   // trainingAssignment_training_or_name: a training OR an external name
-  "trainingAssignment"
+  "trainingAssignment",
+  // projectCostRelief_source_check: a Cost Relief schedule row OR a project
+  // close journal (journal is preserved, the schedule row is not)
+  "projectCostRelief"
 ];
 
 type ForeignKey = {

@@ -18,7 +18,12 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import { formatIsoDate, parseIsoDate, round } from "@carbon/utils";
+import {
+  BILLABLE_REASON_FUNDING_LIMIT,
+  formatIsoDate,
+  parseIsoDate,
+  round
+} from "@carbon/utils";
 import { type RawBuilder, sql } from "kysely";
 import { onInventoryAccount } from "~/modules/projects/project-posting";
 import {
@@ -526,8 +531,8 @@ export async function writeCostRelief(
 
 /**
  * The Right to Invoice synthesizer (community). Per line, earned to date is
- * Σ the line's billable items that are not Written Off, whose ledger row
- * posted on or before the period end. The month is earned to date less what
+ * Σ the line's billable items that are not Written Off and not held for the
+ * funding limit, whose ledger row posted on or before the period end. The month is earned to date less what
  * is recognized before the month. Then every unrelieved WIP row the line owns
  * (`progressLedgerRows`) is relieved (R3).
  */
@@ -565,6 +570,16 @@ export async function synthesizeProjectRevenue(
     .where("b.companyId", "=", companyId)
     .where("b.customerContractLineId", "in", openIds)
     .where("b.status", "<>", "Written Off")
+    // An item the invoice run holds for the funding limit is not earned
+    // until funding covers it and it is billed (audit A6): the run decides
+    // the hold again each time, so the next month earns it cumulatively.
+    .where((eb) =>
+      eb.or([
+        eb("b.status", "=", "Billed"),
+        eb("b.statusReason", "is", null),
+        eb("b.statusReason", "<>", BILLABLE_REASON_FUNDING_LIMIT)
+      ])
+    )
     .where(
       sql<string>`COALESCE(pl."postingDate", b."postingDate")`,
       "<=",

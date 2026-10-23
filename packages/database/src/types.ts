@@ -52009,24 +52009,27 @@ export type Database = {
           companyId: string
           createdAt: string
           id: string
+          journalId: string | null
           projectLedgerId: string
-          revenueRecognitionScheduleId: string
+          revenueRecognitionScheduleId: string | null
         }
         Insert: {
           amount: number
           companyId: string
           createdAt?: string
           id?: string
+          journalId?: string | null
           projectLedgerId: string
-          revenueRecognitionScheduleId: string
+          revenueRecognitionScheduleId?: string | null
         }
         Update: {
           amount?: number
           companyId?: string
           createdAt?: string
           id?: string
+          journalId?: string | null
           projectLedgerId?: string
-          revenueRecognitionScheduleId?: string
+          revenueRecognitionScheduleId?: string | null
         }
         Relationships: [
           {
@@ -52056,6 +52059,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "projectCostRelief_journal_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projectCostRelief_journal_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "projectCostRelief_ledger_fkey"
@@ -106309,6 +106326,7 @@ export type Database = {
         | "Service Order"
         | "Project Transfer"
         | "Burden"
+        | "Project Close"
       journalEntryStatus:
         | "Draft"
         | "Posted"
@@ -106352,6 +106370,7 @@ export type Database = {
         | "Service Order"
         | "Project Transfer"
         | "Burden"
+        | "Project Close"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       leaseEventType: "Modification" | "Termination" | "Purchase"
@@ -108068,6 +108087,7 @@ export const Constants = {
         "Service Order",
         "Project Transfer",
         "Burden",
+        "Project Close",
       ],
       journalEntryStatus: [
         "Draft",
@@ -108113,6 +108133,7 @@ export const Constants = {
         "Service Order",
         "Project Transfer",
         "Burden",
+        "Project Close",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],

@@ -487,8 +487,10 @@ export const updateProjectTemplate = defineServiceFn({
  * Refuses any status but On Hold while the project has a stop-work order
  * (use Resume), and a change the project's current status does not allow.
  * Releasing a capital project first creates its assets under construction.
- * Closing refuses while the project has an open purchase order line or an
- * open job.
+ * Closing refuses while the project has an open purchase order line, an
+ * open job, a borrow not paid back, project stock, or (Capitalize) an asset
+ * still under construction. Closing a Contract project moves its Project WIP
+ * that no progress contract line owns to cost of goods sold.
  *
  * @mcp
  */
@@ -538,22 +540,16 @@ export const updateProjectStatus = defineServiceFn({
       }
     }
 
-    const update = await service.updateProjectStatus(client, {
+    const update = await service.updateProjectStatus(client, ctx.asSystem.pg, {
       id: projectId,
       companyId,
       status,
       updatedBy: ctx.auditUserId
     });
-    if (update.error) {
-      // A refusal of the building block has a message and no code.
-      return "code" in update.error && update.error.code
-        ? ctx.error(
-            "internal",
-            update.error.message ?? "Failed to update the project status",
-            update.error
-          )
-        : ctx.error("rule", update.error.message);
-    }
+    // A refusal of the building block (`ruleError`) is a rule error with its
+    // own message; a data error is internal.
+    const updated = unwrap(ctx, update);
+    if (updated instanceof CarbonError) return updated;
     return { projectId, status };
   }
 });
