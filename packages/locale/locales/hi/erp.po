@@ -1457,6 +1457,9 @@ msgstr "एक मूल्यह्रास विधि जो संपत�
 msgid "A different inspector is required"
 msgstr "एक अलग निरीक्षक आवश्यक है"
 
+msgid "A discount can end on a date; the line then bills its full rate."
+msgstr ""
+
 msgid "A draft run must be posted or deleted first."
 msgstr "एक ड्राफ्ट रन को पहले पोस्ट किया जाना चाहिए या हटाया जाना चाहिए।"
 
@@ -1664,6 +1667,9 @@ msgstr "इस वर्कफ़्लो का उपयोग करने �
 msgid "A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer."
 msgstr "एक किराये के समझौते पर एक मूल्य जिस पर ग्राहक इकाई को खरीद सकता है, एक लीज भुगतान के रूप में गिना जाता है जो लीज को बिक्रय-प्रकार बनाता है जब इसका प्रयोग उचित रूप से निश्चित होता है, और ग्राहक को बेचें द्वारा बिलिंग किया जाता है।"
 
+msgid "A price per unit, billed on the line's billing events"
+msgstr ""
+
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "एक मूल्यवान बिक्री कोटेशन; ड्राफ्ट → भेजा गया → ऑर्डर किया गया, या खोया, समाप्त, या रद्द में समाप्त होता है।"
 
@@ -1814,6 +1820,9 @@ msgstr "किसी रसीद की स्थिति में परि�
 msgid "A receipt's supplier changes"
 msgstr "किसी रसीद के आपूर्तिकर्ता में परिवर्तन होता है"
 
+msgid "A recurring line bills every period at its rate; a one-time line bills once."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "एक किराया समझौता सक्रिय होने के लिए कंपनी की मूल मुद्रा में होना चाहिए। पहले समझौते की मुद्रा बदलें।"
 
@@ -1924,6 +1933,9 @@ msgstr "एक मालिक के तहत कंपनियों का 
 
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "एक जॉब की बकाया सामग्री को गोदाम से खींचने और उन्हें लाइनसाइड में चरण देने के निर्देशों का एक समूह; एक पिकिंग स्टॉक को उपयोग के बिंदु पर स्थानांतरित करता है बजाय इसे खपत करने के।"
+
+msgid "A set price, billed on the line's billing events"
+msgstr ""
 
 msgid "A shipment is created"
 msgstr "एक शिपमेंट बनाया गया है"
@@ -3168,6 +3180,9 @@ msgstr "प्रत्येक अनुबंध पंक्ति की �
 
 msgid "Allowable Cost"
 msgstr "अनुमतिदायी लागत"
+
+msgid "Allowable cost, plus a fee"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "स्वीकार करने और जारी रखने की अनुमति देता है"
@@ -5013,9 +5028,6 @@ msgstr "बिल किया गया आइटम"
 msgid "Billed On"
 msgstr "चालान दिनांक"
 
-msgid "Billed on the line's billing events"
-msgstr "पंक्ति की बिलिंग घटनाओं पर चालान किया गया"
-
 msgid "Billed through"
 msgstr "बिल किया गया"
 
@@ -5027,6 +5039,9 @@ msgstr "बिल भेजा गया:"
 
 msgid "Billing"
 msgstr "बिलिंग"
+
+msgid "Billing & funding"
+msgstr ""
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "किराये को निर्धारित अवधि में बिल करना - प्रारंभ तिथि से महीने, कैलेंडर महीने, या लगातार 28 दिन की अवधि - प्रत्येक को पहले दिन (अग्रिम) या अंतिम दिन (बकाया) चालान किया जाता है।"
@@ -5072,6 +5087,9 @@ msgstr "बिलिंग अवधि इस तारीख से काट�
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "बिलिंग अवधि तब काटी जाती है जब समझौता सक्रिय हो जाता है।"
+
+msgid "Billing stops at the funded amount."
+msgstr ""
 
 msgid "Billing stops at this amount"
 msgstr "बिलिंग इस राशि पर बंद हो जाती है"
@@ -8479,6 +8497,9 @@ msgstr "भुगतान की तारीख"
 msgid "Dates"
 msgstr "तारीखें"
 
+msgid "Dates & revenue"
+msgstr ""
+
 msgid "Dawn's breaking, {name}."
 msgstr "सुबह टूट रही है, {name}।"
 
@@ -9558,6 +9579,9 @@ msgstr "छूट (%)"
 
 msgid "discount {was} → {now}"
 msgstr "छूट {was} → {now}"
+
+msgid "Discount and tax"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "छूट दिन"
@@ -12531,6 +12555,9 @@ msgstr "निधि क्रिया"
 msgid "Funding Actions"
 msgstr "धन सहायता कार्रवाई"
 
+msgid "Funding notice"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "शुल्क के बिना धन सहायता; धन सहायता नोटिस लागत की तुलना करते हैं"
 
@@ -13121,6 +13148,9 @@ msgstr "कर्मचारी और चार्ज नंबर द्व�
 msgid "Hours assumed from location shifts"
 msgstr "स्थान शिफ्ट से मानी गई घंटें"
 
+msgid "Hours at bill rates, plus material and other cost with handling"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "इस स्टेशन पर घंटे"
 
@@ -13207,6 +13237,9 @@ msgstr "कर्मचारी परियोजनाओं पर समय
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "अनुसूचित कार्य उपलब्ध घंटों से कितना अधिक है (+) या कितने घंटे अभी भी मुक्त हैं।"
 
+msgid "How it bills"
+msgstr ""
+
 msgid "How items roll up for posting and reporting"
 msgstr "पोस्टिंग और रिपोर्टिंग के लिए आइटम कैसे रोल अप होते हैं"
 
@@ -13258,6 +13291,9 @@ msgstr "बल्क बैच में प्रत्येक व्यक�
 msgid "How many were actually picked?"
 msgstr "कितने वास्तव में चुने गए?"
 
+msgid "How many, and the rate each one bills."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "ग्राहक को कितनी बार चालान भेजा जाता है, और कब से। नीचे दिए गए चालान अनुसरण करते हैं।"
 
@@ -13278,6 +13314,9 @@ msgstr "तैयार उप-विधानसभा मुख्य नि�
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "जब शेड्यूलर क्षमता देता है तो जॉब कैसे रैंक करता है — ASAP पहले दावे करता है, फिर कठोर समय सीमा, नरम समय सीमा, और कोई समय सीमा नहीं अंतिम। केवल एक रैंकिंग संकेत; कोई समय सीमा प्रकार प्लेसमेंट को रोकता या प्रतिबंधित नहीं करता है।"
+
+msgid "How the line's revenue is recognized."
+msgstr ""
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "सामग्री को कैसे आपूर्ति किया जाता है (निर्माण, खरीद, या इन्वेंटरी से लें) और भंडारण इकाई जहां से इसे लिया जाता है।"
@@ -14290,6 +14329,9 @@ msgstr "जारी तारीख"
 
 msgid "Issues"
 msgstr "समस्याएं"
+
+msgid "It decides what the next step asks for."
+msgstr ""
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "यह अनुमोदित है लेकिन लागू नहीं किया जा सकता। इसे फिर से खोलें, इन पंक्तियों की जांच करें, फिर इसे फिर से सबमिट करें।"
@@ -27354,6 +27396,9 @@ msgstr "पार्ट को मौजूदा स्टॉक से लि�
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "डिलीवरी भुगतान का वह हिस्सा जो सरकार अपने प्रगति व प्रदर्शन-आधारित भुगतान को वसूलने के लिए रखती है: तरलीकरण दर गुणा चालान, कभी भी अभी भी अतरलीकृत वित्तपोषण से अधिक नहीं।"
 
+msgid "The part or service, and the CLIN it is billed under."
+msgstr ""
+
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "यह मार्ग है जो एक तैयार सब-असेंबली एक टुकड़े के रूप में तय करती है जब यह बिल्ड से जुड़ता है। यह चरण के अपने पार्ट्स से पहले आती है; जब तक आप “पथ संपादित करें” से कोई मार्ग नहीं खींचते, यह बिल्ड के बगल से आती है।"
 
@@ -27595,6 +27640,9 @@ msgstr "चयनित कक्षा"
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "सेवा आइटम जिसकी बिक्री मूल्य एक सेवा आदेश पर समय को मूल्य देता है, इसके अनुमान पर और इसके चालान पर।"
+
+msgid "The service, and how it reads on the invoice."
+msgstr ""
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "सेवाएँ जो यह अनुबंध बिल करता है: एकबारी शुल्क और आवर्ती प्रभार। इसे बदलने के लिए एक सेल पर क्लिक करें।"
@@ -27847,6 +27895,9 @@ msgstr "उपकरण की विफलता के तरीके, रख
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "वर्क सेंटर की अपनी बिन जहां पिक की गई सामग्री उत्पादन के लिए रखी जाती है, इसके गोदाम स्रोत शेल्फ के विपरीत।"
+
+msgid "The work the line bills, and the markup on it."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "कार्य घंटे और कैलेंडर जो शेड्यूलिंग को संचालित करते हैं"
@@ -30445,6 +30496,9 @@ msgstr "{translatedTerm} क्या है?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "पट्टे पर क्या है, उदाहरण के लिए Forklift FL-12"
 
+msgid "What it bills"
+msgstr ""
+
 msgid "What it is"
 msgstr "यह क्या है"
 
@@ -30477,6 +30531,9 @@ msgstr "ग्राहक ने Time & Materials या Cost Plus पंक्
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "ग्राहक अग्रिम में क्या भुगतान करता है, किराए पर कर, और चालान कब देय हैं।"
+
+msgid "What the customer pays, billed on the line's billing events."
+msgstr ""
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "नियत तारीख की गिनती किससे शुरू होती है (चालान की तारीख, महीने का अंत, आदि)।"
@@ -30615,6 +30672,9 @@ msgstr "जब कानबान कार्ड को स्कैन कि�
 
 msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
 msgstr "जब पट्टा शुरू होता है और यह कितने समय तक चलता है, उचित रूप से निश्चित नवीनीकरण सहित।"
+
+msgid "When the line starts and ends."
+msgstr ""
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "जब To भंडारण इकाई में अनुमानित मात्रा इस स्तर से नीचे चली जाती है, तो मात्रा के लिए एक जारी स्टॉक स्थानांतरण बनाया जाता है। केवल स्कैन के लिए खाली छोड़ें।"

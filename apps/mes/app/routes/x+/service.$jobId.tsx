@@ -358,7 +358,7 @@ function RepairableCard({
             <RadioGroupButton
               key={option.value}
               value={option.value}
-              className="h-11 min-w-24 data-[state=checked]:bg-accent data-[state=checked]:text-foreground data-[state=checked]:border-primary"
+              className="h-11 min-w-24 data-[state=checked]:border-2 data-[state=checked]:border-primary"
             >
               {option.label}
             </RadioGroupButton>

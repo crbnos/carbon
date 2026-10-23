@@ -1457,6 +1457,9 @@ msgstr "Метод амортизации, который списывает р�
 msgid "A different inspector is required"
 msgstr "Требуется другой инспектор"
 
+msgid "A discount can end on a date; the line then bills its full rate."
+msgstr ""
+
 msgid "A draft run must be posted or deleted first."
 msgstr "Черновой запуск должен быть проведен или удален в первую очередь."
 
@@ -1664,6 +1667,9 @@ msgstr "Предварительно написанное описание, вс
 msgid "A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer."
 msgstr "Цена в договоре аренды, по которой Покупатель может купить единицу оборудования, учитываемая как платеж по аренде, который делает аренду типом продажи, когда её осуществление достаточно вероятно, и выставляется счет через Sell to Customer."
 
+msgid "A price per unit, billed on the line's billing events"
+msgstr ""
+
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Котировка продажи с ценой; Черновик → Отправлено → Заказано, либо завершается как Проиграно, Истек срок или Отменено."
 
@@ -1814,6 +1820,9 @@ msgstr "Статус квитанции меняется"
 msgid "A receipt's supplier changes"
 msgstr "Поставщик квитанции меняется"
 
+msgid "A recurring line bills every period at its rate; a one-time line bills once."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Договор аренды должен быть в базовой валюте организации для активации. Сначала измените валюту договора."
 
@@ -1924,6 +1933,9 @@ msgstr "Набор организаций под одним владельцем
 
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "Набор инструкций для вывоза неудовлетворенных материалов производственного заказа из склада и их размещения в прилинейном запасе; отбор перемещает запас в точку использования, а не потребляет его."
+
+msgid "A set price, billed on the line's billing events"
+msgstr ""
 
 msgid "A shipment is created"
 msgstr "Отгрузка создана"
@@ -3168,6 +3180,9 @@ msgstr "Допустимые и недопустимые затраты кажд
 
 msgid "Allowable Cost"
 msgstr "Допустимые затраты"
+
+msgid "Allowable cost, plus a fee"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
@@ -5013,9 +5028,6 @@ msgstr "Выставленный счет элемент"
 msgid "Billed On"
 msgstr "Дата выставления счета"
 
-msgid "Billed on the line's billing events"
-msgstr "Выставлены счета по событиям выставления счетов по строке"
-
 msgid "Billed through"
 msgstr "Счеты выставлены до"
 
@@ -5027,6 +5039,9 @@ msgstr "Счет выставлен:"
 
 msgid "Billing"
 msgstr "Выставление счетов"
+
+msgid "Billing & funding"
+msgstr ""
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "Выставление счета за аренду в фиксированные периоды: либо месяцы от даты начала, либо календарные месяцы, либо последовательные 28-дневные периоды, каждый счет выставлен в первый день (авансово) или в последний день (постфактум)."
@@ -5072,6 +5087,9 @@ msgstr "Периоды выставления счетов создаются с
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Периоды выставления счетов создаются при активации договора."
+
+msgid "Billing stops at the funded amount."
+msgstr ""
 
 msgid "Billing stops at this amount"
 msgstr "Выставление счетов останавливается при этой сумме"
@@ -8479,6 +8497,9 @@ msgstr "Дата оплаты"
 msgid "Dates"
 msgstr "Даты"
 
+msgid "Dates & revenue"
+msgstr ""
+
 msgid "Dawn's breaking, {name}."
 msgstr "Рассветает, {name}."
 
@@ -9558,6 +9579,9 @@ msgstr "Скидка (%)"
 
 msgid "discount {was} → {now}"
 msgstr "скидка {was} → {now}"
+
+msgid "Discount and tax"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "Дни скидки"
@@ -12531,6 +12555,9 @@ msgstr "Действие финансирования"
 msgid "Funding Actions"
 msgstr "Действия финансирования"
 
+msgid "Funding notice"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "Финансирование без комиссии; уведомления о финансировании сравнивают себестоимость с ней"
 
@@ -13121,6 +13148,9 @@ msgstr "Часы и доллары по сотруднику и номеру р�
 msgid "Hours assumed from location shifts"
 msgstr "Часы предполагаются на основе смен в месте"
 
+msgid "Hours at bill rates, plus material and other cost with handling"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "Часы на этом рабочем месте"
 
@@ -13207,6 +13237,9 @@ msgstr "Как сотрудники регистрируют время в пр�
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "насколько запланированная работа превышает доступные часы (+) или сколько часов все еще свободно."
 
+msgid "How it bills"
+msgstr ""
+
 msgid "How items roll up for posting and reporting"
 msgstr "Как номенклатура агрегируется для проведения и отчетности"
 
@@ -13258,6 +13291,9 @@ msgstr "Сколько единиц строит каждая отдельная
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически подобрано?"
 
+msgid "How many, and the rate each one bills."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Как часто и когда выставляются счета покупателю. Приведенные ниже счета-фактуры следуют этому графику."
 
@@ -13278,6 +13314,9 @@ msgstr "Как готовая подсборка соединяется с ос�
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Как производственный заказ рангируется, когда планировщик распределяет мощность — ASAP занимает первое место, затем Жесткий срок, Мягкий срок и Нет срока в последнюю очередь. Только сигнал ранжирования; ни один тип срока не блокирует и не ограничивает размещение."
+
+msgid "How the line's revenue is recognized."
+msgstr ""
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "Как материал пополняется (производство, закупка или со склада) и единица хранения, из которой он изымается."
@@ -14290,6 +14329,9 @@ msgstr "Дата выпуска"
 
 msgid "Issues"
 msgstr "Проблемы"
+
+msgid "It decides what the next step asks for."
+msgstr ""
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Оно утверждено, но не может быть применено. Откройте его заново, проверьте эти строки, затем отправьте снова."
@@ -27354,6 +27396,9 @@ msgstr "Деталь берется из существующего запаса
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Часть платежа по доставке, которую правительство удерживает для возмещения авансовых платежей или платежей по выполнению: произведение ставки ликвидации и суммы счета-фактуры, но не более оставшегося неликвидированного финансирования."
 
+msgid "The part or service, and the CLIN it is billed under."
+msgstr ""
+
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "Траектория, по которой движется готовая подсборка как единое целое при её добавлении в сборку. Она появляется перед собственными деталями шага; пока вы не создадите её, используя функцию «Изменить траекторию», она скользит в сборку со стороны."
 
@@ -27595,6 +27640,9 @@ msgstr "выбранный класс"
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "Номенклатура услуги, цена продажи которой определяет время по заказу на услугу, на его смете и в его счете-фактуре."
+
+msgid "The service, and how it reads on the invoice."
+msgstr ""
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Услуги, которые выставляет этот контракт: разовые платежи и повторяющиеся сборы. Нажмите на ячейку, чтобы изменить её."
@@ -27847,6 +27895,9 @@ msgstr "Способы отказа оборудования для отслеж
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Собственная ячейка рабочего центра, где отобранный материал подготавливается для производства, в отличие от исходной полки его склада."
+
+msgid "The work the line bills, and the markup on it."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Рабочие часы и календари, которые управляют планированием"
@@ -30445,6 +30496,9 @@ msgstr "Что такое {translatedTerm}?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Что арендуется, например Вилочный погрузчик FL-12"
 
+msgid "What it bills"
+msgstr ""
+
 msgid "What it is"
 msgstr "Что это такое"
 
@@ -30477,6 +30531,9 @@ msgstr "То, что авторизовал покупатель по строк
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Что покупатель платит авансом, налог на аренду и когда счета-фактуры подлежат оплате."
+
+msgid "What the customer pays, billed on the line's billing events."
+msgstr ""
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "На что начинается обратный отсчет срока (дата счета-фактуры, конец месяца и т. д.)."
@@ -30615,6 +30672,9 @@ msgstr "Когда карточка канбана сканируется, за�
 
 msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
 msgstr "Когда начинается аренда и как долго она длится, включая продления, которые разумно ожидаемы."
+
+msgid "When the line starts and ends."
+msgstr ""
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "Когда спроецированное количество в целевой единице хранения упадет ниже этого уровня, создается перемещение запаса в объеме Количества. Оставьте пусто для режима только сканирования."

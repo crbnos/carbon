@@ -1457,6 +1457,9 @@ msgstr "資産の耐用年数全体にわたって、毎期同じ金額を請求
 msgid "A different inspector is required"
 msgstr "異なる検査担当者が必須です"
 
+msgid "A discount can end on a date; the line then bills its full rate."
+msgstr ""
+
 msgid "A draft run must be posted or deleted first."
 msgstr "下書き実行は最初に転記済にするか削除する必要があります。"
 
@@ -1664,6 +1667,9 @@ msgstr "このワークフローを使用するすべての問題に挿入され
 msgid "A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer."
 msgstr "得意先がその資産を購入できる賃貸借契約上の価格であり、リース支払としてカウントされ、その行使が合理的に確実な場合にそのリースがセールスタイプリースとなり、得意先に売却によって請求されます。"
 
+msgid "A price per unit, billed on the line's billing events"
+msgstr ""
+
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "価格付き販売見積。下書き→送信→発注済、または失注・期限切れ・キャンセル済で終了。"
 
@@ -1814,6 +1820,9 @@ msgstr "領収書のステータスが変更される"
 msgid "A receipt's supplier changes"
 msgstr "領収書の仕入先が変更される"
 
+msgid "A recurring line bills every period at its rate; a one-time line bills once."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "レンタル契約を有効化するには、会社の基本通貨である必要があります。契約通貨を先に変更してください。"
 
@@ -1924,6 +1933,9 @@ msgstr "1つのオーナーの下で、グループ規模の構成（勘定科�
 
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "製造指図の未処理の材料を倉庫から引き出し、ラインサイドで配置するための一連の指示。ピッキングは在庫を消費するのではなく、使用の地点に移動させます。"
+
+msgid "A set price, billed on the line's billing events"
+msgstr ""
 
 msgid "A shipment is created"
 msgstr "出荷が作成される"
@@ -3168,6 +3180,9 @@ msgstr "各契約明細の許可可能および許可不可能な原価（資金
 
 msgid "Allowable Cost"
 msgstr "許可可能な原価"
+
+msgid "Allowable cost, plus a fee"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
@@ -5013,9 +5028,6 @@ msgstr "請求対象品目"
 msgid "Billed On"
 msgstr "請求日"
 
-msgid "Billed on the line's billing events"
-msgstr "ラインの請求イベントで請求"
-
 msgid "Billed through"
 msgstr "請求対象"
 
@@ -5027,6 +5039,9 @@ msgstr "請求済み："
 
 msgid "Billing"
 msgstr "請求"
+
+msgid "Billing & funding"
+msgstr ""
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "レンタル請求は固定期間で行われ、開始日からの月、カレンダー月、または連続する28日間のいずれかを期間とします。各期間は最初の日（前払い）または最後の日（後払い）に請求済です。"
@@ -5072,6 +5087,9 @@ msgstr "請求期間はこの日付から開始されます。"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "契約が有効化されると請求期間が作成されます。"
+
+msgid "Billing stops at the funded amount."
+msgstr ""
 
 msgid "Billing stops at this amount"
 msgstr "請求はこの金額で停止します"
@@ -8479,6 +8497,9 @@ msgstr "支払日"
 msgid "Dates"
 msgstr "日付"
 
+msgid "Dates & revenue"
+msgstr ""
+
 msgid "Dawn's breaking, {name}."
 msgstr "明け方ですね、{name}さん。"
 
@@ -9558,6 +9579,9 @@ msgstr "値引（%）"
 
 msgid "discount {was} → {now}"
 msgstr "値引 {was} → {now}"
+
+msgid "Discount and tax"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "値引日数"
@@ -12531,6 +12555,9 @@ msgstr "資金アクション"
 msgid "Funding Actions"
 msgstr "資金調達措置"
 
+msgid "Funding notice"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "手数料なしの資金調達。資金調達通知は費用と比較します"
 
@@ -13121,6 +13148,9 @@ msgstr "従業員とチャージ番号別の時間とドル、給与に照合"
 msgid "Hours assumed from location shifts"
 msgstr "場所のシフトから想定される時間"
 
+msgid "Hours at bill rates, plus material and other cost with handling"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "このステーションの時間"
 
@@ -13207,6 +13237,9 @@ msgstr "従業員がプロジェクトの時間を記録する方法。標準で
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "スケジュール済みの作業が利用可能な時間をどの程度超過しているか（+）、または空いている時間がどの程度あるか。"
 
+msgid "How it bills"
+msgstr ""
+
 msgid "How items roll up for posting and reporting"
 msgstr "アイテムが転記とレポートにどのようにロールアップされるか"
 
@@ -13258,6 +13291,9 @@ msgstr "バルク一括処理の各個別ジョブが構築するユニット数
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
 
+msgid "How many, and the rate each one bills."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "得意先がどのくらいの頻度で請求されるか、いつから。以下の請求書が続きます。"
 
@@ -13278,6 +13314,9 @@ msgstr "完成したサブアセンブリがメイン ビルドに結合され�
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "スケジューラーが容量を割り当てるときに製造指図がどのようにランク付けされるか — ASAP が最初に請求し、その後ハード期限、ソフト期限、期限なしが最後です。ランキング信号のみ；期限タイプは配置をブロックまたはゲートしません。"
+
+msgid "How the line's revenue is recognized."
+msgstr ""
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "材料がどのように調達されるか(内製、購入、または在庫から引当)と、それが引き当てられる保管ユニット"
@@ -14290,6 +14329,9 @@ msgstr "発行日"
 
 msgid "Issues"
 msgstr "問題"
+
+msgid "It decides what the next step asks for."
+msgstr ""
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "承認済ですが適用できません。再オープンしてこれらの行を確認してから、もう一度提出してください。"
@@ -27354,6 +27396,9 @@ msgstr "部品はその親製品が製造されるときに既存在庫から取
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "政府が進捗支払または成果支払を回収するために納品支払から控除する部分。清算率 × 請求書で計算され、未清算融資額を超えません。"
 
+msgid "The part or service, and the CLIN it is billed under."
+msgstr ""
+
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "完成した部分組立がビルドに加わる際に1つのピースとして移動するパス。ステップの部品より前に到着します。編集パスで描くまでは、ビルドの脇からスライドして現れます。"
 
@@ -27595,6 +27640,9 @@ msgstr "選択されたクラス"
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "サービス注文の時間の価格、見積、請求書を決定するサービス品目。"
+
+msgid "The service, and how it reads on the invoice."
+msgstr ""
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "このコントラクトが請求する外注サービス：1回限りの料金と定期的な料金。セルをクリックして変更してください。"
@@ -27847,6 +27895,9 @@ msgstr "設備障害の形式（保全および品質追跡用）"
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "作業区が持つ自身のビンで、ピッキング済の材料が生産で引き出されるようにステージングされる場所です。倉庫の仕入元の棚とは異なります。"
+
+msgid "The work the line bills, and the markup on it."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "スケジューリングを駆動する勤務時間とカレンダー"
@@ -30445,6 +30496,9 @@ msgstr "{translatedTerm}とは何ですか?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "リースされている内容（例：Forklift FL-12など）"
 
+msgid "What it bills"
+msgstr ""
+
 msgid "What it is"
 msgstr "それが何であるか"
 
@@ -30477,6 +30531,9 @@ msgstr "得意先が時間単価ベースまたは原価プラス方式の明細
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "得意先が前払いするもの、レンタル料に対する税、そして請求書が期限になるとき。"
+
+msgid "What the customer pays, billed on the line's billing events."
+msgstr ""
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "期日カウントダウンが開始される内容(請求書日付、月末など)。"
@@ -30615,6 +30672,9 @@ msgstr "かんばんカードがスキャンされると、製造指図は自動
 
 msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
 msgstr "リースが開始される時期と期間、および合理的に確実な更新を含みます。"
+
+msgid "When the line starts and ends."
+msgstr ""
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "宛先保管ユニットの予定数量がこのレベル以下に落ちると、リリース済の在庫転送がかんばん数量で作成されます。スキャンのみの場合は空白のままにしてください。"

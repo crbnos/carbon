@@ -1457,6 +1457,9 @@ msgstr "Varlığın Faydalı ömrü boyunca her dönemde eşit bir tutarı yükl
 msgid "A different inspector is required"
 msgstr "Farklı bir denetçi gereklidir"
 
+msgid "A discount can end on a date; the line then bills its full rate."
+msgstr ""
+
 msgid "A draft run must be posted or deleted first."
 msgstr "Taslak çalıştırma önce muhasebeleştirilmeli veya silinmelidir."
 
@@ -1664,6 +1667,9 @@ msgstr "Bu iş akışını kullanan her sorun içine eklenen önceden yazılmı�
 msgid "A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer."
 msgstr "Müşterinin birimi satın alabileceği bir kiralama sözleşmesi üzerinde bir fiyat, uygulanması makul olduğunda kiralamayı satış tipi yapan bir kira ödemesi olarak sayılan ve Müşteriye Sat tarafından faturalandırılan."
 
+msgid "A price per unit, billed on the line's billing events"
+msgstr ""
+
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Fiyatlandırılmış satış teklifi; Taslak → Gönderilen → Sipariş edildi, ya da Kaybedildi, Süresi doldu veya İptal edildi ile sonlanır."
 
@@ -1814,6 +1820,9 @@ msgstr "Makbuzun durumu değişti"
 msgid "A receipt's supplier changes"
 msgstr "Makbuzun tedarikçisi değişti"
 
+msgid "A recurring line bills every period at its rate; a one-time line bills once."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Bir kira sözleşmesi, etkinleştirilmek için şirketin temel para biriminde olmalıdır. Önce sözleşmenin para birimini değiştirin."
 
@@ -1924,6 +1933,9 @@ msgstr "Tek bir sahip altında, grup kapsamlı yapılandırmayı — hesap plan�
 
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "Bir iş emrinin ihtiyaç duyulan malzemeleri depodan çekmek ve onları hat yanına hazırlamak için bir dizi talimat; bir toplama işi stoğu tüketmek yerine kullanım noktasına hareket ettirir."
+
+msgid "A set price, billed on the line's billing events"
+msgstr ""
 
 msgid "A shipment is created"
 msgstr "Bir sevkiyat oluşturuldu"
@@ -3168,6 +3180,9 @@ msgstr "Finansman ve faturalandırma ile her sözleşme satırının izin verile
 
 msgid "Allowable Cost"
 msgstr "İzin Verilen Maliyet"
+
+msgid "Allowable cost, plus a fee"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
@@ -5013,9 +5028,6 @@ msgstr "Faturalandırılan Stok Kartı"
 msgid "Billed On"
 msgstr "Faturalandığı Tarih"
 
-msgid "Billed on the line's billing events"
-msgstr "Satırın faturalama etkinliklerine göre faturalandı"
-
 msgid "Billed through"
 msgstr "Faturalandığı tarih"
 
@@ -5027,6 +5039,9 @@ msgstr "Faturalandı:"
 
 msgid "Billing"
 msgstr "Faturalandırma"
+
+msgid "Billing & funding"
+msgstr ""
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "Bir kiralama işleminin sabit dönemlerle faturalandırılması: başlangıç tarihinden itibaren aylar, takvim ayları veya ardışık 28 günlük dönemler halinde, her biri ilk gününde (Peşin) veya son gününde (Sonradan) faturalandırılır."
@@ -5072,6 +5087,9 @@ msgstr "Fatura dönemleri bu tarihten itibaren kesilir"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Faturalandırma dönemleri, sözleşme etkinleştirildiğinde oluşturulur."
+
+msgid "Billing stops at the funded amount."
+msgstr ""
 
 msgid "Billing stops at this amount"
 msgstr "Fatura bu tutarda durur"
@@ -8479,6 +8497,9 @@ msgstr "Ödeme Tarihi"
 msgid "Dates"
 msgstr "Tarihler"
 
+msgid "Dates & revenue"
+msgstr ""
+
 msgid "Dawn's breaking, {name}."
 msgstr "Şafak söküyor, {name}."
 
@@ -9558,6 +9579,9 @@ msgstr "İskonto (%)"
 
 msgid "discount {was} → {now}"
 msgstr "iskonto {was} → {now}"
+
+msgid "Discount and tax"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "İskonto Günleri"
@@ -12531,6 +12555,9 @@ msgstr "Finansman eylemi"
 msgid "Funding Actions"
 msgstr "Finansman İşlemleri"
 
+msgid "Funding notice"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "Ücretsiz finansman; finansman bildirimleri maliyeti bununla karşılaştırır"
 
@@ -13121,6 +13148,9 @@ msgstr "Çalışan ve ücret numarasına göre saat ve dolar, bordro ile uzlaşt
 msgid "Hours assumed from location shifts"
 msgstr "Konum vardiyalarından varsayılan saatler"
 
+msgid "Hours at bill rates, plus material and other cost with handling"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "Bu istasyonda saatler"
 
@@ -13207,6 +13237,9 @@ msgstr "Çalışanların projeler üzerinde zamanı nasıl kaydettikleri. Normal
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "Planlanan işin mevcut saatleri ne kadar aştığı (+) veya kaç saatin hala boş olması."
 
+msgid "How it bills"
+msgstr ""
+
 msgid "How items roll up for posting and reporting"
 msgstr "Stok kartları muhasebeleştirme ve raporlama için nasıl toplanır"
 
@@ -13258,6 +13291,9 @@ msgstr "Toplu batch'teki her bireysel iş kaç birim oluşturur; toplam miktar e
 msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane toplandı?"
 
+msgid "How many, and the rate each one bills."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "Müşteriye ne sıklıkla fatura gönderilir ve ne zaman başlayıp gönderilir. Aşağıdaki faturalar bunu takip eder."
 
@@ -13278,6 +13314,9 @@ msgstr "Bitmiş alt montajın ana montaja nasıl katıldığı."
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "İş emri'nin, zamanlayıcı kapasite dağıttığında nasıl sıralandığı — ASAP ilk öncelik alır, sonra Sert Son Tarih, Esnek Son Tarih ve Son Tarih Yok son sırada. Yalnızca bir sıralama sinyali; hiçbir son tarih türü yerleştirmeyi engellemiyor veya kısıtlamıyor."
+
+msgid "How the line's revenue is recognized."
+msgstr ""
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "Malzemenin nasıl tedarik edildiği (üretim, satın alma veya stoktan kullanım) ve çekildiği depolama birimi."
@@ -14290,6 +14329,9 @@ msgstr "Düzenlenme Tarihi"
 
 msgid "Issues"
 msgstr "Sorunlar"
+
+msgid "It decides what the next step asks for."
+msgstr ""
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Onaylandı ama uygulanamıyor. Yeniden açın, bu satırları kontrol edin, ardından yeniden gönderin."
@@ -27354,6 +27396,9 @@ msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni i�
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "Teslimat ödemesinin, hükümetin ilerleme veya performansa dayalı ödemelerini geri almak için tuttuğu kısmı: tasfiye oranı çarpı fatura, hala tasfiye edilmemiş finansmanı aşmamak üzere."
 
+msgid "The part or service, and the CLIN it is billed under."
+msgstr ""
+
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "Bitmiş bir alt-montajın montajla birleştirildiğinde tek bir parça olarak izlediği yolu. Adımın kendi parçalarından önce gelir; Yolu Düzenle ile bir yol çizemeyene kadar, yapının yanından kaymaya devam eder."
 
@@ -27595,6 +27640,9 @@ msgstr "seçilen sınıf"
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "Satış fiyatı, bir hizmet emrindeki zamanı, tahminini ve faturasını fiyatlandıran hizmet stok kartı."
+
+msgid "The service, and how it reads on the invoice."
+msgstr ""
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Bu sözleşmenin faturalandırdığı hizmetler: bir kerelik ücretler ve tekrarlayan ücretler. Değiştirmek için bir hücreyi tıklayın."
@@ -27847,6 +27895,9 @@ msgstr "Ekipmanın arıza yapma şekilleri, bakım ve kalite izlemesi için"
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Depo kaynak Rafının aksine, Toplandı malzemelerin üretime çekilmek üzere hazırlandığı İş merkezinin Göz'ü."
+
+msgid "The work the line bills, and the markup on it."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Çalışma saatleri ve planlama yöneten takvimler"
@@ -30445,6 +30496,9 @@ msgstr "{translatedTerm} nedir?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Kiralanan nedir, örneğin Forklift FL-12"
 
+msgid "What it bills"
+msgstr ""
+
 msgid "What it is"
 msgstr "Ne olduğu"
 
@@ -30477,6 +30531,9 @@ msgstr "Müşterinin Zaman & Malzeme veya Maliyet Artısı satırında yetkilend
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Müşterinin peşin ödediği, kiranın vergisi ve faturaların vadesi."
+
+msgid "What the customer pays, billed on the line's billing events."
+msgstr ""
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Vade tarihinin geri sayımı nereden başlıyor (fatura tarihi, ay sonu, vb.)."
@@ -30615,6 +30672,9 @@ msgstr "Kanban kartı tarandığında, iş otomatik olarak taslaktan çıkarıl�
 
 msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
 msgstr "Kiralama ne zaman başladığı ve ne kadar sürdüğü, makul ölçüde kesin olan yenilemeleri de kapsayarak."
+
+msgid "When the line starts and ends."
+msgstr ""
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "To depolama birimindeki tahmini miktar bu seviyenin altına düştüğünde, kanban miktarı için Serbest bırakıldı stok transferi oluşturulur. Yalnızca tarama için boş bırakın."

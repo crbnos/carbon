@@ -1457,6 +1457,9 @@ msgstr "Une méthode d'amortissement qui impute un montant égal chaque période
 msgid "A different inspector is required"
 msgstr "Un inspecteur différent est requis"
 
+msgid "A discount can end on a date; the line then bills its full rate."
+msgstr ""
+
 msgid "A draft run must be posted or deleted first."
 msgstr "Un brouillon d'écriture doit être comptabilisé ou supprimé en premier."
 
@@ -1664,6 +1667,9 @@ msgstr "Une description pré-écrite insérée dans chaque problème utilisant c
 msgid "A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer."
 msgstr "Un prix dans un accord de location auquel le client peut acheter l'unité, comptabilisé comme un paiement de location qui rend la location de type vente lorsque son exercice est raisonnablement certain, et facturé par Vendre au client."
 
+msgid "A price per unit, billed on the line's billing events"
+msgstr ""
+
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "Un devis de vente tarifé ; Brouillon → Envoyé → Commandé, ou se termine Perdu, Expiré ou Annulé."
 
@@ -1814,6 +1820,9 @@ msgstr "Le statut d'un reçu change"
 msgid "A receipt's supplier changes"
 msgstr "Le fournisseur d'un reçu change"
 
+msgid "A recurring line bills every period at its rate; a one-time line bills once."
+msgstr ""
+
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "Un accord de location doit être dans la devise de base de la Société pour être activé. Modifiez d'abord la devise de l'accord."
 
@@ -1924,6 +1933,9 @@ msgstr "Un ensemble de sociétés appartenant à un même propriétaire partagea
 
 msgid "A set of instructions to pull a job's outstanding materials from the warehouse and stage them lineside; a pick moves stock to the point of use rather than consuming it."
 msgstr "Un ensemble d'instructions pour prélever les articles en attente d'un Ordre de fabrication de l'Entrepôt et les placer en Bord de ligne ; un prélèvement déplace le Stock au point d'utilisation plutôt que de le consommer."
+
+msgid "A set price, billed on the line's billing events"
+msgstr ""
 
 msgid "A shipment is created"
 msgstr "Une expédition est créée"
@@ -3168,6 +3180,9 @@ msgstr "Coût autorisé et non autorisé de chaque ligne de contrat, avec financ
 
 msgid "Allowable Cost"
 msgstr "Coût autorisé"
+
+msgid "Allowable cost, plus a fee"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "Permet d'accuser réception et de continuer"
@@ -5013,9 +5028,6 @@ msgstr "Article facturé"
 msgid "Billed On"
 msgstr "Facturé le"
 
-msgid "Billed on the line's billing events"
-msgstr "Facturé lors des événements de facturation de la ligne"
-
 msgid "Billed through"
 msgstr "Facturé jusqu'au"
 
@@ -5027,6 +5039,9 @@ msgstr "Facturé :"
 
 msgid "Billing"
 msgstr "Facturation"
+
+msgid "Billing & funding"
+msgstr ""
 
 msgid "Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears)."
 msgstr "Facturation d'une location en périodes fixes, soit des mois à partir de la date de début, des mois calendaires, ou des périodes consécutives de 28 jours, chacune facturée à son premier jour (Anticipée) ou à son dernier jour (Différée)."
@@ -5072,6 +5087,9 @@ msgstr "Les périodes de facturation sont créées à partir de cette date"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Les périodes de facturation sont créées quand l'accord est activé."
+
+msgid "Billing stops at the funded amount."
+msgstr ""
 
 msgid "Billing stops at this amount"
 msgstr "La facturation s'arrête à ce montant"
@@ -8479,6 +8497,9 @@ msgstr "Date de paiement"
 msgid "Dates"
 msgstr "Dates"
 
+msgid "Dates & revenue"
+msgstr ""
+
 msgid "Dawn's breaking, {name}."
 msgstr "L'aube point, {name}."
 
@@ -9558,6 +9579,9 @@ msgstr "Remise (%)"
 
 msgid "discount {was} → {now}"
 msgstr "remise {was} → {now}"
+
+msgid "Discount and tax"
+msgstr ""
 
 msgid "Discount Days"
 msgstr "Jours de Remise"
@@ -12531,6 +12555,9 @@ msgstr "Action de financement"
 msgid "Funding Actions"
 msgstr "Actions de financement"
 
+msgid "Funding notice"
+msgstr ""
+
 msgid "Funding without the fee; the funding notices compare cost with it"
 msgstr "Financement sans frais ; les avis de financement le comparent au coût"
 
@@ -13121,6 +13148,9 @@ msgstr "Heures et dollars par Employé et numéro de charge, rapprochés de la f
 msgid "Hours assumed from location shifts"
 msgstr "Heures supposées selon les équipes du site"
 
+msgid "Hours at bill rates, plus material and other cost with handling"
+msgstr ""
+
 msgid "Hours at this station"
 msgstr "Heures à cette station"
 
@@ -13207,6 +13237,9 @@ msgstr "Comment les employés enregistrent le temps sur les projets. Standard ga
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "la distance entre le travail planifié et les heures disponibles (+) ou le nombre d'heures encore libres."
 
+msgid "How it bills"
+msgstr ""
+
 msgid "How items roll up for posting and reporting"
 msgstr "Comment les articles se regroupent pour la comptabilisation et la génération de rapports"
 
@@ -13258,6 +13291,9 @@ msgstr "Combien d'unités chaque travail individuel dans le lot construit; la qu
 msgid "How many were actually picked?"
 msgstr "Combien ont été réellement prélevés ?"
 
+msgid "How many, and the rate each one bills."
+msgstr ""
+
 msgid "How often the customer is invoiced, and from when. The invoices below follow."
 msgstr "À quelle fréquence le client est facturé, et à partir de quand. Les factures ci-dessous suivent."
 
@@ -13278,6 +13314,9 @@ msgstr "Comment le sous-ensemble terminé rejoint la construction principale."
 
 msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
 msgstr "Comment l'ordre de fabrication est classé lors de l'allocation de capacité par le planificateur — Dès que possible d'abord, puis Délai critique, Délai souple et Sans délai en dernier. Un signal de classement uniquement ; aucun type de délai ne bloque ou ne contrôle le placement."
+
+msgid "How the line's revenue is recognized."
+msgstr ""
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "Comment le matériau est approvisionné (fabriquer, acheter ou prélever dans l'inventaire) et l'unité de stockage d'où il est prélevé."
@@ -14290,6 +14329,9 @@ msgstr "Date d'émission"
 
 msgid "Issues"
 msgstr "Problèmes"
+
+msgid "It decides what the next step asks for."
+msgstr ""
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "C'est approuvé mais ne peut pas s'appliquer. Rouvrez-le, vérifiez ces lignes, puis soumettez-le à nouveau."
@@ -27354,6 +27396,9 @@ msgstr "La pièce est prélevée du stock existant lors de la construction de so
 msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 msgstr "La partie d'un paiement de livraison que le gouvernement conserve pour récupérer ses paiements d'avancement ou basés sur le rendement : le taux de liquidation fois la facture, jamais plus que le financement toujours non liquidé."
 
+msgid "The part or service, and the CLIN it is billed under."
+msgstr ""
+
 msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
 msgstr "Le chemin qu'un sous-ensemble fini parcourt comme une seule pièce quand il se joint à la construction. Il arrive avant les pièces de cette étape ; jusqu'à ce que vous en traciez un avec Modifier le chemin, il glisse depuis le côté de la construction."
 
@@ -27595,6 +27640,9 @@ msgstr "la classe sélectionnée"
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "L'article de prestation dont le prix de vente fixe les prix du temps sur une commande de prestation, sur son devis et sur sa facture."
+
+msgid "The service, and how it reads on the invoice."
+msgstr ""
 
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Les prestations que ce contrat facture : frais uniques et frais récurrents. Cliquer sur une cellule pour la modifier."
@@ -27847,6 +27895,9 @@ msgstr "Les façons dont l'équipement tombe en panne, pour le suivi de la maint
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "Le propre casier du poste de travail où le matériel prélevé est présenté pour la production à consommer, par opposition à son étagère source d'entrepôt."
+
+msgid "The work the line bills, and the markup on it."
+msgstr ""
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "Les heures de travail et les calendriers qui pilotent la planification"
@@ -30445,6 +30496,9 @@ msgstr "Qu'est-ce que {translatedTerm} ?"
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Ce qui est loué, par exemple Chariot élévateur FL-12"
 
+msgid "What it bills"
+msgstr ""
+
 msgid "What it is"
 msgstr "Ce que c'est"
 
@@ -30477,6 +30531,9 @@ msgstr "Ce que le client a autorisé sur une ligne à temps et matériaux ou à 
 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Ce que le client paie d'avance, la taxe sur la location, et quand les factures sont dues."
+
+msgid "What the customer pays, billed on the line's billing events."
+msgstr ""
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "À partir de quoi commence le compte à rebours de la date d'échéance (date de facture, fin du mois, etc.)."
@@ -30615,6 +30672,9 @@ msgstr "Lorsque la carte kanban est scannée, le travail est automatiquement dé
 
 msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
 msgstr "Quand le bail commence et combien de temps il s'exécute, y compris les renouvellements qui sont raisonnablement certains."
+
+msgid "When the line starts and ends."
+msgstr ""
 
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "Lorsque la quantité projetée dans l'unité de stockage de destination descend au-dessous de ce niveau, un transfert de stock lancé pour la Quantité est créé. Laissez vide pour la numérisation uniquement."

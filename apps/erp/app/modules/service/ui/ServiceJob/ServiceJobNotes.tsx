@@ -135,7 +135,7 @@ export function ServiceJobProblem({
                 key={option.value}
                 value={option.value}
                 className={cn(
-                  "data-[state=checked]:bg-accent data-[state=checked]:text-foreground data-[state=checked]:border-primary"
+                  "data-[state=checked]:border-2 data-[state=checked]:border-primary"
                 )}
               >
                 {option.label}
