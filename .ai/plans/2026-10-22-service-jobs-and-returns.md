@@ -48,14 +48,15 @@ Phase 2 — MES, My Time and the dispatch grid
 - [ ] Task 30: Build the MES job page with the clock, parts and signature
 - [ ] Task 31: Show service jobs on My Time in the ERP
 - [ ] Task 32: Show service jobs on My Time in the MES
-- [ ] Task 33: Build the dispatch grid
-- [ ] Task 34: Link a charge's cost to a reimbursement or supplier invoice line
+- [ ] Task 33: Add drag and drop to the People matrix, through a shared matrix component
+- [ ] Task 34: Build the dispatch grid
+- [ ] Task 35: Link a charge's cost to a reimbursement or supplier invoice line
 
 Wrap-up
 
-- [ ] Task 35: Write the docs, rules and AGENTS files
-- [ ] Task 36: Fill the translations
-- [ ] Task 37: Verify in the browser
+- [ ] Task 36: Write the docs, rules and AGENTS files
+- [ ] Task 37: Fill the translations
+- [ ] Task 38: Verify in the browser
 
 ## Dependencies
 
@@ -66,8 +67,8 @@ Wrap-up
 - Task 16 needs Task 12. Tasks 17 and 18 need Tasks 14 and 16. Task 19 needs Task 15.
 - Tasks 20 to 24 run in order and need Tasks 13 to 15. Task 24 also needs Task 19.
 - Task 25 needs Task 13. Task 26 needs Tasks 16 to 18. Task 27 needs Tasks 17 and 24.
-- Phase 2 needs phase 1. Tasks 28, 29 and 30 run in order. Tasks 31 and 32 run in order. Task 33 is independent of Tasks 28 to 32. Task 34 needs Task 22.
-- Tasks 35, 36 and 37 run last, in order.
+- Phase 2 needs phase 1. Tasks 28, 29 and 30 run in order. Tasks 31 and 32 run in order. Task 33 is independent of Tasks 28 to 32. Task 34 needs Task 33. Task 35 needs Task 22.
+- Tasks 36, 37 and 38 run last, in order.
 
 ## Rules for every task
 
@@ -368,9 +369,9 @@ pnpm db:check:datasets && pnpm db:check:backups
 **Steps:**
 1. Move the old spec and add the superseded line.
 2. Delete the 4 files.
-3. Point the root `AGENTS.md` "Field service" row at `.ai/specs/2026-10-22-service-jobs-and-returns.md` until Task 35 writes the new rule.
+3. Point the root `AGENTS.md` "Field service" row at `.ai/specs/2026-10-22-service-jobs-and-returns.md` until Task 36 writes the new rule.
 4. Remove `service-orders` from `meta.json`.
-5. In each rule, AGENTS file and docs page, delete the sentences about service orders, visits, service projects, coverage per charge and depot repair. Delete; do not rewrite. Task 35 writes the new text.
+5. In each rule, AGENTS file and docs page, delete the sentences about service orders, visits, service projects, coverage per charge and depot repair. Delete; do not rewrite. Task 36 writes the new text.
 6. In `terms.ts`, delete the service order and visit terms. Keep "customer asset".
 
 **Verify:**
@@ -381,7 +382,7 @@ pnpm --filter docs typecheck
 # Expected: exit code 0.
 ```
 
-**Out of scope:** writing the new docs (Task 35).
+**Out of scope:** writing the new docs (Task 36).
 
 ---
 
@@ -432,7 +433,7 @@ psql "$SUPABASE_DB_URL" -c "SELECT unnest(enum_range(NULL::\"salesReturnOrderSta
    - An index on `companyId` and on every FK column.
 4. Add the `serviceJob` foreign keys: `customer`, `customerLocation`, `customerContact`, `customerAsset`, `item` (both `itemId` and `serviceItemId`), `trackedEntity`, `location`, `salesReturnOrderLine`, `salesInvoice`, `journal` (`completionJournalId`), `user` (`assignee`). Use `ON DELETE SET NULL` for optional columns, `RESTRICT` for `customerId` and `locationId`.
 5. Add the child FKs: `employeeId` → `user`, `laborItemId` and `itemId` → `item`, `storageUnitId` → `storageUnit`.
-6. Add `serviceJobItem."reimbursementLineId"` and `"purchaseInvoiceLineId"` now, nullable, with `ON DELETE SET NULL` FKs. Task 34 uses them.
+6. Add `serviceJobItem."reimbursementLineId"` and `"purchaseInvoiceLineId"` now, nullable, with `ON DELETE SET NULL` FKs. Task 35 uses them.
 7. Add the 2 partial unique indexes from the spec: one live job per RMA line, and one running clock per employee.
 8. Alter `salesReturnOrderLine`: add `returnType`, `customerAssetId` (FK `ON DELETE SET NULL`), `problem`, `quantityShipped`, and the quantity CHECK from the spec.
 9. Add `salesOrderLine."salesReturnOrderLineId"` and `salesInvoiceLine."serviceJobId"`, both nullable with `ON DELETE SET NULL` FKs and indexes.
@@ -804,7 +805,7 @@ pnpm --filter @carbon/server-functions exec vitest run src/create-service-invoic
 - Create: `apps/erp/app/routes/x+/service-job+/_layout.tsx`, `new.tsx`, `update.tsx`
 - Create: `apps/erp/app/modules/service/ui/ServiceJob/ServiceJobsTable.tsx`, `ServiceJobForm.tsx`, `ServiceJobStatus.tsx`, `CoverageBadge.tsx`
 - Modify: `apps/erp/app/utils/path.ts` — `serviceJobs`, `serviceJob(id)`, `newServiceJob`, `serviceJobUpdate`, `serviceJobStatus(id)`, `serviceSchedule`
-- Modify: `apps/erp/app/modules/service/ui/useServiceSubmodules.tsx` — Jobs, Schedule (added in Task 33; leave it out until then), Customer Assets
+- Modify: `apps/erp/app/modules/service/ui/useServiceSubmodules.tsx` — Jobs, Schedule (added in Task 34; leave it out until then), Customer Assets
 - Modify: `apps/erp/app/hooks/useModules.tsx` — the Service module opens `path.to.serviceJobs`
 - Modify: `apps/erp/app/components/Layout/Topbar/CreateMenu.tsx` — "Service Job"
 - Copy from (precedent): `apps/erp/app/routes/x+/resources+/maintenance.tsx`, `apps/erp/app/routes/x+/maintenance+/_layout.tsx`, `new.tsx`, `update.tsx`; `ui/Maintenance/MaintenanceDispatchesTable.tsx`, `MaintenanceDispatchForm.tsx`, `MaintenanceStatus.tsx`
@@ -1160,15 +1161,63 @@ In the MES My Time, the job appears and its hours match the ERP.
 
 **Out of scope:** submit and certification.
 
-## Task 33: Build the dispatch grid
+## Task 33: Add drag and drop to the People matrix, through a shared matrix component
 
 **Depends on:** Task 27
+**Files:**
+- Create: `apps/erp/app/components/ScheduleMatrix/ScheduleMatrix.tsx`, `index.ts`
+- Modify: `apps/erp/app/modules/production/ui/Schedule/People/PeopleMatrix.tsx` — wrap the grid, make each chip draggable and each cell a drop target
+- Modify: `apps/erp/app/modules/production/production.service.ts` — add `movePeopleAssignmentCell`
+- Modify: `apps/erp/app/modules/production/production.models.ts` — the `move-cell` intent in the people update validator
+- Modify: `apps/erp/app/routes/x+/priority+/people.update.tsx` — handle `move-cell`
+- Create: `apps/erp/test/schedule-matrix.test.ts` (the pure drop rules)
+- Copy from (precedent): `apps/erp/app/modules/production/ui/Schedule/People/PeopleWeekBoard.tsx` (`DndContext`, sensors, `DragOverlay`, `onDragEnd` near line 408); `movePeopleAssignment` in `production.service.ts` (near line 5966, the same-station merge); the `move` intent in `people.update.tsx` (near line 296, which reschedules both work centers)
+
+The People matrix and the dispatch grid are the same shape: people as rows, days as columns, chips in cells. Brad asked for drag and drop on both, so they share one component.
+
+**Steps:**
+1. Read `.claude/skills/carbon-design/SKILL.md`.
+2. In `ScheduleMatrix.tsx`, export 4 pieces built on `@dnd-kit/core` (already a dependency):
+   1. `ScheduleMatrixDnd`: wraps `DndContext` and a `DragOverlay`. Use a `PointerSensor` with `activationConstraint: { distance: 5 }` and a `KeyboardSensor`, so a click still opens a cell's modal. Props: `onMove({ chipId, from, to })`, where `from` and `to` are `{ rowId, date } | "outside"`, and `renderOverlay(chipId)`.
+   2. `MatrixCell`: `useDroppable` with id `${rowId}:${date}`. Props: `rowId`, `date`, `disabled`. It highlights while a chip is over it.
+   3. `MatrixChip`: `useDraggable` with data `{ chipId, rowId, date }`. Props: `chipId`, `rowId`, `date`, `disabled`, `children`. It fades while it is being dragged.
+   4. `MatrixOutsideZone`: a drop target with the id `outside`, for a side panel such as the service backlog. A chip dragged from it reports `from: "outside"`.
+3. Export the pure `resolveMatrixDrop(active, over)`. It returns the move, or null when the drop is on the same cell, on a disabled cell, or on nothing. Test the 4 cases in `apps/erp/test/schedule-matrix.test.ts`.
+4. Add `movePeopleAssignmentCell(db, { id, companyId, employeeId, date })` to `production.service.ts`. Copy `movePeopleAssignment`:
+   1. Lock the source row.
+   2. Find a target row with the same work center and the same effective shift for the new person and date.
+   3. If one exists, merge: add the hours (null when either side is null, as the existing merge does), then delete the source.
+   4. Else update the source's `employeeId` and `date`.
+   5. Return the work center id, so the route can reschedule it.
+5. In `people.update.tsx`, handle `intent: "move-cell"` with `id`, `employeeId` and `date`. Refuse a target day on which the person is absent. Reschedule the work center the way the `move` intent does.
+6. In `PeopleMatrix.tsx`:
+   1. Wrap the assignments table in `ScheduleMatrixDnd`.
+   2. Wrap each cell's content in `MatrixCell`. Disable it when the person is absent that day or the user cannot edit.
+   3. Wrap each `PeopleChip` in `MatrixChip`.
+   4. `onMove` submits `move-cell` to `path.to.priorityPeopleUpdate`.
+   5. Keep the cell's click-to-open `PeopleHoursModal` as it is.
+7. Do not change `PeopleBoard` or `PeopleWeekBoard`. They keep their own sortable lists.
+
+**Verify:**
+```bash
+cd apps/erp && pnpm exec vitest run test/schedule-matrix.test.ts
+# Expected: all pass.
+pnpm exec turbo run typecheck --filter=erp --concurrency=1
+# Expected: exit code 0.
+```
+In the browser, open Production → Priority → People, Matrix view. Drag a person's Monday chip to their Tuesday cell. It moves, the hours total stays the same, and the forecast reschedules. Drag it onto a day marked Absent: the cell refuses the drop. Click a cell: the hours modal still opens. Screenshot the matrix during a drag at 1440 px.
+
+**Out of scope:** copy-on-drag, multi-select drag, the Board and Week views.
+
+## Task 34: Build the dispatch grid
+
+**Depends on:** Tasks 27, 33
 **Files:**
 - Create: `apps/erp/app/routes/x+/service-jobs+/schedule.tsx`, `schedule.update.tsx`
 - Create: `apps/erp/app/modules/service/ui/Schedule/ServiceSchedule.tsx`, `ServiceScheduleHeader.tsx`, `ServiceBacklog.tsx`, `AssignmentBlock.tsx`
 - Modify: `apps/erp/app/modules/service/ui/useServiceSubmodules.tsx` — add Schedule
 - Modify: `packages/database/src/datasets/` — seed 4 assignments per dataset in the current week (Task 27's jobs), and a `serviceJobAssignment` floor
-- Copy from (precedent): `apps/erp/app/routes/x+/priority+/people.tsx` (the loader near lines 102–189 and the week block near lines 293–345); `ui/Schedule/People/PeopleMatrix.tsx` (rows and cells), `PeopleHeader.tsx` (week navigation and the department filter), `peopleShared.ts`, `PeopleWeekBoard.tsx` (`DndContext`, `useSortable`, `onDragEnd` near line 408), `people.update.tsx` (intents)
+- Copy from (precedent): `apps/erp/app/routes/x+/priority+/people.tsx` (the loader near lines 102–189 and the week block near lines 293–345); `ui/Schedule/People/PeopleMatrix.tsx` after Task 33 (rows, cells and drag and drop through `~/components/ScheduleMatrix`), `PeopleHeader.tsx` (week navigation and the department filter), `peopleShared.ts`, `people.update.tsx` (intents)
 
 **Steps:**
 1. The loader copies `people.tsx`: resolve the location and its time zone, build the week with `startOfWeek(parseDate(date), "en-GB")`, and read in one `Promise.all`:
@@ -1181,10 +1230,10 @@ In the MES My Time, the job appears and its hours match the ERP.
 3. Copy the `PeopleMatrix` grid: employees as rows, the week's days as columns, sticky header and first column. An absent day is greyed out (`buildAbsentSet`).
 4. Each cell lists `AssignmentBlock`s (job number, customer, planned hours) and a total against the shift hours (`ladderShiftHours`).
 5. `ServiceBacklog` is a side panel listing the backlog jobs as draggable cards.
-6. Copy `PeopleWeekBoard`'s `DndContext`:
-   - Backlog card → cell: intent `assign`. Planned hours default to the shift hours minus the cell's total, at least 1.
-   - Block → another cell: intent `move`.
-   - Block → backlog: intent `unassign`.
+6. Use `ScheduleMatrixDnd`, `MatrixCell` and `MatrixChip` from Task 33, as `PeopleMatrix` does. Wrap the backlog panel in `MatrixOutsideZone`. In `onMove`:
+   - From `outside` to a cell: intent `assign`. Planned hours default to the shift hours minus the cell's total, at least 1.
+   - From a cell to another cell: intent `move`.
+   - From a cell to `outside`: intent `unassign`.
    - Clicking a block opens a small modal to edit the planned hours and note, with a link to the job.
 7. `schedule.update.tsx` handles the 3 intents through `upsertServiceJobAssignment`, `moveServiceJobAssignment` and `deleteServiceJobAssignment`. Permission: `update: "service"`.
 8. Seed assignments in the datasets. Add the floor. Run `pnpm db:check:datasets`.
@@ -1200,7 +1249,7 @@ Screenshot the grid at 1440 px next to the People matrix and answer the screensh
 
 **Out of scope:** capacity forecasting, travel time, skills.
 
-## Task 34: Link a charge's cost to a reimbursement or supplier invoice line
+## Task 35: Link a charge's cost to a reimbursement or supplier invoice line
 
 **Depends on:** Task 22
 **Files:**
@@ -1228,14 +1277,15 @@ In the browser, add a $180 hotel charge, link it to a reimbursement line, and se
 
 # Wrap-up
 
-## Task 35: Write the docs, rules and AGENTS files
+## Task 36: Write the docs, rules and AGENTS files
 
-**Depends on:** Tasks 1 to 34
+**Depends on:** Tasks 1 to 35
 **Files:**
 - Create: `.claude/rules/service-jobs.md` (with `paths:` frontmatter for `apps/erp/app/modules/service/**`, `packages/server-functions/src/post-service-job/**`, `packages/server-functions/src/create-service-invoice/**`, `apps/mes/app/routes/x+/service*`)
 - Create: `apps/erp/app/modules/service/AGENTS.md` (with `.claude/skills/create-agents-md/SKILL.md`) and its `CLAUDE.md` (`@AGENTS.md`)
 - Create: `docs/content/docs/reference/service-jobs.mdx`; add it to `meta.json`
 - Modify: root `AGENTS.md` Task Router row "Field service" → "Service jobs (depot and field service, warranty, RMA service lines)" pointing at the new rule and AGENTS file
+- Modify: `apps/erp/app/modules/production/AGENTS.md` (the People matrix drag and drop, `movePeopleAssignmentCell`, the `move-cell` intent, `~/components/ScheduleMatrix`)
 - Modify: `apps/erp/app/modules/sales/AGENTS.md` (RMA return types), `.claude/rules/inventory-system.md`, `traceability-model.md`, `accounting-sync-handlers.md` if it lists journal sources, `onboarding-company-templates.md` (service jobs in the datasets)
 - Modify: `docs/content/docs/reference/rmas.mdx`, `customer-assets.mdx`, `docs/content/src/glossary/terms.ts` ("service job", "coverage", "return type")
 
@@ -1256,9 +1306,9 @@ grep -rn "service-orders\|serviceOrder" .claude/rules docs/content AGENTS.md app
 
 **Out of scope:** a changelog entry (ask Brad).
 
-## Task 36: Fill the translations
+## Task 37: Fill the translations
 
-**Depends on:** Task 35
+**Depends on:** Task 36
 **Files:**
 - Modify: `packages/locale/locales/*/*.po`
 
@@ -1274,9 +1324,9 @@ The `/translate` skill runs its own check at the end.
 
 **Out of scope:** new strings.
 
-## Task 37: Verify in the browser
+## Task 38: Verify in the browser
 
-**Depends on:** Task 36
+**Depends on:** Task 37
 **Files:**
 - Create: `.ai/playbooks/service-jobs-and-returns.md` (the `/test` skill caches it)
 

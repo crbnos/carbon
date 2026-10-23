@@ -190,6 +190,7 @@ A new **Service** queue in the MES sidebar has these screens:
 | 28 | Backward compatibility (heuristic 7) | No stable surface changes. The service module and its MCP tools are on this branch only, not on main | Nothing to migrate for customers. The MCP digest regenerates. |
 | 29 | Document number | `serviceJobId`, sequence `serviceJob`, prefix `SJ`, size 6; added to `sync_advance_document_sequence` | Lesson "A caller-supplied document number used to leave the counter behind". |
 | 30 | When an estimate is required | Fixed Price jobs and jobs from a Return for Service line, unless `repairable = false` (see the estimate rule under UI Changes) | Brad's diagram puts Quote → Accepted before the billable repair. A field call billed by the hour needs no gate. (Q8, Brad, 2026-10-22.) |
+| 31 | Drag and drop on matrices | One shared component, `~/components/ScheduleMatrix` (`@dnd-kit/core`), used by the dispatch grid AND the production People matrix. On the People matrix, dragging a chip moves that work center assignment to another person or day (`movePeopleAssignmentCell`, merging with a same-station row as `movePeopleAssignment` does). Clicking a cell still opens the hours modal | Both are people × days matrices. Brad asked for the same drag and drop on both (2026-10-23). This is the one production change in this spec. |
 
 ## Data Model Changes
 
@@ -420,8 +421,9 @@ Deviations from the sibling, each a Design Decision above:
 - Time posts at completion, not per event (decision 10).
 - The job has a customer and an asset, not a work center.
 - Assignments are an extra table (decision 2).
+- The People matrix gains drag and drop through the shared `ScheduleMatrix` component (decision 31). The grid then copies the matrix as it is.
 
-**Dispatch grid ↔ People board.** The grid copies the layout of `routes/x+/priority+/people.tsx` with `view=matrix` (`PeopleMatrix`, `PeopleHeader`, `peopleShared.ts`): people as rows, days as columns. `PeopleMatrix` has no drag and drop. The drag and drop copies `PeopleWeekBoard.tsx` (`@dnd-kit/core`, `onDragEnd` that submits an intent). Its blocks are service job assignments instead of work center assignments.
+**Dispatch grid ↔ People board.** The grid copies `routes/x+/priority+/people.tsx` with `view=matrix` (`PeopleMatrix`, `PeopleHeader`, `peopleShared.ts`): people as rows, days as columns. `PeopleMatrix` has no drag and drop today. This spec adds it through a shared `~/components/ScheduleMatrix` component, built from the `DndContext` pattern in `PeopleWeekBoard.tsx`. The People matrix and the grid both use it. The grid's blocks are service job assignments instead of work center assignments.
 
 **My Time service rows ↔ project rows** in `projects/ui/Timesheet/TimesheetWeek.tsx`, `useTimesheetRows.ts` and `@carbon/react/WeekHours`.
 
@@ -437,7 +439,8 @@ Every screen names its precedent. Each UI task in the plan screenshots the new s
 | New job drawer | drawer form | `maintenance+/new.tsx` |
 | Job page: header with one primary action; explorer with Estimate, Time and Parts; centre with Problem, Findings, Resolution and Files; properties panel | B, 3-pane workspace | `maintenance+/$dispatchId.tsx` |
 | Estimate PDF | PDF | `packages/documents/src/pdf/ServiceEstimatePDF.tsx`, rewritten for the job |
-| Service → Schedule | People matrix | `priority+/people.tsx?view=matrix` for the layout, `PeopleWeekBoard.tsx` for drag and drop |
+| Service → Schedule | People matrix | `priority+/people.tsx?view=matrix`, with drag and drop from `~/components/ScheduleMatrix` |
+| Production → People, Matrix view (changed) | People matrix | the same screen, plus drag and drop from `~/components/ScheduleMatrix` |
 | Service → Customer Assets list and asset page | A, and D-like detail | the current `CustomerAssetsTable` and `CustomerAssetPage`. The asset page lists its service jobs and RMA lines |
 | RMA line form: Return Type, asset, problem | existing | `SalesReturnOrderLineForm` |
 | RMA "Add from assets" modal | existing | `ReturnableLinesModal` |
@@ -498,6 +501,7 @@ Service nav (`useServiceSubmodules`) shows Jobs, Schedule and Customer Assets. M
 - [ ] The technician issues a part from the MES job page. The ERP job shows it with its cost.
 - [ ] My Time (ERP and MES) shows the job as a row with the logged hours. Dragging the bar to 3 h updates the row. After the job is Completed, the row is locked.
 - [ ] A technician adds a $180 hotel charge to a job and links it to their reimbursement line. The job shows a cost of 180 on that line, and no new journal posts from the job.
+- [ ] On Production → People (Matrix view), dragging a person's Monday chip to their Tuesday cell moves the assignment, and the week's hours total for that person is unchanged. A drop on a day marked Absent is refused. Clicking a cell still opens the hours modal.
 - [ ] On Service → Schedule, dragging a backlog job onto a technician's Tuesday creates an assignment. The job leaves the backlog, and the cell total shows its planned hours.
 
 ## Risks
@@ -546,3 +550,4 @@ Questions found while writing the spec:
 - 2026-10-22: Created. Supersedes `.ai/specs/implemented/2026-10-08-field-service.md` (archived in phase 0).
 - 2026-10-22: Q6 refined (charge cost in phase 2) and Q8 resolved. All questions closed; ready for `/plan`.
 - 2026-10-22: Planning corrections: `salesReturnOrderLine.quantityShipped` (the RMA line had no shipped count to resolve on); routes move to `x+/service-jobs+/` (`x+/service+/` is the Service item type); real enum names `journalEntrySourceType` and `journalLineDocumentType`; account default registration; `salesInvoiceLine.serviceJobId` so an invoice does not relieve stock twice; drag and drop copies `PeopleWeekBoard`.
+- 2026-10-23: Drag and drop on both matrices through a shared `ScheduleMatrix` component; the production People matrix gets it too (decision 31, Brad).
