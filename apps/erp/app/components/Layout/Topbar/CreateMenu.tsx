@@ -19,7 +19,6 @@ import {
   LuCirclePlay,
   LuClipboardList,
   LuContainer,
-  LuHammer,
   LuLayers,
   LuListChecks,
   LuShieldX,
@@ -163,7 +162,7 @@ export function useCreate(): CreateLink[] {
         name: t`Service Job`,
         to: path.to.newServiceJob,
         shortcut: CREATE_SHORTCUTS.serviceJob,
-        icon: <LuHammer />
+        icon: <LuWrench />
       });
     }
 

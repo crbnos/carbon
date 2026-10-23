@@ -14,11 +14,11 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
-  LuHammer,
   LuQrCode,
   LuSquareUser,
   LuTruck,
-  LuUndo2
+  LuUndo2,
+  LuWrench
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime } from "~/components";
@@ -105,7 +105,7 @@ export default function CustomerAssetPage({
           ]}
           actions={
             <Button
-              leftIcon={<LuHammer />}
+              leftIcon={<LuWrench />}
               isDisabled={!permissions.can("create", "service")}
               onClick={() =>
                 navigate(
@@ -150,7 +150,7 @@ export default function CustomerAssetPage({
                     <RelatedDocument
                       key={job.id}
                       to={path.to.serviceJob(job.id)}
-                      icon={<LuHammer />}
+                      icon={<LuWrench />}
                       title={job.serviceJobId}
                       description={job.problem || coverageLabels[job.coverage]}
                       status={<ServiceJobStatus status={job.status} />}

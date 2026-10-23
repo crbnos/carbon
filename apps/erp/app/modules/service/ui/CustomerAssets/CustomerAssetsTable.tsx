@@ -9,12 +9,12 @@ import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuCalendar,
-  LuHammer,
   LuMapPin,
   LuPackage,
   LuShieldCheck,
   LuSquareUser,
-  LuStar
+  LuStar,
+  LuWrench
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Empty, Hyperlink, New, Table } from "~/components";
@@ -151,7 +151,7 @@ const CustomerAssetsTable = memo(
           accessorFn: openServiceJobCount,
           cell: ({ row }) => openServiceJobCount(row.original) || "—",
           meta: {
-            icon: <LuHammer />
+            icon: <LuWrench />
           }
         },
         {
@@ -193,7 +193,7 @@ const CustomerAssetsTable = memo(
               )
             }
           >
-            <MenuIcon icon={<LuHammer />} />
+            <MenuIcon icon={<LuWrench />} />
             <Trans>New Service Job</Trans>
           </MenuItem>
         </>

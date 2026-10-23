@@ -35,7 +35,6 @@ import {
   LuChevronsUpDown,
   LuCirclePlay,
   LuClipboardList,
-  LuHammer,
   LuHistory,
   LuMonitorPlay,
   LuPackageCheck,
@@ -301,7 +300,7 @@ export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
     { key: "jobs", icon: LuCirclePlay, to: path.to.jobs },
     { key: "maintenance", icon: LuWrench, to: path.to.maintenance },
     { key: "picking", icon: LuPackageCheck, to: path.to.picking },
-    { key: "service", icon: LuHammer, to: path.to.service }
+    { key: "service", icon: LuWrench, to: path.to.service }
   ];
 
 /** `path.to.operations` carries a `?saved=1` query; activity matches on paths. */
