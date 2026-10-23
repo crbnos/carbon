@@ -44,7 +44,7 @@
 - [x] Task 35: Show the job on the project: badge, dates and attention rows
 - [x] Task 36: Count shop hours on milestones
 - [x] Task 37: Keep the demo datasets valid
-- [ ] Task 38: Update the docs, rules and translations, then verify in the browser
+- [x] Task 38: Update the docs, rules and translations, then verify in the browser
 
 ## Dependencies
 
@@ -1029,6 +1029,7 @@ grep -c "PASS" .ai/runs/2026-10-21-project-contracts.md
 - Tasks 33–34 (`6172c1932c`, one commit: shared files): `loadShopLabor` reads the category, the DCAA setting and the work day in one query. **Not done:** My Time and the MES timesheet do not show the job number yet (needs `TIMESHEET_ENTRY_COLUMNS`, `timesheet.update.tsx`, the MES service). An edited or deleted production event does not update its Draft entry (needs a link column). `createTimesheetCorrection` does not copy `jobId` onto a replacement entry.
 - Task 35 (`47a42978bf`): the scheduled finish is `job.projectedCompletionAt` (the scheduler writes it), else the due date. Rows name the task, not a WBS code.
 - Task 36 (`1d694d3718`): `get_project_cost_summary` redefined from `20261011151313`, hours only.
+- Task 38: translations `42c2a0449b` (168 strings, 12 locales); docs and rules in the commit after it; browser check PASS on 9 criteria (run log, "Section 10 browser check"). The browser check covered the Fixed Price path; T&M delivery, void, DCAA, the Overview rows and milestone hours are covered by tests only.
 - Translations: Brad, 2026-10-22: skip translation and glossary work until Task 38; run `/translate` once there.
 - Task 20: BLOCKED. The stack re-ported at 02:53 and the API returns 502; see `.ai/runs/2026-10-21-project-contracts.md`.
 - Task 19 (`22be6410ed`): 2,208 strings filled across 12 locales; `linguito check` and `check-glossary` pass (advisory hits only).

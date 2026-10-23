@@ -75,6 +75,27 @@ labor is not mentioned. The gap of spec 10.6 holds.
 **Result: STOP.** D33 as written leaves a stripe that 6 readers cannot see. D33 needs a
 new decision (see the report to Brad).
 
+## Section 10 browser check (Task 38, 2026-10-22)
+
+`https://erp.projects-wbs-research-spec.dev`, user test@carbon.ms, contract CON000008 on
+project OB2 (ORBSEC Constellation Block 2). Screenshots `.context/s10-*.png`.
+
+| # | Acceptance criterion | Result | Evidence |
+|---|---|---|---|
+| 1 | A project contract line names a Part; the field reads "Item"; Quantity and Unit Price show | PASS | Line `conl_DF5Mrfdrv6DgxYNTeeVwdo`: ADCS-001, quantity 2, rate 40,000, Fixed; grid Qty 2 (`s10-add-part-line.png`) |
+| 2 | The contract confirms with the part line | PASS | CON000008 Active (set to Draft Only after confirming, so no test invoice is emailed) |
+| 3 | Build shows on the Active part line, creates a consume-to-project job linked to the CLIN, and a Make to Order plan line on the task | PASS | J000022: quantity 1, `consumeToProject` true, `receiveToProjectStock` false, task OB2-6, `customerContractLineId` set; plan line `pjp_SVaH3CCjK4qGy8R3s4tfwK` (unit cost 52,250, `jobId` set) (`s10-clin-build.png`, `s10-build-job.png`) |
+| 4 | The task shows the job as one card on Estimated and Actual | PASS | Estimated: "ADCS-001 · Make to Order · J000022 · $1,500.00 of $52,250.00"; Actual: one "J000022 · 2 charges · $1,500.00" card (two ledger rows inserted by hand for the job: $1,200 Material, $300 Labor) (`s10-task-*.png`) |
+| 5 | The plan tree shows the job badge | PASS | "J000022 · 0 of 1" on OB2-6 (`s10-tree-badge.png`) |
+| 6 | With a completed unit the CLIN shows Deliver and lists its job | PASS | quantityComplete set to 1 by hand; header "Deliver"; Jobs "J000022 · 1 of 1 complete" (`s10-clin-deliver.png`) |
+| 7 | Deliver opens a Customer Contract delivery with a Serial Number field; the post modal asks Delivered on | PASS | SHP000007: source read-only, no storage unit, serial saved to `shipmentLine.serialNumber` (`s10-post-modal.png`) |
+| 8 | Posting a Fixed Price delivery moves no stock and splits the billing event | PASS | Posted 2026-10-22; 0 `itemLedger` rows; billing rows 40,000 on 2026-10-22 and 40,000 on 2026-10-31 |
+| 9 | The delivery PDF prints the Receiving Report | PASS | "Receiving Report SHP000007", Contract CON000008, "CLIN 0001 Prototype ADCS unit · ADCS-001 · 1 EA · SN-ADCS-0001" (`s10-receiving-report.png`) |
+
+Not browser-checked (covered by server-function tests only): T&M delivery and its quantity
+refusal, void, DCAA shop labor and timesheets, the Overview attention rows, milestone shop
+hours. Open: the amendment-after-delivery issue (plan execution notes, Task 30).
+
 ## Open items for Brad
 
 1. Glossary hrefs: point `fixed-price` at `/docs/reference/project-billing#fixed-price-billing-events`
