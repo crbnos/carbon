@@ -45,6 +45,12 @@
 - [x] Task 36: Count shop hours on milestones
 - [x] Task 37: Keep the demo datasets valid
 - [x] Task 38: Update the docs, rules and translations, then verify in the browser
+- [x] Task 39: Keep a delivered billing event through an amendment
+- [ ] Task 40: Add parts in the amend modal
+- [ ] Task 41: Link shop time to its production event and job operation
+- [ ] Task 42: Show the job and operation on My Time and the MES timesheet
+- [ ] Task 43: Add New Job on the task
+- [ ] Task 44: Docs, translations, self-review and push
 
 ## Dependencies
 
@@ -994,6 +1000,89 @@ grep -c "PASS" .ai/runs/2026-10-21-project-contracts.md
 ```
 
 **Out of scope:** a changelog entry.
+
+## Task 39: Keep a delivered billing event through an amendment
+
+**Depends on:** none. Brad, 2026-10-23: fix the amendment after a delivery.
+**Files:**
+- Modify: `packages/database/src/contract-schedule.ts` — `ExistingRow.isDelivered?`, `reconcileContractSchedule`
+- Modify: `packages/database/src/contract-schedule.test.ts` — a pure test
+- Modify: `packages/server-functions/src/post-customer-contract/schedule-writes.ts` (`loadSchedule`) — read `isDelivered`
+- Modify: `packages/server-functions/src/post-shipment/customer-contract.test.ts` — the saved test from `.context/pending-amend-after-delivery.test.ts.txt`
+
+**Decision:** the plan said "amend rebuilds only the lines it changes". A delivered row is pinned instead: it is a Planned row that a Posted delivery moved (`shipmentLine.customerContractInvoiceLineId`). This also covers an amendment that changes the delivered line itself, which the line filter does not.
+
+**Steps:**
+1. Add the saved test. Run it; expect it to fail with one 80,000 row on the delivery date.
+2. `loadSchedule`: `isDelivered` = EXISTS a `shipmentLine` whose `customerContractInvoiceLineId` is the row.
+3. `reconcileContractSchedule`: a delivered row on a Planned invoice counts as billed for its key (amount and units), is never re-cut, and is never deleted. An invoice dated on or after `from` that holds a delivered row is not deleted; its other rows go to `deleteRowIds`.
+4. Pure test: a key with a delivered row of 40,000 and a Planned remainder after `from` re-plans only the remainder.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/database exec vitest run src/contract-schedule.test.ts
+set -a; . <(grep -E '^SUPABASE_' .env.local); set +a
+pnpm --filter @carbon/server-functions exec vitest run src/post-shipment/customer-contract.test.ts src/post-customer-contract
+# Expected: all pass.
+```
+
+## Task 40: Add parts in the amend modal
+
+**Depends on:** none
+**Files:**
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ContractAmendModal.tsx`
+- Copy from (precedent): `AddServicesModal` in the same file; the part line fields of `ContractLineForm.tsx` (Task 24)
+
+**Steps:**
+1. On a project contract, the add button reads "Add Lines" and its modal offers Part and Service items (`useItems`, active, type Part or Service). On a service contract it stays "Add Services".
+2. A Part row is One-time with a quantity (editable in the grid) and a Unit Price. The `add` change posts its quantity, as `upsertContractLine` does for a part line.
+
+**Verify:** the code gate.
+
+## Task 41: Link shop time to its production event and job operation
+
+**Depends on:** none. Brad, 2026-10-23: "we're going to need the job operation".
+**Files:**
+- Create: migration `timesheet-production-event` — `timesheetEntry.jobOperationId` (FK `jobOperation(id, companyId)`, ON DELETE SET NULL) and `timesheetEntry.productionEventId` (FK `productionEvent`, ON DELETE SET NULL), with an index on `productionEventId`
+- Modify: `packages/server-functions/src/post-production-event/index.ts` — sync the Draft entry on every post and reversal
+- Modify: `packages/server-functions/src/save-timesheet-entry/index.ts` — `insertTimesheetDraft` takes both; `jobOperationId` is part of the cell key
+- Modify: `apps/erp/app/modules/projects/projects.service.ts` (`createTimesheetCorrection`) — copy `jobId`, `jobOperationId`, `productionEventId`
+- Modify: `apps/erp/app/modules/projects/projects.models.ts` (`timesheetRowKey`, `groupTimesheetRows`) — key by operation
+- Test: `post-production-event/project-event.test.ts`
+
+**Rule:** the event's hours are the truth while the entry is the employee's Draft. Net = Σ hours of the entries linked to the event (a correction pair carries the link). Wanted = 0 on a reversal, else the event's hours.
+- Net equals wanted and the date, operation and category are unchanged: nothing.
+- Every linked entry is Draft or Rejected: delete them and insert one Draft entry with the wanted hours (none when 0).
+- Otherwise (Submitted, Approved or Posted): refuse with "These hours are on a submitted timesheet. Correct the timesheet entry to {hours} hours first." A correction (which now copies the link) makes net equal wanted, and the edit then posts.
+
+**Verify:** `pnpm --filter @carbon/server-functions exec vitest run src/post-production-event src/save-timesheet-entry src/post-timesheet`; typecheck `erp`, `mes`, `@carbon/server-functions`.
+
+## Task 42: Show the job and operation on My Time and the MES timesheet
+
+**Depends on:** Task 41
+**Files:**
+- Modify: `TIMESHEET_ENTRY_COLUMNS` in `apps/erp/app/modules/projects/projects.service.ts` and `apps/mes/app/services/projects.service.ts` — embed `job(jobId)` and `jobOperation(description)`
+- Modify: `apps/erp/app/modules/projects/ui/Timesheet/TimesheetGrid.tsx` and `apps/mes/app/routes/x+/timesheet.tsx` (and the MES row model) — the second line of a row reads "J000022 · Machining · Senior Machinist"
+
+**Verify:** the code gate for `erp` and `mes`; the MES timesheet tests.
+
+## Task 43: Add New Job on the task
+
+**Depends on:** none. Brad, 2026-10-23: "New Job on the task".
+**Files:**
+- Modify: the task page toolbar (the route that renders the task's Time & Materials)
+- Modify: `apps/erp/app/routes/x+/project+/$projectId.elements.$elementId.create-job.tsx` — accept an item, quantity, due date and location without a plan line
+- Create or generalize: the modal of `ContractLineBuildModal.tsx` (part, quantity, due date, location)
+
+**Steps:**
+1. A "New Job" button on the task, with `create: production`. Its modal picks a Make part, the quantity, the due date and the location.
+2. The route calls `createProjectJob` (adds the plan line, consume-to-project, links a part CLIN of the task through `findPartContractLine`) and redirects to the job.
+
+**Verify:** the code gate; browser: New Job on a task creates the job and the task shows its card.
+
+## Task 44: Docs, translations, self-review and push
+
+**Steps:** update `projects-system.md`, `government-contracting.md`, the projects AGENTS file and the Project to cash guide for Tasks 39–43; `/translate`; `/self-review`; push.
 
 ## Execution notes
 

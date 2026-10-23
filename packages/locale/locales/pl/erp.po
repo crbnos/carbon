@@ -9229,10 +9229,11 @@ msgstr "Dostarczona"
 msgid "Delivered on"
 msgstr "Dostarczono dnia"
 
-msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
-msgstr "Dostawy są podpisywane nowym tajnym kluczem natychmiast. Aktualizuj swój punkt końcowy za jego pomocą."
 msgid "Deliveries"
 msgstr "Dostawy"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Dostawy są podpisywane nowym tajnym kluczem natychmiast. Aktualizuj swój punkt końcowy za jego pomocą."
 
 msgid "Delivery Date"
 msgstr "Data dostawy"
@@ -17575,6 +17576,7 @@ msgstr "Brak aktywności magazynowej tutaj."
 
 msgid "No job at this location has an open operation."
 msgstr "Żadne zlecenie produkcyjne w tej lokalizacji nie ma otwartej operacji."
+
 msgid "No job builds this line yet."
 msgstr "Żadne zlecenie produkcyjne nie buduje jeszcze tej pozycji."
 

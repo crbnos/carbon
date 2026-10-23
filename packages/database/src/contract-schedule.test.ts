@@ -465,6 +465,95 @@ describe("reconcileContractSchedule", () => {
     });
   });
 
+  describe("a Fixed Price line with a delivered billing event", () => {
+    const fixedTerms = calendarMonthly();
+    const prototype = (rate: number) =>
+      line({
+        id: "prototype",
+        revenueType: "One-time",
+        rateUnit: null,
+        rate,
+        startDate: "2026-11-01",
+        endDate: "2027-04-30"
+      });
+    const delivered = existingRow({
+      id: "delivered",
+      lineId: "prototype",
+      invoiceId: "inv-delivery",
+      invoiceDate: "2026-12-15",
+      invoiceStatus: "Planned",
+      invoiceIsEdited: true,
+      periodStart: "2026-11-01",
+      periodEnd: "2027-04-30",
+      units: 1 / 3,
+      unitPrice: 60000,
+      amount: 20000,
+      isDelivered: true
+    });
+    const remainder = existingRow({
+      id: "remainder",
+      lineId: "prototype",
+      invoiceId: "inv-remainder",
+      invoiceDate: "2027-04-30",
+      invoiceStatus: "Planned",
+      invoiceIsEdited: true,
+      periodStart: "2026-11-01",
+      periodEnd: "2027-04-30",
+      units: 2 / 3,
+      unitPrice: 60000,
+      amount: 40000
+    });
+
+    it("keeps the delivered row and re-plans only the remainder", () => {
+      const result = reconcileContractSchedule({
+        terms: fixedTerms,
+        lines: [prototype(66000)],
+        existing: [delivered, remainder],
+        from: "2027-03-12",
+        through: "2027-10-31"
+      });
+      expect(result.recut).toEqual([]);
+      expect(result.deleteRowIds).toEqual([]);
+      expect(result.deleteInvoiceIds).toEqual(["inv-remainder"]);
+      const created = result.create.flatMap((i) => i.rows);
+      expect(created).toHaveLength(1);
+      expect(created[0]!.amount).toBe(46000);
+    });
+
+    it("keeps an invoice after `from` that holds a delivered row", () => {
+      const lateDelivery = {
+        ...delivered,
+        invoiceId: "inv-remainder",
+        invoiceDate: "2027-04-30"
+      };
+      const result = reconcileContractSchedule({
+        terms: fixedTerms,
+        lines: [prototype(60000)],
+        existing: [lateDelivery, remainder],
+        from: "2027-03-12",
+        through: "2027-10-31"
+      });
+      expect(result.deleteInvoiceIds).toEqual([]);
+      expect(result.deleteRowIds).toEqual(["remainder"]);
+      expect(invoiceTotal(result.create.flatMap((i) => i.rows))).toBe(40000);
+    });
+
+    it("leaves a line outside `onlyLineIds` as it is", () => {
+      const result = reconcileContractSchedule({
+        terms: fixedTerms,
+        lines: [prototype(66000)],
+        existing: [delivered, remainder],
+        from: "2027-03-12",
+        through: "2027-10-31",
+        onlyLineIds: new Set(["another-line"])
+      });
+      expect(result.recut).toEqual([]);
+      expect(result.deleteRowIds).toEqual([]);
+      expect(result.deleteInvoiceIds).toEqual([]);
+      expect(result.create).toEqual([]);
+    });
+  });
+
   it("does not add a second adjustment when one already exists", () => {
     const result = reconcileContractSchedule({
       terms,

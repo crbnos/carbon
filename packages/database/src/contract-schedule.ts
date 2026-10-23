@@ -97,6 +97,10 @@ export type ExistingRow = {
   amount: number;
   isAdjustment: boolean;
   memoId: string | null;
+  /** A Posted contract delivery moved this row to its delivery date (spec
+   *  section 10.4). It holds the delivered share of the line's price, so a
+   *  reconciliation keeps it where it is and counts it as billed. */
+  isDelivered?: boolean;
 };
 
 export type BillingPeriod = { start: string; end: string; dueDate: string };
@@ -609,7 +613,10 @@ export type ContractScheduleReconciliation = {
  *     split period is credited for every installment. Its `invoiceDate` is
  *     the first planned invoice date ≥ `from` in `create`, or `from` when
  *     there is none (the caller attaches it to that invoice, or to a memo).
- *  3. Existing `Planned` invoices dated ≥ `from` → `deleteInvoiceIds`.
+ *  3. Existing `Planned` invoices dated ≥ `from` → `deleteInvoiceIds`. A
+ *     delivered row (`isDelivered`) is never replaced or re-cut and counts as
+ *     billed for its key; an invoice holding one stays, and its other rows
+ *     dated ≥ `from` → `deleteRowIds`.
  *  4. Existing `Planned` non-adjustment rows on invoices dated < `from`,
  *     grouped by key, must total `ideal − Σ billed`: when the group's
  *     `periodEnd` or total differs → `recut` (one row takes it all;
@@ -626,14 +633,20 @@ export function reconcileContractSchedule({
   lines,
   existing,
   from,
-  through
+  through,
+  onlyLineIds
 }: {
   terms: ContractTerms;
   lines: ContractLineTerms[];
   existing: ExistingRow[];
   from: string;
   through: string;
+  /** Reconcile these lines only; every row of another line stays as it is.
+   *  A project contract's amendment passes the lines it changed, so the
+   *  billing events of the other lines keep their dates. */
+  onlyLineIds?: ReadonlySet<string>;
 }): ContractScheduleReconciliation {
+  const inScope = (lineId: string) => !onlyLineIds || onlyLineIds.has(lineId);
   const dues = billingGrid(terms, through).map((p) => p.dueDate);
   const lineById = new Map(lines.map((line) => [line.id, line]));
   const key = (row: { lineId: string; periodStart: string }) =>
@@ -641,11 +654,12 @@ export function reconcileContractSchedule({
   const periodKey = (row: { lineId: string; periodEnd: string }) =>
     `${row.lineId}|${row.periodEnd}`;
 
-  // 1. The ideal schedule. A One-time copy of a changed line plans its price
-  //    less what the lines it replaced billed — never below nothing.
+  // 1. The ideal schedule, for the lines in scope. A One-time copy of a
+  //    changed line plans its price less what the lines it replaced billed —
+  //    never below nothing.
   const priorBilled = replacedLineBilled(lines, existing);
-  const idealRows = planInvoiceSchedule(terms, lines, through).flatMap(
-    (invoice) =>
+  const idealRows = planInvoiceSchedule(terms, lines, through)
+    .flatMap((invoice) =>
       invoice.rows.flatMap((row) => {
         const prior = priorBilled.get(row.lineId);
         if (prior === undefined) return [row];
@@ -661,18 +675,33 @@ export function reconcileContractSchedule({
           }
         ];
       })
-  );
+    )
+    .filter((row) => inScope(row.lineId));
   const idealByKey = new Map(idealRows.map((row) => [key(row), row]));
 
-  // 3. Planned invoices from `from` on are replaced wholesale.
+  // A delivered row stays on its delivery date and counts as billed; a row
+  // of a line outside `onlyLineIds` stays as it is.
+  const isPinned = (row: ExistingRow) =>
+    row.invoiceStatus === "Planned" &&
+    (!inScope(row.lineId) || (row.isDelivered === true && !row.isAdjustment));
+  const pinnedInvoiceIds = new Set(
+    existing.filter(isPinned).map((row) => row.invoiceId)
+  );
+
+  // 3. Planned invoices from `from` on are replaced wholesale. One that
+  //    holds a delivered row stays; its other rows are replaced one by one.
   const isReplaced = (row: ExistingRow) =>
     row.invoiceId !== null &&
     row.invoiceStatus === "Planned" &&
     row.invoiceDate !== null &&
-    row.invoiceDate >= from;
+    row.invoiceDate >= from &&
+    !isPinned(row);
   const deleteInvoiceIds = new Set<string>();
+  const deleteRowIds = new Set<string>();
   for (const row of existing) {
-    if (isReplaced(row)) deleteInvoiceIds.add(row.invoiceId!);
+    if (!isReplaced(row)) continue;
+    if (pinnedInvoiceIds.has(row.invoiceId)) deleteRowIds.add(row.id);
+    else deleteInvoiceIds.add(row.invoiceId!);
   }
 
   // What each key has already billed: its non-adjustment rows on Invoiced
@@ -683,7 +712,8 @@ export function reconcileContractSchedule({
     if (row.isAdjustment) continue;
     if (
       row.invoiceStatus !== "Invoiced" &&
-      row.invoiceStatus !== "Billed Externally"
+      row.invoiceStatus !== "Billed Externally" &&
+      !isPinned(row)
     ) {
       continue;
     }
@@ -712,7 +742,6 @@ export function reconcileContractSchedule({
   //    (several installments sharing one key) is compared and re-cut as a
   //    group.
   const recut: ContractScheduleRecut[] = [];
-  const deleteRowIds = new Set<string>();
   const keptInvoiceIds = new Set<string>();
   const keptByKey = new Map<string, ExistingRow[]>();
   for (const row of existing) {
@@ -720,7 +749,7 @@ export function reconcileContractSchedule({
       continue;
     }
     keptInvoiceIds.add(row.invoiceId);
-    if (row.isAdjustment) continue;
+    if (row.isAdjustment || isPinned(row)) continue;
     const group = keptByKey.get(key(row));
     if (group) group.push(row);
     else keptByKey.set(key(row), [row]);
@@ -827,7 +856,7 @@ export function reconcileContractSchedule({
   const adjustments: PlannedRow[] = [];
   for (const [rowKey, billed] of billedByKey) {
     const first = billed.invoiced[0];
-    if (!first) continue;
+    if (!first || !inScope(first.lineId)) continue;
     // A remainder billed after the period grew (a renewal un-clipping it)
     // reaches further than the first installment.
     const periodEnd = billed.invoiced.reduce(

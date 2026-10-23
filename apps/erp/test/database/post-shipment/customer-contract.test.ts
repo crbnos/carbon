@@ -11,6 +11,7 @@
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postShipment } from "../../../app/modules/inventory/inventory.service";
+import { postCustomerContract } from "../../../app/modules/sales/sales.service";
 import {
   invokeCreate,
   invokePosting
@@ -457,6 +458,59 @@ databaseTest(
         (await invokePosting(handlesOf(ctx), "post-shipment", { type: "void", shipmentId }, postShipment)).error
       ).toBeNull();
       expect(await f.schedule()).toEqual([["2026-12-31", 80_000]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an amendment after a Fixed Price delivery leaves the delivered billing row in place",
+  async () => {
+    const f = await deliveryFixture();
+    const { ctx } = f;
+    try {
+      const shipmentId = await f.deliver(f.fixedLineId);
+      expect(
+        (
+          await invokePosting(handlesOf(ctx), "post-shipment", {
+            type: "post",
+            shipmentId,
+            postingDate: "2026-06-01"
+          }, postShipment)
+        ).error
+      ).toBeNull();
+
+      const amendment = await invokePosting(handlesOf(ctx), "post-customer-contract", {
+        type: "amend",
+        customerContractId: f.contractId,
+        asOf: "2026-06-15",
+        amendmentDate: "2026-07-01",
+        effect: "Change Date",
+        contractType: "Expansion",
+        reason: "Add a spare",
+        changes: [
+          {
+            op: "add",
+            line: {
+              revenueType: "One-time",
+              itemId: f.partId,
+              quantity: 1,
+              rate: 5_000,
+              discountPercent: 0,
+              taxPercent: 0,
+              startDate: "2026-07-01",
+              billingMethod: "Fixed",
+              revenueMethod: "Daily"
+            }
+          }
+        ]
+      }, postCustomerContract);
+      expect(amendment.error).toBeNull();
+      expect(await f.schedule()).toEqual([
+        ["2026-06-01", 40_000],
+        ["2026-12-31", 40_000]
+      ]);
     } finally {
       await f.cleanup();
     }

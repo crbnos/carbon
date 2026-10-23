@@ -9229,10 +9229,11 @@ msgstr "已交付"
 msgid "Delivered on"
 msgstr "交付于"
 
-msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
-msgstr "投递将立即使用新密钥进行签名。请使用此密钥配置您的端点。"
 msgid "Deliveries"
 msgstr "交付"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "投递将立即使用新密钥进行签名。请使用此密钥配置您的端点。"
 
 msgid "Delivery Date"
 msgstr "交货日期"
@@ -17575,6 +17576,7 @@ msgstr "此处尚无物料库存活动。"
 
 msgid "No job at this location has an open operation."
 msgstr "此地点没有工单有未结工序。"
+
 msgid "No job builds this line yet."
 msgstr "还没有工单生产此行。"
 

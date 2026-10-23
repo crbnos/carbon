@@ -9229,10 +9229,11 @@ msgstr "배송됨"
 msgid "Delivered on"
 msgstr "배송일"
 
-msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
-msgstr "전달이 즉시 새 비밀키로 서명됩니다. 엔드포인트를 업데이트하세요."
 msgid "Deliveries"
 msgstr "배송"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "전달이 즉시 새 비밀키로 서명됩니다. 엔드포인트를 업데이트하세요."
 
 msgid "Delivery Date"
 msgstr "납기일"
@@ -17575,6 +17576,7 @@ msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
 msgid "No job at this location has an open operation."
 msgstr "이 사업장에는 미결 공정이 있는 작업 지시가 없습니다."
+
 msgid "No job builds this line yet."
 msgstr "아직 이 라인을 생산하는 작업 지시가 없습니다."
 

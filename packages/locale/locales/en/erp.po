@@ -9229,10 +9229,11 @@ msgstr "Delivered"
 msgid "Delivered on"
 msgstr "Delivered on"
 
-msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
-msgstr "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgid "Deliveries"
 msgstr "Deliveries"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Deliveries are signed with the new secret at once. Update your endpoint with it."
 
 msgid "Delivery Date"
 msgstr "Delivery Date"
@@ -17575,6 +17576,7 @@ msgstr "No items have inventory activity here yet."
 
 msgid "No job at this location has an open operation."
 msgstr "No job at this location has an open operation."
+
 msgid "No job builds this line yet."
 msgstr "No job builds this line yet."
 

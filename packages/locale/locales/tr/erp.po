@@ -9229,10 +9229,11 @@ msgstr "Teslim Edildi"
 msgid "Delivered on"
 msgstr "Teslim Tarihi"
 
-msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
-msgstr "Teslimatlar yeni sır ile hemen imzalanır. Uç noktanızı bununla güncelleyin."
 msgid "Deliveries"
 msgstr "Teslimatlar"
+
+msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
+msgstr "Teslimatlar yeni sır ile hemen imzalanır. Uç noktanızı bununla güncelleyin."
 
 msgid "Delivery Date"
 msgstr "Teslimat Tarihi"
@@ -17575,6 +17576,7 @@ msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
 msgid "No job at this location has an open operation."
 msgstr "Bu lokasyonda açık bir operasyonu olan İş emri yok."
+
 msgid "No job builds this line yet."
 msgstr "Bu satırı henüz yapacak iş emri yok."
 

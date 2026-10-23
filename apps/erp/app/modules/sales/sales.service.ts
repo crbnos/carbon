@@ -17806,7 +17806,13 @@ export async function loadSchedule(
       "r.unitPrice",
       "r.amount",
       "r.isAdjustment",
-      "r.memoId"
+      "r.memoId",
+      // A Posted contract delivery moved the row (post-shipment): it stays.
+      sql<boolean>`EXISTS (
+        SELECT 1 FROM "shipmentLine" sl
+        WHERE sl."customerContractInvoiceLineId" = r.id
+          AND sl."companyId" = r."companyId"
+      )`.as("isDelivered")
     ])
     .where("r.customerContractId", "=", contractId)
     .where("r.companyId", "=", companyId)
@@ -17832,7 +17838,8 @@ export async function loadSchedule(
       unitPrice: Number(row.unitPrice),
       amount: Number(row.amount),
       isAdjustment: row.isAdjustment ?? false,
-      memoId: row.memoId
+      memoId: row.memoId,
+      isDelivered: row.isDelivered
     }))
   };
 }
@@ -20150,14 +20157,27 @@ async function amend(
       // the effective date, so the one reconciliation below covers it.
       await applyDiscountEnds(trx, scope, contract);
 
-      // Reconcile the schedule from the effective date.
+      // Reconcile the schedule from the effective date. On a project
+      // contract only the lines the amendment ended or added: a Fixed Price
+      // line's billing events are authored (or moved by a delivery), so the
+      // lines it left alone keep theirs.
       const next = await loadContractForUpdate(trx, companyId, contract.id);
+      const priorLineIds = new Set(lines.map((line) => line.id));
       const result = reconcileContractSchedule({
         terms: toTerms(next.contract),
         lines: toLineTerms(next.lines),
         existing: next.existing,
         from: effective,
-        through
+        through,
+        onlyLineIds:
+          contract.billingBasis === "Project"
+            ? new Set([
+                ...ends.map((end) => end.id),
+                ...next.lines
+                  .filter((line) => !priorLineIds.has(line.id))
+                  .map((line) => line.id)
+              ])
+            : undefined
       });
       const editedIds = new Set(
         invoices.filter((invoice) => invoice.isEdited).map((i) => i.id)
