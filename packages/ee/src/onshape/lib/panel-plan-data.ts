@@ -18,6 +18,10 @@ import type {
 import { parsePushDefaults } from "../panel/preferences";
 import { parseDescriptionModes, parsePropertyMap } from "../panel/properties";
 import {
+  type StandardSources,
+  standardSources
+} from "../panel/standard-sources";
+import {
   type ReleasedRevision,
   releasedRevisionsByPartNumber
 } from "../panel/status";
@@ -60,6 +64,30 @@ export async function loadPlanOptions(
     })),
     defaults: parsePushDefaults(integration.data?.metadata)
   };
+}
+
+/**
+ * Where a push reads part number, revision, name, description, Item and
+ * Quantity. Throws on a failed read: Onshape's own properties in place of the
+ * company's choice would match parts to other items. Takes the service role,
+ * as `loadPlanOptions` does.
+ */
+export async function loadStandardSources(
+  client: Client,
+  companyId: string
+): Promise<StandardSources> {
+  const integration = await client
+    .from("companyIntegration")
+    .select("metadata")
+    .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (integration.error) {
+    throw new Error(
+      `Failed to read the Onshape property map: ${integration.error.message}`
+    );
+  }
+  return standardSources(parsePropertyMap(integration.data?.metadata));
 }
 
 /**

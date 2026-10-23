@@ -7,7 +7,8 @@ import type {
   OnshapeBomNode,
   OnshapePropertyValue,
   PlanItemRow,
-  PlanMappingContext
+  PlanMappingContext,
+  StandardSources
 } from "@carbon/ee";
 import {
   buildReleasePlan,
@@ -19,6 +20,7 @@ import {
   parseBomTree,
   parseProperties,
   releaseBomKey,
+  releaseSources,
   withoutProperties
 } from "@carbon/ee";
 import type { StoredReleasePlan } from "@carbon/ee/onshape";
@@ -28,6 +30,7 @@ import {
   loadActiveMakeMethods,
   loadPlanMapping,
   loadPlanOptions,
+  loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -210,6 +213,22 @@ export async function action({ request }: ActionFunctionArgs) {
       .map(releaseBomKey)
   );
 
+  // The map's Item, Quantity, Name and Description columns; a release keeps
+  // Onshape's own Part number and Revision.
+  let sources: StandardSources;
+  try {
+    sources = releaseSources(await loadStandardSources(serviceRole, companyId));
+  } catch (error) {
+    logger.error("Failed to read the Onshape property map", {
+      companyId,
+      error
+    });
+    return data(
+      { error: "Failed to read the Onshape property map" },
+      { status: 500 }
+    );
+  }
+
   // BOMs are read sequentially: parallel bursts hit Onshape rate limits. Null
   // lines (a failed read) tell the apply to leave the method alone; an empty
   // array is an empty BOM. Keyed by `releaseBomKey`: two configurations of one
@@ -232,7 +251,7 @@ export async function action({ request }: ActionFunctionArgs) {
         item.elementId,
         item.configuration ?? null
       );
-      const { lines, missingColumns } = parseBomTree(bom);
+      const { lines, missingColumns } = parseBomTree(bom, sources);
       if (missingColumns.length > 0) {
         bomLinesByElementId[bomKey] = null;
         const unread = {

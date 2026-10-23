@@ -141,6 +141,12 @@ import {
   standardFieldValues,
   untranslatedOptions
 } from "./standard-fields";
+import {
+  type BomLineField,
+  IDENTITY_VALUE_TYPES,
+  type IdentityField,
+  isIdentityProperty
+} from "./standard-sources";
 import type { PanelPartStatus } from "./status";
 
 export type PanelAssemblyLine = {
@@ -276,15 +282,6 @@ type PanelFieldsState =
       forbidden?: boolean;
       diagnostics?: unknown;
     };
-
-// Every push reads these four itself: the Fields page shows them as fixed rows, never as a mapping.
-// Lower case, since a template can relabel them in any case.
-const FIXED_PROPERTY_NAMES = new Set([
-  "part number",
-  "revision",
-  "name",
-  "description"
-]);
 
 // hasOwn: MAPPABLE_VALUE_TYPES is a plain object, so "constructor" would resolve to Object.prototype's.
 function mappableTypesFor(valueType: string): readonly number[] {
@@ -2737,8 +2734,8 @@ function FieldsSection({
   const offered = data.properties
     .filter(
       (property) =>
-        property.mappable &&
-        !FIXED_PROPERTY_NAMES.has(property.name.trim().toLowerCase())
+        // Onshape's own identity properties are each identity row's default.
+        property.mappable && !isIdentityProperty(property)
     )
     .sort((a, b) => a.name.localeCompare(b.name));
   // Item fields with a row of their own are set in that row.
@@ -2769,6 +2766,10 @@ function FieldsSection({
       if (target.kind === "item") {
         return !!standardField(target.field)?.valueTypes.includes(valueType);
       }
+      if (target.kind === "identity") {
+        return IDENTITY_VALUE_TYPES.includes(valueType);
+      }
+      if (target.kind === "bomLine") return false;
       const definition = data.definitions.find(
         (field) => field.id === target.fieldId
       );
@@ -3283,12 +3284,25 @@ function DefaultValueSelect({
   );
 }
 
+// The Carbon side of each standard source row.
+const STANDARD_TARGET_LABEL: Record<IdentityField | BomLineField, string> = {
+  partNumber: "Part ID",
+  revision: "Revision",
+  name: "Short Description",
+  description: "Long Description",
+  item: "BOM structure",
+  quantity: "BOM quantity"
+};
+
 function targetLabel(
   target: PropertyMapTarget,
   definitions: PlanCustomFieldDefinition[]
 ): string {
   if (target.kind === "item") {
     return standardField(target.field)?.label ?? target.field;
+  }
+  if (target.kind === "identity" || target.kind === "bomLine") {
+    return STANDARD_TARGET_LABEL[target.field];
   }
   return (
     definitions.find((definition) => definition.id === target.fieldId)?.name ??

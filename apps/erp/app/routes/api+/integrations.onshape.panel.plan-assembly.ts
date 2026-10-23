@@ -3,14 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { PlanItemRow, PlanMappingContext } from "@carbon/ee";
+import type {
+  PlanItemRow,
+  PlanMappingContext,
+  StandardSources
+} from "@carbon/ee";
 import {
   buildAssemblyPlan,
   describeBomPayload,
   externalIdForAssembly,
   externalIdForBomLine,
   flattenNodes,
-  metadataProperty,
+  identityValue,
   missingBomColumnsMessage,
   normalizeConfiguration,
   parseBomTree,
@@ -27,6 +31,7 @@ import {
   loadPlanOptions,
   loadReleasedRevisions,
   loadReusableDrafts,
+  loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -100,6 +105,20 @@ export async function action({ request }: ActionFunctionArgs) {
     wvmId: wvId
   };
 
+  let sources: StandardSources;
+  try {
+    sources = await loadStandardSources(serviceRole, companyId);
+  } catch (error) {
+    logger.error("Failed to read the Onshape property map", {
+      companyId,
+      error
+    });
+    return data(
+      { error: "Failed to read the Onshape property map" },
+      { status: 500 }
+    );
+  }
+
   let bom: unknown;
   try {
     bom = await onshape.client.getBillOfMaterialsIn(
@@ -113,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Element metadata names the assembly; the BOM's top row is the fallback.
-  const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
+  const { root: bomRoot, lines, missingColumns } = parseBomTree(bom, sources);
   // An empty plan from an unreadable tree would drop every Onshape line.
   if (missingColumns.length > 0) {
     const diagnostics = {
@@ -143,11 +162,12 @@ export async function action({ request }: ActionFunctionArgs) {
       elementId,
       configuration
     );
+    const properties = parseProperties(elementMetadata);
     rootPartNumber =
-      metadataProperty(elementMetadata, "Part number") ?? rootPartNumber;
-    rootName = metadataProperty(elementMetadata, "Name") ?? rootName;
+      identityValue(properties, "partNumber", sources) ?? rootPartNumber;
+    rootName = identityValue(properties, "name", sources) ?? rootName;
     rootDescription =
-      metadataProperty(elementMetadata, "Description") ?? rootDescription;
+      identityValue(properties, "description", sources) ?? rootDescription;
   } catch (error) {
     metadataError = error;
   }

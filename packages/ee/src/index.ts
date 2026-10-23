@@ -106,7 +106,6 @@ export type { BomDiagnostics, OnshapeBomNode } from "./onshape/panel/bom";
 export {
   describeBomPayload,
   flattenBomTree,
-  metadataProperty,
   missingBomColumnsMessage,
   parseBomTree,
   withoutProperties
@@ -270,6 +269,29 @@ export {
   translationErrors,
   untranslatedOptions
 } from "./onshape/panel/standard-fields";
+export type {
+  BomColumnField,
+  BomLineField,
+  IdentityField,
+  OnshapePropertyField,
+  StandardSources
+} from "./onshape/panel/standard-sources";
+export {
+  BOM_LINE_FIELDS,
+  bomColumnIds,
+  DEFAULT_STANDARD_SOURCES,
+  hasIdentityOverride,
+  IDENTITY_FIELDS,
+  IDENTITY_VALUE_TYPES,
+  identityValue,
+  isIdentityProperty,
+  ONSHAPE_PROPERTIES,
+  onshapePropertyField,
+  releaseSources,
+  sourceLabel,
+  standardSources,
+  withIdentitySources
+} from "./onshape/panel/standard-sources";
 export type {
   PanelAssemblyLineInput,
   PanelAssemblyLineStatus,

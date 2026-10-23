@@ -8,9 +8,15 @@ import type {
   PartPlan,
   PlanItemRow,
   PlanMappingContext,
-  PlanMappingRow
+  PlanMappingRow,
+  StandardSources
 } from "@carbon/ee";
-import { buildPartPlan, normalizeConfiguration } from "@carbon/ee";
+import {
+  buildPartPlan,
+  hasIdentityOverride,
+  normalizeConfiguration,
+  withIdentitySources
+} from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   createPanelPlan,
@@ -18,6 +24,7 @@ import {
   loadPlanMapping,
   loadPlanOptions,
   loadReleasedRevisions,
+  loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -25,6 +32,7 @@ import {
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { readPartProperties } from "@carbon/ee/onshape.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -32,6 +40,8 @@ import { z } from "zod";
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "integrations-onshape-panel-plan-part");
 
 const payloadSchema = z.object({
   documentId: z.string().min(1),
@@ -99,6 +109,38 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   // Hidden parts are not shown in the panel, so they cannot be pushed.
   parts = parts.filter((part) => !part.isHidden);
+
+  let sources: StandardSources;
+  try {
+    sources = await loadStandardSources(serviceRole, companyId);
+  } catch (error) {
+    logger.error("Failed to read the Onshape property map", {
+      companyId,
+      error
+    });
+    return data(
+      { error: "Failed to read the Onshape property map" },
+      { status: 500 }
+    );
+  }
+  // A part number from another property: the part metadata is read now, and
+  // the property map reuses it below.
+  let identityProperties: Map<string, OnshapePropertyValue[]> | undefined;
+  if (hasIdentityOverride(sources)) {
+    try {
+      identityProperties = await readPartProperties(
+        onshape.client,
+        document,
+        elementId,
+        partIds,
+        configuration
+      );
+    } catch (error) {
+      const failure = onshapeFailure(error);
+      return data(failure.body, { status: failure.status });
+    }
+    parts = withIdentitySources(parts, identityProperties, sources);
+  }
 
   const requested = parts.filter((part) => partIds.includes(part.partId));
   const partNumbers = [
@@ -199,8 +241,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // No map means no extra Onshape read. Unchanged parts are read too: a
   // property mapped after the last push must reach Carbon.
-  let propertiesByPartId: Map<string, OnshapePropertyValue[]> | undefined;
-  if (mapping.map.length > 0 && requested.length > 0) {
+  let propertiesByPartId = identityProperties;
+  if (!propertiesByPartId && mapping.map.length > 0 && requested.length > 0) {
     try {
       propertiesByPartId = await readPartProperties(
         onshape.client,
