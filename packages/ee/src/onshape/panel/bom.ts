@@ -3,8 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Onshape indented BOM → typed tree. Columns are addressed by display name;
- * nesting comes from the dotted "Item" index ("1.1.2"). Non-empty cells are
+ * Onshape indented BOM → typed tree. Columns are addressed by Onshape's
+ * property name, then by display name ignoring case (`headerIdFor`); nesting
+ * comes from the dotted "Item" index ("1.1.2"). Non-empty cells are
  * kept as properties keyed by column id, so a row resolves through the
  * company's property map like a part.
  */
@@ -37,7 +38,12 @@ export type OnshapeBomNode = {
   children: OnshapeBomNode[];
 };
 
-type BomHeader = { id: string; name: string; valueType?: unknown };
+type BomHeader = {
+  id: string;
+  name: string;
+  propertyName?: unknown;
+  valueType?: unknown;
+};
 type BomRow = {
   headerIdToValue?: Record<string, unknown>;
   itemSource?: Record<string, unknown>;
@@ -70,6 +76,46 @@ export const BOM_REQUIRED_COLUMNS = [
   "Quantity"
 ] as const;
 
+/**
+ * Onshape's property name for each column the parser reads. A BOM template
+ * can relabel a column ("PART NUMBER", "Qty") but never renames its property.
+ */
+const COLUMN_PROPERTY_NAMES: Record<string, string> = {
+  Item: "item",
+  "Part number": "partNumber",
+  Quantity: "quantity",
+  Revision: "revision",
+  Name: "name",
+  Description: "description",
+  "Subassembly BOM behavior": "bomBehavior"
+};
+
+const labelKey = (label: string) => label.trim().toLowerCase();
+
+/** The column id for a label: by property name, else by label ignoring case. */
+function headerIdFor(headers: BomHeader[]) {
+  const byPropertyName = new Map<string, string>();
+  const byLabel = new Map<string, string>();
+  for (const header of headers) {
+    if (typeof header.propertyName === "string") {
+      byPropertyName.set(header.propertyName, header.id);
+    }
+    if (
+      typeof header.name === "string" &&
+      !byLabel.has(labelKey(header.name))
+    ) {
+      byLabel.set(labelKey(header.name), header.id);
+    }
+  }
+  return (label: string) => {
+    const propertyName = COLUMN_PROPERTY_NAMES[label];
+    return (
+      (propertyName ? byPropertyName.get(propertyName) : undefined) ??
+      byLabel.get(labelKey(label))
+    );
+  };
+}
+
 export function parseBomTree(payload: unknown): {
   /** The assembly's own row (index "0"), when the export included it. */
   root: OnshapeBomNode | null;
@@ -84,13 +130,13 @@ export function parseBomTree(payload: unknown): {
   const headers = Array.isArray(bom.headers) ? bom.headers : [];
   const rows = Array.isArray(bom.rows) ? bom.rows : [];
 
-  const headerIdByName = new Map(headers.map((h) => [h.name, h.id]));
+  const headerId = headerIdFor(headers);
   const missingColumns =
     rows.length === 0
       ? []
-      : BOM_REQUIRED_COLUMNS.filter((name) => !headerIdByName.has(name));
+      : BOM_REQUIRED_COLUMNS.filter((name) => !headerId(name));
   const get = (row: BomRow, name: string) => {
-    const id = headerIdByName.get(name);
+    const id = headerId(name);
     return id ? cell(row.headerIdToValue?.[id]) : null;
   };
 

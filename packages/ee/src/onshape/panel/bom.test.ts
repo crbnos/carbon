@@ -241,6 +241,64 @@ describe("parseBomTree", () => {
       parseBomTree({ headers: H, rows: [row("1", "A-1", 1)] }).missingColumns
     ).toEqual([]);
   });
+
+  it("reads a template that relabels its columns, by Onshape's property name", () => {
+    const { lines, missingColumns } = parseBomTree({
+      headers: [
+        { id: "h-item", name: "Pos.", propertyName: "item" },
+        { id: "h-qty", name: "Qty", propertyName: "quantity" },
+        { id: "h-pn", name: "PART NUMBER", propertyName: "partNumber" },
+        { id: "h-rev", name: "REVISION", propertyName: "revision" },
+        { id: "h-name", name: "Benennung", propertyName: "name" },
+        { id: "h-pl", name: "Purchasing Level", propertyName: "h-pl" }
+      ],
+      rows: [row("1", "A-1", 2), row("1.1", "B-1", 3)]
+    });
+    expect(missingColumns).toEqual([]);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({
+      partNumber: "A-1",
+      revision: "A",
+      name: "Name 1",
+      quantity: 2
+    });
+    expect(lines[0]!.children[0]).toMatchObject({
+      partNumber: "B-1",
+      quantity: 3
+    });
+  });
+
+  it("matches a label ignoring case when Onshape sends no property name", () => {
+    const { lines, missingColumns } = parseBomTree({
+      headers: H.map((header) => ({
+        ...header,
+        name: header.name.toUpperCase()
+      })),
+      rows: [row("1", "A-1", 4)]
+    });
+    expect(missingColumns).toEqual([]);
+    expect(lines[0]).toMatchObject({ partNumber: "A-1", quantity: 4 });
+  });
+
+  it("prefers Onshape's part number over a custom column with the same label", () => {
+    const { lines } = parseBomTree({
+      headers: [
+        ...H.filter((header) => header.id !== "h-pn"),
+        { id: "h-custom", name: "Part number", propertyName: "h-custom" },
+        { id: "h-pn", name: "PART NUMBER", propertyName: "partNumber" }
+      ],
+      rows: [
+        {
+          ...row("1", "A-1", 1),
+          headerIdToValue: {
+            ...row("1", "A-1", 1).headerIdToValue,
+            "h-custom": "LEGACY-1"
+          }
+        }
+      ]
+    });
+    expect(lines[0]!.partNumber).toBe("A-1");
+  });
 });
 
 describe("parseBomTree Subassembly BOM behavior", () => {

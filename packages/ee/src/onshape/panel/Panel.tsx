@@ -278,11 +278,12 @@ type PanelFieldsState =
     };
 
 // Every push reads these four itself: the Fields page shows them as fixed rows, never as a mapping.
+// Lower case, since a template can relabel them in any case.
 const FIXED_PROPERTY_NAMES = new Set([
-  "Part number",
-  "Revision",
-  "Name",
-  "Description"
+  "part number",
+  "revision",
+  "name",
+  "description"
 ]);
 
 // hasOwn: MAPPABLE_VALUE_TYPES is a plain object, so "constructor" would resolve to Object.prototype's.
@@ -2736,7 +2737,8 @@ function FieldsSection({
   const offered = data.properties
     .filter(
       (property) =>
-        property.mappable && !FIXED_PROPERTY_NAMES.has(property.name)
+        property.mappable &&
+        !FIXED_PROPERTY_NAMES.has(property.name.trim().toLowerCase())
     )
     .sort((a, b) => a.name.localeCompare(b.name));
   // Item fields with a row of their own are set in that row.

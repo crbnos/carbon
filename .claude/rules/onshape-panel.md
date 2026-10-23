@@ -122,6 +122,7 @@ The gateway rejects a request line over 4,096 bytes, and a PostgREST `.in()` lis
 ## Onshape API facts
 
 - Root identity comes from element metadata ("Part number", "Name", "Description"); the BOM's top-level row (`includeTopLevelAssemblyRow=true`) is the fallback.
+- A company BOM template can relabel columns ("PART NUMBER", "Qty") but never their `propertyName` (`item`, `quantity`, `partNumber`, `revision`, `name`, `description`, `bomBehavior`). `parseBomTree` finds each column by `propertyName`, then by label ignoring case (`headerIdFor`, `panel/bom.ts`); the reserved and fixed property-name sets compare in lower case.
 - A Part Studio model export needs exactly one `partId`. Thumbnails come from Carbon's model optimizer, never Onshape's thumbnail endpoint (it cannot select a part or configuration, and the optimizer renders one anyway).
 - `GET /documents/d/{did}/w/{wid}/currentmicroversion` changes on any edit to the document. An assembly's own element microversion does not change when a Part Studio it uses does, so the export skip keys on the document's.
 - `onshape.model.translation.complete` can be registered per document (`documentId`, `isTransient: true`); its payload carries `translationId`. A webhook that answers errors is dropped by Onshape.

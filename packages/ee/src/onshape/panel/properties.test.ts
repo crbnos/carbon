@@ -428,6 +428,28 @@ describe("resolveMappedFields", () => {
       }
     ]);
   });
+
+  it("treats a relabelled identity column as reserved, whatever its case", () => {
+    const { unmapped } = resolveMappedFields({
+      properties: [
+        {
+          propertyId: "p-pn",
+          name: "PART NUMBER",
+          valueType: "STRING",
+          value: "A-1"
+        },
+        {
+          propertyId: "p-state",
+          name: "STATE",
+          valueType: "STRING",
+          value: "Released"
+        }
+      ],
+      map: [],
+      definitions: []
+    });
+    expect(unmapped).toEqual([]);
+  });
 });
 
 describe("resolveMappedFields — item fields", () => {
