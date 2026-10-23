@@ -15,8 +15,13 @@ type Workspace = {
   access_token: string | null;
 };
 
-async function jobs(): Promise<void> {
-  console.log("✅ 🌱 Starting background jobs sync");
+/**
+ * After a deploy, for every workspace's ERP: Inngest learns its jobs
+ * (PUT /api/inngest), and a hosted Supabase project gets its Auth emails
+ * (auth-emails.ts).
+ */
+async function postDeploy(): Promise<void> {
+  console.log("✅ 🌱 Starting the post-deploy sync");
 
   const { data: workspaces, error } = await client
     .from("workspaces")
@@ -64,14 +69,14 @@ async function jobs(): Promise<void> {
   }
 
   if (hasErrors) {
-    console.error("🔴 Jobs sync completed with errors");
+    console.error("🔴 Post-deploy sync completed with errors");
     process.exit(1);
   }
 
-  console.log("✅ All jobs synced successfully");
+  console.log("✅ Post-deploy sync completed");
 }
 
-jobs().catch((error) => {
-  console.error("🔴 Unexpected error during jobs sync", error);
+postDeploy().catch((error) => {
+  console.error("🔴 Unexpected error during the post-deploy sync", error);
   process.exit(1);
 });

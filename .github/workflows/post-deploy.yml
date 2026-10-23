@@ -1,5 +1,7 @@
-name: Sync Inngest Functions
+name: Post Deploy Sync
 
+# What each workspace's freshly deployed ERP tells the services around it:
+# Inngest its list of jobs, and a hosted Supabase project its Auth emails.
 on:
   # Called by deploy.yml after a successful deploy.
   workflow_call:
@@ -10,7 +12,7 @@ permissions:
 
 jobs:
   sync:
-    name: Sync Inngest
+    name: Post Deploy Sync
     runs-on: ubuntu-latest
 
     steps:
@@ -27,9 +29,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Sync Inngest functions
+      - name: Sync Inngest functions and Auth emails
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-        run: pnpm --filter ci ci:jobs
+        run: pnpm --filter ci ci:post-deploy
