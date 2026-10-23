@@ -1083,7 +1083,11 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
     salesReturnLine: { salesReturn: "motor-repair", line: 1 },
     problem: "The motor trips on over-temperature at 70% of rated load.",
     time: [],
-    charges: []
+    charges: [],
+    assignments: [
+      { weekday: 2, plannedHours: 3 },
+      { weekday: 3, plannedHours: 2 }
+    ]
   },
   {
     key: "estimate",
@@ -1146,7 +1150,15 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
         note: "Re-seated and secured the encoder connector"
       }
     ],
-    charges: []
+    charges: [],
+    assignments: [
+      {
+        weekday: 0,
+        plannedHours: 4,
+        note: "Bring a spare encoder connector and latch kit"
+      },
+      { weekday: 1, plannedHours: 3 }
+    ]
   },
   {
     key: "warranty-repair",

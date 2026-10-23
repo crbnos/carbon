@@ -1083,7 +1083,11 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
     salesReturnLine: { salesReturn: "bus-repair", line: 1 },
     problem: "Reaction wheel telemetry drops out above 40 °C.",
     time: [],
-    charges: []
+    charges: [],
+    assignments: [
+      { weekday: 2, plannedHours: 3 },
+      { weekday: 3, plannedHours: 2 }
+    ]
   },
   {
     key: "estimate",
@@ -1147,7 +1151,15 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
         note: "Fitted the extended baffle and re-ran the eclipse profile"
       }
     ],
-    charges: []
+    charges: [],
+    assignments: [
+      {
+        weekday: 0,
+        plannedHours: 4,
+        note: "Bring the customer's flatsat harness for the eclipse re-run"
+      },
+      { weekday: 1, plannedHours: 3 }
+    ]
   },
   {
     key: "warranty-repair",

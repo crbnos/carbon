@@ -20,6 +20,7 @@ import {
 } from "../../contract-schedule.ts";
 import { round } from "../../precision.ts";
 import {
+  anchorWeekday,
   resolveDate,
   resolveLocalTimestamp,
   resolveTimestamp,
@@ -975,7 +976,9 @@ async function seedCustomerAssets(ctx: Ctx): Promise<void> {
  *   tier 09 writes the completion journal;
  * - an Invoiced job has the Draft invoice `createServiceInvoice` drafts: one
  *   line per labor item (billable hours × its sale price), then each billable
- *   charge, every line with `serviceJobId`, tax 0.
+ *   charge, every line with `serviceJobId`, tax 0;
+ * - an open job's dispatch assignments are the user's, on weekdays of the
+ *   anchor's week.
  */
 async function seedServiceJobs(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.sales;
@@ -1110,6 +1113,18 @@ async function seedServiceJobs(ctx: Ctx): Promise<void> {
         unitCost: done ? labor.unitCost : undefined,
         note: entry.note,
         createdAt: at(entryDate, "17:00:00")
+      });
+    }
+
+    // The dispatch grid's blocks this week (`upsertServiceJobAssignment`).
+    for (const assignment of spec.assignments ?? []) {
+      await insertRow(ctx, "serviceJobAssignment", {
+        serviceJobId: jobId,
+        employeeId: userId,
+        scheduledDate: anchorWeekday(ctx.anchor, assignment.weekday),
+        plannedHours: assignment.plannedHours,
+        note: assignment.note,
+        createdAt: at(openedDate, "09:30:00")
       });
     }
 

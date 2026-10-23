@@ -2370,6 +2370,12 @@ function maxCalendarDaysBack(workdaysBack: number): number {
 }
 
 const DONE_SERVICE_JOB_STATUSES = new Set(["Completed", "Invoiced"]);
+/** Seeded dispatch assignments go on these jobs only: work still to schedule. */
+const DISPATCHABLE_SERVICE_JOB_STATUSES = new Set([
+  "Open",
+  "Awaiting Approval",
+  "In Progress"
+]);
 
 /**
  * Service jobs: each names a seeded asset and bills the dataset's labor item
@@ -2379,7 +2385,9 @@ const DONE_SERVICE_JOB_STATUSES = new Set(["Completed", "Invoiced"]);
  * Progress RMA has a job that is not done. Dates follow the job: time on or
  * after opening, completion after the last entry and in an open period, the
  * invoice after completion. Completed and Invoiced jobs post a balanced
- * completion journal; an Invoiced job is Billable and bills something.
+ * completion journal; an Invoiced job is Billable and bills something. Only
+ * open jobs have dispatch assignments (one per weekday, positive hours), and
+ * at least one open job has none, so the grid and its backlog both show rows.
  */
 function serviceJobs(ctx: ValidationCtx): void {
   const { dataset, fail, need } = ctx;
@@ -2404,6 +2412,8 @@ function serviceJobs(ctx: ValidationCtx): void {
   const seen = new Set<string>();
   const statuses = new Set<string>();
   const jobByReturnLine = new Map<string, ServiceJobSpec>();
+  let assigned = 0;
+  let backlog = 0;
 
   const checkLine = (where: string, line: ServiceJobLineSpec) => {
     need("item", where, line.item);
@@ -2597,6 +2607,49 @@ function serviceJobs(ctx: ValidationCtx): void {
         job.charges.some((charge) => charge.billable ?? true);
       if (!bills) fail(`${where}: an Invoiced job bills time or a charge`);
     }
+
+    // The dispatch grid: assignments of open jobs, one per day
+    // (serviceJobAssignment_unique: job, employee, date — the employee is
+    // always the applying user).
+    const assignments = job.assignments ?? [];
+    if (assignments.length > 0) {
+      assigned += assignments.length;
+      if (!DISPATCHABLE_SERVICE_JOB_STATUSES.has(job.status)) {
+        fail(`${where}: a ${job.status} job is not on the dispatch grid`);
+      }
+    } else if (DISPATCHABLE_SERVICE_JOB_STATUSES.has(job.status)) {
+      backlog += 1;
+    }
+    const days = new Set<number>();
+    for (const assignment of assignments) {
+      if (
+        !Number.isInteger(assignment.weekday) ||
+        assignment.weekday < 0 ||
+        assignment.weekday > 4
+      ) {
+        fail(
+          `${where} assignment: weekday ${assignment.weekday} is not Monday (0) to Friday (4)`
+        );
+      }
+      if (days.has(assignment.weekday)) {
+        fail(
+          `${where} assignment: two on weekday ${assignment.weekday} for the same employee`
+        );
+      }
+      days.add(assignment.weekday);
+      if (!(assignment.plannedHours > 0)) {
+        fail(`${where} assignment: planned hours must be positive`);
+      }
+    }
+  }
+
+  if (assigned === 0) {
+    fail("sales.serviceJobs: no assignments, so the dispatch grid is empty");
+  }
+  if (backlog === 0) {
+    fail(
+      "sales.serviceJobs: every open job is assigned, so the dispatch backlog is empty"
+    );
   }
 
   for (const rma of sales.salesReturns) {

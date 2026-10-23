@@ -1084,7 +1084,11 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
     salesReturnLine: { salesReturn: "manifold-repair", line: 1 },
     problem: "The manifold leaks at the relief valve cavity at full pressure.",
     time: [],
-    charges: []
+    charges: [],
+    assignments: [
+      { weekday: 2, plannedHours: 3 },
+      { weekday: 3, plannedHours: 2 }
+    ]
   },
   {
     key: "estimate",
@@ -1147,7 +1151,15 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
         note: "Cleaned the spool and bore and flushed the circuit"
       }
     ],
-    charges: []
+    charges: [],
+    assignments: [
+      {
+        weekday: 0,
+        plannedHours: 4,
+        note: "Bring cold-start test oil and a spare spool"
+      },
+      { weekday: 1, plannedHours: 3 }
+    ]
   },
   {
     key: "warranty-repair",

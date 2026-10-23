@@ -954,6 +954,18 @@ export type ServiceJobTimeSpec = {
   note?: string;
 };
 
+/**
+ * A dispatch grid assignment (`serviceJobAssignment`) of an open job to the
+ * applying user, on a weekday of the anchor's Monday-start week
+ * (`anchorWeekday`), so the grid's current week has blocks.
+ */
+export type ServiceJobAssignmentSpec = {
+  /** 0 = Monday … 4 = Friday of the anchor's week. */
+  weekday: 0 | 1 | 2 | 3 | 4;
+  plannedHours: number;
+  note?: string;
+};
+
 /** An estimate line or a charge: a Service item at a price. */
 export type ServiceJobLineSpec = {
   item: string;
@@ -1013,6 +1025,11 @@ export type ServiceJobSpec = {
   completedWorkdaysBack?: number;
   /** Invoiced: the Draft invoice's issue day, in working days before the anchor. */
   invoiceWorkdaysBack?: number;
+  /**
+   * Open, Awaiting Approval and In Progress only. A job with none stays in
+   * the dispatch grid's backlog.
+   */
+  assignments?: ServiceJobAssignmentSpec[];
 };
 
 export type SalesData = {

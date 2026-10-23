@@ -1082,7 +1082,11 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
     salesReturnLine: { salesReturn: "arm-repair", line: 1 },
     problem: "Axis 4 faults with an encoder error after a cold start.",
     time: [],
-    charges: []
+    charges: [],
+    assignments: [
+      { weekday: 2, plannedHours: 3 },
+      { weekday: 3, plannedHours: 2 }
+    ]
   },
   {
     key: "estimate",
@@ -1144,7 +1148,15 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
         note: "Loaded the payload data and re-tuned collision detection"
       }
     ],
-    charges: []
+    charges: [],
+    assignments: [
+      {
+        weekday: 0,
+        plannedHours: 4,
+        note: "Load the current payload's collision table before the visit"
+      },
+      { weekday: 1, plannedHours: 3 }
+    ]
   },
   {
     key: "warranty-repair",

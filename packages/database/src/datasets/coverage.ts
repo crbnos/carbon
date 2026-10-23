@@ -229,6 +229,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   salesRfqLine: 4,
   service: 1,
   serviceJob: 5,
+  serviceJobAssignment: 4,
   serviceJobEstimateLine: 4,
   serviceJobItem: 1,
   serviceJobTime: 8,

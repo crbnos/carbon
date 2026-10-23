@@ -140,3 +140,13 @@ export function resolveTimesheetDay(
   });
   return (day.compare(anchor) > 0 ? anchor : day).toString();
 }
+
+/**
+ * A weekday of the anchor's own Monday-start week (`weekday` 0 = Monday …
+ * 4 = Friday), as the service dispatch grid's `startOfWeek(…, "en-GB")`
+ * builds it. Unlike `resolveTimesheetDay` a day after the anchor is kept: a
+ * dispatch assignment is planned work, so it may be later this week.
+ */
+export function anchorWeekday(anchor: CalendarDate, weekday: number): string {
+  return startOfWeek(anchor, "en-GB").add({ days: weekday }).toString();
+}
