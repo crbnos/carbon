@@ -142,7 +142,7 @@ Percent Complete and the loss provision need the Business plan.
 A Time & Materials or Cost Plus line on a contract with `billingBasis` `Schedule`. Refused by `upsertContractLine` and `insertContractLines` (code `CONTRACT_BILLING_BASIS_MISMATCH`), by Confirm, and by Amend for an added line (`post-customer-contract`). Create the line on a project contract (Sales → Agreements → Project Contracts).
 
 ### "A project contract line is One-time. Create a service contract for recurring charges."
-A Recurring line on a contract with `billingBasis` `Project`. `upsertContractLine` saves every project contract line as One-time at quantity 1, so this comes from Confirm, Amend or `insertContractLines`.
+A Recurring line on a contract with `billingBasis` `Project`. `upsertContractLine` saves every project contract line as One-time (at quantity 1, unless the line names a part: then its quantity is the units to deliver), so this comes from Confirm, Amend or `insertContractLines`.
 
 ### "A project contract cannot cover a service order."
 A service order names a project contract as its coverage contract (`createServiceOrder`, `updateServiceOrderCoverageContract`). A project contract never covers a service order; the order form and the coverage picker list Active service contracts only.

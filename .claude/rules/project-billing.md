@@ -37,19 +37,22 @@ it, `isProgressRevenueMethod` keeps it out of the revenue plan) and these column
   and `thresholdNoticeFundedCost` / `runOutNoticeFundedCost` (the funded cost each
   notice went out for, P13).
 
-CHECKs: a billing line has a project and a billing element, quantity 1, rate 0 and
-`revenueType` One-time (`customerContractLine_billing_check`); Cost Plus needs a
+CHECKs: a billing line has a project and a billing element, quantity > 0, rate 0 and
+`revenueType` One-time (`customerContractLine_billing_check`; `quantity = 1` until
+`20261023024353_prototype-clins.sql`, which allows a Part line's units); Cost Plus needs a
 fee; the revenue method follows the billing method (P6: Fixed → Daily, Even Period
 or Percent Complete; T&M → Right to Invoice; Cost Plus → Percent Complete or Right
 to Invoice); Percent Complete needs a billing element. The ERP mirrors them in
 `checkBillingTerms` (`sales.models.ts`, `contractRevenueMethodsByBillingMethod`),
-and `upsertContractLine` forces quantity 1, rate 0 and One-time for a billing line.
+and `upsertContractLine` forces rate 0 and One-time for a billing line, and quantity 1
+unless the line names a Part (see Part CLINs below).
 
 A billing line lives on a **project contract** (`customerContract.billingBasis =
 'Project'`, migration `20261021013300_contract-billing-basis.sql`; spec
 `.ai/specs/2026-10-21-project-contracts.md`). A service contract (`Schedule`) takes only
 `Fixed` lines, and every project contract line is One-time; a project contract's `Fixed`
-line is labelled "Fixed Price", has quantity 1 and its `rate` as the price, and bills on
+line is labelled "Fixed Price", has quantity 1 and its `rate` as the price (a Part line:
+its quantity, at `rate` per unit), and bills on
 its schedule rows ("billing events", edited in `ContractInvoiceGrid` on the Invoicing
 step). An amend `change` of a Fixed Price line (any One-time line, either kind of
 contract) ends it the day before it starts and its copy bills only the new price less
@@ -203,6 +206,66 @@ goes to the contract's sales person and the project's manager, in-app and by ema
 daily cost × `noticeWindowDays`, capped by the remaining plan only when the subtree
 has a plan, P14) against `noticePercent × fundedCost`; a second notice when the funds
 run out within the window. A changed `fundedCost` makes both due again (P13).
+
+## Part CLINs (prototypes)
+
+Spec `.ai/specs/2026-10-21-project-contracts.md` section 10 (D23–D39). A project
+contract line may name a Part: a deliverable that a job builds and a delivery hands
+over. `contractLineItemTypeAllowed` / `contractLineItemTypeMessage`
+(`@carbon/database/contract-schedule`) allow a Part only when `billingBasis =
+'Project'`. A Part line keeps its quantity, the units to deliver. The billing method
+still decides how the line bills. The screens are in
+`apps/erp/app/modules/sales/AGENTS.md` → Contracts → "Part CLINs".
+
+**Build.** `$id.$lineId.build.tsx` calls `sales.buildContractLineJob`, which calls
+`createProjectJob` (`apps/erp/app/modules/projects/projects.service.ts`) with
+`customerContractLineId`.
+The job is charged to the task the user picks, it consumes to the project for every
+billing method (D30, D33), and it gets its own Make to Order plan line on that task.
+The plan line's **Create Job** links its job to a part CLIN too
+(`findPartContractLine`). See `projects-system.md` → Consume-to-project jobs.
+
+**The job bills through the billing element.** Billing reads the project ledger, not
+the job. The job's rows carry `jobId` and the task, so they fall under the line's
+billing element when the task is in its subtree:
+
+| Billing method | What the job's cost gives |
+|---|---|
+| Time & Materials | A billable item per ledger row at posting (`issue`, `post-production-event` through `insertProjectLedgerRows`). Labor is priced by the row's `laborCategoryId`, which `post-production-event` now stamps from `employeeJob.laborCategoryId` (D37); with no category and no employee rate the item is On Hold "No bill rate". Rows that `complete_job_to_inventory` and `backflush_job_materials` write in SQL get their item from the T&M backfill at the next invoice run |
+| Cost Plus | Items from `generateCostPlusItems`, as for any other cost |
+| Fixed Price | No billable items. The line bills on its billing events. Percent Complete revenue follows the job's cost |
+
+Under DCAA timekeeping, shop labor reaches the project through a certified timesheet,
+not at the production event (`government-contracting.md` → Shop labor under DCAA).
+
+**Billing on delivery (Fixed Price, D34).** An Active contract's billing events cannot
+be edited, so the delivery moves them. `postContractShipment`
+(`inventory/shipment-customer-contract.ts`) calls `splitBillingRowForDelivery`
+(`sales/contract-delivery-billing.ts`) for each Fixed Price delivery line with
+delivered quantity × `rate`:
+
+1. It takes the line's next Planned, non-adjustment row with a positive amount
+   (`FOR UPDATE`). With none left (all invoiced), it does nothing.
+2. If the row holds no more than the amount, the whole row moves to a Planned invoice on
+   the delivery date. The shipment line stores the row in
+   `customerContractInvoiceLineId` and its old date in `previousInvoiceDate`.
+3. Otherwise it splits the row: the old row keeps the rest, and a new row with the
+   amount (units in proportion) goes on the delivery date. `previousInvoiceDate` stays
+   null.
+
+`restoreBillingRowAfterVoid` puts it back: a whole row returns to a Planned invoice on
+`previousInvoiceDate`; a split row merges into the line's next Planned row of the same
+period. It refuses once the delivered row's invoice is not Planned ("The delivery is
+invoiced. Credit it first."). Empty Planned invoices are deleted. The line's billed
+total never changes, so the revenue plan still conserves. T&M and Cost Plus deliveries
+change no billing.
+
+**A contract invoice line never ships.** `isDirectItemLine`
+(`post-sales-invoice/posting-lines.ts`) is false for a line with
+`customerContractLineId`. Without it, a Part on a contract invoice line relieved stock
+a second time (a `Sales Shipment` item ledger row and a COGS pair on a Fixed Price
+event; a COGS pair on T&M or Cost Plus). The invoice line stays `invoiceLineType
+'Service'`; the job and the delivery own the part.
 
 ## Revenue and WIP relief (Phase 4b)
 
@@ -414,3 +477,11 @@ both choices visible with an upgrade notice (`ProjectRevenueUpgrade`) and Save d
 - The run page's **Amount** sums every line, cost relief and loss provision included.
 - Browser verification of Phase 4a (plan Task 21) and Phase 4b (plan Task 14) is
   deferred.
+- **Open (needs a decision): amend after a Fixed Price delivery.** An amendment
+  re-plans the line (`reconcileContractSchedule` replaces the Planned invoices from the
+  amendment date and re-cuts the kept row to the whole price), so the undelivered amount
+  moves onto the delivery date. The failing test is saved at
+  `.context/pending-amend-after-delivery.test.ts.txt` (plan
+  `.ai/plans/2026-10-21-project-contracts.md`, Execution notes, Task 30).
+- The amend modal adds Service items only ("Add Services"). A Part line by amendment
+  works only through the server function, which accepts one.

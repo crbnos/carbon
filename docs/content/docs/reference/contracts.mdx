@@ -41,7 +41,7 @@ A new service contract opens a five-step setup. A project contract has four, wit
   <Status name="Ended">The end date has passed and every planned invoice has been drafted. Read-only.</Status>
 </StatusFlow>
 
-**"Confirm"** checks that the contract has lines, that each is a Service item, and that each recurring line has a rate unit. Each line's invoices must add up to its total, and its revenue must equal what it bills. After that, terms and lines change only through [Amend](#amendments); only **"Contract Type"**, **"Invoicing"** and **"Notes"** stay editable. **"Delete Contract"** is for drafts only.
+**"Confirm"** checks that the contract has lines, that each names an item the contract allows (a Service item; on a project contract, a Part too), and that each recurring line has a rate unit. Each line's invoices must add up to its total, and its revenue must equal what it bills. After that, terms and lines change only through [Amend](#amendments); only **"Contract Type"**, **"Invoicing"** and **"Notes"** stay editable. **"Delete Contract"** is for drafts only.
 
 The daily billing job sets a contract to Ended once its end date has passed and nothing is left to draft. An open-ended contract runs until you cancel it.
 
@@ -171,8 +171,8 @@ The order counts those lines as invoiced, so invoicing the order bills only the 
 <AgentContext>
 ## Troubleshooting
 
-### "Add at least one line before confirming" / "LINE: only Service items can be on a contract" / "LINE: a recurring line needs a rate unit"
-Confirm (`post-customer-contract` `confirm`) refuses a contract with no lines, a line whose item is not a Service item, or a Recurring line without a rate unit. Several problems are reported in one message, joined with "; ".
+### "Add at least one line before confirming" / "LINE: only Service items can be on a service contract" / "LINE: only Part and Service items can be on a project contract" / "LINE: a recurring line needs a rate unit"
+Confirm (`post-customer-contract` `confirm`) refuses a contract with no lines, a line whose item the contract does not allow (`contractLineItemTypeAllowed`: a Service item, or a Part on a project contract), or a Recurring line without a rate unit. Several problems are reported in one message, joined with "; ".
 
 ### "The edited invoice schedule no longer bills each line's total (LINE: AMOUNT not on any invoice). Fix the edits or reset the schedule."
 A line changed after the schedule was edited, or a grid edit left an amount unplaced. The invoice grid shows the same amounts in its "Left to invoice" footer row, and the Review step lists them; **Reset Schedule** plans it again from the lines.
@@ -186,8 +186,8 @@ The action does not apply in the contract's status. Draft: Confirm, schedule edi
 ### "Only a Draft contract can be edited — use Amend" / "Lines can only be added or changed on a Draft contract — use Amend" / "Lines can only be removed from a Draft contract — use Amend" / "Only a Draft contract's terms can be edited — use Amend"
 Service-level guards (code `CONTRACT_NOT_DRAFT`; these writers are also MCP tools). On an Active contract only Contract Type, Invoicing and Notes can change directly.
 
-### "A contract line must be a Service item" / "This line does not belong to this contract"
-`upsertContractLine` guards (`CONTRACT_LINE_NOT_SERVICE`, `CONTRACT_LINE_WRONG_CONTRACT`).
+### "Only Service items can be on a service contract" / "Only Part and Service items can be on a project contract" / "This line does not belong to this contract"
+`upsertContractLine` guards (`CONTRACT_LINE_NOT_SERVICE`, `CONTRACT_LINE_WRONG_CONTRACT`). The service wizard's Add Products (`insertContractLines`) still says "A contract line must be a Service item".
 
 ### "Add an invoice contact with an email to send invoices"
 Setting Invoicing to *Post and Email* in the properties panel needs an invoice contact with an email (`CONTRACT_INVOICE_EMAIL_NO_CONTACT`).

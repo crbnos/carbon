@@ -34,20 +34,27 @@ run the same checks. The route only parses the form, and takes the document id f
   `companySettings.receiptQuantitiesStartAtZero` is on (Settings → Inventory → Receiving —
   every source `create` builds lines for: Purchase Order, Inbound Transfer, Sales Return Order;
   a PO's fixed-asset lines then start unticked). Shipments are not affected.
+  The `'Customer Contract'` source (a contract delivery, below) does the same: `createShipment`
+  returns the contract's Draft delivery, else invokes `create` with `shipmentFromCustomerContract`.
 - `$id.tsx` — layout loader: parallel `getShipment` / `getShipmentLines` / `getShipmentTracking`,
-  plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. Receipt also loads
+  plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. On a `Customer Contract`
+  shipment it also reads `serialNumberByLineId` from `shipmentLine` (the `shipmentLines` view
+  predates `shipmentLine.serialNumber`). Receipt also loads
   `getReceiptFiles`, `getBatchProperties`, `getShelfLifeForItems`, `companySettings`. Renders `<Outlet/>`.
 - `$id._index.tsx` — redirects to `…/details`.
 - `$id.details.tsx` — renders Form + Lines + Notes. **Action** (`updateShipment` / `updateReceipt`): if
   `sourceDocument` or the location changed it re-invokes `create`, else the building block
   `upsertShipment` / `upsertReceipt` (Supabase update, sets `updatedBy`).
   A rental document refuses a change of source ("A rental shipment keeps its rental agreement.
-  Create it from the agreement.").
+  Create it from the agreement."). A contract delivery does too, in either direction ("A
+  contract delivery keeps its contract. Create it from the contract."), and neither re-invokes
+  `create` on a header change.
 - `$id.post.tsx` — see posting flow below.
 - `$id.void.tsx` (`voidShipment` / `voidReceipt`) — guards status, invokes the posting with `type: "void"`.
 - `$id.delete.tsx` (`deleteShipment` / `deleteReceipt`) — **guard: blocked once `postingDate` is set**.
 - `lines.update.tsx` (`updateShipmentLines` / `updateReceiptLines`) — one field on the selected
-  lines; only `storageUnitId` + `shippedQuantity` (receipt: `receivedQuantity`). Item/storage rules
+  lines; only `storageUnitId`, `shippedQuantity` and `serialNumber` (a contract delivery's typed
+  serial) (receipt: `receivedQuantity`). Item/storage rules
   are NOT evaluated here, only at post.
 - `lines.tracking.tsx` (`assignShipmentLineEntity`; receipt: `setReceiptLineBatch` /
   `setReceiptLineSerial` / `assignReceiptReturnEntity` / `removeReceiptReturnEntity`, one per
@@ -115,15 +122,20 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   (shipment: `getShipmentRelatedItems`; receipt: `getReceiptRelatedItems`, which also resolves a
   sales return's customer), receipt inspections and line attachments, the shipment's packing slip
   (only for the sources its PDF route renders: Sales Order, Sales Invoice, Purchase Order,
-  Outbound Transfer, Rental Agreement — `PACKING_SLIP_SOURCES`; a rental shipment prints as a
-  "Delivery Ticket", one row per shipped unit with its serial number, through the `title` field of
-  `PackingSlipData`) — and whose Activity tab is the audit log.
+  Outbound Transfer, Rental Agreement, Customer Contract — `PACKING_SLIP_SOURCES`; a rental
+  shipment prints as a "Delivery Ticket", one row per shipped unit with its serial number, through
+  the `title` field of `PackingSlipData`; a contract delivery prints as a "Receiving Report", below)
+  — and whose Activity tab is the audit log. The sidebar row is titled "Packing Slip" for every
+  source. A contract delivery's source row links the contract (`path.to.contractDetails`, with
+  `view: sales`), as does the `ShipmentsTable` source column.
 - **Form** (`ShipmentForm.tsx`, `ReceiptForm/ReceiptForm.tsx`): flat `ValidatedForm` (no Card),
   source-document `Select` + dependent `Combobox` (ID), `Location`, custom fields. The
   `use{Shipment,Receipt}Form` hook fetches
   selectable source documents (filtered by status) when not posted. **Posted locks `location`,
   `sourceDocument`, `sourceDocumentId`.** Shipment extra field `trackingNumber` + `ShippingMethod`;
-  receipt extra `externalDocumentId`.
+  receipt extra `externalDocumentId`. A `Rental Agreement` or `Customer Contract` shipment keeps
+  its source: both source fields are read-only (`keepsSource`), and the source `Select` offers
+  `Customer Contract` only on a contract delivery.
 - **Lines** (`ShipmentLines.tsx`, `ReceiptLines.tsx`): card-row list (a bordered div, **not** a
   table), one `…LineItem` per line. Inline `NumberField` for shipped/received qty and a
   storage-unit `Combobox` (disabled for PO/Job fulfillment), each persisting via a fetcher to
@@ -147,6 +159,11 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   (Fleet / Inventory) for a unit treated as a sale. The loaders sort `rentalLines` by asset id so the
   list holds still across edits. The existing fixed-asset components need an order line id, which a
   rental line does not have.
+- **Contract delivery lines**: on a `'Customer Contract'` shipment, `ShipmentLineItem` hides the
+  storage unit picker (the delivery moves no stock) and shows a **Serial Number** input that saves
+  `shipmentLine.serialNumber` on blur through `lines.update` (field `serialNumber`). The value comes
+  from the loader's `serialNumberByLineId`. No tracked entity holds the serial: the job consumed
+  the part to the project.
 - **Notes**: shipment uses `ShipmentNotes` (Card with **internal + external** tabbed editors).
   Receipt details reuses `SupplierInteractionNotes` (**internal notes only**) — there is no
   `ReceiptNotes` component.
@@ -157,7 +174,8 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   `ShipmentVoidModal` / `ReceiptVoidModal` (destructive `Alert` + bulleted consequences, submit
   via `fetcher.Form` to the void route). Shipment posting is gated by `ShipmentPostModal.tsx`.
   On a rental document the post modals show a date field, **Delivered on** / **Returned on**
-  (default company today, no future date), sent as `postingDate`; `ReceiptPostModal` also blocks a
+  (default company today, no future date), sent as `postingDate`; `ShipmentPostModal` shows
+  **Delivered on** on a contract delivery too (`isDelivery`); `ReceiptPostModal` also blocks a
   ticked unit treated as a sale that has no Return To.
   **Both post modals are source-aware for return flows**, and must stay in step with
   `lines.tracking`'s guard or they reject what tracking accepted:
@@ -183,7 +201,7 @@ same renderer `file+/shipment+/$id[.]pdf.tsx` serves); receipt may call
 
 `postReceipt` and `postShipment` (`inventory.service.ts`, ported from the `post-receipt` and `post-shipment` server functions) take
 `{ type: "post" | "void", {receipt,shipment}Id, postingDate? }` (the context carries `companyId` / `userId`;
-`postingDate` is read only by the rental source, and `$id.post.tsx` passes it from the modal to the operation), run
+`postingDate` is read only by the rental and contract sources, and `$id.post.tsx` passes it from the modal to the operation), run
 the service-role client + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
 - **post-receipt** handles `Purchase Order`, `Inbound Transfer`, `Rental Agreement` (returns each
@@ -205,7 +223,8 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   the legacy backfill (`activateAccounting`, `accounting.service.ts`) calls the same builders
   with the stored cost rows.
 - **post-shipment** handles `Rental Agreement` (puts each ticked unit On Rent on the delivery
-  date; no `itemLedger`, `costLedger` or journal), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
+  date; no `itemLedger`, `costLedger` or journal), `Customer Contract` (a contract delivery, below;
+  `shipment-customer-contract.ts`), `Sales Order`, `Purchase Order`, `Outbound Transfer`,
   `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
   Cr Inventory / Dr GR/IR; the `create` posting seeds the shipment's tracked entities from
   `purchaseReturnOrderLineTrackedEntity`, and this path **splits** a batch when the returned
@@ -259,6 +278,62 @@ applies.
   Posted or held by a Draft run: the units go back to Pending. `post-receipt` refuses a rental
   receipt void ("A rental return cannot be voided. Correct the unit by hand.").
   The rental lifecycle itself is in `apps/erp/app/modules/sales/AGENTS.md` → Rentals.
+
+## Contract deliveries (`Customer Contract` source)
+
+A delivery of a project contract's part CLINs (spec `.ai/specs/2026-10-21-project-contracts.md`
+section 10.4, D29–D34). The sibling is the rental agreement's Deliver. The enum value comes from
+`20261023024312_contract-delivery-enum.sql`; the columns and the index from
+`20261023024353_prototype-clins.sql`. The CLIN side (Build, Deliver, the next step) is in
+`apps/erp/app/modules/sales/AGENTS.md` → Contracts → "Part CLINs".
+
+**Create** — the `create` posting's `shipmentFromCustomerContract` case (`shared.service.ts`) (`{ customerContractId,
+customerContractLineId? }`, permission `create: inventory`). Called by the `deliverContractLine` operation (the CLIN's Deliver route
+`contract+/$id.$lineId.deliver.tsx`, one line) and by `createShipment` (`shipment+/new.tsx`, every line). In one
+transaction it does these steps:
+
+1. It locks the contract `FOR UPDATE` and refuses a contract that is not Active.
+2. It reads the contract's current Part lines (an `amendsLineId` replacement makes a line not
+   current), or the one line given ("Only a contract line that names a part is delivered").
+3. Per line, the open quantity is min(Σ `quantityComplete` of its jobs that are not Cancelled,
+   the line quantity) less the shipped quantity of its Posted `Customer Contract` shipment lines.
+   A line already on a Draft or Pending delivery is skipped.
+4. It reuses the contract's Draft delivery, or inserts one (`sourceDocumentReadableId` = the
+   contract number, `customerId`, `locationId` from the first line's first job). The partial
+   unique index `shipment_oneOpenDraftPerCustomerContract_idx` allows one Draft per contract.
+5. It inserts one `shipmentLine` per line with an open quantity: `lineId` = the CLIN (no FK),
+   `orderQuantity`, `outstandingQuantity` and `shippedQuantity` = the open quantity (filled in:
+   Deliver, then Post), the job's location, no storage unit, `unitPrice` = the line's `rate` on a
+   Fixed Price line, else 0.
+
+It refuses with "Nothing to deliver" or "The line is already on an open delivery".
+
+**Post** — `postContractShipment` (`apps/erp/app/modules/inventory/shipment-customer-contract.ts`, called from `postShipment`), one transaction:
+
+| | Every contract delivery line |
+|---|---|
+| Date | `postingDate` from **Delivered on**, never in the future (`futureDeliveryError`) |
+| Quantity limit | Per CLIN: Σ `quantityComplete` of its jobs (not Cancelled) less Posted deliveries, and at most the line quantity less Posted deliveries. Refused as "<CLIN>: N to deliver, but only M built and not delivered" |
+| Stock | None: no `itemLedger`, no `costLedger`, no tracked entity |
+| Journal | None |
+| Serial | Typed on the line (`shipmentLine.serialNumber`) |
+| Billing | Fixed Price: `splitBillingRowForDelivery` moves delivered quantity × `rate` of the next Planned billing event to the delivery date and stores the row in `customerContractInvoiceLineId` (and `previousInvoiceDate` when the whole row moved). T&M and Cost Plus: nothing (`project-billing.md` → Part CLINs) |
+
+The contract must be Active, and only lines with a `lineId` and a shipped quantity above 0 post
+("Enter a quantity to deliver" otherwise). The shipment becomes `Posted` with `postingDate` and
+`postedBy`.
+
+**Void** — `voidContractShipment`: for each line with `customerContractInvoiceLineId`,
+`restoreBillingRowAfterVoid` puts the billing back. It is refused once that row's invoice is not
+Planned ("The delivery is invoiced. Credit it first."). Then it clears the two columns and sets
+the shipment `Voided`. There is no stock to reverse.
+
+**Receiving Report** — `renderPackingSlip` (`packing-slip.pdf.tsx`), the `Customer Contract` case, renders
+`PackingSlipPDF` with `title="Receiving Report"`, `customerReferenceLabel="Contract No."` and the
+contract's `customerReference`, the contract's ship-to (`shipToCustomerLocationId`) and one row per
+delivered line (shipped quantity above 0): "CLIN <lineItemNumber> <description>", the item's id,
+the typed serial and "<quantity> <unit>" (`PackingSlipData` row field `quantity`). The user keys it
+into WAWF; there is no EDI export.
 
 ## Gotchas
 

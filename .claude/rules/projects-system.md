@@ -58,7 +58,16 @@ opens in layers. Each layer shows the least that a user needs.
   Coming up, Budget, Contract (a Contract project billed by a confirmed project contract,
   `view: sales`) and Needs attention. Needs attention also names, on a Contract project, a
   missing or Draft project contract and the contract billable items that wait for review
-  (see `project-billing.md` → UI). Progress shows the share of work elements done (whole
+  (see `project-billing.md` → UI). Three rows come from the jobs of the tasks' plan lines
+  (`getProjectJobs`, a job that is not Cancelled): a part CLIN with a Completed or Closed
+  job and units not delivered ("J-104 is complete. N units are not delivered", with
+  `view: sales`; min(Σ `quantityComplete`, the line quantity) less Posted `Customer
+  Contract` shipment lines); an open job that finishes after its open task's
+  `targetDate` ("J-104 finishes after <task>'s target date"); and an open task whose every
+  job is done ("J-104 is complete. Is <task> done?"). A complete job never completes its
+  task, because test or inspection work can remain. A job's finish is
+  `job.projectedCompletionAt` (the scheduler writes it) as a day in the company's time
+  zone, else `job.dueDate`. Progress shows the share of work elements done (whole
   percent, rounded down; Cancelled work is left out), the days to the due date, the overdue count
   and a bar per state. Coming up lists open elements with a target date. The right column has
   Details, Milestones, Members (only with `restrictCharging`) and Recent activity. Recent activity
@@ -239,6 +248,39 @@ project the job's cost object in place of WIP:
   raises.
 - On an outside processing receipt, only the job decides the route
   (`loadReceiptProjectRoutes`).
+- `post-production-event` stamps the employee's `employeeJob.laborCategoryId` on the
+  Labor ledger row (D37 of `.ai/specs/2026-10-21-project-contracts.md`), so a T&M
+  contract line prices shop hours by the category's bill rate. Under DCAA timekeeping it
+  skips the Labor leg and writes a Draft timesheet entry instead
+  (`government-contracting.md` → Shop labor under DCAA).
+
+**`createProjectJob`** (`projects.service.ts`) is the one path that makes a job for a
+project element. Two operations call it: the plan line's **Create Job**
+(`projects.createJobFromMaterial`, route `$projectId.elements.$elementId.create-job.tsx`) and a
+part CLIN's **Build** (`sales.buildContractLineJob`, route `x+/contract+/$id.$lineId.build.tsx`,
+spec section 10.2). It does these steps:
+
+1. It checks the location (the service role writes the job) and the item, refuses an
+   item with an unreleased change order, and reads the charge target
+   (`getJobChargeTarget`).
+2. It sets `consumeToProject` for an Expense or Contract project, and `fixedAssetId`
+   for a Capitalize project (refused before release). It never sets project stock: a
+   prototype job always consumes to the project (D30, D33).
+3. With no `materialId` (Build), it adds a Make to Order `projectElementMaterial` row on
+   the task at `itemCost.unitCost` × quantity. A locked plan refuses
+   (`requireProjectPlanEditable`, no change request).
+4. It calls `insertJob` with `projectId`, `projectElementId` and
+   `customerContractLineId`. If the job fails, it deletes the plan line it added
+   (`insertJob` writes on its own client, so the two cannot share a transaction).
+5. It stamps `projectElementMaterial.jobId`.
+
+`job.customerContractLineId` (migration `20261023024353_prototype-clins.sql`, composite
+FK to `customerContractLine`, ON DELETE SET NULL) names the CLIN whose part the job
+builds. Build sets it. Create Job sets it through `findPartContractLine`: the line of a
+Draft or Active project contract with the plan line's item, whose `projectElementId` is
+the task or an ancestor, not replaced by an amendment, and only when exactly one
+matches. The CLIN reads its jobs by this column (`apps/erp/app/modules/sales/AGENTS.md`
+→ Part CLINs). Billing still follows the billing element, not the column.
 
 ## Service projects
 
@@ -793,6 +835,12 @@ the plan route.
   charges by description, which the Charge button prefills. When two lines share a key, the
   oldest takes the whole actual (`keyOwners`), as `post-project-issue` raises the oldest
   line's `quantityIssued`. The material quantity is `quantityIssued` itself.
+- **Actuals by job.** A plan line that made a job (`projectElementMaterial.jobId`) reports
+  the job's whole cost: `planActuals.jobs` sums every own ledger row of that job, of every
+  cost type, by `jobId`. A row whose job a plan line of THIS element made leaves the item
+  and labor keys (`ownedByPlanLine`), so no cost counts twice; a job made elsewhere keeps
+  the old matching. A line with a job never owns its item's key (`keyOwners` skips it).
+  The card's quantity stays `quantityIssued`.
 - **Order.** `orderPlanRows` (`ui/Element/plan-rows.ts`, pure, tested): materials, labor,
   costs, each by `createdAt` then `id`. The sort menu reorders from there (`sortPlanCards`).
 - **Item change.** Choosing an item in `PlanLineModal` reads `itemCost.unitCost` through the
@@ -806,7 +854,12 @@ the plan route.
 
 **Actual** (`ElementTimeAndMaterials`) is one card per ledger row of the element's subtree
 (an expense shows its own description; a row of an element below names it), then the time
-not posted yet with its next step (`OpenTimeAction`). Its **Charge** menu has Issue
+not posted yet with its next step (`OpenTimeAction`). The rows of one job fold into one
+card (`foldJobRows`, `ui/Element/cost-cards.ts`, tested): the job number linked to the job,
+the part, the element when it is below this one, and the summed amount, in the place of
+the job's newest row. The ledger read returns `jobId`, `jobReadableId` and `jobItemId`
+(`ElementLedgerRow`). Rows with no job stay one card each. A job card counts as Material
+in the type filter. Its **Charge** menu has Issue
 material, Log time and Charge cost; with nothing charged it shows the empty text and the
 same menu. On a service order the `charges` prop replaces the tab, and the Estimated cards
 have no charge buttons (the order posts through its own charge route).
@@ -823,6 +876,12 @@ boxes, left to right only, and the cards stack in their box at fixed offsets. Th
 filter is a lens on the Tree: the loader drops `type` for the Tree, and a box stays while
 a card below it matches. `?root=` shows one subtree under a breadcrumb, and the Plan
 route (`$projectId.elements.tsx`) skips its own reload when only `root` changes.
+A task's card shows its job beside the state chip (`JobBadge`, `graph/ElementCardNode.tsx`):
+"J-104 · 1 of 1" (number and quantity complete), linked to the job, with "+N" for the
+task's other jobs and the finish date in its title. The Plan loader reads it only for the
+Tree, from `getProjectJobs` (`projects.service.ts`: `projectElementMaterial` rows with a
+`jobId`, embedding the job); the badge is the task's first job that is not Cancelled. A job
+no plan line names gets no badge.
 
 `countTraceLinks` and `highlightTraceLinks` give the "N tests" and "N reqs" counts
 and their highlight. `ElementTypeIcon` holds the one colour of each type (its icon);
@@ -862,8 +921,9 @@ and the per-user layout preference were removed on 2026-10-12); the tables stay.
 
 ## Plan-line actions and other charge numbers
 
-- **Create Job** (`$projectId.elements.$elementId.create-job.tsx`) and **Create PO
-  line** (`…create-po-line.tsx`) from a plan-line material stamp
+- **Create Job** (`$projectId.elements.$elementId.create-job.tsx`, through
+  `createProjectJob`, see Consume-to-project jobs) and **Create PO line**
+  (`…create-po-line.tsx`) from a plan-line material stamp
   `projectElementMaterial.jobId` / `purchaseOrderLineId`.
 - Reimbursement lines carry `projectId` + `projectElementId` (`ChargeNumberControlled`);
   charge lines show the charge number read-only.
@@ -872,7 +932,12 @@ and the per-user layout preference were removed on 2026-10-12); the tables stay.
   or Quarterly scale (`?scale`; the window and the header periods come from the pure
   `scheduleLayout`, `ui/Milestones/schedule-scale.ts`, tested). A row or a bar opens the
   milestone's drawer (`?milestone=`): dates, progress, hours, cost, actions and the burn
-  chart (`buildBurnSeries`), which plots Posted timesheet hours against the ideal line.
+  chart (`buildBurnSeries`), which plots Posted timesheet hours plus shop hours against
+  the ideal line. Shop hours (D39) are the `quantity` of `projectLedger` rows with
+  `costType = 'Labor'`, a `jobId` and `documentType <> 'Timesheet'` (a DCAA timesheet's
+  rows are already in the timesheet hours). `get_project_cost_summary` adds the same sum
+  to `actualHours`; migration `20261023031213_milestone-shop-hours.sql` redefines it from
+  `20261011151313` and changes only the `hours` CTE.
 
 ## WBS codes
 

@@ -40,7 +40,7 @@ Last, give each <Term>labor category</Term> a **Bill Rate** in its **Rates** gri
 Start with **New Project Contract** on the project, or **Add Project Contract** on the **Project Contracts** list. The setup has four steps.
 
 1. **Details.** The **Customer**, the **Project** (required), a **Name**, the customer's **Contract Number** and the **Period of Performance**: **Start Date** and **End Date**. **Next** saves the contract as a draft.
-2. **Lines.** One line per CLIN. **Add Line** opens the line form: the **Billing Method**, the **Service** item the invoice names, the **Billing Element**, the **Funded Amount** and the **Ceiling**. A Time & Materials line also takes a **Handling (%)** on material, and a Cost Plus line a **Fee (%)**. A Fixed Price line takes a **Price** instead.
+2. **Lines.** One line per CLIN. **Add Line** opens the line form: the **Billing Method**, the **Item** the invoice names (a Service, or a Part you deliver, as in [a prototype CLIN](#a-prototype-clin)), the **Billing Element**, the **Funded Amount** and the **Ceiling**. A Time & Materials line also takes a **Handling (%)** on material, and a Cost Plus line a **Fee (%)**. A Fixed Price line takes a **Price** instead.
 3. **Invoicing.** **Bill To**, **Invoice Contact**, **Invoice Address**, **Ship To** and **Payment Terms**, then the **Billing Period** and the invoicing mode. Carbon invoices each calendar billing period after it ends.
 4. **Review.** A summary, and a list of what the setup still lacks.
 
@@ -99,6 +99,35 @@ The same run moves the line's cost from Project WIP to cost of goods sold, so re
 A Draft run shows a **Journal** card: what posting the run will write, by account, with its debits and credits totalled. Read it before you post. The [project billing reference](/docs/reference/project-billing#revenue) covers the loss provision and the Percent Complete estimate.
 
 <Screenshot label="Draft revenue recognition run with the Journal card: debit and credit per account and the total row" caption="What the run will post, account by account, before you post it." />
+
+## A prototype CLIN
+
+Suppose the award adds a prototype: one sensor housing, built in your shop and handed to the customer. A project contract line can name a Part for this. You build it with a job and hand it over with a delivery, both from the line.
+
+1. **Add the CLIN.** On the Lines step, choose the part in **Item**. A part line shows a **Quantity**, the units to deliver. On a Fixed Price line, the **Unit Price** is the price of one unit.
+2. **Build.** After **Confirm**, open the line's page. The contract opens a Fixed Price line on it; a Time & Materials or Cost Plus line opens on its billing page, with **Line Details** in the **⋯** menu. Click **Build**, check the **Task**, **Quantity**, **Due Date** and **Location**, and click **Create Job**.
+3. **Run the job** like any other job.
+4. **Deliver.** Once the job completes units, the line's button changes to **Deliver**. It opens the contract's draft [shipment](/docs/reference/shipments) with the completed units filled in. Type each **Serial Number**, then **Post** it with the **Delivered on** date.
+
+Build chooses every setting for you. The job is charged to the task, defaulting to the line's billing element, and it [consumes to the project](/docs/reference/projects#consume-to-project). Carbon also adds a <Term>Make to Order</Term> plan line for it on the task. The line page lists its jobs and deliveries and shows one button for the next step: **Deliver** while completed units wait, else **Build** while the jobs do not cover the quantity. From the task, **Create Job** in a Make to Order plan line's **⋯** menu links the job to the line too, when exactly one part line with that item bills the task.
+
+<Callout tone="amber" badge="NO STOCK MOVES" title="The delivery records custody; the job already used the part.">
+A job that consumes to the project puts nothing into stock when it completes. So the delivery moves no stock and posts no journal: it records the units, the serial numbers and the date. You cannot deliver more units than the line's jobs completed and its earlier deliveries did not hand over.
+</Callout>
+
+The task shows the job, not its bill of materials. On **Estimated**, the plan line's card names the job, linked, and its cost so far. On **Actual**, all of the job's cost is one card. The Plan tree's card shows the job and its progress, such as "J-104 · 1 of 1", and the Overview's **Needs attention** adds a row when a completed job's units are not delivered, a job finishes after its task's target date, or every job of an open task is complete.
+
+How the prototype bills follows the line's billing method:
+
+| Billing method | What bills |
+|---|---|
+| Time & Materials | The job's cost under the billing element, as billable items. A shop hour is priced like a logged hour, with the employee's labor category. |
+| Cost Plus | The job's cost plus the fee, as billable items. |
+| Fixed Price | The delivered units' share of the next billing event moves to the delivery date, so the invoice follows the delivery. Voiding the delivery moves it back, until that event is invoiced. |
+
+The shipment's **Packing Slip** prints as a **Receiving Report**: the contract number and, for each CLIN, its description, quantity, unit and serial numbers. Type it into WAWF; Carbon has no EDI export. Under DCAA timekeeping, shop time on the job becomes draft hours on the employee's **My Time**, certified with the week, and a person with no labor category cannot record it.
+
+<Screenshot label="Project contract line page of a part CLIN: the Build button in the header, and the Jobs and Deliveries lists" caption="One button for the next step: Build, then Deliver." />
 
 <Divider />
 

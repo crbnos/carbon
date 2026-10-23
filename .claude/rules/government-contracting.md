@@ -149,6 +149,43 @@ opens `WeekCertificationModal`, which posts `certificationText` to the action's
 changed (Pending Employee Review) is locked there, and the server refuses to submit
 its week until the employee accepts it in the ERP.
 
+## Shop labor under DCAA
+
+Spec `.ai/specs/2026-10-21-project-contracts.md` section 10.6, D37 and D38. In DCAA
+mode, project labor is certified time. Shop time on a consume-to-project job is project
+labor, so it goes through the weekly timesheet, as a service visit's time does
+(`timesheetEntry.serviceVisitId`).
+
+`post-production-event` reads the shop labor facts once per event with a project charge
+(`loadShopLabor`, one query; not for a Machine event): the employee's
+`employeeJob.laborCategoryId`, `companySettings.timekeepingControls` and the day the
+event's `startTime` falls on in the company's time zone.
+
+- **Every mode.** The Labor ledger row carries the employee's `laborCategoryId` (D37), so
+  `resolveBillRate` finds the category's bill rate. With no category, the row has none,
+  and a T&M item without an employee rate goes On Hold "No bill rate".
+- **DCAA mode, first post of a Setup or Labor event.** The event posts its Machine and
+  Overhead legs as before. It skips the Labor leg (cost 0: no Labor ledger row, no labor
+  journal pair). In the same transaction, `insertTimesheetDraft`
+  (`projects.service.ts`) inserts a Draft `timesheetEntry`: the employee, that
+  day, the project, the task, the labor category, `round(duration / 3600)` hours and
+  `jobId` (migration `20261023024353`). With nothing else to post, the entry and the
+  event's `postedToGL` flag are written alone. Each event writes its own entry.
+- **No labor category in DCAA mode.** The event is refused with
+  `SHOP_LABOR_CATEGORY_REQUIRED` ("Set a labor category on this person before they
+  record project time").
+- `insertTimesheetDraft` inserts one entry and runs no control: `addEntry` calls it after
+  the cell's controls, and the production event's hours were recorded on the shop floor.
+  A work location or research role left out takes its default (`resolveRdDefaults`).
+- The employee certifies the hours with the week. `post-timesheet` then posts the labor
+  cost and stamps the entry's `jobId` on the ledger row (a reversal with no job takes its
+  original's), so the job's card on the task still counts it.
+- `jobId` is part of a timesheet cell's key: `save-timesheet-entry` matches on it when the
+  input carries it (null = a row with no job), and `timesheetRowKey`
+  (`projects.models.ts`) includes it.
+
+Outside DCAA mode, the Labor leg posts as before, now with the labor category.
+
 ## Charge restrictions
 
 `project.restrictCharging` with `projectMember` rows (project Settings page;
@@ -314,6 +351,14 @@ supplier-level contract research rate and a PBA code field need a schema change.
 
 - Browser-verified 2026-10-12 (playbooks `government-contracting-phase-5a.md`, `-5d.md`). Not
   verified in the browser: the upgrade overlay on a Community company.
+- **Open: shop labor under DCAA** (`.ai/plans/2026-10-21-project-contracts.md`, Execution
+  notes, Tasks 33–34):
+  - My Time and the MES timesheet do not show the job number on a row with a job yet
+    (`TIMESHEET_ENTRY_COLUMNS` has no `jobId`; `timesheet.update.tsx` and the MES service
+    also need it).
+  - An edited or deleted production event does not update its Draft entry: the event has
+    no link to it. A repost or a reversal leaves the entry for the employee to correct.
+  - `createTimesheetCorrection` does not copy `jobId` onto a replacement entry.
 - The `customerContracts` view predates the 3 research columns; the contract page
   reads them from the table.
 - The report reads load each report in one query and stream the encoded CSV in pages;
