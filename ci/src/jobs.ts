@@ -4,11 +4,15 @@
 
 import { $ } from "execa";
 
+import { pushAuthEmails } from "./auth-emails";
 import { client } from "./client";
+import { SUPABASE_ACCESS_TOKEN } from "./env";
 
 type Workspace = {
   id: number;
   url_erp: string | null;
+  project_id: string | null;
+  access_token: string | null;
 };
 
 async function jobs(): Promise<void> {
@@ -16,7 +20,7 @@ async function jobs(): Promise<void> {
 
   const { data: workspaces, error } = await client
     .from("workspaces")
-    .select("id, url_erp");
+    .select("id, url_erp, project_id, access_token");
 
   if (error) {
     console.error("🔴 🍳 Failed to fetch workspaces", error);
@@ -26,7 +30,7 @@ async function jobs(): Promise<void> {
   let hasErrors = false;
 
   for (const workspace of workspaces as Workspace[]) {
-    const { id, url_erp } = workspace;
+    const { id, url_erp, project_id, access_token } = workspace;
 
     if (!url_erp) {
       console.log(`⏭️ Skipping workspace ${id} — no url_erp`);
@@ -40,6 +44,22 @@ async function jobs(): Promise<void> {
     } catch (err) {
       console.error(`🔴 🍳 Failed to sync jobs for workspace ${id}`, err);
       hasErrors = true;
+    }
+
+    // A hosted Supabase project keeps Auth's emails as settings: copy in the
+    // ones this ERP serves now that it is deployed (auth-emails.ts).
+    if (project_id) {
+      try {
+        await pushAuthEmails(
+          `https://${url_erp}`,
+          project_id,
+          access_token ?? SUPABASE_ACCESS_TOKEN
+        );
+        console.log(`✅ ✉️ Set Auth's emails for workspace ${id}`);
+      } catch (err) {
+        console.error(`🔴 ✉️ Failed to set Auth's emails for workspace ${id}`, err);
+        hasErrors = true;
+      }
     }
   }
 
