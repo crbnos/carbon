@@ -11,7 +11,7 @@ import { authEmails } from ".";
 const placeholders: Record<keyof typeof authEmails, string[]> = {
   "magic-link.html": [
     "{{ .Token }}",
-    'href="{{ .SiteURL }}/magic-link?token={{ .TokenHash }}"'
+    'href="{{ .SiteURL }}/magic-link?token={{ .TokenHash }}&amp;redirect_to={{ .RedirectTo }}"'
   ],
   "invite.html": [
     'href="{{ .SiteURL }}/confirm-invite?token={{ .TokenHash }}"'

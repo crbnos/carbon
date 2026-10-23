@@ -39,8 +39,21 @@ export default function ConfirmMagicLink() {
     return null;
   }
 
+  // The app that asked for the email: the link carries Auth's RedirectTo,
+  // its /callback. Anything else (Auth's bare Site URL when it refused the
+  // app's address, an older email without it) finishes here instead. Auth's
+  // /verify redirects only to its allow list either way.
+  const redirectTo = (() => {
+    const asked = params.get("redirect_to");
+    try {
+      if (asked && new URL(asked).pathname === "/callback") return asked;
+    } catch {
+      // not a URL
+    }
+    return `${window?.location.origin}/callback`;
+  })();
   const getConfirmationURL = (token: string) => {
-    return `${SUPABASE_URL}/auth/v1/verify?token=${token}&type=magiclink&redirect_to=${window?.location.origin}/callback`;
+    return `${SUPABASE_URL}/auth/v1/verify?token=${token}&type=magiclink&redirect_to=${encodeURIComponent(redirectTo)}`;
   };
 
   return (

@@ -8,6 +8,9 @@ import { AUTH_TOKEN, AuthEmail } from "./AuthEmail";
 const SITE_URL = "{{ .SiteURL }}";
 const TOKEN_HASH = "{{ .TokenHash }}";
 const CONFIRMATION_URL = "{{ .ConfirmationURL }}";
+/** The requesting app's /callback (emailRedirectTo), so the MES or academy
+ * signs in where it was asked, not on the ERP that hosts /magic-link. */
+const REDIRECT_TO = "{{ .RedirectTo }}";
 const ONCE = "The code and the button are the same sign-in: use either, once.";
 const IGNORE = "If you didn't ask for this, you can ignore this email.";
 
@@ -19,7 +22,7 @@ export const AuthMagicLinkEmail = () => (
     intro="Enter this code on the sign-in screen, or use the button below."
     showCode
     action={{
-      href: `${SITE_URL}/magic-link?token=${TOKEN_HASH}`,
+      href: `${SITE_URL}/magic-link?token=${TOKEN_HASH}&redirect_to=${REDIRECT_TO}`,
       label: "Sign in"
     }}
     footnote={`${ONCE} ${IGNORE}`}

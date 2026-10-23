@@ -24,7 +24,8 @@ function stepsFor(workspace: Workspace): Step[] {
   const steps: Step[] = [
     {
       name: `Inngest sync for workspace ${id} (${url_erp})`,
-      run: () => $`curl -X PUT https://${url_erp}/api/inngest`
+      // --fail: an HTTP error is a failed sync, not a successful curl.
+      run: () => $`curl --fail --silent --show-error -X PUT https://${url_erp}/api/inngest`
     }
   ];
   // A hosted Supabase project keeps Auth's emails as settings: copy in the

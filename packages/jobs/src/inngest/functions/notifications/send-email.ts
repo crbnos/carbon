@@ -88,7 +88,9 @@ export const sendEmailFunction = inngest.createFunction(
       }
       // Replies reach the person who sent the document and the company's
       // address, which server mail never sends from.
-      const replyTo = [payload.from, sender.replyTo].filter(Boolean).join(", ");
+      const replyTo = [...new Set([payload.from, sender.replyTo])]
+        .filter(Boolean)
+        .join(", ");
       const response = await sendEmail({
         from: sender.from,
         attachments: payload.attachments,

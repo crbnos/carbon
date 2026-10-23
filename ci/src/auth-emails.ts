@@ -37,7 +37,7 @@ export async function authEmailSettings(
       let response: Response | undefined;
       for (let attempt = 1; attempt <= 6; attempt++) {
         response = await fetchImpl(url);
-        if (response.ok) break;
+        if (response.ok || attempt === 6) break;
         await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
       }
       if (!response?.ok) {

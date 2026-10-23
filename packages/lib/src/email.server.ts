@@ -45,9 +45,9 @@ export const DEFAULT_FROM =
  * settings: only when the deployment is single-tenant (TENANT_TYPE=single)
  * and SMTP_HOST is set. On a multi-tenant one (Carbon Cloud) the server's
  * mail is Carbon's, shared by every customer, so a company there sends
- * documents only through an Email integration it set up itself. The legacy RESEND_API_KEY fallback below still sends sign-in
- * and system mail, but it is a shared account, so it never carries a
- * company's documents.
+ * documents only through an Email integration it set up itself. The legacy
+ * RESEND_API_KEY fallback below still sends sign-in and system mail, but it
+ * is a shared account, so it never carries a company's documents.
  */
 export const SERVER_MAIL_CONFIGURED = SINGLE_TENANT && Boolean(SMTP_HOST);
 
