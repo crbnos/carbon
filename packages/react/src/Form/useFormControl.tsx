@@ -28,8 +28,9 @@ export function useFormControl(props: UseFormControlProps) {
   const describedBy = props["aria-describedby"]
     ? [props["aria-describedby"]]
     : [];
-  // The error message is described first.
-  if (field?.isInvalid && field.hasFeedbackText) {
+  // The error message is described first, and only while the control shows
+  // as invalid: a caller's own isInvalid={false} wins over the FormControl.
+  if (isInvalid && field?.hasFeedbackText) {
     describedBy.push(field.feedbackId);
   }
   if (field?.hasHelpText) {

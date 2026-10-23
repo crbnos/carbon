@@ -166,6 +166,18 @@ describe("controls take the FormControl's state", () => {
     expect(input.getAttribute("aria-describedby")).toBe(error.id);
   });
 
+  it("a control the caller marks valid is not described by the error", () => {
+    const view = render(
+      <FormControl isInvalid>
+        <Input id="code" isInvalid={false} />
+        <FormErrorMessage>Code is required</FormErrorMessage>
+      </FormControl>
+    );
+    const input = view.querySelector("input")!;
+    expect(input.hasAttribute("aria-invalid")).toBe(false);
+    expect(input.hasAttribute("aria-describedby")).toBe(false);
+  });
+
   it("a valid field leaves its input alone", () => {
     const view = render(
       <FormControl>
