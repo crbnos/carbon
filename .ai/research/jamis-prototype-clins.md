@@ -237,6 +237,10 @@ answer them.
    and Costpoint Asset. Every competitor makes the user choose this, and
    Acumatica does not even default it. Deriving it is the largest training
    saving section 10 can offer (spec D28, D29, D30, D33).
+   **Later (Brad, 2026-10-22):** Carbon shows project stock only on a project
+   with `projectStock` set, so the Fixed Price branch was dropped. Every
+   prototype job consumes to the project, as SAP non-valuated stock and
+   Costpoint Expensed inventory do. The choice is still never the user's.
 5. **Date the Fixed Price billing event from the delivery** (pattern 5,
    Costpoint's delivery invoice; spec D34). Carbon's contract financing already
    applies liquidation to a delivery invoice (`contract-financing.md`), as
