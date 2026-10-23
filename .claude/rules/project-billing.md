@@ -477,11 +477,12 @@ both choices visible with an upgrade notice (`ProjectRevenueUpgrade`) and Save d
 - The run page's **Amount** sums every line, cost relief and loss provision included.
 - Browser verification of Phase 4a (plan Task 21) and Phase 4b (plan Task 14) is
   deferred.
-- **Open (needs a decision): amend after a Fixed Price delivery.** An amendment
-  re-plans the line (`reconcileContractSchedule` replaces the Planned invoices from the
-  amendment date and re-cuts the kept row to the whole price), so the undelivered amount
-  moves onto the delivery date. The failing test is saved at
-  `.context/pending-amend-after-delivery.test.ts.txt` (plan
-  `.ai/plans/2026-10-21-project-contracts.md`, Execution notes, Task 30).
-- The amend modal adds Service items only ("Add Services"). A Part line by amendment
-  works only through the server function, which accepts one.
+- **Amend after a delivery.** `reconcileContractSchedule` pins a delivered row
+  (`ExistingRow.isDelivered`, read by `loadSchedule` from the `shipmentLine` that moved
+  it): it counts as billed for its key, is never re-cut, and its invoice is never
+  deleted (an invoice dated on or after the change that holds one keeps it and loses its
+  other rows). On a project contract an amendment also passes `onlyLineIds` (the lines
+  it ended or added), so the authored billing events of every other line keep their
+  dates. Pinned by `contract-schedule.test.ts` and `post-shipment/customer-contract.test.ts`.
+- On a project contract the amend modal's **Add Lines** offers parts and services; every
+  added line is One-time, and a part line keeps its quantity and (Fixed) unit price.

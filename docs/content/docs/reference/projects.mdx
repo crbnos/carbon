@@ -117,7 +117,7 @@ The **Plan** page shows the elements in one of three layouts. Pick it in the too
 
 ### The element page
 
-Click an element in any layout or in the sidebar tree to open its page. Its header has **Back**, the project and the parent elements, a copy button and a **⋯** menu: **Log time**, **Issue material**, **Charge cost**, **Add child**, **Add link**, **Add plan line** and **Delete**.
+Click an element in any layout or in the sidebar tree to open its page. Its header has **Back**, the project and the parent elements, a copy button, **New Job** and a **⋯** menu: **Log time**, **Issue material**, **Charge cost**, **Add child**, **Add link**, **Add plan line** and **Delete**.
 
 The main column has the readable id, the name and the description, then **Children**, the costs, **Links** and **Activity**. Children and Links show only once they have content. With Linear or Jira connected, **Sync** sits to the right of the readable id. The costs have two tabs: **Estimated** holds the plan lines, and **Actual** lists the costs and the open time charged to the element. The page opens on Estimated while the project is Draft, and on Actual once it is released. **Activity** holds the comments, and the change history when the audit log is on.
 
@@ -128,6 +128,8 @@ The properties column on the right edits the state, owner, priority, labels, mil
 - **Material:** an item, a method (Pull from Inventory, Purchase to Order or Make to Order), a quantity, a unit cost and a required date. **Create Job** on a Make to Order line and **Create PO Line** on a Purchase to Order line, both in the row's menu, make the job or purchase order line with the element's charge number.
 - **Labor:** a <Term>labor category</Term>, hours and dates.
 - **Cost:** a description and an amount. **Charge** posts a cost to the element with that description, which is how the card counts what has been charged against it.
+
+**New Job** makes a job for the element: pick a part you make, the quantity, the due date (the element's target date) and the location (the project's). Carbon adds a Make to Order plan line for it, the job [consumes to the project](#consume-to-project), and its card shows on the element. It is on a project's elements only, and needs permission to create jobs.
 
 **Actual** shows each cost and each open time entry charged to the element and the elements below it as a card. Its **Charge** menu issues material, logs time or charges a cost. On both tabs you can search the cards, filter them by type and change their order.
 

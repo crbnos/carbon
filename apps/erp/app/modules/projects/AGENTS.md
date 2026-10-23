@@ -203,6 +203,9 @@ operation of the same name in `projects.server.ts`.
 - `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the
   rest of the timesheet flow. A correction on another charge number is a labor transfer
   (`correctionOfId`); `assertCanApprove` refuses its requester as approver in DCAA mode.
+  A correction copies the entry's `jobId`, `jobOperationId` and `productionEventId` (a
+  transfer to another project drops the job and operation), so a shop-time event's
+  hours stay the sum of its entries (`government-contracting.md` → Shop labor under DCAA).
 - `updateProjectStatus` — refuses Close while a PO or job of the project is open, then
   `closeProject`: refuses a borrow not paid back, project stock on hand and (Capitalize)
   an asset Under Construction, and for a Contract project relieves the Project WIP no

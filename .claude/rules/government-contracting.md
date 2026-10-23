@@ -164,13 +164,26 @@ event's `startTime` falls on in the company's time zone.
 - **Every mode.** The Labor ledger row carries the employee's `laborCategoryId` (D37), so
   `resolveBillRate` finds the category's bill rate. With no category, the row has none,
   and a T&M item without an employee rate goes On Hold "No bill rate".
-- **DCAA mode, first post of a Setup or Labor event.** The event posts its Machine and
-  Overhead legs as before. It skips the Labor leg (cost 0: no Labor ledger row, no labor
-  journal pair). In the same transaction, `insertTimesheetDraft`
-  (`projects.service.ts`) inserts a Draft `timesheetEntry`: the employee, that
-  day, the project, the task, the labor category, `round(duration / 3600)` hours and
-  `jobId` (migration `20261023024353`). With nothing else to post, the entry and the
-  event's `postedToGL` flag are written alone. Each event writes its own entry.
+- **DCAA mode, a Setup or Labor event.** The event posts its Machine and Overhead legs
+  as before. It skips the Labor leg (cost 0: no Labor ledger row, no labor journal pair).
+  In the same transaction, `syncShopTimesheet` (`production.service.ts`) keeps
+  the event's timesheet entries in step with it. Each entry is linked to its event
+  (`timesheetEntry.productionEventId`) and names its `jobId` and `jobOperationId`
+  (migrations `20261023024353`, `20261023041256`). The wanted hours are
+  `round(duration / 3600)` on a post and 0 on a reversal (a delete reverses first).
+  - Every linked entry Draft or Rejected: the first is updated in place (day, task,
+    category, hours, job operation; status back to Draft, so a revision on it keeps its
+    entry), the others are deleted; with 0 hours they all are. With none, `insertTimesheetDraft`
+    inserts one.
+  - Any linked entry Submitted, Approved or Posted: when their net hours already equal
+    the wanted hours nothing changes; otherwise the post is refused with
+    `shopTimesheetSubmittedMessage` ("These hours are on a submitted timesheet. Correct
+    the timesheet entry to N hours first."). `createTimesheetCorrection` copies
+    `productionEventId`, `jobId` and `jobOperationId` onto the reversal and the
+    replacement (a transfer to another project drops the job and operation, not the
+    event), so after the correction the net equals the event and it posts.
+  With nothing else to post, the sync and the event's `postedToGL` flag are written
+  alone. Each event has its own entries.
 - **No labor category in DCAA mode.** The event is refused with
   `SHOP_LABOR_CATEGORY_REQUIRED` ("Set a labor category on this person before they
   record project time").
@@ -180,9 +193,12 @@ event's `startTime` falls on in the company's time zone.
 - The employee certifies the hours with the week. `post-timesheet` then posts the labor
   cost and stamps the entry's `jobId` on the ledger row (a reversal with no job takes its
   original's), so the job's card on the task still counts it.
-- `jobId` is part of a timesheet cell's key: `save-timesheet-entry` matches on it when the
-  input carries it (null = a row with no job), and `timesheetRowKey`
-  (`projects.models.ts`) includes it.
+- `jobId` and `jobOperationId` are part of a timesheet cell's key: `save-timesheet-entry`
+  matches on each when the input carries it (null = none), and `timesheetRowKey`
+  (`projects.models.ts`, and its MES copy in `apps/mes/app/services/projects.service.ts`)
+  includes both. My Time and the MES timesheet send them with every cell save and show
+  the row's job and operation before its labor category ("J000022 · Machining ·
+  Machinist").
 
 Outside DCAA mode, the Labor leg posts as before, now with the labor category.
 
