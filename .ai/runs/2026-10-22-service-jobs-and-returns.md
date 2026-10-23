@@ -23,6 +23,9 @@
   - Checks: typecheck erp, database, api, ee, mes, jobs and documents pass. Database tests pass (121), and so do the ee accounting core tests (372). `db:check:datasets` and `db:check:backups` pass. `check:manifest`: digest current.
 - 2026-10-23: Tasks 12–13 committed. `@carbon/utils` `service-job.ts` (24 tests). 22 new `service` operations (8 reads, 14 writes), all exposed as MCP tools.
   - Checks: utils tests and the erp typecheck pass. The posting permissions snapshot is unchanged. `check:manifest` is current, with 1735 operations. Conformance passes.
+- 2026-10-23: Tasks 14–16 committed. Issue types `serviceJobInventory`, `serviceJobTrackedEntities` and `serviceJobUnconsume`; operations `completeServiceJob`, `reopenServiceJob` and `setServiceJobCoverage` over one posting, `post-service-job` (registered for the MES); `refreshSalesReturnOrderStatus` in `sales.service.ts`.
+  - Journals the tests assert: 1 part at 70 → Dr Cost of Service 70 / Cr Inventory 70. Complete 1.5 h × 40 → Dr Cost of Service 60 / Cr Labor Absorption 60. Reopen reverses it. Warranty 2 h × 40 → Dr Warranty 80. Coverage Warranty→Billable with a part issued → Dr Cost of Service 70 / Cr Warranty 70.
+  - Checks: 37 issue and post-service-job tests, 35 utils tests, 81 api tests, and 67 post-receipt, post-shipment and maintenance tests pass. The typecheck passes. `check:manifest` is current. Conformance passes.
 
 ## Decisions made without Brad
 
@@ -42,6 +45,12 @@
 | 13 | Send Estimate refuses a job that is not Billable, and an estimate that is already Accepted | The spec allows estimates on Billable jobs only. |
 | 13 | A labor item, a charge item and `serviceItemId` must be Service items. An asset, contact and customer location must belong to the job's customer | Ids from a form are checked against the company and the customer. |
 | 13 | Status transitions: Start Open→In Progress; Hold Open or In Progress→On Hold; Resume On Hold→In Progress; Cancel from any open status | The spec's state diagram. Complete and Reopen belong to `post-service-job` (Task 15). |
+| 15 | Three operations (`completeServiceJob`, `reopenServiceJob`, `setServiceJobCoverage`) over one posting building block | Each one is a single user action. |
+| 15 | A Warranty job refuses to post while `warrantyExpenseAccount` is empty | It is a feature default, not an optional one, so it has no fallback. Cost of Service falls back to COGS. |
+| 14 | `serviceJobInventory` refuses a serial or batch part; those go through `serviceJobTrackedEntities` | The maintenance version skips the stock movement and the cost for a tracked part. |
+| 14 | `serviceJobUnconsume` with no quantity returns everything still issued, and deletes a line that has nothing left | Task 22's part delete uses it. |
+| 16 | A short-closed line that received nothing counts as resolved | Without this, such an RMA could never complete. |
+| 16 | `setSalesReturnOrderLineDisposition` also refreshes the RMA status | Disposing of a stock line can complete the RMA. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

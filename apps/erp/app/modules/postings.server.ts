@@ -17,6 +17,7 @@ import {
   postMaintenanceEventInput,
   postPickingInput,
   postProductionEventInput,
+  postServiceJobInput,
   postTimesheetInput,
   recalculateInput,
   saveTimesheetEntryInput,
@@ -32,6 +33,7 @@ import * as projects from "./projects/projects.service";
 import * as purchasing from "./purchasing/purchasing.service";
 import * as resources from "./resources/resources.service";
 import * as sales from "./sales/sales.service";
+import * as service from "./service/service.service";
 import * as shared from "./shared/shared.service";
 import { invokePosting } from "./shared/shared.service";
 
@@ -60,6 +62,7 @@ export const postingPermissions = {
   "post-picking": inventory.postPickingPermission,
   "post-production-event": production.postProductionEventPermission,
   "post-maintenance-event": resources.postMaintenanceEventPermission,
+  "post-service-job": service.postServiceJobPermission,
   "post-inventory-adjustment": inventory.postInventoryAdjustmentPermission,
   create: shared.createDocumentPermission,
   "batch-operations": production.batchOperationPermission,
@@ -233,6 +236,11 @@ export const postings: Postings = {
         schema: postMaintenanceEventInput
       }
     ),
+  "post-service-job": (handles, input) =>
+    invokePosting(handles, "post-service-job", input, service.postServiceJob, {
+      as: postingPermissions["post-service-job"],
+      schema: postServiceJobInput
+    }),
   "post-inventory-adjustment": (handles, input) =>
     invokePosting(
       handles,

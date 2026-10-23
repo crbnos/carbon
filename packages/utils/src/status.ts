@@ -134,29 +134,74 @@ export const getPurchaseReturnOrderStatus = (
   return { status, allShipped };
 };
 
+/** An RMA line, as `getSalesReturnOrderStatus` reads it. */
+export type SalesReturnOrderStatusLine = {
+  quantity: number | string | null;
+  quantityReceived: number | string | null;
+  closedComplete: boolean | null;
+  returnType: Database["public"]["Enums"]["returnType"];
+  disposition: Database["public"]["Enums"]["disposition"];
+  /** Units shipped back to the customer. */
+  quantityShipped: number | string | null;
+  /** The line's live service job's status (the latest when all are
+   *  Cancelled), or null when the line has none. */
+  jobStatus: Database["public"]["Enums"]["serviceJobStatus"] | null;
+  /** A sales order line names this RMA line: a replacement was raised. */
+  hasReplacement: boolean;
+};
+
+const CLOSED_JOB_STATUSES: ReadonlySet<string> = new Set([
+  "Completed",
+  "Invoiced",
+  "Cancelled"
+]);
+
 /**
- * Derived customer-return (sales return / RMA) status. The mirror of
- * `getPurchaseReturnOrderStatus`: "Completed" once every line has received its
- * authorized quantity or been short-closed, otherwise "To Receive". Shipping a
- * replacement back to the customer is out-of-band and does not gate completion.
+ * Has the line reached its end? A short-closed line that received nothing
+ * has. A Return to Stock line has once it is received and disposed. A
+ * Service or Warranty line has once its job is closed and the unit went back
+ * to the customer, was scrapped, or was replaced (and then scrapped or kept).
+ */
+const isReturnLineResolved = (line: SalesReturnOrderStatusLine) => {
+  if (!isReturnLineSettled({ ...line, moved: line.quantityReceived })) {
+    return false;
+  }
+  if (line.closedComplete && Number(line.quantityReceived ?? 0) <= EPSILON) {
+    return true;
+  }
+  if (line.returnType === "Return to Stock") {
+    return line.disposition !== "Pending";
+  }
+  if (!line.jobStatus || !CLOSED_JOB_STATUSES.has(line.jobStatus)) {
+    return false;
+  }
+  return (
+    Number(line.quantityShipped ?? 0) >= 1 - EPSILON ||
+    line.disposition === "Scrap" ||
+    (line.hasReplacement && line.disposition === "Use As Is")
+  );
+};
+
+/**
+ * Derived customer-return (sales return / RMA) status: "To Receive" until
+ * every line has received its authorized quantity or been short-closed, "In
+ * Progress" until every line is resolved (`isReturnLineResolved`), then
+ * "Completed". Draft and Cancelled are set by hand; the caller keeps them.
  */
 export const getSalesReturnOrderStatus = (
-  lines: Array<{
-    quantity: number | string | null;
-    quantityReceived: number | string | null;
-    closedComplete: boolean | null;
-  }>
+  lines: SalesReturnOrderStatusLine[]
 ) => {
   const allReceived =
     lines.length > 0 &&
     lines.every((line) =>
       isReturnLineSettled({ ...line, moved: line.quantityReceived })
     );
+  const allResolved = allReceived && lines.every(isReturnLineResolved);
 
   const status: Database["public"]["Tables"]["salesReturnOrder"]["Row"]["status"] =
-    allReceived ? "Completed" : "To Receive";
+    allResolved ? "Completed" : allReceived ? "In Progress" : "To Receive";
 
-  return { status, allReceived };
+  return { status, allReceived, allResolved };
 };
 
 export const getSalesOrderJobStatus = (

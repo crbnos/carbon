@@ -19,11 +19,13 @@ import type {
   IssueResult,
   issueInput,
   PostProductionEventResult,
+  PostServiceJobResult,
   PostTimesheetResult,
   postInventoryAdjustmentInput,
   postMaintenanceEventInput,
   postPickingInput,
   postProductionEventInput,
+  postServiceJobInput,
   postTimesheetInput,
   recalculateInput,
   SaveTimesheetEntryResult,
@@ -206,6 +208,10 @@ export type PostingContract = {
   "post-maintenance-event": {
     input: z.input<typeof postMaintenanceEventInput>;
     output: { success: boolean; journalIds: string[] };
+  };
+  "post-service-job": {
+    input: z.input<typeof postServiceJobInput>;
+    output: PostServiceJobResult;
   };
   "post-inventory-adjustment": {
     input: z.input<typeof postInventoryAdjustmentInput>;

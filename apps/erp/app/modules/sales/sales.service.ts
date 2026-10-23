@@ -7020,6 +7020,7 @@ export async function confirmSalesReturnOrder(
         "id",
         "lineNumber",
         "quantity",
+        "returnType",
         "salesOrderLineId",
         "shipmentLineId",
         "salesInvoiceLineId"
@@ -7175,7 +7176,12 @@ export async function confirmSalesReturnOrder(
       lines.map((line) => ({
         quantity: line.quantity,
         quantityReceived: 0,
-        closedComplete: false
+        closedComplete: false,
+        returnType: line.returnType,
+        disposition: "Pending",
+        quantityShipped: 0,
+        jobStatus: null,
+        hasReplacement: false
       }))
     );
 
@@ -7315,11 +7321,106 @@ export async function cancelSalesReturnOrder(
 }
 
 /**
+ * Re-derives an RMA's status from its lines (`getSalesReturnOrderStatus`):
+ * each line's receipt, disposition and ship-back, its live service job, and
+ * whether a sales order line replaces it. Writes the status when it changed.
+ * A Draft or Cancelled RMA is set by hand and is never changed. Locks the
+ * RMA row. Call it inside the transaction that changed any of those inputs.
+ */
+export async function refreshSalesReturnOrderStatus(
+  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
+  salesReturnOrderId: string,
+  companyId: string,
+  userId: string
+): Promise<Database["public"]["Enums"]["salesReturnOrderStatus"] | null> {
+  const order = await trx
+    .selectFrom("salesReturnOrder")
+    .select(["status"])
+    .where("id", "=", salesReturnOrderId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!order) return null;
+  if (order.status === "Draft" || order.status === "Cancelled") {
+    return order.status;
+  }
+
+  const lines = await trx
+    .selectFrom("salesReturnOrderLine")
+    .select([
+      "id",
+      "quantity",
+      "quantityReceived",
+      "closedComplete",
+      "returnType",
+      "disposition",
+      "quantityShipped"
+    ])
+    .where("salesReturnOrderId", "=", salesReturnOrderId)
+    .where("companyId", "=", companyId)
+    .execute();
+  const lineIds = lines.map((line) => line.id);
+
+  const [jobs, replacements] =
+    lineIds.length > 0
+      ? await Promise.all([
+          trx
+            .selectFrom("serviceJob")
+            .select(["salesReturnOrderLineId", "status"])
+            .where("salesReturnOrderLineId", "in", lineIds)
+            .where("companyId", "=", companyId)
+            .orderBy("createdAt", "desc")
+            .execute(),
+          trx
+            .selectFrom("salesOrderLine")
+            .select(["salesReturnOrderLineId"])
+            .where("salesReturnOrderLineId", "in", lineIds)
+            .where("companyId", "=", companyId)
+            .execute()
+        ])
+      : [[], []];
+
+  // The live job, else the latest Cancelled one (the rows are newest first).
+  const jobStatusByLine = new Map<
+    string,
+    Database["public"]["Enums"]["serviceJobStatus"]
+  >();
+  for (const job of jobs) {
+    const lineId = job.salesReturnOrderLineId as string;
+    const current = jobStatusByLine.get(lineId);
+    if (!current || (current === "Cancelled" && job.status !== "Cancelled")) {
+      jobStatusByLine.set(lineId, job.status);
+    }
+  }
+  const replaced = new Set(
+    replacements.map((row) => row.salesReturnOrderLineId as string)
+  );
+
+  const { status } = getSalesReturnOrderStatus(
+    lines.map((line) => ({
+      ...line,
+      jobStatus: jobStatusByLine.get(line.id) ?? null,
+      hasReplacement: replaced.has(line.id)
+    }))
+  );
+
+  if (status !== order.status) {
+    await trx
+      .updateTable("salesReturnOrder")
+      .set({ status, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .where("id", "=", salesReturnOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  return status;
+}
+
+/**
  * Short-close ("stop expecting") an RMA line — the shortClosePurchaseOrderLine
- * mechanic. The header status is derived from the lines afterwards, so
- * short-closing the last open line completes the RMA (there is no separate
- * manual Complete action, mirroring the Purchase Order). Disposition is tracked
- * independently and does not gate completion.
+ * mechanic. The header status is derived from the lines afterwards
+ * (`refreshSalesReturnOrderStatus`), so short-closing the last open line
+ * moves the RMA on (there is no separate manual Complete action, mirroring
+ * the Purchase Order).
  */
 export async function shortCloseSalesReturnOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -7359,42 +7460,14 @@ export async function shortCloseSalesReturnOrderLine(
       .where("companyId", "=", companyId)
       .execute();
 
-    const [order, lines] = await Promise.all([
-      trx
-        .selectFrom("salesReturnOrder")
-        .select(["status"])
-        .where("id", "=", salesReturnOrderId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst(),
-      trx
-        .selectFrom("salesReturnOrderLine")
-        .select(["quantity", "quantityReceived", "closedComplete"])
-        .where("salesReturnOrderId", "=", salesReturnOrderId)
-        .where("companyId", "=", companyId)
-        .execute()
-    ]);
-
-    // Recompute in both the To Receive and Completed working states: short-closing
-    // the last open line completes the RMA, and reopening a line on a completed
-    // RMA drops it back to To Receive.
-    if (!order || !["To Receive", "Completed"].includes(order.status)) {
-      return;
-    }
-
-    const { status } = getSalesReturnOrderStatus(lines);
-
-    if (status !== order.status) {
-      await trx
-        .updateTable("salesReturnOrder")
-        .set({
-          status,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .where("id", "=", salesReturnOrderId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+    // Short-closing the last open line moves the RMA on; reopening a line
+    // moves it back. A Draft or Cancelled RMA keeps its status.
+    await refreshSalesReturnOrderStatus(
+      trx,
+      salesReturnOrderId,
+      companyId,
+      userId
+    );
   });
 }
 
@@ -7931,18 +8004,35 @@ export async function setSalesReturnOrderLineDisposition(
   }
 
   if (disposition !== "Use As Is") {
-    const update = await client
-      .from("salesReturnOrderLine")
-      .update({
-        disposition,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", lineId)
-      .eq("companyId", companyId)
-      .select("id")
-      .single();
-    if (update.error) return { data: null, error: update.error };
+    // A disposed stock line is resolved, so the RMA status may move on.
+    try {
+      await db.transaction().execute(async (trx) => {
+        await trx
+          .updateTable("salesReturnOrderLine")
+          .set({
+            disposition,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", lineId)
+          .where("companyId", "=", companyId)
+          .execute();
+        await refreshSalesReturnOrderStatus(
+          trx,
+          line.data.salesReturnOrderId,
+          companyId,
+          userId
+        );
+      });
+    } catch (err) {
+      return {
+        data: null,
+        error: {
+          message:
+            err instanceof Error ? err.message : "Failed to set disposition"
+        } as PostgrestError
+      };
+    }
     return { data: { id: lineId }, error: null };
   }
 
@@ -8047,6 +8137,12 @@ export async function setSalesReturnOrderLineDisposition(
         .where("id", "=", lineId)
         .where("companyId", "=", companyId)
         .execute();
+      await refreshSalesReturnOrderStatus(
+        trx,
+        line.data.salesReturnOrderId,
+        companyId,
+        userId
+      );
 
       if (entityIds.length === 0) return;
 

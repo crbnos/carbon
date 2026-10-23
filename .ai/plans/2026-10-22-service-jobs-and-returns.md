@@ -88,9 +88,9 @@ Phase 1 — RMA and the depot service job
 - [x] Task 11: Add the Cost of Service account default
 - [x] Task 12: Write the service models and their pure rules
 - [x] Task 13: Write the service job service functions
-- [ ] Task 14: Add the `serviceJob*` issue types
-- [ ] Task 15: Create the `post-service-job` server function
-- [ ] Task 16: Make the RMA status follow the line resolution
+- [x] Task 14: Add the `serviceJob*` issue types
+- [x] Task 15: Create the `post-service-job` server function
+- [x] Task 16: Make the RMA status follow the line resolution
 - [ ] Task 17: Create the job when a Service or Warranty line is received
 - [ ] Task 18: Ship a service unit back with no value, and post a warranty replacement to warranty
 - [ ] Task 19: Create the service invoice, and stop the invoice relieving stock twice

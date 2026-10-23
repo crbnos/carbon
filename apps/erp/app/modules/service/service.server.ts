@@ -5,8 +5,9 @@
 // The operations of the service module: customer assets and service jobs.
 // The building blocks they run are in `service.service.ts`.
 
+import { postServiceJobInput } from "@carbon/api/postings";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone, type Json } from "@carbon/database";
 import {
   datetime,
@@ -512,6 +513,77 @@ export const setServiceJobStatus = defineServiceFn({
       return ctx.error("conflict", "The job's status changed. Reload it.");
     }
     return { id: jobId, status: transition.to };
+  }
+});
+
+// --- Service jobs: postings --------------------------------------------------
+
+const [completeInput, reopenInput, setCoverageInput] =
+  postServiceJobInput.options;
+
+/**
+ * Complete a service job and post its time.
+ *
+ * @remarks
+ * Runs `post-service-job`: one journal for all the job's time, a pair per
+ * labor item, Dr the coverage account (Cost of Service, or Warranty Expense)
+ * / Cr Labor Absorption at hours × the labor item's unit cost. Refused when
+ * the job is not Open, In Progress or On Hold, needs an accepted estimate it
+ * does not have, has a labor item with no cost, or has a clock running. A
+ * job from an RMA line updates the RMA's status.
+ *
+ * @mcp
+ */
+export const completeServiceJob = defineServiceFn({
+  input: completeInput.omit({ action: true }),
+  permission: service.postServiceJobPermission,
+
+  async run(ctx, input) {
+    return run(ctx, "post-service-job", () =>
+      service.postServiceJob(ctx, { action: "complete", ...input })
+    );
+  }
+});
+
+/**
+ * Reopen a Completed service job.
+ *
+ * @remarks
+ * Runs `post-service-job`: voids the completion journal with a negated copy,
+ * clears the cost stored on each time entry and moves the job back to In
+ * Progress. An Invoiced job cannot reopen.
+ *
+ * @mcp
+ */
+export const reopenServiceJob = defineServiceFn({
+  input: reopenInput.omit({ action: true }),
+  permission: service.postServiceJobPermission,
+
+  async run(ctx, input) {
+    return run(ctx, "post-service-job", () =>
+      service.postServiceJob(ctx, { action: "reopen", ...input })
+    );
+  }
+});
+
+/**
+ * Change a service job's coverage: Billable, Warranty or Contract.
+ *
+ * @remarks
+ * Runs `post-service-job`: the cost of the parts already issued moves from
+ * the old coverage account to the new one in one journal. Refused once the
+ * job is Completed, Invoiced or Cancelled.
+ *
+ * @mcp
+ */
+export const setServiceJobCoverage = defineServiceFn({
+  input: setCoverageInput.omit({ action: true }),
+  permission: service.postServiceJobPermission,
+
+  async run(ctx, input) {
+    return run(ctx, "post-service-job", () =>
+      service.postServiceJob(ctx, { action: "set-coverage", ...input })
+    );
   }
 });
 

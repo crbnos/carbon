@@ -95,6 +95,15 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
       "scrapTrackedEntity": {
         "update": "production",
       },
+      "serviceJobInventory": {
+        "update": "service",
+      },
+      "serviceJobTrackedEntities": {
+        "update": "service",
+      },
+      "serviceJobUnconsume": {
+        "update": "service",
+      },
       "trackedEntitiesToBatch": {
         "update": "production",
       },
@@ -235,6 +244,9 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
   },
   "sales.postRentalAgreementPermission": {
     "update": "sales",
+  },
+  "service.postServiceJobPermission": {
+    "update": "service",
   },
   "settings.seedCompanyPermission": "system",
   "shared.convertDocumentPermission": {
@@ -475,6 +487,15 @@ exports[`posting permissions > match the reviewed manifest 2`] = `
       "scrapTrackedEntity": {
         "update": "production",
       },
+      "serviceJobInventory": {
+        "update": "service",
+      },
+      "serviceJobTrackedEntities": {
+        "update": "service",
+      },
+      "serviceJobUnconsume": {
+        "update": "service",
+      },
       "trackedEntitiesToBatch": {
         "update": "production",
       },
@@ -520,6 +541,9 @@ exports[`posting permissions > match the reviewed manifest 2`] = `
   },
   "post-sales-invoice": {
     "update": "invoicing",
+  },
+  "post-service-job": {
+    "update": "service",
   },
   "post-shipment": {
     "update": "inventory",

@@ -6,20 +6,39 @@
 // assets and service jobs. The operations that run them are in
 // `service.server.ts`.
 
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
+import type { PermissionRule } from "@carbon/api/permissions";
+import {
+  type PostServiceJobResult,
+  postServiceJobInput
+} from "@carbon/api/postings";
 import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { datetime, isServiceJobLocked } from "@carbon/utils";
+import {
+  type AutomaticJournalStatus,
+  journalPostingStatus,
+  resolveDefaultAccount
+} from "@carbon/database/journal-posting-status";
+import { canComplete, datetime, isServiceJobLocked } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { Transaction } from "kysely";
+import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { refreshSalesReturnOrderStatus } from "../sales/sales.service";
 import {
+  allocateJournalLineIds,
+  createAdjustmentJournal,
+  insertNegatedJournal,
   isActiveCompanyEmployee,
-  refuseUnlessOwned
+  refuseUnlessOwned,
+  resolveAccountingPeriod
 } from "../shared/shared.service";
 import type {
   customerAssetUpdateValidator,
@@ -41,6 +60,11 @@ import {
   type serviceJobUpdateFields,
   serviceWorkSites
 } from "./service.models";
+import {
+  buildCoverageReclassLines,
+  buildServiceJobCompletionLines,
+  serviceCoverageAccount
+} from "./service-job-plan";
 
 type Client = SupabaseClient<Database>;
 
@@ -411,6 +435,40 @@ export async function editableServiceJob(ctx: ServiceContext, jobId: string) {
     return ctx.error("rule", SERVICE_JOB_LOCKED);
   }
   return job.data;
+}
+
+/**
+ * The job, locked FOR UPDATE inside a posting's transaction. Throws when the
+ * job is not the company's and, with `open`, when it is Completed, Invoiced
+ * or Cancelled.
+ */
+export async function lockServiceJob(
+  trx: Transaction<KyselyDatabase>,
+  args: { serviceJobId: string; companyId: string; open?: boolean }
+) {
+  const job = await trx
+    .selectFrom("serviceJob")
+    .select([
+      "id",
+      "serviceJobId",
+      "status",
+      "coverage",
+      "billingMethod",
+      "estimateStatus",
+      "salesReturnOrderLineId",
+      "repairable",
+      "completionJournalId",
+      "locationId"
+    ])
+    .where("id", "=", args.serviceJobId)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!job) throw new NotFoundError("Service job not found");
+  if (args.open && isServiceJobLocked(job.status)) {
+    throw new InvalidInputError(SERVICE_JOB_LOCKED);
+  }
+  return job;
 }
 
 /**
@@ -1040,4 +1098,468 @@ export async function deleteServiceJobAssignment(
     .eq("companyId", args.companyId)
     .select("id")
     .single();
+}
+
+// --- Service jobs: postings ---------------------------------------------------
+
+export const postServiceJobPermission = {
+  update: "service"
+} satisfies PermissionRule<z.output<typeof postServiceJobInput>>;
+
+type ServiceJobPostingLine = ReturnType<
+  typeof buildServiceJobCompletionLines
+>["lines"][number];
+
+/**
+ * One 'Service Job' journal of a job's lines, each tagged with the job's
+ * location when a Location dimension is active. Returns the journal's id.
+ */
+async function writeServiceJobJournal(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    job: { id: string; locationId: string };
+    lines: ServiceJobPostingLine[];
+    description: string;
+    postingStatus: AutomaticJournalStatus;
+    postingDate: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<string> {
+  const { job, lines, postingStatus, postingDate, companyId, userId } = args;
+  // A Provisional journal has no accounting period.
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? (await resolveAccountingPeriod(trx, companyId, postingDate, "current"))
+          .id
+      : null;
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    accountingPeriodId,
+    status: postingStatus,
+    description: args.description,
+    postingDate,
+    userId,
+    sourceType: "Service Job"
+  });
+
+  const lineIds = await allocateJournalLineIds(trx, lines.length);
+  const journalLineReference = nanoid();
+  await trx
+    .insertInto("journalLine")
+    .values(
+      lines.map((line, index) => ({
+        id: lineIds[index],
+        journalId,
+        accountId: line.accountId,
+        description: line.description,
+        accountDefaultRole: line.accountDefaultRole,
+        amount: line.amount,
+        quantity: 1,
+        documentType: "Service Job" as const,
+        documentId: job.id,
+        journalLineReference,
+        companyId
+      }))
+    )
+    .execute();
+
+  const location = await trx
+    .selectFrom("dimension")
+    .innerJoin("company", "company.companyGroupId", "dimension.companyGroupId")
+    .select(["dimension.id"])
+    .where("company.id", "=", companyId)
+    .where("dimension.active", "=", true)
+    .where("dimension.entityType", "=", "Location")
+    .executeTakeFirst();
+  if (location && lineIds.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(
+        lineIds.map((journalLineId) => ({
+          journalLineId,
+          dimensionId: location.id,
+          valueId: job.locationId,
+          companyId
+        }))
+      )
+      .execute();
+  }
+  return journalId;
+}
+
+/** The account defaults a service job posting reads. */
+async function serviceJobAccountDefaults(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string
+) {
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .select([
+      "costOfServiceAccount",
+      "costOfGoodsSoldAccount",
+      "warrantyExpenseAccount",
+      "laborAbsorptionAccount",
+      "retainedEarningsAccount"
+    ])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!defaults) throw new Error("Error getting account defaults");
+  return defaults;
+}
+
+/** Re-derives the RMA status of the line a job was created for. */
+async function refreshJobReturnOrder(
+  trx: Transaction<KyselyDatabase>,
+  salesReturnOrderLineId: string | null,
+  companyId: string,
+  userId: string
+) {
+  if (!salesReturnOrderLineId) return;
+  const line = await trx
+    .selectFrom("salesReturnOrderLine")
+    .select(["salesReturnOrderId"])
+    .where("id", "=", salesReturnOrderLineId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!line) return;
+  await refreshSalesReturnOrderStatus(
+    trx,
+    line.salesReturnOrderId,
+    companyId,
+    userId
+  );
+}
+
+const COMPLETABLE_STATUSES: ReadonlySet<string> = new Set([
+  "Open",
+  "In Progress",
+  "On Hold"
+]);
+
+/**
+ * Completes, reopens or changes the coverage of a service job, in one
+ * transaction with the job row locked.
+ *
+ * - `complete` posts the job's time: one journal, a pair per labor item, Dr
+ *   the coverage account / Cr laborAbsorptionAccount at hours × the labor
+ *   item's `itemCost.unitCost`, stored on each time row. Refused without an
+ *   accepted estimate when the job needs one (`canComplete`), with a labor
+ *   item that has no cost, or with a clock still running.
+ * - `reopen` voids that journal with a negated copy and moves a Completed job
+ *   back to In Progress. An Invoiced job cannot reopen.
+ * - `set-coverage` moves the cost of the parts already issued from the old
+ *   coverage account to the new one, in one journal, and sets the coverage.
+ *   Refused once the job is Completed.
+ *
+ * Completing and reopening a job from an RMA line re-derive that RMA's status.
+ */
+export async function postServiceJob(
+  ctx: ServiceContext,
+  raw: z.input<typeof postServiceJobInput>
+): Promise<PostServiceJobResult> {
+  const input = postServiceJobInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const postingDate = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  return db.transaction().execute(async (trx) => {
+    // Provisional before the company's accounting cutover, Posted after it.
+    const postingStatus = await journalPostingStatus(trx, companyId);
+    const now = datetime.timestamp();
+
+    switch (input.action) {
+      case "complete": {
+        const job = await lockServiceJob(trx, {
+          serviceJobId: input.serviceJobId,
+          companyId
+        });
+        if (!COMPLETABLE_STATUSES.has(job.status)) {
+          throw new InvalidInputError(
+            `A job that is ${job.status} cannot be completed.`
+          );
+        }
+        if (!canComplete(job)) {
+          throw new InvalidInputError(
+            "This job needs an accepted estimate before it can be completed."
+          );
+        }
+
+        const [time, defaults] = await Promise.all([
+          trx
+            .selectFrom("serviceJobTime")
+            .innerJoin("item", (join) =>
+              join
+                .onRef("item.id", "=", "serviceJobTime.laborItemId")
+                .onRef("item.companyId", "=", "serviceJobTime.companyId")
+            )
+            .leftJoin("itemCost", (join) =>
+              join
+                .onRef("itemCost.itemId", "=", "serviceJobTime.laborItemId")
+                .onRef("itemCost.companyId", "=", "serviceJobTime.companyId")
+            )
+            .select([
+              "serviceJobTime.laborItemId",
+              "serviceJobTime.hours",
+              "serviceJobTime.startTime",
+              "serviceJobTime.endTime",
+              "item.name as laborItemName",
+              "item.readableIdWithRevision as laborItemReadableId",
+              "itemCost.unitCost"
+            ])
+            .where("serviceJobTime.serviceJobId", "=", job.id)
+            .where("serviceJobTime.companyId", "=", companyId)
+            .execute(),
+          serviceJobAccountDefaults(trx, companyId)
+        ]);
+
+        const uncosted = time.find(
+          (entry) => !(Number(entry.unitCost ?? 0) > 0)
+        );
+        if (uncosted) {
+          throw new InvalidInputError(
+            `The labor item ${
+              uncosted.laborItemReadableId ?? uncosted.laborItemName
+            } has no cost per hour. Set its unit cost first.`
+          );
+        }
+        if (time.some((entry) => entry.startTime && !entry.endTime)) {
+          throw new InvalidInputError("Stop the running clock first.");
+        }
+
+        // The accounts are resolved only when there is cost to post: an
+        // empty default refuses nothing that writes no line.
+        const costs = time.map((entry) => ({
+          laborItemId: entry.laborItemId,
+          laborItemName: entry.laborItemName,
+          hours: Number(entry.hours),
+          unitCost: Number(entry.unitCost)
+        }));
+        const { lines } = costs.some((entry) => entry.hours > 0)
+          ? buildServiceJobCompletionLines({
+              coverage: job.coverage,
+              coverageAccountId: serviceCoverageAccount(
+                defaults,
+                job.coverage,
+                postingStatus
+              ),
+              laborAbsorption: resolveDefaultAccount(
+                defaults,
+                "laborAbsorptionAccount",
+                postingStatus
+              ),
+              time: costs
+            })
+          : { lines: [] };
+
+        const journalId =
+          lines.length > 0
+            ? await writeServiceJobJournal(trx, {
+                job,
+                lines,
+                description: `Service Job ${job.serviceJobId}`,
+                postingStatus,
+                postingDate,
+                companyId,
+                userId
+              })
+            : null;
+
+        // Each entry keeps the cost it was posted at.
+        if (time.length > 0) {
+          await trx
+            .updateTable("serviceJobTime")
+            .from("itemCost")
+            .set((eb) => ({
+              unitCost: eb.ref("itemCost.unitCost"),
+              updatedBy: userId,
+              updatedAt: now
+            }))
+            .whereRef("itemCost.itemId", "=", "serviceJobTime.laborItemId")
+            .whereRef("itemCost.companyId", "=", "serviceJobTime.companyId")
+            .where("serviceJobTime.serviceJobId", "=", job.id)
+            .where("serviceJobTime.companyId", "=", companyId)
+            .execute();
+        }
+
+        await trx
+          .updateTable("serviceJob")
+          .set({
+            status: "Completed",
+            completedAt: now,
+            completionJournalId: journalId,
+            ...(input.signedByName !== undefined
+              ? { signedByName: input.signedByName }
+              : {}),
+            ...(input.signaturePath !== undefined
+              ? { signaturePath: input.signaturePath }
+              : {}),
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", job.id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await refreshJobReturnOrder(
+          trx,
+          job.salesReturnOrderLineId,
+          companyId,
+          userId
+        );
+        return {
+          success: true,
+          serviceJobId: job.id,
+          status: "Completed",
+          journalId
+        };
+      }
+
+      case "reopen": {
+        const job = await lockServiceJob(trx, {
+          serviceJobId: input.serviceJobId,
+          companyId
+        });
+        if (job.status === "Invoiced") {
+          throw new InvalidInputError("An invoiced job cannot be reopened.");
+        }
+        if (job.status !== "Completed") {
+          throw new InvalidInputError(
+            `A job that is ${job.status} cannot be reopened.`
+          );
+        }
+
+        let journalId: string | null = null;
+        if (job.completionJournalId) {
+          const originalLines = await trx
+            .selectFrom("journalLine")
+            .selectAll()
+            .where("journalId", "=", job.completionJournalId)
+            .where("companyId", "=", companyId)
+            .execute();
+          journalId = await insertNegatedJournal(trx, {
+            companyId,
+            userId,
+            originalLines,
+            description: `Reopen Service Job ${job.serviceJobId}`,
+            sourceType: "Service Job",
+            postingStatus,
+            date: postingDate,
+            periodMode: "current",
+            postedAt: now
+          });
+        }
+
+        await trx
+          .updateTable("serviceJobTime")
+          .set({ unitCost: null, updatedBy: userId, updatedAt: now })
+          .where("serviceJobId", "=", job.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .updateTable("serviceJob")
+          .set({
+            status: "In Progress",
+            completedAt: null,
+            completionJournalId: null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", job.id)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        await refreshJobReturnOrder(
+          trx,
+          job.salesReturnOrderLineId,
+          companyId,
+          userId
+        );
+        return {
+          success: true,
+          serviceJobId: job.id,
+          status: "In Progress",
+          journalId
+        };
+      }
+
+      case "set-coverage": {
+        const job = await lockServiceJob(trx, {
+          serviceJobId: input.serviceJobId,
+          companyId,
+          open: true
+        });
+        if (job.coverage === input.coverage) {
+          return {
+            success: true,
+            serviceJobId: job.id,
+            status: job.status,
+            journalId: null
+          };
+        }
+
+        // What the issued parts cost, net of returns: the job's own cost rows
+        // are signed, issues negative.
+        const [booked, defaults] = await Promise.all([
+          trx
+            .selectFrom("costLedger")
+            .select((eb) => eb.fn.sum<number>("cost").as("cost"))
+            .where("documentType", "=", "Service Job Consumption")
+            .where("documentId", "=", job.id)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst(),
+          serviceJobAccountDefaults(trx, companyId)
+        ]);
+        const partsCost = -Number(booked?.cost ?? 0);
+
+        const lines = buildCoverageReclassLines({
+          from: {
+            coverage: job.coverage,
+            accountId: serviceCoverageAccount(
+              defaults,
+              job.coverage,
+              postingStatus
+            )
+          },
+          to: {
+            coverage: input.coverage,
+            accountId: serviceCoverageAccount(
+              defaults,
+              input.coverage,
+              postingStatus
+            )
+          },
+          partsCost
+        });
+        const journalId =
+          lines.length > 0
+            ? await writeServiceJobJournal(trx, {
+                job,
+                lines,
+                description: `Service Job ${job.serviceJobId} coverage ${job.coverage} to ${input.coverage}`,
+                postingStatus,
+                postingDate,
+                companyId,
+                userId
+              })
+            : null;
+
+        await trx
+          .updateTable("serviceJob")
+          .set({ coverage: input.coverage, updatedBy: userId, updatedAt: now })
+          .where("id", "=", job.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        return {
+          success: true,
+          serviceJobId: job.id,
+          status: job.status,
+          journalId
+        };
+      }
+    }
+  });
 }

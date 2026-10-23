@@ -194,6 +194,43 @@ export const issueInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("maintenanceDispatchUnissue"),
     maintenanceDispatchItemId: z.string()
+  }),
+  z.object({
+    type: z.literal("serviceJobInventory"),
+    serviceJobId: z.string(),
+    itemId: z.string(),
+    unitOfMeasureCode: z.string(),
+    quantity: z.number().positive()
+  }),
+  z.object({
+    type: z.literal("serviceJobTrackedEntities"),
+    serviceJobId: z.string(),
+    itemId: z.string(),
+    unitOfMeasureCode: z.string(),
+    children: z.array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number()
+      })
+    ),
+    overrideExpired: z.boolean().optional(),
+    overrideReason: z.string().optional()
+  }),
+  // Puts a part issued to a service job back in stock. A serial or batch part
+  // returns `children` (all its units when omitted); any other part returns
+  // `quantity` (all of it when omitted). A line with nothing left is deleted.
+  z.object({
+    type: z.literal("serviceJobUnconsume"),
+    serviceJobItemId: z.string(),
+    quantity: z.number().positive().optional(),
+    children: z
+      .array(
+        z.object({
+          trackedEntityId: z.string(),
+          quantity: z.number()
+        })
+      )
+      .optional()
   })
 ]);
 
@@ -440,6 +477,36 @@ export const postMaintenanceEventInput = z.object({
   maintenanceDispatchIds: z.array(z.string()).min(1)
 });
 
+/**
+ * Complete, reopen or change the coverage of a service job. Completing posts
+ * its time, reopening reverses that, and a coverage change reclasses the cost
+ * of the parts already issued.
+ */
+export const postServiceJobInput = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("complete"),
+    serviceJobId: z.string().min(1),
+    signedByName: z.string().optional(),
+    signaturePath: z.string().optional()
+  }),
+  z.object({
+    action: z.literal("reopen"),
+    serviceJobId: z.string().min(1)
+  }),
+  z.object({
+    action: z.literal("set-coverage"),
+    serviceJobId: z.string().min(1),
+    coverage: z.enum(["Billable", "Warranty", "Contract"])
+  })
+]);
+
+export type PostServiceJobResult = {
+  success: true;
+  serviceJobId: string;
+  status: string;
+  journalId: string | null;
+};
+
 export const createInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("nonConformanceTasks"),
@@ -664,6 +731,9 @@ export const MES_POSTINGS = {
     "mergeTrackedEntities",
     "partToOperation",
     "scrapTrackedEntity",
+    "serviceJobInventory",
+    "serviceJobTrackedEntities",
+    "serviceJobUnconsume",
     "trackedEntitiesToBatch",
     "trackedEntitiesToOperation",
     "unconsumeTrackedEntities"
@@ -679,6 +749,7 @@ export const MES_POSTINGS = {
   ],
   "post-production-event": null,
   "post-maintenance-event": null,
+  "post-service-job": null,
   "post-inventory-adjustment": null,
   create: ["nonConformanceTasks"],
   "batch-operations": ["complete"],
