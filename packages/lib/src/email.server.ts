@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  CarbonEdition,
+  SINGLE_TENANT,
   SMTP_FROM,
   SMTP_HOST,
   SMTP_PASSWORD,
@@ -11,7 +11,6 @@ import {
   SMTP_USER
 } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
-import { Edition } from "@carbon/utils";
 import type { Transporter } from "nodemailer";
 import nodemailer from "nodemailer";
 
@@ -43,15 +42,14 @@ export const DEFAULT_FROM =
 
 /**
  * Whether companies can send their documents through this server's own mail
- * settings: only on a single-tenant install, and only when SMTP_HOST is set.
- * On Carbon Cloud the server's mail is Carbon's, shared by every company, so
- * a company there sends documents only through an Email integration it set
- * up itself. The legacy RESEND_API_KEY fallback below still sends sign-in
+ * settings: only when the deployment is single-tenant (TENANT_TYPE=single)
+ * and SMTP_HOST is set. On a multi-tenant one (Carbon Cloud) the server's
+ * mail is Carbon's, shared by every customer, so a company there sends
+ * documents only through an Email integration it set up itself. The legacy RESEND_API_KEY fallback below still sends sign-in
  * and system mail, but it is a shared account, so it never carries a
  * company's documents.
  */
-export const SERVER_MAIL_CONFIGURED =
-  CarbonEdition !== Edition.Cloud && Boolean(SMTP_HOST);
+export const SERVER_MAIL_CONFIGURED = SINGLE_TENANT && Boolean(SMTP_HOST);
 
 /** Domain of the default from-address, e.g. "carbon.ms". */
 export const EMAIL_DOMAIN =

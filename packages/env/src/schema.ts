@@ -118,6 +118,11 @@ export const schema = define({
     description: "true for an ITAR / controlled deployment",
     browser: true
   },
+  TENANT_TYPE: {
+    group: "core",
+    description:
+      "single for a deployment one customer owns (BYOC, self-hosted); multi (default) for Carbon Cloud"
+  },
   MAINTENANCE_MODE: {
     group: "core",
     description: "true answers every request except /health with a 503"
