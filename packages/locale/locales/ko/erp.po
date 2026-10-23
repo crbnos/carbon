@@ -309,6 +309,10 @@ msgstr "{0}개 항목을 전기할 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}개의 인식할 항목 · {amount}"
 
+#. placeholder {0}: job.jobId
+msgid "{0} finishes {finish}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
@@ -643,6 +647,9 @@ msgstr "{billingReviewCount, plural, one {# 청구 가능 항목이 검토를 �
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
+msgid "{complete} of {quantity}"
+msgstr ""
+
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed}개 중 {0}개 완료"
@@ -756,6 +763,12 @@ msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {
 
 msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# 변경} other {# 변경}}"
+
+msgid "{jobId} finishes after {elementName}'s target date"
+msgstr ""
+
+msgid "{jobId} is complete. Is {name} done?"
+msgstr ""
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
@@ -881,6 +894,9 @@ msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} 
 
 msgid "{ref} not found"
 msgstr "{ref} 찾을 수 없음"
+
+msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
@@ -11126,6 +11142,9 @@ msgstr "범위의 모든 항목 및 이에 대한 모든 변경"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테스트를 통과합니다."
+
+msgid "Every job of {name} is complete. Is it done?"
+msgstr ""
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "모든 라인이 완전히 송장 발행되었으며 청구한 것을 인식합니다."

@@ -309,6 +309,10 @@ msgstr "{0} 张凭证待过账 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} 项待确认分录 · {amount}"
 
+#. placeholder {0}: job.jobId
+msgid "{0} finishes {finish}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
@@ -643,6 +647,9 @@ msgstr "{billingReviewCount, plural, one {# 项计费物料等待评审} other {
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
+msgid "{complete} of {quantity}"
+msgstr ""
+
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed} 的 {0} 完成"
@@ -756,6 +763,12 @@ msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已�
 
 msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# 更改} other {# 更改}}"
+
+msgid "{jobId} finishes after {elementName}'s target date"
+msgstr ""
+
+msgid "{jobId} is complete. Is {name} done?"
+msgstr ""
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有存储单元} other {# 个未结工单的物料没有存储单元}}"
@@ -881,6 +894,9 @@ msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 
 
 msgid "{ref} not found"
 msgstr "未找到 {ref}"
+
+msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
@@ -11126,6 +11142,9 @@ msgstr "范围内的每个条目和对其所做的每项更改"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
+
+msgid "Every job of {name} is complete. Is it done?"
+msgstr ""
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "每行都完全开票并确认其计费内容"

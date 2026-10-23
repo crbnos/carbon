@@ -56,7 +56,10 @@ import { useLinkTypeLabels } from "../Element/ElementLinks";
 import { ElementTypeIcon } from "./ElementTypeIcon";
 import type { ElementBoxGraphNode } from "./graph/ElementBoxNode";
 import { ElementBoxNode } from "./graph/ElementBoxNode";
-import type { ElementCardGraphNode } from "./graph/ElementCardNode";
+import type {
+  ElementCardGraphNode,
+  ElementJobBadge
+} from "./graph/ElementCardNode";
 import { ElementCardNode } from "./graph/ElementCardNode";
 import type { LinkEdgeData } from "./graph/LinkEdge";
 import { LinkEdge, linkDash } from "./graph/LinkEdge";
@@ -87,6 +90,8 @@ type ElementGraphProps = {
   type: ProjectElementType | null;
   links: ProjectElementLink[];
   commentCounts: Record<string, number>;
+  /** Each task's job badge, by element id. */
+  jobs: Record<string, ElementJobBadge>;
   canUpdate: boolean;
 };
 
@@ -129,6 +134,7 @@ function ElementGraphCanvas({
   type,
   links,
   commentCounts,
+  jobs,
   canUpdate
 }: ElementGraphProps) {
   const { t } = useLingui();
@@ -260,6 +266,7 @@ function ElementGraphCanvas({
                 : element.type === "System" || element.type === "Function"
                   ? { kind: "reqs", count: count?.reqs ?? 0 }
                   : null,
+            job: jobs[element.id] ?? null,
             isSuspect: suspect.has(element.id),
             isDimmed: !!lit && !lit.elementIds.has(element.id),
             isHighlighted: highlight?.elementId === element.id,
@@ -336,6 +343,7 @@ function ElementGraphCanvas({
     toggleCollapsed,
     toggleHighlight,
     commentCounts,
+    jobs,
     labels
   ]);
 

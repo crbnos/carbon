@@ -309,6 +309,10 @@ msgstr "{0}件の仕訳を転記 · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0}件の認識対象明細 · {amount}"
 
+#. placeholder {0}: job.jobId
+msgid "{0} finishes {finish}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
@@ -643,6 +647,9 @@ msgstr "{billingReviewCount, plural, one {# 個の請求対象項目がレビュ
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
+msgid "{complete} of {quantity}"
+msgstr ""
+
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed}個が{0}個中完了"
@@ -756,6 +763,12 @@ msgstr "{inserted} 件が挿入されました、{updated} 件が更新されま
 
 msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# 変更} other {# 変更}}"
+
+msgid "{jobId} finishes after {elementName}'s target date"
+msgstr ""
+
+msgid "{jobId} is complete. Is {name} done?"
+msgstr ""
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に保管ユニットがない材料があります} other {#個のオープン製造指図に保管ユニットがない材料があります}}"
@@ -881,6 +894,9 @@ msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} oth
 
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
+
+msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
@@ -11126,6 +11142,9 @@ msgstr "範囲内のすべてのエントリーと、それに加えられたす
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "スコープ内のすべてのテストが、設定されたシステムで、あなたのデータを使用して合格します。"
+
+msgid "Every job of {name} is complete. Is it done?"
+msgstr ""
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "すべての明細は完全に請求済みであり、請求する金額を認識しています。"

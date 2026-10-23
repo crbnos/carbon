@@ -6,7 +6,7 @@ import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, EPSILON } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -21,6 +21,7 @@ import {
   getProjectContracts,
   getProjectCostSummary,
   getProjectElements,
+  getProjectJobs,
   getProjectMembers,
   getProjectMilestones,
   getProjectOpenTimesheetEntries
@@ -68,7 +69,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     comments,
     costs,
     projectContracts,
-    billingReview
+    billingReview,
+    projectJobs
   ] = await Promise.all([
     getProjectElements(client, projectId, companyId),
     getProjectCostSummary(client, projectId, companyId),
@@ -108,7 +110,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .eq("projectId", projectId)
           .not("customerContractLineId", "is", null)
           .in("status", ["Unbilled", "On Hold"])
-      : null
+      : null,
+    // The jobs the tasks' plan lines made: the job rows of Needs attention.
+    getProjectJobs(client, projectId, companyId)
   ]);
 
   for (const [what, result] of [
@@ -121,7 +125,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ["comments", comments],
     ["costs", costs],
     ["project contracts", projectContracts],
-    ["billable items to review", billingReview]
+    ["billable items to review", billingReview],
+    ["jobs", projectJobs]
   ] as const) {
     if (result?.error) {
       logger.error("Failed to load a part of the project overview", {
@@ -311,6 +316,119 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, ACTIVITY_LIMIT);
 
+  // Needs attention reads the jobs the tasks' plan lines made, once per
+  // task; a Cancelled job counts for nothing. A job's finish is the
+  // scheduler's forecast, as a day in the company's time zone, else its due
+  // date.
+  const isJobDone = (status: string) =>
+    status === "Completed" || status === "Closed";
+  const jobRows = (projectJobs.data ?? []).filter(
+    (row) => row.job.status !== "Cancelled"
+  );
+  type ProjectJob = (typeof jobRows)[number]["job"];
+  const jobsByTask = new Map<string, ProjectJob[]>();
+  const jobsByClin = new Map<string, ProjectJob[]>();
+  for (const { projectElementId, job } of jobRows) {
+    const taskJobs = jobsByTask.get(projectElementId) ?? [];
+    if (!taskJobs.some((row) => row.id === job.id)) taskJobs.push(job);
+    jobsByTask.set(projectElementId, taskJobs);
+    if (!job.customerContractLineId) continue;
+    const clinJobs = jobsByClin.get(job.customerContractLineId) ?? [];
+    if (!clinJobs.some((row) => row.id === job.id)) clinJobs.push(job);
+    jobsByClin.set(job.customerContractLineId, clinJobs);
+  }
+
+  const elementById = new Map(
+    elementRows.map((element) => [element.id, element])
+  );
+  const lateJobs: { id: string; jobId: string; elementName: string }[] = [];
+  const completeTasks: {
+    id: string;
+    name: string;
+    jobId: string;
+    jobCount: number;
+  }[] = [];
+  for (const [elementId, taskJobs] of jobsByTask) {
+    const element = elementById.get(elementId);
+    if (!element || !isOpen(element.state?.group)) continue;
+    // A complete job does not complete its task: test or inspection work
+    // can remain, so the user decides.
+    if (taskJobs.every((job) => isJobDone(job.status))) {
+      completeTasks.push({
+        id: element.id,
+        name: element.name,
+        jobId: taskJobs[0]!.jobId,
+        jobCount: taskJobs.length
+      });
+      continue;
+    }
+    const targetDate = element.targetDate;
+    if (!targetDate) continue;
+    for (const job of taskJobs) {
+      if (isJobDone(job.status)) continue;
+      const finish = job.projectedCompletionAt
+        ? datetime.businessDay(job.projectedCompletionAt, timeZone).toString()
+        : job.dueDate;
+      if (finish && finish > targetDate) {
+        lateJobs.push({
+          id: job.id,
+          jobId: job.jobId,
+          elementName: element.name
+        });
+      }
+    }
+  }
+
+  // A part CLIN with a complete job and units not delivered: its jobs'
+  // quantity complete, at most the line's quantity, less the Posted
+  // Customer Contract shipments of the line. One read for every CLIN.
+  const doneClinIds = [...jobsByClin.entries()]
+    .filter(([, clinJobs]) => clinJobs.some((job) => isJobDone(job.status)))
+    .map(([lineId]) => lineId);
+  const deliveries =
+    canViewSales && doneClinIds.length > 0
+      ? await client
+          .from("shipmentLine")
+          .select(
+            "lineId, shippedQuantity, shipment:shipment!shipmentLine_shipmentId_fkey!inner(status, sourceDocument)"
+          )
+          .eq("companyId", companyId)
+          .in("lineId", doneClinIds)
+          .eq("shipment.status", "Posted")
+          .eq("shipment.sourceDocument", "Customer Contract")
+      : null;
+  if (deliveries?.error) {
+    logger.error("Failed to load a part of the project overview", {
+      what: "contract deliveries",
+      companyId,
+      projectId,
+      error: deliveries.error
+    });
+  }
+  const delivered = new Map<string, number>();
+  for (const line of deliveries?.data ?? []) {
+    if (!line.lineId) continue;
+    delivered.set(
+      line.lineId,
+      (delivered.get(line.lineId) ?? 0) + Number(line.shippedQuantity)
+    );
+  }
+  const lineQuantity = new Map(
+    contracts.flatMap((contract) =>
+      contract.lines.map((line) => [line.id, Number(line.quantity)] as const)
+    )
+  );
+  const undeliveredJobs = doneClinIds.flatMap((lineId) => {
+    const clinJobs = jobsByClin.get(lineId) ?? [];
+    const complete = sum(clinJobs.map((job) => Number(job.quantityComplete)));
+    const cap = lineQuantity.get(lineId);
+    const deliverable = cap === undefined ? complete : Math.min(complete, cap);
+    const remaining = deliverable - (delivered.get(lineId) ?? 0);
+    const job = clinJobs.find((row) => isJobDone(row.status));
+    if (!job || remaining <= EPSILON) return [];
+    return [{ id: job.id, jobId: job.jobId, remaining }];
+  });
+
   return {
     today,
     figures: {
@@ -346,9 +464,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                 customerContractId: draftContract.customerContractId
               }
             : null,
-          billingReviewCount: billingReview?.count ?? 0
+          billingReviewCount: billingReview?.count ?? 0,
+          undeliveredJobs
         }
-      : null
+      : null,
+    jobAttention: { lateJobs, completeTasks }
   };
 }
 

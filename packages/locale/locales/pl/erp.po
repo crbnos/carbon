@@ -309,6 +309,10 @@ msgstr "{0} wpisów do zaksięgowania · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} wpisów do rozpoznania · {amount}"
 
+#. placeholder {0}: job.jobId
+msgid "{0} finishes {finish}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
@@ -643,6 +647,9 @@ msgstr "{billingReviewCount, plural, one {# pozycja do rozliczenia czeka na prze
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostatecznego następcę."
 
+msgid "{complete} of {quantity}"
+msgstr ""
+
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed} z {0} gotowych"
@@ -756,6 +763,12 @@ msgstr "{inserted} wstawiono, {updated} zaktualizowano, {0} wymagają naprawy, {
 
 msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# zmiana} other {# zmiany}}"
+
+msgid "{jobId} finishes after {elementName}'s target date"
+msgstr ""
+
+msgid "{jobId} is complete. Is {name} done?"
+msgstr ""
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# otwarte zlecenie produkcyjne ma materiały bez jednostki magazynowej} other {# otwarte zlecenia produkcyjne mają materiały bez jednostki magazynowej}}"
@@ -881,6 +894,9 @@ msgstr "{purgeRowCount, plural, one {Trwale usuń # wiersz?} other {Trwale usuń
 
 msgid "{ref} not found"
 msgstr "{ref} nie znaleziono"
+
+msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
@@ -11126,6 +11142,9 @@ msgstr "Każdy wpis w zakresie i każda zmiana dokonana na nim"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Każdy test w zakresie przechodzi w Twoim skonfigurowanym systemie, z Twoimi danymi."
+
+msgid "Every job of {name} is complete. Is it done?"
+msgstr ""
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Każda Pozycja jest w pełni zafakturowana i ujmuje to, co faktury."

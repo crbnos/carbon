@@ -6,9 +6,17 @@ import { cn } from "@carbon/react";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
-import { LuChevronRight, LuLink, LuMessageSquare } from "react-icons/lu";
+import {
+  LuChevronRight,
+  LuFactory,
+  LuLink,
+  LuMessageSquare
+} from "react-icons/lu";
+import { Link } from "react-router";
 import { EmployeeAvatar } from "~/components";
+import { useDateFormatter, useQuantityFormatter } from "~/hooks";
 import { handleClass } from "~/modules/workflows/ui/Builder/handles";
+import { path } from "~/utils/path";
 import type {
   ProjectElementType,
   ProjectStateGroup
@@ -20,6 +28,18 @@ import { CARD_HEIGHT, CARD_WIDTH } from "./tree-layout";
 /** The trace link handles show only while the card is hovered. */
 const linkHandleClass = `${handleClass()} !opacity-0 group-hover:!opacity-100`;
 
+/** The job a task's plan line made: the first one, when it has several. */
+export type ElementJobBadge = {
+  id: string;
+  jobId: string;
+  quantity: number;
+  quantityComplete: number;
+  /** The scheduled finish (`YYYY-MM-DD`), else the due date. */
+  finish: string | null;
+  /** The task's other jobs. */
+  moreCount: number;
+};
+
 export type ElementCardData = {
   readableId: string;
   name: string;
@@ -28,6 +48,7 @@ export type ElementCardData = {
   ownerId: string | null;
   commentCount: number;
   linkCount: { kind: "tests" | "reqs"; count: number } | null;
+  job: ElementJobBadge | null;
   isSuspect: boolean;
   isDimmed: boolean;
   isHighlighted: boolean;
@@ -42,7 +63,8 @@ export type ElementCardGraphNode = Node<ElementCardData, "card">;
  * One element on the Tree layout, as a quiet card in its parent's box (the
  * look of Flow's requirement cards): a small grey type label with its icon,
  * the comment and trace link counts and the owner; the name; at most one
- * chip, the state. The link count lights up the card's links. An amber
+ * chip, the state, with the task's job beside it ("J-104 · 1 of 1", linked
+ * to the job). The link count lights up the card's links. An amber
  * border marks a link that needs review. The chevron collapses the box of
  * its children.
  */
@@ -129,12 +151,15 @@ function ElementCardNodeImpl({ id, data }: NodeProps<ElementCardGraphNode>) {
       <div className="line-clamp-2 min-w-0 break-words leading-5 text-foreground">
         {data.name}
       </div>
-      {data.state && (
-        <div className="mt-auto flex min-w-0">
-          <span className="inline-flex h-5 min-w-0 items-center gap-1 rounded bg-muted px-1.5 text-xs text-muted-foreground">
-            <StateIcon group={data.state.group} color={data.state.color} />
-            <span className="truncate">{data.state.name}</span>
-          </span>
+      {(data.state || data.job) && (
+        <div className="mt-auto flex min-w-0 items-center gap-1.5">
+          {data.state && (
+            <span className="inline-flex h-5 min-w-0 items-center gap-1 rounded bg-muted px-1.5 text-xs text-muted-foreground">
+              <StateIcon group={data.state.group} color={data.state.color} />
+              <span className="truncate">{data.state.name}</span>
+            </span>
+          )}
+          {data.job && <JobBadge job={data.job} />}
         </div>
       )}
       {data.hasChildren && (
@@ -159,6 +184,32 @@ function ElementCardNodeImpl({ id, data }: NodeProps<ElementCardGraphNode>) {
         </>
       )}
     </div>
+  );
+}
+
+/** The task's job: its number and quantity complete, linked to the job. */
+function JobBadge({ job }: { job: ElementJobBadge }) {
+  const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
+  const formatQuantity = useQuantityFormatter();
+  const complete = formatQuantity(job.quantityComplete);
+  const quantity = formatQuantity(job.quantity);
+  const finish = job.finish ? formatDate(job.finish) : null;
+  const more = job.moreCount;
+
+  return (
+    <Link
+      to={path.to.job(job.id)}
+      data-graph-action
+      title={finish ? t`${job.jobId} finishes ${finish}` : job.jobId}
+      className="nodrag inline-flex h-5 min-w-0 shrink items-center gap-1 rounded px-1 text-xs text-muted-foreground tabular-nums hover:bg-accent hover:text-foreground"
+    >
+      <LuFactory aria-hidden className="size-3 shrink-0" />
+      <span className="truncate">
+        {job.jobId} · {t`${complete} of ${quantity}`}
+      </span>
+      {more > 0 && <span className="shrink-0">+{more}</span>}
+    </Link>
   );
 }
 

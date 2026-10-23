@@ -309,6 +309,10 @@ msgstr "{0} voci da registrare · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} scritture da riconoscere · {amount}"
 
+#. placeholder {0}: job.jobId
+msgid "{0} finishes {finish}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
@@ -643,6 +647,9 @@ msgstr "{billingReviewCount, plural, one {# articolo fatturabile in attesa di re
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al successore finale."
 
+msgid "{complete} of {quantity}"
+msgstr ""
+
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed} di {0} fatto"
@@ -756,6 +763,12 @@ msgstr "{inserted} inseriti, {updated} aggiornati, {0} richiedono correzione, {1
 
 msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# modifica} other {# modifiche}}"
+
+msgid "{jobId} finishes after {elementName}'s target date"
+msgstr ""
+
+msgid "{jobId} is complete. Is {name} done?"
+msgstr ""
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# ordine di produzione aperto ha materiali senza unità di stoccaggio} other {# ordini di produzione aperti hanno materiali senza unità di stoccaggio}}"
@@ -881,6 +894,9 @@ msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {E
 
 msgid "{ref} not found"
 msgstr "{ref} non trovato"
+
+msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase rimanente} other {# fasi rimanenti}}"
@@ -11126,6 +11142,9 @@ msgstr "Ogni voce nell'intervallo e ogni modifica apportata ad essa"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Ogni test nell'ambito passa nel tuo sistema configurato, con i tuoi dati."
+
+msgid "Every job of {name} is complete. Is it done?"
+msgstr ""
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Ogni riga è completamente fatturata e riconosce quello che fattura."

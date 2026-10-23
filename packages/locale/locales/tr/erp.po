@@ -309,6 +309,10 @@ msgstr "{0} muhasebe fişi muhasebeleştirilecek · {amount}"
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} muhasebeleştirilecek kayıt · {amount}"
 
+#. placeholder {0}: job.jobId
+msgid "{0} finishes {finish}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
@@ -643,6 +647,9 @@ msgstr "{billingReviewCount, plural, one {# faturalama öğesi inceleme için be
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
 
+msgid "{complete} of {quantity}"
+msgstr ""
+
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed} / {0} bitti"
@@ -756,6 +763,12 @@ msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} a
 
 msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# değişiklik} other {# değişiklikler}}"
+
+msgid "{jobId} finishes after {elementName}'s target date"
+msgstr ""
+
+msgid "{jobId} is complete. Is {name} done?"
+msgstr ""
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama birimi olmayan malzemeleri var} other {# açık iş emirlerinin depolama birimi olmayan malzemeleri var}}"
@@ -881,6 +894,9 @@ msgstr "{purgeRowCount, plural, one {# satırı kalıcı olarak sil?} other {# s
 
 msgid "{ref} not found"
 msgstr "{ref} bulunamadı"
+
+msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
@@ -11126,6 +11142,9 @@ msgstr "Aralıktaki her giriş ve buna yapılan her değişiklik"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle geçer."
+
+msgid "Every job of {name} is complete. Is it done?"
+msgstr ""
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "Her satır tamamen faturalandırılır ve faturaladığı şeyi muhasebeleştirir."

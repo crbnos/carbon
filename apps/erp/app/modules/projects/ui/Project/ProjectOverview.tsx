@@ -9,14 +9,17 @@ import { parseDate } from "@internationalized/date";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
+  LuCalendarClock,
   LuChevronRight,
+  LuCircleCheck,
   LuClock,
   LuFilePen,
   LuFilePlus,
   LuGitPullRequestArrow,
   LuHandCoins,
   LuOctagonX,
-  LuReceipt
+  LuReceipt,
+  LuTruck
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
@@ -97,7 +100,21 @@ type ProjectOverviewProps = {
     hasProjectContract: boolean;
     draftContract: { id: string; customerContractId: string } | null;
     billingReviewCount: number;
+    /** A part CLIN's complete job, and the CLIN's units not delivered. */
+    undeliveredJobs: { id: string; jobId: string; remaining: number }[];
   } | null;
+  /** The job rows of Needs attention. */
+  jobAttention: {
+    /** An open job scheduled to finish after its task's target date. */
+    lateJobs: { id: string; jobId: string; elementName: string }[];
+    /** An open task whose every job is complete. */
+    completeTasks: {
+      id: string;
+      name: string;
+      jobId: string;
+      jobCount: number;
+    }[];
+  };
   /** The members section, in DCAA timekeeping. */
   members?: ReactNode;
 };
@@ -118,6 +135,7 @@ export default function ProjectOverview({
   openTimeCount,
   contract,
   contractAttention,
+  jobAttention,
   members
 }: ProjectOverviewProps) {
   const { t } = useLingui();
@@ -170,6 +188,7 @@ export default function ProjectOverview({
             openChangeRequestCount={routeData?.openChangeRequests.length ?? 0}
             openTimeCount={openTimeCount}
             contractAttention={isContract ? contractAttention : null}
+            jobAttention={jobAttention}
           />
         </div>
         <div className="flex min-w-0 flex-col gap-6">
@@ -607,7 +626,8 @@ function NeedsAttentionCard({
   overdueBorrowCount,
   openChangeRequestCount,
   openTimeCount,
-  contractAttention
+  contractAttention,
+  jobAttention
 }: {
   projectId: string;
   project: Project;
@@ -616,6 +636,7 @@ function NeedsAttentionCard({
   openTimeCount: number;
   /** A Contract project's contract rows; null otherwise. */
   contractAttention: ProjectOverviewProps["contractAttention"];
+  jobAttention: ProjectOverviewProps["jobAttention"];
 }) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
@@ -718,6 +739,52 @@ function NeedsAttentionCard({
           one="# billable item waits for review"
           other="# billable items wait for review"
         />
+      </AttentionRow>
+    );
+  }
+  for (const { id, jobId, remaining } of contractAttention?.undeliveredJobs ??
+    []) {
+    rows.push(
+      <AttentionRow
+        key={`undelivered-${id}`}
+        to={path.to.job(id)}
+        icon={<LuTruck />}
+      >
+        <Plural
+          value={remaining}
+          one={`${jobId} is complete. # unit is not delivered`}
+          other={`${jobId} is complete. # units are not delivered`}
+        />
+      </AttentionRow>
+    );
+  }
+  for (const { id, jobId, elementName } of jobAttention.lateJobs) {
+    rows.push(
+      <AttentionRow
+        key={`late-${id}-${elementName}`}
+        to={path.to.job(id)}
+        icon={<LuCalendarClock />}
+      >
+        <Trans>
+          {jobId} finishes after {elementName}'s target date
+        </Trans>
+      </AttentionRow>
+    );
+  }
+  for (const { id, name, jobId, jobCount } of jobAttention.completeTasks) {
+    rows.push(
+      <AttentionRow
+        key={`complete-${id}`}
+        to={path.to.projectElement(projectId, id)}
+        icon={<LuCircleCheck />}
+      >
+        {jobCount === 1 ? (
+          <Trans>
+            {jobId} is complete. Is {name} done?
+          </Trans>
+        ) : (
+          <Trans>Every job of {name} is complete. Is it done?</Trans>
+        )}
       </AttentionRow>
     );
   }

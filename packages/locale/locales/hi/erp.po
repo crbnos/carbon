@@ -309,6 +309,10 @@ msgstr "{0} प्रविष्टियाँ पोस्ट करने �
 msgid "{0} entries to recognize · {amount}"
 msgstr "{0} प्रविष्टियों को पहचानने के लिए · {amount}"
 
+#. placeholder {0}: job.jobId
+msgid "{0} finishes {finish}"
+msgstr ""
+
 #. placeholder {0}: formatHours(dayTotals[index] ?? 0)
 #. placeholder {0}: formatHours(hours)
 #. placeholder {0}: formatQuantity(rate.baseAmount, locale)
@@ -643,6 +647,9 @@ msgstr "{billingReviewCount, plural, one {# बिल योग्य आइट�
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
+msgid "{complete} of {quantity}"
+msgstr ""
+
 #. placeholder {0}: children.length
 msgid "{completed} of {0} done"
 msgstr "{completed} में से {0} हो गया"
@@ -756,6 +763,12 @@ msgstr "{inserted} सम्मिलित किया गया, {updated} �
 
 msgid "{itemCount, plural, one {# change} other {# changes}}"
 msgstr "{itemCount, plural, one {# परिवर्तन} other {# परिवर्तन}}"
+
+msgid "{jobId} finishes after {elementName}'s target date"
+msgstr ""
+
+msgid "{jobId} is complete. Is {name} done?"
+msgstr ""
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
@@ -881,6 +894,9 @@ msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थाय
 
 msgid "{ref} not found"
 msgstr "{ref} नहीं मिला"
+
+msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -11126,6 +11142,9 @@ msgstr "सीमा में प्रत्येक प्रविष्ट
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
+
+msgid "Every job of {name} is complete. Is it done?"
+msgstr ""
 
 msgid "Every line is fully invoiced and recognizes what it bills."
 msgstr "प्रत्येक पंक्ति पूरी तरह से चालान किया गया है और जो बिल करती है उसे स्वीकार करती है।"

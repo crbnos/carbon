@@ -6,7 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { redirect, type WbsNode } from "@carbon/utils";
+import { datetime, redirect, type WbsNode } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useState } from "react";
@@ -41,6 +41,7 @@ import {
   getProjectElementCommentCounts,
   getProjectElementDescriptions,
   getProjectElements,
+  getProjectJobs,
   getProjectVerification,
   getProjectWbsNodes,
   loadChangeRequestOverlay,
@@ -65,12 +66,14 @@ import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "~/modules/projects/ui/Elements/ElementTypeIcon";
+import type { ElementJobBadge } from "~/modules/projects/ui/Elements/graph/ElementCardNode";
 import {
   type NewElementDefaults,
   NewElementModal
 } from "~/modules/projects/ui/Elements/NewElementModal";
 import { WbsMenu } from "~/modules/projects/ui/Elements/WbsMenu";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -132,17 +135,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (value) => value !== null
   );
 
-  const [elements, descriptions, commentCounts] = await Promise.all([
-    getProjectElements(client, projectId, companyId, queryFilters),
-    // Only the Reader shows descriptions; the list query leaves them out.
-    layout === "reader"
-      ? getProjectElementDescriptions(client, projectId, companyId)
-      : Promise.resolve({ data: [], error: null }),
-    // Only the Tree's cards show comment counts.
-    layout === "tree"
-      ? getProjectElementCommentCounts(client, projectId, companyId)
-      : Promise.resolve({ data: [], error: null })
-  ]);
+  const isTree = layout === "tree";
+  const [elements, descriptions, commentCounts, jobs, timeZone] =
+    await Promise.all([
+      getProjectElements(client, projectId, companyId, queryFilters),
+      // Only the Reader shows descriptions; the list query leaves them out.
+      layout === "reader"
+        ? getProjectElementDescriptions(client, projectId, companyId)
+        : Promise.resolve({ data: [], error: null }),
+      // Only the Tree's cards show comment counts and job badges.
+      isTree
+        ? getProjectElementCommentCounts(client, projectId, companyId)
+        : Promise.resolve({ data: [], error: null }),
+      isTree ? getProjectJobs(client, projectId, companyId) : null,
+      isTree ? getCompanyTimeZone(client, companyId) : null
+    ]);
   if (descriptions.error) {
     logger.error("Failed to load element descriptions", {
       companyId,
@@ -156,6 +163,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       projectId,
       error: commentCounts.error
     });
+  }
+
+  if (jobs?.error) {
+    logger.error("Failed to load the project's jobs", {
+      companyId,
+      projectId,
+      error: jobs.error
+    });
+  }
+
+  // A task's badge is its first job that is not Cancelled; the card counts
+  // the others. The finish is the scheduler's forecast, as a day in the
+  // company's time zone, else the job's due date.
+  const jobBadges: Record<string, ElementJobBadge> = {};
+  const seen = new Set<string>();
+  for (const { projectElementId, job } of jobs?.data ?? []) {
+    if (job.status === "Cancelled") continue;
+    const key = `${projectElementId}:${job.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const badge = jobBadges[projectElementId];
+    if (badge) {
+      badge.moreCount += 1;
+      continue;
+    }
+    jobBadges[projectElementId] = {
+      id: job.id,
+      jobId: job.jobId,
+      quantity: Number(job.quantity),
+      quantityComplete: Number(job.quantityComplete),
+      finish:
+        job.projectedCompletionAt && timeZone
+          ? datetime.businessDay(job.projectedCompletionAt, timeZone).toString()
+          : job.dueDate,
+      moreCount: 0
+    };
   }
 
   if (elements.error) {
@@ -249,6 +292,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     commentCounts: Object.fromEntries(
       (commentCounts.data ?? []).map((row) => [row.id, row.count])
     ) as Record<string, number>,
+    jobs: jobBadges,
     layout,
     type,
     isFiltered: Object.values(elementFilters).some((value) => value !== null)
@@ -270,6 +314,7 @@ export default function ProjectElementsRoute() {
     verification,
     descriptions,
     commentCounts,
+    jobs,
     layout,
     type,
     isFiltered
@@ -474,6 +519,7 @@ export default function ProjectElementsRoute() {
             type={type}
             links={links}
             commentCounts={commentCounts}
+            jobs={jobs}
             canUpdate={canUpdate}
           />
         ) : (

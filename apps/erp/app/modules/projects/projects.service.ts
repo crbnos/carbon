@@ -15661,3 +15661,24 @@ export async function getRdTaxReport(
     ein: company?.taxId ?? null
   };
 }
+
+/**
+ * The project's jobs, by the task whose plan line made each one
+ * (`projectElementMaterial.jobId`). The Tree's job badge and the Overview's
+ * job rows read it. A job a plan line does not name is not here.
+ */
+export async function getProjectJobs(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return client
+    .from("projectElementMaterial")
+    .select(
+      "projectElementId, job:job!projectElementMaterial_jobId_fkey!inner(id, jobId, status, quantity, quantityComplete, dueDate, projectedCompletionAt, customerContractLineId)"
+    )
+    .eq("projectId", projectId)
+    .eq("companyId", companyId)
+    .not("jobId", "is", null)
+    .order("createdAt", { ascending: true });
+}
