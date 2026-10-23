@@ -259,21 +259,31 @@ export function OperationsBlock({
                 </View>
               </View>
 
-              {batchNotes || hasWorkInstruction || hasProcedureSteps ? (
+              {/* The planner's notes from the batch builder: plain text, so
+                  line breaks print as typed. First, as in the MES. They take
+                  the batch row's columns: nothing under the QR code, then the
+                  same left and right edges as the sentence beside it. */}
+              {batchNotes ? (
+                <View
+                  style={tw(
+                    "w-full flex flex-row justify-start gap-2 mt-2 mb-2"
+                  )}
+                >
+                  <View style={tw("w-1/4")} />
+                  <View style={tw("w-3/4")}>
+                    <Text style={SUB_SECTION_TITLE}>Batch Notes</Text>
+                    <Text
+                      style={tw("text-[9px]")}
+                      hyphenationCallback={breakLongNotesWord}
+                    >
+                      {batchNotes}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+
+              {hasWorkInstruction || hasProcedureSteps ? (
                 <View style={tw("mt-2 ml-8")}>
-                  {/* The planner's notes from the batch builder: plain text,
-                      so line breaks print as typed. First, as in the MES. */}
-                  {batchNotes ? (
-                    <View style={tw("mb-2")}>
-                      <Text style={SUB_SECTION_TITLE}>Batch Notes</Text>
-                      <Text
-                        style={tw("text-[9px]")}
-                        hyphenationCallback={breakLongNotesWord}
-                      >
-                        {batchNotes}
-                      </Text>
-                    </View>
-                  ) : null}
                   {hasProcedureSteps ? (
                     <View style={tw("mb-2")}>
                       <Text style={SUB_SECTION_TITLE}>Procedure Steps</Text>
