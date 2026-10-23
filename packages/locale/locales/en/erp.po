@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 
+#. placeholder {0}: job.rows.length
+msgid "{0, plural, one {# charge} other {# charges}}"
+msgstr "{0, plural, one {# charge} other {# charges}}"
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# comment} other {# comments}}"

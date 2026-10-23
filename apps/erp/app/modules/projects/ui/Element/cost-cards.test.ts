@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   costDescriptionKey,
+  foldJobRows,
   isOverBudget,
   keyOwners,
   ledgerLineType,
@@ -126,5 +127,50 @@ describe("sortActualCards", () => {
 
   it("sorts by the size of the amount", () => {
     expect(keys(sortActualCards(cards, "amount"))).toEqual(["b", "a", "c"]);
+  });
+});
+
+describe("foldJobRows", () => {
+  const row = (
+    id: string,
+    jobId: string | null,
+    amount: number,
+    postingDate: string
+  ) => ({
+    id,
+    jobId,
+    jobReadableId: jobId ? `J-${jobId}` : null,
+    amount,
+    postingDate
+  });
+
+  it("folds the rows of one job into one entry and keeps the rest", () => {
+    const folded = foldJobRows([
+      row("r1", "a", 100, "2026-10-05"),
+      row("r2", null, 40, "2026-10-04"),
+      row("r3", "a", 250, "2026-10-03"),
+      row("r4", "a", -50, "2026-10-01")
+    ]);
+    expect(folded).toHaveLength(2);
+    expect(folded[0]).toMatchObject({
+      kind: "job",
+      key: "job:a",
+      jobId: "a",
+      jobReadableId: "J-a",
+      amount: 300,
+      date: "2026-10-05"
+    });
+    expect(folded[0]?.kind === "job" && folded[0].rows).toHaveLength(3);
+    expect(folded[1]).toMatchObject({ kind: "row", key: "r2" });
+  });
+
+  it("places a job where its newest row was", () => {
+    const folded = foldJobRows([
+      row("r1", null, 1, "2026-10-09"),
+      row("r2", "b", 2, "2026-10-08"),
+      row("r3", "c", 3, "2026-10-07"),
+      row("r4", "b", 4, "2026-10-06")
+    ]);
+    expect(folded.map((entry) => entry.key)).toEqual(["r1", "job:b", "job:c"]);
   });
 });

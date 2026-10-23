@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo, useState } from "react";
 import {
   LuChevronDown,
@@ -18,12 +18,14 @@ import {
   LuReceipt,
   LuTimer
 } from "react-icons/lu";
+import { useNavigate } from "react-router";
 import {
   useCurrencyFormatter,
   useDateFormatter,
   useQuantityFormatter
 } from "~/hooks";
 import { useItems, usePeople } from "~/stores";
+import { path } from "~/utils/path";
 import type {
   ProjectCostType,
   TimesheetEntryStatus as TimesheetEntryStatusType
@@ -42,6 +44,8 @@ import {
 import {
   type ActualSort,
   type CostTypeFilter,
+  type FoldedLedgerEntry,
+  foldJobRows,
   ledgerLineType,
   matchesSearch,
   sortActualCards
@@ -50,6 +54,8 @@ import { OpenTimeAction } from "./OpenTimeAction";
 import type { PlanLineType } from "./plan-rows";
 import { TimesheetEntryStatus } from "./TimesheetEntryStatus";
 
+type JobEntry = Extract<FoldedLedgerEntry<ElementLedgerRow>, { kind: "job" }>;
+
 type ActualCard = {
   key: string;
   type: PlanLineType;
@@ -57,13 +63,15 @@ type ActualCard = {
   amount: number;
   searchText: (string | null | undefined)[];
   ledger?: ElementLedgerRow;
+  job?: JobEntry;
   openTime?: ElementOpenTimeRow;
 };
 
 /**
  * What has been charged to an element and every element below it, as
  * cards: the project ledger rows, then the timesheet entries that are not
- * Posted yet (Posted time is in the ledger), each with its next step. The
+ * Posted yet (Posted time is in the ledger), each with its next step. A
+ * job's rows are one card with their sum: the job holds the detail. The
  * Charge menu issues material, logs time or charges a cost to the element.
  */
 export function ElementTimeAndMaterials({
@@ -85,6 +93,7 @@ export function ElementTimeAndMaterials({
   onCharge?: () => void;
 }) {
   const { t } = useLingui();
+  const navigate = useNavigate();
   const formatMoney = useCurrencyFormatter();
   const formatQuantity = useQuantityFormatter();
   const { formatDate } = useDateFormatter();
@@ -125,7 +134,26 @@ export function ElementTimeAndMaterials({
 
   const ledgerCards = useMemo<ActualCard[]>(
     () =>
-      ledger.map((row) => {
+      foldJobRows(ledger).map((entry) => {
+        if (entry.kind === "job") {
+          const jobItemId = entry.rows[0]?.jobItemId;
+          const item = jobItemId ? itemsById.get(jobItemId) : undefined;
+          return {
+            key: entry.key,
+            // A job builds a part: its plan line is a Material line.
+            type: "material",
+            date: entry.date,
+            amount: entry.amount,
+            searchText: [
+              entry.jobReadableId,
+              item?.readableIdWithRevision,
+              item?.name,
+              ...entry.rows.map((row) => row.readableId)
+            ],
+            job: entry
+          };
+        }
+        const row = entry.row;
         const item = row.itemId ? itemsById.get(row.itemId) : undefined;
         return {
           key: row.id,
@@ -280,6 +308,43 @@ export function ElementTimeAndMaterials({
     );
   };
 
+  const jobCard = (card: ActualCard, job: JobEntry) => {
+    const jobItemId = job.rows[0]?.jobItemId;
+    const item = jobItemId ? itemsById.get(jobItemId) : undefined;
+    const elementIds = [
+      ...new Set(
+        job.rows
+          .map((row) => row.readableId)
+          .filter((id): id is string => !!id && id !== elementReadableId)
+      )
+    ];
+    return (
+      <CostCard
+        key={card.key}
+        type="material"
+        title={job.jobReadableId ?? t`Job`}
+        subtitle={item?.readableIdWithRevision}
+        badges={
+          elementIds.length > 0 ? (
+            <span className="font-mono">{elementIds.join(", ")}</span>
+          ) : null
+        }
+        figures={withSeparators([
+          <span key="date">{formatDate(job.date)}</span>,
+          <span key="charges">
+            <Plural value={job.rows.length} one="# charge" other="# charges" />
+          </span>
+        ])}
+        actions={
+          <span className="px-1 text-sm font-medium tabular-nums">
+            {formatMoney.format(job.amount)}
+          </span>
+        }
+        onOpen={() => navigate(path.to.job(job.jobId))}
+      />
+    );
+  };
+
   const openTimeCard = (card: ActualCard, row: ElementOpenTimeRow) => (
     <CostCard
       key={card.key}
@@ -332,7 +397,11 @@ export function ElementTimeAndMaterials({
       {visibleLedger.length > 0 && (
         <div className="flex flex-col gap-1.5">
           {visibleLedger.map((card) =>
-            card.ledger ? ledgerCard(card, card.ledger) : null
+            card.job
+              ? jobCard(card, card.job)
+              : card.ledger
+                ? ledgerCard(card, card.ledger)
+                : null
           )}
         </div>
       )}

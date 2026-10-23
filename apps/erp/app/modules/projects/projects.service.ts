@@ -14262,6 +14262,10 @@ export type ElementLedgerRow = {
   /** An expense's own description (`projectExpenseEntry`). */
   description: string | null;
   readableId: string | null;
+  /** The job that posted the row; the Actual tab folds a job's rows. */
+  jobId: string | null;
+  jobReadableId: string | null;
+  jobItemId: string | null;
 };
 
 export type ElementOpenTimeRow = {
@@ -14278,10 +14282,13 @@ export type ElementOpenTimeRow = {
  * What has been charged to the element itself (not its subtree), summed by
  * the key a plan line has: a material's item, a labor category, and an
  * expense's description (lower case, trimmed). The element page's Estimated
- * cards show each plan line's share beside its estimate.
+ * cards show each plan line's share beside its estimate. A job made from a
+ * plan line reports to that line by its id: its rows are summed in `jobs`
+ * and left out of the item and labor keys, so no cost counts twice.
  */
 export type ElementPlanActuals = {
   materials: { itemId: string; amount: number }[];
+  jobs: { jobId: string; amount: number }[];
   labor: {
     laborCategoryId: string;
     hours: number;
@@ -14321,14 +14328,25 @@ export async function getElementTimeAndMaterials(
     )
   `;
 
-  const [ledger, openTime, ledgerByLine, timeByCategory, expenses] =
+  // A row whose job a plan line of this element made: that line takes it.
+  const ownedByPlanLine = sql`
+    EXISTS (
+      SELECT 1 FROM "projectElementMaterial" m
+      WHERE m."jobId" = l."jobId"
+        AND m."companyId" = l."companyId"
+        AND m."projectElementId" = ${args.elementId}
+    )
+  `;
+
+  const [ledger, openTime, ledgerByLine, timeByCategory, expenses, jobs] =
     await Promise.all([
       sql<ElementLedgerRow>`
       ${subtree}
       SELECT l."id", l."postingDate", l."costType", l."documentType",
         l."documentId", l."quantity", l."unitOfMeasureCode", l."amount",
         l."itemId", l."laborCategoryId", l."employeeId", x."description",
-        e."readableId"
+        e."readableId", l."jobId", j."jobId" AS "jobReadableId",
+        j."itemId" AS "jobItemId"
       FROM "projectLedger" l
       JOIN subtree s ON s."id" = l."projectElementId"
       LEFT JOIN "projectExpenseEntry" x
@@ -14336,6 +14354,8 @@ export async function getElementTimeAndMaterials(
         AND x."id" = l."documentId" AND x."companyId" = l."companyId"
       LEFT JOIN "projectElement" e
         ON e."id" = l."projectElementId" AND e."companyId" = l."companyId"
+      LEFT JOIN "job" j
+        ON j."id" = l."jobId" AND j."companyId" = l."companyId"
       WHERE l."companyId" = ${args.companyId}
         AND l."projectId" = ${args.projectId}
       ORDER BY l."postingDate" DESC, l."createdAt" DESC
@@ -14373,6 +14393,7 @@ export async function getElementTimeAndMaterials(
           OR (l."costType" IN ('Material', 'Material Variance')
             AND l."itemId" IS NOT NULL)
         )
+        AND (l."jobId" IS NULL OR NOT ${ownedByPlanLine})
       GROUP BY 1, 2
     `.execute(db),
       // Hours by category: Posted (a correction's reversal is negative) and
@@ -14401,6 +14422,17 @@ export async function getElementTimeAndMaterials(
         AND x."projectElementId" = ${args.elementId}
         AND x."journalId" IS NOT NULL
       GROUP BY 1
+    `.execute(db),
+      // Every cost a plan line's job posted to the element, of every type.
+      sql<{ jobId: string; amount: number }>`
+      SELECT l."jobId", SUM(l."amount") AS "amount"
+      FROM "projectLedger" l
+      WHERE l."companyId" = ${args.companyId}
+        AND l."projectId" = ${args.projectId}
+        AND l."projectElementId" = ${args.elementId}
+        AND l."jobId" IS NOT NULL
+        AND ${ownedByPlanLine}
+      GROUP BY l."jobId"
     `.execute(db)
     ]);
 
@@ -14431,6 +14463,10 @@ export async function getElementTimeAndMaterials(
       materials: ledgerByLine.rows
         .filter((row) => row.kind === "material")
         .map((row) => ({ itemId: row.key, amount: Number(row.amount) })),
+      jobs: jobs.rows.map((row) => ({
+        jobId: row.jobId,
+        amount: Number(row.amount)
+      })),
       labor: [...laborCategoryIds].map((laborCategoryId) => ({
         laborCategoryId,
         hours: Number(hoursByCategory.get(laborCategoryId)?.hours ?? 0),

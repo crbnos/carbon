@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# BOM明細} other {# BOM明細}}"
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# タイムシートへの変更があなたのレビューを待っています} other {# タイムシートへの変更があなたのレビューを待っています}}"
 
+#. placeholder {0}: job.rows.length
+msgid "{0, plural, one {# charge} other {# charges}}"
+msgstr "{0, plural, one {# 料金} other {# 料金}}"
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# コメント} other {# コメント}}"
@@ -929,7 +933,7 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} 個 · 容量超過 — {loads} ロード（{batchCapacity} 個）"
 
 msgid "{typeLabel} title"
-msgstr ""
+msgstr "{typeLabel}タイトル"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} がバッチ化を待機中です"
@@ -2858,7 +2862,7 @@ msgid "Added for this customer"
 msgstr "この得意先に追加済み"
 
 msgid "Added to the change request"
-msgstr ""
+msgstr "変更要求に追加されました"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "選択値に対する単価への加算で、値引およびマークアップの前に適用されます。クレジットには負の金額を使用してください。"
@@ -5807,7 +5811,7 @@ msgid "Change owner"
 msgstr "責任者を変更"
 
 msgid "Change parent"
-msgstr ""
+msgstr "親を変更"
 
 msgid "Change priority"
 msgstr "優先度を変更"
@@ -7633,7 +7637,7 @@ msgid "Create {0} values"
 msgstr "{0}個の値を作成"
 
 msgid "Create {name}"
-msgstr ""
+msgstr "{name}を作成"
 
 msgid "Create & Release"
 msgstr "作成 & リリース"
@@ -7708,7 +7712,7 @@ msgid "Create Contract"
 msgstr "契約を作成"
 
 msgid "Create element"
-msgstr ""
+msgstr "要素を作成"
 
 msgid "Create Elements"
 msgstr "要素を作成"
@@ -7732,7 +7736,7 @@ msgid "Create Kanban"
 msgstr "かんばんを作成"
 
 msgid "Create more"
-msgstr ""
+msgstr "さらに作成"
 
 msgid "Create New"
 msgstr "新規作成"
@@ -7796,7 +7800,7 @@ msgstr "作成日時"
 
 #. placeholder {0}: created.readableId
 msgid "Created {0}"
-msgstr ""
+msgstr "{0}が作成されました"
 
 msgid "Created {count} elements from the part"
 msgstr "部品から{count}個のエレメントを作成しました"
@@ -11625,7 +11629,7 @@ msgid "Failed to create the element"
 msgstr "要素の作成に失敗しました"
 
 msgid "Failed to create the label"
-msgstr ""
+msgstr "ラベルの作成に失敗しました"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14570,7 +14574,7 @@ msgid "Kit"
 msgstr "キット"
 
 msgid "label"
-msgstr ""
+msgstr "ラベル"
 
 msgid "Label"
 msgstr "ラベル"
@@ -23807,7 +23811,7 @@ msgid "Search operators..."
 msgstr "作業者を検索..."
 
 msgid "Search or create..."
-msgstr ""
+msgstr "検索または作成..."
 
 msgid "Search parts..."
 msgstr "部品を検索..."
@@ -29044,7 +29048,7 @@ msgid "Type a message..."
 msgstr "メッセージを入力..."
 
 msgid "Type a name to create a label."
-msgstr ""
+msgstr "名前を入力してラベルを作成してください。"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "メールを入力して Enter キーを押し、社外受取人を追加します"

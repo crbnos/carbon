@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# linia BOM} other {# linie BOM}}"
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# zmiana twojego arkusza czasu oczekuje na twój przegląd} other {# zmiany twojego arkusza czasu oczekują na twój przegląd}}"
 
+#. placeholder {0}: job.rows.length
+msgid "{0, plural, one {# charge} other {# charges}}"
+msgstr "{0, plural, one {# opłata} other {# opłat}}"
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# komentarz} other {# komentarze}}"
@@ -929,7 +933,7 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} szt. · przekracza pojemność — {loads} cykli po {batchCapacity}"
 
 msgid "{typeLabel} title"
-msgstr ""
+msgstr "{typeLabel} tytuł"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} oczekujących na tworzenie partii"
@@ -2858,7 +2862,7 @@ msgid "Added for this customer"
 msgstr "Dodane dla tego klienta"
 
 msgid "Added to the change request"
-msgstr ""
+msgstr "Dodano do żądania zmian"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Dodawane do ceny jednostkowej dla wybranych wartości, przed rabatami i narzutami. Użyj ujemnej kwoty, aby obniżyć cenę."
@@ -5807,7 +5811,7 @@ msgid "Change owner"
 msgstr "Zmień właściciela"
 
 msgid "Change parent"
-msgstr ""
+msgstr "Zmień rodzica"
 
 msgid "Change priority"
 msgstr "Zmień priorytet"
@@ -7633,7 +7637,7 @@ msgid "Create {0} values"
 msgstr "Utwórz {0} wartości"
 
 msgid "Create {name}"
-msgstr ""
+msgstr "Utwórz {name}"
 
 msgid "Create & Release"
 msgstr "Utwórz i zwolnij"
@@ -7708,7 +7712,7 @@ msgid "Create Contract"
 msgstr "Utwórz umowę"
 
 msgid "Create element"
-msgstr ""
+msgstr "Utwórz element"
 
 msgid "Create Elements"
 msgstr "Utwórz elementy"
@@ -7732,7 +7736,7 @@ msgid "Create Kanban"
 msgstr "Utwórz Kanban"
 
 msgid "Create more"
-msgstr ""
+msgstr "Utwórz więcej"
 
 msgid "Create New"
 msgstr "Utwórz nowy"
@@ -7796,7 +7800,7 @@ msgstr "Utworzono"
 
 #. placeholder {0}: created.readableId
 msgid "Created {0}"
-msgstr ""
+msgstr "Utworzono {0}"
 
 msgid "Created {count} elements from the part"
 msgstr "Utworzono {count} elementów z części"
@@ -11625,7 +11629,7 @@ msgid "Failed to create the element"
 msgstr "Nie udało się utworzyć elementu"
 
 msgid "Failed to create the label"
-msgstr ""
+msgstr "Nie udało się utworzyć etykiety"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14570,7 +14574,7 @@ msgid "Kit"
 msgstr "Zestaw"
 
 msgid "label"
-msgstr ""
+msgstr "etykieta"
 
 msgid "Label"
 msgstr "Etykieta"
@@ -23807,7 +23811,7 @@ msgid "Search operators..."
 msgstr "Wyszukaj operatory..."
 
 msgid "Search or create..."
-msgstr ""
+msgstr "Szukaj lub utwórz..."
 
 msgid "Search parts..."
 msgstr "Wyszukaj części..."
@@ -29044,7 +29048,7 @@ msgid "Type a message..."
 msgstr "Wpisz wiadomość..."
 
 msgid "Type a name to create a label."
-msgstr ""
+msgstr "Wpisz nazwę, aby utworzyć etykietę."
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Wpisz adres e-mail i naciśnij Enter, aby dodać zewnętrznego odbiorcy"

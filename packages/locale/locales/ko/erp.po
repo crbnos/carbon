@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# BOM 라인} other {# BOM 라인}}"
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# 타임시트 변경이 검토를 대기 중} other {# 타임시트 변경들이 검토를 대기 중}}"
 
+#. placeholder {0}: job.rows.length
+msgid "{0, plural, one {# charge} other {# charges}}"
+msgstr "{0, plural, one {# 항목} other {# 항목}}"
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# 코멘트} other {# 코멘트}}"
@@ -929,7 +933,7 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} 개 · 용량 초과 — {batchCapacity}의 {loads}개 로드"
 
 msgid "{typeLabel} title"
-msgstr ""
+msgstr "{typeLabel} 제목"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} 배치 대기 중"
@@ -2858,7 +2862,7 @@ msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
 
 msgid "Added to the change request"
-msgstr ""
+msgstr "변경 요청에 추가됨"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "선택한 값에 대해 단가에 추가되며, 할인 및 마크업 전입니다. 대변을 위해 음수 금액을 사용하세요."
@@ -5807,7 +5811,7 @@ msgid "Change owner"
 msgstr "책임자 변경"
 
 msgid "Change parent"
-msgstr ""
+msgstr "상위 항목 변경"
 
 msgid "Change priority"
 msgstr "우선순위 변경"
@@ -7633,7 +7637,7 @@ msgid "Create {0} values"
 msgstr "{0} 값 생성"
 
 msgid "Create {name}"
-msgstr ""
+msgstr "생성 {name}"
 
 msgid "Create & Release"
 msgstr "생성 & 릴리스"
@@ -7708,7 +7712,7 @@ msgid "Create Contract"
 msgstr "계약 생성"
 
 msgid "Create element"
-msgstr ""
+msgstr "요소 생성"
 
 msgid "Create Elements"
 msgstr "요소 생성"
@@ -7732,7 +7736,7 @@ msgid "Create Kanban"
 msgstr "칸반 생성"
 
 msgid "Create more"
-msgstr ""
+msgstr "더 생성"
 
 msgid "Create New"
 msgstr "새로 생성"
@@ -7796,7 +7800,7 @@ msgstr "생성됨"
 
 #. placeholder {0}: created.readableId
 msgid "Created {0}"
-msgstr ""
+msgstr "생성됨 {0}"
 
 msgid "Created {count} elements from the part"
 msgstr "부품에서 {count}개 요소 생성됨"
@@ -11625,7 +11629,7 @@ msgid "Failed to create the element"
 msgstr "요소 생성에 실패했습니다"
 
 msgid "Failed to create the label"
-msgstr ""
+msgstr "라벨 생성 실패"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14570,7 +14574,7 @@ msgid "Kit"
 msgstr "키트"
 
 msgid "label"
-msgstr ""
+msgstr "라벨"
 
 msgid "Label"
 msgstr "라벨"
@@ -23807,7 +23811,7 @@ msgid "Search operators..."
 msgstr "작업자 검색..."
 
 msgid "Search or create..."
-msgstr ""
+msgstr "검색 또는 생성..."
 
 msgid "Search parts..."
 msgstr "부품 검색..."
@@ -29044,7 +29048,7 @@ msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
 
 msgid "Type a name to create a label."
-msgstr ""
+msgstr "라벨을 생성할 이름을 입력하세요."
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "이메일을 입력하고 Enter 키를 눌러 외부 수신자를 추가하세요"

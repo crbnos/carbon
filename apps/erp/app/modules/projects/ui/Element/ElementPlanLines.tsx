@@ -260,13 +260,21 @@ export function ElementPlanLines({
   );
 
   const cards = useMemo<PlanCard[]>(() => {
-    const materialOwners = keyOwners(planLines.materials, (l) => l.itemId);
+    // A line with a job reports by the job, so it never owns its item's key.
+    const materialOwners = keyOwners(
+      planLines.materials.filter((l) => !l.jobId),
+      (l) => l.itemId
+    );
     const laborOwners = keyOwners(planLines.labor, (l) => l.laborCategoryId);
     const costOwners = keyOwners(planLines.costs, (l) =>
       costDescriptionKey(l.description)
     );
     const materialActuals = new Map(
       planActuals.materials.map((a) => [a.itemId, a.amount])
+    );
+    // A line that made a job takes the job's whole cost, whatever it issued.
+    const jobActuals = new Map(
+      planActuals.jobs.map((a) => [a.jobId, a.amount])
     );
     const laborActuals = new Map(
       planActuals.labor.map((a) => [a.laborCategoryId, a])
@@ -306,9 +314,11 @@ export function ElementPlanLines({
           actualQuantity: Number(line.quantityIssued ?? 0),
           openQuantity: 0,
           plannedAmount: unitCost === null ? null : quantity * unitCost,
-          actualAmount: materialOwners.has(line.id)
-            ? (materialActuals.get(line.itemId) ?? 0)
-            : 0,
+          actualAmount: line.jobId
+            ? (jobActuals.get(line.jobId) ?? 0)
+            : materialOwners.has(line.id)
+              ? (materialActuals.get(line.itemId) ?? 0)
+              : 0,
           material: line
         };
       }),

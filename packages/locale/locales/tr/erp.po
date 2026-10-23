@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# BOM satırı} other {# BOM satırları}}"
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# zaman çizelgesine yapılan değişiklik incelemenizi bekliyor} other {# zaman çizelgesine yapılan değişiklikler incelemenizi bekliyorlar}}"
 
+#. placeholder {0}: job.rows.length
+msgid "{0, plural, one {# charge} other {# charges}}"
+msgstr "{0, plural, one {# görev} other {# görevler}}"
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# yorum} other {# yorumlar}}"
@@ -929,7 +933,7 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} parça · kapasite aşıldı — {loads} yükleme {batchCapacity}"
 
 msgid "{typeLabel} title"
-msgstr ""
+msgstr "{typeLabel} başlığı"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} partiye alınmayı bekliyor"
@@ -2858,7 +2862,7 @@ msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
 
 msgid "Added to the change request"
-msgstr ""
+msgstr "Değişim isteğine eklendi"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Seçilen değerler için birim fiyata eklenir, iskontolar ve marjlar öncesi. İndirim için negatif tutar kullanın."
@@ -5807,7 +5811,7 @@ msgid "Change owner"
 msgstr "Sahibi değiştir"
 
 msgid "Change parent"
-msgstr ""
+msgstr "Üst öğeyi değiştir"
 
 msgid "Change priority"
 msgstr "Önceliği değiştir"
@@ -7633,7 +7637,7 @@ msgid "Create {0} values"
 msgstr "{0} değerleri oluştur"
 
 msgid "Create {name}"
-msgstr ""
+msgstr "Oluştur {name}"
 
 msgid "Create & Release"
 msgstr "Oluştur ve Serbest Bırak"
@@ -7708,7 +7712,7 @@ msgid "Create Contract"
 msgstr "Sözleşme Oluştur"
 
 msgid "Create element"
-msgstr ""
+msgstr "Öğe Oluştur"
 
 msgid "Create Elements"
 msgstr "Öğeler Oluştur"
@@ -7732,7 +7736,7 @@ msgid "Create Kanban"
 msgstr "Kanban Oluştur"
 
 msgid "Create more"
-msgstr ""
+msgstr "Daha Fazla Oluştur"
 
 msgid "Create New"
 msgstr "Yeni oluştur"
@@ -7796,7 +7800,7 @@ msgstr "Oluşturulma"
 
 #. placeholder {0}: created.readableId
 msgid "Created {0}"
-msgstr ""
+msgstr "{0} oluşturuldu"
 
 msgid "Created {count} elements from the part"
 msgstr "Parçadan {count} öğe oluşturuldu"
@@ -11625,7 +11629,7 @@ msgid "Failed to create the element"
 msgstr "Element oluşturulamadı"
 
 msgid "Failed to create the label"
-msgstr ""
+msgstr "Etiket oluşturulamadı"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14570,7 +14574,7 @@ msgid "Kit"
 msgstr "Set"
 
 msgid "label"
-msgstr ""
+msgstr "etiket"
 
 msgid "Label"
 msgstr "Etiket"
@@ -23807,7 +23811,7 @@ msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
 msgid "Search or create..."
-msgstr ""
+msgstr "Ara veya Oluştur..."
 
 msgid "Search parts..."
 msgstr "Parça ara..."
@@ -29044,7 +29048,7 @@ msgid "Type a message..."
 msgstr "Bir mesaj yaz..."
 
 msgid "Type a name to create a label."
-msgstr ""
+msgstr "Etiket oluşturmak için bir ad yazın."
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Harici bir alıcı eklemek için bir e-posta girin ve Enter tuşuna basın"

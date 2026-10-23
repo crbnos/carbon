@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# 行 BOM} other {# 行 BOM}}"
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# 对您的工时表的更改等待您的评审} other {# 对您的工时表的更改等待您的评审}}"
 
+#. placeholder {0}: job.rows.length
+msgid "{0, plural, one {# charge} other {# charges}}"
+msgstr "{0, plural, one {# 费项} other {# 费项}}"
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# 评论} other {# 评论}}"
@@ -929,7 +933,7 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} 件 · 超出容量 — {loads} 批 {batchCapacity} 件"
 
 msgid "{typeLabel} title"
-msgstr ""
+msgstr "{typeLabel}标题"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} 等待分组"
@@ -2858,7 +2862,7 @@ msgid "Added for this customer"
 msgstr "为此客户添加"
 
 msgid "Added to the change request"
-msgstr ""
+msgstr "已添加到变更请求"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "添加到所选配置的单价中，在折扣和加价之前生效。使用负数金额可作为抵扣。"
@@ -5807,7 +5811,7 @@ msgid "Change owner"
 msgstr "更改负责人"
 
 msgid "Change parent"
-msgstr ""
+msgstr "修改上级"
 
 msgid "Change priority"
 msgstr "更改优先级"
@@ -7633,7 +7637,7 @@ msgid "Create {0} values"
 msgstr "创建 {0} 个值"
 
 msgid "Create {name}"
-msgstr ""
+msgstr "创建{name}"
 
 msgid "Create & Release"
 msgstr "创建并下达"
@@ -7708,7 +7712,7 @@ msgid "Create Contract"
 msgstr "创建合约"
 
 msgid "Create element"
-msgstr ""
+msgstr "创建元素"
 
 msgid "Create Elements"
 msgstr "创建元素"
@@ -7732,7 +7736,7 @@ msgid "Create Kanban"
 msgstr "创建看板"
 
 msgid "Create more"
-msgstr ""
+msgstr "创建更多"
 
 msgid "Create New"
 msgstr "新建"
@@ -7796,7 +7800,7 @@ msgstr "已创建"
 
 #. placeholder {0}: created.readableId
 msgid "Created {0}"
-msgstr ""
+msgstr "已创建{0}"
 
 msgid "Created {count} elements from the part"
 msgstr "从零件创建了 {count} 个要素"
@@ -11625,7 +11629,7 @@ msgid "Failed to create the element"
 msgstr "创建元素失败"
 
 msgid "Failed to create the label"
-msgstr ""
+msgstr "无法创建标签"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14570,7 +14574,7 @@ msgid "Kit"
 msgstr "套件"
 
 msgid "label"
-msgstr ""
+msgstr "标签"
 
 msgid "Label"
 msgstr "标签"
@@ -23807,7 +23811,7 @@ msgid "Search operators..."
 msgstr "搜索操作员..."
 
 msgid "Search or create..."
-msgstr ""
+msgstr "搜索或创建..."
 
 msgid "Search parts..."
 msgstr "搜索零件..."
@@ -29044,7 +29048,7 @@ msgid "Type a message..."
 msgstr "输入消息..."
 
 msgid "Type a name to create a label."
-msgstr ""
+msgstr "输入名称以创建标签。"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "输入电子邮件并按 Enter 键以添加外部收件人"

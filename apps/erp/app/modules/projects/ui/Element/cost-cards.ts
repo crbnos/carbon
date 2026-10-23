@@ -176,3 +176,65 @@ export function sortActualCards<T extends { date: string; amount: number }>(
         .map(({ card }) => card);
   }
 }
+
+type JobRow = {
+  id: string;
+  jobId: string | null;
+  jobReadableId: string | null;
+  amount: number;
+  postingDate: string;
+};
+
+/** One Actual card: a ledger row, or every row of one job folded together. */
+export type FoldedLedgerEntry<T extends JobRow> =
+  | { kind: "row"; key: string; row: T }
+  | {
+      kind: "job";
+      key: string;
+      jobId: string;
+      jobReadableId: string | null;
+      /** The sum of the job's rows. */
+      amount: number;
+      /** The newest row's posting date. */
+      date: string;
+      rows: T[];
+    };
+
+/**
+ * The Actual tab's entries: a job is one entry with the sum of its rows, in
+ * the place of its newest row (the rows come newest first). Rows with no job
+ * stay one entry each. The job holds the detail; the element shows its total.
+ */
+export function foldJobRows<T extends JobRow>(
+  rows: T[]
+): FoldedLedgerEntry<T>[] {
+  const entries: FoldedLedgerEntry<T>[] = [];
+  const jobs = new Map<
+    string,
+    Extract<FoldedLedgerEntry<T>, { kind: "job" }>
+  >();
+  for (const row of rows) {
+    if (!row.jobId) {
+      entries.push({ kind: "row", key: row.id, row });
+      continue;
+    }
+    const job = jobs.get(row.jobId);
+    if (job) {
+      job.amount += row.amount;
+      job.rows.push(row);
+      continue;
+    }
+    const entry = {
+      kind: "job" as const,
+      key: `job:${row.jobId}`,
+      jobId: row.jobId,
+      jobReadableId: row.jobReadableId,
+      amount: row.amount,
+      date: row.postingDate,
+      rows: [row]
+    };
+    jobs.set(row.jobId, entry);
+    entries.push(entry);
+  }
+  return entries;
+}

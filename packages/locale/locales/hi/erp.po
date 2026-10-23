@@ -76,6 +76,10 @@ msgstr "{0, plural, one {# BOM पंक्ति} other {# BOM पंक्त�
 msgid "{0, plural, one {# change to your timesheet waits for your review} other {# changes to your timesheet wait for your review}}"
 msgstr "{0, plural, one {# आपकी टाइमशीट में परिवर्तन आपकी समीक्षा की प्रतीक्षा में है} other {# आपकी टाइमशीट में परिवर्तन आपकी समीक्षा की प्रतीक्षा में हैं}}"
 
+#. placeholder {0}: job.rows.length
+msgid "{0, plural, one {# charge} other {# charges}}"
+msgstr "{0, plural, one {# प्रभार} other {# प्रभार}}"
+
 #. placeholder {0}: data.commentCount
 msgid "{0, plural, one {# comment} other {# comments}}"
 msgstr "{0, plural, one {# टिप्पणी} other {# टिप्पणियाँ}}"
@@ -929,7 +933,7 @@ msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads 
 msgstr "{totalQuantity} / {batchCapacity} पीसेस · क्षमता से अधिक — {loads} लोड्स {batchCapacity} का"
 
 msgid "{typeLabel} title"
-msgstr ""
+msgstr "{typeLabel} शीर्षक"
 
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} बैचिंग की प्रतीक्षा में"
@@ -2858,7 +2862,7 @@ msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
 
 msgid "Added to the change request"
-msgstr ""
+msgstr "परिवर्तन अनुरोध में जोड़ा गया"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "इकाई मूल्य में चुने गए मानों के लिए जोड़ा जाता है, छूट और अधिशुल्क से पहले। जमा के लिए नकारात्मक राशि का उपयोग करें।"
@@ -5807,7 +5811,7 @@ msgid "Change owner"
 msgstr "स्वामी बदलें"
 
 msgid "Change parent"
-msgstr ""
+msgstr "पैरेंट बदलें"
 
 msgid "Change priority"
 msgstr "प्राथमिकता बदलें"
@@ -7633,7 +7637,7 @@ msgid "Create {0} values"
 msgstr "{0} मान बनाएं"
 
 msgid "Create {name}"
-msgstr ""
+msgstr "{name} बनाएँ"
 
 msgid "Create & Release"
 msgstr "बनाएँ और जारी करें"
@@ -7708,7 +7712,7 @@ msgid "Create Contract"
 msgstr "अनुबंध बनाएँ"
 
 msgid "Create element"
-msgstr ""
+msgstr "तत्व बनाएँ"
 
 msgid "Create Elements"
 msgstr "तत्व बनाएँ"
@@ -7732,7 +7736,7 @@ msgid "Create Kanban"
 msgstr "कानबान बनाएँ"
 
 msgid "Create more"
-msgstr ""
+msgstr "और बनाएँ"
 
 msgid "Create New"
 msgstr "नया बनाएँ"
@@ -7796,7 +7800,7 @@ msgstr "बनाया गया"
 
 #. placeholder {0}: created.readableId
 msgid "Created {0}"
-msgstr ""
+msgstr "{0} बनाया गया"
 
 msgid "Created {count} elements from the part"
 msgstr "{count} तत्व भाग से बनाए गए"
@@ -11625,7 +11629,7 @@ msgid "Failed to create the element"
 msgstr "तत्व बनाने में विफल"
 
 msgid "Failed to create the label"
-msgstr ""
+msgstr "लेबल बनाने में विफल"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14570,7 +14574,7 @@ msgid "Kit"
 msgstr "किट"
 
 msgid "label"
-msgstr ""
+msgstr "लेबल"
 
 msgid "Label"
 msgstr "लेबल"
@@ -23807,7 +23811,7 @@ msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
 msgid "Search or create..."
-msgstr ""
+msgstr "खोजें या बनाएँ..."
 
 msgid "Search parts..."
 msgstr "पार्ट्स को खोजें..."
@@ -29044,7 +29048,7 @@ msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
 
 msgid "Type a name to create a label."
-msgstr ""
+msgstr "लेबल बनाने के लिए एक नाम टाइप करें"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "एक ईमेल टाइप करें और एक बाहरी प्राप्तकर्ता जोड़ने के लिए Enter दबाएं"
