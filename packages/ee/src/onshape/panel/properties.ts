@@ -561,7 +561,7 @@ export function resolveMappedFields({
     const value = propertyDisplayValue(property.value);
     if (
       value !== null &&
-      !RESERVED_PROPERTY_NAMES.has(property.name.trim().toLowerCase())
+      !RESERVED_PROPERTY_NAMES.has(String(property.name).trim().toLowerCase())
     ) {
       unmapped.push({
         propertyId: property.propertyId,

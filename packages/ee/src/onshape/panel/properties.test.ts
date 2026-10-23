@@ -429,6 +429,24 @@ describe("resolveMappedFields", () => {
     ]);
   });
 
+  it("does not throw on a BOM column Onshape sent without a name", () => {
+    const { unmapped } = resolveMappedFields({
+      properties: [
+        {
+          propertyId: "p-unnamed",
+          name: undefined as unknown as string,
+          valueType: "STRING",
+          value: "X"
+        }
+      ],
+      map: [],
+      definitions: []
+    });
+    expect(unmapped.map((property) => property.propertyId)).toEqual([
+      "p-unnamed"
+    ]);
+  });
+
   it("treats a relabelled identity column as reserved, whatever its case", () => {
     const { unmapped } = resolveMappedFields({
       properties: [

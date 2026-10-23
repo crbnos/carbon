@@ -100,10 +100,8 @@ function headerIdFor(headers: BomHeader[]) {
     if (typeof header.propertyName === "string") {
       byPropertyName.set(header.propertyName, header.id);
     }
-    if (
-      typeof header.name === "string" &&
-      !byLabel.has(labelKey(header.name))
-    ) {
+    // Last wins on a repeated label, as the exact-label lookup did.
+    if (typeof header.name === "string") {
       byLabel.set(labelKey(header.name), header.id);
     }
   }
