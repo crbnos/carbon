@@ -46,6 +46,7 @@ are label/value details. Every piece below is load-bearing:
 
 ## Rules that are not style
 
+- **No background images, and no page colour in light mode.** Gmail's iOS app ignores the dark-mode media queries and inverts the email's colours itself, but never a background image: a `linear-gradient` card stayed white while its text turned white. `.nf-body` has a colour only in dark mode, and `.nf-card` is a bordered box on the mail app's own background in light mode.
 - **Dark mode is done by CLASS, not inline style.** Backgrounds go through `nf-*` classes so the `!important` media-query overrides in `notificationStyles` can flip them; an inline `background-color` beats them and renders a white card on a black Gmail. Text colors use `getEmailThemeClasses()` (`email-text`, `email-muted`, …). Off-black `#0e0e0e` and off-white `#fefefe`, never pure `#000`/`#fff` — pure values get auto-inverted by some clients.
 - **No sample defaults on content props.** `NotificationEmail` deliberately gives `heading`/`message` no defaults: fabricated data must never reach a real recipient. Sample data lives in the preview fixture only. (Some older templates — `VerificationEmail` — still default their props; don't copy that, or their pre-card layout.)
 - **Always send a `text` alternative** alongside `html` — the job builds it from the same content (see `entryEmailContent` in `packages/jobs/src/inngest/functions/tasks/changelog-dispatch.feed.ts`).

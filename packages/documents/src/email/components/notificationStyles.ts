@@ -9,15 +9,14 @@
 // loses to `!important`. Most modern clients (Apple Mail, iOS Mail, Gmail
 // web/iOS, Outlook web/mobile) honor this; Outlook desktop renders light-mode
 // only, matching the rest of the system.
+//
+// Flat colours only, and no page colour in light mode. Gmail's iOS app ignores
+// these media queries and inverts the email's colours itself, but it never
+// inverts a background image: a gradient kept the card white while the text
+// on it turned white. With no page colour the light card sits on the mail
+// app's own background, and the inverted card matches the dark app around it.
 export const notificationStyles = `
-  .nf-body,
-  .nf-body > table > tbody > tr > td {
-    background-color: #f5f5f7;
-    background-image: linear-gradient(180deg, #f5f5f7 0%, #ececef 100%);
-  }
   .nf-card {
-    background-color: #ffffff;
-    background-image: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%);
     border-color: #e5e7eb;
   }
   .nf-divider {
@@ -41,11 +40,9 @@ export const notificationStyles = `
     .nf-body,
     .nf-body > table > tbody > tr > td {
       background-color: #0C0C0C !important;
-      background-image: linear-gradient(180deg, #0C0C0C 0%, #161618 100%) !important;
     }
     .nf-card {
       background-color: #161618 !important;
-      background-image: linear-gradient(180deg, #161618 0%, #0F0F10 100%) !important;
       border-color: #1D1D1D !important;
     }
     .nf-divider {
@@ -74,13 +71,11 @@ export const notificationStyles = `
   [data-darkmode="true"] .nf-body,
   [data-darkmode="true"] .nf-body > table > tbody > tr > td {
     background-color: #0C0C0C !important;
-    background-image: linear-gradient(180deg, #0C0C0C 0%, #161618 100%) !important;
   }
   .gmail_dark .nf-card,
   .gmail_dark_theme .nf-card,
   [data-darkmode="true"] .nf-card {
     background-color: #161618 !important;
-    background-image: linear-gradient(180deg, #161618 0%, #0F0F10 100%) !important;
     border-color: #1D1D1D !important;
   }
   .gmail_dark .nf-divider,

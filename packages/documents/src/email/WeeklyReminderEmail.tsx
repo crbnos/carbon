@@ -56,13 +56,7 @@ interface Props {
 // CSS classes (not inline styles) so `!important` overrides in dark-mode media
 // queries can flip them. Outlook desktop renders light-mode only.
 const weeklyReminderStyles = `
-  .wr-body {
-    background-color: #f5f5f7;
-    background-image: linear-gradient(180deg, #f5f5f7 0%, #ececef 100%);
-  }
   .wr-card {
-    background-color: #ffffff;
-    background-image: linear-gradient(180deg, #ffffff 0%, #fbfbfc 100%);
     border-color: #e5e7eb;
   }
   .wr-eyebrow {
@@ -88,11 +82,9 @@ const weeklyReminderStyles = `
   @media (prefers-color-scheme: dark) {
     .wr-body {
       background-color: #0C0C0C !important;
-      background-image: linear-gradient(180deg, #0C0C0C 0%, #161618 100%) !important;
     }
     .wr-card {
       background-color: #161618 !important;
-      background-image: linear-gradient(180deg, #161618 0%, #0F0F10 100%) !important;
       border-color: #1D1D1D !important;
     }
     .wr-eyebrow {
@@ -121,13 +113,11 @@ const weeklyReminderStyles = `
   .gmail_dark_theme .wr-body,
   [data-darkmode="true"] .wr-body {
     background-color: #0C0C0C !important;
-    background-image: linear-gradient(180deg, #0C0C0C 0%, #161618 100%) !important;
   }
   .gmail_dark .wr-card,
   .gmail_dark_theme .wr-card,
   [data-darkmode="true"] .wr-card {
     background-color: #161618 !important;
-    background-image: linear-gradient(180deg, #161618 0%, #0F0F10 100%) !important;
     border-color: #1D1D1D !important;
   }
   .gmail_dark .wr-callout,
