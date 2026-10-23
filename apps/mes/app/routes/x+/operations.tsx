@@ -74,12 +74,11 @@ type BatchTotals = {
   quantity: number;
   targetQuantity: number;
   jobReadableIds: string[];
-  notes: string | null;
 };
 
 /**
- * Per batch: the member count, summed quantities, member job numbers and the
- * batch's notes, from the batch members' rows.
+ * Per batch: the member count, summed quantities and member job numbers, from
+ * the batch members' rows.
  */
 function getBatchTotals(
   members: NonNullable<
@@ -93,10 +92,7 @@ function getBatchTotals(
       size: 0,
       quantity: 0,
       targetQuantity: 0,
-      jobReadableIds: [],
-      notes: member.jobOperationBatch?.notes?.trim()
-        ? member.jobOperationBatch.notes
-        : null
+      jobReadableIds: []
     };
     total.size += 1;
     total.quantity += member.operationQuantity ?? 0;
@@ -162,7 +158,6 @@ function collapseBatches(
       batchSize: total?.size ?? members.length,
       batchJobReadableIds:
         total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),
-      batchNotes: total?.notes ?? null,
       quantity:
         total?.quantity ??
         members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),

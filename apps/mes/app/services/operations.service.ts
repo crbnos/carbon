@@ -491,8 +491,7 @@ export async function getActiveJobOperationsByLocation(
 }
 
 /**
- * The member operations of the given batches: quantities, the job number and
- * the batch's notes.
+ * The member operations of the given batches: quantities and the job number.
  */
 export async function getJobOperationBatchMembers(
   client: SupabaseClient<Database>,
@@ -502,7 +501,7 @@ export async function getJobOperationBatchMembers(
   return client
     .from("jobOperation")
     .select(
-      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId), jobOperationBatch(notes)"
+      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId)"
     )
     .in("jobOperationBatchId", batchIds)
     .eq("companyId", companyId);
