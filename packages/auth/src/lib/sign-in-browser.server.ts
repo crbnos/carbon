@@ -10,7 +10,7 @@ import { authCookieName, getCookieDomain } from "../utils/cookie";
 
 /**
  * Marks the browser that asked for a sign-in email, so the link in it can
- * refuse to complete anywhere else (MAGIC_LINK_SAME_BROWSER). A mail
+ * refuse to complete anywhere else. A mail
  * security sandbox opening the link has no such cookie, so it is shown a
  * page with nothing to press and the one-time token survives for the
  * person. On the shared DOMAIN, like the session, so a link the MES asked
@@ -20,7 +20,7 @@ import { authCookieName, getCookieDomain } from "../utils/cookie";
  * when: it proves "this browser asked", not who for.
  *
  * Without DOMAIN the cookie is host-only, and a link the MES asked for could
- * never complete on the ERP's host. The flag must never make sign-in
+ * never complete on the ERP's host. Binding must never make sign-in
  * impossible, so then every browser counts as the one that asked.
  */
 const MAX_AGE_SECONDS = 60 * 60;
@@ -52,7 +52,7 @@ export async function isSignInBrowser(request: Request): Promise<boolean> {
     if (!warnedUnbound) {
       warnedUnbound = true;
       log.warn(
-        "MAGIC_LINK_SAME_BROWSER is on but DOMAIN is unset: the ERP and MES share no cookie, so sign-in links are not bound to the browser that asked."
+        "DOMAIN is unset: the ERP and MES share no cookie, so sign-in links are not bound to the browser that asked."
       );
     }
     return true;
