@@ -11053,6 +11053,7 @@ export const createDocumentPermission = {
     shipmentLineSplit: { create: "inventory" },
     shipmentFromRentalAgreement: { create: "inventory" },
     receiptFromRentalAgreement: { create: "inventory" },
+    shipmentFromCustomerContract: { create: "inventory" },
     journalEntry: { create: "accounting" }
   }
 } satisfies PermissionRule<z.output<typeof createInput>>;
@@ -14410,6 +14411,223 @@ export async function createDocument(
           )
           .execute();
         return { id: header.id };
+      });
+    }
+    case "shipmentFromCustomerContract": {
+      // A contract delivery (spec section 10.4): one Draft shipment per
+      // contract holds its part CLINs, each at what its jobs completed and
+      // it has not delivered yet. The part moves no stock: the job consumed
+      // it to the project. A per-CLIN shortcut adds its line to the Draft.
+      const { customerContractId, customerContractLineId } = payload;
+
+      createDocumentLogger.info({
+        function: "create",
+        type,
+        companyId,
+        customerContractId,
+        customerContractLineId,
+        userId
+      });
+
+      return db.transaction().execute(async (trx) => {
+        const contract = await trx
+          .selectFrom("customerContract")
+          .select([
+            "id",
+            "customerContractId",
+            "status",
+            "billingBasis",
+            "customerId"
+          ])
+          .where("id", "=", customerContractId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!contract) throw new NotFoundError("Contract not found");
+        if (contract.status !== "Active") {
+          throw new InvalidInputError(
+            `Contract ${contract.customerContractId} is ${contract.status}; parts are delivered on an Active contract`
+          );
+        }
+
+        // The contract's current part CLINs (a line an amendment replaced
+        // is not current).
+        let linesQuery = trx
+          .selectFrom("customerContractLine as l")
+          .innerJoin("item as i", (join) =>
+            join
+              .onRef("i.id", "=", "l.itemId")
+              .onRef("i.companyId", "=", "l.companyId")
+          )
+          .select([
+            "l.id",
+            "l.itemId",
+            "l.quantity",
+            "l.rate",
+            "l.billingMethod",
+            "i.unitOfMeasureCode"
+          ])
+          .where("l.customerContractId", "=", contract.id)
+          .where("l.companyId", "=", companyId)
+          .where("i.type", "=", "Part")
+          .where((eb) =>
+            eb.not(
+              eb.exists(
+                eb
+                  .selectFrom("customerContractLine as a")
+                  .select("a.id")
+                  .whereRef("a.amendsLineId", "=", "l.id")
+                  .whereRef("a.companyId", "=", "l.companyId")
+              )
+            )
+          );
+        if (customerContractLineId) {
+          linesQuery = linesQuery.where("l.id", "=", customerContractLineId);
+        }
+        const lines = await linesQuery.orderBy("l.sortOrder").execute();
+        if (customerContractLineId && lines.length === 0) {
+          throw new InvalidInputError(
+            "Only a contract line that names a part is delivered"
+          );
+        }
+        const lineIds = lines.map((line) => line.id);
+        if (lineIds.length === 0) {
+          throw new InvalidInputError("Nothing to deliver");
+        }
+
+        const [jobs, shipped, draft] = await Promise.all([
+          trx
+            .selectFrom("job")
+            .select([
+              "customerContractLineId",
+              "quantityComplete",
+              "locationId"
+            ])
+            .where("customerContractLineId", "in", lineIds)
+            .where("companyId", "=", companyId)
+            .where("status", "<>", "Cancelled")
+            .orderBy("createdAt")
+            .execute(),
+          trx
+            .selectFrom("shipmentLine as sl")
+            .innerJoin("shipment as s", (join) =>
+              join
+                .onRef("s.id", "=", "sl.shipmentId")
+                .onRef("s.companyId", "=", "sl.companyId")
+            )
+            .select(["sl.lineId", "sl.shippedQuantity", "s.status"])
+            .where("s.sourceDocument", "=", "Customer Contract")
+            .where("s.sourceDocumentId", "=", contract.id)
+            .where("s.status", "in", ["Draft", "Pending", "Posted"])
+            .where("sl.companyId", "=", companyId)
+            .execute(),
+          trx
+            .selectFrom("shipment")
+            .select("id")
+            .where("sourceDocument", "=", "Customer Contract")
+            .where("sourceDocumentId", "=", contract.id)
+            .where("status", "=", "Draft")
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst()
+        ]);
+
+        const completed = new Map<string, number>();
+        const locationByLine = new Map<string, string>();
+        for (const job of jobs) {
+          const lineId = job.customerContractLineId as string;
+          completed.set(
+            lineId,
+            (completed.get(lineId) ?? 0) + Number(job.quantityComplete)
+          );
+          if (!locationByLine.has(lineId)) {
+            locationByLine.set(lineId, job.locationId);
+          }
+        }
+        const delivered = new Map<string, number>();
+        const onOpenDocument = new Set<string>();
+        for (const row of shipped) {
+          if (!row.lineId) continue;
+          if (row.status === "Posted") {
+            delivered.set(
+              row.lineId,
+              (delivered.get(row.lineId) ?? 0) + Number(row.shippedQuantity)
+            );
+          } else {
+            onOpenDocument.add(row.lineId);
+          }
+        }
+        const openQuantity = (line: (typeof lines)[number]) => {
+          const done = delivered.get(line.id) ?? 0;
+          return Math.max(
+            0,
+            Math.min(
+              (completed.get(line.id) ?? 0) - done,
+              Number(line.quantity) - done
+            )
+          );
+        };
+        const toDeliver = lines.filter(
+          (line) => !onOpenDocument.has(line.id) && openQuantity(line) > 0
+        );
+
+        if (draft && (!customerContractLineId || toDeliver.length === 0)) {
+          if (
+            customerContractLineId &&
+            !onOpenDocument.has(customerContractLineId)
+          ) {
+            throw new InvalidInputError("Nothing to deliver");
+          }
+          return { id: draft.id };
+        }
+        if (toDeliver.length === 0) {
+          throw new InvalidInputError(
+            customerContractLineId && onOpenDocument.has(customerContractLineId)
+              ? "The line is already on an open delivery"
+              : "Nothing to deliver"
+          );
+        }
+
+        const firstLocation = locationByLine.get(toDeliver[0]!.id);
+        const shipmentId =
+          draft?.id ??
+          (
+            await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId: await getNextSequence(trx, "shipment", companyId),
+                sourceDocument: "Customer Contract",
+                sourceDocumentId: contract.id,
+                sourceDocumentReadableId: contract.customerContractId,
+                customerId: contract.customerId,
+                locationId: firstLocation ?? null,
+                status: "Draft",
+                companyId,
+                createdBy: userId
+              })
+              .returning(["id"])
+              .executeTakeFirstOrThrow()
+          ).id;
+        await trx
+          .insertInto("shipmentLine")
+          .values(
+            toDeliver.map((line) => ({
+              shipmentId,
+              lineId: line.id,
+              itemId: line.itemId,
+              orderQuantity: openQuantity(line),
+              outstandingQuantity: openQuantity(line),
+              // Filled in, as a sales order shipment is: Deliver, then Post.
+              shippedQuantity: openQuantity(line),
+              locationId: locationByLine.get(line.id) ?? firstLocation ?? null,
+              unitOfMeasure: line.unitOfMeasureCode ?? "EA",
+              unitPrice: line.billingMethod === "Fixed" ? Number(line.rate) : 0,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+        return { id: shipmentId };
       });
     }
     case "receiptFromRentalAgreement": {

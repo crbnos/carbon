@@ -1280,12 +1280,13 @@ export const createShipment = defineServiceFn({
       return ctx.error("rule", NO_DEFAULT_LOCATION);
     }
 
-    // One open draft per return order or agreement: a second Ship goes to
-    // the existing draft instead of stacking up duplicates.
+    // One open draft per return order, agreement or contract: a second Ship
+    // goes to the existing draft instead of stacking up duplicates.
     if (
       sourceDocument === "Sales Return Order" ||
       sourceDocument === "Purchase Return Order" ||
-      sourceDocument === "Rental Agreement"
+      sourceDocument === "Rental Agreement" ||
+      sourceDocument === "Customer Contract"
     ) {
       const existing = await ctx.asCaller.supabase
         .from("shipment")
@@ -1347,6 +1348,11 @@ export const createShipment = defineServiceFn({
           return invokeCreate(ctx, {
             type: "shipmentFromRentalAgreement",
             rentalAgreementId: sourceDocumentId
+          });
+        case "Customer Contract":
+          return invokeCreate(ctx, {
+            type: "shipmentFromCustomerContract",
+            customerContractId: sourceDocumentId
           });
         default:
           return invokeCreate(ctx, {

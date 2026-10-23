@@ -4788,6 +4788,44 @@ export const deliverRentalUnit = defineServiceFn({
 });
 
 /**
+ * Deliver a part CLIN.
+ *
+ * @remarks
+ * Opens the contract's Draft delivery with this line on it, or makes one
+ * (spec section 10.4): the line at what its jobs completed and it has not
+ * delivered yet. The part moves no stock; its job consumed it to the
+ * project.
+ *
+ * @mcp
+ */
+export const deliverContractLine = defineServiceFn({
+  input: z.object({
+    customerContractId: z.string(),
+    customerContractLineId: z.string()
+  }),
+  permission: { update: "sales", create: "inventory" },
+
+  async run(ctx, input) {
+    const result = await invokeCreate(
+      {
+        db: ctx.asSystem.pg,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      },
+      { type: "shipmentFromCustomerContract", ...input }
+    );
+    if (result.error || !result.data) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to create the delivery"),
+        result.error
+      );
+    }
+    return { shipmentId: result.data.id };
+  }
+});
+
+/**
  * Put a rental unit on a receipt to return it.
  *
  * @remarks

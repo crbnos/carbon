@@ -540,6 +540,11 @@ export const createInput = z.discriminatedUnion("type", [
     rentalAgreementLineId: z.string().optional()
   }),
   z.object({
+    type: z.literal("shipmentFromCustomerContract"),
+    customerContractId: z.string(),
+    customerContractLineId: z.string().optional()
+  }),
+  z.object({
     type: z.literal("journalEntry")
   })
 ]);
