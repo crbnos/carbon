@@ -598,42 +598,6 @@ const JobForm = ({
                               );
                             }}
                           />
-                          <Boolean
-                            bordered
-                            name="consumeToProject"
-                            label={t`Consume to project`}
-                            description={t`The job's cost goes to the project when it completes, instead of into stock`}
-                            value={consumeToProject && canConsumeToProject}
-                            onChange={(value) => {
-                              setConsumeToProject(value);
-                              if (value) setReceiveToProjectStock(false);
-                            }}
-                            isDisabled={
-                              !canConsumeToProject || !canEditCompleteTo
-                            }
-                          />
-                          {canReceiveToProjectStock && (
-                            <Boolean
-                              bordered
-                              name="receiveToProjectStock"
-                              label={t`Receive to project stock`}
-                              description={t`The job's output enters the project's stock instead of unassigned stock`}
-                              value={receiveToProjectStock && !consumeToProject}
-                              onChange={(value) => {
-                                setReceiveToProjectStock(value);
-                                if (value) setConsumeToProject(false);
-                              }}
-                              isDisabled={!canEditCompleteTo}
-                            />
-                          )}
-
-                          {showDueDate && (
-                            <DatePicker
-                              name="dueDate"
-                              label={t`Due Date`}
-                              isDisabled={isCustomer}
-                            />
-                          )}
                           <Select
                             name="deadlineType"
                             label={t`Deadline Type`}
@@ -651,6 +615,47 @@ const JobForm = ({
                               )
                             }))}
                           />
+                          {showDueDate && (
+                            <DatePicker
+                              name="dueDate"
+                              label={t`Due Date`}
+                              isDisabled={isCustomer}
+                            />
+                          )}
+
+                          {/* The two switches share one row, whatever precedes them. */}
+                          <div className="col-span-full grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+                            <Boolean
+                              bordered
+                              name="consumeToProject"
+                              label={t`Consume to project`}
+                              description={t`The job's cost goes to the project when it completes, instead of into stock`}
+                              value={consumeToProject && canConsumeToProject}
+                              onChange={(value) => {
+                                setConsumeToProject(value);
+                                if (value) setReceiveToProjectStock(false);
+                              }}
+                              isDisabled={
+                                !canConsumeToProject || !canEditCompleteTo
+                              }
+                            />
+                            {canReceiveToProjectStock && (
+                              <Boolean
+                                bordered
+                                name="receiveToProjectStock"
+                                label={t`Receive to project stock`}
+                                description={t`The job's output enters the project's stock instead of unassigned stock`}
+                                value={
+                                  receiveToProjectStock && !consumeToProject
+                                }
+                                onChange={(value) => {
+                                  setReceiveToProjectStock(value);
+                                  if (value) setConsumeToProject(false);
+                                }}
+                                isDisabled={!canEditCompleteTo}
+                              />
+                            )}
+                          </div>
 
                           {isEditing && (
                             <Customer
