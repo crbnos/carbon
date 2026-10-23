@@ -20,6 +20,7 @@ import type { Database } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { formatIsoDate, parseIsoDate, round } from "@carbon/utils";
 import { type RawBuilder, sql } from "kysely";
+import { onInventoryAccount } from "~/modules/projects/project-posting";
 import {
   lockContractPositions,
   syncDraftRecognitionRuns
@@ -392,9 +393,11 @@ export async function writeProgressMonths(
 /**
  * The cost each line owns (`progressLedgerRows`: its subtree, its own dates)
  * that no relief covers yet (R3, R4): ledger rows posted on or before
- * `through` whose journal line is on an Asset account. A row with no journal
- * line (accounting off) or an expensed row has nothing in WIP. Grouped per
- * line and account.
+ * `through` whose journal line is on an Asset account other than an
+ * inventory account (`onInventoryAccount`: stock charged at receipt is
+ * relieved once issued, through its relocation row on the project account).
+ * A row with no journal line (accounting off) or an expensed row has nothing
+ * in WIP. Grouped per line and account.
  */
 export async function selectUnrelievedCost(
   trx: KyselyTx,
@@ -415,7 +418,11 @@ export async function selectUnrelievedCost(
     JOIN "journalLine" jl
       ON jl."id" = pl."journalLineId" AND jl."companyId" = pl."companyId"
     JOIN "account" a ON a."id" = jl."accountId" AND a."class" = 'Asset'
-    WHERE NOT EXISTS (
+    -- Cost still in stock is not the project's WIP: a Charge at receipt
+    -- receipt row (C2) is relieved through the relocation row its issue
+    -- writes on the project account, never out of inventory.
+    WHERE NOT ${onInventoryAccount("pl")}
+      AND NOT EXISTS (
         SELECT 1 FROM "projectCostRelief" r
         WHERE r."projectLedgerId" = pl."id" AND r."companyId" = pl."companyId"
       )

@@ -936,7 +936,7 @@
     {"name":"projects_getProjectElements","classification":"READ","schema":"204bbc3a478e","response":"be95c443c427","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectItemValues","classification":"READ","schema":"26ce02c57d5a","response":"c3f88758db35","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectLabels","classification":"READ","schema":"31b84d65b2ac","response":"dcbdb271d4d5","permission":"projects:view","paginates":false},
-    {"name":"projects_getProjectLedger","classification":"READ","schema":"18054b4ad38b","response":"186147dcde59","permission":"projects:view","paginates":true},
+    {"name":"projects_getProjectLedger","classification":"READ","schema":"18054b4ad38b","response":"0e36092cc221","permission":"projects:view","paginates":true},
     {"name":"projects_getProjectMembers","classification":"READ","schema":"8e1d73142851","response":"36f32fb767f9","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectMilestones","classification":"READ","schema":"8e1d73142851","response":"66bc099ec015","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectOpenTimesheetEntries","classification":"READ","schema":"8e1d73142851","response":"81f80df693ef","permission":"projects:view","paginates":false},

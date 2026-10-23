@@ -1061,8 +1061,8 @@ export async function reverseProjectLedgerRows(
   );
   const reversals = rows
     .filter((row) => !row.reversalOfId && !reversedIds.has(row.id))
-    .map((row) =>
-      buildProjectLedgerRow({
+    .map((row) => ({
+      ...buildProjectLedgerRow({
         companyId: args.companyId,
         projectId: row.projectId,
         projectElementId: row.projectElementId,
@@ -1087,12 +1087,170 @@ export async function reverseProjectLedgerRows(
         coverageReason: row.coverageReason,
         unallowable: row.unallowable,
         createdBy: args.userId
-      })
-    );
+      }),
+      // A reversal of a relocation row is one too: it bills nothing.
+      relocatesReceiptCharge: row.relocatesReceiptCharge
+    }));
   await insertProjectLedgerRows(trx, {
     companyId: args.companyId,
     userId: args.userId,
     rows: reversals
+  });
+}
+
+/**
+ * True when the row's journal line is on an inventory account (the company's
+ * Raw Materials or Finished Goods default): the cost still sits in stock. A
+ * Charge at receipt receipt row and the inventory side of a relocation pair
+ * are the projectLedger rows that do. `alias` is the projectLedger alias.
+ */
+export function onInventoryAccount(alias: string) {
+  const pl = sql.ref(alias);
+  return sql<boolean>`EXISTS (
+    SELECT 1 FROM "journalLine" jl_inv
+    JOIN "accountDefault" ad_inv ON ad_inv."companyId" = jl_inv."companyId"
+    WHERE jl_inv."id" = ${pl}."journalLineId"
+      AND jl_inv."companyId" = ${pl}."companyId"
+      AND jl_inv."accountId" IN (ad_inv."rawMaterialsAccount", ad_inv."finishedGoodsAccount")
+  )`;
+}
+
+/** A Material row of a movement between stock and a project, before the
+ *  Charge at receipt split. */
+export type StockMaterialDraft = {
+  /** The ordinary row: + for an issue, − for a return, its journal line on
+   *  the project account. */
+  row: ProjectLedgerInsert;
+  /** The stripe the movement draws from or returns to (null: common). */
+  stripeProjectId: string | null;
+  /** The movement's inventory journal line (its credit for an issue, its
+   *  debit for a return). */
+  inventoryJournalLineId: string | null;
+};
+
+/**
+ * Charge at receipt (C2): the receipt of a project with project stock and
+ * `chargeAtReceipt` already charged the project for the units it put in the
+ * project's stock. A movement of those units between the project's own
+ * stock and the project charges nothing again: it writes a zero-net
+ * relocation pair (`relocatesReceiptCharge`), +cost on the project account
+ * line and −cost on the inventory line, so the cost stays counted once (the
+ * receipt row), bills once, and the revenue run relieves it from the project
+ * account (`selectUnrelievedCost` never relieves an inventory-account row).
+ *
+ * - An Issue relocates up to the receipt-charged quantity still on the shelf
+ *   (`project_receipt_charge_quantities`, per project and item); the rest of
+ *   the draw writes the ordinary row.
+ * - A Return to the project's stock relocates back up to the quantity
+ *   relocated to the element (per project, element and item); the rest is
+ *   the ordinary negative row.
+ *
+ * The cost of the relocated part is its share of the draft's cost by
+ * quantity. Drafts of another stripe, of a project that does not charge at
+ * receipt, a Service charge (coverage) or a reversal pass through as their
+ * ordinary row. One read for all drafts; balances run across them in order.
+ */
+export async function splitReceiptChargedDrafts(
+  trx: Kysely<DB>,
+  args: { companyId: string; drafts: StockMaterialDraft[] }
+): Promise<ProjectLedgerInsert[]> {
+  const eligible = (draft: StockMaterialDraft) =>
+    draft.stripeProjectId !== null &&
+    draft.stripeProjectId === draft.row.projectId &&
+    draft.row.costType === "Material" &&
+    !!draft.row.itemId &&
+    !!draft.row.journalLineId &&
+    !!draft.inventoryJournalLineId &&
+    !draft.row.coverage &&
+    !draft.row.reversalOfId &&
+    Math.abs(Number(draft.row.quantity ?? 0)) > EPSILON;
+
+  const candidates = args.drafts.filter(eligible);
+  if (candidates.length === 0) return args.drafts.map((draft) => draft.row);
+
+  const { rows } = await sql<{
+    projectId: string;
+    projectElementId: string | null;
+    itemId: string;
+    onShelfQuantity: number;
+    relocatedQuantity: number;
+  }>`
+    SELECT * FROM project_receipt_charge_quantities(
+      ${args.companyId},
+      ${[...new Set(candidates.map((draft) => draft.row.projectId))]}::text[],
+      ${[...new Set(candidates.map((draft) => draft.row.itemId as string))]}::text[]
+    )
+  `.execute(trx);
+  if (rows.length === 0) return args.drafts.map((draft) => draft.row);
+
+  const shelfKey = (projectId: string, itemId: string) =>
+    `${projectId}\x1f${itemId}`;
+  const elementKey = (
+    projectId: string,
+    projectElementId: string | null | undefined,
+    itemId: string
+  ) => `${projectId}\x1f${projectElementId ?? ""}\x1f${itemId}`;
+  const onShelf = new Map<string, number>();
+  const relocated = new Map<string, number>();
+  for (const row of rows) {
+    const shelf = shelfKey(row.projectId, row.itemId);
+    onShelf.set(shelf, (onShelf.get(shelf) ?? 0) + Number(row.onShelfQuantity));
+    relocated.set(
+      elementKey(row.projectId, row.projectElementId, row.itemId),
+      Number(row.relocatedQuantity)
+    );
+  }
+
+  return args.drafts.flatMap((draft) => {
+    if (!eligible(draft)) return [draft.row];
+    const { row } = draft;
+    const quantity = Number(row.quantity);
+    const isIssue = quantity > 0;
+    const sign = isIssue ? 1 : -1;
+    const absQuantity = Math.abs(quantity);
+    const shelf = shelfKey(row.projectId, row.itemId as string);
+    const element = elementKey(
+      row.projectId,
+      row.projectElementId,
+      row.itemId as string
+    );
+    const shelfBalance = onShelf.get(shelf) ?? 0;
+    const relocatedBalance = relocated.get(element) ?? 0;
+    const charged = Math.min(
+      absQuantity,
+      Math.max(isIssue ? shelfBalance : relocatedBalance, 0)
+    );
+    if (charged <= EPSILON) return [row];
+
+    onShelf.set(shelf, shelfBalance - sign * charged);
+    relocated.set(element, relocatedBalance + sign * charged);
+
+    const chargedAmount = round((Number(row.amount) * charged) / absQuantity);
+    const pair: ProjectLedgerInsert[] = [
+      {
+        ...row,
+        quantity: round(sign * charged),
+        amount: chargedAmount,
+        relocatesReceiptCharge: true
+      },
+      {
+        ...row,
+        quantity: round(-sign * charged),
+        amount: -chargedAmount,
+        journalLineId: draft.inventoryJournalLineId,
+        relocatesReceiptCharge: true
+      }
+    ];
+    const rest = absQuantity - charged;
+    if (rest <= EPSILON) return pair;
+    return [
+      ...pair,
+      {
+        ...row,
+        quantity: round(sign * rest),
+        amount: round(Number(row.amount) - chargedAmount)
+      }
+    ];
   });
 }
 
@@ -1144,6 +1302,9 @@ export async function loadReturnableIssueRows(
       AND pl."itemId" = ${args.itemId}
       AND pl."documentType" = 'Project Issue'
       AND pl."costType" = 'Material'
+      -- The inventory side of a Charge at receipt relocation pair is not an
+      -- issue: its project side carries the issue's quantity and cost.
+      AND NOT (pl."relocatesReceiptCharge" AND ${onInventoryAccount("pl")})
       AND il."trackedEntityId" IS NOT DISTINCT FROM ${args.trackedEntityId}
       AND (
         CASE WHEN ${args.returnOfProjectLedgerId}::text IS NULL
@@ -1756,7 +1917,8 @@ export function buildContractBillableItem(args: {
     | "employeeId"
     | "laborCategoryId"
     | "unallowable"
-  >;
+  > &
+    Partial<Pick<ProjectLedgerRow, "relocatesReceiptCharge">>;
   line: Pick<
     ContractBillingLine,
     "id" | "billingMethod" | "materialHandlingPercent"
@@ -1769,6 +1931,9 @@ export function buildContractBillableItem(args: {
   const { ledgerRow, line } = args;
   if (line.billingMethod !== "Time & Materials") return null;
   if (ledgerRow.unallowable) return null;
+  // A Charge at receipt relocation pair moves cost the receipt already
+  // billed (C2): it bills nothing.
+  if (ledgerRow.relocatesReceiptCharge) return null;
   // A dilution adjustment (Labor with 0 hours) changes the cost, never the
   // hours a Time & Materials line bills.
   if (

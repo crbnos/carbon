@@ -115,8 +115,9 @@ export type ProjectRevenueWriters = {
   ): Promise<ProgressLine[]>;
   lockProjectRevenue(trx: KyselyTx, companyId: string): Promise<void>;
   monthStartOf(periodEnd: string): string;
-  /** The ledger rows each line owns through `through`: its subtree within
-   *  its own dates, each row owned by one line. */
+  /** The ledger rows each line owns through `through`: each subtree row is
+   *  owned by one line, the one with the latest start on or before it (else
+   *  the earliest). */
   progressLedgerRows(args: {
     companyId: string;
     lines: ProgressLine[];
@@ -236,6 +237,9 @@ export async function generateCostPlusItems(
       WHERE pl."postingDate" >= l."startDate"
         AND pl."postingDate" <= LEAST(${through}::date, COALESCE(l."endDate", ${through}::date))
         AND pl."unallowable" = false
+        -- A Charge at receipt relocation pair moves cost the receipt row
+        -- already bills (C2).
+        AND pl."relocatesReceiptCharge" = false
         -- Burden bills through computeBurdenBilling (5b decision B5).
         AND pl."costType" <> 'Burden'
         AND p."costTreatment" = 'Contract'

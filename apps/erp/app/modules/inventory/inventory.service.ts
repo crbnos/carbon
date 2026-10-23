@@ -147,7 +147,8 @@ import {
   insertProjectLedgerRows,
   type JobProjectCharge,
   loadJobProjectCharge,
-  reverseProjectLedgerRows
+  reverseProjectLedgerRows,
+  splitReceiptChargedDrafts
 } from "~/modules/projects/project-posting";
 import {
   futureDeliveryError,
@@ -23058,6 +23059,7 @@ async function issueJobOperationMaterials(
       quantity: number;
       amount: number;
       lineIndex: number;
+      stripeProjectId: string | null;
     }[] = [];
 
     const jobForLocation = await trx
@@ -23112,7 +23114,9 @@ async function issueJobOperationMaterials(
           itemId: ledger.itemId,
           quantity: materialQuantity,
           amount: cogsResult.totalCost,
-          lineIndex: journalLineInserts.length
+          // The project debit; the inventory credit follows it.
+          lineIndex: journalLineInserts.length,
+          stripeProjectId: ledger.projectId ?? null
         });
       }
 
@@ -23293,8 +23297,13 @@ async function issueJobOperationMaterials(
           companyId,
           userId,
           rows: projectLedgerRows.map((row) => ({
-            ...row,
-            journalLineId: journalLineResults[row.lineIndex]?.id ?? null
+            itemId: row.itemId,
+            quantity: row.quantity,
+            amount: row.amount,
+            journalLineId: journalLineResults[row.lineIndex]?.id ?? null,
+            stripeProjectId: row.stripeProjectId,
+            inventoryJournalLineId:
+              journalLineResults[row.lineIndex + 1]?.id ?? null
           }))
         });
       }
@@ -23305,7 +23314,9 @@ async function issueJobOperationMaterials(
 }
 
 // One projectLedger Material row per consumption of a consume-to-project job
-// (a positive amount), or per return (a negative amount).
+// (a positive amount), or per return (a negative amount). A row that names
+// the stripe it drew from (or returned to) and its inventory line goes
+// through the Charge at receipt split (`splitReceiptChargedDrafts`, C2).
 async function insertJobProjectLedgerRows(
   trx: Transaction<KyselyDatabase>,
   args: {
@@ -23321,15 +23332,20 @@ async function insertJobProjectLedgerRows(
       quantity: number;
       amount: number;
       journalLineId: string | null;
+      /** The stripe the movement drew from or returned to. */
+      stripeProjectId?: string | null;
+      /** The movement's inventory journal line. */
+      inventoryJournalLineId?: string | null;
     }[];
   }
 ) {
   if (args.rows.length === 0) return;
-  await insertProjectLedgerRows(trx, {
+  const rows = await splitReceiptChargedDrafts(trx, {
     companyId: args.companyId,
-    userId: args.userId,
-    rows: args.rows.map((row) =>
-      buildProjectLedgerRow({
+    drafts: args.rows.map((row) => ({
+      stripeProjectId: row.stripeProjectId ?? null,
+      inventoryJournalLineId: row.inventoryJournalLineId ?? null,
+      row: buildProjectLedgerRow({
         companyId: args.companyId,
         projectId: args.charge.projectId,
         projectElementId: args.charge.projectElementId,
@@ -23345,7 +23361,12 @@ async function insertJobProjectLedgerRows(
         unallowable: args.charge.unallowable,
         createdBy: args.userId
       })
-    )
+    }))
+  });
+  await insertProjectLedgerRows(trx, {
+    companyId: args.companyId,
+    userId: args.userId,
+    rows
   });
 }
 
@@ -23400,6 +23421,8 @@ async function createMaterialWipEntries(
     quantity: number;
     amount: number;
     lineIndex: number;
+    inventoryLineIndex: number;
+    stripeProjectId: string | null;
   }[] = [];
 
   // Cost layer posts on the company business day, matching the caller's
@@ -23495,7 +23518,9 @@ async function createMaterialWipEntries(
         quantity: isConsumption ? absQty : -absQty,
         amount: isConsumption ? cost : -cost,
         // The project line is first for a consumption, second for a return.
-        lineIndex: journalLineInserts.length + (isConsumption ? 0 : 1)
+        lineIndex: journalLineInserts.length + (isConsumption ? 0 : 1),
+        inventoryLineIndex: journalLineInserts.length + (isConsumption ? 1 : 0),
+        stripeProjectId: ledger.projectId ?? null
       });
     }
     const wipDescription =
@@ -23701,7 +23726,10 @@ async function createMaterialWipEntries(
         itemId: row.itemId,
         quantity: row.quantity,
         amount: row.amount,
-        journalLineId: journalLineResults[row.lineIndex]?.id ?? null
+        journalLineId: journalLineResults[row.lineIndex]?.id ?? null,
+        stripeProjectId: row.stripeProjectId,
+        inventoryJournalLineId:
+          journalLineResults[row.inventoryLineIndex]?.id ?? null
       }))
     });
   }

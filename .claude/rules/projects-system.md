@@ -341,6 +341,31 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   asset), and the purchase invoice writes a `Material Variance` row for the whole price
   variance (`stockChargedAtReceipt`, `loadInvoiceProjectCharges`). The stripe does not depend
   on the cost treatment.
+- **Charge at receipt: the issue charges nothing again (C2).** The receipt row points at the
+  inventory debit, so the cost is the project's while the goods sit in its stock. A movement
+  of those units between the project's own stripe and the project writes a zero-net
+  **relocation pair** instead of a new cost: +cost on the project debit line and −cost on the
+  inventory credit line, both `projectLedger.relocatesReceiptCharge = true`. The pair bills
+  nothing (`buildContractBillableItem` returns null, the Cost Plus generator filters it,
+  burden billing reads billable items), nets to 0 in `get_project_cost_summary`, budget
+  control, burden bases and ACWP, and gives the revenue run a Project WIP row to relieve;
+  `selectUnrelievedCost` never relieves a row on an inventory account, so the receipt row
+  is never relieved and stock on the shelf never leaves inventory. The split is
+  `splitReceiptChargedDrafts` (`project-posting.ts`) for `post-project-issue` (per stripe
+  drawn; the rest stays one ordinary row) and `insertJobProjectLedgerRows` (the job issue
+  and the manual part issue/return), and the same rule in SQL `backflush_job_materials`
+  (`20261023011138`). Both read `project_receipt_charge_quantities` (project, element,
+  item): `onShelfQuantity` = Σ receipt Material and relocation rows on an inventory
+  account (what an Issue may relocate, per project and item), `relocatedQuantity` = Σ
+  relocation rows on any other account (what a Return to the project's stock relocates
+  back, per element; the rest of a Return is the ordinary negative row). The relocated
+  part's cost is its share of the draw by quantity. A reversal copies the flag. The
+  Scrap paths move WIP to scrap, not stock, so they never split. Known limits: the
+  on-shelf balance is a ledger quantity, so receipt-charged units that left the stripe
+  another way (a transfer out, a count, a supplier return) still count as on the shelf
+  and a later issue of uncharged units there is relocated instead of charged; a Service
+  (By Coverage) charge never splits; a cutover re-cost of a relocated issue adjusts its
+  project side (`recostProjectIssues`, one ledger row per cost row).
 - **Jobs.** `job.receiveToProjectStock` (needs a charge number; refused with Consume to
   project, Make to Asset or a sales order line; `chargeNumberError` refuses it on a project
   without project stock) receives the output into the project's stripe

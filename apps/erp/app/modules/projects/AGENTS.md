@@ -161,6 +161,7 @@ cd apps/erp && npx vitest run test/database/post-timesheet test/database/save-ti
 | `projectBillableItem` (`customerContractLineId`) | Contract billable items of Time & Materials and Cost Plus lines (Phase 4a; `.claude/rules/project-billing.md`) |
 | `timesheetEntry` | Hours per employee, day, charge number, labor category |
 | `projectLedger` | Actual cost rows; a void writes a negative row with `reversalOfId` |
+| `projectLedger.relocatesReceiptCharge` | True on the two rows of a zero-net pair that moves Charge at receipt cost from inventory to the project account when the stock is issued, or back on a Return. Not new cost: billing skips it, relief takes its project side (`splitReceiptChargedDrafts`, `project_receipt_charge_quantities`; `projects-system.md` → *Project stock*) |
 | `projectElementLink` | Trace links with `suspectSince` / `reviewedAt` |
 | `projectView`, `projectUserPreference` | Unused since the Plan page lost saved views (2026-10-12); kept with no migration |
 | `fixedAssetCipCost` (`projectId`, `projectElementId`, `postCapitalization`) | CIP rows of capital projects |

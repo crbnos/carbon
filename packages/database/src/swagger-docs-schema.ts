@@ -40648,6 +40648,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectLedger.burdenFiscalYear"
           },
           {
+            $ref: "#/parameters/rowFilter.projectLedger.relocatesReceiptCharge"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -40788,6 +40791,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectLedger.burdenFiscalYear"
           },
           {
+            $ref: "#/parameters/rowFilter.projectLedger.relocatesReceiptCharge"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -40880,6 +40886,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectLedger.burdenFiscalYear"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectLedger.relocatesReceiptCharge"
           },
           {
             $ref: "#/parameters/body.projectLedger"
@@ -121702,6 +121711,91 @@ export default {
         tags: ["(rpc) get_inventory_value_by_location"]
       }
     },
+    "/rpc/project_receipt_charge_quantities": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_project_ids",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "p_item_ids",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) project_receipt_charge_quantities"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_project_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["p_company_id", "p_project_ids", "p_item_ids"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) project_receipt_charge_quantities"]
+      }
+    },
     "/rpc/get_quote_methods_by_method_id": {
       get: {
         parameters: [
@@ -151025,7 +151119,8 @@ export default {
         "amount",
         "unallowable",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "relocatesReceiptCharge"
       ],
       properties: {
         id: {
@@ -151157,6 +151252,13 @@ export default {
         burdenFiscalYear: {
           format: "integer",
           type: "integer"
+        },
+        relocatesReceiptCharge: {
+          default: false,
+          description:
+            "True on the two rows of a zero-net pair that move cost a Charge at receipt project was charged at receipt from inventory to the project account when the stock is issued (or back on a Return). Not new cost: billing skips it and it nets to 0 in every total.",
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -208988,6 +209090,14 @@ export default {
     },
     "rowFilter.projectLedger.burdenFiscalYear": {
       name: "burdenFiscalYear",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectLedger.relocatesReceiptCharge": {
+      name: "relocatesReceiptCharge",
+      description:
+        "True on the two rows of a zero-net pair that move cost a Charge at receipt project was charged at receipt from inventory to the project account when the stock is issued (or back on a Return). Not new cost: billing skips it and it nets to 0 in every total.",
       required: false,
       in: "query",
       type: "string"

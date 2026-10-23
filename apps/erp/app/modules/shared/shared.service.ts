@@ -16305,6 +16305,9 @@ export interface BookAdjustmentResult {
   // Project Issue), or null when no journal was written. A projectLedger row
   // stores it so the revenue run can find the account it charged.
   offsetJournalLineId: string | null;
+  // The journal line on the inventory account, or null with no journal. A
+  // Charge at receipt relocation row points at it.
+  inventoryJournalLineId: string | null;
   cost: number;
 }
 
@@ -16464,30 +16467,38 @@ export async function bookAdjustment(
       itemLedgerId: inserted.id,
       journalId: null,
       offsetJournalLineId: null,
+      inventoryJournalLineId: null,
       cost: 0
     };
   }
 
-  const { journalId, offsetJournalLineId, cost } = await valueMovement(trx, {
-    movement: {
-      postingDate: ledger.postingDate,
-      itemId: ledger.itemId,
-      quantity: ledger.quantity,
-      locationId: ledger.locationId,
-      entryType: ledger.entryType,
-      documentType: ledger.documentType,
-      documentId: ledger.documentId ?? inserted.id,
-      trackedEntityId: ledger.trackedEntityId,
-      projectId: ledger.projectId,
-      companyId: ledger.companyId
-    },
-    item,
-    itemCost,
-    accounting,
-    fixedUnitCost: args.fixedUnitCost
-  });
+  const { journalId, offsetJournalLineId, inventoryJournalLineId, cost } =
+    await valueMovement(trx, {
+      movement: {
+        postingDate: ledger.postingDate,
+        itemId: ledger.itemId,
+        quantity: ledger.quantity,
+        locationId: ledger.locationId,
+        entryType: ledger.entryType,
+        documentType: ledger.documentType,
+        documentId: ledger.documentId ?? inserted.id,
+        trackedEntityId: ledger.trackedEntityId,
+        projectId: ledger.projectId,
+        companyId: ledger.companyId
+      },
+      item,
+      itemCost,
+      accounting,
+      fixedUnitCost: args.fixedUnitCost
+    });
 
-  return { itemLedgerId: inserted.id, journalId, offsetJournalLineId, cost };
+  return {
+    itemLedgerId: inserted.id,
+    journalId,
+    offsetJournalLineId,
+    inventoryJournalLineId,
+    cost
+  };
 }
 
 export interface ValueMovementArgs {
@@ -16526,13 +16537,19 @@ export async function valueMovement(
 ): Promise<{
   journalId: string | null;
   offsetJournalLineId: string | null;
+  inventoryJournalLineId: string | null;
   cost: number;
 }> {
   const { movement, item, itemCost, accounting } = args;
   const { companyId, documentId } = movement;
 
   if (!carriesAdjustmentValue(movement.quantity, item.itemTrackingType)) {
-    return { journalId: null, offsetJournalLineId: null, cost: 0 };
+    return {
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost: 0
+    };
   }
 
   const absQuantity = Math.abs(movement.quantity);
@@ -16635,7 +16652,12 @@ export async function valueMovement(
   // of the document that day, neither the legacy backfill (which skips a
   // document-day that has a journal) nor the re-cost could book the cost.
   if (!accounting || (cost === 0 && movement.quantity > 0)) {
-    return { journalId: null, offsetJournalLineId: null, cost };
+    return {
+      journalId: null,
+      offsetJournalLineId: null,
+      inventoryJournalLineId: null,
+      cost
+    };
   }
 
   const journalId = accounting.getJournalId
@@ -16690,6 +16712,7 @@ export async function valueMovement(
     journalId,
     // Inserted in the order [inventoryLine, offsetLine].
     offsetJournalLineId: journalLines[1]?.id ?? null,
+    inventoryJournalLineId: journalLines[0]?.id ?? null,
     cost
   };
 }

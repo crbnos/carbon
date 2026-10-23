@@ -144,6 +144,7 @@ import {
   reverseBillableItem,
   type ServicePostingContext,
   serviceChargeCoverage,
+  splitReceiptChargedDrafts,
   startElementsOnFirstCharge
 } from "./project-posting";
 import {
@@ -7618,7 +7619,9 @@ export const postProjectIssuePermission = {
  * inventory at its carrying cost through the inventory-adjustment core, and
  * the offset posts to the project account the cost treatment resolves:
  * Dr project / Cr inventory for an Issue, the mirror for a Return. One
- * projectLedger Material row records the same cost. A Statistical project
+ * projectLedger Material row records the same cost, except for units its
+ * receipts already charged (Charge at receipt): those write a zero-net
+ * relocation pair (`splitReceiptChargedDrafts`). A Statistical project
  * charges indirectCostAccount and writes no ledger row.
  *
  * A Return values the stock at the cost the issues it reverses charged
@@ -8029,7 +8032,10 @@ export async function postProjectIssue(
     const bookedRows: {
       itemLedgerId: string;
       offsetJournalLineId: string | null;
+      inventoryJournalLineId: string | null;
       cost: number;
+      stripe: string | null;
+      quantity: number;
     }[] = [];
     for (const draw of draws) {
       const bookedRow = await bookAdjustment(trx, {
@@ -8090,7 +8096,11 @@ export async function postProjectIssue(
           ]
         }
       });
-      bookedRows.push(bookedRow);
+      bookedRows.push({
+        ...bookedRow,
+        stripe: draw.stripe,
+        quantity: draw.quantity
+      });
     }
     const booked = {
       itemLedgerId: bookedRows[0]!.itemLedgerId,
@@ -8112,32 +8122,73 @@ export async function postProjectIssue(
 
     let projectLedgerId: string | null = null;
     if (!isStatistical) {
-      const row = (
-        await insertProjectLedgerRows(trx, {
-          companyId,
-          userId,
-          rows: [
-            buildProjectLedgerRow({
-              companyId,
-              projectId,
-              projectElementId,
-              postingDate,
-              costType: "Material",
-              documentType: "Project Issue",
-              documentId: booked.itemLedgerId,
-              itemId,
-              quantity: isIssue ? quantity : -quantity,
-              amount: isIssue ? booked.cost : -booked.cost,
-              journalLineId: booked.offsetJournalLineId,
-              reversalOfId: returnedIssue?.id ?? null,
-              coverage,
-              coverageReason,
-              unallowable: isUnallowableCharge(context, accountId),
-              createdBy: userId
-            })
-          ]
-        })
-      )[0]!;
+      const ordinary = buildProjectLedgerRow({
+        companyId,
+        projectId,
+        projectElementId,
+        postingDate,
+        costType: "Material",
+        documentType: "Project Issue",
+        documentId: booked.itemLedgerId,
+        itemId,
+        quantity: isIssue ? quantity : -quantity,
+        amount: isIssue ? booked.cost : -booked.cost,
+        journalLineId: booked.offsetJournalLineId,
+        reversalOfId: returnedIssue?.id ?? null,
+        coverage,
+        coverageReason,
+        unallowable: isUnallowableCharge(context, accountId),
+        createdBy: userId
+      });
+      // Charge at receipt (C2): the units of the project's own stock its
+      // receipts charged write a zero-net relocation pair, per stripe drawn;
+      // what is left of every stripe stays one ordinary row.
+      const split = await splitReceiptChargedDrafts(trx, {
+        companyId,
+        drafts: bookedRows.map((booking) => ({
+          row: {
+            ...ordinary,
+            quantity: isIssue ? booking.quantity : -booking.quantity,
+            amount: isIssue ? booking.cost : -booking.cost,
+            journalLineId: booking.offsetJournalLineId
+          },
+          stripeProjectId: booking.stripe,
+          inventoryJournalLineId: booking.inventoryJournalLineId
+        }))
+      });
+      const relocations = split.filter((row) => row.relocatesReceiptCharge);
+      const rest = split.filter((row) => !row.relocatesReceiptCharge);
+      const rows =
+        relocations.length === 0
+          ? [ordinary]
+          : [
+              ...relocations,
+              ...(rest.length === 0
+                ? []
+                : [
+                    {
+                      ...ordinary,
+                      quantity: round(
+                        rest.reduce((sum, row) => sum + Number(row.quantity), 0)
+                      ),
+                      amount: round(
+                        rest.reduce((sum, row) => sum + Number(row.amount), 0)
+                      ),
+                      journalLineId:
+                        rest.find((row) => row.journalLineId)?.journalLineId ??
+                        null
+                    }
+                  ])
+            ];
+      const inserted = await insertProjectLedgerRows(trx, {
+        companyId,
+        userId,
+        rows
+      });
+      // The ordinary row when there is one, else the project side of the
+      // relocation.
+      const row =
+        inserted.find((r) => !r.relocatesReceiptCharge) ?? inserted[0]!;
       projectLedgerId = row.id;
 
       if (service && isIssue && coverage) {

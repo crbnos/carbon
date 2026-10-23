@@ -269,8 +269,12 @@ The math is pure in `packages/ee/src/project-revenue/progress.ts`.
 
 **Cost relief (R2–R4).** Both methods relieve every ledger row the line owns
 (`progressLedgerRows`) posted on or before the period end that has no
-`projectCostRelief` row and whose journal debit line is on an Asset account. A row
-with no journal line, or an expensed row, is never relieved. Every charge writes its
+`projectCostRelief` row and whose journal debit line is on an Asset account other than
+an inventory account (`onInventoryAccount`: the Raw Materials or Finished Goods default).
+A row with no journal line, an expensed row, or a row whose cost still sits in stock (a
+Charge at receipt receipt row, the inventory side of a relocation pair) is never relieved;
+issued receipt-charged stock is relieved through the pair's project side (accounting audit C2,
+`projects-system.md` → *Project stock*). Every charge writes its
 journal for every company (Provisional before the accounting cutover, Posted after
 it), and its ledger row carries the `journalLineId` (a Project Issue included). One `Cost Relief` schedule row per line and account: Dr
 `costOfGoodsSoldAccount` / Cr that account. `projectCostRelief` records each ledger row

@@ -230,6 +230,7 @@ import {
 import {
   buildProjectLedgerRow,
   insertProjectLedgerRows,
+  onInventoryAccount,
   resolveProjectLineCharges,
   reverseProjectLedgerRows
 } from "~/modules/projects/project-posting";
@@ -21102,8 +21103,11 @@ async function recostProjectIssues(
     [...recostByCostLedger.keys()],
     ROWS_PER_STATEMENT
   )) {
+    // An issue of stock charged at receipt (C2) also wrote a relocation
+    // pair: never its inventory side, and one ledger row per cost row (the
+    // ordinary row, else the pair's project side), so a delta counts once.
     const { rows } = await sql<ProjectLedgerRow & { costLedgerId: string }>`
-      SELECT c."id" AS "costLedgerId", pl.*
+      SELECT DISTINCT ON (c."id") c."id" AS "costLedgerId", pl.*
       FROM "costLedger" c
       JOIN "projectLedger" pl
         ON pl."companyId" = c."companyId"
@@ -21115,6 +21119,8 @@ async function recostProjectIssues(
        AND pl."createdAt" = c."createdAt"
       WHERE c."companyId" = ${companyId}
         AND c."id" = ANY(${ids}::text[])
+        AND NOT (pl."relocatesReceiptCharge" AND ${onInventoryAccount("pl")})
+      ORDER BY c."id", pl."relocatesReceiptCharge", pl."id"
     `.execute(trx);
     issues.push(...rows);
   }

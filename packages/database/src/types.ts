@@ -54042,6 +54042,7 @@ export type Database = {
           projectElementId: string | null
           projectId: string
           quantity: number | null
+          relocatesReceiptCharge: boolean
           reversalOfId: string | null
           supplierId: string | null
           unallowable: boolean
@@ -54073,6 +54074,7 @@ export type Database = {
           projectElementId?: string | null
           projectId: string
           quantity?: number | null
+          relocatesReceiptCharge?: boolean
           reversalOfId?: string | null
           supplierId?: string | null
           unallowable?: boolean
@@ -54104,6 +54106,7 @@ export type Database = {
           projectElementId?: string | null
           projectId?: string
           quantity?: number | null
+          relocatesReceiptCharge?: boolean
           reversalOfId?: string | null
           supplierId?: string | null
           unallowable?: boolean
@@ -105225,6 +105228,20 @@ export type Database = {
           p_project_id: string
         }
         Returns: string
+      }
+      project_receipt_charge_quantities: {
+        Args: {
+          p_company_id: string
+          p_item_ids: string[]
+          p_project_ids: string[]
+        }
+        Returns: {
+          itemId: string
+          onShelfQuantity: number
+          projectElementId: string
+          projectId: string
+          relocatedQuantity: number
+        }[]
       }
       purchase_order_line_consumed_by_project: {
         Args: {

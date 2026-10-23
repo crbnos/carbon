@@ -133,7 +133,9 @@ snapshot raises "…cannot be deleted. Deactivate it instead."
 matters only with `chargeAtReceipt`: `loadAcwp` holds back the project's Purchase
 Receipt Material rows (not voided) until project-stock issues consume them, first
 in first out by quantity (`holdUntilIssued`). The issues are the project stripe's
-`itemLedger` Project Issue and Job Consumption rows, netted per item and day.
+`itemLedger` Project Issue and Job Consumption rows, netted per item and day. The issue's
+own relocation pair (`relocatesReceiptCharge`, accounting audit C2) nets to 0, so each unit counts once at
+either point.
 
 ## The ACWP export
 
