@@ -2,97 +2,53 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { AriaAttributes } from "react";
 import { ariaAttr } from "../utils/dom";
-import { callAllHandlers } from "../utils/function";
-import type { FormControlOptions } from "./FormControl";
-import {
-  useFormControlContext,
-  useOptionalFormControlContext
-} from "./FormControl";
+import { useOptionalFormControlContext } from "./FormControl";
 
-export interface UseFormControlProps<T extends HTMLElement>
-  extends FormControlOptions {
-  id?: string;
-  onFocus?: React.FocusEventHandler<T>;
-  onBlur?: React.FocusEventHandler<T>;
-  disabled?: boolean;
-  readOnly?: boolean;
-  required?: boolean;
+export interface UseFormControlProps {
+  isInvalid?: boolean;
+  "aria-invalid"?: AriaAttributes["aria-invalid"];
+  "aria-required"?: AriaAttributes["aria-required"];
   "aria-describedby"?: string;
 }
 
 /**
- * React hook that provides the props that should be spread on to
- * input fields (`input`, `select`, `textarea`, etc.).
+ * What a control inside a FormControl shows and announces: whether it is
+ * invalid or required, and the error message and helper text that describe
+ * it. The caller's own values win; outside a FormControl only they apply.
  *
- * It provides a convenient way to control a form fields, validation
- * and helper text.
- *
- * @internal
+ * It sets `aria-required`, never the native `required` attribute, so the
+ * browser's own validation never runs ahead of the form's.
  */
-export function useFormControl<T extends HTMLElement>(
-  props: UseFormControlProps<T>
-) {
-  const { isDisabled, isInvalid, isReadOnly, isRequired, ...rest } =
-    useFormControlProps(props);
+export function useFormControl(props: UseFormControlProps) {
+  const field = useOptionalFormControlContext();
+  const isInvalid = props.isInvalid ?? field?.isInvalid ?? false;
 
-  return {
-    ...rest,
-    disabled: isDisabled,
-    readOnly: isReadOnly,
-    required: isRequired,
-    "aria-invalid": ariaAttr(isInvalid),
-    "aria-required": ariaAttr(isRequired),
-    "aria-readonly": ariaAttr(isReadOnly)
-  };
-}
-
-/**
- * @internal
- */
-export function useFormControlProps<T extends HTMLElement>(
-  props: UseFormControlProps<T>
-) {
-  const field = useFormControlContext();
-
-  const {
-    id,
-    disabled,
-    readOnly,
-    required,
-    isRequired,
-    isInvalid,
-    isReadOnly,
-    isDisabled,
-    onFocus,
-    onBlur,
-    ...rest
-  } = props;
-
-  const labelIds: string[] = props["aria-describedby"]
+  const describedBy = props["aria-describedby"]
     ? [props["aria-describedby"]]
     : [];
-
-  // Error message must be described first in all scenarios.
-  if (field?.hasFeedbackText && field?.isInvalid) {
-    labelIds.push(field.feedbackId);
+  // The error message is described first.
+  if (field?.isInvalid && field.hasFeedbackText) {
+    describedBy.push(field.feedbackId);
   }
-
   if (field?.hasHelpText) {
-    labelIds.push(field.helpTextId);
+    describedBy.push(field.helpTextId);
   }
 
-  return {
-    ...rest,
-    "aria-describedby": labelIds.join(" ") || undefined,
-    id: id ?? field?.id,
-    isDisabled: disabled ?? isDisabled ?? field?.isDisabled,
-    isReadOnly: readOnly ?? isReadOnly ?? field?.isReadOnly,
-    isRequired: required ?? isRequired ?? field?.isRequired,
-    isInvalid: isInvalid ?? field?.isInvalid,
-    onFocus: callAllHandlers(field?.onFocus, onFocus),
-    onBlur: callAllHandlers(field?.onBlur, onBlur)
-  };
+  // Only the attributes that are set: an explicit `undefined` would replace a
+  // value the control sets itself (Radix Select sets `aria-required`).
+  const ariaProps: Pick<
+    AriaAttributes,
+    "aria-invalid" | "aria-required" | "aria-describedby"
+  > = {};
+  const invalid = props["aria-invalid"] ?? ariaAttr(isInvalid);
+  if (invalid !== undefined) ariaProps["aria-invalid"] = invalid;
+  const required = props["aria-required"] ?? ariaAttr(field?.isRequired);
+  if (required !== undefined) ariaProps["aria-required"] = required;
+  if (describedBy.length) ariaProps["aria-describedby"] = describedBy.join(" ");
+
+  return { isInvalid, ariaProps };
 }
 
 /**
