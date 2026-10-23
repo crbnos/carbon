@@ -22809,6 +22809,9 @@ msgstr "Devolver ao estoque"
 msgid "Return to Stock"
 msgstr ""
 
+msgid "Return type"
+msgstr ""
+
 msgid "Return Type"
 msgstr ""
 
@@ -30388,6 +30391,9 @@ msgstr "O que um backup contém"
 msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
 msgstr "Em que a taxa de uma unidade de aluguel é cobrada: por um dia, uma semana ou um mês. Cada período de faturamento cobra todos os dias, semanas ou meses que cobre, exceto uma taxa mensal em um acordo de mês de calendário, que é rateada para um mês parcial."
 
+msgid "What an RMA line's unit comes back for: Return to Stock is restocked at its original cost, while Return for Service and Return for Warranty stay the customer's and open a service job."
+msgstr ""
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "Qual categoria de falha é essa — Mecânica, Elétrica, Software, Operador, Material, etc.; resume no relatório de pareto do modo de falha para que a divisão de categorias seja significativa."
 
@@ -30766,6 +30772,9 @@ msgstr "Qual operação foi esta?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Enquanto este despacho estiver aberto, o centro de trabalho estará indisponível para o cronograma (até a hora de término planejada ou até que o despacho seja concluído)."
 
+msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "Quem Pode Aprovar"
 
@@ -30984,6 +30993,9 @@ msgstr "Instruções de Trabalho"
 
 msgid "Work location"
 msgstr "Local de trabalho"
+
+msgid "Work on one customer unit, at the depot or at the customer's site, with one coverage, a time list, parts and charges, and an estimate for billable work. An RMA's Return for Service or Return for Warranty line opens one when its receipt posts."
+msgstr ""
 
 msgid "Work package"
 msgstr "Pacote de trabalho"

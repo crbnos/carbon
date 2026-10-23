@@ -22809,6 +22809,9 @@ msgstr "在庫に返却"
 msgid "Return to Stock"
 msgstr ""
 
+msgid "Return type"
+msgstr ""
+
 msgid "Return Type"
 msgstr ""
 
@@ -30388,6 +30391,9 @@ msgstr "バックアップに含まれる内容"
 msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
 msgstr "レンタルユニットの料金の課金単位：1日、1週間、または1ヶ月。各請求期間は、対象となる全日、全週、または全月を請求します。ただし、カレンダー月契約における月額料金の場合は、月の一部に対して日割り計算されます。"
 
+msgid "What an RMA line's unit comes back for: Return to Stock is restocked at its original cost, while Return for Service and Return for Warranty stay the customer's and open a service job."
+msgstr ""
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "障害のカテゴリー（機械的、電気的、ソフトウェア、作業者、材料など）を指定します。障害モードパレート報告書に集計されるため、カテゴリー分類が意味のあるものになります。"
 
@@ -30766,6 +30772,9 @@ msgstr "これはどの工程でしたか?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "このディスパッチがオープンの間、作業区はスケジュールに対して利用できません（計画終了時刻まで、またはディスパッチが完了するまで）。"
 
+msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "誰が承認できるか"
 
@@ -30984,6 +30993,9 @@ msgstr "作業手順書"
 
 msgid "Work location"
 msgstr "作業拠点"
+
+msgid "Work on one customer unit, at the depot or at the customer's site, with one coverage, a time list, parts and charges, and an estimate for billable work. An RMA's Return for Service or Return for Warranty line opens one when its receipt posts."
+msgstr ""
 
 msgid "Work package"
 msgstr "ワークパッケージ"

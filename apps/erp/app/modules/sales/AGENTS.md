@@ -58,7 +58,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 | `pricingRule` | Company-scoped discount/markup rules |
 | `customerItemPriceOverride` / `customerItemPriceOverrideBreak` | Customer-specific price overrides with quantity breaks |
 | `noQuoteReason` | Why a quote line was declined |
-| `salesReturnOrder` / `salesReturnOrderLine` / `salesReturnOrders` (view) | Customer RMAs: non-posting authorization document; statuses Draft → To Receive → Completed, or Cancelled (`salesReturnOrderStatus`; receiving drives To Receive → Completed); lines link optionally to SO/shipment/invoice lines with a `disposition` + `closedComplete` short-close. |
+| `salesReturnOrder` / `salesReturnOrderLine` / `salesReturnOrders` (view) | Customer RMAs: non-posting authorization document; statuses Draft → To Receive → In Progress → Completed, or Cancelled (`salesReturnOrderStatus`, derived by `refreshSalesReturnOrderStatus`, below); lines link optionally to SO/shipment/invoice lines with a `disposition` + `closedComplete` short-close. Each line has a `returnType` (Return to Stock / Return for Service / Return for Warranty), an optional `customerAssetId`, a `problem` and `quantityShipped` (units shipped back); a Service or Warranty line holds one unit (CHECK `salesReturnOrderLine_service_quantity_check`) and its receipt opens a service job (`.claude/rules/service-jobs.md`). `salesOrderLine.salesReturnOrderLineId` marks a replacement. |
 | `salesReturnOrderLineTrackedEntity` / `salesReturnOrderCreditLine` | Legacy expected-serials junction (no longer written — "which serial is it" lives entirely on the receipt; existing rows still honored by disposition) ; per-line credit breakdown behind the header-level AR `memo` (`memo.salesReturnOrderId`) |
 | `returnReason` | Why goods came back (company-defined, seeded; `inventoryValueZero` re-enters stock at zero value). Shared with purchasing's supplier returns |
 
@@ -80,7 +80,9 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `getSalesReturnOrders` / `insertSalesReturnOrder` / `upsertSalesReturnOrderLine` — RMA CRUD; `confirmSalesReturnOrder` (Kysely, row-locked reversible-quantity caps, THROWS), `cancelSalesReturnOrder` (guarded), `shortCloseSalesReturnOrderLine`
 - `getReturnableLinesForCustomer` (posted shipment lines minus already-authorized) — RMA line picker; `getShippedTrackedEntitiesForCustomer` — receipt-side serial/batch candidates (entities of the item currently with the customer via posted shipments)
 - `createSalesReturnOrderCredit` (Kysely, row-locked creditable cap, THROWS) / `getCreditableQuantities` / `createReplacementSalesOrder` (resolvePrice-priced draft SO). The guards are in the service because all three are MCP tools
-- `setSalesReturnOrderLineDisposition` — Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route
+- `setSalesReturnOrderLineDisposition` — Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route. The line menu offers it on received Return to Stock lines only (`canDispose`, `SalesReturnOrderExplorer.tsx`); it refreshes the RMA status
+- `refreshSalesReturnOrderStatus(trx, salesReturnOrderId, companyId, userId)` — the ONE writer of a non-Draft, non-Cancelled RMA status. Locks the RMA, reads its lines, their live service jobs and replacements, and derives To Receive / In Progress / Completed with the pure `getSalesReturnOrderStatus` (`packages/utils/src/status.ts`). In Progress = fully received, some line unresolved. A Return to Stock line resolves when its disposition is not Pending; a Service or Warranty line when its job is Completed, Invoiced or Cancelled AND the unit shipped back, was scrapped, or was replaced. Call it in the transaction that changed any input: `postReceipt`, `postShipment` (and their voids), `postServiceJob`, the next-step functions below, `shortCloseSalesReturnOrderLine`
+- `insertSalesReturnOrderLinesFromAssets` (one line per customer asset, Draft RMA only, unit price 0, Return for Warranty while a warranty runs on the company's today, else Return for Service), `scrapServiceReturnLine`, `warrantyReturnLineJob` / `setReturnLineToService` — the RMA side of a serviced unit
 - `createOpportunityDocumentUploadUrl` / `createOpportunityLineDocumentUploadUrl` — MCP file upload (step 1): presigned URLs for opportunity (`opportunity/{opportunityId}`) and opportunity-line documents; pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
 
 ## Operations (`sales.server.ts`)
@@ -103,7 +105,16 @@ the ones tagged `@mcp` as `sales_<name>`:
 - Orders: `updateSalesOrderDetails`, `setSalesOrderStatus`, `updateSalesOrderField`,
   `confirmSalesOrder`; `createSalesOrderLine` / `updateSalesOrderLine` / `shipSalesOrderLine`
 - Return orders: `updateSalesReturnOrderField`, `confirmReturnOrder`; `createReturnOrderLine` /
-  `updateReturnOrderLine` / `escalateReturnOrderLine`
+  `updateReturnOrderLine` / `escalateReturnOrderLine`; `createReturnOrderLinesFromAssets`
+  (**Add from assets**, `$id.from-assets.tsx`); the line's next steps, posted to
+  `$id.$lineId.next-step.tsx`: `scrapReturnedUnit` (Scrap Unit: disposition Scrap, serial
+  Scrapped, asset Returned, nothing posts), `replaceReturnedUnit` (No-charge Replacement: a
+  Warranty line whose job is Completed with `repairable = false`; a price-0 line naming the RMA
+  line on the RMA's Draft replacement order, else a new Draft order; its shipment posts to
+  warranty expense) and `changeReturnLineToService` (warranty denied: `post-service-job`
+  `set-coverage` Billable, then the line becomes Return for Service; needs `update` on sales and
+  service). **Ship Back** is the ordinary RMA shipment (`path.to.newShipment`, source
+  `Sales Return Order`)
 - Contracts: `createContract`, `updateContractTerms`, `setContractTerm`, `setContractType`,
   `setContractInvoiceAutomation`, `confirmContract`, `previewContractAmendment`, `amendContract`,
   `previewContractCancellation`, `cancelContract`, `revertContractCancellation`
@@ -283,9 +294,11 @@ Service functions (`sales.server.ts`, MCP tools with prefix `sales_`): the reads
 - **accounting** — sales invoices tie to orders; `getExchangeRate` resolves document exchange rates (per-company: base=1, override, else global market store). Rental rent is accrued / released and sales-type lease interest posted by the lease run, and contract revenue months recognized by the revenue recognition run; the fleet (`fleetAssets`) and the Net Investment in Leases report (`getLeaseNetInvestment`) are accounting's
 - **invoicing** — Rental invoice lines, and customer deposits on `payment.rentalAgreementId` / `salesOrderId`; contract invoices and the cancellation credit memo (`memo.customerContractId`)
 - **people** — `getEmployeeJob` used for assignee lookups
+- **service** — an RMA Service or Warranty line's receipt opens a service job; the job's completion and the unit's ship-back resolve the line (`apps/erp/app/modules/service/AGENTS.md`)
 
 ## Rules References
 
 - `.claude/rules/quote-discount-system.md` — pricing architecture, discount vs markup, price trace
 - `.claude/rules/customer-supplier-database-schema.md` — customer/supplier data model
 - `.claude/rules/fixed-asset-lifecycle.md` — the fleet the rental agreements rent (Reserved / On Rent statuses)
+- `.claude/rules/service-jobs.md` — RMA return types, the service receipt and ship-back, next steps and the RMA status

@@ -1,6 +1,6 @@
 ---
 title: RMAs
-description: "Customer return authorizations: receive shipped goods, disposition them, issue credit, and create replacements."
+description: "Customer return authorizations: receive goods to restock or to service, disposition them, issue credit, and create replacements."
 ---
 
 A **return merchandise authorization (RMA)** defines the goods and quantities a customer may return. When possible, it links them to the original sale. Receipt, disposition, customer credit, and replacement fulfillment remain separate, auditable events associated with the RMA.
@@ -15,8 +15,26 @@ Whenever the original delivery is known, add lines from a posted <Term id="shipm
 
 Use **Add manually** for a blind return when the original document is unavailable. A manual line is not checked against a source-document return limit, so review its item and quantity before confirmation.
 
+Use **Add from assets** to bring back units from the customer's [installed base](/docs/reference/customer-assets). It adds one line per chosen asset, at unit price 0, while the RMA is Draft.
+
 <Callout type="note">
 An RMA is the authorization, not the receipt. Inventory, cost, and the received counter change only when the return receipt is posted.
+</Callout>
+
+## Return types
+
+Each line has a <Term>return type</Term> that decides what its receipt does.
+
+| Return type | The unit | On receipt |
+|---|---|---|
+| **Return to Stock** | Becomes yours again | Enters inventory at its original shipment cost, On Hold, ready for a disposition |
+| **Return for Service** | Stays the customer's | Posts no value and opens a Billable [service job](/docs/reference/service-jobs) at the receiving location |
+| **Return for Warranty** | Stays the customer's | Posts no value and opens a Warranty service job |
+
+A Service or Warranty line holds one unit. Picking an asset on the line suggests Return for Warranty while the asset's labor or parts warranty runs today; **Add from assets** applies the same rule. Its asset moves to **"At Depot"** when the receipt posts.
+
+<Callout type="note" title="Diagnosis happens on the job, not the RMA.">
+The technician logs diagnosis time on the service job and marks the unit repairable or not. A Billable job from an RMA line needs an accepted estimate before it completes, unless the unit is not repairable.
 </Callout>
 
 ## Header fields
@@ -38,11 +56,14 @@ An RMA is the authorization, not the receipt. Inventory, cost, and the received 
 
 <FieldTable>
   <Field name="Item" type="reference">The item being returned.</Field>
+  <Field name="Return Type" type="enum">*Return to Stock*, *Return for Service* or *Return for Warranty*. See Return types above.</Field>
+  <Field name="Customer Asset" type="reference">The customer's unit, for a Service or Warranty line. It fills in the item.</Field>
+  <Field name="Problem">What the customer reports is wrong. It is copied to the service job.</Field>
   <Field name="Return Quantity" type="number">The quantity authorized to come back.</Field>
   <Field name="Unit Price" type="number">The commercial price used as the basis for customer credit, not the inventory cost of the returned stock.</Field>
   <Field name="Restock Fee Percent" type="number">The percentage deducted from the gross credit for this line.</Field>
   <Field name="Return Reason" type="reference">A company-defined reason such as Defective, Warranty, or Damaged in Transit.</Field>
-  <Field name="Disposition" type="enum">What to do with received material: *Pending*, *Use As Is*, *Return to Customer*, *Scrap*, or *Rework*.</Field>
+  <Field name="Disposition" type="enum">What to do with a received Return to Stock line: *Pending*, *Use As Is*, *Return to Customer*, *Scrap*, or *Rework*.</Field>
   <Field name="Received">The posted received quantity compared with the authorized quantity.</Field>
 </FieldTable>
 
@@ -52,12 +73,20 @@ After confirmation, the item, quantity, unit, price, restock fee, and source lin
 
 <StatusFlow entity="salesReturnOrder">
   <Status name="Draft">Build the authorization and add its lines.</Status>
-  <Status name="To Receive" accent>Confirmed; at least one line still expects goods.</Status>
-  <Status name="Completed">Every line is fully received or marked **Stop Receiving**.</Status>
+  <Status name="To Receive">Confirmed; at least one line still expects goods.</Status>
+  <Status name="In Progress" accent>Everything is received, but at least one line is not resolved yet.</Status>
+  <Status name="Completed">Every line is resolved.</Status>
   <Status name="Cancelled" branch terminal>The authorization was withdrawn before a return remained against it.</Status>
 </StatusFlow>
 
-Status is driven only by receiving. Posting receipts increases each line's received quantity; voiding a receipt reverses it. **Stop Receiving** short-closes an outstanding line, while **Resume Receiving** makes that remainder expected again. There is no manual Complete action, and issuing credit, setting disposition, creating a replacement, or shipping goods back does not complete the RMA.
+Carbon derives the status from the lines; there is no manual Complete action. Posting receipts increases each line's received quantity; voiding a receipt reverses it. **Stop Receiving** short-closes an outstanding line, while **Resume Receiving** makes that remainder expected again.
+
+Once every line is received or short-closed, the RMA is In Progress until each line is resolved:
+
+- A **Return to Stock** line is resolved when its disposition is no longer Pending.
+- A **Service** or **Warranty** line is resolved when its service job is Completed, Invoiced or Cancelled, and the unit has shipped back or been scrapped.
+
+A short-closed line that received nothing counts as resolved. Issuing credit does not change the status.
 
 Only one Draft receipt can exist for an RMA. Choosing **Receive** again opens that receipt instead of creating a duplicate, and it includes only quantities that are still outstanding.
 
@@ -65,21 +94,33 @@ Only one Draft receipt can exist for an RMA. Choosing **Receive** again opens th
 
 For a <Term id="serial">Serial</Term>- or <Term id="batch">Batch</Term>-tracked item, select the identity that physically arrived on the receipt. The RMA line itself does not reserve an expected identity. Carbon offers consumed identities from posted shipments to the same customer; a blind return can use the normal serial or batch entry flow.
 
-Posting the receipt puts returned tracked stock **On Hold**. Disposition determines what happens next:
+Posting the receipt puts returned tracked stock of a Return to Stock line **On Hold**. Disposition, in the line's ⋯ menu, determines what happens next:
 
 - **Use As Is** releases held tracked stock to Available.
 - **Scrap** or **Rework** opens a linked <Term id="nonconformance">quality issue</Term>. Closing that issue performs the material disposition; Rework currently releases the tracked stock and does not create a production job.
 - **Return to Customer** makes received quantity eligible for a no-revenue shipment back to the customer.
 
 <Callout type="warn">
-A fully received RMA becomes Completed immediately. Set the intended disposition while the RMA is still open when possible, especially on a one-line return.
+A Return to Stock line left at Pending keeps the RMA In Progress. Set its disposition once the goods are inspected.
 </Callout>
+
+## Serviced units
+
+A Return for Service or Return for Warranty unit was never in your stock, so none of its next steps posts a value. The line's ⋯ menu offers them as the job allows:
+
+| Action | When | Effect |
+|---|---|---|
+| **Ship Back** | The job is Completed or Invoiced | Opens the RMA shipment, like **Ship** on the header. Posting it returns the unit and sets its asset **"In Service"** |
+| **Scrap Unit** | The job is Completed or Invoiced and the unit has not shipped | Scraps the serial with the customer's consent and sets the asset **"Returned"** |
+| **No-charge Replacement** | A Warranty line whose job is Completed and marked not repairable | Adds a free line for the item to the RMA's Draft replacement order, or to a new Draft sales order. Its shipment costs go to Warranty Expense, not Cost of Goods Sold. Scrap the old unit afterwards |
+| **Change to Return for Service** | A Warranty line whose job is still open | The warranty is denied: the line becomes Return for Service and the job's coverage becomes Billable |
+
 
 ## Credit and replacement orders
 
 **Issue Credit** creates a Draft customer <Term id="credit-memo">credit memo</Term> for received quantity that is not already reserved by another non-voided memo. The amount is quantity × unit price, less the restock fee. Creating the memo does not post it, apply it to an invoice, or refund cash; finish those steps in the normal memo and settlement flow.
 
-**Create Replacement** creates a separate Draft sales order. It copies every authorized RMA line at its full return quantity and resolves current pricing, so review the new order if the replacement should be free or use warranty pricing. Replacement shipment has no effect on RMA completion.
+**Create Replacement** creates a separate Draft sales order. It copies every authorized RMA line at its full return quantity and resolves current pricing, so review the new order if the replacement should be free or use warranty pricing. For a warranty unit that cannot be repaired, use the line's **No-charge Replacement** instead.
 
 ## Related
 
@@ -89,6 +130,9 @@ A fully received RMA becomes Completed immediately. Set the intended disposition
   </Card>
   <Card title="Receipts" href="/docs/reference/receipts">
     Learn when posting brings returned goods into inventory.
+  </Card>
+  <Card title="Service jobs" href="/docs/reference/service-jobs">
+    Diagnose, estimate, repair and bill a Service or Warranty unit.
   </Card>
   <Card title="Issues" href="/docs/reference/issues">
     Resolve Scrap and Rework dispositions through quality.
@@ -118,6 +162,21 @@ A non-Voided memo reserves credit against the return. Void the memo before voidi
 
 ### "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
 Something has already consumed the receipt's cost layer. The receipt can no longer be reversed safely; correct the remaining inventory instead.
+
+### "Assign the serial before posting a service receipt"
+A serial-tracked Return for Service or Return for Warranty line has no serial on the receipt. Assign the unit's serial, then post.
+
+### "Service job … has work on it. Cancel the job first."
+Voiding the receipt of a Service or Warranty line cancels its job, which is refused once the job has moved past Open or has time or parts.
+
+### "Complete the unit's service job before you ship it back"
+The RMA shipment includes a serviced unit whose job is not Completed or Invoiced.
+
+### "A unit on this shipment is not at the depot"
+The unit's customer asset is no longer At Depot (it already shipped back or was scrapped).
+
+### "Complete the service job as not repairable before replacing the unit"
+No-charge Replacement needs the Warranty line's job Completed with Repairable set to No.
 
 ### "Configure at least one Issue Type and a location to escalate this line to an Issue"
 Scrap and Rework need a quality issue type plus either a return location or user-default location. Configure both, then choose the disposition again.

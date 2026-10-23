@@ -5,7 +5,7 @@ description: The installed base. One record per serial unit at a customer, with 
 
 A **customer asset** is one serial unit that sits at a customer. It records the customer, the site, the ship date, and two warranty end dates: one for labor and one for parts.
 
-Open **Service → Customer Assets** (under **Installed Base**). You need `service` view permission to see the list.
+Open **Service → Customer Assets**. You need `service` view permission to see the list. An asset is what a [service job](/docs/reference/service-jobs) or an [RMA](/docs/reference/rmas#return-types) line points at when the unit needs work.
 
 <Screenshot label="The Customer Assets list with Serial, Item, Customer, Site, Ship Date, Warranty and Status columns, and In warranty, Labor ended and Expired badges" caption="Each row is one serial unit at a customer." />
 
@@ -45,8 +45,9 @@ A serial that Carbon ships becomes an asset when its shipment posts. Register by
 ## Status
 
 <StatusFlow entity="customerAsset">
-  <Status name="In Service" accent>The unit is at the customer. A shipment or a manual registration sets this status.</Status>
-  <Status name="Returned" terminal>The unit came back to you. Voiding the sales order shipment that created or last moved the asset sets this status. A new sales shipment of the serial makes it In Service again.</Status>
+  <Status name="In Service" accent>The unit is at the customer. A shipment, a manual registration, or shipping a serviced unit back on its RMA sets this status.</Status>
+  <Status name="At Depot" branch>The unit is at your depot for service. Posting the receipt of a Return for Service or Return for Warranty line sets it; voiding that receipt sets In Service again.</Status>
+  <Status name="Returned" terminal>The unit came back to you for good. Voiding the sales order shipment that created or last moved the asset sets this status, and so does **Scrap Unit** on its RMA line. A new sales shipment of the serial makes it In Service again.</Status>
 </StatusFlow>
 
 The **warranty status** is a badge that Carbon calculates from today's date in the company's time zone. It is not stored.
@@ -61,14 +62,14 @@ The list's **Warranty** filter uses the same rule.
 
 ## The asset page
 
-Click a serial to open the asset. The header shows the serial, the status, the warranty badge, the item, the customer and the site.
+Click a serial to open the asset. The header shows the serial, the status, the warranty badge, the item, the customer and the site. **New Service Job** opens the new job drawer with the customer and the asset filled in; it needs `service` create permission.
 
 The page has these cards:
 
 - **Warranty and Site.** Change the site and the two warranty end dates. The item, serial, customer and ship date never change after the asset exists. Saving needs `service` update permission.
 - **Notes.** Free text about the unit, saved as you type.
 
-The side panel links the customer and the shipment that created or last moved the asset.
+The side panel links the customer, the serial's traceability, and the shipment that created or last moved the asset. Below them it lists the asset's **Service Jobs** with their status, and its **Returns**: the RMAs with a line for this asset, with the line's return type. Returns show only to users with `sales` view permission.
 
 <Screenshot label="A customer asset page with the Warranty and Site card and Notes" caption="The asset page brings the unit's warranty and notes together." />
 
@@ -79,6 +80,9 @@ Every customer has an **Assets** tab in its sidebar, shown to users with `servic
 ## Related
 
 <Cards>
+  <Card title="Service jobs" href="/docs/reference/service-jobs">
+    Repair or service a customer's unit, at the depot or on site.
+  </Card>
   <Card title="Shipments" href="/docs/reference/shipments">
     Posting a shipment of a serial creates its asset.
   </Card>
@@ -112,8 +116,9 @@ The tab needs `service_view`.
 - Tables: `customerAsset` (id prefix `cas`, unique on `trackedEntityId` per company, no readable id; the page title is the serial).
 - `customerAssetStatus` enum: In Service, At Depot, Returned. `source` is TEXT: Shipment (default) or Manual. The source is not shown in the UI.
 - Shipment creation: `upsertShippedCustomerAssets` (`apps/erp/app/modules/inventory/shipment-customer-assets.ts`, called by `postShipment`), called only for Sales Order shipments, inside the post transaction. Warranty months come from the oldest `itemUnitSalePrice` row of the item. A reshipped serial keeps its `source`.
-- Void of a Sales Order shipment sets every asset with that `shipmentId` to Returned; it does not restore the previous customer. Voiding an RMA return shipment changes no asset.
+- Void of a Sales Order shipment sets every asset with that `shipmentId` to Returned; it does not restore the previous customer.
+- RMA Service or Warranty lines: the receipt (`createServiceJobsForReturn`, `inventory/receipt-service-return.ts`) finds or creates the asset of each received serial and sets it At Depot; its void sets At Depot assets back In Service. The ship-back (`shipServiceUnits`, `inventory/shipment-service-return.ts`) sets the asset In Service at the RMA's site with the new `shipmentId`; its void sets it At Depot. `scrapServiceReturnLine` sets it Returned.
 - Manual registration: `registerCustomerAsset` (`service.service.ts`, behind the operation of the same name) inserts a Consumed `trackedEntity` (source document Item) and the asset with source Manual.
-- Warranty status: `warrantyStatus(asset, today)` in `service.models.ts`.
+- Warranty status: `warrantyStatus(asset, today)` in `@carbon/utils` (`packages/utils/src/service-job.ts`), re-exported by `service.models.ts`. `suggestCoverage` uses the same dates to suggest Warranty coverage.
 - Routes: list `/x/service-jobs/assets`, register `/x/service-jobs/assets/new`, page `/x/customer-asset/<id>`, customer tab `/x/customer/<id>/assets`.
 </AgentContext>

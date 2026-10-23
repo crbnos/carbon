@@ -51,6 +51,8 @@
 - 2026-10-23: Task 32 committed (`eaa2e345ff`): MES My Time shows service job cards. The day total writes with the same rules and messages as the ERP. A throwaway script exercised the write path against the local database (9 cases), then cleaned up.
 - 2026-10-23: Task 35 committed. A charge's "Paid By" links a reimbursement line or a supplier invoice line. The cost is the line amount ÷ quantity, and no journal posts from the job. The database test covers $180 at quantity 2 → 90 each with no new journal, a refusal on another job, and unlinking.
   - Checks: the erp typecheck passes. ERP unit tests pass (715). Conformance passes. The permission tests pass. `check:manifest` is current (1747).
+- 2026-10-23: Full repo test pass (`pnpm run test`, database env loaded): 34 of 34 packages pass. The `@carbon/ee` pegging test that failed earlier passes in this run.
+- 2026-10-23: Task 36 committed. New rule `.claude/rules/service-jobs.md`, new `modules/service/AGENTS.md`, new reference page `service-jobs.mdx`. Updated: root AGENTS router row, production, sales and inventory AGENTS files, onboarding and shipments rules, `rmas.mdx`, `customer-assets.mdx`, glossary (service job, coverage, return type), docs sidebar. `docs` typecheck and the link check pass. The new page has 2 screenshot slots to fill.
 
 ## Decisions made without Brad
 

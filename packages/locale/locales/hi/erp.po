@@ -22809,6 +22809,9 @@ msgstr "स्टॉक में वापस करें"
 msgid "Return to Stock"
 msgstr ""
 
+msgid "Return type"
+msgstr ""
+
 msgid "Return Type"
 msgstr ""
 
@@ -30388,6 +30391,9 @@ msgstr "बैकअप में क्या शामिल है"
 msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
 msgstr "एक किराये की इकाई की दर किस अवधि के लिए ली जाती है: एक दिन, एक सप्ताह, या एक महीना। प्रत्येक बिलिंग अवधि उन संपूर्ण दिनों, सप्ताहों या महीनों को बिल करती है जिन्हें यह कवर करता है, सिवाय मासिक दर के एक कैलेंडर-महीने की सहमति पर, जो आंशिक महीने के लिए आनुपातिक है।"
 
+msgid "What an RMA line's unit comes back for: Return to Stock is restocked at its original cost, while Return for Service and Return for Warranty stay the customer's and open a service job."
+msgstr ""
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "यह किस विफलता श्रेणी का है — यांत्रिक, विद्युत, सॉफ्टवेयर, ऑपरेटर, सामग्री, आदि; विफलता-मोड पेरेटो रिपोर्ट में संक्षेपित होता है ताकि श्रेणी विभाजन सार्थक हो।"
 
@@ -30766,6 +30772,9 @@ msgstr "यह कौन-सा ऑपरेशन था?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "जबकि यह रखरखाव कार्य खुला है, वर्क सेंटर शेड्यूल के लिए अनुपलब्ध है (योजनाबद्ध समाप्ति समय तक, या जब तक रखरखाव कार्य पूर्ण नहीं हो जाता)।"
 
+msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "कौन अनुमोदन कर सकता है"
 
@@ -30984,6 +30993,9 @@ msgstr "कार्य निर्देश"
 
 msgid "Work location"
 msgstr "काम का स्थान"
+
+msgid "Work on one customer unit, at the depot or at the customer's site, with one coverage, a time list, parts and charges, and an estimate for billable work. An RMA's Return for Service or Return for Warranty line opens one when its receipt posts."
+msgstr ""
 
 msgid "Work package"
 msgstr "कार्य पैकेज"

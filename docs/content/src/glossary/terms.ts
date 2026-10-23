@@ -2627,6 +2627,21 @@ export const terms = {
     definition: msg`A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew.`,
     href: "/docs/reference/contracts"
   },
+  "service-job": {
+    term: msg`Service job`,
+    definition: msg`Work on one customer unit, at the depot or at the customer's site, with one coverage, a time list, parts and charges, and an estimate for billable work. An RMA's Return for Service or Return for Warranty line opens one when its receipt posts.`,
+    href: "/docs/reference/service-jobs"
+  },
+  "service-coverage": {
+    term: msg`Coverage`,
+    definition: msg`Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced.`,
+    href: "/docs/reference/service-jobs#coverage-and-cost"
+  },
+  "return-type": {
+    term: msg`Return type`,
+    definition: msg`What an RMA line's unit comes back for: Return to Stock is restocked at its original cost, while Return for Service and Return for Warranty stay the customer's and open a service job.`,
+    href: "/docs/reference/rmas#return-types"
+  },
   "time-and-materials": {
     term: msg`Time & Materials`,
     definition: msg`A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %.`,

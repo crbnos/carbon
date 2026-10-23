@@ -22809,6 +22809,9 @@ msgstr "退回到库存"
 msgid "Return to Stock"
 msgstr ""
 
+msgid "Return type"
+msgstr ""
+
 msgid "Return Type"
 msgstr ""
 
@@ -30388,6 +30391,9 @@ msgstr "备份包含的内容"
 msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
 msgstr "租赁单位的费率按日、周或月计费。每个计费期内对其涵盖的完整天数、周数或月数进行计费，但日历月协议中的月费率除外，该费率按部分月份进行比例分配。"
 
+msgid "What an RMA line's unit comes back for: Return to Stock is restocked at its original cost, while Return for Service and Return for Warranty stay the customer's and open a service job."
+msgstr ""
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "这是什么类别的故障 — 机械、电气、软件、操作员、原材料等；汇总到故障模式帕累托报告中，以便类别细分有意义。"
 
@@ -30766,6 +30772,9 @@ msgstr "这是哪个工序?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "当此派遣打开时，工作中心对计划不可用（直到计划结束时间或派遣完成）。"
 
+msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "谁可以审批"
 
@@ -30984,6 +30993,9 @@ msgstr "作业指导书"
 
 msgid "Work location"
 msgstr "工作地点"
+
+msgid "Work on one customer unit, at the depot or at the customer's site, with one coverage, a time list, parts and charges, and an estimate for billable work. An RMA's Return for Service or Return for Warranty line opens one when its receipt posts."
+msgstr ""
 
 msgid "Work package"
 msgstr "工作包"

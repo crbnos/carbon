@@ -22809,6 +22809,9 @@ msgstr "재고로 반환"
 msgid "Return to Stock"
 msgstr ""
 
+msgid "Return type"
+msgstr ""
+
 msgid "Return Type"
 msgstr ""
 
@@ -30388,6 +30391,9 @@ msgstr "백업에 포함된 내용"
 msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
 msgstr "렌탈 단위의 요금이 청구되는 단위: 일, 주 또는 월. 각 청구 기간은 포함하는 전체 일, 주 또는 월을 청구하며, 달력 월 계약의 월간 요금은 부분 월에 대해 배분됩니다."
 
+msgid "What an RMA line's unit comes back for: Return to Stock is restocked at its original cost, while Return for Service and Return for Warranty stay the customer's and open a service job."
+msgstr ""
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "이 고장의 범주(기계적, 전기적, 소프트웨어, 작업자, 자재 등)로, 고장 모드 파레토 보고서에 집계되어 범주별 분석이 의미를 갖도록 합니다."
 
@@ -30766,6 +30772,9 @@ msgstr "어떤 공정이었나요?"
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "이 유지보수 지시가 열려 있는 동안 작업장은 일정에 사용할 수 없습니다(계획된 종료 시간까지 또는 지시가 완료될 때까지)."
 
+msgid "Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced."
+msgstr ""
+
 msgid "Who Can Approve"
 msgstr "승인 가능자"
 
@@ -30984,6 +30993,9 @@ msgstr "작업 표준서"
 
 msgid "Work location"
 msgstr "작업 사업장"
+
+msgid "Work on one customer unit, at the depot or at the customer's site, with one coverage, a time list, parts and charges, and an estimate for billable work. An RMA's Return for Service or Return for Warranty line opens one when its receipt posts."
+msgstr ""
 
 msgid "Work package"
 msgstr "작업 패키지"

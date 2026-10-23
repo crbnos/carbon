@@ -437,6 +437,42 @@ The full decision log, with the code each convention was copied from, is
 `.ai/specs/2026-09-22-demo-data-completeness.md` and
 `.ai/specs/2026-09-23-demo-data-screen-coverage.md` → Autonomous Decisions.
 
+## Service jobs
+
+Every dataset seeds service work (`SalesData` in `types.ts`, tier 04
+`seedServiceJobs`; see `.claude/rules/service-jobs.md`):
+
+- `sales.serviceLaborItem` — a Service item whose `standardCost` is the cost
+  per hour and whose sale price is the bill rate. Tier 04 sets it as
+  `companySettings.serviceLaborItemId`, so the MES clock and My Time can write
+  time.
+- `sales.customerAssets` — units registered the way `registerCustomerAsset`
+  does it (a Consumed serial, source Manual).
+- `sales.serviceJobs` (`ServiceJobSpec`) — 5 per dataset: one Open from an RMA
+  receipt, Awaiting Approval, In Progress, a Completed Warranty job and an
+  Invoiced Billable job, with time (`workdaysBack`, optional clock times),
+  estimate lines and a charge. Completed and Invoiced store each entry's
+  `unitCost`, and tier 09 (`helpers/post-documents.ts`,
+  `serviceJobCompletionJournal`) writes the Posted `'Service Job'` completion
+  journal and sets `completionJournalId`. The Invoiced job's invoice is Draft,
+  every line carrying `serviceJobId`: tier 09's invoice posting takes Part lines
+  only.
+- Open jobs carry `assignments` (`ServiceJobAssignmentSpec`, a weekday of the
+  anchor's Monday-start week, the applying user), 4 per dataset; one open job is
+  left unassigned so the dispatch grid's backlog has a row.
+- An In Progress RMA with a received Return for Service line (no ledger row) and
+  its job (`salesReturnLine`).
+
+No part is issued to a seeded job: an issue needs the `issue` posting's ledger,
+cost layer and journal rows, which the tiers do not model. The validator checks
+the rest (`serviceJobs` in `validate.ts`): Warranty coverage only on an asset in
+warranty, one job per RMA line, estimates on Billable jobs only, time before
+completion, a balanced completion journal in an Open period, at least one
+assignment and at least one unassigned open job. The wipe voids `'Service Job'`
+journals like any other document source (`DOCUMENT_JOURNAL_SOURCES`). Floors:
+`serviceJob` 5, `serviceJobTime` 8, `serviceJobEstimateLine` 4,
+`serviceJobItem` 1, `serviceJobAssignment` 4.
+
 ## Part thumbnails ship with the app
 
 Every seeded item gets `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`,
