@@ -16785,6 +16785,9 @@ msgstr "新しい問題"
 msgid "New Item Group"
 msgstr "新しいアイテムグループ"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Kanban"
 msgstr "新規かんばん"
 

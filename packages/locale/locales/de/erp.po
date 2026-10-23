@@ -16785,6 +16785,9 @@ msgstr "Neuer Vorfall"
 msgid "New Item Group"
 msgstr "Neue Artikelgruppe"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Kanban"
 msgstr "Neuer Kanban"
 

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Button,
   Copy,
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ import {
   LuChevronRight,
   LuCornerDownRight,
   LuEllipsisVertical,
+  LuFactory,
   LuLink,
   LuListOrdered,
   LuPackageMinus,
@@ -71,6 +73,7 @@ import { ElementTimeAndMaterials } from "./ElementTimeAndMaterials";
 import { ElementTypeBlock, hasTypeBlock } from "./ElementTypeBlock";
 import { IssueMaterialModal } from "./IssueMaterialModal";
 import { LogTimeModal } from "./LogTimeModal";
+import { NewJobModal } from "./NewJobModal";
 
 type ElementViewProps = ProjectElementPage & {
   projectId: string;
@@ -160,6 +163,7 @@ export function ElementView({
     amount?: number;
   } | null>(null);
   const [costView, setCostView] = useState<CostView | null>(null);
+  const [creatingJob, setCreatingJob] = useState(false);
 
   const isClosed = project?.status === "Closed";
   const canUpdate = permissions.can("update", routes.module) && !isClosed;
@@ -180,6 +184,10 @@ export function ElementView({
   const canChargeCost =
     usesProjectCharges && canCharge && permissions.can("update", "projects");
   const canAddChild = canCreate && element.type !== "Parameter";
+  // New Job: a job for a Make part, charged to this element, with a plan
+  // line added for it. A project's, not a service order's.
+  const showNewJob = isProject && element.type !== "Parameter";
+  const canCreateJob = canCharge && permissions.can("create", "production");
   // After the lock milestone completes, the plan changes only through a
   // Draft change request: "Add line" is off, with the Plan page's reason.
   const lockMilestone = milestones.find(
@@ -356,6 +364,17 @@ export function ElementView({
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <Copy text={element.readableId} />
+          {showNewJob && (
+            <Button
+              variant="secondary"
+              size="sm"
+              leftIcon={<LuFactory />}
+              isDisabled={!canCreateJob}
+              onClick={() => setCreatingJob(true)}
+            >
+              <Trans>New Job</Trans>
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -634,6 +653,14 @@ export function ElementView({
           defaultItemId={issuing.itemId}
           defaultQuantity={issuing.quantity}
           onClose={() => setIssuing(null)}
+        />
+      )}
+      {creatingJob && (
+        <NewJobModal
+          projectId={projectId}
+          element={element}
+          defaultLocationId={project?.locationId}
+          onClose={() => setCreatingJob(false)}
         />
       )}
       {charging && (

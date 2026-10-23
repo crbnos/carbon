@@ -3351,6 +3351,19 @@ export const createJobFromMaterialValidator = z.object({
 });
 
 /**
+ * New Job on a task: a job for a Make part with no plan line yet. The
+ * action adds the plan line, so the job's card shows on the task.
+ */
+export const newProjectJobValidator = z.object({
+  itemId: z.string().min(1, { message: "Part is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be greater than 0" })
+  ),
+  dueDate: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" })
+});
+
+/**
  * The quantity a plan-line material still needs: planned less issued, never
  * below zero.
  */

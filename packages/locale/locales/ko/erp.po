@@ -16785,6 +16785,9 @@ msgstr "새 이슈"
 msgid "New Item Group"
 msgstr "새 품목 그룹"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Kanban"
 msgstr "새 칸반"
 

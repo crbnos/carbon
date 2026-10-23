@@ -88,6 +88,7 @@ import {
   logTimeValidator,
   manualPegSupplyTypes,
   NEW_PURCHASE_ORDER,
+  newProjectJobValidator,
   placeInServiceValidator,
   planningGroupExcessRules,
   planningGroupPriorityRules,
@@ -3455,6 +3456,60 @@ export const createJobFromMaterial = defineServiceFn({
         material.data.unitOfMeasureCode ??
         material.data.item?.unitOfMeasureCode ??
         null,
+      customerContractLineId
+    });
+  }
+});
+
+/**
+ * Create a job for a part on a task, with no plan line yet.
+ *
+ * @remarks
+ * New Job on a task: a job for a part the company makes, charged to the
+ * element. It adds the element's Make to Order plan line first, so the job's
+ * card shows on the task; that refuses on a locked plan. An Expense or
+ * Contract project consumes the job; a Capitalize project builds the
+ * element's asset under construction. When one part CLIN of a project
+ * contract has the same item and bills this element, the job builds that
+ * CLIN's part.
+ */
+export const createProjectElementJob = defineServiceFn({
+  input: newProjectJobValidator.extend({
+    projectId: z.string(),
+    projectElementId: z.string()
+  }),
+  permission: { create: "production", view: "projects" },
+  async run(
+    ctx,
+    { projectId, projectElementId, itemId, quantity, dueDate, locationId }
+  ) {
+    const companyId = ctx.company.id;
+    const item = await ctx.asCaller.supabase
+      .from("item")
+      .select("id, type, replenishmentSystem")
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (item.error || !item.data) {
+      return ctx.error("notFound", "The part could not be found", item.error);
+    }
+    if (item.data.type !== "Part" || item.data.replenishmentSystem === "Buy") {
+      return ctx.error("rule", "Only a part you make gets a job");
+    }
+
+    const customerContractLineId = await service.findPartContractLine(
+      ctx.asSystem.pg,
+      { companyId, projectId, elementId: projectElementId, itemId }
+    );
+
+    return service.createProjectJob(ctx, {
+      projectId,
+      elementId: projectElementId,
+      itemId,
+      quantity,
+      dueDate,
+      locationId,
+      materialId: null,
       customerContractLineId
     });
   }

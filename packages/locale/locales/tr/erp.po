@@ -16785,6 +16785,9 @@ msgstr "Yeni Sorun"
 msgid "New Item Group"
 msgstr "Yeni Ürün Grubu"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Kanban"
 msgstr "Yeni Kanban"
 

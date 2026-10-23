@@ -16785,6 +16785,9 @@ msgstr "Новая проблема"
 msgid "New Item Group"
 msgstr "Новая группа товаров"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Kanban"
 msgstr "Новый канбан"
 

@@ -49,7 +49,7 @@
 - [x] Task 40: Add parts in the amend modal
 - [ ] Task 41: Link shop time to its production event and job operation
 - [ ] Task 42: Show the job and operation on My Time and the MES timesheet
-- [ ] Task 43: Add New Job on the task
+- [x] Task 43: Add New Job on the task
 - [ ] Task 44: Docs, translations, self-review and push
 
 ## Dependencies

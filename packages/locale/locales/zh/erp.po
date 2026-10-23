@@ -16785,6 +16785,9 @@ msgstr "新问题"
 msgid "New Item Group"
 msgstr "新建项目组"
 
+msgid "New Job"
+msgstr ""
+
 msgid "New Kanban"
 msgstr "新看板"
 
