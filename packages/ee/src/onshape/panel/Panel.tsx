@@ -36,7 +36,7 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { datetime, formatDate } from "@carbon/utils";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -44,6 +44,7 @@ import {
   LuChevronRight,
   LuCircleCheck,
   LuCircleDashed,
+  LuCopy,
   LuInfo,
   LuListChecks,
   LuLock,
@@ -169,7 +170,12 @@ export type PanelAssemblyStatus = {
 };
 
 /** forbidden: a Retry cannot fix it, so it renders as a warning with no Retry. */
-type LoadFailure = { message: string; forbidden: boolean };
+type LoadFailure = {
+  message: string;
+  forbidden: boolean;
+  /** What Carbon and Onshape answered, for the Details section. */
+  diagnostics?: unknown;
+};
 
 // refreshing / refreshFailure: a re-read keeps the rows on screen; only a first
 // read shows a skeleton.
@@ -193,7 +199,12 @@ type PanelStatusState =
       refreshing?: boolean;
       refreshFailure?: LoadFailure;
     }
-  | { status: "error"; message: string; forbidden?: boolean };
+  | {
+      status: "error";
+      message: string;
+      forbidden?: boolean;
+      diagnostics?: unknown;
+    };
 
 type PanelReleasesState =
   | { status: "idle" }
@@ -206,7 +217,12 @@ type PanelReleasesState =
       refreshing?: boolean;
       refreshFailure?: LoadFailure;
     }
-  | { status: "error"; message: string; forbidden?: boolean };
+  | {
+      status: "error";
+      message: string;
+      forbidden?: boolean;
+      diagnostics?: unknown;
+    };
 
 /**
  * push: the current element. releases: the whole document, so it shows on an
@@ -254,7 +270,12 @@ type PanelFieldsState =
       /** Per-property 422 errors, keyed by onshapePropertyId. */
       fieldErrors: Record<string, string[]>;
     }
-  | { status: "error"; message: string; forbidden?: boolean };
+  | {
+      status: "error";
+      message: string;
+      forbidden?: boolean;
+      diagnostics?: unknown;
+    };
 
 // Every push reads these four itself: the Fields page shows them as fixed rows, never as a mapping.
 const FIXED_PROPERTY_NAMES = new Set([
@@ -329,12 +350,16 @@ type PlanResponse<P> = {
   planId: string;
   expiresAt: string;
   plan: P;
+  /** plan-release only: what Onshape returned for the BOMs it couldn't read. */
+  diagnostics?: unknown;
   /** plan-release only: assemblies whose BOM could not be read. */
   warnings?: unknown;
 };
 
 type PanelErrorResponse = {
   error: string;
+  /** What Carbon asked Onshape and what it answered, for the Details section. */
+  diagnostics?: unknown;
   fieldErrors?: ApplyFieldError[];
   /** too-large: the panel offers a push of the top level only. */
   code?: "too-large";
@@ -427,6 +452,8 @@ type PushOutcome = {
   text: string;
   skipped: string[];
   errors: string[];
+  /** What Carbon and Onshape answered, for the Details section. */
+  diagnostics?: unknown;
   /** Done, but worth knowing: a new Draft version, lines taken over. */
   notes?: string[];
 };
@@ -480,8 +507,8 @@ function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
   return { text: releaseResultText(s), skipped: s.skipped, errors: s.errors };
 }
 
-function failedOutcome(message: string): PushOutcome {
-  return { text: "", skipped: [], errors: [message] };
+function failedOutcome(message: string, diagnostics?: unknown): PushOutcome {
+  return { text: "", skipped: [], errors: [message], diagnostics };
 }
 
 function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
@@ -542,6 +569,9 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
                 <li key={problem}>{problem}</li>
               ))}
             </ul>
+            {outcome.diagnostics ? (
+              <PanelDiagnostics diagnostics={outcome.diagnostics} />
+            ) : null}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -632,6 +662,134 @@ function CappedWarningList({
   );
 }
 
+/**
+ * The Clipboard API first. Inside Onshape's frame the browser can refuse it
+ * (the frame is not granted clipboard-write), so a selected textarea and
+ * `execCommand("copy")` next, which a click still allows there.
+ */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Refused or unavailable: try the selection fallback.
+  }
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.top = "0";
+  area.style.opacity = "0";
+  document.body.appendChild(area);
+  area.select();
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    area.remove();
+  }
+}
+
+/**
+ * The panel URL parameters a report carries: the ones the action URL asks
+ * Onshape to fill, plus `server`. Raw values, so an unfilled `{$elementId}`
+ * shows; any other parameter is left out.
+ */
+const REPORTED_PANEL_PARAMS = [
+  "documentId",
+  "wv",
+  "wvId",
+  "elementId",
+  "partNumber",
+  "revision",
+  "nodeId",
+  "occurrencePath",
+  "configuration",
+  "companyId",
+  "userId",
+  "locale",
+  "clientId",
+  "server"
+] as const satisfies readonly (keyof OnshapePanelContext | "server")[];
+
+function reportedPanelParams(search: string): Record<string, string> {
+  const params = new URLSearchParams(search);
+  const reported: Record<string, string> = {};
+  for (const name of REPORTED_PANEL_PARAMS) {
+    const value = params.get(name);
+    if (value !== null) reported[name] = value;
+  }
+  return reported;
+}
+
+/**
+ * What Carbon asked Onshape and what it answered, plus the panel's own URL
+ * parameters, so a failure can be reported as it happened. Never a token.
+ */
+function PanelDiagnostics({ diagnostics }: { diagnostics: unknown }) {
+  const [open, setOpen] = useState(false);
+  // The report last copied: a new review's diagnostics read "Copy details" again.
+  const [copiedReport, setCopiedReport] = useState<string | null>(null);
+  // Keyed on content, so a re-render with equal diagnostics keeps capturedAt.
+  const details = JSON.stringify(diagnostics ?? null);
+  const report = useMemo(
+    () =>
+      JSON.stringify(
+        {
+          capturedAt: datetime.timestamp(),
+          carbonHost:
+            typeof window === "undefined" ? null : window.location.host,
+          panel:
+            typeof window === "undefined"
+              ? {}
+              : reportedPanelParams(window.location.search),
+          details: JSON.parse(details) as unknown
+        },
+        null,
+        2
+      ),
+    [details]
+  );
+  const copied = copiedReport === report;
+  const copy = async () => {
+    if (await copyText(report)) {
+      setCopiedReport(report);
+    } else {
+      // Nothing could write the clipboard: show the text to select instead.
+      setOpen(true);
+    }
+  };
+  return (
+    <div className="mt-2 w-full">
+      <HStack spacing={3}>
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0"
+          onClick={() => setOpen((current) => !current)}
+        >
+          {open ? "Hide details" : "Show details"}
+        </Button>
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0"
+          leftIcon={<LuCopy />}
+          onClick={copy}
+        >
+          {copied ? "Copied" : "Copy details"}
+        </Button>
+      </HStack>
+      {open ? (
+        <pre className="mt-1 max-h-64 select-all overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 font-mono text-[11px] text-foreground">
+          {report}
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
 /** stale: a failed Refresh over rows still on screen. */
 function PanelLoadError({
   title,
@@ -663,6 +821,9 @@ function PanelLoadError({
         {failure.message}
         {stale ? (
           <span className="mt-1 block">Showing what was loaded before.</span>
+        ) : null}
+        {failure.diagnostics ? (
+          <PanelDiagnostics diagnostics={failure.diagnostics} />
         ) : null}
       </AlertDescription>
       {onRetry ? (
@@ -772,7 +933,11 @@ export function OnshapePanel({
     async (token: string) => {
       if (!canLoadParts) return;
       setAssemblyTooLarge(null);
-      const fail = (message: string, forbidden: boolean) =>
+      const fail = (
+        message: string,
+        forbidden: boolean,
+        diagnostics?: unknown
+      ) =>
         setParts((current) =>
           current.status === "ready" ||
           current.status === "ready-assembly" ||
@@ -780,9 +945,9 @@ export function OnshapePanel({
             ? {
                 ...current,
                 refreshing: false,
-                refreshFailure: { message, forbidden }
+                refreshFailure: { message, forbidden, diagnostics }
               }
-            : { status: "error", message, forbidden }
+            : { status: "error", message, forbidden, diagnostics }
         );
       setParts((current) =>
         current.status === "ready" ||
@@ -807,11 +972,12 @@ export function OnshapePanel({
           | { kind: "partstudio"; parts: PanelPartStatus[] }
           | { kind: "assembly"; assembly: PanelAssemblyStatus }
           | { kind: "other" }
-          | { error: string };
+          | { error: string; diagnostics?: unknown };
         if (!response.ok || "error" in body) {
           fail(
             "error" in body ? body.error : `Carbon answered ${response.status}`,
-            response.status === 403
+            response.status === 403,
+            "error" in body ? body.diagnostics : undefined
           );
           return;
         }
@@ -837,15 +1003,19 @@ export function OnshapePanel({
   const loadReleases = useCallback(
     async (token: string) => {
       if (!context.documentId) return;
-      const fail = (message: string, forbidden: boolean) =>
+      const fail = (
+        message: string,
+        forbidden: boolean,
+        diagnostics?: unknown
+      ) =>
         setReleases((current) =>
           current.status === "ready"
             ? {
                 ...current,
                 refreshing: false,
-                refreshFailure: { message, forbidden }
+                refreshFailure: { message, forbidden, diagnostics }
               }
-            : { status: "error", message, forbidden }
+            : { status: "error", message, forbidden, diagnostics }
         );
       setReleases((current) =>
         current.status === "ready"
@@ -857,11 +1027,12 @@ export function OnshapePanel({
         const response = await panelFetch(token, `${paths.releases}?${query}`);
         const body = (await response.json()) as
           | { releases: PanelRelease[]; releaseManagementAvailable?: boolean }
-          | { error: string };
+          | { error: string; diagnostics?: unknown };
         if (!response.ok || "error" in body) {
           fail(
             "error" in body ? body.error : `Carbon answered ${response.status}`,
-            response.status === 403
+            response.status === 403,
+            "error" in body ? body.diagnostics : undefined
           );
           return;
         }
@@ -966,7 +1137,8 @@ export function OnshapePanel({
             failedOutcome(
               "error" in body
                 ? body.error
-                : `Carbon answered ${response.status}`
+                : `Carbon answered ${response.status}`,
+              "error" in body ? body.diagnostics : undefined
             )
           );
           return;
@@ -1032,7 +1204,8 @@ export function OnshapePanel({
             failedOutcome(
               "error" in body
                 ? body.error
-                : `Carbon answered ${response.status}`
+                : `Carbon answered ${response.status}`,
+              "error" in body ? body.diagnostics : undefined
             )
           );
           return;
@@ -1078,7 +1251,8 @@ export function OnshapePanel({
             [releaseId]: failedOutcome(
               "error" in body
                 ? body.error
-                : `Carbon answered ${response.status}`
+                : `Carbon answered ${response.status}`,
+              "error" in body ? body.diagnostics : undefined
             )
           }));
           return;
@@ -1089,7 +1263,8 @@ export function OnshapePanel({
             expiresAt: body.expiresAt,
             scope: documentScope,
             plan: body.plan,
-            warnings: normalizeWarnings(body.warnings)
+            warnings: normalizeWarnings(body.warnings),
+            diagnostics: body.diagnostics
           })
         );
       } catch (error) {
@@ -1280,16 +1455,20 @@ export function OnshapePanel({
       if (!canLoadParts) return;
       // A landing commits only while the page still waits for this read: a move to
       // another element leaves `closed`, which the answer must not undo.
-      const fail = (message: string, forbidden: boolean) =>
+      const fail = (
+        message: string,
+        forbidden: boolean,
+        diagnostics?: unknown
+      ) =>
         setFields((current) =>
           current.status === "ready" && current.refreshing
             ? {
                 ...current,
                 refreshing: false,
-                refreshFailure: { message, forbidden }
+                refreshFailure: { message, forbidden, diagnostics }
               }
             : current.status === "loading"
-              ? { status: "error", message, forbidden }
+              ? { status: "error", message, forbidden, diagnostics }
               : current
         );
       setFields((current) =>
@@ -1307,11 +1486,12 @@ export function OnshapePanel({
         const response = await panelFetch(token, `${paths.fields}?${query}`);
         const body = (await response.json()) as
           | PanelFieldsData
-          | { error: string };
+          | { error: string; diagnostics?: unknown };
         if (!response.ok || "error" in body) {
           fail(
             "error" in body ? body.error : `Carbon answered ${response.status}`,
-            response.status === 403
+            response.status === 403,
+            "error" in body ? body.diagnostics : undefined
           );
           return;
         }
@@ -2109,7 +2289,12 @@ function PartsSection({
         refreshing?: boolean;
         refreshFailure?: LoadFailure;
       }
-    | { status: "error"; message: string; forbidden?: boolean };
+    | {
+        status: "error";
+        message: string;
+        forbidden?: boolean;
+        diagnostics?: unknown;
+      };
   canPush: boolean;
   pushing: Set<string> | null;
   locked: boolean;
@@ -2162,7 +2347,11 @@ function PartsSection({
       {parts.status === "error" ? (
         <PanelLoadError
           title="Couldn't load part status"
-          failure={{ message: parts.message, forbidden: !!parts.forbidden }}
+          failure={{
+            message: parts.message,
+            forbidden: !!parts.forbidden,
+            diagnostics: parts.diagnostics
+          }}
           onRetry={onRefresh}
         />
       ) : null}
@@ -2300,7 +2489,8 @@ function ReleasesSection({
           title="Couldn't load releases"
           failure={{
             message: releases.message,
-            forbidden: !!releases.forbidden
+            forbidden: !!releases.forbidden,
+            diagnostics: releases.diagnostics
           }}
           onRetry={onRefresh}
         />
@@ -2521,7 +2711,11 @@ function FieldsSection({
         {header}
         <PanelLoadError
           title="Couldn't load properties"
-          failure={{ message: state.message, forbidden: !!state.forbidden }}
+          failure={{
+            message: state.message,
+            forbidden: !!state.forbidden,
+            diagnostics: state.diagnostics
+          }}
           onRetry={onRefresh}
         />
       </VStack>
@@ -4607,6 +4801,9 @@ function ReleaseReviewSection({
             <p className="mt-1">
               Their BOM lines stay as they are. Review again to retry.
             </p>
+            {review.diagnostics ? (
+              <PanelDiagnostics diagnostics={review.diagnostics} />
+            ) : null}
           </AlertDescription>
         </Alert>
       ) : null}

@@ -94,8 +94,9 @@ export {
   isOnshapeIntegrationId,
   ONSHAPE_INTEGRATION_IDS
 } from "./onshape/lib/connection";
-export type { OnshapeBomNode } from "./onshape/panel/bom";
+export type { BomDiagnostics, OnshapeBomNode } from "./onshape/panel/bom";
 export {
+  describeBomPayload,
   flattenBomTree,
   metadataProperty,
   missingBomColumnsMessage,

@@ -244,6 +244,66 @@ export function missingBomColumnsMessage(missingColumns: string[]): string {
   }. Add ${plural ? "them" : "it"} back to the assembly's BOM table in Onshape, then try again.`;
 }
 
+/** At most this many headers go into a diagnostics report. */
+const DIAGNOSTIC_HEADER_LIMIT = 60;
+
+/**
+ * The shape of a BOM response and its column headers, for the panel's Details
+ * when a BOM can't be read. Never a cell value.
+ */
+export type BomDiagnostics = {
+  /** Top-level keys of the response. */
+  payloadKeys: string[];
+  /** "array", "missing", or what `headers` was instead. */
+  headersType: string;
+  headerCount: number;
+  headers: {
+    id: string | null;
+    name: string | null;
+    propertyName: string | null;
+  }[];
+  rowCount: number;
+  formatVersion: string | null;
+  templateId: string | null;
+  topLevelAssemblyRow: boolean;
+};
+
+export function describeBomPayload(payload: unknown): BomDiagnostics {
+  const bom =
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
+      : {};
+  const headers = bom.headers;
+  const text = (value: unknown) =>
+    typeof value === "string" || typeof value === "number"
+      ? String(value)
+      : null;
+  const headerList = Array.isArray(headers) ? headers : [];
+  return {
+    payloadKeys: payload && typeof payload === "object" ? Object.keys(bom) : [],
+    headersType: Array.isArray(headers)
+      ? "array"
+      : headers === undefined
+        ? "missing"
+        : headers === null
+          ? "null"
+          : typeof headers,
+    headerCount: headerList.length,
+    headers: headerList.slice(0, DIAGNOSTIC_HEADER_LIMIT).map((header) => {
+      const h = (header ?? {}) as Record<string, unknown>;
+      return {
+        id: text(h.id),
+        name: text(h.name),
+        propertyName: text(h.propertyName)
+      };
+    }),
+    rowCount: Array.isArray(bom.rows) ? bom.rows.length : 0,
+    formatVersion: text(bom.formatVersion),
+    templateId: text(bom.templateId),
+    topLevelAssemblyRow: !!bom.topLevelAssemblyRow
+  };
+}
+
 export function flattenBomTree(lines: OnshapeBomNode[]): OnshapeBomNode[] {
   const out: OnshapeBomNode[] = [];
   const walk = (list: OnshapeBomNode[]) => {

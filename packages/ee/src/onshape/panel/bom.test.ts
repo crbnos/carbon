@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  describeBomPayload,
   firstOwnAssemblyPart,
   flattenBomTree,
   missingBomColumnsMessage,
@@ -316,5 +317,60 @@ describe("firstOwnAssemblyPart", () => {
     ).toBeNull();
     expect(firstOwnAssemblyPart({})).toBeNull();
     expect(firstOwnAssemblyPart(null)).toBeNull();
+  });
+});
+
+describe("describeBomPayload", () => {
+  it("reports the headers Onshape sent, with their property names", () => {
+    const report = describeBomPayload({
+      formatVersion: "1.0",
+      templateId: "tpl-1",
+      headers: [
+        { id: "h-item", name: "Pos.", propertyName: "item" },
+        { id: "h-qty", name: "Qty", propertyName: "quantity" }
+      ],
+      rows: [row("1", "A-1", 1), row("2", "B-1", 2)],
+      topLevelAssemblyRow: {}
+    });
+    expect(report).toEqual({
+      payloadKeys: [
+        "formatVersion",
+        "templateId",
+        "headers",
+        "rows",
+        "topLevelAssemblyRow"
+      ],
+      headersType: "array",
+      headerCount: 2,
+      headers: [
+        { id: "h-item", name: "Pos.", propertyName: "item" },
+        { id: "h-qty", name: "Qty", propertyName: "quantity" }
+      ],
+      rowCount: 2,
+      formatVersion: "1.0",
+      templateId: "tpl-1",
+      topLevelAssemblyRow: true
+    });
+  });
+
+  it("says when the headers are missing or not a list", () => {
+    expect(describeBomPayload({ rows: [row("1", "A-1", 1)] })).toMatchObject({
+      headersType: "missing",
+      headerCount: 0,
+      rowCount: 1
+    });
+    expect(describeBomPayload({ headers: {}, rows: [] }).headersType).toBe(
+      "object"
+    );
+    expect(describeBomPayload("<html>").payloadKeys).toEqual([]);
+    expect(describeBomPayload(null).headersType).toBe("missing");
+  });
+
+  it("never copies a cell value", () => {
+    const report = describeBomPayload({
+      headers: H,
+      rows: [row("1", "SECRET-PART", 1)]
+    });
+    expect(JSON.stringify(report)).not.toContain("SECRET-PART");
   });
 });

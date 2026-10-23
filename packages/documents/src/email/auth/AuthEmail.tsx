@@ -15,7 +15,11 @@ import {
 import { Button } from "../components/Button";
 import { Logo } from "../components/Logo";
 import { notificationStyles } from "../components/notificationStyles";
-import { EmailThemeProvider, getEmailThemeClasses } from "../components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "../components/Theme";
 
 /**
  * The emails Auth (GoTrue) sends — sign-in, invite, confirmation, password
@@ -58,7 +62,7 @@ export function AuthEmail({
   return (
     <EmailThemeProvider
       preview={<Preview>{preview}</Preview>}
-      additionalHeadContent={<style>{notificationStyles}</style>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}

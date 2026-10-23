@@ -319,7 +319,7 @@ Each row is an action whose logic lives in the route today: it makes two or more
 | `items.material.purchasing.create` | `x+/material+/$itemId.purchasing.new.tsx` | `upsertSupplierPart`; 1 direct write | 68 |
 | `items.methods.get` | `x+/items+/methods+/get.tsx` | `copyItem`, `copyMakeMethod` | 54 |
 | `items.methods.save` | `x+/items+/methods+/save.tsx` | `copyItem`, `copyMakeMethod` | 54 |
-| `items.methods.version.create` | `x+/items+/methods+/version.new.tsx` | `copyMakeMethod`, `upsertMakeMethodVersion` | 73 |
+| `items.methods.version.create` | `x+/items+/methods+/version.new.tsx` | `createMakeMethodVersion` (which copies through `copyMakeMethod`) | 73 |
 | `items.part.create` | `x+/part+/new.tsx` | `upsertPart`; event | 49 |
 | `items.part.purchasing.create` | `x+/part+/$itemId.purchasing.new.tsx` | `upsertSupplierPart`; 1 direct write | 71 |
 | `items.part.sales` | `x+/part+/$itemId.sales.tsx` | `upsertItemRentalRate`, `upsertItemUnitSalePrice` | 74 |
@@ -1175,7 +1175,7 @@ These already exist and a route calls each one directly. Under the pattern they 
 | `upsertConfigurationParameterGroup` | `items.configurationParameterGroup.upsert` |  | 1 | upsert | `items.service.ts` |
 | `upsertConfigurationRule` | `items.configurationRule.upsert` |  | 1 | upsert | `items.service.ts` |
 | `upsertItemSupersession` | `items.itemSupersession.upsert` |  | 1 | upsert | `items.service.ts` |
-| `upsertMakeMethodVersion` | `items.makeMethodVersion.upsert` |  | 1 | upsert | `items.service.ts` |
+| `createMakeMethodVersion` | `items.makeMethodVersion.create` |  | 1 | create | `items.service.ts` |
 | `upsertMethodOperationStepSlide` | `items.methodOperationStepSlide.upsert` |  | 1 | upsert | `items.service.ts` |
 
 </details>

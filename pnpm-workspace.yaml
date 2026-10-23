@@ -59,7 +59,7 @@ overrides:
   tmp: 0.2.7
   turbo-stream: 3.0.0
   valibot: 1.4.2
-  "vite@7": 7.3.7
+  "vite-node>vite": 7.3.7
   "ws@8": 8.21.0
 
 catalog:
