@@ -83,6 +83,13 @@ export const useFormControlContext = () => {
   return ctx;
 };
 
+/**
+ * The FormControl this element sits in, or `null` outside one. For controls
+ * that are also used on their own, such as the select and combobox triggers.
+ */
+export const useOptionalFormControlContext = () =>
+  useContext(FormControlContext);
+
 function useFormControlProvider(props: FormControlContextType) {
   const {
     id: idProp,
@@ -113,6 +120,13 @@ function useFormControlProvider(props: FormControlContextType) {
    */
   const [hasHelpText, setHasHelpText] = useState(false);
 
+  /**
+   * The id of the rendered `FormLabel`, once it is on screen. Controls that
+   * are not labelable elements (the select and combobox triggers) name
+   * themselves with it through `aria-labelledby`.
+   */
+  const [renderedLabelId, setRenderedLabelId] = useState<string>();
+
   // Track whether the form element (e.g, `input`) has focus.
   const [isFocused, setFocus] = useState(false);
 
@@ -141,13 +155,18 @@ function useFormControlProvider(props: FormControlContextType) {
       forwardedRef: ForwardedRef<HTMLLabelElement> | null = null
     ) => ({
       ...props,
-      ref: forwardedRef,
+      ref: mergeRefs(forwardedRef, (node: HTMLLabelElement | null) => {
+        if (!node) return;
+        setRenderedLabelId(node.id);
+      }),
       "data-focus": dataAttr(isFocused),
       "data-disabled": dataAttr(isDisabled),
       "data-invalid": dataAttr(isInvalid),
       "data-readonly": dataAttr(isReadOnly),
       id: props.id !== undefined ? props.id : labelId,
-      htmlFor: id
+      // The field's own id when the caller names it: the form wrappers give
+      // their input `id={name}` and pass `htmlFor={name}`.
+      htmlFor: props.htmlFor ?? id
     }),
     [id, isDisabled, isFocused, isInvalid, isReadOnly, labelId]
   );
@@ -202,6 +221,7 @@ function useFormControlProvider(props: FormControlContextType) {
     setHasFeedbackText,
     hasHelpText,
     setHasHelpText,
+    renderedLabelId,
     id,
     labelId,
     feedbackId,

@@ -16,6 +16,7 @@ import type {
 import { forwardRef } from "react";
 import { LuChevronDown } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
+import { useFormControlLabelledBy } from "./Form/useFormControl";
 import { Modal, ModalContent, ModalTitle } from "./Modal";
 import { cn } from "./utils/cn";
 import { HitArea, useViewport } from "./Viewport";
@@ -370,6 +371,7 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
     // Only mounted on phones: the trigger's `[&>span]:line-clamp-1` would
     // otherwise un-hide the hit-area span on desktop.
     const { isPhone } = useViewport();
+    const labelledBy = useFormControlLabelledBy(props);
     return (
       <button
         ref={ref}
@@ -382,6 +384,7 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
           className
         )}
         {...props}
+        aria-labelledby={labelledBy}
       >
         {asButton && isPhone && <HitArea />}
         {children}

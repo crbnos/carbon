@@ -5,7 +5,10 @@
 import { ariaAttr } from "../utils/dom";
 import { callAllHandlers } from "../utils/function";
 import type { FormControlOptions } from "./FormControl";
-import { useFormControlContext } from "./FormControl";
+import {
+  useFormControlContext,
+  useOptionalFormControlContext
+} from "./FormControl";
 
 export interface UseFormControlProps<T extends HTMLElement>
   extends FormControlOptions {
@@ -90,4 +93,20 @@ export function useFormControlProps<T extends HTMLElement>(
     onFocus: callAllHandlers(field?.onFocus, onFocus),
     onBlur: callAllHandlers(field?.onBlur, onBlur)
   };
+}
+
+/**
+ * `aria-labelledby` for a control that is not a labelable element, such as a
+ * select or combobox trigger: the FormControl's label, unless the caller
+ * already named the control.
+ */
+export function useFormControlLabelledBy(props: {
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+}) {
+  const field = useOptionalFormControlContext();
+  if (props["aria-labelledby"] || props["aria-label"]) {
+    return props["aria-labelledby"];
+  }
+  return field?.renderedLabelId;
 }

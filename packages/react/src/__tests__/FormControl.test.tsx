@@ -1,0 +1,126 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// @vitest-environment jsdom
+
+import type { ReactElement } from "react";
+import { act } from "react";
+import type { Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { CommandTrigger } from "../Command";
+import { FormControl } from "../Form/FormControl";
+import { FormLabel } from "../Form/FormLabel";
+import { Input } from "../Input";
+import { Select, SelectTrigger, SelectValue } from "../Select";
+
+let root: Root | undefined;
+let container: HTMLDivElement | undefined;
+
+beforeAll(() => {
+  (
+    globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+  ).IS_REACT_ACT_ENVIRONMENT = true;
+  // jsdom has no matchMedia; the viewport hook reads it without a provider.
+  window.matchMedia ??= ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false
+  })) as typeof window.matchMedia;
+});
+
+afterEach(() => {
+  act(() => root?.unmount());
+  container?.remove();
+  root = undefined;
+  container = undefined;
+});
+
+function render(ui: ReactElement) {
+  container = document.createElement("div");
+  document.body.appendChild(container);
+  root = createRoot(container);
+  act(() => root!.render(ui));
+  return container;
+}
+
+describe("FormLabel", () => {
+  it("points at the field the caller names", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel htmlFor="partId">Part ID</FormLabel>
+        <Input id="partId" />
+      </FormControl>
+    );
+    const label = view.querySelector("label")!;
+    expect(label.getAttribute("for")).toBe("partId");
+    expect(label.control).toBe(view.querySelector("input"));
+  });
+
+  it("points at the FormControl's id when the caller names none", () => {
+    const view = render(
+      <FormControl id="partId">
+        <FormLabel>Part ID</FormLabel>
+        <Input id="partId" />
+      </FormControl>
+    );
+    expect(view.querySelector("label")!.getAttribute("for")).toBe("partId");
+  });
+});
+
+describe("select and combobox triggers", () => {
+  it("take their name from the FormControl's label", () => {
+    const view = render(
+      <>
+        <FormControl>
+          <FormLabel htmlFor="customerId">Customer</FormLabel>
+          <CommandTrigger role="combobox">Select</CommandTrigger>
+        </FormControl>
+        <FormControl>
+          <FormLabel htmlFor="unitOfMeasureCode">Unit</FormLabel>
+          <Select>
+            <SelectTrigger>
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+          </Select>
+        </FormControl>
+      </>
+    );
+    const labels = view.querySelectorAll("label");
+    const triggers = view.querySelectorAll('[role="combobox"]');
+    expect(triggers).toHaveLength(2);
+    expect(triggers[0]!.getAttribute("aria-labelledby")).toBe(labels[0]!.id);
+    expect(triggers[1]!.getAttribute("aria-labelledby")).toBe(labels[1]!.id);
+  });
+
+  it("keep a name the caller gave them", () => {
+    const view = render(
+      <FormControl>
+        <FormLabel>Customer</FormLabel>
+        <CommandTrigger role="combobox" aria-label="Pick a customer">
+          Select
+        </CommandTrigger>
+      </FormControl>
+    );
+    const trigger = view.querySelector('[role="combobox"]')!;
+    expect(trigger.getAttribute("aria-label")).toBe("Pick a customer");
+    expect(trigger.hasAttribute("aria-labelledby")).toBe(false);
+  });
+
+  it("are not labelled when the FormControl has no label", () => {
+    const view = render(
+      <FormControl>
+        <CommandTrigger role="combobox">Select</CommandTrigger>
+      </FormControl>
+    );
+    expect(
+      view.querySelector('[role="combobox"]')!.hasAttribute("aria-labelledby")
+    ).toBe(false);
+  });
+});

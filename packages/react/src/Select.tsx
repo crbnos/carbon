@@ -15,6 +15,7 @@ import {
   LuChevronsUpDown,
   LuChevronUp
 } from "react-icons/lu";
+import { useFormControlLabelledBy } from "./Form/useFormControl";
 import { compactPart } from "./MenuSheet";
 import {
   SelectSheetContent,
@@ -82,6 +83,7 @@ const SelectTrigger = forwardRef<
   SelectTriggerProps
 >(({ size, className, children, hideIcon, inline, ...props }, ref) => {
   const { isPhone } = useViewport();
+  const labelledBy = useFormControlLabelledBy(props);
   const Trigger = isPhone ? SelectSheetTrigger : SelectPrimitive.Trigger;
   const icon = (
     <LuChevronsUpDown className="h-4 w-4 flex-shrink-0 opacity-50" />
@@ -91,6 +93,7 @@ const SelectTrigger = forwardRef<
       ref={ref}
       className={cn(!inline && selectTriggerVariants({ size }), className)}
       {...props}
+      aria-labelledby={labelledBy}
     >
       {children}
       {!hideIcon && !inline ? (
