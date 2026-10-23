@@ -8104,6 +8104,9 @@ msgstr "得意先担当者"
 msgid "Customer contract"
 msgstr "得意先契約"
 
+msgid "Customer contract line"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "得意先デポジット"
 

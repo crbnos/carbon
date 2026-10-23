@@ -33,7 +33,13 @@ export const TABLE_RENAMES: Record<string, string | null> = {
   // used — so a pre-rename backup carries only their empty shells. The
   // readable-id / parent column moved with them (cardTransactionId → chargeId).
   cardTransaction: "charge",
-  cardTransactionLine: "chargeLine"
+  cardTransactionLine: "chargeLine",
+  // Dropped 2026-10-23 with the old field-service module (service orders,
+  // visits and installed components; 20261023065804). Service jobs replace
+  // it with new tables; nothing carries over.
+  serviceOrder: null,
+  serviceVisit: null,
+  customerAssetComponent: null
 };
 
 /**

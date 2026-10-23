@@ -8104,6 +8104,9 @@ msgstr "ग्राहक संपर्क"
 msgid "Customer contract"
 msgstr "ग्राहक अनुबंध"
 
+msgid "Customer contract line"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "ग्राहक जमा"
 

@@ -8104,6 +8104,9 @@ msgstr "Müşteri ilgili kişileri"
 msgid "Customer contract"
 msgstr "Müşteri Sözleşmesi"
 
+msgid "Customer contract line"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "Müşteri depozu"
 

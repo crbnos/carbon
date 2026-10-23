@@ -8104,6 +8104,9 @@ msgstr "고객 담당자"
 msgid "Customer contract"
 msgstr "고객 계약"
 
+msgid "Customer contract line"
+msgstr ""
+
 msgid "Customer deposit"
 msgstr "고객 선금"
 

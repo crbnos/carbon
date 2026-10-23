@@ -12227,9 +12227,7 @@ export function toBuildFromPartArgs(
  * the activities that output a seed (the upstream side, despite its name).
  * `netBuildComponents` decides what is still in the build: a Consume or a
  * Service input not given back by a later Unconsume (the ancestors RPC
- * returns those as the Unconsume's outputs), not scrapped, and not removed
- * from the customer asset by a later service order. One more query per level
- * reads those removals.
+ * returns those as the Unconsume's outputs), and not scrapped.
  */
 async function loadSerialBuildNodes(
   db: Kysely<KyselyDatabase> | KyselyTx,
@@ -12266,35 +12264,18 @@ async function loadSerialBuildNodes(
       )
     ];
     if (activityIds.length === 0) break;
-    // The removal read: components a later service order removed from the
-    // assembly's customer asset (every component row of the pair removed).
-    const [activities, removedRows] = await Promise.all([
-      db
-        .selectFrom("trackedActivity")
-        .select(["id", "type"])
-        .where("id", "in", activityIds)
-        .where("companyId", "=", args.companyId)
-        .execute(),
-      sql<{ assembly: string; component: string }>`
-        SELECT ca."trackedEntityId" AS "assembly", c."trackedEntityId" AS "component"
-        FROM "customerAssetComponent" c
-        JOIN "customerAsset" ca
-          ON ca."id" = c."customerAssetId" AND ca."companyId" = c."companyId"
-        WHERE c."companyId" = ${args.companyId}
-          AND ca."trackedEntityId" = ANY(${ids}::text[])
-          AND c."trackedEntityId" IS NOT NULL
-        GROUP BY ca."trackedEntityId", c."trackedEntityId"
-        HAVING bool_and(c."removedDate" IS NOT NULL)
-      `.execute(db)
-    ]);
+    const activities = await db
+      .selectFrom("trackedActivity")
+      .select(["id", "type"])
+      .where("id", "in", activityIds)
+      .where("companyId", "=", args.companyId)
+      .execute();
     const typeOf = new Map(activities.map((a) => [a.id, a.type]));
     const pairs = netBuildComponents({
       consumed: consumed.rows,
       given: given.rows,
       typeOf,
-      removed: new Set(
-        removedRows.rows.map((row) => `${row.assembly} ${row.component}`)
-      )
+      removed: new Set()
     });
     if (pairs.length === 0) break;
 

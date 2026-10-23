@@ -3199,9 +3199,7 @@ export type BuildTraceRow = {
  * component counts when a Consume activity (made in the factory) or a
  * Service activity (installed by a service order) put it in, and no later
  * Unconsume activity of the same assembly gave it back. A scrapped
- * component is out. So is a component every `customerAssetComponent` row of
- * the assembly's customer asset marks removed (`removed` holds those pairs as
- * `${assembly} ${component}`): a later service order replaced it.
+ * component is out. So is a pair in `removed` (as `${assembly} ${component}`).
  */
 export function netBuildComponents(args: {
   consumed: BuildTraceRow[];

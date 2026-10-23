@@ -8104,6 +8104,9 @@ msgstr "Customer contacts"
 msgid "Customer contract"
 msgstr "Customer contract"
 
+msgid "Customer contract line"
+msgstr "Customer contract line"
+
 msgid "Customer deposit"
 msgstr "Customer deposit"
 

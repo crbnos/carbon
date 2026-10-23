@@ -92,10 +92,9 @@ const managedAttribute = through(
 );
 
 /**
- * A project table. Its project's type decides the module: a Standard project follows
- * projects_* (any employee reads, as before), a Service project service_* (Service
- * projects are the work trees of service orders). `column` names the row's project, or
- * its element with `via: "projectElement"`; `project` itself passes "id".
+ * A project table, governed by projects_* (any employee reads) in its project's company.
+ * `column` names the row's project, or its element with `via: "projectElement"`;
+ * `project` itself passes "id".
  */
 const projectTable = <T extends Table>(
   column = "projectId",
@@ -328,11 +327,6 @@ export const manifest = {
     delete: inCompany("companyId", "sales_delete")
   }),
   customerAsset: company("service"),
-  customerAssetComponent: company("service", {
-    create: false,
-    update: false,
-    delete: false
-  }),
   customerBankAccount: company("accounting", { read: "accounting_view" }),
   customerContact: policies({
     select: or(
@@ -1615,17 +1609,6 @@ export const manifest = {
   searchIndexRegistry: serviceOnly(),
   sequence: company("settings", { read: "settings_view" }),
   service: company("parts"),
-  serviceOrder: company("service"),
-  serviceVisit: company("service", {
-    create: or(
-      and(owner("technicianId"), inCompany("companyId", "employee")),
-      inCompany("companyId", "service_create")
-    ),
-    update: or(
-      and(owner("technicianId"), inCompany("companyId", "employee")),
-      inCompany("companyId", "service_update")
-    )
-  }),
   shift: company("people"),
   shipment: company("inventory", {
     read: anyOf("inventory_view", "sales_view"),

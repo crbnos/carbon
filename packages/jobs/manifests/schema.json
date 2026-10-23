@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261022045258",
+  "schemaVersion": "20261023065804",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-22T15:56:57.148Z",
+  "exportedAt": "2026-10-23T07:07:39.637Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -6168,8 +6168,6 @@
         "lockPlanAfterMilestoneId",
         "nextChangeRequestSequence",
         "nextBaselineSequence",
-        "projectType",
-        "parentProjectId",
         "projectStock",
         "chargeAtReceipt",
         "governmentFurnished",
@@ -6404,7 +6402,8 @@
         "projectElementId",
         "consumeToProject",
         "receiveToProjectStock",
-        "planningGroupId"
+        "planningGroupId",
+        "customerContractLineId"
       ]
     },
     {
@@ -6509,6 +6508,27 @@
       ]
     },
     {
+      "name": "projectExpenseEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "employeeId",
+        "entryDate",
+        "description",
+        "amount",
+        "journalId",
+        "reversalOfId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "reversalReason"
+      ]
+    },
+    {
       "name": "projectLedger",
       "rows": 0,
       "columns": [
@@ -6534,11 +6554,10 @@
         "unallowable",
         "createdBy",
         "createdAt",
-        "coverage",
-        "coverageReason",
         "indirectPoolId",
         "indirectRateType",
-        "burdenFiscalYear"
+        "burdenFiscalYear",
+        "relocatesReceiptCharge"
       ]
     },
     {
@@ -6658,29 +6677,6 @@
         "workHours",
         "isPlaceholder",
         "jobOperationBatchId"
-      ]
-    },
-    {
-      "name": "customerAssetComponent",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "customerAssetId",
-        "itemId",
-        "trackedEntityId",
-        "quantity",
-        "installedDate",
-        "partsWarrantyEndDate",
-        "serviceOrderId",
-        "projectElementId",
-        "projectLedgerId",
-        "removedDate",
-        "removedByServiceOrderId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
       ]
     },
     {
@@ -6917,6 +6913,43 @@
       ]
     },
     {
+      "name": "timesheetEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeId",
+        "entryDate",
+        "projectId",
+        "projectElementId",
+        "laborCategoryId",
+        "hours",
+        "note",
+        "status",
+        "submittedAt",
+        "approvedBy",
+        "approvedAt",
+        "rejectionNote",
+        "costRate",
+        "reversalOfId",
+        "correctionReason",
+        "journalId",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "lateReason",
+        "correctionOfId",
+        "dilutionFactor",
+        "rdActivityRole",
+        "workLocationId",
+        "jobId",
+        "jobOperationId",
+        "productionEventId"
+      ]
+    },
+    {
       "name": "kanban",
       "rows": 0,
       "columns": [
@@ -7094,7 +7127,6 @@
         "quantity",
         "unitPrice",
         "amount",
-        "coverage",
         "status",
         "statusReason",
         "reversalOfId",
@@ -7212,7 +7244,8 @@
         "projectLedgerId",
         "revenueRecognitionScheduleId",
         "amount",
-        "createdAt"
+        "createdAt",
+        "journalId"
       ]
     },
     {
@@ -7236,30 +7269,6 @@
         "updatedAt",
         "jobId",
         "purchaseOrderLineId"
-      ]
-    },
-    {
-      "name": "projectExpenseEntry",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "projectId",
-        "projectElementId",
-        "employeeId",
-        "entryDate",
-        "description",
-        "amount",
-        "coverage",
-        "coverageReason",
-        "serviceVisitId",
-        "journalId",
-        "reversalOfId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "reversalReason"
       ]
     },
     {
@@ -7756,6 +7765,50 @@
       ]
     },
     {
+      "name": "salesInvoice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "invoiceId",
+        "status",
+        "customerId",
+        "customerReference",
+        "invoiceCustomerId",
+        "invoiceCustomerLocationId",
+        "invoiceCustomerContactId",
+        "paymentTermId",
+        "postingDate",
+        "dateIssued",
+        "dateDue",
+        "datePaid",
+        "locationId",
+        "currencyCode",
+        "subtotal",
+        "totalDiscount",
+        "totalAmount",
+        "totalTax",
+        "exchangeRate",
+        "exchangeRateUpdatedAt",
+        "opportunityId",
+        "shipmentId",
+        "assignee",
+        "companyId",
+        "customFields",
+        "internalNotes",
+        "externalNotes",
+        "tags",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "automationHoldReason",
+        "sentAt",
+        "sentTo",
+        "sendError",
+        "customerContractId"
+      ]
+    },
+    {
       "name": "salesInvoiceFundingAllocation",
       "rows": 0,
       "columns": [
@@ -7900,152 +7953,6 @@
       ]
     },
     {
-      "name": "serviceOrder",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "serviceOrderId",
-        "type",
-        "status",
-        "trackedEntityId",
-        "itemId",
-        "customerAssetId",
-        "customerId",
-        "customerLocationId",
-        "customerContactId",
-        "locationId",
-        "customerContractId",
-        "projectId",
-        "serviceTemplateId",
-        "invoiceDetail",
-        "priority",
-        "problem",
-        "resolution",
-        "assignee",
-        "expectedSellingPrice",
-        "abnormalRework",
-        "completedAt",
-        "completedBy",
-        "salesInvoiceId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields",
-        "salesReturnOrderLineId",
-        "capitalizedAmount",
-        "writeDownAmount",
-        "completionJournalId",
-        "completionCostingMethod"
-      ]
-    },
-    {
-      "name": "serviceVisit",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "serviceOrderId",
-        "technicianId",
-        "status",
-        "plannedStart",
-        "plannedEnd",
-        "travelStartedAt",
-        "arrivedAt",
-        "completedAt",
-        "notes",
-        "signaturePath",
-        "signedByName",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
-      "name": "timesheetEntry",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "employeeId",
-        "entryDate",
-        "projectId",
-        "projectElementId",
-        "laborCategoryId",
-        "hours",
-        "note",
-        "status",
-        "submittedAt",
-        "approvedBy",
-        "approvedAt",
-        "rejectionNote",
-        "costRate",
-        "reversalOfId",
-        "correctionReason",
-        "journalId",
-        "postedAt",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "coverage",
-        "coverageReason",
-        "serviceVisitId",
-        "lateReason",
-        "correctionOfId",
-        "dilutionFactor",
-        "rdActivityRole",
-        "workLocationId"
-      ]
-    },
-    {
-      "name": "salesInvoice",
-      "rows": 0,
-      "columns": [
-        "id",
-        "invoiceId",
-        "status",
-        "customerId",
-        "customerReference",
-        "invoiceCustomerId",
-        "invoiceCustomerLocationId",
-        "invoiceCustomerContactId",
-        "paymentTermId",
-        "postingDate",
-        "dateIssued",
-        "dateDue",
-        "datePaid",
-        "locationId",
-        "currencyCode",
-        "subtotal",
-        "totalDiscount",
-        "totalAmount",
-        "totalTax",
-        "exchangeRate",
-        "exchangeRateUpdatedAt",
-        "opportunityId",
-        "shipmentId",
-        "assignee",
-        "companyId",
-        "customFields",
-        "internalNotes",
-        "externalNotes",
-        "tags",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "automationHoldReason",
-        "sentAt",
-        "sentTo",
-        "sendError",
-        "customerContractId",
-        "serviceOrderId"
-      ]
-    },
-    {
       "name": "shipmentFixedAssetLine",
       "rows": 0,
       "columns": [
@@ -8085,7 +7992,10 @@
         "createdBy",
         "updatedAt",
         "updatedBy",
-        "fulfillmentId"
+        "fulfillmentId",
+        "serialNumber",
+        "customerContractInvoiceLineId",
+        "previousInvoiceDate"
       ]
     },
     {

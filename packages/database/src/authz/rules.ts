@@ -121,12 +121,11 @@ export const exists = (
   });
 
 /**
- * The module that governs a project row: a Standard project follows `projects_<action>`
- * (or `standard`, for a read open to any employee), a Service project `service_<action>`.
- * `column` names the row's project; on `project` itself the row's own `projectType` and
- * company decide (`column` is "id"), so the policy never queries the table it guards.
- * With `via: "projectElement"`, `column` names an element and its project decides.
- * The project (and element) must be in the row's own company.
+ * The rule that governs a project row: `projects_<action>` (or `standard`, for a read
+ * open to any employee) in the project's company. `column` names the row's project; on
+ * `project` itself the row's own company decides (`column` is "id"), so the policy never
+ * queries the table it guards. With `via: "projectElement"`, `column` names an element
+ * and its project decides. The project (and element) must be in the row's own company.
  */
 export const projectModule = (
   column: string,
@@ -139,7 +138,7 @@ export const projectModule = (
   pred((table) => {
     const governs = (alias: string | null) => {
       const ref = (name: string) => sql.ref(alias ? `${alias}.${name}` : name);
-      return sql`((${ref("projectType")} = ${sql.lit("Standard")} AND ${belongsTo(ref("companyId"), standard)}) OR (${ref("projectType")} = ${sql.lit("Service")} AND ${belongsTo(ref("companyId"), `service_${action}`)}))`;
+      return belongsTo(ref("companyId"), standard);
     };
     if (table === "project") return governs(null);
     const row = (name: string) => sql.ref(`${table}.${name}`);
