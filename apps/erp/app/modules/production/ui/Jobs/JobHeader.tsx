@@ -232,6 +232,18 @@ const JobHeader = () => {
   const menuItems = (
     <>
       {auditLogTrigger}
+      {["Ready", "In Progress", "Paused"].includes(status ?? "") && (
+        <DropdownMenuItem asChild>
+          <a
+            href={path.to.external.mesJob(jobId)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <DropdownMenuIcon icon={<LuTvMinimalPlay />} />
+            <Trans>Open in MES</Trans>
+          </a>
+        </DropdownMenuItem>
+      )}
       <DropdownMenuSeparator />
       <DropdownMenuItem
         disabled={
@@ -373,23 +385,6 @@ const JobHeader = () => {
                   </Button>
                 </RecordAction>
               )}
-            {["Ready", "In Progress", "Paused"].includes(status ?? "") && (
-              <RecordAction slot="overflow">
-                <Button
-                  leftIcon={<LuTvMinimalPlay />}
-                  variant="secondary"
-                  asChild
-                >
-                  <a
-                    href={path.to.external.mesJob(jobId)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Trans>Open in MES</Trans>
-                  </a>
-                </Button>
-              </RecordAction>
-            )}
             <RecordAction slot="overflow">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
