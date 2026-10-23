@@ -99,6 +99,8 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   sales_deliverRentalUnit: { module: null, actions: [] },
   sales_returnRentalUnit: { module: null, actions: [] },
   sales_sellRentalUnit: { module: null, actions: [] },
+  // A part CLIN's delivery: sales_update AND inventory_create.
+  sales_deliverContractLine: { module: null, actions: [] },
   // The classification override is an accounting decision: its route
   // requires accounting_update.
   sales_classifyRentalUnit: {

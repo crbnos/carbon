@@ -2,9 +2,39 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { linguiWithoutIdQuery } from "@carbon/dev/vite";
+import { lingui } from "@lingui/vite-plugin";
+import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
+function moduleMacrosOnly(plugins: Plugin[]): Plugin[] {
+  return plugins.map((plugin) => {
+    const transform = plugin.transform;
+    if (!transform) return plugin;
+    const handler = typeof transform === "function" ? transform : transform.handler;
+    const skippingComponents: typeof handler = function (code, id, options) {
+      if (/\.tsx(\?|$)/.test(id)) return null;
+      return handler.call(this, code, id, options);
+    };
+    // Keep the plugin's own hook filter: without it the transform runs on
+    // every file, JSON and compiled classes included.
+    return {
+      ...plugin,
+      transform:
+        typeof transform === "function"
+          ? skippingComponents
+          : { ...transform, handler: skippingComponents }
+    };
+  });
+}
+
 export default defineConfig({
+  // Compile Lingui macros in .ts modules as the app does (as the ERP's
+  // config): a service can reach the glossary's `msg` tables. Components
+  // (.tsx) keep their tests' own macro mocks.
+  plugins: [
+    moduleMacrosOnly(linguiWithoutIdQuery(lingui({ macroTransform: true })))
+  ],
   resolve: {
     tsconfigPaths: true
   },
