@@ -31,10 +31,10 @@
 - [ ] Task 22: Add the `Customer Contract` shipment source
 - [ ] Task 23: Add the prototype columns and relax the billing line quantity
 - [ ] Task 24: Let a project contract line name a Part and carry its quantity
-- [ ] Task 25: Never ship stock from a contract invoice line
+- [x] Task 25: Never ship stock from a contract invoice line
 - [ ] Task 26: Add Build on the CLIN and link the plan line's Create Job
 - [x] Task 27: Dropped (spec D30, D33: every prototype job consumes to the project)
-- [ ] Task 28: Show a job as one card on its task
+- [x] Task 28: Show a job as one card on its task
 - [ ] Task 29: Create a delivery from a CLIN
 - [ ] Task 30: Post and void a contract delivery
 - [ ] Task 31: Show contract deliveries on the shipment and print the Receiving Report
@@ -1016,5 +1016,8 @@ grep -c "PASS" .ai/runs/2026-10-21-project-contracts.md
 - Self-review fixes: `4f0b7f3286`, `de67a8eda7`, `7dafcc282d`, `5c2ffc2606` (see the run log).
 - Plan refresh (2026-10-22, before Task 21): an uncommitted refactor (the New element modal, controlled element pills, the `progress` percent kind) moved lines in `projects.server.ts` (+30), `projects.models.ts`, `$projectId.elements.tsx` and `ProjectOverview.tsx`. Tasks 21 to 38 now cite the new lines. `ElementGraph.tsx` is under `ui/Elements/`, not `ui/Elements/graph/`. No section 10 task changes scope: the refactor touches no contract, sales, shipment or server-function file.
 - Task 21 (`c12a1ea7e1`): STOP. 6 readers of `projectStock` ignore a stripe on a project without the flag (run log, "Section 10 assumptions"). Brad chose option 1: every prototype job consumes to the project, and no delivery moves stock. Spec D30 and D33 changed; Task 27 dropped; Tasks 26, 29, 30 and 31 updated.
+- Task 25 (`705e8a774d`): the test asserts `isDirectItemLine` directly, not the journal. `buildSalesInvoiceJournal` needs contract positions for a contract line, and the only contract journal tests run against the database. Both the COGS pair (`posting-lines.ts:862`) and the shipment on the invoice (`index.ts:771`) read `isDirectItemLine`.
+- Task 28 (`b803bff49f`): rows of a job leave the item and labor keys only when a plan line of the element made the job (the spec's wording), not every job row; a job made elsewhere keeps today's matching. A line with a job never owns its item's key. A job card counts as Material in the type filter. The commit also carries the new element modal's missing translations.
+- Translations: Brad, 2026-10-22: skip translation and glossary work until Task 38; run `/translate` once there.
 - Task 20: BLOCKED. The stack re-ported at 02:53 and the API returns 502; see `.ai/runs/2026-10-21-project-contracts.md`.
 - Task 19 (`22be6410ed`): 2,208 strings filled across 12 locales; `linguito check` and `check-glossary` pass (advisory hits only).
