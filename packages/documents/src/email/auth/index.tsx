@@ -11,21 +11,22 @@ const CONFIRMATION_URL = "{{ .ConfirmationURL }}";
 /** The requesting app's /callback (emailRedirectTo), so the MES or academy
  * signs in where it was asked, not on the ERP that hosts /magic-link. */
 const REDIRECT_TO = "{{ .RedirectTo }}";
-const ONCE = "The code and the button are the same sign-in: use either, once.";
+const ONCE =
+  "Use the code or the button, not both: each email signs you in once.";
 const IGNORE = "If you didn't ask for this, you can ignore this email.";
 
 export const AuthMagicLinkEmail = () => (
   <AuthEmail
     preview={`Your Carbon sign-in code is ${AUTH_TOKEN}`}
     eyebrow="Sign in"
-    heading="Sign in to Carbon"
-    intro="Enter this code on the sign-in screen, or use the button below."
+    heading="Your sign-in code"
+    intro="Enter this code on the Carbon sign-in screen, or sign in with the button below."
     showCode
     action={{
       href: `${SITE_URL}/magic-link?token=${TOKEN_HASH}&redirect_to=${REDIRECT_TO}`,
-      label: "Sign in"
+      label: "Sign in to Carbon"
     }}
-    footnote={`${ONCE} ${IGNORE}`}
+    footnote={`${ONCE} If you didn't try to sign in, you can ignore this email.`}
   />
 );
 
@@ -34,11 +35,12 @@ export const AuthInviteEmail = () => (
     preview="You have been invited to Carbon"
     eyebrow="Invitation"
     heading="You've been invited to Carbon"
-    intro="You've been invited to create an account on Carbon."
+    intro="Accept the invite to set up your Carbon account."
     action={{
       href: `${SITE_URL}/confirm-invite?token=${TOKEN_HASH}`,
-      label: "Accept the invite"
+      label: "Accept invite"
     }}
+    footnote="If you weren't expecting this invite, you can ignore this email."
   />
 );
 
@@ -46,12 +48,12 @@ export const AuthInviteEmail = () => (
 // accepts its code: type "email" covers confirmation tokens.
 export const AuthConfirmationEmail = () => (
   <AuthEmail
-    preview={`Your Carbon sign-in code is ${AUTH_TOKEN}`}
-    eyebrow="Sign in"
+    preview={`Your Carbon confirmation code is ${AUTH_TOKEN}`}
+    eyebrow="Confirm email"
     heading="Confirm your email"
-    intro="Enter this code on the sign-in screen, or use the button below to confirm your email address."
+    intro="Enter this code on the Carbon sign-in screen, or confirm with the button below."
     showCode
-    action={{ href: CONFIRMATION_URL, label: "Confirm your email" }}
+    action={{ href: CONFIRMATION_URL, label: "Confirm email" }}
     footnote={IGNORE}
   />
 );
@@ -61,9 +63,9 @@ export const AuthRecoveryEmail = () => (
     preview="Reset your Carbon password"
     eyebrow="Security"
     heading="Reset your password"
-    intro="Use the button below to reset your password."
-    action={{ href: CONFIRMATION_URL, label: "Reset your password" }}
-    footnote={IGNORE}
+    intro="Choose a new password for your Carbon account."
+    action={{ href: CONFIRMATION_URL, label: "Reset password" }}
+    footnote="If you didn't ask to reset your password, you can ignore this email. Your password stays the same."
   />
 );
 
@@ -72,9 +74,9 @@ export const AuthEmailChangeEmail = () => (
     preview="Confirm your new email for Carbon"
     eyebrow="Security"
     heading="Confirm your new email"
-    intro="Confirm the change of your Carbon email from {{ .Email }} to {{ .NewEmail }}."
-    action={{ href: CONFIRMATION_URL, label: "Confirm the new email" }}
-    footnote={IGNORE}
+    intro="Your Carbon email is changing from {{ .Email }} to {{ .NewEmail }}. Confirm to finish the change."
+    action={{ href: CONFIRMATION_URL, label: "Confirm new email" }}
+    footnote="If you didn't ask for this change, ignore this email and your email stays the same."
   />
 );
 

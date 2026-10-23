@@ -136,7 +136,7 @@ export function AuthEmail({
           <Text
             className={`text-[13px] leading-[20px] m-0 text-center break-all nf-fallback ${themeClasses.mutedText}`}
           >
-            Or open this link in your browser:{" "}
+            Button not working? Open this link in your browser:{" "}
             <Link
               href={action.href}
               className={`${themeClasses.mutedText} underline nf-fallback`}
