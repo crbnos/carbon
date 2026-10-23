@@ -42,6 +42,10 @@ msgstr "{0} ч"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} не имеет номера партии. Установите его в серии или производственном заказе в Carbon, затем завершите."
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0} позиций"
@@ -101,6 +105,9 @@ msgstr "{fails} записанных отказов будут НЕ заверш
 
 msgid "{hour} h"
 msgstr "{hour} ч"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "Ограничение {maxSizeMB}МБ"
@@ -390,6 +397,9 @@ msgid "Characteristics"
 msgstr "Характеристики"
 
 msgid "Charge"
+msgstr ""
+
+msgid "Charge number"
 msgstr ""
 
 msgid "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "Отобрать {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Выберите стиль и аватар или перемешайте для новых."
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr ""
+
 msgid "Pick the leave for your time off."
 msgstr "Выберите отпуск для вашего отпуска."
 
@@ -2031,6 +2044,9 @@ msgstr "С серийными номерами"
 msgid "Service"
 msgstr ""
 
+msgid "Service job"
+msgstr ""
+
 msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
@@ -2222,9 +2238,8 @@ msgstr "Система"
 msgid "Tag"
 msgstr "Тег"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "Коснитесь дня, чтобы добавить время к {0}. Перетащите нижний край полосы, чтобы изменить количество часов."
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "The accent color used across Carbon."
 msgstr "Цвет акцента, используемый во всём Carbon."
@@ -2237,6 +2252,9 @@ msgstr "Количество готовой продукции по этой о�
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "Дата находится перед окном ввода. Причина хранится с записью."
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job opens with your clock running."
 msgstr ""
@@ -2538,6 +2556,9 @@ msgstr "Напишите примечание…"
 
 msgid "Yes"
 msgstr "Да"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"

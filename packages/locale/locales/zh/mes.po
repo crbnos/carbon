@@ -42,6 +42,10 @@ msgstr "{0} 小时"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}没有批次号。在Carbon中的生产批次或工单上设置，然后完成。"
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0} 个物料"
@@ -101,6 +105,9 @@ msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操�
 
 msgid "{hour} h"
 msgstr "{hour} 小时"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
@@ -390,6 +397,9 @@ msgid "Characteristics"
 msgstr "特性"
 
 msgid "Charge"
+msgstr ""
+
+msgid "Charge number"
 msgstr ""
 
 msgid "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "拣货 {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "选择一个风格和头像，或者随机生成新的。"
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr ""
+
 msgid "Pick the leave for your time off."
 msgstr "选择您休假的假期类型。"
 
@@ -2031,6 +2044,9 @@ msgstr "已序列号化"
 msgid "Service"
 msgstr ""
 
+msgid "Service job"
+msgstr ""
+
 msgid "Session locked"
 msgstr "会话已锁定"
 
@@ -2222,9 +2238,8 @@ msgstr "系统"
 msgid "Tag"
 msgstr "标签"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "点击某一天以添加时间到 {0}。拖动条形下边缘以更改其小时数。"
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "The accent color used across Carbon."
 msgstr "整个 Carbon 中使用的强调色。"
@@ -2237,6 +2252,9 @@ msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "日期在输入窗口之前。原因与条目一起保存。"
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job opens with your clock running."
 msgstr ""
@@ -2538,6 +2556,9 @@ msgstr "写备注…"
 
 msgid "Yes"
 msgstr "是"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"

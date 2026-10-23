@@ -8,7 +8,15 @@
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import { storage } from "@carbon/files";
-import { datetime, round } from "@carbon/utils";
+import {
+  datetime,
+  groupServiceTimeRows,
+  isServiceJobLocked,
+  manualHoursForDay,
+  round,
+  type ServiceTimeRow,
+  type ServiceTimeRowJob
+} from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { erpPosting } from "~/services/erp";
@@ -397,4 +405,249 @@ export async function completeServiceJob(
       signaturePath: args.signaturePath
     }
   );
+}
+
+// --- My Time ----------------------------------------------------------------
+
+type ServiceJobOfRow = {
+  id: string;
+  serviceJobId: string;
+  status: Database["public"]["Enums"]["serviceJobStatus"];
+  customer: { name: string } | null;
+};
+
+const serviceJobOf = (serviceJob: ServiceJobOfRow): ServiceTimeRowJob => ({
+  id: serviceJob.id,
+  serviceJobId: serviceJob.serviceJobId,
+  status: serviceJob.status,
+  customerName: serviceJob.customer?.name ?? null
+});
+
+/**
+ * The employee's service week on My Time, as the ERP's: one row per job with
+ * time or an assignment in the week (`rows`), and the open jobs the employee
+ * is assigned to that week or leads, which **Add** offers (`jobs`). Three
+ * reads, whatever the number of jobs.
+ */
+export async function getServiceTimeWeek(
+  client: Client,
+  args: { companyId: string; employeeId: string; from: string; to: string }
+): Promise<{
+  rows: ServiceTimeRow[];
+  jobs: ServiceTimeRowJob[];
+  error: PostgrestError | null;
+}> {
+  const [time, assignments, ledJobs] = await Promise.all([
+    client
+      .from("serviceJobTime")
+      .select(
+        "entryDate, hours, startTime, createdAt, serviceJob:serviceJob!serviceJobTime_serviceJobId_fkey!inner(id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name))"
+      )
+      .eq("employeeId", args.employeeId)
+      .eq("companyId", args.companyId)
+      .gte("entryDate", args.from)
+      .lte("entryDate", args.to),
+    client
+      .from("serviceJobAssignment")
+      .select(
+        "serviceJob:serviceJob!serviceJobAssignment_serviceJobId_fkey!inner(id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name))"
+      )
+      .eq("employeeId", args.employeeId)
+      .eq("companyId", args.companyId)
+      .gte("scheduledDate", args.from)
+      .lte("scheduledDate", args.to),
+    client
+      .from("serviceJob")
+      .select(
+        "id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name)"
+      )
+      .eq("assignee", args.employeeId)
+      .eq("companyId", args.companyId)
+      .not("status", "in", CLOSED_STATUSES)
+  ]);
+
+  const rows = groupServiceTimeRows(
+    (time.data ?? []).map((entry) => ({
+      entryDate: entry.entryDate,
+      hours: entry.hours,
+      startTime: entry.startTime,
+      createdAt: entry.createdAt,
+      job: serviceJobOf(entry.serviceJob)
+    })),
+    (assignments.data ?? []).map((assignment) => ({
+      job: serviceJobOf(assignment.serviceJob)
+    }))
+  );
+
+  const jobs = new Map<string, ServiceTimeRowJob>();
+  for (const serviceJob of [
+    ...(assignments.data ?? []).map((row) => row.serviceJob),
+    ...(ledJobs.data ?? [])
+  ]) {
+    if (!isServiceJobLocked(serviceJob.status)) {
+      jobs.set(serviceJob.id, serviceJobOf(serviceJob));
+    }
+  }
+
+  return {
+    rows,
+    jobs: [...jobs.values()].sort((a, b) =>
+      a.serviceJobId.localeCompare(b.serviceJobId)
+    ),
+    error: time.error ?? assignments.error ?? ledJobs.error ?? null
+  };
+}
+
+/** The ERP's refusal of a closed job, word for word. */
+export const SERVICE_JOB_CLOSED =
+  "This job is closed. A Completed, Invoiced or Cancelled job cannot change.";
+
+/** The ERP's warning for a total below the day's clock time, word for word. */
+export const SERVICE_DAY_HAS_CLOCK_TIME =
+  "This day has clock time on the job. Edit it on the job.";
+
+/**
+ * My Time: sets an employee's total hours on a job for one day, by the ERP's
+ * rules (`setServiceJobDayHours`). The difference from the day's clock
+ * entries goes to the day's one manual entry (no clock): saved, added at the
+ * company's service labor item (billable when the job is Billable), or
+ * removed at 0. A total below the clock entries writes nothing
+ * (`saved: false`) and comes back as `warning`. Refuses a Completed, Invoiced
+ * or Cancelled job, a day with two manual entries and, with
+ * `mustBeAssigned`, a job the employee neither leads nor is assigned to.
+ *
+ * `client` is the service role: every read and write is scoped to
+ * `companyId` here, which is the ownership check.
+ */
+export async function saveServiceDayHours(
+  client: Client,
+  args: {
+    companyId: string;
+    userId: string;
+    employeeId: string;
+    serviceJobId: string;
+    entryDate: string;
+    hours: number;
+    mustBeAssigned: boolean;
+  }
+): Promise<{
+  data: { saved: boolean; warning: string | null } | null;
+  error: { message: string; cause?: PostgrestError } | null;
+}> {
+  const refused = (message: string, cause?: PostgrestError) => ({
+    data: null,
+    error: { message, cause }
+  });
+
+  const job = await client
+    .from("serviceJob")
+    .select("id, status, coverage, assignee")
+    .eq("id", args.serviceJobId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (job.error) {
+    return refused("Failed to load the service job", job.error);
+  }
+  if (!job.data) return refused("Service job not found");
+  if (isServiceJobLocked(job.data.status)) return refused(SERVICE_JOB_CLOSED);
+
+  if (args.mustBeAssigned && job.data.assignee !== args.employeeId) {
+    const assignment = await client
+      .from("serviceJobAssignment")
+      .select("id")
+      .eq("serviceJobId", job.data.id)
+      .eq("companyId", args.companyId)
+      .eq("employeeId", args.employeeId)
+      .limit(1);
+    if (assignment.error) {
+      return refused("Failed to load the job's assignments", assignment.error);
+    }
+    if ((assignment.data ?? []).length === 0) {
+      return refused("You can log time only on a job you are assigned to");
+    }
+  }
+
+  const day = await client
+    .from("serviceJobTime")
+    .select("id, hours, startTime")
+    .eq("serviceJobId", job.data.id)
+    .eq("companyId", args.companyId)
+    .eq("employeeId", args.employeeId)
+    .eq("entryDate", args.entryDate)
+    .order("createdAt")
+    .order("id");
+  if (day.error) return refused("Failed to load the day's time", day.error);
+  const entries = (day.data ?? []).map((entry) => ({
+    id: entry.id,
+    hours: Number(entry.hours),
+    startTime: entry.startTime
+  }));
+
+  const manual = manualHoursForDay(entries, args.hours);
+  if (manual === null) {
+    return {
+      data: { saved: false, warning: SERVICE_DAY_HAS_CLOCK_TIME },
+      error: null
+    };
+  }
+  const manualEntries = entries.filter((entry) => !entry.startTime);
+  if (manualEntries.length > 1) {
+    return refused(
+      "This day has more than one entry on the job. Edit it on the job."
+    );
+  }
+  const existing = manualEntries[0];
+  const saved = { data: { saved: true, warning: null }, error: null };
+
+  if (manual === 0) {
+    if (existing) {
+      const deleted = await client
+        .from("serviceJobTime")
+        .delete()
+        .eq("id", existing.id)
+        .eq("companyId", args.companyId);
+      if (deleted.error) {
+        return refused("Failed to save the hours", deleted.error);
+      }
+    }
+    return saved;
+  }
+
+  if (existing) {
+    const updated = await client
+      .from("serviceJobTime")
+      .update({
+        hours: manual,
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", existing.id)
+      .eq("companyId", args.companyId);
+    if (updated.error) {
+      return refused("Failed to save the hours", updated.error);
+    }
+    return saved;
+  }
+
+  const laborItemId = await getDefaultLaborItemId(client, args.companyId);
+  if (laborItemId.error) {
+    return refused("Failed to load the service labor item", laborItemId.error);
+  }
+  if (!laborItemId.data) {
+    return refused("Set the service labor item in Settings → Invoicing first");
+  }
+  const inserted = await client.from("serviceJobTime").insert({
+    companyId: args.companyId,
+    serviceJobId: job.data.id,
+    employeeId: args.employeeId,
+    laborItemId: laborItemId.data,
+    entryDate: args.entryDate,
+    hours: manual,
+    billable: job.data.coverage === "Billable",
+    createdBy: args.userId
+  });
+  if (inserted.error) {
+    return refused("Failed to save the hours", inserted.error);
+  }
+  return saved;
 }

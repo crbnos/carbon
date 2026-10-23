@@ -42,6 +42,10 @@ msgstr "{0}시간"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}에 로트 번호가 없습니다. Carbon에서 배치 또는 작업 지시에 설정한 다음 완료 처리하세요."
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0} 품목"
@@ -101,6 +105,9 @@ msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니
 
 msgid "{hour} h"
 msgstr "{hour}시간"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
@@ -390,6 +397,9 @@ msgid "Characteristics"
 msgstr "특성"
 
 msgid "Charge"
+msgstr ""
+
+msgid "Charge number"
 msgstr ""
 
 msgid "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "피킹 {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "스타일과 아바타를 선택하거나 새로운 것으로 섞으세요."
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr ""
+
 msgid "Pick the leave for your time off."
 msgstr "휴가를 선택하세요."
 
@@ -2031,6 +2044,9 @@ msgstr "일련화됨"
 msgid "Service"
 msgstr ""
 
+msgid "Service job"
+msgstr ""
+
 msgid "Session locked"
 msgstr "세션 잠김"
 
@@ -2222,9 +2238,8 @@ msgstr "시스템"
 msgid "Tag"
 msgstr "태그"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "날짜를 탭하여 {0}에 시간을 추가하세요. 막대의 아래쪽 가장자리를 드래그하여 시간을 변경하세요."
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
@@ -2237,6 +2252,9 @@ msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보�
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 보관됩니다."
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job opens with your clock running."
 msgstr ""
@@ -2538,6 +2556,9 @@ msgstr "메모 작성…"
 
 msgid "Yes"
 msgstr "예"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"

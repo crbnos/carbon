@@ -42,6 +42,10 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr "{0} is closed. Its time cannot change."
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0} items"
@@ -101,6 +105,9 @@ msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — re
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{hours} h"
+msgstr "{hours} h"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
@@ -391,6 +398,9 @@ msgstr "Characteristics"
 
 msgid "Charge"
 msgstr "Charge"
+
+msgid "Charge number"
+msgstr "Charge number"
 
 msgid "Charge numbers"
 msgstr "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "Pick {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Pick a style and an avatar, or shuffle for new ones."
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr "Pick the job. It shows with no hours until you add some."
+
 msgid "Pick the leave for your time off."
 msgstr "Pick the leave for your time off."
 
@@ -2031,6 +2044,9 @@ msgstr "Serialized"
 msgid "Service"
 msgstr "Service"
 
+msgid "Service job"
+msgstr "Service job"
+
 msgid "Session locked"
 msgstr "Session locked"
 
@@ -2222,9 +2238,8 @@ msgstr "System"
 msgid "Tag"
 msgstr "Tag"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 
 msgid "The accent color used across Carbon."
 msgstr "The accent color used across Carbon."
@@ -2237,6 +2252,9 @@ msgstr "The completed quantity for this operation is less than the required quan
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "The date is before the entry window. The reason is kept with the entry."
+
+msgid "The job is closed"
+msgstr "The job is closed"
 
 msgid "The job opens with your clock running."
 msgstr "The job opens with your clock running."
@@ -2538,6 +2556,9 @@ msgstr "Write a note…"
 
 msgid "Yes"
 msgstr "Yes"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"

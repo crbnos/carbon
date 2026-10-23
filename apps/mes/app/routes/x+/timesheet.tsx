@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -18,6 +20,12 @@ import {
   cn,
   Input,
   Status,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast
 } from "@carbon/react";
 import { WeekHoursChart, weekHoursTones } from "@carbon/react/WeekHours";
@@ -26,6 +34,8 @@ import {
   equals,
   formatDate,
   INPUT_FORMAT,
+  type ServiceTimeRow,
+  type ServiceTimeRowJob,
   TIMESHEET_ENTRY_STATUS_COLOR_MAP,
   timesheetCellReasons,
   timesheetWeek,
@@ -37,6 +47,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
+  LuLock,
   LuPlus,
   LuSearch,
   LuSend,
@@ -50,7 +61,10 @@ import {
 } from "~/components/Timesheet/TimesheetReasonModal";
 import { WeekCertificationModal } from "~/components/Timesheet/WeekCertificationModal";
 import { getDatabaseClient } from "~/services/database.server";
-import { timesheetCellValidator } from "~/services/models";
+import {
+  serviceDayHoursValidator,
+  timesheetCellValidator
+} from "~/services/models";
 import { timesheetBudgetWarning } from "~/services/project-budget.server";
 import type {
   ChargeNumber,
@@ -68,6 +82,10 @@ import {
   submitTimesheetWeek,
   timesheetRowKey
 } from "~/services/projects.service";
+import {
+  getServiceTimeWeek,
+  saveServiceDayHours
+} from "~/services/service.service";
 import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "timesheet");
@@ -88,24 +106,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
     weekOffset
   );
 
-  const [entries, chargeNumbers, laborCategories, employeeJob, settings] =
-    await Promise.all([
-      getTimesheetWeek(client, {
-        companyId,
-        employeeId: userId,
-        from: weekStart,
-        to: weekEnd
-      }),
-      getChargeNumbers(client, companyId),
-      getLaborCategoriesList(client, companyId),
-      client
-        .from("employeeJob")
-        .select("laborCategoryId, locationId, flsaStatus")
-        .eq("id", userId)
-        .eq("companyId", companyId)
-        .maybeSingle(),
-      getTimesheetSettings(client, companyId)
-    ]);
+  const [
+    entries,
+    chargeNumbers,
+    laborCategories,
+    employeeJob,
+    settings,
+    serviceWeek
+  ] = await Promise.all([
+    getTimesheetWeek(client, {
+      companyId,
+      employeeId: userId,
+      from: weekStart,
+      to: weekEnd
+    }),
+    getChargeNumbers(client, companyId),
+    getLaborCategoriesList(client, companyId),
+    client
+      .from("employeeJob")
+      .select("laborCategoryId, locationId, flsaStatus")
+      .eq("id", userId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getTimesheetSettings(client, companyId),
+    // Service time: one row per job, and the open jobs Add offers.
+    getServiceTimeWeek(client, {
+      companyId,
+      employeeId: userId,
+      from: weekStart,
+      to: weekEnd
+    })
+  ]);
 
   if (entries.error) {
     logger.error("Failed to load the timesheet", {
@@ -131,6 +162,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: settings.error
     });
   }
+  if (serviceWeek.error) {
+    logger.error("Failed to load the service time", {
+      companyId,
+      error: serviceWeek.error
+    });
+  }
 
   return {
     weekOffset,
@@ -139,6 +176,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     days,
     today,
     rows: groupTimesheetRows(entries.data ?? []),
+    serviceRows: serviceWeek.rows,
+    serviceJobs: serviceWeek.jobs,
     chargeNumbers: chargeNumbers.data ?? [],
     laborCategories: laborCategories.data ?? [],
     defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
@@ -162,10 +201,64 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, permissions } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+
+  // A service job's total for one day, by the ERP's My Time rules
+  // (`setServiceJobDayHours`). My Time needs only company membership, so
+  // without `update: service` the job must be one the user leads or is
+  // assigned to. Service time never goes through submit or certification.
+  if (intent === "service-cell") {
+    const validation = await validator(serviceDayHoursValidator).validate(
+      formData
+    );
+    if (validation.error) {
+      return {
+        success: false,
+        message:
+          Object.values(validation.error.fieldErrors)[0] ??
+          "The hours are invalid"
+      };
+    }
+    const result = await saveServiceDayHours(await getCarbonServiceRole(), {
+      ...validation.data,
+      companyId,
+      userId,
+      employeeId: userId,
+      mustBeAssigned: !hasPermission(
+        permissions,
+        "service",
+        "update",
+        companyId
+      )
+    });
+    if (result.error || !result.data) {
+      if (result.error?.cause) {
+        logger.error("Failed to save a service time cell", {
+          companyId,
+          error: result.error.cause
+        });
+      }
+      return {
+        success: false,
+        message: result.error?.message ?? "Failed to save the hours"
+      };
+    }
+    // A total below the day's clock time is not saved: the bar goes back.
+    if (!result.data.saved) {
+      return {
+        success: false,
+        message: result.data.warning,
+        isWarning: true
+      };
+    }
+    return { success: true, message: null };
+  }
 
   if (intent === "cell") {
     const validation = await validator(timesheetCellValidator).validate(
@@ -311,6 +404,15 @@ type LocalRow = {
 
 const cellKey = (rowKey: string, day: string) => `${rowKey}|${day}`;
 
+/** A charge number row or a service row: what the chart reads of either. */
+type WeekRow = { key: string; cells: Record<string, { hours: number }> };
+
+/** A service job's row: its job, its days and where it opens. */
+type ServiceWeekRow = ServiceTimeRow & { key: string };
+
+/** A service row's key: never a charge number row's (`timesheetRowKey`). */
+const serviceRowKey = (serviceJobId: string) => `service:${serviceJobId}`;
+
 /**
  * My Time on the shop floor, as the ERP's: the week's charge numbers as
  * cards on the left, and a week of bars on the right (`WeekHoursChart`,
@@ -318,6 +420,11 @@ const cellKey = (rowKey: string, day: string) => `${rowKey}|${day}`;
  * it time up to that point; drag a bar's lower edge to change its hours, or
  * tap × to delete it. Every change saves at once (the `cell` intent, the
  * `save-timesheet-entry` server function). **PTO** adds a leave element.
+ *
+ * Service jobs follow the charge numbers, as in the ERP: a bar sets the day's
+ * total on the job (the `service-cell` intent), the job's time never goes
+ * through Submit week, and a Completed, Invoiced or Cancelled job's card is
+ * locked. **Add** also offers the open jobs the user leads or is assigned to.
  *
  * DCAA mode (`controls`): a future day is read-only except on a leave
  * element, a change to a saved entry or a date before the entry window asks
@@ -333,6 +440,8 @@ export default function MESTimesheetPage() {
     days,
     today,
     rows,
+    serviceRows,
+    serviceJobs,
     chargeNumbers,
     laborCategories,
     defaultLaborCategoryId,
@@ -381,8 +490,22 @@ export default function MESTimesheetPage() {
       if (savingKey.current) forgetOverride(savingKey.current);
     }
   });
+  // A service cell: a total below the day's clock time is not saved, and
+  // comes back as a warning; either refusal puts the bar back.
+  const savingServiceKey = useRef<string | null>(null);
+  const serviceCellFetcher = useAction<typeof action>({
+    onError: (data) => {
+      if ("isWarning" in data && data.isWarning) {
+        toast.warning(data.message);
+      } else {
+        toast.error(data.message ?? t`Failed to save the hours`);
+      }
+      if (savingServiceKey.current) forgetOverride(savingServiceKey.current);
+    }
+  });
   const [adding, setAdding] = useState<"row" | "pto" | null>(null);
   const [addedRows, setAddedRows] = useState<LocalRow[]>([]);
+  const [addedServiceJobIds, setAddedServiceJobIds] = useState<string[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const weekRows = useMemo<TimesheetRow[]>(() => {
@@ -419,12 +542,40 @@ export default function MESTimesheetPage() {
     () => new Map(weekRows.map((row) => [row.key, row])),
     [weekRows]
   );
+  // The week's service rows: the loader's, then the open jobs the user added
+  // that have no row yet.
+  const serviceWeekRows = useMemo<ServiceWeekRow[]>(() => {
+    const ids = new Set(serviceRows.map((row) => row.id));
+    const added = addedServiceJobIds
+      .filter((id) => !ids.has(id))
+      .flatMap((id) => {
+        const job = serviceJobs.find((option) => option.id === id);
+        return job ? [{ ...job, isLocked: false, cells: {}, total: 0 }] : [];
+      });
+    return [...serviceRows, ...added].map((row) => ({
+      ...row,
+      key: serviceRowKey(row.id)
+    }));
+  }, [serviceRows, serviceJobs, addedServiceJobIds]);
+  const serviceRowsByKey = useMemo(
+    () => new Map(serviceWeekRows.map((row) => [row.key, row])),
+    [serviceWeekRows]
+  );
+  const allRowsByKey = useMemo(
+    () =>
+      new Map<string, WeekRow>([
+        ...rowsByKey.entries(),
+        ...serviceRowsByKey.entries()
+      ]),
+    [rowsByKey, serviceRowsByKey]
+  );
+  const allRows = [...allRowsByKey.values()];
 
   // An override leaves once the loader returns the same hours.
   useEffect(() => {
     const settled = Object.keys(overrides).filter((key) => {
       const split = key.lastIndexOf("|");
-      const row = rowsByKey.get(key.slice(0, split));
+      const row = allRowsByKey.get(key.slice(0, split));
       return equals(
         row?.cells[key.slice(split + 1)]?.hours ?? 0,
         overrides[key] ?? 0
@@ -436,19 +587,30 @@ export default function MESTimesheetPage() {
       for (const key of settled) delete next[key];
       return next;
     });
-  }, [overrides, rowsByKey]);
+  }, [overrides, allRowsByKey]);
 
   const tones = useMemo(
     () =>
-      weekHoursTones(
-        weekRows.map((row) => ({ key: row.key, isLeave: row.isLeave }))
-      ),
-    [weekRows]
+      weekHoursTones([
+        ...weekRows.map((row) => ({ key: row.key, isLeave: row.isLeave })),
+        ...serviceWeekRows.map((row) => ({
+          key: row.key,
+          isReadOnly: row.isLocked
+        }))
+      ]),
+    [weekRows, serviceWeekRows]
   );
   const selected =
-    weekRows.find((row) => row.key === selectedKey) ?? weekRows[0] ?? null;
+    weekRows.find((row) => row.key === selectedKey) ??
+    (serviceRowsByKey.has(selectedKey ?? "") ? null : weekRows[0]) ??
+    null;
+  const selectedService =
+    serviceRowsByKey.get(selectedKey ?? "") ??
+    (selected ? null : (serviceWeekRows[0] ?? null));
+  const selectedLabel =
+    selected?.readableId ?? selectedService?.serviceJobId ?? null;
 
-  const hoursOf = (row: TimesheetRow, day: string) =>
+  const hoursOf = (row: WeekRow, day: string) =>
     overrides[cellKey(row.key, day)] ?? row.cells[day]?.hours ?? 0;
   const isCellEditable = (row: TimesheetRow, day: string) => {
     const cell = row.cells[day];
@@ -460,10 +622,10 @@ export default function MESTimesheetPage() {
   };
 
   const dayTotals = days.map((day) =>
-    weekRows.reduce((sum, row) => sum + hoursOf(row, day), 0)
+    allRows.reduce((sum, row) => sum + hoursOf(row, day), 0)
   );
   const weekTotal = dayTotals.reduce((sum, hours) => sum + hours, 0);
-  const rowTotal = (row: TimesheetRow) =>
+  const rowTotal = (row: WeekRow) =>
     days.reduce((sum, day) => sum + hoursOf(row, day), 0);
   const hasDraft = weekRows.some((row) =>
     Object.values(row.cells).some((cell) => cell.status === "Draft")
@@ -514,6 +676,24 @@ export default function MESTimesheetPage() {
     }
     savingKey.current = key;
     cellFetcher.submit({ intent: "cell", ...fields }, { method: "post" });
+  };
+
+  // Sets a service job's total for a day; the job takes the difference from
+  // the day's clock time as its manual entry.
+  const commitService = (row: ServiceWeekRow, day: string, hours: number) => {
+    const key = cellKey(row.key, day);
+    if (equals(hoursOf(row, day), hours)) return;
+    setOverrides((previous) => ({ ...previous, [key]: hours }));
+    savingServiceKey.current = key;
+    serviceCellFetcher.submit(
+      {
+        intent: "service-cell",
+        serviceJobId: row.id,
+        entryDate: day,
+        hours: String(hours)
+      },
+      { method: "post" }
+    );
   };
 
   const weekLabel = `${formatDate(weekStart, { dateStyle: "medium" }, locale)} – ${formatDate(weekEnd, { dateStyle: "medium" }, locale)}`;
@@ -611,7 +791,7 @@ export default function MESTimesheetPage() {
             </Button>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-3">
-            {weekRows.length === 0 && (
+            {weekRows.length === 0 && serviceWeekRows.length === 0 && (
               <p className="px-1 text-sm text-muted-foreground">
                 <Trans>
                   Add what you worked on this week, then tap a day to log time.
@@ -687,6 +867,25 @@ export default function MESTimesheetPage() {
                 </div>
               );
             })}
+            {serviceWeekRows.map((row) => (
+              <ServiceRowCard
+                key={row.key}
+                row={row}
+                isSelected={row.key === selectedService?.key}
+                dotClassName={tones.get(row.key)?.dot}
+                hours={formatQuantity(rowTotal(row))}
+                canRemove={
+                  Object.keys(row.cells).length === 0 &&
+                  addedServiceJobIds.includes(row.id)
+                }
+                onSelect={() => setSelectedKey(row.key)}
+                onRemove={() =>
+                  setAddedServiceJobIds((previous) =>
+                    previous.filter((id) => id !== row.id)
+                  )
+                }
+              />
+            ))}
           </div>
           <div className="flex shrink-0 flex-col items-center gap-1 border-t border-border py-6">
             <span className="text-5xl font-semibold tracking-tight tabular-nums">
@@ -704,25 +903,41 @@ export default function MESTimesheetPage() {
             days={days}
             today={today}
             isDayLocked={(day) =>
-              controls !== null && day > controls.today && !selected?.isLeave
+              selectedService
+                ? selectedService.isLocked
+                : controls !== null &&
+                  day > controls.today &&
+                  !selected?.isLeave
             }
-            rows={weekRows.map((row) => ({
-              key: row.key,
-              label: row.readableId,
-              title: row.name,
-              tone: tones.get(row.key)!
-            }))}
-            selectedKey={selected?.key ?? null}
+            rows={[
+              ...weekRows.map((row) => ({
+                key: row.key,
+                label: row.readableId,
+                title: row.name,
+                tone: tones.get(row.key)!
+              })),
+              ...serviceWeekRows.map((row) => ({
+                key: row.key,
+                label: row.serviceJobId,
+                title: row.customerName ?? row.serviceJobId,
+                tone: tones.get(row.key)!
+              }))
+            ]}
+            selectedKey={selected?.key ?? selectedService?.key ?? null}
             hoursOf={(rowKey, day) => {
-              const row = rowsByKey.get(rowKey);
+              const row = allRowsByKey.get(rowKey);
               return row ? hoursOf(row, day) : 0;
             }}
             enteredAt={(rowKey, day) =>
-              rowsByKey.get(rowKey)?.cells[day]?.createdAt ?? null
+              (rowsByKey.get(rowKey) ?? serviceRowsByKey.get(rowKey))?.cells[
+                day
+              ]?.createdAt ?? null
             }
             isEditable={(rowKey, day) => {
               const row = rowsByKey.get(rowKey);
-              return row ? isCellEditable(row, day) : false;
+              if (row) return isCellEditable(row, day);
+              const serviceRow = serviceRowsByKey.get(rowKey);
+              return serviceRow ? !serviceRow.isLocked : false;
             }}
             formatHours={formatQuantity}
             renderBarAccessory={(rowKey, day) => {
@@ -742,14 +957,24 @@ export default function MESTimesheetPage() {
             onSelect={setSelectedKey}
             onCommit={(rowKey, day, hours) => {
               const row = rowsByKey.get(rowKey);
-              if (row) commit(row, day, hours);
+              if (row) {
+                commit(row, day, hours);
+                return;
+              }
+              const serviceRow = serviceRowsByKey.get(rowKey);
+              if (serviceRow) commitService(serviceRow, day, hours);
             }}
           />
           <p className="shrink-0 px-4 py-3 text-sm text-muted-foreground">
-            {selected ? (
+            {selectedService?.isLocked ? (
               <Trans>
-                Tap a day to add time to {selected.readableId}. Drag the lower
-                edge of a bar to change its hours.
+                {selectedService.serviceJobId} is closed. Its time cannot
+                change.
+              </Trans>
+            ) : selectedLabel ? (
+              <Trans>
+                Tap a day to add time to {selectedLabel}. Drag the lower edge of
+                a bar to change its hours.
               </Trans>
             ) : (
               <Trans>Add what you worked on to start logging time.</Trans>
@@ -818,6 +1043,14 @@ export default function MESTimesheetPage() {
           laborCategories={laborCategories}
           defaultLaborCategoryId={defaultLaborCategoryId}
           jobLocationId={jobLocationId}
+          serviceJobs={serviceJobs.filter(
+            (job) => !serviceRowsByKey.has(serviceRowKey(job.id))
+          )}
+          onAddServiceJob={(serviceJobId) => {
+            setAddedServiceJobIds((previous) => [...previous, serviceJobId]);
+            setSelectedKey(serviceRowKey(serviceJobId));
+            setAdding(null);
+          }}
           onAdd={(row) => {
             setAddedRows((previous) => [...previous, row]);
             // The new charge number is the one the next tap gives time to.
@@ -835,17 +1068,114 @@ function formatHours(hours: number, locale: string) {
   return new Intl.NumberFormat(locale, INPUT_FORMAT.quantity).format(hours);
 }
 
+/** A service job's card: its number (a link to the job), customer and hours. */
+function ServiceRowCard({
+  row,
+  isSelected,
+  dotClassName,
+  hours,
+  canRemove,
+  onSelect,
+  onRemove
+}: {
+  row: ServiceWeekRow;
+  isSelected: boolean;
+  dotClassName: string | undefined;
+  /** The row's hours this week, formatted. */
+  hours: string;
+  canRemove: boolean;
+  onSelect: () => void;
+  onRemove: () => void;
+}) {
+  const { t } = useLingui();
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      className={cn(
+        "flex min-h-16 cursor-pointer flex-col gap-2 rounded-lg border border-border bg-card p-3 text-left outline-none transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring",
+        isSelected && "border-primary bg-accent/50"
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <span
+          className={cn("mt-2 size-2 shrink-0 rounded-full", dotClassName)}
+        />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="flex min-w-0 items-center gap-1.5 text-base">
+            <Link
+              to={path.to.serviceJob(row.id)}
+              className="shrink-0 text-sm text-muted-foreground tabular-nums hover:underline"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {row.serviceJobId}
+            </Link>
+            <span className="truncate font-medium">
+              {row.customerName ?? ""}
+            </span>
+          </span>
+          <span className="truncate text-sm text-muted-foreground">
+            <Trans>Service job</Trans>
+          </span>
+        </div>
+        {row.isLocked && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="mt-1 shrink-0 text-muted-foreground">
+                <LuLock className="size-4" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <Trans>The job is closed</Trans>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      <div className="flex items-center justify-between pl-4 text-sm">
+        <span className="tabular-nums text-muted-foreground">
+          {t`${hours} h`}
+        </span>
+        {canRemove && (
+          <button
+            type="button"
+            className="min-h-8 px-1 text-muted-foreground hover:text-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove();
+            }}
+          >
+            <Trans>Remove</Trans>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AddRowSheet({
   pto = false,
   chargeNumbers: allChargeNumbers,
   laborCategories,
   defaultLaborCategoryId,
   jobLocationId,
+  serviceJobs,
   onAdd,
+  onAddServiceJob,
   onClose
 }: {
   /** Time off: only the leave elements. */
   pto?: boolean;
+  /** The user's open service jobs that are not rows of the week yet. */
+  serviceJobs: ServiceTimeRowJob[];
+  onAddServiceJob: (serviceJobId: string) => void;
   chargeNumbers: ChargeNumber[];
   laborCategories: {
     id: string;
@@ -858,6 +1188,7 @@ function AddRowSheet({
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const [kind, setKind] = useState<"charge" | "service">("charge");
   const chargeNumbers = pto
     ? allChargeNumbers.filter((row) => row.isLeave)
     : allChargeNumbers;
@@ -893,106 +1224,187 @@ function AddRowSheet({
           <BottomSheetDescription>
             {pto ? (
               <Trans>Pick the leave for your time off.</Trans>
+            ) : kind === "service" ? (
+              <Trans>
+                Pick the job. It shows with no hours until you add some.
+              </Trans>
             ) : (
               <Trans>Pick what you worked on, then the labor category.</Trans>
             )}
           </BottomSheetDescription>
         </BottomSheetHeader>
         <BottomSheetBody>
-          <div className="flex flex-col gap-4 pb-2">
-            <div className="relative">
-              <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                size="lg"
-                className="pl-9"
-                placeholder={t`Search projects and tasks`}
-                aria-label={t`Search projects and tasks`}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
-            <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
-              {matches.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  {pto && allChargeNumbers.every((row) => !row.isLeave) ? (
-                    <Trans>
-                      No leave is set up yet. Ask your manager to set one up in
-                      the ERP.
-                    </Trans>
-                  ) : (
-                    <Trans>Nothing matches your search.</Trans>
-                  )}
-                </p>
-              ) : (
-                matches.map((row) => (
-                  <button
-                    key={row.value}
-                    type="button"
-                    onClick={() => setSelected(row)}
-                    className={cn(
-                      "flex min-h-12 w-full flex-col items-start rounded-lg border border-border px-4 py-2 text-left",
-                      selected?.value === row.value
-                        ? "border-primary bg-primary/10"
-                        : "hover:bg-accent"
-                    )}
-                  >
-                    <span className="flex w-full min-w-0 items-center gap-2">
-                      <span className="shrink-0 whitespace-nowrap font-mono text-sm text-muted-foreground">
-                        {row.readableId}
-                      </span>
-                      <span className="truncate font-medium">{row.name}</span>
-                    </span>
-                    {row.projectElementId && (
-                      <span className="w-full truncate text-xs text-muted-foreground">
-                        {row.projectName}
-                      </span>
-                    )}
-                  </button>
-                ))
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium">
-                <Trans>Labor category</Trans>
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {laborCategories.map((category) => (
-                  <Button
-                    key={category.id}
-                    size="lg"
-                    variant={
-                      laborCategoryId === category.id ? "primary" : "secondary"
-                    }
-                    onClick={() => setLaborCategoryId(category.id)}
-                  >
-                    {category.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <Button
-              size="lg"
-              isDisabled={!selected || !laborCategoryId}
-              onClick={() => {
-                if (!selected || !laborCategoryId) return;
-                // The defaults of save-timesheet-entry: the job location and
-                // the category's role.
-                onAdd({
-                  projectId: selected.projectId,
-                  projectElementId: selected.projectElementId,
-                  laborCategoryId,
-                  workLocationId: jobLocationId,
-                  rdActivityRole:
-                    laborCategories.find((c) => c.id === laborCategoryId)
-                      ?.rdActivityRole ?? null
-                });
-              }}
+          {!pto && (
+            <Tabs
+              value={kind}
+              onValueChange={(value) => setKind(value as "charge" | "service")}
+              className="mb-4 w-full"
             >
-              <Trans>Add</Trans>
-            </Button>
-          </div>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="charge">
+                  <Trans>Charge number</Trans>
+                </TabsTrigger>
+                <TabsTrigger value="service">
+                  <Trans>Service job</Trans>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+          {kind === "service" && !pto ? (
+            <AddServiceJob serviceJobs={serviceJobs} onAdd={onAddServiceJob} />
+          ) : (
+            <div className="flex flex-col gap-4 pb-2">
+              <div className="relative">
+                <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  size="lg"
+                  className="pl-9"
+                  placeholder={t`Search projects and tasks`}
+                  aria-label={t`Search projects and tasks`}
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+              <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+                {matches.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">
+                    {pto && allChargeNumbers.every((row) => !row.isLeave) ? (
+                      <Trans>
+                        No leave is set up yet. Ask your manager to set one up
+                        in the ERP.
+                      </Trans>
+                    ) : (
+                      <Trans>Nothing matches your search.</Trans>
+                    )}
+                  </p>
+                ) : (
+                  matches.map((row) => (
+                    <button
+                      key={row.value}
+                      type="button"
+                      onClick={() => setSelected(row)}
+                      className={cn(
+                        "flex min-h-12 w-full flex-col items-start rounded-lg border border-border px-4 py-2 text-left",
+                        selected?.value === row.value
+                          ? "border-primary bg-primary/10"
+                          : "hover:bg-accent"
+                      )}
+                    >
+                      <span className="flex w-full min-w-0 items-center gap-2">
+                        <span className="shrink-0 whitespace-nowrap font-mono text-sm text-muted-foreground">
+                          {row.readableId}
+                        </span>
+                        <span className="truncate font-medium">{row.name}</span>
+                      </span>
+                      {row.projectElementId && (
+                        <span className="w-full truncate text-xs text-muted-foreground">
+                          {row.projectName}
+                        </span>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium">
+                  <Trans>Labor category</Trans>
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {laborCategories.map((category) => (
+                    <Button
+                      key={category.id}
+                      size="lg"
+                      variant={
+                        laborCategoryId === category.id
+                          ? "primary"
+                          : "secondary"
+                      }
+                      onClick={() => setLaborCategoryId(category.id)}
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <Button
+                size="lg"
+                isDisabled={!selected || !laborCategoryId}
+                onClick={() => {
+                  if (!selected || !laborCategoryId) return;
+                  // The defaults of save-timesheet-entry: the job location and
+                  // the category's role.
+                  onAdd({
+                    projectId: selected.projectId,
+                    projectElementId: selected.projectElementId,
+                    laborCategoryId,
+                    workLocationId: jobLocationId,
+                    rdActivityRole:
+                      laborCategories.find((c) => c.id === laborCategoryId)
+                        ?.rdActivityRole ?? null
+                  });
+                }}
+              >
+                <Trans>Add</Trans>
+              </Button>
+            </div>
+          )}
         </BottomSheetBody>
       </BottomSheetContent>
     </BottomSheet>
+  );
+}
+
+/** One of the user's open service jobs, added to the week with no hours. */
+function AddServiceJob({
+  serviceJobs,
+  onAdd
+}: {
+  serviceJobs: ServiceTimeRowJob[];
+  onAdd: (serviceJobId: string) => void;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col gap-4 pb-2">
+      <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+        {serviceJobs.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            <Trans>
+              You have no other open service jobs. A job shows here when you
+              lead it or are assigned to it this week.
+            </Trans>
+          </p>
+        ) : (
+          serviceJobs.map((job) => (
+            <button
+              key={job.id}
+              type="button"
+              onClick={() => setSelectedId(job.id)}
+              className={cn(
+                "flex min-h-12 w-full items-center gap-2 rounded-lg border border-border px-4 py-2 text-left",
+                selectedId === job.id
+                  ? "border-primary bg-primary/10"
+                  : "hover:bg-accent"
+              )}
+            >
+              <span className="shrink-0 whitespace-nowrap font-mono text-sm text-muted-foreground">
+                {job.serviceJobId}
+              </span>
+              <span className="truncate font-medium">
+                {job.customerName ?? ""}
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+      <Button
+        size="lg"
+        isDisabled={!selectedId}
+        onClick={() => {
+          if (selectedId) onAdd(selectedId);
+        }}
+      >
+        <Trans>Add</Trans>
+      </Button>
+    </div>
   );
 }

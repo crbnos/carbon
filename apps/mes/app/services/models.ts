@@ -355,6 +355,23 @@ export const serviceJobNewValidator = z.object({
   coverage: z.enum(serviceCoverages, { error: "Coverage is required" })
 });
 
+/**
+ * My Time: a service job's total hours for one day. The job takes the
+ * difference from the day's clock time as its manual entry.
+ */
+export const serviceDayHoursValidator = z.object({
+  serviceJobId: z.string().min(1, { message: "Job is required" }),
+  entryDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date is required" }),
+  hours: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Hours cannot be negative" })
+      .max(24, { message: "A day has 24 hours" })
+  )
+});
+
 export const qualityIssuePriority = [
   "Low",
   "Medium",

@@ -42,6 +42,10 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} non ha alcun numero di Lotto. Impostalo sul Lotto di produzione o sull'Ordine di produzione in Carbon, quindi completa."
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0} articoli"
@@ -101,6 +105,9 @@ msgstr "{fails} errore(i) campionato(i) registrato(i) e NON sarà(sarranno) comp
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limite"
@@ -390,6 +397,9 @@ msgid "Characteristics"
 msgstr "Caratteristiche"
 
 msgid "Charge"
+msgstr ""
+
+msgid "Charge number"
 msgstr ""
 
 msgid "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "Prelievo {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Scegli uno stile e un avatar, o mescola per ottenere quelli nuovi."
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr ""
+
 msgid "Pick the leave for your time off."
 msgstr "Seleziona il permesso per il tuo tempo libero."
 
@@ -2031,6 +2044,9 @@ msgstr "Serializzato"
 msgid "Service"
 msgstr ""
 
+msgid "Service job"
+msgstr ""
+
 msgid "Session locked"
 msgstr "Sessione bloccata"
 
@@ -2222,9 +2238,8 @@ msgstr "Sistema"
 msgid "Tag"
 msgstr "Etichetta"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "Tocca un giorno per aggiungere tempo a {0}. Trascina il bordo inferiore di una barra per modificare le sue ore."
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "The accent color used across Carbon."
 msgstr "Il colore di accento utilizzato in Carbon."
@@ -2237,6 +2252,9 @@ msgstr "La quantità completata per questa operazione è inferiore alla quantit�
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "La data è precedente alla finestra di voce. Il motivo viene conservato con la voce."
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job opens with your clock running."
 msgstr ""
@@ -2538,6 +2556,9 @@ msgstr "Scrivi una Nota…"
 
 msgid "Yes"
 msgstr "Sì"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbra fine?"

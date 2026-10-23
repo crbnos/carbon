@@ -42,6 +42,10 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}にはロット番号がありません。Carbonでバッチまたは製造指図に設定してから、完了してください。"
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0}個の品目"
@@ -101,6 +105,9 @@ msgstr "{fails}件のサンプル不良が記録されており、完了され�
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB の制限"
@@ -390,6 +397,9 @@ msgid "Characteristics"
 msgstr "特性"
 
 msgid "Charge"
+msgstr ""
+
+msgid "Charge number"
 msgstr ""
 
 msgid "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "ピッキング {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "スタイルとアバターを選択するか、新しいものにシャッフルしてください。"
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr ""
+
 msgid "Pick the leave for your time off."
 msgstr "休暇を選択してください。"
 
@@ -2031,6 +2044,9 @@ msgstr "シリアル化済"
 msgid "Service"
 msgstr ""
 
+msgid "Service job"
+msgstr ""
+
 msgid "Session locked"
 msgstr "セッションはロック中です。"
 
@@ -2222,9 +2238,8 @@ msgstr "システム"
 msgid "Tag"
 msgstr "タグ"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "日付をタップして {0} に時間を追加してください。バーの下端をドラッグして時間を変更できます。"
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon全体で使用されるアクセントカラー。"
@@ -2237,6 +2252,9 @@ msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っ
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "日付がエントリー期間前です。理由はエントリーと共に保持されます。"
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job opens with your clock running."
 msgstr ""
@@ -2538,6 +2556,9 @@ msgstr "メモを書く…"
 
 msgid "Yes"
 msgstr "はい"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "作業開始から{hoursElapsed}時間が経過しています。作業終了を忘れていませんか？"

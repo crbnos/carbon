@@ -42,6 +42,10 @@ msgstr "{0} घंटे"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} के पास लॉट संख्या नहीं है। इसे Carbon में बैच या जॉब पर सेट करें, फिर पूर्ण करें।"
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0} आइटम"
@@ -101,6 +105,9 @@ msgstr "{fails} नमूना विफलता(एं) दर्ज की �
 
 msgid "{hour} h"
 msgstr "{hour} घंटे"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
@@ -390,6 +397,9 @@ msgid "Characteristics"
 msgstr "विशेषताएं"
 
 msgid "Charge"
+msgstr ""
+
+msgid "Charge number"
 msgstr ""
 
 msgid "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "पिकिंग {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "एक शैली और अवतार चुनें, या नए के लिए शफल करें।"
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr ""
+
 msgid "Pick the leave for your time off."
 msgstr "अपनी छुट्टी के लिए अवकाश चुनें।"
 
@@ -2031,6 +2044,9 @@ msgstr "क्रमांकित"
 msgid "Service"
 msgstr ""
 
+msgid "Service job"
+msgstr ""
+
 msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
@@ -2222,9 +2238,8 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "दिन को टैप करके {0} में समय जोड़ें। घंटे बदलने के लिए बार के निचले किनारे को खींचें।"
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
@@ -2237,6 +2252,9 @@ msgstr "इस ऑपरेशन के लिए पूर्ण मात्�
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "तारीख प्रविष्टि विंडो से पहले है। कारण प्रविष्टि के साथ रखा जाता है।"
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job opens with your clock running."
 msgstr ""
@@ -2538,6 +2556,9 @@ msgstr "एक नोट लिखें…"
 
 msgid "Yes"
 msgstr "हां"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"

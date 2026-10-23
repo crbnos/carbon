@@ -42,6 +42,10 @@ msgstr "{0} s"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} Lot numarasına sahip değil. Bunu Carbon'da Partide veya İş emrinde ayarla, sonra Tamamla."
 
+#. placeholder {0}: selectedService.serviceJobId
+msgid "{0} is closed. Its time cannot change."
+msgstr ""
+
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
 msgstr "{0} stok kartı"
@@ -101,6 +105,9 @@ msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları i�
 
 msgid "{hour} h"
 msgstr "{hour} s"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
@@ -390,6 +397,9 @@ msgid "Characteristics"
 msgstr "Özellikler"
 
 msgid "Charge"
+msgstr ""
+
+msgid "Charge number"
 msgstr ""
 
 msgid "Charge numbers"
@@ -1594,6 +1604,9 @@ msgstr "Toplama {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
 
+msgid "Pick the job. It shows with no hours until you add some."
+msgstr ""
+
 msgid "Pick the leave for your time off."
 msgstr "Zaman aşınız için izni seçin."
 
@@ -2031,6 +2044,9 @@ msgstr "Serileştirildi"
 msgid "Service"
 msgstr ""
 
+msgid "Service job"
+msgstr ""
+
 msgid "Session locked"
 msgstr "Oturum kilitlendi"
 
@@ -2222,9 +2238,8 @@ msgstr "Sistem"
 msgid "Tag"
 msgstr "Etiket"
 
-#. placeholder {0}: selected.readableId
-msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
-msgstr "{0}'ye zaman eklemek için bir gün seçin. Saatleri değiştirmek için çubuğun alt kenarını sürükleyin."
+msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
+msgstr ""
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
@@ -2237,6 +2252,9 @@ msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "Tarih giriş penceresinden önce. Neden giriş ile tutulur."
+
+msgid "The job is closed"
+msgstr ""
 
 msgid "The job opens with your clock running."
 msgstr ""
@@ -2538,6 +2556,9 @@ msgstr "Bir not yazın…"
 
 msgid "Yes"
 msgstr "Evet"
+
+msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
+msgstr ""
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
