@@ -1910,6 +1910,7 @@ export const path = {
       `${x}/contract/new?${new URLSearchParams({ basis: "Project", projectId })}`,
     newProjectElement: (id: string) =>
       generatePath(`${x}/project/${id}/elements/new`),
+    newProjectLabel: `${x}/projects/labels/new`,
     newProjectStockTransfer: `${x}/projects/transfers/new`,
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
     newPurchaseInvoiceLine: (id: string) =>

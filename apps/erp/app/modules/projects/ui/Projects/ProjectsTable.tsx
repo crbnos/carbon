@@ -59,7 +59,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
   const permissions = usePermissions();
   const { formatDate } = useDateFormatter();
   const currencyFormatter = useCurrencyFormatter();
-  const percentFormatter = usePercentFormatter();
+  const percentFormatter = usePercentFormatter("progress");
   const [people] = usePeople();
   const [params] = useUrlParams();
   const isFiltered = params.has("filter") || params.has("search");

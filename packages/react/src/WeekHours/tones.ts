@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-/** A row's colour: its card's dot and its bars. Literal classes for Tailwind. */
+/** A row's color: its card's dot and its bars. Literal classes for Tailwind. */
 export type WeekHoursTone = { dot: string; bar: string };
 
 const TONES: WeekHoursTone[] = [
@@ -15,7 +15,7 @@ const TONES: WeekHoursTone[] = [
   { dot: "bg-orange-500", bar: "border-orange-500/60 bg-orange-500/15" },
   { dot: "bg-fuchsia-500", bar: "border-fuchsia-500/60 bg-fuchsia-500/15" }
 ];
-/** Time off: one colour, whatever its place in the list. */
+/** Time off: one color, whatever its place in the list. */
 const LEAVE_TONE: WeekHoursTone = {
   dot: "bg-emerald-500",
   bar: "border-emerald-500/60 bg-emerald-500/15"

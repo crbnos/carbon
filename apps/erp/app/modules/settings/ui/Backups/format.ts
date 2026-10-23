@@ -67,7 +67,7 @@ export function backupStatusLabel(status: BackupStatus): MessageDescriptor {
   return STATUS_LABELS[status];
 }
 
-/** Which badge colour a status wears. */
+/** Which badge color a status wears. */
 export function backupStatusVariant(
   status: BackupStatus
 ): "green" | "yellow" | "red" | "secondary" {

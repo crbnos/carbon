@@ -18,7 +18,7 @@ import {
 } from "./layout";
 import type { WeekHoursTone } from "./tones";
 
-/** One charge number of the week: what its bars are labelled and coloured. */
+/** One charge number of the week: what its bars are labelled and colored. */
 export type WeekHoursRow = {
   key: string;
   /** The short id on its bars ("OB2-6"). */
@@ -112,7 +112,7 @@ export function WeekHoursChart({
 
   return (
     <div className="flex min-w-0 flex-1 flex-col">
-      {/* The page's own colour: the dates sit on it, and bars scroll under. */}
+      {/* The page's own color: the dates sit on it, and bars scroll under. */}
       <div className="sticky top-0 z-10 flex border-b border-border bg-card">
         <div className="w-14 shrink-0" />
         {days.map((day, index) => {

@@ -6,8 +6,6 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { useAction } from "@carbon/query";
-import { toast } from "@carbon/react";
 import { redirect, type WbsNode } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
@@ -58,10 +56,6 @@ import type {
   ProjectState
 } from "~/modules/projects/types";
 import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
-import {
-  useActiveChangeRequestId,
-  withChangeRequest
-} from "~/modules/projects/ui/ChangeRequests/useActiveChangeRequest";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
 import { ElementList } from "~/modules/projects/ui/Elements/ElementList";
@@ -71,6 +65,10 @@ import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "~/modules/projects/ui/Elements/ElementTypeIcon";
+import {
+  type NewElementDefaults,
+  NewElementModal
+} from "~/modules/projects/ui/Elements/NewElementModal";
 import { WbsMenu } from "~/modules/projects/ui/Elements/WbsMenu";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
 import { getDatabaseClient } from "~/services/database.server";
@@ -288,7 +286,6 @@ export default function ProjectElementsRoute() {
   const { search } = useLocation();
   const [people] = usePeople();
   const typeLabels = useElementTypeLabels();
-  const changeRequestId = useActiveChangeRequestId();
 
   const states = routeData?.states ?? [];
   const labels = routeData?.labels ?? [];
@@ -409,49 +406,16 @@ export default function ProjectElementsRoute() {
   const canDelete =
     permissions.can("delete", "projects") && !isClosed && !planLocked;
 
-  // New Element adds a row: a default name per type. The List highlights
-  // the new row; the other layouts open its page, since they have no row to
-  // show.
-  const newNames: Record<ProjectElementType, string> = {
-    System: t`New System`,
-    Requirement: t`New Requirement`,
-    Function: t`New Function`,
-    Task: t`New Task`,
-    "Test Case": t`New Test Case`,
-    Parameter: t`New Parameter`
-  };
+  // New Element opens the New element modal with the type, parent or state
+  // it was asked for. The List highlights the new row; the other layouts
+  // open its page, since they have no row to show.
+  const [creating, setCreating] = useState<NewElementDefaults | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
-  const createFetcher = useAction<{
-    id?: string;
-    error?: { message: string };
-  }>({
-    onSuccess: (data) => {
-      if (!data.id) return;
-      if (layout === "list") setCreatedId(data.id);
-      else navigate(`${path.to.projectElement(projectId, data.id)}${search}`);
-    },
-    onError: (data) =>
-      toast.error(data.error?.message ?? t`Failed to create the element`)
-  });
   const createElement = (
-    elementType: ProjectElementType = "Task",
+    elementType?: ProjectElementType,
     parentId?: string,
     stateId?: string
-  ) => {
-    if (createFetcher.isPending) return;
-    const formData = new FormData();
-    formData.append("type", elementType);
-    formData.append("name", newNames[elementType]);
-    if (parentId) formData.append("parentId", parentId);
-    if (stateId) formData.append("stateId", stateId);
-    createFetcher.submit(formData, {
-      method: "post",
-      action: withChangeRequest(
-        path.to.newProjectElement(projectId),
-        changeRequestId
-      )
-    });
-  };
+  ) => setCreating({ type: elementType, parentId, stateId });
 
   return (
     <div className="flex h-full min-w-0 flex-col bg-card">
@@ -467,7 +431,6 @@ export default function ProjectElementsRoute() {
         onNew={(elementType) => createElement(elementType)}
         onBuildFromPart={() => setBuildingFromPart(true)}
         canCreate={canCreate}
-        isCreating={createFetcher.isPending}
         exportHref={
           layout === "reader"
             ? `${path.to.file.projectReader(projectId)}${search}`
@@ -523,6 +486,27 @@ export default function ProjectElementsRoute() {
           />
         )}
       </div>
+      {creating && (
+        <NewElementModal
+          projectId={projectId}
+          context={routeData?.project?.identifier ?? routeData?.project?.name}
+          elements={elements}
+          states={states}
+          labels={labels}
+          milestones={milestones}
+          types={projectElementTypes}
+          defaults={creating}
+          onCreated={(created, { createMore }) => {
+            if (layout === "list" || createMore) setCreatedId(created.id);
+            else {
+              navigate(
+                `${path.to.projectElement(projectId, created.id)}${search}`
+              );
+            }
+          }}
+          onClose={() => setCreating(null)}
+        />
+      )}
       {buildingFromPart && (
         <BuildFromPartDrawer
           projectId={projectId}

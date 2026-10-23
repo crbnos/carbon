@@ -928,6 +928,9 @@ msgstr "{totalQuantity} / {batchCapacity} шт · умещается в один
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} шт · превышает мощность — {loads} циклов по {batchCapacity}"
 
+msgid "{typeLabel} title"
+msgstr ""
+
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} ожидают группировки"
 
@@ -2853,6 +2856,9 @@ msgstr "Добавлено {name} · {quantity} × {rate}"
 
 msgid "Added for this customer"
 msgstr "Добавлено для этого покупателя"
+
+msgid "Added to the change request"
+msgstr ""
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Добавляется к цене за единицу для выбранных значений, до скидок и надбавок. Используйте отрицательную сумму для кредита."
@@ -5800,6 +5806,9 @@ msgstr "Приказ об изменении"
 msgid "Change owner"
 msgstr "Изменить ответственного"
 
+msgid "Change parent"
+msgstr ""
+
 msgid "Change priority"
 msgstr "Изменить приоритет"
 
@@ -6314,7 +6323,7 @@ msgstr "Свернуть настройку"
 msgid "Collapse subtree"
 msgstr "Свернуть поддерево"
 
-msgid "Colour"
+msgid "Color"
 msgstr "Цвет"
 
 #. placeholder {0}: index + 1
@@ -7623,6 +7632,9 @@ msgstr "Создать {0}"
 msgid "Create {0} values"
 msgstr "Создать {0} значений"
 
+msgid "Create {name}"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "Создать и запустить в работу"
 
@@ -7695,6 +7707,9 @@ msgstr "Создать извещение об изменении"
 msgid "Create Contract"
 msgstr "Создать контракт"
 
+msgid "Create element"
+msgstr ""
+
 msgid "Create Elements"
 msgstr "Создать элементы"
 
@@ -7715,6 +7730,9 @@ msgstr "Создать производственные заказы"
 
 msgid "Create Kanban"
 msgstr "Создать канбан"
+
+msgid "Create more"
+msgstr ""
 
 msgid "Create New"
 msgstr "Создать"
@@ -7775,6 +7793,10 @@ msgstr "Создать рабочий центр"
 
 msgid "Created"
 msgstr "Создано"
+
+#. placeholder {0}: created.readableId
+msgid "Created {0}"
+msgstr ""
 
 msgid "Created {count} elements from the part"
 msgstr "Создано {count} элементов из детали"
@@ -10061,9 +10083,6 @@ msgstr "Заработанная стоимость закрыта для про
 msgid "Earned value closed for {0} projects"
 msgstr "Заработанная стоимость закрыта для {0} проектов"
 
-msgid "Earned value rolls up to this element"
-msgstr "Заработанная стоимость суммируется на этот элемент"
-
 msgid "Earned value: CPI, SPI and EAC per control account."
 msgstr "Заработанная стоимость: CPI, SPI и EAC по счёту контроля."
 
@@ -11604,6 +11623,9 @@ msgstr "Ошибка при создании поставщика: {0}"
 
 msgid "Failed to create the element"
 msgstr "Не удалось создать элемент"
+
+msgid "Failed to create the label"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14547,6 +14569,9 @@ msgstr "Тип записи"
 msgid "Kit"
 msgstr "Комплект"
 
+msgid "label"
+msgstr ""
+
 msgid "Label"
 msgstr "Метка"
 
@@ -16683,9 +16708,6 @@ msgstr "Новое поле"
 msgid "New Fixed Asset"
 msgstr "Новое основное средство"
 
-msgid "New Function"
-msgstr "Новая функция"
-
 msgid "New Gauge"
 msgstr "Новое средство измерения"
 
@@ -16776,9 +16798,6 @@ msgstr "Новый тип несоответствия"
 msgid "New Owner"
 msgstr "Новый ответственный"
 
-msgid "New Parameter"
-msgstr "Новый параметр"
-
 msgid "New Part"
 msgstr "Новая деталь"
 
@@ -16850,9 +16869,6 @@ msgstr "Новое соглашение аренды"
 
 msgid "New Request"
 msgstr "Новый запрос"
-
-msgid "New Requirement"
-msgstr "Новое требование"
 
 msgid "New Revision"
 msgstr "Новая ревизия"
@@ -16931,15 +16947,6 @@ msgstr "Новая деталь поставщика"
 
 msgid "New Supplier Return"
 msgstr "Новый возврат поставщика"
-
-msgid "New System"
-msgstr "Новая система"
-
-msgid "New Task"
-msgstr "Новая задача"
-
-msgid "New Test Case"
-msgstr "Новый тестовый случай"
 
 msgid "New Timecard"
 msgstr "Новая табель учета рабочего времени"
@@ -23799,6 +23806,9 @@ msgstr "Поиск операций…"
 msgid "Search operators..."
 msgstr "Поиск операторов..."
 
+msgid "Search or create..."
+msgstr ""
+
 msgid "Search parts..."
 msgstr "Поиск деталей..."
 
@@ -28762,7 +28772,7 @@ msgstr "Отслеживайте каждое изменение ваших за
 msgid "Track real-time inventory by location and bin"
 msgstr "Отслеживайте инвентарь в реальном времени по местоположению и ячейке"
 
-msgid "Track serial/lot numbers and fulfil sales orders."
+msgid "Track serial/lot numbers and fulfill sales orders."
 msgstr "Отслеживайте серийные номера/партии и выполняйте заказы покупателей"
 
 msgid "Track tax depreciation separately"
@@ -29032,6 +29042,9 @@ msgstr "Введите <0>«{confirmPhrase}»</0> для продолжения.
 
 msgid "Type a message..."
 msgstr "Введите сообщение..."
+
+msgid "Type a name to create a label."
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Введите адрес электронной почты и нажмите Enter, чтобы добавить внешнего получателя"
@@ -29778,7 +29791,7 @@ msgstr "Значения"
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "Значения применяют сегодняшние себестоимость на единицу к историческим количествам."
 
-msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgid "Values in this run have been summarized. Full detail is kept for 7 days."
 msgstr "Значения в этом запуске были сведены. Полные детали хранятся 7 дней."
 
 msgid "Variable lease cost"

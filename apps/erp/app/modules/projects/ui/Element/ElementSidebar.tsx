@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import { Button, Copy, cn, VStack } from "@carbon/react";
+import { Badge, Button, Copy, cn, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo, useState } from "react";
@@ -11,7 +11,7 @@ import { LuBuilding2 } from "react-icons/lu";
 import { Link } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { Employee, MultiSelect } from "~/components/Form";
+import { CreatableMultiSelect, Employee, MultiSelect } from "~/components/Form";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -35,6 +35,7 @@ import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import {
   ElementPriorityIcon,
   sortStates,
+  useCreateProjectLabel,
   useElementField,
   usePriorityLabels
 } from "../Elements/ElementProperties";
@@ -454,7 +455,12 @@ function OwnerField({
   );
 }
 
-/** The labels: the form `MultiSelect` in its inline mode. */
+/**
+ * The labels: the form `CreatableMultiSelect` in its inline mode. A name
+ * that is not a label yet creates one (the company's, in the default
+ * color) and adds it. Without permission to create labels, the form
+ * `MultiSelect`.
+ */
 function LabelsField({
   projectId,
   elementId,
@@ -470,6 +476,17 @@ function LabelsField({
 }) {
   const { t } = useLingui();
   const { submit } = useElementField(projectId, elementId, "labelIds");
+  const createLabel = useCreateProjectLabel();
+  const save = (ids: string[]) => submit(ids.length > 0 ? ids.join(",") : null);
+  const colorById = new Map(labels.map((label) => [label.id, label.color]));
+  const common = {
+    name: "labelIds",
+    label: t`Labels`,
+    isReadOnly: isDisabled,
+    value: labelIds,
+    options: labels.map((label) => ({ value: label.id, label: label.name }))
+  };
+
   return (
     <ValidatedForm
       key={`labelIds:${labelIds.join(",")}`}
@@ -477,21 +494,45 @@ function LabelsField({
       validator={z.object({ labelIds: z.array(z.string()).optional() })}
       className="w-full"
     >
-      <MultiSelect
-        name="labelIds"
-        label={t`Labels`}
-        inline
-        isReadOnly={isDisabled}
-        value={labelIds}
-        options={labels.map((label) => ({
-          value: label.id,
-          label: label.name
-        }))}
-        onChange={(next) => {
-          const ids = next.map((option) => option.value);
-          submit(ids.length > 0 ? ids.join(",") : null);
-        }}
-      />
+      {createLabel ? (
+        <CreatableMultiSelect
+          {...common}
+          createLabel={t`label`}
+          inline={(value, options) => (
+            <div className="flex flex-wrap items-start gap-1">
+              {value.map((id) => (
+                <Badge
+                  key={id}
+                  variant="secondary"
+                  className="max-w-[160px] gap-1.5 border dark:border-none dark:shadow-button-base"
+                >
+                  <span
+                    aria-hidden
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: colorById.get(id) }}
+                  />
+                  <span className="truncate">
+                    {options.find((option) => option.value === id)?.label}
+                  </span>
+                </Badge>
+              ))}
+            </div>
+          )}
+          showCreateOptionOnEmpty={false}
+          onChange={save}
+          onCreateOption={(name) => {
+            const trimmed = name.trim();
+            if (trimmed) createLabel(trimmed, (id) => save([...labelIds, id]));
+          }}
+        />
+      ) : (
+        // No permission to create a label: pick from the company's.
+        <MultiSelect
+          {...common}
+          inline
+          onChange={(next) => save(next.map((option) => option.value))}
+        />
+      )}
     </ValidatedForm>
   );
 }

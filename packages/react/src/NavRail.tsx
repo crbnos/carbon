@@ -476,7 +476,7 @@ type NavRailSwitcherProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "children"
 > & {
-  /** The company's logo for each colour mode; its initials stand in for none. */
+  /** The company's logo for each color mode; its initials stand in for none. */
   logoLight?: string | null;
   logoDark?: string | null;
   /** Also the accessible name unless `aria-label` is given. */

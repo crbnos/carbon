@@ -14,8 +14,8 @@ type PurchasingStatusProps = {
 
 const PurchasingStatus = ({ status, iconOnly }: PurchasingStatusProps) => {
   if (!status) return null;
-  // Every status renders the same way; only its colour differs. An unknown
-  // status (none today) has no colour and renders nothing, as before.
+  // Every status renders the same way; only its color differs. An unknown
+  // status (none today) has no color and renders nothing, as before.
   const color = PURCHASE_ORDER_STATUS_COLOR_MAP[status];
   if (!color) return null;
   return (

@@ -928,6 +928,9 @@ msgstr "{totalQuantity} / {batchCapacity} parça · bir çalışmaya sığar"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} parça · kapasite aşıldı — {loads} yükleme {batchCapacity}"
 
+msgid "{typeLabel} title"
+msgstr ""
+
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} partiye alınmayı bekliyor"
 
@@ -2853,6 +2856,9 @@ msgstr "Eklendi {name} · {quantity} × {rate}"
 
 msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
+
+msgid "Added to the change request"
+msgstr ""
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Seçilen değerler için birim fiyata eklenir, iskontolar ve marjlar öncesi. İndirim için negatif tutar kullanın."
@@ -5800,6 +5806,9 @@ msgstr "Değişim emri"
 msgid "Change owner"
 msgstr "Sahibi değiştir"
 
+msgid "Change parent"
+msgstr ""
+
 msgid "Change priority"
 msgstr "Önceliği değiştir"
 
@@ -6314,7 +6323,7 @@ msgstr "Kurulumu Daralt"
 msgid "Collapse subtree"
 msgstr "Alt ağacı daralt"
 
-msgid "Colour"
+msgid "Color"
 msgstr "Renk"
 
 #. placeholder {0}: index + 1
@@ -7623,6 +7632,9 @@ msgstr "{0} Oluştur"
 msgid "Create {0} values"
 msgstr "{0} değerleri oluştur"
 
+msgid "Create {name}"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "Oluştur ve Serbest Bırak"
 
@@ -7695,6 +7707,9 @@ msgstr "Değişiklik Bildirisi Oluştur"
 msgid "Create Contract"
 msgstr "Sözleşme Oluştur"
 
+msgid "Create element"
+msgstr ""
+
 msgid "Create Elements"
 msgstr "Öğeler Oluştur"
 
@@ -7715,6 +7730,9 @@ msgstr "İş emirleri oluştur"
 
 msgid "Create Kanban"
 msgstr "Kanban Oluştur"
+
+msgid "Create more"
+msgstr ""
 
 msgid "Create New"
 msgstr "Yeni oluştur"
@@ -7775,6 +7793,10 @@ msgstr "İş Merkezi Oluştur"
 
 msgid "Created"
 msgstr "Oluşturulma"
+
+#. placeholder {0}: created.readableId
+msgid "Created {0}"
+msgstr ""
 
 msgid "Created {count} elements from the part"
 msgstr "Parçadan {count} öğe oluşturuldu"
@@ -10061,9 +10083,6 @@ msgstr "{0} proje için kazanılan değer kapatıldı"
 msgid "Earned value closed for {0} projects"
 msgstr "{0} proje için kazanılan değer kapatıldı"
 
-msgid "Earned value rolls up to this element"
-msgstr "Kazanılan değer bu elementi içinde toplar"
-
 msgid "Earned value: CPI, SPI and EAC per control account."
 msgstr "Kazanılan değer: kontrol hesabı başına CPI, SPI ve EAC."
 
@@ -11604,6 +11623,9 @@ msgstr "Tedarikçi oluşturulamadı: {0}"
 
 msgid "Failed to create the element"
 msgstr "Element oluşturulamadı"
+
+msgid "Failed to create the label"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14547,6 +14569,9 @@ msgstr "Kayıt türü"
 msgid "Kit"
 msgstr "Set"
 
+msgid "label"
+msgstr ""
+
 msgid "Label"
 msgstr "Etiket"
 
@@ -16683,9 +16708,6 @@ msgstr "Yeni Alan"
 msgid "New Fixed Asset"
 msgstr "Yeni sabit kıymet"
 
-msgid "New Function"
-msgstr "Yeni İşlev"
-
 msgid "New Gauge"
 msgstr "Yeni ölçüm aleti"
 
@@ -16776,9 +16798,6 @@ msgstr "Yeni Uygunsuzluk Türü"
 msgid "New Owner"
 msgstr "Yeni Sahip"
 
-msgid "New Parameter"
-msgstr "Yeni Parametre"
-
 msgid "New Part"
 msgstr "Yeni parça"
 
@@ -16850,9 +16869,6 @@ msgstr "Yeni Kira Sözleşmesi"
 
 msgid "New Request"
 msgstr "Yeni İstek"
-
-msgid "New Requirement"
-msgstr "Yeni Gereklilik"
 
 msgid "New Revision"
 msgstr "Yeni Revizyon"
@@ -16931,15 +16947,6 @@ msgstr "Yeni Tedarikçi Parçası"
 
 msgid "New Supplier Return"
 msgstr "Yeni Tedarikçi İadesi"
-
-msgid "New System"
-msgstr "Yeni Sistem"
-
-msgid "New Task"
-msgstr "Yeni Görev"
-
-msgid "New Test Case"
-msgstr "Yeni Test Durumu"
 
 msgid "New Timecard"
 msgstr "Yeni Vardiya"
@@ -23799,6 +23806,9 @@ msgstr "Operasyonları ara…"
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
+msgid "Search or create..."
+msgstr ""
+
 msgid "Search parts..."
 msgstr "Parça ara..."
 
@@ -28762,7 +28772,7 @@ msgstr "Siparişlerinizde, faturalarınızda, müşterilerinizde, tedarikçileri
 msgid "Track real-time inventory by location and bin"
 msgstr "Envanteri konum ve göze göre gerçek zamanlı olarak izleyin"
 
-msgid "Track serial/lot numbers and fulfil sales orders."
+msgid "Track serial/lot numbers and fulfill sales orders."
 msgstr "Seri/lot numaralarını takip edin ve satış siparişlerini yerine getirin."
 
 msgid "Track tax depreciation separately"
@@ -29032,6 +29042,9 @@ msgstr "Devam etmek için <0>\"{confirmPhrase}\"</0> yazın."
 
 msgid "Type a message..."
 msgstr "Bir mesaj yaz..."
+
+msgid "Type a name to create a label."
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Harici bir alıcı eklemek için bir e-posta girin ve Enter tuşuna basın"
@@ -29778,7 +29791,7 @@ msgstr "Değerler"
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "Değerler, tarihsel miktarlara bugünün birim maliyetlerini uygular."
 
-msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgid "Values in this run have been summarized. Full detail is kept for 7 days."
 msgstr "Bu çalışmadaki değerler özetlenmiştir. Tam ayrıntılar 7 gün boyunca tutulur."
 
 msgid "Variable lease cost"

@@ -142,6 +142,7 @@ is module-private so the two percent kinds can never drift apart):
 | Kind | Digits | Notes |
 |---|---|---|
 | Percent / rate | min 0, max 3 | "5%", "6.25%", "6.255%" |
+| Progress | min 0, max 0 | "13%" — the figure beside a progress bar or a progress headline (budget used, work done). Display only, never an input; `usePercentFormatter("progress")` |
 | Percent points | min 0, max 3 | the same rate typed bare in a field already labelled "%" — `6.25`, caller divides by 100 |
 | Exchange rate | min 0, max 5 | "1.0852", "0.00781" — a plain multiplier, not a percent and not a currency. Intl's decimal default caps at 3, which truncates a stored rate on blur |
 | Quantity | min 0, max 5 | "3", "4.33333", "0.00125" — no "<0.01" placeholder |

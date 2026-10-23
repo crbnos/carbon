@@ -13,7 +13,7 @@ import {
   LuFiles,
   LuFolderCheck,
   LuFolderKanban,
-  LuHeadphones,
+  LuHeartHandshake,
   LuLandmark,
   LuSettings,
   LuShield,
@@ -128,7 +128,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
       permission: "resources",
       name: t`Resources`,
       to: path.to.resources,
-      icon: LuWrench
+      icon: LuHeartHandshake
     },
     {
       key: "sales",
@@ -142,7 +142,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
       permission: "service",
       name: t`Service`,
       to: path.to.serviceOrders,
-      icon: LuHeadphones
+      icon: LuWrench
     },
     {
       key: "settings",

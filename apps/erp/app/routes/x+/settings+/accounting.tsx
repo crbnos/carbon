@@ -354,7 +354,7 @@ export default function AccountingSettingsRoute() {
                       name="intent"
                       value={JOURNAL_LEGACY_INTENT}
                     />
-                    {/* A secondary button sets no text colour of its own, so
+                    {/* A secondary button sets no text color of its own, so
                         it would take the alert's amber. */}
                     <Button
                       type="submit"

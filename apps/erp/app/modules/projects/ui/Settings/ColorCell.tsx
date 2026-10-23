@@ -6,9 +6,9 @@ import { ColorPicker, useDebounce } from "@carbon/react";
 import { useState } from "react";
 
 /**
- * A grid cell's colour: the shared `ColorPicker`, saved 500 ms after the
+ * A grid cell's color: the shared `ColorPicker`, saved 500 ms after the
  * last change (dragging in the picker changes the value many times). The
- * parent keys it by the saved colour, so a reload shows the stored value.
+ * parent keys it by the saved color, so a reload shows the stored value.
  */
 export function ColorCell({
   value,
@@ -19,7 +19,7 @@ export function ColorCell({
   isDisabled: boolean;
   onSave: (color: string) => unknown;
 }) {
-  // The colour being picked; the saved value until the first change.
+  // The color being picked; the saved value until the first change.
   const [picked, setPicked] = useState<string | null>(null);
   const save = useDebounce((color: string) => onSave(color), 500, true);
 

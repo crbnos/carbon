@@ -24,7 +24,7 @@ const icons: Record<ProjectElementType, IconType> = {
   Parameter: LuSigma
 };
 
-/** The colour of each element type's icon. The type is meaning, so each has a hue. */
+/** The color of each element type's icon. The type is meaning, so each has a hue. */
 const iconColors: Record<ProjectElementType, string> = {
   Requirement: "text-blue-500",
   System: "text-orange-500",

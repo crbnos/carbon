@@ -928,6 +928,9 @@ msgstr "{totalQuantity} / {batchCapacity} 개 · 한 번 실행에 맞음"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} 개 · 용량 초과 — {batchCapacity}의 {loads}개 로드"
 
+msgid "{typeLabel} title"
+msgstr ""
+
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} 배치 대기 중"
 
@@ -2853,6 +2856,9 @@ msgstr "{name} · {quantity} × {rate} 추가됨"
 
 msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
+
+msgid "Added to the change request"
+msgstr ""
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "선택한 값에 대해 단가에 추가되며, 할인 및 마크업 전입니다. 대변을 위해 음수 금액을 사용하세요."
@@ -5800,6 +5806,9 @@ msgstr "변경 오더"
 msgid "Change owner"
 msgstr "책임자 변경"
 
+msgid "Change parent"
+msgstr ""
+
 msgid "Change priority"
 msgstr "우선순위 변경"
 
@@ -6314,7 +6323,7 @@ msgstr "셋업 접기"
 msgid "Collapse subtree"
 msgstr "하위 트리 접기"
 
-msgid "Colour"
+msgid "Color"
 msgstr "색상"
 
 #. placeholder {0}: index + 1
@@ -7623,6 +7632,9 @@ msgstr "{0} 생성"
 msgid "Create {0} values"
 msgstr "{0} 값 생성"
 
+msgid "Create {name}"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "생성 & 릴리스"
 
@@ -7695,6 +7707,9 @@ msgstr "변경 통지 생성"
 msgid "Create Contract"
 msgstr "계약 생성"
 
+msgid "Create element"
+msgstr ""
+
 msgid "Create Elements"
 msgstr "요소 생성"
 
@@ -7715,6 +7730,9 @@ msgstr "작업 지시 생성"
 
 msgid "Create Kanban"
 msgstr "칸반 생성"
+
+msgid "Create more"
+msgstr ""
 
 msgid "Create New"
 msgstr "새로 생성"
@@ -7775,6 +7793,10 @@ msgstr "작업장 생성"
 
 msgid "Created"
 msgstr "생성됨"
+
+#. placeholder {0}: created.readableId
+msgid "Created {0}"
+msgstr ""
 
 msgid "Created {count} elements from the part"
 msgstr "부품에서 {count}개 요소 생성됨"
@@ -10061,9 +10083,6 @@ msgstr "{0}개 프로젝트의 실적 가치가 마감되었습니다"
 msgid "Earned value closed for {0} projects"
 msgstr "{0}개 프로젝트의 실적 가치가 마감되었습니다"
 
-msgid "Earned value rolls up to this element"
-msgstr "실적값이 이 요소로 합산됩니다"
-
 msgid "Earned value: CPI, SPI and EAC per control account."
 msgstr "실적값: 관제 계정당 CPI, SPI 및 EAC"
 
@@ -11604,6 +11623,9 @@ msgstr "공급업체 생성 실패: {0}"
 
 msgid "Failed to create the element"
 msgstr "요소 생성에 실패했습니다"
+
+msgid "Failed to create the label"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14547,6 +14569,9 @@ msgstr "기록 유형"
 msgid "Kit"
 msgstr "키트"
 
+msgid "label"
+msgstr ""
+
 msgid "Label"
 msgstr "라벨"
 
@@ -16683,9 +16708,6 @@ msgstr "신규 필드"
 msgid "New Fixed Asset"
 msgstr "신규 고정자산"
 
-msgid "New Function"
-msgstr "새 함수"
-
 msgid "New Gauge"
 msgstr "신규 계측기"
 
@@ -16776,9 +16798,6 @@ msgstr "새 부적합 유형"
 msgid "New Owner"
 msgstr "신규 책임자"
 
-msgid "New Parameter"
-msgstr "새 매개변수"
-
 msgid "New Part"
 msgstr "신규 부품"
 
@@ -16850,9 +16869,6 @@ msgstr "새 렌탈 계약"
 
 msgid "New Request"
 msgstr "새 요청"
-
-msgid "New Requirement"
-msgstr "새 요구사항"
 
 msgid "New Revision"
 msgstr "새 리비전"
@@ -16931,15 +16947,6 @@ msgstr "새 공급업체 부품"
 
 msgid "New Supplier Return"
 msgstr "새 공급업체 반품"
-
-msgid "New System"
-msgstr "새 시스템"
-
-msgid "New Task"
-msgstr "새 작업"
-
-msgid "New Test Case"
-msgstr "새 테스트 케이스"
 
 msgid "New Timecard"
 msgstr "새 근무기록"
@@ -23799,6 +23806,9 @@ msgstr "공정 검색…"
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+msgid "Search or create..."
+msgstr ""
+
 msgid "Search parts..."
 msgstr "부품 검색..."
 
@@ -28762,7 +28772,7 @@ msgstr "주문, 송장, 고객, 공급업체 등 모든 변경 사항을 추적�
 msgid "Track real-time inventory by location and bin"
 msgstr "위치와 빈(bin)별로 실시간 재고를 추적"
 
-msgid "Track serial/lot numbers and fulfil sales orders."
+msgid "Track serial/lot numbers and fulfill sales orders."
 msgstr "일련번호/로트 번호를 추적하고 수주를 이행합니다."
 
 msgid "Track tax depreciation separately"
@@ -29032,6 +29042,9 @@ msgstr "계속하려면 <0>\"{confirmPhrase}\"</0>를 입력하세요."
 
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
+
+msgid "Type a name to create a label."
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "이메일을 입력하고 Enter 키를 눌러 외부 수신자를 추가하세요"
@@ -29778,7 +29791,7 @@ msgstr "값"
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "값은 과거 수량에 오늘의 단위 원가를 적용합니다."
 
-msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgid "Values in this run have been summarized. Full detail is kept for 7 days."
 msgstr "이 실행의 값이 요약되었습니다. 전체 세부정보는 7일간 유지됩니다."
 
 msgid "Variable lease cost"

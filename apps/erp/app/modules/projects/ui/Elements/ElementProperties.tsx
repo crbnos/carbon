@@ -33,11 +33,12 @@ import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
-import { forwardRef, useMemo, useState } from "react";
+import { forwardRef, useMemo, useRef, useState } from "react";
 import {
   LuCalendar,
   LuCalendarCheck,
   LuCheck,
+  LuCirclePlus,
   LuClock,
   LuDollarSign,
   LuFlag,
@@ -51,11 +52,13 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter,
   useDateFormatter,
+  usePermissions,
   useQuantityFormatter,
   useUser
 } from "~/hooks";
 import { getPriorityIcon } from "~/modules/quality/ui/Issue/IssueIcons";
 import { usePeople } from "~/stores";
+import { path } from "~/utils/path";
 import type {
   ProjectElementEditableField,
   ProjectElementPriority,
@@ -137,7 +140,7 @@ function shown<T>(pending: string | null | undefined, saved: T) {
 
 // --- The pill -----------------------------------------------------------------
 
-export type PillVariant = "pill" | "ghost" | "icon" | "plain";
+export type PillVariant = "pill" | "chip" | "ghost" | "icon" | "plain";
 
 type PillProps = ComponentPropsWithoutRef<"button"> & {
   variant?: PillVariant;
@@ -146,11 +149,13 @@ type PillProps = ComponentPropsWithoutRef<"button"> & {
 
 /**
  * The trigger of every property editor. A `pill` is a 24 px chip (the rows of
- * the Plan list). A `ghost` fills the value column of the element sidebar. An
- * `icon` is a bare square that shows only the value's icon or avatar. A
- * `plain` is borderless muted text (a list row's date, as in Linear).
+ * the Plan list). A `chip` is a pill that always names its value or its
+ * placeholder (the New element modal, as in Linear). A `ghost` fills the
+ * value column of the element sidebar. An `icon` is a bare square that shows
+ * only the value's icon or avatar. A `plain` is borderless muted text (a list
+ * row's date, as in Linear).
  */
-const Pill = forwardRef<HTMLButtonElement, PillProps>(
+export const Pill = forwardRef<HTMLButtonElement, PillProps>(
   (
     { variant = "pill", isDisabled, className, children, onClick, ...props },
     ref
@@ -162,7 +167,7 @@ const Pill = forwardRef<HTMLButtonElement, PillProps>(
       disabled={isDisabled}
       className={cn(
         "inline-flex min-w-0 items-center gap-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60",
-        variant === "pill"
+        variant === "pill" || variant === "chip"
           ? "h-6 max-w-[12rem] shrink-0 rounded-md border border-border px-2 text-muted-foreground enabled:hover:bg-accent enabled:hover:text-foreground"
           : variant === "icon"
             ? "size-6 shrink-0 justify-center rounded-md text-muted-foreground enabled:hover:bg-accent"
@@ -183,9 +188,26 @@ const Pill = forwardRef<HTMLButtonElement, PillProps>(
 );
 Pill.displayName = "Pill";
 
+/** A `ghost` and a `chip` name an empty value; the others show only its icon. */
+function isLabelled(variant: PillVariant | undefined) {
+  return variant === "ghost" || variant === "chip";
+}
+
 function Placeholder({ children }: { children: ReactNode }) {
   return <span className="truncate text-muted-foreground">{children}</span>;
 }
+
+/**
+ * A property editor that holds no element: it shows `value` and reports a
+ * change through `onChange`, only when the value differs. Each `*Pill` below
+ * binds one to an element's field; the New element modal uses them unbound.
+ */
+type ControlProps<T> = {
+  value: T;
+  onChange: (value: T) => void;
+  variant?: PillVariant;
+  isDisabled?: boolean;
+};
 
 type FieldPillProps = {
   projectId: string;
@@ -209,18 +231,26 @@ export function sortStates(states: ProjectState[]) {
   );
 }
 
-export function StatePill({
-  projectId,
-  elementId,
-  stateId,
+/** The state a new element takes: the default Unstarted state, else the
+ *  first Unstarted one — as `insertProjectElement` picks it. */
+export function defaultElementState(states: ProjectState[]) {
+  return [...states]
+    .filter((state) => state.group === "Unstarted")
+    .sort(
+      (a, b) =>
+        Number(b.isDefault) - Number(a.isDefault) || a.sortOrder - b.sortOrder
+    )[0];
+}
+
+export function StateControl({
+  value,
+  onChange,
   states,
   variant,
   isDisabled
-}: FieldPillProps & { stateId: string; states: ProjectState[] }) {
+}: ControlProps<string> & { states: ProjectState[] }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
-  const { pending, submit } = useElementField(projectId, elementId, "stateId");
-  const value = shown(pending, stateId);
   const state = states.find((s) => s.id === value);
   const sorted = useMemo(() => sortStates(states), [states]);
 
@@ -251,7 +281,7 @@ export function StatePill({
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(next) => {
-            if (next !== value) submit(next);
+            if (next !== value) onChange(next);
           }}
         >
           {sorted.map((s) => (
@@ -268,21 +298,34 @@ export function StatePill({
   );
 }
 
-// --- Owner --------------------------------------------------------------------
-
-export function OwnerPill({
+export function StatePill({
   projectId,
   elementId,
-  ownerId,
+  stateId,
+  ...props
+}: FieldPillProps & { stateId: string; states: ProjectState[] }) {
+  const { pending, submit } = useElementField(projectId, elementId, "stateId");
+  return (
+    <StateControl
+      {...props}
+      value={shown(pending, stateId) ?? stateId}
+      onChange={submit}
+    />
+  );
+}
+
+// --- Owner --------------------------------------------------------------------
+
+export function OwnerControl({
+  value,
+  onChange,
   variant,
   isDisabled
-}: FieldPillProps & { ownerId: string | null }) {
+}: ControlProps<string | null>) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
   const [people] = usePeople();
   const user = useUser();
-  const { pending, submit } = useElementField(projectId, elementId, "ownerId");
-  const value = shown(pending, ownerId);
 
   const options = useMemo(
     () => [
@@ -307,14 +350,18 @@ export function OwnerPill({
             <EmployeeAvatar
               employeeId={value}
               size={variant === "icon" ? "xs" : "xxs"}
-              withName={variant === "ghost"}
+              withName={isLabelled(variant)}
             />
           ) : (
             <>
               <LuUser className="size-3 shrink-0" />
-              {variant === "ghost" && (
+              {isLabelled(variant) && (
                 <Placeholder>
-                  <Trans>No owner</Trans>
+                  {variant === "chip" ? (
+                    <Trans>Owner</Trans>
+                  ) : (
+                    <Trans>No owner</Trans>
+                  )}
                 </Placeholder>
               )}
             </>
@@ -339,7 +386,7 @@ export function OwnerPill({
                   value={option.label}
                   onSelect={() => {
                     if (option.value !== (value ?? "")) {
-                      submit(option.value || null);
+                      onChange(option.value || null);
                     }
                     setOpen(false);
                   }}
@@ -363,18 +410,46 @@ export function OwnerPill({
   );
 }
 
+export function OwnerPill({
+  projectId,
+  elementId,
+  ownerId,
+  ...props
+}: FieldPillProps & { ownerId: string | null }) {
+  const { pending, submit } = useElementField(projectId, elementId, "ownerId");
+  return (
+    <OwnerControl
+      {...props}
+      value={shown(pending, ownerId)}
+      onChange={submit}
+    />
+  );
+}
+
 // --- Priority -----------------------------------------------------------------
 
+/** `className` lands on the root, so `DropdownMenuIcon` can space it. */
 export function ElementPriorityIcon({
-  priority
+  priority,
+  className
 }: {
   priority: ProjectElementPriority;
+  className?: string;
 }) {
   if (priority === "None") {
-    return <LuMinus className="size-3 shrink-0 text-muted-foreground" />;
+    return (
+      <LuMinus
+        className={cn("size-3 shrink-0 text-muted-foreground", className)}
+      />
+    );
   }
   return (
-    <span className="flex size-3 shrink-0 items-center justify-center">
+    <span
+      className={cn(
+        "flex size-3 shrink-0 items-center justify-center",
+        className
+      )}
+    >
       {getPriorityIcon(priority === "Urgent" ? "Critical" : priority, false)}
     </span>
   );
@@ -391,18 +466,15 @@ export function usePriorityLabels(): Record<ProjectElementPriority, string> {
   };
 }
 
-export function PriorityPill({
-  projectId,
-  elementId,
-  priority,
+export function PriorityControl({
+  value,
+  onChange,
   variant,
   isDisabled
-}: FieldPillProps & { priority: ProjectElementPriority }) {
+}: ControlProps<ProjectElementPriority>) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
   const labels = usePriorityLabels();
-  const { pending, submit } = useElementField(projectId, elementId, "priority");
-  const value = shown(pending, priority) ?? "None";
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -413,8 +485,16 @@ export function PriorityPill({
           aria-label={t`Change priority`}
         >
           <ElementPriorityIcon priority={value} />
-          {(variant === "ghost" || value !== "None") && (
+          {value !== "None" ? (
             <span className="truncate">{labels[value]}</span>
+          ) : variant === "chip" ? (
+            <Placeholder>
+              <Trans>Priority</Trans>
+            </Placeholder>
+          ) : (
+            variant === "ghost" && (
+              <span className="truncate">{labels[value]}</span>
+            )
           )}
         </Pill>
       </DropdownMenuTrigger>
@@ -422,7 +502,7 @@ export function PriorityPill({
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(next) => {
-            if (next !== value) submit(next);
+            if (next !== value) onChange(next as ProjectElementPriority);
           }}
         >
           {projectElementPriorities.map((p) => (
@@ -434,6 +514,22 @@ export function PriorityPill({
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+export function PriorityPill({
+  projectId,
+  elementId,
+  priority,
+  ...props
+}: FieldPillProps & { priority: ProjectElementPriority }) {
+  const { pending, submit } = useElementField(projectId, elementId, "priority");
+  return (
+    <PriorityControl
+      {...props}
+      value={shown(pending, priority) ?? "None"}
+      onChange={submit}
+    />
   );
 }
 
@@ -449,31 +545,55 @@ function LabelDot({ color }: { color: string }) {
   );
 }
 
-export function LabelsPill({
-  projectId,
-  elementId,
-  labelIds,
+/**
+ * Creates a company label by name from a labels picker, then hands its id to
+ * `onCreated`. Null without permission to create one (projects create, the
+ * label's RLS rule): the picker then offers no "Create" row.
+ */
+export function useCreateProjectLabel() {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const onCreatedRef = useRef<((id: string) => void) | null>(null);
+  const fetcher = useAction<{ id?: string; error?: { message: string } }>({
+    onSuccess: (data) => {
+      if (data.id) onCreatedRef.current?.(data.id);
+      onCreatedRef.current = null;
+    },
+    onError: (data) =>
+      toast.error(data.error?.message ?? t`Failed to create the label`)
+  });
+  if (!permissions.can("create", "projects")) return null;
+  return (name: string, onCreated: (id: string) => void) => {
+    onCreatedRef.current = onCreated;
+    fetcher.submit(
+      { name },
+      { method: "post", action: path.to.newProjectLabel }
+    );
+  };
+}
+
+export function LabelsControl({
+  value,
+  onChange,
   labels,
   variant,
   isDisabled
-}: FieldPillProps & { labelIds: string[]; labels: ProjectLabel[] }) {
+}: ControlProps<string[]> & { labels: ProjectLabel[] }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
-  const { pending, submit } = useElementField(projectId, elementId, "labelIds");
-  const value =
-    pending === undefined
-      ? labelIds
-      : pending === null
-        ? []
-        : pending.split(",");
+  const [search, setSearch] = useState("");
+  const createLabel = useCreateProjectLabel();
   const selected = labels.filter((l) => value.includes(l.id));
+  const name = search.trim();
+  const canCreate =
+    !!createLabel &&
+    name.length > 0 &&
+    !labels.some((l) => l.name.toLowerCase() === name.toLowerCase());
 
-  const toggle = (id: string) => {
-    const next = value.includes(id)
-      ? value.filter((v) => v !== id)
-      : [...value, id];
-    submit(next.length > 0 ? next.join(",") : null);
-  };
+  const toggle = (id: string) =>
+    onChange(
+      value.includes(id) ? value.filter((v) => v !== id) : [...value, id]
+    );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -486,9 +606,13 @@ export function LabelsPill({
           {selected.length === 0 ? (
             <>
               <LuTag className="size-3 shrink-0" />
-              {variant === "ghost" && (
+              {isLabelled(variant) && (
                 <Placeholder>
-                  <Trans>No labels</Trans>
+                  {variant === "chip" ? (
+                    <Trans>Labels</Trans>
+                  ) : (
+                    <Trans>No labels</Trans>
+                  )}
                 </Placeholder>
               )}
             </>
@@ -528,16 +652,42 @@ export function LabelsPill({
         onClick={(e) => e.stopPropagation()}
       >
         <Command>
-          <CommandInput placeholder={t`Search...`} className="h-9" />
+          <CommandInput
+            placeholder={createLabel ? t`Search or create...` : t`Search...`}
+            className="h-9"
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
             <CommandEmpty>
-              <Trans>No labels yet. Add them in Settings → Projects.</Trans>
+              {createLabel ? (
+                <Trans>Type a name to create a label.</Trans>
+              ) : (
+                <Trans>No labels yet. Add them in Settings → Projects.</Trans>
+              )}
             </CommandEmpty>
             <CommandGroup>
+              {canCreate && (
+                // Its value is the search itself, so the filter keeps it.
+                <CommandItem
+                  value={name}
+                  className="gap-2"
+                  onSelect={() => {
+                    createLabel(name, (id) => onChange([...value, id]));
+                    setSearch("");
+                  }}
+                >
+                  <LuCirclePlus className="size-4 shrink-0" />
+                  <span className="truncate">
+                    <Trans>Create {name}</Trans>
+                  </span>
+                </CommandItem>
+              )}
               {labels.map((label) => (
                 <CommandItem
                   key={label.id}
                   value={label.name}
+                  className="gap-2"
                   onSelect={() => toggle(label.id)}
                 >
                   <LabelDot color={label.color} />
@@ -558,19 +708,39 @@ export function LabelsPill({
   );
 }
 
-// --- Dates --------------------------------------------------------------------
-
-export function DatePill({
+export function LabelsPill({
   projectId,
   elementId,
+  labelIds,
+  ...props
+}: FieldPillProps & { labelIds: string[]; labels: ProjectLabel[] }) {
+  const { pending, submit } = useElementField(projectId, elementId, "labelIds");
+  const value =
+    pending === undefined
+      ? labelIds
+      : pending === null
+        ? []
+        : pending.split(",");
+  return (
+    <LabelsControl
+      {...props}
+      value={value}
+      onChange={(next) => submit(next.length > 0 ? next.join(",") : null)}
+    />
+  );
+}
+
+// --- Dates --------------------------------------------------------------------
+
+export function DateControl({
+  value,
+  onChange,
   field,
-  date,
   isComplete,
   variant,
   isDisabled
-}: FieldPillProps & {
+}: ControlProps<string | null> & {
   field: "startDate" | "targetDate";
-  date: string | null;
   /** A completed element is never late. */
   isComplete?: boolean;
 }) {
@@ -578,8 +748,6 @@ export function DatePill({
   const [open, setOpen] = useState(false);
   const today = useCompanyToday();
   const { formatDate } = useDateFormatter();
-  const { pending, submit } = useElementField(projectId, elementId, field);
-  const value = shown(pending, date);
   const isLate =
     field === "targetDate" && !isComplete && !!value && value < today;
   const Icon = field === "startDate" ? LuCalendar : LuCalendarCheck;
@@ -606,7 +774,7 @@ export function DatePill({
               })}
             </span>
           ) : (
-            variant === "ghost" && <Placeholder>{label}</Placeholder>
+            isLabelled(variant) && <Placeholder>{label}</Placeholder>
           )}
         </Pill>
       </PopoverTrigger>
@@ -620,7 +788,7 @@ export function DatePill({
           value={value ? parseDate(value) : null}
           onChange={(next) => {
             const nextValue = next?.toString() ?? null;
-            if (nextValue !== value) submit(nextValue);
+            if (nextValue !== value) onChange(nextValue);
             setOpen(false);
           }}
         />
@@ -630,7 +798,7 @@ export function DatePill({
             size="sm"
             className="mt-2 w-full"
             onClick={() => {
-              submit(null);
+              onChange(null);
               setOpen(false);
             }}
           >
@@ -642,26 +810,39 @@ export function DatePill({
   );
 }
 
-// --- Milestone ----------------------------------------------------------------
-
-export function MilestonePill({
+export function DatePill({
   projectId,
   elementId,
-  milestoneId,
+  field,
+  date,
+  ...props
+}: FieldPillProps & {
+  field: "startDate" | "targetDate";
+  date: string | null;
+  /** A completed element is never late. */
+  isComplete?: boolean;
+}) {
+  const { pending, submit } = useElementField(projectId, elementId, field);
+  return (
+    <DateControl
+      {...props}
+      field={field}
+      value={shown(pending, date)}
+      onChange={submit}
+    />
+  );
+}
+
+// --- Milestone ----------------------------------------------------------------
+
+export function MilestoneControl({
+  value,
+  onChange,
   milestones,
   variant,
   isDisabled
-}: FieldPillProps & {
-  milestoneId: string | null;
-  milestones: ProjectMilestone[];
-}) {
+}: ControlProps<string | null> & { milestones: ProjectMilestone[] }) {
   const { t } = useLingui();
-  const { pending, submit } = useElementField(
-    projectId,
-    elementId,
-    "milestoneId"
-  );
-  const value = shown(pending, milestoneId);
   const milestone = milestones.find((m) => m.id === value);
 
   return (
@@ -676,9 +857,13 @@ export function MilestonePill({
           {milestone ? (
             <span className="truncate">{milestone.name}</span>
           ) : (
-            variant === "ghost" && (
+            isLabelled(variant) && (
               <Placeholder>
-                <Trans>No milestone</Trans>
+                {variant === "chip" ? (
+                  <Trans>Milestone</Trans>
+                ) : (
+                  <Trans>No milestone</Trans>
+                )}
               </Placeholder>
             )
           )}
@@ -688,7 +873,7 @@ export function MilestonePill({
         <DropdownMenuRadioGroup
           value={value ?? ""}
           onValueChange={(next) => {
-            if (next !== (value ?? "")) submit(next || null);
+            if (next !== (value ?? "")) onChange(next || null);
           }}
         >
           <DropdownMenuRadioItem value="">
@@ -712,19 +897,38 @@ export function MilestonePill({
   );
 }
 
-// --- Hours and budget ---------------------------------------------------------
-
-export function NumberPill({
+export function MilestonePill({
   projectId,
   elementId,
+  milestoneId,
+  ...props
+}: FieldPillProps & {
+  milestoneId: string | null;
+  milestones: ProjectMilestone[];
+}) {
+  const { pending, submit } = useElementField(
+    projectId,
+    elementId,
+    "milestoneId"
+  );
+  return (
+    <MilestoneControl
+      {...props}
+      value={shown(pending, milestoneId)}
+      onChange={submit}
+    />
+  );
+}
+
+// --- Hours and budget ---------------------------------------------------------
+
+export function NumberControl({
+  value,
+  onChange,
   field,
-  number,
   variant,
   isDisabled
-}: FieldPillProps & {
-  field: "estimatedHours" | "budget";
-  number: number | null;
-}) {
+}: ControlProps<number | null> & { field: "estimatedHours" | "budget" }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
   const { company } = useUser();
@@ -732,11 +936,6 @@ export function NumberPill({
   const decimals = useCurrencyDecimals(currency);
   const formatMoney = useCurrencyFormatter();
   const formatQuantity = useQuantityFormatter();
-  const { pending, submit } = useElementField(projectId, elementId, field);
-  const value = (() => {
-    const raw = shown<number | string | null>(pending, number);
-    return raw === null || raw === undefined ? null : Number(raw);
-  })();
 
   const isHours = field === "estimatedHours";
   const label = isHours ? t`Estimated hours` : t`Budget`;
@@ -754,7 +953,7 @@ export function NumberPill({
                 : formatMoney.format(value)}
             </span>
           ) : (
-            variant === "ghost" && <Placeholder>{label}</Placeholder>
+            isLabelled(variant) && <Placeholder>{label}</Placeholder>
           )}
         </Pill>
       </PopoverTrigger>
@@ -776,9 +975,7 @@ export function NumberPill({
           step={isHours ? INPUT_STEP.quantity : INPUT_STEP.money(decimals)}
           onChange={(next) => {
             const nextValue = Number.isNaN(next) ? null : next;
-            if (nextValue !== value) {
-              submit(nextValue === null ? null : String(nextValue));
-            }
+            if (nextValue !== value) onChange(nextValue);
           }}
         >
           <NumberInput
@@ -791,5 +988,27 @@ export function NumberPill({
         </NumberField>
       </PopoverContent>
     </Popover>
+  );
+}
+
+export function NumberPill({
+  projectId,
+  elementId,
+  field,
+  number,
+  ...props
+}: FieldPillProps & {
+  field: "estimatedHours" | "budget";
+  number: number | null;
+}) {
+  const { pending, submit } = useElementField(projectId, elementId, field);
+  const raw = shown<number | string | null>(pending, number);
+  return (
+    <NumberControl
+      {...props}
+      field={field}
+      value={raw === null || raw === undefined ? null : Number(raw)}
+      onChange={(next) => submit(next === null ? null : String(next))}
+    />
   );
 }

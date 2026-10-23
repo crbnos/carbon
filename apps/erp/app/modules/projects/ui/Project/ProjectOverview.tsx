@@ -237,7 +237,7 @@ function ProgressCard({
   today: string;
 }) {
   const { t } = useLingui();
-  const percent = usePercentFormatter();
+  const percent = usePercentFormatter("progress");
   const { formatDate } = useDateFormatter();
   // Cancelled work is no longer part of the whole.
   const whole = progress.total - progress.cancelled;
@@ -455,7 +455,7 @@ function useDueLabel(today: string) {
 function BudgetCard({ figures }: { figures: ProjectOverviewProps["figures"] }) {
   const { t } = useLingui();
   const money = useCurrencyFormatter();
-  const percent = usePercentFormatter();
+  const percent = usePercentFormatter("progress");
   const budget = figures.budget;
   const hasBudget = budget !== null && budget > 0;
   const isOverBudget = hasBudget && figures.actual > budget;

@@ -386,7 +386,7 @@ export function WorkflowRunSteps({
       {compacted && (
         <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border/50">
           <Trans>
-            Values in this run have been summarised. Full detail is kept for 7
+            Values in this run have been summarized. Full detail is kept for 7
             days.
           </Trans>
         </div>

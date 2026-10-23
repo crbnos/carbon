@@ -26,11 +26,12 @@ import Grid from "~/components/Grid";
 import { useCellSave } from "~/components/Setup";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import { projectLabelDefaultColor } from "../../projects.models";
 import type { ProjectLabel } from "../../types";
 import { ColorCell, nextName } from "./ColorCell";
 
 /**
- * The company's project labels: name and colour edit in the grid; the row
+ * The company's project labels: name and color edit in the grid; the row
  * menu deletes a label (its elements lose it). Every project uses these.
  */
 export function ProjectLabelsGrid({ labels }: { labels: ProjectLabel[] }) {
@@ -84,7 +85,7 @@ export function ProjectLabelsGrid({ labels }: { labels: ProjectLabel[] }) {
       },
       {
         accessorKey: "color",
-        header: t`Colour`,
+        header: t`Color`,
         cell: ({ row }) => (
           <ColorCell
             key={`${row.original.id}:${row.original.color}`}
@@ -149,7 +150,7 @@ export function ProjectLabelsGrid({ labels }: { labels: ProjectLabel[] }) {
                         t`New label`,
                         labels.map((l) => l.name)
                       ),
-                      color: "#3B82F6"
+                      color: projectLabelDefaultColor
                     },
                     { method: "post", action }
                   )

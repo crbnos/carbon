@@ -191,7 +191,7 @@ export interface CreateMentionExtensionOptions {
   chipComponent?: ComponentType<ReactNodeViewProps>;
 }
 
-/** Colour and shape alone, for a chip that lays its own contents out. */
+/** Color and shape alone, for a chip that lays its own contents out. */
 export const MENTION_CHIP_TONE_CLASS =
   "rounded-full px-1.5 py-0 text-[0.8125rem] font-medium leading-5 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400";
 

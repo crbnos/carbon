@@ -80,7 +80,7 @@ type ElementListProps = {
   highlightId: string | null;
   /** The types the empty list's New element offers; every type by default. */
   types?: readonly ProjectElementType[];
-  /** Creates an element; with `parentId` under it, with `stateId` in it. */
+  /** Opens New element; with `parentId` under it, with `stateId` in it. */
   onNew: (
     type?: ProjectElementType,
     parentId?: string,

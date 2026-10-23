@@ -16,7 +16,9 @@ import {
   LuFactory,
   LuFileText,
   LuFlaskConical,
+  LuFolderCheck,
   LuFolderKanban,
+  LuHeartHandshake,
   LuHistory,
   LuImage,
   LuKey,
@@ -31,8 +33,7 @@ import {
   LuTimer,
   LuUsers,
   LuWebhook,
-  LuWorkflow,
-  LuWrench
+  LuWorkflow
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
@@ -119,7 +120,7 @@ export default function useSettingsSubmodules() {
             name: t`Invoicing`,
             to: path.to.invoicingSettings,
             role: "employee",
-            icon: <LuFileText />
+            icon: <LuCreditCard />
           },
           {
             name: t`Items`,
@@ -167,7 +168,7 @@ export default function useSettingsSubmodules() {
             name: t`Quality`,
             to: path.to.qualitySettings,
             role: "employee",
-            icon: <LuClipboardCheck />
+            icon: <LuFolderCheck />
           },
           {
             name: t`Sales`,
@@ -179,7 +180,7 @@ export default function useSettingsSubmodules() {
             name: t`Resources`,
             to: path.to.resourcesSettings,
             role: "employee",
-            icon: <LuWrench />
+            icon: <LuHeartHandshake />
           }
         ]
       },

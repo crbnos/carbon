@@ -10760,7 +10760,8 @@ type ChangeRequestWriteArgs = {
 /**
  * Adds an element to a change request. Its id is made now and kept; its
  * readable id stays empty until the apply step numbers it. An empty state
- * takes the default Unstarted state, as `insertProjectElement` does.
+ * takes the default Unstarted state, as `insertProjectElement` does. Labels
+ * are not plan-layer, so a change request takes none: the modal hides them.
  */
 export async function addElementToChangeRequest(
   db: Kysely<KyselyDatabase>,
@@ -10827,7 +10828,10 @@ export async function addElementToChangeRequest(
               ? false
               : (element.isChargeable ?? chargeableByDefault[element.type]),
           budget: element.budget ?? null,
-          itemId: element.itemId ?? null
+          itemId: element.itemId ?? null,
+          description: element.description
+            ? JSON.parse(element.description)
+            : null
         }
       }
     ]
@@ -12647,11 +12651,37 @@ export async function insertProjectElement(
         isChargeable,
         budget: args.budget ?? null,
         itemId: args.itemId ?? null,
+        description: args.description
+          ? toJson(JSON.parse(args.description))
+          : null,
         sortOrder: Number(maxSortOrder) + 1,
         createdBy: args.userId
       })
       .returning("id")
       .executeTakeFirstOrThrow();
+
+    // The labels the New element modal chose, the company's own only.
+    if (args.labelIds?.length) {
+      const labels = await trx
+        .selectFrom("projectLabel")
+        .select("id")
+        .where("companyId", "=", args.companyId)
+        .where("id", "in", args.labelIds)
+        .execute();
+      if (labels.length > 0) {
+        await trx
+          .insertInto("projectElementLabel")
+          .values(
+            labels.map((label) => ({
+              projectElementId: element.id,
+              projectLabelId: label.id,
+              companyId: args.companyId,
+              createdBy: args.userId
+            }))
+          )
+          .execute();
+      }
+    }
 
     return { id: element.id, readableId };
   });

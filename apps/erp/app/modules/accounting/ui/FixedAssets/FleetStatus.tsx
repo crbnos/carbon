@@ -10,7 +10,7 @@ import type { fleetStatuses } from "../../accounting.models";
 type FleetStatusValue = (typeof fleetStatuses)[number];
 
 // Fleet status is derived by the `fleetAssets` view, never stored, and has no
-// entry in `packages/utils/src/status-colors.ts` yet, so the colours live here.
+// entry in `packages/utils/src/status-colors.ts` yet, so the colors live here.
 // Under Construction matches FIXED_ASSET_STATUS_COLOR_MAP so the same state
 // reads the same on the asset page and in the fleet register.
 const FLEET_STATUS_COLOR_MAP: Record<FleetStatusValue, StatusColor> = {

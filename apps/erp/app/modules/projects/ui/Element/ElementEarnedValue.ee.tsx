@@ -190,12 +190,13 @@ function EarnedValueForm({
         <Hidden name="intent" value="earned-value" />
         <Hidden name="elementId" />
         <VStack spacing={3}>
+          {/* Drawn as the sidebar's other switches (`PropertySwitch`). */}
           <Boolean
-            bordered
             name="isControlAccount"
             label={t`Control account`}
             termId="control-account"
-            description={t`Earned value rolls up to this element`}
+            variant="small"
+            isOptional={false}
             onChange={setControlAccountChoice}
           />
           {isControlAccount && (

@@ -35,7 +35,7 @@ import { StateIcon } from "../Project/StateIcon";
 import { ColorCell } from "./ColorCell";
 
 /**
- * The company's project states, in board order: name, group and colour edit
+ * The company's project states, in board order: name, group and color edit
  * in the grid; the row menu makes a state its group's default. The set of
  * states is fixed — rows are neither added nor deleted here. Every project and
  * service order uses these states.
@@ -119,7 +119,7 @@ export function ProjectStatesGrid({ states }: { states: ProjectState[] }) {
       },
       {
         accessorKey: "color",
-        header: t`Colour`,
+        header: t`Color`,
         cell: ({ row }) => (
           <ColorCell
             key={`${row.original.id}:${row.original.color}`}

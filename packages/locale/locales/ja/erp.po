@@ -928,6 +928,9 @@ msgstr "{totalQuantity} / {batchCapacity} 個 · 1ラン内に収まります"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} 個 · 容量超過 — {loads} ロード（{batchCapacity} 個）"
 
+msgid "{typeLabel} title"
+msgstr ""
+
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} がバッチ化を待機中です"
 
@@ -2853,6 +2856,9 @@ msgstr "{name} を追加しました · {quantity} × {rate}"
 
 msgid "Added for this customer"
 msgstr "この得意先に追加済み"
+
+msgid "Added to the change request"
+msgstr ""
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "選択値に対する単価への加算で、値引およびマークアップの前に適用されます。クレジットには負の金額を使用してください。"
@@ -5800,6 +5806,9 @@ msgstr "変更指示"
 msgid "Change owner"
 msgstr "責任者を変更"
 
+msgid "Change parent"
+msgstr ""
+
 msgid "Change priority"
 msgstr "優先度を変更"
 
@@ -6314,7 +6323,7 @@ msgstr "段取りを折りたたむ"
 msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
 
-msgid "Colour"
+msgid "Color"
 msgstr "色"
 
 #. placeholder {0}: index + 1
@@ -7623,6 +7632,9 @@ msgstr "{0}を作成"
 msgid "Create {0} values"
 msgstr "{0}個の値を作成"
 
+msgid "Create {name}"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "作成 & リリース"
 
@@ -7695,6 +7707,9 @@ msgstr "変更通知を作成"
 msgid "Create Contract"
 msgstr "契約を作成"
 
+msgid "Create element"
+msgstr ""
+
 msgid "Create Elements"
 msgstr "要素を作成"
 
@@ -7715,6 +7730,9 @@ msgstr "製造指図を作成"
 
 msgid "Create Kanban"
 msgstr "かんばんを作成"
+
+msgid "Create more"
+msgstr ""
 
 msgid "Create New"
 msgstr "新規作成"
@@ -7775,6 +7793,10 @@ msgstr "作業区を作成"
 
 msgid "Created"
 msgstr "作成日時"
+
+#. placeholder {0}: created.readableId
+msgid "Created {0}"
+msgstr ""
 
 msgid "Created {count} elements from the part"
 msgstr "部品から{count}個のエレメントを作成しました"
@@ -10061,9 +10083,6 @@ msgstr "{0}プロジェクトのアーンドバリューがクローズ済にな
 msgid "Earned value closed for {0} projects"
 msgstr "{0}プロジェクトのアーンドバリューがクローズ済になりました"
 
-msgid "Earned value rolls up to this element"
-msgstr "実績値はこの要素にロールアップします"
-
 msgid "Earned value: CPI, SPI and EAC per control account."
 msgstr "実績値：制御勘定ごとのCPI、SPI、EAC"
 
@@ -11604,6 +11623,9 @@ msgstr "仕入先を作成できませんでした: {0}"
 
 msgid "Failed to create the element"
 msgstr "要素の作成に失敗しました"
+
+msgid "Failed to create the label"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14547,6 +14569,9 @@ msgstr "レコード種別"
 msgid "Kit"
 msgstr "キット"
 
+msgid "label"
+msgstr ""
+
 msgid "Label"
 msgstr "ラベル"
 
@@ -16683,9 +16708,6 @@ msgstr "新しいフィールド"
 msgid "New Fixed Asset"
 msgstr "新しい固定資産"
 
-msgid "New Function"
-msgstr "新規機能"
-
 msgid "New Gauge"
 msgstr "新規測定器"
 
@@ -16776,9 +16798,6 @@ msgstr "新しい不適合タイプ"
 msgid "New Owner"
 msgstr "新規責任者"
 
-msgid "New Parameter"
-msgstr "新規パラメータ"
-
 msgid "New Part"
 msgstr "新規部品"
 
@@ -16850,9 +16869,6 @@ msgstr "新規レンタル契約"
 
 msgid "New Request"
 msgstr "新規リクエスト"
-
-msgid "New Requirement"
-msgstr "新規要求事項"
 
 msgid "New Revision"
 msgstr "新しいリビジョン"
@@ -16931,15 +16947,6 @@ msgstr "新規仕入先部品"
 
 msgid "New Supplier Return"
 msgstr "新規仕入先返品"
-
-msgid "New System"
-msgstr "新規システム"
-
-msgid "New Task"
-msgstr "新規タスク"
-
-msgid "New Test Case"
-msgstr "新規テストケース"
 
 msgid "New Timecard"
 msgstr "新しいタイムカード"
@@ -23799,6 +23806,9 @@ msgstr "工程を検索…"
 msgid "Search operators..."
 msgstr "作業者を検索..."
 
+msgid "Search or create..."
+msgstr ""
+
 msgid "Search parts..."
 msgstr "部品を検索..."
 
@@ -28762,7 +28772,7 @@ msgstr "注文、請求書、得意先、仕入先など、すべての変更を
 msgid "Track real-time inventory by location and bin"
 msgstr "リアルタイムで場所とビンごとに在庫を追跡する"
 
-msgid "Track serial/lot numbers and fulfil sales orders."
+msgid "Track serial/lot numbers and fulfill sales orders."
 msgstr "シリアル/ロット番号を追跡し、受注を履行します。"
 
 msgid "Track tax depreciation separately"
@@ -29032,6 +29042,9 @@ msgstr "続行するには <0>\"{confirmPhrase}\"</0> と入力してくださ�
 
 msgid "Type a message..."
 msgstr "メッセージを入力..."
+
+msgid "Type a name to create a label."
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "メールを入力して Enter キーを押し、社外受取人を追加します"
@@ -29778,7 +29791,7 @@ msgstr "値"
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "値は本日の単位原価を過去の数量に適用します。"
 
-msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgid "Values in this run have been summarized. Full detail is kept for 7 days."
 msgstr "このランの値が要約されました。詳細は7日間保持されます。"
 
 msgid "Variable lease cost"

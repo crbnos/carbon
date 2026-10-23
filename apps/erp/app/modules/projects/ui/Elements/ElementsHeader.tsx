@@ -32,13 +32,11 @@ import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
 type ElementsHeaderProps = {
   layout: ProjectLayout;
   filters: ColumnFilter[];
-  /** Creates an element of the type; a Task when none is given. */
+  /** Opens New element with the type; a Task when none is given. */
   onNew: (type?: ProjectElementType) => void;
   /** Opens Build from part; New Element's menu has no entry without it. */
   onBuildFromPart?: () => void;
   canCreate: boolean;
-  /** True while a create is posting. */
-  isCreating: boolean;
   /** The Reader's PDF, with the current filters; shown when set. */
   exportHref?: string;
   /** The lock message while the plan is locked and no change request is open. */
@@ -63,7 +61,6 @@ export function ElementsHeader({
   onNew,
   onBuildFromPart,
   canCreate,
-  isCreating,
   exportHref,
   planLockMessage,
   menu,
@@ -99,7 +96,6 @@ export function ElementsHeader({
           leftIcon={<LuPlus />}
           rightIcon={<LuChevronDown />}
           isDisabled={!canCreate}
-          isLoading={isCreating}
         >
           <Trans>New Element</Trans>
         </Button>

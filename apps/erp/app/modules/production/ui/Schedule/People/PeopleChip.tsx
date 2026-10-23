@@ -9,9 +9,9 @@ import type { ReactNode } from "react";
  * The people page uses two badge shapes on purpose, and the difference is what
  * the COLOUR means:
  *
- * - `PeopleChip` (grid) — colour identifies the WORK CENTER, so the same station
+ * - `PeopleChip` (grid) — color identifies the WORK CENTER, so the same station
  *   reads the same all the way down a week column. Callers pass the class.
- * - `PeoplePill` (card) — colour identifies the METRIC (hours / free / overtime /
+ * - `PeoplePill` (card) — color identifies the METRIC (hours / free / overtime /
  *   absent), so a caller picks a semantic `tone` instead.
  *
  * Merging them would force one of those meanings onto the other.
@@ -30,7 +30,7 @@ function withTooltip(node: ReactNode, tooltip?: string) {
 const CHIP_BASE =
   "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-black/5 dark:ring-white/10";
 
-/** Matrix / Capacity grid chip. `className` carries the colour. */
+/** Matrix / Capacity grid chip. `className` carries the color. */
 export function PeopleChip({
   className,
   tooltip,

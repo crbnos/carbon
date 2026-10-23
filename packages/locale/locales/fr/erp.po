@@ -928,6 +928,9 @@ msgstr "{totalQuantity} / {batchCapacity} pcs · tient en une seule passe"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} pcs · dépasse la capacité — {loads} passages de {batchCapacity}"
 
+msgid "{typeLabel} title"
+msgstr ""
+
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} en attente de mise en lot"
 
@@ -2853,6 +2856,9 @@ msgstr "Ajouté {name} · {quantity} × {rate}"
 
 msgid "Added for this customer"
 msgstr "Ajouté pour ce client"
+
+msgid "Added to the change request"
+msgstr ""
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Ajouté au prix unitaire pour les valeurs choisies, avant les remises et les majorations. Utilisez un montant négatif pour un crédit."
@@ -5800,6 +5806,9 @@ msgstr "Ordre de modification"
 msgid "Change owner"
 msgstr "Modifier le Propriétaire"
 
+msgid "Change parent"
+msgstr ""
+
 msgid "Change priority"
 msgstr "Modifier la Priorité"
 
@@ -6314,7 +6323,7 @@ msgstr "Réduire la configuration"
 msgid "Collapse subtree"
 msgstr "Réduire le sous-arbre"
 
-msgid "Colour"
+msgid "Color"
 msgstr "Couleur"
 
 #. placeholder {0}: index + 1
@@ -7623,6 +7632,9 @@ msgstr "Créer {0}"
 msgid "Create {0} values"
 msgstr "Créer {0} valeurs"
 
+msgid "Create {name}"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "Créer et Lancer"
 
@@ -7695,6 +7707,9 @@ msgstr "Créer un avis de modification"
 msgid "Create Contract"
 msgstr "Créer un contrat"
 
+msgid "Create element"
+msgstr ""
+
 msgid "Create Elements"
 msgstr "Créer des éléments"
 
@@ -7715,6 +7730,9 @@ msgstr "Créer des ordres de fabrication"
 
 msgid "Create Kanban"
 msgstr "Créer Kanban"
+
+msgid "Create more"
+msgstr ""
 
 msgid "Create New"
 msgstr "Créer nouveau"
@@ -7775,6 +7793,10 @@ msgstr "Créer un poste de travail"
 
 msgid "Created"
 msgstr "Créé"
+
+#. placeholder {0}: created.readableId
+msgid "Created {0}"
+msgstr ""
 
 msgid "Created {count} elements from the part"
 msgstr "Créé {count} éléments à partir de la pièce"
@@ -10061,9 +10083,6 @@ msgstr "Valeur acquise clôturée pour {0} projet"
 msgid "Earned value closed for {0} projects"
 msgstr "Valeur acquise clôturée pour {0} projets"
 
-msgid "Earned value rolls up to this element"
-msgstr "La valeur gagnée se cumule jusqu'à cet élément"
-
 msgid "Earned value: CPI, SPI and EAC per control account."
 msgstr "Valeur gagnée : CPI, SPI et EAC par compte de contrôle."
 
@@ -11604,6 +11623,9 @@ msgstr "Échec de la création du fournisseur : {0}"
 
 msgid "Failed to create the element"
 msgstr "Impossible de créer l'élément"
+
+msgid "Failed to create the label"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14547,6 +14569,9 @@ msgstr "Type d'enregistrement"
 msgid "Kit"
 msgstr "Kit"
 
+msgid "label"
+msgstr ""
+
 msgid "Label"
 msgstr "Étiquette"
 
@@ -16683,9 +16708,6 @@ msgstr "Nouveau champ"
 msgid "New Fixed Asset"
 msgstr "Nouvel Actif Immobilisé"
 
-msgid "New Function"
-msgstr "Nouvelle fonction"
-
 msgid "New Gauge"
 msgstr "Nouvel instrument de mesure"
 
@@ -16776,9 +16798,6 @@ msgstr "Nouveau type de non-conformité"
 msgid "New Owner"
 msgstr "Nouveau propriétaire"
 
-msgid "New Parameter"
-msgstr "Nouveau paramètre"
-
 msgid "New Part"
 msgstr "Nouvelle Pièce"
 
@@ -16850,9 +16869,6 @@ msgstr "Nouvel accord de location"
 
 msgid "New Request"
 msgstr "Nouvelle demande"
-
-msgid "New Requirement"
-msgstr "Nouvelle Exigence"
 
 msgid "New Revision"
 msgstr "Nouvelle Révision"
@@ -16931,15 +16947,6 @@ msgstr "Nouvelle pièce fournisseur"
 
 msgid "New Supplier Return"
 msgstr "Nouveau retour fournisseur"
-
-msgid "New System"
-msgstr "Nouveau système"
-
-msgid "New Task"
-msgstr "Nouvelle Tâche"
-
-msgid "New Test Case"
-msgstr "Nouveau cas de test"
 
 msgid "New Timecard"
 msgstr "Nouvelle Feuille de Temps"
@@ -23799,6 +23806,9 @@ msgstr "Rechercher des opérations…"
 msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
 
+msgid "Search or create..."
+msgstr ""
+
 msgid "Search parts..."
 msgstr "Rechercher des pièces..."
 
@@ -28762,7 +28772,7 @@ msgstr "Suivez chaque modification apportée à vos commandes, factures, clients
 msgid "Track real-time inventory by location and bin"
 msgstr "Suivre les stocks en temps réel par site et casier."
 
-msgid "Track serial/lot numbers and fulfil sales orders."
+msgid "Track serial/lot numbers and fulfill sales orders."
 msgstr "Suivre les numéros de série/lot et honorer les commandes clients."
 
 msgid "Track tax depreciation separately"
@@ -29032,6 +29042,9 @@ msgstr "Tapez <0>\"{confirmPhrase}\"</0> pour continuer."
 
 msgid "Type a message..."
 msgstr "Tapez un message..."
+
+msgid "Type a name to create a label."
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Tapez un e-mail et appuyez sur Entrée pour ajouter un destinataire externe"
@@ -29778,7 +29791,7 @@ msgstr "Valeurs"
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "Les valeurs appliquent les coûts unitaires d'aujourd'hui aux quantités historiques."
 
-msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgid "Values in this run have been summarized. Full detail is kept for 7 days."
 msgstr "Les valeurs de cette exécution ont été résumées. Les détails complets sont conservés pendant 7 jours."
 
 msgid "Variable lease cost"

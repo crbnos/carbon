@@ -928,6 +928,9 @@ msgstr "{totalQuantity} / {batchCapacity} 件 · 适合单批"
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} 件 · 超出容量 — {loads} 批 {batchCapacity} 件"
 
+msgid "{typeLabel} title"
+msgstr ""
+
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} 等待分组"
 
@@ -2853,6 +2856,9 @@ msgstr "已添加 {name} · {quantity} × {rate}"
 
 msgid "Added for this customer"
 msgstr "为此客户添加"
+
+msgid "Added to the change request"
+msgstr ""
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "添加到所选配置的单价中，在折扣和加价之前生效。使用负数金额可作为抵扣。"
@@ -5800,6 +5806,9 @@ msgstr "变更单"
 msgid "Change owner"
 msgstr "更改负责人"
 
+msgid "Change parent"
+msgstr ""
+
 msgid "Change priority"
 msgstr "更改优先级"
 
@@ -6314,7 +6323,7 @@ msgstr "收起换型"
 msgid "Collapse subtree"
 msgstr "折叠子树"
 
-msgid "Colour"
+msgid "Color"
 msgstr "颜色"
 
 #. placeholder {0}: index + 1
@@ -7623,6 +7632,9 @@ msgstr "创建 {0}"
 msgid "Create {0} values"
 msgstr "创建 {0} 个值"
 
+msgid "Create {name}"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "创建并下达"
 
@@ -7695,6 +7707,9 @@ msgstr "创建变更通知"
 msgid "Create Contract"
 msgstr "创建合约"
 
+msgid "Create element"
+msgstr ""
+
 msgid "Create Elements"
 msgstr "创建元素"
 
@@ -7715,6 +7730,9 @@ msgstr "创建工单"
 
 msgid "Create Kanban"
 msgstr "创建看板"
+
+msgid "Create more"
+msgstr ""
 
 msgid "Create New"
 msgstr "新建"
@@ -7775,6 +7793,10 @@ msgstr "创建工作中心"
 
 msgid "Created"
 msgstr "已创建"
+
+#. placeholder {0}: created.readableId
+msgid "Created {0}"
+msgstr ""
 
 msgid "Created {count} elements from the part"
 msgstr "从零件创建了 {count} 个要素"
@@ -10061,9 +10083,6 @@ msgstr "已关闭 {0} 个项目的挣值"
 msgid "Earned value closed for {0} projects"
 msgstr "已关闭 {0} 个项目的挣值"
 
-msgid "Earned value rolls up to this element"
-msgstr "赚取值汇总到此元素"
-
 msgid "Earned value: CPI, SPI and EAC per control account."
 msgstr "赚取值：每个控制账户的 CPI、SPI 和 EAC"
 
@@ -11604,6 +11623,9 @@ msgstr "创建供应商失败：{0}"
 
 msgid "Failed to create the element"
 msgstr "创建元素失败"
+
+msgid "Failed to create the label"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14547,6 +14569,9 @@ msgstr "记录类型"
 msgid "Kit"
 msgstr "套件"
 
+msgid "label"
+msgstr ""
+
 msgid "Label"
 msgstr "标签"
 
@@ -16683,9 +16708,6 @@ msgstr "新字段"
 msgid "New Fixed Asset"
 msgstr "新固定资产"
 
-msgid "New Function"
-msgstr "新功能"
-
 msgid "New Gauge"
 msgstr "新建量具"
 
@@ -16776,9 +16798,6 @@ msgstr "新建不合格类型"
 msgid "New Owner"
 msgstr "新建负责人"
 
-msgid "New Parameter"
-msgstr "新参数"
-
 msgid "New Part"
 msgstr "新零件"
 
@@ -16850,9 +16869,6 @@ msgstr "新建租赁协议"
 
 msgid "New Request"
 msgstr "新请求"
-
-msgid "New Requirement"
-msgstr "新要求"
 
 msgid "New Revision"
 msgstr "新修订版"
@@ -16931,15 +16947,6 @@ msgstr "新供应商零件"
 
 msgid "New Supplier Return"
 msgstr "新建供应商退货"
-
-msgid "New System"
-msgstr "新系统"
-
-msgid "New Task"
-msgstr "新任务"
-
-msgid "New Test Case"
-msgstr "新测试用例"
 
 msgid "New Timecard"
 msgstr "新时间卡"
@@ -23799,6 +23806,9 @@ msgstr "搜索工序…"
 msgid "Search operators..."
 msgstr "搜索操作员..."
 
+msgid "Search or create..."
+msgstr ""
+
 msgid "Search parts..."
 msgstr "搜索零件..."
 
@@ -28762,7 +28772,7 @@ msgstr "跟踪对您的订单、发票、客户、供应商等的每项更改。
 msgid "Track real-time inventory by location and bin"
 msgstr "按地点和料箱跟踪实时库存"
 
-msgid "Track serial/lot numbers and fulfil sales orders."
+msgid "Track serial/lot numbers and fulfill sales orders."
 msgstr "跟踪序列号/批号并履行销售订单。"
 
 msgid "Track tax depreciation separately"
@@ -29032,6 +29042,9 @@ msgstr "输入 <0>\"{confirmPhrase}\"</0> 以继续。"
 
 msgid "Type a message..."
 msgstr "输入消息..."
+
+msgid "Type a name to create a label."
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "输入电子邮件并按 Enter 键以添加外部收件人"
@@ -29778,7 +29791,7 @@ msgstr "值"
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "价值采用今日的单位成本应用于历史数量。"
 
-msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgid "Values in this run have been summarized. Full detail is kept for 7 days."
 msgstr "该运行中的值已汇总。完整详情保留 7 天。"
 
 msgid "Variable lease cost"

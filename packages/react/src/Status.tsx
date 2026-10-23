@@ -21,7 +21,7 @@ type StatusProps = ComponentProps<"div"> & {
   tooltip?: ReactNode;
   disableTooltip?: boolean;
   /**
-   * Show the status as its icon alone, in the status colour, with the label
+   * Show the status as its icon alone, in the status color, with the label
    * in the tooltip. For places that have no width for the pill — a dense table
    * row, a narrow drawer — where the status is context, not the headline. The
    * tooltip is the only place the label is readable, so it is always on.

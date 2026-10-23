@@ -2,8 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
-import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useState } from "react";
@@ -19,12 +17,15 @@ import type { ProjectElementListItem } from "~/modules/projects/projects.service
 import type { ProjectLabel, ProjectState } from "~/modules/projects/types";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementList } from "~/modules/projects/ui/Elements/ElementList";
-import { useElementRoutes } from "~/modules/projects/ui/Elements/ElementRoutes";
 import { ElementsHeader } from "~/modules/projects/ui/Elements/ElementsHeader";
 import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "~/modules/projects/ui/Elements/ElementTypeIcon";
+import {
+  type NewElementDefaults,
+  NewElementModal
+} from "~/modules/projects/ui/Elements/NewElementModal";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
 import { usePeople } from "~/stores";
 import { serviceNodeTypes } from "../../service.models";
@@ -66,7 +67,6 @@ export function ServiceWorkList({
   menu?: ReactNode;
 }) {
   const { t } = useLingui();
-  const routes = useElementRoutes(projectId);
   const [people] = usePeople();
   const typeLabels = useElementTypeLabels();
   const [buildingFromPart, setBuildingFromPart] = useState(false);
@@ -154,36 +154,15 @@ export function ServiceWorkList({
     }
   ];
 
-  // New Element adds a row with a default name, as on the Plan page; the
-  // name is edited on the element's page.
-  const newNames: Partial<Record<ProjectElementType, string>> = {
-    System: t`New System`,
-    Task: t`New Task`
-  };
+  // New Element opens the New element modal with the type, parent or state
+  // it was asked for; the List highlights the new row.
+  const [creating, setCreating] = useState<NewElementDefaults | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
-  const createFetcher = useAction<{
-    id?: string;
-    error?: { message: string };
-  }>({
-    onSuccess: (data) => {
-      if (data.id) setCreatedId(data.id);
-    },
-    onError: (data) =>
-      toast.error(data.error?.message ?? t`Failed to create the element`)
-  });
   const createElement = (
-    elementType: ProjectElementType = "Task",
+    elementType?: ProjectElementType,
     parentId?: string,
     stateId?: string
-  ) => {
-    if (createFetcher.isPending) return;
-    const formData = new FormData();
-    formData.append("type", elementType);
-    formData.append("name", newNames[elementType] ?? t`New Task`);
-    if (parentId) formData.append("parentId", parentId);
-    if (stateId) formData.append("stateId", stateId);
-    createFetcher.submit(formData, { method: "post", action: routes.create });
-  };
+  ) => setCreating({ type: elementType, parentId, stateId });
 
   return (
     <div className="flex h-full min-w-0 flex-col bg-card">
@@ -197,7 +176,6 @@ export function ServiceWorkList({
           buildEndpoint ? () => setBuildingFromPart(true) : undefined
         }
         canCreate={!isDisabled}
-        isCreating={createFetcher.isPending}
         menu={menu}
       />
       <div className="min-h-0 flex-1">
@@ -216,6 +194,18 @@ export function ServiceWorkList({
           onNew={createElement}
         />
       </div>
+      {creating && (
+        <NewElementModal
+          projectId={projectId}
+          elements={elements}
+          states={states}
+          labels={labels}
+          types={serviceNodeTypes}
+          defaults={creating}
+          onCreated={(created) => setCreatedId(created.id)}
+          onClose={() => setCreating(null)}
+        />
+      )}
       {buildingFromPart && buildEndpoint && (
         <BuildFromPartDrawer
           projectId={projectId}

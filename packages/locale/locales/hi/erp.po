@@ -928,6 +928,9 @@ msgstr "{totalQuantity} / {batchCapacity} पीसेस · एक रन म�
 msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 msgstr "{totalQuantity} / {batchCapacity} पीसेस · क्षमता से अधिक — {loads} लोड्स {batchCapacity} का"
 
+msgid "{typeLabel} title"
+msgstr ""
+
 msgid "{unbatchedBatchableOperations} awaiting batching"
 msgstr "{unbatchedBatchableOperations} बैचिंग की प्रतीक्षा में"
 
@@ -2853,6 +2856,9 @@ msgstr "{name} जोड़ा गया · {quantity} × {rate}"
 
 msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
+
+msgid "Added to the change request"
+msgstr ""
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "इकाई मूल्य में चुने गए मानों के लिए जोड़ा जाता है, छूट और अधिशुल्क से पहले। जमा के लिए नकारात्मक राशि का उपयोग करें।"
@@ -5800,6 +5806,9 @@ msgstr "परिवर्तन आदेश"
 msgid "Change owner"
 msgstr "स्वामी बदलें"
 
+msgid "Change parent"
+msgstr ""
+
 msgid "Change priority"
 msgstr "प्राथमिकता बदलें"
 
@@ -6314,7 +6323,7 @@ msgstr "सेटअप को संक्षिप्त करें"
 msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
 
-msgid "Colour"
+msgid "Color"
 msgstr "रंग"
 
 #. placeholder {0}: index + 1
@@ -7623,6 +7632,9 @@ msgstr "{0} बनाएं"
 msgid "Create {0} values"
 msgstr "{0} मान बनाएं"
 
+msgid "Create {name}"
+msgstr ""
+
 msgid "Create & Release"
 msgstr "बनाएँ और जारी करें"
 
@@ -7695,6 +7707,9 @@ msgstr "परिवर्तन सूचना बनाएं"
 msgid "Create Contract"
 msgstr "अनुबंध बनाएँ"
 
+msgid "Create element"
+msgstr ""
+
 msgid "Create Elements"
 msgstr "तत्व बनाएँ"
 
@@ -7715,6 +7730,9 @@ msgstr "जॉब बनाएँ"
 
 msgid "Create Kanban"
 msgstr "कानबान बनाएँ"
+
+msgid "Create more"
+msgstr ""
 
 msgid "Create New"
 msgstr "नया बनाएँ"
@@ -7775,6 +7793,10 @@ msgstr "वर्क सेंटर बनाएँ"
 
 msgid "Created"
 msgstr "बनाया गया"
+
+#. placeholder {0}: created.readableId
+msgid "Created {0}"
+msgstr ""
 
 msgid "Created {count} elements from the part"
 msgstr "{count} तत्व भाग से बनाए गए"
@@ -10061,9 +10083,6 @@ msgstr "{0} प्रोजेक्ट के लिए अर्जित म�
 msgid "Earned value closed for {0} projects"
 msgstr "{0} प्रोजेक्ट के लिए अर्जित मूल्य बंद किया गया"
 
-msgid "Earned value rolls up to this element"
-msgstr "अर्जित मूल्य इस तत्व तक रोल अप करता है"
-
 msgid "Earned value: CPI, SPI and EAC per control account."
 msgstr "अर्जित मूल्य: CPI, SPI और EAC प्रति नियंत्रण खाता।"
 
@@ -11604,6 +11623,9 @@ msgstr "आपूर्तिकर्ता बनाने में विफ
 
 msgid "Failed to create the element"
 msgstr "तत्व बनाने में विफल"
+
+msgid "Failed to create the label"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create tool: {0}"
@@ -14547,6 +14569,9 @@ msgstr "रिकॉर्ड का प्रकार"
 msgid "Kit"
 msgstr "किट"
 
+msgid "label"
+msgstr ""
+
 msgid "Label"
 msgstr "लेबल"
 
@@ -16683,9 +16708,6 @@ msgstr "नया फील्ड"
 msgid "New Fixed Asset"
 msgstr "नई अचल संपत्ति"
 
-msgid "New Function"
-msgstr "नया फ़ंक्शन"
-
 msgid "New Gauge"
 msgstr "नया गेज"
 
@@ -16776,9 +16798,6 @@ msgstr "नई गैर-अनुरूपता प्रकार"
 msgid "New Owner"
 msgstr "नया स्वामी"
 
-msgid "New Parameter"
-msgstr "नया पैरामीटर"
-
 msgid "New Part"
 msgstr "नया पार्ट"
 
@@ -16850,9 +16869,6 @@ msgstr "नया किराये का समझौता"
 
 msgid "New Request"
 msgstr "नया अनुरोध"
-
-msgid "New Requirement"
-msgstr "नई आवश्यकता"
 
 msgid "New Revision"
 msgstr "नया रिवीजन"
@@ -16931,15 +16947,6 @@ msgstr "नया आपूर्तिकर्ता भाग"
 
 msgid "New Supplier Return"
 msgstr "नया आपूर्तिकर्ता रिटर्न"
-
-msgid "New System"
-msgstr "नई प्रणाली"
-
-msgid "New Task"
-msgstr "नया कार्य"
-
-msgid "New Test Case"
-msgstr "नया परीक्षण केस"
 
 msgid "New Timecard"
 msgstr "नया टाइमकार्ड"
@@ -23799,6 +23806,9 @@ msgstr "ऑपरेशन को खोजें…"
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
+msgid "Search or create..."
+msgstr ""
+
 msgid "Search parts..."
 msgstr "पार्ट्स को खोजें..."
 
@@ -28762,7 +28772,7 @@ msgstr "आपके आदेश, चालान, ग्राहक, आप�
 msgid "Track real-time inventory by location and bin"
 msgstr "स्थान और बिन के अनुसार रीयल-टाइम इन्वेंटरी ट्रैक करें"
 
-msgid "Track serial/lot numbers and fulfil sales orders."
+msgid "Track serial/lot numbers and fulfill sales orders."
 msgstr "क्रम संख्या/लॉट संख्या को ट्रैक करें और विक्रय आदेश पूरा करें।"
 
 msgid "Track tax depreciation separately"
@@ -29032,6 +29042,9 @@ msgstr "जारी रखने के लिए <0>\"{confirmPhrase}\"</0> �
 
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
+
+msgid "Type a name to create a label."
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "एक ईमेल टाइप करें और एक बाहरी प्राप्तकर्ता जोड़ने के लिए Enter दबाएं"
@@ -29778,7 +29791,7 @@ msgstr "मूल्य"
 msgid "Values apply today's unit costs to historical quantities."
 msgstr "मान ऐतिहासिक मात्राओं पर आज की इकाई लागत को लागू करते हैं।"
 
-msgid "Values in this run have been summarised. Full detail is kept for 7 days."
+msgid "Values in this run have been summarized. Full detail is kept for 7 days."
 msgstr "इस रन में मान सारांशित किए गए हैं। पूर्ण विस्तार 7 दिनों के लिए रखा जाता है।"
 
 msgid "Variable lease cost"

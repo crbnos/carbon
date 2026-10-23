@@ -16,7 +16,7 @@ import type { ComponentProps, ReactNode } from "react";
  * size next to the provider's name (a "ramp" wordmark beside the word "Ramp").
  * The icon is 1:1 and pairs with the name the way an app icon should.
  *
- * Brand colours are fixed (#E4F222 on black), not `currentColor`: recolouring a
+ * Brand colors are fixed (#E4F222 on black), not `currentColor`: recoloring a
  * logo per theme would misrepresent the mark, and it carries its own contrast.
  */
 function RampSourceIcon(props: ComponentProps<"svg">) {

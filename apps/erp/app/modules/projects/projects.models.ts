@@ -308,6 +308,9 @@ export const projectStateValidator = z.object({
   color: z.string().min(1, { message: "Color is required" })
 });
 
+/** The color a new label takes; it is changed in Settings → Projects. */
+export const projectLabelDefaultColor = "#3B82F6";
+
 export const projectLabelValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
@@ -353,7 +356,25 @@ export const projectElementValidator = z
       z.boolean().optional()
     ),
     budget: zfd.numeric(z.number().min(0).optional()),
-    itemId: zfd.text(z.string().optional())
+    itemId: zfd.text(z.string().optional()),
+    // The rich-text document as JSON, from the New element modal.
+    description: zfd.text(
+      z
+        .string()
+        .refine(
+          (value) => {
+            try {
+              JSON.parse(value);
+              return true;
+            } catch {
+              return false;
+            }
+          },
+          { message: "The description is not valid" }
+        )
+        .optional()
+    ),
+    labelIds: zfd.repeatableOfType(z.string()).optional()
   })
   .refine((data) => data.type !== "Parameter" || data.isChargeable !== true, {
     message: "A Parameter cannot take charges",
@@ -3422,22 +3443,22 @@ function byId(a: PlanRow, b: PlanRow) {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
-// The plan layer and the snapshot shape live in `@carbon/database/project-plan`,
-// shared with the demo datasets.
-export {
-  PLAN_LAYER_FIELDS,
-  PROJECT_BASELINE_FORMAT_VERSION,
-  planSnapshotKeys,
-  isPlanLayerField,
-  pickPlanLayerFields,
-  toPlanSnapshot,
-  parsePlanSnapshot
-};
 export type {
   PlanRow,
   PlanScheduleRow,
   ProjectPlanSnapshot,
   ProjectPlanSnapshotKey
+};
+// The plan layer and the snapshot shape live in `@carbon/database/project-plan`,
+// shared with the demo datasets.
+export {
+  isPlanLayerField,
+  PLAN_LAYER_FIELDS,
+  PROJECT_BASELINE_FORMAT_VERSION,
+  parsePlanSnapshot,
+  pickPlanLayerFields,
+  planSnapshotKeys,
+  toPlanSnapshot
 };
 
 export type ProjectPlanDiff = Record<

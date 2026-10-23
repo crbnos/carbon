@@ -10,7 +10,7 @@ import type { DisplayStatus } from "~/utils/display";
 
 /**
  * The shell every work center display shares: a full-width header band carrying
- * the work center name, coloured green or red by a single derived state, over a
+ * the work center name, colored green or red by a single derived state, over a
  * dark scoreboard body.
  *
  * Everything here is sized for reading across a shop floor rather than at a
