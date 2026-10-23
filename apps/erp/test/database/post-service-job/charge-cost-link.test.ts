@@ -15,6 +15,7 @@ import {
   getServiceJobItems,
   upsertServiceJobCharge
 } from "../../../app/modules/service/service.server";
+import { isChargeCostLinkTaken } from "../../../app/modules/service/service.service";
 import { hasLocalDatabase } from "../fixtures/local-database";
 import { localServiceRoleClient } from "../fixtures/local-supabase";
 import { PROJECT_TEST_USER } from "../fixtures/project-posting";
@@ -186,6 +187,22 @@ describe.skipIf(!client)("a charge's paid cost", () => {
         reimbursementLineId: reimbursement.lineId
       });
       expect(twice.error?.message).toMatch(/already pays a charge on SJ-/);
+
+      // The index holds the rule when two saves race past that check, and
+      // the operation names it with the same message.
+      const raced = await client!.from("serviceJobItem").insert({
+        serviceJobId: other.id,
+        lineType: "Charge",
+        itemId: f.laborItemId,
+        description: "Hotel",
+        quantity: 1,
+        unitPrice: 0,
+        reimbursementLineId: reimbursement.lineId,
+        companyId: f.companyId,
+        createdBy: PROJECT_TEST_USER
+      });
+      expect(raced.error?.code).toBe("23505");
+      expect(isChargeCostLinkTaken(raced.error)).toBe(true);
       const otherList = await getLinkableCostLines(ctx, {
         serviceJobId: other.id
       });

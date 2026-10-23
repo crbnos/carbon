@@ -191,7 +191,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           .eq("companyId", companyId)
       : Promise.resolve({ data: [] as { id: string }[] }),
     getPrinterRoutes(serviceRole, companyId),
-    getOpenServiceJobsCount(client, locationId)
+    getOpenServiceJobsCount(client, companyId, locationId)
   ]);
 
   if (user.error || !user.data) {

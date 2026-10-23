@@ -9638,7 +9638,8 @@ export const getShippedTrackedEntitiesForCustomer = defineServiceFn({
 });
 
 /**
- * Per-line creditable pool = received − already credited
+ * Per-line creditable pool = received − already credited, for the Return to
+ * Stock lines (a Service or Warranty unit is not credited)
  *
  * @mcp read
  */
@@ -9684,9 +9685,10 @@ export const createSalesReturnOrderCredit = defineServiceFn({
 });
 
 /**
- * Create a replacement sales order from a return: a Draft order of the return
- * lines at their resolved prices, which the user can change (to zero for a
- * warranty).
+ * Create a replacement sales order from a return: a Draft order of the
+ * Return to Stock lines at their resolved prices, which the user can change.
+ * A Service or Warranty line is replaced from its own line (No-charge
+ * Replacement), never here.
  *
  * @remarks
  * One replacement per return: calling it again returns the existing order.

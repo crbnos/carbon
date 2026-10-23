@@ -9822,6 +9822,35 @@ export async function postSalesInvoice(
               .execute();
           }
 
+          // A service job invoice: the job is Completed again, with no
+          // invoice, so it can be invoiced again.
+          const voidedServiceJobIds = [
+            ...new Set(
+              salesInvoiceLines.data.flatMap((line) =>
+                line.serviceJobId ? [line.serviceJobId] : []
+              )
+            )
+          ];
+          await trx
+            .updateTable("serviceJob")
+            .set({
+              status: "Completed",
+              salesInvoiceId: null,
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Invoiced")
+            .where((eb) =>
+              voidedServiceJobIds.length > 0
+                ? eb.or([
+                    eb("salesInvoiceId", "=", invoiceId),
+                    eb("id", "in", voidedServiceJobIds)
+                  ])
+                : eb("salesInvoiceId", "=", invoiceId)
+            )
+            .execute();
+
           // Update sales order lines to reverse invoiced quantities
           for await (const [salesOrderLineId, update] of Object.entries(
             salesOrderLineUpdates

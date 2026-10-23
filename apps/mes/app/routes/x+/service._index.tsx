@@ -95,8 +95,8 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     .toString();
 
   const [openJobs, myJobs] = await Promise.all([
-    getOpenServiceJobsByLocation(client, locationId),
-    getServiceJobsAssignedTo(client, userId, today)
+    getOpenServiceJobsByLocation(client, companyId, locationId),
+    getServiceJobsAssignedTo(client, companyId, userId, today)
   ]);
 
   type Job = NonNullable<typeof openJobs.data>[number];

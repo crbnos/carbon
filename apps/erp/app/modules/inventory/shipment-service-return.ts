@@ -23,8 +23,62 @@ export type ServiceUnit = {
   quantity: number;
 };
 
-/** The job statuses a serviced unit can ship back from. */
-export const SHIP_BACK_JOB_STATUSES = ["Completed", "Invoiced"] as const;
+/** The job statuses a serviced unit can ship back from. A Cancelled job's
+ *  unit goes back unrepaired. */
+export const SHIP_BACK_JOB_STATUSES = [
+  "Completed",
+  "Invoiced",
+  "Cancelled"
+] as const;
+
+/**
+ * The job of each RMA line among `salesReturnOrderLineIds`: the newest one
+ * not Cancelled, else the newest Cancelled one (as `liveServiceJob`), with its
+ * customer asset.
+ */
+export async function loadReturnLineJobs(
+  db: Kysely<DB> | Transaction<DB>,
+  companyId: string,
+  salesReturnOrderLineIds: string[]
+) {
+  const byLine = new Map<
+    string,
+    {
+      status: string;
+      assetId: string | null;
+      assetStatus: string | null;
+    }
+  >();
+  if (salesReturnOrderLineIds.length === 0) return byLine;
+  const jobs = await db
+    .selectFrom("serviceJob as sj")
+    .leftJoin("customerAsset as ca", (join) =>
+      join
+        .onRef("ca.id", "=", "sj.customerAssetId")
+        .on("ca.companyId", "=", companyId)
+    )
+    .select([
+      "sj.salesReturnOrderLineId",
+      "sj.status",
+      "ca.id as assetId",
+      "ca.status as assetStatus"
+    ])
+    .where("sj.salesReturnOrderLineId", "in", salesReturnOrderLineIds)
+    .where("sj.companyId", "=", companyId)
+    .orderBy(sql`"sj"."status" = 'Cancelled'`)
+    .orderBy("sj.createdAt", "desc")
+    .execute();
+  for (const job of jobs) {
+    if (!job.salesReturnOrderLineId || byLine.has(job.salesReturnOrderLineId))
+      continue;
+    byLine.set(job.salesReturnOrderLineId, {
+      status: job.status,
+      assetId: job.assetId,
+      assetStatus: job.assetStatus
+    });
+  }
+  return byLine;
+}
 
 /** The RMA lines among `salesReturnOrderLineIds` that are Return for Service
  *  or Return for Warranty. */
@@ -64,8 +118,9 @@ export async function loadWarrantyReturnLineIds(
 
 /**
  * Ships serviced units back, in the posting transaction:
- * 1. Refuses a unit whose line has no live job that is Completed or
- *    Invoiced, or whose asset is no longer At Depot.
+ * 1. Refuses a unit whose line's job (the live one, else the latest
+ *    Cancelled one) is not Completed, Invoiced or Cancelled, or whose asset
+ *    is no longer At Depot.
  * 2. Writes one `Return Shipment` activity with `At Depot: false`, the
  *    serials as its inputs. The serials stay Consumed.
  * 3. Sets the jobs' assets In Service at the RMA's site (else their own),
@@ -87,33 +142,15 @@ export async function shipServiceUnits(
   const { companyId, userId, units } = args;
   if (units.length === 0) return;
 
-  const jobs = await trx
-    .selectFrom("serviceJob as sj")
-    .leftJoin("customerAsset as ca", (join) =>
-      join
-        .onRef("ca.id", "=", "sj.customerAssetId")
-        .on("ca.companyId", "=", companyId)
-    )
-    .select([
-      "sj.salesReturnOrderLineId",
-      "sj.status",
-      "ca.id as assetId",
-      "ca.status as assetStatus"
-    ])
-    .where(
-      "sj.salesReturnOrderLineId",
-      "in",
-      units.map((unit) => unit.salesReturnOrderLineId)
-    )
-    .where("sj.status", "!=", "Cancelled")
-    .where("sj.companyId", "=", companyId)
-    .execute();
+  const jobs = await loadReturnLineJobs(
+    trx,
+    companyId,
+    units.map((unit) => unit.salesReturnOrderLineId)
+  );
 
   const assetIds: string[] = [];
   for (const unit of units) {
-    const job = jobs.find(
-      (j) => j.salesReturnOrderLineId === unit.salesReturnOrderLineId
-    );
+    const job = jobs.get(unit.salesReturnOrderLineId);
     if (
       !job ||
       !(SHIP_BACK_JOB_STATUSES as readonly string[]).includes(job.status)

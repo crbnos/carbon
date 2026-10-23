@@ -95,9 +95,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!jobId) throw new Error("Service job is required");
 
   const [job, time, items, files, runningClock, timeZone] = await Promise.all([
-    getServiceJob(client, jobId),
-    getServiceJobTime(client, jobId),
-    getServiceJobItems(client, jobId),
+    getServiceJob(client, companyId, jobId),
+    getServiceJobTime(client, companyId, jobId),
+    getServiceJobItems(client, companyId, jobId),
     getServiceJobFiles(client, companyId, jobId),
     getRunningServiceClock(client, { employeeId: userId, companyId }),
     getCompanyTimeZone(client, companyId)

@@ -8,6 +8,8 @@
 // with no work on it, and refuses one with work.
 
 import { expect } from "vitest";
+import { invokeCreate } from "../../../app/modules/shared/shared.service";
+import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
 import { serviceReturnFixture } from "../fixtures/service-return";
 
@@ -217,6 +219,65 @@ databaseTest(
         .executeTakeFirstOrThrow();
       expect(receipt.status).toBe("Posted");
       expect(await f.rmaStatus(rmaId)).toBe("In Progress");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "voiding a receipt leaves the job of a line it carried at 0 alone: another receipt opened it",
+  async () => {
+    const f = await serviceReturnFixture();
+    try {
+      const { rmaId, lineIds } = await f.addRma([
+        { itemId: f.unitItemId, returnType: "Return for Service" },
+        { itemId: f.unitItemId, returnType: "Return for Service" }
+      ]);
+      const [lineA, lineB] = lineIds as [string, string];
+      const handles = handlesOf(f.ctx);
+      const createReceipt = async () => {
+        const created = await invokeCreate(handles, {
+          type: "receiptFromSalesReturnOrder",
+          salesReturnOrderId: rmaId,
+          locationId: f.locationId
+        });
+        if (created.error) throw created.error;
+        return created.data.id;
+      };
+
+      // R1 receives A, and carries B at 0.
+      const first = await createReceipt();
+      await f.db
+        .updateTable("receiptLine")
+        .set({ receivedQuantity: 0 })
+        .where("receiptId", "=", first)
+        .where("lineId", "=", lineB)
+        .execute();
+      expect((await f.postReceipt("post", first)).error).toBeNull();
+      expect(await f.jobsOf(lineB)).toEqual([]);
+
+      // R2 receives B.
+      const second = await createReceipt();
+      await f.db
+        .updateTable("receiptLine")
+        .set({ receivedQuantity: 0 })
+        .where("receiptId", "=", second)
+        .where("lineId", "=", lineA)
+        .execute();
+      expect((await f.postReceipt("post", second)).error).toBeNull();
+      expect((await f.jobsOf(lineB)).map((job) => job.status)).toEqual([
+        "Open"
+      ]);
+
+      // Voiding R1 cancels A's job only.
+      expect((await f.postReceipt("void", first)).error).toBeNull();
+      expect((await f.jobsOf(lineA)).map((job) => job.status)).toEqual([
+        "Cancelled"
+      ]);
+      expect((await f.jobsOf(lineB)).map((job) => job.status)).toEqual([
+        "Open"
+      ]);
     } finally {
       await f.cleanup();
     }

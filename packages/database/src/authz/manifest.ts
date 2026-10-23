@@ -1609,25 +1609,13 @@ export const manifest = {
   searchIndexRegistry: serviceOnly(),
   sequence: company("settings", { read: "settings_view" }),
   service: company("parts"),
-  // Same rule as maintenanceDispatch: a technician without service_update can log time
-  // and parts from the MES.
-  serviceJob: company("service", { create: "employee", update: "employee" }),
-  serviceJobAssignment: company("service", {
-    create: "employee",
-    update: "employee"
-  }),
-  serviceJobEstimateLine: company("service", {
-    create: "employee",
-    update: "employee"
-  }),
-  serviceJobItem: company("service", {
-    create: "employee",
-    update: "employee"
-  }),
-  serviceJobTime: company("service", {
-    create: "employee",
-    update: "employee"
-  }),
+  // Every technician write (MES, My Time) runs on the service role or the
+  // system connection after its own check; the user's client needs the scope.
+  serviceJob: company("service"),
+  serviceJobAssignment: company("service"),
+  serviceJobEstimateLine: company("service"),
+  serviceJobItem: company("service"),
+  serviceJobTime: company("service"),
   shift: company("people"),
   shipment: company("inventory", {
     read: anyOf("inventory_view", "sales_view"),

@@ -328,18 +328,21 @@ function SalesReturnOrderLineItem({
   } as const;
 
   // What the line can do next. A Return to Stock line is dispositioned once
-  // received; a serviced unit ships back, is scrapped, or (a warranty unit
-  // found not repairable) is replaced once its job is done; a warranty that
-  // is denied moves the line and its open job to Return for Service.
+  // received; a serviced unit ships back or is scrapped once its job is done
+  // or cancelled (it goes back unrepaired), or (a warranty unit found not
+  // repairable) is replaced; a warranty that is denied moves the line and its
+  // open job to Return for Service.
   const serviceJob = liveServiceJob(line.serviceJob);
   const isServiceLine = isServiceReturnLine(line.returnType);
   const isReceived = Number(line.quantityReceived ?? 0) > 0;
   const isJobDone =
-    serviceJob?.status === "Completed" || serviceJob?.status === "Invoiced";
+    serviceJob?.status === "Completed" ||
+    serviceJob?.status === "Invoiced" ||
+    serviceJob?.status === "Cancelled";
   const isUnitOut =
     Number(line.quantityShipped ?? 0) > 0 || line.disposition === "Scrap";
   const canDispose = !isServiceLine && isReceived;
-  const canShipBack = isServiceLine && isJobDone && !isUnitOut;
+  const canShipBack = isServiceLine && isReceived && isJobDone && !isUnitOut;
   const canReplace =
     line.returnType === "Return for Warranty" &&
     serviceJob?.status === "Completed" &&

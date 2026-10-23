@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { expect } from "vitest";
-import { databaseTest } from "../fixtures/local-database";
+import { issueMaterial } from "../../../app/modules/inventory/inventory.service";
+import { invokePosting } from "../../../app/modules/shared/shared.service";
+import { handlesOf } from "../fixtures/handles";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "../fixtures/local-database";
 import { serviceJobFixture } from "../fixtures/service-job";
 
 type Fixture = Awaited<ReturnType<typeof serviceJobFixture>>;
@@ -301,6 +307,93 @@ databaseTest(
         .where("id", "=", trackedEntityId)
         .executeTakeFirstOrThrow();
       expect(entity.status).toBe("Available");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "two partial returns of one part at the same time leave the line at what is still issued",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("seal", {
+        quantity: 5,
+        unitCost: 70
+      });
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+      const issued = await f.issue({
+        type: "serviceJobInventory",
+        serviceJobId: job.id,
+        itemId,
+        unitOfMeasureCode: "EA",
+        quantity: 2
+      });
+      expect(issued.error).toBeNull();
+      const serviceJobItemId = issued.data?.serviceJobItemId as string;
+
+      // Hold the job's row lock while both returns start, so each one reads
+      // the line before the other has changed it.
+      let release: () => void = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let locked: () => void = () => {};
+      const isLocked = new Promise<void>((resolve) => {
+        locked = resolve;
+      });
+      const holder = f.db.transaction().execute(async (trx) => {
+        await trx
+          .selectFrom("serviceJob")
+          .select("id")
+          .where("id", "=", job.id)
+          .forUpdate()
+          .execute();
+        locked();
+        await held;
+      });
+      await isLocked;
+      // The fixture's pool has one connection: each return gets its own.
+      const connections = await Promise.all([
+        connectLocalTestDatabase(),
+        connectLocalTestDatabase()
+      ]);
+      let results: { error: unknown }[];
+      try {
+        const returns = Promise.all(
+          connections.map((db) =>
+            invokePosting(
+              handlesOf({ db, companyId: f.companyId, userId: f.ctx.userId }),
+              "issue",
+              { type: "serviceJobUnconsume", serviceJobItemId, quantity: 1 },
+              issueMaterial
+            )
+          )
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        release();
+        await holder;
+        results = await returns;
+      } finally {
+        await Promise.all(connections.map((db) => db.destroy()));
+      }
+      expect(results.map((result) => result.error)).toEqual([null, null]);
+
+      // Both units are back: the line is gone, not left at a stale 1.
+      const remaining = await f.db
+        .selectFrom("serviceJobItem")
+        .select(["id", "quantity"])
+        .where("serviceJobId", "=", job.id)
+        .execute();
+      expect(remaining).toEqual([]);
+      const onHand = await f.db
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+        .where("itemId", "=", itemId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(onHand.quantity)).toBe(5);
     } finally {
       await f.cleanup();
     }

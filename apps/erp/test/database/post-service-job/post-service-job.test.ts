@@ -2,8 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
+import {
+  SERVICE_JOB_BEFORE_CUTOVER_ERROR,
+  SERVICE_JOB_UNIT_LEFT_ERROR
+} from "../../../app/modules/service/service.service";
 import { databaseTest } from "../fixtures/local-database";
+import { PROJECT_TEST_USER } from "../fixtures/project-posting";
 import { serviceJobFixture } from "../fixtures/service-job";
 
 databaseTest(
@@ -294,13 +300,141 @@ databaseTest(
       expect(second.error).toBeNull();
       expect(await rmaStatus(shipped.salesReturnOrderId)).toBe("Completed");
 
-      const reopened = await f.postServiceJob({
+      // The unit went back to the customer: the job cannot reopen.
+      const refused = await f.postServiceJob({
         action: "reopen",
         serviceJobId: shippedJob.id
       });
+      expect(refused.error?.message).toBe(SERVICE_JOB_UNIT_LEFT_ERROR);
+      expect(await rmaStatus(shipped.salesReturnOrderId)).toBe("Completed");
+
+      // Still at the depot: reopening works and keeps the RMA In Progress.
+      const reopened = await f.postServiceJob({
+        action: "reopen",
+        serviceJobId: heldJob.id
+      });
       expect(reopened.error).toBeNull();
       expect(reopened.data?.journalId).toBeNull();
-      expect(await rmaStatus(shipped.salesReturnOrderId)).toBe("In Progress");
+      expect(await rmaStatus(held.salesReturnOrderId)).toBe("In Progress");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a job whose RMA unit was scrapped or replaced cannot reopen",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { itemId, locationId } = await f.addStockedItem("unit", {
+        quantity: 1,
+        unitCost: 10
+      });
+
+      const scrapped = await f.addReturnLine({ itemId });
+      await f.db
+        .updateTable("salesReturnOrderLine")
+        .set({ disposition: "Scrap" })
+        .where("id", "=", scrapped.lineId)
+        .execute();
+      const scrappedJob = await f.addJob({
+        locationId,
+        status: "Completed",
+        salesReturnOrderLineId: scrapped.lineId
+      });
+      const scrappedReopen = await f.postServiceJob({
+        action: "reopen",
+        serviceJobId: scrappedJob.id
+      });
+      expect(scrappedReopen.error?.message).toBe(SERVICE_JOB_UNIT_LEFT_ERROR);
+
+      const replaced = await f.addReturnLine({ itemId });
+      const salesOrderId = `${f.prefix}-replacement`;
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("salesOrder")
+          .values({
+            id: salesOrderId,
+            salesOrderId,
+            customerId: f.customerId,
+            currencyCode: "USD",
+            companyId: f.companyId,
+            createdBy: PROJECT_TEST_USER
+          })
+          .execute();
+        await trx
+          .insertInto("salesOrderLine")
+          .values({
+            salesOrderId,
+            salesOrderLineType: "Part",
+            itemId,
+            saleQuantity: 1,
+            salesReturnOrderLineId: replaced.lineId,
+            companyId: f.companyId,
+            createdBy: PROJECT_TEST_USER
+          })
+          .execute();
+      });
+      const replacedJob = await f.addJob({
+        locationId,
+        status: "Completed",
+        salesReturnOrderLineId: replaced.lineId
+      });
+      const replacedReopen = await f.postServiceJob({
+        action: "reopen",
+        serviceJobId: replacedJob.id
+      });
+      expect(replacedReopen.error?.message).toBe(SERVICE_JOB_UNIT_LEFT_ERROR);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a job completed before the accounting cutover cannot reopen",
+  async () => {
+    const f = await serviceJobFixture();
+    try {
+      const { locationId } = await f.addStockedItem("unit", {
+        quantity: 1,
+        unitCost: 10
+      });
+      const job = await f.addJob({ locationId, coverage: "Billable" });
+      await f.addTime(job.id, { hours: 1 });
+      const completed = await f.postServiceJob({
+        action: "complete",
+        serviceJobId: job.id
+      });
+      expect(completed.error).toBeNull();
+      const journalId = completed.data?.journalId as string;
+
+      // What the cutover's enable does to a journal posted before it.
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+        await trx
+          .updateTable("journal")
+          .set({ status: "Superseded" })
+          .where("id", "=", journalId)
+          .execute();
+      });
+
+      const reopened = await f.postServiceJob({
+        action: "reopen",
+        serviceJobId: job.id
+      });
+      expect(reopened.error?.message).toBe(SERVICE_JOB_BEFORE_CUTOVER_ERROR);
+      const after = await f.db
+        .selectFrom("serviceJob")
+        .select(["status", "completionJournalId"])
+        .where("id", "=", job.id)
+        .executeTakeFirstOrThrow();
+      expect(after).toEqual({
+        status: "Completed",
+        completionJournalId: journalId
+      });
     } finally {
       await f.cleanup();
     }

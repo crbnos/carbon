@@ -7612,7 +7612,8 @@ export async function getShippedTrackedEntitiesForCustomer(
 /**
  * Per-line creditable pool = received − already credited. Draft memos count
  * against the pool (two Drafts must not double-credit); the VIEW's displayed
- * quantityCredited still derives from Posted memos only.
+ * quantityCredited still derives from Posted memos only. Only Return to
+ * Stock lines: a Service or Warranty unit stays the customer's.
  */
 export async function getCreditableQuantities(
   client: SupabaseClient<Database>,
@@ -7624,6 +7625,7 @@ export async function getCreditableQuantities(
     .select("id, lineNumber, quantityReceived, unitPrice, restockFeePercent")
     .eq("salesReturnOrderId", salesReturnOrderId)
     .eq("companyId", companyId)
+    .eq("returnType", "Return to Stock")
     .order("lineNumber");
   if (lines.error) return { data: null, error: lines.error };
   const lineIds = (lines.data ?? []).map((l) => l.id);
@@ -7738,6 +7740,7 @@ export async function createSalesReturnOrderCredit(
         "id",
         "lineNumber",
         "disposition",
+        "returnType",
         "quantityReceived",
         "unitPrice",
         "restockFeePercent"
@@ -7751,6 +7754,15 @@ export async function createSalesReturnOrderCredit(
     if (orderLines.length !== requested.size) {
       throw new Error(
         "One or more credit lines do not belong to this return order"
+      );
+    }
+    // A Service or Warranty unit stays the customer's: nothing to credit.
+    const serviced = orderLines.find(
+      (line) => line.returnType !== "Return to Stock"
+    );
+    if (serviced) {
+      throw new Error(
+        `Line ${serviced.lineNumber} is a ${serviced.returnType} line and is not credited`
       );
     }
 
@@ -7857,9 +7869,10 @@ export async function createSalesReturnOrderCredit(
  * sends a warranty replacement's cost to warranty expense when it ships and
  * what resolves the RMA line.
  *
- * Without `lineIds`: one replacement per RMA for every line; re-invoking
- * returns the existing link. With `lineIds` (a line's "No-charge
- * replacement"): only those lines, skipping a line an order line already
+ * Without `lineIds`: one replacement per RMA for every Return to Stock line
+ * (a Service or Warranty line goes only through `replaceReturnedUnit`);
+ * re-invoking returns the existing link. With `lineIds` (a line's
+ * "No-charge replacement"): only those lines, skipping a line an order line already
  * replaces; they are added to the RMA's replacement order while it is Draft,
  * else a new order is created. Rollback-by-delete on line failure (the
  * insertSalesOrder pattern) for an order this call created.
@@ -7910,6 +7923,13 @@ export async function createReplacementSalesOrder(
   if (lines.error) return { data: null, error: lines.error };
 
   let replaceLines = lines.data ?? [];
+  // A Service or Warranty line is replaced only one unit at a time, through
+  // `replaceReturnedUnit` (which passes `lineIds`), never with the whole RMA.
+  if (!lineIds) {
+    replaceLines = replaceLines.filter(
+      (line) => line.returnType === "Return to Stock"
+    );
+  }
   if (lineIds && replaceLines.length > 0) {
     const replaced = await client
       .from("salesOrderLine")
@@ -7931,7 +7951,7 @@ export async function createReplacementSalesOrder(
       error: {
         message: lineIds
           ? "This line already has a replacement"
-          : "Return order has no lines"
+          : "Return order has no Return to Stock lines to replace"
       } as PostgrestError
     };
   }
@@ -8463,7 +8483,8 @@ export async function refuseReturnLine(
   return null;
 }
 
-/** A Service or Warranty line, with its live job: the latest not Cancelled. */
+/** A Service or Warranty line, with its job: the latest not Cancelled, else
+ *  the latest Cancelled one. */
 async function lockServiceReturnLine(
   trx: Transaction<KyselyDatabase>,
   args: { salesReturnOrderId: string; lineId: string; companyId: string }
@@ -8516,8 +8537,9 @@ async function lockServiceReturnLine(
       "customerAssetId"
     ])
     .where("salesReturnOrderLineId", "=", line.id)
-    .where("status", "!=", "Cancelled")
     .where("companyId", "=", args.companyId)
+    // The live job, else the latest Cancelled one (as `liveServiceJob`).
+    .orderBy(sql`"status" = 'Cancelled'`)
     .orderBy("createdAt", "desc")
     .executeTakeFirst();
   return { line, job: job ?? null };
@@ -8551,7 +8573,7 @@ export async function scrapServiceReturnLine(
     if (line.disposition === "Scrap") {
       throw new InvalidInputError("The unit is already scrapped");
     }
-    if (job && !["Completed", "Invoiced"].includes(job.status)) {
+    if (job && !["Completed", "Invoiced", "Cancelled"].includes(job.status)) {
       throw new InvalidInputError(
         `Complete service job ${job.serviceJobId} before scrapping the unit`
       );
@@ -8648,6 +8670,11 @@ export async function warrantyReturnLineJob(
     if (!job) {
       throw new InvalidInputError(
         "The line has no service job yet: change its return type instead"
+      );
+    }
+    if (job.status === "Cancelled") {
+      throw new InvalidInputError(
+        `Service job ${job.serviceJobId} is Cancelled: there is no open job to change`
       );
     }
     if (["Completed", "Invoiced"].includes(job.status)) {
@@ -12275,6 +12302,57 @@ async function releaseProjectBillableItemStamps(
 }
 
 /**
+ * Service jobs an invoice (or some of its lines) billed go back to Completed
+ * with no invoice, so they can be invoiced again. A job still named by a line
+ * left on the invoice keeps it: those lines still bill it.
+ */
+export async function releaseServiceJobInvoiceStamps(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    serviceJobIds: (string | null)[];
+    userId: string;
+  }
+): Promise<void> {
+  const { companyId, invoiceId, userId } = args;
+  const serviceJobIds = [
+    ...new Set(args.serviceJobIds.filter((id): id is string => !!id))
+  ];
+  await trx
+    .updateTable("serviceJob")
+    .set({
+      status: "Completed",
+      salesInvoiceId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Invoiced")
+    .where((eb) =>
+      serviceJobIds.length > 0
+        ? eb.or([
+            eb("salesInvoiceId", "=", invoiceId),
+            eb("id", "in", serviceJobIds)
+          ])
+        : eb("salesInvoiceId", "=", invoiceId)
+    )
+    .where((eb) =>
+      eb.not(
+        eb.exists(
+          eb
+            .selectFrom("salesInvoiceLine as still")
+            .select(sql`1`.as("one"))
+            .whereRef("still.serviceJobId", "=", "serviceJob.id")
+            .where("still.companyId", "=", companyId)
+            .where("still.invoiceId", "=", invoiceId)
+        )
+      )
+    )
+    .execute();
+}
+
+/**
  * Deletes a Draft sales invoice and, in the same transaction, releases the
  * rental billing periods and charges and the contract schedule rows it
  * billed, so the next generation bills them again. `salesInvoiceLineId` on
@@ -12330,11 +12408,27 @@ export async function deleteSalesInvoiceReleasingRentals(
       userId
     });
 
+    const serviceLines = await trx
+      .selectFrom("salesInvoiceLine")
+      .select("serviceJobId")
+      .where("invoiceId", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .where("serviceJobId", "is not", null)
+      .execute();
+
     await trx
       .deleteFrom("salesInvoice")
       .where("id", "=", invoiceId)
       .where("companyId", "=", companyId)
       .execute();
+
+    // After the delete: the lines are gone, so no line still names a job.
+    await releaseServiceJobInvoiceStamps(trx, {
+      companyId,
+      invoiceId,
+      serviceJobIds: serviceLines.map((line) => line.serviceJobId),
+      userId
+    });
   });
 }
 
@@ -12412,6 +12506,7 @@ export async function deleteSalesInvoiceLineReleasingRentals(
       )
       .select([
         "salesInvoiceLine.invoiceId as invoiceId",
+        "salesInvoiceLine.serviceJobId as serviceJobId",
         "salesInvoice.status as status"
       ])
       .where("salesInvoiceLine.id", "=", salesInvoiceLineId)
@@ -12437,6 +12532,14 @@ export async function deleteSalesInvoiceLineReleasingRentals(
       .where("id", "=", salesInvoiceLineId)
       .where("companyId", "=", companyId)
       .execute();
+    if (line.serviceJobId) {
+      await releaseServiceJobInvoiceStamps(trx, {
+        companyId,
+        invoiceId,
+        serviceJobIds: [line.serviceJobId],
+        userId
+      });
+    }
   });
 }
 

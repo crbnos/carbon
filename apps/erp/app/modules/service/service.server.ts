@@ -389,9 +389,11 @@ export const createServiceJob = defineServiceFn({
  * Refused when any of the jobs is Completed, Invoiced or Cancelled. An empty
  * value clears the field, except the customer, location, work site, billing
  * method and priority. Ids must be the company's; an asset also sets the
- * job's item and serial. `findings` and `resolution` take the editor's
- * document as JSON; `repairable` takes `true` or `false`. The status and the
- * coverage are not set here.
+ * job's item and serial. A customer location, contact or asset must be the
+ * job's customer's; a job from a return or on an asset keeps its customer,
+ * and a job with issued parts keeps its location. `findings` and
+ * `resolution` take the editor's document as JSON; `repairable` takes `true`
+ * or `false`. The status and the coverage are not set here.
  *
  * @mcp
  */
@@ -402,7 +404,7 @@ export const updateServiceJob = defineServiceFn({
   async run(ctx, { ids, field, value }) {
     const jobs = await ctx.asCaller.supabase
       .from("serviceJob")
-      .select("id, status")
+      .select("id, status, customerId, salesReturnOrderLineId, customerAssetId")
       .in("id", ids)
       .eq("companyId", ctx.company.id);
     if (jobs.error) {
@@ -418,6 +420,14 @@ export const updateServiceJob = defineServiceFn({
     if (jobs.data.some((job) => isServiceJobLocked(job.status))) {
       return ctx.error("rule", service.SERVICE_JOB_LOCKED);
     }
+
+    const refused = await service.serviceJobFieldRefusal(
+      ctx,
+      jobs.data,
+      field,
+      value
+    );
+    if (refused) return refused;
 
     const values = await service.serviceJobFieldValues(ctx, field, value);
     if (values instanceof CarbonError) return values;
@@ -974,6 +984,9 @@ export const upsertServiceJobCharge = defineServiceFn({
             createdBy: ctx.auditUserId
           }
     );
+    if (service.isChargeCostLinkTaken(upsert.error)) {
+      return ctx.error("rule", service.CHARGE_COST_LINE_TAKEN);
+    }
     return unwrap(ctx, upsert);
   }
 });

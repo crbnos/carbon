@@ -18,6 +18,7 @@ import type {
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
+import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
@@ -726,6 +727,94 @@ export async function updateServiceJob(
     .in("id", args.ids)
     .eq("companyId", args.companyId)
     .select("id");
+}
+
+/**
+ * The refusal a header field change gets from the jobs it would change, else
+ * null. A customer location, contact or asset must be each job's customer's.
+ * A job from a return or on an asset keeps its customer. A job with a Part
+ * line keeps its location: the parts were issued from it.
+ */
+export async function serviceJobFieldRefusal(
+  ctx: ServiceContext,
+  jobs: {
+    id: string;
+    customerId: string;
+    salesReturnOrderLineId: string | null;
+    customerAssetId: string | null;
+  }[],
+  field: (typeof serviceJobUpdateFields)[number],
+  value: string | null | undefined
+): Promise<CarbonError | null> {
+  const text = value?.trim() ? value : null;
+  const customerIds = [...new Set(jobs.map((job) => job.customerId))];
+
+  switch (field) {
+    case "customerId":
+      if (
+        jobs.some(
+          (job) =>
+            job.customerId !== text &&
+            (job.salesReturnOrderLineId || job.customerAssetId)
+        )
+      ) {
+        return ctx.error(
+          "rule",
+          "A job from a return or on a customer asset keeps its customer."
+        );
+      }
+      return null;
+    case "customerLocationId":
+    case "customerContactId": {
+      if (!text) return null;
+      const table =
+        field === "customerLocationId" ? "customerLocation" : "customerContact";
+      for (const customerId of customerIds) {
+        const refused = await refuseUnlessOwned(ctx, table, {
+          id: text,
+          customerId
+        });
+        if (refused) return refused;
+      }
+      return null;
+    }
+    case "customerAssetId": {
+      if (!text) return null;
+      const asset = await companyCustomerAsset(ctx, text);
+      if (asset instanceof Error) return asset;
+      if (customerIds.some((customerId) => customerId !== asset.customerId)) {
+        return ctx.error("rule", "The asset belongs to another customer");
+      }
+      return null;
+    }
+    case "locationId": {
+      const parts = await ctx.asSystem.supabase
+        .from("serviceJobItem")
+        .select("id", { count: "exact", head: true })
+        .in(
+          "serviceJobId",
+          jobs.map((job) => job.id)
+        )
+        .eq("companyId", ctx.company.id)
+        .eq("lineType", "Part");
+      if (parts.error) {
+        return ctx.error(
+          "internal",
+          "Failed to load the job's parts",
+          parts.error
+        );
+      }
+      if ((parts.count ?? 0) > 0) {
+        return ctx.error(
+          "rule",
+          "Return the issued parts before changing the job's location."
+        );
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
 }
 
 const REQUIRED_FIELD_LABELS: Partial<
@@ -1489,6 +1578,25 @@ export async function getServiceJobCoverageAccount(
     .maybeSingle();
 }
 
+export const CHARGE_COST_LINE_TAKEN = "This line already pays another charge";
+
+/**
+ * Whether a charge's write failed on the one-line-one-charge unique indexes
+ * (`serviceJobItem_reimbursementLineId_key`,
+ * `serviceJobItem_purchaseInvoiceLineId_key`): another save linked the line
+ * after `chargeCost` checked it.
+ */
+export function isChargeCostLinkTaken(
+  error: { code?: string; message?: string } | null | undefined
+): boolean {
+  return (
+    error?.code === "23505" &&
+    /serviceJobItem_(reimbursementLineId|purchaseInvoiceLineId)_key/.test(
+      error.message ?? ""
+    )
+  );
+}
+
 /**
  * A charge's paid cost: the line it links to and the unit cost that line
  * gives it (its amount ÷ the charge's quantity), or no link and no cost.
@@ -1555,7 +1663,7 @@ export async function chargeCost(
       "rule",
       other.serviceJobId
         ? `This line already pays a charge on ${other.serviceJobId}`
-        : "This line already pays another charge"
+        : CHARGE_COST_LINE_TAKEN
     );
   }
   return {
@@ -1826,6 +1934,46 @@ async function refreshJobReturnOrder(
   );
 }
 
+export const SERVICE_JOB_UNIT_LEFT_ERROR =
+  "This unit has already left the repair; it cannot be reopened.";
+
+export const SERVICE_JOB_BEFORE_CUTOVER_ERROR =
+  "This job was completed before the accounting cutover and cannot be reopened.";
+
+/**
+ * Refuses to reopen a job whose RMA unit has moved on: shipped back,
+ * scrapped, or replaced. Reopening would put work on a unit the depot no
+ * longer has.
+ */
+async function refuseReopenOfDepartedUnit(
+  trx: Transaction<KyselyDatabase>,
+  salesReturnOrderLineId: string | null,
+  companyId: string
+) {
+  if (!salesReturnOrderLineId) return;
+  const [line, replacement] = await Promise.all([
+    trx
+      .selectFrom("salesReturnOrderLine")
+      .select(["quantityShipped", "disposition"])
+      .where("id", "=", salesReturnOrderLineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    trx
+      .selectFrom("salesOrderLine")
+      .select("id")
+      .where("salesReturnOrderLineId", "=", salesReturnOrderLineId)
+      .where("companyId", "=", companyId)
+      .limit(1)
+      .executeTakeFirst()
+  ]);
+  if (
+    replacement ||
+    (line && (Number(line.quantityShipped) > 0 || line.disposition === "Scrap"))
+  ) {
+    throw new InvalidInputError(SERVICE_JOB_UNIT_LEFT_ERROR);
+  }
+}
+
 const COMPLETABLE_STATUSES: ReadonlySet<string> = new Set([
   "Open",
   "In Progress",
@@ -1842,7 +1990,9 @@ const COMPLETABLE_STATUSES: ReadonlySet<string> = new Set([
  *   accepted estimate when the job needs one (`canComplete`), with a labor
  *   item that has no cost, or with a clock still running.
  * - `reopen` voids that journal with a negated copy and moves a Completed job
- *   back to In Progress. An Invoiced job cannot reopen.
+ *   back to In Progress. An Invoiced job cannot reopen, nor can a job whose
+ *   RMA unit was shipped back, scrapped or replaced, nor one whose
+ *   completion journal the accounting cutover superseded.
  * - `set-coverage` moves the cost of the parts already issued from the old
  *   coverage account to the new one, in one journal, and sets the coverage.
  *   Refused once the job is Completed.
@@ -2026,9 +2176,30 @@ export async function postServiceJob(
             `A job that is ${job.status} cannot be reopened.`
           );
         }
+        await refuseReopenOfDepartedUnit(
+          trx,
+          job.salesReturnOrderLineId,
+          companyId
+        );
 
         let journalId: string | null = null;
         if (job.completionJournalId) {
+          // The cutover superseded a journal posted before it: there is no
+          // live journal to void.
+          const completion = await trx
+            .selectFrom("journal")
+            .select("status")
+            .where("id", "=", job.completionJournalId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (
+            !completion ||
+            !(DOCUMENT_JOURNAL_STATUSES as readonly string[]).includes(
+              completion.status
+            )
+          ) {
+            throw new InvalidInputError(SERVICE_JOB_BEFORE_CUTOVER_ERROR);
+          }
           const originalLines = await trx
             .selectFrom("journalLine")
             .selectAll()

@@ -165,6 +165,10 @@ import {
   getPaymentTermsList
 } from "~/modules/accounting/accounting.service";
 import {
+  loadReturnLineJobs,
+  SHIP_BACK_JOB_STATUSES
+} from "~/modules/inventory/shipment-service-return";
+import {
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage
 } from "~/modules/items/items.models";
@@ -12924,8 +12928,9 @@ export async function createDocument(
         userLocationId ?? salesReturnOrder.data.locationId ?? null;
       if (!locationId) throw new Error("The return order has no location");
 
-      // A Service or Warranty line ships its unit back once its job is
-      // Completed or Invoiced, unless the unit is to be scrapped.
+      // A Service or Warranty line ships its unit back once its job (the
+      // live one, else the latest Cancelled one) is Completed, Invoiced or
+      // Cancelled, unless the unit is to be scrapped.
       const serviceLines = salesReturnOrderLines.data.filter(
         (d) =>
           (d.returnType === "Return for Service" ||
@@ -12934,20 +12939,16 @@ export async function createDocument(
       );
       const doneServiceLineIds = new Set<string>();
       if (serviceLines.length > 0) {
-        const doneJobs = await db
-          .selectFrom("serviceJob")
-          .select("salesReturnOrderLineId")
-          .where(
-            "salesReturnOrderLineId",
-            "in",
-            serviceLines.map((d) => d.id)
+        const lineJobs = await loadReturnLineJobs(
+          db,
+          companyId,
+          serviceLines.map((d) => d.id)
+        );
+        for (const [lineId, job] of lineJobs) {
+          if (
+            (SHIP_BACK_JOB_STATUSES as readonly string[]).includes(job.status)
           )
-          .where("status", "in", ["Completed", "Invoiced"])
-          .where("companyId", "=", companyId)
-          .execute();
-        for (const job of doneJobs) {
-          if (job.salesReturnOrderLineId)
-            doneServiceLineIds.add(job.salesReturnOrderLineId);
+            doneServiceLineIds.add(lineId);
         }
       }
 

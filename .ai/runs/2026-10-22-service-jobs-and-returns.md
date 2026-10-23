@@ -55,6 +55,25 @@
 - 2026-10-23: Task 36 committed. New rule `.claude/rules/service-jobs.md`, new `modules/service/AGENTS.md`, new reference page `service-jobs.mdx`. Updated: root AGENTS router row, production, sales and inventory AGENTS files, onboarding and shipments rules, `rmas.mdx`, `customer-assets.mdx`, glossary (service job, coverage, return type), docs sidebar. `docs` typecheck and the link check pass. The new page has 2 screenshot slots to fill.
 - 2026-10-23: Task 37 committed. 205 strings filled in each of 12 locales (erp and mes), with 0 missing.
   - **For Brad:** 38 translations use their own word for "service job", not the glossary's "Job" (a manufacturing work order). The glossary has no "Service Job" term; add one or decide these follow "Job". 29 more terminology flags are false alarms on word form. The repo's 2,500+ older glossary violations are untouched.
+- 2026-10-23: An independent review of the service jobs work confirmed 9 bugs and listed 5 plausible ones. All 9, plus 4 of the plausible ones, are fixed in one commit, each with a test:
+  1. Deleting or voiding a service invoice now releases the job back to Completed.
+  2. Service job RLS is tightened to `company("service")`; every MES and My Time write uses the service role or a system connection.
+  3. A job's location cannot change while it has issued parts.
+  4. A receipt void touches only lines that receipt received.
+  5. A job's contact, site and asset must belong to its customer, and an RMA or asset job keeps its customer.
+  6. Service and Warranty lines cannot be credited.
+  7. The whole-RMA replacement skips Service and Warranty lines.
+  8. Reopen is refused once the unit has shipped, been scrapped or been replaced.
+  9. A cancelled job's unit can ship back or be scrapped.
+
+  The 4 plausible ones fixed:
+  - Reopen is refused for a job completed before the cutover.
+  - A part return locks its line.
+  - New unique indexes stop one cost line paying two charges.
+  - The MES service reads are scoped by `companyId`.
+
+  Migrations: `20261023102753_service-jobs-rls-tighten`, `20261023103748_service-job-item-cost-link-unique`. Checks: 146 database tests, ERP and MES unit tests, authz, datasets, backups, conformance and the manifest all pass.
+  - Still open: the MCP invoice delete tools (plain Supabase deletes in `invoicing.service.ts`) do not release the job. The ERP UI delete does. The MES `saveServiceDayHours` race with Complete is logged, not fixed.
 
 ## Decisions made without Brad
 
@@ -111,6 +130,22 @@
 | 35 | A line already linked to another charge is refused. This is a check before the write, with no unique index | Two people linking at the same moment could both succeed. That is a rare race, and a unique index can come later. |
 | 32 | The MES copies the two ERP messages word for word | The ERP service file was off-limits during the task. Both messages could move to `@carbon/utils` later. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
+
+## Review fixes (2026-10-23)
+
+Confirmed review findings fixed: invoice delete and void release the job;
+service RLS needs the `service` scope (`20261023102753`); a header change is
+checked against the job's customer, return and parts; a receipt void touches
+only the lines it received; credits and the whole-RMA replacement skip
+Service and Warranty lines; reopen refuses a departed unit and a journal the
+cutover superseded; a Cancelled job's unit ships back or is scrapped; the part
+return re-reads its line under the job lock; one charge per cost line has
+unique indexes (`20261023103748`); the MES reads filter by company.
+
+Logged, not fixed: MES `saveServiceDayHours` reads and writes the day's entries
+in separate service-role calls, not one transaction, so two saves of the same
+day at once can both insert a manual entry. `setServiceJobDayHours` in the ERP
+runs in one transaction.
 
 ## Blocked
 

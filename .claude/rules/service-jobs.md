@@ -39,9 +39,17 @@ Two unique indexes carry rules the code relies on:
 `serviceJob_salesReturnOrderLineId_key` (one non-Cancelled job per RMA line) and
 `serviceJobTime_open_clock_key` (one running clock per employee).
 
-RLS (authz manifest `company("service", { create: "employee", update: "employee" })`):
-any employee of the company reads, inserts and updates; delete needs
-`service_delete`. The operations are what gate by `service` scope.
+RLS (authz manifest `company("service")`, tightened by
+`20261023102753_service-jobs-rls-tighten.sql`): any employee of the company
+reads; insert, update and delete need `service_create` / `service_update` /
+`service_delete`. Every technician write (the MES, My Time) runs on the
+service role or the system connection after its own `companyId` check.
+
+`updateServiceJob` checks a change against the jobs it changes
+(`serviceJobFieldRefusal`): a customer location, contact or asset must be the
+job's customer's; a job from a return or on an asset keeps its customer; a job
+with a Part line keeps its location ("Return the issued parts before changing
+the job's location.").
 
 ## Statuses
 
@@ -58,7 +66,7 @@ every child-row write goes through `editableServiceJob` (operations) or
 | Send Estimate | `sendServiceJobEstimate` | Billable only, at least one line, not already Accepted. Estimate Sent, job Awaiting Approval |
 | Record Response | `recordServiceJobEstimateResponse` | Estimate must be Sent. Accepted → job Open; a Fixed Price job's `fixedPrice` = Σ quantity × unit price. Declined → job In Progress and `repairable = false` |
 | Complete | `completeServiceJob` → `postServiceJob` `complete` | From Open, In Progress or On Hold |
-| Reopen | `reopenServiceJob` → `postServiceJob` `reopen` | Completed → In Progress. Invoiced is refused |
+| Reopen | `reopenServiceJob` → `postServiceJob` `reopen` | Completed → In Progress. Invoiced is refused; so is a job whose RMA unit shipped back, was scrapped or replaced (`SERVICE_JOB_UNIT_LEFT_ERROR`), and one whose completion journal is not a live document journal, e.g. Superseded by the cutover (`SERVICE_JOB_BEFORE_CUTOVER_ERROR`) |
 | Create Invoice | `createServiceInvoice` | Completed and Billable → Invoiced |
 | MES clock Start | `x+/service-time.tsx` | An Open job goes In Progress |
 | MES New Job | `x+/service.new.tsx` | Inserted In Progress |
@@ -153,6 +161,12 @@ payment terms, `customerReference` = the job number, tax 0),
 - Fixed Price: one line, `serviceItemId` at `fixedPrice`; refused without either.
 - Nothing billable is refused.
 
+Deleting the Draft invoice (`deleteSalesInvoiceReleasingRentals`) or its last
+line naming a job (`deleteSalesInvoiceLineReleasingRentals`) sets the job back
+to Completed with no `salesInvoiceId` (`releaseServiceJobInvoiceStamps`), in
+the delete's transaction. Voiding a posted one (`postSalesInvoice` `void`)
+does the same, so the job can be invoiced again.
+
 ## The RMA
 
 `salesReturnOrderLine` gained `returnType` (enum `returnType`: Return to Stock,
@@ -174,22 +188,31 @@ Service or Warranty line has quantity 1 (one unit, one job).
   re-reads every line's return type under the RMA lock and refuses if one
   changed. A serial-tracked Service or Warranty line with no serial on the
   receipt is refused ("Assign the serial before posting a service receipt").
-- **Receipt void** (`voidServiceJobsForReturn`): cancels the line's live job and
+- **Receipt void** (`voidServiceJobsForReturn`): for each line THIS receipt
+  received (quantity > 0; a line it carried at 0 belongs to another receipt),
+  cancels the line's live job and
   sets the asset back In Service. Refused when the job has work (a status past
   Open, a time entry or a Part line): "Cancel the job first."
 - **Ship back**: the RMA shipment, the same create path as Return to Customer
   (header **Ship**, line **Ship Back** → `path.to.newShipment` with source
-  `Sales Return Order`). `shipServiceUnits` refuses unless the line's job is
-  Completed or Invoiced (`SHIP_BACK_JOB_STATUSES`) and the asset is At Depot;
+  `Sales Return Order`). The line's job is the live one, else the latest
+  Cancelled one (`loadReturnLineJobs`); a Cancelled job's unit goes back
+  unrepaired. `shipServiceUnits` refuses unless that job is Completed,
+  Invoiced or Cancelled (`SHIP_BACK_JOB_STATUSES`) and the asset is At Depot;
   sets the asset In Service at the RMA's site; adds `quantityShipped`
   (`addReturnLineQuantityShipped`). Void: `unshipServiceUnits` sets the asset
   At Depot and lowers `quantityShipped` (never below 0).
+- **Credit and replacement**: Issue Credit (`getCreditableQuantities`,
+  `createSalesReturnOrderCredit`) and the header's whole-RMA Create
+  Replacement (`createReplacementSalesOrder` without `lineIds`) take Return to
+  Stock lines only. A Service or Warranty unit stays the customer's; it is
+  replaced only through `replaceReturnedUnit`.
 - **Next steps** (line ⋯ menu, `$id.$lineId.next-step.tsx`):
 
 | Action | Operation | When offered | Effect |
 |---|---|---|---|
 | Disposition | `setSalesReturnOrderLineDisposition` / the issue route (Scrap, Rework) | Return to Stock line, received | Use As Is, Return to Customer, Scrap, Rework (no Repair) |
-| Ship Back | the RMA shipment | Service/Warranty line, job Completed or Invoiced, unit not shipped or scrapped | as above |
+| Ship Back | the RMA shipment | Service/Warranty line, received, job Completed, Invoiced or Cancelled, unit not shipped or scrapped | as above |
 | Scrap Unit | `scrapReturnedUnit` → `scrapServiceReturnLine` | same as Ship Back | disposition Scrap, serial Scrapped, asset Returned; nothing posts |
 | No-charge Replacement | `replaceReturnedUnit` | Warranty line, job Completed with `repairable = false` | adds a line at price 0 naming the RMA line to the RMA's Draft replacement order, else a new Draft sales order |
 | Change to Return for Service | `changeReturnLineToService` | Warranty line whose job is open | `set-coverage` Billable on the job, then `setReturnLineToService` on the line: two steps, not one transaction. Needs `update` on sales AND service |
@@ -315,7 +338,10 @@ that already pays another charge, and the job posts nothing for it.
 `getLinkableCostLines` lists the newest 100 of each source; the charge form
 (**Paid By**) warns when the line's account is not the job's coverage account
 (`getServiceJobCoverageAccount`). The one-line-one-charge rule is a check before
-the write, with no unique index.
+the write, backed by the partial unique indexes
+`serviceJobItem_reimbursementLineId_key` / `serviceJobItem_purchaseInvoiceLineId_key`
+(`20261023103748`); `upsertServiceJobCharge` maps their violation
+(`isChargeCostLinkTaken`) to `CHARGE_COST_LINE_TAKEN`.
 
 ## Demo datasets
 
@@ -329,8 +355,6 @@ Progress RMA with a received Return for Service line. See
 - **Keep at zero value** (spec decision 19) did not ship. After a no-charge
   replacement the old unit can only be scrapped: no path adds a customer unit
   to stock at zero cost.
-- **Voiding a service invoice** does not move the job back from Invoiced; the
-  job keeps `salesInvoiceId`.
 - **Phase 3** is out of scope: contract coverage from a service contract,
   supplier warranty recovery, preventive maintenance on customer assets.
 - Seeded jobs carry no issued parts (the tiers do not model the issue posting's

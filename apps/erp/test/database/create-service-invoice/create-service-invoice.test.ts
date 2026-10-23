@@ -5,6 +5,10 @@
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { postSalesInvoice } from "../../../app/modules/invoicing/invoicing.service";
+import {
+  deleteSalesInvoiceLineReleasingRentals,
+  deleteSalesInvoiceReleasingRentals
+} from "../../../app/modules/sales/sales.service";
 import { createServiceInvoice } from "../../../app/modules/service/service.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
@@ -308,6 +312,117 @@ databaseTest(
       });
       const refused = await f.createServiceInvoice(warranty.id);
       expect(refused.error?.message).toContain("Only a Billable job");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "deleting a Draft service invoice, or its last line of a job, puts the job back to Completed; voiding a posted one does too",
+  async () => {
+    const f = await invoiceFixture();
+    try {
+      const { locationId } = await f.addStockedItem("unit", {
+        quantity: 1,
+        unitCost: 10
+      });
+      const jobState = (id: string) =>
+        f.db
+          .selectFrom("serviceJob")
+          .select(["status", "salesInvoiceId"])
+          .where("id", "=", id)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow();
+
+      // Delete the whole Draft invoice.
+      const deleted = await f.addJob({ locationId, status: "Completed" });
+      await f.addTime(deleted.id, { hours: 1 });
+      const first = await f.createServiceInvoice(deleted.id);
+      expect(first.error).toBeNull();
+      await deleteSalesInvoiceReleasingRentals(f.db, {
+        companyId: f.companyId,
+        invoiceId: first.data!.salesInvoiceId,
+        userId: PROJECT_TEST_USER
+      });
+      expect(await jobState(deleted.id)).toEqual({
+        status: "Completed",
+        salesInvoiceId: null
+      });
+      // Released: it invoices again.
+      const rebilled = await f.createServiceInvoice(deleted.id);
+      expect(rebilled.error).toBeNull();
+
+      // Delete the invoice's lines one by one: the job is released only
+      // when no line names it any more.
+      const lined = await f.addJob({ locationId, status: "Completed" });
+      await f.addTime(lined.id, { hours: 1 });
+      await f.db
+        .insertInto("serviceJobItem")
+        .values({
+          serviceJobId: lined.id,
+          lineType: "Charge",
+          itemId: f.laborItemId,
+          description: "Travel",
+          quantity: 1,
+          unitPrice: 50,
+          companyId: f.companyId,
+          createdBy: PROJECT_TEST_USER
+        })
+        .execute();
+      const second = await f.createServiceInvoice(lined.id);
+      expect(second.error).toBeNull();
+      const secondId = second.data!.salesInvoiceId;
+      const secondLines = await f.db
+        .selectFrom("salesInvoiceLine")
+        .select("id")
+        .where("invoiceId", "=", secondId)
+        .execute();
+      expect(secondLines).toHaveLength(2);
+      await deleteSalesInvoiceLineReleasingRentals(f.db, {
+        companyId: f.companyId,
+        invoiceId: secondId,
+        salesInvoiceLineId: secondLines[0]!.id,
+        userId: PROJECT_TEST_USER
+      });
+      expect(await jobState(lined.id)).toEqual({
+        status: "Invoiced",
+        salesInvoiceId: secondId
+      });
+      await deleteSalesInvoiceLineReleasingRentals(f.db, {
+        companyId: f.companyId,
+        invoiceId: secondId,
+        salesInvoiceLineId: secondLines[1]!.id,
+        userId: PROJECT_TEST_USER
+      });
+      expect(await jobState(lined.id)).toEqual({
+        status: "Completed",
+        salesInvoiceId: null
+      });
+
+      // Void a posted invoice.
+      const voided = await f.addJob({ locationId, status: "Completed" });
+      await f.addTime(voided.id, { hours: 1 });
+      const third = await f.createServiceInvoice(voided.id);
+      expect(third.error).toBeNull();
+      const thirdId = third.data!.salesInvoiceId;
+      const post = (type: "post" | "void") =>
+        invokePosting(
+          handlesOf(f.ctx),
+          "post-sales-invoice",
+          { type, invoiceId: thirdId },
+          postSalesInvoice
+        );
+      expect((await post("post")).error).toBeNull();
+      expect(await jobState(voided.id)).toEqual({
+        status: "Invoiced",
+        salesInvoiceId: thirdId
+      });
+      expect((await post("void")).error).toBeNull();
+      expect(await jobState(voided.id)).toEqual({
+        status: "Completed",
+        salesInvoiceId: null
+      });
     } finally {
       await f.cleanup();
     }

@@ -10277,10 +10277,14 @@ export async function postReceipt(
           // Service and Warranty lines: the jobs this receipt created are
           // cancelled and their assets go back In Service. The serials stay
           // Consumed (the entity reset below).
+          // Only the lines THIS receipt received: a line it carried at 0
+          // was received (and its job opened) by another receipt.
           await voidServiceJobsForReturn(trx, {
             companyId,
             userId,
-            salesReturnOrderLineIds: [...receivedByLine.keys()]
+            salesReturnOrderLineIds: [...receivedByLine.entries()]
+              .filter(([, quantity]) => quantity > 0)
+              .map(([lineId]) => lineId)
           });
 
           if (reversingItemLedger.length > 0) {
@@ -29318,20 +29322,31 @@ export async function issueMaterial(
         .toString();
 
       const removed = await db.transaction().execute(async (trx) => {
+        const located = await trx
+          .selectFrom("serviceJobItem")
+          .select("serviceJobId")
+          .where("id", "=", serviceJobItemId)
+          .where("companyId", "=", companyId)
+          .where("lineType", "=", "Part")
+          .executeTakeFirst();
+        if (!located) throw new NotFoundError("Service job part not found");
+
+        const job = await lockServiceJob(trx, {
+          serviceJobId: located.serviceJobId,
+          companyId,
+          open: true
+        });
+        // Re-read under the job lock, and lock the line: a return that
+        // committed while this one waited has already deleted or changed it.
         const jobItem = await trx
           .selectFrom("serviceJobItem")
           .selectAll()
           .where("id", "=", serviceJobItemId)
           .where("companyId", "=", companyId)
           .where("lineType", "=", "Part")
+          .forUpdate()
           .executeTakeFirst();
         if (!jobItem) throw new NotFoundError("Service job part not found");
-
-        const job = await lockServiceJob(trx, {
-          serviceJobId: jobItem.serviceJobId,
-          companyId,
-          open: true
-        });
 
         const [item, ledger] = await Promise.all([
           trx

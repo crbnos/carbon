@@ -8,7 +8,9 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
+import { scrapServiceReturnLine } from "../../../app/modules/sales/sales.service";
 import { databaseTest } from "../fixtures/local-database";
+import { PROJECT_TEST_USER } from "../fixtures/project-posting";
 import { serviceReturnFixture } from "../fixtures/service-return";
 
 type Fixture = Awaited<ReturnType<typeof serviceReturnFixture>>;
@@ -200,6 +202,58 @@ databaseTest(
         [f.account("warranty")]: 0,
         [f.account("inventory")]: 0
       });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a unit whose job was cancelled ships back unrepaired, or is scrapped",
+  async () => {
+    const f = await serviceReturnFixture();
+    try {
+      const serialId = await f.addSerial();
+      const { rmaId, lineIds } = await f.addRma([
+        { itemId: f.serialItemId, returnType: "Return for Service" },
+        { itemId: f.unitItemId, returnType: "Return for Warranty" }
+      ]);
+      const [shipLineId, scrapLineId] = lineIds as [string, string];
+      const received = await f.receive(rmaId, { [shipLineId]: serialId });
+      expect(received.posted.error).toBeNull();
+      await f.db
+        .updateTable("serviceJob")
+        .set({ status: "Cancelled" })
+        .where("salesReturnOrderLineId", "in", lineIds)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      await scrapServiceReturnLine(f.db, {
+        salesReturnOrderId: rmaId,
+        lineId: scrapLineId,
+        companyId: f.companyId,
+        userId: PROJECT_TEST_USER
+      });
+      const scrapped = await f.db
+        .selectFrom("salesReturnOrderLine")
+        .select("disposition")
+        .where("id", "=", scrapLineId)
+        .executeTakeFirstOrThrow();
+      expect(scrapped.disposition).toBe("Scrap");
+
+      const { posted } = await f.shipBack(rmaId, { [shipLineId]: serialId });
+      expect(posted.error).toBeNull();
+      expect(await f.returnLines(rmaId)).toEqual([
+        { id: shipLineId, quantityReceived: 1, quantityShipped: 1 },
+        { id: scrapLineId, quantityReceived: 1, quantityShipped: 0 }
+      ]);
+      const asset = await f.db
+        .selectFrom("customerAsset")
+        .select("status")
+        .where("trackedEntityId", "=", serialId)
+        .executeTakeFirstOrThrow();
+      expect(asset.status).toBe("In Service");
+      expect(await f.rmaStatus(rmaId)).toBe("Completed");
     } finally {
       await f.cleanup();
     }

@@ -80,15 +80,19 @@ const SalesReturnOrderHeader = () => {
     submit(formData, { method: "post", action: path.to.newShipment });
   };
 
-  // What can go back out: a Return to Customer line, or a serviced unit
-  // whose job is done and that has not shipped or been scrapped.
+  // What can go back out: a Return to Customer line, or a received serviced
+  // unit whose job is done or cancelled and that has not shipped or been
+  // scrapped.
   const hasReturnToCustomerLine = routeData.lines.some((line) => {
     if (!isServiceReturnLine(line.returnType)) {
       return line.disposition === "Return to Customer";
     }
     const job = liveServiceJob(line.serviceJob);
     return (
-      (job?.status === "Completed" || job?.status === "Invoiced") &&
+      (job?.status === "Completed" ||
+        job?.status === "Invoiced" ||
+        job?.status === "Cancelled") &&
+      Number(line.quantityReceived ?? 0) > 0 &&
       Number(line.quantityShipped ?? 0) === 0 &&
       line.disposition !== "Scrap"
     );

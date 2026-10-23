@@ -32,11 +32,13 @@ const SERVICE_JOB_CARD_COLUMNS =
 /** The location's open service jobs, newest first. */
 export async function getOpenServiceJobsByLocation(
   client: Client,
+  companyId: string,
   locationId: string
 ) {
   return client
     .from("serviceJob")
     .select(SERVICE_JOB_CARD_COLUMNS)
+    .eq("companyId", companyId)
     .eq("locationId", locationId)
     .not("status", "in", CLOSED_STATUSES)
     .order("createdAt", { ascending: false });
@@ -48,12 +50,14 @@ export async function getOpenServiceJobsByLocation(
  */
 export async function getServiceJobsAssignedTo(
   client: Client,
+  companyId: string,
   userId: string,
   date: string
 ) {
   const assignments = await client
     .from("serviceJobAssignment")
     .select("serviceJobId")
+    .eq("companyId", companyId)
     .eq("employeeId", userId)
     .eq("scheduledDate", date);
   if (assignments.error) return { data: null, error: assignments.error };
@@ -65,6 +69,7 @@ export async function getServiceJobsAssignedTo(
   return client
     .from("serviceJob")
     .select(SERVICE_JOB_CARD_COLUMNS)
+    .eq("companyId", companyId)
     .or(
       jobIds.length > 0
         ? `${assignedTo},id.in.(${jobIds.join(",")})`
@@ -77,46 +82,63 @@ export async function getServiceJobsAssignedTo(
 /** How many service jobs are open at the location: the queue's count. */
 export async function getOpenServiceJobsCount(
   client: Client,
+  companyId: string,
   locationId: string
 ) {
   return client
     .from("serviceJob")
     .select("id", { count: "exact", head: true })
+    .eq("companyId", companyId)
     .eq("locationId", locationId)
     .not("status", "in", CLOSED_STATUSES);
 }
 
 /** One job, with its customer, asset (and warranty dates), item and serial. */
-export async function getServiceJob(client: Client, id: string) {
+export async function getServiceJob(
+  client: Client,
+  companyId: string,
+  id: string
+) {
   return client
     .from("serviceJob")
     .select(
       "*, customer:customer!serviceJob_customerId_fkey(id, name), customerAsset:customerAsset!serviceJob_customerAssetId_fkey(id, laborWarrantyEndDate, partsWarrantyEndDate), item:item!serviceJob_itemId_fkey(id, readableIdWithRevision, name), trackedEntity:trackedEntity!serviceJob_trackedEntityId_fkey(id, readableId)"
     )
     .eq("id", id)
+    .eq("companyId", companyId)
     .maybeSingle();
 }
 
 /** A job's time entries, newest first. */
-export async function getServiceJobTime(client: Client, serviceJobId: string) {
+export async function getServiceJobTime(
+  client: Client,
+  companyId: string,
+  serviceJobId: string
+) {
   return client
     .from("serviceJobTime")
     .select(
       "id, employeeId, entryDate, startTime, endTime, hours, laborItem:item!serviceJobTime_laborItemId_fkey(id, name)"
     )
     .eq("serviceJobId", serviceJobId)
+    .eq("companyId", companyId)
     .order("entryDate", { ascending: false })
     .order("createdAt", { ascending: false });
 }
 
 /** A job's parts and charges, in the order they were added. */
-export async function getServiceJobItems(client: Client, serviceJobId: string) {
+export async function getServiceJobItems(
+  client: Client,
+  companyId: string,
+  serviceJobId: string
+) {
   return client
     .from("serviceJobItem")
     .select(
       "id, lineType, quantity, unitOfMeasureCode, item:item!serviceJobItem_itemId_fkey(id, name, readableIdWithRevision)"
     )
     .eq("serviceJobId", serviceJobId)
+    .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
 }
 
