@@ -21,6 +21,8 @@
 - 2026-10-23: Task 7 committed: the old spec is archived and the old rule, AGENTS file and service-orders reference page are deleted. Service-order sentences are removed from 9 rules, 2 module AGENTS files and 7 docs pages.
 - 2026-10-23: Tasks 8–11 committed. Migrations `20261023070940_service-job-enum-values`, `20261023071039_service-jobs` and `20261023071226_service-jobs-rls`. The SJ sequence exists for all 34 local companies. Each new table has 4 policies.
   - Checks: typecheck erp, database, api, ee, mes, jobs and documents pass. Database tests pass (121), and so do the ee accounting core tests (372). `db:check:datasets` and `db:check:backups` pass. `check:manifest`: digest current.
+- 2026-10-23: Tasks 12–13 committed. `@carbon/utils` `service-job.ts` (24 tests). 22 new `service` operations (8 reads, 14 writes), all exposed as MCP tools.
+  - Checks: utils tests and the erp typecheck pass. The posting permissions snapshot is unchanged. `check:manifest` is current, with 1735 operations. Conformance passes.
 
 ## Decisions made without Brad
 
@@ -36,6 +38,10 @@
 | 10 | The dataset validator excludes the new RMA status 'In Progress' until Task 27 seeds one | Every enum value must be exhibited by a dataset, and none had an In Progress RMA. Task 27's step 4 now removes the exclusion. |
 | 10 | 'Service Job' added to `journalEntrySourceTypes`, `Icons.tsx`, the RMA status badge (yellow) and the ee `POSTING_POLICY` (off by default, like every new journal type) | The new enum values broke exhaustive maps in the ERP typecheck. |
 | 9 | Composite foreign keys with `ON DELETE SET NULL ("col")` for `customerAsset`, `salesReturnOrderLine`, `reimbursementLine` | Copies the existing `memo` and `reimbursementLine` pattern for composite-key tables. |
+| 13 | Estimate lines are locked while the estimate is Sent or Accepted. A Declined estimate is editable again | An accepted Fixed Price total must not drift from its lines. |
+| 13 | Send Estimate refuses a job that is not Billable, and an estimate that is already Accepted | The spec allows estimates on Billable jobs only. |
+| 13 | A labor item, a charge item and `serviceItemId` must be Service items. An asset, contact and customer location must belong to the job's customer | Ids from a form are checked against the company and the customer. |
+| 13 | Status transitions: Start Open→In Progress; Hold Open or In Progress→On Hold; Resume On Hold→In Progress; Cancel from any open status | The spec's state diagram. Complete and Reopen belong to `post-service-job` (Task 15). |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

@@ -86,8 +86,8 @@ Phase 1 — RMA and the depot service job
 - [x] Task 9: Create the service job tables and the new columns
 - [x] Task 10: Wire RLS, events, the sequence and backups for the new tables
 - [x] Task 11: Add the Cost of Service account default
-- [ ] Task 12: Write the service models and their pure rules
-- [ ] Task 13: Write the service job service functions
+- [x] Task 12: Write the service models and their pure rules
+- [x] Task 13: Write the service job service functions
 - [ ] Task 14: Add the `serviceJob*` issue types
 - [ ] Task 15: Create the `post-service-job` server function
 - [ ] Task 16: Make the RMA status follow the line resolution
