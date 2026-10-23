@@ -10,7 +10,7 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { CommandTrigger } from "../Command";
-import { FormControl } from "../Form/FormControl";
+import { FormControl, FormHelperText } from "../Form/FormControl";
 import { FormErrorMessage } from "../Form/FormError";
 import { FormLabel } from "../Form/FormLabel";
 import { Input, InputGroup } from "../Input";
@@ -141,6 +141,29 @@ describe("controls take the FormControl's state", () => {
     expect(input.getAttribute("aria-invalid")).toBe("true");
     expect(input.getAttribute("aria-describedby")).toBe(error.id);
     expect(input.className).toContain("border-destructive");
+  });
+
+  it("helper text leaves the description when the error replaces it", () => {
+    const field = (invalid: boolean) => (
+      <FormControl isInvalid={invalid}>
+        <Input id="code" />
+        {invalid ? (
+          <FormErrorMessage>Code is required</FormErrorMessage>
+        ) : (
+          <FormHelperText>Up to 10 characters</FormHelperText>
+        )}
+      </FormControl>
+    );
+    const view = render(field(false));
+    const input = view.querySelector("input")!;
+    const helper = [...view.querySelectorAll("div[id]")].find(
+      (el) => el.textContent === "Up to 10 characters"
+    )!;
+    expect(input.getAttribute("aria-describedby")).toBe(helper.id);
+
+    act(() => root!.render(field(true)));
+    const error = view.querySelector('[aria-live="polite"]')!;
+    expect(input.getAttribute("aria-describedby")).toBe(error.id);
   });
 
   it("a valid field leaves its input alone", () => {
