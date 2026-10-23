@@ -91,13 +91,21 @@ async function deleteDraftRun(f: Fixture, runId: string) {
   });
 }
 
+/** Sorted in JS, not by `ORDER BY`: the database's collation orders the
+ *  mixed-case ids differently from the JS `.sort()` the tests compare with. */
 async function reliefs(f: Fixture) {
-  return f.db
+  const rows = await f.db
     .selectFrom("projectCostRelief")
     .select(["projectLedgerId", "amount"])
     .where("companyId", "=", f.companyId)
-    .orderBy("projectLedgerId")
     .execute();
+  return rows.sort((a, b) =>
+    a.projectLedgerId < b.projectLedgerId
+      ? -1
+      : a.projectLedgerId > b.projectLedgerId
+        ? 1
+        : 0
+  );
 }
 
 /**
