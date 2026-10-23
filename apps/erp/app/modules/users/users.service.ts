@@ -7,6 +7,7 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   hasPermission,
   ITAR_RIDER_SHA256,
@@ -46,7 +47,8 @@ import {
   type NotificationTopic,
   notificationPreferenceCompanyId
 } from "@carbon/notifications";
-import { datetime, getClientIp } from "@carbon/utils";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import { datetime, Edition, getClientIp } from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -734,11 +736,17 @@ export async function refuseEmailOutsideSso(
   return refusal ? ctx.error("rule", refusal) : null;
 }
 
+/**
+ * Accepts an invite and records it: an audit entry (with the request's IP and
+ * user agent when `request` is given) and, on Cloud, the seat count. The invite
+ * page and /callback both accept through here.
+ */
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   code: string,
-  email?: string
+  email?: string,
+  request?: Request
 ) {
   const invite = await serviceRole
     .from("invite")
@@ -949,6 +957,33 @@ export async function acceptInvite(
         "Failed to invalidate permission cache after invite accept",
         { error: err, userId }
       );
+    }
+
+    // Best-effort audit of the acceptance, with request metadata.
+    try {
+      await insertAuditLogEntries(serviceRole, companyId, [
+        {
+          tableName: "invite",
+          entityType: "invite",
+          entityId: acceptedInvite.id,
+          recordId: acceptedInvite.id,
+          operation: "UPDATE",
+          actorId: null,
+          diff: { acceptedAt: { old: null, new: acceptedInvite.acceptedAt } },
+          metadata: {
+            ipAddress: request
+              ? (getClientIp(request) ?? undefined)
+              : undefined,
+            userAgent: request?.headers.get("user-agent") ?? undefined
+          }
+        }
+      ]);
+    } catch (err) {
+      logger.warn("[invite] audit write skipped for accept", { error: err });
+    }
+
+    if (CarbonEdition === Edition.Cloud) {
+      await updateSubscriptionQuantityForCompany(companyId);
     }
 
     return { data: acceptedInvite, error: null };

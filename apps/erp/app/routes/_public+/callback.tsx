@@ -56,6 +56,7 @@ import {
   getCompanies,
   getEmployeeCompanies
 } from "~/modules/settings/settings.service";
+import { acceptInvite } from "~/modules/users/users.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -455,6 +456,53 @@ export async function action({ request }: ActionFunctionArgs) {
       redis,
       prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
     }).reset(authSession.email);
+
+    // An invitee who signs in from the sign-in page, not the invite's Accept
+    // button, arrives with no company and the invite still open, and the
+    // shell sends a company-less user to onboarding. Signing in proved the
+    // invited address, so accept the invite here, as the SSO path does.
+    if (pickable.length === 0) {
+      const pendingInvite = await serviceRole
+        .from("invite")
+        .select("code")
+        .ilike(
+          "email",
+          authSession.email.replace(/[\\%_]/g, (match) => `\\${match}`)
+        )
+        .is("acceptedAt", null)
+        .is("revokedAt", null)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (pendingInvite.data) {
+        const accept = await acceptInvite(
+          serviceRole,
+          getDatabaseClient(),
+          pendingInvite.data.code,
+          authSession.email,
+          request
+        ).catch((err: unknown) => ({
+          data: null,
+          error: { message: String(err) }
+        }));
+
+        if (accept.data) {
+          const company = await serviceRole
+            .from("company")
+            .select("companyGroupId")
+            .eq("id", accept.data.companyId)
+            .maybeSingle();
+          authSession.companyId = accept.data.companyId;
+          authSession.companyGroupId = company.data?.companyGroupId ?? "";
+        } else {
+          logger.error("Failed to accept a pending invite on sign-in", {
+            error: accept.error,
+            userId: authSession.userId
+          });
+        }
+      }
+    }
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.
