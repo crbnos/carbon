@@ -1,7 +1,7 @@
 # Project contracts — implementation plan
 
 **Spec:** .ai/specs/2026-10-21-project-contracts.md
-**Research:** .ai/research/project-billing-onboarding-ux.md
+**Research:** .ai/research/project-billing-onboarding-ux.md, .ai/research/jamis-prototype-clins.md (section 10)
 **Closest sibling:** the service contract (same record, `x+/contract+/`, `apps/erp/app/modules/sales/ui/Contracts/`)
 **Branch:** projects-wbs-research-spec
 
@@ -27,6 +27,24 @@
 - [x] Task 18: Update the rules and AGENTS files
 - [x] Task 19: Fill the translations
 - [ ] Task 20: Verify in the browser
+- [ ] Task 21: Confirm the assumptions of section 10
+- [ ] Task 22: Add the `Customer Contract` shipment source
+- [ ] Task 23: Add the prototype columns and relax the billing line quantity
+- [ ] Task 24: Let a project contract line name a Part and carry its quantity
+- [ ] Task 25: Never ship stock from a contract invoice line
+- [ ] Task 26: Add Build on the CLIN and link the plan line's Create Job
+- [ ] Task 27: Receive a Fixed Price job into the project's stock and fill the task's serial
+- [ ] Task 28: Show a job as one card on its task
+- [ ] Task 29: Create a delivery from a CLIN
+- [ ] Task 30: Post and void a contract delivery
+- [ ] Task 31: Show contract deliveries on the shipment and print the Receiving Report
+- [ ] Task 32: Show jobs, deliveries and the next step on the CLIN
+- [ ] Task 33: Give shop labor the employee's labor category
+- [ ] Task 34: Route shop labor through DCAA timesheets
+- [ ] Task 35: Show the job on the project: badge, dates and attention rows
+- [ ] Task 36: Count shop hours on milestones
+- [ ] Task 37: Keep the demo datasets valid
+- [ ] Task 38: Update the docs, rules and translations, then verify in the browser
 
 ## Dependencies
 
@@ -35,6 +53,10 @@
 - Tasks 12, 13 and 14 need Task 3. They share `$projectId.tsx`, so they run in order.
 - Tasks 15 and 16 are independent of Tasks 5 to 14 (different files), except Task 15's label edits in `ContractProjectBilling.tsx` and `ProjectBillingLines.tsx`, which run after Tasks 10 and 12.
 - Task 17 and Task 18 run after the code tasks. Task 19 and Task 20 run last.
+- Section 10: Task 21 first. Task 22, then Task 23 (types). Tasks 25, 28 and 33 are independent of the migrations and of each other.
+- Task 24 needs Task 23. Task 26 needs Tasks 23 and 24. Task 27 needs Task 23. Task 29 needs Tasks 23 and 24.
+- Task 30 needs Tasks 27 and 29. Task 31 needs Task 30. Task 32 needs Tasks 26 and 29.
+- Task 34 needs Tasks 23 and 33. Task 35 needs Tasks 26 and 28. Task 36 needs Task 34. Task 37 needs Task 23. Task 38 runs last.
 
 ## Rules for every task
 
@@ -479,6 +501,534 @@ pnpm lingui:extract 2>&1 | grep -A3 "erp:" | head
 
 **Verify:** every acceptance criterion has a PASS line in `.ai/runs/2026-10-21-project-contracts.md`.
 
+## Section 10: Prototypes (Tasks 21 to 38)
+
+These tasks build spec section 10 (D23 to D39). Research:
+`.ai/research/jamis-prototype-clins.md`. The delivery's sibling is the rental
+agreement's Deliver (`x+/rental-agreement+/$id.$lineId.deliver.tsx`).
+
+Run the SQL tests of this section with the worktree database:
+
+```bash
+set -a; . <(grep -E '^SUPABASE_' .env.local); set +a
+pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f <file>
+```
+
+## Task 21: Confirm the assumptions of section 10
+
+**Depends on:** none
+**Files:**
+- Modify: `.ai/runs/2026-10-21-project-contracts.md` — add a "Section 10 assumptions" block
+
+**Steps:**
+1. List every reader of `project.projectStock`: `grep -rn "projectStock" apps/erp/app packages/server-functions/src packages/planning/src packages/database/supabase/migrations | grep -v test`.
+2. For each reader, write one line: what it does when a job's output sits in a project's stripe but `projectStock` is false.
+3. Confirm that `post-production-event` never reads `timekeepingControls`: `grep -n "timekeepingControls" packages/server-functions/src/post-production-event/index.ts`.
+4. Read `government-contracting.md` → DCAA. Write one line: does it require production labor on a project to be timesheet labor?
+5. Record the results in the run log.
+
+**Verify:**
+```bash
+grep -n "Section 10 assumptions" .ai/runs/2026-10-21-project-contracts.md
+# Expected: one match, followed by one line per projectStock reader.
+```
+
+If a reader breaks when a project stripe exists without `projectStock` (for example, the project close guard ignores the stripe), STOP and report — D33 needs a new decision.
+
+**Out of scope:** any code change.
+
+## Task 22: Add the `Customer Contract` shipment source
+
+**Depends on:** Task 21
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_contract-delivery-enum.sql` (with `pnpm db:migrate:new contract-delivery-enum`)
+- Modify: `apps/erp/app/modules/inventory/inventory.models.ts:388` — add `"Customer Contract"` to `shipmentSourceDocumentType`
+- Copy from (precedent): `packages/database/supabase/migrations/20261008155050_rental-documents-enums.sql`
+
+**Steps:**
+1. Run `pnpm db:migrate:new contract-delivery-enum`.
+2. Write only: `ALTER TYPE "shipmentSourceDocument" ADD VALUE IF NOT EXISTS 'Customer Contract';`. An `ADD VALUE` cannot share a transaction with a statement that uses the value.
+3. Add `"Customer Contract"` after `"Rental Agreement"` in `shipmentSourceDocumentType`.
+
+**Verify:** run together with Task 23.
+
+**Out of scope:** the `receiptSourceDocument` enum.
+
+## Task 23: Add the prototype columns and relax the billing line quantity
+
+**Depends on:** Task 22
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_prototype-clins.sql` (with `pnpm db:migrate:new prototype-clins`)
+- Modify: generated types (`pnpm run generate:types`)
+
+**Steps:**
+1. Run `pnpm db:migrate:new prototype-clins`.
+2. Add `job."customerContractLineId" TEXT` with `ADD COLUMN IF NOT EXISTS`.
+3. Add its FK to `"customerContractLine"("id")` `ON DELETE SET NULL`, guarded by a `pg_constraint` check. If `customerContractLine`'s key is `("id", "companyId")`, use the composite FK `("customerContractLineId", "companyId")`.
+4. Add the index `job_customerContractLineId_idx` on `("customerContractLineId", "companyId")`.
+5. Add `shipmentLine."serialNumber" TEXT`, `shipmentLine."customerContractInvoiceLineId" TEXT` (FK to `customerContractInvoiceLine`, `ON DELETE SET NULL`) and `shipmentLine."previousInvoiceDate" DATE`.
+6. Add `timesheetEntry."jobId" TEXT` with its FK to `job` (`ON DELETE SET NULL`) and an index on `("jobId", "companyId")`.
+7. Drop and re-add `customerContractLine_billing_check` with `"quantity" > 0` in place of `"quantity" = 1`. Copy the rest from `20261011122931_project-billing.sql:27-31` exactly.
+8. Add the partial unique index `shipment_oneOpenDraftPerCustomerContract_idx` on `shipment ("sourceDocumentId", "companyId") WHERE "status" = 'Draft' AND "sourceDocument" = 'Customer Contract'`. Copy the shape of `shipment_oneOpenDraftPerRentalAgreement_idx` (`20261008155056_rental-documents.sql:47-49`).
+9. Add a `COMMENT ON COLUMN` for each new column. Say what it records, in one sentence.
+10. Load the worktree env and apply: `set -a; . <(grep -E '^SUPABASE_' .env.local); set +a; pnpm db:migrate`.
+11. Run `pnpm run generate:types`.
+
+**Verify:**
+```bash
+grep -n "customerContractLineId\|serialNumber\|previousInvoiceDate" packages/database/src/types.ts | head
+# Expected: job.customerContractLineId, shipmentLine.serialNumber, shipmentLine.previousInvoiceDate (Row, Insert, Update).
+grep -n '"Customer Contract"' packages/database/src/types.ts | head -2
+# Expected: the shipmentSourceDocument enum lists it.
+pnpm db:check:backups
+# Expected: exit code 0.
+```
+
+**Out of scope:** any data backfill. The new columns are NULL for every existing row, and every reader in Tasks 24 to 35 treats NULL as "no link".
+
+## Task 24: Let a project contract line name a Part and carry its quantity
+
+**Depends on:** Task 23
+**Files:**
+- Modify: `apps/erp/app/modules/sales/sales.service.ts:10297-10309` — accept a `Part` item when `billingBasis` is `Project`
+- Modify: `apps/erp/app/modules/sales/sales.service.ts:10327` — keep `line.quantity` on a Part line
+- Modify: `packages/server-functions/src/post-customer-contract/index.ts:582` (`confirm`) and `:1573` (`amend` add) — accept a Part item on a `Project` contract
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ContractLineForm.tsx:274-297` — label "Item", `type="Item"`, `validItemTypes={["Part", "Service"]}` on a project contract; show `quantity` for a Part line
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ContractLineSummary.tsx:116` — label "Item" on a project contract
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ProjectContractLinesGrid.tsx` — add a Qty column after Description; show it for Part lines only
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ContractAmendModal.tsx:324` — keep the quantity of an added Part line
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ContractSummary.tsx:247-272` — show "qty × rate" for a Part line on a project contract
+- Test: `packages/server-functions/src/post-customer-contract/contract-lifecycle.test.ts`
+
+**Steps:**
+1. Write a failing test in `contract-lifecycle.test.ts`: a project contract with a T&M Part line of quantity 2 confirms. A service contract with a Part line is refused.
+2. Run it and see it fail on "only Service items".
+3. In both `post-customer-contract` checks, allow `item.type === "Part"` when `contract.billingBasis === "Project"`.
+4. In `upsertContractLine`, allow `Part` when `isProject`. Keep `CONTRACT_LINE_NOT_SERVICE` for every other case.
+5. In `upsertContractLine`, write `quantity: isPartLine ? line.quantity : isBilling || isProject ? 1 : line.quantity`. `isPartLine` is `isProject && item.data.type === "Part"`.
+6. Keep `insertContractLines` (the service wizard's Add Products) unchanged.
+7. Update the 5 UI files. Pass the contract's `billingBasis` to each as a prop where it is missing.
+8. Check each reader of a billing line's `quantity`. Each must give the same amount at quantity 2:
+   - `contract-schedule.ts:405`: the planner skips billing lines.
+   - `projectContractFunded` (`sales.models.ts:2133`): billing lines use `fundedAmount`.
+   - `ContractSummary.tsx:247`: the amount is quantity × rate, and rate is 0.
+   - `create-project-billing-invoices`: it reads billable item quantities, not the line's.
+   - `ContractAmendModal.tsx:324` and `contractGrid.tsx:68`: defaults only.
+
+   If a reader multiplies a billing line's quantity into an amount that is not 0, STOP and report.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- contract-lifecycle
+# Expected: all tests pass, including the 2 new ones.
+pnpm exec turbo run typecheck --filter=erp --filter=@carbon/server-functions
+# Expected: exit code 0.
+```
+
+**Out of scope:** `insertContractLines`; Material, Tool, Consumable and Fixture items.
+
+## Task 25: Never ship stock from a contract invoice line
+
+**Depends on:** none
+**Files:**
+- Modify: `packages/server-functions/src/post-sales-invoice/posting-lines.ts:114-120`
+- Test: `packages/server-functions/src/post-sales-invoice/posting-lines.test.ts` (the `describe("a direct inventory line's COGS pair")` block, line 330)
+
+**Steps:**
+1. Copy the case at `posting-lines.test.ts:408`. Make an Inventory Part line with `customerContractLineId: "ccl_1"`. Assert no COGS pair.
+2. Run it and see it fail.
+3. Add `line.customerContractLineId === null &&` to `isDirectItemLine`.
+4. Run the whole file.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- posting-lines
+# Expected: all tests pass.
+```
+
+**Out of scope:** `post-sales-invoice/index.ts:771`. It calls the same function, so it changes with it.
+
+## Task 26: Add Build on the CLIN and link the plan line's Create Job
+
+**Depends on:** Tasks 23, 24
+**Files:**
+- Create: `apps/erp/app/routes/x+/contract+/$id.$lineId.build.tsx` — action only, `update: sales` + `create: production`
+- Modify: `apps/erp/app/modules/projects/projects.server.ts` — add `createProjectJob(...)`, extracted from the create-job route
+- Modify: `apps/erp/app/routes/x+/project+/$projectId.elements.$elementId.create-job.tsx` — call `createProjectJob`
+- Modify: `apps/erp/app/modules/projects/projects.server.ts:4787-4792` (`chargeNumberError`) — D33
+- Modify: `apps/erp/app/modules/production/production.service.ts:3633` (`insertJob`) — accept `customerContractLineId`
+- Modify: `apps/erp/app/utils/path.ts` — `contractLineBuild(id, lineId)`
+- Create: `apps/erp/app/modules/sales/ui/Contracts/ContractLineBuildModal.tsx`
+- Copy from (precedent): `CreateJobModal` (`apps/erp/app/modules/projects/ui/Element/ElementPlanLines.tsx:956-1030`); the route shape of `x+/rental-agreement+/$id.$lineId.deliver.tsx`
+
+**Steps:**
+1. Move the body of the create-job route (lines 56–186) into `createProjectJob(client, serviceRole, db, args)`. Args: `projectId`, `elementId`, `itemId`, `quantity`, `dueDate`, `locationId`, `materialId` (optional), `customerContractLineId` (optional), `companyId`, `userId`. It returns `{ data: { jobId } } | { error: { message } }`.
+2. Choose the flag in `createProjectJob`:
+   - A CLIN whose `billingMethod` is `Fixed`: `receiveToProjectStock: true`, `consumeToProject: false`.
+   - Any other case: the existing rule (`consumeToProject` for Expense or Contract).
+3. In `chargeNumberError`, skip the "no project stock" refusal when `args.customerContractLineId` names a Fixed line of a Project contract (D33).
+4. When `materialId` is absent, insert a `projectElementMaterial` row first:
+   - Fields: the item, the quantity, `methodType` "Make to Order" and `unitCost` from `itemCost.unitCost`.
+   - Then create the job. If the job fails, delete that row.
+5. Stamp `projectElementMaterial.jobId` and `job.customerContractLineId`.
+6. If the plan is locked (`isProjectPlanLocked`) and no Draft change request is open, refuse with `projectPlanLockedMessage`.
+7. In the create-job route, look for exactly one live Part CLIN with the same item whose `projectElementId` is the task or one of its ancestors. If found, pass its id.
+8. Write `$id.$lineId.build.tsx`. Read the line and its contract. Refuse a non-Part line or a non-Active contract. Call `createProjectJob` with the task from the form (default: the line's `projectElementId`). Redirect to the job.
+9. Write `ContractLineBuildModal` from `CreateJobModal`. Fields: quantity (default: line quantity less the quantity of the CLIN's jobs), due date (default: the task's `targetDate`), location, task (`ProjectElement` picker on the line's project).
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0.
+pnpm --filter erp test -- projects
+# Expected: the existing projects tests pass.
+```
+
+If `insertJob` cannot take `customerContractLineId` without a change to the job interceptors, STOP and report.
+
+**Out of scope:** the CLIN page buttons (Task 31).
+
+## Task 27: Receive a Fixed Price job into the project's stock and fill the task's serial
+
+**Depends on:** Task 23
+**Files:**
+- Create: `packages/database/supabase/migrations/<timestamp>_complete-job-prototype.sql` (with `pnpm db:migrate:new complete-job-prototype`)
+- Create: `packages/database/supabase/tests/complete-job-prototype.test.sql`
+- Copy from (precedent): the latest `complete_job_to_inventory` definition, `packages/database/supabase/migrations/20261011163015_merge-main-job-costing-and-planning.sql:1022`; the test style of `job-completion-to-asset.test.sql`
+
+🛑 Copy the newest definition of the function. First run `grep -ln 'FUNCTION "complete_job_to_inventory"\|FUNCTION complete_job_to_inventory' packages/database/supabase/migrations/*.sql | tail -1`. Forking an older copy drops branches added since (`.ai/lessons.md`).
+
+**Steps:**
+1. Copy the whole function into the new migration with `CREATE OR REPLACE`.
+2. At lines 1148–1155 of the copy, set `v_output_project_id = projectId` also when the job's `customerContractLineId` names a `Fixed` line (D33).
+3. After the serial units are set Available, find the job's element (`job.projectElementId`). Then, if all 4 conditions hold, set the element's `trackedEntityId` to the unit:
+   - The job's quantity is 1.
+   - The job's `customerContractLineId` is set.
+   - The element's `itemId` equals the job's item.
+   - The element's `trackedEntityId` is NULL.
+4. Write the SQL test with 3 cases:
+   - A Fixed-linked job on a project without `projectStock` writes its `itemLedger` row with the project's `projectId`.
+   - A job without a CLIN on the same project still writes to common stock.
+   - A quantity-1 serial job fills the element's serial.
+5. Apply with `pnpm db:migrate`. Run `pnpm run generate:types`.
+
+**Verify:**
+```bash
+pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/complete-job-prototype.test.sql
+# Expected: every case prints ok; exit code 0.
+pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/job-completion-to-asset.test.sql
+# Expected: exit code 0 (no regression).
+```
+
+**Out of scope:** consume-to-project jobs; they never receive stock.
+
+## Task 28: Show a job as one card on its task
+
+**Depends on:** none
+**Files:**
+- Modify: `apps/erp/app/modules/projects/projects.server.ts:4485-4650` (`ElementPlanActuals`, `getElementTimeAndMaterials`)
+- Modify: `apps/erp/app/modules/projects/projects.server.ts:4452` (`ElementLedgerRow`) — add `jobId` and `jobReadableId`
+- Modify: `apps/erp/app/modules/projects/ui/Element/ElementPlanLines.tsx:258-368` — a material card with `jobId` takes the job's actual
+- Modify: `apps/erp/app/modules/projects/ui/Element/ElementTimeAndMaterials.tsx:127-282` — fold rows by `jobId`
+- Modify: `apps/erp/app/modules/projects/ui/Element/cost-cards.ts` — add the pure `foldJobRows(rows)`
+- Test: `apps/erp/app/modules/projects/ui/Element/cost-cards.test.ts`
+
+**Steps:**
+1. Write failing tests for `foldJobRows`: 3 rows of job A and 1 row with no job give 2 cards. Card A has the summed amount and the job number.
+2. Add `jobs: { jobId, amount }[]` to `ElementPlanActuals`. Fill it with one query: `projectLedger` on the element, `jobId IS NOT NULL`, grouped by `jobId`.
+3. Exclude rows with a `jobId` from the item and labor category keys (4562–4581), so no cost counts twice.
+4. In `ElementPlanLines`, a material line with `material.jobId` takes `actualAmount` from `jobs`.
+5. Select `l."jobId"` and `j."jobId" AS "jobReadableId"` (left join `job`) in the ledger SQL.
+6. In `ElementTimeAndMaterials`, render one `CostCard` per job:
+   - Title: the job number, linked to `path.to.job`.
+   - Subtitle: the item.
+   - Badge: the element, when it is below this one.
+   - Amount: the sum.
+
+**Verify:**
+```bash
+pnpm --filter erp test -- cost-cards
+# Expected: all tests pass, including the new ones.
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0.
+```
+
+**Out of scope:** the 200-row limit of the Actual tab.
+
+## Task 29: Create a delivery from a CLIN
+
+**Depends on:** Tasks 23, 24
+**Files:**
+- Modify: `packages/server-functions/src/create/index.ts` — input schema (after line 153), permission (after line 205: `{ create: "inventory" }`), and a `shipmentFromCustomerContract` case after line 3581
+- Create: `apps/erp/app/routes/x+/contract+/$id.$lineId.deliver.tsx`
+- Modify: `apps/erp/app/routes/x+/shipment+/new.tsx` — a `"Customer Contract"` case after line 322
+- Modify: `apps/erp/app/utils/path.ts` — `contractLineDeliver(id, lineId)`
+- Copy from (precedent): the `shipmentFromRentalAgreement` case (`create/index.ts:3424-3581`); `x+/rental-agreement+/$id.$lineId.deliver.tsx`; `shipment+/new.tsx:271-322`
+
+**Steps:**
+1. Add the input `{ type: "shipmentFromCustomerContract", customerContractId, customerContractLineId? }`.
+2. In the case, lock the contract `forUpdate` and refuse a contract that is not Active.
+3. Reuse the contract's Draft shipment when one exists, as the rental case does.
+4. For each Part line (or the one line given), compute the open quantity:
+   - T&M or Cost Plus: Σ `quantityComplete` of the line's jobs, less the shipped quantity of Posted `Customer Contract` shipment lines with `lineId` = the line.
+   - Fixed: the line's quantity, less the shipped quantity.
+5. Skip a line whose open quantity is 0. If no line is left, refuse with "Nothing to deliver".
+6. Insert one `shipmentLine` per line: `lineId` = the CLIN, `itemId`, `orderQuantity` and `outstandingQuantity` = the open quantity, `shippedQuantity` 0.
+7. For a Fixed line, set `locationId` and `storageUnitId` from the project's stock of the item.
+8. Write the deliver route from the rental one. Permissions: `{ update: "sales", create: "inventory" }`.
+9. Write the `shipment+/new.tsx` case from the rental case.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp --filter=@carbon/server-functions
+# Expected: exit code 0.
+```
+
+**Out of scope:** posting (Task 30) and the shipment page (Task 31).
+
+## Task 30: Post and void a contract delivery
+
+**Depends on:** Tasks 27, 29
+**Files:**
+- Create: `packages/server-functions/src/post-shipment/customer-contract.ts` — `postContractShipment`, `voidContractShipment`
+- Modify: `packages/server-functions/src/post-shipment/index.ts` — a `"Customer Contract"` case in the post switch (line 213) and in the void switch (line 2920)
+- Modify: `packages/server-functions/src/post-customer-contract/index.ts` — export `splitBillingRowForDelivery(trx, args)` and `restoreBillingRowAfterVoid(trx, args)`, built from the `split` case (lines 1098–1145)
+- Create: `packages/server-functions/src/post-shipment/customer-contract.test.ts`
+- Copy from (precedent): `post-shipment/rental-agreement.ts`; the project-stock test style of `post-shipment/project-stock-shipment.test.ts` (`projectPostingFixture`, `databaseTest`)
+
+**Steps:**
+1. Write the tests first, with `databaseTest`:
+   - A T&M line: posts with a typed serial and writes no `itemLedger` and no `journalLine`. A quantity above the open quantity is refused.
+   - A Fixed line: posts from the project's stripe, with Dr Project WIP / Cr inventory and a `projectLedger` Material row on the task.
+   - A Fixed line of quantity 2 at 40,000 with one Planned event of 80,000: delivering 1 unit leaves 40,000 on the old date and puts 40,000 on the delivery date.
+   - Void of each restores the state before the post.
+   - Amend after a delivery leaves the delivered row in place.
+2. Run the tests and see them fail.
+3. T&M and Cost Plus lines: set `shippedQuantity` and keep `serialNumber`. Write nothing else.
+4. Fixed lines: draw the project's stripe with `splitAcrossStripes` (`lib/stock-stripes.ts:47`) and `bookAdjustment` (`lib/post-adjustment.ts:245`), as `post-project-issue/index.ts:296-448` does. Use `entryType` "Negative Adjmt." and `documentType` "Sales Shipment".
+5. Charge the project with `insertProjectLedgerRows`, as `post-project-issue` does.
+6. Fixed lines: call `splitBillingRowForDelivery` with delivered quantity × `rate`. Store the row id in `shipmentLine.customerContractInvoiceLineId`. If the whole row moved, store its old date in `previousInvoiceDate`.
+7. Void: refuse if the delivered row's invoice is not Planned ("The delivery is invoiced. Credit it first."). Otherwise reverse the stock and call `restoreBillingRowAfterVoid`.
+8. Set the shipment `Posted` with `postingDate` and `postedBy`, as `postRentalShipment` does.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- customer-contract
+# Expected: all new tests pass.
+pnpm --filter @carbon/server-functions test -- rental-agreement project-stock-shipment
+# Expected: no regression.
+```
+
+**Out of scope:** WAWF files and IUID.
+
+## Task 31: Show contract deliveries on the shipment and print the Receiving Report
+
+**Depends on:** Task 30
+**Files:**
+- Modify: `apps/erp/app/modules/inventory/ui/Shipments/ShipmentForm/ShipmentForm.tsx:56,80,90,101`
+- Modify: `apps/erp/app/modules/inventory/ui/Shipments/ShipmentForm/useShipmentForm.tsx:151-154`
+- Modify: `apps/erp/app/modules/inventory/ui/Shipments/ShipmentLines.tsx` — a Serial Number field on a T&M or Cost Plus contract line
+- Modify: `apps/erp/app/modules/inventory/ui/Shipments/ShipmentDocuments.tsx:39,104-111`
+- Modify: `apps/erp/app/modules/inventory/ui/Shipments/ShipmentsTable.tsx:168`
+- Modify: `apps/erp/app/routes/x+/shipment+/$shipmentId.details.tsx:68-80`
+- Modify: `apps/erp/app/routes/file+/shipment+/$id[.]pdf.tsx` — a `"Customer Contract"` case after line 709
+- Copy from (precedent): each file's `"Rental Agreement"` branch; the Delivery Ticket case (`$id[.]pdf.tsx:598-709`)
+
+**Steps:**
+1. Treat `"Customer Contract"` as `"Rental Agreement"` in the form: read-only source, no option for other shipments.
+2. Link the source to `path.to.contractDetails` in `ShipmentDocuments` and `ShipmentsTable`.
+3. Refuse a change of source in `$shipmentId.details.tsx`.
+4. In `ShipmentLines`, show a Serial Number input for a line whose CLIN is T&M or Cost Plus. It writes `shipmentLine.serialNumber` through `lines.update`.
+5. Print "Receiving Report" with: the contract number (`customerReference`), each CLIN (`lineItemNumber`, description, quantity, unit, serial numbers) and the ship date.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0.
+```
+
+**Out of scope:** the DD250 form layout; the report lists the fields only.
+
+## Task 32: Show jobs, deliveries and the next step on the CLIN
+
+**Depends on:** Tasks 26, 29
+**Files:**
+- Modify: `apps/erp/app/routes/x+/contract+/$id.$lineId.details.tsx` — load the line's jobs and delivery lines
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ContractLineSummary.tsx:106-110` — a header action
+- Modify: `apps/erp/app/modules/sales/ui/Contracts/ProjectContractLinesGrid.tsx:440-473` — Build and Deliver in the row menu
+- Modify: `apps/erp/app/modules/sales/sales.models.ts` — add the pure `contractLineNextStep(line, jobs, delivered)`
+- Test: `apps/erp/app/modules/sales/sales.models.test.ts`
+- Copy from (precedent): the "Generate Billable Items" header button (`ContractLineBilling.tsx:131-177`); the rental Deliver button (`RentalAgreementLineSummary.tsx:135-142`)
+
+**Steps:**
+1. Write failing tests for `contractLineNextStep`:
+   - A Part line with no job → `build`.
+   - A Part line whose job completed 1 unit with 0 delivered → `deliver`.
+   - All units delivered → `null`.
+   - A Service line → `null`.
+2. Load the jobs (`job.customerContractLineId` = the line) with `jobId`, `status`, `quantity`, `quantityComplete`. Load the shipped quantity of Posted `Customer Contract` shipment lines.
+3. Show one primary button by `contractLineNextStep`: Build opens `ContractLineBuildModal`; Deliver posts to `contractLineDeliver`.
+4. List the jobs and the deliveries under the summary. Each row links to its record.
+
+**Verify:**
+```bash
+pnpm --filter erp test -- sales.models
+# Expected: all tests pass.
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0.
+```
+
+**Out of scope:** Build on a Draft contract. The contract must be Active.
+
+## Task 33: Give shop labor the employee's labor category
+
+**Depends on:** none
+**Files:**
+- Modify: `packages/server-functions/src/post-production-event/index.ts:661-697`
+- Test: `packages/server-functions/src/post-production-event/project-event.test.ts`
+
+**Steps:**
+1. Write a failing test: an employee with `employeeJob.laborCategoryId` posts an hour on a consume-to-project job. The Labor ledger row carries that category.
+2. Read `employeeJob.laborCategoryId` once per event for `event.employeeId`.
+3. Pass it as `laborCategoryId` to `buildProjectLedgerRow` for the Labor row only.
+4. Add a test: a T&M contract line on the task gets a billable item at the category's bill rate, with no "No bill rate" hold.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- project-event
+# Expected: all tests pass.
+```
+
+**Out of scope:** an operation-level labor category.
+
+## Task 34: Route shop labor through DCAA timesheets
+
+**Depends on:** Tasks 23, 33
+**Files:**
+- Modify: `packages/server-functions/src/post-production-event/index.ts` — skip the Labor leg in DCAA mode; add a Draft timesheet entry
+- Modify: `packages/server-functions/src/save-timesheet-entry/index.ts:31-62,515-560` — accept `jobId` in `add` mode; export the insert of `addEntry` as `insertTimesheetDraft(trx, args)`
+- Modify: `packages/server-functions/src/post-timesheet/index.ts:102-120,488-514` — read `jobId`; pass it to `buildProjectLedgerRow`
+- Modify: `apps/erp/app/modules/projects/projects.models.ts:907` (`timesheetRowKey`) — add `jobId`
+- Modify: `apps/erp/app/modules/projects/ui/Timesheet/TimesheetGrid.tsx` and `apps/mes/app/routes/x+/timesheet.tsx` — show the job number on a row with a job
+- Test: `packages/server-functions/src/post-production-event/project-event.test.ts`, `packages/server-functions/src/post-timesheet/post-timesheet.test.ts`, `packages/server-functions/src/save-timesheet-entry/save-timesheet-entry.test.ts`
+- Copy from (precedent): `serviceVisitId` in `save-timesheet-entry` (`addEntry`, line 555)
+
+**Steps:**
+1. Write failing tests:
+   - In DCAA mode, an hour of shop time on a consume-to-project job writes no Labor ledger row. It writes one Draft `timesheetEntry` with the job, the task, the labor category and 1 hour.
+   - Posting that entry writes a Labor ledger row with `jobId`.
+   - Outside DCAA mode, nothing changes.
+2. Read `companySettings.timekeepingControls` in `post-production-event`.
+3. If it is DCAA and `projectCharge` is set, skip the Labor ledger row and the labor journal pair.
+4. Then call `insertTimesheetDraft`: the employee, `entryDate` = the event's date in the company time zone, the project, the task, the labor category, the hours, `jobId`.
+5. If the employee has no labor category in DCAA mode, refuse the event with "Set a labor category on this person before they record project time".
+6. Add `jobId` to the cell key of `save` (lines 273–300) and to `timesheetRowKey`.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/server-functions test -- project-event post-timesheet save-timesheet-entry
+# Expected: all tests pass.
+pnpm exec turbo run typecheck --filter=erp --filter=mes --filter=@carbon/server-functions
+# Expected: exit code 0.
+```
+
+If `insertTimesheetDraft` cannot run without the DCAA supervisor checks refusing a system caller, STOP and report.
+
+**Out of scope:** machine and overhead legs; they post as today.
+
+## Task 35: Show the job on the project: badge, dates and attention rows
+
+**Depends on:** Tasks 26, 28
+**Files:**
+- Modify: `apps/erp/app/modules/projects/ui/Elements/graph/ElementCardNode.tsx:23-37,132-139` — a job badge in the bottom row
+- Modify: `apps/erp/app/modules/projects/ui/Elements/ElementGraph.tsx:250-262` (the card node `data`) — pass the badge data
+- Modify: `apps/erp/app/routes/x+/project+/$projectId.elements.tsx` (loader, line 110) — one query of the project's jobs per element
+- Modify: `apps/erp/app/routes/x+/project+/$projectId._index.tsx:58-112,338-349` — job attention inputs
+- Modify: `apps/erp/app/modules/projects/ui/Project/ProjectOverview.tsx:604-730` — 3 rows
+- Copy from (precedent): the "billing-review" row (`ProjectOverview.tsx:711-724`)
+
+**Steps:**
+1. Load the project's jobs in one query. Select `projectElementMaterial.projectElementId` and `job(id, jobId, status, quantity, quantityComplete, dueDate)`, where `jobId` is not null.
+2. Find where the scheduler stores a job's planned finish: `grep -rn "endDate\|scheduledEnd" packages/planning/src/scheduling | head`. Use the latest scheduled end of the job's operations. If no such value exists, use `job.dueDate` and record it in the execution notes.
+3. On the tree card, show "J-104 · 1 of 1" next to the state chip. Link it to the job.
+4. Add 3 Overview rows:
+   - A part CLIN's job is complete, and its quantity is not delivered.
+   - A job's scheduled finish is after its task's `targetDate`.
+   - Every job of an open task is complete ("J-104 is complete. Is 1.2 done?").
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0.
+```
+
+**Out of scope:** the element page header; Task 28 covers the element page.
+
+## Task 36: Count shop hours on milestones
+
+**Depends on:** Task 34
+**Files:**
+- Modify: `apps/erp/app/routes/x+/project+/$projectId.milestones.tsx:93-102` — add the shop hours to the burn series
+- Create: `packages/database/supabase/migrations/<timestamp>_milestone-shop-hours.sql` — `get_project_cost_summary` adds the shop hours to `actualHours`
+- Copy from (precedent): the latest `get_project_cost_summary` (`20261011151313_government-contracting-functions.sql:98-102`; confirm it is the newest with grep)
+
+**Steps:**
+1. Shop hours = Σ `projectLedger.quantity` where `costType` = 'Labor', `jobId` IS NOT NULL and `documentType` <> 'Timesheet'. The rows from a DCAA timesheet are already in the timesheet sum.
+2. Add them in the burn query by `postingDate`.
+3. Copy the newest `get_project_cost_summary` and add the same sum to `actualHours`.
+4. Apply with `pnpm db:migrate`. Run `pnpm run generate:types`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=erp
+# Expected: exit code 0.
+```
+
+**Out of scope:** earned value.
+
+## Task 37: Keep the demo datasets valid
+
+**Depends on:** Tasks 22, 23
+**Files:**
+- Modify: `packages/database/src/datasets/validate.ts` — only if a `COVERAGE` set reads `shipmentSourceDocument`
+
+**Steps:**
+1. Run `pnpm db:check:datasets`.
+2. If it fails on the new enum value, add `"Customer Contract"` to that set's `except` list. The reason: "Project contracts are not seeded yet."
+3. If it fails for another reason, STOP and report.
+
+**Verify:**
+```bash
+pnpm db:check:datasets
+# Expected: 4 datasets pass.
+```
+
+**Out of scope:** seeding a project contract.
+
+## Task 38: Update the docs, rules and translations, then verify in the browser
+
+**Depends on:** Tasks 21 to 37
+**Files:**
+- Modify: `docs/content/guides/project-to-cash.mdx` — a prototype CLIN section: Build, run the job, Deliver, invoice
+- Modify: `apps/erp/app/modules/sales/AGENTS.md` (Contracts), `.claude/rules/project-billing.md`, `.claude/rules/projects-system.md`, `.claude/rules/government-contracting.md` (shop labor under DCAA), `.claude/rules/shipments-receipts-ui-patterns.md` (the `Customer Contract` source)
+- Modify: `.ai/runs/2026-10-21-project-contracts.md` — PASS lines
+
+**Steps:**
+1. Describe each change of Tasks 22 to 36 in the rule that owns its files.
+2. Run `pnpm lingui:extract`, then the `/translate` skill.
+3. Run `/auth`, then `/test` against `https://erp.projects-wbs-research-spec.dev`. Set `AGENT_BROWSER_SESSION` for this worktree.
+4. Drive each acceptance criterion of section 10. Save screenshots under `.context/`.
+
+**Verify:**
+```bash
+pnpm --filter docs typecheck
+# Expected: exit code 0.
+grep -c "PASS" .ai/runs/2026-10-21-project-contracts.md
+# Expected: one more PASS line per section 10 acceptance criterion.
+```
+
+**Out of scope:** a changelog entry.
+
 ## Execution notes
 
 - Task 1 (`c2bdead6bd`): the hook's backup check was skipped. It compares against main's manifest, which has 5 tables this branch (behind main) does not have. The new column has a default.
@@ -498,5 +1048,6 @@ pnpm lingui:extract 2>&1 | grep -A3 "erp:" | head
 - Task 16 (`72295a77bb`): the Journal card nets each account to one side.
 - Tasks 17–18 (`a2a6256050`, `e5a3efcdde`).
 - Self-review fixes: `4f0b7f3286`, `de67a8eda7`, `7dafcc282d`, `5c2ffc2606` (see the run log).
+- Plan refresh (2026-10-22, before Task 21): an uncommitted refactor (the New element modal, controlled element pills, the `progress` percent kind) moved lines in `projects.server.ts` (+30), `projects.models.ts`, `$projectId.elements.tsx` and `ProjectOverview.tsx`. Tasks 21 to 38 now cite the new lines. `ElementGraph.tsx` is under `ui/Elements/`, not `ui/Elements/graph/`. No section 10 task changes scope: the refactor touches no contract, sales, shipment or server-function file.
 - Task 20: BLOCKED. The stack re-ported at 02:53 and the API returns 502; see `.ai/runs/2026-10-21-project-contracts.md`.
 - Task 19 (`22be6410ed`): 2,208 strings filled across 12 locales; `linguito check` and `check-glossary` pass (advisory hits only).

@@ -19,6 +19,11 @@ Billing page. The spec also fixes the labels that name one number in several
 ways, adds a journal card to the Draft revenue run, and adds a "Project to cash"
 guide chapter.
 
+A CLIN can also name a part, such as a prototype. The user builds it with
+**Build** on the CLIN, which makes a job, and ships it with **Deliver**. The job
+shows on its task as one plan line with one cost card (section 10). The goal is
+a prototype flow that needs no projects training.
+
 ## Overview diagram
 
 ```mermaid
@@ -34,6 +39,10 @@ flowchart LR
   end
   subgraph Run
     G["Run lines: amounts only"]:::hot --> H["Journal card by account"]:::new
+  end
+  subgraph Prototype
+    I["CLIN: Service items only"]:::hot --> J["CLIN names a part"]:::new
+    K["Job cost: one row per issue"]:::hot --> L["One card per job on its task"]:::new
   end
   classDef hot stroke-width:3px
   classDef new stroke-dasharray:4 3
@@ -65,6 +74,17 @@ A first-time user cannot tell how a project bills, posts and earns revenue.
    "for rent", but contracts use it too.
 6. **A run posts without showing its journal.** The Draft revenue recognition run
    shows each row's amount, not the accounts it will debit and credit.
+7. **A CLIN cannot name a part.** A government CLIN is often a hardware
+   deliverable, such as "0001: Prototype, 2 EA". The line accepts only a Service
+   item (`CONTRACT_LINE_NOT_SERVICE`).
+8. **A job's cost does not reach its task's estimate.** A task's Make to Order
+   plan line can create a job, but the card matches actuals by item. The job
+   issues its components, not the part, so the card shows nothing charged.
+   Meanwhile the Actual tab shows one row for each component and each labor
+   event.
+9. **A prototype costs too much training.** To build a part for a project
+   today, the user must know about charge numbers, consume-to-project, project
+   stock and plan lines. Nothing ships a part against a CLIN.
 
 Research: `.ai/research/project-billing-onboarding-ux.md`. Unanet and Costpoint
 keep a project's contract money on one project view, and D365 and Unanet show
@@ -92,19 +112,21 @@ seeds a T&M or Cost Plus line, so the backfill touches no seeded contract.
 
 ### 2. Project contract lines
 
-A project contract line is still a `customerContractLine`, with its Service item
-(`itemId` is NOT NULL; the item is what the invoice line says). The line fields
-a project contract uses:
+A project contract line is still a `customerContractLine`, with its item
+(`itemId` is NOT NULL; the item is what the invoice line says). On a project
+contract the item is a Part or a Service (section 10). On a service contract it
+stays a Service. The line fields a project contract uses:
 
 | Field | T&M | Cost Plus | Fixed Price |
 |---|---|---|---|
 | CLIN (`lineItemNumber`), SLIN parent (`parentLineId`) | yes | yes | yes |
-| Description, Service item | yes | yes | yes |
+| Description, item (Part or Service) | yes | yes | yes |
 | Billing element (`projectElementId`) | required | required | required for Percent Complete |
 | Handling % (`materialHandlingPercent`) | yes | no | no |
 | Fee % (`feePercent`) | no | required | no |
 | Funded amount, funded cost, ceiling, notice | yes | yes | no |
-| Price | none (quantity 1, rate 0) | none (quantity 1, rate 0) | `rate` (quantity 1, One-time) |
+| Quantity | 1; a part line: the units to deliver | 1; a part line: the units to deliver | 1; a part line: the units to deliver |
+| Price | none (rate 0) | none (rate 0) | `rate`: the price, or the unit price on a part line (One-time) |
 | Revenue method | Right to Invoice | Percent Complete or Right to Invoice | Percent Complete or Daily |
 
 A project contract line is always One-time. The server refuses a Recurring
@@ -219,8 +241,271 @@ it, with "number name" account labels from `useAccounts()`.
 ### 9. Docs
 
 A Guide chapter `docs/content/guides/project-to-cash.mdx` (flow `project-to-cash`,
-`flowIndex: 5`) walks one T&M project from contract to revenue. The reference
+`flowIndex: 5`) walks one T&M project from contract to revenue. It includes a
+prototype CLIN: Build, run the job, Deliver, invoice (section 10). The reference
 pages `project-billing.mdx` and `contracts.mdx` name the two contract kinds.
+
+### 10. Prototypes: a part CLIN, built by a job
+
+**Goal (Brad, 2026-10-22).** Building a prototype on a project must cost little
+thought and little training. A user who knows jobs and contracts builds and
+delivers a prototype with no projects training. The measure: three actions on
+the CLIN (**Build**, **Deliver**, then the invoice), and no setting that the
+user must know about in advance.
+
+Research: `.ai/research/jamis-prototype-clins.md` (JAMIS Prime, SAP, Costpoint,
+Unanet). Every one of them makes the user choose when a production order's cost
+reaches the contract: SAP's valuated or non-valuated project stock, Costpoint's
+Expensed or Asset inventory abbreviation, Acumatica's `PJ` order type and Update
+Project checkbox. Carbon derives that choice from the CLIN's billing method.
+
+In this section, a task is a project element with plan lines.
+
+```
+Project contract
+└─ CLIN 0001  "Prototype, 1 EA"  (T&M)   [Build] [Deliver]
+        │ bills                    │ J-104       │ SHP-0042
+        ▼                          ▼             ▼
+Project plan
+└─ 1.0 Prototype build      ← billing element
+   ├─ 1.1 Design            plan lines: labor, costs (as today)
+   ├─ 1.2 Fabrication       plan line: Prototype × 1, Make to Order → J-104
+   │                        one card: "J-104 · $38,000 of $50,000"
+   └─ 1.3 Test              plan lines: labor, costs (as today)
+```
+
+#### 10.1 The user's path
+
+| Step | Where | What the user does | What Carbon does |
+|---|---|---|---|
+| 1 | Project contract, Lines step | Adds a CLIN with the part as its item | Saves the line (Part items are new on a project contract) |
+| 2 | The CLIN (line page or Lines grid row menu) | Clicks **Build**, confirms quantity, due date, location and task | Creates the job, links it to the CLIN, adds the task's plan line for it (10.2) |
+| 3 | The job | Runs the job as any other job | Posts the job's cost to the task (10.3) |
+| 4 | The CLIN | Clicks **Deliver**, then posts the shipment | Records the delivery and prints the receiving report (10.4) |
+| 5 | The contract | Nothing new | Bills by the CLIN's billing method, as today |
+
+The user never sets a project stock flag, a consume-to-project flag or a plan
+line by hand. **Build** chooses them from the CLIN's billing method.
+
+The other path stays: a user who starts from the task clicks **Create Job** on
+a Make to Order plan line (`$projectId.elements.$elementId.create-job.tsx`).
+Create Job looks for a part CLIN of the project with the same item that bills
+the task. If it finds exactly one, it links the job to it and chooses the flags
+as **Build** does.
+
+#### 10.2 Build
+
+**Build** opens the Create Job modal that the plan line uses today (quantity,
+due date, location), plus a task picker. The task defaults to the CLIN's billing
+element. If the plan is locked and no Draft change request is open, Build
+refuses with the plan lock message, as Add line does. Then Carbon does these
+steps. `insertJob` runs on its own client, so the steps cannot share one
+transaction: if a later step fails, Build deletes what the earlier steps wrote,
+as Charge cost deletes an entry that does not post.
+
+1. Create the job for the part, with `job.customerContractLineId` set to the CLIN.
+2. Charge the job to the task (`projectId`, `projectElementId`).
+3. Set the flag by the CLIN's billing method:
+   - T&M or Cost Plus: `consumeToProject`. The job's cost reaches the project as
+     it posts, so the CLIN bills it as incurred.
+   - Fixed Price: `receiveToProjectStock`. The finished part goes into the
+     project's stock, so the delivery can ship it (10.4).
+4. Add a Make to Order material plan line for the part on the task, at the
+   item's unit cost × quantity, and stamp its `jobId`.
+
+The CLIN shows its jobs (job number, status, quantity complete) and its
+deliveries. It shows one primary action by state, as JAMIS's workflow engine
+guides users to the next step (D35):
+
+| State | Primary action |
+|---|---|
+| No job | **Build** |
+| A job has completed units that are not delivered | **Deliver** |
+| Every unit delivered | none |
+
+#### 10.3 The job on its task
+
+| Place | Shows |
+|---|---|
+| Task, Estimated tab | One card for the plan line: the estimate, the job's cost so far, the progress bar, and the job number as a link |
+| Task, Actual tab | One card for the job: the job number, the part and the job's cost total, linked to the job. Not one card per ledger row |
+| The job | The bill of materials, the routing, the issues and the labor, as today |
+| Plan rollup, Costs page, Overview Budget | No change: the job's ledger rows carry the task, so they roll up the tree |
+| Contract line billing | No change: the job's rows sit under the billing element |
+| Overview, Needs attention | A row when a part CLIN's job is complete and its quantity is not delivered |
+
+For a Fixed Price job, the cost stays in the project's stock until the delivery.
+So the task's card counts the job's cost when the part ships, and Percent
+Complete revenue moves at the delivery.
+
+#### 10.4 Deliver
+
+The delivery is a shipment with the new source `Customer Contract`. It copies
+the rental agreement's **Deliver**: the `create` server function opens the
+contract's Draft shipment, or makes one. The shipment has one `shipmentLine`
+per part CLIN (`lineId` = the CLIN). `post-shipment` posts each line by its
+CLIN's billing method:
+
+| | T&M and Cost Plus (no stock) | Fixed Price (project stock) |
+|---|---|---|
+| Quantity limit | Σ quantity complete of the CLIN's jobs, less what is already delivered | The part's on-hand in the project's stock |
+| Stock | None: the job consumed the part to the project | Out of the project's stock, as an Issue to Project (`post-project-issue`'s stripe split) |
+| Journal | None | Dr Project WIP / Cr inventory, with a `projectLedger` Material row on the task |
+| Serial | Typed on the line (`shipmentLine.serialNumber`; one line per unit for a Serial item) | Picked from the project's stock (`lines.tracking`, as today) |
+| Revenue | No change: Right to Invoice or Percent Complete, as today | The revenue run relieves Project WIP to cost of goods sold |
+| Billing | No change: billable items | The delivered units' share of the next Planned billing event moves to the delivery date (D34) |
+
+The shipment PDF prints a **Receiving Report** for this source: the contract
+number (`customerReference`), each CLIN with its description, quantity, unit
+and serial numbers, and the ship date. The user types it into WAWF, as for the
+SF 1443 (no EDI export). Void reverses the posting, as for every source.
+
+#### 10.5 Changes
+
+1. **Item on a project contract line.** The line takes a Part or a Service
+   item when the contract's `billingBasis` is `Project`. A service contract
+   keeps Service only. Change the 3 guards:
+   - `upsertContractLine` (`sales.service.ts`, `CONTRACT_LINE_NOT_SERVICE`).
+   - `post-customer-contract` Confirm (the "only Service items" problem).
+   - `post-customer-contract` Amend, for an added line.
+
+   `insertContractLines` (the service wizard's Add Products) stays Service only.
+   On a project contract, `ContractLineForm` labels the field "Item" and passes
+   `type="Item"` with `validItemTypes={["Part", "Service"]}`. A service contract
+   keeps the "Service" label. Add the same label switch to `ContractLineSummary`
+   and to the Item column of `ProjectContractLinesGrid`.
+
+   A part line carries its quantity: the units to deliver ("Prototype, 2 EA").
+   Two places force quantity 1 today, and both change for a part line only:
+   - `upsertContractLine` (`isBilling || isProject ? 1 : line.quantity`) keeps
+     the quantity of a Part line.
+   - `customerContractLine_billing_check` allows `quantity > 0` on a T&M or
+     Cost Plus line. Its `rate = 0` stays: billable items price the line, not
+     quantity × rate.
+
+   A Fixed Price part line's price is quantity × `rate`. Build defaults the job
+   quantity to the line quantity less what the CLIN's jobs already build.
+   Deliver refuses more than the line quantity less what is already delivered.
+2. **A contract invoice line never ships.** `isDirectItemLine`
+   (`post-sales-invoice/posting-lines.ts`) returns false for a line with
+   `customerContractLineId`. Without it, a part on a contract invoice line
+   relieves stock a second time:
+   - A Fixed Price billing event for an Inventory part writes a `Sales Shipment`
+     item ledger row and a cost of goods sold pair.
+   - A T&M or Cost Plus line skips the item ledger (`billedServiceLineIds`), but
+     the journal still adds the cost of goods sold pair.
+
+   The invoice line stays `invoiceLineType` `Service`. The delivery (10.4) owns
+   the stock movement.
+3. **Build and the job link.** Add `job.customerContractLineId`. Add the Build
+   action on the CLIN (10.2). Extend the plan line's Create Job to link a
+   matching CLIN (10.1).
+4. **Plan card actuals by job.** In the element's `planActuals`
+   (`projects.server.ts`), a material plan line with a `jobId` takes every own
+   ledger row of that job, of every cost type. The item and labor category
+   keys skip a row that has a `jobId` owned by a plan line, so no cost counts
+   twice. The card's quantity stays `quantityIssued`.
+5. **Actual tab by job.** `ElementTimeAndMaterials` folds the subtree's ledger
+   rows that share a `jobId` into one card. The card shows the job number, the
+   part, the element (when it is below this one) and the summed amount. Rows
+   with no `jobId` stay one card each.
+6. **Deliver.** The `Customer Contract` shipment source, its `create` case, its
+   `post-shipment` and void branches, the shipment UI branch, and the Receiving
+   Report PDF (10.4).
+7. **Needs attention.** The Overview row for a completed, undelivered part CLIN
+   job (10.3).
+
+Not done, by design: the task does not show the job's bill of materials as
+estimate lines (D26). The job holds that detail.
+
+#### 10.6 The job and the project
+
+**The project plans the work. The job does the work.** The task owns what, how
+many and by when. The job owns how: the method, the operations, the materials
+and the shop schedule. Facts flow down once, at Build, and flow up as they
+happen. The user never types a fact in both places.
+
+```
+          Build (once): part, quantity, due date, charge number
+  Task  ───────────────────────────────────────────────────────▶  Job
+ (plan) ◀───────────────────────────────────────────────────────  (execution)
+          as they happen: cost, quantity complete, scheduled finish
+```
+
+A job is not an element type (D36). Element types (System, Requirement,
+Function, Task, Test Case, Parameter) say what the work is. A job does the
+work, and it charges an element, as a timesheet entry or a PO line does.
+Elements are plan records: change requests, baselines, plan lock and templates
+act on them. A job is an execution record with ledger history. A job element would also carry two
+states, two dates and two owners for one fact. So the job attaches to its task,
+and the task shows the job, read-only.
+
+| Project concept | Owner | How the job relates | Change |
+|---|---|---|---|
+| Task | The project | The job's charge number. One task can have several jobs | None |
+| Estimate | The plan line | The Make to Order plan line is the job's budget. Build copies its quantity into the job | 10.2 |
+| Cost | The job | Ledger rows carry `jobId` and the task, so they roll up the tree, the Costs page and the Budget | 10.5 items 4 and 5 |
+| Dates | The task's `targetDate` | Build sets the job's due date from the task's `targetDate`. The job's scheduled finish shows on the task | Item 1 below |
+| Milestone | The project | Through the task's `milestoneId`. The milestone's cost already counts the job's ledger rows | Item 3 below |
+| Progress | The user (the task's state) | The card shows the job's quantity complete. A complete job does not complete the task, because test or inspection work can remain | Item 2 below |
+| Serial | The job (Fixed Price) | The finished unit's tracked entity fills the element's `trackedEntityId` when it is empty | Item 4 below |
+| Earned value | The project | The job's units complete could give the task's earned percent | Not in this spec |
+
+Changes:
+
+1. **Dates.** Build defaults the job's due date to the task's `targetDate`. The
+   task's plan tree card and the element page show the job's scheduled finish.
+   If the job is scheduled to finish after the task's `targetDate`, the Overview
+   shows a Needs attention row: "J-104 finishes after 1.2's target date".
+2. **Progress.** The plan tree card of a task with a job shows a badge with the
+   job number and its quantity complete ("J-104 · 1 of 1"), linked to the job.
+   If every job of an open task is complete, the Overview shows a Needs attention
+   row: "J-104 is complete. Is 1.2 done?" The badge is derived from
+   `projectElementMaterial.jobId`; no new column.
+3. **Milestone hours.** The milestone drawer's hours and burn chart count the
+   Labor hours of job ledger rows on the milestone's tasks, beside the Posted
+   timesheet hours (D39). A milestone that hides its shop labor misleads.
+4. **Serial.** When a job linked to a Fixed Price CLIN completes into project
+   stock, Carbon sets the task's `trackedEntityId` to the finished unit's tracked
+   entity, if the task links the same item and has no serial yet. A quantity
+   above 1 sets nothing; the Deliver step picks the serials.
+
+Two gaps break a T&M prototype today. They affect every consume-to-project job,
+not only a part CLIN, so this spec must close them:
+
+- **Shop labor has no labor category.** `post-production-event` writes a Labor
+  ledger row with `employeeId` and hours, but no `laborCategoryId`.
+  `resolveBillRate` then finds a rate only when the contract has a rate for that
+  employee. Otherwise every shop hour goes On Hold with "No bill rate". The
+  labor cost uses the shop rate, so the cost side is correct.
+- **Shop labor skips DCAA timekeeping.** In DCAA mode, project labor must come
+  through certified weekly timesheets (`government-contracting.md`).
+  `post-production-event` does not read `timekeepingControls`, so shop time on a
+  consume-to-project job posts labor to the project with no timesheet.
+
+The fixes:
+
+5. **A labor category for shop labor (D37).** `post-production-event` stamps
+   the employee's `employeeJob.laborCategoryId` on the Labor ledger row. The
+   column exists already, so this adds none. `resolveBillRate` then finds the
+   category's bill rate. If the employee has no labor category, the row stays
+   as today and the billable item goes On Hold with "No bill rate". An
+   operation-level override is a follow-up.
+6. **Shop labor through DCAA timekeeping (D38).** It copies the service visit,
+   whose time goes through `save-timesheet-entry` with
+   `timesheetEntry.serviceVisitId`. When `timekeepingControls` is DCAA and the
+   job is consume-to-project, `post-production-event` does these steps:
+   1. Post the Machine and Overhead legs as today.
+   2. Skip the Labor leg.
+   3. Add the event's hours to the employee's Draft timesheet entry for that
+      day, project, task, labor category and job (`timesheetEntry.jobId`, new),
+      through `save-timesheet-entry` in `add` mode.
+
+   The employee certifies the hours with the week. `post-timesheet` then posts
+   the labor cost and stamps `jobId` on the ledger row, so the job's card still
+   counts it. Outside DCAA mode, nothing changes. My Time shows the job number
+   on the row. Before the change, the plan's first task confirms the gap
+   against `government-contracting.md`.
 
 ### Design Decisions
 
@@ -248,6 +533,23 @@ pages `project-billing.mdx` and `contracts.mdx` name the two contract kinds.
 | D20 | Heuristic 5, forms | `ValidatedForm` + `customerContractValidator` (basis-aware refine) + the existing actions | `conventions-forms.md`. |
 | D21 | Heuristic 6, module layout | Code stays in `sales.models.ts`, `sales.service.ts`, `ui/Contracts/` | One service and one models file per module. |
 | D22 | Heuristic 7, compatibility | `customerContracts` view recreated with the column; MCP tools regenerate | The view expands `c.*` at creation. |
+| D23 | Item types on a project contract line | Part or Service; a service contract stays Service only | Brad, 2026-10-22: a CLIN can be a part, such as a prototype. Other item types (Material, Tool, Consumable, Fixture) are not deliverables. |
+| D24 | What collects a part CLIN's cost | A job, charged to a task | Brad, 2026-10-22: the job is the natural unit of collection for prototype manufacturing. Tasks keep their own plan lines. |
+| D25 | How the job connects to the CLIN | `job.customerContractLineId`, set by **Build** on the CLIN or by the plan line's Create Job when one CLIN matches | The CLIN shows its jobs, and the delivery limits a T&M quantity to what its jobs completed. Billing still follows the billing element (P7). |
+| D26 | How the task shows the job | One Estimated card (the plan line) and one Actual card (the job); no bill of materials lines on the task | Brad, 2026-10-22: avoid information overload. The job holds the detail. |
+| D27 | Contract invoice lines and stock | `isDirectItemLine` is false for a contract line | The delivery owns the stock movement. An invoice line that also shipped would relieve the part twice. |
+| D28 | Training cost | Three actions on the CLIN (Build, Deliver, invoice); Build sets every flag | Brad, 2026-10-22: greatly cut the cognitive and training cost of prototypes. A setting the user must know about in advance is a training cost. |
+| D29 | T&M and Cost Plus delivery | A shipment that moves no stock (option A) | Brad, 2026-10-22. The job consumed the part to the project, so cost bills as incurred, as a cost-type CLIN needs. |
+| D30 | Fixed Price delivery | A shipment out of the project's stock (option B) | Brad, 2026-10-22. The cost stays in stock until delivery, the serial comes from stock, and the revenue run relieves Project WIP. |
+| D31 | Delivery document | A shipment with the new source `Customer Contract`, copied from the rental agreement's Deliver | The sibling: a shipment opened from an agreement. One Draft per contract. |
+| D32 | Receiving report | The shipment PDF's `Customer Contract` branch, printed; no WAWF export | Same choice as the SF 1443 in the contract financing spec. |
+| D33 | Project stock for a Fixed Price job | A job linked to a Fixed Price CLIN receives to project stock without `project.projectStock` | Brad, 2026-10-22. The project flag is Draft-only and sends every receipt to stock; asking the user to plan for it is a training cost (D28). |
+| D34 | Billing on delivery | Posting a Fixed Price delivery of N units takes N × `rate` out of the line's next Planned billing event onto a Planned event on the delivery date (a split; the whole row moves when it holds exactly that amount). Void puts it back | Brad, 2026-10-22. An Active contract's events cannot be edited, so the delivery must move the event. One row holds quantity × rate, so moving the whole row would bill every unit at the first delivery. |
+| D35 | The CLIN's next step | One primary action by state: Build, then Deliver | JAMIS 8.0 guides users to "the next logical steps" (`.ai/research/jamis-prototype-clins.md`). A prompt costs less than training (D28). |
+| D36 | Is a job an element type? | No. The job attaches to a task, and the task shows it read-only (badge, scheduled finish, serial) | Brad, 2026-10-22. Element types say what the work is; a job is how it is made. Elements are plan records (change requests, baselines, templates); a job is an execution record. |
+| D37 | Labor category of shop labor | `employeeJob.laborCategoryId`, stamped on the Labor ledger row by `post-production-event` | Brad, 2026-10-22. The column exists. Without it, T&M billing holds every shop hour. |
+| D38 | Shop labor under DCAA | A Draft `timesheetEntry` with `jobId`, certified with the week; `post-timesheet` posts the cost | Brad, 2026-10-22. DCAA needs certified time for project labor. The service visit already routes its time this way. |
+| D39 | Milestone hours | Count job Labor hours beside timesheet hours | Brad, 2026-10-22. |
 
 ## Data Model Changes
 
@@ -270,8 +572,45 @@ WHERE EXISTS (
 -- The view expands c.* at creation: drop and recreate it with the same body.
 ```
 
-No new table, so no new RLS policy. The backup manifest picks up the column through
-`pnpm db:check:backups`.
+```sql
+-- Migration: contract delivery enum (its own file: ADD VALUE cannot share a
+-- transaction with a statement that uses the value)
+ALTER TYPE "shipmentSourceDocument" ADD VALUE IF NOT EXISTS 'Customer Contract';
+
+-- Migration: prototype jobs and contract deliveries
+
+-- A part line carries its units to deliver (section 10.5 item 1).
+ALTER TABLE "customerContractLine" DROP CONSTRAINT IF EXISTS "customerContractLine_billing_check";
+ALTER TABLE "customerContractLine" ADD CONSTRAINT "customerContractLine_billing_check" CHECK (
+  "billingMethod" = 'Fixed'
+  OR ("projectId" IS NOT NULL AND "projectElementId" IS NOT NULL AND "quantity" > 0 AND "rate" = 0
+      AND "revenueType" = 'One-time')
+);
+ALTER TABLE "job" ADD COLUMN IF NOT EXISTS "customerContractLineId" TEXT;
+-- FK to customerContractLine, ON DELETE SET NULL; index on
+-- ("customerContractLineId", "companyId").
+
+ALTER TABLE "shipmentLine" ADD COLUMN IF NOT EXISTS "serialNumber" TEXT;
+
+-- D38: shop time under DCAA, as serviceVisitId does for a service visit.
+ALTER TABLE "timesheetEntry" ADD COLUMN IF NOT EXISTS "jobId" TEXT;
+-- FK to job, ON DELETE SET NULL; part of the timesheet cell key.
+
+-- D34: the billing row a Fixed Price delivery wrote or moved, and the date it
+-- moved from (NULL for a split), so void can put it back.
+ALTER TABLE "shipmentLine" ADD COLUMN IF NOT EXISTS "customerContractInvoiceLineId" TEXT;
+ALTER TABLE "shipmentLine" ADD COLUMN IF NOT EXISTS "previousInvoiceDate" DATE;
+
+-- One open Draft delivery per contract, as rentals have
+-- (shipment_oneOpenDraftPerRentalAgreement_idx).
+CREATE UNIQUE INDEX IF NOT EXISTS "shipment_oneOpenDraftPerCustomerContract_idx"
+  ON "shipment" ("sourceDocumentId", "companyId")
+  WHERE "status" = 'Draft' AND "sourceDocument" = 'Customer Contract';
+```
+
+No new table, so no new RLS policy. Add `'Customer Contract'` to
+`shipmentSourceDocumentType` (`inventory.models.ts`). The backup manifest picks
+up the columns through `pnpm db:check:backups`.
 
 ## API / Service Changes
 
@@ -288,6 +627,21 @@ No new table, so no new RLS policy. The backup manifest picks up the column thro
   contract summary for the Overview card, and the billing review count.
 - `service.server.ts` / `service.service.ts`: coverage contract reads filter to
   `Schedule`.
+- `sales.service.ts` `upsertContractLine` and `post-customer-contract` (confirm,
+  amend `add`): accept a Part item on a `Project` contract (D23).
+- `post-sales-invoice/posting-lines.ts`: `isDirectItemLine` is false for a line
+  with `customerContractLineId` (D27).
+- `projects.server.ts`: `planActuals` attributes a job's own ledger rows to the
+  plan line that holds its `jobId`; the subtree rows carry `jobId` and the job's
+  readable id for the Actual tab (D26).
+- Build: a route action on the contract line (`x+/contract+/$id.$lineId.build.tsx`)
+  that shares the job, flag and plan line logic with
+  `$projectId.elements.$elementId.create-job.tsx` (D25, D28).
+- `create` server function: a `shipmentFromCustomerContract` case, a copy of
+  `shipmentFromRentalAgreement` (D31).
+- `post-shipment`: a `Customer Contract` post and void branch
+  (`post-shipment/customer-contract.ts`), by billing method (D29, D30).
+- `file+/shipment+/$id[.]pdf.tsx`: the Receiving Report branch (D32).
 
 ## Closest Sibling
 
@@ -306,6 +660,14 @@ routes and components file for file and branches inside them.
 
 Deviations: no Revenue step (D8), and the Lines grid columns (D4). Both are
 Design Decisions.
+
+The delivery (section 10.4) has its own sibling: the **rental agreement's
+Deliver**. It copies `$id.$lineId.deliver.tsx`, the `shipmentFromRentalAgreement`
+case of `create`, `post-shipment/rental-agreement.ts`, the rental branches of
+`ShipmentForm`, `ShipmentLines` and `ShipmentPostModal`, and the Delivery Ticket
+branch of the shipment PDF. The deviation: it uses `shipmentLine` (an item and a
+quantity), not `shipmentFixedAssetLine` (a fixed asset unit), because a CLIN
+delivers an item.
 
 ## UI Changes
 
@@ -334,6 +696,25 @@ Design Decisions.
 - [ ] A Draft revenue recognition run shows a Journal card whose debits equal its credits.
 - [ ] The service order form offers only service contracts as coverage.
 - [ ] The guide chapter "Project to cash" renders in the docs build, and every internal link resolves.
+- [ ] A project contract line saves with a Part item and confirms; a service contract line with a Part item is refused with `CONTRACT_LINE_NOT_SERVICE`.
+- [ ] Posting a Fixed Price billing event invoice for an Inventory part writes no item ledger row, no shipment and no cost of goods sold pair (unit test on `isDirectItemLine` and the journal builder).
+- [ ] A job created from a task's Make to Order plan line, with $1,200 of material issued and 4 hours of labor posted, shows the plan line card charged with the job's total cost.
+- [ ] The task's Actual tab shows that job as one card with the job number and the same total, not one card per ledger row.
+- [ ] A T&M CLIN whose billing element is the task's parent bills the job's material and labor as billable items.
+- [ ] A T&M part line saves with quantity 2 and a Fixed Price part line with quantity 2 at $40,000 shows a price of $80,000; a Service line on a project contract stays quantity 1.
+- [ ] **Build** on a T&M part CLIN creates a consume-to-project job linked to the CLIN, and a Make to Order plan line on the chosen task with the job's number; the user sets no other field.
+- [ ] **Build** on a Fixed Price part CLIN creates a job that receives to project stock.
+- [ ] **Deliver** on a T&M part CLIN whose job completed 1 unit posts a shipment of 1 with a typed serial, writes no item ledger row and no journal, and refuses a quantity of 2.
+- [ ] **Deliver** on a Fixed Price part CLIN ships the unit from the project's stock and posts Dr Project WIP / Cr inventory; void reverses both.
+- [ ] The shipment PDF of a contract delivery prints the contract number, the CLIN, the quantity and the serial.
+- [ ] The Overview shows a Needs attention row while a part CLIN's job is complete and its quantity is not delivered.
+- [ ] **Build** on a task with a target date of 2026-11-30 creates a job due 2026-11-30; a scheduled finish of 2026-12-05 gives a Needs attention row.
+- [ ] The plan tree card of a task with a job shows "J-104 · 0 of 1"; after completion it shows "1 of 1" and the Overview asks if the task is done.
+- [ ] A Fixed Price job of quantity 1 that completes into project stock sets the task's serial to the finished unit.
+- [ ] A T&M CLIN bills an hour of shop labor on a consume-to-project job at the employee's labor category bill rate, with no "No bill rate" hold, when the employee has no contract rate.
+- [ ] In DCAA mode, an hour of shop time on a consume-to-project job posts no Labor ledger row and adds 1 hour to the employee's Draft timesheet entry with the job; certifying the week posts the labor with the job's `jobId`.
+- [ ] Outside DCAA mode, shop time posts its Labor ledger row as today, with the labor category.
+- [ ] The milestone drawer counts job Labor hours on its tasks.
 - [ ] `pnpm exec turbo run typecheck --filter=erp`, the sales and projects unit tests and `pnpm --filter docs typecheck` pass.
 
 ## Risks
@@ -345,6 +726,15 @@ Design Decisions.
 | The branch is behind main, which moves the contract engine into `sales.service.ts` and drops the module barrels | Med | Build on the branch as it is. The merge is a separate step with the `resolving-merge-conflicts` skill. |
 | A legacy contract mixes Recurring and T&M lines | Low | The backfill makes it a project contract; the server guard applies to new writes only. |
 | The Approvals count adds a query to the Projects layout | Low | One `count: exact, head: true` read on `projectBillableItem`. |
+| `isDirectItemLine` also gates the item ledger and journal of non-contract invoices | Med | The change adds one condition (`customerContractLineId` set). The existing `posting-lines.test.ts` cases pin the other lines. |
+| Two plan lines name the same job | Low | Only Create Job sets `projectElementMaterial.jobId`, and it makes a new job each time. If a direct write repeats a `jobId`, the oldest line takes the job's actuals, as `keyOwners` does for items. |
+| A user charges the part's material to the task directly, outside the job | Low | Those rows have no `jobId`. They match by item as today and show as their own cards. |
+| Amend re-plans Planned billing events (`applyReconciliation`) and can undo a delivery's split | Med | Amend already refuses a `change` of a billing line. The plan's delivery test amends a Fixed Price part line after a delivery and asserts the delivered row stays. |
+| A job receives to project stock on a project without `project.projectStock` (D33) | High | The plan's first task reads every reader of the flag (`chargeNumberError`, the close guard, `issue` draws, MRP) and pins each with a test before the change. |
+| A T&M or Cost Plus line with quantity above 1 meets a reader that assumed quantity 1 | Med | The plan greps every reader of a billing line's `quantity` (funding, the contract total, the invoice planner) before the CHECK changes. Billable items price the line, so the amount does not change. |
+| Under DCAA, a job's labor cost reaches the project only when the week is certified, up to 7 days late | Med | That is DCAA's rule for all project labor. The job card shows the Draft hours as "not posted yet", as the Actual tab does for timesheets today. |
+| The timesheet cell key gains `jobId`, so My Time can show 2 rows for one task | Low | The row shows the job number. Hand-entered time has no job and keeps its row. |
+| A T&M delivery has no tracked entity, so the serial is text with no genealogy | Low | The job consumed the part to the project, so no stock record exists to trace. Option B keeps genealogy for Fixed Price. |
 
 ## Open Questions
 
@@ -357,7 +747,18 @@ Design Decisions.
 - [x] Which terms are canonical? — **Delegated (Brad, 2026-10-21: "go with your recommendations"):** the table in section 7.
 - [x] Which runs get a journal preview? — **Delegated (Brad, 2026-10-21: "go with your recommendations"):** the Draft revenue run now; the burden run is a follow-up (D12).
 - [x] Is the guide chapter in scope? — **Delegated (Brad, 2026-10-21: "go with your recommendations"):** yes (D13).
+- [x] Can a CLIN name a part? — **Answer (Brad, 2026-10-22):** yes. A CLIN can be a part or a service, for example a prototype (D23).
+- [x] What collects a prototype's cost? — **Answer (Brad, 2026-10-22):** a job, as the unit of collection; tasks keep their plan lines (D24).
+- [x] How does the job show on the project? — **Answer (Brad, 2026-10-22):** keep it simple and avoid information overload; one line on its task (D25, D26).
+- [x] Is delivery against the CLIN in scope, and how? — **Answer (Brad, 2026-10-22):** yes. T&M and Cost Plus deliver with no stock (A); Fixed Price ships from project stock (B) (D29, D30).
+- [x] What is the goal for prototypes? — **Answer (Brad, 2026-10-22):** greatly cut the cognitive and training cost of using projects to make prototypes (D28).
+- [x] How does a Fixed Price job receive to project stock when the project has no project stock? — **Answer (Brad, 2026-10-22): yes to the recommendation (D33).** Allow `receiveToProjectStock` on a job with `customerContractLineId` set to a Fixed Price line, without `project.projectStock`. The project flag keeps its meaning for receipts. Otherwise the user must know to switch on project stock while the project is Draft (against D28). The plan checks `chargeNumberError` and the project close guard first.
+- [x] Where does shop labor get its labor category? — **Answer (Brad, 2026-10-22: "go with the recommendations"):** the employee's labor category, stamped by `post-production-event`. The column already exists (`employeeJob.laborCategoryId`) (D37).
+- [x] How does shop labor meet DCAA timekeeping? — **Answer (Brad, 2026-10-22: "go with the recommendations"):** shop time writes a Draft timesheet entry with the job, which the employee certifies with the week (D38).
+- [x] Does the milestone burn count shop hours? — **Answer (Brad, 2026-10-22: "go with the recommendations"):** yes (D39).
+- [x] Does a Fixed Price delivery trigger the line's billing event? — **Answer (Brad, 2026-10-22): yes to the recommendation (D34).** Posting the delivery dates the line's next Planned billing event to the delivery date, because an Active contract's events cannot be edited.
 
 ## Changelog
 
 - 2026-10-21: Created. Q1 to Q3 answered by Brad; Brad delegated the rest ("go with your recommendations"); those answers are marked Delegated.
+- 2026-10-22: Added section 10 (prototypes: a part CLIN, built by a job), problems 7 to 9, D23 to D32, and their data model, acceptance criteria and risks. Delivery (A for T&M and Cost Plus, B for Fixed Price) and the job link are in scope. Brad answered the two section 10 questions (D33, D34). Added the research file `.ai/research/jamis-prototype-clins.md` and D35 (the CLIN's next step) from it. While planning: Build refuses on a locked plan and cleans up on failure (no shared transaction); D34 splits the billing row per delivered unit. Added section 10.6 (the job and the project), D36 (a job is not an element type), and D37 to D39 (shop labor: labor category, DCAA timekeeping, milestone hours); Brad took the recommendations.
