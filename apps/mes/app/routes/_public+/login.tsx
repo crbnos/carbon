@@ -252,7 +252,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // This browser asked: the link completes here (MAGIC_LINK_SAME_BROWSER).
+  // This browser asked: the email's link completes only here.
   return data(
     { success: true, email },
     { headers: { "Set-Cookie": await markSignInBrowser() } }
@@ -800,7 +800,7 @@ function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
  * The code from the sign-in email, as an alternative to its link. It is
  * the link's own one-time token: a mail scanner that only opens the link
  * leaves it usable, one that presses the link page's button spends both
- * (MAGIC_LINK_SAME_BROWSER hides that button from it). A verified code
+ * (the button shows only in the browser that asked). A verified code
  * yields the same session the link's redirect does, handed to /callback the
  * same way, so everything after — company, SSO, MFA — is one path for both.
  */

@@ -243,11 +243,6 @@ export const schema = define({
     secret: true,
     required: "error"
   },
-  MAGIC_LINK_SAME_BROWSER: {
-    group: "auth",
-    description:
-      "true: a sign-in link completes only in the browser that asked for it; needs DOMAIN, ignored without it (false)"
-  },
   AUTH_COOKIE_SUFFIX: {
     group: "auth",
     description:
