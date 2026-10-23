@@ -14,6 +14,9 @@ vi.mock("nodemailer", () => ({
 // The real @carbon/env throws at import on unrelated required vars; mirror just
 // the SMTP accessors, reading process.env lazily so vi.stubEnv applies.
 vi.mock("@carbon/env", () => ({
+  get CarbonEdition() {
+    return process.env.CARBON_EDITION || "community";
+  },
   get SMTP_FROM() {
     return process.env.SMTP_FROM || undefined;
   },
@@ -164,6 +167,13 @@ describe("sendEmail", () => {
     vi.stubEnv("RESEND_API_KEY", "");
     vi.stubEnv("SMTP_HOST", "mail.example.com");
     expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(true);
+  });
+
+  it("never offers server mail on Carbon Cloud", async () => {
+    // The server's mail there is Carbon's, shared by every company.
+    vi.stubEnv("CARBON_EDITION", "cloud");
+    vi.stubEnv("SMTP_HOST", "mail.example.com");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
   });
 
   it("no-ops without error when nothing is configured", async () => {
