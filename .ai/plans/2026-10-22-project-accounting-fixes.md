@@ -21,7 +21,7 @@ Wave 1 (disjoint files, in parallel)
       honours the absorbed-overhead offset)
 
 Wave 2
-- [~] C — C3 done; C2 BLOCKED on a decision (needs a projectLedger column) —  C2 (Charge at receipt: the issue, TS and SQL paths, writes no second row), C3 (issue
+- [x] C — C2 (Option A, approved 2026-10-22: `projectLedger.relocatesReceiptCharge` zero-net pair) (Charge at receipt: the issue, TS and SQL paths, writes no second row), C3 (issue
       Return at the issue's unit cost)
 - [x] D — D2 (reversals copy the original's account and unallowable flag), D3 (labor transfer
       moves the booked amount)
@@ -50,7 +50,9 @@ Gates (after each wave, by the lead, nothing running in parallel)
 - Lead override in R: ledger row ownership is "latest start on or before the posting date, else the
   earliest line" (not strictly the line's own dates), so a single line still owns cost posted before
   its start and nothing is stranded in WIP. Pinned by `lib/project-revenue-run.test.ts`.
-- Left open: C2 (Charge at receipt; options A–D in the run log), E6 (concurrent burden runs need a
+- f808d82bdc (C2, migration `20261023011138`). Datasets 4/4 apply; backups restorable.
+- Left open: E6 (concurrent burden runs need a
   lock across the community posting function), and the three decisions (D11, A6, B2).
 - Gates: typecheck erp/ee/utils green; Biome clean on changed files; 183 files / 2103 tests green.
-  Pre-existing, unrelated: `packages/utils` status-colors test fails at HEAD too.
+  Pre-existing, unrelated: `packages/utils` status-colors and ERP `method-import-guards` "refuses a Draft
+  an editor activates" fail at `a0c98f0560` too.
