@@ -7420,6 +7420,9 @@ msgstr "Corrective action"
 msgid "Cost"
 msgstr "Cost"
 
+msgid "Cost {unitCost} each"
+msgstr "Cost {unitCost} each"
+
 msgid "Cost account"
 msgstr "Cost account"
 
@@ -17830,6 +17833,12 @@ msgstr "No posted journals in this period for this account"
 msgid "No posted opening balance"
 msgstr "No posted opening balance"
 
+msgid "No posted reimbursement lines"
+msgstr "No posted reimbursement lines"
+
+msgid "No posted supplier invoice lines"
+msgstr "No posted supplier invoice lines"
+
 msgid "No pricing for selected quantity"
 msgstr "No pricing for selected quantity"
 
@@ -19380,6 +19389,9 @@ msgstr "Paid Amount:"
 
 msgid "Paid Back"
 msgstr "Paid Back"
+
+msgid "Paid By"
+msgstr "Paid By"
 
 msgid "Paid Date"
 msgstr "Paid Date"
@@ -21921,6 +21933,12 @@ msgstr "Reimbursement Date"
 
 msgid "Reimbursement ID"
 msgstr "Reimbursement ID"
+
+msgid "Reimbursement line"
+msgstr "Reimbursement line"
+
+msgid "Reimbursement Line"
+msgstr "Reimbursement Line"
 
 msgid "Reimbursement to Employee"
 msgstr "Reimbursement to Employee"
@@ -25936,6 +25954,12 @@ msgstr "Supplier IDs shown"
 msgid "Supplier interaction"
 msgstr "Supplier interaction"
 
+msgid "Supplier invoice line"
+msgstr "Supplier invoice line"
+
+msgid "Supplier Invoice Line"
+msgstr "Supplier Invoice Line"
+
 msgid "Supplier Invoice Number"
 msgstr "Supplier Invoice Number"
 
@@ -27969,6 +27993,9 @@ msgstr "This contact has no email address"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "This contract's invoices post automatically, so confirming it needs permission to create invoices."
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr "This cost posted to {lineAccount}, not the job's {jobAccount}."
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "This counterparty has nothing outstanding — the payment will be recorded on-account."

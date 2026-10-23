@@ -1614,7 +1614,7 @@
     {"name":"service_deleteServiceJobCharge","classification":"DESTRUCTIVE","schema":"1e97ff583b5e","response":"3797626bd17e","permission":"service:delete","paginates":false},
     {"name":"service_deleteServiceJobEstimateLine","classification":"DESTRUCTIVE","schema":"1e97ff583b5e","response":"3797626bd17e","permission":"service:delete","paginates":false},
     {"name":"service_deleteServiceJobTime","classification":"DESTRUCTIVE","schema":"1e97ff583b5e","response":"3797626bd17e","permission":"service:delete","paginates":false},
-    {"name":"service_getLinkableCostLines","classification":"READ","schema":"eb0ed7af5b9b","response":"d29a5b8466f0","permission":"service:view","paginates":false},
+    {"name":"service_getLinkableCostLines","classification":"READ","schema":"eb0ed7af5b9b","response":"73bad8501f67","permission":"service:view","paginates":false},
     {"name":"service_getServiceBacklog","classification":"READ","schema":"de371a276a58","response":"a3a412bafab6","permission":"service:view","paginates":false},
     {"name":"service_getServiceJob","classification":"READ","schema":"4999bd4be598","response":"012f396c0065","permission":"service:view","paginates":false},
     {"name":"service_getServiceJobAssignmentsRange","classification":"READ","schema":"270c78475d09","response":"d06d41a9799c","permission":"service:view","paginates":false},

@@ -7420,6 +7420,9 @@ msgstr "是正処置"
 msgid "Cost"
 msgstr "原価"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "原価勘定科目"
 
@@ -17830,6 +17833,12 @@ msgstr "この期間、このアカウントに転記済の仕訳がありませ
 msgid "No posted opening balance"
 msgstr "転記済の期首残高がありません"
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "選択した数量の価格設定がありません"
 
@@ -19380,6 +19389,9 @@ msgstr "支払済み金額:"
 
 msgid "Paid Back"
 msgstr "返済済み"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "支払日"
@@ -21921,6 +21933,12 @@ msgstr "払戻日"
 
 msgid "Reimbursement ID"
 msgstr "払戻ID"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "従業員への払戻"
@@ -25936,6 +25954,12 @@ msgstr "仕入先IDが表示されました"
 msgid "Supplier interaction"
 msgstr "仕入先対応"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "仕入先請求書番号"
 
@@ -27969,6 +27993,9 @@ msgstr "この担当者はメールアドレスを持っていません。"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "この契約の請求書は自動的に転記されるため、確認には請求書を作成する権限が必要です。"
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"

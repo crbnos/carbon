@@ -7420,6 +7420,9 @@ msgstr "Düzeltici faaliyet"
 msgid "Cost"
 msgstr "Maliyet"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "Maliyet hesabı"
 
@@ -17830,6 +17833,12 @@ msgstr "Bu dönem için bu hesapta muhasebeleştirilmiş muhasebe fişi yok"
 msgid "No posted opening balance"
 msgstr "Muhasebeleştirilmiş açılış bakiyesi yoktur"
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "Seçilen miktar için fiyatlandırma yok"
 
@@ -19380,6 +19389,9 @@ msgstr "Ödenen Tutar:"
 
 msgid "Paid Back"
 msgstr "Geri Ödendi"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "Ödeme Tarihi"
@@ -21921,6 +21933,12 @@ msgstr "Geri Ödeme Tarihi"
 
 msgid "Reimbursement ID"
 msgstr "Geri Ödeme ID"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "Çalışana Gider Talebi"
@@ -25936,6 +25954,12 @@ msgstr "Tedarikçi kimlikleri gösterildi"
 msgid "Supplier interaction"
 msgstr "Tedarikçi etkileşimi"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "Tedarikçi Fatura Numarası"
 
@@ -27969,6 +27993,9 @@ msgstr "Bu ilgili kişinin e-posta adresi yok"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Bu sözleşmenin faturaları otomatik olarak muhasebeleştirilir, bu nedenle onaylanması için faturaları oluşturmaya izin gereklidir."
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."

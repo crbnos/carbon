@@ -7420,6 +7420,9 @@ msgstr "Korrekturmaßnahme"
 msgid "Cost"
 msgstr "Kosten"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "Kostenkonto"
 
@@ -17830,6 +17833,12 @@ msgstr "Keine gebuchten Buchungssätze in diesem Zeitraum für dieses Konto"
 msgid "No posted opening balance"
 msgstr "Keine gebuchte Eröffnungsbilanz"
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "Keine Preisfindung für die ausgewählte Menge"
 
@@ -19380,6 +19389,9 @@ msgstr "Bezahlter Betrag:"
 
 msgid "Paid Back"
 msgstr "Zurückgezahlt"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "Bezahlt am"
@@ -21921,6 +21933,12 @@ msgstr "Erstattungsdatum"
 
 msgid "Reimbursement ID"
 msgstr "Erstattungs-ID"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "Kostenerstattung für Mitarbeiter"
@@ -25936,6 +25954,12 @@ msgstr "Lieferanten-IDs angezeigt"
 msgid "Supplier interaction"
 msgstr "Lieferanteninteraktion"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "Lieferantenrechnungsnummer"
 
@@ -27969,6 +27993,9 @@ msgstr "Dieser Kontakt hat keine E-Mail-Adresse"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Die Rechnungen dieses Vertrags werden automatisch gebucht, daher benötigt die Bestätigung die Berechtigung, Rechnungen zu erstellen."
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Dieser Geschäftspartner hat keine ausstehenden Forderungen — die Zahlung wird auf Kontokorrent verbucht."

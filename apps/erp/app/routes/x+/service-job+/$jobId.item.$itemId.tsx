@@ -5,13 +5,25 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import { isServiceJobLocked } from "@carbon/utils";
-import type { ActionFunctionArgs } from "react-router";
-import { Navigate, useNavigate, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { Navigate, useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { serviceJobItemValidator } from "~/modules/service/service.models";
 import type { ServiceJobDetail, ServiceJobItem } from "~/modules/service/types";
 import ServiceJobChargeForm from "~/modules/service/ui/ServiceJob/ServiceJobChargeForm";
 import { path } from "~/utils/path";
+
+/** The posted lines the charge's cost can be linked to. */
+export async function loader(args: LoaderFunctionArgs) {
+  const { jobId, itemId } = args.params;
+  if (!jobId || !itemId) throw new Error("Could not find jobId or itemId");
+  const api = await carbon(args.request);
+  const result = await api.service.getLinkableCostLines({
+    serviceJobId: jobId,
+    serviceJobItemId: itemId
+  });
+  return result.data ?? { lines: [], coverageAccount: null };
+}
 
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(serviceJobItemValidator).request(args, {
@@ -31,6 +43,7 @@ export default function ServiceJobChargeRoute() {
   const { jobId, itemId } = useParams();
   if (!jobId || !itemId) throw new Error("Could not find jobId or itemId");
   const navigate = useNavigate();
+  const { lines, coverageAccount } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{
     job: ServiceJobDetail;
     items: ServiceJobItem[];
@@ -52,8 +65,12 @@ export default function ServiceJobChargeRoute() {
         quantity: charge.quantity,
         unitOfMeasureCode: charge.unitOfMeasureCode ?? undefined,
         unitPrice: charge.unitPrice,
-        billable: charge.billable
+        billable: charge.billable,
+        reimbursementLineId: charge.reimbursementLineId ?? undefined,
+        purchaseInvoiceLineId: charge.purchaseInvoiceLineId ?? undefined
       }}
+      costLines={lines}
+      coverageAccount={coverageAccount}
       isLocked={isServiceJobLocked(routeData?.job?.status)}
       onClose={() => navigate(path.to.serviceJob(jobId))}
     />

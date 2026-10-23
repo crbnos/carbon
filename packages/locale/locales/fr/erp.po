@@ -7420,6 +7420,9 @@ msgstr "Action corrective"
 msgid "Cost"
 msgstr "Coût"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "Compte de coûts"
 
@@ -17830,6 +17833,12 @@ msgstr "Aucune écriture comptabilisée pour cette période sur ce compte"
 msgid "No posted opening balance"
 msgstr "Aucun solde d'ouverture comptabilisé"
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "Aucune tarification pour la quantité sélectionnée"
 
@@ -19380,6 +19389,9 @@ msgstr "Montant payé :"
 
 msgid "Paid Back"
 msgstr "Remboursé"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "Date de paiement"
@@ -21921,6 +21933,12 @@ msgstr "Date de remboursement"
 
 msgid "Reimbursement ID"
 msgstr "ID de remboursement"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "Remboursement à l'Employé"
@@ -25936,6 +25954,12 @@ msgstr "Identifiants du fournisseur affichés"
 msgid "Supplier interaction"
 msgstr "Interaction avec le fournisseur"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "Numéro de facture fournisseur"
 
@@ -27969,6 +27993,9 @@ msgstr "Ce contact n'a pas d'adresse e-mail"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Les factures de ce contrat se comptabilisent automatiquement, donc confirmer le contrat nécessite l'autorisation de créer des factures."
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Ce tiers n'a rien en suspens — le paiement sera enregistré en compte courant."

@@ -7420,6 +7420,9 @@ msgstr "纠正措施"
 msgid "Cost"
 msgstr "成本"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "成本科目"
 
@@ -17830,6 +17833,12 @@ msgstr "此期间此账户没有已过账的凭证"
 msgid "No posted opening balance"
 msgstr "没有已过账的期初余额"
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "所选数量无定价"
 
@@ -19380,6 +19389,9 @@ msgstr "已支付金额："
 
 msgid "Paid Back"
 msgstr "已偿还"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "支付日期"
@@ -21921,6 +21933,12 @@ msgstr "报销日期"
 
 msgid "Reimbursement ID"
 msgstr "报销ID"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "员工报销"
@@ -25936,6 +25954,12 @@ msgstr "供应商ID已显示"
 msgid "Supplier interaction"
 msgstr "供应商互动"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "供应商发票号"
 
@@ -27969,6 +27993,9 @@ msgstr "此联系人没有电子邮件地址"
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "此合同的发票自动过账，所以确认它需要创建发票的权限。"
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"

@@ -7420,6 +7420,9 @@ msgstr "시정 조치"
 msgid "Cost"
 msgstr "원가"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "원가 계정과목"
 
@@ -17830,6 +17833,12 @@ msgstr "이 계정의 이 기간에 전기된 전표가 없습니다."
 msgid "No posted opening balance"
 msgstr "전기된 개시 잔액이 없습니다."
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "선택한 수량에 대한 가격 책정이 없습니다."
 
@@ -19380,6 +19389,9 @@ msgstr "지급액:"
 
 msgid "Paid Back"
 msgstr "상환됨"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "지급일"
@@ -21921,6 +21933,12 @@ msgstr "환급일"
 
 msgid "Reimbursement ID"
 msgstr "환급 ID"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "직원 환급금"
@@ -25936,6 +25954,12 @@ msgstr "공급업체 ID가 표시되었습니다"
 msgid "Supplier interaction"
 msgstr "공급업체 상호작용"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "공급업체 송장 번호"
 
@@ -27969,6 +27993,9 @@ msgstr "이 담당자는 이메일 주소가 없습니다."
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "이 계약의 송장은 자동으로 전기되므로, 확인하려면 송장을 생성할 권한이 필요합니다."
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처는 미결 항목이 없으므로 지불이 외상으로 기록됩니다."

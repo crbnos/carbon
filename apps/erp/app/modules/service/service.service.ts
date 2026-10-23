@@ -28,10 +28,12 @@ import { inOrder, maybeSingle, rpcValue } from "@carbon/database/rows";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   canComplete,
+  coverageAccountRole,
   datetime,
   isServiceJobLocked,
   manualHoursForDay,
-  round
+  round,
+  toBaseAmount
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Transaction } from "kysely";
@@ -373,12 +375,15 @@ export async function getServiceJobTime(client: Client, serviceJobId: string) {
     .order("createdAt", { ascending: false });
 }
 
-/** A job's parts and charges, in the order they were added. */
+/**
+ * A job's parts and charges, in the order they were added. A charge paid by a
+ * reimbursement or supplier invoice line carries that document's number.
+ */
 export async function getServiceJobItems(client: Client, serviceJobId: string) {
   return client
     .from("serviceJobItem")
     .select(
-      "*, item:item!serviceJobItem_itemId_fkey(id, readableIdWithRevision, name, itemTrackingType)"
+      "*, item:item!serviceJobItem_itemId_fkey(id, readableIdWithRevision, name, itemTrackingType), reimbursementLine:reimbursementLine!serviceJobItem_reimbursementLineId_fkey(id, reimbursement:reimbursement!reimbursementLine_reimbursementId_fkey(id, reimbursementId)), purchaseInvoiceLine:purchaseInvoiceLine!serviceJobItem_purchaseInvoiceLineId_fkey(id, purchaseInvoice:purchaseInvoice!purchaseInvoiceLines_invoiceId_fkey(id, invoiceId))"
     )
     .eq("serviceJobId", serviceJobId)
     .order("createdAt", { ascending: true });
@@ -1105,7 +1110,15 @@ export async function setServiceJobDayHours(
   });
 }
 
-type ChargeInput = Omit<z.infer<typeof serviceJobItemValidator>, "id">;
+type ChargeInput = Omit<
+  z.infer<typeof serviceJobItemValidator>,
+  "id" | "reimbursementLineId" | "purchaseInvoiceLineId"
+> & {
+  /** Base currency, from the linked cost line (`chargeCost`); 0 with no link. */
+  unitCost: number;
+  reimbursementLineId: string | null;
+  purchaseInvoiceLineId: string | null;
+};
 
 /**
  * Adds a Charge line (`createdBy`) or saves one (`id`). A Part line is
@@ -1124,7 +1137,10 @@ export async function upsertServiceJobItem(
     quantity: charge.quantity,
     unitOfMeasureCode: charge.unitOfMeasureCode ?? null,
     unitPrice: charge.unitPrice,
-    billable: charge.billable
+    billable: charge.billable,
+    unitCost: charge.unitCost,
+    reimbursementLineId: charge.reimbursementLineId,
+    purchaseInvoiceLineId: charge.purchaseInvoiceLineId
   };
   if ("createdBy" in charge) {
     return client
@@ -1168,6 +1184,385 @@ export async function deleteServiceJobItem(
     .eq("lineType", "Charge")
     .select("id")
     .single();
+}
+
+// --- A charge's paid cost ----------------------------------------------------
+// A hotel or a part bought on site is a real cost. The reimbursement or
+// supplier invoice that paid it posts the journal, so the job only stores
+// the link and the cost; it posts nothing for it.
+
+/** What paid a charge's cost: an employee's reimbursement or a supplier invoice. */
+export type CostLineSource = "reimbursement" | "purchaseInvoice";
+
+/** A posted line a charge's cost can be linked to. */
+export type LinkableCostLine = {
+  source: CostLineSource;
+  id: string;
+  /** The reimbursement's or the purchase invoice's id. */
+  documentId: string;
+  /** Its number: `reimbursementId` or `invoiceId`. */
+  documentReadableId: string;
+  description: string | null;
+  /** In base currency: what the line posted. */
+  amount: number;
+  /** The account the line posted to. */
+  accountId: string | null;
+  accountName: string | null;
+  accountNumber: string | null;
+};
+
+/** How many recent lines of each source the charge form lists. */
+export const LINKABLE_COST_LINE_LIMIT = 100;
+
+/** A purchase invoice in one of these has posted no journal. */
+const UNPOSTED_PURCHASE_INVOICE_STATUSES = '("Draft","Pending","Voided")';
+
+type CostLineResult<T> =
+  | { data: T; error: null }
+  | { data: null; error: PostgrestError };
+
+/**
+ * Lines of Posted reimbursements, newest first. A Draft reimbursement
+ * rewrites its lines on every save, which would drop the link, and has posted
+ * nothing yet.
+ */
+async function reimbursementCostLines(
+  client: Client,
+  companyId: string,
+  args: { ids?: string[]; employeeId?: string; limit: number }
+): Promise<CostLineResult<LinkableCostLine[]>> {
+  let query = client
+    .from("reimbursementLine")
+    .select(
+      "id, description, amount, accountId, account:account!reimbursementLine_accountId_fkey(name, number), reimbursement:reimbursement!reimbursementLine_reimbursementId_fkey!inner(id, reimbursementId, exchangeRate, status, employeeId)"
+    )
+    .eq("companyId", companyId)
+    .eq("reimbursement.status", "Posted");
+  if (args.ids) query = query.in("id", args.ids);
+  if (args.employeeId) {
+    query = query.eq("reimbursement.employeeId", args.employeeId);
+  }
+  const result = await query
+    .order("createdAt", { ascending: false })
+    .limit(args.limit);
+  if (result.error) return { data: null, error: result.error };
+  return {
+    data: result.data.map((row) => ({
+      source: "reimbursement" as const,
+      id: row.id,
+      documentId: row.reimbursement.id,
+      documentReadableId: row.reimbursement.reimbursementId,
+      description: row.description,
+      // The reimbursement posts its lines converted the same way.
+      amount: toBaseAmount(
+        Number(row.amount),
+        Number(row.reimbursement.exchangeRate)
+      ),
+      accountId: row.accountId,
+      accountName: row.account?.name ?? null,
+      accountNumber: row.account?.number ?? null
+    })),
+    error: null
+  };
+}
+
+/**
+ * Lines of posted purchase invoices that post to an account, newest first. A
+ * line with no account (a part received into stock) gets its cost to a job
+ * when the part is issued, not through a charge.
+ */
+async function purchaseInvoiceCostLines(
+  client: Client,
+  companyId: string,
+  args: { ids?: string[]; supplierId?: string; limit: number }
+): Promise<CostLineResult<LinkableCostLine[]>> {
+  let query = client
+    .from("purchaseInvoiceLine")
+    .select(
+      "id, description, totalAmount, accountId, account:account!purchaseInvoiceLine_accountId_fkey(name, number), purchaseInvoice:purchaseInvoice!purchaseInvoiceLines_invoiceId_fkey!inner(id, invoiceId, status, supplierId)"
+    )
+    .eq("companyId", companyId)
+    .not("accountId", "is", null)
+    .neq("invoiceLineType", "Comment")
+    .not("purchaseInvoice.status", "in", UNPOSTED_PURCHASE_INVOICE_STATUSES);
+  if (args.ids) query = query.in("id", args.ids);
+  if (args.supplierId) {
+    query = query.eq("purchaseInvoice.supplierId", args.supplierId);
+  }
+  const result = await query
+    .order("createdAt", { ascending: false })
+    .limit(args.limit);
+  if (result.error) return { data: null, error: result.error };
+  return {
+    data: result.data.map((row) => ({
+      source: "purchaseInvoice" as const,
+      id: row.id,
+      documentId: row.purchaseInvoice.id,
+      documentReadableId: row.purchaseInvoice.invoiceId,
+      description: row.description,
+      // Base currency: the line's price, freight and tax, as it posted.
+      amount: Number(row.totalAmount ?? 0),
+      accountId: row.accountId,
+      accountName: row.account?.name ?? null,
+      accountNumber: row.account?.number ?? null
+    })),
+    error: null
+  };
+}
+
+/** One posted cost line, or null when the company has no such posted line. */
+export async function getCostLine(
+  client: Client,
+  companyId: string,
+  link: { reimbursementLineId?: string; purchaseInvoiceLineId?: string }
+): Promise<CostLineResult<LinkableCostLine | null>> {
+  const result = link.reimbursementLineId
+    ? await reimbursementCostLines(client, companyId, {
+        ids: [link.reimbursementLineId],
+        limit: 1
+      })
+    : link.purchaseInvoiceLineId
+      ? await purchaseInvoiceCostLines(client, companyId, {
+          ids: [link.purchaseInvoiceLineId],
+          limit: 1
+        })
+      : { data: [], error: null };
+  if (result.error) return result;
+  return { data: result.data[0] ?? null, error: null };
+}
+
+/**
+ * The charges, other than `exceptItemId`, that the lines already pay, with
+ * their job's number. One read per source.
+ */
+async function chargesPaidBy(
+  client: Client,
+  companyId: string,
+  lines: Pick<LinkableCostLine, "source" | "id">[],
+  exceptItemId?: string
+): Promise<
+  CostLineResult<
+    { lineId: string; itemId: string; serviceJobId: string | null }[]
+  >
+> {
+  const ids = (source: CostLineSource) =>
+    lines.filter((line) => line.source === source).map((line) => line.id);
+  const read = (
+    column: "reimbursementLineId" | "purchaseInvoiceLineId",
+    lineIds: string[]
+  ) =>
+    lineIds.length === 0
+      ? Promise.resolve({ data: [], error: null })
+      : client
+          .from("serviceJobItem")
+          .select(
+            "id, reimbursementLineId, purchaseInvoiceLineId, serviceJob:serviceJob!serviceJobItem_serviceJobId_fkey(serviceJobId)"
+          )
+          .eq("companyId", companyId)
+          .in(column, lineIds);
+  const [reimbursed, invoiced] = await Promise.all([
+    read("reimbursementLineId", ids("reimbursement")),
+    read("purchaseInvoiceLineId", ids("purchaseInvoice"))
+  ]);
+  if (reimbursed.error) return { data: null, error: reimbursed.error };
+  if (invoiced.error) return { data: null, error: invoiced.error };
+  return {
+    data: [...(reimbursed.data ?? []), ...(invoiced.data ?? [])]
+      .filter((row) => row.id !== exceptItemId)
+      .map((row) => ({
+        lineId: (row.reimbursementLineId ?? row.purchaseInvoiceLineId)!,
+        itemId: row.id,
+        serviceJobId: row.serviceJob?.serviceJobId ?? null
+      })),
+    error: null
+  };
+}
+
+/**
+ * The posted reimbursement and supplier invoice lines a charge's cost can be
+ * linked to: the newest `limit` of each source, less the lines that already
+ * pay another charge. The line `serviceJobItemId` is linked to is always
+ * listed.
+ */
+export async function getLinkableCostLines(
+  client: Client,
+  companyId: string,
+  args: {
+    serviceJobItemId?: string;
+    employeeId?: string;
+    supplierId?: string;
+    limit?: number;
+  }
+): Promise<CostLineResult<LinkableCostLine[]>> {
+  const limit = args.limit ?? LINKABLE_COST_LINE_LIMIT;
+  const [reimbursements, invoices, current] = await Promise.all([
+    reimbursementCostLines(client, companyId, {
+      employeeId: args.employeeId,
+      limit
+    }),
+    purchaseInvoiceCostLines(client, companyId, {
+      supplierId: args.supplierId,
+      limit
+    }),
+    args.serviceJobItemId
+      ? client
+          .from("serviceJobItem")
+          .select("reimbursementLineId, purchaseInvoiceLineId")
+          .eq("id", args.serviceJobItemId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+  ]);
+  if (reimbursements.error) return reimbursements;
+  if (invoices.error) return invoices;
+  if (current.error) return { data: null, error: current.error };
+
+  const lines = [...reimbursements.data, ...invoices.data];
+  const currentLink = current.data;
+  if (
+    currentLink &&
+    (currentLink.reimbursementLineId || currentLink.purchaseInvoiceLineId) &&
+    !lines.some(
+      (line) =>
+        line.id === currentLink.reimbursementLineId ||
+        line.id === currentLink.purchaseInvoiceLineId
+    )
+  ) {
+    const linked = await getCostLine(client, companyId, {
+      reimbursementLineId: currentLink.reimbursementLineId ?? undefined,
+      purchaseInvoiceLineId: currentLink.purchaseInvoiceLineId ?? undefined
+    });
+    if (linked.error) return linked;
+    if (linked.data) lines.unshift(linked.data);
+  }
+
+  const paid = await chargesPaidBy(
+    client,
+    companyId,
+    lines,
+    args.serviceJobItemId
+  );
+  if (paid.error) return paid;
+  const taken = new Set(paid.data.map((row) => row.lineId));
+  return { data: lines.filter((line) => !taken.has(line.id)), error: null };
+}
+
+/**
+ * The account a job's cost goes to, for the charge form's warning: Warranty
+ * expense for Warranty work, else cost of service, falling back to Cost of
+ * Goods Sold. Null when the company has not set it.
+ */
+export async function getServiceJobCoverageAccount(
+  client: Client,
+  companyId: string,
+  serviceJobId: string
+) {
+  const [job, defaults] = await Promise.all([
+    client
+      .from("serviceJob")
+      .select("coverage")
+      .eq("id", serviceJobId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("accountDefault")
+      .select(
+        "costOfServiceAccount, costOfGoodsSoldAccount, warrantyExpenseAccount"
+      )
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (job.error) return { data: null, error: job.error };
+  if (defaults.error) return { data: null, error: defaults.error };
+  if (!job.data || !defaults.data) return { data: null, error: null };
+
+  const accountId =
+    coverageAccountRole(job.data.coverage) === "warrantyExpenseAccount"
+      ? defaults.data.warrantyExpenseAccount
+      : (defaults.data.costOfServiceAccount ??
+        defaults.data.costOfGoodsSoldAccount);
+  if (!accountId) return { data: null, error: null };
+  return client
+    .from("account")
+    .select("id, name, number")
+    .eq("id", accountId)
+    .maybeSingle();
+}
+
+/**
+ * A charge's paid cost: the line it links to and the unit cost that line
+ * gives it (its amount ÷ the charge's quantity), or no link and no cost.
+ * Refuses both links at once, a line the company has not posted, and a line
+ * that already pays another charge.
+ */
+export async function chargeCost(
+  ctx: ServiceContext,
+  charge: {
+    id?: string;
+    quantity: number;
+    reimbursementLineId?: string;
+    purchaseInvoiceLineId?: string;
+  }
+): Promise<
+  | {
+      unitCost: number;
+      reimbursementLineId: string | null;
+      purchaseInvoiceLineId: string | null;
+    }
+  | CarbonError
+> {
+  const { reimbursementLineId, purchaseInvoiceLineId } = charge;
+  if (reimbursementLineId && purchaseInvoiceLineId) {
+    return ctx.error(
+      "validation",
+      "A charge is paid by one line: a reimbursement line or a supplier invoice line"
+    );
+  }
+  if (!reimbursementLineId && !purchaseInvoiceLineId) {
+    return {
+      unitCost: 0,
+      reimbursementLineId: null,
+      purchaseInvoiceLineId: null
+    };
+  }
+
+  const client = ctx.asCaller.supabase;
+  const line = await getCostLine(client, ctx.company.id, {
+    reimbursementLineId,
+    purchaseInvoiceLineId
+  });
+  if (line.error) {
+    return ctx.error("internal", "Failed to load the cost line", line.error);
+  }
+  if (!line.data) {
+    return ctx.error(
+      "notFound",
+      "Cost line not found. Link a line of a posted reimbursement or supplier invoice."
+    );
+  }
+  const paid = await chargesPaidBy(
+    client,
+    ctx.company.id,
+    [line.data],
+    charge.id
+  );
+  if (paid.error) {
+    return ctx.error("internal", "Failed to load the cost line", paid.error);
+  }
+  const other = paid.data[0];
+  if (other) {
+    return ctx.error(
+      "rule",
+      other.serviceJobId
+        ? `This line already pays a charge on ${other.serviceJobId}`
+        : "This line already pays another charge"
+    );
+  }
+  return {
+    unitCost: round(line.data.amount / charge.quantity),
+    reimbursementLineId: reimbursementLineId ?? null,
+    purchaseInvoiceLineId: purchaseInvoiceLineId ?? null
+  };
 }
 
 type AssignmentInput = Omit<

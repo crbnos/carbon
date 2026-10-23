@@ -7420,6 +7420,9 @@ msgstr "सुधारात्मक कार्रवाई"
 msgid "Cost"
 msgstr "लागत"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "लागत खाता"
 
@@ -17830,6 +17833,12 @@ msgstr "इस अवधि में इस खाते के लिए क�
 msgid "No posted opening balance"
 msgstr "कोई पोस्ट किया गया प्रारंभिक शेष राशि नहीं"
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "चयनित मात्रा के लिए कोई मूल्य निर्धारण नहीं"
 
@@ -19380,6 +19389,9 @@ msgstr "भुगतान की गई राशि:"
 
 msgid "Paid Back"
 msgstr "वापस भुगतान किया गया"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
@@ -21921,6 +21933,12 @@ msgstr "प्रतिपूर्ति तारीख"
 
 msgid "Reimbursement ID"
 msgstr "प्रतिपूर्ति ID"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "कर्मचारी को प्रतिपूर्ति"
@@ -25936,6 +25954,12 @@ msgstr "आपूर्तिकर्ता आईडी दिखाई गई
 msgid "Supplier interaction"
 msgstr "आपूर्तिकर्ता इंटरैक्शन"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "आपूर्तिकर्ता चालान संख्या"
 
@@ -27969,6 +27993,9 @@ msgstr "इस संपर्क के पास कोई ईमेल पत
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "इस अनुबंध के चालान स्वचालित रूप से पोस्ट होते हैं, इसलिए इसकी पुष्टि करने के लिए चालान बनाने की अनुमति की आवश्यकता है।"
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"

@@ -932,6 +932,13 @@ export const setServiceJobDayHours = defineServiceFn({
  * Cancelled. A part is issued from stock instead, through the `issue`
  * posting.
  *
+ * A charge that was a real cost (a hotel, a part bought on site) names the
+ * line that paid it: `reimbursementLineId` (a Posted reimbursement) or
+ * `purchaseInvoiceLineId` (a posted supplier invoice line with an account),
+ * never both. Its unit cost is then that line's base amount ÷ the quantity;
+ * with no link it is 0. The linked document already posted the journal, so
+ * the job posts nothing. A line that already pays another charge is refused.
+ *
  * @mcp
  */
 export const upsertServiceJobCharge = defineServiceFn({
@@ -947,19 +954,62 @@ export const upsertServiceJobCharge = defineServiceFn({
       "A charge"
     );
     if (refused) return refused;
+    const cost = await service.chargeCost(ctx, { id, ...charge });
+    if (cost instanceof CarbonError) return cost;
 
     const upsert = await service.upsertServiceJobItem(
       ctx.asCaller.supabase,
       id
         ? {
             ...charge,
+            ...cost,
             id,
             companyId: ctx.company.id,
             updatedBy: ctx.auditUserId
           }
-        : { ...charge, companyId: ctx.company.id, createdBy: ctx.auditUserId }
+        : {
+            ...charge,
+            ...cost,
+            companyId: ctx.company.id,
+            createdBy: ctx.auditUserId
+          }
     );
     return unwrap(ctx, upsert);
+  }
+});
+
+/**
+ * Get the posted lines a service job charge's cost can be linked to
+ *
+ * @remarks
+ * Lines of Posted reimbursements and of posted supplier invoices that post to
+ * an account, newest first, at most 100 of each, with their document number,
+ * description, base-currency amount and account. Lines that already pay
+ * another charge are left out; the line `serviceJobItemId` is linked to is
+ * always listed. `employeeId` and `supplierId` narrow the reimbursements and
+ * the invoices. `coverageAccount` is the account the job's cost goes to, to
+ * compare each line's account with.
+ *
+ * @mcp read
+ */
+export const getLinkableCostLines = defineServiceFn({
+  input: z.object({
+    serviceJobId: z.string().min(1),
+    serviceJobItemId: z.string().optional(),
+    employeeId: z.string().optional(),
+    supplierId: z.string().optional()
+  }),
+  permission: { view: "service" },
+
+  async run(ctx, { serviceJobId, ...args }) {
+    const client = ctx.asCaller.supabase;
+    const [lines, coverageAccount] = await Promise.all([
+      service.getLinkableCostLines(client, ctx.company.id, args),
+      service.getServiceJobCoverageAccount(client, ctx.company.id, serviceJobId)
+    ]);
+    const result = unwrap(ctx, lines, coverageAccount);
+    if (result instanceof CarbonError) return result;
+    return { lines: result[0] ?? [], coverageAccount: result[1] };
   }
 });
 

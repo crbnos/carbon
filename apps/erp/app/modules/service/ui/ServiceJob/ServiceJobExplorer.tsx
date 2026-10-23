@@ -362,6 +362,7 @@ function ServiceJobExplorerChildItem({
   const canDelete = isEditable && permissions.can("delete", "service");
 
   const amount = getChildAmount(child);
+  const costSource = getCostSource(child);
 
   const content = (
     <div className="flex pr-7 h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-2 text-sm hover:bg-accent w-full font-medium whitespace-nowrap">
@@ -370,6 +371,11 @@ function ServiceJobExplorerChildItem({
         <span className="shrink-0">{getChildIcon(child)}</span>
         <span className="truncate">{label}</span>
       </div>
+      {costSource && (
+        <span className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">
+          {costSource}
+        </span>
+      )}
       {child.type === "item" && child.lineType === "Part" && (
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
           {formatQuantity(child.quantity ?? 0)}
@@ -455,7 +461,8 @@ function getEditLink(jobId: string, child: ServiceJobExplorerChild) {
 
 /**
  * The money beside a row: an estimate line or a charge at its price, a part
- * at its cost. A time entry shows its hours in its label instead.
+ * at its cost, and a charge paid by a reimbursement or supplier invoice line
+ * at its cost too. A time entry shows its hours in its label instead.
  */
 function getChildAmount(child: ServiceJobExplorerChild): number | null {
   switch (child.type) {
@@ -464,10 +471,20 @@ function getChildAmount(child: ServiceJobExplorerChild): number | null {
     case "time":
       return null;
     case "item":
-      return child.lineType === "Part"
+      return child.lineType === "Part" || getCostSource(child)
         ? child.quantity * child.unitCost
         : child.quantity * child.unitPrice;
   }
+}
+
+/** The number of the reimbursement or supplier invoice that paid a charge. */
+function getCostSource(child: ServiceJobExplorerChild): string | null {
+  if (child.type !== "item") return null;
+  return (
+    child.reimbursementLine?.reimbursement?.reimbursementId ??
+    child.purchaseInvoiceLine?.purchaseInvoice?.invoiceId ??
+    null
+  );
 }
 
 function getChildIcon(child: ServiceJobExplorerChild) {

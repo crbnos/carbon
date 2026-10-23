@@ -7420,6 +7420,9 @@ msgstr "Корректирующее действие"
 msgid "Cost"
 msgstr "Себестоимость"
 
+msgid "Cost {unitCost} each"
+msgstr ""
+
 msgid "Cost account"
 msgstr "Счет себестоимости"
 
@@ -17830,6 +17833,12 @@ msgstr "Нет проведенных операций в этом период�
 msgid "No posted opening balance"
 msgstr "Нет проведенного открывающего баланса"
 
+msgid "No posted reimbursement lines"
+msgstr ""
+
+msgid "No posted supplier invoice lines"
+msgstr ""
+
 msgid "No pricing for selected quantity"
 msgstr "Нет ценообразования для выбранного количества"
 
@@ -19380,6 +19389,9 @@ msgstr "Оплаченная сумма:"
 
 msgid "Paid Back"
 msgstr "Возвращено"
+
+msgid "Paid By"
+msgstr ""
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
@@ -21921,6 +21933,12 @@ msgstr "Дата возмещения"
 
 msgid "Reimbursement ID"
 msgstr "Номер возмещения"
+
+msgid "Reimbursement line"
+msgstr ""
+
+msgid "Reimbursement Line"
+msgstr ""
 
 msgid "Reimbursement to Employee"
 msgstr "Возмещение сотруднику"
@@ -25936,6 +25954,12 @@ msgstr "Идентификаторы поставщика показаны"
 msgid "Supplier interaction"
 msgstr "Взаимодействие поставщика"
 
+msgid "Supplier invoice line"
+msgstr ""
+
+msgid "Supplier Invoice Line"
+msgstr ""
+
 msgid "Supplier Invoice Number"
 msgstr "Номер счета-фактуры поставщика"
 
@@ -27969,6 +27993,9 @@ msgstr "Это контактное лицо не имеет адреса эле
 
 msgid "This contract's invoices post automatically, so confirming it needs permission to create invoices."
 msgstr "Счета-фактуры этого контракта проводятся автоматически, поэтому его подтверждение требует права доступа для создания счетов-фактур."
+
+msgid "This cost posted to {lineAccount}, not the job's {jobAccount}."
+msgstr ""
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."

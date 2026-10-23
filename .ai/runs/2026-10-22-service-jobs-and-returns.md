@@ -47,6 +47,10 @@
   - ERP My Time: service rows below the project rows, written through `setServiceJobDayHours`, with database tests for 6 cases.
   - Service → Schedule: the dispatch grid on the shared `ScheduleMatrix`, with a backlog panel. Dataset assignments (Task 34 step 8) were not seeded yet.
   - Checks: the erp, mes and utils typecheck passes. Conformance passes. Tests pass: utils (896), MES (93), ERP unit (715). `check:manifest` is current (1746 operations).
+- 2026-10-23: Task 34 step 8 committed (`8965c92ab9`): 4 assignments per dataset in the anchor's week. One open job is left in the backlog. Floor `serviceJobAssignment` 4.
+- 2026-10-23: Task 32 committed (`eaa2e345ff`): MES My Time shows service job cards. The day total writes with the same rules and messages as the ERP. A throwaway script exercised the write path against the local database (9 cases), then cleaned up.
+- 2026-10-23: Task 35 committed. A charge's "Paid By" links a reimbursement line or a supplier invoice line. The cost is the line amount ÷ quantity, and no journal posts from the job. The database test covers $180 at quantity 2 → 90 each with no new journal, a refusal on another job, and unlinking.
+  - Checks: the erp typecheck passes. ERP unit tests pass (715). Conformance passes. The permission tests pass. `check:manifest` is current (1747).
 
 ## Decisions made without Brad
 
@@ -98,6 +102,10 @@
 | 31 | A day with two or more manual entries on a job is refused on My Time | One manual entry per day is the model, and editing several is ambiguous. |
 | 34 | The grid's department list comes from the location's employees, and people from other locations who have assignments get rows | A technician grid has no work centers to take departments from. |
 | 34 | Without `people_view`, shift hours fall back to the location's most common shift length | `employeeShift` row-level security needs `people_view`. |
+| 35 | Only Posted reimbursement lines, and supplier invoice lines on an invoice that is not Draft, Pending or Voided, can be linked | A Draft reimbursement re-creates its lines on save, which would drop the link. |
+| 35 | A supplier line must have an account. Stock part lines are excluded | A stock part gets its cost when it is issued, not through a charge. |
+| 35 | A line already linked to another charge is refused. This is a check before the write, with no unique index | Two people linking at the same moment could both succeed. That is a rare race, and a unique index can come later. |
+| 32 | The MES copies the two ERP messages word for word | The ERP service file was off-limits during the task. Both messages could move to `@carbon/utils` later. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

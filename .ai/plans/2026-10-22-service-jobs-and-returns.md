@@ -109,10 +109,10 @@ Phase 2 — MES, My Time and the dispatch grid
 - [x] Task 29: Create a job from the MES
 - [x] Task 30: Build the MES job page with the clock, parts and signature
 - [x] Task 31: Show service jobs on My Time in the ERP
-- [ ] Task 32: Show service jobs on My Time in the MES
+- [x] Task 32: Show service jobs on My Time in the MES
 - [x] Task 33: Add drag and drop to the People matrix, through a shared matrix component
 - [x] Task 34: Build the dispatch grid
-- [ ] Task 35: Link a charge's cost to a reimbursement or supplier invoice line
+- [x] Task 35: Link a charge's cost to a reimbursement or supplier invoice line
 
 Wrap-up
 

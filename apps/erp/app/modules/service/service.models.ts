@@ -254,7 +254,11 @@ export const serviceJobItemValidator = z.object({
   unitPrice: zfd.numeric(
     z.number().min(0, { message: "Unit price cannot be negative" })
   ),
-  billable: zfd.checkbox()
+  billable: zfd.checkbox(),
+  /** The posted reimbursement line that paid the charge's cost. */
+  reimbursementLineId: zfd.text(z.string().optional()),
+  /** The posted supplier invoice line that paid the charge's cost. */
+  purchaseInvoiceLineId: zfd.text(z.string().optional())
 });
 
 /** A technician scheduled on a job for a day. */
