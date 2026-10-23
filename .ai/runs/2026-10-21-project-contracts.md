@@ -109,3 +109,18 @@ hours. Open: the amendment-after-delivery issue (plan execution notes, Task 30).
 4. Known gaps kept: amend, cancel and renewal re-plan a Fixed Price line's remaining billing
    events into one row; the burden run has no journal preview; the Review step has no
    overlap (P7) gap — Confirm still refuses it.
+
+## Tasks 39–43 browser check (2026-10-23)
+
+ERP https://erp.projects-wbs-research-spec.dev, user test@carbon.ms. Screenshots `.context/s11-*.png`.
+
+| # | Check | Result |
+|---|-------|--------|
+| 1 | Task OB2-6 header shows **New Job**; the modal defaults quantity 1, due date = task target (2026-11-30), location = project's plant | PASS |
+| 2 | New Job with PCB-ADCS-R1 creates J000023: consume-to-project, charged to OB2-6, one plan line with its `jobId`; redirects to the job | PASS |
+| 3 | The task's Estimated tab shows the PCB-ADCS-R1 plan line linked to J000023 | PASS |
+| 4 | Amend CON000008 (project contract): **Add Lines** offers parts; the added row is Fixed Price, One-time, Qty 1, rate editable | PASS |
+| 5 | Its preview keeps the delivered $40,000 on Oct 22 and the remainder on Oct 31, and adds only the new line (cancelled, not saved) | PASS |
+| 6 | My Time row of a shop entry reads "J000023 · SMT placement & reflow · Test Technician" (temporary Draft entry, deleted after) | PASS |
+
+Not checked in the browser: the MES timesheet label (unit test `projects.timesheet-rows.test.ts`), the event sync and the refusal (DB tests in `project-event.test.ts`).

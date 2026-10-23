@@ -1,6 +1,6 @@
 # Prototype CLIN (part CLIN → Build → Deliver)
 
-Last tested: 2026-10-22
+Last tested: 2026-10-23
 Routes: /x/contract/:id/setup/products, /x/contract/:id/:lineId/details,
 /x/project/:projectId/element/:elementId, /x/shipment/:id/details,
 /file/shipment/:id.pdf
@@ -30,6 +30,14 @@ Needs a completed unit (job.quantityComplete). Line page header "Deliver" (a for
 "Delivered on" → requestSubmit its form.
 ### 6. PDF
 Open /file/shipment/:id.pdf → "Receiving Report".
+
+### 7. New Job on a task
+Element page header → "New Job" → modal: Part combobox (click, type, pick option), Quantity,
+Due Date (defaults to the task's target date), Location. requestSubmit the dialog's form →
+/x/job/:id/details. The Estimated tab shows the plan line linked to the job.
+### 8. Amend with a part
+Contract page → "Amend" → "Add Lines" → combobox (type, pick), Escape, click "Add". The row
+is One-time, Qty 1. requestSubmit the dialog's form shows the preview step.
 
 ## Selector Notes
 - The serial textbox is the last textbox on the line row.
