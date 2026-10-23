@@ -20,6 +20,7 @@ vi.mock("@lingui/core/macro", () => ({
 
 const {
   contractBillingMethodsFor,
+  contractLineNextStep,
   contractRevenueMethodsFor,
   contractTermFromServicePeriods,
   customerContractValidator,
@@ -663,5 +664,50 @@ describe("projectContractFunded", () => {
         }
       ])
     ).toBe(200000);
+  });
+});
+
+describe("contractLineNextStep", () => {
+  const part = { isPart: true, quantity: 2 };
+  const job = (quantity: number, quantityComplete: number) => ({
+    quantity,
+    quantityComplete,
+    status: "In Progress"
+  });
+
+  it("builds a part line with no job", () => {
+    expect(contractLineNextStep(part, [], 0)).toBe("build");
+  });
+
+  it("delivers what a job completed and was not delivered", () => {
+    expect(contractLineNextStep(part, [job(2, 1)], 0)).toBe("deliver");
+  });
+
+  it("builds the rest once the completed units are delivered", () => {
+    expect(contractLineNextStep(part, [job(1, 1)], 1)).toBe("build");
+  });
+
+  it("has no step once every unit is delivered", () => {
+    expect(contractLineNextStep(part, [job(2, 2)], 2)).toBeNull();
+  });
+
+  it("waits while the jobs build every unit and none is complete", () => {
+    expect(contractLineNextStep(part, [job(2, 0)], 0)).toBeNull();
+  });
+
+  it("ignores a cancelled job", () => {
+    expect(
+      contractLineNextStep(
+        part,
+        [{ quantity: 2, quantityComplete: 0, status: "Cancelled" }],
+        0
+      )
+    ).toBe("build");
+  });
+
+  it("has no step for a Service line", () => {
+    expect(
+      contractLineNextStep({ isPart: false, quantity: 1 }, [], 0)
+    ).toBeNull();
   });
 });

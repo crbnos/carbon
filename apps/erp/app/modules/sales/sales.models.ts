@@ -2020,6 +2020,27 @@ const contractLineFundingFields = {
 };
 
 /** The funding of one billing line, edited on an Active contract (P9). */
+/**
+ * The one action a part CLIN shows next (spec section 10.2, D35), as JAMIS
+ * guides a user to the next step: Deliver while a job has completed units
+ * that are not delivered, else Build while the jobs do not cover the line's
+ * quantity, else nothing. A Service line has no step. A cancelled job counts
+ * for nothing.
+ */
+export function contractLineNextStep(
+  line: { isPart: boolean; quantity: number },
+  jobs: { quantity: number; quantityComplete: number; status: string }[],
+  delivered: number
+): "build" | "deliver" | null {
+  if (!line.isPart) return null;
+  const live = jobs.filter((job) => job.status !== "Cancelled");
+  const completed = live.reduce((sum, job) => sum + job.quantityComplete, 0);
+  const building = live.reduce((sum, job) => sum + job.quantity, 0);
+  if (Math.min(completed, line.quantity) > delivered) return "deliver";
+  if (building < line.quantity) return "build";
+  return null;
+}
+
 /** Build on a part CLIN (spec section 10.2): the job's task, quantity, due
  *  date and location. Every other job setting follows from the CLIN. */
 export const contractLineBuildValidator = z.object({

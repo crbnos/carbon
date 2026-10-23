@@ -48,7 +48,58 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { line: line.data };
+  // A part CLIN (spec section 10): the jobs that build it and the deliveries
+  // that hand it over, for its next step. Read with the user's client, so a
+  // user without production or inventory access sees none.
+  if (line.data.item?.type !== "Part") {
+    return { line: line.data, prototype: null };
+  }
+  const [jobs, deliveries, task] = await Promise.all([
+    client
+      .from("job")
+      .select("id, jobId, status, quantity, quantityComplete")
+      .eq("customerContractLineId", lineId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("shipmentLine")
+      .select(
+        "id, shippedQuantity, shipment!inner(id, shipmentId, status, sourceDocument, postingDate)"
+      )
+      .eq("lineId", lineId)
+      .eq("companyId", companyId)
+      .eq("shipment.sourceDocument", "Customer Contract")
+      .order("createdAt"),
+    line.data.projectElementId
+      ? client
+          .from("projectElement")
+          .select("targetDate")
+          .eq("id", line.data.projectElementId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+  const delivered = (deliveries.data ?? [])
+    .filter((row) => row.shipment.status === "Posted")
+    .reduce((sum, row) => sum + Number(row.shippedQuantity), 0);
+
+  return {
+    line: line.data,
+    prototype: {
+      jobs: (jobs.data ?? []).map((job) => ({
+        ...job,
+        quantity: Number(job.quantity),
+        quantityComplete: Number(job.quantityComplete)
+      })),
+      deliveries: (deliveries.data ?? []).map((row) => ({
+        id: row.id,
+        shippedQuantity: Number(row.shippedQuantity),
+        shipment: row.shipment
+      })),
+      delivered,
+      taskTargetDate: task.data?.targetDate ?? null
+    }
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -113,7 +164,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 /** One line of the contract. Editable while the contract is a Draft; an
  *  Active contract's lines change through Amend. */
 export default function ContractLineRoute() {
-  const { line } = useLoaderData<typeof loader>();
+  const { line, prototype } = useLoaderData<typeof loader>();
 
   const routeData = useRouteData<ContractRouteData>(
     path.to.contract(line.customerContractId)
@@ -125,7 +176,18 @@ export default function ContractLineRoute() {
   // Only a Draft's lines change; a locked line reads as text.
   if (contract.status !== "Draft") {
     return (
-      <ContractLineSummary line={line} currencyCode={contract.currencyCode} />
+      <ContractLineSummary
+        line={line}
+        currencyCode={contract.currencyCode}
+        prototype={
+          prototype && contract.status === "Active"
+            ? {
+                ...prototype,
+                projectId: line.projectId ?? contract.projectId ?? null
+              }
+            : null
+        }
+      />
     );
   }
 

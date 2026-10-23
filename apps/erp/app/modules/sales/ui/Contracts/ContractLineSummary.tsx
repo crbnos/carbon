@@ -2,14 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  HStack
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { ReadOnlyField, ReadOnlyFields } from "~/components";
+import { useState } from "react";
+import { LuHammer, LuTruck } from "react-icons/lu";
+import { useFetcher } from "react-router";
+import { Hyperlink, ReadOnlyField, ReadOnlyFields } from "~/components";
 import {
   useCurrencyFormatter,
   useDateFormatter,
   usePercentFormatter,
+  usePermissions,
   useQuantityFormatter,
   useRouteData
 } from "~/hooks";
@@ -19,14 +30,42 @@ import type {
   contractRevenueMethods,
   contractRevenueTypes
 } from "../../sales.models";
-import { isProjectBillingMethod } from "../../sales.models";
+import {
+  contractLineNextStep,
+  isProjectBillingMethod
+} from "../../sales.models";
 import type { getContractLine } from "../../sales.service";
 import { useBillingMethodLabels } from "./ContractLineBillingFields";
+import ContractLineBuildModal from "./ContractLineBuildModal";
 import type { ContractRouteData } from "./types";
 
 type ContractLineRow = NonNullable<
   Awaited<ReturnType<typeof getContractLine>>["data"]
 >;
+
+/** A part CLIN on an Active contract: what builds it and what delivered it. */
+type ContractLinePrototype = {
+  projectId: string | null;
+  jobs: {
+    id: string;
+    jobId: string;
+    status: string;
+    quantity: number;
+    quantityComplete: number;
+  }[];
+  deliveries: {
+    id: string;
+    shippedQuantity: number;
+    shipment: {
+      id: string;
+      shipmentId: string;
+      status: string;
+      postingDate: string | null;
+    };
+  }[];
+  delivered: number;
+  taskTargetDate: string | null;
+};
 
 /**
  * A line of a contract that is no longer a Draft, as text: the fields of
@@ -35,12 +74,17 @@ type ContractLineRow = NonNullable<
  */
 export default function ContractLineSummary({
   line,
-  currencyCode
+  currencyCode,
+  prototype = null
 }: {
   line: ContractLineRow;
   currencyCode: string;
+  prototype?: ContractLinePrototype | null;
 }) {
   const { t } = useLingui();
+  const permissions = usePermissions();
+  const deliverFetcher = useFetcher();
+  const [isBuilding, setIsBuilding] = useState(false);
   const { formatDate } = useDateFormatter();
   const formatMoney = useCurrencyFormatter({ currency: currencyCode });
   const formatRate = useCurrencyFormatter({
@@ -102,13 +146,63 @@ export default function ContractLineSummary({
     </span>
   ) : null;
 
+  // The CLIN's one next action (D35): Build, then Deliver.
+  const nextStep = prototype
+    ? contractLineNextStep(
+        { isPart: true, quantity: Number(line.quantity) },
+        prototype.jobs,
+        prototype.delivered
+      )
+    : null;
+  const buildingQuantity = (prototype?.jobs ?? [])
+    .filter((job) => job.status !== "Cancelled")
+    .reduce((sum, job) => sum + job.quantity, 0);
+  const canBuild =
+    permissions.can("update", "sales") &&
+    permissions.can("create", "production");
+  const canDeliver =
+    permissions.can("update", "sales") &&
+    permissions.can("create", "inventory");
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>
-          {line.description || line.item?.name || line.itemId}
-        </CardTitle>
-      </CardHeader>
+      <HStack className="w-full items-start justify-between">
+        <CardHeader>
+          <CardTitle>
+            {line.description || line.item?.name || line.itemId}
+          </CardTitle>
+        </CardHeader>
+        {nextStep === "build" && prototype?.projectId && (
+          <div className="p-6">
+            <Button
+              leftIcon={<LuHammer />}
+              isDisabled={!canBuild}
+              onClick={() => setIsBuilding(true)}
+            >
+              <Trans>Build</Trans>
+            </Button>
+          </div>
+        )}
+        {nextStep === "deliver" && (
+          <deliverFetcher.Form
+            method="post"
+            action={path.to.contractLineDeliver(
+              line.customerContractId,
+              line.id
+            )}
+            className="p-6"
+          >
+            <Button
+              type="submit"
+              leftIcon={<LuTruck />}
+              isDisabled={!canDeliver || deliverFetcher.state !== "idle"}
+              isLoading={deliverFetcher.state !== "idle"}
+            >
+              <Trans>Deliver</Trans>
+            </Button>
+          </deliverFetcher.Form>
+        )}
+      </HStack>
       <CardContent className="flex flex-col gap-4">
         <ReadOnlyFields>
           <ReadOnlyField label={t`Billing Method`} termId="billing-method">
@@ -267,10 +361,78 @@ export default function ContractLineSummary({
           </ReadOnlyFields>
         </div>
 
+        {prototype && (
+          <div className="flex flex-col gap-3 border-t border-border pt-4">
+            <span className="text-xs font-medium text-muted-foreground">
+              <Trans>Jobs</Trans>
+            </span>
+            {prototype.jobs.length === 0 ? (
+              <span className="text-sm text-muted-foreground">
+                <Trans>No job builds this line yet.</Trans>
+              </span>
+            ) : (
+              prototype.jobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <Hyperlink to={path.to.job(job.id)}>{job.jobId}</Hyperlink>
+                  <span className="text-muted-foreground tabular-nums">
+                    {t`${formatQuantity(job.quantityComplete)} of ${formatQuantity(job.quantity)} complete`}{" "}
+                    · {job.status}
+                  </span>
+                </div>
+              ))
+            )}
+            <span className="text-xs font-medium text-muted-foreground">
+              <Trans>Deliveries</Trans>
+            </span>
+            {prototype.deliveries.length === 0 ? (
+              <span className="text-sm text-muted-foreground">
+                <Trans>Nothing delivered yet.</Trans>
+              </span>
+            ) : (
+              prototype.deliveries.map((delivery) => (
+                <div
+                  key={delivery.id}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <Hyperlink to={path.to.shipmentDetails(delivery.shipment.id)}>
+                    {delivery.shipment.shipmentId}
+                  </Hyperlink>
+                  <span className="text-muted-foreground tabular-nums">
+                    {formatQuantity(delivery.shippedQuantity)} ·{" "}
+                    {delivery.shipment.postingDate
+                      ? formatDate(delivery.shipment.postingDate)
+                      : delivery.shipment.status}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         <p className="text-sm text-muted-foreground">
           <Trans>Change lines with Amend.</Trans>
         </p>
       </CardContent>
+      {isBuilding && prototype?.projectId && (
+        <ContractLineBuildModal
+          contractId={line.customerContractId}
+          lineId={line.id}
+          projectId={prototype.projectId}
+          itemLabel={
+            line.item?.readableIdWithRevision ?? line.item?.name ?? line.itemId
+          }
+          defaultElementId={line.projectElementId}
+          defaultQuantity={Math.max(
+            Number(line.quantity) - buildingQuantity,
+            1
+          )}
+          defaultDueDate={prototype.taskTargetDate}
+          onClose={() => setIsBuilding(false)}
+        />
+      )}
     </Card>
   );
 }

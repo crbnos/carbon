@@ -414,6 +414,11 @@ msgstr "{0} di {1}"
 msgid "{0} of {1} {2} issued"
 msgstr "{0} di {1} {2} emessi"
 
+#. placeholder {0}: formatQuantity(job.quantityComplete)
+#. placeholder {1}: formatQuantity(job.quantity)
+msgid "{0} of {1} complete"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
@@ -9226,6 +9231,8 @@ msgstr "Consegnato il"
 
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "Le consegne vengono firmate con la nuova chiave immediatamente. Aggiorna il tuo endpoint con essa."
+msgid "Deliveries"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "Data di consegna"
@@ -17568,6 +17575,8 @@ msgstr "Nessun articolo ha attività di inventario qui ancora."
 
 msgid "No job at this location has an open operation."
 msgstr "Nessun ordine di produzione in questa ubicazione ha un'operazione aperta."
+msgid "No job builds this line yet."
+msgstr ""
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Nessun ordine di produzione programmato in questa ubicazione ancora — rilascia un ordine di produzione per visualizzare il carico del centro di lavoro."
@@ -18309,6 +18318,9 @@ msgstr "Nulla in questa posizione corrisponde a \"{0}\"."
 
 msgid "Nothing completed in MES yet"
 msgstr "Nulla ancora completato in MES"
+
+msgid "Nothing delivered yet."
+msgstr ""
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Niente altro in questa posizione ha stock da cui prelevare."

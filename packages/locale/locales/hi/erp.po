@@ -414,6 +414,11 @@ msgstr "{0} में से {1}"
 msgid "{0} of {1} {2} issued"
 msgstr "{0} में से {1} {2} जारी किया गया"
 
+#. placeholder {0}: formatQuantity(job.quantityComplete)
+#. placeholder {1}: formatQuantity(job.quantity)
+msgid "{0} of {1} complete"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
@@ -9226,6 +9231,8 @@ msgstr "को डिलीवर किया गया"
 
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "डिलीवरीज़ नए रहस्य के साथ तुरंत हस्ताक्षरित की जाती हैं। अपना एंडपॉइंट इससे अपडेट करें।"
+msgid "Deliveries"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
@@ -17568,6 +17575,8 @@ msgstr "अभी तक यहाँ कोई आइटम इन्वें�
 
 msgid "No job at this location has an open operation."
 msgstr "इस स्थान पर कोई जॉब खुला ऑपरेशन नहीं है।"
+msgid "No job builds this line yet."
+msgstr ""
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "इस स्थान पर अभी तक कोई जॉब शेड्यूल नहीं किया गया है — वर्क-सेंटर लोड देखने के लिए एक जॉब जारी करें।"
@@ -18309,6 +18318,9 @@ msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल 
 
 msgid "Nothing completed in MES yet"
 msgstr "MES में अभी तक कुछ भी पूर्ण नहीं हुआ"
+
+msgid "Nothing delivered yet."
+msgstr ""
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"

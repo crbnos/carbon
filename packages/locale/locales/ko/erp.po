@@ -414,6 +414,11 @@ msgstr "{0}/{1}"
 msgid "{0} of {1} {2} issued"
 msgstr "{0}/{1} {2} 발급됨"
 
+#. placeholder {0}: formatQuantity(job.quantityComplete)
+#. placeholder {1}: formatQuantity(job.quantity)
+msgid "{0} of {1} complete"
+msgstr ""
+
 #. placeholder {0}: formatQuantity(card.actualQuantity ?? 0)
 #. placeholder {1}: formatQuantity( card.plannedQuantity ?? 0 )
 msgid "{0} of {1} h"
@@ -9226,6 +9231,8 @@ msgstr "배송일"
 
 msgid "Deliveries are signed with the new secret at once. Update your endpoint with it."
 msgstr "전달이 즉시 새 비밀키로 서명됩니다. 엔드포인트를 업데이트하세요."
+msgid "Deliveries"
+msgstr ""
 
 msgid "Delivery Date"
 msgstr "납기일"
@@ -17568,6 +17575,8 @@ msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
 msgid "No job at this location has an open operation."
 msgstr "이 사업장에는 미결 공정이 있는 작업 지시가 없습니다."
+msgid "No job builds this line yet."
+msgstr ""
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "아직 이 사업장에 스케줄된 작업 지시가 없습니다 — 작업 지시를 릴리스하여 작업장 부하를 확인하세요."
@@ -18309,6 +18318,9 @@ msgstr "이 위치에서 \"{0}\"와 일치하는 항목이 없습니다."
 
 msgid "Nothing completed in MES yet"
 msgstr "MES에서 아직 완료된 항목이 없습니다"
+
+msgid "Nothing delivered yet."
+msgstr ""
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
