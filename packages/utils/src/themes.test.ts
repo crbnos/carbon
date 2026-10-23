@@ -55,13 +55,16 @@ describe("destructive colour contrast", () => {
     }
   );
 
-  it("zinc dark: destructive text on every surface", () => {
-    const vars = themes.find((t) => t.name === "zinc")!.cssVars.dark;
-    for (const surface of SURFACES) {
-      expect(
-        contrast(vars.destructive, vars[surface]),
-        surface
-      ).toBeGreaterThanOrEqual(TEXT);
+  it.each(themes.map((theme) => theme.name))(
+    "%s dark: destructive text on every surface",
+    (name) => {
+      const vars = themes.find((t) => t.name === name)!.cssVars.dark;
+      for (const surface of SURFACES) {
+        expect(
+          contrast(vars.destructive, vars[surface]),
+          surface
+        ).toBeGreaterThanOrEqual(TEXT);
+      }
     }
-  });
+  );
 });
