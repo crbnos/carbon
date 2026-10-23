@@ -483,6 +483,9 @@ both choices visible with an upgrade notice (`ProjectRevenueUpgrade`) and Save d
   deleted (an invoice dated on or after the change that holds one keeps it and loses its
   other rows). On a project contract an amendment also passes `onlyLineIds` (the lines
   it ended or added), so the authored billing events of every other line keep their
-  dates. Pinned by `contract-schedule.test.ts` and `post-shipment/customer-contract.test.ts`.
+  dates. A `change` to a line with a Posted delivery is refused ("… has deliveries, so
+  it cannot be changed. End it and add a line for what is left."): the copy would bill
+  the whole price again while the delivered row stays. Pinned by
+  `contract-schedule.test.ts` and `test/database/post-shipment/customer-contract.test.ts`.
 - On a project contract the amend modal's **Add Lines** offers parts and services; every
   added line is One-time, and a part line keeps its quantity and (Fixed) unit price.

@@ -516,3 +516,49 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a change to a delivered Fixed Price line is refused, so its delivered share never bills twice",
+  async () => {
+    const f = await deliveryFixture();
+    const { ctx } = f;
+    try {
+      const shipmentId = await f.deliver(f.fixedLineId);
+      expect(
+        (
+          await invokePosting(
+            handlesOf(ctx),
+            "post-shipment",
+            { type: "post", shipmentId, postingDate: "2026-06-01" },
+            postShipment
+          )
+        ).error
+      ).toBeNull();
+
+      const amendment = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        {
+          type: "amend",
+          customerContractId: f.contractId,
+          asOf: "2026-06-15",
+          amendmentDate: "2026-07-01",
+          effect: "Change Date",
+          contractType: "Expansion",
+          reason: "A dearer unit",
+          changes: [{ op: "change", lineId: f.fixedLineId, rate: 50_000 }]
+        },
+        postCustomerContract
+      );
+      expect(amendment.error?.message).toMatch(
+        /has deliveries, so it cannot be changed/
+      );
+      expect(await f.schedule()).toEqual([
+        ["2026-06-01", 40_000],
+        ["2026-12-31", 40_000]
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

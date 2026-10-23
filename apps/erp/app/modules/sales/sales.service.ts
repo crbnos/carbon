@@ -19905,6 +19905,34 @@ async function amend(
         }
       }
 
+      // A change re-plans a line at its whole price on a new line, but a
+      // delivery has already moved part of that price onto its delivery
+      // date (spec section 10.4, D34): the delivered share would bill twice.
+      const changedIds = payload.changes.flatMap((change) =>
+        change.op === "change" ? [change.lineId] : []
+      );
+      if (changedIds.length > 0) {
+        const delivered = await trx
+          .selectFrom("shipmentLine as sl")
+          .innerJoin("shipment as s", (join) =>
+            join
+              .onRef("s.id", "=", "sl.shipmentId")
+              .onRef("s.companyId", "=", "sl.companyId")
+          )
+          .select("sl.lineId")
+          .where("s.sourceDocument", "=", "Customer Contract")
+          .where("s.sourceDocumentId", "=", contract.id)
+          .where("s.status", "=", "Posted")
+          .where("sl.lineId", "in", changedIds)
+          .where("sl.companyId", "=", companyId)
+          .executeTakeFirst();
+        if (delivered?.lineId) {
+          throw new InvalidInputError(
+            `${label(openLine(delivered.lineId, "change"))} has deliveries, so it cannot be changed. End it and add a line for what is left.`
+          );
+        }
+      }
+
       // The next line set: end dates to write and lines to insert.
       const ends: {
         id: string;
