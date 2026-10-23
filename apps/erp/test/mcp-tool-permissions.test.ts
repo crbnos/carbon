@@ -169,7 +169,15 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   projects_upsertLaborCategory: { module: null, actions: [] },
   projects_getContractBillableItems: { module: null, actions: [] },
   projects_getContractBillingLines: { module: null, actions: [] },
-  projects_updateProjectBillableItems: { module: null, actions: [] }
+  projects_updateProjectBillableItems: { module: null, actions: [] },
+  // Changing a warranty return line to a billable service line edits the RMA
+  // (sales) AND re-posts the job's coverage (service); the API cannot name
+  // two modules, so the operation's own gate checks both.
+  sales_changeReturnLineToService: { module: null, actions: [] },
+  // Invoicing a completed service job needs service_update AND
+  // invoicing_create (the old service order invoice's rule); the operation's
+  // own gate checks both.
+  service_createServiceInvoice: { module: null, actions: [] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));

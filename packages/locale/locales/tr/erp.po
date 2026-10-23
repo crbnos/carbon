@@ -505,6 +505,7 @@ msgid "{0} scrapped"
 msgstr "{0} hurdaya alındı"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selected.size
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} seçildi"
@@ -697,6 +698,9 @@ msgstr "{count} bağlantılı element değişti. Bağlantıları inceleyiniz."
 msgid "{count} of {total} units"
 msgstr "{count}/{total} adet"
 
+msgid "{count} results"
+msgstr ""
+
 msgid "{count} units"
 msgstr "{count} adet"
 
@@ -750,6 +754,9 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# parça oluşturuldu} other {# parçalar oluşturuldu}}"
@@ -1778,6 +1785,9 @@ msgstr "Bir kira sözleşmesi, etkinleştirilmek için şirketin temel para biri
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Beş ASC 842 kira testinden herhangi birini karşılayan bir kiralama, sözleşmesi etkinleştirildiğinde satış olarak muhasebeleştirilen: birim filo ayrılır, kira hasılatı ve satılan malın maliyeti muhasebeleştirilir ve kiralamada net yatırım yerini alır."
 
+msgid "A replacement at no charge is added to the return's replacement order. Its cost goes to warranty expense when it ships. Scrap the old unit afterwards."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "İade malı yetkilendirmesi (RMA), bir müşterinin kredi, yedek veya onarım için malları iade etmesine yetki verir."
 
@@ -1867,6 +1877,9 @@ msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdi�
 
 msgid "A serial's build history"
 msgstr "Bir serininin yapım geçmişi"
+
+msgid "A serialized unit becomes a customer asset when its shipment posts. Register older units under Service → Customer Assets."
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
@@ -2572,6 +2585,9 @@ msgstr "Olay Ekle"
 msgid "Add Fixed Asset"
 msgstr "Sabit Kıymet Ekle"
 
+msgid "Add from assets"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "Kütüphaneden ekle…"
 
@@ -2616,6 +2632,9 @@ msgstr "Satır Ekle"
 
 msgid "Add Lines"
 msgstr "Satır Ekle"
+
+msgid "Add lines from assets"
+msgstr ""
 
 msgid "Add lines from document"
 msgstr "Belgeden satır ekle"
@@ -2975,6 +2994,9 @@ msgstr "Tüm gelişmiş özellikler kullanılabilir"
 
 msgid "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
 msgstr "Tüm tutarlar tam dolar cinsindendir. Sütunlar 53, Toplam QRE ve Toplam satırı yuvarlatılmış tutarları ekler."
+
+msgid "All assets"
+msgstr ""
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Günlükleri"
@@ -4619,6 +4641,9 @@ msgstr "Kapatma Ortalama Günler"
 msgid "Awaiting approval"
 msgstr "Onay bekliyor"
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "BAC"
 msgstr "BAC"
 
@@ -4904,6 +4929,9 @@ msgstr "Fatura Adresi"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Bir kısmi dönem ilk olarak olmak üzere, tam ayları, çeyrekleri veya yılları faturala."
 
+msgid "Billable"
+msgstr ""
+
 msgid "Billable item"
 msgstr "Faturalandırılabilir öğe"
 
@@ -4918,6 +4946,9 @@ msgstr "Faturalandırılmış"
 
 msgid "Billed Externally"
 msgstr "Harici Olarak Faturalandırıldı"
+
+msgid "Billed Item"
+msgstr ""
 
 msgid "Billed On"
 msgstr "Faturalandığı Tarih"
@@ -5399,8 +5430,8 @@ msgid "Cancel"
 msgstr "İptal"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: job?.serviceJobId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "İptal Et {0}"
 
@@ -5795,6 +5826,9 @@ msgstr "Stok kartı türünü değiştir (örn. Parça, Malzeme, Takım, vb.)"
 msgid "Change Time"
 msgstr "Zamanı Değiştir"
 
+msgid "Change to Return for Service"
+msgstr ""
+
 msgid "Change type"
 msgstr "Türü değiştir"
 
@@ -5965,6 +5999,9 @@ msgstr "Bir parti numarası seçin"
 
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebilir bir işlem seçin."
+
+msgid "Choose a customer"
+msgstr ""
 
 msgid "Choose a labor category or an employee"
 msgstr "Bir işçilik kategorisi veya bir çalışan seç"
@@ -7094,6 +7131,9 @@ msgstr "Sorun numarasını kopyala"
 msgid "Copy issue unique identifier"
 msgstr "Sorun benzersiz tanımlayıcısını kopyala"
 
+msgid "Copy job number"
+msgstr ""
+
 msgid "Copy Job number"
 msgstr "İş Numarasını Kopyala"
 
@@ -7126,6 +7166,9 @@ msgstr "Belge bağlantısını kopyala"
 
 msgid "Copy link to issue"
 msgstr "Sorun bağlantısını kopyala"
+
+msgid "Copy link to job"
+msgstr ""
 
 msgid "Copy link to Job"
 msgstr "İş Bağlantısını Kopyala"
@@ -8083,6 +8126,9 @@ msgstr "Müşteri Hesapları"
 msgid "Customer and supplier pages"
 msgstr "Müşteri ve tedarikçi sayfaları"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "Müşteri Varlıkları"
 
@@ -8205,6 +8251,9 @@ msgstr "Müşteri RFQ"
 
 msgid "Customer Scope"
 msgstr "Müşteri Kapsamı"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "customer status"
 msgstr "müşteri durumu"
@@ -9220,6 +9269,9 @@ msgstr "Depozito:"
 msgid "Deposits"
 msgstr "Depozitolar"
 
+msgid "Depot"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "Amortisman"
 
@@ -9887,6 +9939,9 @@ msgstr "Her tutar, satırın faturalandırılacak kalanından başlar."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Her tutar, satırın muhasebeleştirilecek kalanından başlar."
 
+msgid "Each asset becomes one line for one unit. A unit under warranty is a Return for Warranty, any other a Return for Service."
+msgstr ""
+
 msgid "Each asset is accounted for on its own, at its own payment. Click a cell to change it."
 msgstr "Her varlık kendi ödeme oranında bağımsız olarak muhasebeleştirilir. Değiştirmek için bir hücreyi tıklayın."
 
@@ -10190,6 +10245,9 @@ msgstr "Kontrol Planı Düzenle"
 
 msgid "Edit Item Group"
 msgstr "Ürün Grubunu Düzenle"
+
+msgid "Edit Job"
+msgstr ""
 
 msgid "Edit Journal Entry"
 msgstr "Yevmiye Kaydını Düzenle"
@@ -11611,6 +11669,9 @@ msgstr "Tedarikçi teklifi satırı eklenemedi"
 msgid "Failed to load configuration parameters"
 msgstr "Yapılandırma parametreleri yüklenemedi"
 
+msgid "Failed to load customer assets"
+msgstr ""
+
 msgid "Failed to load customer part details"
 msgstr "Müşteri parça ayrıntıları yüklenemedi"
 
@@ -12005,6 +12066,9 @@ msgstr "Şirket ara…"
 
 msgid "Find module…"
 msgstr "Modül ara…"
+
+msgid "Findings"
+msgstr ""
 
 msgid "finish"
 msgstr "Bitmiş ürünler"
@@ -14396,6 +14460,9 @@ msgstr "Düzenlemeye devam et"
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
 
+msgid "Keep Job"
+msgstr ""
+
 msgid "Keep Line"
 msgstr "Satırı koru"
 
@@ -15103,6 +15170,9 @@ msgstr "Şablonları Yükle"
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Son yüklenen, kesme noktasında hemen, bu nedenle bakiyeler günceldir."
+
+msgid "Loading assets..."
+msgstr ""
 
 msgid "Loading associated jobs..."
 msgstr "İlişkili iş emirleri yükleniyor..."
@@ -16760,6 +16830,9 @@ msgstr "Yeni Seri Numarası"
 msgid "New Service"
 msgstr "Yeni Hizmet"
 
+msgid "New Service Job"
+msgstr ""
+
 msgid "New Shift"
 msgstr "Yeni Vardiya"
 
@@ -17001,8 +17074,14 @@ msgstr "Henüz onay gereklilikleri yok."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Henüz arşivlenmiş günlük yok. {0} günden eski günlükler otomatik olarak arşivlenecek ve buradan indirilmeye hazır olacaktır."
 
+msgid "No asset"
+msgstr ""
+
 msgid "No assets"
 msgstr "Varlık yok"
+
+msgid "No assets match your search"
+msgstr ""
 
 msgid "No assets to depreciate for this period."
 msgstr "Bu dönem için amortisman yapılacak varlık yok."
@@ -17270,6 +17349,9 @@ msgstr "Hiç çalışan bulunamadı"
 msgid "No end"
 msgstr "Bitiş tarihi yok"
 
+msgid "No estimate lines"
+msgstr ""
+
 msgid "No estimated costs."
 msgstr "Tahmini maliyet yok."
 
@@ -17308,6 +17390,9 @@ msgstr "Bu öğe için dosya yok."
 
 msgid "No files uploaded"
 msgstr "Yüklenmiş dosya yok"
+
+msgid "No findings"
+msgstr ""
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "Cutover tarihinden ön hiçbir sabit kıymet satın alınmamıştır."
@@ -17574,6 +17659,9 @@ msgstr "Parça yok"
 msgid "No parts changed."
 msgstr "Hiçbir parça değiştirilmedi."
 
+msgid "No parts or charges"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Henüz hiçbir geçiş anahtarı kaydedilmedi."
 
@@ -17646,6 +17734,9 @@ msgstr "Yapılandırılmış yazıcı yok. Bir tane oluşturmak için \"Yazıcı
 msgid "No priority"
 msgstr "Öncelik yok"
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No process selected"
 msgstr "Hiçbir işlem seçilmedi"
 
@@ -17714,6 +17805,9 @@ msgstr "Bu Şirketin henüz hiç temsilcisi Carbon GovCloud Rider'ı Kabul etmem
 
 msgid "No requests yet."
 msgstr "Henüz istek yok."
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "Sonuç bulunamadı"
@@ -17832,6 +17926,9 @@ msgstr "Henüz senkronizasyon operasyonu yok"
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
+msgid "No time logged"
+msgstr ""
+
 msgid "No time this week"
 msgstr "Bu hafta zaman kaydı yok"
 
@@ -17906,6 +18003,12 @@ msgstr "Henüz çalışma paketi yok. Kontrol hesabının altındaki ücretlendi
 
 msgid "No work yet. <0>Plan the project</0>"
 msgstr "Henüz iş yok. <0>Projeyi planlayın</0>"
+
+msgid "No-charge replacement"
+msgstr ""
+
+msgid "No-charge Replacement"
+msgstr ""
 
 msgid "Nom"
 msgstr "Nom"
@@ -18324,6 +18427,9 @@ msgstr "Eksik Zaman raporunda"
 
 msgid "On this operation"
 msgstr "Bu operasyonda"
+
+msgid "On this RMA"
+msgstr ""
 
 msgid "On time"
 msgstr "Zamanında"
@@ -20288,6 +20394,9 @@ msgstr "Gizlilik Politikası"
 msgid "Private"
 msgstr "Gizli"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "prosedürler"
 
@@ -22074,6 +22183,12 @@ msgstr "Yeniden Sipariş Politikası"
 msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 msgstr "Sadece sevkiyat sırasını ve İş merkezini yeniden düzenler — çizelgeyi yeniden hazırlamaz. Tarihleri Tarihler panosunda değiştirin."
 
+msgid "Repair or service a customer's unit, at the depot or on site"
+msgstr ""
+
+msgid "Repairable"
+msgstr ""
+
 msgid "Repeat Run"
 msgstr "Tekrar Çalıştır"
 
@@ -22356,6 +22471,9 @@ msgstr "Kalıntı değer"
 msgid "Residual Value %"
 msgstr "Kalıntı Değer %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr "Çöz"
 
@@ -22471,6 +22589,12 @@ msgstr "Geri alma'yı tekrar dene"
 msgid "Return"
 msgstr "İade"
 
+msgid "Return for Service"
+msgstr ""
+
+msgid "Return for Warranty"
+msgstr ""
+
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
 
@@ -22512,6 +22636,12 @@ msgstr "Hizmete Döndür"
 
 msgid "Return to stock"
 msgstr "Stoğa Döndür"
+
+msgid "Return to Stock"
+msgstr ""
+
+msgid "Return Type"
+msgstr ""
 
 msgid "returnable"
 msgstr "iadesine uygun"
@@ -23429,6 +23559,12 @@ msgstr "Fire nedenleri"
 msgid "Scrap Reasons"
 msgstr "Fire Nedenleri"
 
+msgid "Scrap the unit"
+msgstr ""
+
+msgid "Scrap Unit"
+msgstr ""
+
 msgid "Scrapped"
 msgstr "Çıkartıldı"
 
@@ -23819,6 +23955,9 @@ msgstr "Tedarikçi Türü Seçin"
 msgid "Select surfaces"
 msgstr "Yüzeyleri seç"
 
+msgid "Select the customer's units to service or replace under warranty."
+msgstr ""
+
 msgid "Select the groups that should complete this training"
 msgstr "Bu eğitimi tamamlaması gereken grupları seçin"
 
@@ -24012,6 +24151,12 @@ msgstr "Hizmet Bitiş Tarihi"
 msgid "Service ID"
 msgstr "Hizmet Kimliği"
 
+msgid "Service Job"
+msgstr ""
+
+msgid "Service Jobs"
+msgstr ""
+
 msgid "Service Labor"
 msgstr "Hizmet İşçiliği"
 
@@ -24047,6 +24192,9 @@ msgstr "Oturum Kilitli"
 
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Sevkiyattan eklemek için bu iade işlemine bir müşteri belirleyin."
+
+msgid "Set a customer on this return to add from its assets."
+msgstr ""
 
 msgid "Set a Pull From on each one through a new version."
 msgstr "Her biri için yeni bir sürüm üzerinden çekme kaynağı belirleyin."
@@ -24294,6 +24442,9 @@ msgstr "Bu istasyona atanan vardiyalar"
 msgid "Ship"
 msgstr "Sevk Et"
 
+msgid "Ship Back"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "Gönderim Tarihi"
 
@@ -24338,6 +24489,9 @@ msgstr "Sevkiyatlar"
 
 msgid "Shipped"
 msgstr "Gönderildi"
+
+msgid "Shipped {shippedOn}"
+msgstr ""
 
 msgid "Shipped <0/>"
 msgstr "Gönderildi <0/>"
@@ -25485,6 +25639,10 @@ msgstr "Eşleştirme Öner"
 
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"
+
+#. placeholder {0}: coverageLabels[suggestCoverage(asset, today)]
+msgid "Suggested from the asset's warranty: {0}"
+msgstr ""
 
 msgid "Suggested from the change in recurring value"
 msgstr "Tekrarlayan değer değişikliğinden önerilir"
@@ -26710,6 +26868,9 @@ msgstr "Stok kartının bu derinlikte üretilmiş bileşeni yoktur. Satın alın
 msgid "The item's rental rate"
 msgstr "Stok kartı'nın kiralama oranı"
 
+msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "o gün vadesi olan iş saatleri (çalışmanın çalıştığı günü değil, vade tarihine göre), gecikmiş iş Gecikmede."
 
@@ -27398,6 +27559,9 @@ msgstr "Dönem sona erdikten sonra birim'in sizin için başka hiçbir kullanım
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "Birim, hizmete döndürülünceye kadar kullanılabilirlikten kaldırılır. Amortisman devam eder ve muhasebesi değişmez."
 
+msgid "The unit is scrapped with the customer's consent and does not ship back. It was never in stock, so nothing posts."
+msgstr ""
+
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "Adet stoktan çıkar ve envanter tarafından taşınan maliyette bir varlık haline gelir."
 
@@ -27454,6 +27618,9 @@ msgstr "Bu siparişin mallarının gönderileceği depo; müşterinin Sevkiyat K
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "Bu alıntının mallarının gönderileceği depo; müşterinin Sevkiyat Konumu, nereye varacakları yer."
+
+msgid "The warranty is denied. The line becomes a Return for Service and its service job becomes Billable."
+msgstr ""
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Ekipmanın arıza yapma şekilleri, bakım ve kalite izlemesi için"
@@ -27615,6 +27782,9 @@ msgstr "Bu sözleşmenin faturaları otomatik olarak muhasebeleştirilir, bu ned
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."
+
+msgid "This customer has no assets"
+msgstr ""
 
 msgid "This customer type's rate"
 msgstr "Bu müşteri türü'nün oranı"
@@ -28045,6 +28215,9 @@ msgstr "Zaman & Malzemeleri ve Maliyet Artı satırları burada gösterilir. Sab
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Kiralama filosunun varlık ve sınıf bazında zaman ve dolar kullanım oranı"
+
+msgid "Time and Materials"
+msgstr ""
 
 msgid "Time entered after the entry window, with the reason given"
 msgstr "Giriş penceresi sonrasında girilen zaman, verilen nedenle"
@@ -30079,6 +30252,9 @@ msgstr "Müşterinin Zaman & Malzeme veya Maliyet Artısı satırında yetkilend
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Müşterinin peşin ödediği, kiranın vergisi ve faturaların vadesi."
 
+msgid "What the customer reported"
+msgstr ""
+
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Vade tarihinin geri sayımı nereden başlıyor (fatura tarihi, ay sonu, vb.)."
 
@@ -30597,6 +30773,9 @@ msgstr "İş Telefonu"
 
 msgid "Work shift tracking is active."
 msgstr "Çalışma vardiyası takibi aktif."
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Workflow"
 msgstr "İş Akışı"

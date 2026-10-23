@@ -46,6 +46,7 @@ import {
   getIssueTypesList,
   insertIssue
 } from "~/modules/quality/quality.service";
+import { postServiceJob } from "~/modules/service/service.service";
 import {
   getCompanySettings,
   getNextSequence as getNextSequenceNumber
@@ -96,6 +97,7 @@ import {
   salesOrderLineValidator,
   salesOrderStatusType,
   salesOrderValidator,
+  salesReturnOrderFromAssetsValidator,
   salesReturnOrderLineValidator,
   salesRFQStatusType,
   salesRfqDragValidator,
@@ -2558,6 +2560,11 @@ export const createReturnOrderLine = defineServiceFn({
         "Lines can only be added while the return order is Draft"
       );
     }
+    const refusedLine = await service.refuseReturnLine(ctx, {
+      customerId: order.data.customerId,
+      line
+    });
+    if (refusedLine) return refusedLine;
 
     const created = await service.upsertSalesReturnOrderLine(client, {
       ...line,
@@ -2835,7 +2842,7 @@ export const updateReturnOrderLine = defineServiceFn({
     const existing = await client
       .from("salesReturnOrderLine")
       .select(
-        "salesReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, salesOrderLineId, shipmentLineId, salesInvoiceLineId"
+        "salesReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, salesOrderLineId, shipmentLineId, salesInvoiceLineId, returnType, customerAssetId, quantityReceived"
       )
       .eq("id", lineId)
       .eq("companyId", ctx.company.id)
@@ -2845,6 +2852,34 @@ export const updateReturnOrderLine = defineServiceFn({
         "notFound",
         "This line does not belong to this return order"
       );
+    }
+
+    // The receipt made a service job of the line's type and asset, so both
+    // are fixed once anything is received.
+    if (Number(existing.data.quantityReceived) > 0) {
+      if (line.returnType && line.returnType !== existing.data.returnType) {
+        return ctx.error("rule", "Return type is locked after receipt");
+      }
+      if (
+        line.customerAssetId &&
+        line.customerAssetId !== existing.data.customerAssetId
+      ) {
+        return ctx.error("rule", "Customer asset is locked after receipt");
+      }
+    }
+    if (order.data) {
+      const refusedLine = await service.refuseReturnLine(ctx, {
+        customerId: order.data.customerId,
+        line: {
+          ...line,
+          returnType: line.returnType ?? existing.data.returnType,
+          customerAssetId:
+            line.customerAssetId === existing.data.customerAssetId
+              ? undefined
+              : line.customerAssetId
+        }
+      });
+      if (refusedLine) return refusedLine;
     }
 
     if (order.data?.status !== "Draft") {
@@ -2903,6 +2938,230 @@ export const updateReturnOrderLine = defineServiceFn({
       );
     }
     return { salesReturnOrderLineId: lineId };
+  }
+});
+
+/**
+ * Add one sales return order (RMA) line per customer asset.
+ *
+ * @remarks
+ * Only while the RMA is Draft. Each line is one unit of the asset's item and
+ * names the asset. Its return type follows the asset's warranty on the
+ * company's today: Return for Warranty while the labor or parts warranty
+ * runs, else Return for Service. The unit stays the customer's and is never
+ * credited, so the unit price is 0. Refused when an asset is not the RMA
+ * customer's or is on the RMA already. One insert for all the lines.
+ *
+ * @mcp
+ */
+export const createReturnOrderLinesFromAssets = defineServiceFn({
+  input: salesReturnOrderFromAssetsValidator.extend({
+    salesReturnOrderId: z.string().min(1)
+  }),
+  permission: { create: "sales" },
+
+  async run(ctx, { salesReturnOrderId, customerAssetIds }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    const today = datetime
+      .today(await getCompanyTimeZone(ctx.asSystem.supabase, ctx.company.id))
+      .toString();
+    return run(ctx, "create-return-order-lines-from-assets", () =>
+      service.insertSalesReturnOrderLinesFromAssets(ctx.asSystem.pg, {
+        salesReturnOrderId,
+        customerAssetIds,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        today
+      })
+    );
+  }
+});
+
+const returnLineInput = z.object({
+  salesReturnOrderId: z.string().min(1),
+  lineId: z.string().min(1)
+});
+
+/**
+ * Scrap the unit of a Return for Service or Return for Warranty line.
+ *
+ * @remarks
+ * With the customer's consent, or after a no-charge replacement. The line's
+ * disposition becomes Scrap, its serial Scrapped and its customer asset
+ * Returned. The unit was never valued, so nothing posts. Refused before the
+ * line's service job is Completed or Invoiced, and once the unit has shipped
+ * back. The RMA status follows.
+ *
+ * @mcp
+ */
+export const scrapReturnedUnit = defineServiceFn({
+  input: returnLineInput,
+  permission: { update: "sales" },
+
+  async run(ctx, { salesReturnOrderId, lineId }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    return run(ctx, "scrap-returned-unit", () =>
+      service.scrapServiceReturnLine(ctx.asSystem.pg, {
+        salesReturnOrderId,
+        lineId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Replace the unit of a Return for Warranty line at no charge.
+ *
+ * @remarks
+ * For a unit its service job found not repairable: the job must be Completed
+ * with Repairable set to no. Adds a line at unit price 0 that names this RMA
+ * line to the RMA's replacement order while it is Draft, else creates a new
+ * Draft order. When the replacement ships, its cost goes to warranty expense.
+ * The old unit is then scrapped (`scrapReturnedUnit`). Returns the sales
+ * order.
+ *
+ * @mcp
+ */
+export const replaceReturnedUnit = defineServiceFn({
+  input: returnLineInput,
+  permission: { create: "sales" },
+
+  async run(ctx, { salesReturnOrderId, lineId }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    const client = ctx.asCaller.supabase;
+    const [line, job] = await Promise.all([
+      client
+        .from("salesReturnOrderLine")
+        .select("id, returnType, salesReturnOrderId")
+        .eq("id", lineId)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle(),
+      client
+        .from("serviceJob")
+        .select("serviceJobId, status, repairable")
+        .eq("salesReturnOrderLineId", lineId)
+        .eq("companyId", ctx.company.id)
+        .neq("status", "Cancelled")
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ]);
+    if (line.error || job.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the return line",
+        line.error ?? job.error
+      );
+    }
+    if (!line.data || line.data.salesReturnOrderId !== salesReturnOrderId) {
+      return ctx.error(
+        "notFound",
+        "This line does not belong to this return order"
+      );
+    }
+    if (line.data.returnType !== "Return for Warranty") {
+      return ctx.error(
+        "rule",
+        "Only a Return for Warranty line is replaced at no charge"
+      );
+    }
+    if (job.data?.status !== "Completed" || job.data.repairable !== false) {
+      return ctx.error(
+        "rule",
+        "Complete the service job as not repairable before replacing the unit"
+      );
+    }
+
+    const replacement = await service.createReplacementSalesOrder(client, {
+      salesReturnOrderId,
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      userId: ctx.auditUserId,
+      lineIds: [lineId]
+    });
+    if (replacement.error || !replacement.data) {
+      return ctx.error(
+        "rule",
+        replacement.error?.message ?? "Failed to create the replacement"
+      );
+    }
+    await ctx.asSystem.pg
+      .transaction()
+      .execute((trx) =>
+        service.refreshSalesReturnOrderStatus(
+          trx,
+          salesReturnOrderId,
+          ctx.company.id,
+          ctx.auditUserId
+        )
+      );
+    return { salesOrderId: replacement.data.id };
+  }
+});
+
+/**
+ * Change a Return for Warranty line to Return for Service: the warranty is
+ * denied.
+ *
+ * @remarks
+ * Runs `post-service-job` `set-coverage` on the line's service job: the job
+ * becomes Billable, and the cost of the parts already issued moves from
+ * warranty expense to the cost of service in one journal. Then the line
+ * becomes Return for Service. Refused before the unit is received (change
+ * the line's return type instead) and once the job is Completed.
+ *
+ * @mcp
+ */
+export const changeReturnLineToService = defineServiceFn({
+  input: returnLineInput,
+  permission: { update: ["sales", "service"] },
+
+  async run(ctx, { salesReturnOrderId, lineId }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    const args = {
+      salesReturnOrderId,
+      lineId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    };
+    const job = await run(ctx, "change-return-line-to-service", () =>
+      service.warrantyReturnLineJob(ctx.asSystem.pg, args)
+    );
+    if (job instanceof CarbonError) return job;
+
+    const coverage = await invokePosting(
+      ctx,
+      "post-service-job",
+      {
+        action: "set-coverage" as const,
+        serviceJobId: job.serviceJobId,
+        coverage: "Billable" as const
+      },
+      postServiceJob
+    );
+    if (coverage.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(coverage.error, "Failed to change the job's coverage")
+      );
+    }
+    return run(ctx, "change-return-line-to-service", () =>
+      service.setReturnLineToService(ctx.asSystem.pg, args)
+    );
   }
 });
 

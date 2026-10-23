@@ -151,6 +151,7 @@ export const CREATE_SHORTCUTS = {
   quote: "q",
   rfq: "r",
   salesOrder: "o",
+  serviceJob: "v",
   stockTransfer: "x",
   supplier: "s",
   warehouseTransfer: "w"

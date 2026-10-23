@@ -34,6 +34,7 @@ import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import { isServiceReturnLine, liveServiceJob } from "../../sales.models";
 import SalesReturnOrderCreditModal from "./SalesReturnOrderCreditModal";
 import SalesReturnOrderStatus from "./SalesReturnOrderStatus";
 import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
@@ -79,9 +80,19 @@ const SalesReturnOrderHeader = () => {
     submit(formData, { method: "post", action: path.to.newShipment });
   };
 
-  const hasReturnToCustomerLine = routeData.lines.some(
-    (line) => line.disposition === "Return to Customer"
-  );
+  // What can go back out: a Return to Customer line, or a serviced unit
+  // whose job is done and that has not shipped or been scrapped.
+  const hasReturnToCustomerLine = routeData.lines.some((line) => {
+    if (!isServiceReturnLine(line.returnType)) {
+      return line.disposition === "Return to Customer";
+    }
+    const job = liveServiceJob(line.serviceJob);
+    return (
+      (job?.status === "Completed" || job?.status === "Invoiced") &&
+      Number(line.quantityShipped ?? 0) === 0 &&
+      line.disposition !== "Scrap"
+    );
+  });
   // Credit is capped at received quantity — the button is useless before
   // anything has been received.
   const hasReceivedQuantity = routeData.lines.some(

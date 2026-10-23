@@ -19,6 +19,7 @@ import {
   LuCirclePlay,
   LuClipboardList,
   LuContainer,
+  LuHammer,
   LuLayers,
   LuListChecks,
   LuShieldX,
@@ -154,6 +155,15 @@ export function useCreate(): CreateLink[] {
         to: path.to.newSalesOrder,
         shortcut: CREATE_SHORTCUTS.salesOrder,
         icon: <RiProgress8Line />
+      });
+    }
+
+    if (permissions.can("create", "service")) {
+      links.push({
+        name: t`Service Job`,
+        to: path.to.newServiceJob,
+        shortcut: CREATE_SHORTCUTS.serviceJob,
+        icon: <LuHammer />
       });
     }
 

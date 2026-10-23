@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import type {
   getSalesReturnOrderCredits,
   getSalesReturnOrderIssues,
+  getSalesReturnOrderLineServiceJobs,
   getSalesReturnOrderLines,
   getSalesReturnOrderLineTrackedEntities,
   getSalesReturnOrderReceipts
@@ -17,9 +18,14 @@ export type SalesReturnOrder =
 export type SalesReturnOrderListItem =
   Database["public"]["Views"]["salesReturnOrders"]["Row"];
 
+export type SalesReturnOrderLineServiceJob = NonNullable<
+  Awaited<ReturnType<typeof getSalesReturnOrderLineServiceJobs>>["data"]
+>[number];
+
+/** A line as the RMA page loads it, with its service jobs. */
 export type SalesReturnOrderLine = NonNullable<
   Awaited<ReturnType<typeof getSalesReturnOrderLines>>["data"]
->[number];
+>[number] & { serviceJob?: SalesReturnOrderLineServiceJob[] };
 
 export type SalesReturnOrderLineTrackedEntity = NonNullable<
   Awaited<ReturnType<typeof getSalesReturnOrderLineTrackedEntities>>["data"]

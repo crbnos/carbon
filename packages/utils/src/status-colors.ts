@@ -243,6 +243,27 @@ export const CUSTOMER_ASSET_STATUS_COLOR_MAP = {
   Returned: "gray"
 } as const satisfies Record<string, StatusColor>;
 
+// A service job (serviceJobStatus): Open waits for a technician, Awaiting
+// Approval waits on the customer's answer to the estimate, On Hold is parked,
+// Completed has posted its time, Invoiced is billed, Cancelled is closed unworked.
+export const SERVICE_JOB_STATUS_COLOR_MAP = {
+  Open: "gray",
+  "Awaiting Approval": "yellow",
+  "In Progress": "blue",
+  "On Hold": "orange",
+  Completed: "green",
+  Invoiced: "purple",
+  Cancelled: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// Who pays for a service job (serviceCoverage): the customer, the warranty, or
+// a service contract.
+export const SERVICE_COVERAGE_COLOR_MAP = {
+  Billable: "green",
+  Warranty: "blue",
+  Contract: "purple"
+} as const satisfies Record<string, StatusColor>;
+
 // A billable item (projectBillableItemStatus): waiting for an invoice, held
 // back by a reviewer, on an invoice, or written off.
 export const BILLABLE_ITEM_STATUS_COLOR_MAP = {
@@ -504,6 +525,7 @@ export const statusColorMaps = {
   pickingList: PICKING_LIST_STATUS_COLOR_MAP,
   pickingListLine: PICKING_LIST_LINE_STATUS_COLOR_MAP,
   maintenanceDispatch: MAINTENANCE_DISPATCH_STATUS_COLOR_MAP,
+  serviceJob: SERVICE_JOB_STATUS_COLOR_MAP,
   fixedAsset: FIXED_ASSET_STATUS_COLOR_MAP,
   customerContract: CUSTOMER_CONTRACT_STATUS_COLOR_MAP,
   rentalAgreement: RENTAL_AGREEMENT_STATUS_COLOR_MAP,

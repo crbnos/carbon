@@ -20,6 +20,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting/types";
+import { returnTypes } from "../service/service.models";
 import {
   incoterms,
   itemType,
@@ -1335,7 +1336,71 @@ export const salesReturnOrderLineValidator = z.object({
   returnReasonId: zfd.text(z.string().optional()),
   salesOrderLineId: zfd.text(z.string().optional()),
   shipmentLineId: zfd.text(z.string().optional()),
-  salesInvoiceLineId: zfd.text(z.string().optional())
+  salesInvoiceLineId: zfd.text(z.string().optional()),
+  /** Left out, a new line is Return to Stock and a saved line keeps its own. */
+  returnType: zfd.text(z.enum(returnTypes).optional()),
+  customerAssetId: zfd.text(z.string().optional()),
+  problem: zfd.text(z.string().optional())
+});
+
+/** A Return for Service or Return for Warranty line: the unit is serviced. */
+export function isServiceReturnLine(
+  returnType: string | null | undefined
+): boolean {
+  return (
+    returnType === "Return for Service" || returnType === "Return for Warranty"
+  );
+}
+
+/**
+ * The service job of a return line: the newest one not Cancelled, else the
+ * newest Cancelled one. A line's receipt creates at most one live job.
+ */
+export function liveServiceJob<J extends { status: string; createdAt: string }>(
+  jobs: J[] | null | undefined
+): J | null {
+  const newestFirst = [...(jobs ?? [])].sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt)
+  );
+  return (
+    newestFirst.find((job) => job.status !== "Cancelled") ??
+    newestFirst[0] ??
+    null
+  );
+}
+
+export const SERVICE_RETURN_LINE_QUANTITY_MESSAGE =
+  "A Return for Service or Return for Warranty line holds one unit";
+
+/**
+ * The line form's validator: the line, and one unit on a Service or Warranty
+ * line. The operations check the same rule, since a refined object cannot be
+ * extended.
+ */
+export const salesReturnOrderLineFormValidator =
+  salesReturnOrderLineValidator.refine(
+    (line) => !isServiceReturnLine(line.returnType) || line.quantity === 1,
+    { message: SERVICE_RETURN_LINE_QUANTITY_MESSAGE, path: ["quantity"] }
+  );
+
+/** Add one line per customer asset to a Draft RMA. */
+export const salesReturnOrderFromAssetsValidator = z.object({
+  customerAssetIds: zfd.repeatable(
+    z.array(z.string().min(1)).min(1, { message: "Select at least one asset" })
+  )
+});
+
+/** What happens to a serviced unit after its job: see `$id.$lineId.next-step`. */
+export const salesReturnOrderNextStepActions = [
+  "Scrap",
+  "Replace",
+  "Change to Service"
+] as const;
+
+export const salesReturnOrderNextStepValidator = z.object({
+  action: z.enum(salesReturnOrderNextStepActions, {
+    message: "Action is required"
+  })
 });
 
 export const salesReturnOrderDispositionValidator = z.object({

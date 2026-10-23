@@ -26,7 +26,7 @@ import {
   toast,
   useMount
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP, suggestCoverage } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, useState } from "react";
 import { LuCircleStop, LuLoaderCircle } from "react-icons/lu";
@@ -38,9 +38,12 @@ import {
   Item,
   Number,
   NumberControlled,
-  Submit
+  SelectControlled,
+  Submit,
+  TextArea
 } from "~/components/Form";
 import {
+  useCompanyToday,
   useCurrencyDecimals,
   usePermissions,
   useRouteData,
@@ -48,9 +51,16 @@ import {
 } from "~/hooks";
 import { path } from "~/utils/path";
 import {
+  returnTypes,
+  type SalesReturnType
+} from "../../../service/service.models";
+import {
   isSalesReturnOrderLocked,
+  isServiceReturnLine,
+  liveServiceJob,
   salesReturnDispositionType,
-  salesReturnOrderLineValidator
+  salesReturnOrderLineFormValidator,
+  type salesReturnOrderLineValidator
 } from "../../sales.models";
 import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 
@@ -154,6 +164,83 @@ const SalesReturnOrderLineForm = ({
     unitPrice: initialValues.unitPrice ?? 0
   });
 
+  const today = useCompanyToday();
+  const quantityReceived = line?.quantityReceived ?? 0;
+  const [returnType, setReturnType] = useState<SalesReturnType>(
+    initialValues.returnType ?? "Return to Stock"
+  );
+  const [quantity, setQuantity] = useState<number>(initialValues.quantity ?? 1);
+  const [customerAssetId, setCustomerAssetId] = useState(
+    initialValues.customerAssetId ?? ""
+  );
+  const isServiceLine = isServiceReturnLine(returnType);
+
+  const returnTypeLabels: Record<SalesReturnType, string> = {
+    "Return to Stock": t`Return to Stock`,
+    "Return for Service": t`Return for Service`,
+    "Return for Warranty": t`Return for Warranty`
+  };
+
+  const onReturnTypeChange = (value: string) => {
+    if (!returnTypes.includes(value as SalesReturnType)) return;
+    setReturnType(value as SalesReturnType);
+    // A serviced unit is one unit: one line, one job.
+    if (isServiceReturnLine(value)) setQuantity(1);
+  };
+
+  // The RMA customer's assets: a line may name the unit it returns.
+  const [assets, setAssets] = useState<
+    {
+      id: string;
+      itemId: string;
+      laborWarrantyEndDate: string | null;
+      partsWarrantyEndDate: string | null;
+      serial: string | null;
+      itemReadableId: string | null;
+    }[]
+  >([]);
+  const customerId = routeData?.salesReturnOrder?.customerId;
+  useMount(() => {
+    if (!carbon || !company.id || !customerId) return;
+    carbon
+      .from("customerAsset")
+      .select(
+        "id, itemId, laborWarrantyEndDate, partsWarrantyEndDate, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey(readableId), item:item!customerAsset_itemId_fkey(readableIdWithRevision)"
+      )
+      .eq("customerId", customerId)
+      .eq("companyId", company.id)
+      .order("createdAt", { ascending: false })
+      .limit(500)
+      .then(({ data, error }) => {
+        if (error) {
+          toast.error(t`Failed to load customer assets`);
+          return;
+        }
+        setAssets(
+          (data ?? []).map((asset) => ({
+            id: asset.id,
+            itemId: asset.itemId,
+            laborWarrantyEndDate: asset.laborWarrantyEndDate,
+            partsWarrantyEndDate: asset.partsWarrantyEndDate,
+            serial: asset.trackedEntity?.readableId ?? null,
+            itemReadableId: asset.item?.readableIdWithRevision ?? null
+          }))
+        );
+      });
+  });
+
+  // Picking an asset fills its item, and a unit still under warranty is
+  // suggested as a Return for Warranty.
+  const onAssetChange = (assetId: string) => {
+    setCustomerAssetId(assetId);
+    const asset = assets.find((candidate) => candidate.id === assetId);
+    if (!asset) return;
+    if (asset.itemId !== itemData.itemId) onItemChange(asset.itemId);
+    if (!isReturnTypeLocked && suggestCoverage(asset, today) === "Warranty") {
+      onReturnTypeChange("Return for Warranty");
+    }
+  };
+
   const [reasons, setReasons] = useState(returnReasons ?? []);
   useMount(() => {
     if (returnReasons || !carbon || !company.id) return;
@@ -249,7 +336,6 @@ const SalesReturnOrderLineForm = ({
   const [disposition, setDisposition] = useState(
     (line?.disposition as string | undefined) ?? "Pending"
   );
-  const quantityReceived = line?.quantityReceived ?? 0;
 
   const onDispositionChange = (value: string) => {
     if (!line?.id) return;
@@ -296,6 +382,10 @@ const SalesReturnOrderLineForm = ({
   // reason and disposition stay editable — Reopen the return to Draft to change
   // anything locked.
   const areLineFieldsLocked = isEditing && status !== "Draft";
+  // The receipt made the line's service job from its type and asset.
+  const isReturnTypeLocked = isEditing && quantityReceived > 0;
+
+  const serviceJob = liveServiceJob(line?.serviceJob);
 
   // Source-document references shown under the line title — one subtle link
   // each, in place of the old badges.
@@ -327,6 +417,13 @@ const SalesReturnOrderLineForm = ({
             label: t`Invoice`,
             value: linkage.salesInvoiceReadableId
           }
+        : null,
+      serviceJob
+        ? {
+            to: path.to.serviceJob(serviceJob.id),
+            label: t`Service Job`,
+            value: serviceJob.serviceJobId
+          }
         : null
     ] as ({ to?: string; label: string; value: string } | null)[]
   ).filter((source): source is { to?: string; label: string; value: string } =>
@@ -339,7 +436,7 @@ const SalesReturnOrderLineForm = ({
         <ModalCardContent size="xxlarge">
           <ValidatedForm
             defaultValues={initialValues}
-            validator={salesReturnOrderLineValidator}
+            validator={salesReturnOrderLineFormValidator}
             method="post"
             action={
               isEditing
@@ -399,12 +496,14 @@ const SalesReturnOrderLineForm = ({
                     onItemChange(value?.value as string);
                   }}
                 />
-                <Number
+                <NumberControlled
                   name="quantity"
                   label={t`Return Quantity`}
+                  value={quantity}
                   minValue={0}
                   step={INPUT_STEP.quantity}
-                  isReadOnly={areLineFieldsLocked}
+                  isReadOnly={areLineFieldsLocked || isServiceLine}
+                  onChange={setQuantity}
                 />
                 <NumberControlled
                   name="unitPrice"
@@ -431,6 +530,31 @@ const SalesReturnOrderLineForm = ({
                   formatOptions={INPUT_FORMAT.percent}
                   isReadOnly={areLineFieldsLocked}
                 />
+                <SelectControlled
+                  name="returnType"
+                  label={t`Return Type`}
+                  value={returnType}
+                  options={returnTypes.map((option) => ({
+                    value: option,
+                    label: returnTypeLabels[option]
+                  }))}
+                  isReadOnly={isReturnTypeLocked}
+                  onChange={(option) => {
+                    if (option) onReturnTypeChange(option.value);
+                  }}
+                />
+                <Combobox
+                  name="customerAssetId"
+                  label={t`Customer Asset`}
+                  value={customerAssetId}
+                  options={assets.map((asset) => ({
+                    value: asset.id,
+                    label: asset.serial ?? asset.id,
+                    helper: asset.itemReadableId ?? undefined
+                  }))}
+                  isReadOnly={areLineFieldsLocked}
+                  onChange={(option) => onAssetChange(option?.value ?? "")}
+                />
                 <Combobox
                   name="returnReasonId"
                   label={t`Return Reason`}
@@ -439,7 +563,7 @@ const SalesReturnOrderLineForm = ({
                     label: reason.name
                   }))}
                 />
-                {isEditing && line && (
+                {isEditing && line && !isServiceReturnLine(line.returnType) && (
                   <FormControl>
                     <FormLabel>
                       <Trans>Disposition</Trans>
@@ -469,6 +593,9 @@ const SalesReturnOrderLineForm = ({
                     </CarbonSelect>
                   </FormControl>
                 )}
+                <div className="lg:col-span-3">
+                  <TextArea name="problem" label={t`Problem`} />
+                </div>
                 <CustomFormFields table="salesReturnOrderLine" />
               </div>
             </ModalCardBody>

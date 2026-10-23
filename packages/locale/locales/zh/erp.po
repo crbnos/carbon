@@ -505,6 +505,7 @@ msgid "{0} scrapped"
 msgstr "{0} 报废"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selected.size
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} 已选择"
@@ -697,6 +698,9 @@ msgstr "{count} 个关联元素已更改。评审链接。"
 msgid "{count} of {total} units"
 msgstr "{count} / {total} 件"
 
+msgid "{count} results"
+msgstr ""
+
 msgid "{count} units"
 msgstr "{count} 件"
 
@@ -750,6 +754,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# 个零件已创建} other {# 个零件已创建}}"
@@ -1778,6 +1785,9 @@ msgstr "租赁协议必须使用公司的基础货币才能启用。请先更改
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "满足五项ASC 842租赁测试之一的租赁，在其协议激活时作为销售入账：该件设备离开租赁队伍，租赁收入和销售成本过账，租赁净投资代替其位置。"
 
+msgid "A replacement at no charge is added to the return's replacement order. Its cost goes to warranty expense when it ships. Scrap the old unit afterwards."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "退货授权（RMA）授权客户退回商品以换取贷项、替代品或维修。"
 
@@ -1867,6 +1877,9 @@ msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报
 
 msgid "A serial's build history"
 msgstr "序列号的构建历史记录"
+
+msgid "A serialized unit becomes a customer asset when its shipment posts. Register older units under Service → Customer Assets."
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "服务是一种可计费活动，可以购买或执行——它从不被运送、接收或存储"
@@ -2572,6 +2585,9 @@ msgstr "添加事件"
 msgid "Add Fixed Asset"
 msgstr "添加固定资产"
 
+msgid "Add from assets"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "从库中添加…"
 
@@ -2616,6 +2632,9 @@ msgstr "添加行项目"
 
 msgid "Add Lines"
 msgstr "添加行"
+
+msgid "Add lines from assets"
+msgstr ""
 
 msgid "Add lines from document"
 msgstr "从文档添加行"
@@ -2975,6 +2994,9 @@ msgstr "所有高级功能可用"
 
 msgid "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
 msgstr "所有金额均以整数美元表示。第 53 列、总 QRE 和总行添加舍入后的金额。"
+
+msgid "All assets"
+msgstr ""
 
 msgid "All Audit Logs"
 msgstr "所有审计日志"
@@ -4619,6 +4641,9 @@ msgstr "平均关闭天数"
 msgid "Awaiting approval"
 msgstr "等待审批"
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "BAC"
 msgstr "BAC"
 
@@ -4904,6 +4929,9 @@ msgstr "账单收款人"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "按整月、整季度或整年开票，可先按部分期间"
 
+msgid "Billable"
+msgstr ""
+
 msgid "Billable item"
 msgstr "应计费用项目"
 
@@ -4918,6 +4946,9 @@ msgstr "已计费"
 
 msgid "Billed Externally"
 msgstr "已外部计费"
+
+msgid "Billed Item"
+msgstr ""
 
 msgid "Billed On"
 msgstr "开票日期"
@@ -5399,8 +5430,8 @@ msgid "Cancel"
 msgstr "取消"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: job?.serviceJobId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "取消 {0}"
 
@@ -5795,6 +5826,9 @@ msgstr "更改物料类型（例如零件、原材料、刀具等）"
 msgid "Change Time"
 msgstr "更改时间"
 
+msgid "Change to Return for Service"
+msgstr ""
+
 msgid "Change type"
 msgstr "变更类型"
 
@@ -5965,6 +5999,9 @@ msgstr "选择批号"
 
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "选择可批处理的工序以查看可以一起运行的操作。"
+
+msgid "Choose a customer"
+msgstr ""
 
 msgid "Choose a labor category or an employee"
 msgstr "选择人工类别或员工"
@@ -7094,6 +7131,9 @@ msgstr "复制问题编号"
 msgid "Copy issue unique identifier"
 msgstr "复制问题唯一标识符"
 
+msgid "Copy job number"
+msgstr ""
+
 msgid "Copy Job number"
 msgstr "复制工作单号"
 
@@ -7126,6 +7166,9 @@ msgstr "复制文件链接"
 
 msgid "Copy link to issue"
 msgstr "复制问题链接"
+
+msgid "Copy link to job"
+msgstr ""
 
 msgid "Copy link to Job"
 msgstr "复制工作链接"
@@ -8083,6 +8126,9 @@ msgstr "客户账户"
 msgid "Customer and supplier pages"
 msgstr "客户和供应商页面"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "客户资产"
 
@@ -8205,6 +8251,9 @@ msgstr "客户询价"
 
 msgid "Customer Scope"
 msgstr "客户范围"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "customer status"
 msgstr "客户状态"
@@ -9220,6 +9269,9 @@ msgstr "押金:"
 msgid "Deposits"
 msgstr "押金"
 
+msgid "Depot"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "折旧"
 
@@ -9887,6 +9939,9 @@ msgstr "每个金额从该行剩余的待开票部分开始"
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "每个金额从该行剩余的待确认部分开始"
 
+msgid "Each asset becomes one line for one unit. A unit under warranty is a Return for Warranty, any other a Return for Service."
+msgstr ""
+
 msgid "Each asset is accounted for on its own, at its own payment. Click a cell to change it."
 msgstr "每项资产独立核算，在其付款处。点击单元格可更改。"
 
@@ -10190,6 +10245,9 @@ msgstr "编辑检验计划"
 
 msgid "Edit Item Group"
 msgstr "编辑项目组"
+
+msgid "Edit Job"
+msgstr ""
 
 msgid "Edit Journal Entry"
 msgstr "编辑分录"
@@ -11611,6 +11669,9 @@ msgstr "未能插入供应商报价行"
 msgid "Failed to load configuration parameters"
 msgstr "加载配置参数失败"
 
+msgid "Failed to load customer assets"
+msgstr ""
+
 msgid "Failed to load customer part details"
 msgstr "无法加载客户零件详情"
 
@@ -12005,6 +12066,9 @@ msgstr "查找公司…"
 
 msgid "Find module…"
 msgstr "查找模块…"
+
+msgid "Findings"
+msgstr ""
 
 msgid "finish"
 msgstr "成品"
@@ -14396,6 +14460,9 @@ msgstr "继续编辑"
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新物料"
 
+msgid "Keep Job"
+msgstr ""
+
 msgid "Keep Line"
 msgstr "保留行"
 
@@ -15103,6 +15170,9 @@ msgstr "加载模板"
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "最后加载，在切换时进行，以便余额是最新的。"
+
+msgid "Loading assets..."
+msgstr ""
 
 msgid "Loading associated jobs..."
 msgstr "加载相关工单..."
@@ -16760,6 +16830,9 @@ msgstr "新序列号"
 msgid "New Service"
 msgstr "新服务"
 
+msgid "New Service Job"
+msgstr ""
+
 msgid "New Shift"
 msgstr "新班次"
 
@@ -17001,8 +17074,14 @@ msgstr "暂无审批要求。"
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "暂无已归档日志。超过{0}天的日志将自动归档，并可在此下载。"
 
+msgid "No asset"
+msgstr ""
+
 msgid "No assets"
 msgstr "无资产"
+
+msgid "No assets match your search"
+msgstr ""
 
 msgid "No assets to depreciate for this period."
 msgstr "本期没有要折旧的资产。"
@@ -17270,6 +17349,9 @@ msgstr "未找到员工"
 msgid "No end"
 msgstr "无结束"
 
+msgid "No estimate lines"
+msgstr ""
+
 msgid "No estimated costs."
 msgstr "没有预计成本。"
 
@@ -17308,6 +17390,9 @@ msgstr "此项目没有文件。"
 
 msgid "No files uploaded"
 msgstr "未上传任何文件"
+
+msgid "No findings"
+msgstr ""
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "在结转日期之前没有获取固定资产"
@@ -17574,6 +17659,9 @@ msgstr "没有零件"
 msgid "No parts changed."
 msgstr "没有零件改变。"
 
+msgid "No parts or charges"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "还没有已登记的通行密钥。"
 
@@ -17646,6 +17734,9 @@ msgstr "未配置打印机。点击\"添加打印机\"创建一个。"
 msgid "No priority"
 msgstr "没有优先级"
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No process selected"
 msgstr "未选择工艺"
 
@@ -17714,6 +17805,9 @@ msgstr "该公司还没有代表接受 Carbon GovCloud Rider。该公司的管�
 
 msgid "No requests yet."
 msgstr "尚无请求。"
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "无结果"
@@ -17832,6 +17926,9 @@ msgstr "还没有同步操作"
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
 
+msgid "No time logged"
+msgstr ""
+
 msgid "No time this week"
 msgstr "本周没有时间"
 
@@ -17906,6 +18003,12 @@ msgstr "还没有工作包。为控制账户下的可计费元素指定挣值技
 
 msgid "No work yet. <0>Plan the project</0>"
 msgstr "还没有工作。<0>计划项目</0>"
+
+msgid "No-charge replacement"
+msgstr ""
+
+msgid "No-charge Replacement"
+msgstr ""
 
 msgid "Nom"
 msgstr "标称值"
@@ -18324,6 +18427,9 @@ msgstr "在\"缺失时间\"报告中"
 
 msgid "On this operation"
 msgstr "在此工序上"
+
+msgid "On this RMA"
+msgstr ""
 
 msgid "On time"
 msgstr "准时"
@@ -20288,6 +20394,9 @@ msgstr "隐私政策"
 msgid "Private"
 msgstr "私密"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "程序文件"
 
@@ -22074,6 +22183,12 @@ msgstr "补货策略"
 msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 msgstr "仅重新排序维护工单序列和工作中心——不重新安排日程。在日期板上更改日期。"
 
+msgid "Repair or service a customer's unit, at the depot or on site"
+msgstr ""
+
+msgid "Repairable"
+msgstr ""
+
 msgid "Repeat Run"
 msgstr "重复运行"
 
@@ -22356,6 +22471,9 @@ msgstr "残值"
 msgid "Residual Value %"
 msgstr "残值 %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr "解决"
 
@@ -22471,6 +22589,12 @@ msgstr "重试还原"
 msgid "Return"
 msgstr "退还"
 
+msgid "Return for Service"
+msgstr ""
+
+msgid "Return for Warranty"
+msgstr ""
+
 msgid "Return Home"
 msgstr "返回首页"
 
@@ -22512,6 +22636,12 @@ msgstr "恢复服务"
 
 msgid "Return to stock"
 msgstr "退回到库存"
+
+msgid "Return to Stock"
+msgstr ""
+
+msgid "Return Type"
+msgstr ""
 
 msgid "returnable"
 msgstr "可退货的"
@@ -23429,6 +23559,12 @@ msgstr "报废原因"
 msgid "Scrap Reasons"
 msgstr "报废原因"
 
+msgid "Scrap the unit"
+msgstr ""
+
+msgid "Scrap Unit"
+msgstr ""
+
 msgid "Scrapped"
 msgstr "已报废"
 
@@ -23819,6 +23955,9 @@ msgstr "选择供应商类型"
 msgid "Select surfaces"
 msgstr "选择表面"
 
+msgid "Select the customer's units to service or replace under warranty."
+msgstr ""
+
 msgid "Select the groups that should complete this training"
 msgstr "选择应该完成此培训的组"
 
@@ -24012,6 +24151,12 @@ msgstr "服务结束"
 msgid "Service ID"
 msgstr "服务ID"
 
+msgid "Service Job"
+msgstr ""
+
+msgid "Service Jobs"
+msgstr ""
+
 msgid "Service Labor"
 msgstr "服务人工"
 
@@ -24047,6 +24192,9 @@ msgstr "会话已锁定"
 
 msgid "Set a customer on this return to add from a shipment."
 msgstr "在此退货上设置客户以从发货中添加。"
+
+msgid "Set a customer on this return to add from its assets."
+msgstr ""
 
 msgid "Set a Pull From on each one through a new version."
 msgstr "通过新版本为每个物料设置拉取来源。"
@@ -24294,6 +24442,9 @@ msgstr "分配给此工作站的班次"
 msgid "Ship"
 msgstr "发货"
 
+msgid "Ship Back"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "发货日期"
 
@@ -24338,6 +24489,9 @@ msgstr "发货单"
 
 msgid "Shipped"
 msgstr "已发货"
+
+msgid "Shipped {shippedOn}"
+msgstr ""
 
 msgid "Shipped <0/>"
 msgstr "已发货 <0/>"
@@ -25485,6 +25639,10 @@ msgstr "建议匹配"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
+
+#. placeholder {0}: coverageLabels[suggestCoverage(asset, today)]
+msgid "Suggested from the asset's warranty: {0}"
+msgstr ""
 
 msgid "Suggested from the change in recurring value"
 msgstr "根据循环值的更改建议"
@@ -26710,6 +26868,9 @@ msgstr "该物料在此深度无制造零件。包括购买零件以添加其采
 msgid "The item's rental rate"
 msgstr "该物料的租赁费率"
 
+msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "该天到期的任务小时数（以截止日期为基础，而不是工作运行的日期），逾期工作在逾期中。"
 
@@ -27398,6 +27559,9 @@ msgstr "期限结束后，该单位对您没有其他用途。"
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "该件在返回服务前不可用。折旧继续，其会计处理保持不变。"
 
+msgid "The unit is scrapped with the customer's consent and does not ship back. It was never in stock, so nothing posts."
+msgstr ""
+
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "该件离开库存，并以库存的成本作为资产进行记账。"
 
@@ -27454,6 +27618,9 @@ msgstr "此订单的商品将从其发货的仓库；客户的发货地点是他
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "此报价的商品将从其发货的仓库；客户的发货地点是他们到达的地方。"
+
+msgid "The warranty is denied. The line becomes a Return for Service and its service job becomes Billable."
+msgstr ""
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "设备失效的方式,用于维护和质量追踪"
@@ -27615,6 +27782,9 @@ msgstr "此合同的发票自动过账，所以确认它需要创建发票的权
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
+
+msgid "This customer has no assets"
+msgstr ""
 
 msgid "This customer type's rate"
 msgstr "此客户类型的费率"
@@ -28045,6 +28215,9 @@ msgstr "工时与物料及成本加成行显示在此。固定价格行按开票
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "按资产和类别统计的租赁设备的时间和成本利用率"
+
+msgid "Time and Materials"
+msgstr ""
 
 msgid "Time entered after the entry window, with the reason given"
 msgstr "在规定时间窗口后输入的时间，并说明原因"
@@ -30079,6 +30252,9 @@ msgstr "客户在时间和材料或成本加成行上已授权的内容。账单
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "客户预付的款项、租赁税和发票到期时间。"
 
+msgid "What the customer reported"
+msgstr ""
+
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "到期日期倒计时从何开始(发票日期、月末等)。"
 
@@ -30597,6 +30773,9 @@ msgstr "工作电话"
 
 msgid "Work shift tracking is active."
 msgstr "班次跟踪已启用。"
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Workflow"
 msgstr "工作流"

@@ -132,6 +132,7 @@ import {
   salesTypeRequirementError,
   searchFilter,
   suggestContractType,
+  suggestCoverage,
   sumFunding,
   takeWithinFunding,
   wholeRateUnits
@@ -256,7 +257,9 @@ import {
   isProjectBillingMethod,
   isQuoteLocked,
   isSalesOrderLocked,
-  OPEN_SALES_ORDER_STATUSES
+  isServiceReturnLine,
+  OPEN_SALES_ORDER_STATUSES,
+  SERVICE_RETURN_LINE_QUANTITY_MESSAGE
 } from "./sales.models";
 import { renderSalesOrderPdf } from "./sales.pdf";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
@@ -6758,6 +6761,24 @@ export async function getSalesReturnOrderLines(
     .order("lineNumber");
 }
 
+/**
+ * The service jobs of an RMA's lines (a Service or Warranty line's receipt
+ * creates one). Read apart from the lines: the embed is too deep to type.
+ */
+export async function getSalesReturnOrderLineServiceJobs(
+  client: SupabaseClient<Database>,
+  lineIds: string[],
+  companyId: string
+) {
+  return client
+    .from("serviceJob")
+    .select(
+      "id, serviceJobId, status, repairable, createdAt, salesReturnOrderLineId"
+    )
+    .in("salesReturnOrderLineId", lineIds)
+    .eq("companyId", companyId);
+}
+
 export async function getSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -6922,10 +6943,16 @@ export async function upsertSalesReturnOrderLine(
       .select("id")
       .single();
   }
-  const { id, ...update } = line;
+  // A saved line keeps its return type when none is sent: the column is
+  // NOT NULL, and `sanitize` would write an absent field as null.
+  const { id, returnType, ...update } = line;
   return client
     .from("salesReturnOrderLine")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .update({
+      ...sanitize(update),
+      ...(returnType ? { returnType } : {}),
+      updatedAt: datetime.timestamp()
+    })
     .eq("id", id)
     .select("id")
     .single();
@@ -7824,9 +7851,18 @@ export async function createSalesReturnOrderCredit(
 
 /**
  * Create Replacement Order: a draft sales order pre-filled from the RMA
- * lines, priced via resolvePrice (user adjusts on the draft — e.g. to zero
- * for warranty). One replacement per RMA; re-invoking returns the existing
- * link. Rollback-by-delete on line failure (the insertSalesOrder pattern).
+ * lines, priced via resolvePrice (user adjusts on the draft). A Return for
+ * Warranty line is replaced at no charge (unit price 0). Each order line
+ * names the RMA line it replaces (`salesReturnOrderLineId`), which is what
+ * sends a warranty replacement's cost to warranty expense when it ships and
+ * what resolves the RMA line.
+ *
+ * Without `lineIds`: one replacement per RMA for every line; re-invoking
+ * returns the existing link. With `lineIds` (a line's "No-charge
+ * replacement"): only those lines, skipping a line an order line already
+ * replaces; they are added to the RMA's replacement order while it is Draft,
+ * else a new order is created. Rollback-by-delete on line failure (the
+ * insertSalesOrder pattern) for an order this call created.
  */
 export async function createReplacementSalesOrder(
   client: SupabaseClient<Database>,
@@ -7834,12 +7870,14 @@ export async function createReplacementSalesOrder(
     salesReturnOrderId,
     companyId,
     companyGroupId,
-    userId
+    userId,
+    lineIds
   }: {
     salesReturnOrderId: string;
     companyId: string;
     companyGroupId: string;
     userId: string;
+    lineIds?: string[];
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const order = await client
@@ -7857,37 +7895,80 @@ export async function createReplacementSalesOrder(
       } as PostgrestError
     };
   }
-  if (order.data.replacementSalesOrderId) {
-    return { data: { id: order.data.replacementSalesOrderId }, error: null };
+  const existingReplacementId = order.data.replacementSalesOrderId;
+  if (existingReplacementId && !lineIds) {
+    return { data: { id: existingReplacementId }, error: null };
   }
 
-  const lines = await client
+  let linesQuery = client
     .from("salesReturnOrderLine")
     .select("*, item(type)")
     .eq("salesReturnOrderId", salesReturnOrderId)
     .eq("companyId", companyId);
+  if (lineIds) linesQuery = linesQuery.in("id", lineIds);
+  const lines = await linesQuery;
   if (lines.error) return { data: null, error: lines.error };
-  if ((lines.data ?? []).length === 0) {
+
+  let replaceLines = lines.data ?? [];
+  if (lineIds && replaceLines.length > 0) {
+    const replaced = await client
+      .from("salesOrderLine")
+      .select("salesReturnOrderLineId")
+      .in(
+        "salesReturnOrderLineId",
+        replaceLines.map((line) => line.id)
+      )
+      .eq("companyId", companyId);
+    if (replaced.error) return { data: null, error: replaced.error };
+    const replacedIds = new Set(
+      (replaced.data ?? []).map((row) => row.salesReturnOrderLineId)
+    );
+    replaceLines = replaceLines.filter((line) => !replacedIds.has(line.id));
+  }
+  if (replaceLines.length === 0) {
     return {
       data: null,
-      error: { message: "Return order has no lines" } as PostgrestError
+      error: {
+        message: lineIds
+          ? "This line already has a replacement"
+          : "Return order has no lines"
+      } as PostgrestError
     };
   }
-  const salesOrder = await insertSalesOrder(client, {
-    customerId: order.data.customerId,
-    companyId,
-    companyGroupId,
-    createdBy: userId,
-    currencyCode: order.data.currencyCode,
-    customerContactId: order.data.customerContactId ?? undefined,
-    customerLocationId: order.data.customerLocationId ?? undefined,
-    locationId: order.data.locationId ?? undefined,
-    customerReference: order.data.salesReturnOrderId
-  });
-  if (salesOrder.error || !salesOrder.data) {
-    return { data: null, error: salesOrder.error };
+
+  // A line's replacement joins the RMA's replacement order while it is
+  // still Draft.
+  let salesOrderId: string | null = null;
+  if (existingReplacementId) {
+    const existing = await client
+      .from("salesOrder")
+      .select("id, status")
+      .eq("id", existingReplacementId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (existing.error) return { data: null, error: existing.error };
+    if (existing.data?.status === "Draft") salesOrderId = existing.data.id;
   }
-  const salesOrderId = salesOrder.data.id;
+
+  const createdOrder = salesOrderId === null;
+  if (createdOrder) {
+    const salesOrder = await insertSalesOrder(client, {
+      customerId: order.data.customerId,
+      companyId,
+      companyGroupId,
+      createdBy: userId,
+      currencyCode: order.data.currencyCode,
+      customerContactId: order.data.customerContactId ?? undefined,
+      customerLocationId: order.data.customerLocationId ?? undefined,
+      locationId: order.data.locationId ?? undefined,
+      customerReference: order.data.salesReturnOrderId
+    });
+    if (salesOrder.error || !salesOrder.data) {
+      return { data: null, error: salesOrder.error };
+    }
+    salesOrderId = salesOrder.data.id;
+  }
+  const replacementId = salesOrderId as string;
 
   const lineTypeFor = (
     itemType: string | null | undefined
@@ -7904,43 +7985,51 @@ export async function createReplacementSalesOrder(
     }
   };
 
-  for (const line of lines.data ?? []) {
-    const price = await resolvePrice(client, companyId, {
-      customerId: order.data.customerId,
-      itemId: line.itemId,
-      quantity: Number(line.quantity)
-    });
+  for (const line of replaceLines) {
+    // A warranty replacement is free; its cost goes to warranty expense when
+    // the replacement ships.
+    const isWarranty = line.returnType === "Return for Warranty";
+    const price = isWarranty
+      ? null
+      : await resolvePrice(client, companyId, {
+          customerId: order.data.customerId,
+          itemId: line.itemId,
+          quantity: Number(line.quantity)
+        });
 
     const insertLine = await client.from("salesOrderLine").insert({
-      salesOrderId,
+      salesOrderId: replacementId,
       salesOrderLineType: lineTypeFor(line.item?.type),
       itemId: line.itemId,
       saleQuantity: Number(line.quantity),
-      unitPrice: price.finalPrice,
-      priceTrace: price.trace,
+      unitPrice: price?.finalPrice ?? 0,
+      priceTrace: price?.trace,
       unitOfMeasureCode: line.unitOfMeasureCode,
+      salesReturnOrderLineId: line.id,
       companyId,
       createdBy: userId
     });
 
     if (insertLine.error) {
-      await deleteSalesOrder(client, salesOrderId);
+      if (createdOrder) await deleteSalesOrder(client, replacementId);
       return { data: null, error: insertLine.error };
     }
   }
 
-  const link = await client
-    .from("salesReturnOrder")
-    .update({
-      replacementSalesOrderId: salesOrderId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", salesReturnOrderId)
-    .eq("companyId", companyId);
-  if (link.error) return { data: null, error: link.error };
+  if (createdOrder && !existingReplacementId) {
+    const link = await client
+      .from("salesReturnOrder")
+      .update({
+        replacementSalesOrderId: replacementId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", salesReturnOrderId)
+      .eq("companyId", companyId);
+    if (link.error) return { data: null, error: link.error };
+  }
 
-  return { data: { id: salesOrderId }, error: null };
+  return { data: { id: replacementId }, error: null };
 }
 
 /**
@@ -8201,6 +8290,408 @@ export async function setSalesReturnOrderLineDisposition(
   }
 
   return { data: { id: lineId }, error: null };
+}
+
+/**
+ * "Add from assets": one line per customer asset on a Draft RMA, in one
+ * insert. Each line is one unit of the asset's item, the asset named, with
+ * the return type its warranty suggests on `today` (the company's day): Return
+ * for Warranty while the labor or parts warranty runs, else Return for
+ * Service. The unit is the customer's and serviced, never credited, so the
+ * unit price is 0. Refused unless the RMA is Draft and every asset is the
+ * RMA customer's and not on the RMA already. Returns the new line ids.
+ */
+export async function insertSalesReturnOrderLinesFromAssets(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    salesReturnOrderId: string;
+    customerAssetIds: string[];
+    companyId: string;
+    userId: string;
+    today: string;
+  }
+): Promise<{ salesReturnOrderLineIds: string[] }> {
+  const { salesReturnOrderId, companyId, userId } = args;
+  const assetIds = [...new Set(args.customerAssetIds)];
+
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("salesReturnOrder")
+      .select(["status", "customerId"])
+      .where("id", "=", salesReturnOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new NotFoundError("Return order not found");
+    if (order.status !== "Draft") {
+      throw new InvalidInputError(
+        "Lines can only be added while the return order is Draft"
+      );
+    }
+
+    const [assets, existing] = await Promise.all([
+      trx
+        .selectFrom("customerAsset")
+        .innerJoin("item", (join) =>
+          join
+            .onRef("item.id", "=", "customerAsset.itemId")
+            .onRef("item.companyId", "=", "customerAsset.companyId")
+        )
+        .select([
+          "customerAsset.id",
+          "customerAsset.itemId",
+          "customerAsset.laborWarrantyEndDate",
+          "customerAsset.partsWarrantyEndDate",
+          "item.unitOfMeasureCode"
+        ])
+        .where("customerAsset.id", "in", assetIds)
+        .where("customerAsset.customerId", "=", order.customerId)
+        .where("customerAsset.companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("salesReturnOrderLine")
+        .select(["lineNumber", "customerAssetId"])
+        .where("salesReturnOrderId", "=", salesReturnOrderId)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+    if (assets.length !== assetIds.length) {
+      throw new InvalidInputError(
+        "Each asset must belong to the return order's customer"
+      );
+    }
+    const onReturn = new Set(existing.map((line) => line.customerAssetId));
+    if (assets.some((asset) => onReturn.has(asset.id))) {
+      throw new InvalidInputError("An asset is already on this return order");
+    }
+
+    const lastLineNumber = existing.reduce(
+      (max, line) => Math.max(max, line.lineNumber),
+      0
+    );
+    const assetById = new Map(assets.map((asset) => [asset.id, asset]));
+    const inserted = await trx
+      .insertInto("salesReturnOrderLine")
+      .values(
+        assetIds.map((assetId, index) => {
+          const asset = assetById.get(assetId)!;
+          return {
+            salesReturnOrderId,
+            lineNumber: lastLineNumber + index + 1,
+            itemId: asset.itemId,
+            quantity: 1,
+            unitOfMeasureCode: asset.unitOfMeasureCode,
+            unitPrice: 0,
+            returnType:
+              suggestCoverage(asset, args.today) === "Warranty"
+                ? ("Return for Warranty" as const)
+                : ("Return for Service" as const),
+            customerAssetId: asset.id,
+            companyId,
+            createdBy: userId
+          };
+        })
+      )
+      .returning(["id"])
+      .execute();
+    return { salesReturnOrderLineIds: inserted.map((row) => row.id) };
+  });
+}
+
+/**
+ * True when the asset is the company's, belongs to `customerId` and is a unit
+ * of `itemId`: the asset a return line may name.
+ */
+export async function isCustomerAssetOfLine(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    customerAssetId: string;
+    customerId: string;
+    itemId: string;
+    companyId: string;
+  }
+): Promise<boolean> {
+  const asset = await db
+    .selectFrom("customerAsset")
+    .select(["id"])
+    .where("id", "=", args.customerAssetId)
+    .where("customerId", "=", args.customerId)
+    .where("itemId", "=", args.itemId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  return !!asset;
+}
+
+/**
+ * The refusal of a return line's service fields, else null: a Return for
+ * Service or Return for Warranty line holds one unit, and a named asset is a
+ * unit of the line's item that belongs to the RMA's customer.
+ */
+export async function refuseReturnLine(
+  ctx: ServiceContext,
+  {
+    customerId,
+    line
+  }: {
+    customerId: string | null;
+    line: {
+      itemId: string;
+      quantity: number;
+      returnType?: string | null;
+      customerAssetId?: string;
+    };
+  }
+): Promise<CarbonError | null> {
+  if (isServiceReturnLine(line.returnType) && line.quantity !== 1) {
+    return ctx.error("rule", SERVICE_RETURN_LINE_QUANTITY_MESSAGE);
+  }
+  if (
+    line.customerAssetId &&
+    (!customerId ||
+      !(await isCustomerAssetOfLine(ctx.asSystem.pg, {
+        customerAssetId: line.customerAssetId,
+        customerId,
+        itemId: line.itemId,
+        companyId: ctx.company.id
+      })))
+  ) {
+    return ctx.error(
+      "rule",
+      "The asset must be a unit of the line's item that belongs to the return order's customer"
+    );
+  }
+  return null;
+}
+
+/** A Service or Warranty line, with its live job: the latest not Cancelled. */
+async function lockServiceReturnLine(
+  trx: Transaction<KyselyDatabase>,
+  args: { salesReturnOrderId: string; lineId: string; companyId: string }
+) {
+  const order = await trx
+    .selectFrom("salesReturnOrder")
+    .select(["status"])
+    .where("id", "=", args.salesReturnOrderId)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!order) throw new NotFoundError("Return order not found");
+  if (order.status === "Cancelled") {
+    throw new InvalidInputError("The return order is cancelled");
+  }
+  const line = await trx
+    .selectFrom("salesReturnOrderLine")
+    .select([
+      "id",
+      "returnType",
+      "disposition",
+      "quantityReceived",
+      "quantityShipped",
+      "customerAssetId"
+    ])
+    .where("id", "=", args.lineId)
+    .where("salesReturnOrderId", "=", args.salesReturnOrderId)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!line) {
+    throw new NotFoundError("This line does not belong to this return order");
+  }
+  if (
+    line.returnType !== "Return for Service" &&
+    line.returnType !== "Return for Warranty"
+  ) {
+    throw new InvalidInputError(
+      "Only a Return for Service or Return for Warranty line has a service job"
+    );
+  }
+  const job = await trx
+    .selectFrom("serviceJob")
+    .select([
+      "id",
+      "serviceJobId",
+      "status",
+      "repairable",
+      "trackedEntityId",
+      "customerAssetId"
+    ])
+    .where("salesReturnOrderLineId", "=", line.id)
+    .where("status", "!=", "Cancelled")
+    .where("companyId", "=", args.companyId)
+    .orderBy("createdAt", "desc")
+    .executeTakeFirst();
+  return { line, job: job ?? null };
+}
+
+/**
+ * Scrap the unit of a Service or Warranty line, with the customer's consent
+ * or after a no-charge replacement: the line's disposition becomes Scrap, its
+ * serial Scrapped and its customer asset Returned. The unit was never valued,
+ * so nothing posts. Refused before the job is Completed, Invoiced or
+ * Cancelled, and once the unit has shipped back. Re-derives the RMA status.
+ */
+export async function scrapServiceReturnLine(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    salesReturnOrderId: string;
+    lineId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ salesReturnOrderLineId: string }> {
+  const { companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const { line, job } = await lockServiceReturnLine(trx, args);
+    if (Number(line.quantityReceived) <= 0) {
+      throw new InvalidInputError("The unit has not been received");
+    }
+    if (Number(line.quantityShipped) > 0) {
+      throw new InvalidInputError("The unit has already shipped back");
+    }
+    if (line.disposition === "Scrap") {
+      throw new InvalidInputError("The unit is already scrapped");
+    }
+    if (job && !["Completed", "Invoiced"].includes(job.status)) {
+      throw new InvalidInputError(
+        `Complete service job ${job.serviceJobId} before scrapping the unit`
+      );
+    }
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("salesReturnOrderLine")
+      .set({ disposition: "Scrap", updatedBy: userId, updatedAt: now })
+      .where("id", "=", line.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const assetId = job?.customerAssetId ?? line.customerAssetId;
+    if (assetId) {
+      await trx
+        .updateTable("customerAsset")
+        .set({ status: "Returned", updatedBy: userId, updatedAt: now })
+        .where("id", "=", assetId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    const serialId = job?.trackedEntityId;
+    if (serialId) {
+      const scrapped = await trx
+        .updateTable("trackedEntity")
+        .set({ status: "Scrapped" })
+        .where("id", "=", serialId)
+        .where("companyId", "=", companyId)
+        .returning(["id", "quantity"])
+        .executeTakeFirst();
+      if (scrapped) {
+        const order = await trx
+          .selectFrom("salesReturnOrder")
+          .select(["salesReturnOrderId"])
+          .where("id", "=", args.salesReturnOrderId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirstOrThrow();
+        const activity = await trx
+          .insertInto("trackedActivity")
+          .values({
+            type: "Disposition",
+            sourceDocument: "Sales Return Order",
+            sourceDocumentId: args.salesReturnOrderId,
+            sourceDocumentReadableId: order.salesReturnOrderId,
+            attributes: JSON.stringify({
+              "Sales Return Order": args.salesReturnOrderId,
+              Disposition: "Scrap",
+              Employee: userId
+            }),
+            companyId,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+        await trx
+          .insertInto("trackedActivityInput")
+          .values({
+            trackedActivityId: activity.id,
+            trackedEntityId: scrapped.id,
+            quantity: Number(scrapped.quantity ?? 1),
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+      }
+    }
+
+    await refreshSalesReturnOrderStatus(
+      trx,
+      args.salesReturnOrderId,
+      companyId,
+      userId
+    );
+    return { salesReturnOrderLineId: line.id };
+  });
+}
+
+/**
+ * The live service job of a Return for Warranty line whose warranty is
+ * denied, before it is Completed: the job the coverage change runs on.
+ * Refuses any other line.
+ */
+export async function warrantyReturnLineJob(
+  db: Kysely<KyselyDatabase>,
+  args: { salesReturnOrderId: string; lineId: string; companyId: string }
+): Promise<{ serviceJobId: string }> {
+  return db.transaction().execute(async (trx) => {
+    const { line, job } = await lockServiceReturnLine(trx, args);
+    if (line.returnType !== "Return for Warranty") {
+      throw new InvalidInputError("Only a Return for Warranty line can change");
+    }
+    if (!job) {
+      throw new InvalidInputError(
+        "The line has no service job yet: change its return type instead"
+      );
+    }
+    if (["Completed", "Invoiced"].includes(job.status)) {
+      throw new InvalidInputError(
+        `Service job ${job.serviceJobId} is ${job.status}: reopen it first`
+      );
+    }
+    return { serviceJobId: job.id };
+  });
+}
+
+/**
+ * Sets a Return for Warranty line to Return for Service, after its job's
+ * coverage moved to Billable. Re-derives the RMA status.
+ */
+export async function setReturnLineToService(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    salesReturnOrderId: string;
+    lineId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ salesReturnOrderLineId: string }> {
+  return db.transaction().execute(async (trx) => {
+    const { line } = await lockServiceReturnLine(trx, args);
+    await trx
+      .updateTable("salesReturnOrderLine")
+      .set({
+        returnType: "Return for Service",
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", line.id)
+      .where("companyId", "=", args.companyId)
+      .execute();
+    await refreshSalesReturnOrderStatus(
+      trx,
+      args.salesReturnOrderId,
+      args.companyId,
+      args.userId
+    );
+    return { salesReturnOrderLineId: line.id };
+  });
 }
 
 /**

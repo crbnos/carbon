@@ -1965,6 +1965,7 @@ export const path = {
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
+    newServiceJob: `${x}/service-job/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
     newShift: `${x}/people/shifts/new`,
@@ -2531,12 +2532,16 @@ export const path = {
       generatePath(`${x}/sales-return-order/${id}/credit`),
     salesReturnOrderDetails: (id: string) =>
       generatePath(`${x}/sales-return-order/${id}/details`),
+    salesReturnOrderFromAssets: (id: string) =>
+      generatePath(`${x}/sales-return-order/${id}/from-assets`),
     salesReturnOrderLine: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/details`),
     salesReturnOrderLineDisposition: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/disposition`),
     salesReturnOrderLineIssue: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/issue`),
+    salesReturnOrderLineNextStep: (orderId: string, lineId: string) =>
+      generatePath(`${x}/sales-return-order/${orderId}/${lineId}/next-step`),
     salesReturnOrderLineReceiving: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/receiving`),
     salesReturnOrderReplacement: (id: string) =>
@@ -2590,6 +2595,11 @@ export const path = {
     service: (id: string) => generatePath(`${x}/service/${id}`),
     serviceCosting: (id: string) => generatePath(`${x}/service/${id}/costing`),
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
+    serviceJob: (id: string) => generatePath(`${x}/service-job/${id}`),
+    serviceJobStatus: (id: string) =>
+      generatePath(`${x}/service-job/${id}/status`),
+    serviceJobs: `${x}/service-jobs`,
+    serviceJobUpdate: `${x}/service-job/update`,
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),
     servicePurchasing: (id: string) =>

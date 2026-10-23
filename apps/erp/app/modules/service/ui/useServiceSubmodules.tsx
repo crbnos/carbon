@@ -3,13 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { LuServer } from "react-icons/lu";
+import { LuHammer, LuServer } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
 const customerAssetRecordPrefix = path.to.customerAsset("x").replace(/x$/, "");
+const serviceJobRecordPrefix = path.to.serviceJob("x").replace(/x$/, "");
 
 export default function useServiceSubmodules() {
   const { t } = useLingui();
@@ -20,6 +21,15 @@ export default function useServiceSubmodules() {
     {
       name: t`Manage`,
       routes: [
+        {
+          name: t`Jobs`,
+          to: path.to.serviceJobs,
+          icon: <LuHammer />,
+          table: "serviceJob",
+          isActive: (pathname: string) =>
+            pathname.startsWith(path.to.serviceJobs) ||
+            pathname.startsWith(serviceJobRecordPrefix)
+        },
         {
           name: t`Customer Assets`,
           to: path.to.customerAssets,

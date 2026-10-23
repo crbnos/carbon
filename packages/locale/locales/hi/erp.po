@@ -505,6 +505,7 @@ msgid "{0} scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selected.size
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} चुने गए"
@@ -697,6 +698,9 @@ msgstr "{count} जुड़े हुए तत्व बदल गए। ल�
 msgid "{count} of {total} units"
 msgstr "{count} का {total} इकाइयों में से"
 
+msgid "{count} results"
+msgstr ""
+
 msgid "{count} units"
 msgstr "{count} इकाइयाँ"
 
@@ -750,6 +754,9 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# पार्ट बनाया गया} other {# पार्ट्स बनाए गए}}"
@@ -1778,6 +1785,9 @@ msgstr "एक किराया समझौता सक्रिय हो�
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "एक किराया जो किसी भी पाँच ASC 842 लीज परीक्षण को पूरा करता है, बिक्रय के रूप में बुक किया जाता है जब इसका समझौता सक्रिय होता है: इकाई बेड़े को छोड़ देती है, लीज राजस्व और बेचे गए माल की लागत पोस्ट होती है, और लीज में शुद्ध निवेश इसकी जगह लेता है।"
 
+msgid "A replacement at no charge is added to the return's replacement order. Its cost goes to warranty expense when it ships. Scrap the old unit afterwards."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "एक रिटर्न मर्चेंडाइज ऑथराइजेशन (RMA) एक ग्राहक को क्रेडिट, प्रतिस्थापन या मरम्मत के लिए सामान वापस करने का अधिकार देता है।"
 
@@ -1867,6 +1877,9 @@ msgstr "कर रिपोर्टिंग के लिए एक अलग 
 
 msgid "A serial's build history"
 msgstr "एक सीरीज का निर्माण इतिहास"
+
+msgid "A serialized unit becomes a customer asset when its shipment posts. Register older units under Service → Customer Assets."
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "एक सेवा एक बिलयोग्य गतिविधि है जो खरीदी या प्रदर्शन की जाती है — इसे कभी भेजा नहीं जाता, प्राप्त नहीं किया जाता, या स्टॉक नहीं किया जाता"
@@ -2572,6 +2585,9 @@ msgstr "ईवेंट जोड़ें"
 msgid "Add Fixed Asset"
 msgstr "अचल संपत्ति जोड़ें"
 
+msgid "Add from assets"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "लाइब्रेरी से जोड़ें…"
 
@@ -2616,6 +2632,9 @@ msgstr "लाइन आइटम जोड़ें"
 
 msgid "Add Lines"
 msgstr "लाइनें जोड़ें"
+
+msgid "Add lines from assets"
+msgstr ""
 
 msgid "Add lines from document"
 msgstr "दस्तावेज़ से लाइनें जोड़ें"
@@ -2975,6 +2994,9 @@ msgstr "सभी उन्नत विशेषताएं उपलब्ध
 
 msgid "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
 msgstr "सभी राशियाँ पूरे डॉलर में हैं। स्तंभ 53, कुल QRE और कुल पंक्ति गोल की गई राशियों को जोड़ते हैं।"
+
+msgid "All assets"
+msgstr ""
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
@@ -4619,6 +4641,9 @@ msgstr "बंद करने के लिए औसत दिन"
 msgid "Awaiting approval"
 msgstr "अनुमोदन की प्रतीक्षा में"
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "BAC"
 msgstr "BAC"
 
@@ -4904,6 +4929,9 @@ msgstr "बिल प्राप्तकर्ता"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "पूरे महीने, त्रैमासिक या वर्षों का बिल करें, पहले आंशिक अवधि के साथ।"
 
+msgid "Billable"
+msgstr ""
+
 msgid "Billable item"
 msgstr "बिलिंग योग्य आइटम"
 
@@ -4918,6 +4946,9 @@ msgstr "बिल किया गया"
 
 msgid "Billed Externally"
 msgstr "बाहरी रूप से चालान किया गया"
+
+msgid "Billed Item"
+msgstr ""
 
 msgid "Billed On"
 msgstr "चालान दिनांक"
@@ -5399,8 +5430,8 @@ msgid "Cancel"
 msgstr "रद्द करें"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: job?.serviceJobId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "रद्द करें {0}"
 
@@ -5795,6 +5826,9 @@ msgstr "आइटम प्रकार बदलें (जैसे भाग,
 msgid "Change Time"
 msgstr "समय बदलें"
 
+msgid "Change to Return for Service"
+msgstr ""
+
 msgid "Change type"
 msgstr "प्रकार परिवर्तित करें"
 
@@ -5965,6 +5999,9 @@ msgstr "एक बैच नंबर चुनें"
 
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "एक साथ चल सकने वाले ऑपरेशन देखने के लिए एक बैच योग्य प्रक्रिया चुनें।"
+
+msgid "Choose a customer"
+msgstr ""
 
 msgid "Choose a labor category or an employee"
 msgstr "एक श्रम श्रेणी या एक कर्मचारी चुनें"
@@ -7094,6 +7131,9 @@ msgstr "समस्या संख्या कॉपी करें"
 msgid "Copy issue unique identifier"
 msgstr "समस्या की अद्वितीय पहचान की प्रतिलिपि बनाएं"
 
+msgid "Copy job number"
+msgstr ""
+
 msgid "Copy Job number"
 msgstr "जॉब नंबर कॉपी करें"
 
@@ -7126,6 +7166,9 @@ msgstr "दस्तावेज़ की लिंक कॉपी करे�
 
 msgid "Copy link to issue"
 msgstr "समस्या के लिए लिंक कॉपी करें"
+
+msgid "Copy link to job"
+msgstr ""
 
 msgid "Copy link to Job"
 msgstr "जॉब के लिए लिंक कॉपी करें"
@@ -8083,6 +8126,9 @@ msgstr "ग्राहक खाते"
 msgid "Customer and supplier pages"
 msgstr "ग्राहक और आपूर्तिकर्ता पृष्ठ"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "ग्राहक संपत्ति"
 
@@ -8205,6 +8251,9 @@ msgstr "ग्राहक RFQ"
 
 msgid "Customer Scope"
 msgstr "ग्राहक स्कोप"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "customer status"
 msgstr "ग्राहक स्थिति"
@@ -9220,6 +9269,9 @@ msgstr "जमा:"
 msgid "Deposits"
 msgstr "जमा राशि"
 
+msgid "Depot"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "मूल्यह्रास"
 
@@ -9887,6 +9939,9 @@ msgstr "प्रत्येक राशि उस पर शुरू हो�
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "प्रत्येक राशि उस पर शुरू होती है जो पंक्ति के पास स्वीकृति के लिए बचा है।"
 
+msgid "Each asset becomes one line for one unit. A unit under warranty is a Return for Warranty, any other a Return for Service."
+msgstr ""
+
 msgid "Each asset is accounted for on its own, at its own payment. Click a cell to change it."
 msgstr "प्रत्येक संपत्ति को अपने ही भुगतान पर अपने आप खाता दिया जाता है। इसे बदलने के लिए एक सेल पर क्लिक करें।"
 
@@ -10190,6 +10245,9 @@ msgstr "निरीक्षण योजना संपादित करे
 
 msgid "Edit Item Group"
 msgstr "आइटम ग्रुप संपादित करें"
+
+msgid "Edit Job"
+msgstr ""
 
 msgid "Edit Journal Entry"
 msgstr "जर्नल प्रविष्टि संपादित करें"
@@ -11611,6 +11669,9 @@ msgstr "आपूर्तिकर्ता कोटेशन पंक्त�
 msgid "Failed to load configuration parameters"
 msgstr "कॉन्फ़िगरेशन पैरामीटर लोड करने में विफल"
 
+msgid "Failed to load customer assets"
+msgstr ""
+
 msgid "Failed to load customer part details"
 msgstr "ग्राहक भाग विवरण लोड करने में विफल"
 
@@ -12005,6 +12066,9 @@ msgstr "कंपनी खोजें…"
 
 msgid "Find module…"
 msgstr "मॉड्यूल खोजें…"
+
+msgid "Findings"
+msgstr ""
 
 msgid "finish"
 msgstr "तैयार माल"
@@ -14396,6 +14460,9 @@ msgstr "संपादन जारी रखें"
 msgid "Keep existing pricing, only add new items"
 msgstr "मौजूदा मूल्य निर्धारण रखें, केवल नई वस्तुएं जोड़ें"
 
+msgid "Keep Job"
+msgstr ""
+
 msgid "Keep Line"
 msgstr "पंक्ति रखें"
 
@@ -15103,6 +15170,9 @@ msgstr "टेम्पलेट लोड करें"
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "अंतिम रूप से लोड किया गया, कटओवर पर, इसलिए शेष राशि वर्तमान है।"
+
+msgid "Loading assets..."
+msgstr ""
 
 msgid "Loading associated jobs..."
 msgstr "संबंधित जॉब लोड हो रहे हैं..."
@@ -16760,6 +16830,9 @@ msgstr "नया सीरियल नंबर"
 msgid "New Service"
 msgstr "नई सेवा"
 
+msgid "New Service Job"
+msgstr ""
+
 msgid "New Shift"
 msgstr "नई शिफ्ट"
 
@@ -17001,8 +17074,14 @@ msgstr "अभी तक कोई अनुमोदन आवश्यकत�
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "अभी तक कोई संग्रहीत लॉग नहीं हैं। {0} दिनों से पुराने लॉग स्वचालित रूप से संग्रहीत किए जाएंगे और यहां डाउनलोड के लिए उपलब्ध होंगे।"
 
+msgid "No asset"
+msgstr ""
+
 msgid "No assets"
 msgstr "कोई संपत्ति नहीं"
+
+msgid "No assets match your search"
+msgstr ""
 
 msgid "No assets to depreciate for this period."
 msgstr "इस अवधि के लिए मूल्यह्रास के लिए कोई संपत्ति नहीं है।"
@@ -17270,6 +17349,9 @@ msgstr "कोई कर्मचारी नहीं मिला"
 msgid "No end"
 msgstr "कोई अंत नहीं"
 
+msgid "No estimate lines"
+msgstr ""
+
 msgid "No estimated costs."
 msgstr "कोई अनुमानित लागत नहीं।"
 
@@ -17308,6 +17390,9 @@ msgstr "इस आइटम के लिए कोई फ़ाइल नही
 
 msgid "No files uploaded"
 msgstr "कोई फ़ाइल अपलोड नहीं की गई"
+
+msgid "No findings"
+msgstr ""
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "कटऑवर तारीख से पहले कोई अचल संपत्ति खरीदी नहीं गई थी।"
@@ -17574,6 +17659,9 @@ msgstr "कोई पार्ट्स नहीं"
 msgid "No parts changed."
 msgstr "कोई पार्ट नहीं बदला।"
 
+msgid "No parts or charges"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "अभी तक कोई पासकी पंजीकृत नहीं है।"
 
@@ -17646,6 +17734,9 @@ msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं
 msgid "No priority"
 msgstr "कोई प्राथमिकता नहीं"
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No process selected"
 msgstr "कोई प्रक्रिया चयनित नहीं है"
 
@@ -17714,6 +17805,9 @@ msgstr "इस कंपनी के किसी भी प्रतिनि�
 
 msgid "No requests yet."
 msgstr "अभी तक कोई अनुरोध नहीं है।"
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "कोई परिणाम नहीं"
@@ -17832,6 +17926,9 @@ msgstr "अभी तक कोई सिंक ऑपरेशन नहीं"
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
+msgid "No time logged"
+msgstr ""
+
 msgid "No time this week"
 msgstr "इस सप्ताह कोई समय नहीं"
 
@@ -17906,6 +18003,12 @@ msgstr "अभी तक कोई कार्य पैकेज नहीं�
 
 msgid "No work yet. <0>Plan the project</0>"
 msgstr "अभी कोई काम नहीं। <0>प्रोजेक्ट की योजना बनाएं</0>"
+
+msgid "No-charge replacement"
+msgstr ""
+
+msgid "No-charge Replacement"
+msgstr ""
 
 msgid "Nom"
 msgstr "नाम"
@@ -18324,6 +18427,9 @@ msgstr "लापता समय रिपोर्ट पर"
 
 msgid "On this operation"
 msgstr "इस ऑपरेशन पर"
+
+msgid "On this RMA"
+msgstr ""
 
 msgid "On time"
 msgstr "समय पर"
@@ -20288,6 +20394,9 @@ msgstr "गोपनीयता नीति"
 msgid "Private"
 msgstr "निजी"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "कार्यविधि"
 
@@ -22074,6 +22183,12 @@ msgstr "पुनः ऑर्डर करने की नीति"
 msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 msgstr "केवल प्रेषण अनुक्रम और वर्क सेंटर को पुनः क्रमित करता है — समय सारणी में परिवर्तन नहीं करता है। तिथि बोर्ड पर तिथियां बदलें।"
 
+msgid "Repair or service a customer's unit, at the depot or on site"
+msgstr ""
+
+msgid "Repairable"
+msgstr ""
+
 msgid "Repeat Run"
 msgstr "दोहराएं रन"
 
@@ -22356,6 +22471,9 @@ msgstr "अवशिष्ट मूल्य"
 msgid "Residual Value %"
 msgstr "अवशिष्ट मूल्य %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr "समाधान करें"
 
@@ -22471,6 +22589,12 @@ msgstr "पूर्ववत् करने का पुन: प्रया�
 msgid "Return"
 msgstr "वापसी"
 
+msgid "Return for Service"
+msgstr ""
+
+msgid "Return for Warranty"
+msgstr ""
+
 msgid "Return Home"
 msgstr "घर लौटें"
 
@@ -22512,6 +22636,12 @@ msgstr "सेवा में वापसी"
 
 msgid "Return to stock"
 msgstr "स्टॉक में वापस करें"
+
+msgid "Return to Stock"
+msgstr ""
+
+msgid "Return Type"
+msgstr ""
 
 msgid "returnable"
 msgstr "रिटर्न योग्य"
@@ -23429,6 +23559,12 @@ msgstr "स्क्रैप कारण"
 msgid "Scrap Reasons"
 msgstr "स्क्रैप कारण"
 
+msgid "Scrap the unit"
+msgstr ""
+
+msgid "Scrap Unit"
+msgstr ""
+
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
 
@@ -23819,6 +23955,9 @@ msgstr "आपूर्तिकर्ता प्रकार चुनें"
 msgid "Select surfaces"
 msgstr "सतहें चुनें"
 
+msgid "Select the customer's units to service or replace under warranty."
+msgstr ""
+
 msgid "Select the groups that should complete this training"
 msgstr "उन समूहों का चयन करें जिन्हें इस प्रशिक्षण को पूरा करना चाहिए"
 
@@ -24012,6 +24151,12 @@ msgstr "सेवा का अंत"
 msgid "Service ID"
 msgstr "सेवा ID"
 
+msgid "Service Job"
+msgstr ""
+
+msgid "Service Jobs"
+msgstr ""
+
 msgid "Service Labor"
 msgstr "सेवा श्रम"
 
@@ -24047,6 +24192,9 @@ msgstr "सत्र लॉक किया गया"
 
 msgid "Set a customer on this return to add from a shipment."
 msgstr "शिपमेंट से जोड़ने के लिए इस वापसी पर एक ग्राहक सेट करें।"
+
+msgid "Set a customer on this return to add from its assets."
+msgstr ""
 
 msgid "Set a Pull From on each one through a new version."
 msgstr "एक नए संस्करण के माध्यम से प्रत्येक पर Pull From निर्दिष्ट करें।"
@@ -24294,6 +24442,9 @@ msgstr "इस स्टेशन को सौंपी गई शिफ्ट"
 msgid "Ship"
 msgstr "भेजें"
 
+msgid "Ship Back"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "शिप की तारीख"
 
@@ -24338,6 +24489,9 @@ msgstr "शिपमेंट"
 
 msgid "Shipped"
 msgstr "भेजी गई"
+
+msgid "Shipped {shippedOn}"
+msgstr ""
 
 msgid "Shipped <0/>"
 msgstr "भेजा गया <0/>"
@@ -25485,6 +25639,10 @@ msgstr "मिलान सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"
+
+#. placeholder {0}: coverageLabels[suggestCoverage(asset, today)]
+msgid "Suggested from the asset's warranty: {0}"
+msgstr ""
 
 msgid "Suggested from the change in recurring value"
 msgstr "आवर्ती मान में परिवर्तन से सुझाया गया"
@@ -26710,6 +26868,9 @@ msgstr "आइटम के इस स्तर पर कोई निर्म
 msgid "The item's rental rate"
 msgstr "आइटम की किराये की दर"
 
+msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "उस दिन देय नौकरी के घंटे (देय तारीख आधार पर, वह दिन नहीं जब काम चलता है), अतिदेय कार्य पिछली देय में।"
 
@@ -27398,6 +27559,9 @@ msgstr "अवधि समाप्त होने के बाद इका�
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "इकाई उपलब्धता से हटा दी जाती है जब तक इसे सेवा में वापस नहीं किया जाता। मूल्यह्रास जारी रहता है और इसका लेखांकन अपरिवर्तित रहता है।"
 
+msgid "The unit is scrapped with the customer's consent and does not ship back. It was never in stock, so nothing posts."
+msgstr ""
+
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "इकाई स्टॉक से निकलती है और इन्वेंटरी में दर्ज लागत पर संपत्ति बन जाती है।"
 
@@ -27454,6 +27618,9 @@ msgstr "गोदाम जिससे इस आदेश पर सामा�
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "गोदाम जिससे इस उद्धरण पर सामान भेज दिया जाएगा; ग्राहक का शिप स्थान वह जगह है जहां वे पहुंचेंगे।"
+
+msgid "The warranty is denied. The line becomes a Return for Service and its service job becomes Billable."
+msgstr ""
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "उपकरण की विफलता के तरीके, रखरखाव और गुणवत्ता ट्रैकिंग के लिए"
@@ -27615,6 +27782,9 @@ msgstr "इस अनुबंध के चालान स्वचालि�
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
+
+msgid "This customer has no assets"
+msgstr ""
 
 msgid "This customer type's rate"
 msgstr "इस ग्राहक प्रकार की दर"
@@ -28045,6 +28215,9 @@ msgstr "समय और सामग्री और Cost Plus पंक्त�
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "संपत्ति और वर्ग द्वारा किराया बेड़े का समय और डॉलर उपयोग"
+
+msgid "Time and Materials"
+msgstr ""
 
 msgid "Time entered after the entry window, with the reason given"
 msgstr "प्रवेश विंडो के बाद दर्ज किया गया समय, कारण के साथ दिया गया"
@@ -30079,6 +30252,9 @@ msgstr "ग्राहक ने Time & Materials या Cost Plus पंक्
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "ग्राहक अग्रिम में क्या भुगतान करता है, किराए पर कर, और चालान कब देय हैं।"
 
+msgid "What the customer reported"
+msgstr ""
+
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "नियत तारीख की गिनती किससे शुरू होती है (चालान की तारीख, महीने का अंत, आदि)।"
 
@@ -30597,6 +30773,9 @@ msgstr "कार्य फोन"
 
 msgid "Work shift tracking is active."
 msgstr "कार्य शिफ्ट ट्रैकिंग सक्रिय है।"
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Workflow"
 msgstr "वर्कफ़्लो"

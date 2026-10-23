@@ -505,6 +505,7 @@ msgid "{0} scrapped"
 msgstr "{0} rebuté"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selected.size
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} sélectionnés"
@@ -697,6 +698,9 @@ msgstr "{count} éléments liés ont changé. Examinez les liens."
 msgid "{count} of {total} units"
 msgstr "{count} sur {total} unités"
 
+msgid "{count} results"
+msgstr ""
+
 msgid "{count} units"
 msgstr "{count} unités"
 
@@ -750,6 +754,9 @@ msgstr "{hiddenCount} autres : {hiddenNames}"
 
 msgid "{hour} h"
 msgstr "{hour} h"
+
+msgid "{hours} h"
+msgstr ""
 
 msgid "{inserted, plural, one {# part created} other {# parts created}}"
 msgstr "{inserted, plural, one {# pièce créée} other {# pièces créées}}"
@@ -1778,6 +1785,9 @@ msgstr "Un accord de location doit être dans la devise de base de la Société 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Une location qui satisfait l'un des cinq tests de location ASC 842, comptabilisée comme une vente lorsque son accord s'active : l'unité quitte la flotte, les revenus de location et le coût des marchandises vendues sont comptabilisés, et un investissement net en location prend sa place."
 
+msgid "A replacement at no charge is added to the return's replacement order. Its cost goes to warranty expense when it ships. Scrap the old unit afterwards."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "Une autorisation de retour de marchandise (RMA) autorise un client à retourner des marchandises pour un crédit, un remplacement ou une réparation."
 
@@ -1867,6 +1877,9 @@ msgstr "Un calendrier d'amortissement distinct pour la déclaration fiscale quan
 
 msgid "A serial's build history"
 msgstr "L'historique de fabrication d'une série"
+
+msgid "A serialized unit becomes a customer asset when its shipment posts. Register older units under Service → Customer Assets."
+msgstr ""
 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Un service est une activité facturable qui est achetée ou exécutée — il n'est jamais expédié, reçu ou stocké"
@@ -2572,6 +2585,9 @@ msgstr "Ajouter un événement"
 msgid "Add Fixed Asset"
 msgstr "Ajouter une immobilisation"
 
+msgid "Add from assets"
+msgstr ""
+
 msgid "Add from library…"
 msgstr "Ajouter à partir de la bibliothèque…"
 
@@ -2616,6 +2632,9 @@ msgstr "Ajouter un article de ligne"
 
 msgid "Add Lines"
 msgstr "Ajouter des lignes"
+
+msgid "Add lines from assets"
+msgstr ""
 
 msgid "Add lines from document"
 msgstr "Ajouter des lignes du document"
@@ -2975,6 +2994,9 @@ msgstr "Toutes les fonctionnalités avancées disponibles"
 
 msgid "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
 msgstr "Tous les montants sont en dollars entiers. Les colonnes 53, Total QRE et la ligne Total ajoutent les montants arrondis."
+
+msgid "All assets"
+msgstr ""
 
 msgid "All Audit Logs"
 msgstr "Tous les journaux d'audit"
@@ -4619,6 +4641,9 @@ msgstr "Jours moy. pour fermer"
 msgid "Awaiting approval"
 msgstr "En attente d'approbation"
 
+msgid "Awaiting Approval"
+msgstr ""
+
 msgid "BAC"
 msgstr "BAC"
 
@@ -4904,6 +4929,9 @@ msgstr "Facturer à"
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "Facturez des mois entiers, des trimestres ou des années, avec une période partielle en premier."
 
+msgid "Billable"
+msgstr ""
+
 msgid "Billable item"
 msgstr "Article facturable"
 
@@ -4918,6 +4946,9 @@ msgstr "Facturé"
 
 msgid "Billed Externally"
 msgstr "Facturé en externe"
+
+msgid "Billed Item"
+msgstr ""
 
 msgid "Billed On"
 msgstr "Facturé le"
@@ -5399,8 +5430,8 @@ msgid "Cancel"
 msgstr "Annuler"
 
 #. placeholder {0}: contract.customerContractId
+#. placeholder {0}: job?.serviceJobId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "Annuler {0}"
 
@@ -5795,6 +5826,9 @@ msgstr "Modifier le type d'article (p. ex. Pièce, Matériau, Outil, etc.)"
 msgid "Change Time"
 msgstr "Modifier l'heure"
 
+msgid "Change to Return for Service"
+msgstr ""
+
 msgid "Change type"
 msgstr "Modifier le type"
 
@@ -5965,6 +5999,9 @@ msgstr "Choisir un numéro de lot"
 
 msgid "Choose a batchable process to see the operations that can run together."
 msgstr "Choisissez un processus regroupable pour voir les opérations qui peuvent s'exécuter ensemble."
+
+msgid "Choose a customer"
+msgstr ""
 
 msgid "Choose a labor category or an employee"
 msgstr "Choisir une catégorie de main-d'œuvre ou un employé"
@@ -7094,6 +7131,9 @@ msgstr "Copier le numéro du problème"
 msgid "Copy issue unique identifier"
 msgstr "Copier l'identifiant unique du problème"
 
+msgid "Copy job number"
+msgstr ""
+
 msgid "Copy Job number"
 msgstr "Copier le numéro de travail"
 
@@ -7126,6 +7166,9 @@ msgstr "Copier le lien du document"
 
 msgid "Copy link to issue"
 msgstr "Copier le lien vers le problème"
+
+msgid "Copy link to job"
+msgstr ""
 
 msgid "Copy link to Job"
 msgstr "Copier le lien vers la tâche"
@@ -8083,6 +8126,9 @@ msgstr "Comptes Clients"
 msgid "Customer and supplier pages"
 msgstr "Pages client et fournisseur"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "Actifs du client"
 
@@ -8205,6 +8251,9 @@ msgstr "RFQ Client"
 
 msgid "Customer Scope"
 msgstr "Portée client"
+
+msgid "Customer Site"
+msgstr ""
 
 msgid "customer status"
 msgstr "statut du client"
@@ -9220,6 +9269,9 @@ msgstr "Dépôt :"
 msgid "Deposits"
 msgstr "Acomptes"
 
+msgid "Depot"
+msgstr ""
+
 msgid "Depreciation"
 msgstr "Amortissement"
 
@@ -9887,6 +9939,9 @@ msgstr "Chaque montant part de ce que la ligne a à facturer."
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "Chaque montant part de ce que la ligne a à reconnaître."
 
+msgid "Each asset becomes one line for one unit. A unit under warranty is a Return for Warranty, any other a Return for Service."
+msgstr ""
+
 msgid "Each asset is accounted for on its own, at its own payment. Click a cell to change it."
 msgstr "Chaque actif est comptabilisé séparément, à son propre paiement. Cliquez sur une cellule pour la modifier."
 
@@ -10190,6 +10245,9 @@ msgstr "Modifier le plan de contrôle"
 
 msgid "Edit Item Group"
 msgstr "Modifier le groupe d'articles"
+
+msgid "Edit Job"
+msgstr ""
 
 msgid "Edit Journal Entry"
 msgstr "Modifier la ligne d'écriture"
@@ -11611,6 +11669,9 @@ msgstr "Impossible d'insérer la ligne de devis fournisseur"
 msgid "Failed to load configuration parameters"
 msgstr "Impossible de charger les paramètres de configuration"
 
+msgid "Failed to load customer assets"
+msgstr ""
+
 msgid "Failed to load customer part details"
 msgstr "Impossible de charger les détails de la pièce client"
 
@@ -12005,6 +12066,9 @@ msgstr "Trouver une société…"
 
 msgid "Find module…"
 msgstr "Trouver un module…"
+
+msgid "Findings"
+msgstr ""
 
 msgid "finish"
 msgstr "Produits finis"
@@ -14396,6 +14460,9 @@ msgstr "Continuer l'édition"
 msgid "Keep existing pricing, only add new items"
 msgstr "Conserver la tarification existante, ajouter uniquement les nouveaux articles"
 
+msgid "Keep Job"
+msgstr ""
+
 msgid "Keep Line"
 msgstr "Conserver la ligne"
 
@@ -15103,6 +15170,9 @@ msgstr "Charger les modèles"
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Chargé en dernier, juste au moment du basculement, pour que les soldes soient à jour."
+
+msgid "Loading assets..."
+msgstr ""
 
 msgid "Loading associated jobs..."
 msgstr "Chargement des ordres de fabrication associés..."
@@ -16760,6 +16830,9 @@ msgstr "Nouveau numéro de série"
 msgid "New Service"
 msgstr "Nouveau service"
 
+msgid "New Service Job"
+msgstr ""
+
 msgid "New Shift"
 msgstr "Nouvelle équipe"
 
@@ -17001,8 +17074,14 @@ msgstr "Aucune exigence d'approbation pour le moment."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Aucun journal archivé pour le moment. Les journaux antérieurs à {0} jours seront automatiquement archivés et disponibles au téléchargement ici."
 
+msgid "No asset"
+msgstr ""
+
 msgid "No assets"
 msgstr "Aucun actif"
+
+msgid "No assets match your search"
+msgstr ""
 
 msgid "No assets to depreciate for this period."
 msgstr "Aucun bien à amortir pour cette période."
@@ -17270,6 +17349,9 @@ msgstr "Aucun employé trouvé"
 msgid "No end"
 msgstr "Sans fin"
 
+msgid "No estimate lines"
+msgstr ""
+
 msgid "No estimated costs."
 msgstr "Aucun coût estimé."
 
@@ -17308,6 +17390,9 @@ msgstr "Aucun fichier pour cet article."
 
 msgid "No files uploaded"
 msgstr "Aucun fichier téléchargé"
+
+msgid "No findings"
+msgstr ""
 
 msgid "No fixed asset was acquired before the cutover date."
 msgstr "Aucune immobilisation n'a été acquise avant la date limite."
@@ -17574,6 +17659,9 @@ msgstr "Pas de pièces"
 msgid "No parts changed."
 msgstr "Aucune pièce n'a changé."
 
+msgid "No parts or charges"
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Aucune clé d'accès enregistrée pour le moment."
 
@@ -17646,6 +17734,9 @@ msgstr "Aucune imprimante configurée. Cliquez sur « Ajouter une imprimante » 
 msgid "No priority"
 msgstr "Aucune priorité"
 
+msgid "No problem described"
+msgstr ""
+
 msgid "No process selected"
 msgstr "Aucun processus sélectionné"
 
@@ -17714,6 +17805,9 @@ msgstr "Aucun représentant de cette société n'a encore accepté l'addendum Ca
 
 msgid "No requests yet."
 msgstr "Pas de demandes encore."
+
+msgid "No resolution"
+msgstr ""
 
 msgid "No results"
 msgstr "Aucun résultat"
@@ -17832,6 +17926,9 @@ msgstr "Aucune opération de synchronisation pour le moment"
 msgid "No time entries for this week"
 msgstr "Aucune entrée de temps pour cette semaine"
 
+msgid "No time logged"
+msgstr ""
+
 msgid "No time this week"
 msgstr "Aucun temps cette semaine"
 
@@ -17906,6 +18003,12 @@ msgstr "Aucun lot de travail encore. Donnez à un élément facturable sous un c
 
 msgid "No work yet. <0>Plan the project</0>"
 msgstr "Aucun travail pour le moment. <0>Planifier le projet</0>"
+
+msgid "No-charge replacement"
+msgstr ""
+
+msgid "No-charge Replacement"
+msgstr ""
 
 msgid "Nom"
 msgstr "Nom"
@@ -18324,6 +18427,9 @@ msgstr "Sur le rapport Temps manquant"
 
 msgid "On this operation"
 msgstr "Sur cette opération"
+
+msgid "On this RMA"
+msgstr ""
 
 msgid "On time"
 msgstr "À l'heure"
@@ -20288,6 +20394,9 @@ msgstr "Politique de confidentialité"
 msgid "Private"
 msgstr "Privé"
 
+msgid "Problem"
+msgstr ""
+
 msgid "procedure"
 msgstr "procédures"
 
@@ -22074,6 +22183,12 @@ msgstr "Politique de réapprovisionnement"
 msgid "Reorders dispatch sequence and work center only — does not reschedule. Change dates on the Dates board."
 msgstr "Réordonne uniquement la séquence d'intervention et le poste de travail — ne change pas la planification. Modifiez les dates sur le tableau des dates."
 
+msgid "Repair or service a customer's unit, at the depot or on site"
+msgstr ""
+
+msgid "Repairable"
+msgstr ""
+
 msgid "Repeat Run"
 msgstr "Passage répété"
 
@@ -22356,6 +22471,9 @@ msgstr "Valeur résiduelle"
 msgid "Residual Value %"
 msgstr "Valeur résiduelle %"
 
+msgid "Resolution"
+msgstr ""
+
 msgid "Resolve"
 msgstr "Résoudre"
 
@@ -22471,6 +22589,12 @@ msgstr "Réessayer l'annulation"
 msgid "Return"
 msgstr "Retour"
 
+msgid "Return for Service"
+msgstr ""
+
+msgid "Return for Warranty"
+msgstr ""
+
 msgid "Return Home"
 msgstr "Retour à l'accueil"
 
@@ -22512,6 +22636,12 @@ msgstr "Retour en service"
 
 msgid "Return to stock"
 msgstr "Retourner au stock"
+
+msgid "Return to Stock"
+msgstr ""
+
+msgid "Return Type"
+msgstr ""
 
 msgid "returnable"
 msgstr "retournable"
@@ -23429,6 +23559,12 @@ msgstr "Motifs de rebut"
 msgid "Scrap Reasons"
 msgstr "Motifs de rebut"
 
+msgid "Scrap the unit"
+msgstr ""
+
+msgid "Scrap Unit"
+msgstr ""
+
 msgid "Scrapped"
 msgstr "Mise au rebut"
 
@@ -23819,6 +23955,9 @@ msgstr "Sélectionner le type de fournisseur"
 msgid "Select surfaces"
 msgstr "Sélectionner les surfaces"
 
+msgid "Select the customer's units to service or replace under warranty."
+msgstr ""
+
 msgid "Select the groups that should complete this training"
 msgstr "Sélectionnez les groupes qui doivent suivre cette formation"
 
@@ -24012,6 +24151,12 @@ msgstr "Fin de service"
 msgid "Service ID"
 msgstr "ID du Service"
 
+msgid "Service Job"
+msgstr ""
+
+msgid "Service Jobs"
+msgstr ""
+
 msgid "Service Labor"
 msgstr "Main-d'œuvre de prestation"
 
@@ -24047,6 +24192,9 @@ msgstr "Session verrouillée"
 
 msgid "Set a customer on this return to add from a shipment."
 msgstr "Définissez un client sur ce retour pour ajouter à partir d'une expédition."
+
+msgid "Set a customer on this return to add from its assets."
+msgstr ""
 
 msgid "Set a Pull From on each one through a new version."
 msgstr "Définissez un Prélèvement depuis pour chacun via une nouvelle version."
@@ -24294,6 +24442,9 @@ msgstr "Équipes assignées à cette station"
 msgid "Ship"
 msgstr "Expédier"
 
+msgid "Ship Back"
+msgstr ""
+
 msgid "Ship Date"
 msgstr "Date d'expédition"
 
@@ -24338,6 +24489,9 @@ msgstr "Expéditions"
 
 msgid "Shipped"
 msgstr "Expédié"
+
+msgid "Shipped {shippedOn}"
+msgstr ""
 
 msgid "Shipped <0/>"
 msgstr "Expédié <0/>"
@@ -25485,6 +25639,10 @@ msgstr "Suggérer une correspondance"
 
 msgid "Suggest with AI"
 msgstr "Suggérer avec l'IA"
+
+#. placeholder {0}: coverageLabels[suggestCoverage(asset, today)]
+msgid "Suggested from the asset's warranty: {0}"
+msgstr ""
 
 msgid "Suggested from the change in recurring value"
 msgstr "Suggéré par le changement de valeur récurrente"
@@ -26710,6 +26868,9 @@ msgstr "L'article n'a pas de composants fabriqués à cette profondeur. Incluez 
 msgid "The item's rental rate"
 msgstr "Le tarif de location de l'article"
 
+msgid "The job closes without work. A job with time entries or issued parts cannot be cancelled."
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "les heures de travail dues ce jour-là (selon la date d'échéance, pas le jour où le travail s'exécute), avec le travail en retard en Retard."
 
@@ -27398,6 +27559,9 @@ msgstr "L'unité n'a pas d'autre utilité pour vous une fois la durée terminée
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "L'unité est retirée de la disponibilité jusqu'à ce qu'elle soit retournée en service. L'amortissement continue et sa comptabilité reste inchangée."
 
+msgid "The unit is scrapped with the customer's consent and does not ship back. It was never in stock, so nothing posts."
+msgstr ""
+
 msgid "The unit leaves stock and becomes an asset at the cost inventory carries it at."
 msgstr "L'unité quitte le stock et devient une immobilisation au coût auquel le stock la porte."
 
@@ -27454,6 +27618,9 @@ msgstr "L'entrepôt à partir duquel les marchandises de cette commande seront e
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "L'entrepôt à partir duquel les marchandises de ce devis seront expédiées; l'emplacement d'expédition du client est où elles arriveront."
+
+msgid "The warranty is denied. The line becomes a Return for Service and its service job becomes Billable."
+msgstr ""
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Les façons dont l'équipement tombe en panne, pour le suivi de la maintenance et de la qualité"
@@ -27615,6 +27782,9 @@ msgstr "Les factures de ce contrat se comptabilisent automatiquement, donc confi
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Ce tiers n'a rien en suspens — le paiement sera enregistré en compte courant."
+
+msgid "This customer has no assets"
+msgstr ""
 
 msgid "This customer type's rate"
 msgstr "Le tarif de ce type de client"
@@ -28045,6 +28215,9 @@ msgstr "Les lignes Temps & Matériel et Coût Majoré s'affichent ici. Les ligne
 
 msgid "Time and dollar utilization of the rental fleet by asset and class"
 msgstr "Utilisation en temps et en dollars de la flotte de location par actif et classe"
+
+msgid "Time and Materials"
+msgstr ""
 
 msgid "Time entered after the entry window, with the reason given"
 msgstr "Temps saisi après la fenêtre de saisie, avec la raison donnée"
@@ -30079,6 +30252,9 @@ msgstr "Ce que le client a autorisé sur une ligne à temps et matériaux ou à 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Ce que le client paie d'avance, la taxe sur la location, et quand les factures sont dues."
 
+msgid "What the customer reported"
+msgstr ""
+
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "À partir de quoi commence le compte à rebours de la date d'échéance (date de facture, fin du mois, etc.)."
 
@@ -30597,6 +30773,9 @@ msgstr "Téléphone professionnel"
 
 msgid "Work shift tracking is active."
 msgstr "Le suivi de l'équipe est actif."
+
+msgid "Work Site"
+msgstr ""
 
 msgid "Workflow"
 msgstr "Flux de travail"

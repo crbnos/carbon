@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import AddFromAssetsModal from "./AddFromAssetsModal";
 import ReturnableLinesModal from "./ReturnableLinesModal";
 import SalesReturnOrderCreditModal from "./SalesReturnOrderCreditModal";
 import SalesReturnOrderExplorer from "./SalesReturnOrderExplorer";
@@ -13,6 +14,7 @@ import SalesReturnOrderStatus from "./SalesReturnOrderStatus";
 import SalesReturnOrdersTable from "./SalesReturnOrdersTable";
 
 export {
+  AddFromAssetsModal,
   ReturnableLinesModal,
   SalesReturnOrderCreditModal,
   SalesReturnOrderExplorer,

@@ -159,6 +159,20 @@ export async function getCustomerAsset(
 }
 
 /**
+ * Every customer asset of the company, for a picker: its serial, item,
+ * owner and warranty end dates.
+ */
+export async function getCustomerAssetsList(client: Client, companyId: string) {
+  return client
+    .from("customerAsset")
+    .select(
+      "id, customerId, customerLocationId, laborWarrantyEndDate, partsWarrantyEndDate, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey!inner(id, readableId), item:item!customerAsset_itemId_fkey(id, readableIdWithRevision, name)"
+    )
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+/**
  * Saves the fields a service manager edits on an asset: the site, the two
  * warranty end dates and the notes. A unit is registered with
  * `registerCustomerAsset` (`service.server.ts`); shipments create the rest.
@@ -304,12 +318,15 @@ export async function getServiceJobs(
   return query;
 }
 
-/** One service job with its customer, asset (and warranty), item and assignee. */
+/**
+ * One service job with its customer, asset (and warranty), item, assignee, and
+ * the RMA line it came from.
+ */
 export async function getServiceJob(client: Client, id: string) {
   return client
     .from("serviceJob")
     .select(
-      "*, customer:customer!serviceJob_customerId_fkey(id, name), customerAsset:customerAsset!serviceJob_customerAssetId_fkey(id, status, laborWarrantyEndDate, partsWarrantyEndDate, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey(id, readableId)), item:item!serviceJob_itemId_fkey(id, readableIdWithRevision, name), serviceItem:item!serviceJob_serviceItemId_fkey(id, readableIdWithRevision, name), assigneeUser:user!serviceJob_assignee_fkey(id, fullName, avatarUrl)"
+      "*, customer:customer!serviceJob_customerId_fkey(id, name), customerAsset:customerAsset!serviceJob_customerAssetId_fkey(id, status, laborWarrantyEndDate, partsWarrantyEndDate, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey(id, readableId)), item:item!serviceJob_itemId_fkey(id, readableIdWithRevision, name), serviceItem:item!serviceJob_serviceItemId_fkey(id, readableIdWithRevision, name), assigneeUser:user!serviceJob_assignee_fkey(id, fullName, avatarUrl), salesReturnOrderLine:salesReturnOrderLine!serviceJob_salesReturnOrderLineId_fkey(id, returnType, salesReturnOrder:salesReturnOrder!salesReturnOrderLine_salesReturnOrderId_fkey(id, salesReturnOrderId))"
     )
     .eq("id", id)
     .single();

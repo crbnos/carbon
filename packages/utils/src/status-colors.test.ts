@@ -48,6 +48,18 @@ describe("service status colors", () => {
     });
   });
 
+  it("registers the service job statuses", () => {
+    expect(maps.serviceJob).toEqual({
+      Open: "gray",
+      "Awaiting Approval": "yellow",
+      "In Progress": "blue",
+      "On Hold": "orange",
+      Completed: "green",
+      Invoiced: "purple",
+      Cancelled: "red"
+    });
+  });
+
   it("registers the billable item statuses", () => {
     expect(maps.billableItem).toEqual({
       Unbilled: "blue",

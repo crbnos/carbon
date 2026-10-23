@@ -11,7 +11,7 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { salesReturnOrderLineValidator } from "~/modules/sales/sales.models";
+import { salesReturnOrderLineFormValidator } from "~/modules/sales/sales.models";
 import {
   getReturnReasonsList,
   getSalesReturnOrderLine
@@ -124,9 +124,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(salesReturnOrderLineValidator).request(args, {
-    params: ["id", "lineId"]
-  });
+  const input = await validator(salesReturnOrderLineFormValidator).request(
+    args,
+    {
+      params: ["id", "lineId"]
+    }
+  );
   if ("invalid" in input) return input.invalid;
   const { id: orderId, lineId } = input.params;
   const api = await carbon(args.request);
@@ -169,6 +172,9 @@ export default function SalesReturnOrderLineDetailsRoute() {
     salesOrderLineId: line.salesOrderLineId ?? undefined,
     shipmentLineId: line.shipmentLineId ?? undefined,
     salesInvoiceLineId: line.salesInvoiceLineId ?? undefined,
+    returnType: line.returnType,
+    customerAssetId: line.customerAssetId ?? undefined,
+    problem: line.problem ?? undefined,
     ...getCustomFields(line.customFields)
   };
 
