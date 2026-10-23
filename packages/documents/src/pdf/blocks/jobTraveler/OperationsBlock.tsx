@@ -21,9 +21,11 @@ function getEndPath(operationId: string) {
   return `${getMESUrl()}/x/end/${operationId}`;
 }
 
-// Opens the operation without starting anything. The MES decides from the
-// live membership whether it runs in a batch, so the code stays right when
-// the job leaves the batch after this page is printed.
+/**
+ * Opens the operation without starting anything. The MES decides from the
+ * live membership whether it runs in a batch, so the code stays right when
+ * the job leaves the batch after this page is printed.
+ */
 function getOperationPath(operationId: string) {
   return `${getMESUrl()}/x/operation/${operationId}`;
 }
@@ -90,7 +92,7 @@ export function OperationsBlock({
           const batch = operation.jobOperationBatch ?? null;
           const batchNotes = batch?.notes?.trim() ? batch.notes : null;
           const openQrCode = batch
-            ? generateQRCode(getOperationPath(operation.id), 10)
+            ? () => generateQRCode(getOperationPath(operation.id), 10)
             : null;
           const setupQrCode =
             !batch && operation.setupTime > 0

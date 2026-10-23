@@ -2064,6 +2064,10 @@ export async function getJobOperationsList(
 const JOB_OPERATION_DETAIL_COLUMNS =
   "*, jobOperationBatch(id, readableId, status, notes), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))" as const;
 
+/**
+ * A make method's operations in order, each with its batch, tools,
+ * parameters and steps.
+ */
 export async function getJobOperationsByMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string

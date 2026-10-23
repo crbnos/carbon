@@ -10,7 +10,7 @@ import { OperationsBlock } from "./OperationsBlock";
 
 type Rendered = { texts: string[]; images: number };
 
-// Every text and image the block draws for one operation.
+/** Every text and image the block draws for one operation. */
 function render(operation: Record<string, unknown>): Rendered {
   const tree = OperationsBlock({
     block: { type: "operations", showWorkInstructions: false },

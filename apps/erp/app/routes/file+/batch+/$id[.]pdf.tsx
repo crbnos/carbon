@@ -15,6 +15,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "batch-list", "pdf");
 
+/** The batch list PDF: the batch's jobs, items and quantities, and its notes. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Permissionless like the job traveler: shop-floor people without ERP
   // permissions still print the load sheet. Tenant safety comes from the

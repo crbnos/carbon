@@ -62,9 +62,11 @@ import { TableSkeleton } from "./TableSkeleton";
 
 type ItemType = Parameters<typeof ItemThumbnail>[0]["type"];
 
-// The batch as the unit of work: aggregated quantities, the one shared pick
-// per material, where the output lands, and every member job. Rendered by
-// JobOperation in place of the per-job details when the "Batch" scope is on.
+/**
+ * The batch as the unit of work: aggregated quantities, the one shared pick
+ * per material, where the output lands, and every member job. Rendered by
+ * JobOperation in place of the per-job details when the "Batch" scope is on.
+ */
 export function BatchOverview({
   batch,
   totals,

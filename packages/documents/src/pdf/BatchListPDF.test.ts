@@ -9,7 +9,7 @@ import { BatchListPDF } from "./BatchListPDF";
 import { SAMPLE_JOB_TRAVELER } from "./jobTraveler.samples";
 import { breakLongNotesWord } from "./notesText";
 
-// Every string the batch list prints, read off its element tree.
+/** Every string the batch list prints, read off its element tree. */
 function printedText(notes: string | null | undefined): string[] {
   const document = (BatchListPDF as (p: never) => ReactElement)({
     company: SAMPLE_JOB_TRAVELER.company,
@@ -55,11 +55,16 @@ describe("breakLongNotesWord", () => {
     expect(breakLongNotesWord("x".repeat(40))).toEqual(["x".repeat(40)]);
   });
 
-  it("lets a longer word break every 40 characters", () => {
+  it("lets a longer word break every 40 characters, at a soft hyphen", () => {
     const url = `https://example.com/${"a".repeat(80)}`;
     const parts = breakLongNotesWord(url);
-    expect(parts.join("")).toBe(url);
-    expect(parts.every((part) => part.length <= 40)).toBe(true);
+    const pieces = parts.map((part) => part.replace("\u00AD", ""));
+    expect(pieces.join("")).toBe(url);
+    expect(pieces.every((piece) => piece.length <= 40)).toBe(true);
     expect(parts).toHaveLength(3);
+    expect(parts.slice(0, -1).every((part) => part.endsWith("\u00AD"))).toBe(
+      true
+    );
+    expect(parts.at(-1)).not.toContain("\u00AD");
   });
 });

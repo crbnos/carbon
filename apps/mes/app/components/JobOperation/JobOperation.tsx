@@ -224,6 +224,11 @@ type JobOperationProps = {
   >;
 };
 
+/**
+ * The operator's screen for one job operation. When the operation is in a
+ * released batch, the same screen runs the batch: its details, timer and
+ * completion.
+ */
 export const JobOperation = ({
   batch,
   batchMaterialTotals,
