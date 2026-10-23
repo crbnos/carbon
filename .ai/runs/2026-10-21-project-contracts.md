@@ -40,6 +40,41 @@ counts only this project's lines; Approvals opens the Billing tab when only bill
 the Review gaps use the line's own project, as Confirm does; project contract redirects go
 to Project Contracts; the run's lines are paged (`5c2ffc2606`).
 
+## Section 10 assumptions (Task 21, 2026-10-22)
+
+Readers of `project.projectStock`, and what each does when a job's output sits in
+a project's stripe while `projectStock` is false (D33):
+
+- `complete_job_to_inventory` (`20261011163015`): writes the output to the stripe only
+  when `projectStock` is true; otherwise common stock. Task 27 changes this.
+- `chargeNumberError` (`projects.server.ts:4787`): refuses `receiveToProjectStock`
+  without the flag. Task 26 changes this.
+- `getStockOwnerProjects` (`projects.service.ts:4625`): the stock owner pickers and the
+  inventory owner filter list flagged projects only. **The stripe has no owner to pick:
+  the prototype cannot be filtered or transferred.**
+- `$id.scan.$lineId.tsx:73` (bin move scan): offers lots of flagged projects only.
+  **The prototype cannot be moved between bins.**
+- `inventory.service.ts:3795`: treats only flagged projects' jobs as stripe-drawing.
+- `mrp.ts:299` and `:320`, `mrp-segment-views.sql:187`, `project-material-mrp-demand.sql:54`:
+  MRP segments are flagged projects only. **A stripe on an unflagged project is not a
+  segment, so MRP cannot net it correctly.**
+- `picking-schedule-project-stripe.sql:38,175`: picks from the stripe only for flagged
+  projects.
+- `purchasing+/planning.tsx:151`, `production+/planning.tsx:152`: the Segment column
+  lists flagged projects only.
+- `job+/update.tsx:393`: **saving the job form sets `receiveToProjectStock` from the
+  project's flag, so editing a Build job on an unflagged project silently turns it off.**
+- `post-receipt/index.ts:1788-2137`: receipts stripe only for flagged projects (by
+  design; D33 keeps it).
+- The project close guard: no reader of `projectStock` found for Close.
+
+DCAA: `post-production-event` has 0 reads of `timekeepingControls` (confirmed). The rule
+(`government-contracting.md`) applies DCAA controls to timesheet entries only; production
+labor is not mentioned. The gap of spec 10.6 holds.
+
+**Result: STOP.** D33 as written leaves a stripe that 6 readers cannot see. D33 needs a
+new decision (see the report to Brad).
+
 ## Open items for Brad
 
 1. Glossary hrefs: point `fixed-price` at `/docs/reference/project-billing#fixed-price-billing-events`
