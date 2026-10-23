@@ -19,8 +19,8 @@ export function Logo() {
     <Section className="mt-[32px]">
       <Img
         src={`${baseUrl}/carbon-email-mark.png`}
-        width="64"
-        height="64"
+        width="80"
+        height="80"
         alt="Carbon"
         className="mb-4 mx-auto block"
       />
