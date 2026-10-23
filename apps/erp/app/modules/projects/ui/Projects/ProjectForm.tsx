@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { useFormContext, ValidatedForm } from "@carbon/form";
+import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -11,10 +11,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  cn,
   HStack,
   ModalDrawer,
   ModalDrawerBody,
@@ -26,9 +22,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { ReadOnlyField } from "~/components";
@@ -38,6 +32,7 @@ import {
   Customer,
   DatePicker,
   Employee,
+  FormFold,
   Hidden,
   InputControlled,
   Location,
@@ -488,44 +483,8 @@ const ProjectForm = ({
 
 export default ProjectForm;
 
-/**
- * A folded group of form fields. A closed section only hides its fields: they
- * stay mounted, so the form still posts their values (D14). An unmounted field
- * would post nothing and the action would clear its column.
- */
-export function FormSection({
-  title,
-  defaultOpen = false,
-  fieldNames,
-  children
-}: {
-  title: ReactNode;
-  defaultOpen?: boolean;
-  /** The section opens while one of these fields has an error. */
-  fieldNames?: string[];
-  children: ReactNode;
-}) {
-  const [userOpen, setOpen] = useState(defaultOpen);
-  const { fieldErrors } = useFormContext();
-  const open =
-    userOpen || (fieldNames ?? []).some((name) => Boolean(fieldErrors[name]));
-  return (
-    <Collapsible open={open} onOpenChange={setOpen} className="w-full">
-      <CollapsibleTrigger className="flex w-full items-center gap-1.5 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-        <LuChevronRight
-          className={cn(
-            "size-4 shrink-0 transition-transform duration-150",
-            open && "rotate-90"
-          )}
-        />
-        {title}
-      </CollapsibleTrigger>
-      <CollapsibleContent forceMount className={cn("pt-3", !open && "hidden")}>
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
+/** A folded group of form fields (D14): the shared `FormFold`. */
+export const FormSection = FormFold;
 
 /** The company's active planning groups, read once when needed. */
 export function usePlanningGroups(enabled: boolean) {

@@ -5,6 +5,7 @@
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
+  ChoiceCardGroup,
   HStack,
   ModalCard,
   ModalCardBody,
@@ -13,20 +14,24 @@ import {
   ModalCardFooter,
   ModalCardHeader,
   ModalCardProvider,
-  ModalCardTitle,
-  VStack
+  ModalCardTitle
 } from "@carbon/react";
 import type { ContractBillingBasis } from "@carbon/utils";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
-import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
   BillingElement,
   DatePicker,
+  FormFold,
+  FormGroup,
+  type FormStep,
+  FormStepBar,
+  FormStepButtons,
+  FormStepPanel,
   Hidden,
   Input,
   Item,
@@ -41,7 +46,7 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
-  contractBillingMethods,
+  type contractBillingMethods,
   contractBillingMethodsFor,
   contractRateUnits,
   contractRevenueMethods,
@@ -59,6 +64,23 @@ import ContractProject from "./ContractProject";
 import type { ContractRouteData } from "./types";
 
 type ContractLineFormValues = z.infer<typeof customerContractLineValidator>;
+
+type LineStep = "line" | "pricing" | "dates";
+
+/** A line's tax, in percent points. */
+function TaxPercent() {
+  const { t } = useLingui();
+  return (
+    <Number
+      name="taxPercent"
+      label={t`Tax (%)`}
+      minValue={0}
+      maxValue={100}
+      step={INPUT_STEP.percent}
+      formatOptions={INPUT_FORMAT.percentPoints}
+    />
+  );
+}
 
 type ContractLineFormProps = {
   /** Discount and tax in percent points (10 = 10%), as the form posts them. */
@@ -140,11 +162,6 @@ const ContractLineForm = ({
       }`
     }));
   const isSubClin = lineItemNumber.trim().length === 6;
-  const [showRevenue, setShowRevenue] = useState(
-    initialValues.revenueMethod !== "Daily" ||
-      !!initialValues.revenueStartDate ||
-      !!initialValues.revenueEndDate
-  );
   const [showDelete, setShowDelete] = useState(false);
   // As a modal the form closes once its save has settled (the action
   // redirects back with a flash).
@@ -205,7 +222,6 @@ const ContractLineForm = ({
     if (!allowed.includes(revenueMethod)) {
       setRevenueMethod(allowed[0]);
     }
-    if (isProjectBillingMethod(next)) setShowRevenue(true);
   };
 
   const isDisabled =
@@ -218,6 +234,70 @@ const ContractLineForm = ({
 
   const minDate = startDate ? safeParseDate(startDate) : undefined;
   const lineName = title ?? t`Line`;
+
+  // A new project line is added in three steps: what it bills and how,
+  // its price or billing and funding, then its dates and revenue. Its own
+  // page and the edit modal show the same groups on one page.
+  const isStepped = type === "modal" && !isEditing && isProject;
+  const [step, setStep] = useState<LineStep>("line");
+  const steps: FormStep<LineStep>[] = [
+    {
+      id: "line",
+      label: t`Line`,
+      fields: [
+        "itemId",
+        "lineItemNumber",
+        "parentLineId",
+        "description",
+        "billingMethod",
+        ...(isPartLine ? ["quantity"] : [])
+      ]
+    },
+    {
+      id: "pricing",
+      label: isBilling ? t`Billing & funding` : t`Price`,
+      fields: [
+        "rate",
+        "taxPercent",
+        "projectElementId",
+        "feePercent",
+        "materialHandlingPercent",
+        "fundedAmount",
+        "fundedCost",
+        "ceilingAmount",
+        "noticePercent",
+        "noticeWindowDays"
+      ]
+    },
+    {
+      id: "dates",
+      label: t`Dates & revenue`,
+      fields: [
+        "startDate",
+        "endDate",
+        "revenueMethod",
+        "revenueStartDate",
+        "revenueEndDate"
+      ]
+    }
+  ];
+  // Without steps every panel shows, a hairline between them.
+  const panel = (id: LineStep) => ({
+    isCurrent: !isStepped || step === id,
+    className: isStepped
+      ? undefined
+      : "[&+&]:border-t [&+&]:border-border [&+&]:pt-6"
+  });
+  const billingMethodDescriptions: Record<
+    (typeof contractBillingMethods)[number],
+    string
+  > = {
+    Fixed: isPartLine
+      ? t`A price per unit, billed on the line's billing events`
+      : t`A set price, billed on the line's billing events`,
+    "Time & Materials": t`Hours at bill rates, plus material and other cost with handling`,
+    "Cost Plus": t`Allowable cost, plus a fee`
+  };
 
   return (
     <ModalCardProvider type={type}>
@@ -251,289 +331,334 @@ const ContractLineForm = ({
                   <Trans>Change lines with Amend.</Trans>
                 </ModalCardDescription>
               )}
+              {isStepped && (
+                <div className="pt-4">
+                  <FormStepBar
+                    steps={steps}
+                    current={step}
+                    label={t`Add line`}
+                  />
+                </div>
+              )}
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="id" />
               <Hidden name="customerContractId" />
-              <VStack spacing={4}>
-                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                  {isProject ? (
-                    <Select
-                      name="billingMethod"
-                      label={t`Billing Method`}
-                      termId="billing-method"
-                      options={contractBillingMethodsFor("Project").map(
-                        (value) => ({
-                          value,
-                          label: billingMethodLabels[value]
-                        })
-                      )}
-                      onChange={(option) => {
-                        const next = contractBillingMethods.find(
-                          (value) => value === option?.value
-                        );
-                        if (next) changeBillingMethod(next);
-                      }}
-                    />
-                  ) : (
-                    // A service contract bills every line on its schedule.
-                    <Hidden name="billingMethod" />
-                  )}
-                  <Item
-                    name="itemId"
-                    label={isProject ? t`Item` : t`Service`}
-                    type={isProject ? "Item" : "Service"}
-                    validItemTypes={isProject ? ["Part", "Service"] : undefined}
-                    isReadOnly={isLocked}
-                    onChange={(option) => setItemId(option?.value ?? "")}
-                  />
-                  {isBilling ? (
-                    // A billing line is One-time at quantity 1 and rate 0
-                    // (`customerContractLine_billing_check`); its price comes
-                    // from the billable items.
-                    <>
-                      <Hidden name="revenueType" value="One-time" />
-                      {!isPartLine && <Hidden name="quantity" value={1} />}
-                      <Hidden name="rate" value={0} />
-                      <Hidden name="discountPercent" value={0} />
-                    </>
-                  ) : isProject ? (
-                    // A Fixed Price line is One-time at quantity 1: its rate
-                    // is its price. A part line's rate is its unit price.
-                    <>
-                      <Hidden name="revenueType" value="One-time" />
-                      {!isPartLine && <Hidden name="quantity" value={1} />}
-                      <Hidden name="discountPercent" value={0} />
-                    </>
-                  ) : (
-                    <Select
-                      name="revenueType"
-                      label={t`Revenue Type`}
-                      options={contractRevenueTypes.map((value) => ({
-                        value,
-                        label: revenueTypeLabels[value]
-                      }))}
-                      onChange={(option) => {
-                        const next = contractRevenueTypes.find(
-                          (value) => value === option?.value
-                        );
-                        if (next) setRevenueType(next);
-                      }}
-                    />
-                  )}
-                  <Input
-                    name="description"
-                    label={t`Description`}
-                    helperText={t`Shown to the customer on the invoice`}
-                  />
-                  <Input
-                    name="lineItemNumber"
-                    label={t`CLIN / SLIN`}
-                    termId="clin"
-                    helperText={t`4 digits for a CLIN; 2 letters or digits more for a SubCLIN`}
-                    onChange={(event) => setLineItemNumber(event.target.value)}
-                  />
-                  {/* Unmounted for a CLIN: only a SubCLIN has a parent. */}
-                  {isSubClin && (
-                    <Select
-                      name="parentLineId"
-                      label={t`Parent CLIN`}
-                      options={parentLineOptions}
-                    />
-                  )}
-                </div>
+              {isBilling ? (
+                // A billing line is One-time at quantity 1 and rate 0
+                // (`customerContractLine_billing_check`); its price comes
+                // from the billable items.
+                <>
+                  <Hidden name="revenueType" value="One-time" />
+                  {!isPartLine && <Hidden name="quantity" value={1} />}
+                  <Hidden name="rate" value={0} />
+                  <Hidden name="discountPercent" value={0} />
+                </>
+              ) : isProject ? (
+                // A Fixed Price line is One-time at quantity 1: its rate is
+                // its price. A part line's rate is its unit price.
+                <>
+                  <Hidden name="revenueType" value="One-time" />
+                  {!isPartLine && <Hidden name="quantity" value={1} />}
+                  <Hidden name="discountPercent" value={0} />
+                </>
+              ) : (
+                <Hidden name="revenueType" value={revenueType} />
+              )}
+              {/* A service contract bills every line on its schedule. */}
+              <Hidden name="billingMethod" value={billingMethod} />
+              {/* A new project line bills the contract's project; the line's
+                  own page can point it elsewhere. */}
+              {isProject && !isEditing && <Hidden name="projectId" />}
 
-                {showUpgrade && billingMethod === "Cost Plus" && (
-                  <ProjectRevenueUpgrade />
-                )}
-
-                {isBilling ? (
-                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
-                    {isPartLine && (
-                      <Number
-                        name="quantity"
-                        label={t`Quantity`}
-                        helperText={t`The units to deliver`}
-                        minValue={1}
-                        step={INPUT_STEP.quantity}
-                        formatOptions={INPUT_FORMAT.quantity}
+              <div className="flex w-full flex-col gap-6">
+                <FormStepPanel {...panel("line")}>
+                  <FormGroup
+                    title={t`What it bills`}
+                    description={
+                      isProject
+                        ? t`The part or service, and the CLIN it is billed under.`
+                        : t`The service, and how it reads on the invoice.`
+                    }
+                  >
+                    <Item
+                      name="itemId"
+                      label={isProject ? t`Item` : t`Service`}
+                      type={isProject ? "Item" : "Service"}
+                      validItemTypes={
+                        isProject ? ["Part", "Service"] : undefined
+                      }
+                      isReadOnly={isLocked}
+                      onChange={(option) => setItemId(option?.value ?? "")}
+                    />
+                    {isProject && (
+                      <Input
+                        name="lineItemNumber"
+                        label={t`CLIN / SLIN`}
+                        termId="clin"
+                        helperText={t`4 digits for a CLIN; 2 letters or digits more for a SubCLIN`}
+                        onChange={(event) =>
+                          setLineItemNumber(event.target.value)
+                        }
                       />
                     )}
-                    <ContractLineBillingFields
-                      billingMethod={billingMethod}
-                      projectId={projectId}
-                      currencyCode={currencyCode}
-                    />
-                    <Number
-                      name="taxPercent"
-                      label={t`Tax (%)`}
-                      minValue={0}
-                      maxValue={100}
-                      step={INPUT_STEP.percent}
-                      formatOptions={INPUT_FORMAT.percentPoints}
-                    />
-                  </div>
-                ) : isProject ? (
-                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
-                    {isPartLine && (
-                      <Number
-                        name="quantity"
-                        label={t`Quantity`}
-                        helperText={t`The units to deliver`}
-                        minValue={1}
-                        step={INPUT_STEP.quantity}
-                        formatOptions={INPUT_FORMAT.quantity}
-                      />
-                    )}
-                    <Number
-                      name="rate"
-                      label={isPartLine ? t`Unit Price` : t`Price`}
-                      helperText={t`Billed on the line's billing events`}
-                      minValue={0}
-                      step={INPUT_STEP.money(currencyDecimals)}
-                      formatOptions={INPUT_FORMAT.money(
-                        currencyCode,
-                        currencyDecimals
-                      )}
-                    />
-                    <Number
-                      name="taxPercent"
-                      label={t`Tax (%)`}
-                      minValue={0}
-                      maxValue={100}
-                      step={INPUT_STEP.percent}
-                      formatOptions={INPUT_FORMAT.percentPoints}
-                    />
-                  </div>
-                ) : (
-                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
-                    <Number
-                      name="quantity"
-                      label={t`Quantity`}
-                      minValue={0}
-                      step={INPUT_STEP.quantity}
-                      formatOptions={INPUT_FORMAT.quantity}
-                    />
-                    <Number
-                      name="rate"
-                      label={t`Rate`}
-                      minValue={0}
-                      step={INPUT_STEP.rate}
-                      formatOptions={INPUT_FORMAT.rate(
-                        currencyCode,
-                        currencyDecimals
-                      )}
-                    />
-                    {/* Unmounted for a one-time line: the validator refuses a
-                        rate unit on one. */}
-                    {revenueType === "Recurring" && (
+                    {/* Unmounted for a CLIN: only a SubCLIN has a parent. */}
+                    {isSubClin && (
                       <Select
-                        name="rateUnit"
-                        label={t`Per`}
-                        options={contractRateUnits.map((value) => ({
+                        name="parentLineId"
+                        label={t`Parent CLIN`}
+                        options={parentLineOptions}
+                      />
+                    )}
+                    <div className="md:col-span-2">
+                      <Input
+                        name="description"
+                        label={t`Description`}
+                        helperText={t`Shown to the customer on the invoice`}
+                      />
+                    </div>
+                  </FormGroup>
+
+                  <FormGroup
+                    title={t`How it bills`}
+                    description={
+                      isProject
+                        ? isStepped
+                          ? t`It decides what the next step asks for.`
+                          : t`It decides how the line is priced.`
+                        : t`A recurring line bills every period at its rate; a one-time line bills once.`
+                    }
+                  >
+                    {isProject ? (
+                      <ChoiceCardGroup<(typeof contractBillingMethods)[number]>
+                        className="md:col-span-2"
+                        direction="row"
+                        value={billingMethod}
+                        onChange={(next) => {
+                          if (!isLocked) changeBillingMethod(next);
+                        }}
+                        options={contractBillingMethodsFor("Project").map(
+                          (value) => ({
+                            value,
+                            title: billingMethodLabels[value],
+                            description: billingMethodDescriptions[value],
+                            disabled: isLocked
+                          })
+                        )}
+                      />
+                    ) : (
+                      <ChoiceCardGroup<(typeof contractRevenueTypes)[number]>
+                        className="md:col-span-2"
+                        direction="row"
+                        value={revenueType}
+                        onChange={(next) => {
+                          if (!isLocked) setRevenueType(next);
+                        }}
+                        options={contractRevenueTypes.map((value) => ({
                           value,
-                          label: rateUnitLabels[value]
+                          title: revenueTypeLabels[value],
+                          disabled: isLocked
                         }))}
                       />
                     )}
-                    <Number
-                      name="discountPercent"
-                      label={t`Discount (%)`}
-                      minValue={0}
-                      maxValue={100}
-                      step={INPUT_STEP.percent}
-                      formatOptions={INPUT_FORMAT.percentPoints}
-                    />
-                    <DatePicker
-                      name="discountEndsOn"
-                      label={t`Discount Ends On`}
-                      minValue={minDate}
-                    />
-                    <Number
-                      name="taxPercent"
-                      label={t`Tax (%)`}
-                      minValue={0}
-                      maxValue={100}
-                      step={INPUT_STEP.percent}
-                      formatOptions={INPUT_FORMAT.percentPoints}
-                    />
-                  </div>
-                )}
-
-                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
-                  <DatePicker
-                    name="startDate"
-                    label={t`Start Date`}
-                    onChange={(date) => setStartDate(date ?? "")}
-                  />
-                  <DatePicker
-                    name="endDate"
-                    label={t`End Date`}
-                    minValue={minDate}
-                  />
-                  {/* A project line is earned by its billing method, not
-                      from a go-live date. */}
-                  {!isProject && (
-                    <DatePicker
-                      name="goLiveDate"
-                      label={t`Go-Live Date`}
-                      minValue={minDate}
-                    />
-                  )}
-                  <ContractProject
-                    name="projectId"
-                    label={t`Project`}
-                    isReadOnly={isLocked}
-                    onChange={(option) => setProjectId(option?.value ?? "")}
-                  />
-                </div>
-
-                <div className="w-full border-t border-border pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="-ml-2"
-                    leftIcon={
-                      showRevenue ? <LuChevronDown /> : <LuChevronRight />
-                    }
-                    onClick={() => setShowRevenue((open) => !open)}
-                  >
-                    <Trans>Revenue</Trans>
-                  </Button>
-                  {/* Hidden rather than unmounted: the fields must still post,
-                      or saving with the section collapsed would clear them. */}
-                  <div
-                    className={
-                      showRevenue
-                        ? "mt-4 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3"
-                        : "hidden"
-                    }
-                  >
-                    <SelectControlled
-                      name="revenueMethod"
-                      label={t`Revenue Method`}
-                      termId="revenue-method"
-                      value={revenueMethod}
-                      options={revenueMethods.map((value) => ({
-                        value,
-                        label: revenueMethodLabels[value]
-                      }))}
-                      onChange={(option) => {
-                        const next = contractRevenueMethods.find(
-                          (value) => value === option?.value
-                        );
-                        if (next) setRevenueMethod(next);
-                      }}
-                    />
-                    {/* A Fixed line recognized by progress needs the element
-                        whose cost measures it. */}
-                    {!isBilling && needsBillingElement && (
-                      <BillingElement
-                        name="projectElementId"
-                        projectId={projectId}
-                        helperText={t`Progress is this element's cost against its estimate at completion`}
+                    {isPartLine && (
+                      <Number
+                        name="quantity"
+                        label={t`Quantity`}
+                        helperText={t`The units to deliver`}
+                        minValue={1}
+                        step={INPUT_STEP.quantity}
+                        formatOptions={INPUT_FORMAT.quantity}
                       />
                     )}
+                  </FormGroup>
+                </FormStepPanel>
+
+                <FormStepPanel {...panel("pricing")}>
+                  {showUpgrade && billingMethod === "Cost Plus" && (
+                    <ProjectRevenueUpgrade />
+                  )}
+                  {isBilling ? (
+                    <>
+                      <FormGroup
+                        title={t`Billing`}
+                        description={t`The work the line bills, and the markup on it.`}
+                      >
+                        <ContractLineBillingFields
+                          group="terms"
+                          billingMethod={billingMethod}
+                          projectId={projectId}
+                          currencyCode={currencyCode}
+                        />
+                        <TaxPercent />
+                      </FormGroup>
+                      <FormGroup
+                        title={t`Funding`}
+                        description={t`Billing stops at the funded amount.`}
+                      >
+                        <ContractLineBillingFields
+                          group="funding"
+                          billingMethod={billingMethod}
+                          projectId={projectId}
+                          currencyCode={currencyCode}
+                        />
+                      </FormGroup>
+                      <FormFold
+                        title={t`Funding notice`}
+                        fieldNames={["noticePercent", "noticeWindowDays"]}
+                      >
+                        <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+                          <ContractLineBillingFields
+                            group="notices"
+                            billingMethod={billingMethod}
+                            projectId={projectId}
+                            currencyCode={currencyCode}
+                          />
+                        </div>
+                      </FormFold>
+                    </>
+                  ) : isProject ? (
+                    <FormGroup
+                      title={t`Price`}
+                      description={t`What the customer pays, billed on the line's billing events.`}
+                    >
+                      <Number
+                        name="rate"
+                        label={isPartLine ? t`Unit Price` : t`Price`}
+                        minValue={0}
+                        step={INPUT_STEP.money(currencyDecimals)}
+                        formatOptions={INPUT_FORMAT.money(
+                          currencyCode,
+                          currencyDecimals
+                        )}
+                      />
+                      <TaxPercent />
+                    </FormGroup>
+                  ) : (
+                    <>
+                      <FormGroup
+                        title={t`Price`}
+                        description={t`How many, and the rate each one bills.`}
+                      >
+                        <Number
+                          name="quantity"
+                          label={t`Quantity`}
+                          minValue={0}
+                          step={INPUT_STEP.quantity}
+                          formatOptions={INPUT_FORMAT.quantity}
+                        />
+                        <Number
+                          name="rate"
+                          label={t`Rate`}
+                          minValue={0}
+                          step={INPUT_STEP.rate}
+                          formatOptions={INPUT_FORMAT.rate(
+                            currencyCode,
+                            currencyDecimals
+                          )}
+                        />
+                        {/* Unmounted for a one-time line: the validator
+                            refuses a rate unit on one. */}
+                        {revenueType === "Recurring" && (
+                          <Select
+                            name="rateUnit"
+                            label={t`Per`}
+                            options={contractRateUnits.map((value) => ({
+                              value,
+                              label: rateUnitLabels[value]
+                            }))}
+                          />
+                        )}
+                      </FormGroup>
+                      <FormGroup
+                        title={t`Discount and tax`}
+                        description={t`A discount can end on a date; the line then bills its full rate.`}
+                      >
+                        <Number
+                          name="discountPercent"
+                          label={t`Discount (%)`}
+                          minValue={0}
+                          maxValue={100}
+                          step={INPUT_STEP.percent}
+                          formatOptions={INPUT_FORMAT.percentPoints}
+                        />
+                        <DatePicker
+                          name="discountEndsOn"
+                          label={t`Discount Ends On`}
+                          minValue={minDate}
+                        />
+                        <TaxPercent />
+                      </FormGroup>
+                    </>
+                  )}
+                </FormStepPanel>
+
+                <FormStepPanel {...panel("dates")}>
+                  <FormGroup
+                    title={t`Period`}
+                    description={t`When the line starts and ends.`}
+                  >
+                    <DatePicker
+                      name="startDate"
+                      label={t`Start Date`}
+                      onChange={(date) => setStartDate(date ?? "")}
+                    />
+                    <DatePicker
+                      name="endDate"
+                      label={t`End Date`}
+                      minValue={minDate}
+                    />
+                    {/* A project line is earned by its billing method, not
+                        from a go-live date. */}
+                    {!isProject && (
+                      <DatePicker
+                        name="goLiveDate"
+                        label={t`Go-Live Date`}
+                        minValue={minDate}
+                      />
+                    )}
+                    {(!isProject || isEditing) && (
+                      <ContractProject
+                        name="projectId"
+                        label={t`Project`}
+                        isReadOnly={isLocked}
+                        onChange={(option) => setProjectId(option?.value ?? "")}
+                      />
+                    )}
+                  </FormGroup>
+                  <FormGroup
+                    title={t`Revenue`}
+                    description={t`How the line's revenue is recognized.`}
+                  >
+                    {/* The method (and the element that measures a Percent
+                        Complete line) on one row, the dates on the next. */}
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:col-span-2 md:grid-cols-2">
+                      <SelectControlled
+                        name="revenueMethod"
+                        label={t`Revenue Method`}
+                        termId="revenue-method"
+                        value={revenueMethod}
+                        options={revenueMethods.map((value) => ({
+                          value,
+                          label: revenueMethodLabels[value]
+                        }))}
+                        onChange={(option) => {
+                          const next = contractRevenueMethods.find(
+                            (value) => value === option?.value
+                          );
+                          if (next) setRevenueMethod(next);
+                        }}
+                      />
+                      {/* A Fixed line recognized by progress needs the element
+                          whose cost measures it. */}
+                      {!isBilling && needsBillingElement && (
+                        <BillingElement
+                          name="projectElementId"
+                          projectId={projectId}
+                          helperText={t`Progress is this element's cost against its estimate at completion`}
+                        />
+                      )}
+                    </div>
                     <DatePicker
                       name="revenueStartDate"
                       label={t`Revenue Start`}
@@ -544,42 +669,63 @@ const ContractLineForm = ({
                       label={t`Revenue End`}
                       helperText={t`Defaults to the end date`}
                     />
-                  </div>
-                  {showRevenue &&
-                    showUpgrade &&
+                  </FormGroup>
+                  {showUpgrade &&
                     revenueMethod === "Percent Complete" &&
-                    billingMethod !== "Cost Plus" && (
-                      <div className="mt-4">
-                        <ProjectRevenueUpgrade />
-                      </div>
-                    )}
-                </div>
-              </VStack>
+                    billingMethod !== "Cost Plus" && <ProjectRevenueUpgrade />}
+                </FormStepPanel>
+              </div>
             </ModalCardBody>
-            {(type === "modal" || !isLocked) && (
+            {isStepped ? (
               <ModalCardFooter>
                 <HStack>
-                  {!isLocked && (
-                    <Submit isDisabled={isDisabled || showUpgrade}>
-                      <Trans>Save</Trans>
-                    </Submit>
-                  )}
-                  {canDelete && (
-                    <Button
-                      size="md"
-                      variant="secondary"
-                      onClick={() => setShowDelete(true)}
-                    >
-                      <Trans>Delete</Trans>
-                    </Button>
-                  )}
-                  {type === "modal" && (
-                    <Button size="md" variant="solid" onClick={onClose}>
-                      {isLocked ? <Trans>Close</Trans> : <Trans>Cancel</Trans>}
-                    </Button>
-                  )}
+                  <FormStepButtons
+                    steps={steps}
+                    current={step}
+                    onStepChange={setStep}
+                    submit={
+                      <Submit isDisabled={isDisabled || showUpgrade}>
+                        <Trans>Save</Trans>
+                      </Submit>
+                    }
+                    cancel={
+                      <Button size="md" variant="solid" onClick={onClose}>
+                        <Trans>Cancel</Trans>
+                      </Button>
+                    }
+                  />
                 </HStack>
               </ModalCardFooter>
+            ) : (
+              (type === "modal" || !isLocked) && (
+                <ModalCardFooter>
+                  <HStack>
+                    {!isLocked && (
+                      <Submit isDisabled={isDisabled || showUpgrade}>
+                        <Trans>Save</Trans>
+                      </Submit>
+                    )}
+                    {canDelete && (
+                      <Button
+                        size="md"
+                        variant="secondary"
+                        onClick={() => setShowDelete(true)}
+                      >
+                        <Trans>Delete</Trans>
+                      </Button>
+                    )}
+                    {type === "modal" && (
+                      <Button size="md" variant="solid" onClick={onClose}>
+                        {isLocked ? (
+                          <Trans>Close</Trans>
+                        ) : (
+                          <Trans>Cancel</Trans>
+                        )}
+                      </Button>
+                    )}
+                  </HStack>
+                </ModalCardFooter>
+              )
             )}
           </ValidatedForm>
         </ModalCardContent>

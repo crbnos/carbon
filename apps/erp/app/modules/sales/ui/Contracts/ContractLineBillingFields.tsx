@@ -44,7 +44,8 @@ export function ContractLineBillingFields({
   projectId,
   currencyCode,
   fundingOnly = false,
-  fundedByActions = false
+  fundedByActions = false,
+  group
 }: {
   billingMethod: BillingMethod;
   projectId: string;
@@ -54,7 +55,14 @@ export function ContractLineBillingFields({
   /** DCAA mode: the funding actions own the funded amount and cost, so
    *  both show read-only. */
   fundedByActions?: boolean;
+  /** One group of the fields, for a form that groups them (the line form):
+   *  the billing terms, the funding, or the funding notice. All of them
+   *  when absent. */
+  group?: "terms" | "funding" | "notices";
 }) {
+  const showTerms = !fundingOnly && (!group || group === "terms");
+  const showFunding = !group || group === "funding";
+  const showNotices = !group || group === "notices";
   const { t } = useLingui();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const money = {
@@ -71,12 +79,15 @@ export function ContractLineBillingFields({
 
   return (
     <>
-      {!fundingOnly && (
+      {showTerms && (
         <>
           <BillingElement
             name="projectElementId"
             projectId={projectId}
             termId="billing-element"
+            // A billing line needs one (the validator's refinement, which
+            // the optional tag cannot see).
+            isOptional={false}
             helperText={t`Bills the work charged to this element and the elements below it`}
           />
           {billingMethod === "Cost Plus" ? (
@@ -96,50 +107,58 @@ export function ContractLineBillingFields({
           )}
         </>
       )}
-      <Number
-        name="fundedAmount"
-        label={t`Funded`}
-        termId="funded-amount"
-        helperText={
-          fundedByActions
-            ? t`Sum of the funding actions`
-            : t`Billing stops at this amount`
-        }
-        isReadOnly={fundedByActions}
-        {...money}
-      />
-      <Number
-        name="fundedCost"
-        label={t`Funded Cost`}
-        helperText={
-          fundedByActions
-            ? t`Sum of the funding actions`
-            : t`Funding without the fee; the funding notices compare cost with it`
-        }
-        isReadOnly={fundedByActions}
-        {...money}
-      />
-      <Number
-        name="ceilingAmount"
-        label={t`Ceiling`}
-        termId="contract-ceiling"
-        {...money}
-      />
-      <Number
-        name="noticePercent"
-        label={t`Notice At (%)`}
-        helperText={t`Of the funded cost, from 75% to 85%`}
-        {...percent}
-        minValue={75}
-        maxValue={85}
-      />
-      <Number
-        name="noticeWindowDays"
-        label={t`Notice Window (Days)`}
-        helperText={t`Expected cost over the next 30 to 90 days`}
-        minValue={30}
-        maxValue={90}
-      />
+      {showFunding && (
+        <>
+          <Number
+            name="fundedAmount"
+            label={t`Funded`}
+            termId="funded-amount"
+            helperText={
+              fundedByActions
+                ? t`Sum of the funding actions`
+                : t`Billing stops at this amount`
+            }
+            isReadOnly={fundedByActions}
+            {...money}
+          />
+          <Number
+            name="fundedCost"
+            label={t`Funded Cost`}
+            helperText={
+              fundedByActions
+                ? t`Sum of the funding actions`
+                : t`Funding without the fee; the funding notices compare cost with it`
+            }
+            isReadOnly={fundedByActions}
+            {...money}
+          />
+          <Number
+            name="ceilingAmount"
+            label={t`Ceiling`}
+            termId="contract-ceiling"
+            {...money}
+          />
+        </>
+      )}
+      {showNotices && (
+        <>
+          <Number
+            name="noticePercent"
+            label={t`Notice At (%)`}
+            helperText={t`Of the funded cost, from 75% to 85%`}
+            {...percent}
+            minValue={75}
+            maxValue={85}
+          />
+          <Number
+            name="noticeWindowDays"
+            label={t`Notice Window (Days)`}
+            helperText={t`Expected cost over the next 30 to 90 days`}
+            minValue={30}
+            maxValue={90}
+          />
+        </>
+      )}
     </>
   );
 }
