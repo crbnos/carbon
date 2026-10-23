@@ -2042,8 +2042,8 @@ msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapma
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böylece bir yedek sağlayabilirsiniz."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir birim oluşturulacaktır."
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"

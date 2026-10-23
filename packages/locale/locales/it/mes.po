@@ -2042,8 +2042,8 @@ msgstr "Questo componente è stato realizzato su ordinazione. Il suo scarto può
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Questo componente sarà scartato dal magazzino. Il suo requisito rimane aperto per permetterti di ritirare una sostituzione."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Questa unità sarà permanentemente scartata e verrà creato un nuovo numero seriale."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Questa unità sarà permanentemente scartata e verrà creata un'unità sostitutiva."
 
 msgid "Thumbnail"
 msgstr "Miniatura"

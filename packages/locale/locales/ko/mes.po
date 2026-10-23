@@ -2042,8 +2042,8 @@ msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라�
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "이 유닛은 영구적으로 스크랩되고 대체 유닛이 생성됩니다."
 
 msgid "Thumbnail"
 msgstr "썸네일"

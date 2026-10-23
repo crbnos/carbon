@@ -2042,8 +2042,8 @@ msgstr "Dieses Teil wurde auf Bestellung gefertigt. Es als Ausschuss zu kennzeic
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Dieses Teil wird als Ausschuss aus dem Bestand verbucht. Seine Anforderung bleibt offen, damit Sie einen Ersatz entnehmen können."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Seriennummer erstellt."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Diese Einheit wird endgültig verschrottet und es wird eine Ersatzeinheit erstellt."
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"

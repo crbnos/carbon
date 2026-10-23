@@ -2042,8 +2042,8 @@ msgstr "यह पार्ट ऑर्डर के अनुसार बन�
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "यह हिस्सा स्टॉक से स्क्रैप किया जाएगा। इसकी आवश्यकता खुली रहती है ताकि आप एक प्रतिस्थापन जारी कर सकें।"
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट सीरियल नंबर बनाया जाएगा।"
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट इकाई बनाई जाएगी।"
 
 msgid "Thumbnail"
 msgstr "थंबनेल"

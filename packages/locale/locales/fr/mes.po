@@ -2042,8 +2042,8 @@ msgstr "Cette pièce a été fabriquée sur commande. La mettre au rebut peut ro
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Cette pièce sera mise au rebut du stock. Son exigence reste ouverte pour que vous puissiez sortir un remplacement."
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "Cette unité sera définitivement mise au rebut et un nouveau numéro de série de remplacement sera créé."
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "Cette unité sera définitivement mise au rebut et une unité de remplacement sera créée."
 
 msgid "Thumbnail"
 msgstr "Miniature"
