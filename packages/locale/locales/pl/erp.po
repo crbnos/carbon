@@ -30475,9 +30475,6 @@ msgstr "Co klient autoryzował na linii Czas i Materiały lub Koszt Plus. Faktur
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "To, co klient płaci z góry, podatek od czynszu i kiedy faktury przypadają."
 
-msgid "What the customer reported"
-msgstr "Co zgłosił klient"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Od czego zaczyna się odliczanie terminu płatności (data faktury, koniec miesiąca itp.)."
 

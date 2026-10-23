@@ -30475,9 +30475,6 @@ msgstr "고객이 시간 및 자재 또는 비용 덧셈 라인에서 승인한 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "고객이 선금으로 지불하는 금액, 렌트에 대한 세금, 그리고 송장이 만기인 시기입니다."
 
-msgid "What the customer reported"
-msgstr "고객이 보고한 내용"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "납기일 카운트다운이 시작되는 지점 (송장 일자, 월말 등)."
 

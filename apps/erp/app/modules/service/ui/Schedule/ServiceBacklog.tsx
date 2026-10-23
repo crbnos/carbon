@@ -105,7 +105,7 @@ export function ServiceBacklog({
       disabled={!canUnassign}
       className="flex w-72 shrink-0 flex-col min-h-0 border-l border-border bg-card"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div className="flex h-[45px] shrink-0 items-center justify-between gap-2 border-b border-border px-4">
         <h3 className="text-sm font-medium">
           <Trans>Backlog</Trans>
         </h3>

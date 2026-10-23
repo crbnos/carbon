@@ -299,8 +299,8 @@ export function ServiceSchedule({
       describeChip={describeChip}
       describePlace={describePlace}
     >
-      <div className="flex flex-1 min-w-0 min-h-0 flex-col p-4">
-        <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-border bg-card shadow-sm">
+      <div className="flex flex-1 min-w-0 min-h-0 flex-col">
+        <div className="flex-1 min-h-0 overflow-auto bg-card">
           <Table full>
             <Thead>
               <Tr>
@@ -363,7 +363,7 @@ export function ServiceSchedule({
                     <Td
                       key={date}
                       className={cn(
-                        "align-top",
+                        "py-2 align-middle",
                         date === today && "bg-muted/30"
                       )}
                     >
@@ -371,7 +371,7 @@ export function ServiceSchedule({
                         rowId={employee.id}
                         date={date}
                         disabled={absent || !canEdit}
-                        className="flex min-h-14 flex-col items-stretch gap-1 p-1"
+                        className="flex min-h-12 flex-col items-stretch justify-center gap-1 p-1"
                       >
                         {absent && (
                           <PeopleChip className="self-center bg-muted text-muted-foreground">
@@ -425,11 +425,11 @@ export function ServiceSchedule({
                     key={employee.id}
                     className="border-b border-border/50 last:border-0 hover:bg-muted/40"
                   >
-                    <Td className={cn(STICKY_FIRST_COL, "align-top")}>
+                    <Td className={cn(STICKY_FIRST_COL, "py-2 align-middle")}>
                       <EmployeeAvatar employeeId={employee.id} size="xs" />
                     </Td>
                     {cells}
-                    <Td className="text-center text-xs text-muted-foreground tabular-nums">
+                    <Td className="py-2 text-center align-middle text-xs text-muted-foreground tabular-nums">
                       {formatHours(weekHours)}h
                     </Td>
                   </Tr>

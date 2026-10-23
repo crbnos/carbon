@@ -30475,9 +30475,6 @@ msgstr "То, что авторизовал покупатель по строк
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Что покупатель платит авансом, налог на аренду и когда счета-фактуры подлежат оплате."
 
-msgid "What the customer reported"
-msgstr "То, что сообщил покупатель"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "На что начинается обратный отсчет срока (дата счета-фактуры, конец месяца и т. д.)."
 

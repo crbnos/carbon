@@ -30475,9 +30475,6 @@ msgstr "Müşterinin Zaman & Malzeme veya Maliyet Artısı satırında yetkilend
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Müşterinin peşin ödediği, kiranın vergisi ve faturaların vadesi."
 
-msgid "What the customer reported"
-msgstr "Müşterinin bildirdiği"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Vade tarihinin geri sayımı nereden başlıyor (fatura tarihi, ay sonu, vb.)."
 

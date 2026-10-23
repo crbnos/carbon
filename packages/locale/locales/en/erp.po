@@ -30475,9 +30475,6 @@ msgstr "What the customer has authorized on a Time & Materials or Cost Plus line
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "What the customer pays up front, the tax on rent, and when invoices are due."
 
-msgid "What the customer reported"
-msgstr "What the customer reported"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "What the due-date countdown starts from (invoice date, end of month, etc.)."
 

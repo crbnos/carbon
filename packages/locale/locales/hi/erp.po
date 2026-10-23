@@ -30475,9 +30475,6 @@ msgstr "ग्राहक ने Time & Materials या Cost Plus पंक्
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "ग्राहक अग्रिम में क्या भुगतान करता है, किराए पर कर, और चालान कब देय हैं।"
 
-msgid "What the customer reported"
-msgstr "ग्राहक द्वारा रिपोर्ट किया गया"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "नियत तारीख की गिनती किससे शुरू होती है (चालान की तारीख, महीने का अंत, आदि)।"
 

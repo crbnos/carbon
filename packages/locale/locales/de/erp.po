@@ -30475,9 +30475,6 @@ msgstr "Was der Kunde auf einer Time & Materials- oder Cost Plus-Position genehm
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Was der Kunde im Voraus zahlt, die Steuer auf die Miete und wann Rechnungen fällig sind."
 
-msgid "What the customer reported"
-msgstr "Was der Kunde gemeldet hat"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Wovon der Countdown der Fälligkeitsfrist beginnt (Rechnungsdatum, Monatsende usw.)."
 

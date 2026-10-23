@@ -30475,9 +30475,6 @@ msgstr "Ce que le client a autorisé sur une ligne à temps et matériaux ou à 
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Ce que le client paie d'avance, la taxe sur la location, et quand les factures sont dues."
 
-msgid "What the customer reported"
-msgstr "Ce que le client a signalé"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "À partir de quoi commence le compte à rebours de la date d'échéance (date de facture, fin du mois, etc.)."
 

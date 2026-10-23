@@ -30475,9 +30475,6 @@ msgstr "客户在时间和材料或成本加成行上已授权的内容。账单
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "客户预付的款项、租赁税和发票到期时间。"
 
-msgid "What the customer reported"
-msgstr "客户报告的内容"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "到期日期倒计时从何开始(发票日期、月末等)。"
 

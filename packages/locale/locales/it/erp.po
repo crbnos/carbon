@@ -30475,9 +30475,6 @@ msgstr "Ciò che il Cliente ha autorizzato su una riga Tempo e Materiali o Costo
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "Cosa il cliente paga in anticipo, l'imposta sul noleggio e quando le fatture scadono."
 
-msgid "What the customer reported"
-msgstr "Ciò che il cliente ha segnalato"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "Da cosa inizia il conto alla rovescia della data di scadenza (data della fattura, fine del mese, ecc.)."
 

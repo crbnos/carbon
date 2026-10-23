@@ -30475,9 +30475,6 @@ msgstr "得意先が時間単価ベースまたは原価プラス方式の明細
 msgid "What the customer pays up front, the tax on rent, and when invoices are due."
 msgstr "得意先が前払いするもの、レンタル料に対する税、そして請求書が期限になるとき。"
 
-msgid "What the customer reported"
-msgstr "得意先が報告した内容"
-
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "期日カウントダウンが開始される内容(請求書日付、月末など)。"
 
