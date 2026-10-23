@@ -15,10 +15,39 @@ type Workspace = {
   access_token: string | null;
 };
 
+/** One thing a workspace's freshly deployed ERP tells a service. */
+type Step = { name: string; run: () => Promise<unknown> };
+
+function stepsFor(workspace: Workspace): Step[] {
+  const { id, url_erp, project_id, access_token } = workspace;
+  if (!url_erp) return [];
+  const steps: Step[] = [
+    {
+      name: `Inngest sync for workspace ${id} (${url_erp})`,
+      run: () => $`curl -X PUT https://${url_erp}/api/inngest`
+    }
+  ];
+  // A hosted Supabase project keeps Auth's emails as settings: copy in the
+  // ones this ERP serves now that it is deployed (auth-emails.ts).
+  if (project_id) {
+    steps.push({
+      name: `Auth emails for workspace ${id}`,
+      run: () =>
+        pushAuthEmails(
+          `https://${url_erp}`,
+          project_id,
+          access_token ?? SUPABASE_ACCESS_TOKEN
+        )
+    });
+  }
+  return steps;
+}
+
 /**
  * After a deploy, for every workspace's ERP: Inngest learns its jobs
  * (PUT /api/inngest), and a hosted Supabase project gets its Auth emails
- * (auth-emails.ts).
+ * (auth-emails.ts). No step waits on another, so all of them run at once,
+ * and one that fails fails the run only after the rest have finished.
  */
 async function postDeploy(): Promise<void> {
   console.log("✅ 🌱 Starting the post-deploy sync");
@@ -32,43 +61,24 @@ async function postDeploy(): Promise<void> {
     process.exit(1);
   }
 
-  let hasErrors = false;
-
-  for (const workspace of workspaces as Workspace[]) {
-    const { id, url_erp, project_id, access_token } = workspace;
-
-    if (!url_erp) {
-      console.log(`⏭️ Skipping workspace ${id} — no url_erp`);
-      continue;
-    }
-
-    try {
-      console.log(`✅ 🔄 Syncing jobs for workspace ${id} (${url_erp})`);
-      await $`curl -X PUT https://${url_erp}/api/inngest`;
-      console.log(`✅ 🐓 Successfully synced jobs for workspace ${id}`);
-    } catch (err) {
-      console.error(`🔴 🍳 Failed to sync jobs for workspace ${id}`, err);
-      hasErrors = true;
-    }
-
-    // A hosted Supabase project keeps Auth's emails as settings: copy in the
-    // ones this ERP serves now that it is deployed (auth-emails.ts).
-    if (project_id) {
-      try {
-        await pushAuthEmails(
-          `https://${url_erp}`,
-          project_id,
-          access_token ?? SUPABASE_ACCESS_TOKEN
-        );
-        console.log(`✅ ✉️ Set Auth's emails for workspace ${id}`);
-      } catch (err) {
-        console.error(`🔴 ✉️ Failed to set Auth's emails for workspace ${id}`, err);
-        hasErrors = true;
-      }
-    }
+  for (const { id, url_erp } of workspaces as Workspace[]) {
+    if (!url_erp) console.log(`⏭️ Skipping workspace ${id} — no url_erp`);
   }
 
-  if (hasErrors) {
+  const results = await Promise.all(
+    (workspaces as Workspace[]).flatMap(stepsFor).map(async (step) => {
+      try {
+        await step.run();
+        console.log(`✅ ${step.name}`);
+        return true;
+      } catch (err) {
+        console.error(`🔴 ${step.name} failed`, err);
+        return false;
+      }
+    })
+  );
+
+  if (results.includes(false)) {
     console.error("🔴 Post-deploy sync completed with errors");
     process.exit(1);
   }

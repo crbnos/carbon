@@ -30,29 +30,35 @@ export async function authEmailSettings(
   fetchImpl: typeof fetch = fetch,
   retryDelayMs = 10_000
 ): Promise<Record<string, string>> {
-  const settings: Record<string, string> = {};
-  for (const { file, name, subject } of AUTH_EMAILS) {
-    const url = `${erpUrl.replace(/\/+$/, "")}/templates/${file}`;
-    // A deploy can return before every task of the new release is serving.
-    let response: Response | undefined;
-    for (let attempt = 1; attempt <= 6; attempt++) {
-      response = await fetchImpl(url);
-      if (response.ok) break;
-      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
-    }
-    if (!response?.ok) {
-      throw new Error(`GET ${url} answered ${response?.status}`);
-    }
-    const html = await response.text();
-    // A page that is not a template (an error page, a sign-in redirect)
-    // must never become the email.
-    if (!html.includes("{{ .SiteURL }}") && !html.includes("{{ .ConfirmationURL }}")) {
-      throw new Error(`GET ${url} is not an Auth template`);
-    }
-    settings[`mailer_subjects_${name}`] = subject;
-    settings[`mailer_templates_${name}_content`] = html;
-  }
-  return settings;
+  const entries = await Promise.all(
+    AUTH_EMAILS.map(async ({ file, name, subject }) => {
+      const url = `${erpUrl.replace(/\/+$/, "")}/templates/${file}`;
+      // A deploy can return before every task of the new release is serving.
+      let response: Response | undefined;
+      for (let attempt = 1; attempt <= 6; attempt++) {
+        response = await fetchImpl(url);
+        if (response.ok) break;
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+      if (!response?.ok) {
+        throw new Error(`GET ${url} answered ${response?.status}`);
+      }
+      const html = await response.text();
+      // A page that is not a template (an error page, a sign-in redirect)
+      // must never become the email.
+      if (
+        !html.includes("{{ .SiteURL }}") &&
+        !html.includes("{{ .ConfirmationURL }}")
+      ) {
+        throw new Error(`GET ${url} is not an Auth template`);
+      }
+      return [
+        [`mailer_subjects_${name}`, subject],
+        [`mailer_templates_${name}_content`, html]
+      ] as const;
+    })
+  );
+  return Object.fromEntries(entries.flat());
 }
 
 /** Sets a hosted project's Auth emails to the ones its ERP serves. */
