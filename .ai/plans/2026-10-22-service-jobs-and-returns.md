@@ -3,8 +3,70 @@
 **Spec:** .ai/specs/2026-10-22-service-jobs-and-returns.md
 **Research:** .ai/research/2026-10-22-service-rma-postings.md, .ai/research/serial-service-cost-treatment.md
 **Closest sibling:** the maintenance dispatch (`x+/maintenance+/`, `apps/erp/app/modules/resources/ui/Maintenance/`, MES `dispatch.*`). The dispatch grid copies the People board (`x+/priority+/people.tsx`).
-**Branch:** projects-wbs-research-spec. Another session commits project-contract work on this branch. Confirm the branch with Brad before Task 1.
-**Precedent commit:** `6335d69cf7`. Phase 0 deletes files that phase 1 copies. Read them with `git show 6335d69cf7:<path>`.
+**Branch:** projects-port-main, worktree `/Users/barbinbrad/conductor/workspaces/carbon/kelowna-port` (PR #2003). Brad moved all sessions here on 2026-10-23. Other sessions share this worktree: stage files by name only, and announce any stash, merge, rebase or reset first.
+**Precedent commit:** `6335d69cf7` (on the frozen `projects-wbs-research-spec`, still reachable). Phase 0 deletes files that phase 1 copies. On the port, read the port copy BEFORE phase 0 deletes it, or read it with `git show 62fe17b63f:<port path>` (the port commit before any deletion). Use the port paths in the table below.
+
+## The port's architecture (read first — this overrides the paths in the tasks)
+
+This plan was written against `projects-wbs-research-spec`, where server functions lived in `packages/server-functions`. On `projects-port-main`, main's #1937 deleted that package. The task text keeps its old paths for history; use this section to find each file's real home. Line numbers in the tasks are stale; find each block by its function or case name.
+
+**Rule A — writes go through operations.** A route action never writes. The `route-action-shape` check refuses a write in an action, including `getDatabaseClient()` writes and `invokePosting`. Every write is a `defineServiceFn` operation in `<module>.server.ts`, which wraps a building block in `<module>.service.ts`. The route calls `const api = await carbon(args.request); const result = await api.<module>.<op>(input); return respond(args.request, result)…`. Precedent: `apps/erp/app/routes/x+/maintenance+/new.tsx` → `resources.server.ts` `createMaintenanceDispatch` → `resources.service.ts` `insertMaintenanceDispatch`. Copy the PORT's version of every precedent route; it already follows Rule A.
+
+**Rule B — a posting.** A posting building block is `export async function name(ctx: ServiceContext, raw)` with `nameInput` (zod) and `namePermission` (`satisfies PermissionRule`) next to it, in `<module>.service.ts`. It uses `ctx.asSystem.pg` (Kysely), `ctx.company.id` and `ctx.auditUserId`. Its operation in `<module>.server.ts` is `defineServiceFn({ input, permission, run(ctx, input) { return run(ctx, "<name>", () => svc.name(ctx, input)); } })` with `run` from `@carbon/api/service-tools.server`. A TSDoc comment is required. Precedent: `service.server.ts` `createServiceOrderInvoice` (before Task 1 deletes it) and `resources.service.ts` `postMaintenanceEvent`.
+
+**Rule C — a posting the MES calls.** Add it to `PostingContract` in `packages/api/src/postings.server.ts`, to `MES_POSTINGS` in `packages/api/src/postings.ts` (its input schema goes in that file too), and to `postingPermissions` and `postings` in `apps/erp/app/modules/postings.server.ts`. The MES calls `erpPosting("<name>", { client, companyId, userId }, input)` from `apps/mes/app/services/erp.ts`. Precedent: `post-maintenance-event`, called by `apps/mes/app/services/maintenance.service.ts` `postMaintenanceLabor`.
+
+**Rule D — one posting calling another** uses `invokePosting(ctx, "<name>", input, svc.fn, { as, schema })` from `shared.service.ts`. Precedent: `resources.service.ts` `postMaintenanceLabor`.
+
+**Path map** (`inv.svc` = `apps/erp/app/modules/inventory/inventory.service.ts`, `shared.svc` = `apps/erp/app/modules/shared/shared.service.ts`, `proj.svc` = `apps/erp/app/modules/projects/projects.service.ts`, `T/` = `apps/erp/test/database/`):
+
+| Plan says (`packages/server-functions/src/…`) | Port |
+|---|---|
+| `issue/index.ts` | `inv.svc` `issueMaterial`, `issueMaterialPermission` (rules keyed by `type`); the input union `issueInput` is in `packages/api/src/postings.ts` |
+| the `maintenanceDispatch*` issue cases, `valueMaintenanceMovements`, `maintenance-return-cost.ts` | `inv.svc` (same names); test `T/issue/maintenance-return-cost.test.ts` |
+| `post-maintenance-event/index.ts`, `plan.ts` | `apps/erp/app/modules/resources/resources.service.ts` `postMaintenanceEvent`, `maintenanceLaborCost`, `diffLaborGroups`; input in `packages/api/src/postings.ts`; test `T/post-maintenance-event/plan.test.ts` |
+| `post-receipt/index.ts` | `inv.svc` `postReceipt` (RMA `case "Sales Return Order"`, the void path, the RMA status write) |
+| `post-receipt/repair.ts` | `apps/erp/app/modules/inventory/receipt-repair.ts` |
+| `post-shipment/index.ts`, `posting-lines.ts` | `inv.svc` `postShipment`, `ShipmentAccountDefaults`, `SalesShipmentLine`, `buildSalesShipmentJournal`; test `T/post-shipment/posting-lines.test.ts` |
+| `post-shipment/customer-assets.ts`, `repair.ts` | `apps/erp/app/modules/inventory/shipment-customer-assets.ts`, `shipment-repair.ts` |
+| `post-sales-invoice/index.ts` | `apps/erp/app/modules/invoicing/invoicing.service.ts` `postSalesInvoice`, `billedServiceLineIds` |
+| `create/index.ts` | `shared.svc` `createDocument` (the RMA ship-back counts) |
+| `create-service-order-invoice/` | `apps/erp/app/modules/service/service.service.ts` `createServiceOrderInvoice`; `service/service-invoice-plan.ts` (+test); op in `service.server.ts`; test `T/create-service-order-invoice/` |
+| `complete-service-order/` | `service.service.ts` `completeServiceOrder`; `service/refurbishment-completion-load.ts`, `refurbishment-completion-plan.ts` (+test); op in `service.server.ts`; test `T/complete-service-order/` |
+| `reclass-project-coverage/` | `proj.svc` `reclassProjectCoverage` (+ Input, Permission); test `T/reclass-project-coverage/` |
+| `lib/service-orders.ts` | `apps/erp/app/modules/service/service-orders.ts`; test `T/lib/service-orders.test.ts` |
+| `post-timesheet/index.ts`, `plan.ts` | `proj.svc` `postTimesheet`, `writeServiceBillableItems`; `apps/erp/app/modules/projects/timesheet-posting-plan.ts` |
+| `save-timesheet-entry/`, `submit-timesheet-week/` | `proj.svc` `saveTimesheetEntry`, `submitTimesheetWeek`, `createTimesheetCorrection`, `insertTimesheetDraft`, `SaveTimesheetEntryArgs`/`invokeSaveTimesheetEntry`; inputs in `packages/api/src/postings.ts` |
+| `post-project-expense/`, `post-project-issue/` | `proj.svc` `postProjectExpense`, `postProjectIssue` |
+| `post-project-issue/service.ts` | `apps/erp/app/modules/projects/service-part-issue.ts` |
+| `post-picking/` | `inv.svc` `postPicking` |
+| `lib/project-posting.ts` | `apps/erp/app/modules/projects/project-posting.ts` |
+| `lib/plan-adjustment.ts` `JOURNAL_LINE_SAFE_DOCUMENT_TYPES` | `shared.svc` |
+| `lib/post-adjustment.ts` `createAdjustmentJournal`, `valueMovement` | `shared.svc` |
+| a journal reverse helper | `shared.svc` `insertNegatedJournal` |
+| `lib/get-accounting-period` `resolveAccountingPeriod` | `shared.svc` |
+| `getNextSequence(trx, …)` | `import * as sequence from "@carbon/database/sequence"` (as `inv.svc` does) |
+| `lib/project-posting-test-fixture.ts`, `lib/sales-return-test-fixture.ts`, `local-database-test-fixture.ts` | `T/fixtures/project-posting.ts`, `T/fixtures/sales-return.ts`, `T/fixtures/local-database.ts` (`databaseTest`); also `T/fixtures/handles.ts` (`handlesOf`, `systemServiceOf`) |
+| `src/<fn>/*.test.ts` | `T/<fn>/…`; a pure plan test sits beside its source file |
+| `invoke.ts` registry, `package.json` exports | none: an exported `defineServiceFn` op is the registration (Rule B); plus Rule C for MES postings |
+| `permissions-manifest.test.ts.snap` | `cd apps/erp && pnpm exec vitest run test/posting-permissions.test.ts -u`, then review the diff |
+| `sales.server.ts` `releaseServiceOrderStamps` | `apps/erp/app/modules/sales/sales.service.ts` |
+| `shipment+/lines.tracking.tsx` service branch | the `assignShipmentLineEntity` op in `inventory.server.ts` |
+| `modules/service/index.ts` | does not exist; there is no barrel |
+| `serverFns.system({ db: getDatabaseClient(), … }).invoke(…)` in a route | `(await carbon(request)).<module>.<op>(…)` with `respond(...)` |
+| the same in the MES | `erpPosting("<name>", { client, companyId, userId }, input)` |
+
+**Command map:**
+
+| Plan says | Port |
+|---|---|
+| `--filter=@carbon/server-functions` | `--filter=erp` (add `--filter=@carbon/api` when `packages/api` changed) |
+| `pnpm --filter @carbon/server-functions test` / `exec vitest run src/<fn>` | `cd apps/erp && pnpm exec vitest run test/database/<fn>` (live; load the worktree `SUPABASE_*` env first) |
+| the permissions snapshot | `cd apps/erp && pnpm exec vitest run test/posting-permissions.test.ts -u` |
+| after adding or removing an op | `pnpm generate:mcp`, then `pnpm check:manifest` |
+| conformance | `pnpm --filter @carbon/checks exec vitest run src/run.test.ts` |
+
+**Shared worktree:** another session (kelowna-1d) edits `production.service.ts` (the shop-time region) and `sales.service.ts` (the contract amend op). Do not edit either file until it reports that its commits landed: staging by file would take its hunks.
 
 ## Progress
 
