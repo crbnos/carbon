@@ -2079,9 +2079,15 @@ msgstr "승인"
 msgid "Acceptance passed"
 msgstr "승인 통과"
 
+msgid "Accepted"
+msgstr ""
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "수락됨 {0}"
+
+msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
+msgstr ""
 
 msgid "Account"
 msgstr "계정"
@@ -4202,6 +4208,9 @@ msgstr "{name}에서 이 직원을 제거하시겠습니까? 교육 이력은 �
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "이 품목을 가격표에서 제거하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+msgid "Are you sure you want to remove this line?"
+msgstr ""
+
 msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 msgstr "이 분개를 정말로 역분개하시겠습니까? 이는 부호가 반대인 새 전기됨 분개를 만들고 이 분개를 역분개됨으로 표시합니다."
 
@@ -4796,6 +4805,9 @@ msgstr "배치/일련번호"
 msgid "Batch Capacity"
 msgstr "배치 용량"
 
+msgid "Batch is not available"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "배치 품목은 수주가 필요합니다"
 
@@ -4804,6 +4816,13 @@ msgstr "배치 번호"
 
 msgid "Batch Number"
 msgstr "배치 번호"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr ""
+
+msgid "Batch number is required"
+msgstr ""
 
 msgid "Batch Properties"
 msgstr "배치 속성"
@@ -7600,6 +7619,9 @@ msgstr "국가 코드"
 msgid "Coverage"
 msgstr "배치"
 
+msgid "Coverage changed"
+msgstr ""
+
 msgid "CPI"
 msgstr "CPI"
 
@@ -7697,6 +7719,9 @@ msgstr "요소 생성"
 
 msgid "Create Forecast"
 msgstr "예측 생성"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "이슈 생성"
@@ -8195,6 +8220,9 @@ msgstr "고객 위치"
 msgid "Customer Location"
 msgstr "고객 위치"
 
+msgid "Customer Name"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "고객 개요"
 
@@ -8539,6 +8567,9 @@ msgstr "소수 자릿수"
 
 msgid "Decision notes"
 msgstr "의사결정 메모"
+
+msgid "Declined"
+msgstr ""
 
 msgid "Declining balance"
 msgstr "정률법"
@@ -9846,6 +9877,9 @@ msgstr "즉시"
 msgid "Duplicate"
 msgstr "복제"
 
+msgid "Duplicate batch number"
+msgstr ""
+
 msgid "Duplicate file names after image conversion"
 msgstr "이미지 변환 후 중복된 파일 이름"
 
@@ -9860,6 +9894,9 @@ msgstr "가격표 복제"
 
 msgid "Duplicate Pricing Rule"
 msgstr "가격 규칙 복제"
+
+msgid "Duplicate serial number"
+msgstr ""
 
 msgid "Duplicate To"
 msgstr "복제 대상"
@@ -10146,6 +10183,9 @@ msgstr "변경 통지 조치 편집"
 msgid "Edit Change Notice Type"
 msgstr "변경 통지 유형 편집"
 
+msgid "Edit Charge"
+msgstr ""
+
 msgid "Edit column visibility"
 msgstr "열 표시 여부 편집"
 
@@ -10212,6 +10252,9 @@ msgstr "직원 역량 편집"
 
 msgid "Edit Employee Type"
 msgstr "직원 유형 편집"
+
+msgid "Edit Estimate Line"
+msgstr ""
 
 msgid "Edit expiration date"
 msgstr "만료일 편집"
@@ -10446,6 +10489,9 @@ msgstr "규칙을 편집하여 「모든 항목에 적용」 플래그를 제거
 
 msgid "Edit the rule's item filters to remove it"
 msgstr "규칙의 항목 필터를 편집하여 제거합니다"
+
+msgid "Edit Time"
+msgstr ""
 
 msgid "Edit Timecard"
 msgstr "타임카드 편집"
@@ -10997,6 +11043,9 @@ msgstr "추정"
 
 msgid "Estimate at completion"
 msgstr "예상"
+
+msgid "Estimate sent"
+msgstr ""
 
 msgid "Estimated"
 msgstr "예상"
@@ -13052,6 +13101,9 @@ msgstr "지급된 시간"
 msgid "Hours per Week"
 msgstr "주당 시간"
 
+msgid "Hours, for a labor item"
+msgstr ""
+
 msgid "Hours/100 Pieces"
 msgstr "시간/100개"
 
@@ -14139,6 +14191,9 @@ msgstr "불출 자재(열린 요소)"
 msgid "Issue not found"
 msgstr "이슈를 찾을 수 없습니다"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "이슈 상태"
 
@@ -14327,6 +14382,9 @@ msgstr "작업 지시 · {itemReadableId}"
 msgid "Job cancelled"
 msgstr "작업 지시가 취소되었습니다"
 
+msgid "Job completed"
+msgstr ""
+
 msgid "Job completed successfully"
 msgstr "작업 지시가 완료되었습니다"
 
@@ -14377,6 +14435,9 @@ msgstr "작업 가독성"
 
 msgid "Job released"
 msgstr "작업 지시 릴리스됨"
+
+msgid "Job reopened"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "작업 이동표"
@@ -14557,6 +14618,9 @@ msgstr "노무 종료"
 
 msgid "Labor Hours"
 msgstr "노무 시간"
+
+msgid "Labor Item"
+msgstr ""
 
 msgid "Labor rate"
 msgstr "노무 요금"
@@ -16553,6 +16617,9 @@ msgstr "새 변경 요청"
 msgid "New Change Request"
 msgstr "새 변경 요청"
 
+msgid "New Charge"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "신규 소모품"
 
@@ -16610,6 +16677,9 @@ msgstr "새 요소 이름"
 
 msgid "New Employee Type"
 msgstr "신규 직원 유형"
+
+msgid "New Estimate Line"
+msgstr ""
 
 msgid "New expiration date"
 msgstr "신규 만료일"
@@ -18535,6 +18605,9 @@ msgstr "일회성"
 msgid "One-time"
 msgstr "일회성"
 
+msgid "Only {available} available"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "초안 절차서만 편집 가능합니다. 활성 또는 보관됨 절차서를 변경하려면 새로운 버전을 생성하세요."
 
@@ -19339,6 +19412,9 @@ msgstr "품목 ID"
 msgid "Part is configured for manufacturing"
 msgstr "제조용으로 설정된 품목입니다"
 
+msgid "Part issued"
+msgstr ""
+
 msgid "Part lead times update from posted purchase receipts."
 msgstr "부품 리드타임은 전기된 구매 입고에서 업데이트됩니다."
 
@@ -19740,6 +19816,9 @@ msgstr "날짜를 선택하거나 비워두어 지우세요."
 
 msgid "Pick a list variable…"
 msgstr "목록 변수 선택…"
+
+msgid "Pick a part and the quantity to issue from stock to this job"
+msgstr ""
 
 msgid "Pick a process to start"
 msgstr "시작할 공정을 선택하세요"
@@ -20344,6 +20423,9 @@ msgstr "{0} 라벨 인쇄"
 
 msgid "Print batch list"
 msgstr "배치 목록 인쇄"
+
+msgid "Print Estimate"
+msgstr ""
 
 msgid "Print job deleted"
 msgstr "인쇄 작업 삭제됨"
@@ -21632,6 +21714,9 @@ msgstr "품목과 작업에 연결된 검사를 기록"
 msgid "Record Payment"
 msgstr "지불 기록"
 
+msgid "Record Response"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "{displayId}의 지불을 직원에게 기록하세요. 부분적으로 결제하려면 총 미결액보다 적게 지불하세요."
 
@@ -21652,6 +21737,9 @@ msgstr "이 교정 후 후속 조치가 필요하다고 기록되었습니다. �
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "이 교정 중에 계측기가 조정되었다고 기록되었습니다. 교정 주기를 다시 계산하는 방식에 영향을 줍니다."
+
+msgid "Recorded the customer's response"
+msgstr ""
 
 msgid "Records"
 msgstr "레코드"
@@ -22497,6 +22585,9 @@ msgstr "자원"
 
 msgid "Resources"
 msgstr "자원"
+
+msgid "Response"
+msgstr ""
 
 msgid "Responsible employee"
 msgstr "담당 직원"
@@ -23844,6 +23935,10 @@ msgstr "견적서를 수락하려면 최소 하나의 품목을 선택하세요"
 msgid "Select at least one line to convert"
 msgstr "전환할 라인을 하나 이상 선택하세요"
 
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr ""
+
 msgid "Select Contact"
 msgstr "담당자 선택"
 
@@ -23943,6 +24038,10 @@ msgstr "행 선택"
 msgid "Select scope"
 msgstr "범위 선택"
 
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr ""
+
 msgid "Select station"
 msgstr "역 선택"
 
@@ -24016,6 +24115,9 @@ msgstr "전송"
 msgid "Send error"
 msgstr "전송 오류"
 
+msgid "Send Estimate"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "초대 보내기"
 
@@ -24042,6 +24144,9 @@ msgstr "송장 전송 중"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "이 문서를 활성화하기 전에 승인을 위해 전송합니다."
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sent at"
 msgstr "전송된 시간"
@@ -24078,6 +24183,16 @@ msgstr "일련번호 품목은 수주가 필요합니다."
 
 msgid "Serial Number"
 msgstr "시리얼 번호"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
+msgid "Serial number is not available"
+msgstr ""
+
+msgid "Serial number is required"
+msgstr ""
 
 msgid "Serial Number:"
 msgstr "시리얼 번호:"
@@ -27121,6 +27236,9 @@ msgstr "재정의는 활성화 시 유지되며 그 이유와 함께 감사 로�
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "추적 개체의 상하위 연결 관계로, 해당 유닛이 무엇으로부터 만들어졌고 무엇이 되었는지를 나타냅니다."
+
+msgid "The part goes back to inventory and its cost is reversed."
+msgstr ""
 
 msgid "The part has a newer model than this instruction."
 msgstr "부품이 이 지시사항보다 최신 모델입니다"
@@ -30557,6 +30675,9 @@ msgstr "누가 무엇을 할 수 있는지"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "6단계 전반에 걸쳐 누가 무엇을 하는지. 귀사의 역할은 위쪽에 강조되어 있습니다. 이를 잘 수행하면 프로젝트가 진행됩니다."
+
+msgid "Who gave the answer"
+msgstr ""
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "누가 무엇을, 어떤 형식으로 교육받는지. 귀사가 할 일: 담당자들의 일정에서 실습 세션 시간을 미리 확보하세요. 회사가 바빠지면 가장 밀리기 쉬운 부분입니다."

@@ -31,6 +31,11 @@ import QuotePDF from "./QuotePDF";
 import SalesInvoicePDF from "./SalesInvoicePDF";
 import SalesOrderPDF from "./SalesOrderPDF";
 import SalesReturnOrderPDF from "./SalesReturnOrderPDF";
+import type {
+  ServiceJobEstimate,
+  ServiceJobEstimateLine
+} from "./ServiceJobEstimatePDF";
+import ServiceJobEstimatePDF from "./ServiceJobEstimatePDF";
 import StockTransferPDF from "./StockTransferPDF";
 import StorageUnitLabelPDF from "./StorageUnitLabelPDF";
 import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
@@ -43,7 +48,9 @@ export type {
   ContractFinancingEventRow,
   ContractFinancingRow,
   JobTravelerMaterial,
-  ProjectReaderSection
+  ProjectReaderSection,
+  ServiceJobEstimate,
+  ServiceJobEstimateLine
 };
 export {
   BatchListPDF,
@@ -75,6 +82,7 @@ export {
   SalesInvoicePDF,
   SalesOrderPDF,
   SalesReturnOrderPDF,
+  ServiceJobEstimatePDF,
   StockTransferPDF,
   StorageUnitLabelPDF
 };

@@ -2079,9 +2079,15 @@ msgstr "受け入れ"
 msgid "Acceptance passed"
 msgstr "承諾合格"
 
+msgid "Accepted"
+msgstr ""
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "承諾済 {0}"
+
+msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
+msgstr ""
 
 msgid "Account"
 msgstr "アカウント"
@@ -4202,6 +4208,9 @@ msgstr "この従業員を「{name}」から除去してもよろしいですか
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "この品目を価格リストから除去してもよろしいですか？これは取り消せません。"
 
+msgid "Are you sure you want to remove this line?"
+msgstr ""
+
 msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 msgstr "この仕訳行を反対仕訳してもよろしいですか？これは否定された金額で新しい転記済エントリを作成し、このエントリを反対仕訳済としてマークします。"
 
@@ -4796,6 +4805,9 @@ msgstr "バッチ / シリアル"
 msgid "Batch Capacity"
 msgstr "バッチ容量"
 
+msgid "Batch is not available"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "バッチ品目は受注が必要です"
 
@@ -4804,6 +4816,13 @@ msgstr "バッチ番号"
 
 msgid "Batch Number"
 msgstr "バッチ番号"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr ""
+
+msgid "Batch number is required"
+msgstr ""
 
 msgid "Batch Properties"
 msgstr "バッチプロパティ"
@@ -7600,6 +7619,9 @@ msgstr "国コード"
 msgid "Coverage"
 msgstr "配置"
 
+msgid "Coverage changed"
+msgstr ""
+
 msgid "CPI"
 msgstr "CPI"
 
@@ -7697,6 +7719,9 @@ msgstr "要素を作成"
 
 msgid "Create Forecast"
 msgstr "予測を作成"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "問題を作成"
@@ -8195,6 +8220,9 @@ msgstr "得意先拠点"
 msgid "Customer Location"
 msgstr "得意先拠点"
 
+msgid "Customer Name"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "得意先概要"
 
@@ -8539,6 +8567,9 @@ msgstr "小数位数"
 
 msgid "Decision notes"
 msgstr "決定メモ"
+
+msgid "Declined"
+msgstr ""
 
 msgid "Declining balance"
 msgstr "定率法"
@@ -9846,6 +9877,9 @@ msgstr "本日が納期"
 msgid "Duplicate"
 msgstr "複製"
 
+msgid "Duplicate batch number"
+msgstr ""
+
 msgid "Duplicate file names after image conversion"
 msgstr "画像変換後のファイル名の重複"
 
@@ -9860,6 +9894,9 @@ msgstr "価格リストを複製"
 
 msgid "Duplicate Pricing Rule"
 msgstr "価格設定ルールを複製"
+
+msgid "Duplicate serial number"
+msgstr ""
 
 msgid "Duplicate To"
 msgstr "複製先"
@@ -10146,6 +10183,9 @@ msgstr "変更通知アクションを編集"
 msgid "Edit Change Notice Type"
 msgstr "変更通知タイプを編集"
 
+msgid "Edit Charge"
+msgstr ""
+
 msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
 
@@ -10212,6 +10252,9 @@ msgstr "従業員スキルを編集"
 
 msgid "Edit Employee Type"
 msgstr "従業員タイプを編集"
+
+msgid "Edit Estimate Line"
+msgstr ""
 
 msgid "Edit expiration date"
 msgstr "有効期限を編集"
@@ -10446,6 +10489,9 @@ msgstr "ルールを編集して、\"すべてに適用\" フラグを削除し�
 
 msgid "Edit the rule's item filters to remove it"
 msgstr "ルールのアイテムフィルターを編集して削除します"
+
+msgid "Edit Time"
+msgstr ""
 
 msgid "Edit Timecard"
 msgstr "タイムカードを編集"
@@ -10997,6 +11043,9 @@ msgstr "見積"
 
 msgid "Estimate at completion"
 msgstr "見積もり"
+
+msgid "Estimate sent"
+msgstr ""
 
 msgid "Estimated"
 msgstr "推定"
@@ -13052,6 +13101,9 @@ msgstr "支払時間"
 msgid "Hours per Week"
 msgstr "週間あたりの時間"
 
+msgid "Hours, for a labor item"
+msgstr ""
+
 msgid "Hours/100 Pieces"
 msgstr "時間/100個"
 
@@ -14139,6 +14191,9 @@ msgstr "材料を出庫（オープン要素）"
 msgid "Issue not found"
 msgstr "問題が見つかりません"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "問題ステータス"
 
@@ -14327,6 +14382,9 @@ msgstr "製造指図 · {itemReadableId}"
 msgid "Job cancelled"
 msgstr "製造指図がキャンセル済になりました"
 
+msgid "Job completed"
+msgstr ""
+
 msgid "Job completed successfully"
 msgstr "製造指図が正常に完了しました"
 
@@ -14377,6 +14435,9 @@ msgstr "ジョブ読取可能"
 
 msgid "Job released"
 msgstr "製造指図がリリース済"
+
+msgid "Job reopened"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "現品票"
@@ -14557,6 +14618,9 @@ msgstr "労務終了"
 
 msgid "Labor Hours"
 msgstr "労務時間"
+
+msgid "Labor Item"
+msgstr ""
 
 msgid "Labor rate"
 msgstr "労務単価"
@@ -16553,6 +16617,9 @@ msgstr "新規変更要求"
 msgid "New Change Request"
 msgstr "新しい変更要求"
 
+msgid "New Charge"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "新しい消耗品"
 
@@ -16610,6 +16677,9 @@ msgstr "新しい要素名"
 
 msgid "New Employee Type"
 msgstr "新しい従業員タイプ"
+
+msgid "New Estimate Line"
+msgstr ""
 
 msgid "New expiration date"
 msgstr "新しい有効期限"
@@ -18535,6 +18605,9 @@ msgstr "1回限り"
 msgid "One-time"
 msgstr "1回限り"
 
+msgid "Only {available} available"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "下書きの手順書のみが編集可能です。有効またはアーカイブ済の手順書を変更するには、新しいバージョンを作成してください。"
 
@@ -19339,6 +19412,9 @@ msgstr "部品ID"
 msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
 
+msgid "Part issued"
+msgstr ""
+
 msgid "Part lead times update from posted purchase receipts."
 msgstr "部品のリードタイムは転記済の購買入荷から更新されます。"
 
@@ -19740,6 +19816,9 @@ msgstr "日付を選択するか、空白のままにしてクリアしてくだ
 
 msgid "Pick a list variable…"
 msgstr "リスト変数を選択..."
+
+msgid "Pick a part and the quantity to issue from stock to this job"
+msgstr ""
 
 msgid "Pick a process to start"
 msgstr "開始するプロセスを選択"
@@ -20344,6 +20423,9 @@ msgstr "{0}個のラベルを印刷"
 
 msgid "Print batch list"
 msgstr "バッチリストを印刷"
+
+msgid "Print Estimate"
+msgstr ""
 
 msgid "Print job deleted"
 msgstr "印刷ジョブが削除されました"
@@ -21632,6 +21714,9 @@ msgstr "部品とジョブに関連付けられた検査を記録する"
 msgid "Record Payment"
 msgstr "支払を記録"
 
+msgid "Record Response"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "{displayId}の従業員への支払を記録します。支払うべき合計金額より少ない金額を支払うと、部分的に清算することができます。"
 
@@ -21652,6 +21737,9 @@ msgstr "この校正後にフォローアップが必要であることを記録
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "この校正中に測定器が調整されたことを記録した。校正周期の再計算方法に影響を与える。"
+
+msgid "Recorded the customer's response"
+msgstr ""
 
 msgid "Records"
 msgstr "記録"
@@ -22497,6 +22585,9 @@ msgstr "リソース"
 
 msgid "Resources"
 msgstr "リソース"
+
+msgid "Response"
+msgstr ""
 
 msgid "Responsible employee"
 msgstr "責任従業員"
@@ -23844,6 +23935,10 @@ msgstr "見積を承諾するには最低でも1つの品目を選択してく�
 msgid "Select at least one line to convert"
 msgstr "変換する行を少なくとも1つ選択してください"
 
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr ""
+
 msgid "Select Contact"
 msgstr "担当者を選択"
 
@@ -23943,6 +24038,10 @@ msgstr "行を選択"
 msgid "Select scope"
 msgstr "スコープを選択"
 
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr ""
+
 msgid "Select station"
 msgstr "ステーションを選択"
 
@@ -24016,6 +24115,9 @@ msgstr "送信"
 msgid "Send error"
 msgstr "送信エラー"
 
+msgid "Send Estimate"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "招待を送信"
 
@@ -24042,6 +24144,9 @@ msgstr "請求書を送信中"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "この文書を有効にする前に承認用に送信します。"
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sent at"
 msgstr "送信日時"
@@ -24078,6 +24183,16 @@ msgstr "シリアル品目は受注が必要です"
 
 msgid "Serial Number"
 msgstr "シリアル番号"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
+msgid "Serial number is not available"
+msgstr ""
+
+msgid "Serial number is required"
+msgstr ""
 
 msgid "Serial Number:"
 msgstr "シリアル番号:"
@@ -27121,6 +27236,9 @@ msgstr "上書きは有効化時に保持され、その理由とともに監査
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "追跡されたエンティティの親子チェーン—ユニットが何から構築され、それが何になったか。"
+
+msgid "The part goes back to inventory and its cost is reversed."
+msgstr ""
 
 msgid "The part has a newer model than this instruction."
 msgstr "部品がこの指示より新しいモデルを持っています。"
@@ -30557,6 +30675,9 @@ msgstr "誰が何ができるか"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "6つのステップ全体で誰が何をするかを示します。あなたの側は上部でハイライトされています。うまく対応すればプロジェクトが進みます。"
+
+msgid "Who gave the answer"
+msgstr ""
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "誰が何をどのような形式で訓練を受けるか。あなたの役割：チャンピオンのカレンダーで実践的なセッション時間を早期に確保する。企業が忙しくなると、これが最も遅れやすい。"

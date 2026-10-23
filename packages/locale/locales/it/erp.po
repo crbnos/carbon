@@ -2079,9 +2079,15 @@ msgstr "Accettazione"
 msgid "Acceptance passed"
 msgstr "Accettazione superata"
 
+msgid "Accepted"
+msgstr ""
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Accettata il {0}"
+
+msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
+msgstr ""
 
 msgid "Account"
 msgstr "Conto"
@@ -4202,6 +4208,9 @@ msgstr "Sei sicuro di voler rimuovere questo dipendente da {name}? La cronologia
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Sei sicuro di voler rimuovere questo articolo dall'elenco dei prezzi? Questa azione non può essere annullata."
 
+msgid "Are you sure you want to remove this line?"
+msgstr ""
+
 msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 msgstr "Sei sicuro di voler stornare questa riga di registrazione? Questo creerà una nuova riga registrata con importi negati e contrassegnerà questa riga come Stornata."
 
@@ -4796,6 +4805,9 @@ msgstr "Lotto / Seriale"
 msgid "Batch Capacity"
 msgstr "Capacità del Lotto"
 
+msgid "Batch is not available"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "Gli articoli in lotto richiedono un ordine di vendita"
 
@@ -4804,6 +4816,13 @@ msgstr "Numero di lotto"
 
 msgid "Batch Number"
 msgstr "Numero Lotto"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr ""
+
+msgid "Batch number is required"
+msgstr ""
 
 msgid "Batch Properties"
 msgstr "Proprietà Batch"
@@ -7600,6 +7619,9 @@ msgstr "Codice paese"
 msgid "Coverage"
 msgstr "Copertura"
 
+msgid "Coverage changed"
+msgstr ""
+
 msgid "CPI"
 msgstr "CPI"
 
@@ -7697,6 +7719,9 @@ msgstr "Crea elementi"
 
 msgid "Create Forecast"
 msgstr "Crea previsione"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Crea Problema"
@@ -8195,6 +8220,9 @@ msgstr "Ubicazione cliente"
 msgid "Customer Location"
 msgstr "Ubicazione Cliente"
 
+msgid "Customer Name"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "Panoramica Cliente"
 
@@ -8539,6 +8567,9 @@ msgstr "Posizioni Decimali"
 
 msgid "Decision notes"
 msgstr "Note di decisione"
+
+msgid "Declined"
+msgstr ""
 
 msgid "Declining balance"
 msgstr "Quote decrescenti"
@@ -9846,6 +9877,9 @@ msgstr "dovuto ora"
 msgid "Duplicate"
 msgstr "Duplica"
 
+msgid "Duplicate batch number"
+msgstr ""
+
 msgid "Duplicate file names after image conversion"
 msgstr "Nomi file duplicati dopo la conversione dell'immagine"
 
@@ -9860,6 +9894,9 @@ msgstr "Duplica Listino Prezzi"
 
 msgid "Duplicate Pricing Rule"
 msgstr "Duplica Regola di Prezzo"
+
+msgid "Duplicate serial number"
+msgstr ""
 
 msgid "Duplicate To"
 msgstr "Duplica in"
@@ -10146,6 +10183,9 @@ msgstr "Modifica azione dell'avviso di modifica"
 msgid "Edit Change Notice Type"
 msgstr "Modifica tipo di avviso di modifica"
 
+msgid "Edit Charge"
+msgstr ""
+
 msgid "Edit column visibility"
 msgstr "Modifica visibilità colonna"
 
@@ -10212,6 +10252,9 @@ msgstr "Modifica competenza dipendente"
 
 msgid "Edit Employee Type"
 msgstr "Modifica Tipo di Dipendente"
+
+msgid "Edit Estimate Line"
+msgstr ""
 
 msgid "Edit expiration date"
 msgstr "Modifica data di scadenza"
@@ -10446,6 +10489,9 @@ msgstr "Modifica la regola per rimuovere il flag \"Applies to all\""
 
 msgid "Edit the rule's item filters to remove it"
 msgstr "Modifica i filtri degli articoli della regola per rimuoverla"
+
+msgid "Edit Time"
+msgstr ""
 
 msgid "Edit Timecard"
 msgstr "Modifica Scheda Orario"
@@ -10997,6 +11043,9 @@ msgstr "Stima"
 
 msgid "Estimate at completion"
 msgstr "Stima"
+
+msgid "Estimate sent"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Stimato"
@@ -13052,6 +13101,9 @@ msgstr "Ore pagate"
 msgid "Hours per Week"
 msgstr "Ore per Settimana"
 
+msgid "Hours, for a labor item"
+msgstr ""
+
 msgid "Hours/100 Pieces"
 msgstr "Ore/100 Pezzi"
 
@@ -14139,6 +14191,9 @@ msgstr "Scarico materiale (l'elemento aperto)"
 msgid "Issue not found"
 msgstr "Problema non trovato"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "Stato del Problema"
 
@@ -14327,6 +14382,9 @@ msgstr "Ordine di produzione · {itemReadableId}"
 msgid "Job cancelled"
 msgstr "Ordine di produzione annullato"
 
+msgid "Job completed"
+msgstr ""
+
 msgid "Job completed successfully"
 msgstr "Ordine di produzione completato con successo"
 
@@ -14377,6 +14435,9 @@ msgstr "Lavoro leggibile"
 
 msgid "Job released"
 msgstr "Ordine di produzione rilasciato"
+
+msgid "Job reopened"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "Cartellino di produzione"
@@ -14557,6 +14618,9 @@ msgstr "Manodopera terminata"
 
 msgid "Labor Hours"
 msgstr "Ore di manodopera"
+
+msgid "Labor Item"
+msgstr ""
 
 msgid "Labor rate"
 msgstr "Tariffa manodopera"
@@ -16553,6 +16617,9 @@ msgstr "Nuova richiesta di modifica"
 msgid "New Change Request"
 msgstr "Nuova richiesta di modifica"
 
+msgid "New Charge"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Nuovo materiale di consumo"
 
@@ -16610,6 +16677,9 @@ msgstr "Nome nuovo elemento"
 
 msgid "New Employee Type"
 msgstr "Nuovo Tipo di Dipendente"
+
+msgid "New Estimate Line"
+msgstr ""
 
 msgid "New expiration date"
 msgstr "Nuova data di scadenza"
@@ -18535,6 +18605,9 @@ msgstr "una tantum"
 msgid "One-time"
 msgstr "Una tantum"
 
+msgid "Only {available} available"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Solo le procedure in bozza sono modificabili. Crea una nuova versione per modificare una procedura attiva o archiviata."
 
@@ -19339,6 +19412,9 @@ msgstr "ID Parte"
 msgid "Part is configured for manufacturing"
 msgstr "La parte è configurata per la produzione"
 
+msgid "Part issued"
+msgstr ""
+
 msgid "Part lead times update from posted purchase receipts."
 msgstr "I lead time dei componenti vengono aggiornati dalle entrate merci registrate."
 
@@ -19740,6 +19816,9 @@ msgstr "Scegli una data o lascia vuoto per cancellarla."
 
 msgid "Pick a list variable…"
 msgstr "Scegli una variabile di elenco…"
+
+msgid "Pick a part and the quantity to issue from stock to this job"
+msgstr ""
 
 msgid "Pick a process to start"
 msgstr "Scegli un processo per iniziare"
@@ -20344,6 +20423,9 @@ msgstr "Stampa {0} Etichette"
 
 msgid "Print batch list"
 msgstr "Stampa elenco lotto di produzione"
+
+msgid "Print Estimate"
+msgstr ""
 
 msgid "Print job deleted"
 msgstr "Lavoro di stampa eliminato"
@@ -21632,6 +21714,9 @@ msgstr "Registra i controlli legati a un componente e a un ordine di produzione"
 msgid "Record Payment"
 msgstr "Registra Pagamento"
 
+msgid "Record Response"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Registra il pagamento di {displayId} al dipendente. Paga meno del totale dovuto per saldarlo parzialmente."
 
@@ -21652,6 +21737,9 @@ msgstr "Registrato che il follow-up è necessario dopo questa taratura; visualiz
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Registrato che lo strumento di misura è stato regolato durante questa taratura; influisce su come l'intervallo di taratura si ricalcola."
+
+msgid "Recorded the customer's response"
+msgstr ""
 
 msgid "Records"
 msgstr "Registri"
@@ -22497,6 +22585,9 @@ msgstr "risorse"
 
 msgid "Resources"
 msgstr "Risorse"
+
+msgid "Response"
+msgstr ""
 
 msgid "Responsible employee"
 msgstr "Dipendente responsabile"
@@ -23844,6 +23935,10 @@ msgstr "Seleziona almeno un articolo per accettare l'offerta"
 msgid "Select at least one line to convert"
 msgstr "Seleziona almeno una riga da convertire"
 
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr ""
+
 msgid "Select Contact"
 msgstr "Seleziona Contatto"
 
@@ -23943,6 +24038,10 @@ msgstr "Seleziona Riga"
 msgid "Select scope"
 msgstr "Seleziona ambito"
 
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr ""
+
 msgid "Select station"
 msgstr "Seleziona stazione"
 
@@ -24016,6 +24115,9 @@ msgstr "Invia"
 msgid "Send error"
 msgstr "Errore di invio"
 
+msgid "Send Estimate"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Invia Invito"
 
@@ -24042,6 +24144,9 @@ msgstr "Invio della fattura in corso"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Invia questo documento per l'approvazione prima che possa diventare attivo."
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sent at"
 msgstr "Inviato il"
@@ -24078,6 +24183,16 @@ msgstr "Gli articoli seriali richiedono un ordine di vendita"
 
 msgid "Serial Number"
 msgstr "Numero di Serie"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
+msgid "Serial number is not available"
+msgstr ""
+
+msgid "Serial number is required"
+msgstr ""
 
 msgid "Serial Number:"
 msgstr "Numero di Serie:"
@@ -27121,6 +27236,9 @@ msgstr "La forzatura è mantenuta all'attivazione e registrata nel registro di a
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "La catena padre-figlio delle entità monitorate - di cosa è stata costruita un'unità e cosa è diventata."
+
+msgid "The part goes back to inventory and its cost is reversed."
+msgstr ""
 
 msgid "The part has a newer model than this instruction."
 msgstr "Il Componente ha un modello più recente di questa istruzione."
@@ -30557,6 +30675,9 @@ msgstr "Chi può fare cosa"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Chi fa cosa, in tutti i sei passi. Il tuo lato è evidenziato in alto. Possiedi bene e il progetto si muove."
+
+msgid "Who gave the answer"
+msgstr ""
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Chi riceve la formazione su cosa, in quale formato. La tua parte: proteggi il tempo della sessione pratica nei calendari dei tuoi champion in anticipo. È quello che scivola di più quando le aziende sono occupate."

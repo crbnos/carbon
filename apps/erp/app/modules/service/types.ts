@@ -5,12 +5,14 @@
 import type {
   getCustomerAsset,
   getCustomerAssets,
+  getSalesReturnLinesByAsset,
   getServiceBacklog,
   getServiceJob,
   getServiceJobAssignmentsRange,
   getServiceJobEstimateLines,
   getServiceJobItems,
   getServiceJobs,
+  getServiceJobsByAsset,
   getServiceJobTime
 } from "./service.service";
 
@@ -21,6 +23,14 @@ export type CustomerAsset = NonNullable<
 export type CustomerAssetDetail = NonNullable<
   Awaited<ReturnType<typeof getCustomerAsset>>["data"]
 >;
+
+export type CustomerAssetServiceJob = NonNullable<
+  Awaited<ReturnType<typeof getServiceJobsByAsset>>["data"]
+>[number];
+
+export type CustomerAssetReturnLine = NonNullable<
+  Awaited<ReturnType<typeof getSalesReturnLinesByAsset>>["data"]
+>[number];
 
 export type ServiceJob = NonNullable<
   Awaited<ReturnType<typeof getServiceJobs>>["data"]

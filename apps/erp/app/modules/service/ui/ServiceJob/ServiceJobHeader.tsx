@@ -17,18 +17,33 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { serviceJobPrimaryAction } from "@carbon/utils";
+import { isServiceJobLocked, serviceJobPrimaryAction } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuCirclePause, LuCirclePlay, LuCircleX, LuPlay } from "react-icons/lu";
+import {
+  LuCircleCheck,
+  LuCirclePause,
+  LuCirclePlay,
+  LuCircleX,
+  LuFile,
+  LuLoaderCircle,
+  LuMessageSquareReply,
+  LuPlay,
+  LuReceipt,
+  LuSend
+} from "react-icons/lu";
 import { useParams } from "react-router";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import { usePermissions, useRouteData } from "~/hooks";
+import type { action as completeAction } from "~/routes/x+/service-job+/$jobId.complete";
+import type { action as sendAction } from "~/routes/x+/service-job+/$jobId.estimate.send";
+import type { action as reopenAction } from "~/routes/x+/service-job+/$jobId.reopen";
 import type { action as statusAction } from "~/routes/x+/service-job+/$jobId.status";
 import { path } from "~/utils/path";
 import type { ServiceJobStatusAction } from "../../service.models";
 import { SERVICE_JOB_STATUS_TRANSITIONS } from "../../service.models";
-import type { ServiceJobDetail } from "../../types";
+import type { ServiceJobDetail, ServiceJobEstimateLine } from "../../types";
 import CoverageBadge from "./CoverageBadge";
+import EstimateResponseModal from "./EstimateResponseModal";
 import ServiceJobStatus from "./ServiceJobStatus";
 
 const ServiceJobHeader = () => {
@@ -36,29 +51,73 @@ const ServiceJobHeader = () => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
-  const routeData = useRouteData<{ job: ServiceJobDetail }>(
-    path.to.serviceJob(jobId)
-  );
+  const routeData = useRouteData<{
+    job: ServiceJobDetail;
+    estimateLines: ServiceJobEstimateLine[];
+  }>(path.to.serviceJob(jobId));
   const job = routeData?.job;
   const status = job?.status;
+  const hasEstimateLines = (routeData?.estimateLines.length ?? 0) > 0;
 
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "service");
   const cancelModal = useDisclosure();
+  const responseModal = useDisclosure();
+
   const statusFetcher = useAction<typeof statusAction>({
     onSuccess: () => {
       toast.success(t`Updated job status`);
       cancelModal.onClose();
     }
   });
+  const sendFetcher = useAction<typeof sendAction>({
+    onSuccess: () => toast.success(t`Estimate sent`)
+  });
+  const completeFetcher = useAction<typeof completeAction>({
+    onSuccess: () => toast.success(t`Job completed`)
+  });
+  const reopenFetcher = useAction<typeof reopenAction>({
+    onSuccess: () => toast.success(t`Job reopened`)
+  });
+  const invoiceFetcher = useAction();
+
+  const isBusy = [
+    statusFetcher,
+    sendFetcher,
+    completeFetcher,
+    reopenFetcher,
+    invoiceFetcher
+  ].some((fetcher) => fetcher.state !== "idle");
 
   const primaryAction = job ? serviceJobPrimaryAction(job) : null;
+  const isLocked = isServiceJobLocked(status);
 
   const isAllowed = (action: ServiceJobStatusAction) =>
     !!status &&
     SERVICE_JOB_STATUS_TRANSITIONS[action].from.includes(status) &&
     canUpdate &&
-    statusFetcher.state === "idle";
+    !isBusy;
+
+  // Only a Billable job has an estimate; an accepted one is not sent again.
+  const canSendEstimate =
+    canUpdate &&
+    !isLocked &&
+    !isBusy &&
+    hasEstimateLines &&
+    job?.coverage === "Billable" &&
+    job?.estimateStatus !== "Accepted";
+  const canRecordResponse =
+    canUpdate && !isLocked && !isBusy && job?.estimateStatus === "Sent";
+  const canComplete =
+    canUpdate &&
+    !isBusy &&
+    (status === "Open" || status === "In Progress" || status === "On Hold");
+  const canInvoice =
+    permissions.can("update", "service") &&
+    permissions.can("create", "invoicing") &&
+    !isBusy &&
+    status === "Completed" &&
+    job?.coverage === "Billable";
 
   const submitStatus = (action: ServiceJobStatusAction) => {
     statusFetcher.submit(
@@ -67,8 +126,28 @@ const ServiceJobHeader = () => {
     );
   };
 
+  const sendEstimate = () => {
+    sendFetcher.submit(
+      {},
+      { method: "post", action: path.to.serviceJobEstimateSend(jobId) }
+    );
+  };
+
   const menuItems = (
     <>
+      <DropdownMenuItem disabled={!canSendEstimate} onClick={sendEstimate}>
+        <DropdownMenuIcon icon={<LuSend />} />
+        <Trans>Send Estimate</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        disabled={!hasEstimateLines}
+        onClick={() =>
+          window.open(path.to.file.serviceJobEstimate(jobId), "_blank")
+        }
+      >
+        <DropdownMenuIcon icon={<LuFile />} />
+        <Trans>Print Estimate</Trans>
+      </DropdownMenuItem>
       <DropdownMenuItem
         disabled={!isAllowed("Hold")}
         onClick={() => submitStatus("Hold")}
@@ -84,6 +163,18 @@ const ServiceJobHeader = () => {
         <Trans>Resume</Trans>
       </DropdownMenuItem>
       <DropdownMenuItem
+        disabled={status !== "Completed" || !canUpdate || isBusy}
+        onClick={() =>
+          reopenFetcher.submit(
+            {},
+            { method: "post", action: path.to.serviceJobReopen(jobId) }
+          )
+        }
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
         destructive
         disabled={!isAllowed("Cancel")}
         onClick={cancelModal.onOpen}
@@ -93,6 +184,88 @@ const ServiceJobHeader = () => {
       </DropdownMenuItem>
     </>
   );
+
+  const primary = (() => {
+    switch (primaryAction) {
+      case "Start":
+        return (
+          <statusFetcher.Form
+            method="post"
+            action={path.to.serviceJobStatus(jobId)}
+          >
+            <input type="hidden" name="action" value="Start" />
+            <Button
+              type="submit"
+              leftIcon={<LuCirclePlay />}
+              variant="primary"
+              isDisabled={!isAllowed("Start")}
+              isLoading={statusFetcher.state !== "idle"}
+            >
+              <Trans>Start</Trans>
+            </Button>
+          </statusFetcher.Form>
+        );
+      case "Send Estimate":
+        return (
+          <Button
+            leftIcon={<LuSend />}
+            variant="primary"
+            isDisabled={!canSendEstimate}
+            isLoading={sendFetcher.state !== "idle"}
+            onClick={sendEstimate}
+          >
+            <Trans>Send Estimate</Trans>
+          </Button>
+        );
+      case "Complete":
+        return (
+          <completeFetcher.Form
+            method="post"
+            action={path.to.serviceJobComplete(jobId)}
+          >
+            <Button
+              type="submit"
+              leftIcon={<LuCircleCheck />}
+              variant="primary"
+              isDisabled={!canComplete}
+              isLoading={completeFetcher.state !== "idle"}
+            >
+              <Trans>Complete</Trans>
+            </Button>
+          </completeFetcher.Form>
+        );
+      case "Record Response":
+        return (
+          <Button
+            leftIcon={<LuMessageSquareReply />}
+            variant="primary"
+            isDisabled={!canRecordResponse}
+            onClick={responseModal.onOpen}
+          >
+            <Trans>Record Response</Trans>
+          </Button>
+        );
+      case "Create Invoice":
+        return (
+          <invoiceFetcher.Form
+            method="post"
+            action={path.to.serviceJobInvoice(jobId)}
+          >
+            <Button
+              type="submit"
+              leftIcon={<LuReceipt />}
+              variant="primary"
+              isDisabled={!canInvoice}
+              isLoading={invoiceFetcher.state !== "idle"}
+            >
+              <Trans>Create Invoice</Trans>
+            </Button>
+          </invoiceFetcher.Form>
+        );
+      default:
+        return null;
+    }
+  })();
 
   return (
     <>
@@ -108,30 +281,12 @@ const ServiceJobHeader = () => {
           </div>
         }
         actions={
-          primaryAction === "Start" ? (
-            <RecordAction slot="primary">
-              <statusFetcher.Form
-                method="post"
-                action={path.to.serviceJobStatus(jobId)}
-              >
-                <input type="hidden" name="action" value="Start" />
-                <Button
-                  type="submit"
-                  leftIcon={<LuCirclePlay />}
-                  variant="primary"
-                  isDisabled={!isAllowed("Start")}
-                  isLoading={
-                    statusFetcher.state !== "idle" &&
-                    statusFetcher.formData?.get("action") === "Start"
-                  }
-                >
-                  <Trans>Start</Trans>
-                </Button>
-              </statusFetcher.Form>
-            </RecordAction>
-          ) : null
+          primary ? <RecordAction slot="primary">{primary}</RecordAction> : null
         }
       />
+      {responseModal.isOpen && (
+        <EstimateResponseModal jobId={jobId} onClose={responseModal.onClose} />
+      )}
       {cancelModal.isOpen && (
         <Modal
           open

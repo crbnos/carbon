@@ -9,6 +9,7 @@ import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuCalendar,
+  LuHammer,
   LuMapPin,
   LuPackage,
   LuShieldCheck,
@@ -27,6 +28,11 @@ import {
   useWarrantyStatusLabels,
   WarrantyBadge
 } from "../ServiceStatus";
+
+/** The asset's open service jobs: the filtered count `CUSTOMER_ASSET_COLUMNS` embeds. */
+function openServiceJobCount(asset: CustomerAsset) {
+  return asset.openServiceJobs?.[0]?.count ?? 0;
+}
 
 type CustomerAssetsTableProps = {
   data: CustomerAsset[];
@@ -139,6 +145,16 @@ const CustomerAssetsTable = memo(
           }
         },
         {
+          id: "openServiceJobs",
+          header: t`Open Jobs`,
+          enableSorting: false,
+          accessorFn: openServiceJobCount,
+          cell: ({ row }) => openServiceJobCount(row.original) || "—",
+          meta: {
+            icon: <LuHammer />
+          }
+        },
+        {
           accessorKey: "status",
           header: t`Status`,
           cell: ({ row }) => (
@@ -169,9 +185,20 @@ const CustomerAssetsTable = memo(
             <MenuIcon icon={<LuBookMarked />} />
             <Trans>View Asset</Trans>
           </MenuItem>
+          <MenuItem
+            disabled={!permissions.can("create", "service")}
+            onClick={() =>
+              navigate(
+                `${path.to.newServiceJob}?customerId=${row.customerId}&customerAssetId=${row.id}`
+              )
+            }
+          >
+            <MenuIcon icon={<LuHammer />} />
+            <Trans>New Service Job</Trans>
+          </MenuItem>
         </>
       );
-    }, [navigate]);
+    }, [navigate, permissions]);
 
     const newAssetPath = customerId
       ? `${path.to.newCustomerAsset}?customerId=${customerId}`

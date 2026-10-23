@@ -90,7 +90,14 @@ export class CustomerAssetError extends Error {
 // --- Customer assets ---------------------------------------------------------
 
 const CUSTOMER_ASSET_COLUMNS =
-  "id, trackedEntityId, itemId, customerId, customerLocationId, status, shippedDate, laborWarrantyEndDate, partsWarrantyEndDate, shipmentId, source, notes, createdAt, updatedAt, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey!inner(id, readableId), item:item!customerAsset_itemId_fkey(id, readableIdWithRevision, name), customer:customer!customerAsset_customerId_fkey(id, name), customerLocation:customerLocation!customerAsset_customerLocationId_fkey(id, name)" as const;
+  "id, trackedEntityId, itemId, customerId, customerLocationId, status, shippedDate, laborWarrantyEndDate, partsWarrantyEndDate, shipmentId, source, notes, createdAt, updatedAt, trackedEntity:trackedEntity!customerAsset_trackedEntityId_fkey!inner(id, readableId), item:item!customerAsset_itemId_fkey(id, readableIdWithRevision, name), customer:customer!customerAsset_customerId_fkey(id, name), customerLocation:customerLocation!customerAsset_customerLocationId_fkey(id, name), openServiceJobs:serviceJob!serviceJob_customerAssetId_fkey(count)" as const;
+
+/**
+ * The statuses a service job is closed in. A read that selects
+ * `CUSTOMER_ASSET_COLUMNS` filters `openServiceJobs` on them, so the embedded
+ * count is the asset's open jobs only.
+ */
+const CLOSED_SERVICE_JOB_STATUSES = '("Completed","Invoiced","Cancelled")';
 
 /**
  * Lists the company's customer assets. Filters: customer, item, the
@@ -111,7 +118,8 @@ export async function getCustomerAssets(
   let query = client
     .from("customerAsset")
     .select(CUSTOMER_ASSET_COLUMNS, { count: LIST_COUNT })
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .not("openServiceJobs.status", "in", CLOSED_SERVICE_JOB_STATUSES);
 
   if (args.search) {
     query = query.ilike("trackedEntity.readableId", `%${args.search}%`);
@@ -155,7 +163,27 @@ export async function getCustomerAsset(
     )
     .eq("id", customerAssetId)
     .eq("companyId", companyId)
+    .not("openServiceJobs.status", "in", CLOSED_SERVICE_JOB_STATUSES)
     .single();
+}
+
+/**
+ * The RMA lines that returned one customer asset, newest first, with the
+ * RMA's number and status.
+ */
+export async function getSalesReturnLinesByAsset(
+  client: Client,
+  customerAssetId: string,
+  companyId: string
+) {
+  return client
+    .from("salesReturnOrderLine")
+    .select(
+      "id, returnType, problem, createdAt, salesReturnOrder:salesReturnOrder!salesReturnOrderLine_salesReturnOrderId_fkey(id, salesReturnOrderId, status)"
+    )
+    .eq("customerAssetId", customerAssetId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
 }
 
 /**

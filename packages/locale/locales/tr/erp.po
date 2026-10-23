@@ -2079,9 +2079,15 @@ msgstr "Kabul"
 msgid "Acceptance passed"
 msgstr "Kabul geçti"
 
+msgid "Accepted"
+msgstr ""
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "{0} tarihinde kabul edildi"
+
+msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
+msgstr ""
 
 msgid "Account"
 msgstr "Hesap"
@@ -4202,6 +4208,9 @@ msgstr "Bu çalışanı {name}'den kaldırmak istediğinizden emin misiniz? Eği
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Bu öğeyi fiyat listesinden kaldırmak istediğinizden emin misiniz? Bu geri alınamaz."
 
+msgid "Are you sure you want to remove this line?"
+msgstr ""
+
 msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 msgstr "Bu yevmiye kaydını tersine çevirmek istediğinizden emin misiniz? Bu, olumsuzlanmış tutarlarla yeni bir muhasebeleştirilmiş kayıt oluşturacak ve bu kaydı Ters kayıt yapıldı olarak işaretleyecektir."
 
@@ -4796,6 +4805,9 @@ msgstr "Parti / Seri"
 msgid "Batch Capacity"
 msgstr "Parti Kapasitesi"
 
+msgid "Batch is not available"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "Parti toplu ürünler için satış siparişi gereklidir"
 
@@ -4804,6 +4816,13 @@ msgstr "Lot numarası"
 
 msgid "Batch Number"
 msgstr "Lot Numarası"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr ""
+
+msgid "Batch number is required"
+msgstr ""
 
 msgid "Batch Properties"
 msgstr "Toplu Özellikler"
@@ -7600,6 +7619,9 @@ msgstr "Ülke kodu"
 msgid "Coverage"
 msgstr "Vardiya katılımı"
 
+msgid "Coverage changed"
+msgstr ""
+
 msgid "CPI"
 msgstr "CPI"
 
@@ -7697,6 +7719,9 @@ msgstr "Öğeler Oluştur"
 
 msgid "Create Forecast"
 msgstr "Tahmin Oluştur"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
@@ -8195,6 +8220,9 @@ msgstr "Müşteri konumu"
 msgid "Customer Location"
 msgstr "Müşteri Konumu"
 
+msgid "Customer Name"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "Müşteri Genel Bakışı"
 
@@ -8539,6 +8567,9 @@ msgstr "Ondalık Basamaklar"
 
 msgid "Decision notes"
 msgstr "Karar notları"
+
+msgid "Declined"
+msgstr ""
 
 msgid "Declining balance"
 msgstr "Azalan Bakiye"
@@ -9846,6 +9877,9 @@ msgstr "hemen teslim"
 msgid "Duplicate"
 msgstr "Çoğalt"
 
+msgid "Duplicate batch number"
+msgstr ""
+
 msgid "Duplicate file names after image conversion"
 msgstr "Görüntü dönüştürmeden sonra yinelenen dosya adları"
 
@@ -9860,6 +9894,9 @@ msgstr "Fiyat Listesini Çoğalt"
 
 msgid "Duplicate Pricing Rule"
 msgstr "Fiyatlandırma Kuralını Çoğalt"
+
+msgid "Duplicate serial number"
+msgstr ""
 
 msgid "Duplicate To"
 msgstr "Nereye Çoğaltılacak"
@@ -10146,6 +10183,9 @@ msgstr "Değişiklik Bildirisi İşlemini Düzenle"
 msgid "Edit Change Notice Type"
 msgstr "Değişiklik Bildirisi Türünü Düzenle"
 
+msgid "Edit Charge"
+msgstr ""
+
 msgid "Edit column visibility"
 msgstr "Sütun görünürlüğünü düzenle"
 
@@ -10212,6 +10252,9 @@ msgstr "Çalışan Yetkinliğini Düzenle"
 
 msgid "Edit Employee Type"
 msgstr "Çalışan Türünü Düzenle"
+
+msgid "Edit Estimate Line"
+msgstr ""
 
 msgid "Edit expiration date"
 msgstr "Son kullanma tarihini düzenle"
@@ -10446,6 +10489,9 @@ msgstr "Kuralı düzenleyerek \"Tümüne uygulanır\" işaretini kaldırın"
 
 msgid "Edit the rule's item filters to remove it"
 msgstr "Kuralı kaldırmak için kuralın öğe filtrelerini düzenleyin"
+
+msgid "Edit Time"
+msgstr ""
 
 msgid "Edit Timecard"
 msgstr "Çalışma Saatini Düzenle"
@@ -10997,6 +11043,9 @@ msgstr "Tahmin"
 
 msgid "Estimate at completion"
 msgstr "Tahmin"
+
+msgid "Estimate sent"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Tahmini"
@@ -13052,6 +13101,9 @@ msgstr "Ödenen Saatler"
 msgid "Hours per Week"
 msgstr "Haftalık Saat"
 
+msgid "Hours, for a labor item"
+msgstr ""
+
 msgid "Hours/100 Pieces"
 msgstr "Saat/100 Parça"
 
@@ -14139,6 +14191,9 @@ msgstr "Malzeme çıkışı (açık öğe)"
 msgid "Issue not found"
 msgstr "Sorun bulunamadı"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "Sorun Durumu"
 
@@ -14327,6 +14382,9 @@ msgstr "İş emri · {itemReadableId}"
 msgid "Job cancelled"
 msgstr "İş emri iptal edildi"
 
+msgid "Job completed"
+msgstr ""
+
 msgid "Job completed successfully"
 msgstr "İş emri başarıyla tamamlandı"
 
@@ -14377,6 +14435,9 @@ msgstr "İş okunabilir"
 
 msgid "Job released"
 msgstr "İş emri serbest bırakıldı"
+
+msgid "Job reopened"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "İş takip kartı"
@@ -14557,6 +14618,9 @@ msgstr "İşçilik sona erdi"
 
 msgid "Labor Hours"
 msgstr "İşçilik Saatleri"
+
+msgid "Labor Item"
+msgstr ""
 
 msgid "Labor rate"
 msgstr "İşçilik oranı"
@@ -16553,6 +16617,9 @@ msgstr "Yeni değişiklik isteği"
 msgid "New Change Request"
 msgstr "Yeni Değişiklik İsteği"
 
+msgid "New Charge"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Yeni Sarf Malzemesi"
 
@@ -16610,6 +16677,9 @@ msgstr "Yeni öğe adı"
 
 msgid "New Employee Type"
 msgstr "Yeni Çalışan Türü"
+
+msgid "New Estimate Line"
+msgstr ""
 
 msgid "New expiration date"
 msgstr "Yeni son kullanma tarihi"
@@ -18535,6 +18605,9 @@ msgstr "tek seferlik"
 msgid "One-time"
 msgstr "Tek Seferlik"
 
+msgid "Only {available} available"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş bir prosedürü değiştirmek için yeni bir sürüm oluşturun."
 
@@ -19339,6 +19412,9 @@ msgstr "Parça Kimliği"
 msgid "Part is configured for manufacturing"
 msgstr "Parça üretim için yapılandırılmış"
 
+msgid "Part issued"
+msgstr ""
+
 msgid "Part lead times update from posted purchase receipts."
 msgstr "Parça tedarik süreleri muhasebeleştirilmiş mal kabul belgelerinden güncellenmiştir."
 
@@ -19740,6 +19816,9 @@ msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
 
 msgid "Pick a list variable…"
 msgstr "Bir liste değişkeni seçin…"
+
+msgid "Pick a part and the quantity to issue from stock to this job"
+msgstr ""
 
 msgid "Pick a process to start"
 msgstr "Başlatmak için bir işlem seçin"
@@ -20344,6 +20423,9 @@ msgstr "{0} Etiket Yazdır"
 
 msgid "Print batch list"
 msgstr "Parti Listesini Yazdır"
+
+msgid "Print Estimate"
+msgstr ""
 
 msgid "Print job deleted"
 msgstr "Yazdırma işi silindi"
@@ -21632,6 +21714,9 @@ msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 msgid "Record Payment"
 msgstr "Ödemeyi Kaydet"
 
+msgid "Record Response"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için toplam borçtan daha az ödeme yapabilirsiniz."
 
@@ -21652,6 +21737,9 @@ msgstr "Bu kalibrasyondan sonra takip gerekli olduğu kaydedildi; bu ölçüm al
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Bu kalibrasyon sırasında ölçüm aletinin ayarlandığı kaydedildi; kalibrasyon aralığının yeniden hesaplanmasını etkiler."
+
+msgid "Recorded the customer's response"
+msgstr ""
 
 msgid "Records"
 msgstr "Kayıtlar"
@@ -22497,6 +22585,9 @@ msgstr "kaynaklar"
 
 msgid "Resources"
 msgstr "Kaynaklar"
+
+msgid "Response"
+msgstr ""
 
 msgid "Responsible employee"
 msgstr "Sorumlu Çalışan"
@@ -23844,6 +23935,10 @@ msgstr "Teklifi kabul etmek için en az bir stok kartı seçin"
 msgid "Select at least one line to convert"
 msgstr "Dönüştürmek için en az bir satır seçin"
 
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr ""
+
 msgid "Select Contact"
 msgstr "İlgili Kişi Seç"
 
@@ -23943,6 +24038,10 @@ msgstr "Satırı Seç"
 msgid "Select scope"
 msgstr "Kapsam seçin"
 
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr ""
+
 msgid "Select station"
 msgstr "İstasyonu seç"
 
@@ -24016,6 +24115,9 @@ msgstr "Gönder"
 msgid "Send error"
 msgstr "Gönderme Hatası"
 
+msgid "Send Estimate"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Davet Gönder"
 
@@ -24042,6 +24144,9 @@ msgstr "Fatura gönderiliyor"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sent at"
 msgstr "Gönderildi:"
@@ -24078,6 +24183,16 @@ msgstr "Seri ürünler satış siparişi gerektirir"
 
 msgid "Serial Number"
 msgstr "Seri Numarası"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
+msgid "Serial number is not available"
+msgstr ""
+
+msgid "Serial number is required"
+msgstr ""
 
 msgid "Serial Number:"
 msgstr "Seri Numarası:"
@@ -27121,6 +27236,9 @@ msgstr "Geçersiz kılma, etkinleştirildiğinde tutulur ve sebebi ile birlikte 
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "İzlenen varlıkların parent-child zinciri - bir birim neyin dışında inşa edilmiş ve ne olmuş."
+
+msgid "The part goes back to inventory and its cost is reversed."
+msgstr ""
 
 msgid "The part has a newer model than this instruction."
 msgstr "Parça, bu talimatının daha yeni bir modeline sahiptir."
@@ -30557,6 +30675,9 @@ msgstr "Kimin ne yapabileceği"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Kimin ne yaptığı, altı adım boyunca. Sizin tarafınız yukarıda vurgulanmıştır. Bunu iyi yönetin ve proje ilerler."
+
+msgid "Who gave the answer"
+msgstr ""
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Kimin ne konuda eğitim aldığı, hangi formatta eğitim alacağı. Sizin göreviniz: uygulamalı oturum zamanını şampiyonlarınızın takvimlerinde erken bir tarihte korumak. Şirketler meşgul olduğunda en çok bunu kaçırırlar."

@@ -96,10 +96,10 @@ Phase 1 — RMA and the depot service job
 - [x] Task 19: Create the service invoice, and stop the invoice relieving stock twice
 - [x] Task 20: Add the Jobs list, the New Job drawer and the navigation
 - [x] Task 21: Build the job page
-- [ ] Task 22: Add time and parts to the job page
-- [ ] Task 23: Add the estimate and its PDF
-- [ ] Task 24: Wire Complete, Reopen, coverage change and Create Invoice
-- [ ] Task 25: Re-home the customer assets
+- [x] Task 22: Add time and parts to the job page
+- [x] Task 23: Add the estimate and its PDF
+- [x] Task 24: Wire Complete, Reopen, coverage change and Create Invoice
+- [x] Task 25: Re-home the customer assets
 - [x] Task 26: Rebuild the RMA line: return type, assets, next steps
 - [ ] Task 27: Seed service jobs in the demo datasets
 

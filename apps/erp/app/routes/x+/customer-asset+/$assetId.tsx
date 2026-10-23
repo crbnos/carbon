@@ -13,7 +13,11 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerAssetUpdateValidator } from "~/modules/service/service.models";
-import { getCustomerAsset } from "~/modules/service/service.service";
+import {
+  getCustomerAsset,
+  getSalesReturnLinesByAsset,
+  getServiceJobsByAsset
+} from "~/modules/service/service.service";
 import { CustomerAssetPage } from "~/modules/service/ui/CustomerAssets";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -33,7 +37,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { assetId } = params;
   if (!assetId) throw new Error("Could not find assetId");
 
-  const asset = await getCustomerAsset(client, assetId, companyId);
+  const [asset, serviceJobs, returnLines] = await Promise.all([
+    getCustomerAsset(client, assetId, companyId),
+    getServiceJobsByAsset(client, assetId),
+    getSalesReturnLinesByAsset(client, assetId, companyId)
+  ]);
 
   if (asset.error) {
     throw redirect(
@@ -42,7 +50,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { asset: asset.data };
+  return {
+    asset: asset.data,
+    serviceJobs: serviceJobs.data ?? [],
+    returnLines: returnLines.data ?? []
+  };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -102,7 +114,14 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CustomerAssetRoute() {
-  const { asset } = useLoaderData<typeof loader>();
+  const { asset, serviceJobs, returnLines } = useLoaderData<typeof loader>();
 
-  return <CustomerAssetPage key={asset.id} asset={asset} />;
+  return (
+    <CustomerAssetPage
+      key={asset.id}
+      asset={asset}
+      serviceJobs={serviceJobs}
+      returnLines={returnLines}
+    />
+  );
 }

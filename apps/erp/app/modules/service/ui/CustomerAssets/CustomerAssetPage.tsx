@@ -4,6 +4,7 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -12,7 +13,14 @@ import {
   CardTitle
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuQrCode, LuSquareUser, LuTruck } from "react-icons/lu";
+import {
+  LuHammer,
+  LuQrCode,
+  LuSquareUser,
+  LuTruck,
+  LuUndo2
+} from "react-icons/lu";
+import { useNavigate } from "react-router";
 import { DateTime } from "~/components";
 import {
   DocumentPage,
@@ -28,23 +36,45 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import SalesReturnOrderStatus from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderStatus";
 import { path } from "~/utils/path";
 import { customerAssetUpdateValidator } from "../../service.models";
-import type { CustomerAssetDetail } from "../../types";
+import type {
+  CustomerAssetDetail,
+  CustomerAssetReturnLine,
+  CustomerAssetServiceJob
+} from "../../types";
+import { useCoverageLabels } from "../ServiceJob/CoverageBadge";
+import ServiceJobStatus from "../ServiceJob/ServiceJobStatus";
 import { ServiceRichText } from "../ServiceRichText";
 import { CustomerAssetStatus, WarrantyBadge } from "../ServiceStatus";
 
 type CustomerAssetPageProps = {
   asset: CustomerAssetDetail;
+  serviceJobs: CustomerAssetServiceJob[];
+  returnLines: CustomerAssetReturnLine[];
 };
 
 /**
- * A unit at a customer: who owns it, where it is and its warranty.
+ * A unit at a customer: who owns it, where it is and its warranty, the
+ * service jobs worked on it and the RMA lines that returned it.
  */
-export default function CustomerAssetPage({ asset }: CustomerAssetPageProps) {
+export default function CustomerAssetPage({
+  asset,
+  serviceJobs,
+  returnLines
+}: CustomerAssetPageProps) {
   const { t } = useLingui();
+  const navigate = useNavigate();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "service");
+  const canViewSales = permissions.can("view", "sales");
+  const coverageLabels = useCoverageLabels();
+  const returnTypeLabels = {
+    "Return to Stock": t`Return to Stock`,
+    "Return for Service": t`Return for Service`,
+    "Return for Warranty": t`Return for Warranty`
+  } as const;
   const serial = asset.trackedEntity?.readableId ?? "";
   const action = path.to.customerAsset(asset.id);
   const shipment = (
@@ -73,33 +103,86 @@ export default function CustomerAssetPage({ asset }: CustomerAssetPageProps) {
               ? [<span key="site">{asset.customerLocation.name}</span>]
               : [])
           ]}
+          actions={
+            <Button
+              leftIcon={<LuHammer />}
+              isDisabled={!permissions.can("create", "service")}
+              onClick={() =>
+                navigate(
+                  `${path.to.newServiceJob}?customerId=${asset.customerId}&customerAssetId=${asset.id}`
+                )
+              }
+            >
+              <Trans>New Service Job</Trans>
+            </Button>
+          }
         />
       }
       sidebar={
         <DocumentSidebar
           documents={
-            <RelatedDocumentGroup>
-              <RelatedDocument
-                to={path.to.customer(asset.customerId)}
-                icon={<LuSquareUser />}
-                title={asset.customer?.name ?? ""}
-                description={t`Customer`}
-              />
-              <RelatedDocument
-                to={`${path.to.traceabilityGraph}?trackedEntityId=${asset.trackedEntityId}`}
-                icon={<LuQrCode />}
-                title={serial}
-                description={t`Serial Number`}
-              />
-              {shipment && (
+            <>
+              <RelatedDocumentGroup>
                 <RelatedDocument
-                  to={path.to.shipment(shipment.id)}
-                  icon={<LuTruck />}
-                  title={shipment.shipmentId}
-                  description={t`Shipment`}
+                  to={path.to.customer(asset.customerId)}
+                  icon={<LuSquareUser />}
+                  title={asset.customer?.name ?? ""}
+                  description={t`Customer`}
                 />
+                <RelatedDocument
+                  to={`${path.to.traceabilityGraph}?trackedEntityId=${asset.trackedEntityId}`}
+                  icon={<LuQrCode />}
+                  title={serial}
+                  description={t`Serial Number`}
+                />
+                {shipment && (
+                  <RelatedDocument
+                    to={path.to.shipment(shipment.id)}
+                    icon={<LuTruck />}
+                    title={shipment.shipmentId}
+                    description={t`Shipment`}
+                  />
+                )}
+              </RelatedDocumentGroup>
+              {serviceJobs.length > 0 && (
+                <RelatedDocumentGroup title={<Trans>Service Jobs</Trans>}>
+                  {serviceJobs.map((job) => (
+                    <RelatedDocument
+                      key={job.id}
+                      to={path.to.serviceJob(job.id)}
+                      icon={<LuHammer />}
+                      title={job.serviceJobId}
+                      description={job.problem || coverageLabels[job.coverage]}
+                      status={<ServiceJobStatus status={job.status} />}
+                    />
+                  ))}
+                </RelatedDocumentGroup>
               )}
-            </RelatedDocumentGroup>
+              {canViewSales && returnLines.length > 0 && (
+                <RelatedDocumentGroup title={<Trans>Returns</Trans>}>
+                  {returnLines.flatMap((line) =>
+                    line.salesReturnOrder
+                      ? [
+                          <RelatedDocument
+                            key={line.id}
+                            to={path.to.salesReturnOrder(
+                              line.salesReturnOrder.id
+                            )}
+                            icon={<LuUndo2 />}
+                            title={line.salesReturnOrder.salesReturnOrderId}
+                            description={returnTypeLabels[line.returnType]}
+                            status={
+                              <SalesReturnOrderStatus
+                                status={line.salesReturnOrder.status}
+                              />
+                            }
+                          />
+                        ]
+                      : []
+                  )}
+                </RelatedDocumentGroup>
+              )}
+            </>
           }
         />
       }

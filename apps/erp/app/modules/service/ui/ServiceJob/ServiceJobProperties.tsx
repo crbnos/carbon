@@ -11,6 +11,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  toast,
   VStack
 } from "@carbon/react";
 import { isServiceJobLocked } from "@carbon/utils";
@@ -30,12 +31,14 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import MaintenancePriority from "~/modules/resources/ui/Maintenance/MaintenancePriority";
+import type { action as coverageAction } from "~/routes/x+/service-job+/$jobId.coverage";
 import type { action as updateAction } from "~/routes/x+/service-job+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import type { ServiceJobPriority } from "../../service.models";
+import type { ServiceCoverage, ServiceJobPriority } from "../../service.models";
 import {
   serviceBillingMethods,
+  serviceCoverages,
   serviceJobPriorities,
   serviceWorkSites
 } from "../../service.models";
@@ -45,6 +48,7 @@ import CoverageBadge from "./CoverageBadge";
 import ServiceJobStatus from "./ServiceJobStatus";
 import {
   useBillingMethodLabels,
+  useEstimateStatusLabels,
   useWorkSiteLabels
 } from "./useServiceJobLabels";
 
@@ -63,6 +67,24 @@ const ServiceJobProperties = () => {
   const job = routeData?.job;
 
   const fetcher = useAction<typeof updateAction>({});
+  // A coverage change posts a reclass journal, so it has its own route.
+  const coverageFetcher = useAction<typeof coverageAction>({
+    onSuccess: () => toast.success(t`Coverage changed`)
+  });
+  const estimateStatusLabels = useEstimateStatusLabels();
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
+  const onCoverageChange = useCallback(
+    (coverage: string) => {
+      const formData = new FormData();
+      formData.append("coverage", coverage);
+      coverageFetcher.submit(formData, {
+        method: "post",
+        action: path.to.serviceJobCoverage(jobId)
+      });
+    },
+    [jobId]
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
@@ -252,12 +274,41 @@ const ServiceJobProperties = () => {
         )}
       </VStack>
 
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">
-          <Trans>Coverage</Trans>
-        </h3>
-        <CoverageBadge coverage={job?.coverage} />
-      </VStack>
+      <ValidatedForm
+        defaultValues={{ coverage: job?.coverage ?? "" }}
+        validator={z.object({ coverage: z.string().optional() })}
+        className="w-full"
+      >
+        <Select
+          name="coverage"
+          label={t`Coverage`}
+          options={serviceCoverages.map((value) => ({
+            value,
+            label: <CoverageBadge coverage={value} />
+          }))}
+          isReadOnly={isDisabled || coverageFetcher.state !== "idle"}
+          inline={(value) => (
+            <CoverageBadge coverage={value as ServiceCoverage} />
+          )}
+          onChange={(value) => {
+            if (value && value.value !== job?.coverage) {
+              onCoverageChange(value.value);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      {job?.estimateStatus && (
+        <VStack spacing={2}>
+          <h3 className="text-xs text-muted-foreground">
+            <Trans>Estimate</Trans>
+          </h3>
+          <span>
+            {estimateStatusLabels[job.estimateStatus]}
+            {job.estimateRespondedBy ? ` · ${job.estimateRespondedBy}` : ""}
+          </span>
+        </VStack>
+      )}
 
       <ValidatedForm
         defaultValues={{ billingMethod: job?.billingMethod ?? "" }}

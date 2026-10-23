@@ -85,6 +85,8 @@ export const path = {
       generatePath(`${x}/items/methods/versions/activate/${id}`),
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/maintenance/${dispatchId}/add-and-issue`),
+    addAndIssueServiceJobItem: (jobId: string) =>
+      generatePath(`${x}/service-job/${jobId}/add-and-issue`),
     analyticsReport: (key: string) =>
       generatePath(`${x}/reports/analytics/${key}`),
     apAging: `${x}/reports/ap-aging`,
@@ -716,7 +718,7 @@ export const path = {
       generatePath(`${x}/customer/${id}/accounting`),
     customerAccounts: `${x}/users/customers`,
     customerAsset: (id: string) => generatePath(`${x}/customer-asset/${id}`),
-    customerAssets: `${x}/service-orders/assets`,
+    customerAssets: `${x}/service-jobs/assets`,
     customerAssetsTab: (customerId: string) =>
       generatePath(`${x}/customer/${customerId}/assets`),
     customerBankAccount: (customerId: string, id: string) =>
@@ -1059,6 +1061,12 @@ export const path = {
       generatePath(`${x}/production/scrap-reasons/delete/${id}`),
     deleteSerialNumberSequence: (id: string) =>
       generatePath(`${x}/settings/serial-numbers/delete/${id}`),
+    deleteServiceJobEstimateLine: (jobId: string, lineId: string) =>
+      generatePath(`${x}/service-job/${jobId}/estimate/${lineId}/delete`),
+    deleteServiceJobItem: (jobId: string, itemId: string) =>
+      generatePath(`${x}/service-job/${jobId}/item/${itemId}/delete`),
+    deleteServiceJobTime: (jobId: string, timeId: string) =>
+      generatePath(`${x}/service-job/${jobId}/time/${timeId}/delete`),
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
     deleteShipment: (id: string) => generatePath(`${x}/shipment/${id}/delete`),
@@ -1284,6 +1292,8 @@ export const path = {
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
       salesReturnOrder: (id: string) =>
         generatePath(`${file}/sales-return-order/${id}.pdf`),
+      serviceJobEstimate: (id: string) =>
+        generatePath(`${file}/service-job-estimate/${id}.pdf`),
       shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
       shipmentLabelsPdf: (
         id: string,
@@ -1801,7 +1811,7 @@ export const path = {
     newCostCenter: `${x}/accounting/cost-centers/new`,
     newCustomer: `${x}/customer/new`,
     newCustomerAccount: `${x}/users/customers/new`,
-    newCustomerAsset: `${x}/service-orders/assets/new`,
+    newCustomerAsset: `${x}/service-jobs/assets/new`,
     newCustomerBankAccount: (id: string) =>
       generatePath(`${x}/customer/${id}/bank-accounts/new`),
     newCustomerContact: (id: string) =>
@@ -1966,6 +1976,12 @@ export const path = {
     newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
     newServiceJob: `${x}/service-job/new`,
+    newServiceJobEstimateLine: (jobId: string) =>
+      generatePath(`${x}/service-job/${jobId}/estimate/new`),
+    newServiceJobItem: (jobId: string) =>
+      generatePath(`${x}/service-job/${jobId}/item/new`),
+    newServiceJobTime: (jobId: string) =>
+      generatePath(`${x}/service-job/${jobId}/time/new`),
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
     newShift: `${x}/people/shifts/new`,
@@ -2596,9 +2612,27 @@ export const path = {
     serviceCosting: (id: string) => generatePath(`${x}/service/${id}/costing`),
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
     serviceJob: (id: string) => generatePath(`${x}/service-job/${id}`),
+    serviceJobComplete: (id: string) =>
+      generatePath(`${x}/service-job/${id}/complete`),
+    serviceJobCoverage: (id: string) =>
+      generatePath(`${x}/service-job/${id}/coverage`),
+    serviceJobEstimateLine: (jobId: string, lineId: string) =>
+      generatePath(`${x}/service-job/${jobId}/estimate/${lineId}`),
+    serviceJobEstimateResponse: (id: string) =>
+      generatePath(`${x}/service-job/${id}/estimate/response`),
+    serviceJobEstimateSend: (id: string) =>
+      generatePath(`${x}/service-job/${id}/estimate/send`),
+    serviceJobInvoice: (id: string) =>
+      generatePath(`${x}/service-job/${id}/invoice`),
+    serviceJobItem: (jobId: string, itemId: string) =>
+      generatePath(`${x}/service-job/${jobId}/item/${itemId}`),
+    serviceJobReopen: (id: string) =>
+      generatePath(`${x}/service-job/${id}/reopen`),
     serviceJobStatus: (id: string) =>
       generatePath(`${x}/service-job/${id}/status`),
     serviceJobs: `${x}/service-jobs`,
+    serviceJobTime: (jobId: string, timeId: string) =>
+      generatePath(`${x}/service-job/${jobId}/time/${timeId}`),
     serviceJobUpdate: `${x}/service-job/update`,
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),

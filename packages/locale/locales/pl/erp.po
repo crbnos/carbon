@@ -2079,9 +2079,15 @@ msgstr "Akceptacja"
 msgid "Acceptance passed"
 msgstr "Odbiór zaliczony"
 
+msgid "Accepted"
+msgstr ""
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Zaakceptowano {0}"
+
+msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
+msgstr ""
 
 msgid "Account"
 msgstr "Konto"
@@ -4202,6 +4208,9 @@ msgstr "Czy na pewno chcesz usunąć tego pracownika z {name}? Historia szkoleni
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć ten element z listy cen? Tej operacji nie można cofnąć."
 
+msgid "Are you sure you want to remove this line?"
+msgstr ""
+
 msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 msgstr "Na pewno chcesz wycofać ten zapis księgowy? Spowoduje to utworzenie nowego zaksięgowanego wpisu z ujemnymi kwotami i oznaczenie tego wpisu jako Wystornowano."
 
@@ -4796,6 +4805,9 @@ msgstr "Partia / Numer seryjny"
 msgid "Batch Capacity"
 msgstr "Pojemność Partii Produkcyjnej"
 
+msgid "Batch is not available"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "Artykuły partii wymagają zamówienia sprzedaży"
 
@@ -4804,6 +4816,13 @@ msgstr "Numer partii"
 
 msgid "Batch Number"
 msgstr "Numer partii"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr ""
+
+msgid "Batch number is required"
+msgstr ""
 
 msgid "Batch Properties"
 msgstr "Właściwości partii"
@@ -7600,6 +7619,9 @@ msgstr "Kod kraju"
 msgid "Coverage"
 msgstr "Pokrycie"
 
+msgid "Coverage changed"
+msgstr ""
+
 msgid "CPI"
 msgstr "CPI"
 
@@ -7697,6 +7719,9 @@ msgstr "Utwórz elementy"
 
 msgid "Create Forecast"
 msgstr "Utwórz prognozę"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Utwórz problem"
@@ -8195,6 +8220,9 @@ msgstr "Lokalizacja klienta"
 msgid "Customer Location"
 msgstr "Lokalizacja klienta"
 
+msgid "Customer Name"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "Przegląd Klienta"
 
@@ -8539,6 +8567,9 @@ msgstr "Miejsca Dziesiętne"
 
 msgid "Decision notes"
 msgstr "Notatki decyzji"
+
+msgid "Declined"
+msgstr ""
 
 msgid "Declining balance"
 msgstr "Metoda degresywna"
@@ -9846,6 +9877,9 @@ msgstr "termin teraz"
 msgid "Duplicate"
 msgstr "Duplikuj"
 
+msgid "Duplicate batch number"
+msgstr ""
+
 msgid "Duplicate file names after image conversion"
 msgstr "Zduplikowane nazwy plików po konwersji obrazu"
 
@@ -9860,6 +9894,9 @@ msgstr "Duplikuj Cennik"
 
 msgid "Duplicate Pricing Rule"
 msgstr "Duplikuj regułę cenową"
+
+msgid "Duplicate serial number"
+msgstr ""
 
 msgid "Duplicate To"
 msgstr "Duplikuj do"
@@ -10146,6 +10183,9 @@ msgstr "Edytuj działanie zawiadomienia o zmianie"
 msgid "Edit Change Notice Type"
 msgstr "Edytuj typ zawiadomienia o zmianie"
 
+msgid "Edit Charge"
+msgstr ""
+
 msgid "Edit column visibility"
 msgstr "Edytuj widoczność kolumn"
 
@@ -10212,6 +10252,9 @@ msgstr "Edytuj Umiejętność Pracownika"
 
 msgid "Edit Employee Type"
 msgstr "Edytuj typ pracownika"
+
+msgid "Edit Estimate Line"
+msgstr ""
 
 msgid "Edit expiration date"
 msgstr "Edytuj datę ważności."
@@ -10446,6 +10489,9 @@ msgstr "Edytuj regułę, aby usunąć flagę „Dotyczy wszystkich\""
 
 msgid "Edit the rule's item filters to remove it"
 msgstr "Edytuj filtry elementów reguły, aby go usunąć"
+
+msgid "Edit Time"
+msgstr ""
 
 msgid "Edit Timecard"
 msgstr "Edytuj Kartę Czasu Pracy"
@@ -10997,6 +11043,9 @@ msgstr "Szacunek"
 
 msgid "Estimate at completion"
 msgstr "Oszacowanie"
+
+msgid "Estimate sent"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Szacunkowy"
@@ -13052,6 +13101,9 @@ msgstr "Godziny opłacone"
 msgid "Hours per Week"
 msgstr "Godziny na tydzień"
 
+msgid "Hours, for a labor item"
+msgstr ""
+
 msgid "Hours/100 Pieces"
 msgstr "Godziny/100 Sztuk"
 
@@ -14139,6 +14191,9 @@ msgstr "Wydaj materiał (otwarty element)"
 msgid "Issue not found"
 msgstr "Problem nie znaleziony"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "Status problemu"
 
@@ -14327,6 +14382,9 @@ msgstr "Zlecenie produkcyjne · {itemReadableId}"
 msgid "Job cancelled"
 msgstr "Zlecenie produkcyjne anulowano"
 
+msgid "Job completed"
+msgstr ""
+
 msgid "Job completed successfully"
 msgstr "Zlecenie produkcyjne zakończone pomyślnie"
 
@@ -14377,6 +14435,9 @@ msgstr "Czytelne zadanie"
 
 msgid "Job released"
 msgstr "Zwolniono zlecenie produkcyjne"
+
+msgid "Job reopened"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "Przewodnik zlecenia"
@@ -14557,6 +14618,9 @@ msgstr "Robocizna zakończona"
 
 msgid "Labor Hours"
 msgstr "Godziny Robocizny"
+
+msgid "Labor Item"
+msgstr ""
 
 msgid "Labor rate"
 msgstr "Stawka robocizny"
@@ -16553,6 +16617,9 @@ msgstr "Nowe żądanie zmian"
 msgid "New Change Request"
 msgstr "Nowe żądanie zmiany"
 
+msgid "New Charge"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "Nowy materiał eksploatacyjny"
 
@@ -16610,6 +16677,9 @@ msgstr "Nazwa nowego elementu"
 
 msgid "New Employee Type"
 msgstr "Nowy typ pracownika"
+
+msgid "New Estimate Line"
+msgstr ""
 
 msgid "New expiration date"
 msgstr "Nowa data ważności"
@@ -18535,6 +18605,9 @@ msgstr "jednorazowo"
 msgid "One-time"
 msgstr "Jednorazowo"
 
+msgid "Only {available} available"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Edytowalne są tylko procedury w wersji roboczej. Utwórz nową wersję, aby zmienić aktywną lub zarchiwizowaną procedurę."
 
@@ -19339,6 +19412,9 @@ msgstr "Identyfikator części"
 msgid "Part is configured for manufacturing"
 msgstr "Część jest skonfigurowana do produkcji"
 
+msgid "Part issued"
+msgstr ""
+
 msgid "Part lead times update from posted purchase receipts."
 msgstr "Czasy realizacji części są aktualizowane na podstawie zaksięgowanych przyjęć zakupów."
 
@@ -19740,6 +19816,9 @@ msgstr "Wybierz datę lub pozostaw puste pole, aby je wyczyścić."
 
 msgid "Pick a list variable…"
 msgstr "Wybierz zmienną listy…"
+
+msgid "Pick a part and the quantity to issue from stock to this job"
+msgstr ""
 
 msgid "Pick a process to start"
 msgstr "Wybierz proces, aby rozpocząć"
@@ -20344,6 +20423,9 @@ msgstr "Drukuj {0} etykiet"
 
 msgid "Print batch list"
 msgstr "Drukuj listę partii produkcyjnych"
+
+msgid "Print Estimate"
+msgstr ""
 
 msgid "Print job deleted"
 msgstr "Zadanie drukowania usunięte"
@@ -21632,6 +21714,9 @@ msgstr "Zarejestruj kontrole powiązane z częścią i zleceniem produkcyjnym"
 msgid "Record Payment"
 msgstr "Zarejestruj płatność"
 
+msgid "Record Response"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Zarejestruj wypłatę {displayId} dla pracownika. Zapłacić mniej niż suma do spłacenia, aby to częściowo rozliczyć."
 
@@ -21652,6 +21737,9 @@ msgstr "Zanotowano, że kontynuacja jest potrzebna po tym wzorcowaniu; wyświetl
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Zanotowano, że przyrząd pomiarowy został dostrojony podczas tego wzorcowania; wpływa na sposób, w jaki okres wzorcowania się przelicza."
+
+msgid "Recorded the customer's response"
+msgstr ""
 
 msgid "Records"
 msgstr "Rekordy"
@@ -22497,6 +22585,9 @@ msgstr "zasoby"
 
 msgid "Resources"
 msgstr "Zasoby"
+
+msgid "Response"
+msgstr ""
 
 msgid "Responsible employee"
 msgstr "Odpowiedzialny pracownik"
@@ -23844,6 +23935,10 @@ msgstr "Wybierz co najmniej jeden artykuł, aby zaakceptować ofertę"
 msgid "Select at least one line to convert"
 msgstr "Wybierz co najmniej jedną pozycję do przekształcenia"
 
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr ""
+
 msgid "Select Contact"
 msgstr "Wybierz kontakt"
 
@@ -23943,6 +24038,10 @@ msgstr "Wybierz wiersz"
 msgid "Select scope"
 msgstr "Wybierz zakres"
 
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr ""
+
 msgid "Select station"
 msgstr "Wybierz stację"
 
@@ -24016,6 +24115,9 @@ msgstr "Wyslij"
 msgid "Send error"
 msgstr "Błąd wysyłania"
 
+msgid "Send Estimate"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Wyślij zaproszenie"
 
@@ -24042,6 +24144,9 @@ msgstr "Wysyłanie faktury"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Wysyła ten dokument do zatwierdzenia, zanim będzie mógł zostać aktywny."
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sent at"
 msgstr "Wysłane o"
@@ -24078,6 +24183,16 @@ msgstr "Artykuły seryjne wymagają zamówienia sprzedaży"
 
 msgid "Serial Number"
 msgstr "Numer seryjny"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
+msgid "Serial number is not available"
+msgstr ""
+
+msgid "Serial number is required"
+msgstr ""
 
 msgid "Serial Number:"
 msgstr "Numer seryjny:"
@@ -27121,6 +27236,9 @@ msgstr "Nadpisanie jest zachowywane w momencie aktywacji i rejestrowane w dzienn
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "Łańcuch parent-child śledzonych jednostek - z czego jednostka została zbudowana i czym się stała."
+
+msgid "The part goes back to inventory and its cost is reversed."
+msgstr ""
 
 msgid "The part has a newer model than this instruction."
 msgstr "Część ma nowszy model niż ta instrukcja."
@@ -30557,6 +30675,9 @@ msgstr "Kto może robić co"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Kto robi co, przez sześć kroków. Twoja strona jest wyróżniona u góry. Weź ją na siebie dobrze, a projekt posunie się do przodu."
+
+msgid "Who gave the answer"
+msgstr ""
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Kto otrzymuje szkolenie na temat czego, w jakim formacie. Twoja rola: zarezerwuj czas praktycznych sesji w kalendarzach swoich liderów jak najwcześniej. To właśnie najczęściej się przesuwane, gdy firmy są zajęte."

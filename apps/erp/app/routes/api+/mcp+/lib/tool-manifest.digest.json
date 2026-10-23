@@ -1,5 +1,5 @@
 {
-  "totalTools": 1743,
+  "totalTools": 1745,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -1621,12 +1621,14 @@
     {"name":"service_getServiceJobs","classification":"READ","schema":"cd40ae40fad5","response":"bc3918ab80a7","permission":"service:view","paginates":true},
     {"name":"service_getServiceJobsByAsset","classification":"READ","schema":"44bd8f31b53e","response":"d6943d2e95f3","permission":"service:view","paginates":false},
     {"name":"service_getServiceJobTime","classification":"READ","schema":"4999bd4be598","response":"461f4c7f2dfa","permission":"service:view","paginates":false},
+    {"name":"service_issueServiceJobPart","classification":"WRITE","schema":"ba28784eec62","response":"beee0f08282a","permission":"service:update","paginates":false},
     {"name":"service_moveServiceJobAssignment","classification":"WRITE","schema":"10c112469311","response":"d7c46146c56f","permission":"service:update","paginates":false},
     {"name":"service_recordServiceJobEstimateResponse","classification":"WRITE","schema":"0546271d6827","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_reopenServiceJob","classification":"WRITE","schema":"a307cf7486c8","response":"98bdc3c64f30","permission":"service:update","paginates":false},
     {"name":"service_sendServiceJobEstimate","classification":"WRITE","schema":"4999bd4be598","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_setServiceJobCoverage","classification":"WRITE","schema":"e70f61ca614e","response":"98bdc3c64f30","permission":"service:update","paginates":false},
     {"name":"service_setServiceJobStatus","classification":"WRITE","schema":"17d35c9b6e76","response":"89fe60b74421","permission":"service:update","paginates":false},
+    {"name":"service_unissueServiceJobPart","classification":"DESTRUCTIVE","schema":"1e97ff583b5e","response":"3797626bd17e","permission":"service:delete","paginates":false},
     {"name":"service_updateServiceJob","classification":"WRITE","schema":"28a05ce1bdb7","response":"0eb0c2be01ed","permission":"service:update","paginates":false},
     {"name":"service_upsertServiceJobAssignment","classification":"WRITE","schema":"2bb2359021e1","response":"3797626bd17e","permission":"service:update","paginates":false},
     {"name":"service_upsertServiceJobCharge","classification":"WRITE","schema":"c58939851f88","response":"3797626bd17e","permission":"service:update","paginates":false},

@@ -115,5 +115,5 @@ The tab needs `service_view`.
 - Void of a Sales Order shipment sets every asset with that `shipmentId` to Returned; it does not restore the previous customer. Voiding an RMA return shipment changes no asset.
 - Manual registration: `registerCustomerAsset` (`service.service.ts`, behind the operation of the same name) inserts a Consumed `trackedEntity` (source document Item) and the asset with source Manual.
 - Warranty status: `warrantyStatus(asset, today)` in `service.models.ts`.
-- Routes: list `/x/service-orders/assets`, register `/x/service-orders/assets/new`, page `/x/customer-asset/<id>`, customer tab `/x/customer/<id>/assets`.
+- Routes: list `/x/service-jobs/assets`, register `/x/service-jobs/assets/new`, page `/x/customer-asset/<id>`, customer tab `/x/customer/<id>/assets`.
 </AgentContext>

@@ -36,6 +36,8 @@
   - I fixed `mcp-tool-permissions.test.ts`: two operations need two modules (`sales_changeReturnLineToService`, `service_createServiceInvoice`) and now have override entries. The Task 19 commit had left this test failing.
   - Screenshot checks against the precedents are deferred to Task 38 (no browser overnight).
   - "Keep at zero value" did NOT ship, per the plan's escape hatch: no server path adds a tracked unit to stock at zero cost. After a no-charge replacement, the old unit can only be scrapped.
+- 2026-10-23: Tasks 22–25 committed. The job page gets time, parts and charges, the estimate (send, record response, PDF), and Complete, Reopen, coverage change and Create Invoice. New operations `issueServiceJobPart` and `unissueServiceJobPart` wrap the issue posting. The customer asset pages move to `/x/service-jobs/assets` and show the asset's open jobs, its jobs and its RMA lines, plus "New Service Job".
+  - Checks: the erp and documents typecheck passes. ERP unit tests pass (710), as do the PDF test, the post-service-job, invoice and issue tests (13) and conformance.
 
 ## Decisions made without Brad
 
@@ -71,6 +73,10 @@
 | 26 | Lines added from assets get unit price 0 and no `salesReturnOrderLineTrackedEntity` row. The receipt falls back to the asset's serial | The unit stays the customer's. The sales notes call that table legacy. |
 | 26 | `changeReturnLineToService` sets the job's coverage, then changes the line, in two steps, not one transaction | Each step goes through its own operation's gate. |
 | 26 | Customer assets and job links need `service_view`. A sales-only user sees neither | They come from the service module's RLS. |
+| 22 | Time, charges and estimate lines open as drawers in the record outlet; the part picker stays a modal | The plan says drawers. Maintenance uses modals for time entries, but its part picker is a modal too. |
+| 22 | A charge line is editable (`$jobId.item.$itemId.tsx`), and one delete route serves both parts (Return to Stock) and charges | Time and estimate lines are editable, so charges are too. |
+| 24 | Start, Send Estimate, Complete and Create Invoice submit with no confirm dialog. A refused Complete shows an error toast | Maintenance's Complete does the same. |
+| 24 | The properties panel shows the estimate's status and who responded, read-only | After acceptance, nothing else on the page shows it. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

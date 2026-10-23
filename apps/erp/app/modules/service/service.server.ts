@@ -16,7 +16,8 @@ import {
   suggestCoverage
 } from "@carbon/utils";
 import { z } from "zod";
-import { refuseUnlessOwned } from "../shared/shared.service";
+import * as inventoryPostings from "../inventory/inventory.service";
+import { invokePosting, refuseUnlessOwned } from "../shared/shared.service";
 import {
   customerAssetUpdateValidator,
   customerAssetValidator,
@@ -953,6 +954,124 @@ export const deleteServiceJobCharge = defineServiceFn({
         companyId: ctx.company.id
       })
     );
+  }
+});
+
+// --- Service jobs: parts -----------------------------------------------------
+
+/**
+ * Issue a part from stock to a service job.
+ *
+ * @remarks
+ * Refused when the job is Completed, Invoiced or Cancelled, or the item is
+ * not the company's. A serial or batch part names the tracked entities it
+ * takes in `children`, each with a quantity more than 0; any other part takes
+ * `quantity` (more than 0) from inventory at the job's location. The stock
+ * leaves inventory through the `issue` posting, which posts its cost to the
+ * job's coverage account; its refusal is returned as it is.
+ *
+ * @mcp
+ */
+export const issueServiceJobPart = defineServiceFn({
+  input: z.object({
+    serviceJobId: z.string().min(1),
+    itemId: z.string().min(1),
+    unitOfMeasureCode: z.string().min(1),
+    quantity: z.number().optional(),
+    children: z
+      .array(
+        z.object({
+          trackedEntityId: z.string(),
+          quantity: z.number().positive()
+        })
+      )
+      .optional()
+  }),
+  permission: { update: "service" },
+
+  async run(
+    ctx,
+    { serviceJobId, itemId, unitOfMeasureCode, quantity, children }
+  ) {
+    const total = children
+      ? children.reduce((sum, child) => sum + child.quantity, 0)
+      : (quantity ?? 0);
+    if (total <= 0) {
+      return ctx.error("validation", "Quantity must be greater than 0");
+    }
+
+    const job = await service.editableServiceJob(ctx, serviceJobId);
+    if (job instanceof CarbonError) return job;
+    const owned = await refuseUnlessOwned(ctx, "item", { id: itemId });
+    if (owned) return owned;
+
+    const tracked = !!children && children.length > 0;
+    const issued = await invokePosting(
+      ctx,
+      "issue",
+      tracked
+        ? {
+            type: "serviceJobTrackedEntities" as const,
+            serviceJobId,
+            itemId,
+            unitOfMeasureCode,
+            children
+          }
+        : {
+            type: "serviceJobInventory" as const,
+            serviceJobId,
+            itemId,
+            unitOfMeasureCode,
+            quantity: total
+          },
+      inventoryPostings.issueMaterial
+    );
+    if (issued.error) return unwrap(ctx, issued) as CarbonError;
+    return { serviceJobId, itemId };
+  }
+});
+
+/**
+ * Remove a part from a service job and return it to stock.
+ *
+ * @remarks
+ * The part must be the job's, and the job not Completed, Invoiced or
+ * Cancelled. Everything still issued on the line goes back to inventory
+ * through the `issue` posting, which reverses its cost from the coverage
+ * account, and the line is removed. A charge is removed with
+ * `deleteServiceJobCharge` instead.
+ *
+ * @mcp destructive
+ */
+export const unissueServiceJobPart = defineServiceFn({
+  input: childRowInput,
+  permission: { delete: "service" },
+
+  async run(ctx, { serviceJobId, id }) {
+    const job = await service.editableServiceJob(ctx, serviceJobId);
+    if (job instanceof CarbonError) return job;
+
+    const item = await ctx.asCaller.supabase
+      .from("serviceJobItem")
+      .select("id")
+      .eq("id", id)
+      .eq("serviceJobId", serviceJobId)
+      .eq("companyId", ctx.company.id)
+      .eq("lineType", "Part")
+      .maybeSingle();
+    if (item.error) {
+      return ctx.error("internal", "Failed to remove the part", item.error);
+    }
+    if (!item.data) return ctx.error("notFound", "Part not found");
+
+    const returned = await invokePosting(
+      ctx,
+      "issue",
+      { type: "serviceJobUnconsume" as const, serviceJobItemId: id },
+      inventoryPostings.issueMaterial
+    );
+    if (returned.error) return unwrap(ctx, returned) as CarbonError;
+    return { id };
   }
 });
 

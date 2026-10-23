@@ -2079,9 +2079,15 @@ msgstr "Acceptance"
 msgid "Acceptance passed"
 msgstr "Acceptance passed"
 
+msgid "Accepted"
+msgstr "Accepted"
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "Accepted {0}"
+
+msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
+msgstr "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
 
 msgid "Account"
 msgstr "Account"
@@ -4202,6 +4208,9 @@ msgstr "Are you sure you want to remove this employee from {name}? The training 
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Are you sure you want to remove this item from the price list? This cannot be undone."
 
+msgid "Are you sure you want to remove this line?"
+msgstr "Are you sure you want to remove this line?"
+
 msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 msgstr "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 
@@ -4796,6 +4805,9 @@ msgstr "Batch / Serial"
 msgid "Batch Capacity"
 msgstr "Batch Capacity"
 
+msgid "Batch is not available"
+msgstr "Batch is not available"
+
 msgid "Batch items require a sales order"
 msgstr "Batch items require a sales order"
 
@@ -4804,6 +4816,13 @@ msgstr "Batch number"
 
 msgid "Batch Number"
 msgstr "Batch Number"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr "Batch Number {0}"
+
+msgid "Batch number is required"
+msgstr "Batch number is required"
 
 msgid "Batch Properties"
 msgstr "Batch Properties"
@@ -7600,6 +7619,9 @@ msgstr "Country code"
 msgid "Coverage"
 msgstr "Coverage"
 
+msgid "Coverage changed"
+msgstr "Coverage changed"
+
 msgid "CPI"
 msgstr "CPI"
 
@@ -7697,6 +7719,9 @@ msgstr "Create Elements"
 
 msgid "Create Forecast"
 msgstr "Create Forecast"
+
+msgid "Create Invoice"
+msgstr "Create Invoice"
 
 msgid "Create Issue"
 msgstr "Create Issue"
@@ -8195,6 +8220,9 @@ msgstr "Customer location"
 msgid "Customer Location"
 msgstr "Customer Location"
 
+msgid "Customer Name"
+msgstr "Customer Name"
+
 msgid "Customer Overview"
 msgstr "Customer Overview"
 
@@ -8539,6 +8567,9 @@ msgstr "Decimal Places"
 
 msgid "Decision notes"
 msgstr "Decision notes"
+
+msgid "Declined"
+msgstr "Declined"
 
 msgid "Declining balance"
 msgstr "Declining balance"
@@ -9846,6 +9877,9 @@ msgstr "due now"
 msgid "Duplicate"
 msgstr "Duplicate"
 
+msgid "Duplicate batch number"
+msgstr "Duplicate batch number"
+
 msgid "Duplicate file names after image conversion"
 msgstr "Duplicate file names after image conversion"
 
@@ -9860,6 +9894,9 @@ msgstr "Duplicate Price List"
 
 msgid "Duplicate Pricing Rule"
 msgstr "Duplicate Pricing Rule"
+
+msgid "Duplicate serial number"
+msgstr "Duplicate serial number"
 
 msgid "Duplicate To"
 msgstr "Duplicate To"
@@ -10146,6 +10183,9 @@ msgstr "Edit Change Notice Action"
 msgid "Edit Change Notice Type"
 msgstr "Edit Change Notice Type"
 
+msgid "Edit Charge"
+msgstr "Edit Charge"
+
 msgid "Edit column visibility"
 msgstr "Edit column visibility"
 
@@ -10212,6 +10252,9 @@ msgstr "Edit Employee Ability"
 
 msgid "Edit Employee Type"
 msgstr "Edit Employee Type"
+
+msgid "Edit Estimate Line"
+msgstr "Edit Estimate Line"
 
 msgid "Edit expiration date"
 msgstr "Edit expiration date"
@@ -10446,6 +10489,9 @@ msgstr "Edit the rule to remove the \"Applies to all\" flag"
 
 msgid "Edit the rule's item filters to remove it"
 msgstr "Edit the rule's item filters to remove it"
+
+msgid "Edit Time"
+msgstr "Edit Time"
 
 msgid "Edit Timecard"
 msgstr "Edit Timecard"
@@ -10997,6 +11043,9 @@ msgstr "Estimate"
 
 msgid "Estimate at completion"
 msgstr "Estimate at completion"
+
+msgid "Estimate sent"
+msgstr "Estimate sent"
 
 msgid "Estimated"
 msgstr "Estimated"
@@ -13052,6 +13101,9 @@ msgstr "Hours Paid"
 msgid "Hours per Week"
 msgstr "Hours per Week"
 
+msgid "Hours, for a labor item"
+msgstr "Hours, for a labor item"
+
 msgid "Hours/100 Pieces"
 msgstr "Hours/100 Pieces"
 
@@ -14139,6 +14191,9 @@ msgstr "Issue material (the open element)"
 msgid "Issue not found"
 msgstr "Issue not found"
 
+msgid "Issue Part"
+msgstr "Issue Part"
+
 msgid "Issue Status"
 msgstr "Issue Status"
 
@@ -14327,6 +14382,9 @@ msgstr "Job · {itemReadableId}"
 msgid "Job cancelled"
 msgstr "Job cancelled"
 
+msgid "Job completed"
+msgstr "Job completed"
+
 msgid "Job completed successfully"
 msgstr "Job completed successfully"
 
@@ -14377,6 +14435,9 @@ msgstr "Job readable"
 
 msgid "Job released"
 msgstr "Job released"
+
+msgid "Job reopened"
+msgstr "Job reopened"
 
 msgid "Job Traveler"
 msgstr "Job Traveler"
@@ -14557,6 +14618,9 @@ msgstr "Labor ended"
 
 msgid "Labor Hours"
 msgstr "Labor Hours"
+
+msgid "Labor Item"
+msgstr "Labor Item"
 
 msgid "Labor rate"
 msgstr "Labor rate"
@@ -16553,6 +16617,9 @@ msgstr "New change request"
 msgid "New Change Request"
 msgstr "New Change Request"
 
+msgid "New Charge"
+msgstr "New Charge"
+
 msgid "New Consumable"
 msgstr "New Consumable"
 
@@ -16610,6 +16677,9 @@ msgstr "New element name"
 
 msgid "New Employee Type"
 msgstr "New Employee Type"
+
+msgid "New Estimate Line"
+msgstr "New Estimate Line"
 
 msgid "New expiration date"
 msgstr "New expiration date"
@@ -18535,6 +18605,9 @@ msgstr "one-time"
 msgid "One-time"
 msgstr "One-time"
 
+msgid "Only {available} available"
+msgstr "Only {available} available"
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 
@@ -19339,6 +19412,9 @@ msgstr "Part ID"
 msgid "Part is configured for manufacturing"
 msgstr "Part is configured for manufacturing"
 
+msgid "Part issued"
+msgstr "Part issued"
+
 msgid "Part lead times update from posted purchase receipts."
 msgstr "Part lead times update from posted purchase receipts."
 
@@ -19740,6 +19816,9 @@ msgstr "Pick a date or leave blank to clear it."
 
 msgid "Pick a list variable…"
 msgstr "Pick a list variable…"
+
+msgid "Pick a part and the quantity to issue from stock to this job"
+msgstr "Pick a part and the quantity to issue from stock to this job"
 
 msgid "Pick a process to start"
 msgstr "Pick a process to start"
@@ -20344,6 +20423,9 @@ msgstr "Print {0} Labels"
 
 msgid "Print batch list"
 msgstr "Print batch list"
+
+msgid "Print Estimate"
+msgstr "Print Estimate"
 
 msgid "Print job deleted"
 msgstr "Print job deleted"
@@ -21632,6 +21714,9 @@ msgstr "Record inspections tied to a part and a job"
 msgid "Record Payment"
 msgstr "Record Payment"
 
+msgid "Record Response"
+msgstr "Record Response"
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 
@@ -21652,6 +21737,9 @@ msgstr "Recorded that follow-up is needed after this calibration; surfaces this 
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
+
+msgid "Recorded the customer's response"
+msgstr "Recorded the customer's response"
 
 msgid "Records"
 msgstr "Records"
@@ -22497,6 +22585,9 @@ msgstr "resources"
 
 msgid "Resources"
 msgstr "Resources"
+
+msgid "Response"
+msgstr "Response"
 
 msgid "Responsible employee"
 msgstr "Responsible employee"
@@ -23844,6 +23935,10 @@ msgstr "Select at least one item to accept the quote"
 msgid "Select at least one line to convert"
 msgstr "Select at least one line to convert"
 
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr "Select Batch {0}"
+
 msgid "Select Contact"
 msgstr "Select Contact"
 
@@ -23943,6 +24038,10 @@ msgstr "Select Row"
 msgid "Select scope"
 msgstr "Select scope"
 
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr "Select Serial {0}"
+
 msgid "Select station"
 msgstr "Select station"
 
@@ -24016,6 +24115,9 @@ msgstr "Send"
 msgid "Send error"
 msgstr "Send error"
 
+msgid "Send Estimate"
+msgstr "Send Estimate"
+
 msgid "Send Invite"
 msgstr "Send Invite"
 
@@ -24042,6 +24144,9 @@ msgstr "Sending invoice"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Sends this document for approval before it can go active."
+
+msgid "Sent"
+msgstr "Sent"
 
 msgid "Sent at"
 msgstr "Sent at"
@@ -24078,6 +24183,16 @@ msgstr "Serial items require a sales order"
 
 msgid "Serial Number"
 msgstr "Serial Number"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr "Serial Number {0}"
+
+msgid "Serial number is not available"
+msgstr "Serial number is not available"
+
+msgid "Serial number is required"
+msgstr "Serial number is required"
 
 msgid "Serial Number:"
 msgstr "Serial Number:"
@@ -27121,6 +27236,9 @@ msgstr "The override is kept at activation and recorded in the audit log with it
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "The parent-child chain of tracked entities — what a unit was built from and what it became."
+
+msgid "The part goes back to inventory and its cost is reversed."
+msgstr "The part goes back to inventory and its cost is reversed."
 
 msgid "The part has a newer model than this instruction."
 msgstr "The part has a newer model than this instruction."
@@ -30557,6 +30675,9 @@ msgstr "Who can do what"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
+
+msgid "Who gave the answer"
+msgstr "Who gave the answer"
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."

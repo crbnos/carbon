@@ -5,6 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type {
   ServiceBillingMethod,
+  ServiceEstimateStatus,
   ServiceWorkSite
 } from "../../service.models";
 
@@ -23,5 +24,19 @@ export function useBillingMethodLabels(): Record<ServiceBillingMethod, string> {
   return {
     "Time and Materials": t`Time and Materials`,
     "Fixed Price": t`Fixed Price`
+  };
+}
+
+/** Where the job's estimate stands with the customer. */
+export function useEstimateStatusLabels(): Record<
+  ServiceEstimateStatus,
+  string
+> {
+  const { t } = useLingui();
+  return {
+    Draft: t`Draft`,
+    Sent: t`Sent`,
+    Accepted: t`Accepted`,
+    Declined: t`Declined`
   };
 }

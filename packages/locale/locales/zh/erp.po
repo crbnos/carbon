@@ -2079,9 +2079,15 @@ msgstr "验收"
 msgid "Acceptance passed"
 msgstr "验收合格"
 
+msgid "Accepted"
+msgstr ""
+
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "已接受 {0}"
+
+msgid "Accepted reopens the job for the repair. Declined marks the unit not repairable, so the job can complete and bill its evaluation time."
+msgstr ""
 
 msgid "Account"
 msgstr "账户"
@@ -4202,6 +4208,9 @@ msgstr "您确定要从 {name} 中移除此员工？培训历史被保留，员�
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "确定要从价格表中移除此物料吗？此操作无法撤消。"
 
+msgid "Are you sure you want to remove this line?"
+msgstr ""
+
 msgid "Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed."
 msgstr "您确定要冲销此分录吗？这将创建一个具有否定金额的新已过账条目，并将此条目标记为已冲销。"
 
@@ -4796,6 +4805,9 @@ msgstr "批次 / 序列号"
 msgid "Batch Capacity"
 msgstr "生产批次容量"
 
+msgid "Batch is not available"
+msgstr ""
+
 msgid "Batch items require a sales order"
 msgstr "生产批次物料需要销售订单"
 
@@ -4804,6 +4816,13 @@ msgstr "批号"
 
 msgid "Batch Number"
 msgstr "批号"
+
+#. placeholder {0}: index + 1
+msgid "Batch Number {0}"
+msgstr ""
+
+msgid "Batch number is required"
+msgstr ""
 
 msgid "Batch Properties"
 msgstr "批量属性"
@@ -7600,6 +7619,9 @@ msgstr "国家代码"
 msgid "Coverage"
 msgstr "覆盖范围"
 
+msgid "Coverage changed"
+msgstr ""
+
 msgid "CPI"
 msgstr "CPI"
 
@@ -7697,6 +7719,9 @@ msgstr "创建元素"
 
 msgid "Create Forecast"
 msgstr "创建预测"
+
+msgid "Create Invoice"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -8195,6 +8220,9 @@ msgstr "客户位置"
 msgid "Customer Location"
 msgstr "客户位置"
 
+msgid "Customer Name"
+msgstr ""
+
 msgid "Customer Overview"
 msgstr "客户概览"
 
@@ -8539,6 +8567,9 @@ msgstr "小数位数"
 
 msgid "Decision notes"
 msgstr "决策备注"
+
+msgid "Declined"
+msgstr ""
 
 msgid "Declining balance"
 msgstr "余额递减法"
@@ -9846,6 +9877,9 @@ msgstr "立即到期"
 msgid "Duplicate"
 msgstr "复制"
 
+msgid "Duplicate batch number"
+msgstr ""
+
 msgid "Duplicate file names after image conversion"
 msgstr "图像转换后文件名重复"
 
@@ -9860,6 +9894,9 @@ msgstr "复制价格表"
 
 msgid "Duplicate Pricing Rule"
 msgstr "复制定价规则"
+
+msgid "Duplicate serial number"
+msgstr ""
 
 msgid "Duplicate To"
 msgstr "复制到"
@@ -10146,6 +10183,9 @@ msgstr "编辑变更通知操作"
 msgid "Edit Change Notice Type"
 msgstr "编辑变更通知类型"
 
+msgid "Edit Charge"
+msgstr ""
+
 msgid "Edit column visibility"
 msgstr "编辑列可见性"
 
@@ -10212,6 +10252,9 @@ msgstr "编辑员工能力"
 
 msgid "Edit Employee Type"
 msgstr "编辑员工类型"
+
+msgid "Edit Estimate Line"
+msgstr ""
 
 msgid "Edit expiration date"
 msgstr "编辑到期日期"
@@ -10446,6 +10489,9 @@ msgstr "编辑规则以移除\"应用于全部\"标志"
 
 msgid "Edit the rule's item filters to remove it"
 msgstr "编辑规则的项目过滤器以将其删除"
+
+msgid "Edit Time"
+msgstr ""
 
 msgid "Edit Timecard"
 msgstr "编辑时间卡"
@@ -10997,6 +11043,9 @@ msgstr "估计"
 
 msgid "Estimate at completion"
 msgstr "估算"
+
+msgid "Estimate sent"
+msgstr ""
 
 msgid "Estimated"
 msgstr "估计的"
@@ -13052,6 +13101,9 @@ msgstr "已支付小时数"
 msgid "Hours per Week"
 msgstr "每周小时数"
 
+msgid "Hours, for a labor item"
+msgstr ""
+
 msgid "Hours/100 Pieces"
 msgstr "小时/100件"
 
@@ -14139,6 +14191,9 @@ msgstr "领料（未结元素）"
 msgid "Issue not found"
 msgstr "问题未找到"
 
+msgid "Issue Part"
+msgstr ""
+
 msgid "Issue Status"
 msgstr "问题状态"
 
@@ -14327,6 +14382,9 @@ msgstr "工单 · {itemReadableId}"
 msgid "Job cancelled"
 msgstr "工单已取消"
 
+msgid "Job completed"
+msgstr ""
+
 msgid "Job completed successfully"
 msgstr "工单已成功完成"
 
@@ -14377,6 +14435,9 @@ msgstr "工作可读性"
 
 msgid "Job released"
 msgstr "工单已下达"
+
+msgid "Job reopened"
+msgstr ""
 
 msgid "Job Traveler"
 msgstr "工单流转卡"
@@ -14557,6 +14618,9 @@ msgstr "人工已结束"
 
 msgid "Labor Hours"
 msgstr "人工小时"
+
+msgid "Labor Item"
+msgstr ""
 
 msgid "Labor rate"
 msgstr "人工费率"
@@ -16553,6 +16617,9 @@ msgstr "新更改请求"
 msgid "New Change Request"
 msgstr "新更改请求"
 
+msgid "New Charge"
+msgstr ""
+
 msgid "New Consumable"
 msgstr "新建耗材"
 
@@ -16610,6 +16677,9 @@ msgstr "新元素名称"
 
 msgid "New Employee Type"
 msgstr "新员工类型"
+
+msgid "New Estimate Line"
+msgstr ""
 
 msgid "New expiration date"
 msgstr "新到期日期"
@@ -18535,6 +18605,9 @@ msgstr "一次性"
 msgid "One-time"
 msgstr "一次性"
 
+msgid "Only {available} available"
+msgstr ""
+
 msgid "Only Draft procedures are editable. Create a new version to change an Active or Archived procedure."
 msgstr "仅草稿程序文件可编辑。创建新版本以更改启用或已归档程序文件。"
 
@@ -19339,6 +19412,9 @@ msgstr "零件ID"
 msgid "Part is configured for manufacturing"
 msgstr "零件已配置用于制造"
 
+msgid "Part issued"
+msgstr ""
+
 msgid "Part lead times update from posted purchase receipts."
 msgstr "零件提前期从已过账的采购收货更新。"
 
@@ -19740,6 +19816,9 @@ msgstr "选择一个日期或留空以清除它。"
 
 msgid "Pick a list variable…"
 msgstr "选择一个列表变量…"
+
+msgid "Pick a part and the quantity to issue from stock to this job"
+msgstr ""
 
 msgid "Pick a process to start"
 msgstr "选择要开始的工序"
@@ -20344,6 +20423,9 @@ msgstr "打印 {0} 个标签"
 
 msgid "Print batch list"
 msgstr "打印生产批次列表"
+
+msgid "Print Estimate"
+msgstr ""
 
 msgid "Print job deleted"
 msgstr "打印工单已删除"
@@ -21632,6 +21714,9 @@ msgstr "记录与零件和工作相关的检验"
 msgid "Record Payment"
 msgstr "记录付款"
 
+msgid "Record Response"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "记录向员工支付 {displayId} 的款项。支付少于应付总额以部分结算。"
 
@@ -21652,6 +21737,9 @@ msgstr "记录此校准后需要后续行动；将此量具呈现在待处理操
 
 msgid "Recorded that the gauge was adjusted during this calibration; affects how the calibration interval recalculates."
 msgstr "记录在此校准期间调整了量具；影响校准周期的重新计算方式。"
+
+msgid "Recorded the customer's response"
+msgstr ""
 
 msgid "Records"
 msgstr "记录"
@@ -22497,6 +22585,9 @@ msgstr "资源"
 
 msgid "Resources"
 msgstr "资源"
+
+msgid "Response"
+msgstr ""
 
 msgid "Responsible employee"
 msgstr "负责员工"
@@ -23844,6 +23935,10 @@ msgstr "选择至少一个物料来接受报价单"
 msgid "Select at least one line to convert"
 msgstr "至少选择一行进行转换"
 
+#. placeholder {0}: index + 1
+msgid "Select Batch {0}"
+msgstr ""
+
 msgid "Select Contact"
 msgstr "选择联系人"
 
@@ -23943,6 +24038,10 @@ msgstr "选择行"
 msgid "Select scope"
 msgstr "选择范围"
 
+#. placeholder {0}: index + 1
+msgid "Select Serial {0}"
+msgstr ""
+
 msgid "Select station"
 msgstr "选择工作站"
 
@@ -24016,6 +24115,9 @@ msgstr "发送"
 msgid "Send error"
 msgstr "发送错误"
 
+msgid "Send Estimate"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "发送邀请"
 
@@ -24042,6 +24144,9 @@ msgstr "发送发票"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "在文件启用前发送进行审批。"
+
+msgid "Sent"
+msgstr ""
 
 msgid "Sent at"
 msgstr "发送于"
@@ -24078,6 +24183,16 @@ msgstr "序列号物料需要销售订单"
 
 msgid "Serial Number"
 msgstr "序列号"
+
+#. placeholder {0}: index + 1
+msgid "Serial Number {0}"
+msgstr ""
+
+msgid "Serial number is not available"
+msgstr ""
+
+msgid "Serial number is required"
+msgstr ""
 
 msgid "Serial Number:"
 msgstr "序列号："
@@ -27121,6 +27236,9 @@ msgstr "覆盖在激活时保持，并在审计日志中记录其原因。"
 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "跟踪实体的父子链 - 一个单位从什么构成以及它变成了什么。"
+
+msgid "The part goes back to inventory and its cost is reversed."
+msgstr ""
 
 msgid "The part has a newer model than this instruction."
 msgstr "零件的模型比此说明更新。"
@@ -30557,6 +30675,9 @@ msgstr "谁可以做什么"
 
 msgid "Who does what, across the six steps. Your side is highlighted up top. Own it well and the project moves."
 msgstr "谁在六个步骤中做什么。您的部分在上面突出显示。做好它，项目就会推进。"
+
+msgid "Who gave the answer"
+msgstr ""
 
 msgid "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
 msgstr "谁接受什么培训，采用什么形式。你的职责：尽早在你的冠军们的日程表上保护动手操作的会议时间。这是公司忙碌时最容易被推迟的事情。"
