@@ -280,6 +280,22 @@ describe("parseBomTree", () => {
     expect(lines[0]).toMatchObject({ partNumber: "A-1", quantity: 4 });
   });
 
+  it("prefers an exact label over one that differs only in case", () => {
+    const { lines } = parseBomTree({
+      headers: [...H, { id: "h-custom", name: "PART NUMBER" }],
+      rows: [
+        {
+          ...row("1", "A-1", 1),
+          headerIdToValue: {
+            ...row("1", "A-1", 1).headerIdToValue,
+            "h-custom": "LEGACY-1"
+          }
+        }
+      ]
+    });
+    expect(lines[0]!.partNumber).toBe("A-1");
+  });
+
   it("prefers Onshape's part number over a custom column with the same label", () => {
     const { lines } = parseBomTree({
       headers: [

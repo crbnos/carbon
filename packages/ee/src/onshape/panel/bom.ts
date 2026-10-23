@@ -4,7 +4,7 @@
 
 /**
  * Onshape indented BOM → typed tree. Columns are addressed by Onshape's
- * property name, then by display name ignoring case (`headerIdFor`); nesting
+ * property name, then by display name (`headerIdFor`); nesting
  * comes from the dotted "Item" index ("1.1.2"). Non-empty cells are
  * kept as properties keyed by column id, so a row resolves through the
  * company's property map like a part.
@@ -92,16 +92,21 @@ const COLUMN_PROPERTY_NAMES: Record<string, string> = {
 
 const labelKey = (label: string) => label.trim().toLowerCase();
 
-/** The column id for a label: by property name, else by label ignoring case. */
+/**
+ * The column id for a label: by property name, then by the exact label (the
+ * lookup this replaced), then by label ignoring case. A repeated label keeps
+ * its last header, as that lookup did.
+ */
 function headerIdFor(headers: BomHeader[]) {
   const byPropertyName = new Map<string, string>();
+  const byExactLabel = new Map<string, string>();
   const byLabel = new Map<string, string>();
   for (const header of headers) {
     if (typeof header.propertyName === "string") {
       byPropertyName.set(header.propertyName, header.id);
     }
-    // Last wins on a repeated label, as the exact-label lookup did.
     if (typeof header.name === "string") {
+      byExactLabel.set(header.name, header.id);
       byLabel.set(labelKey(header.name), header.id);
     }
   }
@@ -109,6 +114,7 @@ function headerIdFor(headers: BomHeader[]) {
     const propertyName = COLUMN_PROPERTY_NAMES[label];
     return (
       (propertyName ? byPropertyName.get(propertyName) : undefined) ??
+      byExactLabel.get(label) ??
       byLabel.get(labelKey(label))
     );
   };
