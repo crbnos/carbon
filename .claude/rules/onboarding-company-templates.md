@@ -102,9 +102,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    customer-XOR-supplier CHECK the FK-nulling pass would violate.
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
-   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. The service
-   order tables (`SERVICE_ORDER_TABLES`) go first too: nulling `serviceOrder.customerId`
-   breaks `serviceOrder_customer_check`. Any other seeded table with a CHECK that needs
+   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
+   seeded table with a CHECK that needs
    one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
    `customerContractInvoiceLine`: an invoice OR a credit memo; `projectCostRelief`: a Cost
    Relief schedule row OR a project close journal; `projectStockTransfer`:

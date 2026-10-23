@@ -13,14 +13,11 @@ import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { inOrder } from "@carbon/database/rows";
 import {
-  type CoverageChargeType,
   datetime,
   EPSILON,
   priceTimeAndMaterialsItem,
   resolveBillRate,
-  resolveCoverage,
   round,
-  type ServiceCoverage,
   selectRowsToBill
 } from "@carbon/utils";
 import { type Kysely, type Selectable, sql, type Transaction } from "kysely";
@@ -37,8 +34,6 @@ export type ProjectPostingProject = {
   costAccountId: string | null;
   /** The project's own CIP asset (Capitalize). */
   fixedAssetId: string | null;
-  /** A Service project's contract project (By Coverage → Contract). */
-  parentProjectId?: string | null;
   /** Time only from the members in `memberIds` (DCAA charge restrictions). */
   restrictCharging: boolean;
   /** The project's members; loaded only when `restrictCharging` is true. */
@@ -82,12 +77,6 @@ export type ProjectPostingContext = {
   defaults: {
     projectExpenseAccount: string | null;
     projectWorkInProgressAccount: string | null;
-    /** By Coverage: Warranty. */
-    warrantyExpenseAccount: string | null;
-    /** By Coverage: Billable, and Contract with no contract project. */
-    costOfGoodsSoldAccount: string | null;
-    /** By Coverage: Capitalized (a Refurbishment). */
-    workInProgressAccount: string | null;
   };
   /** The project's asset and each final-asset node's asset, by asset id. */
   assets: Map<string, ProjectPostingAsset>;
@@ -96,11 +85,6 @@ export type ProjectPostingContext = {
    * elements and the assets name, by account id.
    */
   accountAllowability: Record<string, AccountAllowability>;
-  /**
-   * The parent project's own context (no element), when the project names one.
-   * A Service project's Contract charges post to its account.
-   */
-  parent?: ProjectPostingContext | null;
 };
 
 export type ResolvedProjectPostingAccount = {
@@ -180,75 +164,6 @@ export function resolveProjectTreatment(
 }
 
 /**
- * By Coverage (a Service project): the charge's coverage decides the account.
- * Warranty → Warranty Expense; Contract → the parent (contract) project's
- * posting account (refused while that project is Closed), else Cost of Goods
- * Sold; Billable → Cost of Goods Sold;
- * Capitalized → Work in Progress (a Refurbishment's completion sweeps it).
- */
-function coverageAccount(
-  ctx: ProjectPostingContext,
-  postingDate: string,
-  coverage: ServiceCoverage | null | undefined
-): string {
-  const required = (accountId: string | null, name: string) => {
-    if (!accountId) {
-      throw new ProjectChargeError(
-        `Set ${name} in Account Defaults before you charge a service order`
-      );
-    }
-    return accountId;
-  };
-
-  switch (coverage) {
-    case "Warranty":
-      return required(ctx.defaults.warrantyExpenseAccount, "Warranty Expense");
-    case "Contract": {
-      if (ctx.project.parentProjectId) {
-        if (!ctx.parent) {
-          throw new ProjectChargeError(
-            "The service order's contract project does not exist"
-          );
-        }
-        // A Closed contract project takes no more cost. On Hold and
-        // Technically Complete still do, as assertChargeable's 'commitment'
-        // mode allows.
-        if (ctx.parent.project.status === "Closed") {
-          const contractProject =
-            ctx.parent.project.identifier ??
-            ctx.parent.project.name ??
-            ctx.parent.project.id;
-          throw new ProjectChargeError(
-            `The contract project ${contractProject} is closed. Change the coverage to Billable, or reopen the contract project.`
-          );
-        }
-        // A Statistical contract project keeps the natural account.
-        const parentAccount = resolveProjectPostingAccount(
-          ctx.parent,
-          postingDate
-        ).accountId;
-        if (parentAccount) return parentAccount;
-      }
-      return required(
-        ctx.defaults.costOfGoodsSoldAccount,
-        "Cost of Goods Sold"
-      );
-    }
-    case "Billable":
-      return required(
-        ctx.defaults.costOfGoodsSoldAccount,
-        "Cost of Goods Sold"
-      );
-    case "Capitalized":
-      return required(ctx.defaults.workInProgressAccount, "Work in Progress");
-    default:
-      throw new ProjectChargeError(
-        "A charge on a service order needs a coverage"
-      );
-  }
-}
-
-/**
  * The treatment and account a charge posts to on `postingDate`
  * (`YYYY-MM-DD`). The nearest element (itself, then its ancestors) whose
  * treatment is in effect on the date decides; else the project does.
@@ -256,24 +171,13 @@ function coverageAccount(
  * Capitalize posts to the asset account of the asset it builds
  * (`capitalAssetId`): the CIP class while the asset is Under Construction,
  * its in-service class once it is Active (a late cost).
- * By Coverage (Service projects) posts to the account of the charge's
- * `coverage`, which the caller must pass.
  */
 export function resolveProjectPostingAccount(
   ctx: ProjectPostingContext,
-  postingDate: string,
-  coverage?: ServiceCoverage | null
+  postingDate: string
 ): ResolvedProjectPostingAccount {
   const { treatment, explicitAccount } = treatmentNode(ctx, postingDate);
   const noAsset = { fixedAssetId: null, postCapitalization: false };
-
-  if (treatment === "By Coverage") {
-    return {
-      treatment,
-      accountId: coverageAccount(ctx, postingDate, coverage),
-      ...noAsset
-    };
-  }
 
   if (treatment === "Capitalize") {
     // The asset decides the account, so an explicit account is ignored: the
@@ -412,9 +316,7 @@ export function isUnallowableCharge(
   accountId: string | null
 ): boolean {
   if (accountId) {
-    const allowability =
-      ctx.accountAllowability[accountId] ??
-      ctx.parent?.accountAllowability[accountId];
+    const allowability = ctx.accountAllowability[accountId];
     if (allowability && allowability !== "Allowable") return true;
   }
   const chain = ctx.element ? [ctx.element, ...ctx.ancestors] : [];
@@ -441,9 +343,6 @@ export function buildProjectLedgerRow(args: {
   amount: number;
   journalLineId?: string | null;
   reversalOfId?: string | null;
-  /** A Service project's charge: who pays for it. */
-  coverage?: ServiceCoverage | null;
-  coverageReason?: string | null;
   /** `isUnallowableCharge` for the row's account; a reversal copies it. */
   unallowable: boolean;
   createdBy: string;
@@ -470,8 +369,6 @@ export function buildProjectLedgerRow(args: {
     amount: round(args.amount),
     journalLineId: args.journalLineId ?? null,
     reversalOfId: args.reversalOfId ?? null,
-    coverage: args.coverage ?? null,
-    coverageReason: args.coverageReason ?? null,
     unallowable: args.unallowable,
     createdBy: args.createdBy
   };
@@ -506,15 +403,12 @@ type ElementRow = {
  * defaults, the capital assets the projects and elements hold, the
  * allowability of the accounts they name, and the members of the projects
  * that restrict charging. A ref whose project is missing, or whose element is missing or
- * belongs to another project, has no entry in the map. A project that names a
- * parent project (a Service project's contract project) gets the parent's
- * context in `parent`, loaded by one more call only when one is named.
+ * belongs to another project, has no entry in the map.
  */
 export async function loadProjectPostingContexts(
   trx: Kysely<DB>,
   companyId: string,
-  refs: { projectId: string; projectElementId: string | null }[],
-  { withParents = true }: { withParents?: boolean } = {}
+  refs: { projectId: string; projectElementId: string | null }[]
 ): Promise<Map<string, ProjectPostingContext>> {
   const contexts = new Map<string, ProjectPostingContext>();
   if (refs.length === 0) return contexts;
@@ -540,7 +434,6 @@ export async function loadProjectPostingContexts(
           "costTreatment",
           "costAccountId",
           "fixedAssetId",
-          "parentProjectId",
           "restrictCharging"
         ])
         .where("id", "in", projectIds)
@@ -579,13 +472,7 @@ export async function loadProjectPostingContexts(
     () =>
       trx
         .selectFrom("accountDefault")
-        .select([
-          "projectExpenseAccount",
-          "projectWorkInProgressAccount",
-          "warrantyExpenseAccount",
-          "costOfGoodsSoldAccount",
-          "workInProgressAccount"
-        ])
+        .select(["projectExpenseAccount", "projectWorkInProgressAccount"])
         .where("companyId", "=", companyId)
         .executeTakeFirst()
   ]);
@@ -653,11 +540,7 @@ export async function loadProjectPostingContexts(
   );
   const accountDefaults = {
     projectExpenseAccount: defaults?.projectExpenseAccount ?? null,
-    projectWorkInProgressAccount:
-      defaults?.projectWorkInProgressAccount ?? null,
-    warrantyExpenseAccount: defaults?.warrantyExpenseAccount ?? null,
-    costOfGoodsSoldAccount: defaults?.costOfGoodsSoldAccount ?? null,
-    workInProgressAccount: defaults?.workInProgressAccount ?? null
+    projectWorkInProgressAccount: defaults?.projectWorkInProgressAccount ?? null
   };
 
   // The allowability of every account a charge of these refs can post to,
@@ -705,27 +588,6 @@ export async function loadProjectPostingContexts(
     membersByProject.set(row.projectId, members);
   }
 
-  // A Service project's contract project, loaded one level deep (its own
-  // parent is never read), only when a project names one.
-  const parentIds = withParents
-    ? [
-        ...new Set(
-          projects
-            .map((project) => project.parentProjectId)
-            .filter((id): id is string => Boolean(id))
-        )
-      ]
-    : [];
-  const parents =
-    parentIds.length === 0
-      ? new Map<string, ProjectPostingContext>()
-      : await loadProjectPostingContexts(
-          trx,
-          companyId,
-          parentIds.map((projectId) => ({ projectId, projectElementId: null })),
-          { withParents: false }
-        );
-
   for (const ref of refs) {
     const project = projectById.get(ref.projectId);
     if (!project) continue;
@@ -754,7 +616,6 @@ export async function loadProjectPostingContexts(
         costTreatment: project.costTreatment,
         costAccountId: project.costAccountId,
         fixedAssetId: project.fixedAssetId,
-        parentProjectId: project.parentProjectId,
         restrictCharging: project.restrictCharging,
         memberIds: membersByProject.get(project.id) ?? [],
         identifier: project.identifier,
@@ -764,11 +625,7 @@ export async function loadProjectPostingContexts(
       ancestors,
       defaults: accountDefaults,
       assets,
-      accountAllowability,
-      parent: project.parentProjectId
-        ? (parents.get(projectPostingKey(project.parentProjectId, null)) ??
-          null)
-        : null
+      accountAllowability
     });
   }
 
@@ -1083,8 +940,6 @@ export async function reverseProjectLedgerRows(
         journalLineId: row.journalLineId
           ? (args.reversalLineIds?.get(row.journalLineId) ?? null)
           : null,
-        coverage: row.coverage,
-        coverageReason: row.coverageReason,
         unallowable: row.unallowable,
         createdBy: args.userId
       }),
@@ -1147,8 +1002,7 @@ export type StockMaterialDraft = {
  *
  * The cost of the relocated part is its share of the draft's cost by
  * quantity. Drafts of another stripe, of a project that does not charge at
- * receipt, a Service charge (coverage) or a reversal pass through as their
- * ordinary row. One read for all drafts; balances run across them in order.
+ * receipt, or a reversal pass through as their ordinary row. One read for all drafts; balances run across them in order.
  */
 export async function splitReceiptChargedDrafts(
   trx: Kysely<DB>,
@@ -1161,7 +1015,6 @@ export async function splitReceiptChargedDrafts(
     !!draft.row.itemId &&
     !!draft.row.journalLineId &&
     !!draft.inventoryJournalLineId &&
-    !draft.row.coverage &&
     !draft.row.reversalOfId &&
     Math.abs(Number(draft.row.quantity ?? 0)) > EPSILON;
 
@@ -1278,9 +1131,8 @@ export function issueReturnUnitCost(
 
 /**
  * The Project Issue Material rows a Return of `itemId` (and serial or
- * batch) to the project element reverses: `returnOfProjectLedgerId` alone
- * when the return names its issue (a Service project), else every issue and
- * return of the item to the element. Feed them to `issueReturnUnitCost`.
+ * batch) to the project element reverses: every issue and return of the
+ * item to the element. Feed them to `issueReturnUnitCost`.
  */
 export async function loadReturnableIssueRows(
   trx: Transaction<DB>,
@@ -1290,7 +1142,6 @@ export async function loadReturnableIssueRows(
     projectElementId: string | null;
     itemId: string;
     trackedEntityId: string | null;
-    returnOfProjectLedgerId: string | null;
   }
 ): Promise<{ quantity: number | null; amount: number }[]> {
   const { rows } = await sql<{ quantity: number | null; amount: number }>`
@@ -1306,307 +1157,15 @@ export async function loadReturnableIssueRows(
       -- issue: its project side carries the issue's quantity and cost.
       AND NOT (pl."relocatesReceiptCharge" AND ${onInventoryAccount("pl")})
       AND il."trackedEntityId" IS NOT DISTINCT FROM ${args.trackedEntityId}
-      AND (
-        CASE WHEN ${args.returnOfProjectLedgerId}::text IS NULL
-          THEN pl."projectElementId" IS NOT DISTINCT FROM ${args.projectElementId}
-          ELSE pl."id" = ${args.returnOfProjectLedgerId}
-        END
-      )
+      AND pl."projectElementId" IS NOT DISTINCT FROM ${args.projectElementId}
   `.execute(trx);
   return rows;
-}
-
-// ─── Service projects: coverage inputs and billable items ────────────────────
-
-/** What a charge on a Service project needs to decide its coverage and price. */
-export type ServicePostingContext = {
-  serviceOrderId: string;
-  /** The readable id (SVC000123). */
-  serviceOrderReadableId: string;
-  orderType: Database["public"]["Enums"]["serviceOrderType"];
-  /** The order's customer (null for a Refurbishment), for the Customer dimension. */
-  customerId: string | null;
-  customerContractId: string | null;
-  customerAssetId: string | null;
-  /** The asset's serial: the output of an installed part's genealogy. */
-  assetTrackedEntityId: string | null;
-  /** The order's subject serial (a Refurbishment's unit in stock). */
-  subjectTrackedEntityId: string;
-  laborWarrantyEndDate: string | null;
-  partsWarrantyEndDate: string | null;
-  /** The node's installed component: the open component holding its serial. */
-  componentId: string | null;
-  componentPartsWarrantyEndDate: string | null;
-  /** `companySettings.serviceLaborItemId` and its sale price; null when unset. */
-  laborItemId: string | null;
-  laborPrice: number | null;
-};
-
-/**
- * The service context of every (project, element) ref, keyed by
- * `projectPostingKey`, in at most 3 queries for any number of refs: the
- * service orders with their asset's warranty, the service labor price, and the
- * nodes' installed components. A ref whose project no service order owns has
- * no entry.
- */
-export async function loadServicePostingContexts(
-  trx: Kysely<DB>,
-  companyId: string,
-  refs: { projectId: string; projectElementId: string | null }[]
-): Promise<Map<string, ServicePostingContext>> {
-  const contexts = new Map<string, ServicePostingContext>();
-  if (refs.length === 0) return contexts;
-  const projectIds = [...new Set(refs.map((ref) => ref.projectId))];
-
-  const [orders, labor] = await inOrder([
-    () =>
-      trx
-        .selectFrom("serviceOrder")
-        .leftJoin("customerAsset", (join) =>
-          join
-            .onRef("customerAsset.id", "=", "serviceOrder.customerAssetId")
-            .onRef("customerAsset.companyId", "=", "serviceOrder.companyId")
-        )
-        .select([
-          "serviceOrder.id",
-          "serviceOrder.serviceOrderId",
-          "serviceOrder.projectId",
-          "serviceOrder.type",
-          "serviceOrder.customerId",
-          "serviceOrder.customerContractId",
-          "serviceOrder.customerAssetId",
-          "serviceOrder.trackedEntityId as subjectTrackedEntityId",
-          "customerAsset.trackedEntityId as assetTrackedEntityId",
-          "customerAsset.laborWarrantyEndDate",
-          "customerAsset.partsWarrantyEndDate"
-        ])
-        .where("serviceOrder.projectId", "in", projectIds)
-        .where("serviceOrder.companyId", "=", companyId)
-        .execute(),
-    () =>
-      trx
-        .selectFrom("companySettings")
-        .leftJoin("itemUnitSalePrice", (join) =>
-          join
-            .onRef(
-              "itemUnitSalePrice.itemId",
-              "=",
-              "companySettings.serviceLaborItemId"
-            )
-            .onRef("itemUnitSalePrice.companyId", "=", "companySettings.id")
-        )
-        .select([
-          "companySettings.serviceLaborItemId",
-          "itemUnitSalePrice.unitSalePrice"
-        ])
-        .where("companySettings.id", "=", companyId)
-        .executeTakeFirst()
-  ]);
-  if (orders.length === 0) return contexts;
-  const orderByProject = new Map(
-    orders.map((order) => [order.projectId, order])
-  );
-
-  // The nodes' serials, matched to their assets' open components in one query.
-  const elementIds = [
-    ...new Set(
-      refs
-        .filter(
-          (ref) =>
-            ref.projectElementId &&
-            orderByProject.get(ref.projectId)?.customerAssetId
-        )
-        .map((ref) => ref.projectElementId as string)
-    )
-  ];
-  const assetIds = [
-    ...new Set(
-      orders
-        .map((order) => order.customerAssetId)
-        .filter((id): id is string => Boolean(id))
-    )
-  ];
-  const components =
-    elementIds.length === 0 || assetIds.length === 0
-      ? []
-      : await trx
-          .selectFrom("customerAssetComponent")
-          .innerJoin("projectElement", (join) =>
-            join
-              .onRef(
-                "projectElement.trackedEntityId",
-                "=",
-                "customerAssetComponent.trackedEntityId"
-              )
-              .onRef(
-                "projectElement.companyId",
-                "=",
-                "customerAssetComponent.companyId"
-              )
-          )
-          .select([
-            "customerAssetComponent.id",
-            "customerAssetComponent.customerAssetId",
-            "customerAssetComponent.partsWarrantyEndDate",
-            "projectElement.id as elementId"
-          ])
-          .where("projectElement.id", "in", elementIds)
-          .where("customerAssetComponent.customerAssetId", "in", assetIds)
-          .where("customerAssetComponent.companyId", "=", companyId)
-          .where("customerAssetComponent.removedDate", "is", null)
-          .orderBy("customerAssetComponent.installedDate", "desc")
-          .orderBy("customerAssetComponent.id")
-          .execute();
-
-  const laborItemId = labor?.serviceLaborItemId ?? null;
-  const laborPrice =
-    laborItemId &&
-    labor?.unitSalePrice !== null &&
-    labor?.unitSalePrice !== undefined
-      ? Number(labor.unitSalePrice)
-      : null;
-
-  for (const ref of refs) {
-    const order = orderByProject.get(ref.projectId);
-    if (!order) continue;
-    // The latest open component of the node's serial in this order's asset.
-    const component = ref.projectElementId
-      ? components.find(
-          (row) =>
-            row.elementId === ref.projectElementId &&
-            row.customerAssetId === order.customerAssetId
-        )
-      : undefined;
-    contexts.set(projectPostingKey(ref.projectId, ref.projectElementId), {
-      serviceOrderId: order.id,
-      serviceOrderReadableId: order.serviceOrderId,
-      orderType: order.type,
-      customerId: order.customerId,
-      customerContractId: order.customerContractId,
-      customerAssetId: order.customerAssetId,
-      assetTrackedEntityId: order.assetTrackedEntityId ?? null,
-      subjectTrackedEntityId: order.subjectTrackedEntityId,
-      // DATE columns arrive as YYYY-MM-DD strings from node-postgres.
-      laborWarrantyEndDate: order.laborWarrantyEndDate ?? null,
-      partsWarrantyEndDate: order.partsWarrantyEndDate ?? null,
-      componentId: component?.id ?? null,
-      componentPartsWarrantyEndDate: component?.partsWarrantyEndDate ?? null,
-      laborItemId,
-      laborPrice
-    });
-  }
-  return contexts;
-}
-
-/**
- * The service order of a Service project, its asset's warranty, the node's
- * installed component and the service labor price, in at most 3 queries.
- * Null when no service order owns the project.
- */
-export async function loadServicePostingContext(
-  trx: Kysely<DB>,
-  args: { companyId: string; projectId: string; elementId: string | null }
-): Promise<ServicePostingContext | null> {
-  const ref = { projectId: args.projectId, projectElementId: args.elementId };
-  const contexts = await loadServicePostingContexts(trx, args.companyId, [ref]);
-  return (
-    contexts.get(projectPostingKey(ref.projectId, ref.projectElementId)) ?? null
-  );
-}
-
-/** The coverage of one charge on a service order (`resolveCoverage`). */
-export function serviceChargeCoverage(
-  service: ServicePostingContext,
-  chargeType: CoverageChargeType,
-  serviceDate: string
-): ServiceCoverage {
-  return resolveCoverage({
-    chargeType,
-    serviceDate,
-    orderType: service.orderType,
-    laborWarrantyEndDate: service.laborWarrantyEndDate,
-    partsWarrantyEndDate: service.partsWarrantyEndDate,
-    componentPartsWarrantyEndDate: service.componentPartsWarrantyEndDate,
-    hasCoverageContract: Boolean(service.customerContractId)
-  });
 }
 
 type ProjectBillableItemInsert =
   Database["public"]["Tables"]["projectBillableItem"]["Insert"];
 type ProjectBillableItemRow =
   Database["public"]["Tables"]["projectBillableItem"]["Row"];
-
-const COVERED_NOTE: Partial<Record<ServiceCoverage, string>> = {
-  Warranty: "Covered by warranty",
-  Contract: "Covered by contract"
-};
-
-/**
- * The billing row of one projectLedger row of a Service project, or null when
- * the charge bills nothing (a Capitalized charge, or a cost type that is not
- * time, a part or an expense).
- * - Labor: hours at the service labor price.
- * - Material: the quantity at the item's sale price.
- * - Other Direct: one unit at the amount.
- * - Warranty and Contract: price 0, with a "Covered by …" note.
- */
-export function buildBillableItem(args: {
-  ledgerRow: Pick<
-    ProjectLedgerInsert,
-    | "companyId"
-    | "projectId"
-    | "projectElementId"
-    | "costType"
-    | "quantity"
-    | "amount"
-    | "itemId"
-    | "createdBy"
-  > & { id: string };
-  coverage: ServiceCoverage;
-  laborPrice: number | null;
-  partPrice: number | null;
-  description: string;
-}): ProjectBillableItemInsert | null {
-  const { ledgerRow, coverage } = args;
-  if (coverage === "Capitalized") return null;
-
-  let quantity: number;
-  let unitPrice: number;
-  switch (ledgerRow.costType) {
-    case "Labor":
-      quantity = Number(ledgerRow.quantity ?? 0);
-      unitPrice = args.laborPrice ?? 0;
-      break;
-    case "Material":
-      quantity = Number(ledgerRow.quantity ?? 0);
-      unitPrice = args.partPrice ?? 0;
-      break;
-    case "Other Direct":
-      quantity = 1;
-      unitPrice = Number(ledgerRow.amount);
-      break;
-    default:
-      return null;
-  }
-
-  const note = COVERED_NOTE[coverage];
-  if (note) unitPrice = 0;
-
-  return {
-    companyId: ledgerRow.companyId,
-    projectId: ledgerRow.projectId,
-    projectElementId: ledgerRow.projectElementId ?? null,
-    projectLedgerId: ledgerRow.id,
-    itemId: ledgerRow.itemId ?? null,
-    description: note ? `${args.description} (${note})` : args.description,
-    quantity: round(quantity),
-    unitPrice: round(unitPrice),
-    amount: round(quantity * unitPrice),
-    coverage,
-    status: "Unbilled",
-    createdBy: ledgerRow.createdBy
-  };
-}
 
 /**
  * What reversing a charge does to its billable item:
@@ -1629,7 +1188,6 @@ export function reverseBillableItem(
     | "quantity"
     | "unitPrice"
     | "amount"
-    | "coverage"
     | "status"
     | "createdBy"
   >,
@@ -1654,7 +1212,6 @@ export function reverseBillableItem(
       quantity: round(-Number(original.quantity)),
       unitPrice: round(Number(original.unitPrice)),
       amount: round(-Number(original.amount)),
-      coverage: original.coverage,
       status: "Unbilled",
       reversalOfId: original.id,
       createdBy: reversal.createdBy ?? original.createdBy
@@ -1887,7 +1444,6 @@ function billableItemInsert(
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     amount: item.amount,
-    coverage: item.coverage ?? null,
     status: item.status ?? "Unbilled",
     statusReason: item.statusReason ?? null,
     reversalOfId: item.reversalOfId ?? null,
@@ -1994,8 +1550,6 @@ function contractItemDescription(
  *   that item (`reverseBillableItem`: written off while unbilled, else a
  *   negative Unbilled copy on the reversal row);
  * - any other row under a live Time & Materials line gets its item.
- * Service projects (By Coverage) never match a billing line, and their items
- * have no contract line, so the field service path is untouched.
  */
 async function writeContractBillableItems(
   trx: Kysely<DB>,

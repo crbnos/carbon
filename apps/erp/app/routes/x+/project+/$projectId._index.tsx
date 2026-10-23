@@ -16,7 +16,6 @@ import {
   summarizeMilestones
 } from "~/modules/projects/projects.models";
 import {
-  getChildServiceProjectCosts,
   getProjectContractRevenue,
   getProjectContracts,
   getProjectCostSummary,
@@ -61,7 +60,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [
     elements,
     costSummary,
-    serviceCosts,
     milestones,
     openEntries,
     timeZone,
@@ -74,7 +72,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ] = await Promise.all([
     getProjectElements(client, projectId, companyId),
     getProjectCostSummary(client, projectId, companyId),
-    getChildServiceProjectCosts(client, projectId, companyId),
     getProjectMilestones(client, projectId, companyId),
     getProjectOpenTimesheetEntries(client, projectId, companyId),
     getCompanyTimeZone(client, companyId),
@@ -118,7 +115,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   for (const [what, result] of [
     ["elements", elements],
     ["cost summary", costSummary],
-    ["service order costs", serviceCosts],
     ["milestones", milestones],
     ["open time", openEntries],
     ["members", members],
@@ -230,10 +226,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // The project total, as the Costs page's "Project total" row shows it.
-  const serviceActual = (serviceCosts.data ?? []).reduce(
-    (sum, row) => sum + Number(row.actual),
-    0
-  );
   const { project: figures } = buildProjectCostFigures(
     elementRows.map((element) => ({
       id: element.id,
@@ -241,8 +233,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       budget: element.budget,
       estimateAtCompletion: null
     })),
-    costSummary.data ?? [],
-    serviceActual
+    costSummary.data ?? []
   );
 
   const milestoneSummaries = summarizeMilestones({

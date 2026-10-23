@@ -25,7 +25,7 @@ function ServiceSidebar() {
 
 export const handle: Handle = {
   breadcrumb: msg`Service`,
-  to: path.to.serviceOrders,
+  to: path.to.customerAssets,
   module: "service",
   sidebar: ServiceSidebar
 };

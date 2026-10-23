@@ -162,7 +162,6 @@ import {
   unitLabel,
   unitReturnValidator
 } from "~/modules/sales/sales.service";
-import { assertNoOpenRefurbishment } from "~/modules/service/service-orders";
 import * as settingsService from "~/modules/settings/settings.service";
 import {
   type AdjustmentItemCost,
@@ -262,21 +261,11 @@ import {
 import { clampDepth, writeOffRestoreQuantity } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
 import { loadReceiptProjectRoutes } from "./receipt-project-routes";
-import {
-  createDepotRepairOrders,
-  voidDepotRepairOrders
-} from "./receipt-repair";
 import { upsertShippedCustomerAssets } from "./shipment-customer-assets";
 import {
   postContractShipment,
   voidContractShipment
 } from "./shipment-customer-contract";
-import {
-  loadRepairLineIds,
-  type RepairUnit,
-  shipRepairedUnits,
-  unshipRepairedUnits
-} from "./shipment-repair";
 import {
   effectiveSuccessorId,
   type PickSupersession,
@@ -10265,23 +10254,6 @@ export async function postReceipt(
             );
           }
 
-          // Repair lines: the receipt's Depot Repair orders are cancelled
-          // and their assets go back In Service. The serials stay Consumed
-          // (the entity reset below).
-          await voidDepotRepairOrders(trx, {
-            companyId,
-            userId,
-            salesReturnOrderLineIds: (returnLinesVoid.data ?? [])
-              .filter(
-                (line) =>
-                  line.disposition === "Repair" && receivedByLine.has(line.id)
-              )
-              .map((line) => line.id),
-            trackedEntityIds: (receiptLineTracking.data ?? []).map(
-              (entity) => entity.id
-            )
-          });
-
           if (reversingItemLedger.length > 0) {
             await trx
               .insertInto("itemLedger")
@@ -12916,16 +12888,6 @@ export async function postReceipt(
             quantity: number;
           }
         > = {};
-        // Repair lines: the serials received for repair, and the lines,
-        // whose disposition is re-checked under the return order's lock.
-        const repairSerials: {
-          trackedEntityId: string;
-          serial: string;
-          itemId: string;
-          salesReturnOrderLineId: string;
-          locationId: string | null;
-        }[] = [];
-        const repairLineIds = new Set<string>();
 
         for (const receiptLine of receiptLines.data ?? []) {
           if (!receiptLine.itemId || !receiptLine.lineId) continue;
@@ -12946,51 +12908,6 @@ export async function postReceipt(
 
           const item = itemById.get(receiptLine.itemId);
           const itemTrackingType = item?.itemTrackingType ?? "Inventory";
-
-          // Repair: the unit comes in to be repaired and shipped back. It
-          // never enters company stock or stock value, so the line writes
-          // no stock ledger, no cost layer and no journal, and its serials
-          // stay Consumed (the customer's). One Depot Repair order per
-          // serial is created in the transaction below.
-          if (returnLine.disposition === "Repair") {
-            if (itemTrackingType !== "Serial") {
-              throw new InvalidInputError(
-                "Only a serialized item can be received for repair"
-              );
-            }
-            const serials = (receiptLineTracking.data ?? []).filter(
-              (tracking) =>
-                (tracking.attributes as TrackedEntityAttributes | undefined)?.[
-                  "Receipt Line"
-                ] === receiptLine.id
-            );
-            if (serials.length < receivedQuantity) {
-              throw new InvalidInputError(
-                "Assign the serial before posting a repair receipt"
-              );
-            }
-            for (const serial of serials) {
-              repairSerials.push({
-                trackedEntityId: serial.id,
-                serial: serial.readableId ?? serial.id,
-                itemId: receiptLine.itemId,
-                salesReturnOrderLineId: returnLine.id,
-                locationId:
-                  receiptLine.locationId ??
-                  salesReturnOrder.data.locationId ??
-                  receiptHeader.locationId
-              });
-            }
-            repairLineIds.add(returnLine.id);
-            const existingRepairUpdate = returnLineUpdates[returnLine.id];
-            returnLineUpdates[returnLine.id] = {
-              quantityReceived:
-                (existingRepairUpdate?.quantityReceived ??
-                  Number(returnLine.quantityReceived ?? 0)) + receivedQuantity,
-              updatedBy: userId
-            };
-            continue;
-          }
 
           // Cost resolution: zero-value reason -> 0; linked -> original
           // outbound cost from the shipment's consumption rows; else current.
@@ -13209,40 +13126,6 @@ export async function postReceipt(
             throw new InvalidInputError(
               `Cannot post a receipt against a return order in ${lockedOrder.status} status`
             );
-          }
-
-          // A disposition change to or from Repair takes this same lock. Re-read
-          // the dispositions under it, so a line is never posted by the rule
-          // of a disposition it no longer has.
-          const receivedLineIds = Object.keys(returnLineUpdates);
-          if (receivedLineIds.length > 0) {
-            const lockedLines = await trx
-              .selectFrom("salesReturnOrderLine")
-              .select(["id", "disposition"])
-              .where("id", "in", receivedLineIds)
-              .where("companyId", "=", companyId)
-              .execute();
-            const changed = lockedLines.some(
-              (line) =>
-                (line.disposition === "Repair") !== repairLineIds.has(line.id)
-            );
-            if (changed) {
-              throw new InvalidInputError(
-                "A line's disposition changed while the receipt was posting. Post the receipt again."
-              );
-            }
-          }
-
-          if (repairSerials.length > 0) {
-            await createDepotRepairOrders(trx, {
-              companyId,
-              userId,
-              receiptId,
-              receiptReadableId: receiptHeader.receiptId,
-              today,
-              salesReturnOrder: salesReturnOrder.data,
-              serials: repairSerials
-            });
           }
 
           // A customer return copies the sales shipment it reverses, which
@@ -14771,13 +14654,6 @@ export async function postShipment(
             if (!shipmentHeader.sourceDocumentId)
               throw new Error("Shipment has no sourceDocumentId");
 
-            // A serial under refurbishment is not sold (decision C6).
-            await assertNoOpenRefurbishment(db, {
-              companyId,
-              trackedEntityIds: (shipmentLineTracking.data ?? []).map(
-                (tracking) => tracking.id
-              )
-            });
             // A sales order ships common stock only (Projects Phase 2a).
             await assertEntitiesInCommonStock(
               db,
@@ -16452,17 +16328,6 @@ export async function postShipment(
               }
             > = {};
             const itemShipmentQuantities: Record<string, number> = {};
-            // Repair lines ship the customer's own unit back: no stock, no
-            // cost, no journal. `shipmentLine.lineId` holds the RMA line.
-            const repairLineIds = await loadRepairLineIds(
-              db,
-              companyId,
-              shipmentLines.data
-                .map((line) => line.lineId)
-                .filter((id): id is string => Boolean(id))
-            );
-            const repairUnits: RepairUnit[] = [];
-
             for (const shipmentLine of shipmentLines.data) {
               if (!shipmentLine.itemId) continue;
               const shippedQuantity =
@@ -16475,34 +16340,6 @@ export async function postShipment(
               const itemTrackingType =
                 items.data.find((i) => i.id === shipmentLine.itemId)
                   ?.itemTrackingType ?? "Inventory";
-
-              if (
-                shipmentLine.lineId &&
-                repairLineIds.has(shipmentLine.lineId)
-              ) {
-                const repairEntities = (shipmentLineTracking.data ?? []).filter(
-                  (tracking) =>
-                    (
-                      tracking.attributes as TrackedEntityAttributes | undefined
-                    )?.["Shipment Line"] === shipmentLine.id
-                );
-                if (
-                  itemTrackingType !== "Serial" ||
-                  repairEntities.length !== shippedQuantity
-                ) {
-                  throw new InvalidInputError(
-                    `Shipment line ${shipmentLine.id}: assign the repaired unit's serial before posting`
-                  );
-                }
-                for (const entity of repairEntities) {
-                  repairUnits.push({
-                    trackedEntityId: entity.id,
-                    salesReturnOrderLineId: shipmentLine.lineId,
-                    quantity: Number(entity.quantity ?? 1)
-                  });
-                }
-                continue;
-              }
 
               // Non-Inventory lines have no stock and no carried cost —
               // posting them would book COGS/costLedger with zero inventory
@@ -16723,17 +16560,6 @@ export async function postShipment(
                   }
                 }
               }
-
-              await shipRepairedUnits(trx, {
-                companyId,
-                userId,
-                today,
-                shipmentId,
-                shipmentReadableId: shipmentHeader.shipmentId,
-                salesReturnOrderId,
-                customerLocationId: salesReturnOrder.data.customerLocationId,
-                units: repairUnits
-              });
 
               // The customer's units go back into service at the site the
               // RMA names. Their warranty dates stay.
@@ -18789,48 +18615,13 @@ export async function postShipment(
                 .execute();
               const voidActivityId = voidActivity[0]?.id;
 
-              // A Repair line's unit never left stock, so it stays Consumed
-              // and its asset goes back At Depot.
-              const repairLineIds = await loadRepairLineIds(
-                trx,
-                companyId,
-                shipmentLines.data
-                  .map((line) => line.lineId)
-                  .filter((id): id is string => Boolean(id))
-              );
-              const repairShipmentLineIds = new Set(
-                shipmentLines.data
-                  .filter(
-                    (line) => line.lineId && repairLineIds.has(line.lineId)
-                  )
-                  .map((line) => line.id)
-              );
-              const isRepairEntity = (entity: { attributes: unknown }) => {
-                const shipmentLineId = (
-                  entity.attributes as TrackedEntityAttributes | undefined
-                )?.["Shipment Line"];
-                return (
-                  typeof shipmentLineId === "string" &&
-                  repairShipmentLineIds.has(shipmentLineId)
-                );
-              };
-              await unshipRepairedUnits(trx, {
-                companyId,
-                userId,
-                trackedEntityIds: (shipmentLineTracking.data ?? [])
-                  .filter(isRepairEntity)
-                  .map((entity) => entity.id)
-              });
-
               for await (const entity of shipmentLineTracking.data ?? []) {
-                if (!isRepairEntity(entity)) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set({ status: "On Hold" })
-                    .where("id", "=", entity.id)
-                    .where("companyId", "=", companyId)
-                    .execute();
-                }
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({ status: "On Hold" })
+                  .where("id", "=", entity.id)
+                  .where("companyId", "=", companyId)
+                  .execute();
                 if (voidActivityId) {
                   await trx
                     .insertInto("trackedActivityOutput")
@@ -20760,12 +20551,6 @@ export async function postPicking(
         userId,
         companyId
       } = validatedPayload;
-
-      // A serial under refurbishment is not picked (decision C6).
-      await assertNoOpenRefurbishment(db, {
-        companyId,
-        trackedEntityIds: [trackedEntityId]
-      });
 
       await db.transaction().execute(async (trx) => {
         // Lock the line: every case here read-modify-writes its picked or

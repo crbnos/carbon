@@ -75,22 +75,11 @@ export function diffProjectOptions(
   return diffFieldOptions(desired, remote, mappings);
 }
 
-/**
- * The projects Carbon offers in Ramp: every active Standard project. A
- * Service project belongs to one service order and is never a card-holder
- * choice, so it is never pushed (a project that turns Service would be
- * hidden like a deleted one).
- */
+/** The projects Carbon offers in Ramp: every active project. */
 export function desiredProjectOptions(
-  projects: ReadonlyArray<{
-    id: string;
-    name: string;
-    projectType: Database["public"]["Enums"]["projectType"];
-  }>
+  projects: ReadonlyArray<{ id: string; name: string }>
 ): RampProjectOption[] {
-  return projects
-    .filter((project) => project.projectType === "Standard")
-    .map((project) => ({ id: project.id, value: project.name }));
+  return projects.map((project) => ({ id: project.id, value: project.name }));
 }
 
 /** The parameters that specialise the shared converge for projects. */
@@ -112,7 +101,7 @@ const PROJECT_SPEC: CustomSingleChoiceFieldSpec = {
   loadDesiredOptions: async (serviceRole, companyId) => {
     const { data: projects, error } = await serviceRole
       .from("project")
-      .select("id, name, projectType")
+      .select("id, name")
       .eq("companyId", companyId)
       .eq("active", true);
     if (error) {

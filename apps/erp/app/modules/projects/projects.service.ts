@@ -33,7 +33,6 @@ import { error, hasPermission } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import {
-  Constants,
   type Database,
   getCompanyTimeZone,
   type Json,
@@ -80,7 +79,6 @@ import {
   isValidWbsCode,
   nextEntryStatus,
   round,
-  type ServiceCoverage,
   searchFilter,
   settleQuantity,
   TIMESHEET_REFUSAL_NOT_DRAFT,
@@ -93,12 +91,7 @@ import {
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import {
-  type Insertable,
-  type Selectable,
-  sql,
-  type Transaction
-} from "kysely";
+import { type Selectable, sql, type Transaction } from "kysely";
 import { customAlphabet, nanoid } from "nanoid";
 import { data } from "react-router";
 import { z } from "zod";
@@ -133,22 +126,16 @@ import { ProjectCloseError, relieveProjectWipAtClose } from "./project-close";
 import { postProjectJournal } from "./project-journal";
 import {
   assertChargeable,
-  buildBillableItem,
   buildProjectLedgerRow,
   insertProjectLedgerRows,
   issueReturnUnitCost,
   isUnallowableCharge,
   loadProjectPostingContexts,
   loadReturnableIssueRows,
-  loadServicePostingContext,
-  loadServicePostingContexts,
   ProjectChargeError,
   projectPostingKey,
   resolveProjectPostingAccount,
   resolveProjectTreatment,
-  reverseBillableItem,
-  type ServicePostingContext,
-  serviceChargeCoverage,
   splitReceiptChargedDrafts,
   startElementsOnFirstCharge
 } from "./project-posting";
@@ -254,12 +241,6 @@ import {
   wbsTemplateElementType,
   weekStartOf
 } from "./projects.models";
-import {
-  findServiceIssueToReturn,
-  installServicePart,
-  type ServiceIssue,
-  uninstallServicePart
-} from "./service-part-issue";
 import { paybackVariance, planBorrowMatching } from "./stock-transfer-plan";
 import {
   type DilutionPostedEntry,
@@ -267,7 +248,6 @@ import {
   planRedilutionPostings,
   planTimesheetPosting,
   type TimesheetJournalLine,
-  type TimesheetLedgerRow,
   type TimesheetOriginal,
   type TimesheetPostingEntry
 } from "./timesheet-posting-plan";
@@ -334,7 +314,7 @@ export async function getProject(
 
 /**
  * The projects the project workspace's switcher lists: id, identifier and
- * name of the active Standard projects that are not templates, by
+ * name of the active projects that are not templates, by
  * identifier, at most 200.
  */
 export async function getProjectSwitcherOptions(
@@ -345,7 +325,6 @@ export async function getProjectSwitcherOptions(
     .from("project")
     .select("id, identifier, name")
     .eq("companyId", companyId)
-    .eq("projectType", "Standard")
     .eq("active", true)
     .eq("isTemplate", false)
     .order("identifier", { ascending: true })
@@ -353,8 +332,7 @@ export async function getProjectSwitcherOptions(
 }
 
 /**
- * Lists the active Standard projects of the company. A Service project
- * belongs to its service order and is listed in Service.
+ * Lists the active projects of the company.
  */
 export async function getProjects(
   client: Client,
@@ -373,7 +351,6 @@ export async function getProjects(
       { count: LIST_COUNT }
     )
     .eq("companyId", companyId)
-    .eq("projectType", "Standard")
     .eq("active", true);
 
   if (args.search) {
@@ -767,7 +744,6 @@ export async function getChargeNumbers(client: Client, companyId: string) {
           "id, identifier, name, costTreatment, fixedAssetId, projectStock"
         )
         .eq("companyId", companyId)
-        .eq("projectType", "Standard")
         .eq("status", "Released")
         .eq("active", true)
         .order("identifier", { ascending: true })
@@ -791,7 +767,6 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         )
         .eq("companyId", companyId)
         .eq("isChargeable", true)
-        .eq("project.projectType", "Standard")
         .eq("project.status", "Released")
         .eq("project.active", true)
         .in("state.group", ["Unstarted", "Started"])
@@ -934,7 +909,7 @@ export async function getLineChargeNumber(
 
 /**
  * Lists the company's project states in board order. States are
- * company-wide: every project and service order uses them.
+ * company-wide: every project uses them.
  */
 export async function getProjectStates(client: Client, companyId: string) {
   return client
@@ -3741,12 +3716,11 @@ export async function deletePlanningGroup(
 // --- Timesheets --------------------------------------------------------------
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), hours, note, status, createdAt, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name), jobId, jobOperationId, job:job!timesheetEntry_job_fkey(id, jobId), jobOperation:jobOperation!timesheetEntry_jobOperation_fkey(id, description)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), hours, note, status, createdAt, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name), jobId, jobOperationId, job:job!timesheetEntry_job_fkey(id, jobId), jobOperation:jobOperation!timesheetEntry_jobOperation_fkey(id, description)" as const;
 
 /**
  * Gets an employee's timesheet entries between two dates (inclusive), with
- * the project, element and labor category names. A Service project carries
- * its service order.
+ * the project, element and labor category names.
  */
 export async function getTimesheetWeek(
   client: Client,
@@ -3966,8 +3940,6 @@ export async function createTimesheetCorrection(
       // R&D tax: the reversal undoes the time where and as it was done.
       workLocationId: original.workLocationId,
       rdActivityRole: original.rdActivityRole,
-      // A service entry's correction stays on the visit the time was for.
-      serviceVisitId: original.serviceVisitId,
       // Shop time stays on its job and keeps its production event, so the
       // event's hours remain the sum of its entries (post-production-event).
       jobId: original.jobId,
@@ -3975,10 +3947,6 @@ export async function createTimesheetCorrection(
       productionEventId: original.productionEventId,
       note: original.note,
       correctionReason: args.correctionReason,
-      // A service entry's coverage override travels to the replacement.
-      // post-timesheet posts the reversal at its original's coverage.
-      coverage: original.coverageReason ? original.coverage : null,
-      coverageReason: original.coverageReason,
       status: "Submitted" as const,
       submittedAt: now,
       createdBy: args.userId
@@ -4035,13 +4003,10 @@ export async function createTimesheetCorrection(
           laborCategoryId,
           workLocationId: args.workLocationId || original.workLocationId,
           rdActivityRole: args.rdActivityRole || original.rdActivityRole,
-          // The visit and the coverage override belong to the original
-          // project: a transfer to another project drops them.
+          // Shop time belongs to the original project: a transfer to another
+          // project drops its job.
           ...(movesProject
             ? {
-                serviceVisitId: null,
-                coverage: null,
-                coverageReason: null,
                 jobId: null,
                 jobOperationId: null
               }
@@ -4542,52 +4507,6 @@ export async function getProjectBurdenSummary(
   });
 }
 
-// One row per service order whose Service project has this project as its
-// parent (the coverage contract's project): its actual cost, posted hours, and
-// billed and unbilled amounts.
-// Each row also carries the order's subject serial (one more query for every
-// order, never one per row).
-export async function getChildServiceProjectCosts(
-  client: Client,
-  projectId: string,
-  companyId: string
-) {
-  const costs = await client.rpc("get_child_service_project_costs", {
-    p_project_id: projectId,
-    p_company_id: companyId
-  });
-  if (costs.error) return { data: null, error: costs.error };
-
-  const rows = costs.data ?? [];
-  if (rows.length === 0) return { data: [], error: null };
-
-  const serials = await client
-    .from("serviceOrder")
-    .select(
-      "id, trackedEntity:trackedEntity!serviceOrder_trackedEntityId_fkey(readableId)"
-    )
-    .in(
-      "id",
-      rows.map((row) => row.serviceOrderId)
-    )
-    .eq("companyId", companyId);
-  if (serials.error) return { data: null, error: serials.error };
-
-  const serialByOrder = new Map(
-    (serials.data ?? []).map((order) => [
-      order.id,
-      order.trackedEntity?.readableId ?? null
-    ])
-  );
-  return {
-    data: rows.map((row) => ({
-      ...row,
-      serial: serialByOrder.get(row.serviceOrderId) ?? null
-    })),
-    error: null
-  };
-}
-
 // --- Project stock transfers ---------------------------------------------------
 
 const PROJECT_STOCK_TRANSFER_COLUMNS =
@@ -4958,7 +4877,7 @@ export async function getProjectBorrows(
 }
 
 /**
- * The Standard projects that keep project stock: the stock owners the
+ * The projects that keep project stock: the stock owners the
  * transfer pickers and the inventory owner filter offer, beside common stock.
  */
 export async function getStockOwnerProjects(client: Client, companyId: string) {
@@ -4966,7 +4885,6 @@ export async function getStockOwnerProjects(client: Client, companyId: string) {
     .from("project")
     .select("id, identifier, name, status, customerId, governmentFurnished")
     .eq("companyId", companyId)
-    .eq("projectType", "Standard")
     .eq("projectStock", true)
     .eq("active", true)
     .order("identifier");
@@ -5636,9 +5554,8 @@ export const submitTimesheetWeekPermission = {
 } satisfies PermissionRule<z.output<typeof submitTimesheetWeekInput>>;
 
 /**
- * Submits an employee's Draft entries of Standard projects in the ISO week
- * that starts on `weekStart`. Service time posts from Draft and is never
- * submitted here.
+ * Submits an employee's Draft entries in the ISO week that starts on
+ * `weekStart`.
  *
  * In DCAA mode it first refuses a week with a Pending Employee Review entry,
  * checks the week's entries against the timecard hours (Warn adds a warning,
@@ -5684,16 +5601,10 @@ export async function submitTimesheetWeek(
     // Row locks: a save during the submit waits for it.
     const entries = await trx
       .selectFrom("timesheetEntry")
-      .innerJoin("project", (join) =>
-        join
-          .onRef("project.id", "=", "timesheetEntry.projectId")
-          .onRef("project.companyId", "=", "timesheetEntry.companyId")
-      )
       .select([
         "timesheetEntry.id",
         "timesheetEntry.status",
-        "timesheetEntry.hours",
-        "project.projectType"
+        "timesheetEntry.hours"
       ])
       .where("timesheetEntry.companyId", "=", companyId)
       .where("timesheetEntry.employeeId", "=", employeeId)
@@ -5703,10 +5614,7 @@ export async function submitTimesheetWeek(
       .forUpdate("timesheetEntry")
       .execute();
 
-    // A service order's time is posted from its visit page, never here.
-    const drafts = entries.filter(
-      (entry) => entry.status === "Draft" && entry.projectType === "Standard"
-    );
+    const drafts = entries.filter((entry) => entry.status === "Draft");
     const warnings: string[] = [];
 
     if (mode === "DCAA") {
@@ -5785,7 +5693,7 @@ export async function submitTimesheetWeek(
 // ---------------------------------------------------------------------------
 // save-timesheet-entry
 //
-// Saves one timesheet cell, or adds one entry (Log time, service time): the
+// Saves one timesheet cell, or adds one entry (Log time): the
 // one write path of a timesheet entry for the ERP and the MES, so the DCAA
 // timekeeping controls live in one place. Standard mode keeps the Phase 1a
 // behavior exactly. DCAA mode adds the entry window, the late reason, charge
@@ -5870,8 +5778,8 @@ export const saveTimesheetEntryPermission = {
  * Saves one cell of an employee's timesheet (employee, date, charge number,
  * labor category), or adds one entry in `add` mode. Saving never posts.
  *
- * - **`add` mode** (Log time, service time): always inserts a new entry with
- *   the requested status and visit, beside any entry of the same cell. DCAA
+ * - **`add` mode** (Log time): always inserts a new entry with the
+ *   requested status, beside any entry of the same cell. DCAA
  *   mode applies the same controls as a cell save to it.
  * - **Standard mode** (Phase 1a): a new cell inserts a Draft; a Draft or
  *   Rejected entry is updated to Draft, or deleted at 0 hours; a Submitted,
@@ -6233,8 +6141,7 @@ async function checkDcaaEntry(
 }
 
 /**
- * `add` mode: one new entry each call, as Phase 1a Log time and service time
- * did. It never replaces the hours of an entry already in the cell.
+ * `add` mode: one new entry each call, as Phase 1a Log time did. It never replaces the hours of an entry already in the cell.
  * - Standard mode: the owner adds the entry with the requested status.
  * - DCAA mode: the cell's controls apply (entry window, late reason, charge
  *   restrictions). The owner's entry is Draft whatever status was asked for,
@@ -6282,7 +6189,6 @@ async function addEntry(
     projectElementId: input.projectElementId,
     laborCategoryId: input.laborCategoryId,
     hours: input.hours,
-    serviceVisitId: input.serviceVisitId ?? null,
     jobId: input.jobId ?? null,
     jobOperationId: input.jobOperationId ?? null,
     workLocationId: input.workLocationId,
@@ -6325,7 +6231,6 @@ export async function insertTimesheetDraft(
     projectElementId: string | null;
     laborCategoryId: string;
     hours: number;
-    serviceVisitId?: string | null;
     jobId?: string | null;
     /** Shop time: the job operation and the production event it came from. */
     jobOperationId?: string | null;
@@ -6352,7 +6257,6 @@ export async function insertTimesheetDraft(
       entryDate: args.entryDate,
       projectId: args.projectId,
       projectElementId: args.projectElementId,
-      serviceVisitId: args.serviceVisitId ?? null,
       jobId: args.jobId ?? null,
       jobOperationId: args.jobOperationId ?? null,
       productionEventId: args.productionEventId ?? null,
@@ -6516,12 +6420,6 @@ export const postTimesheetPermission = {
  * company's accounting cutover and Posted after it. A Statistical project
  * writes no journal and no ledger row. Entries that are not postable (Draft, Rejected, already posted)
  * are skipped. The ERP checks who may post (approval routing) before it calls.
- *
- * A Service project's entry also posts from Draft (service time posts at Stop
- * work, with no submit or approval). Its coverage decides the account: a
- * stored coverage with a reason is the user's override, a reversal takes its
- * original's, and any other entry gets `resolveCoverage`, stored on the entry.
- * It writes a billable item; a reversal reverses its original's.
  */
 export async function postTimesheet(
   ctx: ServiceContext,
@@ -6561,16 +6459,7 @@ export async function postTimesheet(
         "postedAt",
         "reversalOfId",
         "correctionOfId",
-        "note",
-        "coverage",
-        "coverageReason",
-        (eb) =>
-          eb
-            .selectFrom("project")
-            .select("project.projectType")
-            .whereRef("project.id", "=", "timesheetEntry.projectId")
-            .whereRef("project.companyId", "=", "timesheetEntry.companyId")
-            .as("projectType")
+        "note"
       ])
       .where("id", "in", entryIds)
       .where("companyId", "=", companyId)
@@ -6581,9 +6470,7 @@ export async function postTimesheet(
     const entries = locked
       .filter(
         (entry) =>
-          (entry.status === "Submitted" ||
-            entry.status === "Approved" ||
-            (entry.status === "Draft" && entry.projectType === "Service")) &&
+          (entry.status === "Submitted" || entry.status === "Approved") &&
           entry.postedAt === null
       )
       .map((entry) => ({
@@ -6597,11 +6484,7 @@ export async function postTimesheet(
         hours: Number(entry.hours),
         reversalOfId: entry.reversalOfId,
         correctionOfId: entry.correctionOfId,
-        isService: entry.projectType === "Service",
         note: entry.note,
-        coverage: entry.coverage as ServiceCoverage | null,
-        coverageReason: entry.coverageReason,
-        customerId: null as string | null,
         bookedRate: null as number | null
       }));
     if (entries.length === 0) {
@@ -6640,75 +6523,56 @@ export async function postTimesheet(
       ])
     ];
 
-    const serviceEntries = entries.filter((e) => e.isService);
-    const serviceRefs = [
-      ...serviceEntries,
-      ...redilutedEntries.filter((e) => e.isService)
-    ].map((e) => ({
-      projectId: e.projectId,
-      projectElementId: e.projectElementId
-    }));
-    const [
-      contexts,
-      rates,
-      originals,
-      originalLedger,
-      accountDefaults,
-      services
-    ] = await inOrder([
-      () =>
-        loadProjectPostingContexts(
-          trx,
-          companyId,
-          [...entries, ...redilutedEntries].map((e) => ({
-            projectId: e.projectId,
-            projectElementId: e.projectElementId
-          }))
-        ),
-      () =>
-        trx
-          .selectFrom("laborCategoryRate")
-          .select(["laborCategoryId", "effectiveFrom", "costRate"])
-          .where("laborCategoryId", "in", categoryIds)
-          .where("companyId", "=", companyId)
-          .execute(),
-      async () =>
-        rateSourceIds.length === 0
-          ? ([] as Pick<
-              Selectable<DB["timesheetEntry"]>,
-              | "id"
-              | "costRate"
-              | "hours"
-              | "dilutionFactor"
-              | "laborCategoryId"
-              | "coverage"
-              | "coverageReason"
-              | "jobId"
-            >[])
-          : trx
-              .selectFrom("timesheetEntry")
-              .select([
-                "id",
-                "costRate",
-                "hours",
-                "dilutionFactor",
-                "laborCategoryId",
-                "coverage",
-                "coverageReason",
-                "jobId"
-              ])
-              .where("id", "in", rateSourceIds)
-              .where("companyId", "=", companyId)
-              .execute(),
-      () => loadTimesheetBookings(trx, companyId, bookedIds),
-      () =>
-        trx
-          .selectFrom("accountDefault")
-          .select(["laborAbsorptionAccount", "retainedEarningsAccount"])
-          .where("companyId", "=", companyId)
-          .executeTakeFirst(),
-      () => loadServicePostingContexts(trx, companyId, serviceRefs)
-    ]);
+    const [contexts, rates, originals, originalLedger, accountDefaults] =
+      await inOrder([
+        () =>
+          loadProjectPostingContexts(
+            trx,
+            companyId,
+            [...entries, ...redilutedEntries].map((e) => ({
+              projectId: e.projectId,
+              projectElementId: e.projectElementId
+            }))
+          ),
+        () =>
+          trx
+            .selectFrom("laborCategoryRate")
+            .select(["laborCategoryId", "effectiveFrom", "costRate"])
+            .where("laborCategoryId", "in", categoryIds)
+            .where("companyId", "=", companyId)
+            .execute(),
+        async () =>
+          rateSourceIds.length === 0
+            ? ([] as Pick<
+                Selectable<DB["timesheetEntry"]>,
+                | "id"
+                | "costRate"
+                | "hours"
+                | "dilutionFactor"
+                | "laborCategoryId"
+                | "jobId"
+              >[])
+            : trx
+                .selectFrom("timesheetEntry")
+                .select([
+                  "id",
+                  "costRate",
+                  "hours",
+                  "dilutionFactor",
+                  "laborCategoryId",
+                  "jobId"
+                ])
+                .where("id", "in", rateSourceIds)
+                .where("companyId", "=", companyId)
+                .execute(),
+        () => loadTimesheetBookings(trx, companyId, bookedIds),
+        () =>
+          trx
+            .selectFrom("accountDefault")
+            .select(["laborAbsorptionAccount", "retainedEarningsAccount"])
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+      ]);
     if (!accountDefaults) throw new Error("Error getting account defaults");
     // Every posting writes its journal: Provisional before the company's
     // accounting cutover, Posted after it. FOR SHARE holds the status until
@@ -6716,18 +6580,7 @@ export async function postTimesheet(
     const postingStatus = await journalPostingStatus(trx, companyId);
     const journalOptions = { postingStatus, accountDefaults };
 
-    // A re-diluted Service entry keeps its order's Customer dimension.
-    for (const entry of redilutedEntries) {
-      if (!entry.isService) continue;
-      entry.customerId =
-        services.get(projectPostingKey(entry.projectId, entry.projectElementId))
-          ?.customerId ?? null;
-    }
-
-    // A Service entry's coverage: a reversal posts to its original's
-    // account, a stored coverage with a reason is the user's override, and
-    // any other entry gets the coverage its date and the asset decide.
-    const originalCoverage = new Map(
+    const originalById = new Map(
       originals.map((original) => [original.id, original])
     );
     // A correction's replacement on its original's labor category rebooks
@@ -6735,7 +6588,7 @@ export async function postTimesheet(
     // not leave a residual in labor absorption.
     for (const entry of entries) {
       if (entry.reversalOfId || !entry.correctionOfId) continue;
-      const original = originalCoverage.get(entry.correctionOfId);
+      const original = originalById.get(entry.correctionOfId);
       if (
         !original ||
         original.costRate === null ||
@@ -6747,32 +6600,6 @@ export async function postTimesheet(
         Number(original.costRate) / Number(original.dilutionFactor ?? 1)
       );
     }
-    for (const entry of serviceEntries) {
-      const service = services.get(
-        projectPostingKey(entry.projectId, entry.projectElementId)
-      );
-      if (!service) {
-        throw new ProjectChargeError(
-          "No service order owns the project of this timesheet entry"
-        );
-      }
-      entry.customerId = service.customerId;
-      const original = entry.reversalOfId
-        ? originalCoverage.get(entry.reversalOfId)
-        : undefined;
-      if (original) {
-        entry.coverage = original.coverage as ServiceCoverage | null;
-        entry.coverageReason = original.coverageReason;
-      } else if (!(entry.coverage && entry.coverageReason)) {
-        entry.coverage = serviceChargeCoverage(
-          service,
-          "Time",
-          entry.entryDate
-        );
-        entry.coverageReason = null;
-      }
-    }
-
     const bookedById = new Map<string, TimesheetOriginal>();
     const reversedIds = new Set(originalIds);
     for (const original of originals) {
@@ -6871,8 +6698,7 @@ export async function postTimesheet(
         .where("dimension.entityType", "in", [
           "Project",
           "ProjectElement",
-          "Employee",
-          "Customer"
+          "Employee"
         ])
         .execute();
       const dimensionIdByType = new Map(
@@ -6927,8 +6753,7 @@ export async function postTimesheet(
             [
               ["Project", line.projectId],
               ["ProjectElement", line.projectElementId],
-              ["Employee", line.employeeId],
-              ["Customer", line.customerId]
+              ["Employee", line.employeeId]
             ] as const
           ).flatMap(([entityType, valueId]) => {
             const dimensionId = dimensionIdByType.get(entityType);
@@ -6976,7 +6801,7 @@ export async function postTimesheet(
               : null)
         ])
       );
-      const insertedLedger = await insertProjectLedgerRows(trx, {
+      await insertProjectLedgerRows(trx, {
         companyId,
         userId,
         rows: plan.ledgerRows.map((row) =>
@@ -6996,23 +6821,10 @@ export async function postTimesheet(
             amount: row.amount,
             journalLineId: debitLineIdByEntry.get(row.entryId) ?? null,
             reversalOfId: row.reversalOfId,
-            coverage: row.coverage,
-            coverageReason: row.coverageReason,
             unallowable: row.unallowable,
             createdBy: userId
           })
         )
-      });
-
-      await writeServiceBillableItems(trx, {
-        companyId,
-        userId,
-        entries: serviceEntries,
-        ledgerRows: plan.ledgerRows,
-        ledgerIdByEntry: new Map(
-          insertedLedger.map((row) => [row.documentId, row.id])
-        ),
-        services
       });
 
       // A Capitalize entry also builds its asset.
@@ -7036,9 +6848,7 @@ export async function postTimesheet(
       });
     }
 
-    // One statement for every entry: each carries its own rate and journal,
-    // and a Service entry its coverage.
-    const entryById = new Map(entries.map((entry) => [entry.id, entry]));
+    // One statement for every entry: each carries its own rate and journal.
     const postedAt = datetime.timestamp();
     await sql`
         UPDATE "timesheetEntry" t
@@ -7046,23 +6856,17 @@ export async function postTimesheet(
             "costRate" = v."costRate",
             "journalId" = v."journalId",
             "dilutionFactor" = COALESCE(v."dilutionFactor", t."dilutionFactor"),
-            "coverage" = COALESCE(v."coverage"::"serviceCoverage", t."coverage"),
-            "coverageReason" = CASE WHEN v."coverage" IS NULL
-              THEN t."coverageReason" ELSE v."coverageReason" END,
             "postedAt" = ${postedAt}::timestamptz,
             "updatedBy" = ${userId},
             "updatedAt" = ${postedAt}::timestamptz
         FROM (VALUES ${sql.join(
-          plan.stamps.map((stamp) => {
-            const entry = entryById.get(stamp.entryId);
-            const coverage = entry?.isService ? entry.coverage : null;
-            return sql`(${stamp.entryId}, ${stamp.costRate}::numeric, ${
-              journalIdByEntry.get(stamp.entryId) ?? null
-            }::text, ${stamp.dilutionFactor ?? null}::numeric, ${coverage}::text, ${
-              coverage ? (entry?.coverageReason ?? null) : null
-            }::text)`;
-          })
-        )}) AS v("id", "costRate", "journalId", "dilutionFactor", "coverage", "coverageReason")
+          plan.stamps.map(
+            (stamp) =>
+              sql`(${stamp.entryId}, ${stamp.costRate}::numeric, ${
+                journalIdByEntry.get(stamp.entryId) ?? null
+              }::text, ${stamp.dilutionFactor ?? null}::numeric)`
+          )
+        )}) AS v("id", "costRate", "journalId", "dilutionFactor")
         WHERE t."id" = v."id" AND t."companyId" = ${companyId}
       `.execute(trx);
 
@@ -7100,7 +6904,6 @@ export async function postTimesheet(
 }
 
 type PostingEntry = TimesheetPostingEntry & {
-  isService: boolean;
   note: string | null;
   /** The job of shop time under DCAA; its ledger row carries it. */
   jobId: string | null;
@@ -7128,7 +6931,7 @@ const emptyTimesheetBooking: TimesheetBooking = {
 /**
  * What each posted timesheet entry booked, in 2 queries: its own posting
  * row (the earliest live row with hours: not a dilution adjustment, not a
- * reversal, not reversed by a coverage reclass), the account of that row's
+ * reversal, not reversed), the account of that row's
  * journal debit line and its unallowable flag, the Σ of all its Timesheet
  * rows, and the asset its CIP row built. An entry with no live posting row
  * is absent.
@@ -7224,7 +7027,7 @@ async function loadTimesheetBookings(
  * mode, in at most 3 queries: the employees' FLSA status, the weeks'
  * entries, and what each posted entry's ledger rows hold.
  * - The week's hours are its Submitted, Approved and Posted entries plus the
- *   entries of this call (a Service entry posts from Draft).
+ *   entries of this call.
  * - `factorByEntry`: the factor of each new entry of the call.
  * - `posted`, `adjustments`, `stamps`: the week's other posted entries (not a
  *   reversal, not reversed) and their re-dilution (`planDilution`).
@@ -7271,11 +7074,6 @@ async function loadWeekDilution(
 
   const rows = await trx
     .selectFrom("timesheetEntry")
-    .innerJoin("project", (join) =>
-      join
-        .onRef("project.id", "=", "timesheetEntry.projectId")
-        .onRef("project.companyId", "=", "timesheetEntry.companyId")
-    )
     .select([
       "timesheetEntry.id",
       "timesheetEntry.employeeId",
@@ -7289,10 +7087,7 @@ async function loadWeekDilution(
       "timesheetEntry.costRate",
       "timesheetEntry.dilutionFactor",
       "timesheetEntry.reversalOfId",
-      "timesheetEntry.note",
-      "timesheetEntry.coverage",
-      "timesheetEntry.coverageReason",
-      "project.projectType"
+      "timesheetEntry.note"
     ])
     .where("timesheetEntry.companyId", "=", companyId)
     .where("timesheetEntry.employeeId", "in", [...exempt])
@@ -7397,127 +7192,11 @@ async function loadWeekDilution(
       jobId: row.jobId,
       hours: Number(row.hours),
       reversalOfId: null,
-      isService: row.projectType === "Service",
-      note: row.note,
-      coverage: row.coverage as ServiceCoverage | null,
-      coverageReason: row.coverageReason,
-      customerId: null
+      note: row.note
     })),
     adjustments,
     stamps
   };
-}
-
-/**
- * The billable items of the Service entries just posted: a new item per
- * entry, priced by the service labor item, and for a reversal the reversal of
- * its original's item (written off while unbilled, else a negative copy).
- */
-async function writeServiceBillableItems(
-  trx: Transaction<DB>,
-  args: {
-    companyId: string;
-    userId: string;
-    entries: {
-      id: string;
-      note: string | null;
-      coverage: ServiceCoverage | null;
-      reversalOfId: string | null;
-      projectId: string;
-      projectElementId: string | null;
-    }[];
-    ledgerRows: TimesheetLedgerRow[];
-    ledgerIdByEntry: Map<string, string>;
-    services: Map<string, ServicePostingContext>;
-  }
-): Promise<void> {
-  const { companyId, userId } = args;
-  const entryById = new Map(args.entries.map((entry) => [entry.id, entry]));
-  const rows = args.ledgerRows.filter((row) => entryById.has(row.entryId));
-  if (rows.length === 0) return;
-
-  // The originals' items, for the reversals: one query.
-  const originalLedgerIds = rows
-    .map((row) => row.reversalOfId)
-    .filter((id): id is string => Boolean(id));
-  const originalItems =
-    originalLedgerIds.length === 0
-      ? []
-      : await trx
-          .selectFrom("projectBillableItem")
-          .selectAll()
-          .where("projectLedgerId", "in", originalLedgerIds)
-          .where("reversalOfId", "is", null)
-          .where("companyId", "=", companyId)
-          .execute();
-  const itemByLedger = new Map(
-    originalItems.map((item) => [item.projectLedgerId, item])
-  );
-
-  const inserts: Insertable<DB["projectBillableItem"]>[] = [];
-  const writeOffIds: string[] = [];
-  for (const row of rows) {
-    const entry = entryById.get(row.entryId)!;
-    const ledgerId = args.ledgerIdByEntry.get(row.entryId);
-    if (!ledgerId) continue;
-
-    if (row.reversalOfId) {
-      const original = itemByLedger.get(row.reversalOfId);
-      if (!original) continue;
-      const reversal = reverseBillableItem(
-        {
-          ...original,
-          quantity: Number(original.quantity),
-          unitPrice: Number(original.unitPrice),
-          amount: Number(original.amount)
-        },
-        { projectLedgerId: ledgerId, createdBy: userId }
-      );
-      if (reversal.update) writeOffIds.push(original.id);
-      if (reversal.insert) inserts.push(reversal.insert);
-      continue;
-    }
-
-    if (!entry.coverage) continue;
-    const service = args.services.get(
-      projectPostingKey(entry.projectId, entry.projectElementId)
-    );
-    const item = buildBillableItem({
-      ledgerRow: {
-        id: ledgerId,
-        companyId,
-        projectId: row.projectId,
-        projectElementId: row.projectElementId,
-        costType: "Labor",
-        quantity: row.quantity,
-        amount: row.amount,
-        itemId: service?.laborItemId ?? null,
-        createdBy: userId
-      },
-      coverage: entry.coverage,
-      laborPrice: service?.laborPrice ?? null,
-      partPrice: null,
-      description: entry.note?.trim() || "Labor"
-    });
-    if (item) inserts.push(item);
-  }
-
-  if (writeOffIds.length > 0) {
-    await trx
-      .updateTable("projectBillableItem")
-      .set({
-        status: "Written Off",
-        statusReason: "Reversed",
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "in", writeOffIds)
-      .where("companyId", "=", companyId)
-      .execute();
-  }
-  if (inserts.length > 0) {
-    await trx.insertInto("projectBillableItem").values(inserts).execute();
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -7548,12 +7227,8 @@ export const postProjectExpensePermission = {
  * accounting cutover and Posted after it. A Statistical project charges
  * indirectCostAccount and writes no ledger row.
  *
- * On a Service project the coverage decides the account (the user's override
- * with a reason, else `resolveCoverage` for an expense), the journal carries
- * the Customer dimension, and the charge writes a billable item at its
- * amount. A reversal entry (`reversalOfId`) posts its own (negative) amount at
- * its original's coverage and reverses the original's billable item.
- * Posting twice is a no-op.
+ * A reversal entry (`reversalOfId`) posts its own (negative) amount to the
+ * account its original booked. Posting twice is a no-op.
  */
 export async function postProjectExpense(
   ctx: ServiceContext,
@@ -7604,19 +7279,15 @@ export async function postProjectExpense(
     if (!context) throw new NotFoundError("Project element not found");
     assertChargeable(context, isReversal ? "commitment" : "new");
 
-    // The original's open ledger row: not reversed by a later row (a
-    // coverage reclass reverses and replaces it), with the account of its
-    // journal debit line and its unallowable flag.
+    // The original's open ledger row: not reversed by a later row, with the
+    // account of its journal debit line and its unallowable flag.
     const original = entry.reversalOfId
       ? await sql<{
           id: string;
-          coverage: ServiceCoverage | null;
-          coverageReason: string | null;
           unallowable: boolean;
           accountId: string | null;
         }>`
-            SELECT pl."id", pl."coverage", pl."coverageReason",
-              pl."unallowable", jl."accountId"
+            SELECT pl."id", pl."unallowable", jl."accountId"
             FROM "projectLedger" pl
             LEFT JOIN "journalLine" jl
               ON jl."id" = pl."journalLineId" AND jl."companyId" = pl."companyId"
@@ -7635,34 +7306,6 @@ export async function postProjectExpense(
           .then((result) => result.rows[0] ?? null)
       : null;
 
-    const isService = context.project.costTreatment === "By Coverage";
-    const service = isService
-      ? await loadServicePostingContext(trx, {
-          companyId,
-          projectId: entry.projectId,
-          elementId: entry.projectElementId
-        })
-      : null;
-    if (isService && !service) {
-      throw new ProjectChargeError(
-        "No service order owns the project of this expense"
-      );
-    }
-
-    let coverage: ServiceCoverage | null = null;
-    let coverageReason: string | null = null;
-    if (service) {
-      if (original) {
-        coverage = original.coverage;
-        coverageReason = original.coverageReason;
-      } else if (entry.coverage && entry.coverageReason) {
-        coverage = entry.coverage;
-        coverageReason = entry.coverageReason;
-      } else {
-        coverage = serviceChargeCoverage(service, "Expense", entry.entryDate);
-      }
-    }
-
     // A reversal undoes what its original booked: the account its debit
     // line was on, whatever the project's treatment is today.
     const resolved = original?.accountId
@@ -7670,7 +7313,7 @@ export async function postProjectExpense(
           treatment: resolveProjectTreatment(context, entry.entryDate),
           accountId: original.accountId
         }
-      : resolveProjectPostingAccount(context, entry.entryDate, coverage);
+      : resolveProjectPostingAccount(context, entry.entryDate);
     if (!original?.accountId && resolved.treatment === "Capitalize") {
       throw new ProjectChargeError(
         "An expense entry cannot charge a capital project. Use a charge or a purchase invoice."
@@ -7716,11 +7359,7 @@ export async function postProjectExpense(
         lines: [
           {
             accountId: debitAccount,
-            description: isStatistical
-              ? "Indirect Cost"
-              : service
-                ? "Service Expense"
-                : "Project Expense",
+            description: isStatistical ? "Indirect Cost" : "Project Expense",
             amount: debit("expense", amount)
           },
           {
@@ -7732,8 +7371,7 @@ export async function postProjectExpense(
         dimensions: [
           ["Project", entry.projectId],
           ["ProjectElement", entry.projectElementId],
-          ["Employee", entry.employeeId],
-          ["Customer", service?.customerId]
+          ["Employee", entry.employeeId]
         ]
       });
       journalId = posted.journalId;
@@ -7760,8 +7398,6 @@ export async function postProjectExpense(
               amount,
               journalLineId: debitLineId,
               reversalOfId: original?.id ?? null,
-              coverage,
-              coverageReason,
               // A reversal copies its original's flag.
               unallowable:
                 original?.unallowable ??
@@ -7772,69 +7408,12 @@ export async function postProjectExpense(
         })
       )[0]!;
       projectLedgerId = row.id;
-
-      if (service && original) {
-        const item = await trx
-          .selectFrom("projectBillableItem")
-          .selectAll()
-          .where("projectLedgerId", "=", original.id)
-          .where("reversalOfId", "is", null)
-          .where("companyId", "=", companyId)
-          .executeTakeFirst();
-        if (item) {
-          const reversal = reverseBillableItem(item, {
-            projectLedgerId: row.id,
-            createdBy: userId
-          });
-          if (reversal.update) {
-            await trx
-              .updateTable("projectBillableItem")
-              .set({
-                ...reversal.update,
-                updatedBy: userId,
-                updatedAt: datetime.timestamp()
-              })
-              .where("id", "=", item.id)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
-          if (reversal.insert) {
-            await trx
-              .insertInto("projectBillableItem")
-              .values(reversal.insert)
-              .execute();
-          }
-        }
-      } else if (service && coverage) {
-        const item = buildBillableItem({
-          ledgerRow: {
-            id: row.id,
-            companyId,
-            projectId: entry.projectId,
-            projectElementId: entry.projectElementId,
-            costType: "Other Direct",
-            quantity: 1,
-            amount,
-            itemId: null,
-            createdBy: userId
-          },
-          coverage,
-          laborPrice: null,
-          partPrice: null,
-          description: entry.description
-        });
-        if (item) {
-          await trx.insertInto("projectBillableItem").values(item).execute();
-        }
-      }
     }
 
     await trx
       .updateTable("projectExpenseEntry")
       .set({
         journalId,
-        coverage: service ? coverage : entry.coverage,
-        coverageReason: service ? coverageReason : entry.coverageReason,
         updatedBy: userId,
         updatedAt: datetime.timestamp()
       })
@@ -7863,16 +7442,7 @@ export const postProjectIssueInput = z.object({
   storageUnitId: z.string().optional().nullable(),
   trackedEntityId: z.string().optional().nullable(),
   quantity: z.number().gt(0),
-  direction: z.enum(["Issue", "Return"]),
-  /** A Service project's issue: the user's coverage, with its reason. */
-  coverage: z
-    .enum(Constants.public.Enums.serviceCoverage)
-    .optional()
-    .nullable(),
-  coverageReason: z.string().optional().nullable(),
-  /** A Service project's return: the issue it reverses (else the latest
-   *  open issue of the same part to the node). */
-  returnOfProjectLedgerId: z.string().optional().nullable()
+  direction: z.enum(["Issue", "Return"])
 });
 
 export type PostProjectIssueResult = {
@@ -7902,12 +7472,6 @@ export const postProjectIssuePermission = {
  * Unscrap rule), else at the item's current cost, and the ledger row uses
  * that same cost, so the project total equals the GL and a round trip nets
  * to 0.
- *
- * On a Service project (By Coverage) the charge's coverage decides the
- * account: the user's override with a reason, else `resolveCoverage` for a
- * part. The issue writes a billable item and installs the part in the
- * customer asset (`installServicePart`). A return reverses one whole issue at
- * its coverage (`reversalOfId` on the ledger row) and undoes the install.
  */
 export async function postProjectIssue(
   ctx: ServiceContext,
@@ -8167,48 +7731,7 @@ export async function postProjectIssue(
     if (!context) throw new NotFoundError("Project element not found");
     assertChargeable(context, isIssue ? "new" : "commitment");
 
-    // A Service project: the coverage decides the account.
-    const service =
-      context.project.costTreatment === "By Coverage"
-        ? await loadServicePostingContext(trx, {
-            companyId,
-            projectId,
-            elementId: projectElementId
-          })
-        : null;
-    if (context.project.costTreatment === "By Coverage" && !service) {
-      throw new ProjectChargeError(
-        "No service order owns the project of this issue"
-      );
-    }
-    let coverage: ServiceCoverage | null = null;
-    let coverageReason: string | null = null;
-    let returnedIssue: ServiceIssue | null = null;
-    if (service && isIssue) {
-      const override = input.coverage && input.coverageReason?.trim();
-      coverage = override
-        ? input.coverage!
-        : serviceChargeCoverage(service, "Part", postingDate);
-      coverageReason = override ? input.coverageReason!.trim() : null;
-    } else if (service) {
-      returnedIssue = await findServiceIssueToReturn(trx, {
-        companyId,
-        projectId,
-        projectElementId,
-        itemId,
-        trackedEntityId,
-        quantity,
-        returnOfProjectLedgerId: input.returnOfProjectLedgerId ?? null
-      });
-      coverage = returnedIssue.coverage;
-      coverageReason = returnedIssue.coverageReason;
-    }
-
-    const resolved = resolveProjectPostingAccount(
-      context,
-      postingDate,
-      coverage
-    );
+    const resolved = resolveProjectPostingAccount(context, postingDate);
     const { treatment, accountId } = resolved;
     const isStatistical = treatment === "Statistical";
     const offsetAccount = isStatistical
@@ -8296,8 +7819,7 @@ export async function postProjectIssue(
             projectId,
             projectElementId,
             itemId,
-            trackedEntityId,
-            returnOfProjectLedgerId: returnedIssue?.id ?? null
+            trackedEntityId
           })
         );
 
@@ -8345,9 +7867,7 @@ export async function postProjectIssue(
           offsetAccount,
           offsetDescription: isStatistical
             ? "Indirect Cost"
-            : service
-              ? "Service Material"
-              : "Project Material",
+            : "Project Material",
           sourceType: "Project Issue",
           description: journalDescription,
           getJournalId,
@@ -8362,9 +7882,6 @@ export async function postProjectIssue(
                     valueId: projectElementId
                   }
                 ]
-              : []),
-            ...(service?.customerId
-              ? [{ entityType: "Customer", valueId: service.customerId }]
               : [])
           ]
         }
@@ -8407,9 +7924,6 @@ export async function postProjectIssue(
         quantity: isIssue ? quantity : -quantity,
         amount: isIssue ? booked.cost : -booked.cost,
         journalLineId: booked.offsetJournalLineId,
-        reversalOfId: returnedIssue?.id ?? null,
-        coverage,
-        coverageReason,
         unallowable: isUnallowableCharge(context, accountId),
         createdBy: userId
       });
@@ -8463,34 +7977,6 @@ export async function postProjectIssue(
       const row =
         inserted.find((r) => !r.relocatesReceiptCharge) ?? inserted[0]!;
       projectLedgerId = row.id;
-
-      if (service && isIssue && coverage) {
-        await installServicePart(trx, {
-          companyId,
-          userId,
-          service,
-          projectId,
-          projectElementId,
-          projectLedgerId: row.id,
-          itemLedgerId: booked.itemLedgerId,
-          itemId,
-          itemName: itemResult.data.name,
-          trackedEntityId,
-          quantity,
-          postingDate,
-          coverage
-        });
-      } else if (service && returnedIssue) {
-        await uninstallServicePart(trx, {
-          companyId,
-          userId,
-          service,
-          projectElementId,
-          issueLedgerId: returnedIssue.id,
-          issueItemLedgerId: returnedIssue.documentId,
-          returnLedgerId: row.id
-        });
-      }
 
       // An issue to a Capitalize project builds its asset.
       await writeProjectCipRows(trx, {
@@ -9127,363 +8613,6 @@ export async function postProjectStockTransfer(
       success: true,
       journalId: journalId as string | null
     };
-  });
-}
-
-// ---------------------------------------------------------------------------
-// reclass-project-coverage
-
-export const reclassProjectCoverageInput = z.object({
-  projectLedgerId: z.string(),
-  coverage: z.enum(Constants.public.Enums.serviceCoverage),
-  reason: z.string().trim().min(1)
-});
-
-export type ReclassProjectCoverageResult = {
-  success: true;
-  journalId: string | null;
-  /** The new projectLedger row, at the new coverage. */
-  projectLedgerId: string;
-};
-
-/** The source documents that carry a coverage, and their journal types. */
-const SOURCE_TYPES = {
-  Timesheet: "Timesheet",
-  "Project Issue": "Project Issue",
-  "Project Expense": "Project Expense"
-} as const;
-
-/** "Labor (Covered by warranty)" → "Labor". */
-function baseDescription(description: string): string {
-  return description.replace(/ \(Covered by (warranty|contract)\)$/, "");
-}
-
-export const reclassProjectCoveragePermission = {
-  update: "projects"
-} satisfies PermissionRule<z.output<typeof reclassProjectCoverageInput>>;
-
-/**
- * Changes the coverage of a posted service charge without moving stock or
- * time. In one transaction it:
- * 1. refuses a charge whose billable item is Billed, or no change;
- * 2. posts Dr the new coverage's account / Cr the account the charge debited;
- * 3. writes a reversal projectLedger row and a new row at the new coverage
- *    (the ledger stays append-only);
- * 4. writes off (or credits) the old billable item and writes the new one;
- * 5. stores the coverage and reason on the source timesheet or expense entry.
- * An installed component follows its issue to the new ledger row.
- */
-export async function reclassProjectCoverage(
-  ctx: ServiceContext,
-  raw: z.input<typeof reclassProjectCoverageInput>
-): Promise<ReclassProjectCoverageResult> {
-  const { projectLedgerId, coverage, reason } =
-    reclassProjectCoverageInput.parse(raw);
-  const db = ctx.asSystem.pg;
-  const companyId = ctx.company.id;
-  const userId = ctx.auditUserId;
-
-  const postingDate = datetime
-    .today(await getCompanyTimeZone(db, companyId))
-    .toString();
-
-  return db.transaction().execute(async (trx) => {
-    // Row lock: two reclasses of one charge must not both reverse it.
-    const source = await trx
-      .selectFrom("projectLedger")
-      .selectAll()
-      .where("id", "=", projectLedgerId)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!source) throw new NotFoundError("Charge not found");
-
-    const sourceType =
-      SOURCE_TYPES[source.documentType as keyof typeof SOURCE_TYPES];
-    if (!source.coverage || !sourceType) {
-      throw new InvalidInputError("Only a service charge has a coverage");
-    }
-    if (source.reversalOfId) {
-      throw new InvalidInputError("A reversal cannot be reclassed");
-    }
-    const reversed = await trx
-      .selectFrom("projectLedger")
-      .select("id")
-      .where("reversalOfId", "=", source.id)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (reversed) {
-      throw new ProjectChargeError(
-        "This charge is already reversed or reclassed"
-      );
-    }
-    if (source.coverage === coverage) {
-      throw new ProjectChargeError(`The charge is already ${coverage}`);
-    }
-    if (source.coverage === "Capitalized" || coverage === "Capitalized") {
-      throw new ProjectChargeError(
-        "Only a refurbishment charge is Capitalized, and it stays Capitalized"
-      );
-    }
-
-    const billable = await trx
-      .selectFrom("projectBillableItem")
-      .selectAll()
-      .where("projectLedgerId", "=", source.id)
-      .where("reversalOfId", "is", null)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (billable?.status === "Billed") {
-      throw new ProjectChargeError(
-        "The charge is already invoiced. Credit the invoice first."
-      );
-    }
-
-    const contexts = await loadProjectPostingContexts(trx, companyId, [
-      {
-        projectId: source.projectId,
-        projectElementId: source.projectElementId
-      }
-    ]);
-    const context = contexts.get(
-      projectPostingKey(source.projectId, source.projectElementId)
-    );
-    if (!context) throw new NotFoundError("Project element not found");
-    assertChargeable(context, "commitment");
-    const service = await loadServicePostingContext(trx, {
-      companyId,
-      projectId: source.projectId,
-      elementId: source.projectElementId
-    });
-    if (!service) {
-      throw new ProjectChargeError(
-        "No service order owns the project of this charge"
-      );
-    }
-
-    const amount = round(Number(source.amount));
-    let journalId: string | null = null;
-    let debitLineId: string | null = null;
-    let creditLineId: string | null = null;
-    // The account the replacement posts to; null for a zero charge. The
-    // journal is written for every company: Provisional before the
-    // accounting cutover, Posted after it (postProjectJournal).
-    let newAccount: string | null = null;
-    if (amount !== 0) {
-      newAccount = resolveProjectPostingAccount(
-        context,
-        postingDate,
-        coverage
-      ).accountId;
-      // Credit the account the charge debited.
-      const debited = source.journalLineId
-        ? await trx
-            .selectFrom("journalLine")
-            .select("accountId")
-            .where("id", "=", source.journalLineId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst()
-        : undefined;
-      const oldAccount =
-        debited?.accountId ??
-        resolveProjectPostingAccount(
-          context,
-          source.postingDate,
-          source.coverage
-        ).accountId;
-      if (!newAccount || !oldAccount) {
-        throw new ProjectChargeError(
-          "The charge's coverage has no posting account"
-        );
-      }
-      if (newAccount !== oldAccount) {
-        const posted = await postProjectJournal(trx, {
-          companyId,
-          userId,
-          postingDate,
-          description: `Coverage ${source.coverage} to ${coverage}: ${reason}`,
-          sourceType,
-          documentType: sourceType,
-          documentId: source.documentId,
-          documentLineReference: journalReference.to.coverageReclass(source.id),
-          lines: [
-            {
-              accountId: newAccount,
-              description: `${coverage} Coverage`,
-              amount: debit("expense", amount)
-            },
-            {
-              accountId: oldAccount,
-              description: `${source.coverage} Coverage`,
-              amount: credit("expense", amount)
-            }
-          ],
-          dimensions: [
-            ["Project", source.projectId],
-            ["ProjectElement", source.projectElementId],
-            ["Employee", source.employeeId],
-            ["Customer", service.customerId]
-          ]
-        });
-        journalId = posted.journalId;
-        debitLineId = posted.lineIds[0] ?? null;
-        creditLineId = posted.lineIds[1] ?? null;
-      }
-    }
-
-    const shared = {
-      companyId,
-      projectId: source.projectId,
-      projectElementId: source.projectElementId,
-      postingDate,
-      costType: source.costType,
-      documentType: source.documentType,
-      documentId: source.documentId,
-      documentLineId: source.documentLineId,
-      jobId: source.jobId,
-      itemId: source.itemId,
-      employeeId: source.employeeId,
-      laborCategoryId: source.laborCategoryId,
-      supplierId: source.supplierId,
-      unitOfMeasureCode: source.unitOfMeasureCode,
-      createdBy: userId
-    };
-    const quantity = source.quantity === null ? null : Number(source.quantity);
-    const reversal = (
-      await insertProjectLedgerRows(trx, {
-        companyId,
-        userId,
-        rows: [
-          buildProjectLedgerRow({
-            ...shared,
-            quantity: quantity === null ? null : -quantity,
-            amount: -amount,
-            journalLineId: creditLineId,
-            reversalOfId: source.id,
-            coverage: source.coverage,
-            coverageReason: source.coverageReason,
-            unallowable: source.unallowable
-          })
-        ]
-      })
-    )[0]!;
-    const replacement = (
-      await insertProjectLedgerRows(trx, {
-        companyId,
-        userId,
-        rows: [
-          buildProjectLedgerRow({
-            ...shared,
-            quantity,
-            amount,
-            journalLineId: debitLineId,
-            coverage,
-            coverageReason: reason,
-            unallowable: isUnallowableCharge(context, newAccount)
-          })
-        ]
-      })
-    )[0]!;
-
-    const now = datetime.timestamp();
-    if (billable) {
-      const undo = reverseBillableItem(billable, {
-        projectLedgerId: reversal.id,
-        createdBy: userId
-      });
-      if (undo.update) {
-        await trx
-          .updateTable("projectBillableItem")
-          .set({ ...undo.update, updatedBy: userId, updatedAt: now })
-          .where("id", "=", billable.id)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
-      if (undo.insert) {
-        await trx
-          .insertInto("projectBillableItem")
-          .values(undo.insert)
-          .execute();
-      }
-    }
-
-    const partPrice =
-      source.costType === "Material" && source.itemId
-        ? await trx
-            .selectFrom("itemUnitSalePrice")
-            .select("unitSalePrice")
-            .where("itemId", "=", source.itemId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst()
-            .then((row) => (row ? Number(row.unitSalePrice) : null))
-        : null;
-    const item = buildBillableItem({
-      ledgerRow: {
-        id: replacement.id,
-        companyId,
-        projectId: source.projectId,
-        projectElementId: source.projectElementId,
-        costType: source.costType,
-        quantity,
-        amount,
-        itemId:
-          billable?.itemId ??
-          (source.costType === "Labor" ? service.laborItemId : source.itemId),
-        createdBy: userId
-      },
-      coverage,
-      laborPrice: service.laborPrice,
-      partPrice,
-      description: billable
-        ? baseDescription(billable.description)
-        : source.costType === "Labor"
-          ? "Labor"
-          : "Charge"
-    });
-    if (item) {
-      await trx.insertInto("projectBillableItem").values(item).execute();
-    }
-
-    // The source entry keeps the coverage its charge now posts at.
-    if (source.documentType === "Timesheet") {
-      await trx
-        .updateTable("timesheetEntry")
-        .set({
-          coverage,
-          coverageReason: reason,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", source.documentId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else if (source.documentType === "Project Expense") {
-      await trx
-        .updateTable("projectExpenseEntry")
-        .set({
-          coverage,
-          coverageReason: reason,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", source.documentId)
-        .where("companyId", "=", companyId)
-        .execute();
-    } else {
-      // An installed part follows its issue, so a return still finds it.
-      await trx
-        .updateTable("customerAssetComponent")
-        .set({
-          projectLedgerId: replacement.id,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("projectLedgerId", "=", source.id)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
-
-    return { success: true, journalId, projectLedgerId: replacement.id };
   });
 }
 
@@ -14403,7 +13532,6 @@ export type SaveTimesheetEntryArgs = {
   reason?: string;
   mode?: "cell" | "add";
   status?: "Draft" | "Submitted";
-  serviceVisitId?: string | null;
   /** R&D tax: left out takes the default; "" or null is none. */
   workLocationId?: string | null;
   rdActivityRole?: RdActivityRole | "" | null;
@@ -14439,8 +13567,8 @@ export function saveTimesheetEntryPostingInput(input: SaveTimesheetEntryArgs) {
 /**
  * Saves one timesheet entry through the `save-timesheet-entry` posting,
  * which applies the DCAA rules in one place for the ERP and the MES.
- * `mode: "add"` (Log time, service time) always adds a new entry with
- * `status` and `serviceVisitId`; the default edits the grid cell. Returns
+ * `mode: "add"` (Log time) always adds a new entry with `status`; the
+ * default edits the grid cell. Returns
  * the saved entry, or the refusal message. The caller has already
  * authorized the change.
  */

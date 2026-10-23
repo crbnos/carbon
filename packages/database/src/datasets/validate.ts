@@ -212,18 +212,6 @@ export const COVERAGE = {
     values: enumValues("salesReturnOrderStatus", { Cancelled: OPTIONAL }),
     missing: matrix("sales status matrix", "salesReturn with status")
   },
-  serviceOrder: {
-    values: enumValues("serviceOrderStatus", {
-      "In Progress":
-        "a visit under way leaves charges, which need hand-authored journals, ledger rows and billable items",
-      "On Hold": OPTIONAL,
-      Completed:
-        "completed work has posted charges, which need hand-authored journals, ledger rows and billable items",
-      Closed: "an invoiced order needs posted charges and their billable items",
-      Cancelled: OPTIONAL
-    }),
-    missing: matrix("field service matrix", "service order with status")
-  },
   arAgingBucket: {
     // get_ar_aging's default buckets, by days past due as of today.
     values: ["Current", "1-30", "31-60", "61-90"],
@@ -964,8 +952,6 @@ export function onHandLedger(
   for (const rma of dataset.sales.salesReturns) {
     if (rma.status !== "Completed") continue;
     for (const line of rma.lines) {
-      // A repair never adds stock: its receipt writes no ledger row.
-      if (line.disposition === "Repair") continue;
       if (line.toShelf !== undefined && shelves.has(line.toShelf)) {
         add(line.item, line.toShelf, line.quantity);
       }
@@ -2346,11 +2332,8 @@ const WARRANTY_STATES = ["In warranty", "Labor ended", "Expired"] as const;
 /**
  * Field service: the assets are serials of serial-tracked items at customers
  * with a contact, with a warranty that ends after the ship date and the three
- * warranty states on the anchor day; the template nodes name earlier parents,
- * known labor categories and items; each order names a known asset (one open
- * order per asset) and template; a Refurbishment names an Available stock
- * serial of a serial-tracked item (one open order per serial); a Scheduled
- * order has a visit and a Draft order none.
+ * warranty states on the anchor day; a contract's project has a unique
+ * identifier and name.
  */
 export function fieldService(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need, needCustomer } = ctx;
@@ -2394,59 +2377,6 @@ export function fieldService(ctx: ValidationCtx): void {
     }
   }
 
-  const laborCategories = new Set(
-    dataset.accounting.laborCategories.map((category) => category.name)
-  );
-  const templateKeys = new Set<string>();
-  if (sales.serviceTemplates.length === 0) {
-    fail("sales.serviceTemplates: no service template");
-  }
-  for (const template of sales.serviceTemplates) {
-    const where = `sales.serviceTemplates "${template.key}"`;
-    templateKeys.add(template.key);
-    if (template.nodes.length === 0) fail(`${where}: no nodes`);
-    const seen = new Set<string>();
-    for (const node of template.nodes) {
-      const at = `${where} node "${node.key}"`;
-      if (node.parentKey && !seen.has(node.parentKey)) {
-        fail(`${at}: parent "${node.parentKey}" is not an earlier node`);
-      }
-      seen.add(node.key);
-      for (const line of node.labor ?? []) {
-        if (!laborCategories.has(line.laborCategory)) {
-          fail(`${at}: unknown labor category "${line.laborCategory}"`);
-        }
-        if (line.hours <= 0) fail(`${at}: labor hours must be above 0`);
-      }
-      for (const line of node.materials ?? []) {
-        need("item", at, line.item);
-        if (line.quantity <= 0) fail(`${at}: quantity must be above 0`);
-      }
-    }
-    if (
-      !template.nodes.some(
-        (node) =>
-          (node.labor?.length ?? 0) +
-            (node.materials?.length ?? 0) +
-            (node.costs?.length ?? 0) >
-          0
-      )
-    ) {
-      fail(`${where}: no plan lines, so its estimate has no prices`);
-    }
-  }
-
-  const statuses = new Set<string>();
-  const openAssets = new Set<string>();
-  const stockSerials = new Map<string, { item: string; status: string }>();
-  for (const stock of dataset.inventory.onHandTracked) {
-    for (const entity of stock.entities) {
-      stockSerials.set(entity.readableId, {
-        item: stock.item,
-        status: entity.status ?? "Available"
-      });
-    }
-  }
   // A contract's project is seeded beside the dataset's projects: its name
   // and identifier share their uniqueness.
   const projectIdentifiers = new Set(
@@ -2471,60 +2401,6 @@ export function fieldService(ctx: ValidationCtx): void {
     }
     projectNames.add(contract.name);
   }
-
-  const refurbishedSerials = new Set<string>();
-  for (const order of sales.serviceOrders) {
-    const where = `sales.serviceOrders "${order.key}"`;
-    statuses.add(order.status);
-    if (order.type === "Refurbishment") {
-      // A refurbishment is on a serial in stock, one open order per serial;
-      // the seed puts it On Hold, as createServiceOrder does.
-      const stock = stockSerials.get(order.serial);
-      if (!stock) {
-        fail(`${where}: "${order.serial}" is not in inventory.onHandTracked`);
-      } else {
-        if (ix.trackingByItem.get(stock.item) !== "Serial") {
-          fail(`${where}: item "${stock.item}" is not serial-tracked`);
-        }
-        if (stock.status !== "Available") {
-          fail(`${where}: serial "${order.serial}" is ${stock.status}`);
-        }
-      }
-      if (refurbishedSerials.has(order.serial)) {
-        fail(`${where}: serial "${order.serial}" already has an open order`);
-      }
-      refurbishedSerials.add(order.serial);
-    } else {
-      if (!assetKeys.has(order.asset)) {
-        fail(`${where}: unknown asset "${order.asset}"`);
-      }
-      if (openAssets.has(order.asset)) {
-        fail(`${where}: asset "${order.asset}" already has an open order`);
-      }
-      openAssets.add(order.asset);
-      if (order.contract) {
-        const contract = sales.contracts.find((c) => c.key === order.contract);
-        const asset = sales.customerAssets.find((a) => a.key === order.asset);
-        if (!contract) {
-          fail(`${where}: unknown contract "${order.contract}"`);
-        } else if (asset && contract.customer !== asset.customer) {
-          fail(
-            `${where}: contract "${order.contract}" is not the asset's customer's`
-          );
-        }
-      }
-    }
-    if (order.template && !templateKeys.has(order.template)) {
-      fail(`${where}: unknown template "${order.template}"`);
-    }
-    if ((order.status === "Scheduled") !== Boolean(order.visit)) {
-      fail(
-        `${where}: a Scheduled order needs a visit and a Draft or Planned order none`
-      );
-    }
-  }
-
-  checkCoverage(fail, { serviceOrder: statuses });
 }
 
 export function sales(ctx: ValidationCtx): void {
@@ -2703,28 +2579,9 @@ export function sales(ctx: ValidationCtx): void {
       if (line.quantity <= 0) {
         fail(`${where} line "${line.item}": quantity must be positive`);
       }
-      if (line.disposition === "Repair") {
-        if (ix.trackingByItem.get(line.item) !== "Serial") {
-          fail(
-            `${where} line "${line.item}": a Repair line needs a Serial-tracked item`
-          );
-        }
-        if (rma.status === "Completed") {
-          fail(
-            `${where} line "${line.item}": a received Repair line needs a Depot Repair order the seed does not write`
-          );
-        }
-        if (
-          !dataset.sales.customerAssets.some(
-            (asset) =>
-              asset.item === line.item && asset.customer === rma.customer
-          )
-        ) {
-          fail(
-            `${where} line "${line.item}": a Repair line needs a customer asset of the item at "${rma.customer}"`
-          );
-        }
-      } else if (isTracked(line.item)) {
+      // A return that is not received writes only its lines, so a tracked
+      // item is fine there; receiving one needs per-entity rows.
+      if (rma.status === "Completed" && isTracked(line.item)) {
         fail(
           `${where} line "${line.item}": tracked items need per-entity returns the seed does not model`
         );

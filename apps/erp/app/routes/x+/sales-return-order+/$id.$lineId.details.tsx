@@ -30,17 +30,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  // A Repair line's Depot Repair orders, one per received serial. RLS shows
-  // them only to a user with service view.
-  const [line, returnReasons, serviceOrders] = await Promise.all([
+  const [line, returnReasons] = await Promise.all([
     getSalesReturnOrderLine(client, lineId),
-    getReturnReasonsList(client, companyId),
-    client
-      .from("serviceOrder")
-      .select("id, serviceOrderId, status")
-      .eq("salesReturnOrderLineId", lineId)
-      .eq("companyId", companyId)
-      .order("serviceOrderId")
+    getReturnReasonsList(client, companyId)
   ]);
 
   if (line.error) {
@@ -126,8 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       salesOrderId,
       salesOrderReadableId,
       salesInvoiceId,
-      salesInvoiceReadableId,
-      serviceOrders: serviceOrders.data ?? []
+      salesInvoiceReadableId
     }
   };
 }

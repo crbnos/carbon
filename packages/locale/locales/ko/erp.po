@@ -374,10 +374,6 @@ msgstr "{0}개 송장이 이전 시스템에서 청구되었으며 다시 초안
 msgid "{0} is {1}, not Draft or Planned"
 msgstr "{0}은 {1}이며 초안 또는 계획됨이 아닙니다"
 
-#. placeholder {0}: item.description
-msgid "{0} is never billed. Its cost stays on the order."
-msgstr "{0}은 청구되지 않습니다. 해당 원가는 발주서에 남아있습니다."
-
 #. placeholder {0}: data.quantity
 msgid "{0} items marked as picked"
 msgstr "{0}개 품목이 피킹 완료로 표시됨"
@@ -715,9 +711,6 @@ msgstr "{daysLeft, plural, one {# 일} other {# 일}} {due}까지"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}가(이) 이를 귀사의 원장에 게시하므로 Carbon은 이를 푸시하지 않습니다. 변경되는 경우에 대비하여 저장된 선택 사항이 유지됩니다."
-
-msgid "{description} of {amount}. The reversal posts at the same coverage, and its billable item is written off or credited."
-msgstr "{amount}의 {description}. 역취소가 같은 적용 범위에 전기되며, 청구 가능한 품목은 상각 또는 대변됩니다."
 
 msgid "{discount} off"
 msgstr "{discount} 할인"
@@ -1431,9 +1424,6 @@ msgstr "제목과 사유가 있는 계획 변경 초안 집합입니다. 현재 
 msgid "A Draft's lines are edited directly. Once confirmed, changes are made with Amend and recorded here."
 msgstr "초안의 라인은 직접 편집됩니다. 확정된 후에는 수정(Amend)으로 변경을 수행하고 여기에 기록됩니다."
 
-msgid "A field visit to a unit at a customer. The unit decides the customer and the site."
-msgstr "고객에 있는 단위에 대한 현장 방문. 단위가 고객과 사이트를 결정합니다."
-
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "{0} 파일이 이미 존재합니다 — 먼저 삭제하거나 이름을 바꾸세요"
@@ -1998,9 +1988,6 @@ msgstr "라인에 추가된 과세 부과금(취급, 셋업, 연료); 세금 기
 msgid "A template"
 msgstr "템플릿"
 
-msgid "A template holds the elements and planned work a service order starts from."
-msgstr "템플릿은 서비스 주문이 시작하는 요소와 계획된 작업을 포함합니다."
-
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
 msgstr "작업 지시 공정에 기록된 셋업, 노무 또는 기계 작업의 시간 기록으로, 그 기간은 공정의 실제 원가에 누적됩니다."
 
@@ -2039,12 +2026,6 @@ msgstr "역량"
 
 msgid "Ability"
 msgstr "역량"
-
-msgid "Abnormal Rework"
-msgstr "비정상 재작업"
-
-msgid "Abnormal rework posts this cost to material variance. The serial keeps its cost."
-msgstr "비정상 재작업은 이 원가를 자재 차이에 전기합니다. 일련 번호는 원가를 유지합니다."
 
 msgid "About"
 msgstr "정보"
@@ -2394,9 +2375,6 @@ msgstr "실제 종료"
 msgid "Actual Failure Mode"
 msgstr "실제 고장 모드"
 
-msgid "Actual includes service orders: {serviceAmount}"
-msgstr "실제는 서비스 주문을 포함합니다: {serviceAmount}"
-
 msgid "Actual of budget"
 msgstr "예산 대비 실제"
 
@@ -2593,12 +2571,6 @@ msgstr "항목 추가"
 
 msgid "Add Event"
 msgstr "이벤트 추가"
-
-msgid "Add expense"
-msgstr "비용 추가"
-
-msgid "Add Expense"
-msgstr "비용 추가"
 
 msgid "Add Fixed Asset"
 msgstr "고정자산 추가"
@@ -2831,9 +2803,6 @@ msgstr "첫 번째 요청 전에 요율을 추가하세요."
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "DNS 호스트에서 이 TXT 레코드를 추가한 다음 확인을 클릭하세요. DNS 변경은 전파되는 데 몇 분이 걸릴 수 있습니다."
-
-msgid "Add Time"
-msgstr "시간 추가"
 
 msgid "Add Timecard"
 msgstr "근무기록 추가"
@@ -3080,9 +3049,6 @@ msgstr "모든 교대조"
 msgid "All slotted dimension values are mapped"
 msgstr "모든 슬롯된 차원 값이 매핑되었습니다"
 
-msgid "All statuses"
-msgstr "모든 상태"
-
 msgid "All steps"
 msgstr "모든 단계"
 
@@ -3091,9 +3057,6 @@ msgstr "모든 재고 소유자"
 
 msgid "All Suppliers"
 msgstr "모든 공급업체"
-
-msgid "All technicians"
-msgstr "모든 기술자"
 
 msgid "All Time"
 msgstr "전체 기간"
@@ -3777,17 +3740,11 @@ msgstr "이 작업 지시를 취소하시겠습니까? 현장에서 더 이상 �
 msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
 msgstr "이 RMA를 취소하시겠습니까? 이렇게 하면 승인된 수량이 원본 문서로 반환됩니다."
 
-msgid "Are you sure you want to cancel this service order? Its open visits are cancelled too. An order with a charge that is not reversed cannot be cancelled."
-msgstr "이 서비스 주문을 취소하시겠습니까? 미결 방문도 취소됩니다. 역분개되지 않은 청구가 있는 주문은 취소할 수 없습니다."
-
 msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
 msgstr "이 공급업체 반품을 취소하시겠습니까? 이렇게 하면 승인된 수량이 원본 문서로 반환됩니다."
 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "{propertyName} 속성을 변경하시겠습니까? 자동 생성된 자재 ID를 사용하고 있으므로, 이 변경으로 해당 품목의 품목 ID와 관련된 모든 리비전이 변경됩니다."
-
-msgid "Are you sure you want to close this service order without an invoice? A closed order cannot change."
-msgstr "송장 없이 이 서비스 주문을 마감하시겠습니까? 마감된 주문은 변경할 수 없습니다."
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "이 RMA를 확인하시겠습니까? 확인하면 고객이 라인상의 상품을 반품할 수 있도록 허가됩니다."
@@ -4270,12 +4227,6 @@ msgstr "확실합니까?"
 msgid "Arrears"
 msgstr "연체금"
 
-msgid "Arrive"
-msgstr "도착"
-
-msgid "Arrived <0/>"
-msgstr "도착됨 <0/>"
-
 msgid "As if it jumped to the front of the shop's queue."
 msgstr "마치 공장의 대기열 맨 앞으로 뛰어든 것처럼."
 
@@ -4665,9 +4616,6 @@ msgstr "아바타 출처: {1}의 <0>{0}</0>, <1>{2}</1> 라이선스."
 msgid "Average"
 msgstr "평균"
 
-msgid "Average spreads this cost over every unit of the item."
-msgstr "평균은 품목의 모든 개에 대해 이 원가를 분산합니다."
-
 msgid "Avg Days to Close"
 msgstr "평균 마감 소요일"
 
@@ -4958,9 +4906,6 @@ msgstr "청구 대상"
 
 msgid "Bill whole months, quarters or years, with a part period first."
 msgstr "월, 분기, 연도 단위로 청구합니다(처음에 부분 기간 포함 가능)."
-
-msgid "Billable"
-msgstr "청구가능"
 
 msgid "Billable item"
 msgstr "청구 가능한 항목"
@@ -5365,9 +5310,6 @@ msgstr "문서 날짜 기준"
 msgid "By Due Date"
 msgstr "마감일 기준"
 
-msgid "By Element"
-msgstr "요소별"
-
 msgid "By field"
 msgstr "필드별"
 
@@ -5460,8 +5402,8 @@ msgid "Cancel"
 msgstr "취소"
 
 #. placeholder {0}: contract.customerContractId
-#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Cancel {0}"
 msgstr "{0} 취소"
 
@@ -5510,9 +5452,6 @@ msgstr "RMA 취소"
 msgid "Cancel Sales Order"
 msgstr "수주 취소"
 
-msgid "Cancel Service Order"
-msgstr "서비스 주문 취소"
-
 msgid "Cancel SO"
 msgstr "판매주문 취소"
 
@@ -5530,9 +5469,6 @@ msgstr "판매주문만 취소"
 
 msgid "Cancel Transfer"
 msgstr "이송 취소"
-
-msgid "Cancel Visit"
-msgstr "방문 취소"
 
 msgid "Canceled"
 msgstr "취소됨"
@@ -5611,9 +5547,6 @@ msgstr "고정자산으로 자본화"
 
 msgid "Capitalize Asset"
 msgstr "자산 자본화"
-
-msgid "Capitalized"
-msgstr "자본화됨"
 
 msgid "Caption"
 msgstr "캡션"
@@ -6064,9 +5997,6 @@ msgstr "과세 연도 선택"
 msgid "Choose a template"
 msgstr "템플릿 선택"
 
-msgid "Choose an element to log time, issue a part or add an expense."
-msgstr "요소를 선택하여 시간을 기록하거나 부품을 불출하거나 비용을 추가하세요."
-
 msgid "Choose an item"
 msgstr "품목 선택"
 
@@ -6117,9 +6047,6 @@ msgstr "MRP이 자동으로 다시 계산할 시간을 선택하세요. 계획 �
 
 msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 msgstr "품목, 견적서 및 작업 지시의 BoM 탐색기에서 각 라인을 설명으로 표시할지 품목 ID로 표시할지 선택하세요."
-
-msgid "Choose who goes to the unit, and when."
-msgstr "누가 단위에 가는지, 그리고 언제인지 선택합니다."
 
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
@@ -6227,9 +6154,6 @@ msgstr "작업 종료"
 msgid "Clock Out"
 msgstr "작업 종료"
 
-msgid "Clock running"
-msgstr "시계 실행 중"
-
 msgid "Clocked in"
 msgstr "근무 시작"
 
@@ -6245,7 +6169,6 @@ msgstr "퇴근 기록됨"
 msgid "Close"
 msgstr "닫기"
 
-#. placeholder {0}: order.serviceOrderId
 #. placeholder {0}: project.identifier
 msgid "Close {0}"
 msgstr "{0} 마감"
@@ -6507,17 +6430,10 @@ msgstr "호환성 규칙"
 msgid "Complete"
 msgstr "완료"
 
-#. placeholder {0}: order.serviceOrderId
-msgid "Complete {0}"
-msgstr "{0} 완료 처리"
-
 #. placeholder {0}: getCompleteQuantity(operation)
 #. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
 msgid "Complete {0}/{1}"
 msgstr "완료 처리 {0}/{1}"
-
-msgid "Complete {readableId}"
-msgstr "{readableId} 완료 처리"
 
 msgid "Complete All"
 msgstr "모두 완료"
@@ -6579,9 +6495,6 @@ msgstr "완료 진행 중 — 작업 현장에서 다시 시도하세요"
 
 msgid "Completion Time"
 msgstr "완료 시간"
-
-msgid "Component"
-msgstr "구성요소"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
@@ -7644,9 +7557,6 @@ msgstr "국가 코드"
 msgid "Coverage"
 msgstr "배치"
 
-msgid "Coverage Contract"
-msgstr "보장 계약"
-
 msgid "CPI"
 msgstr "CPI"
 
@@ -7678,9 +7588,6 @@ msgstr "생성 및 스냅샷"
 
 msgid "Create a change notice for the new revision and open it"
 msgstr "새 리비전에 대한 변경 통지를 생성하고 엽니다."
-
-msgid "Create a Draft invoice of the order's unbilled items, laid out by its work? The service order is closed."
-msgstr "주문의 미청구 품목의 초안 송장을 해당 작업으로 정렬하여 생성하시겠습니까? 서비스 주문이 마감됨되었습니다."
 
 msgid "Create a job"
 msgstr "작업 생성"
@@ -7747,9 +7654,6 @@ msgstr "요소 생성"
 
 msgid "Create Forecast"
 msgstr "예측 생성"
-
-msgid "Create Invoice"
-msgstr "송장 생성"
 
 msgid "Create Issue"
 msgstr "이슈 생성"
@@ -8178,9 +8082,6 @@ msgstr "고객 계정"
 
 msgid "Customer and supplier pages"
 msgstr "고객 및 공급업체 페이지"
-
-msgid "Customer Asset"
-msgstr "고객 자산"
 
 msgid "Customer Assets"
 msgstr "고객 자산"
@@ -9315,9 +9216,6 @@ msgstr "보증금:"
 
 msgid "Deposits"
 msgstr "보증금"
-
-msgid "Depot Repair"
-msgstr "정비소 수리"
 
 msgid "Depreciation"
 msgstr "감가상각"
@@ -10551,9 +10449,6 @@ msgstr "원가 요소"
 msgid "Element type: {0}"
 msgstr "요소 유형: {0}"
 
-msgid "Elements"
-msgstr "요소"
-
 msgid "Elements completed"
 msgstr "완료된 요소"
 
@@ -10809,9 +10704,6 @@ msgstr "입고, 출하, 이동, 조정 전반에 걸쳐 품목별 검증 및 지
 
 msgid "Engagement tier"
 msgstr "참여 등급"
-
-msgid "Engine rebuild"
-msgstr "엔진 재구축"
 
 msgid "Engineering"
 msgstr "엔지니어링"
@@ -11347,9 +11239,6 @@ msgstr "예상 입고"
 msgid "Expected Receipt Date"
 msgstr "예상 입고일"
 
-msgid "Expected Selling Price"
-msgstr "예상 판매가"
-
 msgid "Expedite"
 msgstr "앞당기기"
 
@@ -11358,9 +11247,6 @@ msgstr "작업 지시 {target}을(를) {date}로 앞당기기"
 
 msgid "Expedite purchase order {target} to {date}"
 msgstr "발주서 {target}을(를) {date}로 앞당기기"
-
-msgid "Expense"
-msgstr "비용"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "매출채권 정산 시 회수 불가로 상각된 고객 잔액에 대한 비용 계정"
@@ -11794,9 +11680,6 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to plan job"
 msgstr "작업 지시 계획 실패"
 
-msgid "Failed to read the signature"
-msgstr "서명 읽기에 실패했습니다"
-
 msgid "Failed to record gauge"
 msgstr "계측기 기록에 실패했습니다"
 
@@ -11872,12 +11755,6 @@ msgstr "원가 저장 실패"
 msgid "Failed to save the earned value"
 msgstr ""
 
-msgid "Failed to save the fixed price"
-msgstr "고정 가격 저장 실패"
-
-msgid "Failed to save the signature"
-msgstr "서명 저장 실패"
-
 msgid "Failed to save tools"
 msgstr "도구 저장 실패"
 
@@ -11914,20 +11791,11 @@ msgstr "견적 라인을 업데이트하지 못했습니다"
 msgid "Failed to update supplier quote line"
 msgstr "공급업체 견적 라인을 업데이트하지 못했습니다"
 
-msgid "Failed to update the item"
-msgstr "품목 업데이트 실패"
-
 msgid "Failed to update the items"
 msgstr "품목 업데이트 실패"
 
-msgid "Failed to update the price"
-msgstr "가격 업데이트 실패"
-
 msgid "Failed to update the setting"
 msgstr "설정을 업데이트하지 못했습니다"
-
-msgid "Failed to update the visit"
-msgstr "방문 업데이트 실패"
 
 msgid "Failed to update thumbnail path"
 msgstr "썸네일 경로를 업데이트하지 못했습니다"
@@ -11938,9 +11806,6 @@ msgstr "타임카드 설정을 업데이트하지 못했습니다"
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0}을(를) 업로드하지 못했습니다"
-
-msgid "Failed to upload a photo"
-msgstr "사진 업로드 실패"
 
 msgid "Failed to upload certificate"
 msgstr "인증서를 업로드하지 못했습니다"
@@ -11976,9 +11841,6 @@ msgstr "썸네일을 업로드하지 못했습니다"
 
 msgid "Failed to upload: {reason}"
 msgstr "업로드 실패: {reason}"
-
-msgid "Failed to write off the item"
-msgstr "품목 제거 실패"
 
 msgid "Failing"
 msgstr "실패"
@@ -12036,12 +11898,6 @@ msgstr "필드 정보"
 
 msgid "Field Mapping"
 msgstr "필드 매핑"
-
-msgid "Field Visit"
-msgstr "현장 방문"
-
-msgid "Field visits and refurbishments show here once opened."
-msgstr "현장 방문 및 개선은 열리면 여기에 표시됩니다."
 
 msgid "Fields"
 msgstr "필드"
@@ -12275,9 +12131,6 @@ msgstr "배치 크기가 표준과 다를 때 고정 원가 상각 차이"
 
 msgid "Fixed once accounting periods have been posted to or closed. Delete all open periods to change it."
 msgstr "회계 기간이 게시되거나 종료되면 고정됩니다. 변경하려면 모든 공개 기간을 삭제하십시오."
-
-msgid "Fixed price"
-msgstr "고정 가격"
 
 msgid "Fixed Price"
 msgstr "고정 가격"
@@ -13052,12 +12905,6 @@ msgstr "역사적 환율(자본)"
 msgid "History"
 msgstr "이력"
 
-msgid "History by Component"
-msgstr "구성 요소별 이력"
-
-msgid "History by Order"
-msgstr "주문별 이력"
-
 msgid "Hold"
 msgstr "보류"
 
@@ -13578,9 +13425,6 @@ msgstr "재고만"
 msgid "In stock, the remainder as {substitute}"
 msgstr "재고 있음, 나머지는 {substitute}로"
 
-msgid "In the company's time zone ({timeZone})"
-msgstr "회사의 시간대({timeZone})에서"
-
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
@@ -13834,9 +13678,6 @@ msgstr "설치 모드"
 msgid "Installed"
 msgstr "설치됨"
 
-msgid "Installed Components"
-msgstr "설치된 부품"
-
 msgid "Installed on this step, so it can't be hidden here."
 msgstr "이 단계에 설치되어 있어 여기서 숨길 수 없습니다."
 
@@ -14015,10 +13856,6 @@ msgstr "초대됨"
 msgid "Invoice"
 msgstr "송장"
 
-#. placeholder {0}: order.serviceOrderId
-msgid "Invoice {0}"
-msgstr "송장 {0}"
-
 msgid "Invoice {invoiceDate}"
 msgstr "송장 {invoiceDate}"
 
@@ -14060,9 +13897,6 @@ msgstr "송장 고객 사업장"
 
 msgid "Invoice Date"
 msgstr "송장 날짜"
-
-msgid "Invoice Detail"
-msgstr "송장 상세정보"
 
 msgid "Invoice From"
 msgstr "송장 출처"
@@ -14181,9 +14015,6 @@ msgstr "송장 관리"
 msgid "is"
 msgstr "같음"
 
-msgid "Is all the work on this unit done? If it is, the service order is completed and ready to invoice. If not, it stays In Progress for another visit."
-msgstr "이 장치의 모든 작업이 완료되었습니까? 그렇다면 서비스 주문이 완료되고 송장 준비가 됩니다. 그렇지 않으면 다음 방문을 위해 진행 중으로 유지됩니다."
-
 msgid "is any of"
 msgstr "다음 중 하나임"
 
@@ -14217,9 +14048,6 @@ msgstr "공급업체 조직 그룹입니다"
 msgid "Is supplier type group"
 msgstr "공급업체 유형 그룹입니다"
 
-msgid "Is the work on this unit done? A completed order is ready to invoice. Open visits stay as they are."
-msgstr "이 장치의 작업이 완료되었습니까? 완료된 주문은 송장 준비가 됩니다. 미결 방문은 그대로 유지됩니다."
-
 msgid "Issue"
 msgstr "이슈"
 
@@ -14243,12 +14071,6 @@ msgstr "불출 자재(열린 요소)"
 
 msgid "Issue not found"
 msgstr "이슈를 찾을 수 없습니다"
-
-msgid "Issue part"
-msgstr "부품 불출"
-
-msgid "Issue Part"
-msgstr "부품 불출"
 
 msgid "Issue Status"
 msgstr "이슈 상태"
@@ -14325,9 +14147,6 @@ msgstr "품목"
 msgid "Item / Location"
 msgstr "항목 / 위치"
 
-msgid "Item actions"
-msgstr "품목 작업"
-
 msgid "Item filters"
 msgstr "품목 필터"
 
@@ -14399,12 +14218,6 @@ msgstr "품목 유형(선택 사항)"
 
 msgid "Item types"
 msgstr "품목 유형"
-
-msgid "Item's unit cost"
-msgstr "품목의 단가"
-
-msgid "Itemized"
-msgstr "항목화"
 
 msgid "items"
 msgstr "품목"
@@ -14753,9 +14566,6 @@ msgstr "성"
 msgid "Last Name"
 msgstr "성"
 
-msgid "Last orders"
-msgstr "최근 주문"
-
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
 msgstr "마지막 전송 {when} 실패: {0}"
@@ -14777,15 +14587,6 @@ msgstr "마지막 실행"
 
 msgid "Last scheduled push {when}:"
 msgstr "마지막 예약된 푸시 {when}:"
-
-msgid "Last service"
-msgstr "마지막 서비스"
-
-msgid "Last Service"
-msgstr "최근 서비스"
-
-msgid "Last service <0/>"
-msgstr "최근 서비스 <0/>"
 
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
@@ -16498,9 +16299,6 @@ msgstr "내 저장된 보기"
 msgid "My Time"
 msgstr "내 시간"
 
-msgid "My Visits"
-msgstr "내 방문"
-
 msgid "Name"
 msgstr "이름"
 
@@ -16627,9 +16425,6 @@ msgstr "네트워크 오류"
 
 msgid "Never"
 msgstr "안 함"
-
-msgid "Never serviced"
-msgstr "서비스되지 않음"
 
 msgid "New"
 msgstr "신규"
@@ -16959,12 +16754,6 @@ msgstr "새 시리얼 번호"
 msgid "New Service"
 msgstr "새 서비스"
 
-msgid "New Service Order"
-msgstr "새 서비스 주문"
-
-msgid "New Service Template"
-msgstr "새 서비스 템플릿"
-
 msgid "New Shift"
 msgstr "신규 교대조"
 
@@ -17009,9 +16798,6 @@ msgstr "새 이동"
 
 msgid "New Transfer Line"
 msgstr "신규 이송 라인"
-
-msgid "New unit cost"
-msgstr "새 단위 원가"
 
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
@@ -17114,9 +16900,6 @@ msgstr "다음 채번 규칙"
 
 msgid "Next step"
 msgstr "다음 단계"
-
-msgid "Next Visit"
-msgstr "다음 방문"
 
 msgid "Next week"
 msgstr "다음 주"
@@ -17436,9 +17219,6 @@ msgstr "사용 가능한 초안 버전이 없습니다"
 msgid "No due date"
 msgstr "마감일 없음"
 
-msgid "No earlier service orders."
-msgstr "이전 서비스 주문이 없습니다."
-
 msgid "No earned value was recorded for this period."
 msgstr "이 기간에 기록된 기여 가치가 없습니다."
 
@@ -17691,9 +17471,6 @@ msgstr "메모 없음"
 msgid "No notes were given."
 msgstr "메모가 제공되지 않았습니다."
 
-msgid "No notes."
-msgstr "메모가 없습니다."
-
 msgid "No one assigned"
 msgstr "배치된 사람이 없습니다"
 
@@ -17824,9 +17601,6 @@ msgstr "그 날에 peg이 없습니다"
 msgid "No pegs yet"
 msgstr "아직 peg이 없습니다"
 
-msgid "No photos."
-msgstr "사진 없음."
-
 msgid "No planned invoices are removed."
 msgstr "계획된 송장이 제거되지 않습니다."
 
@@ -17865,9 +17639,6 @@ msgstr "설정된 프린터가 없습니다. \"프린터 추가\"를 클릭하�
 
 msgid "No priority"
 msgstr "우선순위 없음"
-
-msgid "No problem described"
-msgstr "설명된 문제 없음"
 
 msgid "No process selected"
 msgstr "프로세스를 선택하지 않았습니다"
@@ -17938,9 +17709,6 @@ msgstr "이 회사의 대표자가 아직 Carbon GovCloud Rider를 수락하지 
 msgid "No requests yet."
 msgstr "아직 요청이 없습니다."
 
-msgid "No resolution yet"
-msgstr "아직 해결책이 없습니다."
-
 msgid "No results"
 msgstr "결과 없음"
 
@@ -17985,21 +17753,6 @@ msgstr "일련번호 없음"
 
 msgid "No serial numbers selected yet."
 msgstr "아직 선택된 시리얼 번호가 없습니다."
-
-msgid "No service order has fitted a part to this unit."
-msgstr "이 개에 부품을 장착한 서비스 주문이 없습니다."
-
-msgid "No service orders"
-msgstr "서비스 주문 없음"
-
-msgid "No service orders yet"
-msgstr "아직 서비스 주문이 없습니다"
-
-msgid "No service templates yet"
-msgstr "아직 서비스 템플릿이 없습니다."
-
-msgid "No service work has been charged to this asset yet."
-msgstr "이 자산에 아직 서비스 작업이 청구되지 않았습니다."
 
 msgid "No services yet. Add the services this contract bills."
 msgstr "아직 서비스가 없습니다. 이 계약의 송장 관리 서비스를 추가합니다."
@@ -18130,12 +17883,6 @@ msgstr "가용한 버전이 없습니다"
 msgid "No video added"
 msgstr "추가된 비디오 없음"
 
-msgid "No visits planned"
-msgstr "계획된 방문이 없습니다"
-
-msgid "No visits yet. Schedule one to send a technician."
-msgstr "아직 방문이 없습니다. 기술자를 보내기 위해 하나를 예약하세요."
-
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
@@ -18153,9 +17900,6 @@ msgstr "아직 작업 패키지가 없습니다. 통제 계정 아래의 청구 
 
 msgid "No work yet. <0>Plan the project</0>"
 msgstr "아직 작업이 없습니다. <0>프로젝트 계획</0>"
-
-msgid "No, More Work"
-msgstr "아니오, 더 많은 작업"
 
 msgid "Nom"
 msgstr "명목"
@@ -18236,9 +17980,6 @@ msgstr "미설정"
 msgid "Not delivered"
 msgstr "배송되지 않음"
 
-msgid "Not done"
-msgstr "미완료"
-
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
@@ -18259,9 +18000,6 @@ msgstr "매핑되지 않음"
 
 msgid "Not now"
 msgstr "나중에"
-
-msgid "Not planned"
-msgstr "계획 안 됨"
 
 msgid "Not Qualified"
 msgstr "부적격"
@@ -18301,9 +18039,6 @@ msgstr "회사 설정에서 설정되지 않음"
 
 msgid "Not set up"
 msgstr "설정되지 않음"
-
-msgid "Not signed."
-msgstr "미서명."
 
 msgid "Not started"
 msgstr "시작되지 않음"
@@ -18380,9 +18115,6 @@ msgstr "아직 선택된 항목이 없습니다"
 
 msgid "Nothing to approve"
 msgstr "승인할 것이 없습니다"
-
-msgid "Nothing to bill yet. Time, parts and expenses charged to the work show here."
-msgstr "아직 청구할 것이 없습니다. 작업에 청구된 시간, 부품 및 비용이 여기에 표시됩니다."
 
 msgid "Nothing to build"
 msgstr "빌드할 것이 없습니다."
@@ -18577,9 +18309,6 @@ msgstr "렌탈 중"
 
 msgid "On Sales Order"
 msgstr "수주에"
-
-msgid "On Site"
-msgstr "현장"
 
 msgid "On Storage Unit"
 msgstr "보관 단위에"
@@ -18823,9 +18552,6 @@ msgstr "변경 통지 {ids}에서 열기. 새로운 버전 또는 리비전을 �
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "변경 통지 {ids}에서 열기. 새로운 버전 또는 리비전을 생성하려면 릴리스하세요."
 
-msgid "Open in maps"
-msgstr "지도에서 열기"
-
 msgid "Open in MES"
 msgstr "MES에서 열기"
 
@@ -18907,9 +18633,6 @@ msgstr "부분 조립 열기"
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
 
-msgid "Open Template"
-msgstr "미결 템플릿"
-
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "정산일에 장부를 개설하십시오. 회계 활성화는 일방향입니다."
 
@@ -18927,9 +18650,6 @@ msgstr "미결 시간표"
 
 msgid "Open transactions"
 msgstr "미결 거래"
-
-msgid "Open Visit"
-msgstr "미결 방문"
 
 msgid "Open Workflow"
 msgstr "워크플로우 열기"
@@ -19191,9 +18911,6 @@ msgstr "원본 계산"
 msgid "Other"
 msgstr "기타"
 
-msgid "Other charges"
-msgstr "기타 청구"
-
 msgid "Other cost"
 msgstr "기타 원가"
 
@@ -19323,12 +19040,6 @@ msgstr "분류 재정의"
 #. placeholder {0}: line.description
 msgid "Override Classification of {0}"
 msgstr "{0}의 분류 재정의"
-
-msgid "Override coverage"
-msgstr "적용 범위 재정의"
-
-msgid "Override Coverage"
-msgstr "재정의 적용 범위"
 
 msgid "Override line {line}"
 msgstr "라인 {line} 재정의"
@@ -19554,9 +19265,6 @@ msgstr "부품"
 
 msgid "Parts & items"
 msgstr "부품 & 품목"
-
-msgid "Parts fitted by a service order, with their own parts warranty."
-msgstr "서비스로 설치된 부품(자체 부품 보증 포함)"
 
 msgid "Parts run one after another — e.g. a saw or laser table."
 msgstr "부품은 차례대로 실행됩니다 — 예: 톱 또는 레이저 테이블."
@@ -19896,9 +19604,6 @@ msgstr "전화번호"
 
 msgid "Photo uploaded successfully"
 msgstr "사진이 업로드되었습니다"
-
-msgid "Photos"
-msgstr "사진"
 
 msgid "Physical printers available for assignment."
 msgstr "할당 가능한 물리적 프린터입니다."
@@ -20316,9 +20021,6 @@ msgstr "게시자"
 msgid "Posted By"
 msgstr "전기자"
 
-msgid "Posted from the service order"
-msgstr "서비스 주문에서 전기됨"
-
 msgid "Posted hours"
 msgstr "전기된 시간"
 
@@ -20436,9 +20138,6 @@ msgstr "수정안을 미리보는 중…"
 msgid "Previewing the cancellation…"
 msgstr "취소를 미리보는 중…"
 
-msgid "Previewing the completion…"
-msgstr "완료 예상 내용 조회 중…"
-
 msgid "Previous"
 msgstr "이전"
 
@@ -20534,12 +20233,6 @@ msgstr "{0} 라벨 인쇄"
 msgid "Print batch list"
 msgstr "배치 목록 인쇄"
 
-msgid "Print estimate"
-msgstr "견적 인쇄"
-
-msgid "Print Estimate"
-msgstr "견적 인쇄"
-
 msgid "Print job deleted"
 msgstr "인쇄 작업 삭제됨"
 
@@ -20588,9 +20281,6 @@ msgstr "개인정보처리방침"
 
 msgid "Private"
 msgstr "비공개"
-
-msgid "Problem"
-msgstr "문제"
 
 msgid "procedure"
 msgstr "절차서"
@@ -21155,9 +20845,6 @@ msgid "Put a contract project on hold under a stop-work order, with its 90-day e
 msgstr "계약 프로젝트를 중단 명령에 따라 보류 상태로 전환하고 90일 종료 날짜를 설정한 후 명령이 종료되면 재개합니다."
 
 msgid "Put on hold"
-msgstr "보류"
-
-msgid "Put on Hold"
 msgstr "보류"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
@@ -21924,9 +21611,6 @@ msgstr "환불 메모"
 msgid "Refund to Customer"
 msgstr "고객 환불"
 
-msgid "Refurbishment"
-msgstr "재정비"
-
 msgid "Regenerate"
 msgstr "재생성"
 
@@ -22596,9 +22280,6 @@ msgstr "수리 필요"
 msgid "Requires staffing"
 msgstr "인력 필수"
 
-msgid "Reschedule"
-msgstr "일정 변경"
-
 msgid "Reschedule tolerance"
 msgstr "재일정 허용 범위"
 
@@ -22607,9 +22288,6 @@ msgstr "재일정 허용도"
 
 msgid "Reschedule tolerance updated"
 msgstr "일정 변경 허용오차가 업데이트되었습니다"
-
-msgid "Reschedule Visit"
-msgstr "방문 일정 변경"
 
 msgid "Research (R&D tax)"
 msgstr "연구(연구개발세)"
@@ -22671,9 +22349,6 @@ msgstr "잔존가액"
 
 msgid "Residual Value %"
 msgstr "잔존가액 %"
-
-msgid "Resolution"
-msgstr "해결책"
 
 msgid "Resolve"
 msgstr "해결"
@@ -22946,12 +22621,6 @@ msgstr "매출 시작"
 msgid "Revenue Type"
 msgstr "매출 유형"
 
-msgid "Reversal"
-msgstr "반차"
-
-msgid "Reverse"
-msgstr "반차"
-
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -22969,9 +22638,6 @@ msgstr "이 송장에서 모든 품목 원장 항목을 역분개합니다."
 
 msgid "Reverse charge"
 msgstr "역청구"
-
-msgid "Reverse Charge"
-msgstr "역으로 청구"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "역청구 판매세"
@@ -23348,9 +23014,6 @@ msgstr "판매"
 msgid "Sale Price"
 msgstr "판매가"
 
-msgid "Sale price cap"
-msgstr "판매 가격 상한선"
-
 msgid "Sale Proceeds"
 msgstr "판매 대금"
 
@@ -23563,9 +23226,6 @@ msgstr "초안 저장"
 msgid "Save Method"
 msgstr "저장 방법"
 
-msgid "Save Signature"
-msgstr "서명 저장"
-
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
 
@@ -23683,9 +23343,6 @@ msgstr "일정 재생성됨"
 
 msgid "Schedule variance"
 msgstr "일정 차이"
-
-msgid "Schedule Visit"
-msgstr "방문 일정 예약"
 
 msgid "Scheduled"
 msgstr "예정됨"
@@ -24307,9 +23964,6 @@ msgstr "일련번호 추적"
 msgid "Serial-tracked jobs must be completed in whole units."
 msgstr "시리얼 번호로 추적되는 작업 지시는 정수 단위로 완료해야 합니다."
 
-msgid "Serial's unit cost"
-msgstr "시리얼의 단위 원가"
-
 msgid "Serial/Batch #"
 msgstr "일련번호/배치 #"
 
@@ -24364,26 +24018,8 @@ msgstr "서비스 노무 품목이 업데이트되었습니다"
 msgid "Service lines"
 msgstr "서비스 라인"
 
-msgid "Service Location"
-msgstr "서비스 사업장"
-
 msgid "Service order"
 msgstr "서비스 오더"
-
-msgid "Service Order"
-msgstr "서비스 오더"
-
-msgid "Service order pages"
-msgstr "서비스 주문 페이지"
-
-msgid "Service orders"
-msgstr "서비스 오더"
-
-msgid "Service Orders"
-msgstr "서비스 오더"
-
-msgid "Service orders that name this contract for coverage show here."
-msgstr "이 계약을 범위로 지정하는 서비스 주문이 여기에 표시됩니다."
 
 msgid "Service Period"
 msgstr "서비스 기간"
@@ -24396,15 +24032,6 @@ msgstr "서비스 시작일"
 
 msgid "Service supplier created"
 msgstr "서비스 공급업체가 생성되었습니다"
-
-msgid "Service template"
-msgstr "서비스 템플릿"
-
-msgid "Service Template"
-msgstr "서비스 템플릿"
-
-msgid "Service Templates"
-msgstr "서비스 템플릿"
 
 msgid "services"
 msgstr "서비스"
@@ -24663,9 +24290,6 @@ msgstr "이 스테이션에 할당된 교대조"
 
 msgid "Ship"
 msgstr "출하"
-
-msgid "Ship Back"
-msgstr "반송"
 
 msgid "Ship Date"
 msgstr "배송 일자"
@@ -24947,9 +24571,6 @@ msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 msgid "Shuffle"
 msgstr "섞기"
 
-msgid "Sign Again"
-msgstr "다시 서명"
-
 msgid "Sign in to Carbon"
 msgstr "Carbon에 로그인"
 
@@ -24980,17 +24601,8 @@ msgstr "다음 단계로 넘어가기 전 서명 검토"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "이 이슈를 종료하기 전에 기록해야 하는 서명으로, 워크플로에서 요구하는 서명과는 별도입니다."
 
-msgid "Signature"
-msgstr "서명"
-
 msgid "Signature pad"
 msgstr "서명 패드"
-
-msgid "Signed by"
-msgstr "서명자"
-
-msgid "Signed by {signedByName}"
-msgstr "{signedByName}이(가) 서명함"
 
 msgid "Signed in as {name}"
 msgstr "{name}(으)로 로그인됨"
@@ -25317,9 +24929,6 @@ msgstr "표준 계수"
 msgid "Standard Lead Time"
 msgstr "표준 리드타임"
 
-msgid "Standard posts this cost to material variance. The serial stays at its standard cost."
-msgstr "보통 검사는 이 원가를 자재 차이에 기록합니다. 일련번호는 표준원가로 유지됩니다."
-
 msgid "Standard weekly hours"
 msgstr "보통 매주 시간"
 
@@ -25372,17 +24981,8 @@ msgstr "입고 수량을 0으로 시작"
 msgid "Start Time"
 msgstr "시작 시간"
 
-msgid "Start Travel"
-msgstr "이동 시작"
-
 msgid "Start with"
 msgstr "…부터 시작"
-
-msgid "Start Work"
-msgstr "작업 시작"
-
-msgid "Start Work From"
-msgstr "이곳에서 작업 시작"
 
 msgid "Started"
 msgstr "시작됨"
@@ -26464,12 +26064,6 @@ msgstr "기술 세부정보"
 msgid "Technical support"
 msgstr "기술 지원"
 
-msgid "Technician"
-msgstr "기술자"
-
-msgid "Technicians"
-msgstr "기술자"
-
 msgid "Technique"
 msgstr "기법"
 
@@ -26737,9 +26331,6 @@ msgstr "이 공급업체가 속하는 카테고리(원자재, 서비스, 위탁�
 msgid "The change and its reason are kept in the timesheet's history."
 msgstr "변경 사항과 그 이유는 타임시트의 이력에 보관됩니다."
 
-msgid "The charge moves to the new coverage, and its cost to that coverage's account."
-msgstr "청구는 새 범위로 이동하고 그 원가는 범위의 계정으로 이동합니다."
-
 msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
 msgstr "계정과목표는 그룹의 모든 회사에서 공유됩니다. 이러한 회사들은 다른 계정으로 이동되는 문서 또는 전표를 가지고 있습니다."
 
@@ -26790,9 +26381,6 @@ msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기�
 
 msgid "The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts."
 msgstr "프로젝트 시간의 원가 등급(예: Engineer II)으로, 기록될 때 시간에 가격을 책정하는 유효 날짜 원가 시간당 요율이 있습니다."
-
-msgid "The cost is not capped"
-msgstr "원가가 제한되지 않습니다"
 
 msgid "The cost treatment of a project that builds fixed assets. Its charges post to assets under construction, one for the project and one per Final asset element, until Place in Service."
 msgstr "고정자산을 구축하는 프로젝트의 원가 처리. 해당 비용은 건설 중인 자산에 전기되며, 프로젝트당 하나와 최종 고정자산 요소당 하나, 서비스 배치까지."
@@ -27115,9 +26703,6 @@ msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하�
 
 msgid "The item has no made components at this depth. Include bought components to add its purchased parts."
 msgstr "품목에 이 깊이의 제조 부품이 없습니다. 구매한 부품을 추가하려면 구매 부품을 포함시키세요."
-
-msgid "The item's bill of materials"
-msgstr "품목의 자재 명세서"
 
 msgid "The item's rental rate"
 msgstr "품목의 임차료"
@@ -27560,9 +27145,6 @@ msgstr "추적 개체의 기록된 계보입니다 — 입고부터 출하까지
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "다른 모든 것의 기반이 되는 참조 데이터입니다. 가장 먼저 로드됩니다."
 
-msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes."
-msgstr "재고의 일련 번호의 리퍼비시. 일련 번호는 주문이 완료될 때까지 보류됩니다."
-
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
 msgid "The remaining {0} {1} will be expected again and counted as incoming supply."
@@ -27626,9 +27208,6 @@ msgstr "판매 대신 임대 목적으로 구축하거나 자본화할 개 단�
 
 msgid "the selected class"
 msgstr "선택한 클래스"
-
-msgid "The serial gets its own cost layer and leaves stock at its new unit cost."
-msgstr "시리얼은 자신의 원가 계층을 얻고 새로운 개 당 원가로 재고를 떠납니다."
 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "서비스 주문, 견적 및 송장에서 시간 가격을 정하는 판매 가격의 서비스 품목입니다."
@@ -27834,9 +27413,6 @@ msgstr "재고 단위와 다를 경우, 공급업체가 이 품목의 가격을 
 msgid "The unit's book value is not visible to you, so its cost of goods sold and asset legs are not shown."
 msgstr "자산의 장부가액이 표시되지 않으므로, 그 매출원가 및 자산 계정이 표시되지 않습니다."
 
-msgid "The unit's build history"
-msgstr "개의 구축 이력"
-
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "구매, 재고, 판매 시 사용하는 측정 단위"
 
@@ -27881,9 +27457,6 @@ msgstr "설비 실패 방식으로, 유지보수 및 품질 추적을 위해 사
 
 msgid "The work center's own bin where picked material is staged for production to draw down, as opposed to its warehouse source shelf."
 msgstr "작업장의 자체 빈으로, 피킹된 자재가 생산이 사용할 수 있도록 준비되는 곳이며, 창고 원본 선반과는 다릅니다."
-
-msgid "The work's cost is posted as the preview shows, and the serial goes back to stock. A completed refurbishment cannot be reopened."
-msgstr "작업의 원가가 미리 보기에 표시된 대로 전기되고 시리얼이 재고로 돌아갑니다. 완료된 재정비는 다시 열 수 없습니다."
 
 msgid "The working hours and calendars that drive scheduling"
 msgstr "일정 수립의 기준이 되는 근무 시간 및 캘린더"
@@ -28039,9 +27612,6 @@ msgstr "이 계약의 송장은 자동으로 전기되므로, 확인하려면 �
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처는 미결 항목이 없으므로 지불이 외상으로 기록됩니다."
-
-msgid "This customer has no active contract"
-msgstr "이 고객에게는 활성 계약이 없습니다."
 
 msgid "This customer type's rate"
 msgstr "이 고객 유형의 요금"
@@ -28217,9 +27787,6 @@ msgstr "이번 분기"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "이 입고에는 항목이 없습니다. 추가하려면 원본 문서를 선택하십시오."
 
-msgid "This refurbishment cannot be completed"
-msgstr "이 재정비는 완료될 수 없습니다."
-
 msgid "This removes the PDF. Employees will see the new content instead."
 msgstr "이렇게 하면 PDF가 제거됩니다. 직원이 대신 새 콘텐츠를 볼 수 있습니다."
 
@@ -28265,9 +27832,6 @@ msgstr "이 수주는 작업 지시가 생성되어야 하는 라인이 있습�
 msgid "This serial"
 msgstr "이 일련번호"
 
-msgid "This service order has no work yet."
-msgstr "이 서비스 주문에는 아직 작업이 없습니다."
-
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "이 작업장은 역량 게이트 작업을 실행합니다 — 자격 있는 작업자가 교대조에 있을 때만 실행됩니다; 인력 배치표에 할당된 작업자는 가용 노무를 더욱 형성합니다."
 
@@ -28292,9 +27856,6 @@ msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활�
 
 msgid "This unit has no cost in inventory"
 msgstr "이 개는 재고에 원가가 없습니다."
-
-msgid "This unit has no service orders yet."
-msgstr "이 개에는 아직 서비스 주문이 없습니다."
 
 msgid "This updates the theme for all users of the application"
 msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를 업데이트합니다"
@@ -28726,9 +28287,6 @@ msgstr "자산의 총 자본화 원가(구매가격에 운송비, 설치비 등 
 msgid "Total Construction Cost:"
 msgstr "총 구성 비용:"
 
-msgid "Total Cost"
-msgstr "총 원가"
-
 msgid "Total costs incurred to date"
 msgstr "현재까지 발생한 총 원가"
 
@@ -28987,9 +28545,6 @@ msgstr "휴지통"
 msgid "Travel"
 msgstr "출장"
 
-msgid "Travel started <0/>"
-msgstr "출장 시작됨 <0/>"
-
 msgid "Traveler materials disabled"
 msgstr "작업 이동표 자재가 비활성화되었습니다"
 
@@ -29001,9 +28556,6 @@ msgstr "작업 이동표 공정이 비활성화되었습니다"
 
 msgid "Traveler operations enabled"
 msgstr "작업 이동표 공정이 활성화되었습니다"
-
-msgid "Traveling"
-msgstr "출장 중"
 
 msgid "Treatment"
 msgstr "처리"
@@ -30145,9 +29697,6 @@ msgstr "대체 발주서 보기"
 msgid "View replacement sales order"
 msgstr "대체 수주 보기"
 
-msgid "View Return Order"
-msgstr "반품 주문 보기"
-
 msgid "View Run"
 msgstr "실행 보기"
 
@@ -30184,9 +29733,6 @@ msgstr "추적성 그래프 보기"
 msgid "View Transfer"
 msgstr "이동 보기"
 
-msgid "View Unit"
-msgstr "개 보기"
-
 msgid "Viewed"
 msgstr "조회됨"
 
@@ -30203,12 +29749,6 @@ msgstr "공개 범위"
 
 msgid "Visible on a user's public profile"
 msgstr "사용자의 공개 프로필에 표시됩니다"
-
-msgid "Visits"
-msgstr "방문"
-
-msgid "Visits planned in these days, for these filters, show here."
-msgstr "이 기간 동안 계획된 방문(이 필터 기준)은 여기에 표시됩니다."
 
 msgid "Void"
 msgstr "무효 처리"
@@ -30472,9 +30012,6 @@ msgstr "모든 차원별 재고를 높이거나 낮춘 요인"
 
 msgid "What each asset is worth, how long it lasts, and what happens to it at the end of the term. A purchase option that is reasonably certain becomes a payment row. Click a cell to change it."
 msgstr "각 자산의 가치, 지속 기간, 계약 종료 시 처리 방법입니다. 합리적으로 확실한 구매 옵션은 지불 행이 됩니다. 셀을 클릭하여 변경하세요."
-
-msgid "What each component has cost across every service order."
-msgstr "각 구성 요소가 모든 서비스 주문에서 비용이 얼마인지"
 
 msgid "What each period's payment is for this asset in the first year"
 msgstr "첫 해에 이 자산에 대한 각 기간의 지불액"
@@ -31031,9 +30568,6 @@ msgstr "작업 완료"
 msgid "Work Complete"
 msgstr "작업 완료"
 
-msgid "Work complete?"
-msgstr "작업 완료?"
-
 msgid "Work in process (WIP)"
 msgstr "재공품(WIP)"
 
@@ -31097,12 +30631,6 @@ msgstr "제거"
 msgid "Write Off Items"
 msgstr "항목 제거"
 
-msgid "Write-down"
-msgstr "평가감"
-
-msgid "Write-Down"
-msgstr "평가감"
-
 msgid "Write-Down Account"
 msgstr "평가감 계정"
 
@@ -31157,9 +30685,6 @@ msgstr "예, 거부"
 
 msgid "Yes, Update IDs"
 msgstr "예, ID 업데이트"
-
-msgid "Yes, Work Complete"
-msgstr "예, 작업 완료"
 
 msgid "Yesterday"
 msgstr "어제"
@@ -31343,9 +30868,6 @@ msgstr "팀 구성, 조직, 권한."
 
 msgid "Your vendor list"
 msgstr "공급업체 목록"
-
-msgid "Your visits for today and the next 7 days show here."
-msgstr "오늘 및 향후 7일간의 방문 내역이 여기에 표시됩니다."
 
 msgid "yourself"
 msgstr "본인"

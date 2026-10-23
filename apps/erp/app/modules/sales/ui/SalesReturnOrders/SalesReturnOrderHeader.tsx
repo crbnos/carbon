@@ -33,15 +33,10 @@ import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import { isReadyToShipBack } from "~/modules/service/service.models";
 import { path } from "~/utils/path";
 import SalesReturnOrderCreditModal from "./SalesReturnOrderCreditModal";
 import SalesReturnOrderStatus from "./SalesReturnOrderStatus";
-import type {
-  DepotRepairOrder,
-  SalesReturnOrder,
-  SalesReturnOrderLine
-} from "./types";
+import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 
 const SalesReturnOrderHeader = () => {
   const { t } = useLingui();
@@ -53,7 +48,6 @@ const SalesReturnOrderHeader = () => {
   const routeData = useRouteData<{
     salesReturnOrder: SalesReturnOrder;
     lines: SalesReturnOrderLine[];
-    depotRepairOrders: DepotRepairOrder[];
   }>(path.to.salesReturnOrder(id));
 
   if (!routeData?.salesReturnOrder) {
@@ -88,20 +82,10 @@ const SalesReturnOrderHeader = () => {
   const hasReturnToCustomerLine = routeData.lines.some(
     (line) => line.disposition === "Return to Customer"
   );
-  // A Repair line ships its unit back once the unit's Depot Repair order is
-  // done and the unit is still at the depot.
-  const hasRepairToShip = (routeData.depotRepairOrders ?? []).some(
-    isReadyToShipBack
-  );
   // Credit is capped at received quantity — the button is useless before
-  // anything has been received. A Repair line is never credited.
+  // anything has been received.
   const hasReceivedQuantity = routeData.lines.some(
-    (line) => line.disposition !== "Repair" && Number(line.quantityReceived) > 0
-  );
-  // A replacement copies the lines that are not Repair; with none, there is
-  // nothing to replace.
-  const hasReplaceableLine = routeData.lines.some(
-    (line) => line.disposition !== "Repair"
+    (line) => Number(line.quantityReceived) > 0
   );
 
   const confirmDisclosure = useDisclosure();
@@ -217,8 +201,8 @@ const SalesReturnOrderHeader = () => {
             )}
 
             {!["Draft", "Cancelled"].includes(status ?? "") &&
-              ((hasReceivedQuantity && hasReturnToCustomerLine) ||
-                hasRepairToShip) && (
+              hasReceivedQuantity &&
+              hasReturnToCustomerLine && (
                 <RecordAction slot="overflow">
                   <Button
                     variant="secondary"
@@ -265,7 +249,7 @@ const SalesReturnOrderHeader = () => {
                       </Link>
                     </Button>
                   </RecordAction>
-                ) : hasReplaceableLine ? (
+                ) : (
                   <RecordAction slot="overflow">
                     <Button
                       leftIcon={<LuGitCompare />}
@@ -285,7 +269,7 @@ const SalesReturnOrderHeader = () => {
                       <Trans>Create Replacement</Trans>
                     </Button>
                   </RecordAction>
-                ) : null}
+                )}
               </>
             )}
           </>

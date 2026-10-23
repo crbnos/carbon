@@ -580,15 +580,13 @@ export const saveTimesheetEntryInput = z.object({
   /** Required to change a saved entry in DCAA mode. */
   reason: z.string().optional(),
   /**
-   * `cell` (the grid) edits the one entry of a cell. `add` (Log time,
-   * service time) always inserts a new entry, as Phase 1a did.
+   * `cell` (the grid) edits the one entry of a cell. `add` (Log time)
+   * always inserts a new entry, as Phase 1a did.
    */
   mode: z.enum(["cell", "add"]).default("cell"),
   /** `add` only: the status of the new entry. Log time submits it in
    *  Standard mode; DCAA mode saves the owner's entry as Draft. */
   status: z.enum(["Draft", "Submitted"]).optional(),
-  /** `add` only: the service visit the time belongs to. */
-  serviceVisitId: z.string().min(1).nullable().optional(),
   /**
    * The job the time was worked on (shop time under DCAA). Part of the
    * cell's key: null is a row with no job. Left out, a cell save matches its

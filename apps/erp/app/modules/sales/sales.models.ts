@@ -1276,27 +1276,12 @@ export const salesReturnDispositionType = [
   // "No Action Required",
   "Pending",
   // "Quarantine",
-  "Repair",
+  // "Repair",
   "Return to Customer",
   "Rework",
   "Scrap",
   "Use As Is"
 ] as const;
-
-/** Why a line's Repair disposition cannot change once it has received. */
-export const REPAIR_DISPOSITION_LOCKED_MESSAGE =
-  "A line's Repair disposition is set before receipt and cannot change after it. Void the receipt to change it.";
-
-/** Why a Repair line takes no credit memo: the unit goes back to the customer. */
-export const REPAIR_LINE_CREDIT_MESSAGE =
-  "Change the disposition before you credit a repair line.";
-
-/** Why an RMA of Repair lines only gets no replacement order. */
-export const REPAIR_ONLY_REPLACEMENT_MESSAGE =
-  "Every line is a repair. There is nothing to replace.";
-
-/** The dispositions a line can take before any quantity is received. */
-export const salesReturnPreReceiptDispositions = ["Pending", "Repair"] as const;
 
 export const SALES_RETURN_ORDER_LOCKED_STATUSES = [
   "Completed",

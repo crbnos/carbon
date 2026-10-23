@@ -39,8 +39,6 @@ export const EXEMPT_COUNTERS: Record<string, string> = {
   reimbursement:
     "no form or API write takes reimbursementId (reimbursement lines only reference their parent)",
   revenueRecognitionRun: "no form or API write takes runId",
-  serviceOrder:
-    "no form or API write takes serviceOrderId (insertServiceOrder takes it from get_next_sequence)",
   projectStockTransfer:
     "no form or API write takes projectStockTransferId (the transfer insert takes it from get_next_sequence)"
 };

@@ -18,7 +18,6 @@ import {
   preproductionActual
 } from "~/modules/projects/projects.models";
 import {
-  getChildServiceProjectCosts,
   getProjectBurdenSummary,
   getProjectCostSummary,
   getProjectElementCosts
@@ -31,7 +30,6 @@ import type {
   EarnedValuePeriodOption
 } from "~/modules/projects/ui/Costs/ProjectEarnedValue.ee";
 import ProjectEarnedValue from "~/modules/projects/ui/Costs/ProjectEarnedValue.ee";
-import type { ServiceOrderCostRow } from "~/modules/projects/ui/Costs/ServiceOrderCosts";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -45,13 +43,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const [elements, costSummary, serviceCosts, burdenSummary] =
-    await Promise.all([
-      getProjectElementCosts(client, projectId, companyId),
-      getProjectCostSummary(client, projectId, companyId),
-      getChildServiceProjectCosts(client, projectId, companyId),
-      getProjectBurdenSummary(client, projectId, companyId)
-    ]);
+  const [elements, costSummary, burdenSummary] = await Promise.all([
+    getProjectElementCosts(client, projectId, companyId),
+    getProjectCostSummary(client, projectId, companyId),
+    getProjectBurdenSummary(client, projectId, companyId)
+  ]);
 
   if (elements.error) {
     logger.error("Failed to load project elements", {
@@ -76,35 +72,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  if (serviceCosts.error) {
-    logger.error("Failed to load the project's service order costs", {
-      companyId,
-      projectId,
-      error: serviceCosts.error
-    });
-  }
-
-  // The service orders a coverage contract on this project covers. Their
-  // actual adds to the project total; RLS returns none without service_view.
-  const serviceOrders: ServiceOrderCostRow[] = (serviceCosts.data ?? []).map(
-    (row) => ({
-      serviceOrderId: row.serviceOrderId,
-      serviceOrderReadableId: row.serviceOrderReadableId,
-      status: row.status,
-      serial: row.serial,
-      actual: Number(row.actual),
-      actualHours: Number(row.actualHours),
-      billed: Number(row.billed),
-      unbilled: Number(row.unbilled)
-    })
-  );
-  const serviceActual = serviceOrders.reduce((sum, row) => sum + row.actual, 0);
-
   const elementRows = elements.data ?? [];
   const { byElement, project } = buildProjectCostFigures(
     elementRows,
-    costSummary.data ?? [],
-    serviceActual
+    costSummary.data ?? []
   );
 
   const rows: ProjectCostRow[] = elementRows.map((element) => ({
@@ -178,8 +149,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     earnedValue,
     rows,
     project,
-    serviceOrders,
-    serviceActual,
     preproduction,
     burdenByElement,
     projectBurden: round(projectBurden),
@@ -275,8 +244,6 @@ export default function ProjectCostsRoute() {
     earnedValue,
     rows,
     project,
-    serviceOrders,
-    serviceActual,
     preproduction,
     burdenByElement,
     projectBurden,
@@ -289,8 +256,6 @@ export default function ProjectCostsRoute() {
         projectId={projectId}
         rows={rows}
         project={project}
-        serviceOrders={serviceOrders}
-        serviceActual={serviceActual}
         preproduction={preproduction}
         burdenByElement={burdenByElement}
         projectBurden={projectBurden}

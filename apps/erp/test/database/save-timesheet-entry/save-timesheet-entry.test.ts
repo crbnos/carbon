@@ -473,7 +473,7 @@ databaseTest(
       expect(loggedRow.note).toEqual("Fixture rework");
       expect(Number((await f.entry(draft.data!.entryId!)).hours)).toEqual(6);
 
-      // A Posted entry in the cell does not stop a second log (service time).
+      // A Posted entry in the cell does not stop a second log.
       await f.db
         .updateTable("timesheetEntry")
         .set({ status: "Posted" })
@@ -488,8 +488,7 @@ databaseTest(
           entryDate: day(-2),
           hours: 1,
           mode: "add",
-          status: "Draft",
-          serviceVisitId: null
+          status: "Draft"
         },
         saveTimesheetEntry
       );

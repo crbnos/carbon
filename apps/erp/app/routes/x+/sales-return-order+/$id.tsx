@@ -20,7 +20,6 @@ import {
   SalesReturnOrderHeader,
   SalesReturnOrderProperties
 } from "~/modules/sales/ui/SalesReturnOrders";
-import { getDepotRepairOrdersByReturnOrder } from "~/modules/service/service.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -44,10 +43,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [salesReturnOrder, lines, depotRepairOrders] = await Promise.all([
+  const [salesReturnOrder, lines] = await Promise.all([
     getSalesReturnOrder(client, id),
-    getSalesReturnOrderLines(client, id, companyId),
-    getDepotRepairOrdersByReturnOrder(client, id, companyId)
+    getSalesReturnOrderLines(client, id, companyId)
   ]);
 
   if (salesReturnOrder.error) {
@@ -66,10 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     salesReturnOrder: salesReturnOrder.data,
-    lines: lines.data ?? [],
-    // Empty for a user without Service access (RLS): the Repair lines then
-    // show no orders and no Ship button of their own.
-    depotRepairOrders: depotRepairOrders.data ?? []
+    lines: lines.data ?? []
   };
 }
 

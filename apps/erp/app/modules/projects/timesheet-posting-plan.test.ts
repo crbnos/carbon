@@ -38,10 +38,7 @@ function contexts(
         ancestors: [],
         defaults: {
           projectExpenseAccount: "6100",
-          projectWorkInProgressAccount: "1400",
-          warrantyExpenseAccount: "6120",
-          costOfGoodsSoldAccount: "5010",
-          workInProgressAccount: "1230"
+          projectWorkInProgressAccount: "1400"
         },
         assets: new Map(),
         accountAllowability: {}

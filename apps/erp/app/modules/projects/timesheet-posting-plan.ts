@@ -23,7 +23,7 @@ import {
   type OptionalDefaultRole,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
-import { credit, debit, round, type ServiceCoverage } from "@carbon/utils";
+import { credit, debit, round } from "@carbon/utils";
 import {
   assertChargeable,
   isUnallowableCharge,
@@ -44,11 +44,6 @@ export type TimesheetPostingEntry = {
   laborCategoryId: string;
   hours: number;
   reversalOfId: string | null;
-  /** A Service project's entry: who pays for it (decides the account). */
-  coverage?: ServiceCoverage | null;
-  coverageReason?: string | null;
-  /** A Service project's customer, for the Customer dimension. */
-  customerId?: string | null;
   /**
    * A correction's replacement on its original's labor category: the
    * undiluted rate the original booked, used instead of the rate on the
@@ -95,7 +90,6 @@ export type TimesheetJournalLine = {
   projectId: string;
   projectElementId: string | null;
   employeeId: string;
-  customerId: string | null;
 };
 
 export type TimesheetLedgerRow = {
@@ -111,8 +105,6 @@ export type TimesheetLedgerRow = {
   /** The asset a Capitalize entry builds, else null. */
   fixedAssetId: string | null;
   postCapitalization: boolean;
-  coverage: ServiceCoverage | null;
-  coverageReason: string | null;
   /** `isUnallowableCharge` for the project account. */
   unallowable: boolean;
 };
@@ -267,7 +259,7 @@ export function planTimesheetPosting(
     }
 
     const { treatment, accountId, fixedAssetId, postCapitalization } =
-      resolveProjectPostingAccount(ctx, entry.entryDate, entry.coverage);
+      resolveProjectPostingAccount(ctx, entry.entryDate);
 
     const rate =
       entry.bookedRate ??
@@ -395,8 +387,7 @@ function bookedAccount(
     original.accountId ??
     (original.ledgerRowId === null
       ? null
-      : resolveProjectPostingAccount(ctx, entry.entryDate, entry.coverage)
-          .accountId);
+      : resolveProjectPostingAccount(ctx, entry.entryDate).accountId);
   return {
     treatment,
     accountId,
@@ -430,7 +421,7 @@ function pushCost(
   }
 ): void {
   const { entry, ctx, resolved, cost, options } = args;
-  const { treatment, accountId } = resolved;
+  const { accountId } = resolved;
   plan.ledgerRows.push({
     entryId: entry.id,
     projectId: entry.projectId,
@@ -443,9 +434,6 @@ function pushCost(
     reversalOfId: args.reversalOfId,
     fixedAssetId: resolved.fixedAssetId,
     postCapitalization: resolved.postCapitalization,
-    coverage: treatment === "By Coverage" ? (entry.coverage ?? null) : null,
-    coverageReason:
-      treatment === "By Coverage" ? (entry.coverageReason ?? null) : null,
     unallowable: args.unallowable ?? isUnallowableCharge(ctx, accountId)
   });
 
@@ -466,15 +454,13 @@ function pushCost(
     postingDate: entry.entryDate,
     projectId: entry.projectId,
     projectElementId: entry.projectElementId,
-    employeeId: entry.employeeId,
-    customerId: entry.customerId ?? null
+    employeeId: entry.employeeId
   };
   plan.lines.push(
     {
       ...shared,
       accountId,
-      description:
-        treatment === "By Coverage" ? "Service Labor" : "Project Labor",
+      description: "Project Labor",
       amount: debit("expense", cost),
       accountDefaultRole: null,
       isProjectDebit: true
@@ -532,11 +518,7 @@ export function planRedilutionPostings(
       });
       continue;
     }
-    const resolved = resolveProjectPostingAccount(
-      ctx,
-      entry.entryDate,
-      entry.coverage
-    );
+    const resolved = resolveProjectPostingAccount(ctx, entry.entryDate);
     if (resolved.treatment === "Statistical" || resolved.accountId === null) {
       continue;
     }

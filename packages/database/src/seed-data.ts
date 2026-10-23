@@ -616,15 +616,6 @@ export const sequences = [
     step: 1
   },
   {
-    table: "serviceOrder",
-    name: "Service Order",
-    prefix: "SVC",
-    suffix: null,
-    next: 0,
-    size: 6,
-    step: 1
-  },
-  {
     table: "projectStockTransfer",
     name: "Project Stock Transfer",
     prefix: "PST",

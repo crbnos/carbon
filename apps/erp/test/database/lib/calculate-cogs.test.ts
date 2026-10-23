@@ -147,8 +147,8 @@ databaseTest(
 );
 
 // Children of a layer cover different units of it, in order; children of a
-// layer stamped for one serial all belong to that unit (a refurbishment's
-// revaluation and write-down, Field Service Phase C).
+// layer stamped for one serial all belong to that unit (a revaluation and a
+// write-down of that serial).
 databaseTest(
   "a stamped layer relieves every child; an unstamped layer one child per unit",
   async () => {

@@ -9,7 +9,6 @@ import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuCalendar,
-  LuClipboardList,
   LuMapPin,
   LuPackage,
   LuShieldCheck,
@@ -35,12 +34,6 @@ type CustomerAssetsTableProps = {
   /** On a customer's page: no customer column, no customer filter. */
   customerId?: string;
 };
-
-/** The count of the asset's orders that are not Closed or Cancelled. */
-export function openOrderCount(asset: { openOrders: unknown }) {
-  const rows = asset.openOrders as { count: number }[] | null;
-  return rows?.[0]?.count ?? 0;
-}
 
 const CustomerAssetsTable = memo(
   ({ data, count, customerId }: CustomerAssetsTableProps) => {
@@ -146,18 +139,6 @@ const CustomerAssetsTable = memo(
           }
         },
         {
-          id: "openOrders",
-          header: t`Open Orders`,
-          enableSorting: false,
-          accessorFn: (row) => openOrderCount(row),
-          cell: ({ row }) => (
-            <span className="tabular-nums">{openOrderCount(row.original)}</span>
-          ),
-          meta: {
-            icon: <LuClipboardList />
-          }
-        },
-        {
           accessorKey: "status",
           header: t`Status`,
           cell: ({ row }) => (
@@ -188,21 +169,9 @@ const CustomerAssetsTable = memo(
             <MenuIcon icon={<LuBookMarked />} />
             <Trans>View Asset</Trans>
           </MenuItem>
-          <MenuItem
-            disabled={
-              !permissions.can("create", "service") ||
-              row.status !== "In Service"
-            }
-            onClick={() =>
-              navigate(`${path.to.newServiceOrder}?customerAssetId=${row.id}`)
-            }
-          >
-            <MenuIcon icon={<LuClipboardList />} />
-            <Trans>New Service Order</Trans>
-          </MenuItem>
         </>
       );
-    }, [navigate, permissions]);
+    }, [navigate]);
 
     const newAssetPath = customerId
       ? `${path.to.newCustomerAsset}?customerId=${customerId}`

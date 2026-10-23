@@ -521,8 +521,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           quantityReceived: completed ? line.quantity : 0,
           returnReasonId,
           unitOfMeasureCode: "EA",
-          unitPrice: line.unitPrice,
-          disposition: line.disposition
+          unitPrice: line.unitPrice
         });
         lineIds.push(lineId);
         ctx.refs.documents[`rmaline:${spec.key}:${index + 1}`] = lineId;

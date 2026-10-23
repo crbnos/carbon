@@ -186,8 +186,7 @@ export const getProjectSwitcherOptions = defineServiceFn({
  * Get the company's projects.
  *
  * @remarks
- * Lists the active Standard projects of the company. A Service project
- * belongs to its service order and is listed in Service.
+ * Lists the active projects of the company.
  *
  * @param search - Matches the name, identifier or description.
  * @param status - Only projects in these statuses.
@@ -803,7 +802,7 @@ export const getChargeNumbers = defineServiceFn({
  *
  * @remarks
  * Lists the company's project states in board order. States are
- * company-wide: every project and service order uses them.
+ * company-wide: every project uses them.
  *
  * @mcp read
  */
@@ -4098,8 +4097,7 @@ export const upsertLaborCategoryRate = defineServiceFn({
  *
  * @remarks
  * Both dates are inclusive. Each entry has the project, element and labor
- * category names; a Service project carries its service order. Left out,
- * `employeeId` is the caller.
+ * category names. Left out, `employeeId` is the caller.
  *
  * @mcp read
  */

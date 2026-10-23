@@ -5,7 +5,6 @@
 import { describe, expect, it } from "vitest";
 import {
   assertChargeable,
-  buildBillableItem,
   buildContractBillableItem,
   buildProjectLedgerRow,
   isUnallowableCharge,
@@ -22,10 +21,7 @@ import { projectBillingTestFixture } from "../fixtures/project-billing";
 
 const defaults = {
   projectExpenseAccount: "acct-expense",
-  projectWorkInProgressAccount: "acct-wip",
-  warrantyExpenseAccount: "acct-warranty",
-  costOfGoodsSoldAccount: "acct-cogs",
-  workInProgressAccount: "acct-inventory-wip"
+  projectWorkInProgressAccount: "acct-wip"
 };
 
 function project(
@@ -233,95 +229,6 @@ describe("resolveProjectPostingAccount: Capitalize", () => {
   });
 });
 
-describe("resolveProjectPostingAccount: By Coverage", () => {
-  const service = (overrides: Partial<ProjectPostingContext> = {}) =>
-    context({
-      project: project({
-        identifier: "SVC000123",
-        costTreatment: "By Coverage"
-      }),
-      ...overrides
-    });
-  const accountOf = (ctx: ProjectPostingContext, coverage: string | null) =>
-    resolveProjectPostingAccount(
-      ctx,
-      "2028-02-01",
-      coverage as Parameters<typeof resolveProjectPostingAccount>[2]
-    ).accountId;
-
-  it("posts each coverage to its account", () => {
-    expect(accountOf(service(), "Warranty")).toBe("acct-warranty");
-    expect(accountOf(service(), "Contract")).toBe("acct-cogs");
-    expect(accountOf(service(), "Billable")).toBe("acct-cogs");
-    expect(accountOf(service(), "Capitalized")).toBe("acct-inventory-wip");
-  });
-
-  it("posts a Contract charge to the contract project's account", () => {
-    const ctx = service({
-      project: project({
-        identifier: "SVC000123",
-        costTreatment: "By Coverage",
-        parentProjectId: "prj-contract"
-      }),
-      parent: context({
-        project: project({ id: "prj-contract", costTreatment: "Expense" })
-      })
-    });
-    expect(accountOf(ctx, "Contract")).toBe("acct-expense");
-    // A Statistical contract project keeps the natural account.
-    const statistical = service({
-      project: ctx.project,
-      parent: context({
-        project: project({ id: "prj-contract", costTreatment: "Statistical" })
-      })
-    });
-    expect(accountOf(statistical, "Contract")).toBe("acct-cogs");
-  });
-
-  it("refuses a Contract charge on a Closed contract project, and posts on an On Hold one", () => {
-    const withParent = (status: ProjectPostingProject["status"]) =>
-      service({
-        project: project({
-          identifier: "SVC000123",
-          costTreatment: "By Coverage",
-          parentProjectId: "prj-contract"
-        }),
-        parent: context({
-          project: project({
-            id: "prj-contract",
-            identifier: "ACME27",
-            costTreatment: "Expense",
-            status
-          })
-        })
-      });
-
-    expect(() => accountOf(withParent("Closed"), "Contract")).toThrow(
-      ProjectChargeError
-    );
-    expect(() => accountOf(withParent("Closed"), "Contract")).toThrow(
-      "The contract project ACME27 is closed. Change the coverage to Billable, or reopen the contract project."
-    );
-    expect(accountOf(withParent("On Hold"), "Contract")).toBe("acct-expense");
-    expect(accountOf(withParent("Technically Complete"), "Contract")).toBe(
-      "acct-expense"
-    );
-    // Only a Contract charge reaches the parent.
-    expect(accountOf(withParent("Closed"), "Billable")).toBe("acct-cogs");
-    expect(accountOf(withParent("Closed"), "Warranty")).toBe("acct-warranty");
-  });
-
-  it("refuses a charge with no coverage, and a missing default by name", () => {
-    expect(() => accountOf(service(), null)).toThrow(ProjectChargeError);
-    expect(() =>
-      accountOf(
-        service({ defaults: { ...defaults, warrantyExpenseAccount: null } }),
-        "Warranty"
-      )
-    ).toThrow(/Warranty Expense/);
-  });
-});
-
 describe("assertChargeable", () => {
   it("refuses a new charge on a Draft project, a Backlog element and a non-chargeable element", () => {
     expect(() =>
@@ -448,72 +355,10 @@ describe("buildProjectLedgerRow", () => {
 });
 
 describe("billable items", () => {
-  const ledgerRow = {
-    id: "pjl-1",
-    companyId: "co-1",
-    projectId: "prj-svc",
-    projectElementId: "el-1",
-    costType: "Labor" as const,
-    quantity: 2,
-    amount: 170,
-    itemId: null,
-    createdBy: "user-1"
-  };
-
-  it("prices 2 h of Labor at the service labor price", () => {
-    const item = buildBillableItem({
-      ledgerRow,
-      coverage: "Billable",
-      laborPrice: 95,
-      partPrice: null,
-      description: "Labor"
-    });
-    expect(item).toMatchObject({
-      projectLedgerId: "pjl-1",
-      quantity: 2,
-      unitPrice: 95,
-      amount: 190,
-      coverage: "Billable",
-      status: "Unbilled"
-    });
-  });
-
-  it("keeps a Warranty part on the invoice at price 0", () => {
-    const item = buildBillableItem({
-      ledgerRow: {
-        ...ledgerRow,
-        costType: "Material",
-        quantity: 3,
-        amount: 42,
-        itemId: "item-1"
-      },
-      coverage: "Warranty",
-      laborPrice: 95,
-      partPrice: 25,
-      description: "Gasket"
-    });
-    expect(item).toMatchObject({
-      itemId: "item-1",
-      quantity: 3,
-      unitPrice: 0,
-      amount: 0,
-      description: "Gasket (Covered by warranty)"
-    });
-    expect(
-      buildBillableItem({
-        ledgerRow,
-        coverage: "Capitalized",
-        laborPrice: 95,
-        partPrice: null,
-        description: "Labor"
-      })
-    ).toBeNull();
-  });
-
   const billed = {
     id: "pbi-1",
     companyId: "co-1",
-    projectId: "prj-svc",
+    projectId: "prj-1",
     projectElementId: "el-1",
     projectLedgerId: "pjl-1",
     customerContractLineId: null,
@@ -522,7 +367,6 @@ describe("billable items", () => {
     quantity: 2,
     unitPrice: 95,
     amount: 190,
-    coverage: "Billable" as const,
     status: "Unbilled" as const,
     createdBy: "user-1"
   };

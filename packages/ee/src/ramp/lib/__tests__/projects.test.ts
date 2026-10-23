@@ -123,12 +123,15 @@ describe("diffProjectOptions", () => {
 });
 
 describe("desiredProjectOptions", () => {
-  it("pushes Standard projects and never a Service project", () => {
+  it("pushes every project", () => {
     expect(
       desiredProjectOptions([
-        { id: "prj_a", name: "Apollo", projectType: "Standard" },
-        { id: "prj_s", name: "SN-0001 — Acme", projectType: "Service" }
+        { id: "prj_a", name: "Apollo" },
+        { id: "prj_b", name: "Borealis" }
       ])
-    ).toEqual([{ id: "prj_a", value: "Apollo" }]);
+    ).toEqual([
+      { id: "prj_a", value: "Apollo" },
+      { id: "prj_b", value: "Borealis" }
+    ]);
   });
 });

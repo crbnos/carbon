@@ -141,7 +141,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
       key: "service",
       permission: "service",
       name: t`Service`,
-      to: path.to.serviceOrders,
+      to: path.to.customerAssets,
       icon: LuWrench
     },
     {

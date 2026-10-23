@@ -5460,30 +5460,24 @@ function getEntityDimensionValues(
         .eq("companyId", companyId)
         .order("name");
     case "Project":
-      // Only ACTIVE Standard projects are selectable for new dimension
-      // assignments; soft-deleted (active = false) projects stay resolvable
-      // for history via getEntityValuesByIds but must not appear as new
-      // options. A Service project's journal lines carry its Project value
-      // from posting, so reports still group by service order.
+      // Only ACTIVE projects are selectable for new dimension assignments;
+      // soft-deleted (active = false) projects stay resolvable for history
+      // via getEntityValuesByIds but must not appear as new options.
       return client
         .from("project")
         .select("id, name")
         .eq("companyId", companyId)
-        .eq("projectType", "Standard")
         .eq("active", true)
         .order("name");
     case "ProjectElement":
-      // Only chargeable elements of Standard projects take a charge here, so
-      // only they are options. The label is the element's readable id and
-      // name ("ST-12 Optics").
+      // Only chargeable elements take a charge here, so only they are
+      // options. The label is the element's readable id and name
+      // ("ST-12 Optics").
       return client
         .from("projectElement")
-        .select(
-          "id, readableId, name, project:project!projectElement_project_fkey!inner(projectType)"
-        )
+        .select("id, readableId, name")
         .eq("companyId", companyId)
         .eq("isChargeable", true)
-        .eq("project.projectType", "Standard")
         .order("readableId")
         .then(({ data, error }) => ({
           data: (data ?? []).map((e) => ({
@@ -21160,8 +21154,6 @@ async function recostProjectIssues(
         unitOfMeasureCode: issue.unitOfMeasureCode,
         amount,
         journalLineId: recost.offsetJournalLineId,
-        coverage: issue.coverage,
-        coverageReason: issue.coverageReason,
         unallowable: issue.unallowable,
         createdBy: userId
       })

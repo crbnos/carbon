@@ -3269,7 +3269,6 @@ export async function dcaaTimekeepingRefusal(
     .from("project")
     .select("id", { count: "exact", head: true })
     .eq("companyId", companyId)
-    .eq("projectType", "Standard")
     .eq("status", "Released")
     .is("costObjective", null);
   if (missing.error) {

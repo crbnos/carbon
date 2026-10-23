@@ -228,8 +228,6 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   salesRfq: 4,
   salesRfqLine: 4,
   service: 1,
-  serviceOrder: 2,
-  serviceVisit: 1,
   shift: 2,
   shipment: 5,
   shipmentLine: 5,

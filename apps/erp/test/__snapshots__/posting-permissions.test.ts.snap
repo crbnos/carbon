@@ -187,9 +187,6 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
   "projects.postTimesheetPermission": {
     "update": "projects",
   },
-  "projects.reclassProjectCoveragePermission": {
-    "update": "projects",
-  },
   "projects.saveTimesheetEntryPermission": {
     "update": "projects",
   },
@@ -238,13 +235,6 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
   },
   "sales.postRentalAgreementPermission": {
     "update": "sales",
-  },
-  "service.completeServiceOrderPermission": {
-    "update": "service",
-  },
-  "service.createServiceOrderInvoicePermission": {
-    "create": "invoicing",
-    "update": "service",
   },
   "settings.seedCompanyPermission": "system",
   "shared.convertDocumentPermission": {

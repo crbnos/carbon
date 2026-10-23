@@ -210,10 +210,8 @@ export default function TimesheetGrid({
     0
   );
   const hasTimecards = timecardTotal > 0;
-  const hasDraft = gridRows.some(
-    (row) =>
-      !row.isService &&
-      Object.values(row.cells).some((cell) => cell.status === "Draft")
+  const hasDraft = gridRows.some((row) =>
+    Object.values(row.cells).some((cell) => cell.status === "Draft")
   );
   const isSubmitting = submitFetcher.state !== "idle";
 
@@ -221,7 +219,7 @@ export default function TimesheetGrid({
   // keeps a future date read-only except on a leave element.
   const isCellEditable = useCallback(
     (row: GridRow, day: string) => {
-      if (row.isService || isReadOnly) return false;
+      if (isReadOnly) return false;
       const cell = row.cells[day];
       if (cell && !editableStatuses.includes(cell.status)) return false;
       if (today && day > today && !row.isLeave) return false;
@@ -467,7 +465,7 @@ export default function TimesheetGrid({
   // posted time.
   const renderMenu = useCallback(
     (row: TableRow) => {
-      if (employee || row.isService) return null;
+      if (employee) return null;
       const posted = days.filter((day) => row.cells[day]?.status === "Posted");
       if (posted.length === 0) return null;
       return (

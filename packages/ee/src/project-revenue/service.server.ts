@@ -277,7 +277,6 @@ export async function generateCostPlusItems(
         quantity: price.quantity,
         unitPrice: price.unitPrice,
         amount: price.amount,
-        coverage: null,
         status: "Unbilled" as const,
         statusReason: null,
         createdBy: userId

@@ -13,13 +13,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerAssetUpdateValidator } from "~/modules/service/service.models";
-import {
-  getCustomerAsset,
-  getCustomerAssetComponents,
-  getCustomerAssetHistoryByComponent,
-  getServiceOrderCosts,
-  getServiceOrders
-} from "~/modules/service/service.service";
+import { getCustomerAsset } from "~/modules/service/service.service";
 import { CustomerAssetPage } from "~/modules/service/ui/CustomerAssets";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -39,17 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { assetId } = params;
   if (!assetId) throw new Error("Could not find assetId");
 
-  const [asset, components, history, orders] = await Promise.all([
-    getCustomerAsset(client, assetId, companyId),
-    getCustomerAssetComponents(client, assetId, companyId),
-    getCustomerAssetHistoryByComponent(client, assetId, companyId),
-    getServiceOrders(client, companyId, {
-      search: null,
-      customerAssetId: assetId,
-      limit: 100,
-      offset: 0
-    })
-  ]);
+  const asset = await getCustomerAsset(client, assetId, companyId);
 
   if (asset.error) {
     throw redirect(
@@ -58,19 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const costs = await getServiceOrderCosts(
-    client,
-    (orders.data ?? []).map((order) => order.projectId),
-    companyId
-  );
-
-  return {
-    asset: asset.data,
-    components: components.data ?? [],
-    history: history.data ?? [],
-    orders: orders.data ?? [],
-    orderCosts: costs.data ?? {}
-  };
+  return { asset: asset.data };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -130,17 +102,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CustomerAssetRoute() {
-  const { asset, components, history, orders, orderCosts } =
-    useLoaderData<typeof loader>();
+  const { asset } = useLoaderData<typeof loader>();
 
-  return (
-    <CustomerAssetPage
-      key={asset.id}
-      asset={asset}
-      components={components}
-      history={history}
-      orders={orders}
-      orderCosts={orderCosts}
-    />
-  );
+  return <CustomerAssetPage key={asset.id} asset={asset} />;
 }

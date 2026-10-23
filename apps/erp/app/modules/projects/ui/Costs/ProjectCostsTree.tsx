@@ -27,8 +27,6 @@ import { buildElementTree } from "../../projects.models";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
 import type { ProjectBurdenPoolRow } from "./ProjectBurdenByPool.ee";
 import ProjectBurdenByPool from "./ProjectBurdenByPool.ee";
-import type { ServiceOrderCostRow } from "./ServiceOrderCosts";
-import ServiceOrderCosts from "./ServiceOrderCosts";
 
 export type ProjectCostRow = {
   id: string;
@@ -44,10 +42,8 @@ export type ProjectCostRow = {
 type ProjectCostsTreeProps = {
   projectId: string;
   rows: ProjectCostRow[];
-  /** The project total; its actual includes `serviceActual`. */
+  /** The project total. */
   project: ProjectCostFigures;
-  serviceOrders: ServiceOrderCostRow[];
-  serviceActual: number;
   /** The actual cost of the preproduction elements, or null with none. */
   preproduction: number | null;
   /** Allowable burden per element, each row its subtree (Phase 5b). */
@@ -79,8 +75,6 @@ export default function ProjectCostsTree({
   projectId,
   rows,
   project,
-  serviceOrders,
-  serviceActual,
   preproduction,
   burdenByElement,
   projectBurden,
@@ -104,7 +98,6 @@ export default function ProjectCostsTree({
 
   const money = (value: number | null) =>
     value === null ? "—" : formatMoney.format(value);
-  const serviceAmount = money(serviceActual);
   const preproductionAmount = money(preproduction);
 
   const figureCells = (figures: ProjectCostFigures, burden = 0) => (
@@ -179,11 +172,6 @@ export default function ProjectCostsTree({
             <span className="shrink-0">
               <Trans>Project total</Trans>
             </span>
-            {serviceOrders.length > 0 && (
-              <span className="truncate text-xs font-normal text-muted-foreground">
-                <Trans>Actual includes service orders: {serviceAmount}</Trans>
-              </span>
-            )}
             {preproduction !== null && (
               <span className="truncate text-xs font-normal text-muted-foreground">
                 <Trans>Preproduction: {preproductionAmount}</Trans>
@@ -264,7 +252,6 @@ export default function ProjectCostsTree({
             }}
           />
         )}
-        <ServiceOrderCosts rows={serviceOrders} />
         <ProjectBurdenByPool rows={burdenByPool} />
         {footer}
       </div>

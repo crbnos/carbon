@@ -91,7 +91,6 @@ import {
   quoteMaterialValidator,
   quoteStatusType,
   quoteValidator,
-  REPAIR_DISPOSITION_LOCKED_MESSAGE,
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
@@ -2657,12 +2656,6 @@ export const escalateReturnOrderLine = defineServiceFn({
         "Cannot set a disposition before any quantity is received"
       );
     }
-    // A received Repair line's unit never entered stock, so it cannot be
-    // scrapped or reworked from stock.
-    if (line.data.disposition === "Repair") {
-      return ctx.error("rule", REPAIR_DISPOSITION_LOCKED_MESSAGE);
-    }
-
     const entityIds = await service.returnedOnHoldEntityIds(ctx, {
       id,
       lineId

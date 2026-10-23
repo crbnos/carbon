@@ -26,16 +26,11 @@ export type GridRow = {
   jobOperationId: string | null;
   /** "J000022 · Machining"; null when the row has no job. */
   jobLabel: string | null;
-  /**
-   * The project identifier, or the element's readable id; on a service
-   * order, the order's readable id.
-   */
+  /** The project identifier, or the element's readable id. */
   readableId: string;
   name: string;
   /** Where the charge number opens. */
   to: string | null;
-  /** A service order's time: read-only here, its visit page posts it. */
-  isService: boolean;
   /** A leave element (5a): DCAA mode takes time for a future date on it. */
   isLeave: boolean;
   laborCategory: string;
@@ -63,8 +58,6 @@ export type TimesheetGridProps = {
       project: {
         identifier: string | null;
         name: string;
-        projectType: "Standard" | "Service";
-        serviceOrder: { id: string; serviceOrderId: string }[];
       } | null;
       element: { readableId: string; name: string; isLeave?: boolean } | null;
       laborCategory: { name: string } | null;
@@ -110,11 +103,6 @@ export function useTimesheetRows({
   return useMemo<GridRow[]>(() => {
     const serverRows: GridRow[] = rows.map((row) => {
       const project = row.entry.project;
-      const serviceOrder =
-        project?.projectType === "Service"
-          ? (project.serviceOrder[0] ?? null)
-          : null;
-      const isService = project?.projectType === "Service";
       return {
         key: row.key,
         projectId: row.projectId,
@@ -130,18 +118,11 @@ export function useTimesheetRows({
               .filter(Boolean)
               .join(" · ")
           : null,
-        readableId: isService
-          ? (serviceOrder?.serviceOrderId ?? "")
-          : (row.entry.element?.readableId ?? project?.identifier ?? ""),
+        readableId: row.entry.element?.readableId ?? project?.identifier ?? "",
         name: row.entry.element?.name ?? project?.name ?? "",
-        to: isService
-          ? serviceOrder
-            ? path.to.serviceOrder(serviceOrder.id)
-            : null
-          : row.projectElementId
-            ? path.to.projectElement(row.projectId, row.projectElementId)
-            : path.to.project(row.projectId),
-        isService,
+        to: row.projectElementId
+          ? path.to.projectElement(row.projectId, row.projectElementId)
+          : path.to.project(row.projectId),
         isLeave: row.entry.element?.isLeave ?? false,
         laborCategory: row.entry.laborCategory?.name ?? "",
         cells: row.cells,
@@ -171,7 +152,6 @@ export function useTimesheetRows({
           to: row.projectElementId
             ? path.to.projectElement(row.projectId, row.projectElementId)
             : path.to.project(row.projectId),
-          isService: false,
           isLeave: chargeNumber?.isLeave ?? false,
           laborCategory:
             laborCategories.find((c) => c.id === row.laborCategoryId)?.name ??

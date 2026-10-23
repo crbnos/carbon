@@ -24,7 +24,6 @@ import {
   LuCreditCard,
   LuEllipsisVertical,
   LuFileText,
-  LuHardHat,
   LuLandmark,
   LuListChecks,
   LuPanelLeft,
@@ -78,21 +77,11 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   const canRevertCancellation =
     isActive && isCancelled && !!contract.endDate && contract.endDate >= today;
 
-  // The route tabs: the contract's Service Orders need service_view, its
-  // Financing the government contracting fields, and with only Details there
-  // is nothing to switch between.
+  // The route tabs: the contract's Financing needs the government contracting
+  // fields, and with only Details there is nothing to switch between.
   const governmentContracting = useGovernmentContracting();
   const navigation = [
     { name: t`Details`, to: path.to.contractDetails(id), icon: LuFileText },
-    ...(permissions.can("view", "service")
-      ? [
-          {
-            name: t`Service Orders`,
-            to: path.to.contractServiceOrders(id),
-            icon: LuHardHat
-          }
-        ]
-      : []),
     ...(governmentContracting
       ? [
           {

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Project WIP relief at close (accounting audit D11, D12). Closing a Contract
+// Project WIP relief at close (accounting audit D11). Closing a Contract
 // project moves the Project WIP that no progress contract line owns to cost
 // of goods sold, in one journal: Dr cost of goods sold / Cr the account each
 // ledger row's journal line debited, grouped by that account. The rows are
@@ -40,9 +40,7 @@ type ReliefGroup = {
 /**
  * The unrelieved Project WIP of a closing project that no progress contract
  * line owns, posted on or before `closeDate`, grouped by the account its
- * journal lines debited. The project's own rows, and (D12) the Contract
- * coverage rows of the Service projects it is the contract project of: those
- * post to this project's account, on elements no line of it can bill.
+ * journal lines debited.
  */
 export async function selectUnrelievedCloseCost(
   trx: KyselyTx,
@@ -71,20 +69,12 @@ export async function selectUnrelievedCloseCost(
   const { rows } = await sql<{ accountId: string; id: string; amount: number }>`
     SELECT jl."accountId", pl."id", pl."amount"
     FROM "projectLedger" pl
-    JOIN "project" p ON p."id" = pl."projectId" AND p."companyId" = pl."companyId"
     JOIN "journalLine" jl
       ON jl."id" = pl."journalLineId" AND jl."companyId" = pl."companyId"
     JOIN "account" a ON a."id" = jl."accountId" AND a."class" = 'Asset'
     WHERE pl."companyId" = ${companyId}
       AND pl."postingDate" <= ${closeDate}::date
-      AND (
-        pl."projectId" = ${projectId}
-        OR (
-          p."parentProjectId" = ${projectId}
-          AND p."projectType" = 'Service'
-          AND pl."coverage" = 'Contract'
-        )
-      )
+      AND pl."projectId" = ${projectId}
       -- Cost still in stock is not WIP (C2), as in the run's cost relief.
       AND NOT ${onInventoryAccount("pl")}
       AND NOT EXISTS (

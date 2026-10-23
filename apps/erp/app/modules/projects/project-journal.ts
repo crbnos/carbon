@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // One journal for one project charge: the status and period, the journal
-// header, its lines and their dimension tags. Used by post-project-expense
-// and reclass-project-coverage. The journal is Provisional before the
-// company's accounting cutover and Posted after it.
+// header, its lines and their dimension tags. Used by post-project-expense.
+// The journal is Provisional before the company's accounting cutover and
+// Posted after it.
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";

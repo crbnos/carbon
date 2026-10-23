@@ -7,7 +7,7 @@ Files (`.claude/rules/module-files.md`): `projects.server.ts` holds only the mod
 `defineServiceFn` operations (`api.projects.<name>`, MCP `projects_<name>` when tagged
 `@mcp`); `projects.service.ts` holds every building block, including the posting bodies
 `postTimesheet`, `saveTimesheetEntry`, `submitTimesheetWeek`, `postProjectIssue`,
-`postProjectExpense`, `postProjectStockTransfer`, `reclassProjectCoverage` and
+`postProjectExpense`, `postProjectStockTransfer` and
 `postProjectBurden` (each with its `<name>Input` and `<name>Permission`);
 `projects.models.ts` the validators and pure helpers; `types.ts` the shared types; `projects.utils.ts` the two reads a
 component runs in the browser (`getCipFixedAssetClasses`, `getPlanningGroupsList`).
@@ -15,7 +15,7 @@ Plain server-only files: `project-posting.ts` (the posting context, accounts, ch
 gates, ledger rows and contract billable items every module's posting uses),
 `project-cip.ts` (CIP rows), `project-journal.ts` (`postProjectJournal`),
 `project-close.ts` (WIP relief at close),
-`timesheet-posting-plan.ts`, `stock-transfer-plan.ts`, `service-part-issue.ts`.
+`timesheet-posting-plan.ts`, `stock-transfer-plan.ts`.
 
 ## Key Domain Concepts
 
@@ -31,7 +31,7 @@ gates, ledger rows and contract billable items every module's posting uses),
 - **State** — company-wide `projectState` in five groups (Backlog, Unstarted, Started,
   Completed, Cancelled), one default per group per company, edited in Settings → Projects
   (`ProjectStatesGrid`). `seedCompany` (`settings.service.ts`) inserts the six `projectStates` of
-  `@carbon/database/seed-data`; a project or service order seeds none. Labels
+  `@carbon/database/seed-data`; a project seeds none. Labels
   (`projectLabel`) are company-wide too (`ProjectLabelsGrid`).
 - **Charge number** — a project, or a project plus element (`ChargeNumber` picker,
   `getChargeNumbers`). Jobs, PO lines, purchase invoice lines, charge and reimbursement
@@ -146,7 +146,7 @@ pnpm --filter erp test   # apps/erp/test/projects-*.test.ts and the module's pur
 # live-database posting tests (need the local stack):
 cd apps/erp && npx vitest run test/database/post-timesheet test/database/save-timesheet-entry \
   test/database/submit-timesheet-week test/database/post-project-issue test/database/post-project-expense \
-  test/database/post-project-stock-transfer test/database/reclass-project-coverage \
+  test/database/post-project-stock-transfer \
   test/database/post-project-burden test/database/lib/project-posting.test.ts
 ```
 
@@ -188,16 +188,14 @@ cd apps/erp && npx vitest run test/database/post-timesheet test/database/save-ti
 Building blocks in `projects.service.ts` unless marked (models, utils). Most have an
 operation of the same name in `projects.server.ts`.
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
-- `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs page. `getChildServiceProjectCosts` (`get_child_service_project_costs`) adds the service orders of a contract project; their actual goes to the project total through `buildProjectCostFigures`'s third argument.
+- `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs page.
 - `getProjectElementPage` — everything the element page loads, in parallel.
 - `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
 - `saveTimesheetEntry`, `submitTimesheetWeek` — the posting bodies of
   `save-timesheet-entry` and `submit-timesheet-week`, which hold the DCAA rules for the
   ERP and the MES. The grid saves a cell and submits a week through the operations of the
-  same name. Log time (the `logTimesheetEntry` operation) and service time (the service
-  module's `logServiceTime`) save with `mode: "add"`: one new entry each time (Log time
-  Submitted in Standard mode, service time Draft with its visit); the operation then posts
-  it. In DCAA mode the body saves the owner's Log time entry as Draft, so it waits for the
+  same name. Log time (the `logTimesheetEntry` operation) saves with `mode: "add"`: one
+  new entry each time (Submitted in Standard mode); the operation then posts it. In DCAA mode the body saves the owner's Log time entry as Draft, so it waits for the
   weekly certification, and the operation does not post it. `invokeSaveTimesheetEntry` +
   `saveTimesheetEntryPostingInput` (form blanks to null) wrap the body for other callers.
 - `approveTimesheetEntries`, `rejectTimesheetEntries`, `createTimesheetCorrection` — the

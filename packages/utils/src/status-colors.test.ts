@@ -39,27 +39,8 @@ describe("project status colors", () => {
   });
 });
 
-describe("field service status colors", () => {
-  it("registers the service order lifecycle", () => {
-    expect(maps.serviceOrder).toEqual({
-      Draft: "gray",
-      Scheduled: "blue",
-      "In Progress": "yellow",
-      "On Hold": "orange",
-      Completed: "green",
-      Closed: "gray",
-      Cancelled: "red"
-    });
-  });
-
-  it("registers the visit and customer asset statuses", () => {
-    expect(maps.serviceVisit).toEqual({
-      Scheduled: "blue",
-      Traveling: "yellow",
-      "On Site": "yellow",
-      Completed: "green",
-      Cancelled: "red"
-    });
+describe("service status colors", () => {
+  it("registers the customer asset statuses", () => {
     expect(maps.customerAsset).toEqual({
       "In Service": "green",
       "At Depot": "orange",

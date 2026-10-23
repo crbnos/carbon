@@ -235,31 +235,6 @@ export const PROJECT_PEG_STATE_COLOR_MAP = {
   Manual: "blue"
 } as const satisfies Record<string, StatusColor>;
 
-// A service order (serviceOrderStatus). Planned is released with no visit yet
-// (purple: In Progress already holds the yellow a planned job uses), Scheduled
-// waits on a visit like a released project, In Progress is work under way, On Hold pauses, Completed
-// is done and waits on its invoice, Closed is gray like a closed project.
-export const SERVICE_ORDER_STATUS_COLOR_MAP = {
-  Draft: "gray",
-  Planned: "purple",
-  Scheduled: "blue",
-  "In Progress": "yellow",
-  "On Hold": "orange",
-  Completed: "green",
-  Closed: "gray",
-  Cancelled: "red"
-} as const satisfies Record<string, StatusColor>;
-
-// A service visit (serviceVisitStatus): planned, then under way (travel and
-// time on site), then done.
-export const SERVICE_VISIT_STATUS_COLOR_MAP = {
-  Scheduled: "blue",
-  Traveling: "yellow",
-  "On Site": "yellow",
-  Completed: "green",
-  Cancelled: "red"
-} as const satisfies Record<string, StatusColor>;
-
 // A customer asset (customerAssetStatus): at the customer, at our depot for
 // repair, or sent back to us for good.
 export const CUSTOMER_ASSET_STATUS_COLOR_MAP = {
@@ -510,8 +485,6 @@ export const statusColorMaps = {
   projectStockTransfer: PROJECT_STOCK_TRANSFER_STATUS_COLOR_MAP,
   projectBorrow: PROJECT_BORROW_STATUS_COLOR_MAP,
   projectPeg: PROJECT_PEG_STATE_COLOR_MAP,
-  serviceOrder: SERVICE_ORDER_STATUS_COLOR_MAP,
-  serviceVisit: SERVICE_VISIT_STATUS_COLOR_MAP,
   customerAsset: CUSTOMER_ASSET_STATUS_COLOR_MAP,
   billableItem: BILLABLE_ITEM_STATUS_COLOR_MAP,
   assemblyInstruction: ASSEMBLY_INSTRUCTION_STATUS_COLOR_MAP,

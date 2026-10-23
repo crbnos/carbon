@@ -256,10 +256,7 @@ import {
   isProjectBillingMethod,
   isQuoteLocked,
   isSalesOrderLocked,
-  OPEN_SALES_ORDER_STATUSES,
-  REPAIR_DISPOSITION_LOCKED_MESSAGE,
-  REPAIR_LINE_CREDIT_MESSAGE,
-  REPAIR_ONLY_REPLACEMENT_MESSAGE
+  OPEN_SALES_ORDER_STATUSES
 } from "./sales.models";
 import { renderSalesOrderPdf } from "./sales.pdf";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
@@ -7515,8 +7512,7 @@ export async function getShippedTrackedEntitiesForCustomer(
 /**
  * Per-line creditable pool = received − already credited. Draft memos count
  * against the pool (two Drafts must not double-credit); the VIEW's displayed
- * quantityCredited still derives from Posted memos only. A Repair line is
- * left out: its unit goes back to the customer, so it is never credited.
+ * quantityCredited still derives from Posted memos only.
  */
 export async function getCreditableQuantities(
   client: SupabaseClient<Database>,
@@ -7528,7 +7524,6 @@ export async function getCreditableQuantities(
     .select("id, lineNumber, quantityReceived, unitPrice, restockFeePercent")
     .eq("salesReturnOrderId", salesReturnOrderId)
     .eq("companyId", companyId)
-    .or("disposition.is.null,disposition.neq.Repair")
     .order("lineNumber");
   if (lines.error) return { data: null, error: lines.error };
   const lineIds = (lines.data ?? []).map((l) => l.id);
@@ -7575,8 +7570,7 @@ export async function getCreditableQuantities(
  * The creditable cap (received − already credited over NON-VOIDED memos —
  * Drafts count so two drafts can't double-credit) is validated inside the
  * transaction under a row lock on the RMA lines. Amount is rounded ONCE at
- * the currency's decimals (settlement boundary). A Repair line is refused:
- * its unit goes back to the customer. Returns the memo id.
+ * the currency's decimals (settlement boundary). Returns the memo id.
  */
 export async function createSalesReturnOrderCredit(
   client: SupabaseClient<Database>,
@@ -7695,11 +7689,6 @@ export async function createSalesReturnOrderCredit(
     }[] = [];
 
     for (const line of orderLines) {
-      if (line.disposition === "Repair") {
-        throw new Error(
-          `Line ${line.lineNumber}: ${REPAIR_LINE_CREDIT_MESSAGE}`
-        );
-      }
       const quantity = requested.get(line.id)!;
       const received = Number(line.quantityReceived ?? 0);
       const alreadyCredited = creditedByLine.get(line.id) ?? 0;
@@ -7765,8 +7754,6 @@ export async function createSalesReturnOrderCredit(
  * lines, priced via resolvePrice (user adjusts on the draft — e.g. to zero
  * for warranty). One replacement per RMA; re-invoking returns the existing
  * link. Rollback-by-delete on line failure (the insertSalesOrder pattern).
- * Repair lines are skipped: their units go back repaired. An RMA of Repair
- * lines only is refused.
  */
 export async function createReplacementSalesOrder(
   client: SupabaseClient<Database>,
@@ -7813,16 +7800,6 @@ export async function createReplacementSalesOrder(
       error: { message: "Return order has no lines" } as PostgrestError
     };
   }
-  const replaceableLines = (lines.data ?? []).filter(
-    (line) => line.disposition !== "Repair"
-  );
-  if (replaceableLines.length === 0) {
-    return {
-      data: null,
-      error: { message: REPAIR_ONLY_REPLACEMENT_MESSAGE } as PostgrestError
-    };
-  }
-
   const salesOrder = await insertSalesOrder(client, {
     customerId: order.data.customerId,
     companyId,
@@ -7854,7 +7831,7 @@ export async function createReplacementSalesOrder(
     }
   };
 
-  for (const line of replaceableLines) {
+  for (const line of lines.data ?? []) {
     const price = await resolvePrice(client, companyId, {
       customerId: order.data.customerId,
       itemId: line.itemId,
@@ -7895,8 +7872,7 @@ export async function createReplacementSalesOrder(
 
 /**
  * Set an RMA line's disposition. Before any quantity is received, only
- * Pending and Repair (serialized items only) are allowed; once any is
- * received, a change to or from Repair is refused. "Use As Is" additionally releases the line's
+ * Pending is allowed. "Use As Is" additionally releases the line's
  * returned (On Hold) tracked entities to Available and records one
  * `trackedActivity` (+ one input per entity) for the genealogy — the same
  * shape the NCR disposition writes. Scrap/Rework are set via Issue escalation
@@ -7921,7 +7897,7 @@ export async function setSalesReturnOrderLineDisposition(
   const line = await client
     .from("salesReturnOrderLine")
     .select(
-      "id, salesReturnOrderId, quantityReceived, disposition, salesReturnOrder(status), item(itemTrackingType)"
+      "id, salesReturnOrderId, quantityReceived, salesReturnOrder(status)"
     )
     .eq("id", lineId)
     .eq("companyId", companyId)
@@ -7942,88 +7918,16 @@ export async function setSalesReturnOrderLineDisposition(
     };
   }
 
-  const isReceived = Number(line.data.quantityReceived ?? 0) > 0;
-  // Repair is decided before receipt: the receipt of a Repair line posts no
-  // stock, so it is the only value a line can take before any quantity is
-  // received, and it cannot change once any is.
-  if (!isReceived && disposition !== "Pending" && disposition !== "Repair") {
+  if (
+    disposition !== "Pending" &&
+    Number(line.data.quantityReceived ?? 0) <= 0
+  ) {
     return {
       data: null,
       error: {
         message: "Cannot set a disposition before any quantity is received"
       } as PostgrestError
     };
-  }
-  const touchesRepair =
-    disposition !== line.data.disposition &&
-    (disposition === "Repair" || line.data.disposition === "Repair");
-  if (touchesRepair && isReceived) {
-    return {
-      data: null,
-      error: {
-        message: REPAIR_DISPOSITION_LOCKED_MESSAGE
-      } as PostgrestError
-    };
-  }
-  if (
-    disposition === "Repair" &&
-    (line.data.item as { itemTrackingType: string } | null)
-      ?.itemTrackingType !== "Serial"
-  ) {
-    return {
-      data: null,
-      error: {
-        message: "Only a serialized item can be returned for repair"
-      } as PostgrestError
-    };
-  }
-
-  // A change to or from Repair is written under the return order's row lock,
-  // the lock post-receipt holds while it posts, and re-checks the received
-  // quantity there: a receipt posted in between would otherwise leave the
-  // line's stock wrong.
-  if (touchesRepair) {
-    try {
-      await db.transaction().execute(async (trx) => {
-        const lockedOrder = await trx
-          .selectFrom("salesReturnOrder")
-          .select(["status"])
-          .where("id", "=", line.data.salesReturnOrderId)
-          .where("companyId", "=", companyId)
-          .forUpdate()
-          .executeTakeFirstOrThrow();
-        if (lockedOrder.status === "Cancelled") {
-          throw new Error(
-            `Cannot change disposition on a ${lockedOrder.status} return order`
-          );
-        }
-        const lockedLine = await trx
-          .selectFrom("salesReturnOrderLine")
-          .select(["quantityReceived"])
-          .where("id", "=", lineId)
-          .where("companyId", "=", companyId)
-          .executeTakeFirstOrThrow();
-        if (Number(lockedLine.quantityReceived ?? 0) > 0) {
-          throw new Error(REPAIR_DISPOSITION_LOCKED_MESSAGE);
-        }
-        await trx
-          .updateTable("salesReturnOrderLine")
-          .set({
-            disposition,
-            updatedBy: userId,
-            updatedAt: datetime.timestamp()
-          })
-          .where("id", "=", lineId)
-          .where("companyId", "=", companyId)
-          .execute();
-      });
-    } catch (err) {
-      return {
-        data: null,
-        error: { message: (err as Error).message } as PostgrestError
-      };
-    }
-    return { data: { id: lineId }, error: null };
   }
 
   if (disposition !== "Use As Is") {
@@ -11685,7 +11589,7 @@ async function releaseRecurringInvoiceStamps(
   const { companyId, salesInvoiceLineIds, userId } = args;
   if (salesInvoiceLineIds.length === 0) return;
 
-  await releaseServiceOrderStamps(trx, args);
+  await releaseProjectBillableItemStamps(trx, args);
 
   await trx
     .updateTable("rentalBillingPeriod")
@@ -11762,17 +11666,15 @@ async function releaseRecurringInvoiceStamps(
 }
 
 /**
- * A service order's billable items go back to Unbilled when the Draft lines
- * that billed them are deleted. An invoice left with no billing line loses
- * its `serviceOrderId`, and its order goes back from Closed to Completed so
- * it can be invoiced again.
+ * A project's billable items go back to Unbilled when the Draft lines that
+ * billed them are deleted.
  */
-async function releaseServiceOrderStamps(
+async function releaseProjectBillableItemStamps(
   trx: KyselyTx,
   args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
 ): Promise<void> {
   const { companyId, salesInvoiceLineIds, userId } = args;
-  const released = await trx
+  await trx
     .updateTable("projectBillableItem")
     .set({
       salesInvoiceLineId: null,
@@ -11782,62 +11684,6 @@ async function releaseServiceOrderStamps(
     })
     .where("companyId", "=", companyId)
     .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
-    .returning("id")
-    .execute();
-  if (released.length === 0) return;
-
-  const invoices = await trx
-    .selectFrom("salesInvoiceLine")
-    .select("invoiceId")
-    .distinct()
-    .where("companyId", "=", companyId)
-    .where("id", "in", salesInvoiceLineIds)
-    .execute();
-  const invoiceIds = invoices.map((row) => row.invoiceId);
-  if (invoiceIds.length === 0) return;
-
-  // An invoice still billing the order through another line keeps it.
-  const stillBilled = sql<boolean>`EXISTS (
-    SELECT 1 FROM "salesInvoiceLine" l
-    JOIN "projectBillableItem" b
-      ON b."salesInvoiceLineId" = l."id" AND b."companyId" = l."companyId"
-    WHERE l."invoiceId" = "salesInvoice"."id" AND l."companyId" = ${companyId}
-  )`;
-  const unstamped = await trx
-    .selectFrom("salesInvoice")
-    .select(["id", "serviceOrderId"])
-    .where("companyId", "=", companyId)
-    .where("id", "in", invoiceIds)
-    .where("serviceOrderId", "is not", null)
-    .where(sql<boolean>`NOT ${stillBilled}`)
-    .execute();
-  if (unstamped.length === 0) return;
-
-  await trx
-    .updateTable("salesInvoice")
-    .set({ serviceOrderId: null, updatedBy: userId, updatedAt: sql`now()` })
-    .where("companyId", "=", companyId)
-    .where(
-      "id",
-      "in",
-      unstamped.map((row) => row.id)
-    )
-    .execute();
-  await trx
-    .updateTable("serviceOrder")
-    .set({
-      status: "Completed",
-      salesInvoiceId: null,
-      updatedBy: userId,
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where(
-      "id",
-      "in",
-      unstamped.map((row) => row.serviceOrderId as string)
-    )
-    .where("status", "=", "Closed")
     .execute();
 }
 

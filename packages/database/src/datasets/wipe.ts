@@ -102,15 +102,6 @@ const MODEL_SLIDE_TABLES = [
   "quoteOperationStepSlide"
 ];
 
-// serviceOrder_customer_check ties a non-Refurbishment order to its customer,
-// and the FK-nulling pass would clear customerId while customers still exist.
-// Children first: an installed component's order FK has no ON DELETE action.
-const SERVICE_ORDER_TABLES = [
-  "customerAssetComponent",
-  "serviceVisit",
-  "serviceOrder"
-];
-
 // Other tables whose CHECK needs one of several nullable FKs to stay set, so
 // the FK-nulling pass would empty all of them and trip the CHECK. A new table
 // with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
@@ -417,7 +408,6 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   for (const t of [
     ...TRANSIENT_MRP_TABLES,
     ...MODEL_SLIDE_TABLES,
-    ...SERVICE_ORDER_TABLES,
     ...PARENT_CHECK_TABLES
   ]) {
     if (deleteSet.has(t)) {

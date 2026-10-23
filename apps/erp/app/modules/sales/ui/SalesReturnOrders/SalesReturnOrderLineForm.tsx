@@ -50,8 +50,7 @@ import { path } from "~/utils/path";
 import {
   isSalesReturnOrderLocked,
   salesReturnDispositionType,
-  salesReturnOrderLineValidator,
-  salesReturnPreReceiptDispositions
+  salesReturnOrderLineValidator
 } from "../../sales.models";
 import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 
@@ -71,8 +70,6 @@ type SalesReturnOrderLineFormProps = {
     salesOrderReadableId?: string | null;
     salesInvoiceId?: string | null;
     salesInvoiceReadableId?: string | null;
-    /** A Repair line's Depot Repair orders, one per received serial */
-    serviceOrders?: { id: string; serviceOrderId: string }[];
   };
 };
 
@@ -253,17 +250,6 @@ const SalesReturnOrderLineForm = ({
     (line?.disposition as string | undefined) ?? "Pending"
   );
   const quantityReceived = line?.quantityReceived ?? 0;
-  // Before receipt a line is Pending or Repair (serialized items only); after
-  // receipt Repair is fixed, and the other values are offered without it.
-  const isRepairLocked = quantityReceived > 0 && line?.disposition === "Repair";
-  const dispositionOptions: readonly string[] =
-    quantityReceived === 0
-      ? salesReturnPreReceiptDispositions.filter(
-          (option) => option !== "Repair" || itemData.trackingType === "Serial"
-        )
-      : salesReturnDispositionType.filter(
-          (option) => option !== "Repair" || line?.disposition === "Repair"
-        );
 
   const onDispositionChange = (value: string) => {
     if (!line?.id) return;
@@ -341,12 +327,7 @@ const SalesReturnOrderLineForm = ({
             label: t`Invoice`,
             value: linkage.salesInvoiceReadableId
           }
-        : null,
-      ...(linkage?.serviceOrders ?? []).map((order) => ({
-        to: path.to.serviceOrderDetails(order.id),
-        label: t`Service Order`,
-        value: order.serviceOrderId
-      }))
+        : null
     ] as ({ to?: string; label: string; value: string } | null)[]
   ).filter((source): source is { to?: string; label: string; value: string } =>
     Boolean(source)
@@ -382,7 +363,7 @@ const SalesReturnOrderLineForm = ({
               {sources.length > 0 && (
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-sm">
                   {sources.map((source, index) => (
-                    <Fragment key={`${source.label}:${source.value}`}>
+                    <Fragment key={source.label}>
                       {index > 0 && (
                         <span className="text-muted-foreground/50">·</span>
                       )}
@@ -467,7 +448,7 @@ const SalesReturnOrderLineForm = ({
                       value={disposition}
                       onValueChange={onDispositionChange}
                       disabled={
-                        isRepairLocked ||
+                        quantityReceived === 0 ||
                         // Not isLocked: full receipt auto-completes the RMA,
                         // and disposition happens after goods arrive.
                         status === "Cancelled" ||
@@ -479,7 +460,7 @@ const SalesReturnOrderLineForm = ({
                         <SelectValue placeholder={t`Select disposition`} />
                       </SelectTrigger>
                       <SelectContent>
-                        {dispositionOptions.map((option) => (
+                        {salesReturnDispositionType.map((option) => (
                           <SelectItem key={option} value={option}>
                             {option}
                           </SelectItem>

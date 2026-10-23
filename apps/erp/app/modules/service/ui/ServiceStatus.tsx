@@ -5,69 +5,16 @@
 import { Badge, Status } from "@carbon/react";
 import {
   BILLABLE_ITEM_STATUS_COLOR_MAP,
-  CUSTOMER_ASSET_STATUS_COLOR_MAP,
-  SERVICE_ORDER_STATUS_COLOR_MAP,
-  SERVICE_VISIT_STATUS_COLOR_MAP
+  CUSTOMER_ASSET_STATUS_COLOR_MAP
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useCompanyToday } from "~/hooks";
 import type {
   CustomerAssetStatus as CustomerAssetStatusType,
   ProjectBillableItemStatus,
-  ServiceOrderStatus as ServiceOrderStatusType,
-  ServiceVisitStatus as ServiceVisitStatusType,
   WarrantyStatus
 } from "../service.models";
 import { warrantyStatus } from "../service.models";
-
-function useServiceOrderStatusLabels(): Record<ServiceOrderStatusType, string> {
-  const { t } = useLingui();
-  return {
-    Draft: t`Draft`,
-    Planned: t`Planned`,
-    Scheduled: t`Scheduled`,
-    "In Progress": t`In Progress`,
-    "On Hold": t`On Hold`,
-    Completed: t`Completed`,
-    Closed: t`Closed`,
-    Cancelled: t`Cancelled`
-  };
-}
-
-export function ServiceOrderStatus({
-  status
-}: {
-  status?: ServiceOrderStatusType | null;
-}) {
-  const labels = useServiceOrderStatusLabels();
-  if (!status) return null;
-  return (
-    <Status color={SERVICE_ORDER_STATUS_COLOR_MAP[status]}>
-      {labels[status]}
-    </Status>
-  );
-}
-
-export function ServiceVisitStatus({
-  status
-}: {
-  status?: ServiceVisitStatusType | null;
-}) {
-  const { t } = useLingui();
-  if (!status) return null;
-  const labels: Record<ServiceVisitStatusType, string> = {
-    Scheduled: t`Scheduled`,
-    Traveling: t`Traveling`,
-    "On Site": t`On Site`,
-    Completed: t`Completed`,
-    Cancelled: t`Cancelled`
-  };
-  return (
-    <Status color={SERVICE_VISIT_STATUS_COLOR_MAP[status]}>
-      {labels[status]}
-    </Status>
-  );
-}
 
 export function CustomerAssetStatus({
   status

@@ -191,8 +191,7 @@ export default function TimesheetWeek({
       weekHoursTones(
         weekRows.map((row) => ({
           key: row.key,
-          isLeave: row.isLeave,
-          isReadOnly: row.isService
+          isLeave: row.isLeave
         }))
       ),
     [weekRows]
@@ -202,15 +201,11 @@ export default function TimesheetWeek({
     [weekRows]
   );
 
-  const canEditRow = (row: GridRow) => !row.isService;
   const selected =
-    weekRows.find((row) => row.key === selectedKey && canEditRow(row)) ??
-    weekRows.find(canEditRow) ??
-    null;
+    weekRows.find((row) => row.key === selectedKey) ?? weekRows[0] ?? null;
 
   const isCellEditable = useCallback(
     (row: GridRow, day: string) => {
-      if (row.isService) return false;
       const cell = row.cells[day];
       if (cell && !editableStatuses.includes(cell.status)) return false;
       if (today && day > today && !row.isLeave) return false;
@@ -230,20 +225,18 @@ export default function TimesheetWeek({
     0
   );
   const hasTimecards = timecardTotal > 0;
-  const draftHours = weekRows
-    .filter((row) => !row.isService)
-    .reduce(
-      (sum, row) =>
-        sum +
-        days.reduce(
-          (daySum, day) =>
-            row.cells[day]?.status === "Draft"
-              ? daySum + row.cells[day]!.hours
-              : daySum,
-          0
-        ),
-      0
-    );
+  const draftHours = weekRows.reduce(
+    (sum, row) =>
+      sum +
+      days.reduce(
+        (daySum, day) =>
+          row.cells[day]?.status === "Draft"
+            ? daySum + row.cells[day]!.hours
+            : daySum,
+        0
+      ),
+    0
+  );
   const pendingReviewCount = controls?.pendingReview.length ?? 0;
   const isSubmitting = submitFetcher.state !== "idle";
   const canSubmit = draftHours > 0 && pendingReviewCount === 0;
@@ -439,17 +432,15 @@ export default function TimesheetWeek({
                 (cell) => !editableStatuses.includes(cell.status)
               );
               const hasEntries = Object.keys(row.cells).length > 0;
-              const canRemove =
-                !row.isService && !locked && (!controls || !hasEntries);
+              const canRemove = !locked && (!controls || !hasEntries);
               return (
                 <div
                   key={row.key}
                   role="button"
-                  tabIndex={row.isService ? -1 : 0}
+                  tabIndex={0}
                   aria-pressed={isSelected}
-                  onClick={() => !row.isService && setSelectedKey(row.key)}
+                  onClick={() => setSelectedKey(row.key)}
                   onKeyDown={(event) => {
-                    if (row.isService) return;
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
                       setSelectedKey(row.key);
@@ -457,9 +448,7 @@ export default function TimesheetWeek({
                   }}
                   className={cn(
                     "flex flex-col gap-2 rounded-lg border border-border bg-card p-3 text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                    row.isService
-                      ? "cursor-default opacity-70"
-                      : "cursor-pointer hover:bg-accent/50",
+                    "cursor-pointer hover:bg-accent/50",
                     isSelected && "border-primary bg-accent/50"
                   )}
                 >
@@ -478,11 +467,9 @@ export default function TimesheetWeek({
                         <span className="truncate font-medium">{row.name}</span>
                       </span>
                       <span className="truncate text-xs text-muted-foreground">
-                        {row.isService
-                          ? t`Posted from the service order`
-                          : row.jobLabel
-                            ? `${row.jobLabel} · ${row.laborCategory}`
-                            : row.laborCategory}
+                        {row.jobLabel
+                          ? `${row.jobLabel} · ${row.laborCategory}`
+                          : row.laborCategory}
                       </span>
                     </div>
                   </div>
@@ -559,7 +546,7 @@ export default function TimesheetWeek({
                   status={cell.status}
                   entryId={cell.entryId}
                   isRevised={revisedEntryIds.has(cell.entryId)}
-                  canCorrect={cell.status === "Posted" && !row.isService}
+                  canCorrect={cell.status === "Posted"}
                   onCorrect={() =>
                     setCorrecting({
                       entryId: cell.entryId,
@@ -573,9 +560,7 @@ export default function TimesheetWeek({
                 />
               );
             }}
-            onSelect={(rowKey) => {
-              if (!rowsByKey.get(rowKey)?.isService) setSelectedKey(rowKey);
-            }}
+            onSelect={(rowKey) => setSelectedKey(rowKey)}
             onCommit={(rowKey, day, hours) => {
               const row = rowsByKey.get(rowKey);
               if (row) void commit(row, day, hours);

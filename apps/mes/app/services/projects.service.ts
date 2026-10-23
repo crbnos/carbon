@@ -33,10 +33,9 @@ export type ChargeNumber = {
 };
 
 /**
- * Lists what a user can charge: each Released Standard project, and each
- * chargeable element of one whose state is Unstarted or Started. A Service
- * project is charged from its service order's visit page. When
- * the company requires an element, the project-only rows are left out.
+ * Lists what a user can charge: each Released project, and each chargeable
+ * element of one whose state is Unstarted or Started. When the company
+ * requires an element, the project-only rows are left out.
  */
 export async function getChargeNumbers(client: Client, companyId: string) {
   const [settings, projects, elements] = await Promise.all([
@@ -50,7 +49,6 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         .from("project")
         .select("id, identifier, name")
         .eq("companyId", companyId)
-        .eq("projectType", "Standard")
         .eq("status", "Released")
         .eq("active", true)
         .order("identifier", { ascending: true })
@@ -70,7 +68,6 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         )
         .eq("companyId", companyId)
         .eq("isChargeable", true)
-        .eq("project.projectType", "Standard")
         .eq("project.status", "Released")
         .eq("project.active", true)
         .in("state.group", ["Unstarted", "Started"])

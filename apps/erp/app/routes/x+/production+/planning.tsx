@@ -159,7 +159,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .select("id, identifier, name")
     .eq("companyId", companyId)
     .eq("projectStock", true)
-    .eq("projectType", "Standard")
     .order("identifier");
 
   const planningActions = await getPlanningActions(client, {

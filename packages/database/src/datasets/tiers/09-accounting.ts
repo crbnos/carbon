@@ -38,7 +38,6 @@ import {
   need,
   nextSequence,
   one,
-  RICH,
   rows
 } from "../sql.ts";
 import type {
@@ -49,8 +48,7 @@ import type {
   JournalEntrySpec,
   JournalLineSpec,
   ProjectElementSpec,
-  ProjectStateName,
-  ServiceTemplateNodeSpec
+  ProjectStateName
 } from "../types.ts";
 
 // Mirrors get-accounting-period.ts so seeded periods get the same (fiscalYear,
@@ -133,7 +131,7 @@ export async function runTier9(ctx: Ctx): Promise<void> {
 
   await seedProjects(ctx);
   await seedProjectStock(ctx);
-  await seedServiceWork(ctx);
+  await seedContractProjects(ctx);
   for (const spec of data.projects) {
     const projectId = need(ctx.refs.misc, `project:${spec.key}`, "project");
     if (spec.purchaseInvoiceLine) {
@@ -854,97 +852,13 @@ async function insertProjectStates(ctx: Ctx): Promise<Record<string, string>> {
 }
 
 /**
- * A Service project's work tree: the default states, the nodes in list order
- * (`<identifier>-<n>`, Todo, by sibling order) and, with `planLines`, each
- * node's labor, material and other-cost plan lines. Returns the node ids by
- * key.
+ * Each contract with a project gets its Released project, with the default
+ * states, linked from the contract.
  */
-async function insertServiceTree(
-  ctx: Ctx,
-  args: {
-    projectId: string;
-    identifier: string;
-    nodes: ServiceTemplateNodeSpec[];
-    planLines: boolean;
-  }
-): Promise<Record<string, string>> {
-  const { projectId, identifier, nodes } = args;
-  const stateIds = await insertProjectStates(ctx);
-
-  const nodeIds: Record<string, string> = {};
-  const siblingCount: Record<string, number> = {};
-  for (const [index, node] of nodes.entries()) {
-    const siblings = node.parentKey ?? "";
-    siblingCount[siblings] = (siblingCount[siblings] ?? 0) + 1;
-    const nodeId = await insertId(ctx, "projectElement", {
-      projectId,
-      readableId: `${identifier}-${index + 1}`,
-      sequence: index + 1,
-      type: node.type,
-      parentId: node.parentKey
-        ? need(nodeIds, node.parentKey, "parent node")
-        : null,
-      name: node.name,
-      stateId: need(stateIds, "Todo", "project state"),
-      isChargeable: true,
-      sortOrder: siblingCount[siblings]
-    });
-    nodeIds[node.key] = nodeId;
-    if (!args.planLines) continue;
-
-    for (const line of node.labor ?? []) {
-      await insertRow(ctx, "projectElementLabor", {
-        projectId,
-        projectElementId: nodeId,
-        laborCategoryId: need(
-          ctx.refs.misc,
-          `laborCategory:${line.laborCategory}`,
-          "labor category"
-        ),
-        hours: line.hours
-      });
-    }
-    for (const line of node.materials ?? []) {
-      const item = need(ctx.refs.items, line.item, "item");
-      await insertRow(ctx, "projectElementMaterial", {
-        projectId,
-        projectElementId: nodeId,
-        itemId: item.id,
-        methodType: "Pull from Inventory",
-        quantity: line.quantity,
-        unitOfMeasureCode: item.unitOfMeasureCode,
-        unitCost: item.unitCost
-      });
-    }
-    for (const line of node.costs ?? []) {
-      await insertRow(ctx, "projectElementCost", {
-        projectId,
-        projectElementId: nodeId,
-        description: line.description,
-        amount: line.amount
-      });
-    }
-  }
-  return nodeIds;
-}
-
-/**
- * Field service work, after the labor categories: each service template
- * (a Draft Service project marked as a template, identifier `TPL-` and the
- * first 6 characters of its id, as `createServiceTemplate` names it), then
- * each service order with its Service project (identifier = the order's
- * readable id, as `createServiceOrder` makes it). A Scheduled order copies its
- * template's nodes and plan lines and gets one visit for the applying user. A
- * Refurbishment has no customer and puts its stock serial On Hold.
- */
-async function seedServiceWork(ctx: Ctx): Promise<void> {
-  const { anchor, userId } = ctx;
+async function seedContractProjects(ctx: Ctx): Promise<void> {
+  const { userId } = ctx;
   const sales = ctx.dataset.sales;
-  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
 
-  // A contract's project: the parent of the Service projects of the orders
-  // the contract covers (Field Service Phase D).
-  const contractProjectIds: Record<string, string> = {};
   for (const spec of sales.contracts) {
     if (!spec.project) continue;
     ctx.log(`contract project ${spec.name}`);
@@ -970,177 +884,6 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
         ctx.companyId
       ]
     );
-    contractProjectIds[spec.key] = projectId;
-  }
-
-  const templateIds: Record<string, string> = {};
-  for (const spec of sales.serviceTemplates) {
-    ctx.log(`service template ${spec.name}`);
-    const projectId = await insertId(ctx, "project", {
-      name: spec.name,
-      projectType: "Service",
-      isTemplate: true,
-      status: "Draft",
-      costTreatment: "By Coverage",
-      priority: "None",
-      active: true,
-      locationId: plantId,
-      nextElementSequence: spec.nodes.length + 1
-    });
-    const body = projectId.slice(projectId.indexOf("_") + 1);
-    const identifier = `TPL-${body.slice(0, 6).toUpperCase()}`;
-    await ctx.client.query(
-      `UPDATE project SET identifier = $1 WHERE id = $2 AND "companyId" = $3`,
-      [identifier, projectId, ctx.companyId]
-    );
-    await insertServiceTree(ctx, {
-      projectId,
-      identifier,
-      nodes: spec.nodes,
-      planLines: true
-    });
-    templateIds[spec.key] = projectId;
-  }
-
-  for (const spec of sales.serviceOrders) {
-    const template = spec.template
-      ? sales.serviceTemplates.find((t) => t.key === spec.template)
-      : undefined;
-    if (spec.template && !template) {
-      throw new Error(
-        `Seed: service order "${spec.key}" names unknown template "${spec.template}"`
-      );
-    }
-
-    // The order's subject: a customer asset (Field Visit), or a serial in
-    // stock with no customer (Refurbishment).
-    let subject: {
-      projectName: string;
-      customerId: string | null;
-      parentProjectId: string | null;
-      columns: Record<string, unknown>;
-    };
-    if (spec.type === "Refurbishment") {
-      const stock = ctx.dataset.inventory.onHandTracked.find((s) =>
-        s.entities.some((e) => e.readableId === spec.serial)
-      );
-      if (!stock) {
-        throw new Error(
-          `Seed: service order "${spec.key}" names unknown serial "${spec.serial}"`
-        );
-      }
-      subject = {
-        projectName: `${spec.serial} — Refurbishment`,
-        customerId: null,
-        parentProjectId: null,
-        columns: {
-          type: "Refurbishment",
-          trackedEntityId: need(ctx.refs.misc, `te:${spec.serial}`, "serial"),
-          itemId: need(ctx.refs.items, stock.item, "item").id,
-          customerAssetId: null,
-          customerId: null,
-          customerLocationId: null,
-          expectedSellingPrice: spec.expectedSellingPrice ?? null
-        }
-      };
-    } else {
-      const asset = sales.customerAssets.find((a) => a.key === spec.asset);
-      if (!asset) {
-        throw new Error(
-          `Seed: service order "${spec.key}" names unknown asset "${spec.asset}"`
-        );
-      }
-      const customerId = need(ctx.refs.customers, asset.customer, "customer");
-      subject = {
-        projectName: `${asset.serial} — ${asset.customer}`,
-        customerId,
-        parentProjectId: spec.contract
-          ? (contractProjectIds[spec.contract] ?? null)
-          : null,
-        columns: {
-          type: "Field Visit",
-          customerContractId: spec.contract
-            ? need(ctx.refs.documents, `con:${spec.contract}`, "contract")
-            : null,
-          trackedEntityId: need(
-            ctx.refs.misc,
-            `asset-serial:${asset.key}`,
-            "asset serial"
-          ),
-          itemId: need(ctx.refs.items, asset.item, "item").id,
-          customerAssetId: need(ctx.refs.misc, `asset:${asset.key}`, "asset"),
-          customerId,
-          customerLocationId: need(
-            ctx.refs.misc,
-            `cloc:${asset.customer}`,
-            "customer location"
-          )
-        }
-      };
-    }
-
-    const serviceOrderId = await nextSequence(ctx, "serviceOrder");
-    ctx.log(`service order ${serviceOrderId}`);
-    const projectId = await insertId(ctx, "project", {
-      name: subject.projectName,
-      identifier: serviceOrderId,
-      projectType: "Service",
-      // As projectStatusOfOrder: a Draft order's tree is Draft, so its parts
-      // are not MRP demand.
-      status: spec.status === "Draft" ? "Draft" : "Released",
-      costTreatment: "By Coverage",
-      customerId: subject.customerId,
-      parentProjectId: subject.parentProjectId,
-      locationId: plantId,
-      priority: "None",
-      active: true,
-      nextElementSequence: (template?.nodes.length ?? 0) + 1
-    });
-    // Every Service project has the default states, nodes or not.
-    await insertServiceTree(ctx, {
-      projectId,
-      identifier: serviceOrderId,
-      nodes: template?.nodes ?? [],
-      planLines: true
-    });
-
-    const orderId = await insertId(ctx, "serviceOrder", {
-      serviceOrderId,
-      ...subject.columns,
-      status: spec.status,
-      locationId: plantId,
-      projectId,
-      serviceTemplateId: template ? need(templateIds, template.key) : null,
-      priority: spec.priority ?? "None",
-      problem: RICH(spec.problem)
-    });
-    // A refurbishment holds its serial out of picking and shipping.
-    if (spec.type === "Refurbishment") {
-      await ctx.client.query(
-        `UPDATE "trackedEntity" SET status = 'On Hold'
-         WHERE id = $1 AND "companyId" = $2`,
-        [subject.columns.trackedEntityId, ctx.companyId]
-      );
-    }
-    ctx.refs.documents[`svc:${spec.key}`] = orderId;
-
-    if (spec.visit) {
-      await insertRow(ctx, "serviceVisit", {
-        serviceOrderId: orderId,
-        technicianId: userId,
-        status: "Scheduled",
-        plannedStart: resolveTimestamp(
-          anchor,
-          spec.visit.startOffset,
-          spec.visit.startTime
-        ),
-        plannedEnd: resolveTimestamp(
-          anchor,
-          spec.visit.startOffset,
-          spec.visit.endTime
-        )
-      });
-    }
   }
 }
 

@@ -2095,32 +2095,13 @@ export const assignShipmentLineEntity = defineServiceFn({
     // The statuses this source may ship (`shippableEntityStatuses`): a
     // return-to-customer ships returned stock, On Hold until it is
     // dispositioned; a return-to-supplier also ships rejected units;
-    // everything else ships Available stock only. A Repair line ships the
-    // customer's own unit back: it never entered stock, so it is Consumed.
-    // On Hold alone is not provenance: the entity must have COME BACK on a
-    // receipt of this return order.
+    // everything else ships Available stock only. On Hold alone is not
+    // provenance: the entity must have COME BACK on a receipt of this return
+    // order.
     const isReturn = shipment.data.sourceDocument === "Sales Return Order";
-    const returnLine =
-      isReturn && line.data.lineId
-        ? await client
-            .from("salesReturnOrderLine")
-            .select("disposition")
-            .eq("id", line.data.lineId)
-            .eq("companyId", companyId)
-            .maybeSingle()
-        : { data: null, error: null };
-    if (returnLine.error) {
-      return ctx.error(
-        "internal",
-        "Failed to load the return line",
-        returnLine.error
-      );
-    }
-    const isRepairLine = returnLine.data?.disposition === "Repair";
-    const allowedStatuses: ReturnType<typeof utils.shippableEntityStatuses> =
-      isRepairLine
-        ? ["Consumed"]
-        : utils.shippableEntityStatuses(shipment.data.sourceDocument);
+    const allowedStatuses = utils.shippableEntityStatuses(
+      shipment.data.sourceDocument
+    );
     const attributes = (entity.data.attributes ?? {}) as Record<
       string,
       unknown
@@ -2150,39 +2131,6 @@ export const assignShipmentLineEntity = defineServiceFn({
           "rule",
           "Tracked entity was not received on this return order and cannot ship back on it"
         );
-      }
-
-      // A repaired unit ships back once its Depot Repair order on this line
-      // is done and the unit is still at the depot.
-      if (isRepairLine) {
-        const repair = await client
-          .from("serviceOrder")
-          .select(
-            "status, customerAsset:customerAsset!serviceOrder_asset_fkey(status)"
-          )
-          .eq("trackedEntityId", trackedEntityId)
-          .eq("salesReturnOrderLineId", line.data.lineId ?? "")
-          .eq("type", "Depot Repair")
-          .eq("companyId", companyId)
-          .in("status", ["Completed", "Closed"])
-          .limit(1)
-          .maybeSingle();
-        if (repair.error) {
-          return ctx.error(
-            "internal",
-            "Failed to load the service order",
-            repair.error
-          );
-        }
-        if (!repair.data) {
-          return ctx.error(
-            "rule",
-            "Complete the unit's service order before you ship it back"
-          );
-        }
-        if (repair.data.customerAsset?.status !== "At Depot") {
-          return ctx.error("rule", "The unit is not at the depot");
-        }
       }
     }
 

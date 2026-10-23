@@ -1750,10 +1750,7 @@ export { estimateAtCompletion } from "@carbon/utils";
  * project total includes charges with no element. The budget of a row adds
  * every budget set in its subtree; the project budget adds every element's.
  * An element's own `estimateAtCompletion` overrides its estimate; the project
- * estimate is always computed. `serviceActual` is the actual cost of the
- * service orders whose Service project has this project as its parent (a
- * coverage contract's project): it adds to the project total only, never to an
- * element.
+ * estimate is always computed.
  */
 export function buildProjectCostFigures(
   elements: {
@@ -1762,8 +1759,7 @@ export function buildProjectCostFigures(
     budget: number | null;
     estimateAtCompletion: number | null;
   }[],
-  costSummary: Parameters<typeof rollUpCostSummary>[1],
-  serviceActual = 0
+  costSummary: Parameters<typeof rollUpCostSummary>[1]
 ): { byElement: Map<string, ProjectCostFigures>; project: ProjectCostFigures } {
   const { byElement: totals, project: projectTotals } = rollUpCostSummary(
     elements,
@@ -1831,11 +1827,7 @@ export function buildProjectCostFigures(
 
   return {
     byElement,
-    project: figures(
-      { ...projectTotals, actual: projectTotals.actual + serviceActual },
-      projectBudget,
-      null
-    )
+    project: figures(projectTotals, projectBudget, null)
   };
 }
 

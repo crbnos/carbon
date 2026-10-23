@@ -157,15 +157,6 @@ export function useCreate(): CreateLink[] {
       });
     }
 
-    if (permissions.can("create", "service")) {
-      links.push({
-        name: t`Service Order`,
-        to: path.to.newServiceOrder,
-        shortcut: CREATE_SHORTCUTS.serviceOrder,
-        icon: <LuClipboardList />
-      });
-    }
-
     if (permissions.can("create", "users")) {
       links.push({
         name: t`Employee`,

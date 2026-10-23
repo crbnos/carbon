@@ -697,8 +697,6 @@ export const path = {
       generatePath(`${x}/contract/${id}/revert-cancellation`),
     contractSchedule: (id: string) =>
       generatePath(`${x}/contract/${id}/schedule`),
-    contractServiceOrders: (id: string) =>
-      generatePath(`${x}/contract/${id}/service-orders`),
     contractSetup: (
       id: string,
       step: "details" | "products" | "invoicing" | "revenue" | "review"
@@ -1753,7 +1751,6 @@ export const path = {
     mfaVerify: "/api/mfa/verify",
     moveChartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/move/${id}`),
-    myVisits: `${x}/service-orders/my-visits`,
     newAbility: `${x}/resources/abilities/new`,
     newApiKey: `${x}/settings/api-keys/new`,
     newApprovalRule: (documentType?: string) =>
@@ -1968,12 +1965,8 @@ export const path = {
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
-    newServiceOrder: `${x}/service-orders/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
-    newServiceTemplate: `${x}/service-orders/templates/new`,
-    newServiceVisit: (orderId: string) =>
-      generatePath(`${x}/service-order/${orderId}/visits/new`),
     newShift: `${x}/people/shifts/new`,
     newShipment: `${x}/shipment/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
@@ -2599,62 +2592,14 @@ export const path = {
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),
-    serviceOrder: (id: string) => generatePath(`${x}/service-order/${id}`),
-    serviceOrderBilling: (id: string) =>
-      generatePath(`${x}/service-order/${id}/billing`),
-    serviceOrderCharge: (id: string) =>
-      generatePath(`${x}/service-order/${id}/charge`),
-    serviceOrderComplete: (id: string) =>
-      generatePath(`${x}/service-order/${id}/complete`),
-    serviceOrderDetails: (id: string) =>
-      generatePath(`${x}/service-order/${id}/details`),
-    serviceOrderEstimate: (id: string) =>
-      generatePath(`${file}/service-estimate/${id}.pdf`),
-    serviceOrderInvoice: (id: string) =>
-      generatePath(`${x}/service-order/${id}/invoice`),
-    serviceOrderStatus: (id: string) =>
-      generatePath(`${x}/service-order/${id}/status`),
-    serviceOrders: `${x}/service-orders`,
-    serviceOrderVisits: (id: string) =>
-      generatePath(`${x}/service-order/${id}/visits`),
-    serviceOrderWork: (id: string) =>
-      generatePath(`${x}/service-order/${id}/work`),
-    serviceOrderWorkBuild: (id: string) =>
-      generatePath(`${x}/service-order/${id}/work/build`),
-    serviceOrderWorkNode: (id: string, elementId: string) =>
-      generatePath(`${x}/service-order/${id}/work/${elementId}`),
     servicePurchasing: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing`),
     serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
     serviceRoot: `${x}/service`,
     serviceSales: (id: string) => generatePath(`${x}/service/${id}/sales`),
-    serviceSchedule: `${x}/service-orders/schedule`,
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/purchasing/${id}`),
     services: `${x}/items/services`,
-    serviceTemplate: (id: string) =>
-      generatePath(`${x}/service-orders/templates/${id}`),
-    serviceTemplateNode: (id: string, elementId: string) =>
-      generatePath(`${x}/service-orders/templates/${id}/${elementId}`),
-    serviceTemplates: `${x}/service-orders/templates`,
-    serviceVisit: (orderId: string, visitId: string) =>
-      generatePath(`${x}/service-order/${orderId}/visits/${visitId}`),
-    serviceVisitSignature: (orderId: string, visitId: string) =>
-      generatePath(`${x}/service-order/${orderId}/visits/${visitId}/signature`),
-    serviceVisitStatus: (orderId: string, visitId: string) =>
-      generatePath(`${x}/service-order/${orderId}/visits/${visitId}/status`),
-    serviceWorkComments: (projectId: string, elementId: string) =>
-      generatePath(`${x}/service-work/${projectId}/${elementId}/comments`),
-    serviceWorkDelete: (projectId: string, elementId: string) =>
-      generatePath(`${x}/service-work/${projectId}/${elementId}/delete`),
-    serviceWorkMove: (projectId: string) =>
-      generatePath(`${x}/service-work/${projectId}/move`),
-    serviceWorkNew: (projectId: string) =>
-      generatePath(`${x}/service-work/${projectId}/new`),
-    serviceWorkPlan: (projectId: string, elementId: string) =>
-      generatePath(`${x}/service-work/${projectId}/${elementId}/plan`),
-    serviceWorkUpdate: (projectId: string) =>
-      generatePath(`${x}/service-work/${projectId}/update`),
     settings: `${x}/settings`,
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,

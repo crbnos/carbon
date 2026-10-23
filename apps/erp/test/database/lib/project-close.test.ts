@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Closing a project (audit `.ai/runs/2026-10-22-project-accounting-audit.md`
-// D11, D12): a Contract project's Project WIP that no progress contract line
+// D11): a Contract project's Project WIP that no progress contract line
 // owns moves to cost of goods sold in one journal, each ledger row once; a
 // row a Right to Invoice line owns stays for the revenue run. Close refuses
 // a project that still holds stock, has a borrow not paid back, or has an
@@ -271,99 +271,6 @@ databaseTest(
       );
     } finally {
       await dropRecognitionRuns(f.db, f.companyId);
-      await f.cleanup();
-    }
-  }
-);
-
-databaseTest(
-  "a Contract coverage charge of a service order is relieved when its contract project closes (D12)",
-  async () => {
-    const f = await projectBillingTestFixture();
-    try {
-      await f.addAccounting();
-      const parent = await f.addProject("parent", "PC3");
-      const serviceProjectId = `${parent.projectId}-service`;
-      const stateId = `${parent.projectId}-todo`;
-      await f.db
-        .insertInto("project")
-        .values({
-          id: serviceProjectId,
-          name: "SO-1",
-          identifier: "SO-1",
-          projectType: "Service",
-          status: "Released",
-          costTreatment: "By Coverage",
-          parentProjectId: parent.projectId,
-          companyId: f.companyId,
-          createdBy: f.userId
-        })
-        .execute();
-      await f.db
-        .insertInto("projectElement")
-        .values({
-          id: `${serviceProjectId}-visit`,
-          projectId: serviceProjectId,
-          readableId: "SO-1-1",
-          sequence: 1,
-          type: "Task",
-          name: "Visit",
-          isBilling: false,
-          stateId,
-          companyId: f.companyId,
-          createdBy: f.userId
-        })
-        .execute();
-      const [contractLine, capitalizedLine] = await f.addJournalLines(
-        [
-          { account: "wip", amount: 250 },
-          { account: "wip", amount: 75 }
-        ],
-        "2026-09-10"
-      );
-      const [covered, capitalized] = await f.db
-        .insertInto("projectLedger")
-        .values(
-          [
-            { coverage: "Contract" as const, amount: 250, journalLineId: contractLine },
-            { coverage: "Capitalized" as const, amount: 75, journalLineId: capitalizedLine }
-          ].map((row, index) => ({
-            companyId: f.companyId,
-            projectId: serviceProjectId,
-            projectElementId: `${serviceProjectId}-visit`,
-            postingDate: "2026-09-10",
-            costType: "Labor" as const,
-            documentType: "Test",
-            documentId: `service-${index}`,
-            amount: row.amount,
-            journalLineId: row.journalLineId,
-            coverage: row.coverage,
-            coverageReason: "test",
-            unallowable: false,
-            createdBy: f.userId
-          }))
-        )
-        .returning("id")
-        .execute();
-      await setStatus(f, parent.projectId, "Technically Complete");
-
-      const closed = await close(f, parent.projectId);
-      expect(closed.error).toBeNull();
-      const journalId = closed.data!.journalId!;
-      expect(
-        (await journalLines(f, journalId)).map((line) => line.amount)
-      ).toEqual([-250, 250]);
-      // A Capitalized (refurbishment) charge moves into its serial, never COGS.
-      expect(await reliefs(f)).toEqual([
-        {
-          projectLedgerId: covered!.id,
-          amount: 250,
-          journalId,
-          scheduled: false
-        }
-      ]);
-      expect(capitalized).toBeTruthy();
-    } finally {
       await f.cleanup();
     }
   }
