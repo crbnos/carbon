@@ -52,6 +52,9 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
 
   const isPosted = status === "Posted";
   const isRental = initialValues.sourceDocument === "Rental Agreement";
+  // A contract delivery is made from its contract and keeps it.
+  const isContract = initialValues.sourceDocument === "Customer Contract";
+  const keepsSource = isRental || isContract;
   const isEditing = initialValues.id !== undefined;
 
   return (
@@ -76,6 +79,7 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
           termId="shipment-source-document"
           options={shipmentSourceDocumentType
             .filter((v) => isRental || v !== "Rental Agreement")
+            .filter((v) => isContract || v !== "Customer Contract")
             .map((v) => ({
               label: v,
               value: v
@@ -85,7 +89,7 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
               setSourceDocument(newValue.value as ShipmentSourceDocument);
             }
           }}
-          isReadOnly={isPosted || isRental}
+          isReadOnly={isPosted || keepsSource}
         />
         <Combobox
           key={sourceDocument}
@@ -96,7 +100,7 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
             label: d.name,
             value: d.id
           }))}
-          isReadOnly={isPosted || isRental}
+          isReadOnly={isPosted || keepsSource}
         />
         <Location
           name="locationId"

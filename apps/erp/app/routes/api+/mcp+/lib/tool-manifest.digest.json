@@ -284,7 +284,7 @@
     {"name":"inventory_updateReceiptLines","classification":"WRITE","schema":"3a91317efcce","response":"0eb0c2be01ed","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateShipment","classification":"WRITE","schema":"02747bbf2393","response":"3797626bd17e","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateShipmentFixedAssetLine","classification":"WRITE","schema":"ab168f9d9366","response":"3797626bd17e","permission":"inventory:update","paginates":false},
-    {"name":"inventory_updateShipmentLines","classification":"WRITE","schema":"3a4fe03b9c85","response":"0eb0c2be01ed","permission":"inventory:update","paginates":false},
+    {"name":"inventory_updateShipmentLines","classification":"WRITE","schema":"7b0bfde46b4b","response":"0eb0c2be01ed","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateShippingMethod","classification":"WRITE","schema":"1b5e5991be6c","response":"3797626bd17e","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateStockTransferLine","classification":"WRITE","schema":"3577763da43f","response":"3797626bd17e","permission":"inventory:create+update","paginates":false},
     {"name":"inventory_updateStockTransferLines","classification":"WRITE","schema":"17ef89b7d868","response":"0eb0c2be01ed","permission":"inventory:update","paginates":false},

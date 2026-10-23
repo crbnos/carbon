@@ -1417,6 +1417,15 @@ export const updateShipment = defineServiceFn({
     const isRental =
       current.data.sourceDocument === "Rental Agreement" ||
       shipment.sourceDocument === "Rental Agreement";
+    const isContract =
+      current.data.sourceDocument === "Customer Contract" ||
+      shipment.sourceDocument === "Customer Contract";
+    if (isContract && sourceChanged) {
+      return ctx.error(
+        "rule",
+        "A contract delivery keeps its contract. Create it from the contract."
+      );
+    }
     if (isRental && sourceChanged) {
       return ctx.error(
         "rule",
@@ -1426,6 +1435,7 @@ export const updateShipment = defineServiceFn({
 
     const rebuild =
       !isRental &&
+      !isContract &&
       (sourceChanged || current.data.locationId !== shipment.locationId);
     // A rebuild replaces the lines: on a posted shipment, the posted ones.
     if (rebuild && current.data.status !== "Draft") {
@@ -1893,7 +1903,8 @@ export const splitShipmentLine = defineServiceFn({
  * Set one field on shipment lines.
  *
  * @remarks
- * `storageUnitId` or `shippedQuantity`, on every line in `ids`. An empty
+ * `storageUnitId`, `shippedQuantity` or `serialNumber` (a contract
+ * delivery's typed serial), on every line in `ids`. An empty
  * value clears the field. Storage rules run when the shipment is posted, not
  * here.
  *
@@ -1902,7 +1913,7 @@ export const splitShipmentLine = defineServiceFn({
 export const updateShipmentLines = defineServiceFn({
   input: z.object({
     ids: z.array(z.string()).min(1),
-    field: z.enum(["storageUnitId", "shippedQuantity"]),
+    field: z.enum(["storageUnitId", "shippedQuantity", "serialNumber"]),
     value: z.string().nullable()
   }),
   permission: { update: "inventory" },
@@ -1932,7 +1943,9 @@ export const updateShipmentLines = defineServiceFn({
       .update({
         ...(field === "storageUnitId"
           ? { storageUnitId: value || null }
-          : { shippedQuantity: Number(value || 0) }),
+          : field === "serialNumber"
+            ? { serialNumber: value || null }
+            : { shippedQuantity: Number(value || 0) }),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })

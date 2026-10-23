@@ -94,6 +94,8 @@ const ShipmentLines = () => {
     shipmentLineTracking: ShipmentLineTracking[];
     /** A Sales Return Order shipment: the RMA lines whose disposition is Repair. */
     repairLineIds?: string[];
+    /** A contract delivery: each line's typed serial. */
+    serialNumberByLineId?: Record<string, string | null>;
     fixedAssetLines: {
       id: string;
       salesOrderLineId: string;
@@ -215,7 +217,7 @@ const ShipmentLines = () => {
         }
       | {
           lineId: string;
-          field: "storageUnitId";
+          field: "storageUnitId" | "serialNumber";
           value: string;
         }) => {
       const formData = new FormData();
@@ -275,6 +277,9 @@ const ShipmentLines = () => {
                         key={line.id}
                         line={line}
                         shipment={routeData?.shipment}
+                        serialNumber={
+                          routeData?.serialNumberByLineId?.[line.id!] ?? null
+                        }
                         isRepairLine={
                           !!line.lineId &&
                           (routeData?.repairLineIds ?? []).includes(line.lineId)
@@ -480,6 +485,7 @@ function ShipmentRentalLineItem({
 function ShipmentLineItem({
   line,
   shipment,
+  serialNumber,
   isRepairLine,
   className,
   hasTrackingLabel,
@@ -491,6 +497,8 @@ function ShipmentLineItem({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  /** A contract delivery line's typed serial. */
+  serialNumber?: string | null;
   /** The line ships a repaired unit back on its RMA's Repair line. */
   isRepairLine: boolean;
   className?: string;
@@ -513,12 +521,15 @@ function ShipmentLineItem({
       }
     | {
         lineId: string;
-        field: "storageUnitId";
+        field: "storageUnitId" | "serialNumber";
         value: string;
       }) => Promise<void>;
 }) {
   const { t } = useLingui();
   const [items] = useItems();
+  // A contract delivery moves no stock: no storage unit, and the serial is
+  // typed (the job consumed the part to the project, so no tracked entity).
+  const isContractDelivery = shipment?.sourceDocument === "Customer Contract";
   const item = items.find((p) => p.id === line.itemId);
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
@@ -709,7 +720,30 @@ function ShipmentLineItem({
               </span>
             </VStack>
           )}
+          {isContractDelivery && (
+            <VStack spacing={1}>
+              <label className="text-xs text-muted-foreground">
+                <Trans>Serial Number</Trans>
+              </label>
+              <Input
+                size="sm"
+                className="min-w-[160px]"
+                defaultValue={serialNumber ?? ""}
+                isReadOnly={isReadOnly}
+                onBlur={(event) => {
+                  const value = event.target.value.trim();
+                  if (value === (serialNumber ?? "")) return;
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "serialNumber",
+                    value
+                  });
+                }}
+              />
+            </VStack>
+          )}
           {!isJobFulfillment &&
+            !isContractDelivery &&
             shipment?.sourceDocument !== "Purchase Order" && (
               <StorageUnit
                 locationId={line.locationId}

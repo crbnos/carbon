@@ -17,6 +17,7 @@ export function PartiesBlock({ data }: { data: PackingSlipData }) {
     sourceDocument,
     sourceDocumentId,
     customerReference,
+    customerReferenceLabel,
     locale
   } = data;
   const {
@@ -68,7 +69,9 @@ export function PartiesBlock({ data }: { data: PackingSlipData }) {
               </Text>
             ) : null}
             {customerReference ? (
-              <Text>Customer PO #: {customerReference}</Text>
+              <Text>
+                {customerReferenceLabel ?? "Customer PO #"}: {customerReference}
+              </Text>
             ) : null}
             {shipment?.trackingNumber ? (
               <Text>Tracking: {shipment.trackingNumber}</Text>

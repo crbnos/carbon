@@ -59,6 +59,9 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   }>(path.to.shipment(shipmentId));
 
   const isRental = routeData?.shipment?.sourceDocument === "Rental Agreement";
+  // A rental or contract delivery is dated: the day the customer received it.
+  const isDelivery =
+    isRental || routeData?.shipment?.sourceDocument === "Customer Contract";
   const companyToday = useCompanyToday();
   const [postingDate, setPostingDate] = useState(companyToday);
 
@@ -285,7 +288,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           <p className="text-sm text-muted-foreground mb-4">
             <Trans>Are you sure you want to post this shipment?</Trans>
           </p>
-          {isRental && (
+          {isDelivery && (
             <FormControl className="mb-4">
               <FormLabel>
                 <Trans>Delivered on</Trans>
@@ -382,7 +385,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData();
-                if (isRental) formData.set("postingDate", postingDate);
+                if (isDelivery) formData.set("postingDate", postingDate);
                 ruleViolations.submit(formData);
               }}
             >

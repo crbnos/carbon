@@ -318,6 +318,9 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
       "shipmentDefault": {
         "create": "inventory",
       },
+      "shipmentFromCustomerContract": {
+        "create": "inventory",
+      },
       "shipmentFromPurchaseOrder": {
         "create": "inventory",
       },
@@ -389,6 +392,9 @@ exports[`posting permissions > match the reviewed manifest 2`] = `
         "create": "inventory",
       },
       "shipmentDefault": {
+        "create": "inventory",
+      },
+      "shipmentFromCustomerContract": {
         "create": "inventory",
       },
       "shipmentFromPurchaseOrder": {

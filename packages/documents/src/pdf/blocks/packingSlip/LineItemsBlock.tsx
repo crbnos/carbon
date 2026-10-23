@@ -84,7 +84,9 @@ export function LineItemsBlock({
                   </Text>
                 ) : null}
               </View>
-              <Text style={tw("w-2/12 text-right text-gray-600")}>1</Text>
+              <Text style={tw("w-2/12 text-right text-gray-600")}>
+                {unit.quantity ?? "1"}
+              </Text>
               <Text style={tw("w-4/12 text-right text-gray-600")}>
                 {unit.serialNumber ?? ""}
               </Text>

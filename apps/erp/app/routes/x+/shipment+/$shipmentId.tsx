@@ -169,9 +169,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // A contract delivery's typed serials, by line: the `shipmentLines` view
+  // predates `shipmentLine.serialNumber`.
+  let serialNumberByLineId: Record<string, string | null> = {};
+  if (shipment.data.sourceDocument === "Customer Contract") {
+    const serials = await client
+      .from("shipmentLine")
+      .select("id, serialNumber")
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId);
+    serialNumberByLineId = Object.fromEntries(
+      (serials.data ?? []).map((line) => [line.id, line.serialNumber])
+    );
+  }
+
   return {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
+    serialNumberByLineId,
     repairLineIds,
     fixedAssetLines,
     rentalLines,
