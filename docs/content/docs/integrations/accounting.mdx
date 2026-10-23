@@ -1,6 +1,6 @@
 ---
 title: Accounting
-description: Mirror invoices, bills, and GL journals to Xero, QuickBooks, or Rillet, and keep exchange rates current.
+description: Mirror invoices, bills, and GL journals to Xero, QuickBooks, or Rillet, post journals to NetSuite, and keep exchange rates current.
 ---
 
 Carbon synchronizes accounting data with **Xero**, **QuickBooks Online**, or **Rillet**. Ledger synchronization requires Enterprise Edition or the Carbon Cloud Business plan. The **Exchange Rates** service is available on every plan.
@@ -19,7 +19,7 @@ A provider payment creates a Carbon payment and <Term id="invoice-settlement">in
 
 ## Connect a ledger
 
-Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**.
+Xero and QuickBooks Online use **OAuth**. Rillet uses a per-company **API key**. NetSuite uses token-based authentication (account id, consumer key, consumer secret, token id, token secret) and an optional subsidiary id. Carbon pushes automated journals to NetSuite and reads its chart of accounts for mapping. Customers, invoices, bills, and payments are not synced.
 
 <Steps>
   <Step>

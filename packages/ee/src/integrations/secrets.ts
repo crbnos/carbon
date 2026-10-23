@@ -52,6 +52,12 @@ export const SECRET_KEYS: Record<string, string[]> = {
     "webhookSecret"
   ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
+  netsuite: [
+    "credentials.consumerKey",
+    "credentials.consumerSecret",
+    "credentials.tokenId",
+    "credentials.tokenSecret"
+  ],
   "paperless-parts": ["apiKey", "secretKey"],
   sense: ["apiKey"],
   resend: ["apiKey"],

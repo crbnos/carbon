@@ -6,6 +6,11 @@ import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { mountHealthcheck } from "./mount/hooks.server";
+import {
+  netsuiteHealthcheck,
+  netsuiteOnInstall,
+  netsuiteOnUninstall
+} from "./netsuite/hooks.server";
 import { onshapeHealthcheck, onshapeOnUninstall } from "./onshape/hooks.server";
 import {
   ONSHAPE_GOVERNMENT_INTEGRATION_ID,
@@ -101,6 +106,12 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onInstall: rilletOnInstall,
     onUpdate: rilletOnInstall,
     onUninstall: rilletOnUninstall
+  },
+  netsuite: {
+    onHealthcheck: netsuiteHealthcheck,
+    onInstall: netsuiteOnInstall,
+    onUpdate: netsuiteOnInstall,
+    onUninstall: netsuiteOnUninstall
   },
   sense: {
     onHealthcheck: senseHealthcheck,

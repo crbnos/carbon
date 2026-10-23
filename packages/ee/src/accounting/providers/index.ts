@@ -2,12 +2,18 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { NetSuiteProvider } from "./netsuite";
 import type { QboProvider } from "./quickbooks-online";
 import type { RilletProvider } from "./rillet";
 import type { XeroProvider } from "./xero";
 
-export type AccountingProvider = XeroProvider | QboProvider | RilletProvider;
+export type AccountingProvider =
+  | XeroProvider
+  | QboProvider
+  | RilletProvider
+  | NetSuiteProvider;
 
+export * from "./netsuite";
 export * from "./quickbooks-online";
 export * from "./rillet";
 export * from "./xero";

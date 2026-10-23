@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  netsuiteSyncerRegistry,
   ProviderID,
   qboSyncerRegistry,
   REQUIRED_SYNC_SUBSCRIPTIONS,
@@ -32,6 +33,7 @@ const SYNCER_REGISTRIES: Record<SyncProviderID, SyncerRegistry> = {
   [ProviderID.XERO]: xeroSyncerRegistry,
   [ProviderID.QUICKBOOKS]: qboSyncerRegistry,
   [ProviderID.RILLET]: rilletSyncerRegistry,
+  [ProviderID.NETSUITE]: netsuiteSyncerRegistry,
   // A spend provider is held to the same invariant — its subscriptions run on
   // the same handler, registry and drain.
   [SpendProviderID.RAMP]: rampSyncerRegistry
