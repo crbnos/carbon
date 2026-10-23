@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { NotFoundError } from "@carbon/api/errors";
+import { NotFoundError, ServerFnError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import {
   CarbonError,
@@ -18,11 +18,12 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
-import type {
-  ExpressionBuilder,
-  Kysely,
-  KyselyDatabase,
-  KyselyTx
+import {
+  type ExpressionBuilder,
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
 } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import { insertRows, many, maybeSingle } from "@carbon/database/rows";
@@ -113,7 +114,6 @@ import {
   type itemValidator,
   type MethodDiffEntry,
   type MethodDiffStatus,
-  type makeMethodVersionValidator,
   type materialDimensionValidator,
   type materialFinishValidator,
   type materialFormValidator,
@@ -4301,20 +4301,27 @@ export async function upsertItemUnitSalePrice(
 
 /**
  * A new Draft version of a make method with `copyFromId`'s header, bill of
- * materials and bill of process. With `activeVersionId` (which must be
- * `copyFromId`) a Draft source is set Active first, so the new Draft never
- * outranks it. The insert, the activation and the copy are one transaction:
- * a failed copy leaves no empty version and no source set Active.
+ * materials and bill of process. With `activate`, a Draft source is set Active
+ * first, so the new Draft never outranks it. The insert, the activation and the
+ * copy run in one transaction, or in the one `db` already is: a failed copy
+ * leaves no empty version and no source set Active. Kysely bypasses RLS, so the
+ * caller's client is checked for what the makeMethod policies ask; the copy then
+ * runs as the system, since the method line policies ask for no more than
+ * parts_create, while get-method's own gate asks for production update.
  */
 export async function createMakeMethodVersion(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
+  args: {
+    copyFromId: string;
+    version: number;
+    /** Set a Draft source Active. An Active or Archived source is left alone. */
+    activate?: boolean;
+    /** The change notice the new Draft belongs to; else the source's. */
+    changeOrderId?: string;
     companyId: string;
     createdBy: string;
-  },
-  // get-method is gated on production update; `createMethodVersion` copies as the system.
-  copyClient: SupabaseClient<Database> = client
+  }
 ): Promise<
   | {
       data: {
@@ -4324,18 +4331,9 @@ export async function createMakeMethodVersion(
       };
       error: null;
     }
-  | { data: null; error: ServiceError }
+  | { data: null; error: ServiceError | ServerFnError }
 > {
-  const { copyFromId, activeVersionId, version, companyId, createdBy } =
-    makeMethodVersion;
-
-  // Any other id could be another item's version, set Active beside its own.
-  if (activeVersionId && activeVersionId !== copyFromId) {
-    return {
-      data: null,
-      error: ruleError("Only the version being copied can be set Active")
-    };
-  }
+  const { copyFromId, version, companyId, createdBy } = args;
 
   const source = await client
     .from("makeMethod")
@@ -4345,9 +4343,9 @@ export async function createMakeMethodVersion(
     .single();
   if (source.error) return { data: null, error: source.error };
 
-  // The writes are Kysely: the makeMethod policies ask for parts_create to
-  // insert and parts_update to set a version Active.
-  const activate = Boolean(activeVersionId) && source.data.status === "Draft";
+  // The makeMethod policies ask for parts_create to insert and parts_update to
+  // set a version Active.
+  const activate = args.activate === true && source.data.status === "Draft";
   const permitted = await requireCompanyPermission(
     client,
     companyId,
@@ -4364,14 +4362,14 @@ export async function createMakeMethodVersion(
   }
 
   try {
-    const draftId = await db.transaction().execute(async (trx) => {
+    const draftId = await withTransaction(db, async (trx) => {
       const draft = await trx
         .insertInto("makeMethod")
         .values({
           itemId: source.data.itemId,
           customFields: toJson(source.data.customFields),
           tags: source.data.tags,
-          changeOrderId: source.data.changeOrderId,
+          changeOrderId: args.changeOrderId ?? source.data.changeOrderId,
           status: "Draft",
           version,
           companyId,
@@ -4381,21 +4379,18 @@ export async function createMakeMethodVersion(
         .executeTakeFirstOrThrow();
 
       if (activate) {
-        const activated = await trx
+        // A source set Active meanwhile, or archived behind a newer Active, is
+        // not outranked by the new Draft either: nothing to refuse.
+        await trx
           .updateTable("makeMethod")
           .set({ status: "Active" })
           .where("id", "=", copyFromId)
           .where("companyId", "=", companyId)
           .where("status", "=", "Draft")
-          .executeTakeFirst();
-        if (Number(activated.numUpdatedRows) === 0) {
-          throw new RuleRefusal(
-            "The version being copied is no longer a Draft"
-          );
-        }
+          .execute();
       }
 
-      const copy = await copyMakeMethod(copyClient, trx, {
+      const copy = await copyMakeMethod(getCarbonServiceRole(), trx, {
         sourceId: copyFromId,
         targetId: draft.id,
         billOfMaterial: true,
@@ -4407,14 +4402,7 @@ export async function createMakeMethodVersion(
         companyId,
         userId: createdBy
       });
-      if (copy.error) {
-        // Below 500 the posting refused with a message written for the person.
-        if (copy.error.status < 500) throw new RuleRefusal(copy.error.message);
-        // A database error reaches here with an empty message.
-        throw new Error(copy.error.message || "Failed to copy make method", {
-          cause: copy.error
-        });
-      }
+      if (copy.error) throw copy.error;
 
       return draft.id;
     });
@@ -4424,12 +4412,17 @@ export async function createMakeMethodVersion(
       error: null
     };
   } catch (error) {
-    logger.error("Failed to create make method version", {
-      companyId,
-      copyFromId,
-      version,
-      error
-    });
+    // The copy's refusal, with the status its category is read from.
+    if (error instanceof ServerFnError) return { data: null, error };
+    // A taken version number is the caller's to retry.
+    if (!isUniqueViolation(error)) {
+      logger.error("Failed to create make method version", {
+        companyId,
+        copyFromId,
+        version,
+        error
+      });
+    }
     return { data: null, error: writeError(error) };
   }
 }
@@ -5220,11 +5213,6 @@ async function requireMaterialUpdatable(
 }
 
 class MaterialRuleViolation extends Error {}
-
-// A refusal thrown inside a transaction: `writeError` keeps its rule code.
-class RuleRefusal extends Error {
-  readonly code = SERVICE_RULE_ERROR_CODE;
-}
 
 // A thrown Kysely/Postgres error in the { message, code } shape services
 // return. The code is the SQLSTATE (23505 for a taken revision label).
@@ -6943,9 +6931,8 @@ export async function createChangeNoticeDraftMethod(
     // highest-version draft when there is no Active — and `get-method` would hand
     // the CO's UNRELEASED edits to jobs/quotes. Freezing the base as Active keeps
     // production on the current method until the CO is released.
-    const activeVersionId = base.status === "Draft" ? base.id : undefined;
-    // New Draft version on the same item with the BoM/BoP rows copied in (the
-    // canonical new-version flow: createMakeMethodVersion). Number it
+    // `createMakeMethodVersion` activates only a Draft base, and writes the new
+    // Draft with the CO's id and its BoM/BoP rows in one transaction. Number it
     // above ALL existing versions (maxVersion + 1), not the Active one, so a
     // second CO on the same part doesn't collide on (itemId, version). Retry on
     // a concurrent unique-violation by recomputing the next free version.
@@ -6954,7 +6941,8 @@ export async function createChangeNoticeDraftMethod(
     for (let attempt = 0; attempt < 3; attempt++) {
       const res = await createMakeMethodVersion(client, db, {
         copyFromId: base.id,
-        activeVersionId,
+        activate: true,
+        changeOrderId: changeNoticeId,
         version: nextVersion,
         companyId,
         createdBy: userId
@@ -6981,12 +6969,6 @@ export async function createChangeNoticeDraftMethod(
         error: { message: "Failed to create draft version" }
       };
     }
-    const stamp = await client
-      .from("makeMethod")
-      .update({ changeOrderId: changeNoticeId })
-      .eq("id", draftId)
-      .eq("companyId", companyId);
-    if (stamp.error) return { data: null, error: stamp.error };
     return {
       data: {
         draftMakeMethodId: draftId,

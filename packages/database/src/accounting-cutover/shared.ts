@@ -20,14 +20,6 @@ export const ACCOUNTING_ALREADY_SET_UP = "Accounting is already set up.";
 
 export const OPENING_BALANCE_SOURCE = "Opening Balance" as const;
 
-export async function withTransaction<T>(
-  db: CutoverDb,
-  fn: (trx: Transaction<KyselyDatabase>) => Promise<T>
-): Promise<T> {
-  if (db.isTransaction) return fn(db as Transaction<KyselyDatabase>);
-  return db.transaction().execute(fn);
-}
-
 export async function getCompany(db: CutoverDb, companyId: string) {
   const company = await db
     .selectFrom("company")

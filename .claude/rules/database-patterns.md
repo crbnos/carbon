@@ -291,6 +291,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 - Never query inside a loop — one set-based statement (`UPDATE … FROM (VALUES …)`, `.in()`, a
   join) per logical write.
 - Single writes are already atomic — don't reach for a transaction.
+- A building block that may be handed a transaction opens its own with `withTransaction(db, fn)`
+  (`@carbon/database/client`), never `db.transaction()`: Kysely refuses `transaction()` on a
+  `Transaction`, and joining lets the caller commit its own writes with it
+  (`createMakeMethodVersion`, every `getMethod` body).
 - Kysely auto-quotes reserved column names (e.g. `order`), so `.set({ order: sortOrder })` is
   safe; in raw `sql`, use `sql.ref(column)`.
 

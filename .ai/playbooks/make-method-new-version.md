@@ -1,6 +1,6 @@
 # Make Method — New Version, Version change notice, Get Method
 
-Last tested: 2026-10-19
+Last tested: 2026-10-22
 Routes: /x/part/{itemId}/details?methodId={makeMethodId} · /x/change-notice/new · /x/items/change-notice/{id}/details
 
 ## Prerequisites
@@ -28,6 +28,14 @@ Routes: /x/part/{itemId}/details?methodId={makeMethodId} · /x/change-notice/new
 - On a Draft version click **Get Method** → first combobox: type the source part, pick it → second combobox: pick its version → `requestSubmit` "Confirm".
 - Verify: the Draft's lines are replaced by the source's.
 
+### 5. A failed copy leaves nothing (the atomicity check)
+- Make the copy fail with a temporary trigger (drop it afterwards; check `pg_trigger` is clean):
+  `CREATE FUNCTION test_fail_op_copy() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'operation copy refused (test)'; END $$;`
+  `CREATE TRIGGER test_fail_op_copy BEFORE INSERT ON "methodOperation" FOR EACH ROW WHEN (NEW."companyId" = '<companyId>') EXECUTE FUNCTION test_fail_op_copy();`
+  (`methodOperationStepSlide` only fires when the source has steps; the satellite methods have none.)
+- New Version on a part whose only version is a Draft → `requestSubmit` "Create Version".
+- Verify: toast "Failed to create new version", the URL keeps no `methodId` of a new version, the DB has no new row and the source is still Draft. Drop the trigger; New Version then succeeds with the SAME version number (nothing held it).
+
 ## Selector Notes
 - The version button is `button "V<n> <Status>"`; its menu has "Version N …", "New Version", "New Change Notice".
 - Item pickers: click the combobox, `agent-browser keyboard type "<part number>"`, then click the `option`.
@@ -42,5 +50,7 @@ from "makeMethod" m where m."itemId" = '<itemId>' order by m.version;
 ```
 
 ## Common Failures
+- `agent-browser screenshot .context/x.png` with a relative path saves nowhere useful: pass an absolute path.
+- No `psql` on the host: query with `pg` from `packages/database` (`node -e` / a small script) and `SUPABASE_DB_URL` from `.env.local` (the shell exports another stack's).
 - Portless URLs need `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem` for scripts; the browser works as is.
 - `crbn up --no-portless` pins port 54321 and fails when another worktree's localhost stack holds it; use portless mode.

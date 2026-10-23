@@ -5,7 +5,7 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 ## Key Domain Concepts
 
 - **Job** — production work order. Statuses: Draft → Planned → Ready → In Progress → Paused → Completed → Closed → Cancelled. `isJobLocked(status)` returns true for Completed/Closed/Cancelled. MUST check before allowing edits.
-- **Job Make Method** — a job's manufacturing method (BOM + routing). Root method has `parentMaterialId = null`; sub-assemblies nest via `parentMaterialId`. Created by `getMethod` (`production.service.ts`, ported from the `get-method` server function; its live and unit tests include `production.sandbox.test.ts`).
+- **Job Make Method** — a job's manufacturing method (BOM + routing). Root method has `parentMaterialId = null`; sub-assemblies nest via `parentMaterialId`. Created by `getMethod` (`production.service.ts`, ported from the `get-method` server function; its live and unit tests include `production.sandbox.test.ts`). Every `getMethod` body opens its transaction through `withTransaction` (`@carbon/database/client`), so it joins one it is handed: `createMakeMethodVersion` copies into a Draft it has not committed yet.
 - **Job Operation** — routing step within a make method. `operationType` (shared enum): `Process`, `Assembly`, `Inspection` (in-house on a work center), or `Outside Processing` (subcontracted to a supplier process). Statuses: Todo → Ready → In Progress → Done. Ordered by `order` column.
 - **Job Material** — BOM line within a make method. Each has a `methodType` (Pull from Inventory, Purchase to Order, Make to Order) that drives procurement.
 - **Production Event** — time tracking (Labor/Machine/Setup) against an operation.

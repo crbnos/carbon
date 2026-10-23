@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -966,12 +967,20 @@ export const createMethodVersion = defineServiceFn({
   permission: { create: "parts" },
 
   async run(ctx, input) {
-    if (input.activeVersionId) {
+    const { copyFromId, activeVersionId, version } = input;
+    // Any other id could be another item's version, set Active beside its own.
+    if (activeVersionId && activeVersionId !== copyFromId) {
+      return ctx.error(
+        "rule",
+        "Only the version being copied can be set Active"
+      );
+    }
+    if (activeVersionId) {
       const db = ctx.asSystem.pg;
       const { strict } = await getStrictBackflushSettings(db, ctx.company.id);
       if (strict) {
         const parts = await getMethodPartsMissingPullFrom(db, {
-          makeMethodId: input.activeVersionId,
+          makeMethodId: activeVersionId,
           companyId: ctx.company.id
         });
         if (parts.length > 0) {
@@ -980,25 +989,30 @@ export const createMethodVersion = defineServiceFn({
       }
     }
 
-    // get-method is gated on production update, so the copy runs as the system.
     const result = await service.createMakeMethodVersion(
       ctx.asCaller.supabase,
       ctx.asSystem.pg,
-      { ...input, companyId: ctx.company.id, createdBy: ctx.auditUserId },
-      ctx.asSystem.supabase
+      {
+        copyFromId,
+        version,
+        activate: Boolean(activeVersionId),
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
+      }
     );
-    // A failed copy has no code; `unwrap` would answer it generically.
-    if (result.error && !("code" in result.error && result.error.code)) {
+    // The copy runs as the system, so its refusal is ours, as `copyMethod` reads it.
+    if (result.error instanceof ServerFnError) {
       return ctx.error(
         "internal",
         "Failed to create new version",
         result.error
       );
     }
-    const version = unwrap(ctx, result);
-    if (version instanceof CarbonError) return version;
-    if (!version) return ctx.error("internal", "Failed to create new version");
-    return version;
+    // `data` is set whenever `error` is not; the null is the union's, not a case.
+    return (
+      unwrap(ctx, result) ??
+      ctx.error("internal", "Failed to create new version")
+    );
   }
 });
 
