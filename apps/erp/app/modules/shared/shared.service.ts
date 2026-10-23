@@ -12866,8 +12866,9 @@ export async function createDocument(
     }
     case "shipmentFromSalesReturnOrder": {
       // Return-to-customer shipment: ships back RECEIVED quantity on lines
-      // dispositioned "Return to Customer", minus what earlier posted
-      // shipments of this source already sent back.
+      // dispositioned "Return to Customer", and the serviced unit of a
+      // Return for Service / Warranty line whose job is done, minus what
+      // earlier posted shipments of this source already sent back.
       const {
         salesReturnOrderId,
         shipmentId: existingShipmentId,
@@ -12908,8 +12909,13 @@ export async function createDocument(
       if (salesReturnOrderLines.error)
         throw new Error(salesReturnOrderLines.error.message);
       // Goods can only go back out once they came in: the return must be
-      // confirmed (To Receive) or already Completed — never Draft/Cancelled.
-      if (!["To Receive", "Completed"].includes(salesReturnOrder.data.status))
+      // confirmed (To Receive, In Progress) or already Completed — never
+      // Draft/Cancelled.
+      if (
+        !["To Receive", "In Progress", "Completed"].includes(
+          salesReturnOrder.data.status
+        )
+      )
         throw new Error(
           `Cannot create a shipment for a ${salesReturnOrder.data.status} return order`
         );
@@ -12918,11 +12924,42 @@ export async function createDocument(
         userLocationId ?? salesReturnOrder.data.locationId ?? null;
       if (!locationId) throw new Error("The return order has no location");
 
-      const returnLines = salesReturnOrderLines.data.filter(
-        (d) => d.disposition === "Return to Customer"
+      // A Service or Warranty line ships its unit back once its job is
+      // Completed or Invoiced, unless the unit is to be scrapped.
+      const serviceLines = salesReturnOrderLines.data.filter(
+        (d) =>
+          (d.returnType === "Return for Service" ||
+            d.returnType === "Return for Warranty") &&
+          d.disposition !== "Scrap"
+      );
+      const doneServiceLineIds = new Set<string>();
+      if (serviceLines.length > 0) {
+        const doneJobs = await db
+          .selectFrom("serviceJob")
+          .select("salesReturnOrderLineId")
+          .where(
+            "salesReturnOrderLineId",
+            "in",
+            serviceLines.map((d) => d.id)
+          )
+          .where("status", "in", ["Completed", "Invoiced"])
+          .where("companyId", "=", companyId)
+          .execute();
+        for (const job of doneJobs) {
+          if (job.salesReturnOrderLineId)
+            doneServiceLineIds.add(job.salesReturnOrderLineId);
+        }
+      }
+
+      const returnLines = salesReturnOrderLines.data.filter((d) =>
+        d.returnType === "Return to Stock"
+          ? d.disposition === "Return to Customer"
+          : doneServiceLineIds.has(d.id)
       );
       if (returnLines.length === 0)
-        throw new Error('No lines are dispositioned "Return to Customer"');
+        throw new Error(
+          'No lines are dispositioned "Return to Customer" or have a completed service job'
+        );
 
       // Quantity already shipped back by earlier posted shipments
       const priorShipments = await many(

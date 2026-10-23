@@ -157,6 +157,7 @@ import {
   lockAgreement,
   type RentalUnitReturn,
   receiptReturnError,
+  refreshSalesReturnOrderStatus,
   rentalShipmentVoidBlocker,
   returnRentalUnit,
   unitLabel,
@@ -266,11 +267,25 @@ import {
 import { clampDepth, writeOffRestoreQuantity } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
 import { loadReceiptProjectRoutes } from "./receipt-project-routes";
+import {
+  createServiceJobsForReturn,
+  isServiceReturnType,
+  type ServiceReturnUnit,
+  voidServiceJobsForReturn
+} from "./receipt-service-return";
 import { upsertShippedCustomerAssets } from "./shipment-customer-assets";
 import {
   postContractShipment,
   voidContractShipment
 } from "./shipment-customer-contract";
+import {
+  addReturnLineQuantityShipped,
+  loadServiceReturnLineIds,
+  loadWarrantyReturnLineIds,
+  type ServiceUnit,
+  shipServiceUnits,
+  unshipServiceUnits
+} from "./shipment-service-return";
 import {
   effectiveSuccessorId,
   type PickSupersession,
@@ -10259,6 +10274,15 @@ export async function postReceipt(
             );
           }
 
+          // Service and Warranty lines: the jobs this receipt created are
+          // cancelled and their assets go back In Service. The serials stay
+          // Consumed (the entity reset below).
+          await voidServiceJobsForReturn(trx, {
+            companyId,
+            userId,
+            salesReturnOrderLineIds: [...receivedByLine.keys()]
+          });
+
           if (reversingItemLedger.length > 0) {
             await trx
               .insertInto("itemLedger")
@@ -10325,30 +10349,12 @@ export async function postReceipt(
               .execute();
           }
 
-          const remainingLines = await trx
-            .selectFrom("salesReturnOrderLine")
-            .select(["quantity", "quantityReceived", "closedComplete"])
-            .where("salesReturnOrderId", "=", salesReturnOrderId)
-            .execute();
-          // Derived status (mirrors getSalesReturnOrderStatus): a void that
-          // drops received quantity below the authorized total returns the RMA
-          // to To Receive; otherwise it stays Completed.
-          const allReceived =
-            remainingLines.length > 0 &&
-            remainingLines.every(
-              (l) =>
-                l.closedComplete ||
-                Number(l.quantityReceived) >= Number(l.quantity)
-            );
-          const returnStatus = allReceived
-            ? ("Completed" as const)
-            : ("To Receive" as const);
-          await trx
-            .updateTable("salesReturnOrder")
-            .set({ status: returnStatus, updatedBy: userId })
-            .where("id", "=", salesReturnOrderId)
-            .where("companyId", "=", companyId)
-            .execute();
+          await refreshSalesReturnOrderStatus(
+            trx,
+            salesReturnOrderId,
+            companyId,
+            userId
+          );
 
           const voidActivity = await trx
             .insertInto("trackedActivity")
@@ -12893,6 +12899,10 @@ export async function postReceipt(
             quantity: number;
           }
         > = {};
+        // Service and Warranty lines: the units received to be serviced, and
+        // the lines, whose return type is re-checked under the RMA's lock.
+        const serviceUnits: ServiceReturnUnit[] = [];
+        const serviceLineIds = new Set<string>();
 
         for (const receiptLine of receiptLines.data ?? []) {
           if (!receiptLine.itemId || !receiptLine.lineId) continue;
@@ -12913,6 +12923,54 @@ export async function postReceipt(
 
           const item = itemById.get(receiptLine.itemId);
           const itemTrackingType = item?.itemTrackingType ?? "Inventory";
+
+          // Return for Service / Warranty: the customer's unit comes in to be
+          // worked on and shipped back. It never enters company stock or
+          // stock value, so the line writes no stock ledger, no cost layer
+          // and no journal, and its serial stays Consumed (the customer's).
+          // One service job per line is created in the transaction below.
+          if (isServiceReturnType(returnLine.returnType)) {
+            const serial =
+              (receiptLineTracking.data ?? []).find(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line"] === receiptLine.id
+              ) ?? null;
+            if (itemTrackingType === "Serial" && !serial) {
+              throw new InvalidInputError(
+                "Assign the serial before posting a service receipt"
+              );
+            }
+            const serviceLocationId =
+              receiptLine.locationId ??
+              salesReturnOrder.data.locationId ??
+              receiptHeader.locationId;
+            if (!serviceLocationId) {
+              throw new InvalidInputError(
+                "The receipt has no location to service the unit at"
+              );
+            }
+            serviceUnits.push({
+              salesReturnOrderLineId: returnLine.id,
+              returnType: returnLine.returnType,
+              itemId: receiptLine.itemId,
+              trackedEntityId:
+                itemTrackingType === "Serial" ? (serial?.id ?? null) : null,
+              customerAssetId: returnLine.customerAssetId,
+              problem: returnLine.problem,
+              locationId: serviceLocationId
+            });
+            serviceLineIds.add(returnLine.id);
+            const existingServiceUpdate = returnLineUpdates[returnLine.id];
+            returnLineUpdates[returnLine.id] = {
+              quantityReceived:
+                (existingServiceUpdate?.quantityReceived ??
+                  Number(returnLine.quantityReceived ?? 0)) + receivedQuantity,
+              updatedBy: userId
+            };
+            continue;
+          }
 
           // Cost resolution: zero-value reason -> 0; linked -> original
           // outbound cost from the shipment's consumption rows; else current.
@@ -13133,6 +13191,39 @@ export async function postReceipt(
             );
           }
 
+          // A return type change takes this same lock. Re-read the return
+          // types under it, so a line is never posted by the rule of a type
+          // it no longer has.
+          const receivedLineIds = Object.keys(returnLineUpdates);
+          if (receivedLineIds.length > 0) {
+            const lockedLines = await trx
+              .selectFrom("salesReturnOrderLine")
+              .select(["id", "returnType"])
+              .where("id", "in", receivedLineIds)
+              .where("companyId", "=", companyId)
+              .execute();
+            const changed = lockedLines.some(
+              (line) =>
+                isServiceReturnType(line.returnType) !==
+                serviceLineIds.has(line.id)
+            );
+            if (changed) {
+              throw new InvalidInputError(
+                "A line's return type changed while the receipt was posting. Post the receipt again."
+              );
+            }
+          }
+
+          await createServiceJobsForReturn(trx, {
+            companyId,
+            userId,
+            today,
+            receiptId,
+            receiptReadableId: receiptHeader.receiptId,
+            salesReturnOrder: salesReturnOrder.data,
+            units: serviceUnits
+          });
+
           // A customer return copies the sales shipment it reverses, which
           // drew common stock (Projects Phase 2a): its layers are common.
           if (costLedgerInserts.length > 0) {
@@ -13153,30 +13244,12 @@ export async function postReceipt(
               .execute();
           }
 
-          // Derived status (mirrors getSalesReturnOrderStatus): the RMA is
-          // Completed once every line has received its authorized quantity or
-          // been short-closed, otherwise it stays To Receive.
-          const allLines = await trx
-            .selectFrom("salesReturnOrderLine")
-            .select(["quantity", "quantityReceived", "closedComplete"])
-            .where("salesReturnOrderId", "=", salesReturnOrderId)
-            .execute();
-          const allReceived =
-            allLines.length > 0 &&
-            allLines.every(
-              (l) =>
-                l.closedComplete ||
-                Number(l.quantityReceived) >= Number(l.quantity)
-            );
-          const returnStatus = allReceived
-            ? ("Completed" as const)
-            : ("To Receive" as const);
-          await trx
-            .updateTable("salesReturnOrder")
-            .set({ status: returnStatus, updatedBy: userId })
-            .where("id", "=", salesReturnOrderId)
-            .where("companyId", "=", companyId)
-            .execute();
+          await refreshSalesReturnOrderStatus(
+            trx,
+            salesReturnOrderId,
+            companyId,
+            userId
+          );
 
           if (journalLines.length > 0) {
             const journalEntryId = await sequence.getNextSequence(
@@ -13715,6 +13788,11 @@ export type SalesShipmentLine = {
   itemPostingGroupId: string | null;
   /** The line's location, else the shipment's. */
   locationId: string | null;
+  /** The account debited in place of Cost of Goods Sold: Warranty Expense
+   *  for a replacement of a Return for Warranty line. */
+  cogsAccountOverride?: string;
+  /** The debit's description with `cogsAccountOverride`. */
+  cogsDescription?: string;
 };
 
 /** A fixed asset sold on the sales order and shipped with this shipment. */
@@ -13849,8 +13927,10 @@ export function buildSalesShipmentJournal({
     journalLines.push(
       {
         ...keys,
-        accountId: defaults.costOfGoodsSoldAccount,
-        description: "Cost of Goods Sold",
+        accountId: line.cogsAccountOverride ?? defaults.costOfGoodsSoldAccount,
+        description: line.cogsAccountOverride
+          ? (line.cogsDescription ?? "Cost of Goods Sold")
+          : "Cost of Goods Sold",
         amount: round(debit("expense", cost))
       },
       {
@@ -14761,6 +14841,47 @@ export async function postShipment(
             const journalShipmentLines: SalesShipmentLine[] = [];
             const fixedAssetSales: FixedAssetSale[] = [];
 
+            // A sales order line that replaces a Return for Warranty line
+            // ships to warranty expense, not cost of goods sold.
+            const replacedReturnLineBySalesOrderLine = new Map(
+              salesOrderLines.data.flatMap((line) =>
+                line.salesReturnOrderLineId
+                  ? [[line.id, line.salesReturnOrderLineId] as const]
+                  : []
+              )
+            );
+            const warrantyReturnLineIds = await loadWarrantyReturnLineIds(
+              db,
+              companyId,
+              [...new Set(replacedReturnLineBySalesOrderLine.values())]
+            );
+            const warrantyExpenseAccount =
+              warrantyReturnLineIds.size > 0
+                ? serviceCoverageAccount(
+                    accountDefaults.data,
+                    "Warranty",
+                    postingStatus
+                  )
+                : null;
+            const warrantyOverride = (
+              salesOrderLineId: string | null
+            ): Pick<
+              SalesShipmentLine,
+              "cogsAccountOverride" | "cogsDescription"
+            > => {
+              const returnLineId = salesOrderLineId
+                ? replacedReturnLineBySalesOrderLine.get(salesOrderLineId)
+                : undefined;
+              return warrantyExpenseAccount &&
+                returnLineId &&
+                warrantyReturnLineIds.has(returnLineId)
+                ? {
+                    cogsAccountOverride: warrantyExpenseAccount,
+                    cogsDescription: coverageLineDescription("Warranty")
+                  }
+                : {};
+            };
+
             const jobUpdates: Record<
               string,
               Database["public"]["Tables"]["job"]["Update"]
@@ -15022,7 +15143,8 @@ export async function postShipment(
                   itemCosts.data.find(
                     (cost) => cost.itemId === shipmentLine.itemId
                   )?.itemPostingGroupId ?? null,
-                locationId: shipmentLine.locationId ?? locationId ?? null
+                locationId: shipmentLine.locationId ?? locationId ?? null,
+                ...warrantyOverride(shipmentLine.lineId)
               });
             }
 
@@ -16240,7 +16362,9 @@ export async function postShipment(
           case "Sales Return Order": {
             // Return-to-customer: ships rejected-claim goods back out of the
             // returned (On Hold) stock at carried cost. Dr COGS / Cr Inventory.
-            // No RMA quantity bumps — dispositions carry the line state.
+            // A Return for Service / Warranty line ships the customer's own
+            // unit back at no value. Every line adds to its RMA line's
+            // quantityShipped, and the RMA status is derived again.
             if (!shipmentHeader.sourceDocumentId)
               throw new Error("Shipment has no sourceDocumentId");
             const salesReturnOrderId = shipmentHeader.sourceDocumentId;
@@ -16255,7 +16379,7 @@ export async function postShipment(
             // back once they came in. A Draft RMA has never had its caps
             // validated; Cancelled cannot ship.
             if (
-              !["To Receive", "Completed"].includes(
+              !["To Receive", "In Progress", "Completed"].includes(
                 salesReturnOrder.data.status
               )
             )
@@ -16333,6 +16457,18 @@ export async function postShipment(
               }
             > = {};
             const itemShipmentQuantities: Record<string, number> = {};
+            // Service and Warranty lines ship the customer's own unit back:
+            // no stock, no cost, no journal. `shipmentLine.lineId` holds the
+            // RMA line.
+            const serviceLineIds = await loadServiceReturnLineIds(
+              db,
+              companyId,
+              shipmentLines.data
+                .map((line) => line.lineId)
+                .filter((id): id is string => Boolean(id))
+            );
+            const serviceUnits: ServiceUnit[] = [];
+            const shippedByReturnLine = new Map<string, number>();
             for (const shipmentLine of shipmentLines.data) {
               if (!shipmentLine.itemId) continue;
               const shippedQuantity =
@@ -16341,15 +16477,17 @@ export async function postShipment(
                   ? 0
                   : shipmentLine.shippedQuantity;
               if (shippedQuantity <= 0) continue;
+              if (shipmentLine.lineId) {
+                shippedByReturnLine.set(
+                  shipmentLine.lineId,
+                  (shippedByReturnLine.get(shipmentLine.lineId) ?? 0) +
+                    shippedQuantity
+                );
+              }
 
               const itemTrackingType =
                 items.data.find((i) => i.id === shipmentLine.itemId)
                   ?.itemTrackingType ?? "Inventory";
-
-              // Non-Inventory lines have no stock and no carried cost —
-              // posting them would book COGS/costLedger with zero inventory
-              // movement (the Sales Order branch excludes them the same way).
-              if (itemTrackingType === "Non-Inventory") continue;
 
               const lineEntities = (shipmentLineTracking.data ?? []).filter(
                 (tracking) =>
@@ -16357,6 +16495,34 @@ export async function postShipment(
                     tracking.attributes as TrackedEntityAttributes | undefined
                   )?.["Shipment Line"] === shipmentLine.id
               );
+
+              if (
+                shipmentLine.lineId &&
+                serviceLineIds.has(shipmentLine.lineId)
+              ) {
+                if (
+                  itemTrackingType === "Serial" &&
+                  lineEntities.length !== shippedQuantity
+                ) {
+                  throw new InvalidInputError(
+                    `Shipment line ${shipmentLine.id}: assign the serviced unit's serial before posting`
+                  );
+                }
+                serviceUnits.push({
+                  salesReturnOrderLineId: shipmentLine.lineId,
+                  trackedEntityId:
+                    itemTrackingType === "Serial"
+                      ? (lineEntities[0]?.id ?? null)
+                      : null,
+                  quantity: shippedQuantity
+                });
+                continue;
+              }
+
+              // Non-Inventory lines have no stock and no carried cost —
+              // posting them would book COGS/costLedger with zero inventory
+              // movement (the Sales Order branch excludes them the same way).
+              if (itemTrackingType === "Non-Inventory") continue;
 
               if (itemTrackingType === "Inventory") {
                 itemShipmentQuantities[shipmentLine.itemId] =
@@ -16566,6 +16732,17 @@ export async function postShipment(
                 }
               }
 
+              await shipServiceUnits(trx, {
+                companyId,
+                userId,
+                today,
+                shipmentId,
+                shipmentReadableId: shipmentHeader.shipmentId,
+                salesReturnOrderId,
+                customerLocationId: salesReturnOrder.data.customerLocationId,
+                units: serviceUnits
+              });
+
               // The customer's units go back into service at the site the
               // RMA names. Their warranty dates stay.
               const returnedEntityIds = Object.keys(trackedEntityUpdates);
@@ -16588,6 +16765,18 @@ export async function postShipment(
                   .where("companyId", "=", companyId)
                   .execute();
               }
+
+              await addReturnLineQuantityShipped(trx, {
+                companyId,
+                userId,
+                shippedByLine: shippedByReturnLine
+              });
+              await refreshSalesReturnOrderStatus(
+                trx,
+                salesReturnOrderId,
+                companyId,
+                userId
+              );
 
               await trx
                 .updateTable("shipment")
@@ -18620,13 +18809,50 @@ export async function postShipment(
                 .execute();
               const voidActivityId = voidActivity[0]?.id;
 
+              // A Service or Warranty line's unit never left stock, so it
+              // stays Consumed and its asset goes back At Depot.
+              const shippedByReturnLine = new Map<string, number>();
+              for (const line of shipmentLines.data) {
+                const shipped = Number(line.shippedQuantity ?? 0);
+                if (!line.lineId || !(shipped > 0)) continue;
+                shippedByReturnLine.set(
+                  line.lineId,
+                  (shippedByReturnLine.get(line.lineId) ?? 0) - shipped
+                );
+              }
+              const serviceLineIds = await loadServiceReturnLineIds(
+                trx,
+                companyId,
+                [...shippedByReturnLine.keys()]
+              );
+              const serviceShipmentLineIds = new Set(
+                shipmentLines.data
+                  .filter(
+                    (line) => line.lineId && serviceLineIds.has(line.lineId)
+                  )
+                  .map((line) => line.id)
+              );
+              await unshipServiceUnits(trx, {
+                companyId,
+                userId,
+                salesReturnOrderLineIds: [...serviceLineIds]
+              });
+
               for await (const entity of shipmentLineTracking.data ?? []) {
-                await trx
-                  .updateTable("trackedEntity")
-                  .set({ status: "On Hold" })
-                  .where("id", "=", entity.id)
-                  .where("companyId", "=", companyId)
-                  .execute();
+                const shipmentLineId = (
+                  entity.attributes as TrackedEntityAttributes | undefined
+                )?.["Shipment Line"];
+                const isServiceUnit =
+                  typeof shipmentLineId === "string" &&
+                  serviceShipmentLineIds.has(shipmentLineId);
+                if (!isServiceUnit) {
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set({ status: "On Hold" })
+                    .where("id", "=", entity.id)
+                    .where("companyId", "=", companyId)
+                    .execute();
+                }
                 if (voidActivityId) {
                   await trx
                     .insertInto("trackedActivityOutput")
@@ -18641,6 +18867,18 @@ export async function postShipment(
                     .execute();
                 }
               }
+
+              await addReturnLineQuantityShipped(trx, {
+                companyId,
+                userId,
+                shippedByLine: shippedByReturnLine
+              });
+              await refreshSalesReturnOrderStatus(
+                trx,
+                shipmentHeader.sourceDocumentId!,
+                companyId,
+                userId
+              );
 
               await trx
                 .updateTable("shipment")

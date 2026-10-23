@@ -29,6 +29,8 @@
 - 2026-10-23: Task 19 committed. `createServiceInvoice` operation and its pure line builder. Invoice lines carry `serviceJobId`, and `postSalesInvoice` posts them as revenue only. The live test (1.5 h × 95 + 1 part × 120 = 262.50) proves AR and Sales lines only, with no item ledger row. Without the posting change it fails, so the test is real.
   - Checks: 10 invoice tests and 43 project billing and sales invoice tests pass. The erp typecheck passes. The snapshot adds `service.createServiceInvoicePermission`. `check:manifest` is current.
   - Known gap: voiding a service invoice does not move the job back from Invoiced. The task did not ask for it.
+- 2026-10-23: Tasks 17–18 committed. Receiving a Service or Warranty line posts no value and opens the job (Billable or Warranty, Open, Depot). Voiding the receipt cancels the job, or is refused once the job has work. Shipping a serviced unit back posts no value and completes the RMA. A warranty replacement posts Dr Warranty Expense / Cr Inventory.
+  - Checks: post-receipt and post-shipment tests pass (66), as do service-job and issue tests (11) and the inventory, create and memo tests (49). The erp typecheck and conformance pass.
 
 ## Decisions made without Brad
 
@@ -55,6 +57,9 @@
 | 16 | A short-closed line that received nothing counts as resolved | Without this, such an RMA could never complete. |
 | 16 | `setSalesReturnOrderLineDisposition` also refreshes the RMA status | Disposing of a stock line can complete the RMA. |
 | 19 | The invoice refuses a labor item with billable hours and no sale price | It mirrors Complete refusing a labor item with no cost. A silent $0 line would under-bill. |
+| 18 | `ShipmentAccountDefaults` does not gain `warrantyExpenseAccount`. The posting resolves the warranty account itself and passes it as `cogsAccountOverride` | A legacy backfill in `accounting.service.ts` builds that type, and the builder does not need the field. |
+| 17 | A serialized Service or Warranty line with no assigned serial is refused at receipt | The job and the asset need the serial. |
+| 18 | A void of a ship-back puts the asset back At Depot. `quantityShipped` never goes below 0 | Shipments posted before this change never counted. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

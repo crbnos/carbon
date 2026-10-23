@@ -91,8 +91,8 @@ Phase 1 — RMA and the depot service job
 - [x] Task 14: Add the `serviceJob*` issue types
 - [x] Task 15: Create the `post-service-job` server function
 - [x] Task 16: Make the RMA status follow the line resolution
-- [ ] Task 17: Create the job when a Service or Warranty line is received
-- [ ] Task 18: Ship a service unit back with no value, and post a warranty replacement to warranty
+- [x] Task 17: Create the job when a Service or Warranty line is received
+- [x] Task 18: Ship a service unit back with no value, and post a warranty replacement to warranty
 - [x] Task 19: Create the service invoice, and stop the invoice relieving stock twice
 - [ ] Task 20: Add the Jobs list, the New Job drawer and the navigation
 - [ ] Task 21: Build the job page
