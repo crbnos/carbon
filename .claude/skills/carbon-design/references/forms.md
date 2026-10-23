@@ -9,6 +9,7 @@ model, copy.
 2. Which container a form lives in
 3. Canonical skeletons (drawer, record card, settings card)
 4. Field layout
+4a. Size and grouping — flat, groups, folds, steps
 5. Labels, optional, help, placeholders, validation
 6. New vs edit
 7. Save model — explicit submit vs autosave
@@ -27,7 +28,9 @@ model, copy.
 - **Save is explicit on forms; autosave only on property surfaces** (§7).
 - **Mark optional, never required.** No asterisks anywhere.
 - **Help lives in the label via the glossary** (`termId`), not in custom tooltips.
-- **Flat forms.** Sections inside a form are rare; long text and uploads go below the grid.
+- **As much form as the job needs, no more on one screen.** A short form is flat; a longer
+  one is grouped, folded or stepped by the budget in §4a. Long text and uploads go below the
+  grid.
 - **Every selector can create what's missing** in place (domain selectors open the entity form
   as a modal, pre-filled with what was typed).
 
@@ -142,13 +145,53 @@ A single boolean setting is a toggle card that saves on change (no footer) — e
    item, employee) → quantities / money → dates → location → `<CustomFormFields table=…/>`
    last in the grid. Long text (`TextArea`) and uploads **below** the grid, full width.
 4. **Hidden fields first** in the body (`id`, `type`, FK context).
-5. **Sections** (`Subheading variant="heavy"` between groups) only for genuinely long forms
-   (WorkCenterForm: Basic Information / Costing / Scheduling). Prefer flat.
+5. **Groups, folds and steps** — see §4a. (Older forms use `Subheading variant="heavy"`
+   between groups, e.g. WorkCenterForm; new forms use `FormGroup`.)
 6. **Custom fields** — include `<CustomFormFields table="…"/>` on any entity that supports them.
 7. **Boolean** in a form: `Boolean` (Switch) **with `bordered`**, always (Brad, 2026-10-12): a
    toggle card, label + description left, switch right. The exception is a Properties panel,
    which draws a flag as `Boolean variant="small"` like the item properties panels.
 8. No field is wider than it needs to be in settings (`max-w-[400px]`).
+
+## 4a. Size and grouping
+
+Brad, 2026-10-23, on the project contract's Add Line (17 fields in one three-column grid, with
+holes where conditional fields were hidden): "spacing and grouping is important to not
+overload the user". Count the fields a user sees at once and pick the shape by that count.
+The pieces are in `~/components/Form` (`FormLayout.tsx`); all of them only HIDE what is off
+screen, so every field still posts.
+
+| Visible fields | Shape | Pieces |
+|---|---|---|
+| up to ~8 | One flat grid (§4) | — |
+| ~9 to ~14 | Titled groups of related fields, each at most two rows | `FormGroup title description` |
+| more than ~14, or an early choice that decides the rest | Steps: the setup wizard's step bar inside one form, Back / Next, Save on the last step | `FormStepBar`, `FormStepPanel`, `FormStepButtons` |
+
+Rules that apply at every size:
+
+1. **A choice that changes the rest of the form comes first, as choice cards** (`ChoiceCardGroup
+   direction="row"`, one line of description per card), not a small `Select`. Billing method on
+   a contract line, revenue type, deadline type when it decides the date fields.
+2. **A hidden field never leaves a hole.** Never place conditional fields at fixed grid
+   positions next to unrelated ones. Put them in the group they belong to; `FormGroup`'s grid
+   closes up. A full-width field (`Description`) spans the group (`md:col-span-2`).
+3. **Group by the question the user is answering** — what it is, how it is priced, how it is
+   funded, when it runs, how its revenue falls — and give every group one muted line saying
+   what it is for. Two columns inside a modal, not three.
+4. **Fold what most users leave at its default** (`FormFold`, opens itself on an error): the
+   funding notice percent and window, advanced options.
+5. **Don't ask on a line what the header already decided.** A contract line takes the
+   contract's project; its own page can point it elsewhere.
+6. **Switches share a row.** Two `Boolean bordered` toggles sit side by side in their own full
+   row (`col-span-full grid md:grid-cols-2`), whatever precedes them (the job form).
+7. **Steps are for creating.** Editing a record shows the same groups on one page, so one
+   change is one click away. Next checks the current step's fields (`validateField`) and a save
+   the server refuses jumps to the first step with an error.
+
+Exemplar: `modules/sales/ui/Contracts/ContractLineForm.tsx` (Add Line on a project contract:
+Line → Billing & funding / Price → Dates & revenue; edit shows the groups). The
+`form-field-budget` check (`@carbon/checks`) flags a form with more than 14 fields and no
+groups or steps; the forms that predate it are baselined.
 
 ## 5. Labels, optional, help, placeholders, validation
 
