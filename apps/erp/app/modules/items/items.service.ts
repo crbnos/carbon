@@ -3939,7 +3939,7 @@ export async function updateItem(
   if (!current.data) {
     return { data: null, error: ruleError(`${type} ${item.id} not found`) };
   }
-  if (readableId && readableId !== current.data.readableId) {
+  if (readableId !== undefined && readableId !== current.data.readableId) {
     return {
       data: null,
       error: ruleError(

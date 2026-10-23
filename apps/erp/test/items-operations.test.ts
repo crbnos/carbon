@@ -336,13 +336,15 @@ describe("updateItem", () => {
   it("refuses a readable id that differs from the item's, and writes nothing", async () => {
     const { client, writes } = fakeClient({ item: { readableId: "P-100" } });
 
-    const result = await updateItem(contextFor(client), {
-      ...part,
-      readableId: "P-200"
-    });
+    for (const readableId of ["P-200", ""]) {
+      const result = await updateItem(contextFor(client), {
+        ...part,
+        readableId
+      });
 
-    expect(result.error).toMatchObject({ category: "rule" });
-    expect(result.error?.message).toContain("setItemReadableId");
+      expect(result.error).toMatchObject({ category: "rule" });
+      expect(result.error?.message).toContain("setItemReadableId");
+    }
     expect(writes).toHaveLength(0);
   });
 
