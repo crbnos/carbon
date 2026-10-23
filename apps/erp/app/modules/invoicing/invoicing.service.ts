@@ -8699,12 +8699,15 @@ export async function postSalesInvoice(
           return byLine;
         };
 
-        // Lines that bill a service order's charges: a part issued to a
-        // service node already left stock and posted its cost, so these
-        // lines post revenue only. One query per invoice.
+        // Lines that bill a project's billable items or a service job: a
+        // part issued to either already left stock and posted its cost, so
+        // these lines post revenue only. One query per invoice.
         const invoiceLineIds = salesInvoiceLines.data.map((line) => line.id);
-        const billedServiceLineIds = new Set(
-          invoiceLineIds.length === 0
+        const billedServiceLineIds = new Set<string | null>([
+          ...salesInvoiceLines.data
+            .filter((line) => line.serviceJobId)
+            .map((line) => line.id),
+          ...(invoiceLineIds.length === 0
             ? []
             : (
                 await db
@@ -8713,8 +8716,8 @@ export async function postSalesInvoice(
                   .where("salesInvoiceLineId", "in", invoiceLineIds)
                   .where("companyId", "=", companyId)
                   .execute()
-              ).map((row) => row.salesInvoiceLineId)
-        );
+              ).map((row) => row.salesInvoiceLineId))
+        ]);
 
         const journal = buildSalesInvoiceJournal({
           companyId,
@@ -8740,8 +8743,8 @@ export async function postSalesInvoice(
           accounts,
           revenue: postingLineRevenue,
           // Built at zero; the posting transaction relieves the cost and
-          // fills the pair in (fillDirectCogs). A line billing a service
-          // order's charges has no COGS pair.
+          // fills the pair in (fillDirectCogs). A line billing a project's
+          // billable items or a service job has no COGS pair.
           directCost: (line) => (billedServiceLineIds.has(line.id) ? null : 0),
           contract: {
             positions: contractPositionsRead,

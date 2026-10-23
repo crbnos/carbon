@@ -587,6 +587,31 @@ export const setServiceJobCoverage = defineServiceFn({
   }
 });
 
+/**
+ * Draft the invoice of a Completed Billable service job.
+ *
+ * @remarks
+ * Runs `create-service-invoice`: one Draft sales invoice. A Time and
+ * Materials job bills its billable hours per labor item at the labor item's
+ * sale price, then each billable part and charge; a Fixed Price job bills one
+ * line of its service item at the fixed price. Every line names the job, so
+ * posting the invoice writes revenue only: the parts already left stock. The
+ * job moves to Invoiced. Refused unless the job is Completed and Billable.
+ * Returns the invoice.
+ *
+ * @mcp
+ */
+export const createServiceInvoice = defineServiceFn({
+  input: service.createServiceInvoiceInput,
+  permission: service.createServiceInvoicePermission,
+
+  async run(ctx, input) {
+    return run(ctx, "create-service-invoice", () =>
+      service.createServiceInvoice(ctx, input)
+    );
+  }
+});
+
 // --- Service jobs: the estimate ----------------------------------------------
 
 /**

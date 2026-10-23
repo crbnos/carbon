@@ -26,6 +26,9 @@
 - 2026-10-23: Tasks 14–16 committed. Issue types `serviceJobInventory`, `serviceJobTrackedEntities` and `serviceJobUnconsume`; operations `completeServiceJob`, `reopenServiceJob` and `setServiceJobCoverage` over one posting, `post-service-job` (registered for the MES); `refreshSalesReturnOrderStatus` in `sales.service.ts`.
   - Journals the tests assert: 1 part at 70 → Dr Cost of Service 70 / Cr Inventory 70. Complete 1.5 h × 40 → Dr Cost of Service 60 / Cr Labor Absorption 60. Reopen reverses it. Warranty 2 h × 40 → Dr Warranty 80. Coverage Warranty→Billable with a part issued → Dr Cost of Service 70 / Cr Warranty 70.
   - Checks: 37 issue and post-service-job tests, 35 utils tests, 81 api tests, and 67 post-receipt, post-shipment and maintenance tests pass. The typecheck passes. `check:manifest` is current. Conformance passes.
+- 2026-10-23: Task 19 committed. `createServiceInvoice` operation and its pure line builder. Invoice lines carry `serviceJobId`, and `postSalesInvoice` posts them as revenue only. The live test (1.5 h × 95 + 1 part × 120 = 262.50) proves AR and Sales lines only, with no item ledger row. Without the posting change it fails, so the test is real.
+  - Checks: 10 invoice tests and 43 project billing and sales invoice tests pass. The erp typecheck passes. The snapshot adds `service.createServiceInvoicePermission`. `check:manifest` is current.
+  - Known gap: voiding a service invoice does not move the job back from Invoiced. The task did not ask for it.
 
 ## Decisions made without Brad
 
@@ -51,6 +54,7 @@
 | 14 | `serviceJobUnconsume` with no quantity returns everything still issued, and deletes a line that has nothing left | Task 22's part delete uses it. |
 | 16 | A short-closed line that received nothing counts as resolved | Without this, such an RMA could never complete. |
 | 16 | `setSalesReturnOrderLineDisposition` also refreshes the RMA status | Disposing of a stock line can complete the RMA. |
+| 19 | The invoice refuses a labor item with billable hours and no sale price | It mirrors Complete refusing a labor item with no cost. A silent $0 line would under-bill. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

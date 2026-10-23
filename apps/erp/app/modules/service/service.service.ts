@@ -24,11 +24,18 @@ import {
   journalPostingStatus,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
-import { canComplete, datetime, isServiceJobLocked } from "@carbon/utils";
+import { inOrder, maybeSingle, rpcValue } from "@carbon/database/rows";
+import { getNextSequence } from "@carbon/database/sequence";
+import {
+  canComplete,
+  datetime,
+  isServiceJobLocked,
+  round
+} from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
-import type { z } from "zod";
+import { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { refreshSalesReturnOrderStatus } from "../sales/sales.service";
@@ -60,6 +67,7 @@ import {
   type serviceJobUpdateFields,
   serviceWorkSites
 } from "./service.models";
+import { planServiceJobInvoiceLines } from "./service-job-invoice-plan";
 import {
   buildCoverageReclassLines,
   buildServiceJobCompletionLines,
@@ -458,7 +466,11 @@ export async function lockServiceJob(
       "salesReturnOrderLineId",
       "repairable",
       "completionJournalId",
-      "locationId"
+      "locationId",
+      "customerId",
+      "customerLocationId",
+      "serviceItemId",
+      "fixedPrice"
     ])
     .where("id", "=", args.serviceJobId)
     .where("companyId", "=", args.companyId)
@@ -1561,5 +1573,298 @@ export async function postServiceJob(
         };
       }
     }
+  });
+}
+
+// --- Service jobs: the invoice ------------------------------------------------
+//
+// Invoices a Completed Billable job: one Draft sales invoice of its billable
+// time, parts and charges, or of its fixed price (`planServiceJobInvoiceLines`).
+// It follows create-service-order-invoice (sequence, opportunity, header,
+// salesInvoiceShipment, then lines). Every line carries `serviceJobId`, so
+// post-sales-invoice posts revenue only for it: the parts already left stock
+// when they were issued, and the time posted its cost at completion.
+
+export const createServiceInvoiceInput = z.object({
+  serviceJobId: z.string().min(1)
+});
+
+export type CreateServiceInvoiceResult = {
+  success: true;
+  salesInvoiceId: string;
+  /** The readable invoice id. */
+  invoiceId: string;
+};
+
+export const createServiceInvoicePermission = {
+  update: "service",
+  create: "invoicing"
+} satisfies PermissionRule<z.output<typeof createServiceInvoiceInput>>;
+
+/**
+ * Drafts the invoice of one Completed Billable service job, in one
+ * transaction:
+ * 1. locks the job and refuses unless it is Completed and Billable;
+ * 2. builds the lines (`planServiceJobInvoiceLines`): Time and Materials bills
+ *    Σ billable hours × each labor item's sale price, then each billable
+ *    Part and Charge; Fixed Price bills the service item at the fixed price;
+ * 3. inserts the opportunity, the header (the customer, the job's location,
+ *    the customer's payment term and currency) and `salesInvoiceShipment`;
+ * 4. inserts the lines, each with `serviceJobId`;
+ * 5. stamps the job with the invoice and sets it Invoiced.
+ * Tax stays at 0, as create-service-order-invoice did.
+ */
+export async function createServiceInvoice(
+  ctx: ServiceContext,
+  raw: z.input<typeof createServiceInvoiceInput>
+): Promise<CreateServiceInvoiceResult> {
+  const { serviceJobId } = createServiceInvoiceInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+
+  return db.transaction().execute(async (trx) => {
+    // Row lock: two invoices of one job must not both bill it.
+    const job = await lockServiceJob(trx, { serviceJobId, companyId });
+    if (job.status === "Invoiced") {
+      throw new InvalidInputError(
+        `Service job ${job.serviceJobId} is already invoiced.`
+      );
+    }
+    if (job.status !== "Completed") {
+      throw new InvalidInputError(
+        `Service job ${job.serviceJobId} is ${job.status}. Only a Completed job is invoiced.`
+      );
+    }
+    if (job.coverage !== "Billable") {
+      throw new InvalidInputError(
+        `Service job ${job.serviceJobId} is ${job.coverage}. Only a Billable job is invoiced.`
+      );
+    }
+    const customerId = job.customerId;
+
+    const [time, items, serviceItem, customerPayment, customer, company] =
+      await inOrder([
+        () =>
+          trx
+            .selectFrom("serviceJobTime")
+            .innerJoin("item", (join) =>
+              join
+                .onRef("item.id", "=", "serviceJobTime.laborItemId")
+                .onRef("item.companyId", "=", "serviceJobTime.companyId")
+            )
+            .leftJoin("itemUnitSalePrice", (join) =>
+              join
+                .onRef(
+                  "itemUnitSalePrice.itemId",
+                  "=",
+                  "serviceJobTime.laborItemId"
+                )
+                .onRef(
+                  "itemUnitSalePrice.companyId",
+                  "=",
+                  "serviceJobTime.companyId"
+                )
+            )
+            .select([
+              "serviceJobTime.laborItemId",
+              "serviceJobTime.hours",
+              "serviceJobTime.billable",
+              "item.name as laborItemName",
+              "item.unitOfMeasureCode",
+              "itemUnitSalePrice.unitSalePrice",
+              "itemUnitSalePrice.salesUnitOfMeasureCode"
+            ])
+            .where("serviceJobTime.serviceJobId", "=", job.id)
+            .where("serviceJobTime.companyId", "=", companyId)
+            .orderBy("serviceJobTime.entryDate")
+            .orderBy("serviceJobTime.createdAt")
+            .orderBy("serviceJobTime.id")
+            .execute(),
+        () =>
+          trx
+            .selectFrom("serviceJobItem")
+            .innerJoin("item", (join) =>
+              join
+                .onRef("item.id", "=", "serviceJobItem.itemId")
+                .onRef("item.companyId", "=", "serviceJobItem.companyId")
+            )
+            .select([
+              "serviceJobItem.lineType",
+              "serviceJobItem.itemId",
+              "serviceJobItem.description",
+              "serviceJobItem.quantity",
+              "serviceJobItem.unitPrice",
+              "serviceJobItem.billable",
+              "serviceJobItem.unitOfMeasureCode",
+              "item.name as itemName",
+              "item.unitOfMeasureCode as itemUnitOfMeasureCode"
+            ])
+            .where("serviceJobItem.serviceJobId", "=", job.id)
+            .where("serviceJobItem.companyId", "=", companyId)
+            .orderBy("serviceJobItem.createdAt")
+            .orderBy("serviceJobItem.id")
+            .execute(),
+        async () =>
+          job.billingMethod === "Fixed Price" && job.serviceItemId
+            ? trx
+                .selectFrom("item")
+                .select(["name", "unitOfMeasureCode"])
+                .where("id", "=", job.serviceItemId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : undefined,
+        () => maybeSingle(trx, "customerPayment", { customerId, companyId }),
+        () => maybeSingle(trx, "customer", { id: customerId, companyId }),
+        () =>
+          maybeSingle(
+            trx,
+            "company",
+            { id: companyId },
+            { columns: ["baseCurrencyCode"] }
+          )
+      ]);
+    if (customerPayment.error) throw customerPayment.error;
+    if (customer.error) throw customer.error;
+    if (company.error) throw company.error;
+
+    const lines = planServiceJobInvoiceLines({
+      job: {
+        serviceJobId: job.serviceJobId,
+        billingMethod: job.billingMethod,
+        serviceItemId: job.serviceItemId,
+        fixedPrice: job.fixedPrice === null ? null : Number(job.fixedPrice)
+      },
+      serviceItem: serviceItem ?? null,
+      time: time.map((entry) => ({
+        laborItemId: entry.laborItemId,
+        laborItemName: entry.laborItemName,
+        hours: Number(entry.hours),
+        billable: entry.billable,
+        unitSalePrice:
+          entry.unitSalePrice === null ? null : Number(entry.unitSalePrice),
+        unitOfMeasureCode:
+          entry.salesUnitOfMeasureCode ?? entry.unitOfMeasureCode
+      })),
+      items: items.map((item) => ({
+        lineType: item.lineType,
+        itemId: item.itemId,
+        description: item.description || item.itemName,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
+        billable: item.billable,
+        unitOfMeasureCode: item.unitOfMeasureCode ?? item.itemUnitOfMeasureCode
+      }))
+    });
+
+    const currencyCode =
+      customer.data?.currencyCode ?? company.data?.baseCurrencyCode ?? "USD";
+    // 1 for the base currency; raises on a missing rate.
+    const rate = await rpcValue(trx, "get_exchange_rate", {
+      p_company_id: companyId,
+      p_currency_code: currencyCode
+    });
+    if (rate.error) throw new Error(rate.error.message);
+    const exchangeRate = Number(rate.data);
+
+    const subtotal = round(
+      lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+    );
+
+    const readableInvoiceId = await getNextSequence(
+      trx,
+      "salesInvoice",
+      companyId
+    );
+    // Every sales invoice has an opportunity: its documents live under the
+    // opportunity's storage folder.
+    const opportunity = await trx
+      .insertInto("opportunity")
+      .values({ companyId, customerId })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+    const invoice = await trx
+      .insertInto("salesInvoice")
+      .values({
+        invoiceId: readableInvoiceId,
+        status: "Draft",
+        customerId,
+        invoiceCustomerId:
+          customerPayment.data?.invoiceCustomerId ?? customerId,
+        invoiceCustomerContactId:
+          customerPayment.data?.invoiceCustomerContactId ?? null,
+        invoiceCustomerLocationId:
+          customerPayment.data?.invoiceCustomerLocationId ?? null,
+        locationId: job.locationId,
+        paymentTermId: customerPayment.data?.paymentTermId ?? null,
+        currencyCode,
+        exchangeRate,
+        customerReference: job.serviceJobId,
+        dateIssued: today,
+        subtotal,
+        totalDiscount: 0,
+        totalTax: 0,
+        totalAmount: subtotal,
+        opportunityId: opportunity.id,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    await trx
+      .insertInto("salesInvoiceShipment")
+      .values({
+        id: invoice.id,
+        locationId: job.locationId,
+        customerLocationId: job.customerLocationId,
+        shippingCost: 0,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    await trx
+      .insertInto("salesInvoiceLine")
+      .values(
+        lines.map((line, index) => ({
+          invoiceId: invoice.id,
+          invoiceLineType: line.invoiceLineType,
+          description: line.description,
+          itemId: line.itemId,
+          quantity: line.quantity,
+          unitPrice: line.unitPrice,
+          unitOfMeasureCode: line.unitOfMeasureCode,
+          taxPercent: 0,
+          exchangeRate,
+          locationId: job.locationId,
+          serviceJobId: job.id,
+          sortOrder: index + 1,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+
+    await trx
+      .updateTable("serviceJob")
+      .set({
+        status: "Invoiced",
+        salesInvoiceId: invoice.id,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", job.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return {
+      success: true,
+      salesInvoiceId: invoice.id,
+      invoiceId: readableInvoiceId
+    };
   });
 }

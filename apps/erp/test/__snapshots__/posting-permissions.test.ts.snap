@@ -245,6 +245,10 @@ exports[`posting permissions > match the reviewed manifest 1`] = `
   "sales.postRentalAgreementPermission": {
     "update": "sales",
   },
+  "service.createServiceInvoicePermission": {
+    "create": "invoicing",
+    "update": "service",
+  },
   "service.postServiceJobPermission": {
     "update": "service",
   },

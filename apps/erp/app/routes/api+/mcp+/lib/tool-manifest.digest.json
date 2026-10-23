@@ -1,5 +1,5 @@
 {
-  "totalTools": 1738,
+  "totalTools": 1739,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -1603,6 +1603,7 @@
     {"name":"sales_upsertSalesOrderPayment","classification":"WRITE","schema":"d637b4fad42f","response":"3797626bd17e","permission":"sales:create+update","paginates":false},
     {"name":"sales_upsertSalesOrderShipment","classification":"WRITE","schema":"c91b5d79606d","response":"3797626bd17e","permission":"sales:create+update","paginates":false},
     {"name":"service_completeServiceJob","classification":"WRITE","schema":"1ab04131052c","response":"98bdc3c64f30","permission":"service:update","paginates":false},
+    {"name":"service_createServiceInvoice","classification":"WRITE","schema":"a307cf7486c8","response":"0d1ee2cbad8c","permission":"none","paginates":false},
     {"name":"service_createServiceJob","classification":"WRITE","schema":"75f4014390d4","response":"d7c46146c56f","permission":"service:create","paginates":false},
     {"name":"service_deleteServiceJobAssignment","classification":"DESTRUCTIVE","schema":"3797626bd17e","response":"3797626bd17e","permission":"service:delete","paginates":false},
     {"name":"service_deleteServiceJobCharge","classification":"DESTRUCTIVE","schema":"1e97ff583b5e","response":"3797626bd17e","permission":"service:delete","paginates":false},
