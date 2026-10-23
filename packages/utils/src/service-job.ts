@@ -8,6 +8,7 @@
 // Spec: `.ai/specs/2026-10-22-service-jobs-and-returns.md`
 
 import type { Database } from "@carbon/database";
+import { equals, round } from "@carbon/database/precision";
 
 type Enums = Database["public"]["Enums"];
 type ServiceJobStatus = Enums["serviceJobStatus"];
@@ -57,6 +58,34 @@ export function suggestCoverage(
   return runs(asset.laborWarrantyEndDate) || runs(asset.partsWarrantyEndDate)
     ? "Warranty"
     : "Billable";
+}
+
+export const warrantyStatuses = [
+  "In warranty",
+  "Labor ended",
+  "Expired"
+] as const;
+export type WarrantyStatus = (typeof warrantyStatuses)[number];
+
+/**
+ * The warranty of a customer asset on a day (`YYYY-MM-DD`; date strings
+ * compare in calendar order). In warranty while the labor warranty runs,
+ * Labor ended while only the parts warranty runs, else Expired.
+ */
+export function warrantyStatus(
+  asset: {
+    laborWarrantyEndDate: string | null;
+    partsWarrantyEndDate: string | null;
+  },
+  today: string
+): WarrantyStatus {
+  if (asset.laborWarrantyEndDate && asset.laborWarrantyEndDate >= today) {
+    return "In warranty";
+  }
+  if (asset.partsWarrantyEndDate && asset.partsWarrantyEndDate >= today) {
+    return "Labor ended";
+  }
+  return "Expired";
 }
 
 export type ServiceJobRuleFields = {
@@ -125,4 +154,100 @@ export function serviceJobPrimaryAction(
     default:
       return null;
   }
+}
+
+// --- My Time ----------------------------------------------------------------
+
+/** The job a My Time service row names. */
+export type ServiceTimeRowJob = {
+  id: string;
+  /** The readable job number ("SJ000012"). */
+  serviceJobId: string;
+  status: ServiceJobStatus;
+  customerName: string | null;
+};
+
+/** One day of a service row: the hours, and how many came from the clock. */
+export type ServiceTimeCell = {
+  hours: number;
+  clockHours: number;
+  /** The day's first entry: a day stacks its bars in that order. */
+  createdAt: string;
+};
+
+export type ServiceTimeRow = ServiceTimeRowJob & {
+  isLocked: boolean;
+  cells: Record<string, ServiceTimeCell>;
+  total: number;
+};
+
+/**
+ * The service rows of one employee's My Time week: one row per job, each
+ * day the sum of the job's entries on it, plus a row with no hours for a job
+ * the employee is assigned to that week and has no time on. Rows are in job
+ * number order. A clock entry is one with a `startTime`.
+ */
+export function groupServiceTimeRows(
+  entries: {
+    entryDate: string;
+    hours: number;
+    startTime: string | null;
+    createdAt: string;
+    job: ServiceTimeRowJob;
+  }[],
+  assignments: { job: ServiceTimeRowJob }[]
+): ServiceTimeRow[] {
+  const rows = new Map<string, ServiceTimeRow>();
+  const rowOf = (job: ServiceTimeRowJob) => {
+    let row = rows.get(job.id);
+    if (!row) {
+      row = {
+        ...job,
+        isLocked: isServiceJobLocked(job.status),
+        cells: {},
+        total: 0
+      };
+      rows.set(job.id, row);
+    }
+    return row;
+  };
+
+  for (const entry of entries) {
+    const row = rowOf(entry.job);
+    const hours = Number(entry.hours) || 0;
+    const cell = row.cells[entry.entryDate];
+    row.cells[entry.entryDate] = {
+      hours: (cell?.hours ?? 0) + hours,
+      clockHours: (cell?.clockHours ?? 0) + (entry.startTime ? hours : 0),
+      createdAt:
+        cell && cell.createdAt <= entry.createdAt
+          ? cell.createdAt
+          : entry.createdAt
+    };
+    row.total += hours;
+  }
+  for (const assignment of assignments) rowOf(assignment.job);
+
+  return [...rows.values()].sort((a, b) =>
+    a.serviceJobId.localeCompare(b.serviceJobId)
+  );
+}
+
+/**
+ * The hours of the day's one manual entry (no clock) when the employee sets
+ * the day's total for a job on My Time: the new total less the day's clock
+ * entries. Null when the total is below the clock entries: those are edited
+ * on the job, never here. 0 means the manual entry goes.
+ */
+export function manualHoursForDay(
+  dayEntries: { hours: number; startTime: string | null }[],
+  total: number
+): number | null {
+  const clockHours = dayEntries.reduce(
+    (sum, entry) => sum + (entry.startTime ? Number(entry.hours) || 0 : 0),
+    0
+  );
+  const manual = total - clockHours;
+  if (equals(manual, 0)) return 0;
+  return manual < 0 ? null : round(manual);
 }

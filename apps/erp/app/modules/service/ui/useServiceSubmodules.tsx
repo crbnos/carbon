@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { LuHammer, LuServer } from "react-icons/lu";
+import { LuCalendarRange, LuHammer, LuServer } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -26,9 +26,19 @@ export default function useServiceSubmodules() {
           to: path.to.serviceJobs,
           icon: <LuHammer />,
           table: "serviceJob",
+          // Schedule and Customer Assets live under /service-jobs too
           isActive: (pathname: string) =>
-            pathname.startsWith(path.to.serviceJobs) ||
+            (pathname.startsWith(path.to.serviceJobs) &&
+              !pathname.startsWith(path.to.serviceSchedule) &&
+              !pathname.startsWith(path.to.customerAssets)) ||
             pathname.startsWith(serviceJobRecordPrefix)
+        },
+        {
+          name: t`Schedule`,
+          to: path.to.serviceSchedule,
+          icon: <LuCalendarRange />,
+          isActive: (pathname: string) =>
+            pathname.startsWith(path.to.serviceSchedule)
         },
         {
           name: t`Customer Assets`,

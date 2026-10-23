@@ -331,6 +331,30 @@ export const maintenanceDispatchValidator = z.object({
   actualEndTime: zfd.text(z.string().optional())
 });
 
+export const serviceWorkSites = [
+  "Depot",
+  "Customer Site"
+] as const satisfies readonly Database["public"]["Enums"]["serviceWorkSite"][];
+
+export const serviceCoverages = [
+  "Billable",
+  "Warranty",
+  "Contract"
+] as const satisfies readonly Database["public"]["Enums"]["serviceCoverage"][];
+
+/**
+ * A job a technician opens on the floor or on site: the unit (a customer
+ * asset) or only its customer, the problem, where the work happens, and who
+ * pays. It opens In Progress with the technician's clock running.
+ */
+export const serviceJobNewValidator = z.object({
+  customerAssetId: zfd.text(z.string().optional()),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  problem: z.string().trim().min(1, { message: "Problem is required" }),
+  workSite: z.enum(serviceWorkSites, { error: "Work site is required" }),
+  coverage: z.enum(serviceCoverages, { error: "Coverage is required" })
+});
+
 export const qualityIssuePriority = [
   "Low",
   "Medium",

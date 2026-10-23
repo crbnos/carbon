@@ -42,6 +42,11 @@
   - Checks: the erp typecheck passes. `schedule-matrix.test.ts` passes (5 tests), and so do the ERP unit tests and the permission tests. There is no live database test: `apps/erp/test/database` has no people-assignment harness.
 - 2026-10-23: Task 27 committed. Each dataset seeds 5 service jobs (Open from an RMA receipt, Awaiting Approval, In Progress, Completed Warranty, Invoiced Billable), 8 time rows, 4 estimate lines and 1 charge. Each also gets a labor item set as `serviceLaborItemId`, and an In Progress RMA with a received Return for Service line. The temporary 'In Progress' exclusion is removed. New floors: `serviceJob` 5, `serviceJobTime` 8, `serviceJobEstimateLine` 4, `serviceJobItem` 1.
   - Checks: the database typecheck passes. `db:check:datasets` passes for all four datasets, including the re-apply. In satellite, the Warranty completion posted Dr 6120 / Cr 5060 807.50, and the Billable completion posted Dr 5010 (COGS fallback) / Cr 5060.
+- 2026-10-23: Tasks 28–31 and 34 committed together; they share `path.ts`, `service-job.ts` and the service models.
+  - MES: a Service queue (alt+8, a tab), New Job by scanning a serial, and a job page with the clock, parts, findings, photos, signature and Complete. Plain writes use the service role after an ownership check, as maintenance does. Postings go through `erpPosting` (`issue`, `post-service-job`). Start, Stop and the refused second Start were tested against the local database.
+  - ERP My Time: service rows below the project rows, written through `setServiceJobDayHours`, with database tests for 6 cases.
+  - Service → Schedule: the dispatch grid on the shared `ScheduleMatrix`, with a backlog panel. Dataset assignments (Task 34 step 8) were not seeded yet.
+  - Checks: the erp, mes and utils typecheck passes. Conformance passes. Tests pass: utils (896), MES (93), ERP unit (715). `check:manifest` is current (1746 operations).
 
 ## Decisions made without Brad
 
@@ -85,6 +90,14 @@
 | 27 | The seeded jobs carry no issued parts, only time and charges | An issued part needs the issue posting's stock ledger, cost layer and journal rows, which the tiers do not model. |
 | 27 | The Invoiced job's invoice is Draft | `createServiceInvoice` leaves a Draft. Tier 09's invoice posting refuses lines that are not Part lines. |
 | 27 | The wipe voids 'Service Job' journals, like the other document sources | A re-apply must void the journals of documents it deletes. |
+| 30 | The MES queue is `service._index.tsx` under a `service.tsx` layout, as Picking is | A queue in `service.tsx` would be the parent of `service.$jobId`. |
+| 30 | The MES part modal reuses `MaintenanceAddPartModal` (new `action` and `title` props), instead of a 680-line copy | It is one picker. |
+| 30 | `warrantyStatus` moved to `@carbon/utils`, and the ERP re-exports it | The MES needs it too. |
+| 30 | **For Brad:** Service makes 6 tabs on the phone tab bar. Check the fit at 390 px | A layout risk. |
+| 31 | `setServiceJobDayHours` needs company membership only, like `saveTimesheetEntry`. A user without `service_update` may write only to jobs they lead or are assigned to | My Time needs only the employee role. |
+| 31 | A day with two or more manual entries on a job is refused on My Time | One manual entry per day is the model, and editing several is ambiguous. |
+| 34 | The grid's department list comes from the location's employees, and people from other locations who have assignments get rows | A technician grid has no work centers to take departments from. |
+| 34 | Without `people_view`, shift hours fall back to the location's most common shift length | `employeeShift` row-level security needs `people_view`. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

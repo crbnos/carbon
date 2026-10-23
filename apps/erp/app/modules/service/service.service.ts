@@ -30,6 +30,7 @@ import {
   canComplete,
   datetime,
   isServiceJobLocked,
+  manualHoursForDay,
   round
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -960,6 +961,148 @@ export async function deleteServiceJobTime(
     .eq("companyId", args.companyId)
     .select("id")
     .single();
+}
+
+export const SERVICE_DAY_HAS_CLOCK_TIME =
+  "This day has clock time on the job. Edit it on the job.";
+
+/**
+ * My Time: sets an employee's total hours on a job for one day. The
+ * difference from the day's clock entries goes to the day's one manual entry
+ * (no clock): saved, added at the company's service labor item, or removed
+ * at 0. A total below the clock entries writes nothing (`saved: false`) and
+ * comes back as `warning`. Locks the job FOR UPDATE and refuses a Completed, Invoiced or
+ * Cancelled one; with `mustBeAssigned`, also a job the employee is neither
+ * assigned to nor leads.
+ */
+export async function setServiceJobDayHours(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    employeeId: string;
+    serviceJobId: string;
+    entryDate: string;
+    hours: number;
+    mustBeAssigned: boolean;
+  }
+): Promise<{ saved: boolean; warning: string | null }> {
+  return db.transaction().execute(async (trx) => {
+    const job = await lockServiceJob(trx, {
+      serviceJobId: args.serviceJobId,
+      companyId: args.companyId,
+      open: true
+    });
+
+    if (args.mustBeAssigned) {
+      const assigned = await trx
+        .selectFrom("serviceJob")
+        .select("id")
+        .where("id", "=", job.id)
+        .where("companyId", "=", args.companyId)
+        .where((eb) =>
+          eb.or([
+            eb("assignee", "=", args.employeeId),
+            eb.exists(
+              eb
+                .selectFrom("serviceJobAssignment")
+                .select("serviceJobAssignment.id")
+                .whereRef(
+                  "serviceJobAssignment.serviceJobId",
+                  "=",
+                  "serviceJob.id"
+                )
+                .where("serviceJobAssignment.companyId", "=", args.companyId)
+                .where("serviceJobAssignment.employeeId", "=", args.employeeId)
+            )
+          ])
+        )
+        .executeTakeFirst();
+      if (!assigned) {
+        throw new InvalidInputError(
+          "You can log time only on a job you are assigned to"
+        );
+      }
+    }
+
+    const dayEntries = await trx
+      .selectFrom("serviceJobTime")
+      .select(["id", "hours", "startTime"])
+      .where("serviceJobId", "=", job.id)
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("entryDate", "=", args.entryDate)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+    const entries = dayEntries.map((entry) => ({
+      id: entry.id,
+      hours: Number(entry.hours),
+      startTime: entry.startTime ? String(entry.startTime) : null
+    }));
+
+    const manual = manualHoursForDay(entries, args.hours);
+    if (manual === null) {
+      return { saved: false, warning: SERVICE_DAY_HAS_CLOCK_TIME };
+    }
+    const manualEntries = entries.filter((entry) => !entry.startTime);
+    if (manualEntries.length > 1) {
+      throw new InvalidInputError(
+        "This day has more than one entry on the job. Edit it on the job."
+      );
+    }
+    const existing = manualEntries[0];
+
+    if (manual === 0) {
+      if (existing) {
+        await trx
+          .deleteFrom("serviceJobTime")
+          .where("id", "=", existing.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+      }
+      return { saved: true, warning: null };
+    }
+
+    if (existing) {
+      await trx
+        .updateTable("serviceJobTime")
+        .set({
+          hours: manual,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", existing.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return { saved: true, warning: null };
+    }
+
+    const settings = await trx
+      .selectFrom("companySettings")
+      .select("serviceLaborItemId")
+      .where("id", "=", args.companyId)
+      .executeTakeFirst();
+    if (!settings?.serviceLaborItemId) {
+      throw new InvalidInputError(
+        "Set the service labor item in Settings → Invoicing first"
+      );
+    }
+    await trx
+      .insertInto("serviceJobTime")
+      .values({
+        companyId: args.companyId,
+        serviceJobId: job.id,
+        employeeId: args.employeeId,
+        laborItemId: settings.serviceLaborItemId,
+        entryDate: args.entryDate,
+        hours: manual,
+        billable: job.coverage === "Billable",
+        createdBy: args.userId
+      })
+      .execute();
+    return { saved: true, warning: null };
+  });
 }
 
 type ChargeInput = Omit<z.infer<typeof serviceJobItemValidator>, "id">;

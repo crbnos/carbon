@@ -7,9 +7,12 @@ import { describe, expect, it } from "vitest";
 import {
   canComplete,
   coverageAccountRole,
+  groupServiceTimeRows,
   isServiceJobLocked,
+  manualHoursForDay,
   needsAcceptedEstimate,
   type ServiceJobRuleFields,
+  type ServiceTimeRowJob,
   serviceJobPrimaryAction,
   suggestCoverage
 } from "./service-job";
@@ -220,5 +223,91 @@ describe("isServiceJobLocked", () => {
     ]) {
       expect(isServiceJobLocked(status)).toBe(false);
     }
+  });
+});
+
+describe("manualHoursForDay", () => {
+  it("sets the manual entry to the total on a day with only a manual entry", () => {
+    expect(manualHoursForDay([{ hours: 2, startTime: null }], 3)).toBe(3);
+  });
+
+  it("gives the manual entry what the clock did not cover", () => {
+    expect(
+      manualHoursForDay(
+        [
+          { hours: 1.5, startTime: "2026-10-20T08:00:00Z" },
+          { hours: 0.5, startTime: null }
+        ],
+        3
+      )
+    ).toBe(1.5);
+  });
+
+  it("refuses a total below the clock entries", () => {
+    expect(
+      manualHoursForDay([{ hours: 1.5, startTime: "2026-10-20T08:00:00Z" }], 1)
+    ).toBeNull();
+  });
+
+  it("removes the manual entry when the total equals the clock entries", () => {
+    expect(
+      manualHoursForDay(
+        [{ hours: 1.5, startTime: "2026-10-20T08:00:00Z" }],
+        1.5
+      )
+    ).toBe(0);
+  });
+});
+
+describe("groupServiceTimeRows", () => {
+  const jobA: ServiceTimeRowJob = {
+    id: "sj_a",
+    serviceJobId: "SJ000002",
+    status: "In Progress",
+    customerName: "Acme"
+  };
+  const jobB: ServiceTimeRowJob = {
+    id: "sj_b",
+    serviceJobId: "SJ000001",
+    status: "Completed",
+    customerName: null
+  };
+
+  it("sums each job's entries per day and adds assigned jobs with no time", () => {
+    const rows = groupServiceTimeRows(
+      [
+        {
+          entryDate: "2026-10-20",
+          hours: 1.5,
+          startTime: "2026-10-20T08:00:00Z",
+          createdAt: "2026-10-20T09:30:00Z",
+          job: jobA
+        },
+        {
+          entryDate: "2026-10-20",
+          hours: 1,
+          startTime: null,
+          createdAt: "2026-10-20T08:00:00Z",
+          job: jobA
+        }
+      ],
+      [{ job: jobA }, { job: jobB }]
+    );
+    expect(rows.map((row) => row.serviceJobId)).toEqual([
+      "SJ000001",
+      "SJ000002"
+    ]);
+    expect(rows[0]).toMatchObject({ isLocked: true, cells: {}, total: 0 });
+    expect(rows[1]).toMatchObject({
+      isLocked: false,
+      total: 2.5,
+      cells: {
+        "2026-10-20": {
+          hours: 2.5,
+          clockHours: 1.5,
+          createdAt: "2026-10-20T08:00:00Z"
+        }
+      }
+    });
   });
 });

@@ -39,12 +39,13 @@ import {
   LuChevronRight,
   LuCircleAlert,
   LuEllipsis,
+  LuLock,
   LuPencil,
   LuPlus,
   LuSend,
   LuTreePalm
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { Link, useFetcher, useNavigate } from "react-router";
 import { useCellSave } from "~/components/Setup";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
@@ -61,7 +62,10 @@ import { TimesheetReviewBanner } from "./TimesheetReviewBanner";
 import { TimesheetRevisionsPopover } from "./TimesheetRevisionsPopover";
 import {
   type GridRow,
+  type ServiceGridRow,
+  serviceRowKey,
   type TimesheetGridProps,
+  useServiceRows,
   useTimesheetRows
 } from "./useTimesheetRows";
 
@@ -89,6 +93,9 @@ type PendingChange = {
 
 const cellKey = (rowKey: string, day: string) => `${rowKey}|${day}`;
 
+/** A project row or a service row: what the chart reads of either. */
+type WeekRow = { key: string; cells: Record<string, { hours: number }> };
+
 /** Clock time as hours and minutes ("8h, 32m"), never a long decimal. */
 const formatClocked = (hours: number) =>
   formatDurationHours(hours, { style: "short", units: ["h", "m"] });
@@ -103,8 +110,10 @@ const formatClocked = (hours: number) =>
  * grid cell did. **Submit week** lists what the week still needs.
  *
  * A Submitted, Approved or Posted bar is locked; a Posted one is corrected
- * from its menu. A service order's time is read-only here: its visit page
- * posts it. DCAA mode keeps a day after today locked except on a leave
+ * from its menu. Service jobs follow the project rows: a bar sets the day's
+ * total on the job (`timesheet.service`), the job's time never goes through
+ * Submit week, and a Completed, Invoiced or Cancelled job's row is locked.
+ * DCAA mode keeps a day after today locked except on a leave
  * element, asks for the change and late reasons first
  * (`TimesheetChangeModal`), certifies the week (`CertificationModal`) and
  * shows the changes another user made (`TimesheetReviewBanner`).
@@ -118,6 +127,8 @@ export default function TimesheetWeek({
   weekEnd,
   days,
   rows,
+  serviceRows,
+  serviceJobs = [],
   timecardHours,
   laborCategories,
   jobLocationId = null,
@@ -135,6 +146,7 @@ export default function TimesheetWeek({
   const submitFetcher = useFetcher();
 
   const [addedRows, setAddedRows] = useState<AddedRow[]>([]);
+  const [addedServiceJobIds, setAddedServiceJobIds] = useState<string[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [adding, setAdding] = useState<"row" | "pto" | null>(null);
   const [removing, setRemoving] = useState<GridRow | null>(null);
@@ -164,12 +176,21 @@ export default function TimesheetWeek({
   );
 
   const weekRows = useTimesheetRows({ rows, addedRows, laborCategories });
+  const serviceWeekRows = useServiceRows({
+    serviceRows,
+    serviceJobs,
+    addedServiceJobIds
+  });
+  const allRows: WeekRow[] = useMemo(
+    () => [...weekRows, ...serviceWeekRows],
+    [weekRows, serviceWeekRows]
+  );
 
   // An override leaves once the loader returns the same hours.
   useEffect(() => {
     const settled = Object.entries(overrides).filter(([key, hours]) => {
       const split = key.lastIndexOf("|");
-      const row = weekRows.find((r) => r.key === key.slice(0, split));
+      const row = allRows.find((r) => r.key === key.slice(0, split));
       return equals(row?.cells[key.slice(split + 1)]?.hours ?? 0, hours);
     });
     if (settled.length === 0) return;
@@ -178,31 +199,43 @@ export default function TimesheetWeek({
       for (const [key] of settled) delete next[key];
       return next;
     });
-  }, [overrides, weekRows]);
+  }, [overrides, allRows]);
 
   const hoursOf = useCallback(
-    (row: GridRow, day: string) =>
+    (row: WeekRow, day: string) =>
       overrides[cellKey(row.key, day)] ?? row.cells[day]?.hours ?? 0,
     [overrides]
   );
 
   const tones = useMemo(
     () =>
-      weekHoursTones(
-        weekRows.map((row) => ({
+      weekHoursTones([
+        ...weekRows.map((row) => ({ key: row.key, isLeave: row.isLeave })),
+        ...serviceWeekRows.map((row) => ({
           key: row.key,
-          isLeave: row.isLeave
+          isReadOnly: row.isLocked
         }))
-      ),
-    [weekRows]
+      ]),
+    [weekRows, serviceWeekRows]
   );
   const rowsByKey = useMemo(
     () => new Map(weekRows.map((row) => [row.key, row])),
     [weekRows]
   );
+  const serviceRowsByKey = useMemo(
+    () => new Map(serviceWeekRows.map((row) => [row.key, row])),
+    [serviceWeekRows]
+  );
 
   const selected =
-    weekRows.find((row) => row.key === selectedKey) ?? weekRows[0] ?? null;
+    weekRows.find((row) => row.key === selectedKey) ??
+    (serviceRowsByKey.has(selectedKey ?? "") ? null : weekRows[0]) ??
+    null;
+  const selectedService =
+    serviceRowsByKey.get(selectedKey ?? "") ??
+    (selected ? null : (serviceWeekRows[0] ?? null));
+  const selectedLabel =
+    selected?.readableId ?? selectedService?.serviceJobId ?? null;
 
   const isCellEditable = useCallback(
     (row: GridRow, day: string) => {
@@ -215,10 +248,16 @@ export default function TimesheetWeek({
   );
 
   const dayTotals = days.map((day) =>
-    weekRows.reduce((sum, row) => sum + hoursOf(row, day), 0)
+    allRows.reduce((sum, row) => sum + hoursOf(row, day), 0)
   );
   const weekTotal = dayTotals.reduce((sum, hours) => sum + hours, 0);
-  const rowTotal = (row: GridRow) =>
+  // Service time never counts toward submit or the DCAA timecard check.
+  const projectWeekTotal = days.reduce(
+    (sum, day) =>
+      sum + weekRows.reduce((daySum, row) => daySum + hoursOf(row, day), 0),
+    0
+  );
+  const rowTotal = (row: WeekRow) =>
     days.reduce((sum, day) => sum + hoursOf(row, day), 0);
   const timecardTotal = days.reduce(
     (sum, day) => sum + (timecardHours[day] ?? 0),
@@ -303,6 +342,38 @@ export default function TimesheetWeek({
     [controls, formatDate, overrides, save]
   );
 
+  // Sets a service job's total for a day; the job takes the difference as
+  // its manual entry. A total below the day's clock time is not saved: the
+  // warning toasts and the bar goes back.
+  const commitService = useCallback(
+    async (row: ServiceGridRow, day: string, hours: number) => {
+      const key = cellKey(row.key, day);
+      if (
+        equals(row.cells[day]?.hours ?? 0, hours) &&
+        overrides[key] === undefined
+      ) {
+        return;
+      }
+      setOverrides((previous) => ({ ...previous, [key]: hours }));
+      setSavingCount((count) => count + 1);
+      const result = await save(path.to.timesheetService, {
+        serviceJobId: row.id,
+        entryDate: day,
+        hours: String(hours)
+      });
+      setSavingCount((count) => count - 1);
+      const saved = (result.data as { data?: { saved?: boolean } } | null)?.data
+        ?.saved;
+      if (result.error || saved === false) {
+        setOverrides((previous) => {
+          const { [key]: _gone, ...rest } = previous;
+          return rest;
+        });
+      }
+    },
+    [overrides, save]
+  );
+
   const removeRow = async (row: GridRow) => {
     setRemoving(null);
     for (const day of days) {
@@ -364,7 +435,7 @@ export default function TimesheetWeek({
               <SubmitChecks
                 draftHours={draftHours}
                 pendingReviewCount={pendingReviewCount}
-                weekTotal={weekTotal}
+                weekTotal={projectWeekTotal}
                 timecardTotal={controls && hasTimecards ? timecardTotal : null}
               />
             }
@@ -418,7 +489,7 @@ export default function TimesheetWeek({
             </div>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pb-3">
-            {weekRows.length === 0 && (
+            {weekRows.length === 0 && serviceWeekRows.length === 0 && (
               <p className="px-1 text-sm text-muted-foreground">
                 <Trans>
                   Add the charge numbers you worked on this week, then click a
@@ -494,6 +565,25 @@ export default function TimesheetWeek({
                 </div>
               );
             })}
+            {serviceWeekRows.map((row) => (
+              <ServiceRowCard
+                key={row.key}
+                row={row}
+                isSelected={row.key === selectedService?.key}
+                dotClassName={tones.get(row.key)?.dot}
+                hours={rowTotal(row)}
+                canRemove={
+                  Object.keys(row.cells).length === 0 &&
+                  addedServiceJobIds.includes(row.id)
+                }
+                onSelect={() => setSelectedKey(row.key)}
+                onRemove={() =>
+                  setAddedServiceJobIds((previous) =>
+                    previous.filter((id) => id !== row.id)
+                  )
+                }
+              />
+            ))}
           </div>
           <div className="flex shrink-0 flex-col items-center gap-1 border-t border-border py-6">
             <span className="text-5xl font-semibold tracking-tight tabular-nums">
@@ -515,25 +605,39 @@ export default function TimesheetWeek({
             days={days}
             today={currentDay}
             isDayLocked={(day) =>
-              today !== null && day > today && !selected?.isLeave
+              selectedService
+                ? selectedService.isLocked
+                : today !== null && day > today && !selected?.isLeave
             }
-            rows={weekRows.map((row) => ({
-              key: row.key,
-              label: row.readableId,
-              title: row.name,
-              tone: tones.get(row.key)!
-            }))}
-            selectedKey={selected?.key ?? null}
+            rows={[
+              ...weekRows.map((row) => ({
+                key: row.key,
+                label: row.readableId,
+                title: row.name,
+                tone: tones.get(row.key)!
+              })),
+              ...serviceWeekRows.map((row) => ({
+                key: row.key,
+                label: row.serviceJobId,
+                title: row.customerName ?? row.serviceJobId,
+                tone: tones.get(row.key)!
+              }))
+            ]}
+            selectedKey={selected?.key ?? selectedService?.key ?? null}
             hoursOf={(rowKey, day) => {
-              const row = rowsByKey.get(rowKey);
+              const row = rowsByKey.get(rowKey) ?? serviceRowsByKey.get(rowKey);
               return row ? hoursOf(row, day) : 0;
             }}
             enteredAt={(rowKey, day) =>
-              rowsByKey.get(rowKey)?.cells[day]?.createdAt ?? null
+              (rowsByKey.get(rowKey) ?? serviceRowsByKey.get(rowKey))?.cells[
+                day
+              ]?.createdAt ?? null
             }
             isEditable={(rowKey, day) => {
               const row = rowsByKey.get(rowKey);
-              return row ? isCellEditable(row, day) : false;
+              if (row) return isCellEditable(row, day);
+              const serviceRow = serviceRowsByKey.get(rowKey);
+              return serviceRow ? !serviceRow.isLocked : false;
             }}
             clockedHours={timecardHours}
             formatHours={formatQuantity}
@@ -563,14 +667,24 @@ export default function TimesheetWeek({
             onSelect={(rowKey) => setSelectedKey(rowKey)}
             onCommit={(rowKey, day, hours) => {
               const row = rowsByKey.get(rowKey);
-              if (row) void commit(row, day, hours);
+              if (row) {
+                void commit(row, day, hours);
+                return;
+              }
+              const serviceRow = serviceRowsByKey.get(rowKey);
+              if (serviceRow) void commitService(serviceRow, day, hours);
             }}
           />
           <p className="shrink-0 px-4 py-3 text-xs text-muted-foreground">
-            {selected ? (
+            {selectedService?.isLocked ? (
               <Trans>
-                Click a day to add time to {selected.readableId}. Drag the lower
-                edge of a bar to change its hours.
+                {selectedService.serviceJobId} is closed. Its time cannot
+                change.
+              </Trans>
+            ) : selectedLabel ? (
+              <Trans>
+                Click a day to add time to {selectedLabel}. Drag the lower edge
+                of a bar to change its hours.
               </Trans>
             ) : (
               <Trans>Add a charge number to start logging time.</Trans>
@@ -584,6 +698,14 @@ export default function TimesheetWeek({
           pto={adding === "pto"}
           laborCategories={laborCategories}
           jobLocationId={jobLocationId}
+          serviceJobs={serviceJobs.filter(
+            (job) => !serviceRowsByKey.has(serviceRowKey(job.id))
+          )}
+          onAddServiceJob={(serviceJobId) => {
+            setAddedServiceJobIds((previous) => [...previous, serviceJobId]);
+            setSelectedKey(serviceRowKey(serviceJobId));
+            setAdding(null);
+          }}
           onAdd={(row) => {
             setAddedRows((previous) => [...previous, row]);
             // The new charge number is the one the next click gives time to.
@@ -675,6 +797,102 @@ export default function TimesheetWeek({
           onClose={() => setCertifying(false)}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * A service job's card: the job number (linked to the job) and customer,
+ * the week's hours, and a lock when the job is closed.
+ */
+function ServiceRowCard({
+  row,
+  isSelected,
+  dotClassName,
+  hours,
+  canRemove,
+  onSelect,
+  onRemove
+}: {
+  row: ServiceGridRow;
+  isSelected: boolean;
+  dotClassName: string | undefined;
+  hours: number;
+  canRemove: boolean;
+  onSelect: () => void;
+  onRemove: () => void;
+}) {
+  const { t } = useLingui();
+  const formatQuantity = useQuantityFormatter();
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-pressed={isSelected}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      className={cn(
+        "flex flex-col gap-2 rounded-lg border border-border bg-card p-3 text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+        "cursor-pointer hover:bg-accent/50",
+        isSelected && "border-primary bg-accent/50"
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-2">
+        <span
+          className={cn("mt-1.5 size-2 shrink-0 rounded-full", dotClassName)}
+        />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <Link
+              to={row.to}
+              className="shrink-0 text-muted-foreground tabular-nums hover:underline"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {row.serviceJobId}
+            </Link>
+            <span className="truncate font-medium">
+              {row.customerName ?? ""}
+            </span>
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            <Trans>Service job</Trans>
+          </span>
+        </div>
+        {row.isLocked && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="mt-0.5 shrink-0 text-muted-foreground">
+                <LuLock className="size-3.5" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <Trans>The job is closed</Trans>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      <div className="flex items-center justify-between pl-4 text-xs">
+        <span className="tabular-nums text-muted-foreground">
+          {t`${formatQuantity(hours)} h`}
+        </span>
+        {canRemove && (
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove();
+            }}
+          >
+            <Trans>Remove</Trans>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

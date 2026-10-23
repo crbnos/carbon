@@ -24,6 +24,7 @@ import {
   SERVICE_JOB_STATUS_TRANSITIONS,
   serviceJobAssignmentMoveValidator,
   serviceJobAssignmentValidator,
+  serviceJobDayHoursValidator,
   serviceJobEstimateLineValidator,
   serviceJobEstimateResponseValidator,
   serviceJobEstimateSendValidator,
@@ -883,6 +884,38 @@ export const deleteServiceJobTime = defineServiceFn({
         id,
         serviceJobId,
         companyId: ctx.company.id
+      })
+    );
+  }
+});
+
+/**
+ * Set the caller's total hours on a service job for one day, from My Time.
+ *
+ * @remarks
+ * The difference from the day's clock entries is written to the day's one
+ * manual entry (no clock): saved, added at the company's service labor item,
+ * or removed at 0. A total below the clock entries writes nothing and comes
+ * back as `warning`: clock time is edited on the job. Refused when the job is
+ * Completed, Invoiced or Cancelled. Like My Time itself it needs only company
+ * membership, so the job must be one the caller is assigned to or leads,
+ * unless the caller has `update: service`. Service time never goes through
+ * timesheet submit or approval.
+ */
+export const setServiceJobDayHours = defineServiceFn({
+  input: serviceJobDayHoursValidator,
+  // Your own time on your own job; anyone else's job needs `update: service`,
+  // which the body checks.
+  permission: {},
+
+  async run(ctx, input) {
+    return run(ctx, "setServiceJobDayHours", () =>
+      service.setServiceJobDayHours(ctx.asSystem.pg, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        employeeId: ctx.auditUserId,
+        mustBeAssigned: !ctx.can({ update: "service" })
       })
     );
   }

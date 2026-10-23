@@ -35,6 +35,7 @@ import {
   LuChevronsUpDown,
   LuCirclePlay,
   LuClipboardList,
+  LuHammer,
   LuHistory,
   LuMonitorPlay,
   LuPackageCheck,
@@ -55,6 +56,7 @@ import { UserNav, useSwitchCompany } from "./UserNav";
 export function AppSidebar({
   activeEvents,
   activeMaintenanceCount,
+  openServiceJobCount,
   company,
   companies,
   consoleEnabled,
@@ -69,6 +71,7 @@ export function AppSidebar({
 }: {
   activeEvents: number;
   activeMaintenanceCount: number;
+  openServiceJobCount: number;
   company: Company;
   companies: Company[];
   consoleEnabled?: boolean;
@@ -91,7 +94,8 @@ export function AppSidebar({
     <QueueLinks
       counts={{
         active: activeEvents,
-        maintenance: activeMaintenanceCount
+        maintenance: activeMaintenanceCount,
+        service: openServiceJobCount
       }}
     />
   );
@@ -296,7 +300,8 @@ export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
     { key: "recent", icon: LuHistory, to: path.to.recent },
     { key: "jobs", icon: LuCirclePlay, to: path.to.jobs },
     { key: "maintenance", icon: LuWrench, to: path.to.maintenance },
-    { key: "picking", icon: LuPackageCheck, to: path.to.picking }
+    { key: "picking", icon: LuPackageCheck, to: path.to.picking },
+    { key: "service", icon: LuHammer, to: path.to.service }
   ];
 
 /** `path.to.operations` carries a `?saved=1` query; activity matches on paths. */
@@ -313,7 +318,8 @@ export function useQueueTitles(): Record<QueueKey, string> {
       recent: t`Recent`,
       jobs: t`Jobs`,
       maintenance: t`Maintenance`,
-      picking: t`Picking`
+      picking: t`Picking`,
+      service: t`Service`
     }),
     [t]
   );

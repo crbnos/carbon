@@ -2641,6 +2641,8 @@ export const path = {
     serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
     serviceRoot: `${x}/service`,
     serviceSales: (id: string) => generatePath(`${x}/service/${id}/sales`),
+    serviceSchedule: `${x}/service-jobs/schedule`,
+    serviceScheduleUpdate: `${x}/service-jobs/schedule/update`,
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/purchasing/${id}`),
     services: `${x}/items/services`,
@@ -2775,6 +2777,7 @@ export const path = {
     timesheetReview: `${x}/timesheet/review`,
     timesheetRevisions: (entryId: string) =>
       generatePath(`${x}/timesheet/revisions/${entryId}`),
+    timesheetService: `${x}/timesheet/service`,
     timesheetSubmit: `${x}/timesheet/submit`,
     timesheetUpdate: `${x}/timesheet/update`,
     tool: (id: string) => generatePath(`${x}/tool/${id}`),

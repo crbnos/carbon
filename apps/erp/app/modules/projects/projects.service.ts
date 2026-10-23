@@ -73,8 +73,10 @@ import {
   debit,
   dilutionFactor,
   equals,
+  groupServiceTimeRows,
   heldProjectRefusal,
   isEntryDateAllowed,
+  isServiceJobLocked,
   isUniqueViolation,
   isValidWbsCode,
   nextEntryStatus,
@@ -14531,6 +14533,11 @@ export async function moveActionPegsToSupply(
  * grid rows, the hours clocked per day, the labor categories, the company
  * settings and, in DCAA mode, the entries that have a correction trail. A
  * failed read is logged and shows as empty.
+ *
+ * Service time is read next to it, never mixed in: `serviceRows` has one row
+ * per service job the employee has time on or is assigned to that week, and
+ * `serviceJobs` the employee's open jobs (assigned that week, or lead) that
+ * Add row offers. Service time never goes through submit or approval.
  */
 export async function getTimesheetWeekView(
   client: SupabaseClient<Database>,
@@ -14544,38 +14551,75 @@ export async function getTimesheetWeekView(
     offset
   );
 
-  const [entries, timecard, laborCategories, settings, job] = await Promise.all(
-    [
-      getTimesheetWeek(client, {
-        companyId,
-        employeeId,
-        from: weekStart,
-        to: weekEnd
-      }),
-      client
-        .from("timeCardEntry")
-        .select("clockIn, clockOut")
-        .eq("employeeId", employeeId)
-        .eq("companyId", companyId)
-        .gte("clockIn", from)
-        .lte("clockIn", to),
-      getLaborCategoriesList(client, companyId),
-      client.from("companySettings").select("*").eq("id", companyId).single(),
-      // R&D tax: a new row's work location defaults to the job location.
-      client
-        .from("employeeJob")
-        .select("locationId")
-        .eq("id", employeeId)
-        .eq("companyId", companyId)
-        .maybeSingle()
-    ]
-  );
+  const [
+    entries,
+    timecard,
+    laborCategories,
+    settings,
+    job,
+    serviceTime,
+    serviceAssignments,
+    leadServiceJobs
+  ] = await Promise.all([
+    getTimesheetWeek(client, {
+      companyId,
+      employeeId,
+      from: weekStart,
+      to: weekEnd
+    }),
+    client
+      .from("timeCardEntry")
+      .select("clockIn, clockOut")
+      .eq("employeeId", employeeId)
+      .eq("companyId", companyId)
+      .gte("clockIn", from)
+      .lte("clockIn", to),
+    getLaborCategoriesList(client, companyId),
+    client.from("companySettings").select("*").eq("id", companyId).single(),
+    // R&D tax: a new row's work location defaults to the job location.
+    client
+      .from("employeeJob")
+      .select("locationId")
+      .eq("id", employeeId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("serviceJobTime")
+      .select(
+        "entryDate, hours, startTime, createdAt, serviceJob:serviceJob!serviceJobTime_serviceJobId_fkey!inner(id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name))"
+      )
+      .eq("employeeId", employeeId)
+      .eq("companyId", companyId)
+      .gte("entryDate", weekStart)
+      .lte("entryDate", weekEnd),
+    client
+      .from("serviceJobAssignment")
+      .select(
+        "serviceJob:serviceJob!serviceJobAssignment_serviceJobId_fkey!inner(id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name))"
+      )
+      .eq("employeeId", employeeId)
+      .eq("companyId", companyId)
+      .gte("scheduledDate", weekStart)
+      .lte("scheduledDate", weekEnd),
+    // Add row also offers the open jobs the employee leads.
+    client
+      .from("serviceJob")
+      .select(
+        "id, serviceJobId, status, customer:customer!serviceJob_customerId_fkey(name)"
+      )
+      .eq("assignee", employeeId)
+      .eq("companyId", companyId)
+      .not("status", "in", '("Completed","Invoiced","Cancelled")')
+  ]);
   for (const [what, result] of [
     ["the timesheet", entries],
     ["the timecard", timecard],
     ["labor categories", laborCategories],
     ["company settings", settings],
-    ["the employee job", job]
+    ["the employee job", job],
+    ["the service time", serviceTime],
+    ["the service assignments", serviceAssignments],
+    ["the service jobs", leadServiceJobs]
   ] as const) {
     if (result.error) {
       logger.error("Failed to load the timesheet week", {
@@ -14618,6 +14662,40 @@ export async function getTimesheetWeekView(
     ];
   }
 
+  // Service time: one row per job, and the open jobs Add row offers.
+  const serviceJobOf = (serviceJob: {
+    id: string;
+    serviceJobId: string;
+    status: Database["public"]["Enums"]["serviceJobStatus"];
+    customer: { name: string } | null;
+  }) => ({
+    id: serviceJob.id,
+    serviceJobId: serviceJob.serviceJobId,
+    status: serviceJob.status,
+    customerName: serviceJob.customer?.name ?? null
+  });
+  const serviceRows = groupServiceTimeRows(
+    (serviceTime.data ?? []).map((entry) => ({
+      entryDate: entry.entryDate,
+      hours: entry.hours,
+      startTime: entry.startTime,
+      createdAt: entry.createdAt,
+      job: serviceJobOf(entry.serviceJob)
+    })),
+    (serviceAssignments.data ?? []).map((assignment) => ({
+      job: serviceJobOf(assignment.serviceJob)
+    }))
+  );
+  const serviceJobs = new Map<string, ReturnType<typeof serviceJobOf>>();
+  for (const serviceJob of [
+    ...(serviceAssignments.data ?? []).map((row) => row.serviceJob),
+    ...(leadServiceJobs.data ?? [])
+  ]) {
+    if (!isServiceJobLocked(serviceJob.status)) {
+      serviceJobs.set(serviceJob.id, serviceJobOf(serviceJob));
+    }
+  }
+
   return {
     week: {
       weekOffset: offset,
@@ -14625,6 +14703,10 @@ export async function getTimesheetWeekView(
       weekEnd,
       days,
       rows: groupTimesheetRows(entries.data ?? []),
+      serviceRows,
+      serviceJobs: [...serviceJobs.values()].sort((a, b) =>
+        a.serviceJobId.localeCompare(b.serviceJobId)
+      ),
       timecardHours,
       laborCategories: laborCategories.data ?? [],
       jobLocationId: job.data?.locationId ?? null

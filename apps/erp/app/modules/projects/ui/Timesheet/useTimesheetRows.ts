@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ServiceTimeRow, ServiceTimeRowJob } from "@carbon/utils";
 import { useMemo } from "react";
 import { useChargeNumbers } from "~/components/Form";
 import { useLocations } from "~/components/Form/Location";
@@ -75,6 +76,12 @@ export type TimesheetGridProps = {
   }[];
   /** R&D tax: the employee's job location, a new row's default. */
   jobLocationId?: string | null;
+  /**
+   * My Time: the week's service jobs, one row each (time or an assignment
+   * that week), and the open jobs Add row offers. Never submitted.
+   */
+  serviceRows?: ServiceTimeRow[];
+  serviceJobs?: ServiceTimeRowJob[];
   /** DCAA mode's controls (5a); null in Standard mode. */
   controls: TimesheetControls | null;
   /**
@@ -162,4 +169,40 @@ export function useTimesheetRows({
       });
     return [...serverRows, ...localRows];
   }, [rows, addedRows, chargeNumbers, laborCategories, locations]);
+}
+
+/** A service job's row on My Time: its job, its days and where it opens. */
+export type ServiceGridRow = ServiceTimeRow & { key: string; to: string };
+
+/** A service row's key: never a project row's (`timesheetRowKey`). */
+export const serviceRowKey = (serviceJobId: string) =>
+  `service:${serviceJobId}`;
+
+/**
+ * The week's service rows: the loader's, then the open jobs the user added
+ * that have no row yet (an added job stops being "added" once it has one).
+ */
+export function useServiceRows({
+  serviceRows = [],
+  serviceJobs = [],
+  addedServiceJobIds
+}: {
+  serviceRows?: ServiceTimeRow[];
+  serviceJobs?: ServiceTimeRowJob[];
+  addedServiceJobIds: string[];
+}): ServiceGridRow[] {
+  return useMemo<ServiceGridRow[]>(() => {
+    const ids = new Set(serviceRows.map((row) => row.id));
+    const added = addedServiceJobIds
+      .filter((id) => !ids.has(id))
+      .flatMap((id) => {
+        const job = serviceJobs.find((option) => option.id === id);
+        return job ? [{ ...job, isLocked: false, cells: {}, total: 0 }] : [];
+      });
+    return [...serviceRows, ...added].map((row) => ({
+      ...row,
+      key: serviceRowKey(row.id),
+      to: path.to.serviceJob(row.id)
+    }));
+  }, [serviceRows, serviceJobs, addedServiceJobIds]);
 }

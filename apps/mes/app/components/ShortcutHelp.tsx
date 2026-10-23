@@ -76,6 +76,11 @@ const ShortcutHelp = () => {
         description: t`Picking`,
         group: navigation
       },
+      {
+        shortcut: MES_NAV_SHORTCUTS.service,
+        description: t`Service`,
+        group: navigation
+      },
       // AssemblyView owns these bindings (apps/mes/app/components/AssemblyView.tsx);
       // they are listed here for discoverability.
       {

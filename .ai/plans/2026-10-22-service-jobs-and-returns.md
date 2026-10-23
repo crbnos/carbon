@@ -105,13 +105,13 @@ Phase 1 — RMA and the depot service job
 
 Phase 2 — MES, My Time and the dispatch grid
 
-- [ ] Task 28: Add the MES Service queue
-- [ ] Task 29: Create a job from the MES
-- [ ] Task 30: Build the MES job page with the clock, parts and signature
-- [ ] Task 31: Show service jobs on My Time in the ERP
+- [x] Task 28: Add the MES Service queue
+- [x] Task 29: Create a job from the MES
+- [x] Task 30: Build the MES job page with the clock, parts and signature
+- [x] Task 31: Show service jobs on My Time in the ERP
 - [ ] Task 32: Show service jobs on My Time in the MES
 - [x] Task 33: Add drag and drop to the People matrix, through a shared matrix component
-- [ ] Task 34: Build the dispatch grid
+- [x] Task 34: Build the dispatch grid
 - [ ] Task 35: Link a charge's cost to a reimbursement or supplier invoice line
 
 Wrap-up

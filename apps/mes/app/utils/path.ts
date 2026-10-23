@@ -22,6 +22,8 @@ export const path = {
     active: `${x}/active`,
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/dispatch/${dispatchId}/add-and-issue`),
+    addAndIssueServiceJobItem: (jobId: string) =>
+      generatePath(`${x}/service/${jobId}/add-and-issue`),
     api: {
       batchNumbers: (itemId: string, operationId?: string) =>
         generatePath(
@@ -189,6 +191,7 @@ export const path = {
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
+    newServiceJob: `${x}/service/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
@@ -218,6 +221,11 @@ export const path = {
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
+    service: `${x}/service`,
+    serviceJob: (id: string) => generatePath(`${x}/service/${id}`),
+    serviceJobSignature: (id: string) =>
+      generatePath(`${x}/service/${id}/signature`),
+    serviceTime: `${x}/service-time`,
     setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     suggestion: `${x}/suggestion`,

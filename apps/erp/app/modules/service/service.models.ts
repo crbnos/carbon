@@ -28,33 +28,12 @@ export const customerAssetStatuses = [
   "Returned"
 ] as const satisfies readonly CustomerAssetStatus[];
 
-export const warrantyStatuses = [
-  "In warranty",
-  "Labor ended",
-  "Expired"
-] as const;
-export type WarrantyStatus = (typeof warrantyStatuses)[number];
-
-/**
- * The warranty of a customer asset on a day (`YYYY-MM-DD`; date strings
- * compare in calendar order). In warranty while the labor warranty runs,
- * Labor ended while only the parts warranty runs, else Expired.
- */
-export function warrantyStatus(
-  asset: {
-    laborWarrantyEndDate: string | null;
-    partsWarrantyEndDate: string | null;
-  },
-  today: string
-): WarrantyStatus {
-  if (asset.laborWarrantyEndDate && asset.laborWarrantyEndDate >= today) {
-    return "In warranty";
-  }
-  if (asset.partsWarrantyEndDate && asset.partsWarrantyEndDate >= today) {
-    return "Labor ended";
-  }
-  return "Expired";
-}
+// The warranty rule is shared with the MES.
+export {
+  type WarrantyStatus,
+  warrantyStatus,
+  warrantyStatuses
+} from "@carbon/utils";
 
 const optionalDate = zfd.text(
   z
@@ -240,6 +219,26 @@ export const serviceJobTimeValidator = z.object({
   ),
   billable: zfd.checkbox(),
   note: zfd.text(z.string().optional())
+});
+
+/**
+ * My Time: the signed-in employee's total hours on a job for one day. 0
+ * removes the day's manual entry.
+ */
+export const serviceJobDayHoursValidator = z.object({
+  serviceJobId: z.string().min(1, { message: "Job is required" }),
+  entryDate: requiredDate,
+  hours: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Hours cannot be negative" })
+      .max(24, { message: "A day has 24 hours" })
+  )
+});
+
+/** My Time: a service job added to the week, empty until hours are set. */
+export const timesheetServiceRowValidator = z.object({
+  serviceJobId: z.string().min(1, { message: "Service job is required" })
 });
 
 /** A Charge line: a Service item with a price (a trip fee, a call-out fee). */
