@@ -30463,6 +30463,7 @@ export type Database = {
           consumeToProject: boolean
           createdAt: string
           createdBy: string
+          customerContractLineId: string | null
           customerId: string | null
           customFields: Json | null
           deadlineType: Database["public"]["Enums"]["deadlineType"]
@@ -30513,6 +30514,7 @@ export type Database = {
           consumeToProject?: boolean
           createdAt?: string
           createdBy: string
+          customerContractLineId?: string | null
           customerId?: string | null
           customFields?: Json | null
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
@@ -30563,6 +30565,7 @@ export type Database = {
           consumeToProject?: boolean
           createdAt?: string
           createdBy?: string
+          customerContractLineId?: string | null
           customerId?: string | null
           customFields?: Json | null
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
@@ -30702,6 +30705,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "job_customerContractLine_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "job_customerId_fkey"
@@ -72741,6 +72751,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          customerContractInvoiceLineId: string | null
           fulfillmentId: string | null
           id: string
           itemId: string
@@ -72748,8 +72759,10 @@ export type Database = {
           locationId: string | null
           orderQuantity: number
           outstandingQuantity: number
+          previousInvoiceDate: string | null
           requiresBatchTracking: boolean
           requiresSerialTracking: boolean
+          serialNumber: string | null
           shipmentId: string
           shippedQuantity: number
           storageUnitId: string | null
@@ -72762,6 +72775,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          customerContractInvoiceLineId?: string | null
           fulfillmentId?: string | null
           id?: string
           itemId: string
@@ -72769,8 +72783,10 @@ export type Database = {
           locationId?: string | null
           orderQuantity?: number
           outstandingQuantity?: number
+          previousInvoiceDate?: string | null
           requiresBatchTracking?: boolean
           requiresSerialTracking?: boolean
+          serialNumber?: string | null
           shipmentId: string
           shippedQuantity?: number
           storageUnitId?: string | null
@@ -72783,6 +72799,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          customerContractInvoiceLineId?: string | null
           fulfillmentId?: string | null
           id?: string
           itemId?: string
@@ -72790,8 +72807,10 @@ export type Database = {
           locationId?: string | null
           orderQuantity?: number
           outstandingQuantity?: number
+          previousInvoiceDate?: string | null
           requiresBatchTracking?: boolean
           requiresSerialTracking?: boolean
+          serialNumber?: string | null
           shipmentId?: string
           shippedQuantity?: number
           storageUnitId?: string | null
@@ -72835,6 +72854,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipmentLine_customerContractInvoiceLine_fkey"
+            columns: ["customerContractInvoiceLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractInvoiceLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "shipmentLine_fulfillmentId_fkey"
@@ -78629,6 +78655,7 @@ export type Database = {
           entryDate: string
           hours: number
           id: string
+          jobId: string | null
           journalId: string | null
           laborCategoryId: string
           lateReason: string | null
@@ -78662,6 +78689,7 @@ export type Database = {
           entryDate: string
           hours: number
           id?: string
+          jobId?: string | null
           journalId?: string | null
           laborCategoryId: string
           lateReason?: string | null
@@ -78695,6 +78723,7 @@ export type Database = {
           entryDate?: string
           hours?: number
           id?: string
+          jobId?: string | null
           journalId?: string | null
           laborCategoryId?: string
           lateReason?: string | null
@@ -78866,6 +78895,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_job_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_job_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheetEntry_job_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "openProductionOrders"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "timesheetEntry_journalId_fkey"
@@ -106810,6 +106860,7 @@ export type Database = {
         | "Inbound Transfer"
         | "Outbound Transfer"
         | "Rental Agreement"
+        | "Customer Contract"
       shipmentStatus: "Draft" | "Pending" | "Posted" | "Voided"
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       sourcingType: "Specified" | "Drop Ship" | "Ship from Inventory"
@@ -108612,6 +108663,7 @@ export const Constants = {
         "Inbound Transfer",
         "Outbound Transfer",
         "Rental Agreement",
+        "Customer Contract",
       ],
       shipmentStatus: ["Draft", "Pending", "Posted", "Voided"],
       shippingCarrier: ["UPS", "FedEx", "USPS", "DHL", "Other"],

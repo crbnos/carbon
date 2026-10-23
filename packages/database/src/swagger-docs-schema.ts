@@ -44323,6 +44323,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.planningGroupId"
           },
           {
+            $ref: "#/parameters/rowFilter.job.customerContractLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -44526,6 +44529,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.planningGroupId"
           },
           {
+            $ref: "#/parameters/rowFilter.job.customerContractLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -44681,6 +44687,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.planningGroupId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.customerContractLineId"
           },
           {
             $ref: "#/parameters/body.job"
@@ -52000,6 +52009,9 @@ export default {
             $ref: "#/parameters/rowFilter.timesheetEntry.workLocationId"
           },
           {
+            $ref: "#/parameters/rowFilter.timesheetEntry.jobId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -52152,6 +52164,9 @@ export default {
             $ref: "#/parameters/rowFilter.timesheetEntry.workLocationId"
           },
           {
+            $ref: "#/parameters/rowFilter.timesheetEntry.jobId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -52256,6 +52271,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.timesheetEntry.workLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.jobId"
           },
           {
             $ref: "#/parameters/body.timesheetEntry"
@@ -89425,6 +89443,15 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.fulfillmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.customerContractInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.previousInvoiceDate"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -89541,6 +89568,15 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.fulfillmentId"
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.customerContractInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.previousInvoiceDate"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -89609,6 +89645,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLine.fulfillmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.customerContractInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.previousInvoiceDate"
           },
           {
             $ref: "#/parameters/body.shipmentLine"
@@ -153038,6 +153083,12 @@ export default {
         planningGroupId: {
           format: "text",
           type: "string"
+        },
+        customerContractLineId: {
+          description:
+            "The project contract line (CLIN) whose part this job builds.",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -156608,6 +156659,12 @@ export default {
           type: "string"
         },
         workLocationId: {
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "The job whose shop time wrote this entry (DCAA timekeeping); NULL for time logged by hand.\n\nNote:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -163024,7 +163081,8 @@ export default {
             "Purchase Return Order",
             "Inbound Transfer",
             "Outbound Transfer",
-            "Rental Agreement"
+            "Rental Agreement",
+            "Customer Contract"
           ],
           format: 'public."shipmentSourceDocument"',
           type: "string"
@@ -174103,6 +174161,24 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `fulfillment.id`.<fk table='fulfillment' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        serialNumber: {
+          description:
+            "The serial number typed on a contract delivery line; the part moves no stock, so no tracked entity holds it.",
+          format: "text",
+          type: "string"
+        },
+        customerContractInvoiceLineId: {
+          description:
+            "The Fixed Price billing row a contract delivery wrote or moved to its delivery date.",
+          format: "text",
+          type: "string"
+        },
+        previousInvoiceDate: {
+          description:
+            "The date a contract delivery moved a whole billing row from; NULL when the delivery split the row.",
+          format: "date",
           type: "string"
         }
       },
@@ -211037,6 +211113,14 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.customerContractLineId": {
+      name: "customerContractLineId",
+      description:
+        "The project contract line (CLIN) whose part this job builds.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.changeOrderAffectedItem": {
       name: "changeOrderAffectedItem",
       description: "changeOrderAffectedItem",
@@ -214927,6 +215011,14 @@ export default {
     },
     "rowFilter.timesheetEntry.workLocationId": {
       name: "workLocationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.jobId": {
+      name: "jobId",
+      description:
+        "The job whose shop time wrote this entry (DCAA timekeeping); NULL for time logged by hand.",
       required: false,
       in: "query",
       type: "string"
@@ -234361,6 +234453,30 @@ export default {
     },
     "rowFilter.shipmentLine.fulfillmentId": {
       name: "fulfillmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLine.serialNumber": {
+      name: "serialNumber",
+      description:
+        "The serial number typed on a contract delivery line; the part moves no stock, so no tracked entity holds it.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLine.customerContractInvoiceLineId": {
+      name: "customerContractInvoiceLineId",
+      description:
+        "The Fixed Price billing row a contract delivery wrote or moved to its delivery date.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.shipmentLine.previousInvoiceDate": {
+      name: "previousInvoiceDate",
+      description:
+        "The date a contract delivery moved a whole billing row from; NULL when the delivery split the row.",
       required: false,
       in: "query",
       type: "string"

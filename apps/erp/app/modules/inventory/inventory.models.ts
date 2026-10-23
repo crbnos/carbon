@@ -396,7 +396,8 @@ export const shipmentSourceDocumentType = [
   "Purchase Return Order",
   // "Inbound Transfer",
   "Outbound Transfer",
-  "Rental Agreement"
+  "Rental Agreement",
+  "Customer Contract"
 ] as const;
 
 export const shippingCarrierType = [
