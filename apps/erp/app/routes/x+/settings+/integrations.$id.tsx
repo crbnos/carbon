@@ -10,9 +10,10 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import {
   integrations as availableIntegrations,
-  Email,
+  emailSettingsForm,
   getIntegrationConfigById,
   type IntegrationID,
+  picksServerMail,
   resolveIntegrationTopology
 } from "@carbon/ee";
 import {
@@ -519,13 +520,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions.reimbursementBankAccountId = assetOptions;
   }
 
-  // Server mail cannot send from a server without mail settings, so it is
-  // not offered there.
-  if (integrationId === "email" && !SERVER_MAIL_CONFIGURED) {
-    dynamicOptions.provider =
-      Email.settings
-        .find((setting) => setting.name === "provider")
-        ?.listOptions?.filter((option) => option.value !== "server") ?? [];
+  // Server mail is offered only where the server has mail settings.
+  const emailForm = emailSettingsForm(integrationId, SERVER_MAIL_CONFIGURED);
+  if (emailForm?.providerOptions) {
+    dynamicOptions.provider = emailForm.providerOptions;
   }
 
   const integrationData = await getIntegration(
@@ -538,10 +536,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       installed: false,
       // A fresh Email install starts on server mail where the server has it.
-      metadata:
-        integrationId === "email" && SERVER_MAIL_CONFIGURED
-          ? { provider: "server" }
-          : {},
+      metadata: emailForm?.initialMetadata ?? {},
       dynamicOptions,
       syncActivity: null,
       accountMapping: null,
@@ -1291,8 +1286,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // integration active but non-functional, so require one here. Scoped to
   // form-entered secrets — OAuth providers get their credentials via the
   // callback, so they are never blocked here.
-  const usesServerMail =
-    integrationId === "email" && metadata.provider === "server";
+  const usesServerMail = picksServerMail(integrationId, metadata);
   if (usesServerMail && !SERVER_MAIL_CONFIGURED) {
     return data(
       {},

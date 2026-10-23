@@ -3,7 +3,13 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it } from "vitest";
-import { documentSender, resolveEmailDelivery } from "./delivery";
+import {
+  documentSender,
+  emailSettingsForm,
+  picksServerMail,
+  resolveEmailDelivery,
+  withEmailDelivery
+} from "./delivery";
 
 const installed = (metadata: Record<string, unknown>) => ({
   active: true,
@@ -112,5 +118,54 @@ describe("documentSender", () => {
       )
     ).toEqual({});
     expect(documentSender(null, "Acme", serverFrom)).toEqual({});
+  });
+});
+
+describe("withEmailDelivery", () => {
+  const slack = { id: "slack", active: true, metadata: {} };
+
+  it("gives a company without Email server mail when the server has it", () => {
+    const shell = withEmailDelivery([slack], "c1", true);
+    expect(shell.find((i) => i.id === "email")).toMatchObject({
+      active: true,
+      companyId: "c1",
+      metadata: { provider: "server" }
+    });
+  });
+
+  it("offers no Email when nothing can send", () => {
+    expect(withEmailDelivery([slack], "c1", false)).toEqual([slack]);
+  });
+
+  it("keeps an installed Email, inactive when its server mail cannot send", () => {
+    const email = {
+      id: "email",
+      active: true,
+      metadata: { provider: "server" }
+    };
+    const shell = withEmailDelivery([slack, email], "c1", false);
+    expect(shell.find((i) => i.id === "email")).toMatchObject({
+      active: false,
+      metadata: { provider: "server" }
+    });
+  });
+});
+
+describe("Email settings form", () => {
+  it("offers and starts on server mail only where the server has it", () => {
+    expect(emailSettingsForm("email", true)?.initialMetadata).toEqual({
+      provider: "server"
+    });
+    const without = emailSettingsForm("email", false);
+    expect(without?.providerOptions?.map((o) => o.value)).not.toContain(
+      "server"
+    );
+    expect(emailSettingsForm("slack", true)).toBeNull();
+  });
+
+  it("knows a save that picks server mail", () => {
+    expect(picksServerMail("email", { provider: "server" })).toBe(true);
+    expect(picksServerMail("email", { provider: "smtp" })).toBe(false);
+    expect(picksServerMail("slack", { provider: "server" })).toBe(false);
   });
 });

@@ -21,7 +21,7 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
-import { resolveEmailDelivery } from "@carbon/ee";
+import { withEmailDelivery } from "@carbon/ee";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
@@ -225,29 +225,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
   const companies = read(shell.data?.companies);
   const integrations = read(shell.data?.companyIntegrations);
-  // Whether documents can be emailed, settled here once for every
-  // `integrations.has("email")`: a company without the Email integration
-  // sends through this server's mail settings when the server has them.
-  const emailIntegration = integrations.data?.find((i) => i.id === "email");
-  const emailActive =
-    resolveEmailDelivery(emailIntegration, SERVER_MAIL_CONFIGURED) !== null;
-  const companyIntegrations = [
-    ...(integrations.data ?? []).filter((i) => i.id !== "email"),
-    ...(emailIntegration || emailActive
-      ? [
-          {
-            id: "email",
-            companyId,
-            metadata: { provider: "server" },
-            secretRef: null,
-            updatedAt: "",
-            updatedBy: null,
-            ...emailIntegration,
-            active: emailActive
-          }
-        ]
-      : [])
-  ];
+  // Whether documents can be emailed, settled once for every
+  // `integrations.has("email")` (withEmailDelivery).
+  const companyIntegrations = withEmailDelivery(
+    integrations.data ?? [],
+    companyId,
+    SERVER_MAIL_CONFIGURED
+  );
   const companySettings = read(shell.data?.companySettings ?? undefined);
   const savedViews = read(shell.data?.savedViews);
   const user = read(shell.data?.user ?? undefined);

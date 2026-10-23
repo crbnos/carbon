@@ -22,7 +22,13 @@ import { Xero } from "./xero/config";
 
 export { Email } from "./email/config";
 export type { EmailDelivery } from "./email/delivery";
-export { documentSender, resolveEmailDelivery } from "./email/delivery";
+export {
+  documentSender,
+  emailSettingsForm,
+  picksServerMail,
+  resolveEmailDelivery,
+  withEmailDelivery
+} from "./email/delivery";
 export { defineIntegration } from "./fns";
 export type {
   Integration,
