@@ -44,7 +44,7 @@ msgstr "{0} nie ma numeru partii. Ustaw go w partii produkcyjnej lub zleceniu w 
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
-msgstr ""
+msgstr "{0} jest zamknięte. Jego czas nie może się zmienić."
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
@@ -107,7 +107,7 @@ msgid "{hour} h"
 msgstr "{hour} h"
 
 msgid "{hours} h"
-msgstr ""
+msgstr "{hours} godz."
 
 msgid "{maxSizeMB}MB limit"
 msgstr "limit {maxSizeMB}MB"
@@ -183,7 +183,7 @@ msgid "Add Inventory"
 msgstr "Dodaj zapasy"
 
 msgid "Add Part"
-msgstr ""
+msgstr "Dodaj Część"
 
 msgid "Add Passkey"
 msgstr "Dodaj klucz dostępu"
@@ -302,7 +302,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Awatary z <0>{0}</0> autorstwa {1}, licencjonowane na warunkach <1>{2}</1>."
 
 msgid "Awaiting Approval"
-msgstr ""
+msgstr "Oczekiwanie na zatwierdzenie"
 
 msgid "Back"
 msgstr "Wstecz"
@@ -342,7 +342,7 @@ msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Opóźnione o {daysBehindTarget} dni"
 
 msgid "Billable"
-msgstr ""
+msgstr "Do rozliczenia"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -397,10 +397,10 @@ msgid "Characteristics"
 msgstr "Cechy"
 
 msgid "Charge"
-msgstr ""
+msgstr "Obciążenie"
 
 msgid "Charge number"
-msgstr ""
+msgstr "Numer obciążenia"
 
 msgid "Charge numbers"
 msgstr "Numery obciążenia"
@@ -536,7 +536,7 @@ msgid "Continue"
 msgstr "Kontynuuj"
 
 msgid "Contract"
-msgstr ""
+msgstr "Umowa"
 
 msgid "Copied!"
 msgstr "Skopiowano!"
@@ -552,7 +552,7 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Koszt nieplanowanego utrzymania ruchu, ostatnie {0} dni"
 
 msgid "Coverage"
-msgstr ""
+msgstr "Zasięg"
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -574,7 +574,7 @@ msgid "Customer"
 msgstr "Klient"
 
 msgid "Customer Site"
-msgstr ""
+msgstr "Lokalizacja klienta"
 
 msgid "Dark"
 msgstr "Ciemny"
@@ -607,7 +607,7 @@ msgid "Delete Timecard (<0/>)"
 msgstr "Usuń kartę czasu (<0/>)"
 
 msgid "Depot"
-msgstr ""
+msgstr "Centrum serwisu"
 
 msgid "Describe the problem..."
 msgstr "Opisz problem..."
@@ -798,7 +798,7 @@ msgid "Failed to get options"
 msgstr "Nie udało się pobrać opcji"
 
 msgid "Failed to read the signature"
-msgstr ""
+msgstr "Nie udało się odczytać podpisu"
 
 msgid "Failed to record gauge"
 msgstr "Nie udało się zarejestrować przyrządu pomiarowego"
@@ -816,7 +816,7 @@ msgid "Failed to save the hours"
 msgstr "Nie udało się zapisać godzin"
 
 msgid "Failed to save the signature"
-msgstr ""
+msgstr "Nie udało się zapisać podpisu"
 
 msgid "Failed to submit the week"
 msgstr "Nie udało się przesłać tygodnia"
@@ -849,7 +849,7 @@ msgid "Filter by location"
 msgstr "Filtruj według lokalizacji"
 
 msgid "Findings"
-msgstr ""
+msgstr "Ustalenia"
 
 msgid "Finish"
 msgstr "Zakończ"
@@ -941,7 +941,7 @@ msgid "In Progress"
 msgstr "W toku"
 
 msgid "In warranty"
-msgstr ""
+msgstr "W gwarancji"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Powiadomienia w aplikacji są zawsze dostarczone. Wybierz, które tematy będą również wysyłane pocztą e-mail lub Slack."
@@ -971,7 +971,7 @@ msgid "Inventory Adjustments"
 msgstr "Korekty zapasów"
 
 msgid "Invoiced"
-msgstr ""
+msgstr "Zafakturowano"
 
 msgid "is"
 msgstr "jest"
@@ -1037,7 +1037,7 @@ msgid "Labor category"
 msgstr "Kategoria robocizny"
 
 msgid "Labor ended"
-msgstr ""
+msgstr "Robocizna zakończona"
 
 msgid "Last completed"
 msgstr "Ostatnio ukończono"
@@ -1212,7 +1212,7 @@ msgid "More options"
 msgstr "Więcej opcji"
 
 msgid "More than one unit has this serial. Choose one."
-msgstr ""
+msgstr "Więcej niż jedna sztuka ma ten numer seryjny. Wybierz jedną."
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1243,13 +1243,13 @@ msgid "New"
 msgstr "Nowy"
 
 msgid "New Job"
-msgstr ""
+msgstr "Nowe Zlecenie produkcyjne"
 
 msgid "New Record"
 msgstr "Nowy rekord"
 
 msgid "New Service Job"
-msgstr ""
+msgstr "Nowe Zlecenie serwisowe"
 
 msgid "Newest first"
 msgstr "Najnowsze pierwsze"
@@ -1295,7 +1295,7 @@ msgstr "Brak tekstu certyfikacji. Poproś administratora, aby ustawił go w Usta
 
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
-msgstr ""
+msgstr "Żaden składnik majątkowy klienta nie ma numeru seryjnego {0}. Wybierz klienta."
 
 msgid "No dispatches assigned to you"
 msgstr "Brak zleceń utrzymania ruchu przydzielonych Tobie"
@@ -1304,7 +1304,7 @@ msgid "No files"
 msgstr "Brak plików"
 
 msgid "No findings"
-msgstr ""
+msgstr "Brak ustaleń"
 
 msgid "No gauges found."
 msgstr "Nie znaleziono przyrządów pomiarowych."
@@ -1334,7 +1334,7 @@ msgid "No open jobs"
 msgstr "Brak otwartych zleceń produkcyjnych"
 
 msgid "No open service jobs at this location"
-msgstr ""
+msgstr "Brak otwartych zleceń serwisowych w tej lokalizacji"
 
 msgid "No open units to allocate"
 msgstr "Brak otwartych jednostek do przydzielenia"
@@ -1349,13 +1349,13 @@ msgid "No options found."
 msgstr "Nie znaleziono opcji."
 
 msgid "No parts added yet"
-msgstr ""
+msgstr "Jeszcze nie dodano części"
 
 msgid "No passkeys registered yet."
 msgstr "Nie zarejestrowano żadnych kluczy dostępu jeszcze."
 
 msgid "No photos yet"
-msgstr ""
+msgstr "Jeszcze nie dodano zdjęć"
 
 msgid "No picking lists assigned"
 msgstr "Brak przydzielonych list kompletacyjnych"
@@ -1370,7 +1370,7 @@ msgid "No remaining entities to inspect."
 msgstr "Brak pozostałych encji do przebadania."
 
 msgid "No resolution"
-msgstr ""
+msgstr "Brak rozwiązania"
 
 msgid "No results"
 msgstr "Brak wyników"
@@ -1394,7 +1394,7 @@ msgid "No serial numbers found"
 msgstr "Nie znaleziono numerów seryjnych"
 
 msgid "No service jobs assigned to you today"
-msgstr ""
+msgstr "Dzisiaj nie przypisano ci żadnych zleceń serwisowych"
 
 msgid "No shortcuts available on this page."
 msgstr "Na tej stronie nie są dostępne żadne skróty."
@@ -1424,7 +1424,7 @@ msgid "None"
 msgstr "Brak"
 
 msgid "Not signed."
-msgstr ""
+msgstr "Nie podpisano."
 
 msgid "Notes"
 msgstr "Notatki"
@@ -1461,7 +1461,7 @@ msgid "Oldest first"
 msgstr "Najstarsze pierwsze"
 
 msgid "On Hold"
-msgstr ""
+msgstr "Wstrzymano"
 
 msgid "one combined lot · planned"
 msgstr "jedna połączona partia · zaplanowana"
@@ -1492,7 +1492,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Otwórz NCR dla dyspozycji MRB"
 
 msgid "Open at this location"
-msgstr ""
+msgstr "Otwarte w tej lokalizacji"
 
 msgid "Open ERP"
 msgstr "Otwórz ERP"
@@ -1559,7 +1559,7 @@ msgid "Partial Disposition"
 msgstr "Częściowa dyspozycja"
 
 msgid "Parts"
-msgstr ""
+msgstr "Części"
 
 msgid "Passed inspection"
 msgstr "Zaliczono kontrolę"
@@ -1592,7 +1592,7 @@ msgid "Photo uploaded successfully"
 msgstr "Zdjęcie przesłane pomyślnie"
 
 msgid "Photos"
-msgstr ""
+msgstr "Zdjęcia"
 
 msgid "Pick"
 msgstr "Pobierz"
@@ -1605,7 +1605,7 @@ msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Wybierz styl i awatar, lub tasuj, aby otrzymać nowe."
 
 msgid "Pick the job. It shows with no hours until you add some."
-msgstr ""
+msgstr "Wybierz zlecenie. Zostaje ono wyświetlone bez godzin, dopóki nie dodasz ich."
 
 msgid "Pick the leave for your time off."
 msgstr "Wybierz urlop na czas wolny."
@@ -1692,7 +1692,7 @@ msgid "Priority"
 msgstr "Priorytet"
 
 msgid "Problem"
-msgstr ""
+msgstr "Problem"
 
 msgid "Procedure"
 msgstr "Procedura"
@@ -1820,7 +1820,7 @@ msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Ponownie otwórz podzespół i utwórz zastępczą jednostkę"
 
 msgid "Repairable"
-msgstr ""
+msgstr "Do naprawy"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Wymaga 6-cyfrowego kodu z aplikacji uwierzytelniającej podczas logowania."
@@ -1832,7 +1832,7 @@ msgid "Reset"
 msgstr "Zresetuj"
 
 msgid "Resolution"
-msgstr ""
+msgstr "Rozwiązanie"
 
 msgid "Result"
 msgstr "Wynik"
@@ -1841,7 +1841,7 @@ msgid "Retry Completion"
 msgstr "Ponów zakończenie"
 
 msgid "Return part"
-msgstr ""
+msgstr "Zwrot części"
 
 msgid "Rework"
 msgstr "Poprawka"
@@ -1856,7 +1856,7 @@ msgid "Running"
 msgstr "W trakcie"
 
 msgid "Running since <0/>"
-msgstr ""
+msgstr "Uruchomione od <0/>"
 
 msgid "Sales"
 msgstr "Sprzedaż"
@@ -1871,7 +1871,7 @@ msgid "Save"
 msgstr "Zapisz"
 
 msgid "Save Signature"
-msgstr ""
+msgstr "Zapisz podpis"
 
 msgid "Save the form you're editing"
 msgstr "Zapisz formularz, który edytujesz"
@@ -1883,7 +1883,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "Skanuj jednostkę śledzoną, aby dodać pierwszą kolumnę próby."
 
 msgid "Scan or enter a serial"
-msgstr ""
+msgstr "Skanuj lub wprowadź numer seryjny"
 
 msgid "Scan or enter serial number"
 msgstr "Skanuj lub wprowadź numer seryjny"
@@ -1967,7 +1967,7 @@ msgid "Select a completion quantity"
 msgstr "Wybierz ilość ukończoną"
 
 msgid "Select a customer"
-msgstr ""
+msgstr "Wybierz klienta"
 
 msgid "Select a rework quantity"
 msgstr "Wybierz ilość do poprawki"
@@ -2042,10 +2042,10 @@ msgid "Serialized"
 msgstr "Serializowany"
 
 msgid "Service"
-msgstr ""
+msgstr "Usługa"
 
 msgid "Service job"
-msgstr ""
+msgstr "Zlecenie usługowe"
 
 msgid "Session locked"
 msgstr "Sesja zablokowana"
@@ -2087,7 +2087,7 @@ msgid "Shuffle"
 msgstr "Tasuj"
 
 msgid "Sign Again"
-msgstr ""
+msgstr "Podpisz ponownie"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Zaloguj się za pomocą biometrii zamiast magicznego linku. Klucze dostępu są chronione za pomocą Face ID, Touch ID lub PIN urządzenia."
@@ -2111,16 +2111,16 @@ msgid "Sign out instead"
 msgstr "Zamiast tego wyloguj się"
 
 msgid "Signature"
-msgstr ""
+msgstr "Podpis"
 
 msgid "Signature pad"
 msgstr "Podpis"
 
 msgid "Signed by"
-msgstr ""
+msgstr "Podpisano przez"
 
 msgid "Signed by {signedByName}"
-msgstr ""
+msgstr "Podpisano przez {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "Zalogowany jako {stationName}"
@@ -2151,7 +2151,7 @@ msgid "Start {0}"
 msgstr "Rozpocznij {0}"
 
 msgid "Start Job"
-msgstr ""
+msgstr "Rozpocznij zlecenie"
 
 msgid "Start or pause the operation"
 msgstr "Uruchom lub wstrzymaj operację"
@@ -2185,7 +2185,7 @@ msgid "Steps are missing"
 msgstr "Brakuje kroków"
 
 msgid "Stop"
-msgstr ""
+msgstr "Zatrzymaj"
 
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
@@ -2215,7 +2215,7 @@ msgid "Submit week"
 msgstr "Prześlij tydzień"
 
 msgid "Suggested coverage"
-msgstr ""
+msgstr "Sugerowane pokrycie"
 
 msgid "Suggestion"
 msgstr "Propozycja"
@@ -2239,7 +2239,7 @@ msgid "Tag"
 msgstr "Tag"
 
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "Kliknij dzień, aby dodać czas do {selectedLabel}. Przeciągnij dolną krawędź paska, aby zmienić liczbę godzin."
 
 msgid "The accent color used across Carbon."
 msgstr "Kolor akcentu używany w Carbon."
@@ -2254,10 +2254,10 @@ msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "Data jest przed oknem wpisu. Przyczyna jest przechowywana razem z wpisem."
 
 msgid "The job is closed"
-msgstr ""
+msgstr "Zlecenie jest zamknięte"
 
 msgid "The job opens with your clock running."
-msgstr ""
+msgstr "Zlecenie otwiera się z uruchomionym zegarem."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Zlecenia produkcyjne i części, które składają się na ten przebieg."
@@ -2297,7 +2297,7 @@ msgid "This information will be visible to all users, so be careful what you sha
 msgstr "Te informacje będą widoczne dla wszystkich użytkowników, więc uważaj, co udostępniasz."
 
 msgid "This job needs an accepted estimate before it can be completed."
-msgstr ""
+msgstr "To zlecenie wymaga zaakceptowanego kosztorysu, zanim będzie można je ukończyć."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
@@ -2312,10 +2312,10 @@ msgid "This part will be scrapped from stock. Its requirement stays open so you 
 msgstr "Ta część będzie skierowana do braku ze zapasów. Jej wymaganie pozostaje otwarte, aby można było wydać zamiennik."
 
 msgid "This posts the job's time. The job can no longer change."
-msgstr ""
+msgstr "To zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
-msgstr ""
+msgstr "To zatrzymuje Twój zegar i zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy numer seryjny zamiennika."
@@ -2350,7 +2350,7 @@ msgstr "Dzisiaj"
 
 #. placeholder {0}: quantity(todayHours)
 msgid "Today: {0} h"
-msgstr ""
+msgstr "Dziś: {0} h"
 
 msgid "Toggle labor"
 msgstr "Przełącz robociznę"
@@ -2391,7 +2391,7 @@ msgstr "Czas całkowity: {0}"
 
 #. placeholder {0}: quantity(totalHours)
 msgid "Total time: {0} h"
-msgstr ""
+msgstr "Całkowity czas: {0} h"
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2525,7 +2525,7 @@ msgid "View or open"
 msgstr "Wyświetl lub otwórz"
 
 msgid "Warranty"
-msgstr ""
+msgstr "Gwarancja"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Wysłaliśmy Ci link do logowania na Twoje konto."
@@ -2549,7 +2549,7 @@ msgid "Work instructions"
 msgstr "Instrukcje robocze"
 
 msgid "Work Site"
-msgstr ""
+msgstr "Stanowisko robocze"
 
 msgid "Write a note…"
 msgstr "Napisz notatkę…"
@@ -2558,7 +2558,7 @@ msgid "Yes"
 msgstr "Tak"
 
 msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr ""
+msgstr "Nie masz żadnych innych otwartych zleceń usługowych. Zlecenie pojawia się tutaj, gdy jesteś jego kierownikiem lub zostały Ci przypisane w tym tygodniu."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Pracujesz od {hoursElapsed} godzin. Zapomniałeś o zakończeniu pracy?"
@@ -2568,7 +2568,7 @@ msgstr "Twoje konto nie należy jeszcze do żadnej firmy. Ukończ wdrażanie w C
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr ""
+msgstr "Twój zegar pracuje na <0>{0}</0>. Najpierw zatrzymaj go tam."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Twoja organizacja wymaga aplikacji uwierzytelniającej. Skonfiguruj ją w aplikacji Carbon, a następnie wróć tutaj."

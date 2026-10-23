@@ -53,6 +53,8 @@
   - Checks: the erp typecheck passes. ERP unit tests pass (715). Conformance passes. The permission tests pass. `check:manifest` is current (1747).
 - 2026-10-23: Full repo test pass (`pnpm run test`, database env loaded): 34 of 34 packages pass. The `@carbon/ee` pegging test that failed earlier passes in this run.
 - 2026-10-23: Task 36 committed. New rule `.claude/rules/service-jobs.md`, new `modules/service/AGENTS.md`, new reference page `service-jobs.mdx`. Updated: root AGENTS router row, production, sales and inventory AGENTS files, onboarding and shipments rules, `rmas.mdx`, `customer-assets.mdx`, glossary (service job, coverage, return type), docs sidebar. `docs` typecheck and the link check pass. The new page has 2 screenshot slots to fill.
+- 2026-10-23: Task 37 committed. 205 strings filled in each of 12 locales (erp and mes), with 0 missing.
+  - **For Brad:** 38 translations use their own word for "service job", not the glossary's "Job" (a manufacturing work order). The glossary has no "Service Job" term; add one or decide these follow "Job". 29 more terminology flags are false alarms on word form. The repo's 2,500+ older glossary violations are untouched.
 
 ## Decisions made without Brad
 

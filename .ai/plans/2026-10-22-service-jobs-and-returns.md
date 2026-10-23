@@ -117,7 +117,7 @@ Phase 2 — MES, My Time and the dispatch grid
 Wrap-up
 
 - [x] Task 36: Write the docs, rules and AGENTS files
-- [ ] Task 37: Fill the translations
+- [x] Task 37: Fill the translations
 - [ ] Task 38: Verify in the browser
 
 ## Dependencies

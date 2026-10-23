@@ -44,7 +44,7 @@ msgstr "{0} Lot numarasına sahip değil. Bunu Carbon'da Partide veya İş emrin
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
-msgstr ""
+msgstr "{0} kapatıldı. Saati değiştirilemiyor."
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
@@ -107,7 +107,7 @@ msgid "{hour} h"
 msgstr "{hour} s"
 
 msgid "{hours} h"
-msgstr ""
+msgstr "{hours} s"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
@@ -183,7 +183,7 @@ msgid "Add Inventory"
 msgstr "Envantere Ekle"
 
 msgid "Add Part"
-msgstr ""
+msgstr "Parça Ekle"
 
 msgid "Add Passkey"
 msgstr "Geçiş Anahtarı Ekle"
@@ -302,7 +302,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "Avatarlar <0>{0}</0> kaynağından {1} tarafından, <1>{2}</1> lisansı altında."
 
 msgid "Awaiting Approval"
-msgstr ""
+msgstr "Onay Bekleniyor"
 
 msgid "Back"
 msgstr "Geri"
@@ -342,7 +342,7 @@ msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
 
 msgid "Billable"
-msgstr ""
+msgstr "Faturalanabilir"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -397,10 +397,10 @@ msgid "Characteristics"
 msgstr "Özellikler"
 
 msgid "Charge"
-msgstr ""
+msgstr "Masraf"
 
 msgid "Charge number"
-msgstr ""
+msgstr "Masraf Kodu"
 
 msgid "Charge numbers"
 msgstr "Masraf numaraları"
@@ -536,7 +536,7 @@ msgid "Continue"
 msgstr "Devam Et"
 
 msgid "Contract"
-msgstr ""
+msgstr "Sözleşme"
 
 msgid "Copied!"
 msgstr "Kopyalandı!"
@@ -552,7 +552,7 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
 
 msgid "Coverage"
-msgstr ""
+msgstr "Kapsam"
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -574,7 +574,7 @@ msgid "Customer"
 msgstr "Müşteri"
 
 msgid "Customer Site"
-msgstr ""
+msgstr "Müşteri Yeri"
 
 msgid "Dark"
 msgstr "Koyu"
@@ -607,7 +607,7 @@ msgid "Delete Timecard (<0/>)"
 msgstr "Zaman Kartını Sil (<0/>)"
 
 msgid "Depot"
-msgstr ""
+msgstr "Depo"
 
 msgid "Describe the problem..."
 msgstr "Sorunu açıklayın..."
@@ -798,7 +798,7 @@ msgid "Failed to get options"
 msgstr "Seçenekler alınamadı"
 
 msgid "Failed to read the signature"
-msgstr ""
+msgstr "İmza okunamadı"
 
 msgid "Failed to record gauge"
 msgstr "Ölçüm aleti kaydedilemedi"
@@ -816,7 +816,7 @@ msgid "Failed to save the hours"
 msgstr "Saatler kaydedilemedi"
 
 msgid "Failed to save the signature"
-msgstr ""
+msgstr "İmza kaydedilemedi"
 
 msgid "Failed to submit the week"
 msgstr "Hafta gönderilemedi"
@@ -849,7 +849,7 @@ msgid "Filter by location"
 msgstr "Konuma göre filtrele"
 
 msgid "Findings"
-msgstr ""
+msgstr "Bulgular"
 
 msgid "Finish"
 msgstr "Bitir"
@@ -941,7 +941,7 @@ msgid "In Progress"
 msgstr "Devam Ediyor"
 
 msgid "In warranty"
-msgstr ""
+msgstr "Garanti Altında"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman teslim edilir. Hangi konuların size e-posta veya Slack aracılığıyla ulaşacağını seçin."
@@ -971,7 +971,7 @@ msgid "Inventory Adjustments"
 msgstr "Stok düzeltmeleri"
 
 msgid "Invoiced"
-msgstr ""
+msgstr "Faturalandı"
 
 msgid "is"
 msgstr "eşittir"
@@ -1037,7 +1037,7 @@ msgid "Labor category"
 msgstr "İşçilik kategorisi"
 
 msgid "Labor ended"
-msgstr ""
+msgstr "İşçilik Sona Erdi"
 
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
@@ -1212,7 +1212,7 @@ msgid "More options"
 msgstr "Daha fazla seçenek"
 
 msgid "More than one unit has this serial. Choose one."
-msgstr ""
+msgstr "Birden fazla adet bu seri numarasına sahip. Birini seçin."
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1243,13 +1243,13 @@ msgid "New"
 msgstr "Yeni"
 
 msgid "New Job"
-msgstr ""
+msgstr "Yeni İş Emri"
 
 msgid "New Record"
 msgstr "Yeni Kayıt"
 
 msgid "New Service Job"
-msgstr ""
+msgstr "Yeni Hizmet İşi"
 
 msgid "Newest first"
 msgstr "En yeniden önce"
@@ -1295,7 +1295,7 @@ msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Z
 
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
-msgstr ""
+msgstr "Hiçbir müşteri varlığı {0} seri numarasına sahip değil. Müşteri seçin."
 
 msgid "No dispatches assigned to you"
 msgstr "Size atanmış bakım emri yok"
@@ -1304,7 +1304,7 @@ msgid "No files"
 msgstr "Dosya yok"
 
 msgid "No findings"
-msgstr ""
+msgstr "Bulgu yok"
 
 msgid "No gauges found."
 msgstr "Ölçüm aleti bulunamadı."
@@ -1334,7 +1334,7 @@ msgid "No open jobs"
 msgstr "Açık iş emirleri yok"
 
 msgid "No open service jobs at this location"
-msgstr ""
+msgstr "Bu lokasyonda açık hizmet işi yok"
 
 msgid "No open units to allocate"
 msgstr "Tahsis edilecek açık birim yok"
@@ -1349,13 +1349,13 @@ msgid "No options found."
 msgstr "Seçenek bulunamadı."
 
 msgid "No parts added yet"
-msgstr ""
+msgstr "Henüz parça eklenmedi"
 
 msgid "No passkeys registered yet."
 msgstr "Henüz hiçbir geçiş anahtarı kaydedilmedi."
 
 msgid "No photos yet"
-msgstr ""
+msgstr "Henüz fotoğraf yok"
 
 msgid "No picking lists assigned"
 msgstr "Atanmış toplama listesi yok"
@@ -1370,7 +1370,7 @@ msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
 
 msgid "No resolution"
-msgstr ""
+msgstr "Çözüm yok"
 
 msgid "No results"
 msgstr "Sonuç bulunamadı"
@@ -1394,7 +1394,7 @@ msgid "No serial numbers found"
 msgstr "Seri numarası bulunamadı"
 
 msgid "No service jobs assigned to you today"
-msgstr ""
+msgstr "Bugün size atanmış hizmet işi yok"
 
 msgid "No shortcuts available on this page."
 msgstr "Bu sayfada kullanılabilir kısayol yoktur."
@@ -1424,7 +1424,7 @@ msgid "None"
 msgstr "Hiçbiri"
 
 msgid "Not signed."
-msgstr ""
+msgstr "İmzalanmadı."
 
 msgid "Notes"
 msgstr "Notlar"
@@ -1461,7 +1461,7 @@ msgid "Oldest first"
 msgstr "En eski önce"
 
 msgid "On Hold"
-msgstr ""
+msgstr "Askıda"
 
 msgid "one combined lot · planned"
 msgstr "bir birleştirilmiş Lot · planlandı"
@@ -1492,7 +1492,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için NCR aç"
 
 msgid "Open at this location"
-msgstr ""
+msgstr "Bu lokasyonda açık"
 
 msgid "Open ERP"
 msgstr "ERP'yi aç"
@@ -1559,7 +1559,7 @@ msgid "Partial Disposition"
 msgstr "Kısmi Karar"
 
 msgid "Parts"
-msgstr ""
+msgstr "Parçalar"
 
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
@@ -1592,7 +1592,7 @@ msgid "Photo uploaded successfully"
 msgstr "Fotoğraf başarıyla yüklendi"
 
 msgid "Photos"
-msgstr ""
+msgstr "Fotoğraflar"
 
 msgid "Pick"
 msgstr "Topla"
@@ -1605,7 +1605,7 @@ msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
 
 msgid "Pick the job. It shows with no hours until you add some."
-msgstr ""
+msgstr "İş emrini seçin. Saat ekleyene kadar saatsiz görünecektir."
 
 msgid "Pick the leave for your time off."
 msgstr "Zaman aşınız için izni seçin."
@@ -1692,7 +1692,7 @@ msgid "Priority"
 msgstr "Öncelik"
 
 msgid "Problem"
-msgstr ""
+msgstr "Sorun"
 
 msgid "Procedure"
 msgstr "Prosedür"
@@ -1820,7 +1820,7 @@ msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 
 msgid "Repairable"
-msgstr ""
+msgstr "Onarılabilir"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod iste."
@@ -1832,7 +1832,7 @@ msgid "Reset"
 msgstr "Sıfırla"
 
 msgid "Resolution"
-msgstr ""
+msgstr "Çözüm"
 
 msgid "Result"
 msgstr "Sonuç"
@@ -1841,7 +1841,7 @@ msgid "Retry Completion"
 msgstr "Tamamlanmayı Yeniden Dene"
 
 msgid "Return part"
-msgstr ""
+msgstr "İade Parçası"
 
 msgid "Rework"
 msgstr "Yeniden işleme"
@@ -1856,7 +1856,7 @@ msgid "Running"
 msgstr "Çalışıyor"
 
 msgid "Running since <0/>"
-msgstr ""
+msgstr "Şu tarihten beri çalışıyor <0/>"
 
 msgid "Sales"
 msgstr "Satış"
@@ -1871,7 +1871,7 @@ msgid "Save"
 msgstr "Kaydet"
 
 msgid "Save Signature"
-msgstr ""
+msgstr "İmzayı Kaydet"
 
 msgid "Save the form you're editing"
 msgstr "Düzenlediğiniz formu kaydetin"
@@ -1883,7 +1883,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "İlk örnek sütununu eklemek için izlenen bir varlığı tarayın."
 
 msgid "Scan or enter a serial"
-msgstr ""
+msgstr "Seri numarasını tara veya gir"
 
 msgid "Scan or enter serial number"
 msgstr "Seri numarası tarayın veya girin"
@@ -1967,7 +1967,7 @@ msgid "Select a completion quantity"
 msgstr "Bir tamamlama miktarı seçin"
 
 msgid "Select a customer"
-msgstr ""
+msgstr "Müşteri seçin"
 
 msgid "Select a rework quantity"
 msgstr "Bir yeniden işleme miktarı seçin"
@@ -2042,10 +2042,10 @@ msgid "Serialized"
 msgstr "Serileştirildi"
 
 msgid "Service"
-msgstr ""
+msgstr "Hizmet"
 
 msgid "Service job"
-msgstr ""
+msgstr "Hizmet İş emri"
 
 msgid "Session locked"
 msgstr "Oturum kilitlendi"
@@ -2087,7 +2087,7 @@ msgid "Shuffle"
 msgstr "Karıştır"
 
 msgid "Sign Again"
-msgstr ""
+msgstr "Tekrar İmzala"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bir bağlantı yerine biyometrik veriler ile oturum açın. Geçiş anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
@@ -2111,16 +2111,16 @@ msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
 msgid "Signature"
-msgstr ""
+msgstr "İmza"
 
 msgid "Signature pad"
 msgstr "İmza Yastığı"
 
 msgid "Signed by"
-msgstr ""
+msgstr "İmzalayan"
 
 msgid "Signed by {signedByName}"
-msgstr ""
+msgstr "İmzalayan: {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
@@ -2151,7 +2151,7 @@ msgid "Start {0}"
 msgstr "Başlat {0}"
 
 msgid "Start Job"
-msgstr ""
+msgstr "İş emrini Başlat"
 
 msgid "Start or pause the operation"
 msgstr "Operasyonu başlat veya duraklat"
@@ -2185,7 +2185,7 @@ msgid "Steps are missing"
 msgstr "Adımlar eksik"
 
 msgid "Stop"
-msgstr ""
+msgstr "Durdur"
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
@@ -2215,7 +2215,7 @@ msgid "Submit week"
 msgstr "Haftayı Gönder"
 
 msgid "Suggested coverage"
-msgstr ""
+msgstr "Önerilen kapsam"
 
 msgid "Suggestion"
 msgstr "Öneri"
@@ -2239,7 +2239,7 @@ msgid "Tag"
 msgstr "Etiket"
 
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "Bir gün seçerek {selectedLabel} için süre ekleyin. Bir çubuğun alt kenarını sürükleyerek saatlerini değiştirin."
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
@@ -2254,10 +2254,10 @@ msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "Tarih giriş penceresinden önce. Neden giriş ile tutulur."
 
 msgid "The job is closed"
-msgstr ""
+msgstr "İş emri kapatıldı"
 
 msgid "The job opens with your clock running."
-msgstr ""
+msgstr "İş emri açılırken saatin çalışmaya başlar."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."
@@ -2297,7 +2297,7 @@ msgid "This information will be visible to all users, so be careful what you sha
 msgstr "Bu bilgiler tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
 
 msgid "This job needs an accepted estimate before it can be completed."
-msgstr ""
+msgstr "Bu iş emri tamamlanmadan önce kabul edilmiş bir tahminle hazırlanmalı."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Bu lot'un süresi doldu ve toplanamaz."
@@ -2312,10 +2312,10 @@ msgid "This part will be scrapped from stock. Its requirement stays open so you 
 msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böylece bir yedek sağlayabilirsiniz."
 
 msgid "This posts the job's time. The job can no longer change."
-msgstr ""
+msgstr "Bu, iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
-msgstr ""
+msgstr "Bu, saatini durdurur ve iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
@@ -2350,7 +2350,7 @@ msgstr "Bugün"
 
 #. placeholder {0}: quantity(todayHours)
 msgid "Today: {0} h"
-msgstr ""
+msgstr "Bugün: {0} h"
 
 msgid "Toggle labor"
 msgstr "İşçiliği Aç/Kapat"
@@ -2391,7 +2391,7 @@ msgstr "Toplam süre: {0}"
 
 #. placeholder {0}: quantity(totalHours)
 msgid "Total time: {0} h"
-msgstr ""
+msgstr "Toplam süre: {0} h"
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2525,7 +2525,7 @@ msgid "View or open"
 msgstr "Görüntüle veya aç"
 
 msgid "Warranty"
-msgstr ""
+msgstr "Garanti"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
@@ -2549,7 +2549,7 @@ msgid "Work instructions"
 msgstr "İş talimatları"
 
 msgid "Work Site"
-msgstr ""
+msgstr "İş Sahanı"
 
 msgid "Write a note…"
 msgstr "Bir not yazın…"
@@ -2558,7 +2558,7 @@ msgid "Yes"
 msgstr "Evet"
 
 msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr ""
+msgstr "Başka açık hizmet iş emri yoktur. Bu hafta yönettiğiniz veya size atanan bir iş emri buraya gösterilir."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
@@ -2568,7 +2568,7 @@ msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon 
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr ""
+msgstr "Saatiniz <0>{0}</0> üzerinde çalışıyor. Önce onu orada durdurun."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."

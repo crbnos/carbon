@@ -44,7 +44,7 @@ msgstr "{0}에 로트 번호가 없습니다. Carbon에서 배치 또는 작업 
 
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
-msgstr ""
+msgstr "{0}은 마감되었습니다. 시간을 변경할 수 없습니다."
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
@@ -107,7 +107,7 @@ msgid "{hour} h"
 msgstr "{hour}시간"
 
 msgid "{hours} h"
-msgstr ""
+msgstr "{hours} 시간"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
@@ -183,7 +183,7 @@ msgid "Add Inventory"
 msgstr "재고 추가"
 
 msgid "Add Part"
-msgstr ""
+msgstr "부품 추가"
 
 msgid "Add Passkey"
 msgstr "패스키 추가"
@@ -302,7 +302,7 @@ msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "<0>{0}</0>의 아바타는 {1}이 만들었으며 <1>{2}</1> 라이선스로 제공됩니다."
 
 msgid "Awaiting Approval"
-msgstr ""
+msgstr "승인 대기 중"
 
 msgid "Back"
 msgstr "뒤로"
@@ -342,7 +342,7 @@ msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 
 msgid "Billable"
-msgstr ""
+msgstr "청구 가능"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -397,10 +397,10 @@ msgid "Characteristics"
 msgstr "특성"
 
 msgid "Charge"
-msgstr ""
+msgstr "청구"
 
 msgid "Charge number"
-msgstr ""
+msgstr "청구 번호"
 
 msgid "Charge numbers"
 msgstr "청구 번호"
@@ -536,7 +536,7 @@ msgid "Continue"
 msgstr "계속"
 
 msgid "Contract"
-msgstr ""
+msgstr "계약"
 
 msgid "Copied!"
 msgstr "복사되었습니다!"
@@ -552,7 +552,7 @@ msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
 
 msgid "Coverage"
-msgstr ""
+msgstr "보장"
 
 #. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
@@ -574,7 +574,7 @@ msgid "Customer"
 msgstr "고객"
 
 msgid "Customer Site"
-msgstr ""
+msgstr "고객 현장"
 
 msgid "Dark"
 msgstr "다크"
@@ -607,7 +607,7 @@ msgid "Delete Timecard (<0/>)"
 msgstr "타임카드 삭제 (<0/>)"
 
 msgid "Depot"
-msgstr ""
+msgstr "센터"
 
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
@@ -798,7 +798,7 @@ msgid "Failed to get options"
 msgstr "옵션을 불러올 수 없습니다."
 
 msgid "Failed to read the signature"
-msgstr ""
+msgstr "서명을 읽지 못했습니다"
 
 msgid "Failed to record gauge"
 msgstr "계측기 기록 실패"
@@ -816,7 +816,7 @@ msgid "Failed to save the hours"
 msgstr "시간 저장 실패"
 
 msgid "Failed to save the signature"
-msgstr ""
+msgstr "서명을 저장하지 못했습니다"
 
 msgid "Failed to submit the week"
 msgstr "주 제출 실패"
@@ -849,7 +849,7 @@ msgid "Filter by location"
 msgstr "위치별 필터"
 
 msgid "Findings"
-msgstr ""
+msgstr "발견사항"
 
 msgid "Finish"
 msgstr "마감"
@@ -941,7 +941,7 @@ msgid "In Progress"
 msgstr "진행 중"
 
 msgid "In warranty"
-msgstr ""
+msgstr "보증 기간 내"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "앱 내 알림은 항상 전달됩니다. 이메일이나 Slack으로도 받을 주제를 선택하세요."
@@ -971,7 +971,7 @@ msgid "Inventory Adjustments"
 msgstr "재고 조정"
 
 msgid "Invoiced"
-msgstr ""
+msgstr "송장 발행됨"
 
 msgid "is"
 msgstr "같음"
@@ -1037,7 +1037,7 @@ msgid "Labor category"
 msgstr "노무 분류"
 
 msgid "Labor ended"
-msgstr ""
+msgstr "노무 완료"
 
 msgid "Last completed"
 msgstr "마지막 완료"
@@ -1212,7 +1212,7 @@ msgid "More options"
 msgstr "추가 옵션"
 
 msgid "More than one unit has this serial. Choose one."
-msgstr ""
+msgstr "이 일련번호를 가진 여러 개가 있습니다. 하나를 선택하세요."
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
@@ -1243,13 +1243,13 @@ msgid "New"
 msgstr "신규"
 
 msgid "New Job"
-msgstr ""
+msgstr "새 작업 지시"
 
 msgid "New Record"
 msgstr "새 레코드"
 
 msgid "New Service Job"
-msgstr ""
+msgstr "새 서비스 작업 지시"
 
 msgid "Newest first"
 msgstr "최신순"
@@ -1295,7 +1295,7 @@ msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설�
 
 #. placeholder {0}: lookup.serial
 msgid "No customer asset has the serial {0}. Choose the customer."
-msgstr ""
+msgstr "일련번호 {0}을 가진 고객 자산이 없습니다. 고객을 선택하세요."
 
 msgid "No dispatches assigned to you"
 msgstr "당신에게 할당된 유지보수 지시가 없습니다"
@@ -1304,7 +1304,7 @@ msgid "No files"
 msgstr "파일 없음"
 
 msgid "No findings"
-msgstr ""
+msgstr "발견사항 없음"
 
 msgid "No gauges found."
 msgstr "계측기가 없습니다."
@@ -1334,7 +1334,7 @@ msgid "No open jobs"
 msgstr "미결 작업 지시가 없습니다"
 
 msgid "No open service jobs at this location"
-msgstr ""
+msgstr "이 사업장에서 미결 서비스 작업이 없습니다"
 
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
@@ -1349,13 +1349,13 @@ msgid "No options found."
 msgstr "옵션이 없습니다."
 
 msgid "No parts added yet"
-msgstr ""
+msgstr "아직 부품이 추가되지 않았습니다"
 
 msgid "No passkeys registered yet."
 msgstr "등록된 패스키가 없습니다."
 
 msgid "No photos yet"
-msgstr ""
+msgstr "아직 사진이 없습니다"
 
 msgid "No picking lists assigned"
 msgstr "할당된 피킹 리스트가 없습니다"
@@ -1370,7 +1370,7 @@ msgid "No remaining entities to inspect."
 msgstr "검사할 나머지 엔터티가 없습니다."
 
 msgid "No resolution"
-msgstr ""
+msgstr "해결 결과 없음"
 
 msgid "No results"
 msgstr "결과 없음"
@@ -1394,7 +1394,7 @@ msgid "No serial numbers found"
 msgstr "시리얼 번호를 찾을 수 없습니다"
 
 msgid "No service jobs assigned to you today"
-msgstr ""
+msgstr "오늘 배정된 서비스 작업 지시가 없습니다"
 
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서는 사용 가능한 바로가기가 없습니다."
@@ -1424,7 +1424,7 @@ msgid "None"
 msgstr "없음"
 
 msgid "Not signed."
-msgstr ""
+msgstr "미서명입니다."
 
 msgid "Notes"
 msgstr "메모"
@@ -1461,7 +1461,7 @@ msgid "Oldest first"
 msgstr "오래된순"
 
 msgid "On Hold"
-msgstr ""
+msgstr "보류"
 
 msgid "one combined lot · planned"
 msgstr "결합된 로트 하나 · 계획됨"
@@ -1492,7 +1492,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 
 msgid "Open at this location"
-msgstr ""
+msgstr "이 사업장에서 미결"
 
 msgid "Open ERP"
 msgstr "ERP 열기"
@@ -1559,7 +1559,7 @@ msgid "Partial Disposition"
 msgstr "부분 처분 결정"
 
 msgid "Parts"
-msgstr ""
+msgstr "부품"
 
 msgid "Passed inspection"
 msgstr "검사 통과"
@@ -1592,7 +1592,7 @@ msgid "Photo uploaded successfully"
 msgstr "사진이 성공적으로 업로드됨"
 
 msgid "Photos"
-msgstr ""
+msgstr "사진"
 
 msgid "Pick"
 msgstr "피킹"
@@ -1605,7 +1605,7 @@ msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "스타일과 아바타를 선택하거나 새로운 것으로 섞으세요."
 
 msgid "Pick the job. It shows with no hours until you add some."
-msgstr ""
+msgstr "작업 지시를 선택하세요. 시간을 추가할 때까지 시간이 표시되지 않습니다."
 
 msgid "Pick the leave for your time off."
 msgstr "휴가를 선택하세요."
@@ -1692,7 +1692,7 @@ msgid "Priority"
 msgstr "우선순위"
 
 msgid "Problem"
-msgstr ""
+msgstr "문제"
 
 msgid "Procedure"
 msgstr "절차서"
@@ -1820,7 +1820,7 @@ msgid "Reopen the subassembly and create a replacement unit"
 msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 
 msgid "Repairable"
-msgstr ""
+msgstr "수리 가능"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인할 때 인증 앱에서 6자리 코드를 요구합니다."
@@ -1832,7 +1832,7 @@ msgid "Reset"
 msgstr "재설정"
 
 msgid "Resolution"
-msgstr ""
+msgstr "해결"
 
 msgid "Result"
 msgstr "결과"
@@ -1841,7 +1841,7 @@ msgid "Retry Completion"
 msgstr "완료 다시 시도"
 
 msgid "Return part"
-msgstr ""
+msgstr "부품 반품"
 
 msgid "Rework"
 msgstr "재작업"
@@ -1856,7 +1856,7 @@ msgid "Running"
 msgstr "실행 중"
 
 msgid "Running since <0/>"
-msgstr ""
+msgstr "<0/>부터 실행 중"
 
 msgid "Sales"
 msgstr "영업"
@@ -1871,7 +1871,7 @@ msgid "Save"
 msgstr "저장"
 
 msgid "Save Signature"
-msgstr ""
+msgstr "서명 저장"
 
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
@@ -1883,7 +1883,7 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "첫 번째 샘플 열을 추가하려면 추적 대상을 스캔하세요."
 
 msgid "Scan or enter a serial"
-msgstr ""
+msgstr "일련번호를 스캔하거나 입력하세요"
 
 msgid "Scan or enter serial number"
 msgstr "시리얼 번호를 스캔하거나 입력하세요"
@@ -1967,7 +1967,7 @@ msgid "Select a completion quantity"
 msgstr "완료 수량을 선택하세요"
 
 msgid "Select a customer"
-msgstr ""
+msgstr "고객 선택"
 
 msgid "Select a rework quantity"
 msgstr "재작업 수량을 선택하세요"
@@ -2042,10 +2042,10 @@ msgid "Serialized"
 msgstr "일련화됨"
 
 msgid "Service"
-msgstr ""
+msgstr "서비스"
 
 msgid "Service job"
-msgstr ""
+msgstr "서비스 작업 지시"
 
 msgid "Session locked"
 msgstr "세션 잠김"
@@ -2087,7 +2087,7 @@ msgid "Shuffle"
 msgstr "섞기"
 
 msgid "Sign Again"
-msgstr ""
+msgstr "다시 서명"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "매직 링크 대신 생체 인식으로 로그인하십시오. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
@@ -2111,16 +2111,16 @@ msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
 msgid "Signature"
-msgstr ""
+msgstr "서명"
 
 msgid "Signature pad"
 msgstr "서명 패드"
 
 msgid "Signed by"
-msgstr ""
+msgstr "서명:"
 
 msgid "Signed by {signedByName}"
-msgstr ""
+msgstr "서명: {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
@@ -2151,7 +2151,7 @@ msgid "Start {0}"
 msgstr "{0} 시작"
 
 msgid "Start Job"
-msgstr ""
+msgstr "작업 지시 시작"
 
 msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
@@ -2185,7 +2185,7 @@ msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
 msgid "Stop"
-msgstr ""
+msgstr "중지"
 
 msgid "Storage Unit"
 msgstr "보관 단위"
@@ -2215,7 +2215,7 @@ msgid "Submit week"
 msgstr "주 제출"
 
 msgid "Suggested coverage"
-msgstr ""
+msgstr "권장 범위"
 
 msgid "Suggestion"
 msgstr "제안"
@@ -2239,7 +2239,7 @@ msgid "Tag"
 msgstr "태그"
 
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
-msgstr ""
+msgstr "날짜를 누르면 {selectedLabel}에 시간을 추가합니다. 막대의 아래쪽 모서리를 드래그하여 시간을 변경합니다."
 
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
@@ -2254,10 +2254,10 @@ msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 보관됩니다."
 
 msgid "The job is closed"
-msgstr ""
+msgstr "작업 지시가 마감됨"
 
 msgid "The job opens with your clock running."
-msgstr ""
+msgstr "작업 지시가 열리면서 시계가 실행됩니다."
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."
@@ -2297,7 +2297,7 @@ msgid "This information will be visible to all users, so be careful what you sha
 msgstr "이 정보는 모든 사용자에게 표시되므로 공유 내용을 주의하십시오."
 
 msgid "This job needs an accepted estimate before it can be completed."
-msgstr ""
+msgstr "이 작업 지시는 완료되기 전에 수락된 견적이 필요합니다."
 
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
@@ -2312,10 +2312,10 @@ msgid "This part will be scrapped from stock. Its requirement stays open so you 
 msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
 
 msgid "This posts the job's time. The job can no longer change."
-msgstr ""
+msgstr "이는 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
-msgstr ""
+msgstr "이는 시계를 중지하고 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
@@ -2350,7 +2350,7 @@ msgstr "오늘"
 
 #. placeholder {0}: quantity(todayHours)
 msgid "Today: {0} h"
-msgstr ""
+msgstr "오늘: {0} 시간"
 
 msgid "Toggle labor"
 msgstr "노무 전환"
@@ -2391,7 +2391,7 @@ msgstr "총 시간: {0}"
 
 #. placeholder {0}: quantity(totalHours)
 msgid "Total time: {0} h"
-msgstr ""
+msgstr "총 시간: {0} 시간"
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
@@ -2525,7 +2525,7 @@ msgid "View or open"
 msgstr "보기 또는 열기"
 
 msgid "Warranty"
-msgstr ""
+msgstr "보증"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
@@ -2549,7 +2549,7 @@ msgid "Work instructions"
 msgstr "작업 표준서"
 
 msgid "Work Site"
-msgstr ""
+msgstr "작업 현장"
 
 msgid "Write a note…"
 msgstr "메모 작성…"
@@ -2558,7 +2558,7 @@ msgid "Yes"
 msgstr "예"
 
 msgid "You have no other open service jobs. A job shows here when you lead it or are assigned to it this week."
-msgstr ""
+msgstr "다른 미결 서비스 작업 지시가 없습니다. 이번 주에 작업 지시를 주도하거나 배정받으면 여기에 표시됩니다."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"
@@ -2568,7 +2568,7 @@ msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온�
 
 #. placeholder {0}: runningClock.serviceJob?.serviceJobId
 msgid "Your clock is running on <0>{0}</0>. Stop it there first."
-msgstr ""
+msgstr "시계가 <0>{0}</0>에서 실행 중입니다. 먼저 거기서 중지하세요."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
