@@ -80,8 +80,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     today
   });
 
-  // The burn of the selected milestone: its elements' posted hours, in one
-  // query.
+  // The burn of the selected milestone: its elements' Posted timesheet hours
+  // and shop hours (the Labor quantity of job ledger rows; a DCAA timesheet's
+  // rows are already in the timesheet hours), one query each.
   const selectedId = new URL(request.url).searchParams.get("milestone");
   const selected = summaries.find((m) => m.id === selectedId) ?? null;
   let burn: {
@@ -93,23 +94,48 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const elementIds = (elements.data ?? [])
       .filter((element) => element.milestoneId === selected.id)
       .map((element) => element.id);
-    const entries =
-      elementIds.length > 0 && selected.startDate && selected.endDate
-        ? await client
+    const endDate =
+      elementIds.length > 0 && selected.startDate ? selected.endDate : null;
+    const [entries, shopHours] = endDate
+      ? await Promise.all([
+          client
             .from("timesheetEntry")
             .select("entryDate, hours")
             .eq("companyId", companyId)
             .eq("projectId", projectId)
             .eq("status", "Posted")
             .in("projectElementId", elementIds)
-            .lte("entryDate", selected.endDate)
-        : { data: [], error: null };
+            .lte("entryDate", endDate),
+          client
+            .from("projectLedger")
+            .select("postingDate, quantity")
+            .eq("companyId", companyId)
+            .eq("projectId", projectId)
+            .eq("costType", "Labor")
+            .not("jobId", "is", null)
+            .neq("documentType", "Timesheet")
+            .not("quantity", "is", null)
+            .in("projectElementId", elementIds)
+            .lte("postingDate", endDate)
+        ])
+      : [
+          { data: [], error: null },
+          { data: [], error: null }
+        ];
     if (entries.error) {
       logger.error("Failed to load the milestone's posted hours", {
         companyId,
         projectId,
         milestoneId: selected.id,
         error: entries.error
+      });
+    }
+    if (shopHours.error) {
+      logger.error("Failed to load the milestone's shop hours", {
+        companyId,
+        projectId,
+        milestoneId: selected.id,
+        error: shopHours.error
       });
     }
     burn = {
@@ -121,10 +147,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               startDate: selected.startDate,
               endDate: selected.endDate,
               plannedHours: selected.estimatedHours,
-              entries: (entries.data ?? []).map((entry) => ({
-                entryDate: entry.entryDate,
-                hours: Number(entry.hours)
-              })),
+              entries: [
+                ...(entries.data ?? []).map((entry) => ({
+                  entryDate: entry.entryDate,
+                  hours: Number(entry.hours)
+                })),
+                ...(shopHours.data ?? []).map((row) => ({
+                  entryDate: row.postingDate,
+                  hours: Number(row.quantity)
+                }))
+              ],
               today
             })
           : []
