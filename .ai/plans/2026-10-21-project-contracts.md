@@ -47,8 +47,8 @@
 - [x] Task 38: Update the docs, rules and translations, then verify in the browser
 - [x] Task 39: Keep a delivered billing event through an amendment
 - [x] Task 40: Add parts in the amend modal
-- [ ] Task 41: Link shop time to its production event and job operation
-- [ ] Task 42: Show the job and operation on My Time and the MES timesheet
+- [x] Task 41: Link shop time to its production event and job operation
+- [x] Task 42: Show the job and operation on My Time and the MES timesheet
 - [x] Task 43: Add New Job on the task
 - [ ] Task 44: Docs, translations, self-review and push
 
@@ -1119,6 +1119,10 @@ pnpm --filter @carbon/server-functions exec vitest run src/post-shipment/custome
 - Task 35 (`47a42978bf`): the scheduled finish is `job.projectedCompletionAt` (the scheduler writes it), else the due date. Rows name the task, not a WBS code.
 - Task 36 (`1d694d3718`): `get_project_cost_summary` redefined from `20261011151313`, hours only.
 - Task 38: translations `42c2a0449b` (168 strings, 12 locales); docs and rules in the commit after it; browser check PASS on 9 criteria (run log, "Section 10 browser check"). The browser check covered the Fixed Price path; T&M delivery, void, DCAA, the Overview rows and milestone hours are covered by tests only.
+- Task 39 (`91852ed695`): kept "amend rebuilds only the lines it changes" (`onlyLineIds`, project contracts) and also pinned a delivered row (`isDelivered`), which covers an amendment that changes the delivered line itself.
+- Tasks 41–42: the code landed in `059ed9777c`, a commit by another session in this worktree that swept the uncommitted files; the tests are `48dfd82304` and the commit after it. A submitted entry is matched on net hours only: a correction cannot change the date, so a date change is not compared.
+- Task 43 (`814ee62c14`): on a locked plan New Job stays enabled; the modal shows the refusal.
+- Task 44: Brad, 2026-10-23: no translations for now.
 - Translations: Brad, 2026-10-22: skip translation and glossary work until Task 38; run `/translate` once there.
 - Task 20: BLOCKED. The stack re-ported at 02:53 and the API returns 502; see `.ai/runs/2026-10-21-project-contracts.md`.
 - Task 19 (`22be6410ed`): 2,208 strings filled across 12 locales; `linguito check` and `check-glossary` pass (advisory hits only).

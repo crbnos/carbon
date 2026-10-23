@@ -388,6 +388,8 @@ databaseTest(
           "projectElementId",
           "laborCategoryId",
           "jobId",
+          "jobOperationId",
+          "productionEventId",
           "hours",
           "status"
         ])
@@ -403,6 +405,8 @@ databaseTest(
           projectElementId: f.elementId,
           laborCategoryId: f.laborCategoryId,
           jobId: job.jobId,
+          jobOperationId: job.operationId,
+          productionEventId: eventId,
           hours: 1,
           status: "Draft"
         }
@@ -444,6 +448,134 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .execute();
       expect(written).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** The event's timesheet entries: [hours, status], oldest first. */
+async function eventEntries(f: Fixture, eventId: string) {
+  const rows = await f.db
+    .selectFrom("timesheetEntry")
+    .select(["hours", "status"])
+    .where("productionEventId", "=", eventId)
+    .where("companyId", "=", f.companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .execute();
+  return rows.map((row) => [Number(row.hours), row.status]);
+}
+
+async function setEventEnd(f: Fixture, eventId: string, endTime: string) {
+  await f.db
+    .updateTable("productionEvent")
+    .set({ endTime })
+    .where("id", "=", eventId)
+    .where("companyId", "=", f.companyId)
+    .execute();
+}
+
+databaseTest(
+  "DCAA: an edit of the event updates its Draft entry, and a reversal removes it",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ timekeepingControls: "DCAA" })
+        .where("id", "=", f.companyId)
+        .execute();
+      const { eventId } = await shopHour(f, {
+        laborCategoryId: f.laborCategoryId
+      });
+      const post = (reverse?: boolean) =>
+        postProductionEvent(f.ctx, { productionEventId: eventId, reverse });
+
+      expect((await post()).data?.success).toBe(true);
+      expect(await eventEntries(f, eventId)).toEqual([[1, "Draft"]]);
+
+      // Two hours instead of one: the same entry, re-posted.
+      await setEventEnd(f, eventId, "2026-10-06T01:30:00Z");
+      expect((await post()).data?.success).toBe(true);
+      expect(await eventEntries(f, eventId)).toEqual([[2, "Draft"]]);
+
+      // Deleting the event reverses it first: the entry goes.
+      expect((await post(true)).data?.success).toBe(true);
+      expect(await eventEntries(f, eventId)).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA: an edit of submitted hours is refused until the timesheet is corrected",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ timekeepingControls: "DCAA" })
+        .where("id", "=", f.companyId)
+        .execute();
+      const { eventId } = await shopHour(f, {
+        laborCategoryId: f.laborCategoryId
+      });
+      expect(
+        (await postProductionEvent(f.ctx, { productionEventId: eventId })).data
+          ?.success
+      ).toBe(true);
+      const entry = await f.db
+        .updateTable("timesheetEntry")
+        .set({ status: "Posted" })
+        .where("productionEventId", "=", eventId)
+        .where("companyId", "=", f.companyId)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      await setEventEnd(f, eventId, "2026-10-06T01:30:00Z");
+      const refused = await postProductionEvent(f.ctx, {
+        productionEventId: eventId
+      });
+      expect(refused.error?.message).toEqual(
+        "These hours are on a submitted timesheet. Correct the timesheet entry to 2 hours first."
+      );
+      expect(await eventEntries(f, eventId)).toEqual([[1, "Posted"]]);
+
+      // The correction createTimesheetCorrection writes (a reversal and a
+      // replacement, both carrying the link): the event then posts.
+      const { id: _id, createdAt: _createdAt, ...copy } = entry;
+      await f.db
+        .insertInto("timesheetEntry")
+        .values([
+          {
+            ...copy,
+            hours: -1,
+            status: "Submitted",
+            reversalOfId: entry.id,
+            correctionReason: "Two hours, not one"
+          },
+          {
+            ...copy,
+            hours: 2,
+            status: "Submitted",
+            correctionOfId: entry.id,
+            correctionReason: "Two hours, not one"
+          }
+        ])
+        .execute();
+      const posted = await postProductionEvent(f.ctx, {
+        productionEventId: eventId
+      });
+      expect(posted.error).toBeNull();
+      expect(posted.data?.success).toBe(true);
+      // The correction pair shares one createdAt: compare the hours sorted.
+      expect(
+        (await eventEntries(f, eventId))
+          .map(([hours]) => Number(hours))
+          .sort((a, b) => a - b)
+      ).toEqual([-1, 1, 2]);
     } finally {
       await f.cleanup();
     }
