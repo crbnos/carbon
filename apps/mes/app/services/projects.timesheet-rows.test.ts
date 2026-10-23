@@ -77,3 +77,27 @@ describe("groupTimesheetRows (R&D tax)", () => {
     expect(project?.isLeave).toBe(false);
   });
 });
+
+describe("groupTimesheetRows (shop time)", () => {
+  it("gives each job operation its own row, labelled with the job", () => {
+    const shop = (id: string, jobOperationId: string, description: string) =>
+      entry({
+        id,
+        jobId: "job-1",
+        jobOperationId,
+        job: { id: "job-1", jobId: "J000022" },
+        jobOperation: { id: jobOperationId, description }
+      });
+    const rows = groupTimesheetRows([
+      entry({ id: "a" }),
+      shop("b", "op-10", "Machining"),
+      shop("c", "op-10", "Machining"),
+      shop("d", "op-20", "Inspect")
+    ]);
+    expect(rows.map((row) => [row.job, row.total])).toEqual([
+      ["", 4],
+      ["J000022 · Machining", 8],
+      ["J000022 · Inspect", 4]
+    ]);
+  });
+});
