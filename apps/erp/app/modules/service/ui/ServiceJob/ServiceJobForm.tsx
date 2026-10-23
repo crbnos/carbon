@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { SelectControlled, ValidatedForm } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import {
   Card,
   CardContent,
@@ -10,8 +11,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Label,
   VStack
 } from "@carbon/react";
+import { Editor } from "@carbon/react/Editor";
 import { suggestCoverage } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -23,12 +26,12 @@ import {
   CustomerLocation,
   DatePicker,
   Employee,
+  Hidden,
   Location,
   Select,
-  Submit,
-  TextArea
+  Submit
 } from "~/components/Form";
-import { useCompanyToday, usePermissions } from "~/hooks";
+import { useCompanyToday, useImageUpload, usePermissions } from "~/hooks";
 import MaintenancePriority from "~/modules/resources/ui/Maintenance/MaintenancePriority";
 import { path } from "~/utils/path";
 import type { ServiceCoverage } from "../../service.models";
@@ -77,6 +80,13 @@ const ServiceJobForm = ({ initialValues, assets }: ServiceJobFormProps) => {
   );
 
   const customerAssets = assets.filter((a) => a.customerId === customerId);
+
+  const [problem, setProblem] = useState<JSONContent>(
+    initialValues.problem
+      ? (JSON.parse(initialValues.problem) as JSONContent)
+      : {}
+  );
+  const onUploadImage = useImageUpload("service-job");
 
   return (
     <Card>
@@ -157,8 +167,19 @@ const ServiceJobForm = ({ initialValues, assets }: ServiceJobFormProps) => {
                 customer={customerId}
                 isOptional
               />
-              <div className="md:col-span-2">
-                <TextArea name="problem" label={t`Problem`} />
+              <div className="md:col-span-2 flex flex-col gap-2 w-full">
+                <Hidden name="problem" value={JSON.stringify(problem)} />
+                <Label>
+                  <Trans>Problem</Trans>
+                </Label>
+                <Editor
+                  initialValue={problem}
+                  onUpload={onUploadImage}
+                  onChange={(value) => {
+                    setProblem(value);
+                  }}
+                  className="[&_.is-empty]:text-muted-foreground min-h-[120px] py-3 px-4 border rounded-md w-full"
+                />
               </div>
               <SelectControlled
                 name="coverage"

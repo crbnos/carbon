@@ -2653,6 +2653,9 @@ msgstr "송장 추가"
 msgid "Add Item"
 msgstr "품목 추가"
 
+msgid "Add Job"
+msgstr ""
+
 msgid "Add Journal Entry"
 msgstr "분개 추가"
 
@@ -6047,6 +6050,9 @@ msgstr "체크포인트"
 
 msgid "Children"
 msgstr "하위 항목"
+
+msgid "Children and jobs"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "백업 선택"
@@ -16772,9 +16778,6 @@ msgstr "새 이슈"
 
 msgid "New Item Group"
 msgstr "새 품목 그룹"
-
-msgid "New Job"
-msgstr "새 작업 지시"
 
 msgid "New Kanban"
 msgstr "새 칸반"

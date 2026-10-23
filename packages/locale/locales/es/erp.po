@@ -2653,6 +2653,9 @@ msgstr "Agregar factura"
 msgid "Add Item"
 msgstr "Agregar Artículo"
 
+msgid "Add Job"
+msgstr ""
+
 msgid "Add Journal Entry"
 msgstr "Agregar Apunte"
 
@@ -6047,6 +6050,9 @@ msgstr "Puntos de control"
 
 msgid "Children"
 msgstr "Elementos secundarios"
+
+msgid "Children and jobs"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "Elige una copia de seguridad"
@@ -16772,9 +16778,6 @@ msgstr "Nuevo Problema"
 
 msgid "New Item Group"
 msgstr "Nuevo Grupo de Artículos"
-
-msgid "New Job"
-msgstr "Nueva orden de trabajo"
 
 msgid "New Kanban"
 msgstr "Nuevo Kanban"

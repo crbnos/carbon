@@ -367,7 +367,7 @@ export const createServiceJob = defineServiceFn({
       serviceItemId: input.serviceItemId,
       assignee: input.assignee,
       dueDate: input.dueDate,
-      problem: input.problem,
+      problem: service.problemDocument(input.problem),
       companyId: ctx.company.id,
       createdBy: ctx.auditUserId
     });

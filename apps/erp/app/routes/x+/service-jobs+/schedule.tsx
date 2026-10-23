@@ -5,7 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { formatDate, redirect } from "@carbon/utils";
+import { formatDate, redirect, richTextToPlainText } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -233,7 +233,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     status: job.status,
     priority: job.priority,
     dueDate: job.dueDate,
-    problem: job.problem
+    problem: richTextToPlainText(job.problem) || null
   }));
 
   return {

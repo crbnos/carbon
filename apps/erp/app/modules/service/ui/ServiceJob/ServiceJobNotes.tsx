@@ -16,6 +16,7 @@ import type { JSONContent } from "@carbon/react";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
   cn,
@@ -35,7 +36,6 @@ import {
   Table,
   Tbody,
   Td,
-  Textarea,
   Th,
   Thead,
   Tr,
@@ -47,7 +47,7 @@ import { Editor } from "@carbon/react/Editor";
 import { RoundingMode, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
-import type { ChangeEvent } from "react";
+import type { ChangeEvent, ReactNode } from "react";
 import { Suspense, useCallback, useState } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Await } from "react-router";
@@ -96,7 +96,7 @@ export function ServiceJobProblem({
   isDisabled
 }: {
   id: string;
-  problem: string | null;
+  problem: JSONContent;
   repairable: boolean | null;
   isDisabled: boolean;
 }) {
@@ -107,34 +107,13 @@ export function ServiceJobProblem({
   const [repairable, setRepairable] = useState(initialRepairable);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <Trans>Problem</Trans>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {isReadOnly ? (
-          <p className="text-sm whitespace-pre-wrap">
-            {problem || (
-              <span className="text-muted-foreground">
-                <Trans>No problem described</Trans>
-              </span>
-            )}
-          </p>
-        ) : (
-          <Textarea
-            aria-label={t`Problem`}
-            defaultValue={problem ?? ""}
-            placeholder={t`What the customer reported`}
-            onBlur={(e) => {
-              if (e.target.value !== (problem ?? "")) {
-                onUpdate("problem", e.target.value);
-              }
-            }}
-          />
-        )}
-        <div className="flex flex-col gap-2">
+    <ServiceJobNotes
+      id={id}
+      field="problem"
+      content={problem}
+      isDisabled={isDisabled}
+      footer={
+        <CardFooter className="gap-3">
           <Label>
             <Trans>Repairable</Trans>
           </Label>
@@ -163,23 +142,29 @@ export function ServiceJobProblem({
               </RadioGroupButton>
             ))}
           </RadioGroup>
-        </div>
-      </CardContent>
-    </Card>
+        </CardFooter>
+      }
+    />
   );
 }
 
-/** The technician's findings or the resolution: rich text, autosaved. */
+/**
+ * The customer's problem, the technician's findings or the resolution: rich
+ * text, autosaved. `footer` renders below the text (the problem's
+ * Repairable).
+ */
 export function ServiceJobNotes({
   id,
   field,
   content: initialContent,
-  isDisabled
+  isDisabled,
+  footer
 }: {
   id: string;
-  field: "findings" | "resolution";
+  field: "problem" | "findings" | "resolution";
   content: JSONContent;
   isDisabled: boolean;
+  footer?: ReactNode;
 }) {
   const permissions = usePermissions();
   const onUpdate = useUpdateServiceJobField(id);
@@ -198,7 +183,9 @@ export function ServiceJobNotes({
     <Card>
       <CardHeader>
         <CardTitle>
-          {field === "findings" ? (
+          {field === "problem" ? (
+            <Trans>Problem</Trans>
+          ) : field === "findings" ? (
             <Trans>Findings</Trans>
           ) : (
             <Trans>Resolution</Trans>
@@ -219,7 +206,9 @@ export function ServiceJobNotes({
           <RichTextView
             content={content as JSONContent}
             empty={
-              field === "findings" ? (
+              field === "problem" ? (
+                <Trans>No problem described</Trans>
+              ) : field === "findings" ? (
                 <Trans>No findings</Trans>
               ) : (
                 <Trans>No resolution</Trans>
@@ -228,6 +217,7 @@ export function ServiceJobNotes({
           />
         )}
       </CardContent>
+      {footer}
     </Card>
   );
 }

@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { richTextToPlainText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuQrCode,
@@ -152,7 +153,10 @@ export default function CustomerAssetPage({
                       to={path.to.serviceJob(job.id)}
                       icon={<LuWrench />}
                       title={job.serviceJobId}
-                      description={job.problem || coverageLabels[job.coverage]}
+                      description={
+                        richTextToPlainText(job.problem) ||
+                        coverageLabels[job.coverage]
+                      }
                       status={<ServiceJobStatus status={job.status} />}
                     />
                   ))}

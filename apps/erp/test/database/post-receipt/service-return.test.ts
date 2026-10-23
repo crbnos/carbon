@@ -7,6 +7,7 @@
 // same receipt keeps its valued receipt. Voiding the receipt cancels a job
 // with no work on it, and refuses one with work.
 
+import { textToRichTextDoc } from "@carbon/utils";
 import { expect } from "vitest";
 import { invokeCreate } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
@@ -66,7 +67,8 @@ databaseTest(
         itemId: f.unitItemId,
         trackedEntityId: null,
         customerAssetId: null,
-        problem: "Leaks at the seal"
+        // The RMA line's text, as the rich text the job holds.
+        problem: textToRichTextDoc("Leaks at the seal")
       });
 
       expect(await f.returnLines(rmaId)).toEqual([

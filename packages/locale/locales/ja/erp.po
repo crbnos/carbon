@@ -2653,6 +2653,9 @@ msgstr "請求書を追加"
 msgid "Add Item"
 msgstr "アイテムを追加"
 
+msgid "Add Job"
+msgstr ""
+
 msgid "Add Journal Entry"
 msgstr "仕訳行を追加"
 
@@ -6047,6 +6050,9 @@ msgstr "チェックポイント"
 
 msgid "Children"
 msgstr "子要素"
+
+msgid "Children and jobs"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "バックアップを選択"
@@ -16772,9 +16778,6 @@ msgstr "新しい問題"
 
 msgid "New Item Group"
 msgstr "新しいアイテムグループ"
-
-msgid "New Job"
-msgstr "新規製造指図"
 
 msgid "New Kanban"
 msgstr "新規かんばん"

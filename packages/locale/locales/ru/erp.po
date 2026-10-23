@@ -2653,6 +2653,9 @@ msgstr "Добавить счет-фактуру"
 msgid "Add Item"
 msgstr "Добавить элемент"
 
+msgid "Add Job"
+msgstr ""
+
 msgid "Add Journal Entry"
 msgstr "Добавить проводку"
 
@@ -6047,6 +6050,9 @@ msgstr "Контрольные точки"
 
 msgid "Children"
 msgstr "Подчинённые"
+
+msgid "Children and jobs"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "Выберите резервную копию"
@@ -16772,9 +16778,6 @@ msgstr "Новая проблема"
 
 msgid "New Item Group"
 msgstr "Новая группа товаров"
-
-msgid "New Job"
-msgstr "Новый производственный заказ"
 
 msgid "New Kanban"
 msgstr "Новый канбан"

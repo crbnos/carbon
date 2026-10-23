@@ -31,9 +31,12 @@ import {
   canComplete,
   coverageAccountRole,
   datetime,
+  documentHasImages,
   isServiceJobLocked,
   manualHoursForDay,
+  richTextToPlainText,
   round,
+  textToRichTextDoc,
   toBaseAmount
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -561,7 +564,8 @@ export async function insertServiceJob(
     serviceItemId?: string | null;
     assignee?: string | null;
     dueDate?: string | null;
-    problem?: string | null;
+    /** A TipTap document; text from a short field goes through `textToRichTextDoc`. */
+    problem?: Json | null;
   }
 ): Promise<{
   data: { id: string; serviceJobId: string } | null;
@@ -615,6 +619,28 @@ export async function insertServiceJob(
     })
     .select("id, serviceJobId")
     .single();
+}
+
+/**
+ * A job's problem as the TipTap document the column holds. The editor posts
+ * its document as JSON; a caller that sends plain text gets it as
+ * paragraphs. An empty document is null, so "no problem described" reads
+ * the same however the job was opened.
+ */
+export function problemDocument(value: string | null | undefined): Json | null {
+  if (!value?.trim()) return null;
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    // Plain text, below.
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return textToRichTextDoc(value) as Json | null;
+  }
+  return richTextToPlainText(parsed) || documentHasImages(parsed)
+    ? (parsed as Json)
+    : null;
 }
 
 /** Refuses unless `employeeId` is an active employee of the company. */
@@ -914,7 +940,7 @@ export async function serviceJobFieldValues(
         ? ctx.error("validation", "Enter a date")
         : { dueDate: text };
     case "problem":
-      return { problem: text };
+      return { problem: problemDocument(text) };
     case "findings":
     case "resolution": {
       let document: Json = null;

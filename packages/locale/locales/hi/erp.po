@@ -2653,6 +2653,9 @@ msgstr "चालान जोड़ें"
 msgid "Add Item"
 msgstr "आइटम जोड़ें"
 
+msgid "Add Job"
+msgstr ""
+
 msgid "Add Journal Entry"
 msgstr "जर्नल प्रविष्टि जोड़ें"
 
@@ -6047,6 +6050,9 @@ msgstr "चेकपॉइंट्स"
 
 msgid "Children"
 msgstr "संतानें"
+
+msgid "Children and jobs"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "एक बैकअप चुनें"
@@ -16772,9 +16778,6 @@ msgstr "नया मुद्दा"
 
 msgid "New Item Group"
 msgstr "नया आइटम समूह"
-
-msgid "New Job"
-msgstr "नया जॉब"
 
 msgid "New Kanban"
 msgstr "नया कानबन"

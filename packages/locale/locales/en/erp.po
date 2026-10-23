@@ -2653,6 +2653,9 @@ msgstr "Add Invoice"
 msgid "Add Item"
 msgstr "Add Item"
 
+msgid "Add Job"
+msgstr "Add Job"
+
 msgid "Add Journal Entry"
 msgstr "Add Journal Entry"
 
@@ -6047,6 +6050,9 @@ msgstr "Checkpoints"
 
 msgid "Children"
 msgstr "Children"
+
+msgid "Children and jobs"
+msgstr "Children and jobs"
 
 msgid "Choose a backup"
 msgstr "Choose a backup"
@@ -16772,9 +16778,6 @@ msgstr "New Issue"
 
 msgid "New Item Group"
 msgstr "New Item Group"
-
-msgid "New Job"
-msgstr "New Job"
 
 msgid "New Kanban"
 msgstr "New Kanban"

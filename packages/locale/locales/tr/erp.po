@@ -2653,6 +2653,9 @@ msgstr "Fatura Ekle"
 msgid "Add Item"
 msgstr "Öğe Ekle"
 
+msgid "Add Job"
+msgstr ""
+
 msgid "Add Journal Entry"
 msgstr "Yevmiye Kaydı Ekle"
 
@@ -6047,6 +6050,9 @@ msgstr "Kontrol Noktaları"
 
 msgid "Children"
 msgstr "Alt öğeler"
+
+msgid "Children and jobs"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "Yedek seçin"
@@ -16772,9 +16778,6 @@ msgstr "Yeni Sorun"
 
 msgid "New Item Group"
 msgstr "Yeni Ürün Grubu"
-
-msgid "New Job"
-msgstr "Yeni İş Emri"
 
 msgid "New Kanban"
 msgstr "Yeni Kanban"

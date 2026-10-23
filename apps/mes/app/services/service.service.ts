@@ -15,7 +15,8 @@ import {
   manualHoursForDay,
   round,
   type ServiceTimeRow,
-  type ServiceTimeRowJob
+  type ServiceTimeRowJob,
+  textToRichTextDoc
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -195,7 +196,8 @@ export async function insertServiceJob(
       coverage: args.coverage,
       billingMethod: "Time and Materials",
       priority: "Medium",
-      problem: args.problem,
+      // Typed on the floor as plain text; the job holds rich text.
+      problem: textToRichTextDoc(args.problem) as Json | null,
       assignee: args.assignee,
       companyId: args.companyId,
       createdBy: args.createdBy,

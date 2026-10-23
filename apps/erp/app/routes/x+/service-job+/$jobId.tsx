@@ -113,7 +113,7 @@ export default function ServiceJobRoute() {
                     <ServiceJobProblem
                       key={`problem-${jobId}`}
                       id={jobId}
-                      problem={job.problem}
+                      problem={(job.problem ?? {}) as JSONContent}
                       repairable={job.repairable}
                       isDisabled={isLocked}
                     />

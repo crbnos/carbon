@@ -2653,6 +2653,9 @@ msgstr "添加发票"
 msgid "Add Item"
 msgstr "添加项目"
 
+msgid "Add Job"
+msgstr ""
+
 msgid "Add Journal Entry"
 msgstr "添加分录"
 
@@ -6047,6 +6050,9 @@ msgstr "检查点"
 
 msgid "Children"
 msgstr "子项"
+
+msgid "Children and jobs"
+msgstr ""
 
 msgid "Choose a backup"
 msgstr "选择备份"
@@ -16772,9 +16778,6 @@ msgstr "新问题"
 
 msgid "New Item Group"
 msgstr "新建项目组"
-
-msgid "New Job"
-msgstr "新建工单"
 
 msgid "New Kanban"
 msgstr "新看板"

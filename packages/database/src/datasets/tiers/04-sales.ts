@@ -1058,7 +1058,7 @@ async function seedServiceJobs(ctx: Ctx): Promise<void> {
         spec.dueOffset === undefined
           ? undefined
           : resolveDate(ctx.anchor, spec.dueOffset),
-      problem: spec.problem,
+      problem: RICH(spec.problem),
       findings: spec.findings === undefined ? undefined : RICH(spec.findings),
       resolution:
         spec.resolution === undefined ? undefined : RICH(spec.resolution),

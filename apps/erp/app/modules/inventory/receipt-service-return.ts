@@ -11,8 +11,9 @@
 import { InvalidInputError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
 import * as sequence from "@carbon/database/sequence";
-import { datetime } from "@carbon/utils";
+import { datetime, textToRichTextDoc } from "@carbon/utils";
 import type { Transaction } from "kysely";
 
 type ReturnLineType = Database["public"]["Enums"]["returnType"];
@@ -158,7 +159,8 @@ export async function createServiceJobsForReturn(
             null,
           locationId: unit.locationId,
           salesReturnOrderLineId: unit.salesReturnOrderLineId,
-          problem: unit.problem,
+          // The RMA line's short text, as the rich text the job holds.
+          problem: toJson(textToRichTextDoc(unit.problem)),
           companyId,
           createdBy: userId
         };

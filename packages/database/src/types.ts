@@ -71227,7 +71227,7 @@ export type Database = {
           itemId: string | null
           locationId: string
           priority: Database["public"]["Enums"]["serviceJobPriority"]
-          problem: string | null
+          problem: Json | null
           repairable: boolean | null
           resolution: Json | null
           salesInvoiceId: string | null
@@ -71269,7 +71269,7 @@ export type Database = {
           itemId?: string | null
           locationId: string
           priority?: Database["public"]["Enums"]["serviceJobPriority"]
-          problem?: string | null
+          problem?: Json | null
           repairable?: boolean | null
           resolution?: Json | null
           salesInvoiceId?: string | null
@@ -71311,7 +71311,7 @@ export type Database = {
           itemId?: string | null
           locationId?: string
           priority?: Database["public"]["Enums"]["serviceJobPriority"]
-          problem?: string | null
+          problem?: Json | null
           repairable?: boolean | null
           resolution?: Json | null
           salesInvoiceId?: string | null

@@ -159300,8 +159300,7 @@ export default {
           type: "string"
         },
         problem: {
-          format: "text",
-          type: "string"
+          format: "jsonb"
         },
         findings: {
           format: "jsonb"

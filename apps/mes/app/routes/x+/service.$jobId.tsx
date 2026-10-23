@@ -23,6 +23,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  isRichTextEmpty,
   Modal,
   ModalBody,
   ModalContent,
@@ -573,7 +574,7 @@ export default function ServiceJobRoute() {
           </Card>
 
           {/* Problem */}
-          {job.problem && (
+          {!isRichTextEmpty(job.problem as JSONContent) && (
             <Card className="w-full">
               <CardHeader>
                 <CardTitle className="text-sm text-muted-foreground font-normal">
@@ -581,7 +582,10 @@ export default function ServiceJobRoute() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm whitespace-pre-wrap">{job.problem}</p>
+                <RichTextView
+                  content={job.problem as JSONContent}
+                  empty={null}
+                />
               </CardContent>
             </Card>
           )}

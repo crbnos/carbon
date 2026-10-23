@@ -159,6 +159,7 @@ export const serviceJobValidator = z.object({
   serviceItemId: zfd.text(z.string().optional()),
   assignee: zfd.text(z.string().optional()),
   dueDate: optionalDate,
+  /** The editor's TipTap document as JSON (plain text is taken as paragraphs). */
   problem: zfd.text(z.string().optional())
 });
 

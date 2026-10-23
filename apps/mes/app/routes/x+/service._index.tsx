@@ -22,7 +22,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { datetime, richTextToPlainText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
@@ -99,7 +99,14 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     getServiceJobsAssignedTo(client, companyId, userId, today)
   ]);
 
-  type Job = NonNullable<typeof openJobs.data>[number];
+  // The problem is rich text; a card and the search read its text.
+  type Row = NonNullable<typeof openJobs.data>[number];
+  const withProblemText = (rows: Row[] | null) =>
+    (rows ?? []).map((job) => ({
+      ...job,
+      problem: richTextToPlainText(job.problem) || null
+    }));
+  type Job = ReturnType<typeof withProblemText>[number];
   const matches = (job: Job) =>
     (!statuses.length || statuses.includes(job.status)) &&
     (!coverages.length || coverages.includes(job.coverage)) &&
@@ -114,8 +121,8 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
       ].some((value) => value?.toLowerCase().includes(search)));
 
   return {
-    openJobs: (openJobs.data ?? []).filter(matches),
-    myJobs: (myJobs.data ?? []).filter(matches),
+    openJobs: withProblemText(openJobs.data).filter(matches),
+    myJobs: withProblemText(myJobs.data).filter(matches),
     today,
     hasLocation: !!locationId
   };
