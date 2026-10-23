@@ -125,8 +125,10 @@ registration handshake, not Carbon-specific. Two independent triggers exist:
   path (`server/app.ts`, `@vercel/react-router` in `entry.server.tsx`) is
   still live, so this stays inert there rather than retrying uselessly.
 - **CI-triggered sync** (`.github/workflows/post-deploy.yml`, `ci/src/post-deploy.ts`):
-  called by `deploy.yml` (job `sync`) after its deploy job succeeds; also
-  runnable by hand. Reads every row in the
+  the one post-deploy step, whatever hosts the ERP. Called by `deploy.yml`
+  (job `sync`) after its deploy job succeeds, run on a successful production
+  deploy of the ERP's Vercel projects (`deployment_status`, environment
+  `Production – carbon*`), and runnable by hand. Reads every row in the
   `workspaces` table and does the same `PUT .../api/inngest` against each
   `url_erp`. Redundant with boot self-sync today, but kept as an
   externally-triggered backstop (e.g. if a task's own retries were exhausted

@@ -2,17 +2,35 @@ name: Post Deploy Sync
 
 # What each workspace's freshly deployed ERP tells the services around it:
 # Inngest its list of jobs, and a hosted Supabase project its Auth emails.
+# The one place for that, whatever hosts the ERP: every host's deploy ends
+# here.
 on:
-  # Called by deploy.yml after a successful deploy.
+  # AWS: called by deploy.yml after a successful deploy.
   workflow_call:
+  # Vercel, and any host that reports its deploys to GitHub: a production
+  # ERP deploy that succeeded (the job's `if`).
+  deployment_status:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Several ERP projects finish within moments of each other, and each run
+# syncs every workspace: one at a time, and a newer one replaces a run
+# still waiting.
+concurrency:
+  group: post-deploy
+  cancel-in-progress: false
+
 jobs:
   sync:
     name: Post Deploy Sync
+    # The ERP's Vercel projects are carbon, carbon-us and carbon-eu; MES,
+    # docs and academy deploys, and previews, have nothing to sync.
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment_status.state == 'success' &&
+      startsWith(github.event.deployment.environment, 'Production – carbon'))
     runs-on: ubuntu-latest
 
     steps:
