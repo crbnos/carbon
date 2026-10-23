@@ -995,3 +995,63 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "an entry with a job (shop time under DCAA) posts its Labor ledger row with the job",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { itemId, locationId } = await f.addStockedItem("bolt", {
+        quantity: 10,
+        unitCost: 10
+      });
+      const job = await f.addConsumeToProjectJob("a", {
+        locationId,
+        materialItemId: itemId,
+        quantityPerParent: 1,
+        jobQuantity: 1
+      });
+      const entry = await f.db
+        .insertInto("timesheetEntry")
+        .values({
+          employeeId: PROJECT_TEST_USER,
+          entryDate: "2026-10-05",
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          laborCategoryId: f.laborCategoryId,
+          jobId: job.jobId,
+          hours: 2,
+          status: "Submitted",
+          companyId: f.companyId,
+          createdBy: PROJECT_TEST_USER
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "post-timesheet",
+        { timesheetEntryIds: [entry.id] },
+        postTimesheet
+      );
+      expect(result.data?.postedEntryIds).toEqual([entry.id]);
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "documentId", "jobId", "quantity", "amount"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.documentId,
+          row.jobId,
+          Number(row.quantity),
+          Number(row.amount)
+        ])
+      ).toEqual([["Labor", entry.id, job.jobId, 2, 170]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

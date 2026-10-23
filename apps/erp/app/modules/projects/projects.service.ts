@@ -5917,7 +5917,13 @@ type Settings =
  */
 async function resolveRdDefaults(
   trx: Transaction<DB>,
-  input: z.output<typeof saveTimesheetEntryInput> & { companyId: string }
+  input: {
+    companyId: string;
+    employeeId: string;
+    laborCategoryId: string;
+    workLocationId?: string | null;
+    rdActivityRole?: RdActivityRole | null;
+  }
 ): Promise<{
   workLocationId: string | null;
   rdActivityRole: RdActivityRole | null;
@@ -6000,6 +6006,11 @@ async function save(
   existingQuery = input.rdActivityRole
     ? existingQuery.where("rdActivityRole", "=", input.rdActivityRole)
     : existingQuery.where("rdActivityRole", "is", null);
+  if (input.jobId !== undefined) {
+    existingQuery = input.jobId
+      ? existingQuery.where("jobId", "=", input.jobId)
+      : existingQuery.where("jobId", "is", null);
+  }
   const rows = await existingQuery.orderBy("id").forUpdate().execute();
   const current = currentEntry(rows);
   // Fewer hours on a held project is a correction; more is a new charge.
@@ -6038,6 +6049,7 @@ async function save(
         projectId: input.projectId,
         projectElementId: input.projectElementId,
         laborCategoryId: input.laborCategoryId,
+        jobId: input.jobId ?? null,
         workLocationId: input.workLocationId,
         rdActivityRole: input.rdActivityRole,
         hours: input.hours,
@@ -6245,42 +6257,102 @@ async function addEntry(
     }
   }
 
-  const now = datetime.timestamp();
-  const created = await trx
-    .insertInto("timesheetEntry")
-    .values({
-      companyId,
-      employeeId,
-      entryDate: input.entryDate,
-      projectId: input.projectId,
-      projectElementId: input.projectElementId,
-      serviceVisitId: input.serviceVisitId ?? null,
-      laborCategoryId: input.laborCategoryId,
-      workLocationId: input.workLocationId,
-      rdActivityRole: input.rdActivityRole,
-      hours: input.hours,
-      note: input.note ?? null,
-      lateReason: late ? lateReason : null,
-      status,
-      submittedAt: status === "Submitted" ? now : null,
-      createdBy: userId,
-      createdAt: now
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
+  const entryId = await insertTimesheetDraft(trx, {
+    companyId,
+    employeeId,
+    entryDate: input.entryDate,
+    projectId: input.projectId,
+    projectElementId: input.projectElementId,
+    laborCategoryId: input.laborCategoryId,
+    hours: input.hours,
+    serviceVisitId: input.serviceVisitId ?? null,
+    jobId: input.jobId ?? null,
+    workLocationId: input.workLocationId,
+    rdActivityRole: input.rdActivityRole,
+    note: input.note ?? null,
+    lateReason: late ? lateReason : null,
+    status,
+    createdBy: userId
+  });
 
   if (mode === "DCAA" && !actorIsOwner) {
     await writeRevision(trx, {
       companyId,
       employeeId,
-      timesheetEntryId: created.id,
+      timesheetEntryId: entryId,
       revisedBy: userId,
       reason: reason!,
       before: null,
       after: revisionFields(input)
     });
   }
-  return { entryId: created.id, status };
+  return { entryId, status };
+}
+
+/**
+ * Inserts one timesheet entry and runs no control: the caller has applied
+ * them. `addEntry` calls it after the cell's controls; `post-production-event`
+ * calls it for shop time on a consume-to-project job under DCAA (D38), whose
+ * hours the shop floor recorded, so the employee certifies them with the week.
+ * The entry is Draft unless `status` says otherwise. A work location or
+ * research role left out takes its default (`resolveRdDefaults`).
+ */
+export async function insertTimesheetDraft(
+  trx: Transaction<DB>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    entryDate: string;
+    projectId: string;
+    projectElementId: string | null;
+    laborCategoryId: string;
+    hours: number;
+    serviceVisitId?: string | null;
+    jobId?: string | null;
+    workLocationId?: string | null;
+    rdActivityRole?: RdActivityRole | null;
+    note?: string | null;
+    lateReason?: string | null;
+    status?: TimesheetEntryStatus;
+    createdBy: string;
+  }
+): Promise<string> {
+  const defaults =
+    args.workLocationId === undefined || args.rdActivityRole === undefined
+      ? await resolveRdDefaults(trx, args)
+      : null;
+  const status = args.status ?? "Draft";
+  const now = datetime.timestamp();
+  const created = await trx
+    .insertInto("timesheetEntry")
+    .values({
+      companyId: args.companyId,
+      employeeId: args.employeeId,
+      entryDate: args.entryDate,
+      projectId: args.projectId,
+      projectElementId: args.projectElementId,
+      serviceVisitId: args.serviceVisitId ?? null,
+      jobId: args.jobId ?? null,
+      laborCategoryId: args.laborCategoryId,
+      workLocationId:
+        args.workLocationId === undefined
+          ? (defaults?.workLocationId ?? null)
+          : args.workLocationId,
+      rdActivityRole:
+        args.rdActivityRole === undefined
+          ? (defaults?.rdActivityRole ?? null)
+          : args.rdActivityRole,
+      hours: args.hours,
+      note: args.note ?? null,
+      lateReason: args.lateReason ?? null,
+      status,
+      submittedAt: status === "Submitted" ? now : null,
+      createdBy: args.createdBy,
+      createdAt: now
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return created.id;
 }
 
 /**
@@ -6339,6 +6411,7 @@ async function saveStandard(
         projectId: input.projectId,
         projectElementId: input.projectElementId,
         laborCategoryId: input.laborCategoryId,
+        jobId: input.jobId ?? null,
         workLocationId: input.workLocationId,
         rdActivityRole: input.rdActivityRole,
         hours: input.hours,
@@ -6458,6 +6531,7 @@ export async function postTimesheet(
         "projectId",
         "projectElementId",
         "laborCategoryId",
+        "jobId",
         "hours",
         "status",
         "postedAt",
@@ -6495,6 +6569,7 @@ export async function postTimesheet(
         projectId: entry.projectId,
         projectElementId: entry.projectElementId,
         laborCategoryId: entry.laborCategoryId,
+        jobId: entry.jobId,
         hours: Number(entry.hours),
         reversalOfId: entry.reversalOfId,
         correctionOfId: entry.correctionOfId,
@@ -6584,6 +6659,7 @@ export async function postTimesheet(
               | "laborCategoryId"
               | "coverage"
               | "coverageReason"
+              | "jobId"
             >[])
           : trx
               .selectFrom("timesheetEntry")
@@ -6594,7 +6670,8 @@ export async function postTimesheet(
                 "dilutionFactor",
                 "laborCategoryId",
                 "coverage",
-                "coverageReason"
+                "coverageReason",
+                "jobId"
               ])
               .where("id", "in", rateSourceIds)
               .where("companyId", "=", companyId)
@@ -6860,6 +6937,21 @@ export async function postTimesheet(
     }
 
     if (plan.ledgerRows.length > 0) {
+      // Shop time keeps its job on the ledger row, so the job's cost
+      // counts it; a reversal without a job of its own takes its
+      // original's.
+      const originalJobById = new Map(
+        originals.map((original) => [original.id, original.jobId])
+      );
+      const jobIdByEntry = new Map(
+        [...entries, ...redilutedEntries].map((entry) => [
+          entry.id,
+          entry.jobId ??
+            (entry.reversalOfId
+              ? (originalJobById.get(entry.reversalOfId) ?? null)
+              : null)
+        ])
+      );
       const insertedLedger = await insertProjectLedgerRows(trx, {
         companyId,
         userId,
@@ -6872,6 +6964,7 @@ export async function postTimesheet(
             costType: "Labor",
             documentType: "Timesheet",
             documentId: row.entryId,
+            jobId: jobIdByEntry.get(row.entryId) ?? null,
             employeeId: row.employeeId,
             laborCategoryId: row.laborCategoryId,
             quantity: row.quantity,
@@ -6985,6 +7078,8 @@ export async function postTimesheet(
 type PostingEntry = TimesheetPostingEntry & {
   isService: boolean;
   note: string | null;
+  /** The job of shop time under DCAA; its ledger row carries it. */
+  jobId: string | null;
 };
 
 type TimesheetBooking = Pick<
@@ -7164,6 +7259,7 @@ async function loadWeekDilution(
       "timesheetEntry.projectId",
       "timesheetEntry.projectElementId",
       "timesheetEntry.laborCategoryId",
+      "timesheetEntry.jobId",
       "timesheetEntry.hours",
       "timesheetEntry.status",
       "timesheetEntry.costRate",
@@ -7274,6 +7370,7 @@ async function loadWeekDilution(
       projectId: row.projectId,
       projectElementId: row.projectElementId,
       laborCategoryId: row.laborCategoryId,
+      jobId: row.jobId,
       hours: Number(row.hours),
       reversalOfId: null,
       isService: row.projectType === "Service",

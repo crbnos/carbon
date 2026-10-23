@@ -7,7 +7,10 @@ import { postProductionEvent as postProductionEventBody } from "../../../app/mod
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import { databaseTest } from "../fixtures/local-database";
-import { projectPostingFixture } from "../fixtures/project-posting";
+import {
+  PROJECT_TEST_USER,
+  projectPostingFixture
+} from "../fixtures/project-posting";
 
 type Ctx = Parameters<typeof handlesOf>[0];
 
@@ -151,6 +154,296 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .executeTakeFirstOrThrow();
       expect(Number(total.amount)).toEqual(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+type Fixture = Awaited<ReturnType<typeof projectPostingFixture>>;
+
+/** One hour of Labor by `system` on a consume-to-project job, with the
+ *  employee's job at the job's location in `laborCategoryId`. */
+async function shopHour(
+  f: Fixture,
+  options: { laborCategoryId: string | null }
+) {
+  const { itemId, locationId } = await f.addStockedItem("bolt", {
+    quantity: 10,
+    unitCost: 10
+  });
+  const job = await f.addConsumeToProjectJob("a", {
+    locationId,
+    materialItemId: itemId,
+    quantityPerParent: 1,
+    jobQuantity: 1
+  });
+  await f.db
+    .insertInto("employeeJob")
+    .values({
+      id: PROJECT_TEST_USER,
+      companyId: f.companyId,
+      locationId,
+      laborCategoryId: options.laborCategoryId
+    })
+    .execute();
+  const event = await f.db
+    .insertInto("productionEvent")
+    .values({
+      jobOperationId: job.operationId,
+      type: "Labor",
+      // 23:30 to 00:30 UTC: the work began on 2026-10-05 in New York.
+      startTime: "2026-10-05T23:30:00Z",
+      endTime: "2026-10-06T00:30:00Z",
+      employeeId: PROJECT_TEST_USER,
+      workCenterId: job.workCenterId,
+      companyId: f.companyId,
+      createdBy: PROJECT_TEST_USER
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  return { itemId, locationId, job, eventId: event.id };
+}
+
+databaseTest(
+  "shop labor carries the employee's labor category on its Labor ledger row",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      const { eventId } = await shopHour(f, {
+        laborCategoryId: f.laborCategoryId
+      });
+      const result = await postProductionEvent(f.ctx, {
+        productionEventId: eventId
+      });
+      expect(result.data?.success).toBe(true);
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "laborCategoryId", "quantity", "amount"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.laborCategoryId,
+          Number(row.quantity),
+          Number(row.amount)
+        ])
+      ).toEqual([["Labor", f.laborCategoryId, 1, 50]]);
+      // Standard timekeeping writes no timesheet entry.
+      const entries = await f.db
+        .selectFrom("timesheetEntry")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(entries).toEqual([]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "shop labor under a Time & Materials line bills at the labor category's bill rate",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Contract" });
+    try {
+      const { itemId, eventId } = await shopHour(f, {
+        laborCategoryId: f.laborCategoryId
+      });
+      const customerId = `${f.prefix}-customer`;
+      const contractId = `${f.prefix}-contract`;
+      await f.db
+        .updateTable("laborCategoryRate")
+        .set({ billRate: 150 })
+        .where("laborCategoryId", "=", f.laborCategoryId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await f.db
+        .insertInto("customer")
+        .values({ id: customerId, name: f.prefix, companyId: f.companyId })
+        .execute();
+      await f.db
+        .insertInto("customerContract")
+        .values({
+          id: contractId,
+          customerContractId: "CON-TM",
+          name: "T&M",
+          customerId,
+          status: "Active",
+          closeDate: "2026-01-01",
+          startDate: "2026-01-01",
+          currencyCode: "USD",
+          companyId: f.companyId,
+          createdBy: PROJECT_TEST_USER
+        })
+        .execute();
+      await f.db
+        .insertInto("customerContractLine")
+        .values({
+          id: `${contractId}-line`,
+          customerContractId: contractId,
+          revenueType: "One-time",
+          itemId,
+          description: "Engineering T&M",
+          quantity: 1,
+          rate: 0,
+          startDate: "2026-01-01",
+          billingMethod: "Time & Materials",
+          revenueMethod: "Right to Invoice",
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          companyId: f.companyId,
+          createdBy: PROJECT_TEST_USER
+        })
+        .execute();
+
+      const result = await postProductionEvent(f.ctx, {
+        productionEventId: eventId
+      });
+      expect(result.data?.success).toBe(true);
+
+      const items = await f.db
+        .selectFrom("projectBillableItem")
+        .select(["quantity", "unitPrice", "amount", "status", "statusReason"])
+        .where("projectId", "=", f.projectId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        items.map((item) => [
+          Number(item.quantity),
+          Number(item.unitPrice),
+          Number(item.amount),
+          item.status,
+          item.statusReason
+        ])
+      ).toEqual([[1, 150, 150, "Unbilled", null]]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA: shop labor writes a Draft timesheet entry with the job, and its overhead posts as before",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ timekeepingControls: "DCAA" })
+        .where("id", "=", f.companyId)
+        .execute();
+      const { job, eventId } = await shopHour(f, {
+        laborCategoryId: f.laborCategoryId
+      });
+      await f.db
+        .updateTable("workCenter")
+        .set({ overheadRate: 10 })
+        .where("id", "=", job.workCenterId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const result = await postProductionEvent(f.ctx, {
+        productionEventId: eventId
+      });
+      expect(result.error).toBeNull();
+      expect(result.data?.success).toBe(true);
+
+      // No Labor ledger row and no labor journal pair: only the overhead.
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select(["costType", "quantity", "amount"])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          Number(row.quantity),
+          Number(row.amount)
+        ])
+      ).toEqual([["Overhead", 1, 10]]);
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .orderBy("amount", "desc")
+        .execute();
+      expect(
+        lines.map((line) => [line.accountId, Number(line.amount)])
+      ).toEqual([
+        [f.account("project-expense"), 10],
+        [f.account("overhead-absorption"), -10]
+      ]);
+
+      // One Draft entry on the event's day in New York, for the employee to
+      // certify with the week.
+      const entries = await f.db
+        .selectFrom("timesheetEntry")
+        .select([
+          "employeeId",
+          "entryDate",
+          "projectId",
+          "projectElementId",
+          "laborCategoryId",
+          "jobId",
+          "hours",
+          "status"
+        ])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        entries.map((entry) => ({ ...entry, hours: Number(entry.hours) }))
+      ).toEqual([
+        {
+          employeeId: PROJECT_TEST_USER,
+          entryDate: "2026-10-05",
+          projectId: f.projectId,
+          projectElementId: f.elementId,
+          laborCategoryId: f.laborCategoryId,
+          jobId: job.jobId,
+          hours: 1,
+          status: "Draft"
+        }
+      ]);
+      const event = await f.db
+        .selectFrom("productionEvent")
+        .select("postedToGL")
+        .where("id", "=", eventId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(event.postedToGL).toBe(true);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA: shop labor by a person with no labor category is refused",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ timekeepingControls: "DCAA" })
+        .where("id", "=", f.companyId)
+        .execute();
+      const { eventId } = await shopHour(f, { laborCategoryId: null });
+
+      const result = await postProductionEvent(f.ctx, {
+        productionEventId: eventId
+      });
+      expect(result.error?.message).toEqual(
+        "Set a labor category on this person before they record project time"
+      );
+      const written = await f.db
+        .selectFrom("timesheetEntry")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(written).toEqual([]);
     } finally {
       await f.cleanup();
     }

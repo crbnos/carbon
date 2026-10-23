@@ -171,7 +171,8 @@ import {
 } from "~/modules/projects/project-posting";
 import {
   chargeNumberError,
-  checkProjectBudget
+  checkProjectBudget,
+  insertTimesheetDraft
 } from "~/modules/projects/projects.service";
 import {
   assertCompanyRecords,
@@ -22777,6 +22778,9 @@ export const postProductionEventPermission = {
   update: "production"
 } satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
 
+export const SHOP_LABOR_CATEGORY_REQUIRED =
+  "Set a labor category on this person before they record project time";
+
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
 export async function postProductionEvent(
   ctx: ServiceContext,
@@ -22787,9 +22791,8 @@ export async function postProductionEvent(
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
-  const today = datetime
-    .today(await getCompanyTimeZone(db, companyId))
-    .toString();
+  const timeZone = await getCompanyTimeZone(db, companyId);
+  const today = datetime.today(timeZone).toString();
 
   const companyRecord = await single(
     db,
@@ -22899,6 +22902,42 @@ export async function postProductionEvent(
   const costAccount =
     projectCharge?.accountId ?? accountDefaults.data.workInProgressAccount;
 
+  // Shop labor on a project is priced by the employee's labor category
+  // (D37). Read once per event; a Machine event has no labor category.
+  const shopLabor =
+    projectCharge && event.type !== "Machine"
+      ? await loadShopLabor(db, { companyId, productionEventId, timeZone })
+      : null;
+
+  // DCAA timekeeping (D38): project labor is certified time. The Labor leg
+  // is skipped; the hours go to the employee's timesheet as a Draft entry
+  // with the job, and post-timesheet posts their cost when the week is
+  // certified. The Machine and Overhead legs post as before. Only the
+  // first post writes the entry: an event has no link to it, so a repost
+  // or a reversal leaves the entry for the employee to correct.
+  const timesheetLabor = shopLabor?.isDcaa ?? false;
+  const timesheetHours =
+    timesheetLabor && projectCharge && !reverse && !event.postedToGL
+      ? round((event.duration ?? 0) / 3600)
+      : 0;
+  if (timesheetHours > 0 && !shopLabor?.laborCategoryId) {
+    throw new InvalidInputError(SHOP_LABOR_CATEGORY_REQUIRED);
+  }
+  const timesheetDraft =
+    timesheetHours > 0 && projectCharge && shopLabor?.laborCategoryId
+      ? {
+          companyId,
+          employeeId: event.employeeId!,
+          entryDate: shopLabor.entryDate,
+          projectId: projectCharge.projectId,
+          projectElementId: projectCharge.projectElementId,
+          laborCategoryId: shopLabor.laborCategoryId,
+          hours: timesheetHours,
+          jobId,
+          createdBy: userId
+        }
+      : null;
+
   let cost = 0;
   let overheadCost = 0;
   if (!reverse) {
@@ -22920,7 +22959,7 @@ export async function postProductionEvent(
         ? Number(workCenter.data.machineRate ?? 0)
         : Number(workCenter.data.laborRate ?? 0);
 
-    cost = durationHours * rate;
+    cost = timesheetLabor ? 0 : durationHours * rate;
     overheadCost = durationHours * Number(workCenter.data.overheadRate ?? 0);
 
     if (
@@ -23009,6 +23048,18 @@ export async function postProductionEvent(
   if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
     // Nothing to post and nothing to reverse. On a reversal this clears the
     // flag so the event can be deleted; on a post it marks it done.
+    if (timesheetDraft) {
+      await db.transaction().execute(async (trx) => {
+        await insertTimesheetDraft(trx, timesheetDraft);
+        await trx
+          .updateTable("productionEvent")
+          .set({ postedToGL: true })
+          .where("id", "=", productionEventId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+      return { success: true } as PostProductionEventResult;
+    }
     await updateRows(
       db,
       "productionEvent",
@@ -23371,6 +23422,7 @@ export async function postProductionEvent(
           documentId: productionEventId,
           jobId: row.jobId,
           employeeId: row.employeeId,
+          laborCategoryId: row.laborCategoryId,
           quantity: row.quantity === null ? null : -Number(row.quantity),
           amount: -Number(row.amount),
           reversalOfId: row.id,
@@ -23406,6 +23458,10 @@ export async function postProductionEvent(
                 documentId: productionEventId,
                 jobId,
                 employeeId: event.employeeId,
+                laborCategoryId:
+                  costType === "Labor"
+                    ? (shopLabor?.laborCategoryId ?? null)
+                    : null,
                 quantity: hours,
                 amount,
                 journalLineId: journalLineResults[lineIndex]?.id ?? null,
@@ -23423,6 +23479,8 @@ export async function postProductionEvent(
       });
     }
 
+    if (timesheetDraft) await insertTimesheetDraft(trx, timesheetDraft);
+
     await trx
       .updateTable("productionEvent")
       .set({ postedToGL: !reverse })
@@ -23432,6 +23490,39 @@ export async function postProductionEvent(
   });
 
   return { success: true };
+}
+
+/**
+ * The employee's labor category, the company's timekeeping controls and the
+ * day the event's work began on the company's calendar, in one read.
+ */
+async function loadShopLabor(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; productionEventId: string; timeZone: string }
+) {
+  const row = await db
+    .selectFrom("productionEvent as pe")
+    .leftJoin("employeeJob as ej", (join) =>
+      join
+        .onRef("ej.id", "=", "pe.employeeId")
+        .onRef("ej.companyId", "=", "pe.companyId")
+    )
+    .leftJoin("companySettings as cs", "cs.id", "pe.companyId")
+    .select([
+      "ej.laborCategoryId",
+      "cs.timekeepingControls",
+      sql<string>`(("pe"."startTime" AT TIME ZONE ${args.timeZone})::date)::text`.as(
+        "entryDate"
+      )
+    ])
+    .where("pe.id", "=", args.productionEventId)
+    .where("pe.companyId", "=", args.companyId)
+    .executeTakeFirstOrThrow();
+  return {
+    laborCategoryId: row.laborCategoryId ?? null,
+    isDcaa: row.timekeepingControls === "DCAA",
+    entryDate: row.entryDate
+  };
 }
 const recalculateRequirementsLogger = getLogger(
   "server-functions",

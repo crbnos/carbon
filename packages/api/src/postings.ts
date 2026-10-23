@@ -590,6 +590,12 @@ export const saveTimesheetEntryInput = z.object({
   /** `add` only: the service visit the time belongs to. */
   serviceVisitId: z.string().min(1).nullable().optional(),
   /**
+   * The job the time was worked on (shop time under DCAA). Part of the
+   * cell's key: null is a row with no job. Left out, a cell save matches its
+   * entry whatever the job, as it did before jobs.
+   */
+  jobId: z.string().min(1).nullable().optional(),
+  /**
    * Where the work took place (R&D tax). Left out, it is the employee's job
    * location; null means no location.
    */

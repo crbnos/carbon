@@ -910,13 +910,16 @@ export function timesheetRowKey(row: {
   laborCategoryId: string;
   workLocationId?: string | null;
   rdActivityRole?: RdActivityRole | null;
+  /** Shop time under DCAA: the job the hours were worked on. */
+  jobId?: string | null;
 }): string {
   return [
     row.projectId,
     row.projectElementId ?? "",
     row.laborCategoryId,
     row.workLocationId ?? "",
-    row.rdActivityRole ?? ""
+    row.rdActivityRole ?? "",
+    row.jobId ?? ""
   ].join("\u001f");
 }
 
@@ -1343,6 +1346,7 @@ export type TimesheetRow<T> = {
   laborCategoryId: string;
   workLocationId: string | null;
   rdActivityRole: RdActivityRole | null;
+  jobId: string | null;
   /** The first entry of the row, for its display fields. */
   entry: T;
   cells: Record<string, TimesheetCell>;
@@ -1351,7 +1355,7 @@ export type TimesheetRow<T> = {
 
 /**
  * Groups timesheet entries into grid rows: one row per project, element,
- * labor category, work location and research role, with one cell per date. Two entries on the same date (a
+ * labor category, work location, research role and job, with one cell per date. Two entries on the same date (a
  * correction and its reversal) add up in one cell; the cell names the Draft
  * entry when there is one, because that is the entry a user can edit.
  */
@@ -1363,6 +1367,7 @@ export function groupTimesheetRows<
     laborCategoryId: string;
     workLocationId?: string | null;
     rdActivityRole?: RdActivityRole | null;
+    jobId?: string | null;
     entryDate: string;
     hours: number;
     status: TimesheetEntryStatus;
@@ -1381,6 +1386,7 @@ export function groupTimesheetRows<
         laborCategoryId: entry.laborCategoryId,
         workLocationId: entry.workLocationId ?? null,
         rdActivityRole: entry.rdActivityRole ?? null,
+        jobId: entry.jobId ?? null,
         entry,
         cells: {},
         total: 0

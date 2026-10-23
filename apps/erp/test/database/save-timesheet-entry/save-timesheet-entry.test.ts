@@ -959,3 +959,70 @@ databaseTest(
     }
   }
 );
+
+databaseTest("The job is part of a cell's key", async () => {
+  const f = await timesheetFixture("Standard");
+  try {
+    const { itemId, locationId } = await f.addStockedItem("bolt", {
+      quantity: 10,
+      unitCost: 10
+    });
+    const job = await f.addConsumeToProjectJob("a", {
+      locationId,
+      materialItemId: itemId,
+      quantityPerParent: 1,
+      jobQuantity: 1
+    });
+
+    // Shop time: an entry with the job.
+    const shop = await invokePosting(
+      handlesOf(f.ctx),
+      "save-timesheet-entry",
+      {
+      ...f.cell,
+      entryDate: day(-2),
+      hours: 1,
+      mode: "add",
+      status: "Draft",
+      jobId: job.jobId
+    },
+      saveTimesheetEntry
+    );
+    expect(shop.error).toBeNull();
+    expect((await f.entry(shop.data!.entryId!)).jobId).toEqual(job.jobId);
+
+    // The row without a job is a different cell: a new entry.
+    const plain = await invokePosting(
+      handlesOf(f.ctx),
+      "save-timesheet-entry",
+      {
+      ...f.cell,
+      entryDate: day(-2),
+      hours: 3,
+      jobId: null
+    },
+      saveTimesheetEntry
+    );
+    expect(plain.error).toBeNull();
+    expect(plain.data?.entryId).not.toEqual(shop.data?.entryId);
+    expect((await f.entry(plain.data!.entryId!)).jobId).toBeNull();
+
+    // The job's row edits the job's entry.
+    const changed = await invokePosting(
+      handlesOf(f.ctx),
+      "save-timesheet-entry",
+      {
+      ...f.cell,
+      entryDate: day(-2),
+      hours: 2,
+      jobId: job.jobId
+    },
+      saveTimesheetEntry
+    );
+    expect(changed.data?.entryId).toEqual(shop.data?.entryId);
+    expect(Number((await f.entry(shop.data!.entryId!)).hours)).toEqual(2);
+    expect(Number((await f.entry(plain.data!.entryId!)).hours)).toEqual(3);
+  } finally {
+    await f.cleanup();
+  }
+});
