@@ -94,13 +94,13 @@ Phase 1 — RMA and the depot service job
 - [x] Task 17: Create the job when a Service or Warranty line is received
 - [x] Task 18: Ship a service unit back with no value, and post a warranty replacement to warranty
 - [x] Task 19: Create the service invoice, and stop the invoice relieving stock twice
-- [ ] Task 20: Add the Jobs list, the New Job drawer and the navigation
-- [ ] Task 21: Build the job page
+- [x] Task 20: Add the Jobs list, the New Job drawer and the navigation
+- [x] Task 21: Build the job page
 - [ ] Task 22: Add time and parts to the job page
 - [ ] Task 23: Add the estimate and its PDF
 - [ ] Task 24: Wire Complete, Reopen, coverage change and Create Invoice
 - [ ] Task 25: Re-home the customer assets
-- [ ] Task 26: Rebuild the RMA line: return type, assets, next steps
+- [x] Task 26: Rebuild the RMA line: return type, assets, next steps
 - [ ] Task 27: Seed service jobs in the demo datasets
 
 Phase 2 — MES, My Time and the dispatch grid

@@ -31,6 +31,11 @@
   - Known gap: voiding a service invoice does not move the job back from Invoiced. The task did not ask for it.
 - 2026-10-23: Tasks 17–18 committed. Receiving a Service or Warranty line posts no value and opens the job (Billable or Warranty, Open, Depot). Voiding the receipt cancels the job, or is refused once the job has work. Shipping a serviced unit back posts no value and completes the RMA. A warranty replacement posts Dr Warranty Expense / Cr Inventory.
   - Checks: post-receipt and post-shipment tests pass (66), as do service-job and issue tests (11) and the inventory, create and memo tests (49). The erp typecheck and conformance pass.
+- 2026-10-23: Tasks 20, 21 and 26 committed together (both touched `path.ts`). The Jobs list, the new job page and the 3-pane job page all copy the port's maintenance dispatch files. The RMA line gets a return type, an asset and a problem, "Add from assets", a job link and next steps (Ship back, Scrap, No-charge replacement, Change to Return for Service).
+  - Checks: the erp and utils typecheck passes. ERP unit tests pass (710), as do the sales, post-receipt and post-shipment tests (202) and conformance. `check:manifest` is current.
+  - I fixed `mcp-tool-permissions.test.ts`: two operations need two modules (`sales_changeReturnLineToService`, `service_createServiceInvoice`) and now have override entries. The Task 19 commit had left this test failing.
+  - Screenshot checks against the precedents are deferred to Task 38 (no browser overnight).
+  - "Keep at zero value" did NOT ship, per the plan's escape hatch: no server path adds a tracked unit to stock at zero cost. After a no-charge replacement, the old unit can only be scrapped.
 
 ## Decisions made without Brad
 
@@ -60,6 +65,12 @@
 | 18 | `ShipmentAccountDefaults` does not gain `warrantyExpenseAccount`. The posting resolves the warranty account itself and passes it as `cogsAccountOverride` | A legacy backfill in `accounting.service.ts` builds that type, and the builder does not need the field. |
 | 17 | A serialized Service or Warranty line with no assigned serial is refused at receipt | The job and the asset need the serial. |
 | 18 | A void of a ship-back puts the asset back At Depot. `quantityShipped` never goes below 0 | Shipments posted before this change never counted. |
+| 21 | No `$jobId._index.tsx`. Notes, findings, resolution, repairable and assignee save through `update.tsx` | Maintenance has no index route. Its notes write from the browser, which Rule A forbids. |
+| 21 | Asset and Coverage are read-only in the properties panel. A "Billed Item" field shows for Fixed Price jobs | A coverage change posts a journal (Task 24). The invoice needs an item to bill at a fixed price. |
+| 26 | Scrap of a serviced unit sets the asset to Returned and posts nothing | The unit has no value on our books. |
+| 26 | Lines added from assets get unit price 0 and no `salesReturnOrderLineTrackedEntity` row. The receipt falls back to the asset's serial | The unit stays the customer's. The sales notes call that table legacy. |
+| 26 | `changeReturnLineToService` sets the job's coverage, then changes the line, in two steps, not one transaction | Each step goes through its own operation's gate. |
+| 26 | Customer assets and job links need `service_view`. A sales-only user sees neither | They come from the service module's RLS. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked
