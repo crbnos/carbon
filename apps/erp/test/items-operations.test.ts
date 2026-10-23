@@ -34,6 +34,7 @@ import {
   setItemActive,
   setItemPostingGroup,
   setItemSourcing,
+  updateItem,
   updateItemPlanning
 } from "../app/modules/items/items.server";
 import {
@@ -318,5 +319,62 @@ describe("updateItemPlanning", () => {
 
     expect(result.error).toMatchObject({ category: "rule" });
     expect(upsertItemPlanning).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateItem", () => {
+  const part = {
+    id: "i1",
+    name: "Bracket",
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Purchase to Order",
+    itemTrackingType: "Inventory",
+    unitOfMeasureCode: "EA",
+    type: "Part"
+  } as const;
+
+  it("refuses a readable id that differs from the item's, and writes nothing", async () => {
+    const { client, writes } = fakeClient({ item: { readableId: "P-100" } });
+
+    const result = await updateItem(contextFor(client), {
+      ...part,
+      readableId: "P-200"
+    });
+
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(result.error?.message).toContain("setItemReadableId");
+    expect(writes).toHaveLength(0);
+  });
+
+  it("refuses an item that is not of the type sent, and writes nothing", async () => {
+    const { client, writes } = fakeClient({ item: null });
+
+    const result = await updateItem(contextFor(client), {
+      ...part,
+      type: "Tool"
+    });
+
+    expect(result.error).toMatchObject({ category: "rule" });
+    expect(writes).toHaveLength(0);
+  });
+
+  it("writes neither the readable id nor the type", async () => {
+    const { client, writes } = fakeClient({ item: { readableId: "P-100" } });
+
+    const result = await updateItem(contextFor(client), {
+      ...part,
+      readableId: "P-100",
+      name: "Bracket, painted"
+    });
+
+    expect(result.error).toBeNull();
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatchObject({
+      table: "item",
+      op: "update",
+      values: { name: "Bracket, painted" }
+    });
+    expect(writes[0].values).not.toHaveProperty("readableId");
+    expect(writes[0].values).not.toHaveProperty("type");
   });
 });

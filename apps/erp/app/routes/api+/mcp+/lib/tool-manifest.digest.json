@@ -559,7 +559,7 @@
     {"name":"items_updateConfigurationParameterOrder","classification":"WRITE","schema":"b4f1f31e0f60","response":"bcde375ebd4c","permission":"parts:update","paginates":false},
     {"name":"items_updateConsumable","classification":"WRITE","schema":"e0ed6a5c0e19","response":"none","permission":"parts:update","paginates":false},
     {"name":"items_updateDefaultRevision","classification":"WRITE","schema":"7f8214d1083f","response":"d02966b20664","permission":"parts:update","paginates":false},
-    {"name":"items_updateItem","classification":"WRITE","schema":"ce8e8f42c401","response":"bcde375ebd4c","permission":"parts:update","paginates":false},
+    {"name":"items_updateItem","classification":"WRITE","schema":"ce8e8f42c401","response":"3797626bd17e","permission":"parts:update","paginates":false},
     {"name":"items_updateItemCost","classification":"WRITE","schema":"77edb4dfa70e","response":"bcde375ebd4c","permission":"parts:update","paginates":false},
     {"name":"items_updateItemManufacturing","classification":"WRITE","schema":"8f541b0237ee","response":"623ca47a6c74","permission":"parts:update","paginates":false},
     {"name":"items_updateItemPlanning","classification":"WRITE","schema":"45e5182283f4","response":"ade4704d7338","permission":"parts:update","paginates":false},
