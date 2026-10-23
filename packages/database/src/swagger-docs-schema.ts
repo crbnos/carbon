@@ -52012,6 +52012,12 @@ export default {
             $ref: "#/parameters/rowFilter.timesheetEntry.jobId"
           },
           {
+            $ref: "#/parameters/rowFilter.timesheetEntry.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.productionEventId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -52167,6 +52173,12 @@ export default {
             $ref: "#/parameters/rowFilter.timesheetEntry.jobId"
           },
           {
+            $ref: "#/parameters/rowFilter.timesheetEntry.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.productionEventId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -52274,6 +52286,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.timesheetEntry.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.timesheetEntry.productionEventId"
           },
           {
             $ref: "#/parameters/body.timesheetEntry"
@@ -156667,6 +156685,18 @@ export default {
             "The job whose shop time wrote this entry (DCAA timekeeping); NULL for time logged by hand.\n\nNote:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
           format: "text",
           type: "string"
+        },
+        jobOperationId: {
+          description:
+            "The job operation whose shop time wrote this entry (DCAA timekeeping); NULL for time logged by hand.\n\nNote:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        productionEventId: {
+          description:
+            "The production event whose hours this entry holds (DCAA timekeeping). post-production-event keeps a Draft entry in step with the event; a correction copies the link.\n\nNote:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -215019,6 +215049,22 @@ export default {
       name: "jobId",
       description:
         "The job whose shop time wrote this entry (DCAA timekeeping); NULL for time logged by hand.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.jobOperationId": {
+      name: "jobOperationId",
+      description:
+        "The job operation whose shop time wrote this entry (DCAA timekeeping); NULL for time logged by hand.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.timesheetEntry.productionEventId": {
+      name: "productionEventId",
+      description:
+        "The production event whose hours this entry holds (DCAA timekeeping). post-production-event keeps a Draft entry in step with the event; a correction copies the link.",
       required: false,
       in: "query",
       type: "string"
