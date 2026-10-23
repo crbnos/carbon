@@ -36,6 +36,7 @@ import {
   type ContractPlannedInvoice,
   type ContractScheduleReconciliation,
   type ContractTerms,
+  chainBilled,
   discountEndSplits,
   type ExistingRow,
   horizon,
@@ -48,6 +49,7 @@ import {
   reconcileContractSchedule,
   recurringValuePerPeriod,
   renewedEndDate,
+  rowPricing,
   suggestAmendmentType,
   validateScheduleEdit
 } from "@carbon/database/contract-schedule";
@@ -17899,6 +17901,7 @@ export function toLineTerms(
     | "startDate"
     | "endDate"
     | "billingMethod"
+    | "amendsLineId"
   >[]
 ): ContractLineTerms[] {
   return lines.map((line) => ({
@@ -17910,7 +17913,8 @@ export function toLineTerms(
     discountPercent: Number(line.discountPercent),
     startDate: line.startDate,
     endDate: line.endDate,
-    billingMethod: line.billingMethod
+    billingMethod: line.billingMethod,
+    amendsLineId: line.amendsLineId
   }));
 }
 
@@ -19764,7 +19768,9 @@ const rowView = (row: ScheduleRowView): ScheduleRowView => ({
 /** Effective dates of an amendment for one existing line. A Recurring line
  *  changes from the effective date (or its own start, when later). A One-time
  *  line has no time to split: the replacement takes over the whole line, so
- *  the old one ends the day before it starts and plans nothing. */
+ *  the old one ends the day before it starts and plans nothing more. What it
+ *  already billed stays, and its copy bills only the rest
+ *  (`reconcileContractSchedule`). */
 function lineCutover(line: ContractLineRow, effective: string) {
   if (line.revenueType === "One-time") {
     return { oldEnd: addDays(line.startDate, -1), newStart: line.startDate };
@@ -19818,7 +19824,7 @@ async function amend(
       const label = (line: ContractLineRow) =>
         line.description ?? `Line ${line.id}`;
       const touchedLines = new Set<string>();
-      const openLine = (lineId: string) => {
+      const openLine = (lineId: string, op: "change" | "end") => {
         const line = lineById.get(lineId);
         if (!line) throw new NotFoundError("Contract line not found");
         if (touchedLines.has(lineId)) {
@@ -19830,9 +19836,15 @@ async function amend(
             `${label(line)} already ended on ${line.endDate}`
           );
         }
-        if (line.revenueType === "One-time" && invoicedLineIds.has(line.id)) {
+        // A changed One-time line's copy bills only what is left (its price
+        // checked below); ending one would leave the rest unbilled.
+        if (
+          op === "end" &&
+          line.revenueType === "One-time" &&
+          invoicedLineIds.has(line.id)
+        ) {
           throw new InvalidInputError(
-            `${label(line)} is a one-time line that has been invoiced; it cannot be changed`
+            `${label(line)} is a one-time line that has been invoiced; it cannot be ended`
           );
         }
         return line;
@@ -19873,12 +19885,16 @@ async function amend(
       }
 
       // The next line set: end dates to write and lines to insert.
-      const ends: { id: string; endDate: string }[] = [];
+      const ends: {
+        id: string;
+        endDate: string;
+        revenueEndDate?: string | null;
+      }[] = [];
       const inserts: { fields: LineFields; overrides: Partial<LineFields> }[] =
         [];
       for (const change of payload.changes) {
         if (change.op === "change") {
-          const line = openLine(change.lineId);
+          const line = openLine(change.lineId, "change");
           // A change replaces the line with a new id; billable items point at
           // the old one (plan decision P9).
           if (line.billingMethod !== "Fixed") {
@@ -19895,7 +19911,39 @@ async function amend(
             );
           }
           const { oldEnd, newStart } = lineCutover(line, effective);
-          ends.push({ id: line.id, endDate: oldEnd });
+          if (line.revenueType === "One-time") {
+            // The copy bills its price less what the line (and the lines it
+            // replaced) billed. A price below that would need a credit, which
+            // a one-time line has no adjustment for.
+            const billed = chainBilled(line.id, toLineTerms(lines), existing);
+            const price = rowPricing(
+              {
+                quantity: Number(change.quantity ?? line.quantity),
+                rate: Number(change.rate ?? line.rate),
+                discountPercent:
+                  change.discountPercent !== undefined
+                    ? fraction(change.discountPercent)
+                    : Number(line.discountPercent)
+              },
+              1
+            ).amount;
+            if (billed > price && !equals(billed, price)) {
+              throw new InvalidInputError(
+                `${label(line)} has billed ${billed}; a change cannot price it below that`
+              );
+            }
+            // The old line still earns what it billed, over the service it
+            // covers — the window its copy keeps — not on a day before it
+            // started.
+            ends.push({
+              id: line.id,
+              endDate: oldEnd,
+              revenueEndDate:
+                line.revenueEndDate ?? line.endDate ?? line.startDate
+            });
+          } else {
+            ends.push({ id: line.id, endDate: oldEnd });
+          }
           inserts.push({
             fields: line,
             overrides: {
@@ -19931,7 +19979,7 @@ async function amend(
             }
           });
         } else if (change.op === "end") {
-          const line = openLine(change.lineId);
+          const line = openLine(change.lineId, "end");
           ends.push({
             id: line.id,
             endDate: lineCutover(line, effective).oldEnd

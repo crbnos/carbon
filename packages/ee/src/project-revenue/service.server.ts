@@ -443,20 +443,50 @@ export function synthesizeCommercialProjectRevenue(
       elements.map((element) => [element.id, element])
     );
 
-    // 3. The Fixed lines' scheduled total (their contract value).
-    const scheduled = await trx
-      .selectFrom("customerContractInvoiceLine")
-      .select([
-        "customerContractLineId",
-        sql<number>`COALESCE(SUM("amount"), 0)`.as("amount")
-      ])
-      .where("companyId", "=", companyId)
-      .where("customerContractLineId", "in", lineIds)
-      .groupBy("customerContractLineId")
-      .execute();
-    const scheduledByLine = new Map(
-      scheduled.map((row) => [row.customerContractLineId, Number(row.amount)])
+    // 3. The Fixed lines' scheduled total (their contract value), plus what
+    //    the lines each one replaced billed: a changed One-time line's copy
+    //    schedules only what the old line had not billed
+    //    (`reconcileContractSchedule`), so the price is the chain's.
+    const scheduledLineByHistoryId = new Map(
+      open.flatMap((line) =>
+        line.historyLineIds.map((id) => [id, line.id] as const)
+      )
     );
+    const scheduled = await trx
+      .selectFrom("customerContractInvoiceLine as r")
+      .leftJoin("customerContractInvoice as i", (join) =>
+        join
+          .onRef("i.id", "=", "r.customerContractInvoiceId")
+          .onRef("i.companyId", "=", "r.companyId")
+      )
+      .select([
+        "r.customerContractLineId",
+        sql<number>`COALESCE(SUM(r."amount"), 0)`.as("amount")
+      ])
+      .where("r.companyId", "=", companyId)
+      .where((eb) =>
+        eb.or([
+          eb("r.customerContractLineId", "in", lineIds),
+          eb.and([
+            eb("r.customerContractLineId", "in", [
+              ...scheduledLineByHistoryId.keys()
+            ]),
+            eb("r.isAdjustment", "=", false),
+            eb("i.status", "in", ["Invoiced", "Billed Externally"])
+          ])
+        ])
+      )
+      .groupBy("r.customerContractLineId")
+      .execute();
+    const scheduledByLine = new Map<string, number>();
+    for (const row of scheduled) {
+      const lineId = scheduledLineByHistoryId.get(row.customerContractLineId);
+      if (!lineId) continue;
+      scheduledByLine.set(
+        lineId,
+        (scheduledByLine.get(lineId) ?? 0) + Number(row.amount)
+      );
+    }
 
     // 4. The loss provision each line (and the lines it replaced) carries:
     //    earlier months, and this month's rows an earlier run already posted

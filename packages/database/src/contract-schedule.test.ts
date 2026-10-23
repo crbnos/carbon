@@ -754,6 +754,153 @@ describe("lastRecurringPeriodEnd", () => {
   });
 });
 
+describe("reconcileContractSchedule — a changed one-time line", () => {
+  // A 100,000 Fixed Price line billed in four 25,000 events; the first two
+  // are invoiced. An amendment changes the price: the old line ends the day
+  // before it starts and its copy (`amendsLineId`) takes it over.
+  const terms = calendarMonthly();
+  const oneTime = (
+    overrides: Partial<ContractLineTerms> & { id: string; rate: number }
+  ) =>
+    line({
+      revenueType: "One-time",
+      rateUnit: null,
+      startDate: "2026-11-01",
+      endDate: "2027-10-31",
+      ...overrides
+    });
+  const replaced = oneTime({
+    id: "fp-1",
+    rate: 100_000,
+    endDate: "2026-10-31"
+  });
+  const event = (
+    index: number,
+    invoiceDate: string,
+    invoiceStatus: ExistingRow["invoiceStatus"],
+    lineId = "fp-1"
+  ) =>
+    existingRow({
+      id: `${lineId}-event-${index}`,
+      lineId,
+      invoiceId: `inv-${lineId}-${index}`,
+      invoiceDate,
+      invoiceStatus,
+      invoiceIsEdited: true,
+      periodStart: "2026-11-01",
+      periodEnd: "2027-10-31",
+      units: 0.25,
+      unitPrice: 100_000,
+      amount: 25_000
+    });
+  const events = [
+    event(1, "2026-11-01", "Invoiced"),
+    event(2, "2027-02-01", "Invoiced"),
+    event(3, "2027-05-01", "Planned"),
+    event(4, "2027-08-01", "Planned")
+  ];
+  const copyRows = (result: ReturnType<typeof reconcileContractSchedule>) =>
+    result.create.flatMap((i) => i.rows).filter((r) => r.lineId === "fp-2");
+
+  it("plans only the new price less what the replaced line invoiced", () => {
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [
+        replaced,
+        oneTime({ id: "fp-2", rate: 120_000, amendsLineId: "fp-1" })
+      ],
+      existing: events,
+      from: "2027-03-15",
+      through: "2027-10-31"
+    });
+    const rows = copyRows(result);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.amount).toBe(70_000);
+    // The remaining events are re-planned as that one row.
+    expect(result.deleteInvoiceIds.sort()).toEqual([
+      "inv-fp-1-3",
+      "inv-fp-1-4"
+    ]);
+    expect(result.adjustments).toEqual([]);
+  });
+
+  it("follows the amendsLineId chain and counts Billed Externally rows", () => {
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [
+        replaced,
+        oneTime({
+          id: "fp-2",
+          rate: 120_000,
+          amendsLineId: "fp-1",
+          endDate: "2026-10-31"
+        }),
+        oneTime({ id: "fp-3", rate: 130_000, amendsLineId: "fp-2" })
+      ],
+      existing: [
+        event(1, "2026-11-01", "Billed Externally"),
+        event(2, "2027-02-01", "Invoiced"),
+        existingRow({
+          ...event(1, "2027-05-01", "Invoiced", "fp-2"),
+          amount: 30_000
+        })
+      ],
+      from: "2027-06-15",
+      through: "2027-10-31"
+    });
+    const rows = result.create
+      .flatMap((i) => i.rows)
+      .filter((r) => r.lineId === "fp-3");
+    expect(rows.map((r) => r.amount)).toEqual([50_000]);
+  });
+
+  it("plans nothing when the new price is below what was invoiced", () => {
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [
+        replaced,
+        oneTime({ id: "fp-2", rate: 40_000, amendsLineId: "fp-1" })
+      ],
+      existing: events,
+      from: "2027-03-15",
+      through: "2027-10-31"
+    });
+    expect(copyRows(result)).toEqual([]);
+  });
+
+  it("leaves a Recurring copy to its own periods", () => {
+    const result = reconcileContractSchedule({
+      terms,
+      lines: [
+        line({ id: "seats-1", rate: 100, endDate: "2026-11-30" }),
+        line({
+          id: "seats-2",
+          rate: 150,
+          startDate: "2026-12-01",
+          amendsLineId: "seats-1"
+        })
+      ],
+      existing: [
+        existingRow({
+          id: "nov",
+          lineId: "seats-1",
+          invoiceDate: "2026-11-01",
+          periodStart: "2026-11-01",
+          periodEnd: "2026-11-30",
+          unitPrice: 100,
+          amount: 100
+        })
+      ],
+      from: "2026-12-01",
+      through: "2027-01-31"
+    });
+    const rows = result.create
+      .flatMap((i) => i.rows)
+      .filter((r) => r.lineId === "seats-2");
+    expect(rows.map((r) => r.amount)).toEqual([150, 150]);
+  });
+});
+
 describe("reconcileContractSchedule — split and repeated adjustments", () => {
   const terms = calendarMonthly({ startDate: "2027-03-01" });
   const service = (endDate: string | null) =>

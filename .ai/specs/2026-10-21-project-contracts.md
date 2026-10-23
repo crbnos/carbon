@@ -340,7 +340,7 @@ Design Decisions.
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Amend, cancel and renewal re-plan a Fixed Price line's remaining billing events into one row | Med | Known gap, documented. Amend already refuses a change to a billing line; a Fixed Price line's events are best set before Confirm. |
+| Amend, cancel and renewal re-plan a Fixed Price line's remaining billing events into one row | Med | Known gap, documented. Amend already refuses a change to a billing line; a Fixed Price line's events are best set before Confirm. A `change` of a partly invoiced Fixed Price line bills only the new price less what was invoiced (audit B2, 2026-10-22), as one row on the first invoice date from the change; a new price below what was invoiced is refused. |
 | A Fixed Price line with Percent Complete may be refused at Confirm (`refuseRevenueResiduals` counts its billed total against zero revenue rows) | Med | The plan writes a failing test first. If it fails, the fix skips progress revenue methods in the residual check (server and `$id.tsx`). |
 | The branch is behind main, which moves the contract engine into `sales.service.ts` and drops the module barrels | Med | Build on the branch as it is. The merge is a separate step with the `resolving-merge-conflicts` skill. |
 | A legacy contract mixes Recurring and T&M lines | Low | The backfill makes it a project contract; the server guard applies to new writes only. |

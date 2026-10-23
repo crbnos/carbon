@@ -92,12 +92,14 @@ async function percentCompleteLine(
   return { project, lineId };
 }
 
-/** One Planned schedule row: a Fixed line's contract value. */
+/** One schedule row (Planned unless `status` says otherwise): a Fixed
+ *  line's contract value. */
 async function addScheduledTotal(
   f: Fixture,
   contractId: string,
   lineId: string,
-  amount: number
+  amount: number,
+  status: "Planned" | "Invoiced" = "Planned"
 ) {
   const invoice = await f.db
     .insertInto("customerContractInvoice")
@@ -105,6 +107,7 @@ async function addScheduledTotal(
       companyId: f.companyId,
       customerContractId: contractId,
       invoiceDate: "2026-12-31",
+      status,
       createdBy: f.userId
     })
     .returning("id")
@@ -632,6 +635,91 @@ databaseTest(
           { lineId: next.lineId, amount: 20000 }
         ].sort((a, b) => a.lineId.localeCompare(b.lineId))
       );
+    } finally {
+      await cleanup(f);
+    }
+  }
+);
+
+// Audit B2: the copy of a partly invoiced Fixed line schedules only what the
+// old line had not billed, so the price is the chain's: billed + scheduled.
+databaseTest(
+  "a change copy of a partly invoiced Fixed Percent Complete line is priced at the new price",
+  async () => {
+    const f = await fixture();
+    try {
+      const { project, lineId } = await percentCompleteLine(f, {
+        key: "pcb",
+        billingMethod: "Fixed",
+        estimateAtCompletion: 100000
+      });
+      const line = await f.db
+        .selectFrom("customerContractLine")
+        .selectAll()
+        .where("id", "=", lineId)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      await addScheduledTotal(
+        f,
+        line.customerContractId,
+        lineId,
+        100000
+      );
+      await postCost(f, project, 40000, "2026-09-10");
+      await propose(f, "2026-09-30");
+      expect((await month(f, "2026-09-01")).amount).toBe(40000);
+
+      // The amendment: 50,000 of the old line was invoiced, its Planned rows
+      // went, and the copy at 120,000 schedules the other 70,000.
+      await f.db
+        .deleteFrom("customerContractInvoiceLine")
+        .where("customerContractLineId", "=", lineId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await addScheduledTotal(
+        f,
+        line.customerContractId,
+        lineId,
+        50000,
+        "Invoiced"
+      );
+      const amendment = await f.db
+        .insertInto("customerContractAmendment")
+        .values({
+          customerContractId: line.customerContractId,
+          amendmentDate: "2026-10-01",
+          contractType: "Expansion",
+          reason: "Price change",
+          companyId: f.companyId,
+          createdBy: f.userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const copyId = `${lineId}-copy`;
+      await f.db
+        .insertInto("customerContractLine")
+        .values({
+          ...line,
+          id: copyId,
+          rate: 120000,
+          amendmentId: amendment.id,
+          amendsLineId: lineId,
+          createdAt: undefined,
+          updatedAt: undefined
+        })
+        .execute();
+      await setLineDates(f, lineId, {
+        startDate: "2026-01-01",
+        endDate: "2025-12-31"
+      });
+      await addScheduledTotal(f, line.customerContractId, copyId, 70000);
+
+      await postCost(f, project, 10000, "2026-10-05");
+      await propose(f, "2026-10-31");
+
+      // 50 % of 120,000 is 60,000 earned; 40,000 was recognized.
+      const { revenue } = await monthRows(f, "2026-10-01");
+      expect(revenue).toEqual([{ lineId: copyId, amount: 20000 }]);
     } finally {
       await cleanup(f);
     }

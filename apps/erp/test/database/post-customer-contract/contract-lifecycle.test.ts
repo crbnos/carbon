@@ -2697,3 +2697,215 @@ databaseTest(
     }
   }
 );
+
+// Audit B2: an amendment `change` of a partly invoiced One-time line (a
+// project contract's Fixed Price line, a service contract's One-time line)
+// replaces it with a copy. The copy bills only what the replaced line has
+// not, and each line recognizes what it bills over the same window, so the
+// two together bill and earn the new price.
+for (const basis of ["Schedule", "Project"] as const) {
+  databaseTest(
+    `a price change of a partly invoiced one-time line bills only the rest (${basis})`,
+    async () => {
+      const f = await contractFixture();
+      const { ctx, db, companyId } = f;
+      try {
+        const itemId = await contractItemId(db, companyId, f.oneTimeLineId);
+        const { customerId } = await db
+          .selectFrom("customerContract")
+          .select("customerId")
+          .where("id", "=", f.contractId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirstOrThrow();
+        const project =
+          basis === "Project"
+            ? await (await projectBillingFixture(f)).addProject(
+                "fp-change",
+                "PFP",
+                "Contract"
+              )
+            : null;
+        // Advance bills on the 1st, Arrears (a project contract) on the last.
+        const dates =
+          basis === "Schedule"
+            ? ["2026-01-01", "2026-04-01", "2026-07-01", "2026-10-01"]
+            : ["2026-01-31", "2026-04-30", "2026-07-31", "2026-10-31"];
+
+        const addContract = async (key: string) => {
+          const contractId = `${companyId}-${key}`;
+          const lineId = `${contractId}-line`;
+          await db.transaction().execute(async (trx) => {
+            await trx
+              .insertInto("customerContract")
+              .values({
+                id: contractId,
+                customerContractId: `CON-${key}`,
+                name: key,
+                customerId,
+                billingBasis: basis,
+                projectId: project?.projectId ?? null,
+                closeDate: "2026-01-01",
+                startDate: "2026-01-01",
+                endDate: "2026-12-31",
+                termMonths: 12,
+                billingFrequency: "Month",
+                billingAlignment: "Calendar",
+                billingTiming: basis === "Schedule" ? "Advance" : "Arrears",
+                renewal: "End",
+                currencyCode: "USD",
+                companyId,
+                createdBy: USER
+              })
+              .execute();
+            await trx
+              .insertInto("customerContractLine")
+              .values({
+                id: lineId,
+                customerContractId: contractId,
+                revenueType: "One-time",
+                itemId,
+                description: "Fixed Price build",
+                quantity: 1,
+                rate: 100_000,
+                startDate: "2026-01-01",
+                endDate: "2026-12-31",
+                billingMethod: "Fixed",
+                revenueMethod: "Daily",
+                projectId: project?.projectId ?? null,
+                projectElementId: project?.rootId ?? null,
+                companyId,
+                createdBy: USER
+              })
+              .execute();
+          });
+          // Four 25,000 billing events.
+          const split = await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "edit-schedule",
+              customerContractId: contractId,
+              asOf: "2026-01-01",
+              edit: {
+                intent: "split",
+                customerContractInvoiceLineId: `planned:${dates[0]}:${lineId}:2026-01-01`,
+                installments: dates.map((invoiceDate) => ({
+                  invoiceDate,
+                  amount: 25_000
+                }))
+              }
+            },
+            postCustomerContract
+          );
+          expect(split.error).toBeNull();
+          const confirmed = await invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            { type: "confirm", customerContractId: contractId, asOf: "2026-01-01" },
+            postCustomerContract
+          );
+          expect(confirmed.error).toBeNull();
+          // The first two events are invoiced: 50,000.
+          const run = await invokePosting(
+            handlesOf(ctx),
+            "create-contract-invoices",
+            { asOf: dates[1]!, customerContractId: contractId },
+            createContractInvoices
+          );
+          expect(run.error).toBeNull();
+          expect(run.data!.failures).toEqual([]);
+          return { contractId, lineId };
+        };
+        const changePrice = (contractId: string, lineId: string, rate: number) =>
+          invokePosting(
+            handlesOf(ctx),
+            "post-customer-contract",
+            {
+              type: "amend",
+              customerContractId: contractId,
+              asOf: "2026-05-10",
+              amendmentDate: "2026-05-10",
+              effect: "Change Date",
+              contractType: "Expansion",
+              reason: "Price change",
+              changes: [{ op: "change", lineId, rate }]
+            },
+            postCustomerContract
+          );
+        const billedRows = async (contractId: string) =>
+          (await plannedInvoices(db, companyId, contractId)).flatMap(
+            (invoice) =>
+              invoice.rows.map((row) => ({
+                lineId: row.customerContractLineId,
+                status: invoice.status,
+                amount: Number(row.amount)
+              }))
+          );
+
+        // --- 100,000 → 120,000: the copy bills 70,000 ----------------------
+        const up = await addContract("fp-up");
+        const amended = await changePrice(up.contractId, up.lineId, 120_000);
+        expect(amended.error).toBeNull();
+        const lines = await contractLines(db, companyId, up.contractId);
+        const copy = lines.find((line) => line.amendsLineId === up.lineId)!;
+        expect(copy).toBeDefined();
+        expect(
+          (await billedRows(up.contractId)).map((row) => [
+            row.lineId === up.lineId ? "old" : "copy",
+            row.status,
+            row.amount
+          ])
+        ).toEqual([
+          ["old", "Invoiced", 25_000],
+          ["old", "Invoiced", 25_000],
+          ["copy", "Planned", 70_000]
+        ]);
+
+        // Each line earns what it bills over the same window, so the months
+        // through May hold 151 of 365 days of the new price.
+        const revenue = await revenueRows(db, companyId, up.contractId);
+        const lineRevenue = (lineId: string) =>
+          round(
+            revenue
+              .filter((row) => row.customerContractLineId === lineId)
+              .reduce((sum, row) => sum + row.amount, 0)
+          );
+        expect(lineRevenue(up.lineId)).toBe(50_000);
+        expect(lineRevenue(copy.id)).toBe(70_000);
+        expect(
+          revenue
+            .filter((row) => row.periodStart <= "2026-05-01")
+            .reduce((sum, row) => sum + row.amount, 0)
+        ).toBeCloseTo((120_000 * 151) / 365, 2);
+
+        // Invoicing the rest bills 70,000 more: 120,000 in all.
+        const rest = await invokePosting(
+          handlesOf(ctx),
+          "create-contract-invoices",
+          { asOf: "2026-12-31", customerContractId: up.contractId },
+          createContractInvoices
+        );
+        expect(rest.error).toBeNull();
+        expect(rest.data!.failures).toEqual([]);
+        const invoiced = (await billedRows(up.contractId)).filter(
+          (row) => row.status === "Invoiced"
+        );
+        expect(round(invoiced.reduce((sum, row) => sum + row.amount, 0))).toBe(
+          120_000
+        );
+
+        // --- 100,000 → 40,000: below the 50,000 invoiced, refused ---------
+        const down = await addContract("fp-down");
+        const before = await billedRows(down.contractId);
+        const refused = await changePrice(down.contractId, down.lineId, 40_000);
+        expect(refused.error?.message).toContain("cannot price it below");
+        expect(await billedRows(down.contractId)).toEqual(before);
+        expect(await contractLines(db, companyId, down.contractId)).toHaveLength(
+          1
+        );
+      } finally {
+        await f.cleanup();
+      }
+    }
+  );
+}

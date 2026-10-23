@@ -58,6 +58,9 @@ export type ContractLineTerms = {
   /** Absent means Fixed. A Time & Materials or Cost Plus line has no
    *  schedule: its billable items are invoiced instead. */
   billingMethod?: "Fixed" | "Time & Materials" | "Cost Plus";
+  /** The line an amendment's `change` replaced with this one. A One-time
+   *  copy bills only what its replaced lines have not (`replacedLineBilled`). */
+  amendsLineId?: string | null;
 };
 
 export type PlannedRow = {
@@ -512,6 +515,58 @@ export function invoiceLinePricing(
 // ---------------------------------------------------------------------------
 // Reconciliation
 
+/** What a line and the lines it replaced (its `amendsLineId` chain) have
+ *  billed: their non-adjustment rows on `Invoiced` and `Billed Externally`
+ *  invoices. A One-time line is replaced whole, from its own first day, so
+ *  each line of the chain prices the same delivery: the latest copy bills
+ *  only the rest. */
+export function chainBilled(
+  lineId: string | null | undefined,
+  lines: Pick<ContractLineTerms, "id" | "amendsLineId">[],
+  existing: Pick<
+    ExistingRow,
+    "lineId" | "invoiceStatus" | "isAdjustment" | "amount"
+  >[]
+): number {
+  const lineById = new Map(lines.map((l) => [l.id, l]));
+  const chain = new Set<string>();
+  let current = lineId ?? null;
+  while (current !== null && !chain.has(current)) {
+    chain.add(current);
+    current = lineById.get(current)?.amendsLineId ?? null;
+  }
+  let billed = 0;
+  for (const row of existing) {
+    if (row.isAdjustment || !chain.has(row.lineId)) continue;
+    if (
+      row.invoiceStatus === "Invoiced" ||
+      row.invoiceStatus === "Billed Externally"
+    ) {
+      billed += row.amount;
+    }
+  }
+  return round(billed);
+}
+
+/** Per One-time line that replaced another, what the replaced lines billed
+ *  (`chainBilled` of its `amendsLineId`). Lines with nothing billed before
+ *  them are left out. */
+export function replacedLineBilled(
+  lines: Pick<ContractLineTerms, "id" | "revenueType" | "amendsLineId">[],
+  existing: Pick<
+    ExistingRow,
+    "lineId" | "invoiceStatus" | "isAdjustment" | "amount"
+  >[]
+): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const line of lines) {
+    if (line.revenueType !== "One-time" || !line.amendsLineId) continue;
+    const billed = chainBilled(line.amendsLineId, lines, existing);
+    if (!equals(billed, 0)) result.set(line.id, billed);
+  }
+  return result;
+}
+
 export type ContractScheduleRecut = {
   id: string;
   periodEnd: string;
@@ -539,7 +594,10 @@ export type ContractScheduleReconciliation = {
  *  is always reconciled as a whole: its rows together must equal its ideal
  *  row (0 when the line no longer covers the period).
  *
- *  1. `ideal = planInvoiceSchedule(terms, lines, through)`.
+ *  1. `ideal = planInvoiceSchedule(terms, lines, through)`, less, on a
+ *     One-time line an amendment's `change` made (`amendsLineId`), what the
+ *     lines it replaced billed (`replacedLineBilled`; nothing when that is
+ *     the whole price or more).
  *  2. Adjustments. For a key with `Invoiced` rows whose Recurring line now
  *     ends before the period's end, the credit the key needs is
  *     `ideal − Σ billed` (never more than what was invoiced). Adjustments
@@ -583,9 +641,26 @@ export function reconcileContractSchedule({
   const periodKey = (row: { lineId: string; periodEnd: string }) =>
     `${row.lineId}|${row.periodEnd}`;
 
-  // 1. The ideal schedule.
+  // 1. The ideal schedule. A One-time copy of a changed line plans its price
+  //    less what the lines it replaced billed — never below nothing.
+  const priorBilled = replacedLineBilled(lines, existing);
   const idealRows = planInvoiceSchedule(terms, lines, through).flatMap(
-    (invoice) => invoice.rows
+    (invoice) =>
+      invoice.rows.flatMap((row) => {
+        const prior = priorBilled.get(row.lineId);
+        if (prior === undefined) return [row];
+        const amount = round(row.amount - prior);
+        if (amount <= 0 || equals(amount, 0)) return [];
+        return [
+          {
+            ...row,
+            units: equals(row.amount, 0)
+              ? row.units
+              : (row.units * amount) / row.amount,
+            amount
+          }
+        ];
+      })
   );
   const idealByKey = new Map(idealRows.map((row) => [key(row), row]));
 
