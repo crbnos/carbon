@@ -47,8 +47,7 @@ hidden (not unmounted) under Standard, so its fields still post.
 | `standardWeeklyHours` | 40 | `dilutionFactor` |
 
 Turning DCAA on is refused while a Released Standard project has no
-`costObjective` ("Set a cost objective on N projects first"). A Service project has no
-cost objective field, so it is not counted.
+`costObjective` ("Set a cost objective on N projects first").
 
 Unallowable cost, cost objectives, CLIN numbers and funding actions work in both modes.
 In DCAA mode the funding actions own the line's funded totals (below).
@@ -153,8 +152,7 @@ its week until the employee accepts it in the ERP.
 
 Spec `.ai/specs/2026-10-21-project-contracts.md` section 10.6, D37 and D38. In DCAA
 mode, project labor is certified time. Shop time on a consume-to-project job is project
-labor, so it goes through the weekly timesheet, as a service visit's time does
-(`timesheetEntry.serviceVisitId`).
+labor, so it goes through the weekly timesheet.
 
 `post-production-event` reads the shop labor facts once per event with a project charge
 (`loadShopLabor`, one query; not for a Machine event): the employee's

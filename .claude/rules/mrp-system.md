@@ -290,10 +290,8 @@ project stock gets output identical to before, row for row.
   (project stock, Statistical) covers nothing and nets as supply. Both views
   read one predicate, `purchase_order_line_consumed_by_project` (SQL twin of
   post-receipt `consumedByProject`). The required date is the line's
-  `requiredDate`, else the element's start, else the Service project's next
-  unfinished visit (`plannedStart` as a date in the company's time zone), else
-  the project's start; with none, `planCompany` uses today. A Draft service
-  order's project is Draft, so its lines are not demand (`field-service.md`).
+  `requiredDate`, else the element's start, else
+  the project's start; with none, `planCompany` uses today.
   An open borrow is firm `Project Borrow` demand on the borrower's segment and
   firm `Project Borrow` supply on the lender's, both on the payback date.
 - **The netting sequence** (`explodeBom`, the pure helpers in

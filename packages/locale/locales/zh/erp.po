@@ -1328,8 +1328,8 @@ msgstr "合同行的合同行项目号 (CLIN)：4 位数字，如 0001。项目�
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D 税收报告的合同设置。有资金支持的合同下的直接项目成本不是合格的研究费用。默认情况下，有成本加成或工料合约行的合同计为有资金支持。"
 
-msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr "一份按计划开票日程对服务物料进行开票的合同，在可续期的期间内含有循环和一次性行。只有服务合同涵盖服务订单。"
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
+msgstr ""
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
 msgstr "一份在业绩期间内对项目工作进行开票的合同。其行为时间&物料、成本加或固定价格，从计费物料和计费事件而非日程表进行开票。"
@@ -2005,9 +2005,6 @@ msgstr "用户在收货时记录每个生产批次或序列号的有效期。当
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "可变费用（如里程超额、损害、交付、清洁）在协议的下一份发票上计费。"
-
-msgid "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
-msgstr "针对一个序列号的工单，编号为 SVC…：客户处单位的现场访问、库存序列号的翻新或 RMA 收货的维修。其费用在工作树上汇总。"
 
 msgid "A written off item is never billed."
 msgstr "核销的物料从不计费。"
@@ -7386,6 +7383,9 @@ msgstr "销售成本（默认）"
 
 msgid "Cost of Sales"
 msgstr "销售成本"
+
+msgid "Cost of Service"
+msgstr ""
 
 msgid "Cost of service work covered by a warranty"
 msgstr "保修范围内的服务工作成本"
@@ -14463,6 +14463,9 @@ msgstr "人工机器差异"
 msgid "Labor & Machine Variance (default)"
 msgstr "人工机器差异（默认）"
 
+msgid "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+msgstr ""
+
 msgid "Labor Categories"
 msgstr "人工分类"
 
@@ -18366,8 +18369,8 @@ msgstr "1 {0} 等于多少 {1}？"
 msgid "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 msgstr "一份合同修改的时间和物料或成本加成订单行的资金，包括修改号、日期、ACRN、资金成本、资金费用和有效期。在DCAA模式下，订单行的资金总额是其资金操作的总和。"
 
-msgid "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
-msgstr "一项待账单成本，由账单元素下的费用或服务订单产生。它是\"未账单\"、\"搁置\"、\"已账单\"或\"核销\"状态。"
+msgid "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
+msgstr ""
 
 msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
 msgstr "每个已发生成本计划一个CSV。计划D、F、J、M、N和O需要Carbon之外的数据。"
@@ -24020,9 +24023,6 @@ msgstr "服务人工物料已更新"
 
 msgid "Service lines"
 msgstr "服务行"
-
-msgid "Service order"
-msgstr "服务订单"
 
 msgid "Service Period"
 msgstr "服务期间"
@@ -30393,9 +30393,6 @@ msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "谁拥有此租赁：他们获得发票摘要和日期提醒。"
-
-msgid "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
-msgstr "由谁为服务订单费用付款由过账时决定：保修、合同、可计费或在翻新中资本化。覆盖可以更改它，需要说明原因。"
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "谁接收发票、在哪里以及按什么条款。"

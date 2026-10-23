@@ -1328,8 +1328,8 @@ msgstr "A contract line item number on a contract line: 4 digits, such as 0001. 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 
-msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
+msgstr "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
 msgstr "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
@@ -2005,9 +2005,6 @@ msgstr "A user records the expiry date on each batch or serial when the goods ar
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
-
-msgid "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
-msgstr "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
 
 msgid "A written off item is never billed."
 msgstr "A written off item is never billed."
@@ -7386,6 +7383,9 @@ msgstr "Cost of Goods Sold (default)"
 
 msgid "Cost of Sales"
 msgstr "Cost of Sales"
+
+msgid "Cost of Service"
+msgstr "Cost of Service"
 
 msgid "Cost of service work covered by a warranty"
 msgstr "Cost of service work covered by a warranty"
@@ -14463,6 +14463,9 @@ msgstr "Labor & Machine Variance"
 msgid "Labor & Machine Variance (default)"
 msgstr "Labor & Machine Variance (default)"
 
+msgid "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+msgstr "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+
 msgid "Labor Categories"
 msgstr "Labor Categories"
 
@@ -18366,8 +18369,8 @@ msgstr "One {0} is equal to how many {1}?"
 msgid "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 msgstr "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 
-msgid "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
-msgstr "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
+msgid "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
+msgstr "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
 
 msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
 msgstr "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
@@ -24020,9 +24023,6 @@ msgstr "Service labor item updated"
 
 msgid "Service lines"
 msgstr "Service lines"
-
-msgid "Service order"
-msgstr "Service order"
 
 msgid "Service Period"
 msgstr "Service Period"
@@ -30393,9 +30393,6 @@ msgstr "Who owns MRP planning actions. Locations inherit the company default; it
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Who owns the lease here: they get the invoice digest and the date reminders."
-
-msgid "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
-msgstr "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Who receives the invoices, where, and on what terms."

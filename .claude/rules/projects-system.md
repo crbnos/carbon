@@ -154,8 +154,7 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
 `journalLineId` when a journal exists. Build rows with `buildProjectLedgerRow`.
 
 - Only the postings and the job-completion SQL write it. The ERP only reads it
-  (`getProjectLedger`, `getElementTimeAndMaterials`, `get_project_cost_summary`,
-  `get_child_service_project_costs`).
+  (`getProjectLedger`, `getElementTimeAndMaterials`, `get_project_cost_summary`).
 - A Statistical charge writes no row. Neither does a Statistical timesheet: the entry is
   only stamped Posted, with no journal (`projects/timesheet-posting-plan.ts`).
 - A void or repost writes negative rows with `reversalOfId`
@@ -171,7 +170,7 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
   and the period for the expense and reclass journals.
 - An empty `laborAbsorptionAccount` on a timesheet becomes a stand-in line on retained
   earnings before the cutover (`resolveDefaultAccount`) and refuses the posting after it.
-  An empty project or warranty default refuses in every state (`ProjectChargeError`), so
+  An empty project default refuses in every state (`ProjectChargeError`), so
   the cutover readiness lets those stay empty (`FEATURE_ACCOUNT_DEFAULTS`).
 
 ## The accounting cutover
@@ -179,9 +178,8 @@ Overhead, Material Variance, …), `documentType` + `documentId`, `amount`, and
 Brad's decisions of 2026-10-11 (`.ai/runs/2026-10-11-merge-origin-main.md`,
 *Open questions for Brad*):
 
-- **Opening WIP.** Project and service cost on `workInProgressAccount` that is not a
-  job's (a Contract project whose Project WIP is the WIP account, a Refurbishment
-  charge with Capitalized coverage) opens as ONE "Work in Progress" item with no
+- **Opening WIP.** Project cost on `workInProgressAccount` that is not a
+  job's (a Contract project whose Project WIP is the WIP account) opens as ONE "Work in Progress" item with no
   document (`getWorkInProgressItems`, `accounting-cutover/open-items.ts`): the
   non-job WIP lines before the cutover, less the Cost Relief rows before it that
   credit the WIP account (the enable's step 5 posts those with no journal).
@@ -223,8 +221,7 @@ See `project-control.md`.
 
 ## Readable ids
 
-`project.identifier` matches `^[A-Z][A-Z0-9]{1,5}$` (a Service project's is its order's
-readable id or a template's `TPL-…`, so the CHECK skips Service) and is unique per
+`project.identifier` matches `^[A-Z][A-Z0-9]{1,5}$` and is unique per
 company. An
 element's `readableId` is `<identifier>-<n>`, where `n` comes from
 `project.nextElementSequence`, incremented in `insertProjectElement`'s transaction. A move
@@ -286,38 +283,17 @@ the task or an ancestor, not replaced by an amendment, and only when exactly one
 matches. The CLIN reads its jobs by this column (`apps/erp/app/modules/sales/AGENTS.md`
 → Part CLINs). Billing still follows the billing element, not the column.
 
-## Service projects
+## Expense entries and billable items
 
-A project with `projectType = 'Service'` is a service order's work tree. Its
-`costTreatment` is always By Coverage (`project_service_treatment_check`), its
-identifier is the order's readable id (the identifier CHECK skips Service projects),
-and `parentProjectId` names a coverage contract's project. Field service owns the rest:
-`.claude/rules/field-service.md`.
-
-- **Coverage on charges.** `projectLedger`, `timesheetEntry` and `projectExpenseEntry`
-  carry `coverage` and `coverageReason`, and `post-project-issue` takes them as input;
-  Standard rows leave them null. `resolveProjectPostingAccount(ctx, date, coverage)` turns the coverage into an
-  account and refuses a By Coverage charge without one. `buildProjectLedgerRow` and
-  `reverseProjectLedgerRows` copy the coverage.
 - **Expense entries.** `projectExpenseEntry` (mileage, a meal, a part bought on a card)
   posts through `post-project-expense` for any project: Dr the project account (a
   Statistical project: `indirectCostAccount`, no ledger row) / Cr GRNI. A Capitalize
   project is refused. The shared `postProjectJournal` (`projects/project-journal.ts`) posts
-  it and the coverage reclass.
-- **Billable items.** `projectBillableItem` is what a charge will bill. Service
-  projects write them (`buildBillableItem`, `reverseBillableItem`), and so does a
-  Contract project under a Time & Materials contract line (`buildContractBillableItem`;
+  it.
+- **Billable items.** `projectBillableItem` is what a charge will bill. A
+  Contract project under a Time & Materials contract line writes them (`buildContractBillableItem`;
   project billing, below). `projectElement.fixedPrice` bills a node's whole subtree as
   one line.
-- **Parent roll-up** (field service Phase D). The Costs page lists a project's child
-  Service projects, one row per order, from `get_child_service_project_costs`; their
-  actual adds to the project total only (`buildProjectCostFigures`, third argument). A
-  Contract charge on a Closed parent is refused. `updateServiceOrderCoverageContract`
-  keeps `parentProjectId` in step with the order's coverage contract. Details:
-  `field-service.md` → *The contract project*.
-- **Hidden outside Service.** The Projects lists, Copy from, Build from part's template
-  list, the charge number pickers, the dimension picker and the Ramp sync filter
-  `projectType = 'Standard'`. Never list a Service project in Projects.
 
 ## Contract billing and revenue (Phases 4a and 4b)
 
@@ -375,14 +351,6 @@ whenever it starts): those stay for the run. Each relieved row gets a `projectCo
 row with `journalId`, so neither the run nor a second close relieves it again. A group
 that nets to 0 writes nothing. The close takes the run's lock (`lockProjectRevenue`).
 
-**Service orders (D12).** A Contract coverage charge of a Service project posts to its
-contract project's account (*Service projects*) on elements no line of the parent can
-bill. The PARENT's close relieves them: rows of a Service project whose `parentProjectId` is
-the closing project with `coverage = 'Contract'`. The parent is the cost object (its
-account holds the debit, and a Closed parent refuses new Contract charges); a Service
-project's own close relieves nothing, since its treatment is By Coverage, not Contract. Capitalized (refurbishment) rows are
-left alone: they move into the serial's cost.
-
 Closed is final in the UI (`projectStatusTransitions`). Nothing reverses the close
 journal; the close relieves only unrelieved rows, so a cost that reaches the project after a
 close (only through a direct status change today) is relieved at the next close or by the
@@ -409,7 +377,7 @@ What it changes here:
   difference, one per line × pool × fiscal year: `projectLedgerId` null, with
   `indirectPoolId`, `fiscalYear`, `burdenRate`, `burdenBase` and `postingDate`.
   The billing readers (`create-project-billing-invoices`,
-  `synthesizeProjectRevenue`, `create-service-order-invoice`) left-join
+  `synthesizeProjectRevenue`) left-join
   `projectLedger`; the invoice groups burden lines by pool, after every other
   line, and the billing backup shows the pool, rate and base.
 - **Cost relief.** Memo rows are never relieved (no journal debit on an Asset
@@ -452,8 +420,7 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   Scrap paths move WIP to scrap, not stock, so they never split. Known limits: the
   on-shelf balance is a ledger quantity, so receipt-charged units that left the stripe
   another way (a transfer out, a count, a supplier return) still count as on the shelf
-  and a later issue of uncharged units there is relocated instead of charged; a Service
-  (By Coverage) charge never splits; a cutover re-cost of a relocated issue adjusts its
+  and a later issue of uncharged units there is relocated instead of charged; a cutover re-cost of a relocated issue adjusts its
   project side (`recostProjectIssues`, one ledger row per cost row).
 - **Jobs.** `job.receiveToProjectStock` (needs a charge number; refused with Consume to
   project, Make to Asset or a sales order line; `chargeNumberError` refuses it on a project
@@ -472,8 +439,8 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   journal and one `projectLedger` row. A Return goes back to the project's stock at the
   cost the issues it reverses charged, not the item's current cost: `issueReturnUnitCost`
   over `loadReturnableIssueRows` (`project-posting.ts`) — the net outstanding Project
-  Issue Material cost over quantity for the item (and serial or batch) to the element, or
-  the one issue a Service return names — passed to `bookAdjustment` as `fixedUnitCost`,
+  Issue Material cost over quantity for the item (and serial or batch) to the element —
+  passed to `bookAdjustment` as `fixedUnitCost`,
   the Unscrap rule. So an issue and its return net to 0 in the project and in WIP. With
   nothing outstanding (a Statistical project writes no ledger row) it books at current
   cost. What the stripes do not cover comes out of the first stripe, below zero, unless the
@@ -665,10 +632,7 @@ excepted) and the status locks are the grid's. A Posted bar's menu has **Correct
 (`ChargeNumber leaveOnly`), and says how to set one up when there is none. **Remove**
 deletes a card's Draft hours (Standard mode; in DCAA only an empty card), and **Submit
 week** shows its checks in a tooltip. The manager's view of another employee's week
-(`projects+/timesheets.$employeeId.tsx`) keeps `TimesheetGrid`. A Service row is
-read-only on both: service time posts from Draft at Stop Work or Add Time on the order,
-so `submit-timesheet-week` submits Standard entries only and `post-timesheet` posts a
-Service project's Draft entry.
+(`projects+/timesheets.$employeeId.tsx`) keeps `TimesheetGrid`.
 
 `post-timesheet` costs hours × the labor category's rate on the entry date
 (`laborCategoryRate.effectiveFrom`), Dr the project account / Cr
@@ -779,15 +743,14 @@ States and labels are company-wide (`20261021012100_project-states-company-wide.
 state group has at most one default per company. Settings → Projects edits them in two grids
 (`ProjectStatesGrid`, `ProjectLabelsGrid`, posting to `settings+/projects.tsx`); the project
 Settings page has no states or labels. `seed-company` seeds the six default states; creating,
-copying or building a project, a template or a service order seeds or copies none, and an
+copying or building a project or a template seeds or copies none, and an
 element keeps its state id. `projectElement_state_fkey` is `("stateId", "companyId")`.
 
-**Shared with service.** `ElementsHeader`, `ElementList`, `ElementView` and their pieces
+`ElementsHeader`, `ElementList`, `ElementView` and their pieces
 (pills, `MoveElementModal`, `ElementChildren`, `QuickAddRow`, `ElementComments`,
 `ElementPlanLines`) take their links, write actions, element types and permission module
 from `ElementRoutesProvider` (`ui/Elements/ElementRoutes.tsx`); with no provider they use
-the project routes (`projectElementRoutes`). A service order's and a service template's
-work pass service routes (`field-service.md` → The module UI). Never hard-code a
+the project routes (`projectElementRoutes`). Never hard-code a
 `path.to.projectElement*` in these components again: read `useElementRoutes(projectId)`.
 
 An element opens on its own page, `path.to.projectElement` → `/x/project/$id/element/$elementId`
@@ -803,8 +766,7 @@ column (`ElementSidebar`, inline fields from
 `ui/Element/PropertyFields.tsx`: the properties, the type's fields from `ElementTypeBlock`, Work,
 Costs with children, and the Government contracting group, shown only with DCAA timekeeping).
 Costs is one block with two tabs: **Estimated** (the plan line cards, `ElementPlanLines`) and
-**Actual** (`ElementTimeAndMaterials`: the ledger rows and the open time as cards; on a service
-order the `charges` prop instead). It opens on Estimated while the project is Draft (or has no
+**Actual** (`ElementTimeAndMaterials`: the ledger rows and the open time as cards). It opens on Estimated while the project is Draft (or has no
 project row) and on Actual after; the user's choice holds until the page remounts. Every
 type but a Parameter shows it, so an empty Task shows Estimated with its Add line button.
 The earned value form posts to the page route's action.
@@ -865,8 +827,7 @@ the job's newest row. The ledger read returns `jobId`, `jobReadableId` and `jobI
 (`ElementLedgerRow`). Rows with no job stay one card each. A job card counts as Material
 in the type filter. Its **Charge** menu has Issue
 material, Log time and Charge cost; with nothing charged it shows the empty text and the
-same menu. On a service order the `charges` prop replaces the tab, and the Estimated cards
-have no charge buttons (the order posts through its own charge route).
+same menu.
 
 **Charge cost** (`x+/projects+/expense.tsx`, `path.to.projectExpense`, `update: projects`)
 checks the budget (source `purchase`: Block refuses, Warn flashes), then `addProjectExpense`
@@ -911,13 +872,11 @@ and the per-user layout preference were removed on 2026-10-12); the tables stay.
   item from the serial.
 - `buildElementsFromPart` / `previewBuildFromPart` (`$projectId.elements.build.tsx`)
   create System elements from a serial's build history (the lineage RPCs, one call per
-  level; `netBuildComponents` counts Consume and Service inputs, less Unconsume, less
-  a component a later service order removed from the asset's `customerAssetComponent`
-  rows), an item's active make method (`getMethodTree`; lines
+  level; `netBuildComponents` counts Consume and Service inputs, less Unconsume), an item's active make method (`getMethodTree`; lines
   without an `itemCost` row are counted as skipped) or a template's elements, under one
   parent, in one transaction. `planElementsFromSource` is the pure planner. With
   `includePlanLines` a template source also copies the plan lines of the elements it
-  copies (a service order passes it; Projects does not). `insertElementsFromPart` is the
+  copies (Projects does not pass it). `insertElementsFromPart` is the
   same build in the caller's transaction.
 - `get_element_history_by_item` averages hours and material cost over the elements
   that charged the same item. `getProjectElementPage` still loads it, but the element page
@@ -1046,9 +1005,8 @@ an inbound name or description; a Closed project refuses every field.
   line.
 - The `jobs`, `purchaseOrderLines` and `purchaseInvoiceLines` views predate the charge
   columns, so screens load them with `getJobProjectCharge` / `getLineChargeNumber`.
-- `POSTING_POLICY` keeps every project and service journal type off external ledgers by
-  default: `Timesheet`, `Project Issue`, `Project Expense`, `Project Transfer` and
-  `Service Order`. One rule, as for every journal type added after the returns types
+- `POSTING_POLICY` keeps every project journal type off external ledgers by
+  default: `Timesheet`, `Project Issue`, `Project Expense` and `Project Transfer`. One rule, as for every journal type added after the returns types
   (Brad 2026-10-10); a customer turns each one on in the integration's settings.
 - Ids inside the JSONB of `projectBaseline.snapshot` and `projectChangeRequestItem`
   (`payload`, `baseRow`) are not rewritten by a restore into another company.

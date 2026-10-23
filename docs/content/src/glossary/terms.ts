@@ -2604,7 +2604,7 @@ export const terms = {
   },
   "billable-item": {
     term: msg`Billable item`,
-    definition: msg`One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off.`,
+    definition: msg`One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off.`,
     href: "/docs/reference/project-billing#billable-items"
   },
   "right-to-invoice": {
@@ -2624,7 +2624,7 @@ export const terms = {
   },
   "service-contract": {
     term: msg`Service contract`,
-    definition: msg`A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders.`,
+    definition: msg`A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew.`,
     href: "/docs/reference/contracts"
   },
   "time-and-materials": {
@@ -2656,17 +2656,6 @@ export const terms = {
     aliases: ["ceiling"]
   },
 
-  // Field service (field-service.md)
-  "service-order": {
-    term: msg`Service order`,
-    definition: msg`A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree.`,
-    href: "/docs/reference/service-orders#the-service-order"
-  },
-  coverage: {
-    term: msg`Coverage`,
-    definition: msg`Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason.`,
-    href: "/docs/reference/service-orders#coverage"
-  },
   "external-training": {
     term: msg`External training`,
     definition: msg`Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate.`

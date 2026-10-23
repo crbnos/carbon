@@ -1328,8 +1328,8 @@ msgstr "契約明細のCLIN（契約明細番号）：0001などの4桁。プロ
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D税レポートの契約設定。資金提供契約下のDirect プロジェクトの原価は適格研究費ではありません。デフォルトでは、Cost Plus または Time & Materials 明細を持つ契約は資金提供されたと見なされます。"
 
-msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr "計画された請求スケジュールで外注サービス品目を請求し、更新可能な期間内に繰り返しおよび1回限りの明細を持つ契約。外注サービス契約のみがサービスオーダーをカバーしています。"
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
+msgstr ""
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
 msgstr "プロジェクトの作業を遂行期間内に請求する契約。その明細は、スケジュールの代わりに請求可能な項目と請求イベントから請求される、工数・材料費、コスト・プラス、または固定価格です。"
@@ -2005,9 +2005,6 @@ msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "変動料金（走行距離超過、損傷、配送、清掃など）は契約の次の請求書に計上されます。"
-
-msgid "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
-msgstr "1つのシリアル用の作業指示、SVC…という番号が付けられています：顧客の単位のフィールドビジット、在庫内のシリアルの整備、またはRMA受領からの施設修理。その費用は作業ツリーに収集されます。"
 
 msgid "A written off item is never billed."
 msgstr "減額された品目は請求されません。"
@@ -7386,6 +7383,9 @@ msgstr "売上原価（デフォルト）"
 
 msgid "Cost of Sales"
 msgstr "販売原価"
+
+msgid "Cost of Service"
+msgstr ""
 
 msgid "Cost of service work covered by a warranty"
 msgstr "保証でカバーされるサービス作業の原価"
@@ -14463,6 +14463,9 @@ msgstr "労務・機械差異"
 msgid "Labor & Machine Variance (default)"
 msgstr "労務・機械差異（デフォルト）"
 
+msgid "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+msgstr ""
+
 msgid "Labor Categories"
 msgstr "労務カテゴリ"
 
@@ -18366,8 +18369,8 @@ msgstr "1 {0} は何 {1} に相当しますか？"
 msgid "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 msgstr "タイム&マテリアルまたはコストプラス明細の1つの契約修正資金（修正番号、日付、ACRN、資金コスト、資金手数料および有効期限付き）。DCAA モードでは、明細の資金総額は資金アクションの合計です。"
 
-msgid "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
-msgstr "請求エレメントまたは外注サービスオーダーの下の課金から作成された1つの請求費用。未請求、保留中、請求済、または償却済です。"
+msgid "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
+msgstr ""
 
 msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
 msgstr "発生コストスケジュールごとに1つのCSV。スケジュールD、F、J、M、NおよびOはCarbon外のデータが必要です。"
@@ -24020,9 +24023,6 @@ msgstr "外注サービス労務品目が更新されました"
 
 msgid "Service lines"
 msgstr "外注サービス明細"
-
-msgid "Service order"
-msgstr "サービス注文"
 
 msgid "Service Period"
 msgstr "サービス期間"
@@ -30393,9 +30393,6 @@ msgstr "MRP計画アクションの所有者。拠点は会社のデフォルト
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "ここでリースを所有する人。彼らは請求書ダイジェストと日付リマインダーを受け取ります。"
-
-msgid "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
-msgstr "サービスオーダー費用を誰が支払うかは、転記時に決定されます：保証、契約、請求可能、または修復時に資本化。上書きで理由付きで変更できます。"
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "誰が請求書を受け取るか、どこで、どのような条件で。"

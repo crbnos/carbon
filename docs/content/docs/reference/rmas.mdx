@@ -1,6 +1,6 @@
 ---
 title: RMAs
-description: "Customer return authorizations: receive shipped goods, disposition them, repair and ship units back, issue credit, and create replacements."
+description: "Customer return authorizations: receive shipped goods, disposition them, issue credit, and create replacements."
 ---
 
 A **return merchandise authorization (RMA)** defines the goods and quantities a customer may return. When possible, it links them to the original sale. Receipt, disposition, customer credit, and replacement fulfillment remain separate, auditable events associated with the RMA.
@@ -42,7 +42,7 @@ An RMA is the authorization, not the receipt. Inventory, cost, and the received 
   <Field name="Unit Price" type="number">The commercial price used as the basis for customer credit, not the inventory cost of the returned stock.</Field>
   <Field name="Restock Fee Percent" type="number">The percentage deducted from the gross credit for this line.</Field>
   <Field name="Return Reason" type="reference">A company-defined reason such as Defective, Warranty, or Damaged in Transit.</Field>
-  <Field name="Disposition" type="enum">What to do with received material: *Pending*, *Repair*, *Use As Is*, *Return to Customer*, *Scrap*, or *Rework*. Only *Pending* and *Repair* are offered before the line receives anything.</Field>
+  <Field name="Disposition" type="enum">What to do with received material: *Pending*, *Use As Is*, *Return to Customer*, *Scrap*, or *Rework*.</Field>
   <Field name="Received">The posted received quantity compared with the authorized quantity.</Field>
 </FieldTable>
 
@@ -70,28 +70,16 @@ Posting the receipt puts returned tracked stock **On Hold**. Disposition determi
 - **Use As Is** releases held tracked stock to Available.
 - **Scrap** or **Rework** opens a linked <Term id="nonconformance">quality issue</Term>. Closing that issue performs the material disposition; Rework currently releases the tracked stock and does not create a production job.
 - **Return to Customer** makes received quantity eligible for a no-revenue shipment back to the customer.
-- **Repair** never puts the unit in stock. See [Repair](#repair).
 
 <Callout type="warn">
 A fully received RMA becomes Completed immediately. Set the intended disposition while the RMA is still open when possible, especially on a one-line return.
 </Callout>
 
-## Repair
-
-Use **Repair** when the customer sends a unit in to be fixed and shipped back. The unit stays the customer's: it never enters your stock or your stock value.
-
-1. Set the line's disposition to **Repair** before you receive it. Repair is available only for a <Term id="serial">Serial</Term>-tracked item, and it cannot change once the line has received anything.
-2. Receive the unit and select its serial on the receipt. Posting writes no stock, no cost and no journal. The serial stays Consumed, the unit's [customer asset](/docs/reference/customer-assets) shows **At Depot**, and Carbon opens one Depot Repair [service order](/docs/reference/service-orders#depot-repair) per serial. A serial with no customer asset gets one.
-3. Do the work on the service order. Time, parts and expenses post by coverage, as on a field visit. **Complete** the order when the work is done.
-4. Choose **Ship** on the RMA. A Repair line ships the units whose service order is Completed or Closed. Posting the shipment writes no stock, no cost and no journal, and the customer asset is **In Service** again at the RMA's location.
-
-The RMA line links each of its service orders. Voiding the receipt cancels those orders and sets their assets back to In Service, but only while no charge on them stands and the unit has not shipped back. Voiding the return shipment sets the asset back to At Depot.
-
 ## Credit and replacement orders
 
-**Issue Credit** creates a Draft customer <Term id="credit-memo">credit memo</Term> for received quantity that is not already reserved by another non-voided memo. The amount is quantity × unit price, less the restock fee. Creating the memo does not post it, apply it to an invoice, or refund cash; finish those steps in the normal memo and settlement flow. A Repair line is never credited, because its unit goes back to the customer.
+**Issue Credit** creates a Draft customer <Term id="credit-memo">credit memo</Term> for received quantity that is not already reserved by another non-voided memo. The amount is quantity × unit price, less the restock fee. Creating the memo does not post it, apply it to an invoice, or refund cash; finish those steps in the normal memo and settlement flow.
 
-**Create Replacement** creates a separate Draft sales order. It copies every authorized RMA line that is not Repair at its full return quantity and resolves current pricing, so review the new order if the replacement should be free or use warranty pricing. An RMA of Repair lines only has nothing to replace. Replacement shipment has no effect on RMA completion.
+**Create Replacement** creates a separate Draft sales order. It copies every authorized RMA line at its full return quantity and resolves current pricing, so review the new order if the replacement should be free or use warranty pricing. Replacement shipment has no effect on RMA completion.
 
 ## Related
 
@@ -101,9 +89,6 @@ The RMA line links each of its service orders. Voiding the receipt cancels those
   </Card>
   <Card title="Receipts" href="/docs/reference/receipts">
     Learn when posting brings returned goods into inventory.
-  </Card>
-  <Card title="Service orders" href="/docs/reference/service-orders">
-    Repair a returned unit on its Depot Repair order.
   </Card>
   <Card title="Issues" href="/docs/reference/issues">
     Resolve Scrap and Rework dispositions through quality.
@@ -136,24 +121,4 @@ Something has already consumed the receipt's cost layer. The receipt can no long
 
 ### "Configure at least one Issue Type and a location to escalate this line to an Issue"
 Scrap and Rework need a quality issue type plus either a return location or user-default location. Configure both, then choose the disposition again.
-### "Only a serialized item can be returned for repair"
-Repair needs one serial per unit, so the item must be Serial-tracked. Use another disposition for an untracked or Batch item.
-
-### "A line's Repair disposition is set before receipt and cannot change after it. Void the receipt to change it."
-The receipt of a Repair line wrote no stock, so changing the disposition afterwards would leave stock wrong. Void the receipt, change the disposition, then receive again.
-
-### "Assign the serial before posting a repair receipt"
-Each received unit of a Repair line needs its serial on the receipt line.
-
-### "Serial … has an open service order (SVC…). Close or cancel it before you receive the unit for repair."
-A serial can have one open service order. Close or cancel the open order first.
-
-### "Service order … has posted charges. Reverse them before you void this receipt."
-Reverse the order's time and expenses, and return its parts, then void the receipt again.
-
-### "Complete the unit's service order before you ship it back"
-A repaired unit ships back once its Depot Repair order is Completed or Closed and the unit is still At Depot.
-
-### "Line …: Change the disposition before you credit a repair line." / "Every line is a repair. There is nothing to replace."
-A Repair line gets no credit and no replacement. Before receipt, change the disposition; after receipt, void the receipt first.
 </AgentContext>

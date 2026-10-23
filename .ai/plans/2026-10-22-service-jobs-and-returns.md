@@ -72,13 +72,13 @@ This plan was written against `projects-wbs-research-spec`, where server functio
 
 Phase 0 — remove the old service module
 
-- [ ] Task 1: Remove service orders, coverage and depot repair from the server functions
-- [ ] Task 2: Remove service orders from the ERP, the MES and the shared packages
-- [ ] Task 3: Remove service orders from the demo datasets
-- [ ] Task 4: Take the service branch out of the authz rules
-- [ ] Task 5: Drop the old service tables, columns and enums
-- [ ] Task 6: Regenerate types and generated artifacts, and pass the phase 0 gate
-- [ ] Task 7: Archive the old spec and remove the old docs and rules
+- [x] Task 1: Remove service orders, coverage and depot repair from the server functions
+- [x] Task 2: Remove service orders from the ERP, the MES and the shared packages
+- [x] Task 3: Remove service orders from the demo datasets
+- [x] Task 4: Take the service branch out of the authz rules
+- [x] Task 5: Drop the old service tables, columns and enums
+- [x] Task 6: Regenerate types and generated artifacts, and pass the phase 0 gate
+- [x] Task 7: Archive the old spec and remove the old docs and rules
 
 Phase 1 — RMA and the depot service job
 

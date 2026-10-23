@@ -1328,8 +1328,8 @@ msgstr "एक अनुबंध पंक्ति पर एक अनुब�
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D कर रिपोर्ट के लिए एक अनुबंध सेटिंग। एक वित्तपोषित अनुबंध के तहत एक प्रत्यक्ष परियोजना की लागत एक योग्य अनुसंधान व्यय नहीं है; डिफ़ॉल्ट पर, एक लागत-अतिरिक्त या समय और सामग्री पंक्ति वाला अनुबंध वित्तपोषित के रूप में गिना जाता है।"
 
-msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr "एक अनुबंध जो सेवा आइटम को एक निर्धारित चालान शेड्यूल पर बिल करता है, एक अवधि के दौरान आवर्ती और एकबारी पंक्तियों के साथ जो नवीनीकृत हो सकता है। केवल एक सेवा अनुबंध सेवा आदेशों को कवर करता है।"
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
+msgstr ""
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
 msgstr "एक अनुबंध जो एक परियोजना के कार्य को प्रदर्शन की अवधि में बिल करता है। इसकी पंक्तियां समय और सामग्री, लागत प्लस या निर्धारित मूल्य हैं, शेड्यूल के बजाय बिल योग्य आइटम और बिलिंग घटनाओं से बिल किया जाता है।"
@@ -2005,9 +2005,6 @@ msgstr "एक उपयोगकर्ता प्रत्येक बैच
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "एक परिवर्तनीय शुल्क — माइलेज अधिकता, क्षति, डिलीवरी, सफाई — समझौते के अगले चालान पर बिल किया जाता है।"
-
-msgid "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
-msgstr "एक सीरियल के लिए एक काम का आदेश, SVC… से संख्यांकित: एक ग्राहक पर एक इकाई के लिए एक फील्ड विज़िट, स्टॉक में एक सीरियल का नवीनीकरण, या एक RMA प्राप्ति से एक डिपो मरम्मत। इसके शुल्क एक काम के पेड़ पर एकत्र होते हैं।"
 
 msgid "A written off item is never billed."
 msgstr "एक लिखी गई आइटम कभी भी बिल नहीं की जाती है।"
@@ -7386,6 +7383,9 @@ msgstr "बेचे गए माल की लागत (डिफ़ॉल्
 
 msgid "Cost of Sales"
 msgstr "बिक्री की लागत"
+
+msgid "Cost of Service"
+msgstr ""
 
 msgid "Cost of service work covered by a warranty"
 msgstr "वारंटी द्वारा कवर की गई सेवा कार्य की लागत"
@@ -14463,6 +14463,9 @@ msgstr "श्रम और मशीन विचलन"
 msgid "Labor & Machine Variance (default)"
 msgstr "श्रम और मशीन विचलन (डिफ़ॉल्ट)"
 
+msgid "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+msgstr ""
+
 msgid "Labor Categories"
 msgstr "श्रम श्रेणियां"
 
@@ -18366,8 +18369,8 @@ msgstr "1 {0} कितने {1} के बराबर है?"
 msgid "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 msgstr "एक अनुबंध संशोधन का Time & Materials या Cost Plus लाइन का वित्तपोषण, संशोधन संख्या, तारीख, ACRN, वित्तपोषित लागत, वित्तपोषित शुल्क और समाप्ति के साथ। DCAA मोड में लाइन के वित्तपोषित कुल इसके वित्तपोषण कार्यों के योग हैं।"
 
-msgid "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
-msgstr "एक लागत बिल करने के लिए, एक बिलिंग तत्व के तहत या एक सेवा आदेश पर चार्ज से बनाई गई। यह बिना बिल की गई है, होल्ड पर है, बिल की गई है या लिख दी गई है।"
+msgid "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
+msgstr ""
 
 msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
 msgstr "प्रत्येक प्राप्त लागत शेड्यूल के लिए एक CSV। शेड्यूल D, F, J, M, N और O को Carbon के बाहर डेटा की आवश्यकता है।"
@@ -24020,9 +24023,6 @@ msgstr "सेवा श्रम आइटम अपडेट किया ग�
 
 msgid "Service lines"
 msgstr "सेवा पंक्तियां"
-
-msgid "Service order"
-msgstr "सेवा आदेश"
 
 msgid "Service Period"
 msgstr "सेवा अवधि"
@@ -30393,9 +30393,6 @@ msgstr "MRP योजना कार्यों का मालिक कौ�
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "यहाँ पट्टे का स्वामी कौन है: उन्हें चालान सारांश और तारीख अनुस्मारक मिलता है।"
-
-msgid "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
-msgstr "कौन एक सेवा ऑर्डर चार्ज के लिए भुगतान करता है, तय किया जाता है जब यह पोस्ट करता है: वारंटी, अनुबंध, बिलयोग्य, या पुनर्निर्माण पर पूंजीकृत। ओवरराइड इसे बदलता है, एक कारण के साथ।"
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "कौन चालान प्राप्त करता है, कहाँ, और किन शर्तों पर।"

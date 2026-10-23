@@ -144,8 +144,7 @@ issue.
   field not on the edit screen), the push retries each field alone.
 - The Linear and Jira dialogs sit beside "Add line" in the element's Plan section
   (`ElementPlanLines` `toolbarExtras`, from `ElementView.tsx`); a Parameter, which has
-  no Plan section, shows them in the header. The project element page and the service
-  order work page (`service-order+/$id_.work.$elementId.tsx`) read the links with
+  no Plan section, shows them in the header. The project element page reads the links with
   `getRecordIssueLinks` (`shared.service.ts`).
 - Link Existing opens with the 10 most recently updated issues (`listRecentIssues`;
   Jira: `searchIssues` with no text) and searches as the user types. Create New starts

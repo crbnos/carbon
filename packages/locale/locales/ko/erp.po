@@ -1328,8 +1328,8 @@ msgstr "계약 라인의 계약 라인 항목 번호: 0001과 같은 4자리 번
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D 세금 보고서에 대한 계약 설정입니다. 자금이 지원되는 계약에 따른 직접 프로젝트의 비용은 적격 연구 비용이 아닙니다. 기본값에서 비용 가산 또는 시간 및 자재 라인이 있는 계약은 자금이 지원되는 것으로 계산됩니다."
 
-msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr "계획된 송장 일정에 따라 서비스 항목을 청구하는 계약으로, 갱신할 수 있는 기간에 걸쳐 반복 및 일회성 라인이 있습니다. 서비스 계약만 서비스 주문을 처리합니다."
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
+msgstr ""
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
 msgstr "성과 기간에 걸쳐 프로젝트 작업을 청구하는 계약입니다. 라인은 시간 및 자재, 원가가산제 또는 정가제이며, 일정 대신 청구 가능 항목 및 청구 이벤트에서 청구됩니다."
@@ -2005,9 +2005,6 @@ msgstr "사용자는 상품을 수령할 때 각 배치 또는 시리얼의 유�
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "변동 요금(마일리지 초과, 손상, 배송, 청소)은 계약의 다음 송장에 청구됩니다."
-
-msgid "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
-msgstr "SVC…로 번호가 지정된 일련번호 하나에 대한 작업 지시입니다: 고객의 장치에 대한 현장 방문, 재고 일련번호의 재조정, 또는 RMA 입고에서의 창고 수리입니다. 해당 청구는 작업 트리에 수집됩니다."
 
 msgid "A written off item is never billed."
 msgstr "상각된 품목은 청구되지 않습니다."
@@ -7386,6 +7383,9 @@ msgstr "매출원가(기본값)"
 
 msgid "Cost of Sales"
 msgstr "매출 원가"
+
+msgid "Cost of Service"
+msgstr ""
 
 msgid "Cost of service work covered by a warranty"
 msgstr "보증으로 적용되는 서비스 작업 원가"
@@ -14463,6 +14463,9 @@ msgstr "노무 및 기계 차이"
 msgid "Labor & Machine Variance (default)"
 msgstr "노무 및 기계 차이(기본값)"
 
+msgid "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+msgstr ""
+
 msgid "Labor Categories"
 msgstr "노무 카테고리"
 
@@ -18366,8 +18369,8 @@ msgstr "1 {0}은(는) 몇 {1}입니까?"
 msgid "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 msgstr "시간 및 자재 또는 Cost Plus 라인의 계약 수정 자금 조달, 수정 번호, 날짜, ACRN, 자금 조달 원가, 자금 조달 수수료 및 유효 기한 포함. DCAA 모드에서 라인의 자금 조달 합계는 자금 조달 조치의 합입니다."
 
-msgid "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
-msgstr "청구 요소 또는 서비스 주문에 따른 청구에서 만들어진 청구할 원가 하나. Unbilled, 보류, Billed 또는 Written Off입니다."
+msgid "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
+msgstr ""
 
 msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
 msgstr "발생 비용 일정당 하나의 CSV. 일정 D, F, J, M, N 및 O는 Carbon 외부의 데이터가 필요합니다."
@@ -24020,9 +24023,6 @@ msgstr "서비스 노무 품목이 업데이트되었습니다"
 
 msgid "Service lines"
 msgstr "서비스 라인"
-
-msgid "Service order"
-msgstr "서비스 오더"
 
 msgid "Service Period"
 msgstr "서비스 기간"
@@ -30393,9 +30393,6 @@ msgstr "MRP 계획 조치를 누가 소유하는가. 사업장은 회사 기본�
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "여기서 리스를 소유한 사람: 그들은 송장 요약과 날짜 알림을 받습니다."
-
-msgid "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
-msgstr "서비스 주문 청구의 비용 부담자(전기 시 결정됨): 보증, 계약, 청구 또는 재정비에 의한 자본화. 재정의는 사유와 함께 변경합니다."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "송장을 수령하는 대상, 수령처 및 결제 조건"

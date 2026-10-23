@@ -15,7 +15,7 @@ Time & Materials is included in every plan. Cost Plus needs the Business plan. T
 
 ## Project contracts
 
-**Sales → Agreements** has two lists. A [service contract](/docs/reference/contracts) bills Service items on an invoice schedule, and only a service contract covers a [service order](/docs/reference/service-orders). A project contract, under **Project Contracts**, bills one project over a period of performance. A service contract refuses a Time & Materials or Cost Plus line, and a project contract refuses a recurring line: every project contract line is one-time.
+**Sales → Agreements** has two lists. A [service contract](/docs/reference/contracts) bills Service items on an invoice schedule. A project contract, under **Project Contracts**, bills one project over a period of performance. A service contract refuses a Time & Materials or Cost Plus line, and a project contract refuses a recurring line: every project contract line is one-time.
 
 Start one with **Add Project Contract** on the list, or with **New Project Contract** on the project's **Billing** page. The setup has four steps:
 
@@ -143,9 +143,6 @@ A Time & Materials or Cost Plus line on a contract with `billingBasis` `Schedule
 
 ### "A project contract line is One-time. Create a service contract for recurring charges."
 A Recurring line on a contract with `billingBasis` `Project`. `upsertContractLine` saves every project contract line as One-time (at quantity 1, unless the line names a part: then its quantity is the units to deliver), so this comes from Confirm, Amend or `insertContractLines`.
-
-### "A project contract cannot cover a service order."
-A service order names a project contract as its coverage contract (`createServiceOrder`, `updateServiceOrderCoverageContract`). A project contract never covers a service order; the order form and the coverage picker list Active service contracts only.
 
 ## Internals
 `customerContract.billingBasis` (enum `contractBillingBasis`: `Schedule` = service contract, `Project` = project contract; NOT NULL, default `Schedule`), on the `customerContracts` view too. Lists: `/x/sales/contracts` (Schedule) and `/x/sales/project-contracts` (Project). New: `/x/contract/new?basis=Project`, `&projectId=` picks the project. Setup steps: `details`, `products` (labelled Lines), `invoicing`, `review`; a project contract has no Revenue step. A project contract's header terms are fixed by the basis except the billing frequency: alignment Calendar, timing Arrears, renewal End. The Review step's gaps come from `projectContractGaps` (`sales.models.ts`). Fixed Price billing events are `customerContractInvoice` / `customerContractInvoiceLine` rows, drafted by `create-contract-invoices`; Time & Materials and Cost Plus invoices come from `create-project-billing-invoices`.

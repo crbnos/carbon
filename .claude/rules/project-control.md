@@ -78,8 +78,7 @@ entry date. Warn and Block both give a warning; Block also sends
 in a `timesheetBudgetWarning` that never throws (ERP `projects.service.ts`, MES
 `services/project-budget.server.ts`). The callers are My Time
 (`timesheet.update.tsx`), Log time, the manager edit route
-(`timesheets.$employeeId.tsx`), service time (`service-order+/$id.charge.tsx`,
-checked after the save and before the entry posts) and the MES timesheet.
+(`timesheets.$employeeId.tsx`) and the MES timesheet.
 
 ## Earned value
 

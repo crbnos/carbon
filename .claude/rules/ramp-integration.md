@@ -273,8 +273,6 @@ uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the depend
   `projectField` for the field), and `ensureProjectDimension` resolves the group's
   active `Project` dimension (seeded by the slice-2 migration; it FINDS, rarely
   creates). Runs in `convergeRamp` and the `ramp-projects` step of every `ramp-sync`.
-  Only Standard projects are options (`desiredProjectOptions`): a Service project
-  belongs to one service order and is never pushed.
   Inbound: `codeSelections` decodes a `carbon-project` selection to `projectId`, the
   card/bill/reimbursement staging writes it to `chargeLine.projectId` /
   `purchaseInvoiceLine.projectId` (verified by `verifyProjects`), and

@@ -1,6 +1,8 @@
 # Field Service: service orders on serials in stock and in the field
 
-> Status: Implemented. Phases A, B, C and D implemented (2026-10-09, plans `.ai/plans/2026-10-09-field-service-phase-a.md`, `…-phase-b.md`, `…-phase-c.md` and `…-phase-d.md`); browser verification of all 4 is still due. Every open question is resolved (Q1 answered 2026-10-08).
+> Status: archived (superseded)
+> Superseded by (2026-10-23): `.ai/specs/2026-10-22-service-jobs-and-returns.md`. That spec removes service orders, visits, service projects, coverage per charge and depot repair. Service jobs and the RMA replace them.
+> Former status: Implemented. Phases A, B, C and D implemented (2026-10-09, plans `.ai/plans/2026-10-09-field-service-phase-a.md`, `…-phase-b.md`, `…-phase-c.md` and `…-phase-d.md`); browser verification of all 4 is still due. Every open question is resolved (Q1 answered 2026-10-08).
 > Author: Brad (with Claude)
 > Date: 2026-10-08
 > Research: `.ai/research/field-service.md` (SAP S/4HANA Service and FSM, D365 Field Service, Business Central, IFS, Salesforce Field Service, Epicor) and `.ai/research/serial-service-cost-treatment.md` (capitalize or expense)

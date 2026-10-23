@@ -53,7 +53,7 @@ Key service functions (verified):
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
   Pinned by `apps/erp/test/database/lib/cost-layer-order.test.ts` and the database test
   `apps/erp/test/database/lib/calculate-cogs.test.ts`. **Children of a layer** (`appliesToCostLedgerId`,
-  `adjustment = true`: purchase price variance, a refurbishment's `Revaluation` and
+  `adjustment = true`: purchase price variance, a `Revaluation` and
   write-down) are applied with their parent. On an unstamped layer the children cover
   its units in turn (`createdAt` order, each only up to the quantity taken). On a layer
   stamped for one serial every child belongs to that unit and is applied in full. The SQL
@@ -61,13 +61,7 @@ Key service functions (verified):
   it issues only untracked material, so it takes unstamped layers first and a stamped
   layer last, and it applies every open child of a stamped layer in full. Pinned by
   `supabase/tests/backflush-layer-children.test.sql`.
-  **Refurbishment** (`completeServiceOrder`, `service.service.ts`, Field Service Phase C): a serial with no
-  layer of its own gets one by a **split** of the layer `calculateCOGS` takes next
-  (oldest unstamped under FIFO, newest under LIFO): 1 unit of quantity, remaining
-  quantity and cost moves to a new stamped layer, and the unit's share of the source's
-  open children moves with it (`planRefurbishmentCompletion`,
-  `service/refurbishment-completion-plan.ts`). No value changes and no journal posts; the WIP then
-  lands as a `Revaluation` child. **`get_inventory_valuation`** (migration
+  **`get_inventory_valuation`** (migration
   `20261021003000_valuation-child-rows.sql`) counts only parent rows as layers and adds each
   open child's remaining cost to its parent; it counted an open child as a layer of its
   own before.
@@ -86,7 +80,7 @@ Key service functions (verified):
   offsetAccountId?, postingDate }`, `update: accounting`): exactly one unit on
   hand at one location; relieves it via `calculateCOGS` (its own layer first)
   and books −1 at the old cost / +1 stamped at the new, both
-  `costLedgerType 'Revaluation'` (refurbishment completion also writes one; no
+  `costLedgerType 'Revaluation'` (no
   `itemLedger` row — nothing moves); posts an `'Inventory
   Adjustment'` journal (Provisional before the accounting cutover) of the difference, inventory account vs the offset
   account (`getOffsetAccount`, `shared.service.ts`, signed by the offset
@@ -284,12 +278,6 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
 - **`get_inventory_quantities` has many revisions.** Always read the newest (`20261021004300`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
-- **An RMA Repair line moves no stock.** `postReceipt` and `postShipment` (`inventory.service.ts`,
-  helpers `receipt-repair.ts` / `shipment-repair.ts`) branch on
-  `salesReturnOrderLine.disposition = 'Repair'`: no `itemLedger` row, no cost layer, no
-  journal, and the serial stays `Consumed`. The receipt still counts `quantityReceived`;
-  the shipment ships only units whose Depot Repair order is Completed or Closed. Every
-  other RMA line posts as before. See `field-service.md` → Depot repair.
 - On-hand math comes from `itemLedger` (and the `get_inventory_quantities` RPC), not from summing
   `trackedEntity` directly. The old `itemInventory` table is orphaned (trigger dropped
   `20250209170952`) — never read or write it.

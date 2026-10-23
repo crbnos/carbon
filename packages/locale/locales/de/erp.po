@@ -1328,8 +1328,8 @@ msgstr "Eine Vertragspositionsnummer auf einer Vertragsposition: 4 Ziffern, wie 
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "Eine Vertragseinstellung für die F&E-Steuerberichte. Die Kosten eines Direct-Projekts unter einem finanzierten Vertrag sind keine qualifizierten Forschungsausgaben; standardmäßig gilt ein Vertrag mit einer Cost-Plus- oder Time & Materials-Position als finanziert."
 
-msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr "Ein Vertrag, der Dienstleistungen nach einem geplanten Abrechnungsplan abrechnet, mit wiederkehrenden und einmaligen Positionen über eine Laufzeit, die sich verlängern kann. Nur ein Servicevertrag deckt Serviceaufträge ab."
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
+msgstr ""
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
 msgstr "Ein Vertrag, der die Arbeit eines Projekts während eines Ausführungszeitraums abrechnet. Seine Positionen sind Zeit & Material, Kosten-Plus oder Festpreis, abgerechnet aus abrechenbaren Artikeln und Abrechnungsereignissen statt nach einem Plan."
@@ -2005,9 +2005,6 @@ msgstr "Ein Benutzer erfasst das Verfallsdatum für jede Charge oder Seriennumme
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Eine variable Gebühr – Kilometerüberschuss, Schaden, Lieferung, Reinigung – wird auf der nächsten Rechnung des Vertrags abgerechnet."
-
-msgid "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
-msgstr "Ein Arbeitsauftrag für eine Seriennummer, nummeriert SVC…: ein Feldbesuch für eine Einheit bei einem Kunden, eine Überholung einer Seriennummer im Bestand oder eine Depot-Reparatur von einem RMA-Beleg. Seine Kosten sammeln sich auf einem Arbeitsbaum."
 
 msgid "A written off item is never billed."
 msgstr "Ein abgeschriebener Artikel wird nie berechnet."
@@ -7386,6 +7383,9 @@ msgstr "Umsatzkosten (Standard)"
 
 msgid "Cost of Sales"
 msgstr "Umsatzkosten"
+
+msgid "Cost of Service"
+msgstr ""
 
 msgid "Cost of service work covered by a warranty"
 msgstr "Kosten für Servicearbeiten, die unter Garantie fallen"
@@ -14463,6 +14463,9 @@ msgstr "Personal- & Maschinenabweichung"
 msgid "Labor & Machine Variance (default)"
 msgstr "Personal- & Maschinenabweichung (Standard)"
 
+msgid "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+msgstr ""
+
 msgid "Labor Categories"
 msgstr "Personalkategorien"
 
@@ -18366,8 +18369,8 @@ msgstr "1 {0} entspricht wie vielen {1}?"
 msgid "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 msgstr "Eine Finanzierung einer Vertragsänderung einer Zeit & Material- oder Cost-Plus-Position mit Änderungsnummer, Datum, ACRN, finanzierte Kosten, finanzierte Gebühr und Ablauf. Im DCAA-Modus sind die finanzierten Gesamtbeträge der Position die Summen ihrer Finanzierungsmaßnahmen."
 
-msgid "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
-msgstr "Ein zu berechnender Kosten, erstellt aus einer Belastung unter einem Abrechnungselement oder auf einem Serviceauftrag. Es ist Unbilled, Angehalten, Abgerechnet oder Abgeschrieben."
+msgid "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
+msgstr ""
 
 msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
 msgstr "Eine CSV pro angefallene Kostenvorgabe. Die Zeitpläne D, F, J, M, N und O benötigen Daten außerhalb von Carbon."
@@ -24020,9 +24023,6 @@ msgstr "Dienstleistungs-Personalartikel aktualisiert"
 
 msgid "Service lines"
 msgstr "Dienstleistungspositionen"
-
-msgid "Service order"
-msgstr "Dienstleistungsauftrag"
 
 msgid "Service Period"
 msgstr "Leistungsperiode"
@@ -30393,9 +30393,6 @@ msgstr "Wer ist Eigentümer von MRP-Planungsaktionen. Standorte erben den Untern
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Wer ist hier Eigentümer des Leasings: Sie erhalten die Rechnungszusammenfassung und die Datumserinnerungen."
-
-msgid "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
-msgstr "Wer eine Gebühr des Dienstleistungsauftrags bezahlt, wird beim Buchen entschieden: Garantie, Vertrag, Abrechenbar oder Aktiviert für Überholung. Die Übersteuerung ändert dies mit einer Begründung."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Wer die Rechnungen erhält, wo und zu welchen Bedingungen."

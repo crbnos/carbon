@@ -1328,8 +1328,8 @@ msgstr "Bir sözleşme satırında bir sözleşme satır öğesi numarası: 0001
 msgid "A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded."
 msgstr "R&D vergi raporları için bir sözleşme ayarı. Finanse edilen bir sözleşme kapsamında bir Doğrudan projenin maliyeti, nitelikli bir araştırma gideri değildir; Varsayılan olarak, bir Cost Plus veya Zaman ve Malzeme satırı olan bir sözleşme finanse edilmiş olarak sayılır."
 
-msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew. Only a service contract covers service orders."
-msgstr "Yenilenebilecek bir dönem boyunca yinelenen ve tek seferlik satırları içeren, planlanmış bir fatura çizelgesinde hizmet öğelerini faturalayan bir sözleşme. Yalnızca bir hizmet sözleşmesi hizmet siparişlerini kapsar."
+msgid "A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew."
+msgstr ""
 
 msgid "A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule."
 msgstr "Bir projenin çalışmasını bir performans döneminde faturalayan bir sözleşme. Satırları Zaman ve Malzeme, Maliyet Artı veya Sabit Fiyattır ve bir çizelge yerine faturalama öğeleri ve faturalama olaylarından faturalanır."
@@ -2005,9 +2005,6 @@ msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullan
 
 msgid "A variable charge — mileage overage, damage, delivery, cleaning — is billed on the agreement's next invoice."
 msgstr "Değişken bir ücret — kilometre fazlası, hasar, teslimat, temizlik — sözleşmenin bir sonraki faturasında faturalandırılır."
-
-msgid "A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree."
-msgstr "Bir seri için bir iş emri, SVC… numaralı: müşteride bir birim için bir Saha Ziyareti, stokta bir serinin Yenilenmesi veya bir RMA makbuzundan bir Depo Onarımı. Ücretleri bir iş ağacında toplanır."
 
 msgid "A written off item is never billed."
 msgstr "Silinen bir stok kartı asla faturalanmaz."
@@ -7386,6 +7383,9 @@ msgstr "Satılan malın maliyeti (varsayılan)"
 
 msgid "Cost of Sales"
 msgstr "Satışların Maliyeti"
+
+msgid "Cost of Service"
+msgstr ""
 
 msgid "Cost of service work covered by a warranty"
 msgstr "Garanti kapsamında olan hizmet işinin maliyeti"
@@ -14463,6 +14463,9 @@ msgstr "İşçilik ve Makine Sapması"
 msgid "Labor & Machine Variance (default)"
 msgstr "İşçilik ve Makine Sapması (varsayılan)"
 
+msgid "Labor and parts on billable and contract service jobs. Falls back to Cost of Goods Sold."
+msgstr ""
+
 msgid "Labor Categories"
 msgstr "İşçilik Kategorileri"
 
@@ -18366,8 +18369,8 @@ msgstr "1 {0} kaç {1} eder?"
 msgid "One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions."
 msgstr "Bir sözleşme değişikliğinin Zaman ve Malzeme veya Maliyet Artı satırının finansmanı, değişiklik numarası, tarih, ACRN, finansmanlı maliyet, finansmanlı ücret ve son tarihi ile. DCAA modunda satırın finansmanlı toplamları, finansman işlemlerinin toplamıdır."
 
-msgid "One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off."
-msgstr "Bir faturalama öğesi altında veya bir hizmet emrinde yapılan bir ücretin hesaplamalarından oluşturulan, faturalaştırılacak bir maliyet. Faturalandırılmamış, Askıda, Faturalandı veya Silindi olabilir."
+msgid "One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off."
+msgstr ""
 
 msgid "One CSV per incurred cost schedule. Schedules D, F, J, M, N and O need data outside Carbon."
 msgstr "Yapılan maliyet çizelgesi başına bir CSV. D, F, J, M, N ve O çizelgeleri Carbon dışında verilere ihtiyaç duyar."
@@ -24020,9 +24023,6 @@ msgstr "Hizmet işçilik stok kartı güncellendi"
 
 msgid "Service lines"
 msgstr "Hizmet Satırları"
-
-msgid "Service order"
-msgstr "Hizmet Siparişi"
 
 msgid "Service Period"
 msgstr "Hizmet Dönemi"
@@ -30393,9 +30393,6 @@ msgstr "MRP planlama eylemlerinin sahibi kimdir. Lokasyonlar şirket varsayılan
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Kiralama burada kime ait: kiralama özetini ve tarih hatırlatıcılarını alırlar."
-
-msgid "Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason."
-msgstr "Bir hizmet emri masrafı için kim ödeme yapar, muhasebeleştirildiğinde kararlaştırılır: Garanti, Sözleşme, Faturalandırılabilir veya Onarımda Aktifleştirildi. Geçersiz Kılma bunu bir nedenle değiştirir."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Faturaları kim alır, nereye ve hangi koşullarda."

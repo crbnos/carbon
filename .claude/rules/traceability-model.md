@@ -71,19 +71,6 @@ and MES services — NOT a single `post-production`:
   `trigger-rework` insert `trackedActivity` + input/output link rows on posting.
 - MES `startProductionEvent` (`apps/mes/app/services/operations.service.ts`) inserts a
   `trackedActivity` and a `trackedActivityOutput` for the production event.
-- `post-project-issue` (`post-project-issue/service.ts`), for a tracked part issued to a
-  node of a service order on a customer asset: a `type: 'Service'` activity (source
-  document Service Order) with the part as its input and the asset's serial as its output.
-  Its `attributes` hold `{ "Project Issue": <itemLedger id> }`, so a return deletes exactly
-  the activity its issue wrote (`uninstallServicePart`). See `field-service.md`.
-- RMA **Repair** lines (depot repair, `field-service.md`): the unit stays the customer's,
-  so its serial stays `Consumed` through the whole repair; no receipt or shipment flips
-  it to `On Hold` or back. `post-receipt` (`inventory/receipt-repair.ts`) writes a
-  `Return Receipt` activity per serial with `{ "Sales Return Order", Receipt, Employee,
-  "At Depot": true, "Service Order": <id> }` and the serial as its output. `post-shipment`
-  (`inventory/shipment-repair.ts`) writes one `Return Shipment` activity with
-  `"At Depot": false` and the units as inputs. Neither writes an `itemLedger` row, and
-  both voids leave the serial `Consumed`.
 - **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `issue` case
   `jobOperationScrap` scraps the serial being made — `type: 'Scrap'` activity,
   entity → `Scrapped`, then **spawns the next serial** (same `getNextSerialNumbers`
@@ -123,10 +110,7 @@ returned components as its outputs, so a component given back shows up on the as
 "ancestors" side. To list what an assembly still contains, net each component's `Consume`
 rows (descendants RPC) against its `Unconsume` rows (ancestors RPC), as MES
 `getTrackedInputs` and projects `loadSerialBuildNodes` (`projects.service.ts`, Build from
-part) do. Projects also counts a `Service` activity (a part a service order installed,
-input = the part, output = the customer asset's serial) as a `Consume`, and drops a
-component whose `customerAssetComponent` rows on the asset are all removed
-(`netBuildComponents`). Neither RPC returns `itemId`; read it from `trackedEntity`.
+part) do. Neither RPC returns `itemId`; read it from `trackedEntity`.
 
 **Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column;
 `20260929152451` adds `p_company_id`):
