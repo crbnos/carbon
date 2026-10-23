@@ -32,15 +32,18 @@ ensureLoggingConfigured();
 //
 // The key must be a real PostHog project key (`phc_…`), not just non-empty: a
 // placeholder value (e.g. a masked "****" in a local .env) passes a truthiness
-// check, and initializing with it makes posthog-js inject its remote-config
-// <script> into the document before hydrateRoot(document) runs — an extra DOM
-// node React can't match, so the ENTIRE document fails hydration.
+// check and would start analytics with a key PostHog does not know.
 if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
     api_host: POSTHOG_API_HOST,
     // LCP, INP and CLS from real sessions: the only way to know which pages are
     // slow for the people using them.
-    capture_performance: { web_vitals: true }
+    capture_performance: { web_vitals: true },
+    // Remote config, web vitals and the recorder load as <script> tags. The
+    // default puts them in <body> ahead of React Router's scripts, a node the
+    // server never sent, and the whole document fails hydration (#418/#423).
+    // React 18 ignores extra nodes at the end of <head>.
+    external_scripts_inject_target: "head"
   });
 }
 
