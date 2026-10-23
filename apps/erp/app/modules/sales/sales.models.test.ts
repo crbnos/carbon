@@ -271,7 +271,8 @@ describe("contractTermFromServicePeriods", () => {
 });
 
 // A project contract has a period of performance, not a term: it takes no
-// duration, renewal or billing timing, but it needs a project and an end date.
+// duration, renewal or billing timing, but it needs a project. Its end date
+// is optional: the period of performance may be open-ended.
 describe("customerContractValidator billing basis", () => {
   const header = {
     name: "Phase 2 support",
@@ -304,16 +305,13 @@ describe("customerContractValidator billing basis", () => {
     );
   });
 
-  it("refuses a project contract without an end date", () => {
+  it("parses an open-ended project contract (no end date)", () => {
     const result = customerContractValidator.safeParse({
       ...header,
       billingBasis: "Project",
       projectId: "proj_1"
     });
-    expect(result.success).toBe(false);
-    expect(result.error?.issues.map((issue) => issue.path[0])).toContain(
-      "endDate"
-    );
+    expect(result.success).toBe(true);
   });
 
   it("still requires the term of a service contract", () => {

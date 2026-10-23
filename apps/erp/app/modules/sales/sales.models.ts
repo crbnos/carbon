@@ -1998,9 +1998,11 @@ export const customerContractValidator = z
     message: "Project is required",
     path: ["projectId"]
   })
+  // A Custom term names its end date. A project contract's period of
+  // performance may be open-ended: its end date is optional.
   .refine(
     (data) =>
-      data.duration === "custom" || data.billingBasis === "Project"
+      data.duration === "custom" && data.billingBasis !== "Project"
         ? !!data.endDate
         : true,
     {
