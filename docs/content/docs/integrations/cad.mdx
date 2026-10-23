@@ -331,9 +331,20 @@ company's custom properties) onto Carbon. A property can set an **item field** o
 open, but the mappings belong to the company and apply to every push. It lives in
 the panel because Onshape lists properties only from inside a document.
 
-The page starts with fixed rows: Part number and Revision always come from Onshape,
-and Name and Description each have a mode (below). Then come the item fields with
-their **push defaults**, the values a new item gets when no property sets them:
+The page starts with the values every push reads. Part number, Revision, Name and
+Description come from Onshape's own properties unless you pick another text or list
+property; Name and Description each have a mode (below). Pushes match parts to Carbon
+items by part number, so the page warns when you change the Part number or Revision
+source while items are linked. Release pushes always read Onshape's own Part number
+and Revision.
+
+On an assembly, the page also shows the BOM's Item and Quantity columns. The panel
+finds Onshape's own columns whatever your BOM template or language calls them, and
+shows them as **Found**. When it can't, pick the column that holds each one; **None**
+clears the choice.
+
+Then come the item fields with their **push defaults**, the values a new item gets
+when no property sets them:
 
 | Item field | Values | Push default |
 | --- | --- | --- |
@@ -411,6 +422,7 @@ a cell value.
 | *Onshape is not connected for this company* | Only **Onshape** (sync) is connected, or no Onshape integration is. | Connect **Onshape V2**. |
 | The review fails to open with a 503 | Carbon could not store the review in Redis. | Check `REDIS_URL`. |
 | *Review again* after **Push to Carbon** | The 15-minute review expired, or it was already applied. | Press **Review again**. |
+| *Onshape's BOM for this assembly has no "Item" … columns* | The panel recognises none of the BOM's columns as Item, Part number or Quantity. | Add the column back in Onshape, or press **Choose columns** and pick it on the Fields page. |
 | A part shows **Conflict** | Carbon already has an item with that part number, made by hand, by an import or by the sync integration. | Push it: the panel links and updates that item instead of creating a duplicate. |
 | The push result says *New Draft version, not yet live* | The assembly's make method was released, so the push wrote to a Draft version. | Release the Draft in Carbon when ready. |
 | `invalid_scope` on Connect | The OAuth application lacks `OAuth2Write`. | Grant it in the developer portal. |
