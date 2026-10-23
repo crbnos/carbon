@@ -11,6 +11,7 @@ import {
   type ContractLineTerms,
   type ContractTerms,
   contractBillingBasisFor,
+  contractLineItemTypeAllowed,
   discountEndSplits,
   type ExistingRow,
   invoiceLinePricing,
@@ -1110,6 +1111,24 @@ describe("periodEndContaining", () => {
     expect(periodEndContaining(terms, "2027-01-15")).toBe("2027-01-31");
     // Clipped at the contract's end.
     expect(periodEndContaining(terms, "2027-12-15")).toBe("2027-10-31");
+  });
+});
+
+describe("contract line item types", () => {
+  it("lets a project contract line name a Part or a Service", () => {
+    expect(contractLineItemTypeAllowed("Project", "Part")).toBe(true);
+    expect(contractLineItemTypeAllowed("Project", "Service")).toBe(true);
+  });
+
+  it("keeps a service contract to Service items", () => {
+    expect(contractLineItemTypeAllowed("Schedule", "Service")).toBe(true);
+    expect(contractLineItemTypeAllowed("Schedule", "Part")).toBe(false);
+  });
+
+  it("refuses the other item types on either basis", () => {
+    for (const type of ["Material", "Tool", "Consumable", "Fixture"]) {
+      expect(contractLineItemTypeAllowed("Project", type)).toBe(false);
+    }
   });
 });
 

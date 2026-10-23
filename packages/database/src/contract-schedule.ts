@@ -1082,6 +1082,24 @@ export const billingBasisMismatchMessages: Record<
     "A project contract line is One-time. Create a service contract for recurring charges."
 };
 
+/** The item types a contract line may name. A service contract bills
+ *  services; a project contract's CLIN may also be a part, such as a
+ *  prototype that a job builds and a delivery hands over. */
+export function contractLineItemTypeAllowed(
+  basis: ContractBillingBasis,
+  itemType: string
+): boolean {
+  return itemType === "Service" || (basis === "Project" && itemType === "Part");
+}
+
+/** What the ERP and `post-customer-contract` say when they refuse an item
+ *  `contractLineItemTypeAllowed` rejects. */
+export function contractLineItemTypeMessage(basis: ContractBillingBasis) {
+  return basis === "Project"
+    ? "Only Part and Service items can be on a project contract"
+    : "Only Service items can be on a service contract";
+}
+
 /** Why a line does not belong on a contract of `basis`, or null. A service
  *  contract bills on its schedule, so it takes only `Fixed` lines; a project
  *  contract line is always One-time. */

@@ -516,6 +516,10 @@ msgstr "{0}件の残高のある仕入先"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}個の未サンプリングエンティティが利用可能にリリースされます。サンプリング済みの合格品は利用可能なままで、サンプリング済みの不合格品は却下されたままです。"
 
+#. placeholder {0}: formatQuantity(quantity)
+msgid "{0} units"
+msgstr ""
+
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
 msgid "{0} unmapped accounts will be matched against {1} provider accounts."
@@ -27784,6 +27788,9 @@ msgstr "ユニットの構築履歴"
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "購入、在庫、販売する単位"
+
+msgid "The units to deliver"
+msgstr ""
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "<0>{name}</0>のアップロードが{stopped}%で停止しました。同じファイルを再度ドロップして続行してください。"

@@ -103,6 +103,8 @@ import {
   certainPurchaseOption,
   classifyRentalLine,
   contractInvoiceHold,
+  contractLineItemTypeAllowed,
+  contractLineItemTypeMessage,
   DEFAULT_CURRENCY_DECIMALS,
   datetime,
   EPSILON,
@@ -9664,10 +9666,11 @@ export async function upsertContractLine(
     );
   }
 
-  // A billing line has no schedule: quantity 1 at rate 0, One-time
+  // A billing line has no schedule: rate 0, One-time
   // (`customerContractLine_billing_check`). Its price comes from the items.
   // A Fixed Price line of a project contract is one price, billed on its
-  // billing events: quantity 1 at its rate, One-time.
+  // billing events: One-time at its rate. Either is quantity 1, unless it
+  // names a part: then the quantity is the units to deliver (section 10).
   const isBilling = isProjectBillingMethod(line.billingMethod);
   const isProject = contract.data.billingBasis === "Project";
   const revenueType = isBilling || isProject ? "One-time" : line.revenueType;
@@ -9690,12 +9693,15 @@ export async function upsertContractLine(
     .eq("companyId", companyId)
     .single();
   if (item.error) return item;
-  if (item.data.type !== "Service") {
+  if (
+    !contractLineItemTypeAllowed(contract.data.billingBasis, item.data.type)
+  ) {
     return contractRefusal(
       "CONTRACT_LINE_NOT_SERVICE",
-      "A contract line must be a Service item"
+      contractLineItemTypeMessage(contract.data.billingBasis)
     );
   }
+  const isPartLine = isProject && item.data.type === "Part";
 
   const numbering = await checkContractLineNumber(client, {
     companyId,
@@ -9713,7 +9719,11 @@ export async function upsertContractLine(
     revenueType,
     itemId: line.itemId,
     description: line.description ?? null,
-    quantity: isBilling || isProject ? 1 : line.quantity,
+    quantity: isPartLine
+      ? line.quantity
+      : isBilling || isProject
+        ? 1
+        : line.quantity,
     rate: isBilling ? 0 : line.rate,
     rateUnit: revenueType === "Recurring" ? (line.rateUnit ?? null) : null,
     discountPercent: percentToFraction(line.discountPercent),
@@ -18866,8 +18876,11 @@ async function confirm(
       const item = itemById.get(line.itemId);
       const label = line.description ?? item?.readableIdWithRevision ?? "Line";
       if (!item) problems.push(`${label}: item not found`);
-      else if (item.type !== "Service") {
-        problems.push(`${label}: only Service items can be on a contract`);
+      else if (!contractLineItemTypeAllowed(contract.billingBasis, item.type)) {
+        const message = contractLineItemTypeMessage(contract.billingBasis);
+        problems.push(
+          `${label}: ${message.charAt(0).toLowerCase()}${message.slice(1)}`
+        );
       }
       if (line.revenueType === "Recurring" && !line.rateUnit) {
         problems.push(`${label}: a recurring line needs a rate unit`);
@@ -19850,7 +19863,8 @@ async function amend(
         return line;
       };
 
-      // Added lines must be Service items of this company.
+      // Added lines must be items of this company that the basis allows:
+      // Service, or Part on a project contract.
       const added = payload.changes.flatMap((change) =>
         change.op === "add" ? [change.line] : []
       );
@@ -19865,9 +19879,9 @@ async function amend(
         for (const line of added) {
           const type = typeById.get(line.itemId);
           if (!type) throw new NotFoundError("Item not found");
-          if (type !== "Service") {
+          if (!contractLineItemTypeAllowed(contract.billingBasis, type)) {
             throw new InvalidInputError(
-              "Only Service items can be on a contract"
+              contractLineItemTypeMessage(contract.billingBasis)
             );
           }
           // Added lines only: a change copies a stored line, and a contract

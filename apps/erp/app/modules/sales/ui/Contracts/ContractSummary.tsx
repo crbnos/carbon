@@ -269,8 +269,14 @@ function SummaryLine({
         (part): part is string => !!part
       )
     : [isRecurring ? t`Recurring` : t`One-time`];
-  if (!isProject && quantity !== 1) {
-    details.push(`${formatQuantity(quantity)} × ${rateFormatter.format(rate)}`);
+  // A project contract line is quantity 1 unless it names a part: then the
+  // quantity is the units to deliver, at the rate per unit (Fixed Price).
+  if (quantity !== 1) {
+    details.push(
+      isProject && isBillingLine
+        ? t`${formatQuantity(quantity)} units`
+        : `${formatQuantity(quantity)} × ${rateFormatter.format(rate)}`
+    );
   }
   if (discount > 0) {
     const off = percent.format(discount);

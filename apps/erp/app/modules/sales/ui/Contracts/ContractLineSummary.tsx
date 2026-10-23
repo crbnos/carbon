@@ -56,6 +56,7 @@ export default function ContractLineSummary({
   const billingMethodLabels = useBillingMethodLabels(
     routeData?.contract.billingBasis
   );
+  const isProject = routeData?.contract.billingBasis === "Project";
 
   const revenueTypeLabels: Record<
     (typeof contractRevenueTypes)[number],
@@ -113,7 +114,7 @@ export default function ContractLineSummary({
           <ReadOnlyField label={t`Billing Method`} termId="billing-method">
             {billingMethodLabels[line.billingMethod]}
           </ReadOnlyField>
-          <ReadOnlyField label={t`Service`}>
+          <ReadOnlyField label={isProject ? t`Item` : t`Service`}>
             {line.item ? (
               <span className="flex min-w-0 items-center gap-2">
                 <span className="shrink-0 whitespace-nowrap">

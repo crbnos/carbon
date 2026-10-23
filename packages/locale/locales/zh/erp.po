@@ -516,6 +516,10 @@ msgstr "{0}个有余额的供应商"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}个未采样的实体将转为可用。已采样的合格品保持可用，已采样的不合格品保持已拒绝。"
 
+#. placeholder {0}: formatQuantity(quantity)
+msgid "{0} units"
+msgstr ""
+
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
 msgid "{0} unmapped accounts will be matched against {1} provider accounts."
@@ -27784,6 +27788,9 @@ msgstr "该件的构建历史"
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "您购买、库存和销售的计量单位"
+
+msgid "The units to deliver"
+msgstr ""
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "上传<0>{name}</0>在{stopped}%处停止。拖放同一文件以继续。"

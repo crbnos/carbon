@@ -516,6 +516,10 @@ msgstr "{0} आपूर्तिकर्ता शेष राशि के �
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} नमूना न किए गए इकाइयों को उपलब्ध में जारी किया जाएगा। नमूना किए गए पास उपलब्ध रहेंगे और नमूना किए गए विफलताएं अस्वीकृत रहेंगी।"
 
+#. placeholder {0}: formatQuantity(quantity)
+msgid "{0} units"
+msgstr ""
+
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
 msgid "{0} unmapped accounts will be matched against {1} provider accounts."
@@ -27784,6 +27788,9 @@ msgstr "इकाई का निर्माण इतिहास"
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "आप जो इकाइयाँ खरीदते, स्टॉक करते और बेचते हैं"
+
+msgid "The units to deliver"
+msgstr ""
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "<0>{name}</0> का अपलोड {stopped}% पर रुक गया। जारी रखने के लिए एक ही फ़ाइल को फिर से ड्रॉप करें।"

@@ -516,6 +516,10 @@ msgstr "{0} bakiyesi olan tedarikçi"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} örneklenmemiş varlıklar Kullanılabilir'e bırakılacaktır. Örneklenen başarılılar Kullanılabilir ve örneklenen başarısızlar Reddedilmiş olarak kalır."
 
+#. placeholder {0}: formatQuantity(quantity)
+msgid "{0} units"
+msgstr ""
+
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
 msgid "{0} unmapped accounts will be matched against {1} provider accounts."
@@ -27784,6 +27788,9 @@ msgstr "Birimin yapı geçmişi"
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Satın aldığınız, stokladığınız ve sattığınız ölçü birimleri"
+
+msgid "The units to deliver"
+msgstr ""
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "<0>{name}</0> yüklemesi %{stopped}'de durdu. Devam etmek için aynı dosyayı tekrar bırakın."

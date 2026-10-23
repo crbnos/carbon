@@ -516,6 +516,10 @@ msgstr "{0} fornitori con un saldo"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0} entità non campionate verranno rilasciate a Disponibile. I campioni approvati rimangono Disponibili e i campioni rifiutati rimangono Rifiutati."
 
+#. placeholder {0}: formatQuantity(quantity)
+msgid "{0} units"
+msgstr ""
+
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
 msgid "{0} unmapped accounts will be matched against {1} provider accounts."
@@ -27784,6 +27788,9 @@ msgstr "La cronologia di costruzione dell'unità"
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "Le unità di misura in cui acquisti, immagazzini e vendi"
+
+msgid "The units to deliver"
+msgstr ""
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "Il caricamento di <0>{name}</0> si è fermato al {stopped}%. Rilascia lo stesso file di nuovo per continuare."

@@ -2301,6 +2301,9 @@ async function projectBillingFixture(
     key: string;
     projectId: string;
     projectElementId: string;
+    /** A part CLIN: the item and its units to deliver. */
+    itemId?: string;
+    quantity?: number;
   }) => {
     const contractId = `${companyId}-${input.key}`;
     await db.transaction().execute(async (trx) => {
@@ -2330,9 +2333,9 @@ async function projectBillingFixture(
           id: `${contractId}-line`,
           customerContractId: contractId,
           revenueType: "One-time",
-          itemId,
+          itemId: input.itemId ?? itemId,
           description: "Engineering T&M",
-          quantity: 1,
+          quantity: input.quantity ?? 1,
           rate: 0,
           startDate: "2026-01-01",
           billingMethod: "Time & Materials",
@@ -2409,6 +2412,73 @@ databaseTest(
       expect((await confirm(expensed)).error?.message).toContain(
         "cost treatment must be Contract"
       );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a project contract line may name a part with its quantity; a service contract may not",
+  async () => {
+    const f = await contractFixture();
+    const { ctx, db, companyId } = f;
+    try {
+      const partId = `${companyId}-prototype`;
+      await db
+        .insertInto("item")
+        .values({
+          id: partId,
+          readableId: `${companyId.slice(0, 8)}-PROTO`,
+          name: "Prototype",
+          type: "Part",
+          itemTrackingType: "Inventory",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      const billing = await projectBillingFixture(f);
+      const project = await billing.addProject("part", "PP", "Contract");
+      const contractId = await billing.addTimeAndMaterialsContract({
+        key: "tm-part",
+        projectId: project.projectId,
+        projectElementId: project.rootId,
+        itemId: partId,
+        quantity: 2
+      });
+      const confirmed = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        { type: "confirm", customerContractId: contractId, asOf: "2026-01-01" },
+        postCustomerContract
+      );
+      expect(confirmed.error).toBeNull();
+
+      // --- The same part on the fixture's service contract ----------------
+      await db
+        .insertInto("customerContractLine")
+        .values({
+          id: `${f.contractId}-part`,
+          customerContractId: f.contractId,
+          revenueType: "One-time",
+          itemId: partId,
+          description: "Prototype",
+          quantity: 1,
+          rate: 100,
+          startDate: "2026-10-01",
+          billingMethod: "Fixed",
+          revenueMethod: "Daily",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      const refused = await invokePosting(
+        handlesOf(ctx),
+        "post-customer-contract",
+        { type: "confirm", customerContractId: f.contractId, asOf: "2026-10-01" },
+        postCustomerContract
+      );
+      expect(refused.error?.message).toContain("only Service items");
     } finally {
       await f.cleanup();
     }

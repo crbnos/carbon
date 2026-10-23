@@ -516,6 +516,10 @@ msgstr "잔액이 있는 공급업체 {0}곳"
 msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
 msgstr "{0}개의 미검사 항목이 가용으로 릴리스됩니다. 검사 합격 항목은 가용으로 유지되고 검사 불합격 항목은 거부됨으로 유지됩니다."
 
+#. placeholder {0}: formatQuantity(quantity)
+msgid "{0} units"
+msgstr ""
+
 #. placeholder {0}: unmapped.length
 #. placeholder {1}: chart.length
 msgid "{0} unmapped accounts will be matched against {1} provider accounts."
@@ -27784,6 +27788,9 @@ msgstr "개의 구축 이력"
 
 msgid "The units of measure you buy, stock, and sell in"
 msgstr "구매, 재고, 판매 시 사용하는 측정 단위"
+
+msgid "The units to deliver"
+msgstr ""
 
 msgid "The upload of <0>{name}</0> stopped at {stopped}%. Drop the same file again to continue."
 msgstr "파일 <0>{name}</0>의 업로드가 {stopped}%에서 중지되었습니다. 계속하려면 같은 파일을 다시 드롭하세요."

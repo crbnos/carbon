@@ -38,6 +38,7 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
   contractBillingMethods,
@@ -104,6 +105,13 @@ const ContractLineForm = ({
     initialValues.revenueMethod
   );
   const [projectId, setProjectId] = useState(initialValues.projectId ?? "");
+  const [itemId, setItemId] = useState(initialValues.itemId ?? "");
+  const [items] = useItems();
+  // A project contract's CLIN may name a part (a prototype): its quantity is
+  // the units to deliver (spec section 10).
+  const isPartLine =
+    billingBasis === "Project" &&
+    items.find((item) => item.id === itemId)?.type === "Part";
   const [revenueType, setRevenueType] = useState(initialValues.revenueType);
   const [startDate, setStartDate] = useState(initialValues.startDate);
   const [lineItemNumber, setLineItemNumber] = useState(
@@ -273,9 +281,11 @@ const ContractLineForm = ({
                   )}
                   <Item
                     name="itemId"
-                    label={t`Service`}
-                    type="Service"
+                    label={isProject ? t`Item` : t`Service`}
+                    type={isProject ? "Item" : "Service"}
+                    validItemTypes={isProject ? ["Part", "Service"] : undefined}
                     isReadOnly={isLocked}
+                    onChange={(option) => setItemId(option?.value ?? "")}
                   />
                   {isBilling ? (
                     // A billing line is One-time at quantity 1 and rate 0
@@ -283,16 +293,16 @@ const ContractLineForm = ({
                     // from the billable items.
                     <>
                       <Hidden name="revenueType" value="One-time" />
-                      <Hidden name="quantity" value={1} />
+                      {!isPartLine && <Hidden name="quantity" value={1} />}
                       <Hidden name="rate" value={0} />
                       <Hidden name="discountPercent" value={0} />
                     </>
                   ) : isProject ? (
                     // A Fixed Price line is One-time at quantity 1: its rate
-                    // is its price.
+                    // is its price. A part line's rate is its unit price.
                     <>
                       <Hidden name="revenueType" value="One-time" />
-                      <Hidden name="quantity" value={1} />
+                      {!isPartLine && <Hidden name="quantity" value={1} />}
                       <Hidden name="discountPercent" value={0} />
                     </>
                   ) : (
@@ -339,6 +349,16 @@ const ContractLineForm = ({
 
                 {isBilling ? (
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
+                    {isPartLine && (
+                      <Number
+                        name="quantity"
+                        label={t`Quantity`}
+                        helperText={t`The units to deliver`}
+                        minValue={1}
+                        step={INPUT_STEP.quantity}
+                        formatOptions={INPUT_FORMAT.quantity}
+                      />
+                    )}
                     <ContractLineBillingFields
                       billingMethod={billingMethod}
                       projectId={projectId}
@@ -355,9 +375,19 @@ const ContractLineForm = ({
                   </div>
                 ) : isProject ? (
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 border-t border-border pt-4">
+                    {isPartLine && (
+                      <Number
+                        name="quantity"
+                        label={t`Quantity`}
+                        helperText={t`The units to deliver`}
+                        minValue={1}
+                        step={INPUT_STEP.quantity}
+                        formatOptions={INPUT_FORMAT.quantity}
+                      />
+                    )}
                     <Number
                       name="rate"
-                      label={t`Price`}
+                      label={isPartLine ? t`Unit Price` : t`Price`}
                       helperText={t`Billed on the line's billing events`}
                       minValue={0}
                       step={INPUT_STEP.money(currencyDecimals)}

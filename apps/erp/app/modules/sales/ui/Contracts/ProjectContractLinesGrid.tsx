@@ -35,6 +35,7 @@ import {
   useCurrencyDecimals,
   usePercentFormatter,
   usePermissions,
+  useQuantityFormatter,
   useSettings
 } from "~/hooks";
 import { path } from "~/utils/path";
@@ -69,7 +70,10 @@ type LineRow = {
   /** The Cost Plus fee or the Time & Materials handling, in percent points,
    *  as the cell edits it. */
   markupPercent: number | null;
-  /** A Fixed Price line's price: its rate at quantity 1. */
+  /** A part CLIN's units to deliver; null for a Service line (quantity 1). */
+  quantity: number | null;
+  /** A Fixed Price line's price: its rate at quantity 1, or per unit on a
+   *  part line. */
   rate: number;
   revenueMethod: RevenueMethod;
 };
@@ -113,6 +117,7 @@ const ProjectContractLinesGrid = ({
   const navigate = useNavigate();
   const save = useCellSave();
   const percent = usePercentFormatter();
+  const formatQuantity = useQuantityFormatter();
 
   const contractId = contract.id!;
   const { currencyCode } = contract;
@@ -173,6 +178,7 @@ const ProjectContractLinesGrid = ({
             : line.billingMethod === "Time & Materials"
               ? points(line.materialHandlingPercent)
               : null,
+        quantity: line.item?.type === "Part" ? Number(line.quantity) : null,
         rate: Number(line.rate),
         revenueMethod: line.revenueMethod
       })),
@@ -221,6 +227,18 @@ const ProjectContractLinesGrid = ({
             {row.original.name}
           </span>
         )
+      },
+      {
+        accessorKey: "quantity",
+        header: t`Qty`,
+        cell: ({ row }) =>
+          row.original.quantity === null ? (
+            <Dash />
+          ) : (
+            <span className="tabular-nums">
+              {formatQuantity(row.original.quantity)}
+            </span>
+          )
       },
       {
         accessorKey: "billingMethod",
@@ -322,6 +340,7 @@ const ProjectContractLinesGrid = ({
       t,
       currencyCode,
       percent,
+      formatQuantity,
       billingMethodLabels,
       revenueMethodLabels,
       elementLabels
