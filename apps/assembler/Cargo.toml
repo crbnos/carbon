@@ -36,7 +36,7 @@ sha2 = "0.10"
 hex = "0.4"
 tower-http = { version = "0.6", features = ["compression-zstd", "compression-gzip"] }
 memmap2 = "0.9"
-file-format = "0.26"
+file-format = "0.29"
 tempfile = "3"
 # Tracing (OTLP over HTTP, traces only). Inert unless OTEL_EXPORTER_OTLP_ENDPOINT
 # is set — the same switch and variables as the Node apps (`@carbon/logger`).
