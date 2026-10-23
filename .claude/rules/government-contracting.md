@@ -164,26 +164,35 @@ event's `startTime` falls on in the company's time zone.
 - **Every mode.** The Labor ledger row carries the employee's `laborCategoryId` (D37), so
   `resolveBillRate` finds the category's bill rate. With no category, the row has none,
   and a T&M item without an employee rate goes On Hold "No bill rate".
-- **DCAA mode, a Setup or Labor event.** The event posts its Machine and Overhead legs
-  as before. It skips the Labor leg (cost 0: no Labor ledger row, no labor journal pair).
-  In the same transaction, `syncShopTimesheet` (`production.service.ts`) keeps
-  the event's timesheet entries in step with it. Each entry is linked to its event
-  (`timesheetEntry.productionEventId`) and names its `jobId` and `jobOperationId`
-  (migrations `20261023024353`, `20261023041256`). The wanted hours are
-  `round(duration / 3600)` on a post and 0 on a reversal (a delete reverses first).
-  - Every linked entry Draft or Rejected: the first is updated in place (day, task,
-    category, hours, job operation; status back to Draft, so a revision on it keeps its
-    entry), the others are deleted; with 0 hours they all are. With none, `insertTimesheetDraft`
-    inserts one.
-  - Any linked entry Submitted, Approved or Posted: when their net hours already equal
-    the wanted hours nothing changes; otherwise the post is refused with
-    `shopTimesheetSubmittedMessage` ("These hours are on a submitted timesheet. Correct
-    the timesheet entry to N hours first."). `createTimesheetCorrection` copies
-    `productionEventId`, `jobId` and `jobOperationId` onto the reversal and the
-    replacement (a transfer to another project drops the job and operation, not the
-    event), so after the correction the net equals the event and it posts.
+- **DCAA mode, any event with a project charge.** A Setup or Labor event posts its
+  Machine and Overhead legs as before and skips the Labor leg (cost 0: no Labor ledger
+  row, no labor journal pair). In the same transaction, `syncShopTimesheet`
+  (`production.service.ts`) keeps the event's timesheet entries in step with it, for a
+  Machine event too (so an edit from Labor to Machine removes the entry). Each entry is
+  linked to its event (`timesheetEntry.productionEventId`) and names its `jobId` and
+  `jobOperationId` (migrations `20261023024353`, `20261023041256`). The wanted entry
+  is `round(duration / 3600)` hours for the event's person; none on a reversal (a delete
+  reverses first) or for a Machine event. It locks the event row first, so two posts of
+  one event cannot both insert.
+  - Certified entries (Submitted, Approved, Posted) whose net is not 0 stand. When they
+    already match (same person, same hours) the open entries go and nothing else
+    changes. Otherwise the post is refused: `SHOP_TIMESHEET_SUBMITTED` ("These hours are
+    on a submitted timesheet. Reject the entry, then save the event again.") while none is
+    Posted, else `shopTimesheetPostedMessage` ("These hours are posted. Correct the
+    timesheet entry to N hours first.", N = 0 when the event moved to another person).
+    `createTimesheetCorrection` (Posted entries only) copies `productionEventId`, `jobId`
+    and `jobOperationId` onto the reversal and the replacement (a transfer to another
+    project drops the job and operation, not the event), so after it the net matches. A
+    certified net of 0 (corrected to 0) no longer counts.
+  - Otherwise the first open (Draft or Rejected) entry is updated in place (person, day,
+    task, category, hours, job operation; back to Draft with `submittedAt` and
+    `rejectionNote` cleared, so a revision on it keeps its entry), the others are
+    deleted; with nothing wanted they all are. With none, `insertTimesheetDraft` inserts
+    one.
   With nothing else to post, the sync and the event's `postedToGL` flag are written
   alone. Each event has its own entries.
+- **No person in DCAA mode.** A Setup or Labor event with hours and no `employeeId` is
+  refused with `SHOP_LABOR_EMPLOYEE_REQUIRED`: its labor cost would post nowhere.
 - **No labor category in DCAA mode.** The event is refused with
   `SHOP_LABOR_CATEGORY_REQUIRED` ("Set a labor category on this person before they
   record project time").

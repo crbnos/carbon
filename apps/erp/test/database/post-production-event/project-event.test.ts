@@ -467,6 +467,18 @@ async function eventEntries(f: Fixture, eventId: string) {
   return rows.map((row) => [Number(row.hours), row.status]);
 }
 
+async function entryIds(f: Fixture, eventId: string) {
+  const rows = await f.db
+    .selectFrom("timesheetEntry")
+    .select("id")
+    .where("productionEventId", "=", eventId)
+    .where("companyId", "=", f.companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .execute();
+  return rows.map((row) => row.id);
+}
+
 async function setEventEnd(f: Fixture, eventId: string, endTime: string) {
   await f.db
     .updateTable("productionEvent")
@@ -494,11 +506,13 @@ databaseTest(
 
       expect((await post()).data?.success).toBe(true);
       expect(await eventEntries(f, eventId)).toEqual([[1, "Draft"]]);
+      const [first] = await entryIds(f, eventId);
 
       // Two hours instead of one: the same entry, re-posted.
       await setEventEnd(f, eventId, "2026-10-06T01:30:00Z");
       expect((await post()).data?.success).toBe(true);
       expect(await eventEntries(f, eventId)).toEqual([[2, "Draft"]]);
+      expect(await entryIds(f, eventId)).toEqual([first]);
 
       // Deleting the event reverses it first: the entry goes.
       expect((await post(true)).data?.success).toBe(true);
@@ -539,7 +553,7 @@ databaseTest(
         productionEventId: eventId
       });
       expect(refused.error?.message).toEqual(
-        "These hours are on a submitted timesheet. Correct the timesheet entry to 2 hours first."
+        "These hours are posted. Correct the timesheet entry to 2 hours first."
       );
       expect(await eventEntries(f, eventId)).toEqual([[1, "Posted"]]);
 
@@ -576,6 +590,94 @@ databaseTest(
           .map(([hours]) => Number(hours))
           .sort((a, b) => a - b)
       ).toEqual([-1, 1, 2]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA: an edit of submitted hours is refused until the entry is rejected, then reuses it",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ timekeepingControls: "DCAA" })
+        .where("id", "=", f.companyId)
+        .execute();
+      const { eventId } = await shopHour(f, {
+        laborCategoryId: f.laborCategoryId
+      });
+      const post = () =>
+        postProductionEvent(f.ctx, { productionEventId: eventId });
+      expect((await post()).data?.success).toBe(true);
+      const [entryId] = await entryIds(f, eventId);
+      const setStatus = (status: "Submitted" | "Rejected") =>
+        f.db
+          .updateTable("timesheetEntry")
+          .set({ status, rejectionNote: status === "Rejected" ? "Recheck" : null })
+          .where("id", "=", entryId!)
+          .where("companyId", "=", f.companyId)
+          .execute();
+
+      await setStatus("Submitted");
+      await setEventEnd(f, eventId, "2026-10-06T01:30:00Z");
+      expect((await post()).error?.message).toEqual(
+        "These hours are on a submitted timesheet. Reject the entry, then save the event again."
+      );
+      expect(await eventEntries(f, eventId)).toEqual([[1, "Submitted"]]);
+
+      await setStatus("Rejected");
+      expect((await post()).data?.success).toBe(true);
+      expect(await eventEntries(f, eventId)).toEqual([[2, "Draft"]]);
+      expect(await entryIds(f, eventId)).toEqual([entryId]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "DCAA: an event turned into machine time drops its labor entry; one with no person is refused",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ timekeepingControls: "DCAA" })
+        .where("id", "=", f.companyId)
+        .execute();
+      const { eventId } = await shopHour(f, {
+        laborCategoryId: f.laborCategoryId
+      });
+      const post = () =>
+        postProductionEvent(f.ctx, { productionEventId: eventId });
+      expect((await post()).data?.success).toBe(true);
+      expect(await eventEntries(f, eventId)).toEqual([[1, "Draft"]]);
+
+      const setEvent = (values: {
+        type?: "Labor" | "Machine";
+        employeeId?: string | null;
+      }) =>
+        f.db
+          .updateTable("productionEvent")
+          .set(values)
+          .where("id", "=", eventId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+
+      await setEvent({ type: "Machine" });
+      expect((await post()).data?.success).toBe(true);
+      expect(await eventEntries(f, eventId)).toEqual([]);
+
+      // Labor with no person: no timesheet to put it on, and its cost is
+      // not posted either, so the event is refused.
+      await setEvent({ type: "Labor", employeeId: null });
+      expect((await post()).error?.message).toEqual(
+        "Set the person on this event: project time under DCAA belongs to a person's timesheet"
+      );
+      expect(await eventEntries(f, eventId)).toEqual([]);
     } finally {
       await f.cleanup();
     }
