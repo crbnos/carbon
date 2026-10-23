@@ -19,6 +19,7 @@ import {
   normalizeConfiguration,
   parseBomTree,
   parseProperties,
+  sourceLabel,
   withoutProperties
 } from "@carbon/ee";
 import type { OnshapeDocument, StoredAssemblyPlan } from "@carbon/ee/onshape";
@@ -177,7 +178,11 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(failure.body, { status: failure.status });
     }
     return data(
-      { error: "Set a part number on the assembly in Onshape first" },
+      {
+        error: sources.identity.partNumber
+          ? `Set ${sourceLabel("partNumber", sources)} on the assembly in Onshape first: it is the part number`
+          : "Set a part number on the assembly in Onshape first"
+      },
       { status: 422 }
     );
   }

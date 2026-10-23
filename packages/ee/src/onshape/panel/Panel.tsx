@@ -148,7 +148,8 @@ import {
   IDENTITY_VALUE_TYPES,
   type IdentityField,
   isIdentityProperty,
-  ONSHAPE_PROPERTIES
+  ONSHAPE_PROPERTIES,
+  onshapePropertyField
 } from "./standard-sources";
 import type { PanelPartStatus } from "./status";
 
@@ -167,6 +168,8 @@ export type PanelAssemblyLine = {
 export type PanelAssemblyStatus = {
   root: {
     partNumber: string | null;
+    /** The Onshape property the part number is read from. */
+    partNumberSource?: string;
     name: string | null;
     /** Element metadata could not be read, so a null part number says nothing. */
     identityUnavailable?: boolean;
@@ -1988,6 +1991,11 @@ export function OnshapePanel({
                     onPush={() => planAssembly(session.token)}
                     onPushLevel={() => planAssembly(session.token, "top")}
                     onRefresh={() => loadParts(session.token)}
+                    onOpenFields={
+                      availableTabs.includes("fields")
+                        ? () => setTab("fields")
+                        : undefined
+                    }
                   />
                 )
               ) : (
@@ -2096,7 +2104,8 @@ function AssemblySection({
   refreshFailure,
   onPush,
   onPushLevel,
-  onRefresh
+  onRefresh,
+  onOpenFields
 }: {
   assembly: PanelAssemblyStatus;
   canPush: boolean;
@@ -2110,6 +2119,8 @@ function AssemblySection({
   onPush: () => void;
   onPushLevel: () => void;
   onRefresh: () => void;
+  /** Set when the user can open Fields, where a missing column is chosen. */
+  onOpenFields?: () => void;
 }) {
   return (
     <VStack spacing={2} className="w-full">
@@ -2162,7 +2173,8 @@ function AssemblySection({
             <AlertTitle>This assembly has no part number</AlertTitle>
             <AlertDescription>
               In Onshape, right-click the assembly's tab, choose Properties and
-              set Part number. Then press Refresh.
+              set {assembly.root.partNumberSource ?? "Part number"}. Then press
+              Refresh.
             </AlertDescription>
           </Alert>
         )
@@ -2175,6 +2187,13 @@ function AssemblySection({
           stale
           retrying={refreshing}
           onRetry={onRefresh}
+          action={
+            onOpenFields && missingBomColumns(refreshFailure.diagnostics) ? (
+              <Button size="sm" onClick={onOpenFields}>
+                Choose columns
+              </Button>
+            ) : null
+          }
         />
       ) : null}
 
@@ -2949,6 +2968,8 @@ function FieldsSection({
                   entry={entry}
                   columns={bom.columns}
                   detected={bom.detected[field]}
+                  mappingOf={mappingOf}
+                  definitions={data.definitions}
                   errors={
                     entry
                       ? state.fieldErrors[entry.onshapePropertyId]
@@ -3609,6 +3630,8 @@ function BomLineRow({
   entry,
   columns,
   detected,
+  mappingOf,
+  definitions,
   errors,
   disabled,
   onSource
@@ -3617,6 +3640,8 @@ function BomLineRow({
   entry: FieldsDraftEntry | undefined;
   columns: Pick<PanelFieldsProperty, "propertyId" | "name" | "valueType">[];
   detected: string | null;
+  mappingOf: Map<string, FieldsDraftEntry>;
+  definitions: PlanCustomFieldDefinition[];
   errors: string[] | undefined;
   disabled: boolean;
   onSource: (
@@ -3645,6 +3670,25 @@ function BomLineRow({
       />
     );
   }
+  // Onshape's own columns are never another field's source (`standardSourceErrors`).
+  const candidates: PanelFieldsProperty[] = columns
+    .filter(
+      (column) =>
+        onshapePropertyField({ propertyId: column.propertyId }) === null
+    )
+    .map((column) => ({ ...column, mappable: true }));
+  // The map is company-wide: the chosen column may belong to another template.
+  const chosenMissing =
+    entry !== undefined &&
+    !columns.some((column) => column.propertyId === entry.onshapePropertyId);
+  if (entry && chosenMissing) {
+    candidates.push({
+      propertyId: entry.onshapePropertyId,
+      name: entry.onshapeName,
+      valueType: entry.valueType,
+      mappable: true
+    });
+  }
   return (
     <FieldRow
       source={
@@ -3653,27 +3697,35 @@ function BomLineRow({
             entry ? `${SOURCE_PROPERTY}${entry.onshapePropertyId}` : undefined
           }
           label={`${carbon}: source`}
-          placeholder="Choose the column"
+          placeholder={`Choose the ${own} column`}
           groups={[
-            ...(entry && found
+            ...(entry
               ? [
                   {
                     options: [
-                      {
-                        value: SOURCE_DEFAULT,
-                        label: found.name,
-                        helper: `Onshape's ${own} column`
-                      }
+                      found
+                        ? {
+                            value: SOURCE_DEFAULT,
+                            label: found.name,
+                            helper: `Onshape's ${own} column`
+                          }
+                        : {
+                            value: SOURCE_DEFAULT,
+                            label: "None",
+                            helper: `Use Onshape's ${own} column when a BOM has one`
+                          }
                     ]
                   }
                 ]
               : []),
             {
               label: "BOM column",
-              options: columns.map((column) => ({
-                value: `${SOURCE_PROPERTY}${column.propertyId}`,
-                label: column.name
-              }))
+              options: propertyOptions(
+                candidates,
+                entry,
+                mappingOf,
+                definitions
+              )
             }
           ]}
           disabled={disabled}
@@ -3682,7 +3734,7 @@ function BomLineRow({
               if (entry) onSource(null);
               return;
             }
-            const chosen = columns.find(
+            const chosen = candidates.find(
               (c) => c.propertyId === value.slice(SOURCE_PROPERTY.length)
             );
             if (chosen) onSource(chosen);
@@ -3697,6 +3749,16 @@ function BomLineRow({
             <p className="text-xs text-destructive">
               This BOM has no {own} column the panel recognises. Choose the
               column that holds it.
+            </p>
+          ) : chosenMissing && !found ? (
+            <p className="text-xs text-destructive">
+              This BOM has no {entry.onshapeName} column. Choose the column that
+              holds {own}.
+            </p>
+          ) : chosenMissing && found ? (
+            <p className="text-xs text-muted-foreground">
+              This BOM has no {entry.onshapeName} column, so pushes read{" "}
+              {found.name}.
             </p>
           ) : null}
           {rowErrors(errors)}

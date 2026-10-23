@@ -65,5 +65,22 @@ does this on the Fields page, which already maps custom fields.
 - No fixture or live response confirms that release package properties carry
   `propertyId`. The release read takes the id first and keeps the label as a
   fallback.
-- Nobody has run the Fields page in a browser yet. The review needs a stack
-  with an `onshape-v2` connection and the panel extension pointed at it.
+
+## Browser self-test (local stack, panel inside Onshape, 2026-10-23)
+
+The BOM response was relabelled on the server for the template cases (a temporary edit, not committed).
+
+- [x] Onshape's default template: Item and Quantity show Found; status, push review and Releases load.
+- [x] All labels in capitals, Onshape's ids and `propertyName` kept: status loads; Fields shows ITEM and QUANTITY as Found.
+- [x] Item and Quantity unrecognisable (custom ids and property names, unfamiliar labels): status refuses with Choose columns; the Fields rows show pickers; choosing both and saving loads the assembly; the push writes the BOM lines with the chosen Quantity column's values (1 and 3).
+- [x] Clearing an Item override with None brings the missing-column refusal back for Item only.
+- [x] A saved Quantity override whose column a BOM lacks: pushes read Onshape's own column, and the row says so.
+- [x] Part number from a custom text property, empty on these parts: the change warns with the link count; parts stay linked and read "No part number"; the assembly hint and the push refusal name the property.
+- [x] Part Studio: Fields shows no Item or Quantity rows; a Part number override reads part metadata.
+
+Fixed during the self-test:
+- [x] The Item and Quantity picker offered Onshape's own columns (which the save refuses) and the other row's column.
+- [x] A saved Item or Quantity override could not be cleared while no column was detected (None option).
+- [x] The picker placeholder now names the field ("Choose the Item column").
+- [x] An assembly refresh that failed on missing columns had no Choose columns button.
+- [x] The "no part number" hint and the push refusal named Part number when another property was the source.

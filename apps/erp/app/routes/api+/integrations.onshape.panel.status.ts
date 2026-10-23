@@ -20,6 +20,7 @@ import {
   normalizeConfiguration,
   parseBomTree,
   parseProperties,
+  sourceLabel,
   withIdentitySources
 } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
@@ -308,6 +309,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         assembly: {
           root: {
             partNumber: rootPartNumber,
+            partNumberSource: sourceLabel("partNumber", sources),
             name: rootName,
             identityUnavailable: rootIdentityUnavailable,
             state: rootReleased
