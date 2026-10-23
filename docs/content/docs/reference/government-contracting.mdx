@@ -1,0 +1,175 @@
+---
+title: Government contracting
+description: "Run projects the way a pre-award survey checks them, with cost objectives, unallowable cost, DCAA timekeeping, labor distribution, CLIN funding and R&D tax reports."
+---
+
+A US defense manufacturer can win a cost-type contract only when its accounting system passes a pre-award survey (SF 1408). Carbon covers the items the survey checks on [projects](/docs/reference/projects): each project's cost objective, unallowable cost kept apart, timekeeping with a full correction trail, labor reconciled to payroll, and contract line items funded by ACRN.
+
+Everything on this page is included in every plan. The timekeeping controls stay off until you turn on DCAA mode, so a commercial company keeps the simple timesheet.
+
+## Cost objectives
+
+Open a project's **Settings** page and set **Cost Objective** in the **Accounting** section. The field shows in DCAA mode, or when your plan has government contracting:
+
+| Cost objective | Use it for |
+|---|---|
+| **Direct** | Work on a government contract |
+| **Commercial** | Work for a commercial customer |
+| **Indirect** | Overhead and administrative work, leave |
+| **IR&D** | Independent research and development |
+| **B&P** | Bids and proposals |
+
+A project with cost treatment **Expense** takes Indirect, IR&D or B&P only. In DCAA mode every project needs a cost objective, and you cannot turn DCAA mode on while a Released project has none.
+
+## Unallowable cost
+
+FAR 31.201-6 requires you to identify unallowable cost and keep it out of what you bill. Carbon marks it in two places:
+
+- **The account.** In the chart of accounts, set **Allowability** to Expressly Unallowable, Mutually Agreed Unallowable or Directly Associated Unallowable, and give an **Unallowable reason** (for example `31.205-14 Entertainment`). **Element of cost** classifies the account as Labor, Material, Subcontract, Other Direct or Travel. Group accounts take none of these fields.
+- **The element.** In DCAA mode, the properties of an element page have a **Government contracting** group. Turn on **Unallowable** there. The elements below it inherit it.
+
+When a cost posts to an unallowable account or element, its project ledger row is marked unallowable. That row never becomes a [billable item](/docs/reference/project-billing#billable-items). The mark is kept at posting, so a later change to the account does not rewrite history.
+
+The project's **Costs** page shows **Allowable** and **Unallowable** in separate columns, and the ledger has an **Unallowable** column you can filter on. Turn on **Preproduction** on an element to show its cost as **Preproduction** in the total row.
+
+## DCAA timekeeping
+
+Open **Settings → Time** and set **Controls** to **DCAA**. You need both certification texts first.
+
+<Screenshot label="Settings, Time page: the Controls card set to DCAA, and the DCAA rules card with Entry window (days), Timecard check, Standard weekly hours and the two certification texts" />
+
+<FieldTable>
+  <Field name="Controls" type="enum">**Standard** keeps the light timesheet. **DCAA** adds every control below.</Field>
+  <Field name="Entry window (days)" type="number">Default 1. An entry older than this needs a reason for late entry.</Field>
+  <Field name="Timecard check" type="enum">**Off**, **Warn** (default) or **Block**. Compares a submitted week with the employee's [time cards](/docs/reference/people#time-cards).</Field>
+  <Field name="Certification text, exempt staff" type="text">The statement an exempt employee certifies at submit.</Field>
+  <Field name="Certification text, non-exempt staff" type="text">The statement a non-exempt employee certifies at submit.</Field>
+  <Field name="Standard weekly hours" type="number">Default 40. The hours an exempt employee's week is diluted to.</Field>
+</FieldTable>
+
+In DCAA mode, **My Time** works like this:
+
+- **Daily entry.** Time for a future date is refused, except on a leave element. A late entry asks for a **Reason for late entry**, and it shows on the late entries report.
+- **Correction trail.** Changing saved time asks for a **Reason for change**. Every change keeps the hours before and after, who changed them, when and why. The history icon on a cell opens **Changes**.
+- **Certification.** **Submit week** opens **Certify and Submit**: the employee ticks **I certify this statement** for the text that matches their **FLSA status** (set on the person's **Job** tab). Carbon stores who certified, when, and a hash of the text.
+- **Total time.** With the timecard check on Block, a week whose entries are short of its time cards cannot be submitted. On Warn, the week is submitted with a warning.
+- **Log time** saves a Draft entry. It is submitted with the week, after certification.
+
+A manager opens an employee's week from **Open timesheet** on an approval card. Every change the manager makes needs a reason, and the entry becomes **"Pending Employee Review"**. It cannot be submitted or posted until the employee accepts it with **Accept changes** on their timesheet. A manager can add time for an employee only on a day of recorded absence.
+
+### Charge restrictions
+
+On a project's **Settings** page, turn on **Restrict charging to members** in the **Charging** section, then add the people under **Members**. In DCAA mode, time from anyone else is refused when it posts.
+
+### Leave
+
+On a project with cost objective Indirect, turn on **Leave** for the element that holds vacation or sick time. Employees can enter time on it ahead of the day.
+
+## Dilution for exempt staff
+
+An exempt employee who works more than the standard weekly hours spreads the week's cost over all the hours worked (CAM 6-410.4a). In DCAA mode, the week posts at a factor of standard hours ÷ hours worked. For example, 50 hours at a 60.00 labor rate with a 40-hour standard post 2,400.00, at 48.00 an hour.
+
+A later correction to the week posts the difference on its other entries.
+
+## Labor transfers
+
+Moving posted time to another charge number is a labor transfer. On **My Time**, open the row's menu and choose **Correct** for the posted day, turn on **Move to another charge number**, pick the new charge number and labor category, and give a reason.
+
+In DCAA mode a transfer always waits for approval, even with timesheet approval off, and the person who asked for it cannot approve it. The approvals list marks it **Transfer** and shows the charge number it came from.
+
+## Payroll totals
+
+Carbon has no payroll, so you import each pay period's totals to reconcile labor. Open **People → Payroll Totals** and import a CSV with the employee, period start, period end, gross wages and hours paid. Importing the same employee and period again replaces the totals. See [import and export](/docs/reference/import-export) for the import steps.
+
+## Missing time
+
+In DCAA mode Carbon checks yesterday every day. When a scheduled shift day has no time entered, and the day is not a holiday or a recorded absence, the employee and their manager get a notice with **Open timesheet**.
+
+Only employees with **Timesheet required** on count, and only from their start date. Both are on the person's **Job** page. Timesheet required is on for every employee until you turn it off, for example for shop floor staff who never charge a project. The daily notice, the **Missing Time** report and the close checklist all follow it. A day counts only once it has ended.
+
+The [close checklist](/docs/reference/period-close#the-close-checklist) gains **Timesheets complete**, a warning. In DCAA mode it counts the period's entries that are not posted, plus its days with missing time.
+
+## CLIN and ACRN funding
+
+A contract line can carry a contract line item number (DFARS 204.71). On the line, enter **CLIN / SLIN**: 4 digits for a CLIN (`0001`), or 2 more letters or digits for a SubCLIN (`0001AA`). Pick the **Parent CLIN** for a SubCLIN.
+
+A Time & Materials or Cost Plus line has a **Funding Actions** grid on its billing page, one row per contract modification: **Modification**, **Funded** (the date), **ACRN**, **Expires**, **Funded Cost** and **Funded Fee**. **Add Funding** adds a row. In DCAA mode the line's funded cost and funded amount are the sums of its funding actions, and you edit the actions instead.
+
+When a project billing invoice bills a numbered line, it shows a separate amount per CLIN, with how it splits across the line's ACRNs. Each CLIN draws on its oldest funds first.
+
+## Contract financing
+
+A fixed-price contract can carry <Term id="progress-payment">progress payments</Term> or <Term id="performance-based-payment">performance-based payments</Term>, never both. Open the contract's **Financing** tab. Contract financing is available on the Business plan, and it needs a contract in the company's base currency.
+
+1. **Financing Terms:** the method, the contract price (SF 1443 line 5), the initial award date and the small-business flag. For performance-based payments, the maximum share of the price, at most 90 %.
+2. **Rates:** the progress payment rate and the liquidation rate the contract clause sets. A modification adds a rate from its effective date. Carbon does not derive a rate from business size.
+3. **Payment Events** (performance-based payments): each event's code, description, completion criteria, type, CLIN and amount. **Complete** records the completion date and the evidence. A Cumulative event bills only after every event before it is complete.
+
+**New Request** creates a Draft:
+
+- **Progress payments:** Carbon computes SF 1443 lines 5 to 26 from the cost of the contract's project and its Fixed lines' projects, through the costs-through date. Unallowable cost counts in line 12a, never in line 11. When the cost to date plus the estimate to complete exceeds the price, line 13 applies the loss ratio. Section III applies once an item is delivered and invoiced. On a Draft you can override lines 12b, 14a, 14b, 14d, 20a, 21a, 21d, 23 and 26, each with a reason; the request keeps the computed value beside it.
+- **Performance-based payments:** the request bills every complete event that no earlier request billed, and shows the values 1a to 2. Its amount never reads cost.
+
+**Submit** gives the request the next number of the contract's series; a withdrawn request keeps its number. **Approve** records the amount the contracting officer approved. **Print** gives the SF 1443 or the request to enter in WAWF.
+
+**Record Payment** opens a customer payment held against the contract for the approved amount. Posting it marks the request Paid. A delivery invoice of the contract shows the <Term id="liquidation">liquidation</Term> the government will take, and the invoice stays gross. When the payment arrives, apply the contract's deposit to the invoice for the liquidation and the cash for the rest. The Financing tab shows the balance still unliquidated.
+
+## R&D tax
+
+Carbon tags the data a US research tax filing needs and reports it by tax year. A tax year starts in the month set as **Start of Tax Year** in the fiscal year settings, and it takes the name of the calendar year it starts in.
+
+- **Business components.** In an element's **Government contracting** properties, turn on **Business component (R&D)**, then pick its **Component type** (Product, Process or All Others) and, for software, its **Software type**. The element's cost and the cost of the elements below it belong to it, down to the next business component.
+- **Research role.** Each labor category can have a **Research role**: Direct Research, Direct Supervision, Direct Support or Not Qualified. New time in the category takes that role.
+- **Work location.** Each timesheet entry has a work location, by default the employee's job location. The location's country decides domestic or foreign research: the United States, Puerto Rico and the US possessions are domestic. On **My Time**, open **Add row → More** to log time at another location or with another role.
+- **Funded research.** On a contract, the **Research (R&D tax)** group has **Funded research**, **Payment depends on success** and **We keep substantial rights**. With Funded research on Default, a contract with a Cost Plus or Time & Materials line counts as funded. Cost of a Direct project under a funded contract is not a qualified research expense.
+- **Officers.** On a person's **Job** tab, turn on **Officer** for Form 6765 Section E.
+
+The two R&D tax reports:
+
+- **§174A R&E** lists each business component's cost in Domestic, Foreign and Unknown Country columns (a location with no country is unknown). Burden shows apart for review, and **Of Which Funded** shows the funded part.
+- **Form 6765 Section G** lists the business components in descending order of qualified research expenses until they hold 80 % of the total or 50 rows, then one row for all the others. Wages use the employee's imported payroll totals, else their labor cost, and an employee with 80 % or more of their hours qualified counts all of their wages. Contract research counts at 65 % (column 56, **Applicable Contract Research**). Carbon applies 65 % to all contract research: adjust payments to a qualified research consortium (75 %) or for qualified energy research (100 %) yourself. All amounts are in whole dollars, and columns 53 and Total QRE add the rounded amounts. A **Total** row after the components sums every row; its columns 53 to 56 go to Section F lines 42 to 45. The file ends with the officers' wage total for Section E line 38 and notes for anything Carbon estimated or left out.
+
+## Reports
+
+Open **Projects → Reports** and pick a report. Each one opens on its own page as a table, with **Download CSV** for the same rows. Each report runs for a date range, except labor distribution, which runs for one accounting period, and the R&D tax reports, which run for one tax year. Pin the reports you use most; pins are per person.
+
+| Report | What it lists | Needs |
+|---|---|---|
+| **Late entries** | Time entered after the entry window, with the reason | Projects |
+| **Missing time** | Scheduled work days with no time, with each employee's manager | Projects |
+| **Labor distribution** | Hours and dollars by employee and charge number for one accounting period, in Direct, Indirect, Unclassified and Unallowable columns, with each employee's difference to time cards and to payroll | Projects and People |
+| **Labor transfers** | Every transfer, with the reason, who asked, who approved, and the days after the entry date | Projects |
+| **Timesheet export for auditors** | Every entry in the range and every change made to it | Projects |
+| **Cost by CLIN** | Allowable and unallowable cost of each contract line item, with its funding and the amount billed | Sales |
+| **§174A R&E (domestic and foreign)** | Research cost of each business component by work country | Projects and Accounting |
+| **Form 6765 Section G** | Qualified research expenses of each business component, columns 49(a)–56, and a Total row, in whole dollars | Projects and Accounting |
+
+A report you do not have the permission for is not shown. In labor distribution, an employee with no imported payroll for the period shows "No payroll imported".
+
+The **Missing Time** report has one row per employee, with the number of missing days, the first and the last, and the manager. Expand a row to see the days. Search, or filter by employee, manager, department or location. Select employees and choose **Send Reminder** to send each one a notice that lists their missing days. **Exclude from Report** in a row's menu turns the person's Timesheet required off, and **Excluded** lists those people so you can add them back; both need permission to update People.
+
+<AgentContext>
+Internals (Government Contracting Phase 5a, rule `.claude/rules/government-contracting.md`):
+
+- DCAA mode is `companySettings.timekeepingControls = 'DCAA'`. Columns: `timesheetEntryWindowDays`, `timesheetTimecardCheck` (Off/Warn/Block), `certificationTextExempt`, `certificationTextNonExempt`, `standardWeeklyHours`.
+- Every timesheet save goes through the `save-timesheet-entry` posting and every week submit through `submit-timesheet-week`, from the ERP and the MES.
+- `projectLedger.unallowable` is stamped at posting by `isUnallowableCharge`. Revisions are in `timesheetEntryRevision`, certifications in `timesheetCertification`, payroll totals in `payrollPeriodTotal`, funding actions in `customerContractFunding`, invoice ACRN splits in `salesInvoiceFundingAllocation`.
+- The missing-time check runs from pg_cron `timesheet-missing-time-sweeper` at 12:00 UTC.
+- R&D tax (Phase 5d): `projectElement.isBusinessComponent`, `rdComponentType`, `rdSoftwareType`; `timesheetEntry.workLocationId` and `rdActivityRole` (defaults filled by `save-timesheet-entry`); `laborCategory.rdActivityRole`; `customerContract.researchFunded`, `paymentContingentOnSuccess`, `contractorRetainsRights`; `employeeJob.isOfficer`. The pure rules are `@carbon/utils` `rd-tax.ts`. Section G column 53 is the sum of columns 50–52 (confirmed against Form 6765 Rev. 12-2024) and column 55 is always 0. `section6765FilingRows` rounds columns 50–52 and 54–56 to whole dollars (`IRS_WHOLE_DOLLAR_SCALE`), adds 53, Total QRE and the Total row from the rounded values, and the aggregate row is named "Aggregate Business Components". Column 56 applies 65 % to all contract research; there is no supplier rate for 75 % or 100 %.
+
+Exact messages and what they mean:
+
+- "Time cannot be entered for a future date": DCAA mode refuses a future date unless the element is a leave element.
+- "Give a reason for the late entry": the entry is older than the entry window.
+- "Give a reason for the change": someone other than the owner, or the owner on a saved entry, changed time without a reason.
+- "You can enter time for another employee only on a day of recorded absence": a manager may add time only on an absence day.
+- "Review the changes to your timesheet first": the week has an entry in Pending Employee Review; accept it on My Time.
+- "Set the certification text in Settings → Time before you submit": the certification text for the employee's FLSA status is empty.
+- "The certification text changed. Reload the page": the text changed after the dialog opened.
+- "Your entries account for X h of Y h on your timecards": the timecard check found a shortfall (refused on Block, a warning on Warn).
+- "PROJECT accepts time only from its members" (with the project named): the project restricts charging and the employee is not a member.
+- "A labor transfer needs an approver other than the requester": the requester tried to approve their own transfer.
+- "Set a cost objective. DCAA timekeeping requires one": a project saved without a cost objective in DCAA mode.
+- "Set a cost objective on N projects first": DCAA mode cannot turn on while Released projects lack a cost objective.
+- "Mark the element as a business component first": a component or software type was set on an element that is not a business component.
+</AgentContext>

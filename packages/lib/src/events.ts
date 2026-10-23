@@ -321,6 +321,16 @@ export type Events = {
     };
   };
 
+  // Indirect rate period run (Government Contracting 5b), sent when an
+  // accounting period locks.
+  "carbon/indirect-rates.compute": {
+    data: {
+      companyId: string;
+      accountingPeriodId: string;
+      userId: string;
+    };
+  };
+
   // Generate preventive-maintenance dispatches for one schedule on demand
   // (fired when a maintenance schedule is created or updated).
   "carbon/generate-maintenance": {
@@ -534,6 +544,35 @@ export type Events = {
     };
   };
 
+  "carbon/event-issue-sync": {
+    data: {
+      records: Array<{
+        event: {
+          table: string;
+          recordId: string;
+          operation: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE";
+          [key: string]: unknown;
+        };
+        companyId: string;
+      }>;
+    };
+  };
+
+  // One company's synced-record changes, for the Linear and Jira push
+  "carbon/issue-sync.push": {
+    data: {
+      companyId: string;
+      /** A newly created issue: push every field Carbon has. */
+      initial?: boolean;
+      records: Array<{
+        table: string;
+        recordId: string;
+        operation: "UPDATE" | "DELETE";
+        old: Record<string, unknown> | null;
+      }>;
+    };
+  };
+
   "carbon/event-embedding": {
     data: {
       records: Array<{
@@ -586,6 +625,11 @@ export type Events = {
     data: Record<string, never>;
   };
   "carbon/workflow-run-retention.process": {
+    data: Record<string, never>;
+  };
+  // `util.sweep_timesheet_missing_time`, daily while a company runs DCAA
+  // timekeeping.
+  "carbon/timesheet-missing-time.process": {
     data: Record<string, never>;
   };
   // Sent by the database (queue_kanban_level_checks, sync_kanban_level_check,
@@ -831,7 +875,7 @@ export type Events = {
         action: string;
         data: {
           id: string;
-          assigneeId?: string;
+          assigneeId?: string | null;
           [key: string]: unknown;
         };
       };

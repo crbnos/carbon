@@ -6,6 +6,7 @@ export interface ReceiptLayerLike {
   id: string;
   quantity: number; // original layer quantity
   remainingQuantity: number; // unconsumed units
+  projectId?: string | null; // the layer's stock stripe (null = common)
 }
 
 export interface VarianceAllocation {
@@ -15,6 +16,19 @@ export interface VarianceAllocation {
     costLedgerId: string;
     appliedQuantity: number; // units of this layer the adjustment applies to
     adjustmentCost: number; // total cost bump for those units
+    projectId?: string | null; // the layer's stock stripe, when given
+  }[];
+  /**
+   * The consumed share, per layer: the matched units no on-hand unit covers,
+   * taken from each layer's consumed units in order. Their costs add up to
+   * `ppvShare` unless the layers hold fewer units than were matched. Set only
+   * when there is a variance to split.
+   */
+  consumed?: {
+    costLedgerId: string;
+    projectId: string | null;
+    quantity: number;
+    cost: number;
   }[];
 }
 
@@ -48,10 +62,36 @@ export function allocateVarianceAcrossLayers(
     perLayer.push({
       costLedgerId: layer.id,
       appliedQuantity: applied,
-      adjustmentCost
+      adjustmentCost,
+      ...(layer.projectId !== undefined ? { projectId: layer.projectId } : {})
     });
     inventoryShare += adjustmentCost;
     uncovered -= applied;
   }
-  return { inventoryShare, ppvShare: variance - inventoryShare, perLayer };
+  // The units no on-hand unit covers were consumed: attribute them to the
+  // layers' consumed units in order, so a striped layer's consumed share can
+  // follow its project (Projects Phase 3).
+  const consumed: NonNullable<VarianceAllocation["consumed"]> = [];
+  for (const layer of layers) {
+    if (uncovered <= 0) break;
+    const consumedUnits = Math.max(
+      layer.quantity - Math.max(layer.remainingQuantity, 0),
+      0
+    );
+    const applied = Math.min(consumedUnits, uncovered);
+    if (applied <= 0) continue;
+    consumed.push({
+      costLedgerId: layer.id,
+      projectId: layer.projectId ?? null,
+      quantity: applied,
+      cost: perUnit * applied
+    });
+    uncovered -= applied;
+  }
+  return {
+    inventoryShare,
+    ppvShare: variance - inventoryShare,
+    perLayer,
+    consumed
+  };
 }

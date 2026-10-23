@@ -86,6 +86,8 @@ interface EditorProp {
    * options as the bubble menu — no new capabilities.
    */
   toolbar?: boolean;
+  /** The body's placeholder; "Press '/' for commands" when unset. */
+  placeholder?: string;
   toolbarClassName?: string;
   /**
    * Full-screen "document" mode. When provided, the editor's first block is a
@@ -119,6 +121,7 @@ const Editor = ({
   mentions,
   highlightTokens,
   toolbar,
+  placeholder,
   toolbarClassName,
   title
 }: EditorProp) => {
@@ -136,6 +139,7 @@ const Editor = ({
       const level = node.attrs.level;
       return t`Heading ${level}`;
     }
+    if (placeholder) return placeholder;
     return isPhone ? t`Write a note…` : t`Press '/' for commands`;
   };
   const [openNode, setOpenNode] = useState(false);

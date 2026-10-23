@@ -63,7 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -81,6 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateMaterialUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
+    companyId,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -114,6 +115,10 @@ export default function MaterialSalesRoute() {
 
   const initialValues = {
     ...materialUnitSalePrice,
+    laborWarrantyMonths:
+      materialUnitSalePrice?.laborWarrantyMonths ?? undefined,
+    partsWarrantyMonths:
+      materialUnitSalePrice?.partsWarrantyMonths ?? undefined,
     salesUnitOfMeasureCode: materialUnitSalePrice?.salesUnitOfMeasureCode ?? "",
     ...getCustomFields(materialUnitSalePrice.customFields),
     itemId: itemId

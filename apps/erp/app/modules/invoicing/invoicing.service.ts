@@ -9,6 +9,7 @@ import {
 } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
+import { withStripe } from "@carbon/api/stock-stripes";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
@@ -170,6 +171,16 @@ import {
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "~/modules/projects/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  reverseProjectLedgerRows
+} from "~/modules/projects/project-posting";
+import {
   getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction
@@ -184,6 +195,7 @@ import {
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
+  allocateJournalLineIds,
   assertNoMigrationClearing,
   assertPostable,
   calculateCOGS,
@@ -247,6 +259,10 @@ import {
   isSalesInvoiceLocked,
   type stripeCustomerActions
 } from "./invoicing.models";
+import {
+  type InvoiceProjectCharges,
+  loadInvoiceProjectCharges
+} from "./project-charges";
 import type { StripeCustomerSources } from "./stripe-customer.mapper";
 import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 
@@ -1798,6 +1814,7 @@ export async function upsertReimbursementLines(
           accountId: line.accountId,
           costCenterId: line.costCenterId ?? null,
           projectId: line.projectId ?? null,
+          projectElementId: line.projectElementId ?? null,
           description: line.description ?? null,
           amount: line.amount,
           sequence: index,
@@ -2401,8 +2418,9 @@ async function getOpenInvoicesForParty(
   >;
   type DocumentLineRow = Pick<
     Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
-    "invoiceId" | "rentalAgreementId" | "salesOrderId"
+    "invoiceId" | "rentalAgreementId" | "salesOrderId" | "customerContractId"
   >;
+  type ContractInvoiceRow = { id: string; customerContractId: string | null };
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
       client,
@@ -2439,79 +2457,144 @@ async function getOpenInvoicesForParty(
   const settlements: SettlementRow[] = [];
   const controls: ControlRow[] = [];
   const documentLines: DocumentLineRow[] = [];
+  const contractInvoices: ContractInvoiceRow[] = [];
   // Bound filter URLs as well as response pages. A single invoice can itself
   // have more than one response page of control lines or settlements.
   for (const batch of chunkArray(ids, 100)) {
-    const [batchSettlements, batchControls, batchDocumentLines] =
-      await Promise.all([
-        fetchAllFromTable<SettlementRow>(
-          client,
-          "invoiceSettlement",
-          "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
-          (query) =>
-            query
-              .eq("companyId", companyId)
-              .in(
-                isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
-                batch
-              )
-              .order("id")
-        ),
-        fetchAllFromTable<ControlRow>(
-          client,
-          "journalLine",
-          "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
-          (query) =>
-            query
-              .eq("companyId", companyId)
-              .eq("journal.companyId", companyId)
-              .eq("journal.status", "Posted")
-              .eq(
-                "journal.sourceType",
-                isAR ? "Sales Invoice" : "Purchase Invoice"
-              )
-              .eq("documentType", "Invoice")
-              .in(
-                "description",
-                isAR
-                  ? RECEIVABLE_POSTING_DESCRIPTIONS
-                  : PAYABLE_POSTING_DESCRIPTIONS
-              )
-              .in("documentId", batch)
-              .order("id")
-        ),
-        // The documents each invoice bills: a customer deposit funds only an
-        // invoice of its own rental agreement or sales order.
-        isAR
-          ? fetchAllFromTable<DocumentLineRow>(
-              client,
-              "salesInvoiceLine",
-              "invoiceId, rentalAgreementId, salesOrderId",
-              (query) =>
-                query
-                  .eq("companyId", companyId)
-                  .in("invoiceId", batch)
-                  .or("rentalAgreementId.not.is.null,salesOrderId.not.is.null")
-                  .order("id")
+    const [
+      batchSettlements,
+      batchControls,
+      batchDocumentLines,
+      batchContractInvoices
+    ] = await Promise.all([
+      fetchAllFromTable<SettlementRow>(
+        client,
+        "invoiceSettlement",
+        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in(
+              isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
+              batch
             )
-          : { data: [] as DocumentLineRow[], error: null }
-      ]);
+            .order("id")
+      ),
+      fetchAllFromTable<ControlRow>(
+        client,
+        "journalLine",
+        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .eq("journal.companyId", companyId)
+            .eq("journal.status", "Posted")
+            .eq(
+              "journal.sourceType",
+              isAR ? "Sales Invoice" : "Purchase Invoice"
+            )
+            .eq("documentType", "Invoice")
+            .in(
+              "description",
+              isAR
+                ? RECEIVABLE_POSTING_DESCRIPTIONS
+                : PAYABLE_POSTING_DESCRIPTIONS
+            )
+            .in("documentId", batch)
+            .order("id")
+      ),
+      // The documents each invoice bills: a customer deposit funds only an
+      // invoice of its own rental agreement, sales order or contract.
+      isAR
+        ? fetchAllFromTable<DocumentLineRow>(
+            client,
+            "salesInvoiceLine",
+            "invoiceId, rentalAgreementId, salesOrderId, customerContractId",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("invoiceId", batch)
+                .or(
+                  "rentalAgreementId.not.is.null,salesOrderId.not.is.null,customerContractId.not.is.null"
+                )
+                .order("id")
+          )
+        : { data: [] as DocumentLineRow[], error: null },
+      isAR
+        ? fetchAllFromTable<ContractInvoiceRow>(
+            client,
+            "salesInvoice",
+            "id, customerContractId",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("id", batch)
+                .or("customerContractId.not.is.null")
+                .order("id")
+          )
+        : { data: [] as ContractInvoiceRow[], error: null }
+    ]);
     const error =
-      batchSettlements.error ?? batchControls.error ?? batchDocumentLines.error;
+      batchSettlements.error ??
+      batchControls.error ??
+      batchDocumentLines.error ??
+      batchContractInvoices.error;
     if (error) return { data: null, error };
     settlements.push(...(batchSettlements.data ?? []));
     controls.push(...(batchControls.data ?? []));
     documentLines.push(...(batchDocumentLines.data ?? []));
+    contractInvoices.push(...(batchContractInvoices.data ?? []));
+  }
+  // A delivery invoice of a contract's own sales order bills the contract.
+  const lineOrderIds = [
+    ...new Set(documentLines.map((line) => line.salesOrderId))
+  ].filter((id): id is string => Boolean(id));
+  const contractsByOrder = new Map<string, string[]>();
+  for (const batch of chunkArray(lineOrderIds, 100)) {
+    const contracts = await client
+      .from("customerContract")
+      .select("id, salesOrderId")
+      .eq("companyId", companyId)
+      .in("salesOrderId", batch);
+    if (contracts.error) return { data: null, error: contracts.error };
+    for (const contract of contracts.data ?? []) {
+      if (!contract.salesOrderId) continue;
+      const list = contractsByOrder.get(contract.salesOrderId) ?? [];
+      list.push(contract.id);
+      contractsByOrder.set(contract.salesOrderId, list);
+    }
   }
   const documentsByInvoice = new Map<
     string,
-    { rentalAgreementIds: string[]; salesOrderIds: string[] }
+    {
+      rentalAgreementIds: string[];
+      salesOrderIds: string[];
+      customerContractIds: string[];
+    }
   >();
-  for (const line of documentLines) {
-    const documents = documentsByInvoice.get(line.invoiceId) ?? {
+  const documentsOf = (invoiceId: string) => {
+    const documents = documentsByInvoice.get(invoiceId) ?? {
       rentalAgreementIds: [],
-      salesOrderIds: []
+      salesOrderIds: [],
+      customerContractIds: []
     };
+    documentsByInvoice.set(invoiceId, documents);
+    return documents;
+  };
+  const addContract = (invoiceId: string, contractId: string | null) => {
+    if (!contractId) return;
+    const documents = documentsOf(invoiceId);
+    if (!documents.customerContractIds.includes(contractId))
+      documents.customerContractIds.push(contractId);
+  };
+  for (const invoice of contractInvoices)
+    addContract(invoice.id, invoice.customerContractId);
+  for (const line of documentLines) {
+    addContract(line.invoiceId, line.customerContractId);
+    for (const contractId of contractsByOrder.get(line.salesOrderId ?? "") ??
+      [])
+      addContract(line.invoiceId, contractId);
+    const documents = documentsOf(line.invoiceId);
     if (
       line.rentalAgreementId &&
       !documents.rentalAgreementIds.includes(line.rentalAgreementId)
@@ -2566,7 +2649,9 @@ async function getOpenInvoicesForParty(
             remainingDocument: remaining.remainingDocument,
             rentalAgreementIds:
               documentsByInvoice.get(i.id)?.rentalAgreementIds ?? [],
-            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? []
+            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? [],
+            customerContractIds:
+              documentsByInvoice.get(i.id)?.customerContractIds ?? []
           };
         })
         .filter((i) => i.remainingDocument > 0),
@@ -2827,8 +2912,10 @@ async function loadOnAccountSources(
   type OnAccountPaymentRow = FundingPaymentRow & {
     rentalAgreementId: string | null;
     salesOrderId: string | null;
+    customerContractId: string | null;
     depositAgreement: { readableId: string } | null;
     depositOrder: { readableId: string } | null;
+    depositContract: { readableId: string } | null;
   };
   const [payments, company] = await Promise.all([
     fetchAllFromTable<OnAccountPaymentRow>(
@@ -2836,7 +2923,7 @@ async function loadOnAccountSources(
       "payment",
       // A deposit's document comes along with its readable id so the composer
       // can say which document the deposit is reserved for.
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId)",
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, customerContractId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId), depositContract:customerContract!payment_customerContract_fkey(readableId:customerContractId)",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -2904,7 +2991,9 @@ async function loadOnAccountSources(
             readableId:
               (scope.type === "rentalAgreement"
                 ? payment.depositAgreement?.readableId
-                : payment.depositOrder?.readableId) ?? null
+                : scope.type === "customerContract"
+                  ? payment.depositContract?.readableId
+                  : payment.depositOrder?.readableId) ?? null
           }
         };
       }),
@@ -3014,6 +3103,7 @@ export async function upsertPayment(
           supplierId: payment.supplierId ?? null,
           salesOrderId: payment.salesOrderId ?? null,
           rentalAgreementId: payment.rentalAgreementId ?? null,
+          customerContractId: payment.customerContractId ?? null,
           employeeId: payment.employeeId ?? null
         }
       ])
@@ -3028,6 +3118,7 @@ export async function upsertPayment(
       supplierId: payment.supplierId ?? null,
       salesOrderId: payment.salesOrderId ?? null,
       rentalAgreementId: payment.rentalAgreementId ?? null,
+      customerContractId: payment.customerContractId ?? null,
       // Explicit null, like the two trade parties: switching a Draft payment's
       // payee must CLEAR the other two, or the widened one-of-three CHECK
       // rejects the update.
@@ -4698,33 +4789,48 @@ export async function getDepositDocuments(
   companyId: string,
   keepSalesOrderIds: (string | null | undefined)[] = []
 ): Promise<DepositDocument[]> {
-  const [deposits, rentalAgreements, openOrders] = await Promise.all([
-    client
-      .from("payment")
-      .select("salesOrderId")
-      .eq("companyId", companyId)
-      .eq("paymentType", "Receipt")
-      .eq("status", "Posted")
-      .not("salesOrderId", "is", null),
-    client
-      .from("rentalAgreement")
-      .select("id, rentalAgreementId, customerId, status")
-      .eq("companyId", companyId)
-      .order("rentalAgreementId", { ascending: false }),
-    fetchAllFromTable<{
-      id: string;
-      salesOrderId: string;
-      customerId: string;
-      status: string;
-    }>(client, "salesOrder", "id, salesOrderId, customerId, status", (query) =>
-      query
+  const [deposits, rentalAgreements, openOrders, contracts] = await Promise.all(
+    [
+      client
+        .from("payment")
+        .select("salesOrderId")
         .eq("companyId", companyId)
-        .in("status", [...OPEN_SALES_ORDER_STATUSES])
-        .order("salesOrderId", { ascending: false })
-    )
-  ]);
+        .eq("paymentType", "Receipt")
+        .eq("status", "Posted")
+        .not("salesOrderId", "is", null),
+      client
+        .from("rentalAgreement")
+        .select("id, rentalAgreementId, customerId, status")
+        .eq("companyId", companyId)
+        .order("rentalAgreementId", { ascending: false }),
+      fetchAllFromTable<{
+        id: string;
+        salesOrderId: string;
+        customerId: string;
+        status: string;
+      }>(
+        client,
+        "salesOrder",
+        "id, salesOrderId, customerId, status",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in("status", [...OPEN_SALES_ORDER_STATUSES])
+            .order("salesOrderId", { ascending: false })
+      ),
+      // A contract deposit receives a progress or performance-based payment.
+      client
+        .from("customerContract")
+        .select("id, customerContractId, customerId, status")
+        .eq("companyId", companyId)
+        .order("customerContractId", { ascending: false })
+    ]
+  );
   const firstError =
-    deposits.error ?? rentalAgreements.error ?? openOrders.error;
+    deposits.error ??
+    rentalAgreements.error ??
+    openOrders.error ??
+    contracts.error;
   if (firstError) throw new Error(firstError.message);
   const listed = new Set((openOrders.data ?? []).map((order) => order.id));
   const missingOrderIds = [
@@ -4751,6 +4857,14 @@ export async function getDepositDocuments(
       kind: "rentalAgreement" as const,
       status: agreement.status,
       open: agreement.status === "Draft" || agreement.status === "Active"
+    })),
+    ...(contracts.data ?? []).map((contract) => ({
+      id: contract.id,
+      readableId: contract.customerContractId,
+      customerId: contract.customerId,
+      kind: "customerContract" as const,
+      status: contract.status,
+      open: contract.status === "Draft" || contract.status === "Active"
     })),
     ...[...(openOrders.data ?? []), ...(closedOrders.data ?? [])].map(
       (order) => ({
@@ -4782,14 +4896,17 @@ export async function checkDepositDocument(
     customerId?: string | null;
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   },
   saved: {
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   } = {}
 ): Promise<string | null> {
-  const { salesOrderId, rentalAgreementId, customerId } = payment;
-  if (!salesOrderId && !rentalAgreementId) return null;
+  const { salesOrderId, rentalAgreementId, customerContractId, customerId } =
+    payment;
+  if (!salesOrderId && !rentalAgreementId && !customerContractId) return null;
   // The validator already requires a customer for a deposit.
   if (!customerId) return "Only a customer payment can be a deposit";
 
@@ -4800,12 +4917,19 @@ export async function checkDepositDocument(
         .eq("id", salesOrderId)
         .eq("companyId", companyId)
         .maybeSingle()
-    : await client
-        .from("rentalAgreement")
-        .select("customerId, status")
-        .eq("id", rentalAgreementId!)
-        .eq("companyId", companyId)
-        .maybeSingle();
+    : rentalAgreementId
+      ? await client
+          .from("rentalAgreement")
+          .select("customerId, status")
+          .eq("id", rentalAgreementId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : await client
+          .from("customerContract")
+          .select("customerId, status")
+          .eq("id", customerContractId!)
+          .eq("companyId", companyId)
+          .maybeSingle();
   if (document.error) throw new Error(document.error.message);
   if (!document.data) return "The deposit document was not found";
   if (document.data.customerId !== customerId) {
@@ -4814,7 +4938,9 @@ export async function checkDepositDocument(
 
   const unchanged = salesOrderId
     ? salesOrderId === saved.salesOrderId
-    : rentalAgreementId === saved.rentalAgreementId;
+    : rentalAgreementId
+      ? rentalAgreementId === saved.rentalAgreementId
+      : customerContractId === saved.customerContractId;
   if (payment.paymentType !== "Receipt" || unchanged) return null;
 
   const status = document.data.status as string;
@@ -4824,7 +4950,9 @@ export async function checkDepositDocument(
   if (open) return null;
   return salesOrderId
     ? `The sales order is ${status} and cannot take a new deposit`
-    : `The rental agreement is ${status} and cannot take a new deposit`;
+    : rentalAgreementId
+      ? `The rental agreement is ${status} and cannot take a new deposit`
+      : `The contract is ${status} and cannot take a new deposit`;
 }
 
 /**
@@ -8568,6 +8696,23 @@ export async function postSalesInvoice(
           return byLine;
         };
 
+        // Lines that bill a service order's charges: a part issued to a
+        // service node already left stock and posted its cost, so these
+        // lines post revenue only. One query per invoice.
+        const invoiceLineIds = salesInvoiceLines.data.map((line) => line.id);
+        const billedServiceLineIds = new Set(
+          invoiceLineIds.length === 0
+            ? []
+            : (
+                await db
+                  .selectFrom("projectBillableItem")
+                  .select("salesInvoiceLineId")
+                  .where("salesInvoiceLineId", "in", invoiceLineIds)
+                  .where("companyId", "=", companyId)
+                  .execute()
+              ).map((row) => row.salesInvoiceLineId)
+        );
+
         const journal = buildSalesInvoiceJournal({
           companyId,
           companyGroupId: companyGroupId!,
@@ -8592,8 +8737,9 @@ export async function postSalesInvoice(
           accounts,
           revenue: postingLineRevenue,
           // Built at zero; the posting transaction relieves the cost and
-          // fills the pair in (fillDirectCogs).
-          directCost: () => 0,
+          // fills the pair in (fillDirectCogs). A line billing a service
+          // order's charges has no COGS pair.
+          directCost: (line) => (billedServiceLineIds.has(line.id) ? null : 0),
           contract: {
             positions: contractPositionsRead,
             rate: invoiceExchangeRate
@@ -8622,7 +8768,11 @@ export async function postSalesInvoice(
         // A direct item line ships on the invoice: a shipment (never for a
         // service) and, for a stocked item, the item ledger.
         for (const invoiceLine of salesInvoiceLines.data) {
-          if (!isDirectItemLine(invoiceLine)) continue;
+          if (
+            !isDirectItemLine(invoiceLine) ||
+            billedServiceLineIds.has(invoiceLine.id)
+          )
+            continue;
           if (invoiceLine.invoiceLineType !== "Service") {
             shipmentLineInserts.push({
               itemId: invoiceLine.itemId!,
@@ -8835,7 +8985,8 @@ export async function postSalesInvoice(
             (line) =>
               line.salesOrderLineId === null &&
               line.itemId &&
-              line.invoiceLineType !== "Rental"
+              line.invoiceLineType !== "Rental" &&
+              !billedServiceLineIds.has(line.id)
           );
 
           for (const directLine of directInvoiceItems) {
@@ -8847,10 +8998,12 @@ export async function postSalesInvoice(
 
             if (itemTrackingType !== "Inventory") continue;
 
+            // A direct invoice ships common stock only (Projects Phase 2a).
             const cogsResult = await calculateCOGS(trx, {
               itemId: directLine.itemId,
               quantity: directLine.quantity,
-              companyId
+              companyId,
+              projectId: null
             });
 
             // The pair the journal builder wrote at zero.
@@ -8873,6 +9026,7 @@ export async function postSalesInvoice(
                   quantity: round(-directLine.quantity),
                   cost: round(-cogsResult.totalCost),
                   remainingQuantity: 0,
+                  projectId: null,
                   companyId,
                   postingDate: today
                 })
@@ -9065,7 +9219,8 @@ export async function postSalesInvoice(
           if (itemLedgerInserts.length > 0) {
             await trx
               .insertInto("itemLedger")
-              .values(itemLedgerInserts)
+              // Every row draws common stock.
+              .values(withStripe(itemLedgerInserts, null))
               .returning(["id"])
               .execute();
           }
@@ -9502,6 +9657,8 @@ export async function postSalesInvoice(
               documentType: "Sales Shipment",
               documentId: invoiceHeader.id ?? undefined,
               externalDocumentId: entry.externalDocumentId,
+              // A reversal copies the row it reverses.
+              projectId: entry.projectId ?? null,
               createdBy: userId,
               companyId
             });
@@ -9639,6 +9796,25 @@ export async function postSalesInvoice(
             .where("companyId", "=", companyId)
             .where("salesInvoiceId", "=", invoiceId)
             .execute();
+
+          // A project billing or service order invoice: its billable items
+          // are billable again, remembering the voided invoice so a re-bill
+          // is held for review (project billing P4).
+          if (invoiceLineIds.length > 0) {
+            await trx
+              .updateTable("projectBillableItem")
+              .set({
+                status: "Unbilled",
+                salesInvoiceLineId: null,
+                voidedSalesInvoiceId: invoiceId,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("companyId", "=", companyId)
+              .where("salesInvoiceLineId", "in", invoiceLineIds)
+              .where("status", "=", "Billed")
+              .execute();
+          }
 
           // Update sales order lines to reverse invoiced quantities
           for await (const [salesOrderLineId, update] of Object.entries(
@@ -11380,6 +11556,7 @@ export function paymentKind(
     | "paymentType"
     | "rentalAgreementId"
     | "salesOrderId"
+    | "customerContractId"
   >
 ) {
   // An employee payee is a reimbursement payout: always cash OUT against the
@@ -11408,11 +11585,16 @@ export function paymentKind(
     isAR,
     cashIn,
     isRefund,
-    // A payment that references a sales order or rental agreement is a
-    // customer deposit: its unapplied cash is a liability on the prepayment
-    // account rather than on-account receivable credit. The builder ignores
-    // the flag for supplier payments.
-    isDeposit: Boolean(payment.rentalAgreementId ?? payment.salesOrderId),
+    // A payment that references a sales order, rental agreement or customer
+    // contract is a customer deposit: its unapplied cash is a liability on
+    // the prepayment account rather than on-account receivable credit. A
+    // contract deposit is how a progress payment is received. The builder
+    // ignores the flag for supplier payments.
+    isDeposit: Boolean(
+      payment.rentalAgreementId ??
+        payment.salesOrderId ??
+        payment.customerContractId
+    ),
     partyId,
     targetColumn: isReimbursement
       ? ("targetReimbursementId" as const)
@@ -13623,6 +13805,8 @@ export type InvoicedPurchaseOrderLine = {
   isOutsideProcessing: boolean;
   processId: string | null;
   coverage: VarianceCoverage;
+  /** A PO line made for a planning group (Projects Phase 3). */
+  planningGroupId?: string | null;
 };
 
 type LineBase = {
@@ -13668,6 +13852,7 @@ export type PurchaseInvoicePostingLine = LineBase &
         account: { id: string; name: string };
         costCenterId: string | null;
         projectId: string | null;
+        projectElementId?: string | null;
       }
     | {
         /** A lessee lease's line, its accounts from `resolveLeasePostingLine`.
@@ -13699,6 +13884,25 @@ export type BuildPurchaseInvoicePostingLinesInput = {
   };
   /** The invoice's lines in order, comments left out. */
   lines: PurchaseInvoicePostingLine[];
+  /** The project charges of the invoice's lines (`loadInvoiceProjectCharges`).
+   *  Absent: no line is charged to a project. */
+  projectCharges?: InvoiceProjectCharges | null;
+};
+
+/** One projectLedger row the posting writes once the journal line ids exist:
+ *  `journalLineIndex` is the index of its line in `lines`. */
+export type PurchaseInvoiceProjectDraft = {
+  invoiceLineId: string;
+  projectId: string;
+  projectElementId: string | null;
+  costType: "Purchased Service" | "Other Direct" | "Material Variance";
+  itemId: string | null;
+  quantity: number;
+  amount: number;
+  journalLineIndex: number | null;
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
+  unallowable: boolean;
 };
 
 /** The units a line cleared from GR/IR and what their variance did. */
@@ -13719,6 +13923,8 @@ export type PurchaseInvoicePosting = {
   /** By invoice line id: each PO item line that cleared received units, and
    *  each fixed asset line a receipt brought in. */
   receivedVariances: Map<string, ReceivedVariance>;
+  /** The project ledger rows of the lines charged to a project. */
+  projectDrafts: PurchaseInvoiceProjectDraft[];
 };
 
 /** A line of an item: `direct` with no PO, else `ordered`. */
@@ -13859,6 +14065,8 @@ export function buildPurchaseInvoicePostingLines(
   input: BuildPurchaseInvoicePostingLinesInput
 ): PurchaseInvoicePosting {
   const { invoice, accounts, payables, supplierTypeId } = input;
+  const projectCharges = input.projectCharges ?? null;
+  const projectDrafts: PurchaseInvoiceProjectDraft[] = [];
 
   const clearings = new Map<string, Clearing>();
   // The variance of the lines that share a stored write-up, per item.
@@ -13867,6 +14075,15 @@ export function buildPurchaseInvoicePostingLines(
     if (line.kind !== "ordered") continue;
     const clearing = clearReceipts(line);
     if (!clearing) continue;
+    // A line its receipt charged to a project has no layers: its whole
+    // variance goes to the account the receipt debited.
+    if (
+      projectCharges?.chargedAtReceipt(
+        line.purchaseOrderLine.purchaseOrderLineId
+      )
+    ) {
+      clearing.usesLayers = false;
+    }
     clearings.set(line.id, clearing);
     const itemId = line.item.itemId;
     if (
@@ -13892,6 +14109,7 @@ export function buildPurchaseInvoicePostingLines(
     locationId: string | null;
     costCenterId: string | null;
     projectId: string | null;
+    projectElementId?: string | null;
     processId: string | null;
     fixedAssetClassId: string | null;
   };
@@ -13913,6 +14131,7 @@ export function buildPurchaseInvoicePostingLines(
         Location: meta.locationId,
         CostCenter: meta.costCenterId,
         Project: meta.projectId,
+        ProjectElement: meta.projectElementId ?? null,
         Process: meta.processId,
         FixedAssetClass: meta.fixedAssetClassId
       }
@@ -13943,6 +14162,12 @@ export function buildPurchaseInvoicePostingLines(
         const trackingType = item.itemTrackingType ?? "Inventory";
         let debitAccount: string;
         let debitDescription: string;
+        // A Non-Inventory line charged to a non-Statistical project debits
+        // the project account.
+        const directProjectCharge =
+          trackingType === "Non-Inventory"
+            ? (projectCharges?.forLine(line.id) ?? null)
+            : null;
         if (trackingType === "Inventory" && line.receivedWithInvoice) {
           const inventory = resolveInventoryAccount(
             item.replenishmentSystem,
@@ -13950,6 +14175,9 @@ export function buildPurchaseInvoicePostingLines(
           );
           debitAccount = inventory.account;
           debitDescription = inventory.description;
+        } else if (directProjectCharge) {
+          debitAccount = directProjectCharge.accountId;
+          debitDescription = "Project Account";
         } else if (trackingType === "Non-Inventory") {
           debitAccount = accounts.indirectCostAccount;
           debitDescription = "Indirect Cost Account";
@@ -13968,6 +14196,24 @@ export function buildPurchaseInvoicePostingLines(
           processId: null,
           fixedAssetClassId: null
         };
+        if (directProjectCharge) {
+          projectDrafts.push({
+            invoiceLineId: line.id,
+            projectId: directProjectCharge.projectId,
+            projectElementId: directProjectCharge.projectElementId,
+            fixedAssetId: directProjectCharge.fixedAssetId,
+            postCapitalization: directProjectCharge.postCapitalization,
+            unallowable: directProjectCharge.unallowable,
+            costType:
+              line.invoiceLineType === "Service"
+                ? "Purchased Service"
+                : "Other Direct",
+            itemId: item.itemId,
+            quantity,
+            amount: total,
+            journalLineIndex: lines.length
+          });
+        }
         push(
           {
             accountId: debitAccount,
@@ -13976,7 +14222,13 @@ export function buildPurchaseInvoicePostingLines(
             quantity: round(quantity),
             journalLineReference
           },
-          meta
+          directProjectCharge
+            ? {
+                ...meta,
+                projectId: directProjectCharge.projectId,
+                projectElementId: directProjectCharge.projectElementId
+              }
+            : meta
         );
         push(payable(total, quantity, { journalLineReference }), meta);
         break;
@@ -14027,9 +14279,15 @@ export function buildPurchaseInvoicePostingLines(
             },
             meta
           );
+          const receiptProjectCharge =
+            projectCharges?.chargedAtReceipt(
+              purchaseOrderLine.purchaseOrderLineId
+            ) ?? null;
           // The on-hand share writes up inventory; the consumed share is
           // purchase variance.
+          let inventoryVarianceLineIndex: number | null = null;
           if (Math.abs(allocation.inventoryShare) > VARIANCE_THRESHOLD) {
+            inventoryVarianceLineIndex = lines.length;
             const inventory = resolveInventoryAccount(
               item.replenishmentSystem,
               accounts
@@ -14044,16 +14302,128 @@ export function buildPurchaseInvoicePostingLines(
               meta
             );
           }
-          if (Math.abs(allocation.ppvShare) > VARIANCE_THRESHOLD) {
+          // A PO line made for a planning group (Projects Phase 3): the
+          // consumed share of a member stripe's layer is that member's cost.
+          // It posts to the member's project account with a Material Variance
+          // row; the rest stays in PPV.
+          let remainingPpvShare = allocation.ppvShare;
+          if (purchaseOrderLine.planningGroupId && projectCharges) {
+            const consumedByProject = new Map<
+              string,
+              { quantity: number; cost: number }
+            >();
+            for (const entry of allocation.consumed ?? []) {
+              if (!entry.projectId) continue;
+              const total = consumedByProject.get(entry.projectId) ?? {
+                quantity: 0,
+                cost: 0
+              };
+              consumedByProject.set(entry.projectId, {
+                quantity: total.quantity + entry.quantity,
+                cost: total.cost + entry.cost
+              });
+            }
+            for (const [memberProjectId, share] of consumedByProject) {
+              const amount = round(share.cost);
+              if (Math.abs(amount) <= VARIANCE_THRESHOLD) continue;
+              const memberCharge =
+                projectCharges.stripeVarianceCharge(memberProjectId);
+              if (!memberCharge) continue;
+              projectDrafts.push({
+                invoiceLineId: line.id,
+                projectId: memberProjectId,
+                projectElementId: null,
+                fixedAssetId: memberCharge.fixedAssetId,
+                postCapitalization: memberCharge.postCapitalization,
+                unallowable: memberCharge.unallowable,
+                costType: "Material Variance",
+                itemId: item.itemId,
+                quantity: share.quantity,
+                amount,
+                journalLineIndex: lines.length
+              });
+              push(
+                {
+                  accountId: memberCharge.accountId,
+                  description: "Project Account (Price Variance)",
+                  amount: round(debit("expense", amount)),
+                  ...keys,
+                  quantity: round(share.quantity)
+                },
+                { ...meta, projectId: memberProjectId, projectElementId: null }
+              );
+              remainingPpvShare -= amount;
+            }
+          }
+          let ppvLineIndex: number | null = null;
+          if (Math.abs(remainingPpvShare) > VARIANCE_THRESHOLD) {
+            ppvLineIndex = lines.length;
+            if (receiptProjectCharge) {
+              projectDrafts.push({
+                invoiceLineId: line.id,
+                projectId: receiptProjectCharge.projectId,
+                projectElementId: receiptProjectCharge.projectElementId,
+                fixedAssetId: receiptProjectCharge.fixedAssetId,
+                postCapitalization: receiptProjectCharge.postCapitalization,
+                unallowable: receiptProjectCharge.unallowable,
+                costType: "Material Variance",
+                itemId: item.itemId,
+                quantity: clearing.quantity,
+                amount: remainingPpvShare,
+                journalLineIndex: ppvLineIndex
+              });
+            }
             push(
               {
-                accountId: accounts.purchaseVarianceAccount,
-                description: "Purchase Price Variance",
-                amount: round(debit("expense", allocation.ppvShare)),
+                accountId:
+                  receiptProjectCharge?.accountId ??
+                  accounts.purchaseVarianceAccount,
+                description: receiptProjectCharge
+                  ? "Project Account (Price Variance)"
+                  : "Purchase Price Variance",
+                amount: round(debit("expense", remainingPpvShare)),
                 ...keys
               },
-              meta
+              receiptProjectCharge
+                ? {
+                    ...meta,
+                    projectId: receiptProjectCharge.projectId,
+                    projectElementId: receiptProjectCharge.projectElementId
+                  }
+                : meta
             );
+          }
+          // Charge at receipt into project stock (Projects Phase 2a): the
+          // receipt charged the project at receipt cost while the goods
+          // entered its stock, so the project's ledger gets the price variance
+          // too, on the line that carries it (the inventory write-up, else the
+          // PPV of consumed units).
+          const stockReceiptCharge = receiptProjectCharge
+            ? null
+            : (projectCharges?.stockChargedAtReceipt(
+                purchaseOrderLine.purchaseOrderLineId
+              ) ?? null);
+          const stockVariance = round(
+            allocation.inventoryShare + allocation.ppvShare
+          );
+          if (
+            stockReceiptCharge &&
+            Math.abs(stockVariance) > VARIANCE_THRESHOLD
+          ) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: stockReceiptCharge.projectId,
+              projectElementId: stockReceiptCharge.projectElementId,
+              // Stock builds no asset until it is issued.
+              fixedAssetId: null,
+              postCapitalization: false,
+              unallowable: stockReceiptCharge.unallowable,
+              costType: "Material Variance",
+              itemId: item.itemId,
+              quantity: clearing.quantity,
+              amount: stockVariance,
+              journalLineIndex: inventoryVarianceLineIndex ?? ppvLineIndex
+            });
           }
           push(payable(clearing.invoiceCost, clearing.quantity, keys), meta);
         }
@@ -14065,16 +14435,40 @@ export function buildPurchaseInvoicePostingLines(
           const quantityToAccrue = quantity - quantityCleared;
           const accrualCost = quantityToAccrue * line.amounts.inventoryUnitCost;
           const isService = line.invoiceLineType === "Service";
+          // A service charged to a non-Statistical project debits the project
+          // account instead of indirect cost.
+          const serviceProjectCharge = isService
+            ? (projectCharges?.forLine(line.id) ?? null)
+            : null;
           const keys = {
             quantity: round(quantityToAccrue),
             documentLineReference,
             journalLineReference: nanoid()
           };
+          if (serviceProjectCharge) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: serviceProjectCharge.projectId,
+              projectElementId: serviceProjectCharge.projectElementId,
+              fixedAssetId: serviceProjectCharge.fixedAssetId,
+              postCapitalization: serviceProjectCharge.postCapitalization,
+              unallowable: serviceProjectCharge.unallowable,
+              costType: "Purchased Service",
+              itemId: item.itemId,
+              quantity: quantityToAccrue,
+              amount: accrualCost,
+              journalLineIndex: lines.length
+            });
+          }
           push(
             isService
               ? {
-                  accountId: accounts.indirectCostAccount,
-                  description: "Indirect Cost Account",
+                  accountId:
+                    serviceProjectCharge?.accountId ??
+                    accounts.indirectCostAccount,
+                  description: serviceProjectCharge
+                    ? "Project Account"
+                    : "Indirect Cost Account",
                   amount: round(debit("asset", accrualCost)),
                   ...keys
                 }
@@ -14085,7 +14479,13 @@ export function buildPurchaseInvoicePostingLines(
                   amount: round(debit("liability", accrualCost)),
                   ...keys
                 },
-            meta
+            serviceProjectCharge
+              ? {
+                  ...meta,
+                  projectId: serviceProjectCharge.projectId,
+                  projectElementId: serviceProjectCharge.projectElementId
+                }
+              : meta
           );
           push(
             payable(accrualCost, quantityToAccrue, {
@@ -14171,16 +14571,36 @@ export function buildPurchaseInvoicePostingLines(
       }
 
       case "glAccount": {
+        // A non-Statistical project replaces the line's account.
+        const glProjectCharge = projectCharges?.forLine(line.id) ?? null;
         const meta: Dimensions = {
           supplierTypeId: null,
           itemPostingGroupId: null,
           itemId: null,
           locationId: line.locationId,
           costCenterId: line.costCenterId,
-          projectId: line.projectId,
+          projectId: glProjectCharge?.projectId ?? line.projectId,
+          projectElementId: glProjectCharge
+            ? glProjectCharge.projectElementId
+            : (line.projectElementId ?? null),
           processId: null,
           fixedAssetClassId: null
         };
+        if (glProjectCharge) {
+          projectDrafts.push({
+            invoiceLineId: line.id,
+            projectId: glProjectCharge.projectId,
+            projectElementId: glProjectCharge.projectElementId,
+            fixedAssetId: glProjectCharge.fixedAssetId,
+            postCapitalization: glProjectCharge.postCapitalization,
+            unallowable: glProjectCharge.unallowable,
+            costType: "Other Direct",
+            itemId: null,
+            quantity,
+            amount: total,
+            journalLineIndex: lines.length
+          });
+        }
         const keys = {
           quantity: round(quantity),
           documentLineReference: line.purchaseOrderLineId
@@ -14190,8 +14610,10 @@ export function buildPurchaseInvoicePostingLines(
         };
         push(
           {
-            accountId: line.account.id,
-            description: line.account.name,
+            accountId: glProjectCharge?.accountId ?? line.account.id,
+            description: glProjectCharge
+              ? "Project Account"
+              : line.account.name,
             amount: round(debit("asset", total)),
             ...keys
           },
@@ -14252,7 +14674,7 @@ export function buildPurchaseInvoicePostingLines(
     }
   }
 
-  return { lines, receivedVariances };
+  return { lines, receivedVariances, projectDrafts };
 }
 export type PurchasePostingLine = {
   id: string;
@@ -14772,6 +15194,8 @@ export async function postPurchaseInvoice(
           documentType: entry.documentType,
           documentId: entry.documentId,
           externalDocumentId: entry.externalDocumentId,
+          // a reversal copies the stripe of the row it reverses
+          projectId: entry.projectId,
           createdBy: userId,
           companyId
         }));
@@ -14808,6 +15232,7 @@ export async function postPurchaseInvoice(
           nominalCost: -entry.nominalCost,
           cost: -entry.cost,
           supplierId: entry.supplierId,
+          projectId: entry.projectId,
           companyId,
           postingDate: today
         }));
@@ -14858,6 +15283,7 @@ export async function postPurchaseInvoice(
             .execute();
         }
 
+        const reversalByOriginal = new Map<string, string>();
         if (reversingJournalLines.length > 0) {
           const voidJournalEntryId = await getNextSequence(
             trx,
@@ -14885,15 +15311,25 @@ export async function postPurchaseInvoice(
           const journalId = journal[0]!.id;
           if (!journalId) throw new Error("Failed to insert journal");
 
+          // Ids allocated first, so each project ledger reversal row can
+          // name the line that negates its original line.
+          const reversingLineIds = await allocateJournalLineIds(
+            trx,
+            reversingJournalLines.length
+          );
           await trx
             .insertInto("journalLine")
             .values(
-              reversingJournalLines.map((journalLine) => ({
+              reversingJournalLines.map((journalLine, index) => ({
                 ...journalLine,
+                id: reversingLineIds[index],
                 journalId
               }))
             )
             .execute();
+          for (const [index, line] of originalJournalLines.entries()) {
+            reversalByOriginal.set(line.id, reversingLineIds[index]!);
+          }
         }
 
         if (reversingItemLedger.length > 0) {
@@ -14902,6 +15338,22 @@ export async function postPurchaseInvoice(
             .values(reversingItemLedger)
             .execute();
         }
+
+        // Reverse the project charges of this invoice.
+        await reverseProjectLedgerRows(trx, {
+          companyId,
+          documentType: "Purchase Invoice",
+          documentId: invoiceId,
+          postingDate: today,
+          userId,
+          reversalLineIds: reversalByOriginal
+        });
+        await reverseProjectCipRows(trx, {
+          companyId,
+          userId,
+          sourceType: "Purchase Invoice",
+          sourceDocumentId: invoiceId
+        });
 
         if (reversingCostLedger.length > 0) {
           await trx
@@ -14940,6 +15392,7 @@ export async function postPurchaseInvoice(
                 cost: round(-child.cost),
                 remainingQuantity: round(child.remainingQuantity),
                 supplierId: child.supplierId,
+                projectId: child.projectId,
                 companyId,
                 postingDate: today
               })
@@ -14974,6 +15427,7 @@ export async function postPurchaseInvoice(
                 cost: round(-layer.cost),
                 remainingQuantity: 0,
                 supplierId: layer.supplierId,
+                projectId: layer.projectId,
                 companyId,
                 postingDate: today
               })
@@ -15062,6 +15516,7 @@ export async function postPurchaseInvoice(
               "Location",
               "CostCenter",
               "Project",
+              "ProjectElement",
               "Process",
               "FixedAssetClass"
             ]
@@ -15424,7 +15879,8 @@ export async function postPurchaseInvoice(
                 "documentId",
                 "itemId",
                 "quantity",
-                "remainingQuantity"
+                "remainingQuantity",
+                "projectId"
               ],
               orderBy: ["postingDate", "createdAt"]
             }
@@ -15447,7 +15903,8 @@ export async function postPurchaseInvoice(
             .map((layer) => ({
               id: layer.id,
               quantity: Number(layer.quantity),
-              remainingQuantity: Number(layer.remainingQuantity ?? 0)
+              remainingQuantity: Number(layer.remainingQuantity ?? 0),
+              projectId: layer.projectId
             }))
         ];
       })
@@ -15549,6 +16006,15 @@ export async function postPurchaseInvoice(
       fixedAssets.map((asset) => [asset.id, asset])
     );
 
+    // Lines charged to a non-Statistical project debit its account. A
+    // purchase order line its receipt already charged writes only its price
+    // variance here.
+    const projectCharges = await loadInvoiceProjectCharges(db, companyId, {
+      invoiceLines: purchaseInvoiceLines.data,
+      purchaseOrderLines: purchaseOrderLines.data,
+      postingDate: today
+    });
+
     // Lease lines: the leases, payment rows and lease accounts they name.
     const leaseFacts = await loadLeasePostingFacts(db, {
       companyId,
@@ -15598,6 +16064,7 @@ export async function postPurchaseInvoice(
               ] ?? []
             ),
             isOutsideProcessing: !!purchaseOrderLine?.jobOperationId,
+            planningGroupId: purchaseOrderLine?.planningGroupId ?? null,
             processId: purchaseOrderLine?.jobOperationId
               ? (processIdByJobOperationId.get(
                   purchaseOrderLine.jobOperationId
@@ -15665,7 +16132,8 @@ export async function postPurchaseInvoice(
             purchaseOrderLineId: invoiceLine.purchaseOrderLineId,
             account,
             costCenterId: invoiceLine.costCenterId ?? null,
-            projectId: invoiceLine.projectId ?? null
+            projectId: invoiceLine.projectId ?? null,
+            projectElementId: invoiceLine.projectElementId ?? null
           });
           break;
         }
@@ -15691,7 +16159,8 @@ export async function postPurchaseInvoice(
       supplierTypeId: supplier.data.supplierTypeId ?? null,
       accounts: accountDefaults.data,
       payables,
-      lines: postingLines
+      lines: postingLines,
+      projectCharges
     });
     const journalLineInserts = posting.lines.map(
       ({ dimensions: _dimensions, ...line }) => ({ ...line, companyId })
@@ -15723,6 +16192,12 @@ export async function postPurchaseInvoice(
 
         // With no PO line the invoice receives the part itself.
         if (invoiceLine.purchaseOrderLineId === null) {
+          // A stocked item charged to a project with project stock enters
+          // that project's stock (Projects Phase 2a).
+          const directStockStripe =
+            itemTrackingType === "Non-Inventory"
+              ? null
+              : projectCharges.stockStripe(invoiceLine.id);
           // Services are never received, so they must not materialize a
           // receipt document — only the expense + AP entries.
           if (invoiceLine.invoiceLineType !== "Service") {
@@ -15757,6 +16232,7 @@ export async function postPurchaseInvoice(
               documentId: purchaseInvoice.data?.id ?? undefined,
               externalDocumentId:
                 purchaseInvoice.data?.supplierReference ?? undefined,
+              projectId: directStockStripe,
               createdBy: userId,
               companyId
             });
@@ -15779,6 +16255,7 @@ export async function postPurchaseInvoice(
               cost: round(totalLineCostWithWeightedShipping),
               remainingQuantity: round(invoiceLineQuantityInInventoryUnit),
               supplierId: purchaseInvoice.data?.supplierId,
+              projectId: directStockStripe,
               companyId,
               postingDate: today
             });
@@ -15791,7 +16268,8 @@ export async function postPurchaseInvoice(
         if (!received) continue;
 
         // Subledger: adjustment child rows on the covered layers, consumed
-        // alongside their parent by calculateCOGS.
+        // alongside their parent by calculateCOGS. A child carries its
+        // parent layer's stock stripe.
         for (const entry of received.allocation.perLayer) {
           costLedgerInserts.push({
             itemLedgerType: "Purchase",
@@ -15808,6 +16286,7 @@ export async function postPurchaseInvoice(
             cost: round(entry.adjustmentCost),
             remainingQuantity: round(entry.appliedQuantity),
             supplierId: purchaseInvoice.data?.supplierId,
+            projectId: entry.projectId ?? null,
             companyId,
             postingDate: today
           });
@@ -15840,6 +16319,7 @@ export async function postPurchaseInvoice(
             ),
             remainingQuantity: round(coveredQuantity),
             supplierId: purchaseInvoice.data?.supplierId,
+            projectId: projectCharges.stockStripe(invoiceLine.id),
             companyId,
             postingDate: today
           });
@@ -16062,6 +16542,7 @@ export async function postPurchaseInvoice(
       }
 
       let invoiceJournalId: string | null = null;
+      let invoiceJournalLineIds: string[] = [];
       if (journalLineInserts.length > 0) {
         const journalEntryId = await getNextSequence(
           trx,
@@ -16100,6 +16581,7 @@ export async function postPurchaseInvoice(
           )
           .returning(["id"])
           .execute();
+        invoiceJournalLineIds = journalLineResults.map((jl) => jl.id);
 
         if (dimensionMap.size > 0) {
           const journalLineDimensionInserts = journalLineDimensionRows({
@@ -16297,6 +16779,57 @@ export async function postPurchaseInvoice(
               .execute();
           }
         }
+      }
+
+      const projectLedgerDrafts = posting.projectDrafts;
+      if (projectLedgerDrafts.length > 0) {
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: projectLedgerDrafts.map((draft) =>
+            buildProjectLedgerRow({
+              companyId,
+              projectId: draft.projectId,
+              projectElementId: draft.projectElementId,
+              postingDate: today,
+              costType: draft.costType,
+              documentType: "Purchase Invoice",
+              documentId: invoiceId,
+              documentLineId: draft.invoiceLineId,
+              itemId: draft.itemId,
+              supplierId: purchaseInvoice.data?.supplierId ?? null,
+              quantity: draft.quantity,
+              amount: draft.amount,
+              journalLineId:
+                draft.journalLineIndex === null
+                  ? null
+                  : (invoiceJournalLineIds[draft.journalLineIndex] ?? null),
+              unallowable: draft.unallowable,
+              createdBy: userId
+            })
+          )
+        });
+
+        // A line charged to a Capitalize project builds its asset.
+        await writeProjectCipRows(trx, {
+          companyId,
+          userId,
+          rows: projectLedgerDrafts.map((draft) =>
+            buildProjectCipRow({
+              resolved: draft,
+              companyId,
+              userId,
+              projectId: draft.projectId,
+              projectElementId: draft.projectElementId,
+              sourceType: "Purchase Invoice",
+              sourceDocumentId: invoiceId,
+              sourceDocumentLineId: draft.invoiceLineId,
+              amount: draft.amount,
+              costDate: today,
+              journalId: invoiceJournalId
+            })
+          )
+        });
       }
 
       if (cipCostInserts.length > 0) {

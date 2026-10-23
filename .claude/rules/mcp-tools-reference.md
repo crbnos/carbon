@@ -320,11 +320,12 @@ seeded with it; the file's header names the traps it sets on purpose. Run it
 with that skill's `scripts/evaluation.py` and a `crbn_` key holding the view
 scopes. Not part of `pnpm test`.
 
-## The 14 modules
+## The 15 modules
 
 `accounting` · `documents` · `inventory` · `invoicing` · `items` · `people` ·
-`production` · `purchasing` · `quality` · `resources` · `sales` · `settings` ·
-`shared` · `users`. Each is one namespace in `modules/router.server.ts`. The
+`production` · `projects` · `purchasing` · `quality` · `resources` · `sales` ·
+`settings` · `shared` · `users`. Each is one namespace in `modules/router.server.ts`.
+The router also holds `service`, `agent` and `workflows`, which publish no tool. The
 caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
 part of `users` and gates on company membership.
 

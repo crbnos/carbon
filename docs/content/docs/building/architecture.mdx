@@ -596,9 +596,8 @@ database credentials. Redis stores job state and result pointers and is required
 purchasing/
 ├── purchasing.models.ts    zod schemas and the types derived from them
 ├── purchasing.service.ts   every database operation for this module
-├── purchasing.server.ts    server-only helpers (optional)
+├── purchasing.server.ts    service functions (defineServiceFn) behind routes, API calls and tools
 ├── types.ts                shared types
-├── index.ts                barrel, import from "~/modules/purchasing"
 └── ui/                     React components, grouped by feature
 ```
 

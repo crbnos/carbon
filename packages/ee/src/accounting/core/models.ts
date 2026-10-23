@@ -525,6 +525,52 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // Project and service journal types follow one rule: like every journal
+  // type added after the returns types, they never start pushing to a
+  // customer's external ledger unasked (see 'Revenue Recognition' below).
+  // A customer turns each one on in the integration's posting settings.
+  // Spec: .ai/specs/2026-10-03-projects.md.
+  Timesheet: {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  "Project Issue": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // A project expense entry (mileage, a cost with no card charge or invoice)
+  // posts Dr the project account / Cr GRNI, alongside project time and issues.
+  "Project Expense": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // A project stock transfer, borrow or payback moves inventory value between
+  // project stock stripes. Off by default for the same reason as
+  // 'Revenue Recognition'.
+  "Project Transfer": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // Applied burden (Government Contracting 5b): Dr Project WIP / Cr the
+  // pool's applied account, when the company posts burden to the GL. Off by
+  // default for the same reason as 'Revenue Recognition'.
+  Burden: {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // Project close (audit D11): Dr cost of goods sold / Cr Project WIP for the
+  // cost no progress contract line relieves. Off by default for the same
+  // reason as 'Revenue Recognition'.
+  "Project Close": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Asset Depreciation": {
     representation: "journal",
     defaultEnabled: true,
@@ -539,6 +585,13 @@ export const POSTING_POLICY: Record<
   // start pushing to a customer's external ledger unasked (plan decision 1,
   // `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I).
   "Revenue Recognition": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // A refurbishment completion moves a service order's WIP into one serial's
+  // inventory cost. Off by default for the same reason as 'Revenue Recognition'.
+  "Service Order": {
     representation: "journal",
     defaultEnabled: false,
     defaultGranularity: "individual"

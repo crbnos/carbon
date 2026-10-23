@@ -1,0 +1,146 @@
+---
+title: Customer assets
+description: The installed base. One record per serial unit at a customer, with its site, labor and parts warranty, fitted parts and service history.
+---
+
+A **customer asset** is one serial unit that sits at a customer. It records the customer, the site, the ship date, and two warranty end dates: one for labor and one for parts. Every [service order](/docs/reference/service-orders) starts from an asset.
+
+Open **Service → Customer Assets** (under **Installed Base**). You need `service` view permission to see the list.
+
+<Screenshot label="The Customer Assets list with Serial, Item, Customer, Site, Ship Date, Warranty, Open Orders and Status columns, and In warranty, Labor ended and Expired badges" caption="Each row is one serial unit at a customer." />
+
+## How an asset is created
+
+**When a serial ships.** Posting a sales order [shipment](/docs/reference/shipments) creates an asset for each <Term id="serial">serial</Term> on its serial-tracked lines. Carbon fills in:
+
+- **Customer** and **Site** come from the sales order. For a <Term>drop shipment</Term>, the site is the delivery's customer location.
+- **Ship Date** is the day the shipment posts.
+- The warranty end dates are the ship date plus the item's warranty months. An item with no months gives an empty date.
+- The asset starts **"In Service"** with source Shipment.
+
+Set the months on the item's **Sales** tab, in the **Sale Price** card: **Labor Warranty (months)** and **Parts Warranty (months)**. Both are whole numbers. They apply to serials that ship after you save them.
+
+<Callout type="info" title="A new sale restarts the warranty. A return shipment does not.">
+When an asset's serial ships again on a sales order, the asset moves to the new customer and site. Both warranty dates start again from the new ship date. When you ship a serial back on an [RMA](/docs/reference/rmas), the asset returns to "In Service" and keeps its warranty dates. Its site becomes the RMA's site when the RMA has one.
+</Callout>
+
+**By hand, for units sold before Carbon.** Click **Add Asset** on the list, or on the customer's **Assets** tab, which fills in the customer. The **New Customer Asset** drawer asks for:
+
+<FieldTable>
+  <Field name="Item" type="reference" required>The part. It must be serial-tracked.</Field>
+  <Field name="Serial" type="text" required>The unit's serial number. The item cannot already have this serial in Carbon.</Field>
+  <Field name="Customer" type="reference" required>Who owns the unit.</Field>
+  <Field name="Site" type="reference">One of the customer's locations. This is where the technician goes.</Field>
+  <Field name="Ship Date" type="date">When the unit was delivered.</Field>
+  <Field name="Labor Warranty Ends" type="date">Cannot be before the ship date.</Field>
+  <Field name="Parts Warranty Ends" type="date">Cannot be before the ship date.</Field>
+</FieldTable>
+
+Saving creates a "Consumed" serial for the item and an asset with source Manual. Registering needs `service` create permission.
+
+<Callout type="warn" title="Do not register a unit that Carbon will ship.">
+A serial that Carbon ships becomes an asset when its shipment posts. Register by hand only the units that left before you used Carbon. If the serial already exists on the item, registration fails with "Serial … already exists for this item".
+</Callout>
+
+## Status
+
+<StatusFlow entity="customerAsset">
+  <Status name="In Service" accent>The unit is at the customer. A shipment, an RMA return shipment or a manual registration sets this status. Only an asset that is In Service can get a new service order.</Status>
+  <Status name="At Depot" branch>The unit is in your shop for repair. Posting the receipt of an RMA line with the **Repair** disposition sets it; posting the return shipment sets the unit back to In Service. See [Repair](/docs/reference/rmas#repair).</Status>
+  <Status name="Returned" terminal>The unit came back to you. Voiding the sales order shipment that created or last moved the asset sets this status. A new sales shipment of the serial makes it In Service again.</Status>
+</StatusFlow>
+
+The **warranty status** is a badge that Carbon calculates from today's date in the company's time zone. It is not stored.
+
+| Warranty | Meaning |
+|---|---|
+| **In warranty** | The labor warranty has not ended. |
+| **Labor ended** | The labor warranty has ended, but the parts warranty has not. |
+| **Expired** | Both warranties have ended, or the asset has no warranty dates. |
+
+The list's **Warranty** filter uses the same rule. Service orders use the dates themselves, not the badge, to decide [coverage](/docs/reference/service-orders#coverage) for each charge.
+
+## The asset page
+
+Click a serial to open the asset. The header shows the serial, the status, the warranty badge, the item, the customer and the site. **New Service Order** opens the [service order](/docs/reference/service-orders) form with this unit filled in. It is available when the asset is "In Service" and you have `service` create permission.
+
+The page has these cards:
+
+- **Warranty and Site.** Change the site and the two warranty end dates. The item, serial, customer and ship date never change after the asset exists. Saving needs `service` update permission.
+- **Notes.** Free text about the unit, saved as you type.
+- **Installed Components.** The parts that service orders fitted to this unit. Each shows its install date, its own parts warranty end, its removal date and the service order. Removed parts show muted, below the current ones.
+- **History by Order.** Every service order for this unit, with status, opened and completed dates, and cost.
+- **History by Component.** The hours, part cost and total cost of each component across all service orders, with the number of orders and the last service date.
+
+The side panel links the customer, the shipment that created or last moved the asset, and each service order.
+
+<Screenshot label="A customer asset page with the Warranty and Site card, Notes, Installed Components, History by Order and History by Component" caption="The asset page brings the unit's warranty, parts and service history together." />
+
+## Installed components
+
+A part issued to a node of a service order is written to the asset's **Installed Components**. Its parts warranty end is the issue date plus the part's **Parts Warranty (months)**. A charge on that node later uses this date for coverage, as well as the asset's own parts warranty.
+
+Replacement is automatic. There is no replace button. A node can be linked to a serial that is a current component of the asset. Issuing a part to that node removes the old component. It gets a removal date and the service order that removed it.
+
+For a serial part, the issue also records a Service step in the unit's <Term>genealogy</Term>: the part's serial goes into the asset's serial. Returning the part reverses the issue in full. The component and the genealogy step are deleted, and the replaced component is restored when nothing else from that order sits on the node.
+
+<Callout type="note" title="Parts built in at the factory have no component record.">
+Only parts that a service order fitted appear in Installed Components. A serial part that production built into the unit is not on the list, so a part issued in its place does not remove it.
+</Callout>
+
+## The customer's Assets tab
+
+Every customer has an **Assets** tab in its sidebar, shown to users with `service` view permission. It lists that customer's assets with the same columns as the main list, without the Customer column. From a row, **View Asset** opens the asset and **New Service Order** starts an order.
+
+## Related
+
+<Cards>
+  <Card title="Service orders" href="/docs/reference/service-orders">
+    Plan, charge, cover and invoice field service work on an asset.
+  </Card>
+  <Card title="Shipments" href="/docs/reference/shipments">
+    Posting a shipment of a serial creates its asset.
+  </Card>
+  <Card title="Traceability" href="/docs/reference/traceability">
+    Follow a serial and the parts fitted to it.
+  </Card>
+  <Card title="Customers" href="/docs/reference/suppliers-and-customers">
+    Customer sites and contacts that an asset points to.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Only a serialized item can be an asset"
+The item on the New Customer Asset drawer is not serial-tracked. Change the item's tracking type, or pick the serial-tracked item.
+
+### "Serial … already exists for this item"
+The item already has a tracked entity with this serial. If Carbon shipped it, the asset is created at shipment. Search the Customer Assets list by serial instead.
+
+### "The labor warranty cannot end before the ship date" / "The parts warranty cannot end before the ship date"
+A warranty end date on the registration form is earlier than the ship date.
+
+### "A field visit needs a unit in service. This unit is …"
+A service order can only start from an asset whose status is In Service. A Returned asset (its shipment was voided) cannot get a field visit.
+
+### New Service Order is greyed out on an asset
+Either the asset is not In Service, or the user lacks `service_create`.
+
+### A shipped serial has no warranty dates
+The item had no Labor Warranty (months) / Parts Warranty (months) on its sale price when the shipment posted. Assets created by the migration backfill for serials shipped before field service also have null warranty dates. Edit the dates on the asset's Warranty and Site card.
+
+### The Assets tab is missing from a customer
+The tab needs `service_view`.
+
+## Internals
+- Tables: `customerAsset` (id prefix `cas`, unique on `trackedEntityId` per company, no readable id; the page title is the serial) and `customerAssetComponent` (`cac`, `removedDate`, `removedByServiceOrderId`).
+- `customerAssetStatus` enum: In Service, At Depot, Returned. `source` is TEXT: Shipment (default) or Manual. The source is not shown in the UI.
+- Shipment creation: `upsertShippedCustomerAssets` (`apps/erp/app/modules/inventory/shipment-customer-assets.ts`, called by `postShipment`), called only for Sales Order shipments, inside the post transaction. Warranty months come from the oldest `itemUnitSalePrice` row of the item. A reshipped serial keeps its `source`.
+- Void of a Sales Order shipment sets every asset with that `shipmentId` to Returned; it does not restore the previous customer. Voiding an RMA return shipment changes no asset.
+- Manual registration: `registerCustomerAsset` (`service.service.ts`, behind the operation of the same name) inserts a Consumed `trackedEntity` (source document Item) and the asset with source Manual.
+- Repair receipt: `ensureCustomerAssets` (`apps/erp/app/modules/service/service-orders.ts`) inserts an asset with source Manual for a received Repair serial that has none, and `createDepotRepairOrders` (`inventory/receipt-repair.ts`) sets it At Depot. `shipRepairedUnits` (`inventory/shipment-repair.ts`) sets it In Service at the RMA's site with the ship date and shipment.
+- Warranty status: `warrantyStatus(asset, today)` in `service.models.ts`.
+- Installed components: `installServicePart` (`apps/erp/app/modules/projects/service-part-issue.ts`, run by `postProjectIssue`); the Service `trackedActivity` carries the attribute "Project Issue".
+- Routes: list `/x/service-orders/assets`, register `/x/service-orders/assets/new`, page `/x/customer-asset/<id>`, customer tab `/x/customer/<id>/assets`.
+</AgentContext>

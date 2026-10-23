@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
+import type { SyncedEntityType } from "@carbon/ee/issue-sync";
 import type { LinearTeam, LinearUser } from "@carbon/ee/linear";
 import {
   Hidden,
@@ -12,7 +12,7 @@ import {
   TextArea,
   ValidatedForm
 } from "@carbon/form";
-import { Button, ModalFooter, VStack } from "@carbon/react";
+import { Button, ModalBody, ModalFooter, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useId, useMemo, useState } from "react";
 import z from "zod";
@@ -20,7 +20,7 @@ import { useAsyncFetcher } from "~/hooks/useAsyncFetcher";
 import { path } from "~/utils/path";
 
 type Props = {
-  entityType: ActionTaskEntityType;
+  entityType: SyncedEntityType;
   taskId: string;
   linkedIssue: unknown;
   onClose: () => void;
@@ -39,7 +39,8 @@ export const CreateIssue = (props: Props) => {
   const id = useId();
   const [team, setTeam] = useState<string | undefined>();
 
-  const { teams, members, fetcher } = useLinearTeams(team);
+  const { teams, members, defaults, fetcher } = useLinearTeams(team, props);
+  const initial = useInitialDefaults(defaults);
 
   const teamOptions = useMemo(
     () => teams.map((el) => ({ label: el.name, value: el.id })),
@@ -54,6 +55,14 @@ export const CreateIssue = (props: Props) => {
 
   return (
     <ValidatedForm
+      className="flex min-h-0 flex-col"
+      // Remount once the record's title and description arrive, so they fill
+      // the form.
+      key={initial ? "defaults" : "empty"}
+      defaultValues={{
+        title: initial?.title ?? "",
+        description: initial?.description ?? ""
+      }}
       id={id}
       method="post"
       action={path.to.api.linearCreateIssue}
@@ -63,38 +72,41 @@ export const CreateIssue = (props: Props) => {
       resetAfterSubmit
       onAfterSubmit={() => props.onClose()}
     >
-      <VStack spacing={4}>
-        <Hidden name="actionId" value={props.taskId} />
-        <Hidden name="entityType" value={props.entityType} />
-        <Select
-          isLoading={isSearching}
-          label={t`Linear Team`}
-          name="teamId"
-          placeholder={t`Select a team`}
-          value={team}
-          onChange={(e) => setTeam(e?.value)}
-          options={teamOptions}
-        />
-        <Input
-          label={t`Title`}
-          name="title"
-          placeholder={t`Issue title`}
-          required
-        />
-        <TextArea
-          label={t`Description`}
-          name="description"
-          placeholder={t`Issue description`}
-          required
-        />
-        <Select
-          label={t`Assign To`}
-          name="assignee"
-          placeholder={t`Select a assignee`}
-          isOptional
-          options={membersOptions}
-        />
-      </VStack>
+      {/* Outside the stack: a hidden input in a spaced stack still takes a gap. */}
+      <Hidden name="actionId" value={props.taskId} />
+      <Hidden name="entityType" value={props.entityType} />
+      <ModalBody>
+        <VStack spacing={4}>
+          <Select
+            isLoading={isSearching}
+            label={t`Linear Team`}
+            name="teamId"
+            placeholder={t`Select a team`}
+            value={team}
+            onChange={(e) => setTeam(e?.value)}
+            options={teamOptions}
+          />
+          <Input
+            label={t`Title`}
+            name="title"
+            placeholder={t`Issue title`}
+            required
+          />
+          <TextArea
+            label={t`Description`}
+            name="description"
+            placeholder={t`Issue description`}
+            required
+          />
+          <Select
+            label={t`Assign To`}
+            name="assignee"
+            placeholder={t`Select a assignee`}
+            isOptional
+            options={membersOptions}
+          />
+        </VStack>
+      </ModalBody>
       <ModalFooter>
         <Button
           variant="secondary"
@@ -114,22 +126,41 @@ export const CreateIssue = (props: Props) => {
 
 CreateIssue.displayName = "CreateIssue";
 
-const useLinearTeams = (teamId?: string) => {
+type IssueDefaults = { title: string; description: string };
+
+/** The first defaults the loader returns; later loads do not overwrite edits. */
+const useInitialDefaults = (defaults: IssueDefaults | null | undefined) => {
+  const [initial, setInitial] = useState<IssueDefaults | null>(null);
+  useEffect(() => {
+    if (!initial && defaults) setInitial(defaults);
+  }, [defaults, initial]);
+  return initial;
+};
+
+const useLinearTeams = (
+  teamId: string | undefined,
+  record: { taskId: string; entityType: SyncedEntityType }
+) => {
   const fetcher = useAsyncFetcher<{
     teams: LinearTeam[];
     members: LinearUser[];
+    defaults?: IssueDefaults | null;
   }>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    fetcher.load(
-      path.to.api.linearCreateIssue + (teamId ? `?teamId=${teamId}` : "")
-    );
+    const params = new URLSearchParams({
+      actionId: record.taskId,
+      entityType: record.entityType
+    });
+    if (teamId) params.set("teamId", teamId);
+    fetcher.load(`${path.to.api.linearCreateIssue}?${params}`);
   }, [teamId]);
 
   return {
     teams: fetcher.data?.teams || [],
     members: fetcher.data?.members || [],
+    defaults: fetcher.data?.defaults,
     fetcher
   };
 };

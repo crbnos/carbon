@@ -21,10 +21,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Combobox, Hidden, Input, Submit } from "~/components/Form";
+import { Combobox, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { accountValidator } from "../../accounting.models";
+import {
+  accountAllowabilities,
+  accountValidator,
+  elementsOfCost
+} from "../../accounting.models";
 import type { AccountClass, AccountIncomeBalance } from "../../types";
 
 type GroupAccount = {
@@ -67,6 +71,27 @@ const ChartOfAccountForm = ({
   const accountClass =
     (selectedGroup?.class as AccountClass) ?? initialValues.class;
   const accountType = selectedGroup?.accountType ?? initialValues.accountType;
+
+  // Only the user's pick is state; until they pick, the saved value shows.
+  const [pickedAllowability, setAllowability] = useState<string | null>(null);
+  const allowability =
+    pickedAllowability ?? initialValues.allowability ?? "Allowable";
+  const allowabilityLabels: Record<
+    (typeof accountAllowabilities)[number],
+    string
+  > = {
+    Allowable: t`Allowable`,
+    "Expressly Unallowable": t`Expressly Unallowable`,
+    "Mutually Agreed Unallowable": t`Mutually Agreed Unallowable`,
+    "Directly Associated Unallowable": t`Directly Associated Unallowable`
+  };
+  const elementOfCostLabels: Record<(typeof elementsOfCost)[number], string> = {
+    Labor: t`Labor`,
+    Material: t`Material`,
+    Subcontract: t`Subcontract`,
+    "Other Direct": t`Other Direct`,
+    Travel: t`Travel`
+  };
 
   useEffect(() => {
     if (fetcher.state === "loading" && fetcher.data?.data) {
@@ -167,6 +192,40 @@ const ChartOfAccountForm = ({
                       </label>
                       <p className="text-sm">{accountClass}</p>
                     </div>
+                  </>
+                )}
+                {/* Government contracting: a group account takes no
+                    allowability, so the fields are only for a posting account. */}
+                {!initialValues.isGroup && (
+                  <>
+                    <Select
+                      name="allowability"
+                      label={t`Allowability`}
+                      options={accountAllowabilities.map((value) => ({
+                        value,
+                        label: allowabilityLabels[value]
+                      }))}
+                      onChange={(selected) =>
+                        setAllowability(selected?.value ?? "Allowable")
+                      }
+                    />
+                    {allowability === "Allowable" ? (
+                      <Hidden name="unallowableReason" value="" />
+                    ) : (
+                      <Input
+                        name="unallowableReason"
+                        label={t`Unallowable reason`}
+                        placeholder={t`31.205-14 Entertainment`}
+                      />
+                    )}
+                    <Select
+                      name="elementOfCost"
+                      label={t`Element of cost`}
+                      options={elementsOfCost.map((value) => ({
+                        value,
+                        label: elementOfCostLabels[value]
+                      }))}
+                    />
                   </>
                 )}
               </VStack>

@@ -6,6 +6,7 @@ import type { ShortcutInput } from "@carbon/react";
 import {
   Button,
   Count,
+  cn,
   HStack,
   PrefetchLink,
   ShortcutKey,
@@ -29,12 +30,20 @@ type DetailSidebarProps = {
     icon?: ReactNode;
     count?: number;
     shortcut?: ShortcutInput;
+    /** Overrides the default pathname-includes active check. */
+    isActive?: (pathname: string) => boolean;
+    /** Indents the link under the one above it (a child page). */
+    indent?: boolean;
   }[];
 };
 
 const DetailSidebar = ({ links }: DetailSidebarProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
+  const isLinkActive = (link: DetailSidebarProps["links"][number]) =>
+    link.isActive
+      ? link.isActive(location.pathname)
+      : location.pathname.includes(link.to);
 
   useShortcutKeyMap(
     useMemo(
@@ -60,7 +69,7 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
           label: route.name,
           to: route.to,
           count: route.count,
-          active: location.pathname.includes(route.to)
+          active: isLinkActive(route)
         }))}
       />
     );
@@ -72,7 +81,7 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
       spacing={1}
     >
       {links.map((route) => {
-        const isActive = location.pathname.includes(route.to);
+        const isActive = isLinkActive(route);
 
         return (
           <Tooltip key={route.name}>
@@ -80,7 +89,7 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
               <Button
                 asChild
                 variant={isActive ? "active" : "ghost"}
-                className="w-full justify-start"
+                className={cn("w-full justify-start", route.indent && "pl-8")}
               >
                 <PrefetchLink
                   to={route.to}

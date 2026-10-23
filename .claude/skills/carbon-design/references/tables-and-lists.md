@@ -47,6 +47,7 @@ Paths relative to `apps/erp/app/` unless they start with `apps/` or `packages/`.
 | **SortableList** | ordered children each edited inline (BoM/BoP) | `components/SortableList.tsx` |
 | **Grid** | small editable child lists on master data (supplier parts, price overrides) | `components/Grid/Grid.tsx` |
 | **Card-row list** | lines the user fills in before posting (receipts, shipments) | `modules/inventory/ui/Shipments/ShipmentLines.tsx` |
+| **Grouped work list** (Linear style) | work items grouped by state, one 36 px row each, no column headers or grid lines; only state, owner and date edit in place through their pickers; a click elsewhere opens the item's page | `modules/projects/ui/Elements/ElementList.tsx` |
 | **Kanban** | work moved between states or work centers by dragging | `apps/mes/app/components/Kanban/`, `modules/production/ui/Schedule/Kanban/Kanban.tsx` |
 | **Card grid** | operator (MES) lists read at a glance on touch | `apps/mes/app/components/OperationsList.tsx` |
 | **Activity feed** | history / audit narrative for one record | `components/Activity.tsx` |
@@ -213,6 +214,7 @@ menu) unless the row is expandable. Report/workbench tables with no openable rec
 | Document lines (quote, SO, PO, invoice, return) | Explorer (left) + `…Summary` card (center) — never a list Table in the content pane |
 | Operational sub-table in a record | `Table compact title=… primaryAction=…`; editable → `withInlineEditing` + `editableComponents` (`EditableNumber(mutation)`), `forceEditMode` for Draft docs |
 | Small editable child list | `Grid` in a Card with `onNewRow` "New" row and an `<Outlet/>` for the form |
+| Any other editable table (timesheet, rates, plan lines, funding) | the Excel-like grid of the inventory count: `Table compact withInlineEditing` + `useCellSave` (or `Grid`), borderless cells until focused, a footer row for totals, "Add …" as a quiet button. Never a `NumberField` box per cell, never a modal per row. Editors built once (`useStableEditableComponents`). Exemplars: `modules/inventory/ui/InventoryCount/InventoryCountLines.tsx`, `modules/projects/ui/Timesheet/TimesheetGrid.tsx`, `modules/sales/ui/Contracts/ContractLaborRates.tsx` |
 | BoM / BoP | `SortableList` with expandable inline forms, live reorder + throttled save |
 | Receiving / shipping lines | card-row list with inline `NumberField` + selectors, per-line persistence |
 

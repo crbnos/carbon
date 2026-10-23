@@ -144,6 +144,30 @@ export async function approveRequest(
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
         }
+      } else if (documentType === "projectChangeRequest") {
+        // Only the status moves here. The ERP route applies the change
+        // request after this returns; project logic stays out of ee.
+        const changeRequestUpdate = await trx
+          .updateTable("projectChangeRequest")
+          .set({
+            status: "Approved",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "In Review")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeRequestUpdate) {
+          throw new Error(
+            "Failed to update change request status - it may no longer be 'In Review'"
+          );
+        }
       } else if (documentType === "changeOrder") {
         // Approval is the gate on Engineering Complete -> Implementation, so
         // approving performs that transition (only from the gated stage).
@@ -962,6 +986,30 @@ export async function rejectRequest(
 
         if (!supplierUpdate) {
           throw new Error("Failed to update supplier status");
+        }
+      }
+
+      if (documentType === "projectChangeRequest") {
+        const changeRequestUpdate = await trx
+          .updateTable("projectChangeRequest")
+          .set({
+            status: "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "In Review")
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (!changeRequestUpdate) {
+          throw new Error(
+            "Failed to update change request status - it may no longer be 'In Review'"
+          );
         }
       }
 

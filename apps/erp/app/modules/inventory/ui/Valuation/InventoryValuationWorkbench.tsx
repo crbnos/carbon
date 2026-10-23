@@ -194,7 +194,8 @@ export function InventoryValuationWorkbench({
         for (const r of childrenByGroup[g.id] ?? []) {
           out.push({
             kind: "detail",
-            rowId: `${r.locationId}:${r.itemId}`,
+            // One row per stock stripe (Projects Phase 2a).
+            rowId: `${r.locationId}:${r.itemId}:${r.projectId ?? ""}`,
             groupId: g.id,
             pctOfTotal:
               grandTotal === 0 ? 0 : Number(r.totalValue) / grandTotal,

@@ -23,6 +23,9 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
+  LuFileText,
+  LuHardHat,
+  LuLandmark,
   LuListChecks,
   LuPanelLeft,
   LuPencilLine,
@@ -31,8 +34,10 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { usePanels } from "~/components/Layout";
+import DetailTopbar from "~/components/Layout/Navigation/DetailsTopbar";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import ContractAmendModal from "./ContractAmendModal";
 import ContractCancelModal from "./ContractCancelModal";
@@ -72,6 +77,32 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   // A cancellation can be reverted until its end date has passed.
   const canRevertCancellation =
     isActive && isCancelled && !!contract.endDate && contract.endDate >= today;
+
+  // The route tabs: the contract's Service Orders need service_view, its
+  // Financing the government contracting fields, and with only Details there
+  // is nothing to switch between.
+  const governmentContracting = useGovernmentContracting();
+  const navigation = [
+    { name: t`Details`, to: path.to.contractDetails(id), icon: LuFileText },
+    ...(permissions.can("view", "service")
+      ? [
+          {
+            name: t`Service Orders`,
+            to: path.to.contractServiceOrders(id),
+            icon: LuHardHat
+          }
+        ]
+      : []),
+    ...(governmentContracting
+      ? [
+          {
+            name: t`Financing`,
+            to: path.to.contractFinancing(id),
+            icon: LuLandmark
+          }
+        ]
+      : [])
+  ];
 
   const open = (next: PendingAction) => {
     setAction(next);
@@ -148,6 +179,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
             )}
           </HStack>
           <HStack>
+            {navigation.length > 1 && <DetailTopbar links={navigation} />}
             {canRevertCancellation && (
               <Button
                 variant="secondary"

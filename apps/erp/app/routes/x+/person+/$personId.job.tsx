@@ -24,7 +24,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const job = await getEmployeeJob(client, personId, companyId);
+  // Project time adds fields to a job, shown only once the company uses it:
+  // it has a labor category.
+  const [job, laborCategories] = await Promise.all([
+    getEmployeeJob(client, personId, companyId),
+    client
+      .from("laborCategory")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+  ]);
   if (job.error) {
     // PGRST116 = no rows: the person has no job record in this company.
     const message =
@@ -38,7 +46,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    job: job.data
+    job: job.data,
+    usesProjectTime: (laborCategories.count ?? 0) > 0
   };
 }
 
@@ -51,6 +60,11 @@ export async function action(args: ActionFunctionArgs) {
   const api = await carbon(args.request);
   const result = await api.people.updatePersonJob({
     ...input.data,
+    // This form always renders both switches, and an unchecked switch posts
+    // nothing — so here a missing value is "off". (The validator keeps them
+    // optional for API callers, where a missing value keeps the stored flag.)
+    isOfficer: input.data.isOfficer ?? false,
+    timesheetRequired: input.data.timesheetRequired ?? false,
     employeeId: personId,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -60,7 +74,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function PersonJobRoute() {
-  const { job } = useLoaderData<typeof loader>();
+  const { job, usesProjectTime } = useLoaderData<typeof loader>();
   const { personId } = useParams();
 
   const initialValues = {
@@ -70,8 +84,18 @@ export default function PersonJobRoute() {
     shiftId: job.shiftId ?? "",
     departmentId: job.departmentId ?? "",
     managerId: job.managerId ?? "",
+    laborCategoryId: job.laborCategoryId ?? "",
+    flsaStatus: job.flsaStatus ?? undefined,
+    isOfficer: job.isOfficer ?? false,
+    timesheetRequired: job.timesheetRequired ?? true,
     ...getCustomFields(job.customFields)
   };
 
-  return <PersonJob key={personId} initialValues={initialValues} />;
+  return (
+    <PersonJob
+      key={personId}
+      initialValues={initialValues}
+      usesProjectTime={usesProjectTime}
+    />
+  );
 }

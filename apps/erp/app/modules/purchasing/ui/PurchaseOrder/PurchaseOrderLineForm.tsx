@@ -53,6 +53,7 @@ import type { z } from "zod";
 import { ItemLifecycleBadge } from "~/components";
 import {
   Account,
+  ChargeNumber,
   ConversionFactor,
   CostCenter,
   CustomFormFields,
@@ -845,6 +846,10 @@ const PurchaseOrderLineForm = ({
                             />
                           )}
 
+                        {!isOutsideProcessing && (
+                          <ChargeNumber label={t`Charge Number`} isOptional />
+                        )}
+
                         <CustomFormFields table="purchaseOrderLine" />
                       </div>
 
@@ -946,6 +951,10 @@ const PurchaseOrderLineForm = ({
                                 name="costCenterId"
                                 label={t`Cost Center`}
                                 termId="cost-center"
+                                isOptional
+                              />
+                              <ChargeNumber
+                                label={t`Charge Number`}
                                 isOptional
                               />
                             </>

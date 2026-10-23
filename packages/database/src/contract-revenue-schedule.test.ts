@@ -107,6 +107,26 @@ describe("planRevenueSchedule", () => {
       planRevenueSchedule({ lines: [recurring], totals: new Map() })
     ).toEqual([]);
   });
+
+  it("plans no months for a Fixed line recognized by Percent Complete", () => {
+    const rows = planRevenueSchedule({
+      lines: [
+        recurring,
+        {
+          ...recurring,
+          id: "development",
+          revenueType: "One-time",
+          revenueMethod: "Percent Complete"
+        }
+      ],
+      totals: new Map([
+        ["platform", 42_000],
+        ["development", 100_000]
+      ])
+    });
+    expect(rows).toHaveLength(12);
+    expect(rows.every((row) => row.lineId === "platform")).toBe(true);
+  });
 });
 
 describe("validateRevenueEdit", () => {

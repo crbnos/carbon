@@ -23,8 +23,10 @@ export const path = {
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/dispatch/${dispatchId}/add-and-issue`),
     api: {
-      batchNumbers: (itemId: string) =>
-        generatePath(`${api}/batch-numbers?itemId=${itemId}`),
+      batchNumbers: (itemId: string, operationId?: string) =>
+        generatePath(
+          `${api}/batch-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+        ),
       failureModes: `${api}/failure-modes`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
@@ -35,16 +37,19 @@ export const path = {
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
-      serialNumbers: (itemId: string) =>
-        generatePath(`${api}/serial-numbers?itemId=${itemId}`),
+      serialNumbers: (itemId: string, operationId?: string) =>
+        generatePath(
+          `${api}/serial-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+        ),
       ssoCheck: `${api}/sso/check`,
       suggestedAllocation: (
         itemId: string,
         locationId: string,
-        quantity: number
+        quantity: number,
+        operationId?: string
       ) =>
         generatePath(
-          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
+          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}${operationId ? `&operationId=${operationId}` : ""}`
         ),
       systemStatus: `${api}/system-status`
     },
@@ -220,6 +225,7 @@ export const path = {
       generatePath(`${x}/company/switch/${companyId}`),
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
+    timesheet: `${x}/timesheet`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>

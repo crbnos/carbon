@@ -39,7 +39,7 @@ import { useCallback, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { z } from "zod";
-import { EmailRecipients, Users } from "~/components/Form";
+import { EmailRecipients, Item, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
@@ -50,6 +50,7 @@ import {
   invoiceAutomations,
   invoiceAutomationValidator,
   invoiceNotificationValidator,
+  serviceLaborItemValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
 import {
@@ -117,6 +118,11 @@ const invoicingSettingsForm = z.discriminatedUnion("intent", [
     .extend({ intent: z.literal("emails") })
     .transform(({ defaultCustomerCc }) => ({
       defaultCustomerCc: defaultCustomerCc ?? []
+    })),
+  serviceLaborItemValidator
+    .extend({ intent: z.literal("serviceLabor") })
+    .transform(({ serviceLaborItemId }) => ({
+      serviceLaborItemId: serviceLaborItemId || null
     }))
 ]);
 
@@ -142,6 +148,8 @@ export default function InvoicingSettingsRoute() {
         toast.success(t`Invoice notification settings updated`);
       else if (data.accountsReceivableBillingAddress)
         toast.success(t`Accounts receivable billing address updated`);
+      else if (data.serviceLaborItemId !== undefined)
+        toast.success(t`Service labor item updated`);
       else toast.success(t`Customer email settings updated`);
     }
   });
@@ -258,6 +266,51 @@ export default function InvoicingSettingsRoute() {
                 isLoading={
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") === "invoiceAutomation"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={serviceLaborItemValidator}
+            defaultValues={{
+              serviceLaborItemId: companySettings.serviceLaborItemId ?? ""
+            }}
+            fetcher={fetcher}
+          >
+            <Hidden name="intent" value="serviceLabor" />
+            <CardHeader>
+              <CardTitle>
+                <Trans>Service Labor</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  The service item whose sale price prices time on a service
+                  order, on its estimate and on its invoice.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Item
+                  name="serviceLaborItemId"
+                  label={t`Service Labor Item`}
+                  type="Service"
+                  validItemTypes={["Service"]}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "serviceLabor"
                 }
               >
                 <Trans>Save</Trans>

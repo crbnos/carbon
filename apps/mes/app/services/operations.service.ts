@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import {
+  activeJobStatuses,
+  fetchAllByIds,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
 import {
@@ -502,6 +506,60 @@ export async function getJobOperationBatchMembers(
     )
     .in("jobOperationBatchId", batchIds)
     .eq("companyId", companyId);
+}
+
+export type JobProject = {
+  projectId: string;
+  projectElementId: string | null;
+  // The element's readable id when the job is charged to one, else the
+  // project's identifier
+  projectReadableId: string;
+  projectName: string;
+};
+
+/**
+ * The charge number of each job that has one, keyed by job id — what the
+ * schedule cards show beside the sales order. The ERP twin is
+ * `getJobProjects` in `production.service.ts`.
+ */
+export async function getJobProjects(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobIds: string[]
+): Promise<{
+  data: Record<string, JobProject>;
+  error: PostgrestError | null;
+}> {
+  if (jobIds.length === 0) return { data: {}, error: null };
+
+  const result = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("job")
+      .select(
+        "id, projectId, projectElementId, project:project!job_project_fkey(identifier, name), projectElement:projectElement!job_projectElement_fkey(readableId, name)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+
+  if (result.error) return { data: {}, error: result.error };
+
+  const data: Record<string, JobProject> = {};
+  for (const job of result.data ?? []) {
+    const readableId =
+      job.projectElement?.readableId ?? job.project?.identifier;
+    if (!job.projectId || !job.project || !readableId) continue;
+    data[job.id] = {
+      projectId: job.projectId,
+      projectElementId: job.projectElementId,
+      projectReadableId: readableId,
+      projectName: job.projectElement?.name ?? job.project.name
+    };
+  }
+
+  return { data, error: null };
 }
 
 export async function getActiveJobCount(

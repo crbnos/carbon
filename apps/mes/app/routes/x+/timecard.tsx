@@ -37,7 +37,12 @@ import {
   Tr,
   useViewport
 } from "@carbon/react";
-import { datetime, fromLocalDateTime, toLocalDateTime } from "@carbon/utils";
+import {
+  datetime,
+  formatDate,
+  fromLocalDateTime,
+  toLocalDateTime
+} from "@carbon/utils";
 import type { CalendarDateTime } from "@internationalized/date";
 import { toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -88,11 +93,11 @@ function formatTotalHours(
 }
 
 function formatDay(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleDateString(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  return formatDate(
+    dateStr,
+    { weekday: "short", month: "short", day: "numeric" },
+    locale
+  );
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {

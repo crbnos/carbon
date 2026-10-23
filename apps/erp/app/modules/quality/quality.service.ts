@@ -29,6 +29,10 @@ import { openai } from "@ai-sdk/openai";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
+import {
+  loadTrackedEntityStripes,
+  trackedEntityStripe
+} from "@carbon/api/stock-stripes";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
@@ -516,12 +520,14 @@ export async function getIssueActionTasks(
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "linear")
+        .eq("companyId", companyId)
         .in("entityId", taskIds),
       client
         .from("externalIntegrationMapping")
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "jira")
+        .eq("companyId", companyId)
         .in("entityId", taskIds)
     ]);
 
@@ -3380,11 +3386,13 @@ async function subdivideBatchEntity(
   // against it so per-storage-unit on-hand stays consistent.
   const sourceLedgerRows = await trx
     .selectFrom("itemLedger")
-    .select(["trackedEntityId", "storageUnitId", "quantity"])
+    .select(["trackedEntityId", "storageUnitId", "quantity", "projectId"])
     .where("trackedEntityId", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
   const storageUnitId = resolveTrackedEntityBin(sourceLedgerRows, source.id);
+  // The split stays in the source lot's stock stripe (Projects Phase 2a).
+  const projectId = trackedEntityStripe(sourceLedgerRows, source.id);
 
   const split = buildBatchSplitRecords({
     parent: {
@@ -3492,6 +3500,7 @@ async function subdivideBatchEntity(
         ...ledger,
         // Non-null in the node Insert type; the builder types it nullable.
         itemId,
+        projectId,
         comment: `NC ${readableNc} batch split`
       }))
     )
@@ -5510,6 +5519,17 @@ export async function postNonconformance(
 
   const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
 
+  // A movement of a tracked entity books in the entity's stock stripe
+  // (Projects Phase 2a); an untracked movement names no stripe and books
+  // common stock.
+  const entityStripes = await loadTrackedEntityStripes(
+    db,
+    companyId,
+    effectiveMovements
+      .map((m) => m.trackedEntityId)
+      .filter((id): id is string => Boolean(id))
+  );
+
   const [itemsResult, itemCostsResult] = await inOrder([
     () =>
       many(
@@ -5699,6 +5719,9 @@ export async function postNonconformance(
           locationId: movement.locationId ?? null,
           storageUnitId: null,
           trackedEntityId: movement.trackedEntityId ?? null,
+          projectId: movement.trackedEntityId
+            ? (entityStripes.get(movement.trackedEntityId) ?? null)
+            : null,
           entryType:
             movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
           documentType,

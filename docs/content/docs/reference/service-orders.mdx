@@ -1,0 +1,328 @@
+---
+title: Service orders
+description: Send a technician to a customer's unit, or refurbish a serial in stock. Charge time, parts and expenses to the work tree, decide who pays, and invoice the rest.
+---
+
+A **service order** sends a technician to one [customer asset](/docs/reference/customer-assets) at the customer's site, repairs a unit the customer sent back on an [RMA](/docs/reference/rmas), or refurbishes a serial you hold in stock. It holds a tree of work and collects every charge until you invoice it. Each charge decides on its own whether warranty, a contract or the customer pays.
+
+Open the **Service** module. It has **Service Orders**, **Schedule** and **My Visits**, then a **Setup** group with **Customer Assets** and **Service Templates**. **My Time** is in the user menu.
+
+<Screenshot label="A service order's Work tab with the element tree, Hours, Part Cost, Cost, Billable and Coverage columns, and the header buttons" caption="The work tree collects every charge on the order." />
+
+## The service order
+
+Click **Add Service Order** on the list, **Service Order** in the Create menu, or **New Service Order** on an asset. The **New Service Order** drawer opens. Carbon numbers the order `SVC…`. A unit can have only one open service order at a time.
+
+<FieldTable>
+  <Field name="Type" type="enum" required>**Field Visit** (a unit at a customer) or **Refurbishment** (a serial in your stock). See [Refurbishment](#refurbishment).</Field>
+  <Field name="Unit" type="reference" required>Field Visit only. The customer asset, found by serial. It must be "In Service". The unit sets the customer, the site, the item and the serial of the order.</Field>
+  <Field name="Service Location" type="reference" required>Your location that does the work.</Field>
+  <Field name="Item" type="reference" required>Refurbishment only. The serial-tracked item to refurbish.</Field>
+  <Field name="Serial" type="reference" required>Refurbishment only. A serial of the item that is Available or On Hold, with no open service order.</Field>
+  <Field name="Coverage Contract" type="reference">Field Visit only. A <Term>service contract</Term> of the unit's customer that pays for work outside warranty. If you leave it empty and the customer has exactly one Active service contract, Carbon uses that contract. A project contract never covers a service order.</Field>
+  <Field name="Priority" type="enum">Low, Medium, High or Urgent.</Field>
+  <Field name="Start Work From" type="enum">Where the first work tree comes from: **Empty**, **Service template**, **The unit's build history** or **The item's bill of materials**. See [the work tree](#the-work-tree).</Field>
+</FieldTable>
+
+A Field Visit also takes a **Contact**, and every order takes the **Problem**. **Coverage Contract**, **Priority** and **Start Work From** are under **More** in the drawer. The order has the tabs **Details**, **Work**, **Visits** and **Billing**. Its contact and site can change only while it is "Draft" or "Planned". Its coverage contract can change while the order is open, until a Contract charge has posted (see [Contract project](#contract-project)).
+
+## Status lifecycle
+
+<StatusFlow entity="serviceOrder">
+  <Status name="Draft">Not released yet. Its materials are not planning demand, and it takes no time, parts or expenses.</Status>
+  <Status name="Planned">Set with **Mark as Planned**. Its materials are [planning](/docs/reference/planning) demand and it takes charges. No visit is live.</Status>
+  <Status name="Scheduled">A visit is scheduled and none has started.</Status>
+  <Status name="In Progress">A visit is traveling or on site, or completed with work left.</Status>
+  <Status name="On Hold" branch>Set with **Put on Hold**. While on hold, its materials are not planning demand. **Resume** returns the order to its visits' status, or Planned.</Status>
+  <Status name="Completed" accent>The technician answered **Work complete?** with yes, or you clicked **Complete**. The order is ready to invoice.</Status>
+  <Status name="Closed">**Create Invoice** closes the order. With nothing left to bill, **Close** closes it.</Status>
+  <Status name="Cancelled" terminal>Set with **Cancel**. It also cancels the order's open visits.</Status>
+</StatusFlow>
+
+<Callout type="info" title="Visits drive the status.">
+You set Planned, On Hold, Completed, Closed and Cancelled. Carbon sets the rest from the visits, and cancelled visits do not count. Scheduling a visit on a Draft order makes it Scheduled. An order that has left Draft never goes back to it: with no live visit, it is Planned. **Reopen**, in the order's menu, returns a Completed order to its visits' status, or Planned.
+</Callout>
+
+You can cancel an order only when every charge on it is reversed. Deleting the Draft invoice of an order moves the order from Closed back to Completed, and its billable items back to Unbilled.
+
+## The work tree
+
+The **Work** tab holds the order's tree of **elements**. An element is a System or a Task. Click **Add Element**, or **Add Child Element** in an element's menu, to add one. You can delete an element that has no charges.
+
+**Start Work From** on the new order, or **Build Tree** on the Work tab, creates System elements from one source:
+
+- **The unit's build history:** the components recorded on the unit's serial. The new order keeps bought parts, because those are what service replaces.
+- **The item's bill of materials:** the item's made components.
+- **A service template:** every element of the template, with its planned materials, labor and other costs.
+
+The new order builds two levels from a serial or an item. **Build Tree** opens **Build from part**, where you choose the depth, the parent element and whether to include bought components, with a preview first.
+
+Click an element to open its drawer: the last service date of its serial or item, and its charges.
+
+**Fixed price.** In the element drawer, enter a **Fixed Price** to bill the element and the work under it as one line. Leave it empty to bill each item.
+
+## Charges
+
+Charge an element from its drawer or from the visit page. Each charge posts at once.
+
+- **Log Time** posts a timesheet entry on the order. Its billable item is priced at the service labor item's sale price.
+- **Issue Part** takes a part from stock, by default from your own van. It is priced at the part's sale price, and it is written to the asset's [installed components](/docs/reference/customer-assets#installed-components). A return reverses one whole issue.
+- **Add Expense** records a date, a description and an amount.
+
+To undo a time or expense charge, click **Reverse** on it in the element drawer. The **Reverse Charge** dialog needs a **Reason**. The reversal posts at once, at the same coverage as the charge. The charge's billable item is written off, or credited on the next invoice when it is already billed. Time is reversed as a timesheet correction to 0 hours. A part is returned with **Issue Part** instead.
+
+Service time shows read-only on **My Time** and never goes through **Submit week**.
+
+## Coverage
+
+Carbon decides the coverage of each charge when it posts, from the charge date:
+
+1. Time inside the asset's labor warranty is **Warranty**.
+2. A part inside the asset's parts warranty, or inside the warranty of the installed component on the element, is **Warranty**.
+3. An expense is never Warranty.
+4. Any other charge is **Contract** when the order has a coverage contract.
+5. Otherwise it is **Billable**.
+
+Every charge on a Refurbishment is **Capitalized**: it posts to Work in Progress and has no billable item. A field visit never creates this coverage.
+
+| Coverage | Cost posts to | Billable item |
+|---|---|---|
+| **Warranty** | Warranty Expense | price 0, "(Covered by warranty)" |
+| **Contract** | the contract's account, else Cost of Goods Sold | price 0, "(Covered by contract)" |
+| **Billable** | Cost of Goods Sold | the sale price |
+
+To change a coverage, click **Override** on a charge in the element drawer. The **Override Coverage** dialog needs a new coverage and a **Reason**. The cost moves to the new coverage's account. You cannot override a billed charge or a reversal.
+
+### Contract project
+
+When the coverage contract has a project, the order's work counts toward it:
+
+- Contract charges post to the contract project's account.
+- The project's **Costs** page lists the order under its elements, with hours, actual cost, billed and unbilled amounts. Its actual cost adds to the project total.
+- The contract's page has a **Service Orders** tab that lists every order the contract covers, with its cost.
+
+Changing the coverage contract moves the order to the new contract's project. Carbon refuses the change while a Contract charge stands, because that cost has already posted to the old contract's account. Override those charges to Billable or Warranty first. A Closed contract project takes no more Contract charges; On Hold and Work Complete still do.
+
+<Callout type="warn" title="Set Warranty Expense before the first warranty charge.">
+A warranty charge posts to the **Warranty Expense** account in **Accounting → Default Accounts**. Without it, the charge fails with "Set Warranty Expense in Account Defaults before you charge a service order".
+</Callout>
+
+## Billing and invoicing
+
+The **Billing** tab lists every billable item by element, with items on no element last under "Other charges". Review each **Unbilled** item from its row menu:
+
+- **Edit Price** changes the unit price.
+- **Hold** keeps the item off the invoice. **Release** returns it to Unbilled.
+- **Write Off** means the item is never billed. Its cost stays on the order. A reason is required.
+
+**Create Invoice** is on a Completed order that has an Unbilled item. It drafts a sales [invoice](/docs/reference/invoices) of the Unbilled items, laid out by the tree, and closes the order. The order's id becomes the customer reference.
+
+- **Itemized** (the default **Invoice Detail**): each top-level element is a heading, followed by one line per item.
+- **By Element**: one line per top-level element at its subtree total.
+- A fixed-price element is one line at its price. Its items follow at price 0, marked "Included in fixed price".
+- Covered items appear at price 0, marked as covered by warranty or by the contract.
+
+Tax on the draft is 0. The invoice does not move stock again: the part left stock when it was issued.
+
+**Print Estimate**, on the Work tab and in the order's menu, makes a PDF of the planned work at sale prices. Labor uses the service labor item's price.
+
+## Visits
+
+A visit sends one technician to the unit in a planned window. On the order's **Visits** tab, click **Schedule Visit** and choose the **Technician**, **Planned Start** and **Planned End**. You type the window in the company's time zone, whatever zone your browser is in. **Reschedule** moves a visit that is still Scheduled.
+
+<StatusFlow entity="serviceVisit">
+  <Status name="Scheduled">Planned. **Start Travel** or **Arrive** moves it on.</Status>
+  <Status name="Traveling">The technician clicked **Start Travel**. Carbon records the time.</Status>
+  <Status name="On Site" accent>The technician clicked **Arrive**. Carbon records the time.</Status>
+  <Status name="Completed">The technician clicked **Complete** and answered **Work complete?**</Status>
+  <Status name="Cancelled" terminal>**Cancel Visit**, from any open status.</Status>
+</StatusFlow>
+
+On **Work complete?**, **Yes, Work Complete** completes the order. **No, More Work** completes only the visit, and the order stays In Progress.
+
+**My Visits** is the technician's phone page: their visits for today and the next 7 days, with a map link. A visit opens a one-column page:
+
+- **Unit:** the item, serial, warranty badge and the last 3 orders.
+- **Work:** pick an element, then **Issue Part**, **Add Expense** or **Add Time**. **Start Work** starts a clock on the device, and **Stop Work** opens Log Time with the elapsed hours.
+- **Notes**, **Photos** and a **Signature** with the signer's name.
+
+**Schedule** shows 7 days of visits by day and technician, filtered to **Not done** by default. You schedule visits from the order, not from this page.
+
+## Depot Repair
+
+A **Depot Repair** order repairs a unit in your shop. You do not create it by hand: posting the receipt of an RMA line with the **Repair** disposition opens one Draft Depot Repair order per received serial. Click **Mark as Planned** when you start the repair, so its parts are planned and it takes charges. The order takes the RMA's customer, site and contact, and your receiving location. If the customer has exactly one Active contract, the order uses it as its coverage contract. See [Repair](/docs/reference/rmas#repair) for the RMA side.
+
+- The header shows the RMA, linked, and **At Depot** while the unit is in your shop. **View Return Order** is in the order's menu.
+- Charge the work tree as on a field visit. The order needs no visit, so **Complete** is the next step.
+- Once the order is Completed or Closed and the unit is still At Depot, **Ship Back** opens the RMA. Ship the unit from there.
+- Invoice the order, or **Close** it, as any service order.
+
+The order list has a **Type** column to filter Field Visit, Depot Repair and Refurbishment orders.
+
+## Refurbishment
+
+A **Refurbishment** order reworks a serial you own while it is in stock. Its labor, parts and expenses collect in Work in Progress. When you complete the order, that cost moves into the serial's own cost, so the unit later ships at its refurbished cost.
+
+1. Click **Add Service Order** and choose the **Type** Refurbishment.
+2. Choose the **Item** and the **Serial**. Carbon puts the serial **On Hold**, so nobody ships or picks it while the work runs.
+3. Charge the work tree as on any order. A part you issue is recorded in the serial's build history.
+4. Click **Complete**. A preview shows the work in progress, the unit cost before and after, the sale price cap and the write-down. Click **Complete** in the preview to post it.
+
+Cancelling the order sets the serial back to Available.
+
+The item's costing method decides where the cost goes:
+
+| Costing method | Effect of the completion |
+|---|---|
+| **FIFO** or **LIFO** | The serial gets its own cost layer at its old unit cost, and the work's cost is added to it. The other units keep their cost. |
+| **Average** | The cost is spread over every unit of the item: the average unit cost goes up. |
+| **Standard** | The cost posts to material variance. The serial stays at its standard cost. |
+
+**Sale price cap.** Under FIFO and LIFO, the serial's new cost cannot exceed what it will sell for. Enter an **Expected Selling Price** in the order's properties, or Carbon uses the item's sale price. The excess posts to inventory adjustment variance. If there is no price, the preview warns that the cost was not capped. A sale price per another unit of measure, or in another currency, is not used.
+
+**Abnormal Rework.** Turn it on in the order's properties for work that should never be part of the unit's cost, such as rework after damage. The cost then posts to material variance, and the serial keeps its cost.
+
+<Callout type="info" title="A completed refurbishment cannot be reopened.">
+Its cost is already in the serial. The expected selling price and Abnormal Rework can change only until the order is completed.
+</Callout>
+
+## Service templates
+
+A **service template** is a reusable work tree. Click **Add Service Template** and add elements. An element opens on its own page, where **Add plan line** in the **⋯** menu plans its materials, labor and other costs. An order started from a template copies its nodes and plan lines, so its estimate has prices.
+
+## Permissions
+
+Service uses its own `service` permissions: view, create, update and delete.
+
+- A technician without `service` update works only their own visits. They can move the visit, charge it, write notes and sign until it is Completed or Cancelled. They cannot override a coverage.
+- **Issue Part** also needs `inventory` update.
+- **Create Invoice** also needs `invoicing` create.
+
+## Settings
+
+- **Settings → Invoicing → Service Labor:** the **Service Labor Item**, a Service item whose sale price prices time on charges, estimates and invoices.
+- **Accounting → Default Accounts → Warranty Expense** (under Operating Expenses): the account for warranty charges.
+- **Labor Warranty (months)** and **Parts Warranty (months)** on the item's **Sales** tab. See [customer assets](/docs/reference/customer-assets).
+- **Van (default storage unit)** on the person's **Job**: where their service parts are issued from first. It must be at the job's location.
+
+## Related
+
+<Cards>
+  <Card title="Customer assets" href="/docs/reference/customer-assets">
+    The serial units that service orders work on, with their warranty and history.
+  </Card>
+  <Card title="Invoices" href="/docs/reference/invoices">
+    Post the Draft invoice that a service order creates.
+  </Card>
+  <Card title="RMAs" href="/docs/reference/rmas">
+    Receive a unit for repair and ship it back.
+  </Card>
+  <Card title="Contracts" href="/docs/reference/contracts">
+    Customer contracts that pay for work outside warranty.
+  </Card>
+  <Card title="Permissions" href="/docs/reference/permissions">
+    Grant the service permissions to dispatchers and technicians.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "A field visit needs a unit in service. This unit is …"
+The chosen customer asset is not In Service (for example, Returned after its shipment was voided). Only an In Service asset can get a service order.
+
+### A unit cannot get a second service order
+A serial can have only one open service order (any status other than Closed or Cancelled). Close or cancel the open one first.
+
+### "1 charge of this order is covered by the contract and has posted to its account. Override the coverage of each Contract charge to Billable or Warranty first, then change the contract."
+A Contract charge has posted to the old contract project's account. Click **Override** on each Contract charge in the element drawer, then change the coverage contract.
+
+### "The contract project … is closed. Change the coverage to Billable, or reopen the contract project."
+The coverage contract's project is Closed, so it takes no more cost. Override the charge to Billable, or reopen the contract project in Projects.
+
+### "The coverage contract is not one of this customer's contracts"
+The Coverage Contract belongs to another customer. Pick one of the unit's customer's contracts, or leave it empty.
+
+### "This service order has 2 charges that are not reversed. Reverse every charge before you cancel the order, or complete the order and write off its billable items."
+At least one charge on the order still stands. Return each part with **Issue Part** and **Return to stock**. Reverse each time and expense charge with **Reverse** in its element drawer. Then cancel. A coverage override does not reverse a charge: it moves the cost to a new charge.
+
+### "This charge is already reversed" / "Only time and expenses are reversed here. Return a part with Issue Part."
+**Reverse** applies only to a time or expense charge that is not a reversal and that no later charge reverses. A part charge is returned with **Issue Part**.
+
+### "You can reverse only the charges of your own visit"
+The user lacks service_update, so they can reverse only the charges of their own open visit. Grant service_update, or have the visit's technician do it.
+
+### "Set Warranty Expense in Account Defaults before you charge a service order"
+The company has no Warranty Expense account default. Set it in Accounting → Default Accounts (Operating Expenses group). The same message names Cost of Goods Sold or Work in Progress when those defaults are missing.
+
+### "The time is logged but did not post: ..." / "The expense is saved but did not post: ..." / "The reversal is saved but did not post: ..."
+The entry was saved but posting failed; the text after the colon is the posting error (often a missing account default or a closed accounting period). For a reversal, fix the cause and click **Reverse** again: Carbon posts the saved reversal and does not write a second one.
+
+### "Return the whole quantity of one issue" / "No open issue of this part to this node matches the return"
+A service part return reverses exactly one earlier issue of the same item (and serial or batch) to the same element. Partial returns are refused.
+
+### "You can charge only your own visits" / "This visit belongs to another technician" / "A completed visit takes no changes" / "A cancelled visit takes no changes"
+The user lacks service_update, so they can only charge, sign, write notes on, or move their own open visit. Grant service_update, or have the visit's technician do it.
+
+### "You do not have permission to change a coverage"
+Coverage overrides need service_update.
+
+### "This charge is already reversed or reclassed" / "The charge is already invoiced. Credit the invoice first."
+Override applies only to an original charge that is not reversed, not reclassed and not Billed.
+
+### "A refurbishment needs a serial in stock. Serial … is …" / "Serial … already has an open service order, …" / "A refurbishment needs a serial-tracked item"
+A Refurbishment needs a serial of a serial-tracked item that is Available or On Hold, with no open service order. A Consumed (shipped) serial is a customer asset: open a Field Visit instead.
+
+### "Serial … is under refurbishment on …. Complete the order first."
+A shipment or a serial pick names a serial with an open Refurbishment order. Complete or cancel the order first.
+
+### "Complete a refurbishment from its order, so its cost moves to the serial" / "A completed refurbishment cannot be reopened: its cost is already in the serial" / "A completed refurbishment cannot change: its cost is already in the serial"
+A Refurbishment completes only through **Complete** in its header, which posts the cost. A visit's Work complete? does not complete it, and Reopen is not available after completion.
+
+### "No open cost layer holds this serial. Correct the item's stock before you complete the refurbishment."
+Under FIFO or LIFO the serial needs its own open cost layer, or an open layer of the item without a serial, to split from. Fix the item's stock (for example with an inventory adjustment), then complete.
+
+### "No sale price; the cost was not capped" / "The sale price is per …, not per …; the cost was not capped" / "The sale price is in …, not …; the cost was not capped"
+A warning, not a refusal: the completion posted without a cap. Set the order's Expected Selling Price to cap the cost.
+
+### "Only a refurbishment charge is Capitalized, and it stays Capitalized"
+Overrides cannot move a charge to or from Capitalized.
+
+### "Service order … is …. Only a Completed order is invoiced." / "Service order … has no unbilled charge. Close it instead."
+Create Invoice needs a Completed order with at least one Unbilled billable item. With none, use Close.
+
+### "Only an unbilled item can change"
+Edit Price, Hold and Write Off apply only to Unbilled or On Hold items; a reversal row takes no action.
+
+### "Choose a service item"
+The Service Labor Item in Settings → Invoicing must be an item of type Service.
+
+### "The van must be a storage unit at the job's location"
+The Van on the person's Job tab must be a storage unit at the job's location.
+
+### Labor bills at 0
+The Service Labor Item is not set in Settings → Invoicing, or it has no sale price.
+
+### Log Time / Start Work is disabled
+The company has no labor category.
+
+### Create Invoice is missing from the order header
+The order is not Completed, it has no Unbilled item (then Close shows instead), or the user lacks service_update or invoicing_create.
+
+### Issue Part is disabled
+The user lacks inventory_update.
+
+## Internals
+- Each service order owns a Service project (projectType Service, costTreatment By Coverage, identifier = the order's readable id). Its elements are the work tree's elements (the UI said "nodes" before; the invoice detail enum value `By Node` shows as "By Element"). Service projects are hidden from the Projects module, charge number pickers and dimension pickers.
+- Readable id: sequence serviceOrder, prefix SVC, size 6 (SVC000001). Order types in the enum: Field Visit, Depot Repair, Refurbishment. The New form creates Field Visit and Refurbishment; the receipt of an RMA Repair line creates Depot Repair orders (`serviceOrder.salesReturnOrderLineId`, CHECK `serviceOrder_depot_check`; `createDepotRepairOrders` in `inventory/receipt-repair.ts`). A Refurbishment has no customer (CHECK `serviceOrder_customer_check`).
+- Refurbishment completion: the complete-service-order posting (`completeServiceOrder` in `service.service.ts`; `refurbishment-completion-load.ts` reads, `refurbishment-completion-plan.ts` plans). FIFO/LIFO split one unit from the layer calculateCOGS takes next and add a 'Revaluation' child of the WIP; Average adds the child and re-averages itemCost.unitCost; Standard and Abnormal Rework post Dr Material Variance / Cr WIP; a write-down over the cap posts Dr Inventory Adjustment Variance / Cr inventory. The journal's source type is Service Order. The order stores capitalizedAmount, writeDownAmount, completionJournalId and completionCostingMethod. The preview route is `/x/service-order/<id>/complete` (loader only).
+- Status roll-up: rollUpOrderStatus (service.models.ts); allowed moves canMoveServiceOrder and canMoveVisit; saved by syncServiceOrderStatus (service.service.ts), which also sets the project status (Draft → Draft, On Hold → On Hold, Completed → Technically Complete, Closed/Cancelled → Closed, else Released). A Released Service project's plan-line materials are MRP demand (openProjectMaterialLines), due at the next unfinished visit when the line has no date.
+- Coverage: resolveCoverage (packages/utils/src/service-coverage.ts). Capitalized charges post to Work in Progress and create no billable item.
+- Charges: route service-order+/$id.charge.tsx with intent time / part / expense / reclass / reverse (reverseServiceCharge: a timesheet correction to 0 hours, or a projectExpenseEntry with reversalOfId and reversalReason); postings post-timesheet, post-project-issue, post-project-expense, reclass-project-coverage. Time posts Dr coverage account / Cr Labor Absorption ("Service Labor"); expenses Dr coverage account / Cr GR/IR ("Service Expense"); parts "Service Material". All carry the Customer dimension.
+- Invoice: the create-service-order-invoice posting (layout in `service/service-invoice-plan.ts`). post-sales-invoice skips stock and COGS on lines stamped by billable items. Deleting the Draft invoice runs releaseServiceOrderStamps.
+- The Start Work clock is stored in the browser's localStorage (key `carbon:service-work:<visitId>`); clearing storage or switching devices loses a running clock.
+- Visit photos: private bucket `${companyId}/service/${orderId}/${visitId}/`; signature `signature.png` in the same folder (PNG, at most 2 MB).
+- Estimate PDF: `/file/service-estimate/<id>.pdf` (ServiceEstimatePDF); not in the document template customizer.
+- Contract project (Phase D): `project.parentProjectId` of the order's Service project is the coverage contract's `customerContract.projectId`, kept in step by updateServiceOrderCoverageContract (service.service.ts; refused while a Contract ledger row stands, `openChargeIds`). RPC `get_child_service_project_costs(p_project_id, p_company_id)` returns one row per child Service project's order (actual, posted hours, billed, unbilled); the project Costs tab and the contract's Service Orders tab (`/x/contract/<id>/service-orders`) read it. `resolveProjectPostingAccount` refuses a Contract charge on a Closed parent.
+- Routes: list `/x/service-orders`, order `/x/service-order/<id>`, visit `/x/service-order/<id>/visits/<visitId>`, My Visits `/x/service-orders/my-visits`, Schedule `/x/service-orders/schedule`, templates `/x/service-orders/templates`.
+</AgentContext>

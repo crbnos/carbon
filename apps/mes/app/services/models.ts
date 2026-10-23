@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -487,4 +488,39 @@ export const inspectionGaugeValidator = z.object({
 export const setClockOutValidator = z.object({
   intent: z.literal("clockOut"),
   clockOut: z.string().min(1, { message: "Clock out is required" })
+});
+
+type RdActivityRole = Database["public"]["Enums"]["rdActivityRole"];
+
+/** One cell of the MES timesheet. Zero hours deletes the Draft entry. */
+export const timesheetCellValidator = z.object({
+  entryDate: z.string().min(1, { message: "Date is required" }),
+  projectId: z.string().min(1, { message: "Project is required" }),
+  projectElementId: zfd.text(z.string().optional()),
+  laborCategoryId: z.string().min(1, { message: "Labor category is required" }),
+  hours: zfd.numeric(
+    z
+      .number()
+      .min(0, { message: "Hours cannot be negative" })
+      .max(24, { message: "A day has 24 hours" })
+  ),
+  // DCAA mode: the reason for a late entry, and for a change to a saved one,
+  // as in the ERP's cell validator.
+  lateReason: zfd.text(z.string().trim().optional()),
+  reason: zfd.text(z.string().trim().optional()),
+  // R&D tax: the row's work location and research role, part of the cell's
+  // key. A field that is not sent takes its default in save-timesheet-entry;
+  // an empty one is none.
+  workLocationId: z.string().optional(),
+  rdActivityRole: z
+    .union([
+      z.enum([
+        "Direct Research",
+        "Direct Supervision",
+        "Direct Support",
+        "Not Qualified"
+      ] satisfies [RdActivityRole, ...RdActivityRole[]]),
+      z.literal("")
+    ])
+    .optional()
 });

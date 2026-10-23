@@ -118,7 +118,8 @@
     "./GeneratedAvatar": "./src/GeneratedAvatar.tsx",
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts",
-    "./VariableText": "./src/VariableText/index.ts"
+    "./VariableText": "./src/VariableText/index.ts",
+    "./WeekHours": "./src/WeekHours/index.ts"
   },
   "peerDependencies": {
     "@internationalized/date": "catalog:",

@@ -10,7 +10,10 @@ import {
   getLegacyDocumentCounts,
   hasLegacyDocuments
 } from "@carbon/database/accounting-cutover-reads";
+import { burdenSettingsValidator } from "@carbon/ee/indirect-rates";
+import { getBurdenSettings } from "@carbon/ee/indirect-rates.server";
 import { ValidatedForm, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
   Alert,
@@ -45,10 +48,13 @@ import {
   Submit
 } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
+import { UpgradeOverlayRow } from "~/components/UpgradeOverlay";
 import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { useResolved } from "~/hooks/useResolved";
 import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import BurdenSettingsForm from "~/modules/accounting/ui/IndirectRates/BurdenSettingsForm.ee";
 import { settingsToggle } from "~/modules/settings/settings.models";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -56,6 +62,8 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const JOURNAL_LEGACY_INTENT = "journal-legacy";
+
+const logger = getLogger("erp", "accounting-settings");
 
 const taxDepreciationSettingsValidator = z.object({
   intent: z.literal("assetTaxDepreciation"),
@@ -107,10 +115,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const [companySettings, accountDefaults] = await Promise.all([
+  const [companySettings, accountDefaults, burdenSettings] = await Promise.all([
     getCompanySettings(client, companyId),
-    getDefaultAccounts(client, companyId)
+    getDefaultAccounts(client, companyId),
+    getBurdenSettings(client, companyId)
   ]);
+  if (burdenSettings.error) {
+    logger.error("Failed to load the burden settings", {
+      companyId,
+      error: burdenSettings.error
+    });
+  }
 
   if (!companySettings.data)
     throw redirect(
@@ -135,6 +150,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     companySettings: companySettings.data,
     accountDefaults: accountDefaults.data,
+    burdenSettings: {
+      burdenRateType: (burdenSettings.data?.burdenRateType === "Actual"
+        ? "Actual"
+        : "Provisional") as "Provisional" | "Actual",
+      postAppliedBurden: burdenSettings.data?.postAppliedBurden ?? false
+    },
     legacyDocumentsExist: hasLegacy,
     legacyDocumentCount:
       hasLegacy && cutoverDate
@@ -165,7 +186,11 @@ const accountingSettingsForm = z.discriminatedUnion("intent", [
   taxDepreciationSettingsValidator.transform(({ intent: _, ...tax }) => ({
     ...tax,
     assetTaxDepreciationEnabled: true
-  }))
+  })),
+  // Government contracting (indirect rates): `updateBurdenSettings`.
+  burdenSettingsValidator
+    .extend({ intent: z.literal("burdenSettings") })
+    .transform(({ intent: _, ...burden }) => ({ burden }))
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -175,6 +200,9 @@ export async function action(args: ActionFunctionArgs) {
   if ("writeMissingJournals" in input.data) {
     return api.settings.writeMissingJournals({});
   }
+  if ("burden" in input.data) {
+    return api.accounting.updateBurdenSettings(input.data.burden);
+  }
   return api.settings.updateAccountingSettings(input.data);
 }
 
@@ -182,9 +210,13 @@ export default function AccountingSettingsRoute() {
   const {
     companySettings,
     accountDefaults,
+    burdenSettings,
     legacyDocumentsExist,
     legacyDocumentCount: legacyDocumentCountPromise
   } = useLoaderData<typeof loader>();
+  const { isGated: governmentContractingGated } = usePlanGate({
+    feature: "GOVERNMENT_CONTRACTING"
+  });
   const legacyDocumentCount = useResolved(legacyDocumentCountPromise, null);
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -200,7 +232,8 @@ export default function AccountingSettingsRoute() {
   });
   const fetcher = useAction<typeof action>({
     onSuccess: ({ data }) => {
-      if (!data || "documents" in data) return;
+      // The burden settings card toasts its own result.
+      if (!data || "documents" in data || "success" in data) return;
       toast.success(
         data.showCurrencyTrailingZeros !== undefined
           ? t`Currency display updated`
@@ -555,6 +588,20 @@ export default function AccountingSettingsRoute() {
             )}
           </Card>
         </ValidatedForm>
+
+        {governmentContractingGated ? (
+          <UpgradeOverlayRow
+            title={<Trans>Burden Settings</Trans>}
+            plan={<Trans>Business</Trans>}
+          />
+        ) : (
+          <BurdenSettingsForm
+            key={`${burdenSettings.burdenRateType}:${burdenSettings.postAppliedBurden}`}
+            initialValues={burdenSettings}
+            action={path.to.accountingSettings}
+            isDisabled={!permissions.can("update", "settings")}
+          />
+        )}
       </SettingsPage>
     </ScrollArea>
   );

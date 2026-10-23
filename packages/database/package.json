@@ -28,6 +28,7 @@
     "./rows": "./src/rows.ts",
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
+    "./mrp-netting-sequence": "./src/mrp-netting-sequence.ts",
     "./supersession-pick": "./src/supersession-pick.ts",
     "./account-import": "./src/account-import.ts",
     "./account-import-reads": "./src/account-import-reads.ts",
@@ -61,6 +62,8 @@
     "./dataset-assets": "./src/datasets/assets.ts",
     "./dataset-rule-fields": "./src/datasets/rule-fields.ts",
     "./precision": "./src/precision.ts",
+    "./project-plan": "./src/project-plan.ts",
+    "./change-notice": "./src/change-notice.ts",
     "./accounting-currency": "./src/accounting-currency.ts",
     "./accounting-posting": "./src/accounting-posting.ts",
     "./journal-posting-status": "./src/journal-posting-status.ts",
@@ -72,7 +75,8 @@
     "./sales-posting-amounts": "./src/sales-posting-amounts.ts",
     "./ledger": "./src/ledger.ts",
     "./deposit-scope": "./src/deposit-scope.ts",
-    "./payment-processor-fee": "./src/payment-processor-fee.ts"
+    "./payment-processor-fee": "./src/payment-processor-fee.ts",
+    "./timesheet-readiness": "./src/timesheet-readiness.ts"
   },
   "private": true,
   "scripts": {

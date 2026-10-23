@@ -150,6 +150,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updatePartUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
+    companyId,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -190,6 +191,8 @@ export default function PartSalesRoute() {
 
   const initialValues = {
     ...partUnitSalePrice,
+    laborWarrantyMonths: partUnitSalePrice?.laborWarrantyMonths ?? undefined,
+    partsWarrantyMonths: partUnitSalePrice?.partsWarrantyMonths ?? undefined,
     salesUnitOfMeasureCode: partUnitSalePrice?.salesUnitOfMeasureCode ?? "",
     ...getCustomFields(partUnitSalePrice.customFields),
     itemId: itemId

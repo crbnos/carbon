@@ -7,7 +7,11 @@ import {
   actionsOfTypes,
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
-  resolvePlanningActionScope
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey,
+  planningSegmentFilter,
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope
 } from "../app/modules/production/ui/Planning/planning-action-scope";
 
 describe("resolvePlanningActionScope", () => {
@@ -141,5 +145,48 @@ describe("actionsOfTypes", () => {
 
   it("returns nothing when the row has no action of the filtered type", () => {
     expect(actionsOfTypes(actions, ["Order"])).toEqual([]);
+  });
+});
+
+describe("resolvePlanningSegmentScope", () => {
+  it("turns the Segment filter into segment ids, Common as ''", () => {
+    const filters = [
+      { column: "type", operator: "eq", value: "Part" },
+      { column: PLANNING_SEGMENT_COLUMN, operator: "in", value: "common,prj_1" }
+    ];
+    expect(resolvePlanningSegmentScope({ filters })).toEqual({
+      gridFilters: [{ column: "type", operator: "eq", value: "Part" }],
+      segments: ["", "prj_1"]
+    });
+  });
+
+  it("keeps every segment without the filter", () => {
+    expect(resolvePlanningSegmentScope({ filters: [] }).segments).toBe(
+      undefined
+    );
+  });
+});
+
+describe("planningSegmentFilter", () => {
+  // an `in` list cannot hold the empty string, so Common is `eq.""`
+  it("matches Common with eq and the projects with in", () => {
+    expect(planningSegmentFilter(["", "prj_1", "prj_2"])).toBe(
+      'planningSegmentId.eq."",planningSegmentId.in.(prj_1,prj_2)'
+    );
+    expect(planningSegmentFilter([""])).toBe('planningSegmentId.eq.""');
+    expect(planningSegmentFilter(["prj_1"])).toBe(
+      "planningSegmentId.in.(prj_1)"
+    );
+  });
+});
+
+describe("planningRowKey", () => {
+  it("tells an item's common row from its project row", () => {
+    expect(planningRowKey({ id: "i1", planningSegmentId: "" })).not.toBe(
+      planningRowKey({ id: "i1", planningSegmentId: "prj_1" })
+    );
+    expect(planningRowKey({ id: "i1" })).toBe(
+      planningRowKey({ id: "i1", planningSegmentId: "" })
+    );
   });
 });

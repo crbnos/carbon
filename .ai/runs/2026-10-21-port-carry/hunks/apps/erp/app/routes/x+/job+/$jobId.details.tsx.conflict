@@ -1,0 +1,652 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  cn,
+  HStack,
+  Spinner,
+  useMount,
+  VStack
+} from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import { sql } from "kysely";
+import { Suspense } from "react";
+import { LuShoppingCart } from "react-icons/lu";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
+import {
+  CadModel,
+  DeferredFiles,
+  Hyperlink,
+  SupplierAvatar
+} from "~/components";
+import { usePanels } from "~/components/Layout";
+import { usePermissions, useRouteData } from "~/hooks";
+import {
+  JOB_LOCKED_MESSAGE,
+  jobValidator
+} from "~/modules/production/production.models";
+import {
+  getJob,
+  getJobDocumentsWithItemId,
+  getJobMakeMethodById,
+  getJobMaterialsByMethodId,
+  getJobOperationsByMethodId,
+  getJobPurchaseOrderLines,
+  getProductionDataByOperations,
+  getRootMakeMethod
+} from "~/modules/production/production.service";
+import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
+import {
+  JobBillOfMaterial,
+  JobBillOfProcess,
+  JobDocuments,
+  JobEstimatesVsActuals,
+  JobNotes,
+  JobRiskRegister
+} from "~/modules/production/ui/Jobs";
+import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
+import {
+  chargeNumberError,
+  checkProjectBudget
+} from "~/modules/projects/projects.server";
+import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
+import {
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
+import { useItems } from "~/stores";
+import type { StorageItem } from "~/types";
+import { setCustomFields } from "~/utils/form";
+import { path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "production",
+    bypassRls: true
+  });
+
+  const { jobId } = params;
+  if (!jobId) throw new Error("Could not find jobId");
+
+  // `client` is the service role (bypassRls) and every read keys on the URL id,
+  // so the job must be this company's. The check runs beside the reads it
+  // guards, not before them: it rejects the whole batch, and nothing read here
+  // is returned unless it passes.
+  const [, job, rootMethod, tags] = await Promise.all([
+    requireCompanyRecord(client, "job", companyId, { id: jobId }),
+    getJob(client, jobId),
+    getRootMakeMethod(client, jobId, companyId),
+    getTagsList(client, companyId, "operation")
+  ]);
+  if (job.error) {
+    throw redirect(
+      path.to.jobs,
+      await flash(request, error(job.error, "Failed to load job"))
+    );
+  }
+
+  if (rootMethod.error) {
+    return {
+      notes: (job.data?.notes ?? {}) as JSONContent,
+      purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+      materials: [],
+      operations: [],
+      makeMethod: null,
+      files: Promise.resolve([] as StorageItem[]),
+      productionData: Promise.resolve({
+        quantities: [],
+        events: [],
+        notes: []
+      }),
+      tags: []
+    };
+  }
+
+  const methodId = rootMethod.data.id;
+
+  const [materials, operations, makeMethod] = await Promise.all([
+    getJobMaterialsByMethodId(client, methodId),
+    getJobOperationsByMethodId(client, methodId),
+    getJobMakeMethodById(client, methodId, companyId)
+  ]);
+
+  return {
+    notes: (job.data?.notes ?? {}) as JSONContent,
+    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+    materials:
+      materials?.data?.map((m) => ({
+        ...m,
+        itemType: m.itemType as "Part",
+        unitOfMeasureCode: m.unitOfMeasureCode ?? "",
+        jobOperationId: m.jobOperationId ?? undefined
+      })) ?? [],
+    operations:
+      operations.data?.map((o) => ({
+        ...o,
+        description: o.description ?? "",
+        workCenterId: o.workCenterId ?? undefined,
+        laborRate: o.laborRate ?? 0,
+        machineRate: o.machineRate ?? 0,
+        operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
+        jobMakeMethodId: o.jobMakeMethodId ?? methodId,
+        workInstruction: o.workInstruction as JSONContent
+      })) ?? [],
+    makeMethod: makeMethod.data ?? null,
+    files: getJobDocumentsWithItemId(
+      client,
+      companyId,
+      job.data,
+      rootMethod.data.itemId
+    ),
+    productionData: getProductionDataByOperations(
+      client,
+      operations?.data?.map((o) => o.id) ?? []
+    ),
+    tags: tags.data ?? []
+  };
+}
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(jobValidator).request(args, {
+    params: ["jobId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { jobId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.production.updateJobDetails({
+    ...input.data,
+    id: jobId,
+    customFields: setCustomFields(input.formData ?? new FormData())
+  });
+  // The item cannot complete to the job's asset: say so on the item field.
+  if (
+    result.error?.category === "rule" &&
+    result.error.message !== JOB_LOCKED_MESSAGE
+  ) {
+    return validationError({ fieldErrors: { itemId: result.error.message } });
+  }
+  return respond(args.request, result).redirect(path.to.job(jobId), {
+    message: "Updated job"
+  });
+<<<<<<< HEAD
+
+  const formData = await request.formData();
+  const validation = await validator(jobValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  // The asset target ids come from the form: prove they are this company's
+  // before the job points at them. The service role, since a production user
+  // may not hold accounting view and RLS would read their own class as absent.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    validation.data.fixedAssetClassId
+      ? requireCompanyRecord(serviceRole, "fixedAssetClass", companyId, {
+          id: validation.data.fixedAssetClassId
+        })
+      : null,
+    validation.data.fixedAssetId
+      ? requireCompanyRecord(serviceRole, "fixedAsset", companyId, {
+          id: validation.data.fixedAssetId
+        })
+      : null
+  ]);
+
+  const chargeError = await chargeNumberError(
+    serviceRole,
+    companyId,
+    validation.data
+  );
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
+
+  // The same Make to Asset item rule the job form, release and completion
+  // apply, so a saved target or item is refused with the field it is about.
+  if (validation.data.fixedAssetClassId || validation.data.fixedAssetId) {
+    const item = await client
+      .from("item")
+      .select("itemTrackingType")
+      .eq("id", validation.data.itemId)
+      .eq("companyId", companyId)
+      .single();
+    const itemError = makeToAssetItemError({
+      ...validation.data,
+      itemTrackingType: item.data?.itemTrackingType
+    });
+    if (itemError) {
+      return validationError({ fieldErrors: { itemId: itemError } });
+    }
+  }
+
+  // Budget control (Government Contracting 5c, C4 and C5). Only a job that
+  // consumes to its project is checked. Its new amount is quantity × the
+  // item's unit cost less the job's cost already in the project ledger, which
+  // the check counts as actual cost. Burden rows are left out, as in the check
+  // (C3). Block refuses the save; Warn saves and flashes the overrun.
+  let budgetNote = "";
+  if (validation.data.consumeToProject && validation.data.projectId) {
+    const db = getDatabaseClient();
+    const [cost, posted] = await Promise.all([
+      db
+        .selectFrom("itemCost")
+        .select("unitCost")
+        .where("itemId", "=", validation.data.itemId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      db
+        .selectFrom("projectLedger")
+        .select(sql<number>`COALESCE(SUM("amount"), 0)`.as("amount"))
+        .where("companyId", "=", companyId)
+        .where("jobId", "=", id)
+        .where("costType", "!=", "Burden")
+        .executeTakeFirst()
+    ]);
+    const budget = await checkProjectBudget(db, client, {
+      companyId,
+      source: "job",
+      charges: [
+        {
+          projectId: validation.data.projectId,
+          projectElementId: validation.data.projectElementId || null,
+          amount: Math.max(
+            0,
+            (validation.data.quantity ?? 0) * Number(cost?.unitCost ?? 0) -
+              Number(posted?.amount ?? 0)
+          )
+        }
+      ]
+    });
+    if (budget.status === "block") {
+      return validationError({ fieldErrors: { quantity: budget.message } });
+    }
+    if (budget.status === "warn") budgetNote = `. ${budget.message}`;
+  }
+
+  const result = await updateJob(client, {
+    id,
+    companyId,
+    quantity: validation.data.quantity,
+    scrapQuantity: validation.data.scrapQuantity,
+    itemId: validation.data.itemId,
+    dueDate: validation.data.dueDate || null,
+    startDate: validation.data.startDate || null,
+    deadlineType: validation.data.deadlineType,
+    locationId: validation.data.locationId,
+    unitOfMeasureCode: validation.data.unitOfMeasureCode,
+    customerId: validation.data.customerId || null,
+    modelUploadId: validation.data.modelUploadId || null,
+    fixedAssetClassId: validation.data.fixedAssetClassId || null,
+    fixedAssetId: validation.data.fixedAssetId || null,
+    projectId: validation.data.projectId || null,
+    projectElementId: validation.data.projectElementId || null,
+    consumeToProject: validation.data.consumeToProject,
+    receiveToProjectStock: validation.data.receiveToProjectStock,
+    customFields: setCustomFields(formData),
+    updatedBy: userId
+  });
+  if (result.error) {
+    throw redirect(
+      path.to.job(id),
+      await flash(request, error(result.error, "Failed to update job"))
+    );
+  }
+
+  const recalculate = await recalculateJobRequirements(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      id,
+      companyId,
+      userId
+    }
+  );
+  if (recalculate.error) {
+    throw redirect(
+      path.to.job(id),
+      await flash(
+        request,
+        error(recalculate.error, "Failed to recalculate job requirements")
+      )
+    );
+  }
+
+  throw redirect(
+    path.to.job(id),
+    await flash(request, success(`Updated job${budgetNote}`))
+  );
+||||||| 23bd5d6e0b
+
+  const formData = await request.formData();
+  const validation = await validator(jobValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  // The asset target ids come from the form: prove they are this company's
+  // before the job points at them. The service role, since a production user
+  // may not hold accounting view and RLS would read their own class as absent.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    validation.data.fixedAssetClassId
+      ? requireCompanyRecord(serviceRole, "fixedAssetClass", companyId, {
+          id: validation.data.fixedAssetClassId
+        })
+      : null,
+    validation.data.fixedAssetId
+      ? requireCompanyRecord(serviceRole, "fixedAsset", companyId, {
+          id: validation.data.fixedAssetId
+        })
+      : null
+  ]);
+
+  // The same Make to Asset item rule the job form, release and completion
+  // apply, so a saved target or item is refused with the field it is about.
+  if (validation.data.fixedAssetClassId || validation.data.fixedAssetId) {
+    const item = await client
+      .from("item")
+      .select("itemTrackingType")
+      .eq("id", validation.data.itemId)
+      .eq("companyId", companyId)
+      .single();
+    const itemError = makeToAssetItemError({
+      ...validation.data,
+      itemTrackingType: item.data?.itemTrackingType
+    });
+    if (itemError) {
+      return validationError({ fieldErrors: { itemId: itemError } });
+    }
+  }
+
+  const result = await updateJob(client, {
+    id,
+    companyId,
+    quantity: validation.data.quantity,
+    scrapQuantity: validation.data.scrapQuantity,
+    itemId: validation.data.itemId,
+    dueDate: validation.data.dueDate || null,
+    startDate: validation.data.startDate || null,
+    deadlineType: validation.data.deadlineType,
+    locationId: validation.data.locationId,
+    unitOfMeasureCode: validation.data.unitOfMeasureCode,
+    customerId: validation.data.customerId || null,
+    modelUploadId: validation.data.modelUploadId || null,
+    fixedAssetClassId: validation.data.fixedAssetClassId || null,
+    fixedAssetId: validation.data.fixedAssetId || null,
+    customFields: setCustomFields(formData),
+    updatedBy: userId
+  });
+  if (result.error) {
+    throw redirect(
+      path.to.job(id),
+      await flash(request, error(result.error, "Failed to update job"))
+    );
+  }
+
+  const recalculate = await recalculateJobRequirements(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    {
+      id,
+      companyId,
+      userId
+    }
+  );
+  if (recalculate.error) {
+    throw redirect(
+      path.to.job(id),
+      await flash(
+        request,
+        error(recalculate.error, "Failed to recalculate job requirements")
+      )
+    );
+  }
+
+  throw redirect(path.to.job(id), await flash(request, success("Updated job")));
+=======
+>>>>>>> 0a1bd961b2
+}
+
+export default function JobDetailsRoute() {
+  const {
+    notes,
+    purchaseOrderLines,
+    materials,
+    operations,
+    makeMethod,
+    productionData,
+    tags,
+    files
+  } = useLoaderData<typeof loader>();
+  const { jobId } = useParams();
+  if (!jobId) throw new Error("Could not find jobId");
+  const permissions = usePermissions();
+
+  const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
+
+  useMount(() => {
+    if (isExplorerCollapsed) {
+      setIsExplorerCollapsed(false);
+    }
+  });
+
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
+
+  if (!jobData) throw new Error("Could not find job data");
+
+  const methodId = makeMethod?.id;
+
+  return (
+    <div className="h-full w-full items-start overflow-y-auto scrollbar-hide">
+      <VStack spacing={4} className="p-4">
+        <JobMakeMethodTools makeMethod={makeMethod ?? undefined} />
+
+        <JobNotes
+          id={jobId}
+          title={jobData?.job.jobId ?? ""}
+          subTitle={jobData?.job.itemReadableIdWithRevision ?? ""}
+          notes={notes}
+        />
+
+        {methodId && (
+          <>
+            <JobBillOfProcess
+              key={`bop:${methodId}`}
+              jobMakeMethodId={methodId}
+              materials={materials}
+              // @ts-expect-error
+              operations={operations}
+              locationId={jobData?.job?.locationId ?? ""}
+              tags={tags}
+              itemId={makeMethod.itemId}
+              salesOrderLineId={jobData?.job.salesOrderLineId ?? ""}
+              customerId={jobData?.job.customerId ?? ""}
+            />
+            <JobBillOfMaterial
+              key={`bom:${methodId}`}
+              jobMakeMethodId={methodId}
+              // @ts-expect-error
+              materials={materials}
+              // @ts-expect-error
+              operations={operations}
+            />
+          </>
+        )}
+        <Suspense>
+          <Await resolve={purchaseOrderLines}>
+            {(purchaseOrderLines) => (
+              <JobPurchaseOrderLines
+                purchaseOrderLines={purchaseOrderLines.data ?? []}
+              />
+            )}
+          </Await>
+        </Suspense>
+
+        <Suspense
+          fallback={
+            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[200px]">
+              <Spinner className="h-10 w-10" />
+            </div>
+          }
+        >
+          <Await resolve={productionData}>
+            {(resolvedProductionData) => (
+              <JobEstimatesVsActuals
+                materials={materials ?? []}
+                // @ts-expect-error
+                operations={operations}
+                productionEvents={resolvedProductionData.events}
+                productionQuantities={resolvedProductionData.quantities}
+                notes={resolvedProductionData.notes}
+              />
+            )}
+          </Await>
+        </Suspense>
+
+        <DeferredFiles resolve={files}>
+          {(resolvedFiles) => (
+            <JobDocuments
+              files={resolvedFiles}
+              jobId={jobData.job.id ?? ""}
+              bucket="parts"
+              itemId={makeMethod?.itemId ?? jobData.job.itemId}
+              modelUpload={{ ...jobData.job }}
+            />
+          )}
+        </DeferredFiles>
+
+        <CadModel
+          isReadOnly={!permissions.can("update", "production")}
+          metadata={{
+            jobId: jobData?.job?.id ?? undefined,
+            itemId: jobData?.job?.itemId ?? undefined
+          }}
+          modelUpload={jobData?.job ?? null}
+          title="CAD Model"
+          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        />
+        <JobRiskRegister jobId={jobId} itemId={jobData?.job?.itemId ?? ""} />
+      </VStack>
+    </div>
+  );
+}
+
+function JobPurchaseOrderLines({
+  purchaseOrderLines
+}: {
+  purchaseOrderLines: JobPurchaseOrderLine[];
+}) {
+  if (purchaseOrderLines.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Purchase Orders</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-lg">
+          {purchaseOrderLines.map((line, index) => (
+            <div
+              key={line.id}
+              className={cn(
+                "border-b p-6",
+                index === purchaseOrderLines.length - 1 && "border-b-0"
+              )}
+            >
+              <JobPurchaseOrderLineItem line={line} />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function JobPurchaseOrderLineItem({ line }: { line: JobPurchaseOrderLine }) {
+  const [items] = useItems();
+  const item = items.find((i) => i.id === line.itemId);
+
+  const isPartiallyShipped = (line.quantityShipped ?? 0) > 0;
+  const isShipped = (line.quantityShipped ?? 0) >= (line.purchaseQuantity ?? 0);
+
+  const isPartiallyReceived = (line.quantityReceived ?? 0) > 0;
+  const isReceived =
+    (line.quantityReceived ?? 0) >= (line.purchaseQuantity ?? 0);
+
+  const status = isReceived
+    ? "Received"
+    : isPartiallyReceived
+      ? "Partially Received"
+      : isShipped
+        ? "Shipped"
+        : isPartiallyShipped
+          ? "Partially Shipped"
+          : "To Ship";
+
+  const statusColor = isReceived
+    ? "green"
+    : isPartiallyReceived
+      ? "yellow"
+      : isShipped
+        ? "blue"
+        : isPartiallyShipped
+          ? "orange"
+          : "gray";
+
+  return (
+    <div className="flex flex-1 justify-between items-center w-full">
+      <HStack spacing={4} className="w-2/3">
+        <HStack spacing={4} className="flex-1">
+          <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+            <LuShoppingCart className="size-4" />
+          </div>
+          <VStack spacing={0}>
+            <Hyperlink
+              className="text-sm font-medium"
+              to={path.to.purchaseOrder(line.purchaseOrder.id)}
+            >
+              {line.purchaseOrder.purchaseOrderId}
+            </Hyperlink>
+            <PurchasingStatus status={line.purchaseOrder.status} />
+          </VStack>
+          <VStack className="items-center" spacing={0}>
+            <span className="text-sm font-medium text-center">
+              {item?.readableIdWithRevision}
+            </span>
+            <span className="text-xs text-muted-foreground text-center">
+              {item?.name}
+            </span>
+          </VStack>
+        </HStack>
+      </HStack>
+      <div className="flex flex-col items-end justify-center gap-1">
+        <SupplierAvatar
+          className="text-sm"
+          supplierId={line.purchaseOrder.supplierId}
+        />
+        <Badge variant={statusColor}>{status}</Badge>
+      </div>
+    </div>
+  );
+}

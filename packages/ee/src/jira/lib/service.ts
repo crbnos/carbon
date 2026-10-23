@@ -4,18 +4,12 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { getLogger } from "@carbon/logger";
-import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { persistIntegrationSecrets } from "../../integrations/secrets";
-import type { ActionTaskEntityType } from "../../lib/actionTaskEntity";
-import { actionTaskEntities } from "../../lib/actionTaskEntity";
-import { adfToTiptap } from "./richtext";
+import { syncedEntities } from "../../issue-sync/entities";
+import type { SyncedEntityType } from "../../issue-sync/types";
 import type { JiraCredentials, JiraIssue, JiraIssueMapping } from "./types";
 import { JiraIssueMappingSchema } from "./types";
-import { mapJiraStatusToCarbonStatus } from "./utils";
-
-const logger = getLogger("ee", "jira");
 
 /**
  * Get the Jira integration for a company.
@@ -84,93 +78,18 @@ export function issueToMapping(
 }
 
 /**
- * Link an action task to a Jira issue.
- */
-export async function linkActionToJiraIssue(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  input: {
-    entityType: ActionTaskEntityType;
-    actionId: string;
-    issue: JiraIssue;
-    siteUrl: string;
-    assignee?: string | null;
-    syncNotes?: boolean;
-  }
-) {
-  const entity = actionTaskEntities[input.entityType];
-  const mapping = issueToMapping(input.issue, input.siteUrl);
-
-  // Convert Jira description (ADF) to Tiptap format for notes
-  let notes: any = undefined;
-  if (input.syncNotes && input.issue.fields.description) {
-    try {
-      notes = adfToTiptap(input.issue.fields.description);
-    } catch (e) {
-      logger.error("Failed to convert Jira description to Tiptap", {
-        error: e
-      });
-    }
-  }
-
-  const updateData: Record<string, any> = {
-    assignee: input.assignee,
-    status: mapJiraStatusToCarbonStatus(
-      input.issue.fields.status.statusCategory.key
-    ),
-    dueDate: input.issue.fields.duedate
-  };
-
-  // Only update notes if we successfully converted the description
-  if (notes !== undefined) {
-    updateData.notes = notes;
-  }
-
-  // Update the task fields
-  const result = await client
-    .from(entity.table)
-    .update(unchecked(updateData))
-    .eq("companyId", companyId)
-    .eq("id", input.actionId)
-    .select(entity.parentColumn);
-
-  // Delete any existing Jira mapping for this action
-  // Use service role to bypass RLS (no DELETE policy for authenticated users)
-  const serviceRoleForLink = getCarbonServiceRole();
-  await serviceRoleForLink
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("companyId", companyId)
-    .eq("entityType", input.entityType)
-    .eq("entityId", input.actionId)
-    .eq("integration", "jira");
-
-  // Create the new mapping
-  await client.from("externalIntegrationMapping").insert({
-    entityType: input.entityType,
-    entityId: input.actionId,
-    integration: "jira",
-    externalId: input.issue.id,
-    metadata: mapping as any,
-    companyId
-  });
-
-  return result;
-}
-
-/**
  * Unlink an action task from a Jira issue.
  */
 export async function unlinkActionFromJiraIssue(
   client: SupabaseClient<Database>,
   companyId: string,
   input: {
-    entityType: ActionTaskEntityType;
+    entityType: SyncedEntityType;
     actionId: string;
     assignee?: string | null;
   }
 ) {
-  const entity = actionTaskEntities[input.entityType];
+  const entity = syncedEntities[input.entityType];
 
   // Delete the Jira mapping using service role to bypass RLS
   const serviceRole = getCarbonServiceRole();
@@ -197,7 +116,7 @@ export const getJiraIssueFromExternalId = async (
   client: SupabaseClient<Database>,
   companyId: string,
   actionId: string,
-  entityType: ActionTaskEntityType
+  entityType: SyncedEntityType
 ): Promise<JiraIssueMapping | null> => {
   const { data: mapping } = await client
     .from("externalIntegrationMapping")
@@ -227,10 +146,13 @@ export const getCompanyEmployees = async (
 ) => {
   const users = await client
     .from("userToCompany")
-    .select("userId,user(email)")
+    .select("userId,user!inner(email)")
     .eq("companyId", companyId)
     .eq("role", "employee")
-    .in("user.email", emails);
+    // Trackers keep the case a user typed; match it and its lower case.
+    .in("user.email", [
+      ...new Set(emails.flatMap((email) => [email, email.toLowerCase()]))
+    ]);
 
   return users.data ?? [];
 };
@@ -243,7 +165,7 @@ export async function updateJiraIssueMapping(
   companyId: string,
   actionId: string,
   mapping: JiraIssueMapping,
-  entityType: ActionTaskEntityType
+  entityType: SyncedEntityType
 ) {
   return await client
     .from("externalIntegrationMapping")

@@ -61,6 +61,7 @@ type OpenInvoice = {
   // its own rental agreement or sales order.
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
+  customerContractIds?: string[];
 };
 
 type ExistingApplication = {
@@ -90,6 +91,7 @@ type ApplyRow = {
   remainingDocument: number;
   rentalAgreementIds?: string[];
   salesOrderIds?: string[];
+  customerContractIds?: string[];
   checked: boolean;
   appliedAmount: number;
   discountAmount: number;
@@ -289,7 +291,8 @@ const PaymentApplyTable = ({
               discountAmount: r.discountAmount,
               writeOffAmount: r.writeOffAmount,
               rentalAgreementIds: r.rentalAgreementIds,
-              salesOrderIds: r.salesOrderIds
+              salesOrderIds: r.salesOrderIds,
+              customerContractIds: r.customerContractIds
             }))
         }),
         error: null
@@ -622,7 +625,8 @@ const PaymentApplyTable = ({
           discountAmount: 0,
           writeOffAmount: 0,
           rentalAgreementIds: r.rentalAgreementIds,
-          salesOrderIds: r.salesOrderIds
+          salesOrderIds: r.salesOrderIds,
+          customerContractIds: r.customerContractIds
         }));
         const result = allocatePaymentFunding({
           currentPayment,

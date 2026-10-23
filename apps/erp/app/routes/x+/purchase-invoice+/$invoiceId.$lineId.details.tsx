@@ -6,13 +6,16 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { JSONContent } from "@carbon/react";
-import { RecordOutlet } from "@carbon/react";
+import { type JSONContent, RecordOutlet } from "@carbon/react";
 import { getItemReadableId, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react/jsx-runtime";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  useLoaderData,
+  useParams
+} from "react-router";
 import { DeferredFiles } from "~/components";
 import {
   isPurchaseInvoiceLocked,
@@ -24,6 +27,10 @@ import {
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing/invoicing.service";
 import { PurchaseInvoiceLineForm } from "~/modules/invoicing/ui";
+import {
+  chargeNumberError,
+  getLineChargeNumber
+} from "~/modules/projects/projects.service";
 import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service";
 import {
   SupplierInteractionLineDocuments,
@@ -43,10 +50,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
+  const [purchaseInvoiceLine, chargeNumber] = await Promise.all([
+    getPurchaseInvoiceLine(client, lineId),
+    getLineChargeNumber(client, "purchaseInvoiceLine", lineId, companyId)
+  ]);
 
   return {
     purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,
+    chargeNumber: chargeNumber.data ?? null,
     files: getSupplierInteractionLineDocuments(client, companyId, lineId)
   };
 }
@@ -81,7 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -113,6 +124,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   //   d.assetId = undefined;
   // }
 
+  const chargeError = await chargeNumberError(client, companyId, d);
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
+
   const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     id: lineId,
     ...d,
@@ -143,7 +161,8 @@ export default function EditPurchaseInvoiceLineRoute() {
   if (!lineId) throw notFound("lineId not found");
 
   const [items] = useItems();
-  const { purchaseInvoiceLine, files } = useLoaderData<typeof loader>();
+  const { purchaseInvoiceLine, chargeNumber, files } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     id: purchaseInvoiceLine?.id ?? undefined,
@@ -166,6 +185,8 @@ export default function EditPurchaseInvoiceLineRoute() {
     conversionFactor: purchaseInvoiceLine?.conversionFactor ?? 1,
     storageUnitId: purchaseInvoiceLine?.storageUnitId ?? "",
     costCenterId: purchaseInvoiceLine?.costCenterId ?? "",
+    projectId: chargeNumber?.projectId ?? "",
+    projectElementId: chargeNumber?.projectElementId ?? "",
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",

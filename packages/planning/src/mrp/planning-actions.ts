@@ -9,6 +9,17 @@
 //   Expedite / Defer      — move an existing open PO line / job (date)
 //   Increase / Decrease   — change an existing order's quantity
 //   Cancel                — an existing order has no remaining requirement
+//   Transfer              — move common stock a project segment needs into
+//                           the project (from the common segment's true surplus),
+//                           or a planning group member's permanent excess to a
+//                           short sibling (Projects Phase 3)
+//   Borrow                — lend a member's stock to a short sibling until the
+//                           member needs it back (Projects Phase 3)
+//
+// Every action belongs to a netting segment (`planningSegmentId`): '' is
+// common, a project id is a project with project stock. Each segment is
+// planned on its own; a project segment is lot-for-lot, with no reorder
+// point, safety stock or Stock Only reserve.
 //
 // Change actions follow the SAP "rescheduling check on a firmed receipt" model:
 // open orders are matched to dated requirements chronologically; a date gap
@@ -32,6 +43,14 @@ import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import { COMMON_SEGMENT, KEY_SEP } from "@carbon/database/mrp-engine";
+import type {
+  GroupPegInput,
+  MemberMove,
+  MemberPosition,
+  PegPriorityRule,
+  WriteGroupPegs
+} from "@carbon/ee/pegging";
 import { getLogger } from "@carbon/logger";
 import {
   computePlanningOrders,
@@ -46,6 +65,7 @@ import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { groupByProjectOf, planningSegmentOf } from "./plan-company.ts";
 import { loadResponsibleEmployeeResolver } from "./responsible-employee.ts";
 import {
   jobCompletionDate,
@@ -54,7 +74,6 @@ import {
 
 const logger = getLogger("planning", "planning-actions");
 
-const KEY_SEP = "\x1f";
 const WEEKS_TO_PLAN = 48;
 /** Planning periods are weeks. */
 const DAYS_PER_PERIOD = 7;
@@ -74,7 +93,22 @@ export type PlanningActionType =
   | "Cancel"
   | "Increase"
   | "Decrease"
-  | "Release";
+  | "Release"
+  | "Transfer"
+  | "Borrow";
+
+/**
+ * The netting segment and, for a Transfer or Borrow, the owners the stock
+ * moves between. Absent is common ('') with no owners.
+ */
+export type PlanningActionSegment = {
+  /** '' is common; a project id is a project with project stock. */
+  planningSegmentId?: string;
+  /** Transfer / Borrow: the owner the stock leaves; null is common stock. */
+  fromProjectId?: string | null;
+  /** Transfer / Borrow: the owner the stock joins; null is common stock. */
+  toProjectId?: string | null;
+};
 
 export type PlanningActionCandidate = {
   itemId: string;
@@ -101,9 +135,10 @@ export type PlanningActionCandidate = {
   supplierId: string | null;
   policyName: string | null;
   reason: string | null;
-  triggerValues: Record<string, number | null | undefined> | null;
+  /** A Borrow carries its payback date (`paybackDueDate`) as a string. */
+  triggerValues: Record<string, number | string | null | undefined> | null;
   assignee: string | null;
-};
+} & PlanningActionSegment;
 
 export type ExistingPlanningAction = {
   id: string;
@@ -126,7 +161,7 @@ export type ExistingPlanningAction = {
   triggerValues: unknown;
   assignee: string | null;
   assigneeOverridden: boolean;
-};
+} & PlanningActionSegment;
 
 /** Signed day difference a − b for two ISO calendar dates. */
 export function daysBetween(a: string, b: string): number {
@@ -804,6 +839,11 @@ export function deriveReleaseActions(args: {
 /**
  * The identity an action keeps from run to run.
  *
+ * Every action belongs to its netting segment, so one item and week can hold
+ * a common Order and a project's Order. A Transfer is also keyed on the owners
+ * it moves stock between ('' when common): two Transfers into one segment
+ * from different owners are two actions.
+ *
  * A change action belongs to its ORDER: item, location, type and target. Its
  * period (the week of the need it was measured against) is data, so a need
  * that moves a week updates the same row instead of replacing it.
@@ -822,15 +862,18 @@ export function naturalKey(
     periodId: string;
     purchaseOrderLineId: string | null;
     jobId: string | null;
-  },
+  } & PlanningActionSegment,
   keyPeriod: (periodId: string) => string = (periodId) => periodId
 ): string {
   const target = action.purchaseOrderLineId ?? action.jobId;
   return [
     action.itemId,
     action.locationId,
+    action.planningSegmentId ?? COMMON_SEGMENT,
     action.type,
-    target ? `order:${target}` : `period:${keyPeriod(action.periodId)}`
+    target ? `order:${target}` : `period:${keyPeriod(action.periodId)}`,
+    action.fromProjectId ?? "",
+    action.toProjectId ?? ""
   ].join(KEY_SEP);
 }
 
@@ -1144,11 +1187,216 @@ export async function writePlanningActionDiff(
             ? JSON.stringify(candidate.triggerValues)
             : null,
           assignee: candidate.assignee,
+          planningSegmentId: candidate.planningSegmentId ?? COMMON_SEGMENT,
+          fromProjectId: candidate.fromProjectId ?? null,
+          toProjectId: candidate.toProjectId ?? null,
           createdBy: userId
         }))
       )
       .execute();
   }
+}
+
+/**
+ * Projects Phase 3: adds each planned Order / Make of a planning group
+ * segment to its peg input, as a `Planning Action` supply named by the
+ * action's id. A candidate maps to the stored action with its natural key;
+ * one with no stored action (not written) is left out.
+ */
+export function withPlannedPegSupplies(args: {
+  inputs: GroupPegInput[];
+  candidates: PlanningActionCandidate[];
+  /** `naturalKey` (with this run's `keyPeriod`) -> the stored action id. */
+  actionIdByKey: ReadonlyMap<string, string>;
+  keyPeriod: (periodId: string) => string;
+  groupIds: ReadonlySet<string>;
+}): GroupPegInput[] {
+  const byKey = new Map<string, GroupPegInput>();
+  const inputs = args.inputs.map((input) => {
+    const copy = { ...input, supplies: [...input.supplies] };
+    byKey.set(
+      [input.planningGroupId, input.itemId, input.locationId].join(KEY_SEP),
+      copy
+    );
+    return copy;
+  });
+  const placed = new Set<string>();
+  for (const candidate of args.candidates) {
+    if (candidate.type !== "Order" && candidate.type !== "Make") continue;
+    const groupId = candidate.planningSegmentId ?? COMMON_SEGMENT;
+    if (!args.groupIds.has(groupId)) continue;
+    const actionId = args.actionIdByKey.get(
+      naturalKey(candidate, args.keyPeriod)
+    );
+    if (!actionId || placed.has(actionId)) continue;
+    placed.add(actionId);
+    const key = [groupId, candidate.itemId, candidate.locationId].join(KEY_SEP);
+    let input = byKey.get(key);
+    if (!input) {
+      input = {
+        planningGroupId: groupId,
+        itemId: candidate.itemId,
+        locationId: candidate.locationId,
+        demands: [],
+        supplies: []
+      };
+      byKey.set(key, input);
+      inputs.push(input);
+    }
+    input.supplies.push({
+      supplyType: "Planning Action",
+      supplyId: actionId,
+      ownerProjectId: null,
+      availableDate: candidate.suggestedDate,
+      quantity: candidate.suggestedQuantity
+    });
+  }
+  return inputs;
+}
+
+const MEMBER_TRANSFER_REASON = "Sibling stock not needed within the horizon";
+const MEMBER_BORROW_REASON = "Sibling stock lent until the sibling needs it";
+
+/** The pure pegging functions `memberMoveCandidates` uses (`@carbon/ee/pegging`). */
+export type MemberMovePegging = {
+  proposeMemberMoves: (args: {
+    members: MemberPosition[];
+    horizonEndDate: string;
+    leadTimeDays: number;
+    today: string;
+    priorityRule?: PegPriorityRule;
+  }) => MemberMove[];
+  memberPositionsOf: (
+    input: GroupPegInput,
+    memberProjectIds: readonly string[],
+    priorityByProject: Readonly<Record<string, number>>
+  ) => MemberPosition[];
+  applyMemberMoves: (
+    input: GroupPegInput,
+    moves: readonly MemberMove[],
+    today: string
+  ) => GroupPegInput;
+};
+
+/**
+ * Projects Phase 3: the member Transfers and Borrows of every planning group.
+ * Per (group, item, location) peg input, `proposeMemberMoves` moves stock
+ * from a sibling with excess to a short member. Each move is a candidate in
+ * the group's segment; moves with one natural key add up. The returned peg
+ * inputs carry the moved stock, so the short member's own stock covers its
+ * demand before pegging. A move never changes the group's net requirement.
+ */
+export function memberMoveCandidates(
+  args: {
+    inputs: GroupPegInput[];
+    planningGroups: { id: string; memberProjectIds: string[] }[];
+    priorityRuleByGroup: Record<string, PegPriorityRule>;
+    priorityByProject: Record<string, number>;
+    /** `itemId + KEY_SEP + locationId` -> the item's lead time in days. */
+    leadTimeByItemLocation: ReadonlyMap<string, number>;
+    periods: { id: string; startDate: string }[];
+    todayDate: string;
+    assigneeOf: (
+      itemId: string,
+      locationId: string,
+      segmentId: string
+    ) => string | null;
+  },
+  pegging: MemberMovePegging
+): { candidates: PlanningActionCandidate[]; inputs: GroupPegInput[] } {
+  const { periods, todayDate } = args;
+  const lastPeriod = periods[periods.length - 1];
+  if (!lastPeriod) return { candidates: [], inputs: args.inputs };
+  const horizonEndDate = parseDate(lastPeriod.startDate)
+    .add({ days: DAYS_PER_PERIOD - 1 })
+    .toString();
+  const membersByGroup = new Map(
+    args.planningGroups.map((group) => [group.id, group.memberProjectIds])
+  );
+  const periodFor = (dateIso: string) => {
+    let match = periods[0]!;
+    for (const p of periods) {
+      if (daysBetween(p.startDate, dateIso) <= 0) match = p;
+      else break;
+    }
+    return match;
+  };
+
+  const byKey = new Map<string, PlanningActionCandidate>();
+  const inputs = args.inputs.map((input) => {
+    const memberIds = membersByGroup.get(input.planningGroupId) ?? [];
+    if (memberIds.length < 2) return input;
+    const moves = pegging.proposeMemberMoves({
+      members: pegging.memberPositionsOf(
+        input,
+        memberIds,
+        args.priorityByProject
+      ),
+      horizonEndDate,
+      leadTimeDays:
+        args.leadTimeByItemLocation.get(
+          input.itemId + KEY_SEP + input.locationId
+        ) ?? 0,
+      today: todayDate,
+      priorityRule: args.priorityRuleByGroup[input.planningGroupId]
+    });
+    for (const move of moves) {
+      const date = laterDate(move.needDate, todayDate);
+      const candidate: PlanningActionCandidate = {
+        itemId: input.itemId,
+        locationId: input.locationId,
+        periodId: periodFor(date).id,
+        type: move.type,
+        suggestedQuantity: move.quantity,
+        suggestedDate: date,
+        horizonDate: date,
+        latestOrderDate: null,
+        isASAP: daysBetween(move.needDate, todayDate) <= 0,
+        purchaseOrderLineId: null,
+        jobId: null,
+        requiresManualAction: false,
+        supplierId: null,
+        policyName: null,
+        reason:
+          move.type === "Borrow"
+            ? MEMBER_BORROW_REASON
+            : MEMBER_TRANSFER_REASON,
+        triggerValues: move.paybackDueDate
+          ? { paybackDueDate: move.paybackDueDate }
+          : null,
+        assignee: args.assigneeOf(
+          input.itemId,
+          input.locationId,
+          input.planningGroupId
+        ),
+        planningSegmentId: input.planningGroupId,
+        fromProjectId: move.fromProjectId,
+        toProjectId: move.toProjectId
+      };
+      const key = naturalKey(candidate);
+      const current = byKey.get(key);
+      if (!current) {
+        byKey.set(key, candidate);
+        continue;
+      }
+      current.suggestedQuantity = round(
+        current.suggestedQuantity + candidate.suggestedQuantity
+      );
+      current.isASAP = current.isASAP || candidate.isASAP;
+      // the earliest payback of the moves it holds
+      const payback = candidate.triggerValues?.paybackDueDate;
+      const held = current.triggerValues?.paybackDueDate;
+      if (
+        typeof payback === "string" &&
+        typeof held === "string" &&
+        payback < held
+      ) {
+        current.triggerValues = { paybackDueDate: payback };
+      }
+    }
+    return pegging.applyMemberMoves(input, moves, todayDate);
+  });
+  return { candidates: [...byKey.values()], inputs };
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -1181,10 +1429,398 @@ function policyFloorFor(row: {
   }
 }
 
+/** The map key of an item at a location in one netting segment. */
+export function itemLocationSegmentKey(
+  itemId: string,
+  locationId: string,
+  segmentId: string = COMMON_SEGMENT
+): string {
+  return itemId + KEY_SEP + locationId + KEY_SEP + segmentId;
+}
+
+/**
+ * On-hand per item, location and netting segment (`itemLocationSegmentKey`).
+ * itemStockQuantities holds one row per project stock stripe ('' is common).
+ * Each stripe sums into its segment by the rule of the SQL
+ * `project_planning_segment` (`planningSegmentOf`): a project with project
+ * stock is its own segment, any other stripe is common.
+ */
+export async function loadSegmentOnHand(
+  db: Kysely<DB>,
+  companyId: string,
+  // Projects Phase 3: project id -> its active planning group, when the
+  // company has PLANNING_GROUPS. A member's stock is its group's.
+  groupByProject?: ReadonlyMap<string, string>
+): Promise<Map<string, number>> {
+  const [rows, stockedProjects] = await Promise.all([
+    db
+      .selectFrom("itemStockQuantities")
+      .select(["itemId", "locationId", "projectId", "quantityOnHand"])
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("project")
+      .select(["id"])
+      .where("companyId", "=", companyId)
+      .where("projectStock", "=", true)
+      .execute()
+  ]);
+  const stockedProjectIds = new Set(stockedProjects.map((p) => p.id));
+  const onHand = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.itemId || !row.locationId) continue;
+    const key = itemLocationSegmentKey(
+      row.itemId,
+      row.locationId,
+      planningSegmentOf(row.projectId, stockedProjectIds, groupByProject)
+    );
+    onHand.set(key, (onHand.get(key) ?? 0) + (Number(row.quantityOnHand) || 0));
+  }
+  return onHand;
+}
+
+/** What one project segment takes from common stock in one period. */
+export type CommonSurplusDraw = {
+  itemId: string;
+  locationId: string;
+  periodId: string;
+  planningSegmentId: string;
+  quantity: number;
+};
+
+const TRANSFER_REASON = "Common stock not needed within the horizon";
+
+export type DeriveRowActionsInput = {
+  /** One planning RPC row: one item in one segment at the location. */
+  row: RpcPlanningRow | ProductionPlanningRow;
+  kind: "Order" | "Make";
+  /** This run's weeks, current first. */
+  periods: { id: string; startDate: string }[];
+  /** Demand of the item in the row's segment, by period id. */
+  demandByPeriod: Map<string, number>;
+  /** Open PO lines or jobs of the item in the row's segment. */
+  openOrders: OpenSupplyOrder[];
+  /** On-hand of the item in the row's segment. */
+  onHand: number;
+  /** What the row's segment takes from common stock, per period. */
+  draws: { periodId: string; quantity: number }[];
+  toleranceDays: number;
+  todayDate: string;
+};
+
+/**
+ * Every action for one planning row: the change actions on its open orders,
+ * the new supply its projection needs, the releases of its planned orders,
+ * and, in a project segment, a Transfer per period that draws common stock.
+ *
+ * A project segment is lot-for-lot: no reorder point, safety stock or Stock
+ * Only reserve. A draw counts as the segment's own stock from its period on,
+ * so the segment's Order or Make covers only the remainder.
+ *
+ * An open Project Borrow is firm: MRP books it as demand on the borrower and
+ * supply on the lender, in the row's projection, but it is never one of
+ * `openOrders`, so no change action (Expedite, Defer, Cancel, Increase,
+ * Decrease) ever targets it. An overdue borrow is an exception the planning
+ * worklist and the project header show instead.
+ */
+export function deriveRowActions(
+  input: DeriveRowActionsInput
+): ChangeCandidate[] {
+  const {
+    row,
+    kind,
+    periods,
+    demandByPeriod,
+    openOrders,
+    toleranceDays,
+    todayDate
+  } = input;
+  const segmentId = row.planningSegmentId || COMMON_SEGMENT;
+  const isProjectSegment = segmentId !== COMMON_SEGMENT;
+
+  const drawByPeriod = new Map<string, number>();
+  for (const draw of isProjectSegment ? input.draws : []) {
+    if (draw.quantity <= 0) continue;
+    drawByPeriod.set(
+      draw.periodId,
+      (drawByPeriod.get(draw.periodId) ?? 0) + draw.quantity
+    );
+  }
+  const drawTotal = [...drawByPeriod.values()].reduce((a, b) => a + b, 0);
+
+  // change actions against real open documents
+  const demandPeriods = periods
+    .filter((p) => (demandByPeriod.get(p.id) ?? 0) > 0)
+    .map((p) => ({
+      periodId: p.id,
+      startDate: p.startDate,
+      quantity: demandByPeriod.get(p.id) ?? 0
+    }));
+
+  const coverageInput = {
+    onHand: input.onHand + drawTotal,
+    demandPeriods,
+    openOrders,
+    periods,
+    policyFloor: isProjectSegment ? 0 : policyFloorFor(row)
+  };
+  const leadTime = Number(row.leadTime) || 0;
+  // lot-for-lot in a project segment: one order per short week, sized to the
+  // shortfall
+  const sizingPolicy = isProjectSegment
+    ? "Demand-Based Reorder"
+    : row.reorderingPolicy;
+  const sizingParams = isProjectSegment
+    ? {
+        reorderPoint: 0,
+        reorderQuantity: 0,
+        minimumOrderQuantity: 0,
+        maximumOrderQuantity: 0,
+        orderMultiple: 0,
+        lotSize: 0,
+        maximumInventoryQuantity: 0,
+        demandAccumulationPeriod: 1,
+        demandAccumulationSafetyStock: 0,
+        leadTime
+      }
+    : {
+        reorderPoint: Number(row.reorderPoint) || 0,
+        reorderQuantity: Number(row.reorderQuantity) || 0,
+        minimumOrderQuantity: Number(row.minimumOrderQuantity) || 0,
+        maximumOrderQuantity: Number(row.maximumOrderQuantity) || 0,
+        orderMultiple: Number(row.orderMultiple) || 0,
+        lotSize: Number(row.lotSize) || 0,
+        maximumInventoryQuantity: Number(row.maximumInventoryQuantity) || 0,
+        demandAccumulationPeriod: Number(row.demandAccumulationPeriod) || 1,
+        demandAccumulationSafetyStock:
+          Number(row.demandAccumulationSafetyStock) || 0,
+        leadTime
+      };
+  const orderRules = orderSizingRules(
+    !isProjectSegment && row.supersessionMode === "Stock Only"
+      ? "Stock Only"
+      : sizingPolicy,
+    sizingParams
+  );
+  const changeActions = deriveChangeActions({
+    ...coverageInput,
+    toleranceDays,
+    todayDate,
+    orderRules,
+    leadTimeDays: leadTime
+  });
+
+  // new-supply suggestions from the shared sizing (same math as the grid),
+  // sized on the projection with every open order counted from the week
+  // it is needed: every Expedite above done, and an order late within the
+  // tolerance counted as on time, as the reschedule check judged it
+  let sizing: ChangeCandidate[] = [];
+  if (!isProjectSegment && row.supersessionMode === "Stock Only") {
+    const shortfall = Math.max(0, Number(row.quantityToOrder) || 0);
+    const firstPeriod = periods[0];
+    if (shortfall > 0 && firstPeriod) {
+      const startDate = parseDate(firstPeriod.startDate)
+        .subtract({ days: Number(row.leadTime) || 0 })
+        .toString();
+      sizing = [
+        {
+          type: kind,
+          periodId: firstPeriod.id,
+          suggestedQuantity: shortfall,
+          suggestedDate: firstPeriod.startDate,
+          horizonDate: firstPeriod.startDate,
+          latestOrderDate: startDate,
+          isASAP: daysBetween(startDate, todayDate) < 0,
+          purchaseOrderLineId: null,
+          jobId: null,
+          requiresManualAction: false,
+          supplierId:
+            kind === "Order"
+              ? ((row as RpcPlanningRow).preferredSupplierId ?? null)
+              : null,
+          policyName: "Stock Only",
+          reason: "Below the minimum reserve for a superseded item",
+          triggerValues: {
+            projectedStock: Number(row.quantityOnHand) || 0,
+            reorderPoint: Number(row.minimumReserveQuantity) || 0,
+            leadTime: Number(row.leadTime) || 0
+          }
+        }
+      ];
+    }
+  } else {
+    // A draw is the segment's stock from its period on.
+    let drawn = 0;
+    const projected = periods.map((p, i) => {
+      drawn += drawByPeriod.get(p.id) ?? 0;
+      const value = row[`week${i + 1}` as keyof typeof row];
+      return (Number(value) || 0) + drawn;
+    });
+    const projections = projectionsWithExpedites({
+      projections: projected,
+      periods,
+      changeActions,
+      openOrders,
+      firstNeedPeriods: firstNeedPeriodByOrder(coverageInput, {
+        toleranceDays,
+        todayDate,
+        leadTimeDays: leadTime
+      })
+    });
+    sizing = computePlanningOrders({
+      reorderingPolicy: sizingPolicy,
+      periods,
+      projections,
+      todayDate,
+      params: sizingParams
+    }).map((order) => ({
+      type: kind,
+      periodId: order.periodId,
+      suggestedQuantity: order.quantity,
+      suggestedDate: order.dueDate,
+      horizonDate: order.dueDate,
+      latestOrderDate: order.startDate,
+      isASAP: order.isASAP,
+      purchaseOrderLineId: null,
+      jobId: null,
+      requiresManualAction: false,
+      supplierId:
+        kind === "Order"
+          ? ((row as RpcPlanningRow).preferredSupplierId ?? null)
+          : null,
+      policyName: isProjectSegment ? "Lot-for-Lot" : order.policyName,
+      reason: null,
+      triggerValues: isProjectSegment
+        ? {
+            projectedStock: order.triggerValues.projectedStock,
+            leadTime
+          }
+        : order.triggerValues
+    }));
+  }
+
+  const merged = convertOrdersToIncreases({
+    sizingCandidates: sizing,
+    openOrders,
+    changeActions,
+    toleranceDays,
+    todayDate,
+    maximumPerOrder: orderRules.maximum,
+    leadTimeDays: leadTime
+  });
+
+  // Lot-size splitting can emit several new-supply suggestions in one
+  // period; persist ONE action per (type, period) with the summed quantity
+  // — the natural key would otherwise collide and silently drop batches.
+  // The planning pages split the action back into the orders its policy
+  // sized (`splitIntoOrders`): a batch, a fixed reorder quantity, a
+  // maximum order quantity each.
+  const aggregated = new Map<string, ChangeCandidate>();
+  const passthrough: ChangeCandidate[] = [];
+  for (const candidate of merged) {
+    const isNewSupply =
+      (candidate.type === "Order" || candidate.type === "Make") &&
+      !candidate.purchaseOrderLineId &&
+      !candidate.jobId;
+    if (!isNewSupply) {
+      passthrough.push(candidate);
+      continue;
+    }
+    const key = `${candidate.type}${KEY_SEP}${candidate.periodId}`;
+    const current = aggregated.get(key);
+    if (current) {
+      current.suggestedQuantity += candidate.suggestedQuantity;
+      current.isASAP = current.isASAP || candidate.isASAP;
+      current.suggestedDate = earlierDate(
+        current.suggestedDate,
+        candidate.suggestedDate
+      );
+      current.horizonDate = earlierDate(
+        current.horizonDate,
+        candidate.horizonDate
+      );
+      if (candidate.latestOrderDate) {
+        current.latestOrderDate = current.latestOrderDate
+          ? earlierDate(current.latestOrderDate, candidate.latestOrderDate)
+          : candidate.latestOrderDate;
+      }
+    } else {
+      aggregated.set(key, { ...candidate });
+    }
+  }
+
+  const releaseActions = deriveReleaseActions({
+    openOrders,
+    changeActions,
+    periods,
+    todayDate
+  });
+
+  // One Transfer per period a draw lands in: common stock into the project.
+  const transfers: ChangeCandidate[] = [];
+  for (const period of periods) {
+    const quantity = drawByPeriod.get(period.id) ?? 0;
+    if (quantity <= 0) continue;
+    transfers.push({
+      type: "Transfer",
+      periodId: period.id,
+      suggestedQuantity: quantity,
+      suggestedDate: period.startDate,
+      horizonDate: period.startDate,
+      latestOrderDate: null,
+      isASAP: daysBetween(period.startDate, todayDate) < 0,
+      purchaseOrderLineId: null,
+      jobId: null,
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: null,
+      reason: TRANSFER_REASON,
+      triggerValues: null,
+      fromProjectId: null,
+      toProjectId: segmentId
+    });
+  }
+
+  return [
+    ...aggregated.values(),
+    ...passthrough,
+    ...changeActions,
+    ...releaseActions,
+    ...transfers
+  ].map((action) => ({ ...action, planningSegmentId: segmentId }));
+}
+
 export async function generatePlanningActions(
   client: SupabaseClient<Database>,
   db: Kysely<DB>,
-  args: { companyId: string; userId: string }
+  args: {
+    companyId: string;
+    userId: string;
+    /**
+     * What each project segment takes from common stock (`planCompany`'s
+     * `commonSurplusDraws`). Each draw becomes a Transfer action.
+     */
+    commonSurplusDraws?: CommonSurplusDraw[];
+    /**
+     * Projects Phase 3: the active planning groups and their members, as
+     * `runMrp` passed them to `planCompany` (empty without PLANNING_GROUPS).
+     */
+    planningGroups?: { id: string; memberProjectIds: string[] }[];
+    /**
+     * Projects Phase 3: the peg writer's inputs, passed only when the company
+     * has PLANNING_GROUPS. The pegs are diff-written in this function's
+     * transaction, after the actions, so a planned supply has its action id.
+     * `writeGroupPegs` is the commercial writer, injected by the server-side
+     * caller (`MrpDeps`): this package imports no `.server` module.
+     */
+    pegging?: {
+      writeGroupPegs: WriteGroupPegs;
+      runId: string;
+      inputs: GroupPegInput[];
+      priorityRuleByGroup: Record<string, PegPriorityRule>;
+      priorityByProject: Record<string, number>;
+    };
+  }
 ): Promise<{ inserted: number; updated: number; deleted: number }> {
   const { companyId, userId } = args;
 
@@ -1254,28 +1890,41 @@ export async function generatePlanningActions(
   const poLineRows = openPoLines.data ?? [];
   const jobRows = openJobs.data ?? [];
 
-  // ── demand per (item, location, period): actual + forecast + projection
-  //    (net of consumption), the same union the planning RPCs read; on-hand;
-  //    the open jobs' status and good-unit quantity, and the open PO lines'
-  //    conversion factor, which the openProductionOrders / openPurchaseOrderLines
-  //    views do not expose — one read each of the company's open documents
-  //    (the views' own filters), no id list.
+  // ── demand per (item, location, segment, period): actual + forecast +
+  //    projection (net of consumption), the same union the planning RPCs
+  //    read; on-hand per segment; the open jobs' status and good-unit
+  //    quantity, and the open PO lines' conversion factor, which the
+  //    openProductionOrders / openPurchaseOrderLines views do not expose —
+  //    one read each of the company's open documents (the views' own
+  //    filters), no id list. Projections are common demand.
   const [
     demandActuals,
     demandForecasts,
     demandProjections,
-    inventoryRows,
+    onHandByItemLocation,
     openJobRows,
     poLineFactorRows
   ] = await Promise.all([
     db
       .selectFrom("demandActual")
-      .select(["itemId", "locationId", "periodId", "actualQuantity"])
+      .select([
+        "itemId",
+        "locationId",
+        "periodId",
+        "planningSegmentId",
+        "actualQuantity"
+      ])
       .where("companyId", "=", companyId)
       .execute(),
     db
       .selectFrom("demandForecast")
-      .select(["itemId", "locationId", "periodId", "forecastQuantity"])
+      .select([
+        "itemId",
+        "locationId",
+        "periodId",
+        "planningSegmentId",
+        "forecastQuantity"
+      ])
       .where("companyId", "=", companyId)
       .execute(),
     db
@@ -1289,11 +1938,7 @@ export async function generatePlanningActions(
       ])
       .where("companyId", "=", companyId)
       .execute(),
-    db
-      .selectFrom("itemStockQuantities")
-      .select(["itemId", "locationId", "quantityOnHand"])
-      .where("companyId", "=", companyId)
-      .execute(),
+    loadSegmentOnHand(db, companyId, groupByProjectOf(args.planningGroups)),
     db
       .selectFrom("job")
       .select(["id", "status", "quantity", "quantityReceivedToInventory"])
@@ -1321,12 +1966,17 @@ export async function generatePlanningActions(
   const addDemand = (
     itemId: string | null,
     locationId: string | null,
+    segmentId: string | null,
     periodId: string | null,
     quantity: number | null
   ) => {
     if (!itemId || !locationId || !periodId) return;
     if (!periodIdSet.has(periodId)) return;
-    const key = `${itemId}${KEY_SEP}${locationId}`;
+    const key = itemLocationSegmentKey(
+      itemId,
+      locationId,
+      segmentId || COMMON_SEGMENT
+    );
     const byPeriod = demandByItemLocation.get(key) ?? new Map<string, number>();
     byPeriod.set(
       periodId,
@@ -1335,15 +1985,28 @@ export async function generatePlanningActions(
     demandByItemLocation.set(key, byPeriod);
   };
   for (const row of demandActuals) {
-    addDemand(row.itemId, row.locationId, row.periodId, row.actualQuantity);
+    addDemand(
+      row.itemId,
+      row.locationId,
+      row.planningSegmentId,
+      row.periodId,
+      row.actualQuantity
+    );
   }
   for (const row of demandForecasts) {
-    addDemand(row.itemId, row.locationId, row.periodId, row.forecastQuantity);
+    addDemand(
+      row.itemId,
+      row.locationId,
+      row.planningSegmentId,
+      row.periodId,
+      row.forecastQuantity
+    );
   }
   for (const row of demandProjections) {
     addDemand(
       row.itemId,
       row.locationId,
+      COMMON_SEGMENT,
       row.periodId,
       Math.max(
         (Number(row.forecastQuantity) || 0) -
@@ -1351,16 +2014,6 @@ export async function generatePlanningActions(
         0
       )
     );
-  }
-
-  const onHandByItemLocation = new Map<string, number>();
-  for (const row of inventoryRows) {
-    if (row.itemId && row.locationId) {
-      onHandByItemLocation.set(
-        `${row.itemId}${KEY_SEP}${row.locationId}`,
-        Number(row.quantityOnHand) || 0
-      );
-    }
   }
 
   const jobById = new Map<
@@ -1414,19 +2067,26 @@ export async function generatePlanningActions(
     if (quantity <= 0) continue;
     // the same arrival date the projection buckets this line on
     const dueDate = purchaseOrderLineArrivalDate(line, todayDate);
-    pushOrder(`${line.itemId}${KEY_SEP}${line.locationId}`, {
-      purchaseOrderLineId: line.id,
-      quantity,
-      dueDate,
-      requiresManualAction: isCommittedPurchaseOrderStatus(line.status),
-      dateIsPromised: Boolean(line.promisedDate),
-      supplierId: line.supplierId,
-      conversionFactor: conversionFactorByLineId.get(line.id) ?? 1,
-      release:
-        line.status === "Planned" && line.purchaseOrderId
-          ? (releaseByPurchaseOrder.get(line.purchaseOrderId) ?? null)
-          : null
-    });
+    pushOrder(
+      itemLocationSegmentKey(
+        line.itemId,
+        line.locationId,
+        line.planningSegmentId || COMMON_SEGMENT
+      ),
+      {
+        purchaseOrderLineId: line.id,
+        quantity,
+        dueDate,
+        requiresManualAction: isCommittedPurchaseOrderStatus(line.status),
+        dateIsPromised: Boolean(line.promisedDate),
+        supplierId: line.supplierId,
+        conversionFactor: conversionFactorByLineId.get(line.id) ?? 1,
+        release:
+          line.status === "Planned" && line.purchaseOrderId
+            ? (releaseByPurchaseOrder.get(line.purchaseOrderId) ?? null)
+            : null
+      }
+    );
   }
   for (const job of jobRows) {
     if (!job.id || !job.itemId || !job.locationId) continue;
@@ -1444,27 +2104,54 @@ export async function generatePlanningActions(
     // supply there, so it is supply here too
     const dueDate = jobCompletionDate(job, todayDate);
     const leadTime = Number(job.leadTime) || 0;
-    pushOrder(`${job.itemId}${KEY_SEP}${job.locationId}`, {
-      jobId: job.id,
-      quantity,
-      dueDate,
-      requiresManualAction: isCommittedJobStatus(details?.status),
-      release:
-        details?.status === "Planned"
-          ? { date: releaseByDate(dueDate, leadTime), dueDate, leadTime }
-          : null
-    });
+    pushOrder(
+      itemLocationSegmentKey(
+        job.itemId,
+        job.locationId,
+        job.planningSegmentId || COMMON_SEGMENT
+      ),
+      {
+        jobId: job.id,
+        quantity,
+        dueDate,
+        requiresManualAction: isCommittedJobStatus(details?.status),
+        release:
+          details?.status === "Planned"
+            ? { date: releaseByDate(dueDate, leadTime), dueDate, leadTime }
+            : null
+      }
+    );
   }
 
-  // ── planning rows (projections + reorder params) per location
+  // ── the common stock each project segment draws, per item and location
+  const drawsByItemLocation = new Map<
+    string,
+    { periodId: string; quantity: number }[]
+  >();
+  for (const draw of args.commonSurplusDraws ?? []) {
+    if (!draw.planningSegmentId || draw.quantity <= 0) continue;
+    const key = itemLocationSegmentKey(
+      draw.itemId,
+      draw.locationId,
+      draw.planningSegmentId
+    );
+    const list = drawsByItemLocation.get(key) ?? [];
+    list.push({ periodId: draw.periodId, quantity: draw.quantity });
+    drawsByItemLocation.set(key, list);
+  }
+
+  // ── planning rows (projections + reorder params) per location and segment
   const candidates: PlanningActionCandidate[] = [];
+  // The lead time of each item at each location, for the member Borrows.
+  const leadTimeByItemLocation = new Map<string, number>();
 
   for (const location of locations) {
     // Paged like every other read in the run: a bare RPC call stops at
     // PostgREST's max_rows, and an item missing from these rows has no
     // candidates — the diff below would then DELETE its existing actions,
-    // dismissals and assignee overrides included. `id` is the item id, unique
-    // per row, so the pages neither overlap nor skip.
+    // dismissals and assignee overrides included. A row is one item in one
+    // segment, so the pages order by the item id, then the segment: a total
+    // order, so the pages neither overlap nor skip.
     const [purchasing, production] = await Promise.all([
       fetchAll<RpcPlanningRow>(() =>
         client
@@ -1474,6 +2161,7 @@ export async function generatePlanningActions(
             periods: periodIds
           })
           .order("id")
+          .order("planningSegmentId")
       ),
       fetchAll<ProductionPlanningRow>(() =>
         client
@@ -1483,6 +2171,7 @@ export async function generatePlanningActions(
             periods: periodIds
           })
           .order("id")
+          .order("planningSegmentId")
       )
     ]);
     if (purchasing.error) throw new Error(purchasing.error.message);
@@ -1492,198 +2181,34 @@ export async function generatePlanningActions(
       row: RpcPlanningRow | ProductionPlanningRow,
       kind: "Order" | "Make"
     ) => {
-      const itemLocationKey = `${row.id}${KEY_SEP}${location.id}`;
-      const openOrders = openOrdersByItemLocation.get(itemLocationKey) ?? [];
-
-      // change actions against real open documents
-      const demandMap =
-        demandByItemLocation.get(itemLocationKey) ?? new Map<string, number>();
-      const demandPeriods = periods
-        .filter((p) => (demandMap.get(p.id) ?? 0) > 0)
-        .map((p) => ({
-          periodId: p.id,
-          startDate: p.startDate,
-          quantity: demandMap.get(p.id) ?? 0
-        }));
-
-      const coverageInput = {
-        onHand: onHandByItemLocation.get(itemLocationKey) ?? 0,
-        demandPeriods,
-        openOrders,
-        periods,
-        policyFloor: policyFloorFor(row)
-      };
-      const orderRules = orderSizingRules(
-        row.supersessionMode === "Stock Only"
-          ? "Stock Only"
-          : row.reorderingPolicy,
-        row
+      const key = itemLocationSegmentKey(
+        row.id,
+        location.id,
+        row.planningSegmentId || COMMON_SEGMENT
       );
-      const leadTimeDays = Number(row.leadTime) || 0;
-      const changeActions = deriveChangeActions({
-        ...coverageInput,
-        toleranceDays,
-        todayDate,
-        orderRules,
-        leadTimeDays
-      });
-
-      // new-supply suggestions from the shared sizing (same math as the grid),
-      // sized on the projection with every open order counted from the week
-      // it is needed: every Expedite above done, and an order late within the
-      // tolerance counted as on time, as the reschedule check judged it
-      let sizing: ChangeCandidate[] = [];
-      if (row.supersessionMode === "Stock Only") {
-        const shortfall = Math.max(0, Number(row.quantityToOrder) || 0);
-        const firstPeriod = periods[0];
-        if (shortfall > 0 && firstPeriod) {
-          const startDate = parseDate(firstPeriod.startDate)
-            .subtract({ days: Number(row.leadTime) || 0 })
-            .toString();
-          sizing = [
-            {
-              type: kind,
-              periodId: firstPeriod.id,
-              suggestedQuantity: shortfall,
-              suggestedDate: firstPeriod.startDate,
-              horizonDate: firstPeriod.startDate,
-              latestOrderDate: startDate,
-              isASAP: daysBetween(startDate, todayDate) < 0,
-              purchaseOrderLineId: null,
-              jobId: null,
-              requiresManualAction: false,
-              supplierId:
-                kind === "Order"
-                  ? ((row as RpcPlanningRow).preferredSupplierId ?? null)
-                  : null,
-              policyName: "Stock Only",
-              reason: "Below the minimum reserve for a superseded item",
-              triggerValues: {
-                projectedStock: Number(row.quantityOnHand) || 0,
-                reorderPoint: Number(row.minimumReserveQuantity) || 0,
-                leadTime: Number(row.leadTime) || 0
-              }
-            }
-          ];
-        }
-      } else {
-        const projections = projectionsWithExpedites({
-          projections: periods.map((_, i) => {
-            const value = row[`week${i + 1}` as keyof typeof row];
-            return Number(value) || 0;
-          }),
-          periods,
-          changeActions,
-          openOrders,
-          firstNeedPeriods: firstNeedPeriodByOrder(coverageInput, {
-            toleranceDays,
-            todayDate,
-            leadTimeDays
-          })
-        });
-        sizing = computePlanningOrders({
-          reorderingPolicy: row.reorderingPolicy,
-          periods,
-          projections,
-          todayDate,
-          params: {
-            reorderPoint: Number(row.reorderPoint) || 0,
-            reorderQuantity: Number(row.reorderQuantity) || 0,
-            minimumOrderQuantity: Number(row.minimumOrderQuantity) || 0,
-            maximumOrderQuantity: Number(row.maximumOrderQuantity) || 0,
-            orderMultiple: Number(row.orderMultiple) || 0,
-            lotSize: Number(row.lotSize) || 0,
-            maximumInventoryQuantity: Number(row.maximumInventoryQuantity) || 0,
-            demandAccumulationPeriod: Number(row.demandAccumulationPeriod) || 1,
-            demandAccumulationSafetyStock:
-              Number(row.demandAccumulationSafetyStock) || 0,
-            leadTime: Number(row.leadTime) || 0
-          }
-        }).map((order) => ({
-          type: kind,
-          periodId: order.periodId,
-          suggestedQuantity: order.quantity,
-          suggestedDate: order.dueDate,
-          horizonDate: order.dueDate,
-          latestOrderDate: order.startDate,
-          isASAP: order.isASAP,
-          purchaseOrderLineId: null,
-          jobId: null,
-          requiresManualAction: false,
-          supplierId:
-            kind === "Order"
-              ? ((row as RpcPlanningRow).preferredSupplierId ?? null)
-              : null,
-          policyName: order.policyName,
-          reason: null,
-          triggerValues: order.triggerValues
-        }));
-      }
-
-      const merged = convertOrdersToIncreases({
-        sizingCandidates: sizing,
-        openOrders,
-        changeActions,
-        toleranceDays,
-        todayDate,
-        maximumPerOrder: orderRules.maximum,
-        leadTimeDays
-      });
-
-      // Lot-size splitting can emit several new-supply suggestions in one
-      // period; persist ONE action per (type, period) with the summed quantity
-      // — the natural key would otherwise collide and silently drop batches.
-      // The planning pages split the action back into the orders its policy
-      // sized (`splitIntoOrders`): a batch, a fixed reorder quantity, a
-      // maximum order quantity each.
-      const aggregated = new Map<string, ChangeCandidate>();
-      const passthrough: ChangeCandidate[] = [];
-      for (const candidate of merged) {
-        const isNewSupply =
-          (candidate.type === "Order" || candidate.type === "Make") &&
-          !candidate.purchaseOrderLineId &&
-          !candidate.jobId;
-        if (!isNewSupply) {
-          passthrough.push(candidate);
-          continue;
-        }
-        const key = `${candidate.type}${KEY_SEP}${candidate.periodId}`;
-        const current = aggregated.get(key);
-        if (current) {
-          current.suggestedQuantity += candidate.suggestedQuantity;
-          current.isASAP = current.isASAP || candidate.isASAP;
-          current.suggestedDate = earlierDate(
-            current.suggestedDate,
-            candidate.suggestedDate
-          );
-          current.horizonDate = earlierDate(
-            current.horizonDate,
-            candidate.horizonDate
-          );
-          if (candidate.latestOrderDate) {
-            current.latestOrderDate = current.latestOrderDate
-              ? earlierDate(current.latestOrderDate, candidate.latestOrderDate)
-              : candidate.latestOrderDate;
-          }
-        } else {
-          aggregated.set(key, { ...candidate });
-        }
-      }
-
-      const releaseActions = deriveReleaseActions({
-        openOrders,
-        changeActions,
+      const actions = deriveRowActions({
+        row,
+        kind,
         periods,
+        demandByPeriod:
+          demandByItemLocation.get(key) ?? new Map<string, number>(),
+        openOrders: openOrdersByItemLocation.get(key) ?? [],
+        onHand: onHandByItemLocation.get(key) ?? 0,
+        draws: drawsByItemLocation.get(key) ?? [],
+        toleranceDays,
         todayDate
       });
 
-      const assignee = resolveAssignee(row.id, location.id);
-      for (const action of [
-        ...aggregated.values(),
-        ...passthrough,
-        ...changeActions,
-        ...releaseActions
-      ]) {
+      leadTimeByItemLocation.set(
+        row.id + KEY_SEP + location.id,
+        Number(row.leadTime) || 0
+      );
+      const assignee = resolveAssignee(
+        row.id,
+        location.id,
+        row.planningSegmentId || COMMON_SEGMENT
+      );
+      for (const action of actions) {
         if (!action.periodId || !periodById.has(action.periodId)) continue;
         candidates.push({
           ...action,
@@ -1698,6 +2223,28 @@ export async function generatePlanningActions(
 
     for (const row of purchasing.data ?? []) process(row, "Order");
     for (const row of production.data ?? []) process(row, "Make");
+  }
+
+  // ── Projects Phase 3: member Transfers and Borrows inside each planning
+  // group. Only with PLANNING_GROUPS (`args.pegging`); the commercial
+  // functions load lazily, so a company without the feature loads none.
+  let pegging = args.pegging;
+  if (pegging && (args.planningGroups ?? []).length > 0) {
+    const moves = memberMoveCandidates(
+      {
+        inputs: pegging.inputs,
+        planningGroups: args.planningGroups ?? [],
+        priorityRuleByGroup: pegging.priorityRuleByGroup,
+        priorityByProject: pegging.priorityByProject,
+        leadTimeByItemLocation,
+        periods,
+        todayDate,
+        assigneeOf: resolveAssignee
+      },
+      await import("@carbon/ee/pegging")
+    );
+    candidates.push(...moves.candidates);
+    pegging = { ...pegging, inputs: moves.inputs };
   }
 
   // ── diff-write. One transaction holds a per-company advisory lock across
@@ -1733,7 +2280,10 @@ export async function generatePlanningActions(
         "reason",
         "triggerValues",
         "assignee",
-        "assigneeOverridden"
+        "assigneeOverridden",
+        "planningSegmentId",
+        "fromProjectId",
+        "toProjectId"
       ])
       .where("companyId", "=", companyId)
       .where("status", "!=", "Actioned")
@@ -1766,6 +2316,17 @@ export async function generatePlanningActions(
       updatedAt: datetime.timestamp()
     });
 
+    if (pegging) {
+      const pegs = await writePegs(trx, {
+        companyId,
+        userId,
+        pegging,
+        candidates,
+        keyPeriod: keyPeriodFor(periods)
+      });
+      logger.info("project pegs written", { companyId, ...pegs });
+    }
+
     return diff;
   });
 
@@ -1781,4 +2342,64 @@ export async function generatePlanningActions(
     updated: diff.updates.length,
     deleted: diff.deleteIds.length
   };
+}
+
+/**
+ * Reads the stored Order / Make actions of the planning groups, adds them to
+ * the peg inputs as planned supply, and runs the commercial peg writer. Runs
+ * in the planning-action transaction, which holds the company's lock.
+ */
+async function writePegs(
+  trx: Kysely<DB>,
+  args: {
+    companyId: string;
+    userId: string;
+    pegging: NonNullable<
+      Parameters<typeof generatePlanningActions>[2]["pegging"]
+    >;
+    candidates: PlanningActionCandidate[];
+    keyPeriod: (periodId: string) => string;
+  }
+) {
+  const { companyId, userId, pegging } = args;
+  const groupIds = new Set(Object.keys(pegging.priorityRuleByGroup));
+  const actionRows =
+    groupIds.size > 0
+      ? await trx
+          .selectFrom("planningAction")
+          .select([
+            "id",
+            "itemId",
+            "locationId",
+            "periodId",
+            "type",
+            "purchaseOrderLineId",
+            "jobId",
+            "planningSegmentId",
+            "fromProjectId",
+            "toProjectId"
+          ])
+          .where("companyId", "=", companyId)
+          .where("status", "!=", "Actioned")
+          .where("type", "in", ["Order", "Make"])
+          .where("planningSegmentId", "in", [...groupIds])
+          .execute()
+      : [];
+  const actionIdByKey = new Map(
+    actionRows.map((row) => [naturalKey(row, args.keyPeriod), row.id])
+  );
+  return pegging.writeGroupPegs(trx, {
+    companyId,
+    userId,
+    runId: pegging.runId,
+    inputs: withPlannedPegSupplies({
+      inputs: pegging.inputs,
+      candidates: args.candidates,
+      actionIdByKey,
+      keyPeriod: args.keyPeriod,
+      groupIds
+    }),
+    priorityRuleByGroup: pegging.priorityRuleByGroup,
+    priorityByProject: pegging.priorityByProject
+  });
 }

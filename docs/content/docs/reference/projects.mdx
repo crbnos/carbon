@@ -1,0 +1,538 @@
+---
+title: Projects
+description: Break engineering and contract work into elements, charge time, material and purchases to them, and compare plan with actual cost.
+---
+
+A **project** holds a tree of <Term id="element">elements</Term>: the systems, requirements, tasks and tests that make up the work. Jobs, purchase order lines, purchase invoice lines, timesheets and material issues charge their cost to a project or to one of its elements. The <Term>project ledger</Term> records each charge, so you can compare it with the plan.
+
+Open **Projects** in the sidebar. The module has **Projects**, **My Time**, **Approvals** and **Reports**, then a **Setup** group with **Labor Categories** and **Planning Groups**. **Approvals** shows when timesheet approval or DCAA mode is on, or while contract [billable items](/docs/reference/project-billing#billable-items) wait for review, with the number of entries and items that wait for you.
+
+<Screenshot label="A project's Plan page in the List layout: the project sidebar with Overview, Plan and the element tree, Schedule, Costs, Time and Settings, and the elements grouped by state" caption="The Plan page lists a project's elements by state." />
+
+## The project
+
+Click **Add Project** on the project list. The **New Project** drawer asks for the name, the identifier, the cost treatment, the customer and the owner, and can copy another project. Every other field is on the project's **Settings** page. A new project starts in **"Draft"**.
+
+<FieldTable>
+  <Field name="Name" type="text" required>What the project is called.</Field>
+  <Field name="Identifier" type="text">2 to 6 capital letters or digits that start with a letter, such as `SNS`. It is unique in the company. If you leave it empty, Carbon makes one from the initials of the name. You cannot change it after you save, because every element id starts with it.</Field>
+  <Field name="Cost Treatment" type="enum" required>Where the project's cost posts: `Statistical`, `Expense`, `Contract` or `Capitalize`. See [cost treatment](#cost-treatment).</Field>
+  <Field name="Cost Account" type="reference">An account that replaces the account default for this project. Leave it empty to use the default. Not shown for Capitalize.</Field>
+  <Field name="CIP Class" type="reference" required>Capitalize only. The Construction in Progress fixed asset class that holds the project's assets while they are built.</Field>
+  <Field name="Copy from" type="reference">On a new project only, under **Start from a copy**. Copies another project's milestones, elements, trace links and plan lines. Templates are listed first.</Field>
+  <Field name="Customer" type="reference">The customer the work is for, if any.</Field>
+  <Field name="Owner" type="reference">The person responsible for the project.</Field>
+  <Field name="Location" type="reference">The site the project belongs to.</Field>
+  <Field name="Priority" type="enum">`Urgent`, `High`, `Medium`, `Low` or `None`.</Field>
+  <Field name="Start Date / End Date" type="date">The planned window of the project.</Field>
+  <Field name="Lock Plan After Milestone" type="reference">Settings page, **Plan lock**. When this milestone is completed, the plan changes only through a [change request](#change-requests).</Field>
+  <Field name="Project stock" type="boolean">Settings page, **Stock and planning**. The project owns the stock received for it. You can change it only while the project is Draft. See [project stock](#project-stock).</Field>
+  <Field name="Charge at receipt" type="boolean">With project stock. Charges the project when its stock is received, not when the stock is issued.</Field>
+  <Field name="Government-furnished" type="boolean">With project stock. The project's stock can move only to a project of the same customer.</Field>
+</FieldTable>
+
+Edit these fields later on the project's **Settings** page. The identifier shows there as read-only text.
+
+## The project workspace
+
+A project opens on its **Overview**. The header shows the identifier, the name and the status. Click the name to switch to another project. The **⋯** menu changes the status, and opens **Baselines**, **Change requests**, **Copy project** and **Template**.
+
+The project sidebar has, from the top:
+
+- The plan picker. It reads **Current plan**, or the change request you work in. The history icon next to it opens [Baselines](#baselines).
+- **Overview**: the owner, customer, dates and cost treatment on one line, the budget used, the next milestone, and **Needs attention**. That list names a stop-work order, borrows past their payback date, open change requests and time not posted yet.
+- **Plan**: the [elements](#the-plan-page). The element tree and its **Search elements** box show below the links on every project page.
+- **Schedule**: the [milestones](#milestones) on a timeline.
+- **Costs**: the [cost of each element](#costs-and-the-project-ledger). Below it, **Stock** shows once the project holds stock of its own, **Pegging** once it has a peg, and **Billing** on every Contract project. With no [project contract](/docs/reference/project-billing#project-contracts), the Billing page offers **New Project Contract**.
+- **Time**: the time not posted yet, then the costs posted to the project.
+- **Settings**, at the bottom: the project's fields, its [members](/docs/reference/government-contracting#charge-restrictions) and [budget control](#budget-control).
+
+## Status lifecycle
+
+The project status controls which charges the project accepts. The **⋯** menu in the project header moves it, with the next step first.
+
+| Status | Menu item that sets it | What the project accepts |
+| --- | --- | --- |
+| **"Draft"** | (new project) | Structure, plan lines and budget. No charges. |
+| **"Released"** | **Release**, **Resume**, **Reopen** | New charges and postings. |
+| **"On Hold"** | **Put on hold** | Postings against existing purchase order lines and jobs. No new charges. |
+| **"Work Complete"** | **Work complete** | Late receipts, invoices and job completions, and reversals. No new charges. |
+| **"Closed"** | **Close** | Nothing. The project is read-only. |
+
+<Callout type="warn" title="Close is final.">
+A Closed project cannot go back to any other status, and there is no project delete. Carbon refuses **Close** while the project has an open purchase order or an open job.
+</Callout>
+
+## Cost treatment
+
+The <Term>cost treatment</Term> decides which account a project charge posts to. Carbon reads it when each charge posts.
+
+| Treatment | Where the cost posts |
+| --- | --- |
+| **Statistical** | The charge keeps its own account, and the project is only a dimension on the journal line. Time posts no cost. An issue goes to **Indirect Materials & Services**. |
+| **Expense** | The project's **Cost Account**, else the **Project Expense** account default. |
+| **Contract** | The project's **Cost Account**, else the **Project WIP** account default. |
+| **Capitalize** | The asset under construction that the charge builds. See [capital projects](#capital-projects). |
+
+Set **Project WIP** and **Project Expense** at **Accounting → Default Accounts**. If an Expense or Contract project has no account, Carbon refuses its charges.
+
+<Callout type="note" title="Statistical projects show no actual cost for time and issues.">
+A Statistical project has no project account, so its time and issues write no project ledger rows. Its posted hours still count. Use Expense or Contract when you want the Costs page to show actual cost.
+</Callout>
+
+### Capital projects
+
+A Capitalize project builds fixed assets. When you release it, Carbon creates one asset under construction for the project and one for each element marked **Final asset** on its element page. Each charge posts to the asset of its nearest final-asset element, else to the project's asset. A job on a Capitalize charge number completes into that asset.
+
+**Place in service** in the project header's **⋯** menu, or on a final-asset element, moves the assets into an in-service class. The final-asset elements and everything below them move to a Completed state. A cost that posts after that adds to the in-service asset, and its depreciation spreads the addition over the asset's remaining life. See [fixed assets](/docs/reference/fixed-assets).
+
+## Elements
+
+An element is one item of the project tree. It has a type, a state, an owner, a priority, labels, dates, a milestone, an hours estimate and a budget.
+
+- **Types:** `System`, `Requirement`, `Function`, `Task`, `Test Case` and `Parameter`. A Parameter's children must be Parameters.
+- **Linked part:** any element except a Parameter can link an item and, for a serial-tracked item, one serial of it. **Issue material** then offers the part's bill of materials first.
+- **Readable id:** the project identifier and a sequence number, such as `ST-12`. The id stays the same when you move the element.
+- **Chargeable:** on for a new element, except a Parameter, which can never take charges. Turn it off on an element that only groups others.
+
+Deleting an element also deletes every element below it. Carbon refuses the delete if that branch has costs, time, a job or a purchase order line.
+
+### States
+
+States and labels are shared by every project of the company. Each state belongs to a state group: **Backlog**, **Unstarted**, **Started**, **Completed** or **Cancelled**. A company starts with Backlog, Todo, In Progress, In Review, Done and Cancelled. Manage states, labels and their colours at **Settings → Projects**, which needs the Settings update permission. The first charge to an Unstarted element moves it to the default Started state.
+
+<Callout type="info" title="The state group decides whether an element takes charges.">
+A new charge needs a Released project and an Unstarted or Started element. A posting against an existing commitment, such as a receipt or an invoice, also accepts a Completed element. Backlog and Cancelled elements accept nothing.
+</Callout>
+
+### The Plan page
+
+The **Plan** page shows the elements in one of three layouts. Pick it in the toolbar:
+
+- **List** groups the elements by state. Click the state icon on a row to change the state, and set the owner and target date in place. **+** on a group header adds a Task in that state.
+- **Tree** groups the children of each element in one box and draws the trace links between them. Drag from one element to another to add a link. **Focus** on a box shows only that part of the tree, and the breadcrumb goes back up. The type filter keeps the boxes, so the tree holds together. Click **N tests** or **N reqs** on a card to highlight its links.
+- **Reader** shows the project as a numbered document. The **Export PDF** icon downloads it with the current filters.
+
+**Filter** narrows the elements by type, state, owner, milestone or label. **Search elements**, above the element tree in the sidebar, searches every layout. **New Element** adds a Task, and its menu adds any other type or opens **Build from part**. In the List the new element appears as a row; in the Tree and the Reader its page opens.
+
+### The element page
+
+Click an element in any layout or in the sidebar tree to open its page. Its header has **Back**, the project and the parent elements, a copy button and a **⋯** menu: **Log time**, **Issue material**, **Charge cost**, **Add child**, **Add link**, **Add plan line** and **Delete**.
+
+The main column has the readable id, the name and the description, then **Children**, the costs, **Links** and **Activity**. Children and Links show only once they have content. With Linear or Jira connected, **Sync** sits to the right of the readable id. The costs have two tabs: **Estimated** holds the plan lines, and **Actual** lists the costs and the open time charged to the element. The page opens on Estimated while the project is Draft, and on Actual once it is released. **Activity** holds the comments, and the change history when the audit log is on.
+
+The properties column on the right edits the state, owner, priority, labels, milestone and dates in place. The **Work** group holds **Chargeable**, the budget, the hours estimate and the linked part. **Costs, with children** shows plan, committed, actual and remaining, and **View costs** opens the element on the Costs page.
+
+**Estimated** shows each plan line as a card: its estimate, what has been charged against it so far, and a bar that turns red once the line is over its estimate. Each card has one button to charge more: **Issue** on a material, **Log time** on a labor line and **Charge** on a cost. A material's estimate is its quantity times its unit cost; a labor line's is its hours at its category's cost rate. Click a card to edit the line, and use **Add line** to add one:
+
+- **Material:** an item, a method (Pull from Inventory, Purchase to Order or Make to Order), a quantity, a unit cost and a required date. **Create Job** on a Make to Order line and **Create PO Line** on a Purchase to Order line, both in the row's menu, make the job or purchase order line with the element's charge number.
+- **Labor:** a <Term>labor category</Term>, hours and dates.
+- **Cost:** a description and an amount. **Charge** posts a cost to the element with that description, which is how the card counts what has been charged against it.
+
+**Actual** shows each cost and each open time entry charged to the element and the elements below it as a card. Its **Charge** menu issues material, logs time or charges a cost. On both tabs you can search the cards, filter them by type and change their order.
+
+### Milestones
+
+A <Term>milestone</Term> is a dated window, such as a design review or a phase. Each element can belong to one milestone. The **Schedule** page lists the milestones with a bar each on a **Weekly**, **Monthly** or **Quarterly** timeline, and tints the current period. Click **New Milestone** to add one.
+
+Click a milestone to open its drawer: its status (**Active**, **Upcoming** or **Completed**), dates, elements completed, hours and cost, and a burn chart of its posted hours against an ideal line from its start date to its end date. **Complete**, **Reopen**, **Edit** and **Delete** are in the drawer and in the row's menu.
+
+## Requirements, tests and parameters
+
+A Requirement, a Test Case and a Parameter each have a group of their own in the properties column of the element page.
+
+- A **Parameter** is a value with a unit. Its source is **Manual**, **Sum of children**, **Smallest child**, **Largest child**, **Formula** or **Linked part**. A formula such as `= SNS-20 - SNS-21` uses readable ids, numbers, `+ - * /`, `min`, `max` and `abs`. **Linked part** reads the unit cost or a numeric custom field of the nearest linked part above it. A Parameter can carry an **Allocation** of its parent Parameter and a **Contingency**.
+- A **Requirement** has a category, a target (`≤`, `≥`, `=` or a range) and the Parameter that measures it.
+- A **Test Case** has a verdict and the quality procedure it runs.
+
+A Requirement passes when its Parameter meets the target, with any contingency applied, and no Test Case that verifies it has failed. Units are free text and never convert.
+
+## Trace links
+
+A trace link connects two elements of one project: **satisfies**, **verifies**, **derives**, **implements**, **blocks**, **precedes**, **relates to** and **feeds**. Add them with **Add link** in the element's **⋯** menu, in its **Links** section, or in the Tree layout. A formula writes its own **feeds** links.
+
+When the name, description, target or Parameter value of an element changes, its incoming links <Term id="needs-review">need review</Term>. The Tree draws them with an amber border (**Needs review** in its legend) until someone clicks **Mark reviewed** in the **Links** section.
+
+## Templates and Build from part
+
+Mark a project as a **Template** in the header's menu. **Copy project** opens a new project with **Copy from** set to it. A copy starts in **"Draft"** with no charges, time or assets.
+
+**Build from part**, in the **New Element** menu of the Plan page, creates System elements under a parent element from one of three sources:
+
+- **Serial:** what was consumed to build a serial, each element linked to its consumed serial.
+- **Item:** the item's bill of materials. Bought components are left out unless you turn on **Include bought components**.
+- **Template:** the elements of a template project.
+
+Choose a depth from 1 to 5. The drawer previews the elements before it creates them.
+
+## WBS codes
+
+Each element has a <Term id="wbs-code">WBS code</Term>, such as `1.3.2`. Carbon numbers the tree by position: a top-level element is `1`, `2`, and a child takes its parent's code and its own position. A Parameter and the elements below it get no code. When a code ends in `.0`, its children drop the `.0`, so the children of `1.0` are `1.1`, `1.2`, as MIL-STD-881F numbers them.
+
+- **Pin a code:** type it in **WBS code** on the element page. A pinned code stays when the element moves. Clear the field to go back to the derived code.
+- **Pin WBS codes:** in the Plan page's WBS menu, pins every derived code of the project at once. Do this when the codes match the contract WBS.
+- **Renumber WBS:** in the element page's menu, clears the pinned codes of the element and everything below it.
+
+The Plan page's list and the sidebar tree show the codes once the project has a pinned code. A warning marks a code that two elements share; the exports refuse until you change one.
+
+### Start from MIL-STD-881F
+
+**Copy from** in **New Project** lists four MIL-STD-881F starter structures, levels 1 to 3: Appendix B (Electronics/Avionics/Generic Systems), A (Aircraft Systems), C (Missile/Ordnance Systems) and F (Space Systems). The project starts with every code pinned. An element with children is a System, a leaf is a Task. Rename the "1...n (Specify)" elements for your program.
+
+### Export and import
+
+The Plan page's WBS menu has:
+
+- **Export CSV:** one row per element in tree order, with **Element ID**, **WBS Code**, **Parent WBS Code**, **Level**, **Type**, **Name**, **Start**, **Target**, **Budget** and **Predecessors** (the codes of the elements that precede it).
+- **Import CSV:** reads the same columns. A row with an **Element ID** updates that element, and a blank cell keeps its value. A row without one creates an element under its **Parent WBS Code**. The modal shows every create, update and error first; **Apply** writes nothing while a row has an error. An import never deletes an element or a link, and it is refused once the plan is locked.
+- **Export MS Project XML:** the WBS as a Microsoft Project XML file, which MS Project, Primavera P6 and Deltek Cobra import. A leaf carries its budget and a Start No Earlier Than constraint on its start date, the latest baseline is Baseline 0, and the Text1 to Text3 fields hold the element id, the control account and the work package flag.
+
+## Baselines and change requests
+
+The plan of a project is its elements, their names, types, budgets, estimates, part links, Requirement targets and Parameters, the trace links and the plan lines. State, owner, priority, labels, dates, milestone, verdict and comments are progress. Baselines, change requests and the plan lock cover the plan only. Progress stays editable at all times.
+
+### Baselines
+
+A baseline is a read-only copy of the plan. Open **Baselines** from the history icon at the top of the project sidebar or from the header's **⋯** menu. Click **Take Baseline**, or complete a milestone, which takes one named after it. Click a baseline to compare it with the current plan, or use **Compare with…** in its menu to compare two baselines. The compare lists each changed element in tree order, with its changed fields, plan lines and trace links.
+
+### Change requests
+
+A change request is a draft set of plan changes with a title and a reason. Choose **New change request** in the plan picker at the top of the project sidebar, or click **New Change Request** on the **Change requests** page (the header's **⋯** menu). The Plan page then opens with a banner, and every plan change goes into the change request. The current plan does not change. To open another change request, or to go back to the current plan, use the plan picker. Rows the change request adds, changes or removes show **Added**, **Modified** or **Removed** in the List layout. Click **Leave** to go back to the current plan, and **Review** to open the change request.
+
+The review page shows one card per changed element. Reviewers comment on a changed field or on the element, mark each element **Viewed**, and resolve comments. A **Viewed** mark clears when the element changes again in the change request.
+
+1. **Submit** sends a Draft for review.
+2. **Approve** applies the changes to the plan in one step and takes a baseline named "After" the change request. **Reject** sends it back with notes.
+3. **Reopen** turns a Rejected change request back into a Draft.
+
+If an [approval rule](/docs/reference/approvals) for project change requests exists, its approvers decide. Approval rules are available on the Business plan. Without a rule, anyone who can update projects approves.
+
+<Callout type="warn" title="A change request applies whole, or not at all.">
+If the current plan changed a row after the change request changed it, approval does not apply it. The page lists the conflicting rows. Click **Reopen**, check the rows, then submit again. A change request cannot delete an element that has costs, time, a job or a purchase order line.
+</Callout>
+
+A formula cannot change inside a change request. Leave the change request to edit it.
+
+### Plan lock
+
+Set **Lock Plan After Milestone** on the project's **Settings** page, under **Plan lock**. When that milestone is completed, a plan change outside a Draft change request is refused, and **New Element** on the Plan page is disabled with the lock message as its tooltip. Open a change request from the plan picker to change the plan.
+
+## Charge numbers
+
+A <Term>charge number</Term> is a project, or a project and one of its elements. The picker lists Released projects and their chargeable elements in an Unstarted or Started state. A **Charge Number** field is on:
+
+- **Jobs.** You can change it while the job is Draft or Planned. After release it is fixed.
+- **Purchase order lines.** On the item tab and on the G/L Account tab. An outside processing order has no picker, because its job decides the charge.
+- **Purchase invoice lines.** A line converted from a purchase order copies the charge number of its PO line.
+- **Reimbursement lines.** Each line takes a charge number. Charge lines show their charge number read-only.
+
+**Settings → Projects → Require an element on every project charge** is off by default. Turn it on to make every charge name an element.
+
+### Consume to project
+
+A new job with a charge number has a **Consume to project** switch. When it is on, the job's material, labor and overhead post to the project account. When the job completes, nothing goes into stock, because the project consumes the output.
+
+The switch turns on by itself for an Expense or Contract project. It is not available for a Statistical project, a job that does not complete to inventory, or a job for a sales order line.
+
+## Time
+
+Employees record hours against a charge number and a labor category. Each hour costs the category's rate on the entry date.
+
+- **Log time**, in the element page's **⋯** menu, records hours on one date.
+- **My Time** shows one week. The charge numbers you worked on are on the left, each with its hours for the week, and the week total is under them. Each day is a column with one bar per charge number, as tall as its hours. Select a charge number, then click a day below its bars to add time up to that point. Drag the lower edge of a bar to change its hours, in half-hour steps, or click **×** to delete it. Every change saves at once. **Add** adds a charge number, **PTO** adds a leave element for time off, and **Submit week** sends the Draft hours; its tooltip says what the week still needs. When the week has time cards, each day shows your clocked hours, in orange where they differ. My Time is also in the user menu, and needs only an employee role.
+- **My Time** in the MES shows the same week of bars for operators on the shop floor, sized for touch: tap a charge number, then tap a day to add time.
+
+A <Term>timesheet</Term> entry moves through **"Draft"**, **"Submitted"**, **"Approved"** and **"Posted"**. A **"Rejected"** entry is editable again.
+
+Time that is not posted yet lists on the project's **Time** page and on an element's **Actual** tab, each row with its next step: **Submit week** on your own draft time, **Approve** on submitted time (**Post** when approval is off), or **Open My Time** when the weekly certification or a review must handle it.
+
+<Callout type="warn" title="You correct posted time. You do not edit it.">
+A Posted entry is locked. On **My Time** in the ERP, open the posted bar's menu and choose **Correct**, then give the new hours and a reason. Carbon reverses the posted hours and charges the new hours instead.
+</Callout>
+
+### Approvals
+
+**Settings → Projects → Require approval of timesheets** is off by default, so submitted time posts at once. Turn it on to hold submitted time on the **Time** tab of **Projects → Approvals**. Approve or reject each entry, or use **Approve all** and **Reject all** for an employee's week. The **Billing** tab holds the [billable items](/docs/reference/project-billing#billable-items) to review. An approved entry posts at once, and a rejection needs a note. Approving needs the Projects update permission.
+
+### Labor categories
+
+A labor category is the cost class of an hour, such as Engineer II. Create them at **Projects → Labor Categories**. The category's **Rates** grid keeps a history of **Cost Rate** and **Bill Rate** by **Effective From** date: **New** adds a row. Expense and Contract time cannot post without a rate on its date. Set a person's default category on their **Job** tab in [People](/docs/reference/people).
+
+## Issue material
+
+**Issue material**, in the element page's **⋯** menu, takes stock from a storage unit and charges it to the element. **Return to stock** brings it back. **Inventory → Issue to Project** does the same with a charge number picker. The stock leaves at its carrying cost.
+
+Log time and Issue material are not available on a Closed project or an element that does not take charges.
+
+## Project stock
+
+A project with **Project stock** owns the stock received for it. Stock that belongs to no project is <Term id="unassigned-stock">unassigned stock</Term>.
+
+- A purchase order line charged to the project receives into its stock. So does a job with **Receive to project stock**.
+- A job or an issue for the project draws the project's stock first, then unassigned stock. Other demand draws unassigned stock only. A sales shipment always ships unassigned stock.
+- Stock received into the project is inventory, not project cost. The project is charged when the stock is issued, or at receipt with **Charge at receipt**.
+
+**Inventory → Quantities** filters by **Stock owner**. The item's storage units list each owner's stock on its own, and an inventory count gives each owner its own line, with a **Stock Owner** column. Once the project holds stock of its own, **Stock** shows under **Costs** in the project sidebar. The page lists the project's stock by item, location, storage unit and lot or serial, the borrows it owes and has lent, and its latest transfers. A borrow past its due date shows in red.
+
+### Planning
+
+MRP plans a project with project stock on its own, as described in [planning](/docs/reference/planning#projects-with-project-stock). The project's plan-line materials are its demand. When unassigned stock has more than it needs, MRP suggests a **Transfer** into the project; what is still short becomes an Order or Make for the project, charged to it. The project's manager owns these suggestions. An open borrow past its payback date shows under **Needs attention** on the project's **Overview**, linked to the Stock page.
+
+### Planning groups
+
+<PlanBadge plan="Business" />
+
+A **planning group** lets projects with project stock share supply of the same parts. MRP plans the members as one, so one order covers all of their demand. Each piece of that order is still assigned to a member, and it becomes the member's stock when it arrives.
+
+Open **Projects → Planning Groups** and click **New**:
+
+<FieldTable>
+  <Field name="Name" type="text" required>Unique in the company.</Field>
+  <Field name="Location" type="reference" required>Only projects at this location can join.</Field>
+  <Field name="Priority Rule" type="enum" required>`Earliest Need` gives the group's supply to the earliest need date first. `Project Priority` gives it to the member with the lowest **Planning Priority** first.</Field>
+  <Field name="Excess Rule" type="enum" required>Where received stock goes when no member needs it: **Unassigned stock** or **Exception project**.</Field>
+  <Field name="Exception Project" type="reference">The project that takes the excess. Required with **Exception project**, and it must have project stock.</Field>
+  <Field name="Active" type="boolean">The members of an inactive group are planned on their own.</Field>
+</FieldTable>
+
+A project joins on its **Settings** page, under **Stock and planning**, after you save it: set **Planning Group** and **Planning Priority**. The fields show once the project has project stock and the company has a planning group. The project must have project stock and be at the group's location. You cannot delete a group while it has members, or purchase order lines or jobs made for it.
+
+An order that MRP places for the group belongs to the group, not to one project. MRP **pegs** each part of it to a member's demand:
+
+- A **Soft** peg sits on an order that has not arrived. MRP may move it on any run. A soft peg on a purchase order counts in the member's **Committed** cost.
+- A **Hard** peg is made when the order is received, or when the job completes. The receipt or the job's output is split into one piece of stock per member, at its cost. MRP never moves a hard peg. What no member needs follows the excess rule.
+- A **Manual** peg is a planner's choice, made with a reason. MRP keeps it. If its demand goes away, the peg shows an exception.
+
+A price difference on the supplier's invoice is split over the members' pieces. On stock already used, each member's share is charged to its project as material variance. When one member is short and another has stock it does not need, MRP suggests a **Transfer**, or a **Borrow** with a payback date when the other member needs the stock back later.
+
+Once a member project has a <Term id="peg">peg</Term>, **Pegging** shows under **Costs** in its sidebar. The page lists the group's orders that are for the project, with quantity, need date, state and element. Choose an **As of** date to see the pegs on that day. **Override**, in a peg's row menu, replaces a soft peg with a manual peg on another open order of the group.
+
+### Transfers, borrows and paybacks
+
+Another project's stock needs a transfer first. On the project's **Stock** page, click **Transfer**, or choose **Borrow** or **Payback** from its menu. **Pay Back** is also in the row menu of a borrow, and **All transfers** opens the full list. Add the lines while the transfer is Draft. A user who can update projects approves it, then posts it.
+
+- **Transfer** moves stock between two owners at its cost. Either owner can be unassigned stock.
+- **Borrow** moves stock from one project to another until a payback due date. The stock moves at the lender's cost, and the borrower owes it back at that cost.
+- **Payback** returns borrowed stock. The borrower's stock leaves at its current cost, and the lender gets it back at the cost it lent. When the returned stock cost more or less, the borrower takes the difference as **Payback Variance**, on its project and in the inventory adjustment variance account.
+
+## Costs and the project ledger
+
+The **Costs** page rolls each element up with its children, and adds a **Project total** row:
+
+- **Plan:** material, labor and other plan lines.
+- **Budget:** the budgets set on the element and below it.
+- **Committed:** the value of purchase order lines not yet received.
+- **Allowable** and **Unallowable:** the project ledger total, split by [allowability](/docs/reference/government-contracting#unallowable-cost).
+- **Remaining:** budget less committed and actual.
+- **Estimate:** the element's estimate at completion, else the larger of plan and committed plus actual.
+
+A project that is a contract's project also lists the **Service orders** its contract covers, under the elements: one row per order with hours, actual, billed and unbilled amounts. Their actual cost adds to the **Project total**, and the total row says how much of it is service. You see these rows only with the permission to view service orders. See [Contract project](/docs/reference/service-orders#contract-project).
+
+Click an element to open a drawer with its ledger rows. The **Time** page lists the time not posted yet, then the whole project ledger under **Costs posted**. The ledger only grows: a void or a correction adds a negative row.
+
+<Callout type="note" title="Some actual cost needs accounting.">
+Time, issues, receipts, charges and reimbursements write ledger rows in every company. Job material, job time and purchase invoices write ledger rows only when accounting is on.
+</Callout>
+
+## Indirect rates
+
+<PlanBadge plan="Business" />
+
+**Indirect rates** spread fringe, overhead and G&A cost over the projects that cause it, as a government contractor does. Carbon computes each pool's rate every month, puts **burden** on your projects, and bills it on Cost Plus contract lines.
+
+### Pools
+
+Open **Accounting → Indirect Pools** and click **New**:
+
+<FieldTable>
+  <Field name="Name" type="text" required>Unique in the company.</Field>
+  <Field name="Pool Type" type="enum" required>`Fringe`, `Overhead`, `Material Handling`, `G&A` or `Service Center`.</Field>
+  <Field name="Sequence" type="number" required>The order in which pools compute. A later pool takes the burden of an earlier one, so fringe on indirect labor goes into overhead.</Field>
+  <Field name="Base" type="enum" required>What the rate applies to: `Total Labor Dollars`, `Direct Labor Dollars`, `Direct Labor Hours`, `Direct Material Dollars`, `Total Cost Input` or `Value Added`.</Field>
+  <Field name="Applied Account" type="reference">The account that applied burden credits.</Field>
+  <Field name="Applies to Projects" type="boolean">The burden run burdens project cost with this pool. Not for a Service Center pool.</Field>
+  <Field name="Offset Absorbed Overhead" type="boolean">Overhead pools only. Subtracts the overhead your work centers already applied from each project's burden.</Field>
+  <Field name="Active" type="boolean">An inactive pool computes no rate and burdens nothing.</Field>
+</FieldTable>
+
+Open a pool and click **Add** under **Accounts** to map a GL account to it. **Cost** is pool cost, the top of the rate. **Base** is part of what the rate applies to. A mapping can narrow the account to one dimension value, such as a department. One account is the cost of at most one pool. Project labor and material come into the base from the project ledger, by the project's cost objective, so a project account cannot be a Base account.
+
+### Rates and the period run
+
+Open **Accounting → Indirect Rates** and pick a fiscal year. The page lists the year's period runs. **Rates**, in the **⋯** menu, opens a grid of each pool's year-to-date rate by period, for the rate types `Provisional`, `Target`, `Actual` and `Final`.
+
+- **Set Rate**, in the Rates drawer, enters a Provisional, Target or Final rate from a period to the end of the year.
+- Locking an accounting period starts the **period run**. **Run Period** starts it by hand. The run computes the Actual rates, posts the burden catch-up to your projects, and bills burden on Cost Plus lines.
+- **Run True-Up** appears in the **⋯** menu when every pool that applies to projects has a Final rate for period 12. It burdens the year again at the Final rates and bills the difference.
+
+Burden posts only into a Locked period. Each run posts the year-to-date burden less the burden already posted, so a rate change during the year is caught up on the next run. Unallowable cost stays out of a pool's rate and stays in its base.
+
+**Burden Settings**, at **Settings → Accounting**, picks the rate the run applies, `Provisional` or `Actual`. Burden rows are memo rows in the project ledger. **Post applied burden for Contract projects** also posts them to the general ledger: debit Project WIP, credit the pool's applied account.
+
+**Statement**, in the **⋯** menu, opens the Statement of Indirect Expenses for a period: each pool's accounts, the burden it carries from earlier pools, and its cost, base and rate. **ICE Export** downloads the incurred cost schedules A, B, C, E, G, H, I, K and L of the year, one CSV each.
+
+### Burden on projects and contracts
+
+The **Costs** page of a burdened project lists **Burden by pool**, allowable and unallowable, under the element tree. Hover over an element's **Allowable** amount to see how much of it is burden.
+
+A Cost Plus contract line bills burden at the Final rate when one exists, else at the Provisional rate, plus the line's fee. On the line's billing page, **Rate Ceilings** caps a pool's rate for that line. Burden bills by difference, so a rate change or the true-up adds a positive or negative item, and a posted invoice never changes.
+
+## Budget control
+
+<PlanBadge plan="Business" />
+
+**Budget control** checks each charge against the budget of its nearest budgeted element: the element itself, else the closest element above it with a budget. Set it on the project's **Settings** page, under **Project Control**:
+
+<FieldTable>
+  <Field name="Budget Control" type="enum" required>`None`, `Warn` or `Block`.</Field>
+  <Field name="Tolerance" type="number">How far over the budget a charge may go before the check reports it. Empty reads as 0 %.</Field>
+  <Field name="Material Measurement Point" type="enum" required>`Receipt` counts material when it is received. `Issue` counts it when project stock is issued (earned value only).</Field>
+</FieldTable>
+
+The check adds the new amount to the element's open purchase order lines and its direct actual cost. It runs when you save a purchase order line, finalize a purchase order, issue material to the project, and save a job that consumes to the project. **Warn** saves the document and shows the overrun. **Block** refuses it.
+
+<Callout type="note" title="A timesheet is never refused.">
+The work decides where time is charged, not the money left. On a timesheet, **Warn** and **Block** both save the time and show a warning. **Block** also sends the project owner a "Budget exceeded" notification.
+</Callout>
+
+## Earned value
+
+<PlanBadge plan="Business" />
+
+**Earned value** compares the work done with the plan and the cost. Set it up on the element page, under **Earned Value** in the **Government contracting** properties, which show in DCAA mode:
+
+- Turn on **Control account** on the element that a control account manager owns. Pick the **Control account manager**.
+- On a chargeable element below a control account, pick a **Technique**. That element is a work package.
+
+| Technique | Planned value (BCWS) | Earned value (BCWP) |
+| --- | --- | --- |
+| `0/100` | All at the end date | All when the element is completed |
+| `50/50` | Half at the start date, half at the end date | Half when started, all when completed |
+| `Percent Complete` | Spread over the dates | The budget times **Percent complete** |
+| `Milestone` | Each child element's budget at its target date | The completed child elements |
+| `Level of Effort` | Spread over the dates | Equal to the planned value |
+| `Apportioned` | Spread over the dates | **Factor** times the **Base element**'s earned value |
+
+The budget at completion (BAC) and the dates come from the latest [baseline](#baselines). Take a baseline before you read earned value. Actual cost (ACWP) is the direct cost in the project ledger below the work package.
+
+Once the project has a control account, the **Costs** page shows earned value below the element tree: one row per control account, with its work packages below it. The columns are BAC, **Planned value**, **Earned value**, **Actual cost**, cost variance (CV), schedule variance (SV), the cost and schedule performance indexes (CPI, SPI), the estimate at completion (EAC) and the variance at completion (VAC). A CPI or SPI below 1 shows in red. EAC is ACWP plus the remaining budget divided by CPI.
+
+Pick **Current** or a closed period in the period picker. **Current** is live. A closed period shows the snapshot that **Close Earned Value** took on the period close page while the period was locked. The snapshot never changes after the period closes. For a closed period, **Export ACWP** downloads its actual cost by charge number and element of cost, in hours and amounts, direct and burden, for an earned value tool such as Cobra.
+
+## Stop-work orders
+
+<PlanBadge plan="Business" />
+
+A customer can order work on a contract to stop for 90 days (FAR 52.242-15). On a Released project with the cost objective `Direct`, open the **⋯** menu in the project header and click **Stop work**. Enter the order date.
+
+The project goes **"On Hold"**: it takes no new charges, and open purchase orders and jobs still post. The project's **Overview** shows the order date and the end date 90 days later under **Needs attention**. While the order is open, the header's **⋯** menu offers **Resume work** in place of the status changes, and only it releases the project and clears the order.
+
+## Keyboard shortcuts
+
+**⌘⇧E** opens Plan, **⌘⇧M** Schedule, **⌘⇧C** Costs, **⌘⇧H** Time and **⌘⇧S** Settings (Ctrl instead of ⌘ on Windows). While they show in the sidebar, **⌘⇧K** opens Stock, **⌘⇧P** Pegging and **⌘⇧I** Billing. On the Plan page, **N** adds an element. On the element page, **T** logs time and **I** issues material. Press **?** for the [full list](/docs/reference/keyboard-shortcuts).
+
+## Related
+
+<Cards>
+  <Card title="Jobs" href="/docs/reference/jobs">
+    The production orders that carry a charge number and can consume to a project.
+  </Card>
+  <Card title="Purchase orders" href="/docs/reference/purchase-orders">
+    The lines that charge purchases to a project.
+  </Card>
+  <Card title="Dimensions" href="/docs/reference/dimensions">
+    The project dimensions on every project journal line.
+  </Card>
+  <Card title="Accounting" href="/docs/reference/accounting">
+    Where Project WIP and Project Expense post.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Troubleshooting
+
+### "Project XX is Draft. Only a Released project takes new charges."
+New time, issues and other new charges need a Released project. Release the project from the ⋯ menu in its header. The same message names On Hold, Technically Complete (shown as Work Complete) or Closed for those statuses.
+
+### "Element XX-12 of project XX is Backlog. Only an Unstarted or Started element takes new charges."
+Move the element to an Unstarted or Started state. A Completed element still accepts postings against existing commitments (receipts, invoices, job completions, reversals), but no new charges.
+
+### "Element XX-12 of project XX does not take charges."
+The element's Chargeable property is off. A Parameter can never be chargeable ("A Parameter cannot take charges").
+
+### "Set Project Expense in Account Defaults before you charge an Expense project" / "Set Project Work in Progress in Account Defaults before you charge a Contract project"
+The project has no Cost Account and the account default is empty. Set it at Accounting → Default Accounts. The UI label for Project Work in Progress is "Project WIP".
+
+### "Set Indirect Cost in Account Defaults before you issue to a Statistical project"
+An issue to a Statistical project posts to the Indirect Materials & Services account default. Set it at Accounting → Default Accounts.
+
+### "The labor category of a timesheet entry has no cost rate on YYYY-MM-DD"
+Expense and Contract time needs a cost rate effective on or before the entry date. Add one on the labor category (Projects → Labor Categories). Rates cannot be deleted; add a new one with a later Effective From date to change it.
+
+### "This time is posted. Use a correction to change posted hours."
+Posted timesheet entries are locked. Use Correct in the posted bar's menu on ERP My Time. A correction writes a negative reversal and a replacement entry, both Submitted. An entry can be corrected once ("Only a posted entry needs a correction" for anything else).
+
+### "The time is logged but did not post: ..."
+Log time saved the entry as Submitted, but posting refused it with the reason shown. The entry stays Submitted and does not post.
+
+### "The project has N open purchase order line(s). Receive or close them before you close the project."
+Close refuses while any purchase order of the project is not Completed, Closed or Rejected, or any job is not Completed, Cancelled or Closed.
+
+### "A Closed project cannot change"
+Element create, update, move, delete and plan routes refuse a Closed project. Closed has no transition back.
+
+### "This project has a stop-work order. Use Resume."
+A project with an open [stop-work order](#stop-work-orders) stays On Hold. Click **Resume** in the project header.
+
+### "Earned value is recorded for this element or an element below it. It cannot be deleted."
+A closed period's earned value snapshot names the element as a work package or a control account. Keep the element.
+
+### "The charge number is fixed once the job is released"
+A job's charge number can change only while the job is Draft or Planned.
+
+### "Project XX is Statistical. A job cannot consume to a Statistical project."
+Consume to project needs an Expense or Contract project. It also cannot be combined with a fixed asset target or a sales order line.
+
+### "Government-furnished stock of project XX can only move to a project of the same customer"
+Approve and Post refuse a transfer, borrow or payback that moves a government-furnished project's stock to unassigned stock or to a project of another customer. Pick a project of the same customer.
+
+### "LOT-1 is in the stock of project XX. Transfer it first."
+A job, an issue or a pick can draw only its own project's stock and unassigned stock. Move the lot with a transfer or a borrow first.
+
+### "Insufficient quantity in the stock of project XX to transfer"
+Posting checks the from-owner's stock at each line's storage unit and lot. The line modal shows what is available there.
+
+### Approvals is missing from the Projects menu
+The Approvals item shows only when Settings → Projects → "Require approval of timesheets" is on or Settings → Time → Controls is DCAA. The billable items review is its Billing tab (`/x/projects/billing` redirects there). Approving needs the Projects update permission; an approver sees time on every project.
+
+### The Costs page shows no actual cost
+Actual is the sum of the project ledger. A Statistical project writes no ledger rows for time or issues. Job material, job time and purchase invoice rows are written only when accounting is enabled. Committed is the unreceived value of PO lines on purchase orders in Planned, To Receive, To Receive and Invoice or To Invoice.
+
+## Internals
+
+Tables: `project` (`identifier` matches `^[A-Z][A-Z0-9]{1,5}$`, `status` enum `projectStatus`, `costTreatment` enum `projectCostTreatment`: Statistical, Expense, Capitalize, Contract; `fixedAssetClassId` and `fixedAssetId` for Capitalize; `isTemplate`), `projectElement` (`readableId`, `type` enum `projectElementType`, `stateId`, `isChargeable`, `isFinalAsset`, `fixedAssetId`, `itemId`, `trackedEntityId`, Requirement target columns, `verdict`, Parameter columns `parameterSource` / `parameterValue` / `parameterFormula` / `parameterItemField` / `allocationPercent` / `parameterContingencyPercent`), `projectElementLink` (`linkType` enum `projectElementLinkType`, `suspectSince`, `reviewedAt`; the UI calls a suspect link "needs review"), `projectView` and `projectUserPreference` (saved views and layout preference, no longer read by the UI), `projectState` (`group` enum `projectStateGroup`) and `projectLabel` (both company-wide, unique per (companyId, name), edited at Settings → Projects), `projectMilestone`, `projectElementMaterial` / `projectElementLabor` / `projectElementCost` (plan lines), `laborCategory`, `laborCategoryRate`, `timesheetEntry` (status enum `timesheetEntryStatus`), `projectLedger` (`costType` enum `projectCostType`, `reversalOfId`). Charge number columns: `projectId` + `projectElementId` on `job`, `purchaseOrderLine`, `purchaseInvoiceLine`, `chargeLine`, `reimbursementLine`; `job.consumeToProject`. Settings: `companySettings.timesheetApprovalRequired`, `companySettings.requireProjectElement`. Account defaults: `projectWorkInProgressAccount`, `projectExpenseAccount`. Postings: `post-timesheet`, `post-project-issue`. Journal sources: `Timesheet`, `Project Issue`. Routes: `/x/projects`, `/x/timesheet` (My Time; `/x/projects/timesheet` redirects to it), `/x/projects/approvals` (`?tab=time|billing`), `/x/projects/labor-categories`, `/x/projects/issue`, `/x/project/:id` (Overview), `/x/project/:id/elements` (Plan, `?layout=list|tree|reader`; retired `table`, `board` and `timeline` redirect to `list`), `/x/project/:id/element/:elementId` (element page; `/elements/:elementId` redirects to it), `/x/project/:id/milestones` (Schedule), `/x/project/:id/costs|stock|pegging|billing|time|settings` (`/details` redirects to `/settings`), `/x/settings/projects`; MES `/x/timesheet`. Capital projects write `fixedAssetCipCost` rows (`projectId`, `projectElementId`, `postCapitalization`). RPC `get_element_history_by_item`; RPC `get_child_service_project_costs` (the Costs tab's service orders, one row per child Service project). Routes added in Phase 1b: `/x/project/:id/place-in-service`, `/x/project/:id/elements/build`, `/x/project/:id/elements/links`, `/x/project/:id/template`, `/x/project/:id/elements/:elementId/create-job`, `/x/project/:id/elements/:elementId/create-po-line`, `/file/project/:id.pdf`. Phase 1c tables: `projectBaseline` (`snapshot` JSONB with `formatVersion`, `source` enum `projectBaselineSource`), `projectChangeRequest` (`status` enum `projectChangeRequestStatus`, `readableId` `<identifier>-CR-<n>`, `baseBaselineId`, `appliedBaselineId`), `projectChangeRequestItem` (`operation`, `targetTable`, `targetId`, `payload`, `baseRow`), `projectChangeRequestComment`, `projectChangeRequestView`; `project.lockPlanAfterMilestoneId`. Approval document type `projectChangeRequest`. Routes added in Phase 1c: `/x/project/:id/baselines`, `/x/project/:id/baselines/compare`, `/x/project/:id/change-requests`, `/x/project/:id/change-requests/new`, `/x/project/:id/change-requests/:crId` (with `/status`, `/comments`, `/viewed`); `?cr=<id>` on the Elements and element pages opens a change request. Phase 2a (project stock): `project.projectStock` / `chargeAtReceipt` / `governmentFurnished`; `itemLedger.projectId` and `costLedger.projectId` (NULL = unassigned stock, `COMMON_STOCK_OWNER` in code); `itemStockQuantities.projectId` (`''` = common); `job.receiveToProjectStock`; `pickingListLine.projectId`, `inventoryCountLine.projectId`; tables `projectStockTransfer` (`type` enum `projectStockTransferType`, `status` enum `projectStockTransferStatus`, readable id `PST…`), `projectStockTransferLine` (`unitCost` stamped at posting), `projectBorrow` (`status` enum `projectBorrowStatus`); `costLedger.projectBorrowId`. Posting `post-project-stock-transfer`; journal source and item ledger document type `Project Transfer`; cost type `Payback Variance`. `get_inventory_quantities` takes `project_id`; `get_inventory_valuation` returns `projectId`. Routes added in Phase 2a: `/x/projects/transfers`, `/x/projects/transfers/new`, `/x/project-stock-transfer/:id` (with `/lines`, `/status`), `/x/project/:id/stock`. Phase 2b (planning): `planningSegmentId` on `demandForecast`, `supplyForecast`, `demandActual`, `supplyActual`, `demandForecastSource` and `planningAction` (`''` = common); SQL `project_planning_segment`; views `openProjectMaterialLines` and `openProjectBorrows`; demand source types `Project Material` and `Project Borrow`, supply source type `Project Borrow`; `planningAction` type `Transfer` with `fromProjectId`, `toProjectId` and `projectStockTransferId`; `projectStockTransfer.planningActionId`. Not built yet: element cost-treatment overrides in the UI, attachments on elements.
+
+### "This capital project has no asset under construction. Release the project first."
+A Capitalize charge needs the asset of its project or final-asset element. Release creates the assets; marking an element Final asset on a released project creates its asset.
+
+### "Asset XX was capitalized; reverse the capitalization first"
+A void of a document whose cost reached an asset under construction is refused once that asset is in service. A late cost (posted after Place in Service) can be voided until the asset is disposed.
+
+### "A Parameter can only have Parameters as children"
+A Parameter's children roll up into it, so only Parameters can go under a Parameter.
+
+### "The serial belongs to a different item"
+A linked serial must be a serial of the element's linked item. Picking another item clears the serial.
+
+### "The plan is locked after XX. Open a change request to change it."
+The project's lock milestone is completed. Open a change request from the plan picker in the project sidebar and make the change there. Progress fields (state, owner, dates) are never locked.
+
+### "XX-CR-1 is approved but cannot apply: the current plan changed under N of its rows."
+A row the change request changes was changed in the current plan after the draft read it. Reopen the change request; Carbon lays its changes over the current plan. Check the rows and submit again.
+
+### "A formula cannot change in a change request."
+A formula writes its own feeds links, which a change request does not carry. Leave the change request (**Leave** on the banner) to edit the formula.
+
+### Build from part leaves bill of materials lines out
+The item source reads the method tree, which skips a line whose item has no cost record. The drawer shows the count. A Build from part parent cannot be a Parameter.
+</AgentContext>

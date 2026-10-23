@@ -48,7 +48,8 @@ import {
   type OpenItem,
   planInventoryReset,
   type RecostEvent,
-  recostOutbound
+  recostOutbound,
+  splitOpeningLayersByStripe
 } from "@carbon/database/accounting-cutover";
 import {
   ACCOUNTING_ALREADY_SET_UP,
@@ -145,6 +146,9 @@ import {
   getNextSequence as getNextSequenceInTransaction,
   getNextSequences
 } from "@carbon/database/sequence";
+import { getTimesheetCloseReadiness } from "@carbon/database/timesheet-readiness";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { getLogger } from "@carbon/logger";
 import type {
   AccountType as LedgerAccountType,
@@ -218,6 +222,18 @@ import {
   type SalesLineRevenue,
   salesLineDimensions
 } from "~/modules/invoicing/invoicing.service";
+import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "~/modules/projects/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  onInventoryAccount,
+  resolveProjectLineCharges,
+  reverseProjectLedgerRows
+} from "~/modules/projects/project-posting";
 import { getOnRentLineForAsset } from "~/modules/sales/sales.service";
 import { getNextSequence } from "~/modules/settings/settings.service";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -244,7 +260,6 @@ import {
   getAccountingPeriodForDate,
   getDefaultPostingGroup,
   getOffsetAccount,
-  insertNegatedJournal,
   invokePosting,
   loadContractPositions,
   lockContractPositions,
@@ -278,7 +293,6 @@ import type {
   periodCloseTaskSeverities,
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
-  projectValidator,
   taxDepreciationMethods
 } from "./accounting.models";
 import {
@@ -309,6 +323,10 @@ import {
   summarizeLeaseCosts,
   summarizeLeaseLiabilities
 } from "./lease-liabilities";
+import {
+  projectRevenueWriters,
+  synthesizeProjectRevenue
+} from "./project-revenue";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
@@ -3039,7 +3057,8 @@ export async function closeAccountingPeriod(
     companyGroupId: string;
     userId: string;
   },
-  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
+  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args),
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const cutover = await requireAccountingCutover(client, args.companyId);
   if (cutover.error) return { data: null, error: cutover.error };
@@ -3088,9 +3107,11 @@ export async function closeAccountingPeriod(
   // idempotent, so this both materializes and evaluates the checklist.
   const checklist = await loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
-    previewRuns
+    previewRuns,
+    entitlements
   );
   if (checklist.error || !checklist.data) {
     return {
@@ -3200,12 +3221,19 @@ export async function closePeriodWithChecklist(
     userId: string;
   }
 ) {
-  return closeAccountingPeriod(client, db, {
+  const closeArgs = {
     periodId: args.periodId,
     companyId: args.companyId,
     companyGroupId: args.companyGroupId,
     userId: args.userId
-  });
+  };
+  return closeAccountingPeriod(
+    client,
+    db,
+    closeArgs,
+    runPreviewer(client, db, closeArgs),
+    await periodCloseEntitlements(client, args.companyId)
+  );
 }
 
 export async function reopenAccountingPeriod(
@@ -3538,8 +3566,9 @@ function previewError(error: unknown, fallback: string): string {
 
 /**
  * Asks both run engines what a new run for `periodEnd` would hold, without
- * creating one. Revenue: the `preview-revenue-recognition-run` server
- * function (the proposal's synthesizers and due rows, rolled back).
+ * creating one. Revenue: `previewRevenueRecognitionRun` (the proposal's
+ * synthesizers, the commercial project revenue one included, and due rows,
+ * rolled back).
  * Depreciation: `buildDepreciationRunLines`, empty when a later period is
  * already posted (per-month posting put those months in their periods).
  * Never throws: a failure is returned as the preview's `error`.
@@ -3616,25 +3645,236 @@ export async function getPeriodRunPreview(
 }
 
 /** The previewer the close checklist uses outside tests. */
-function runPreviewer(
+export function runPreviewer(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; companyGroupId: string; userId: string }
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
 ): PeriodRunPreviewer {
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
 
 /**
- * Evaluates every Auto close check for the period. `runPreview` is what new
- * revenue recognition and depreciation runs for `endDate` would hold
- * (`getPeriodRunPreview`).
+ * The "Timesheets complete" close check (Government Contracting 5a). It reads
+ * with the privileged Kysely client, so the count does not depend on the
+ * closing user's `people` or `projects` access. A failed read counts as one,
+ * so the warning shows rather than a false pass.
  */
-export async function computePeriodReadiness(
+async function getPeriodTimesheetReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ failing: boolean; count: number }> {
+  try {
+    return await getTimesheetCloseReadiness(db, {
+      companyId,
+      startDate,
+      endDate
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * The commercial features the close checks depend on. The checklist and the
+ * close read them with `periodCloseEntitlements`; a test passes its own.
+ */
+export type PeriodCloseEntitlements = {
+  /** GOVERNMENT_CONTRACTING: the "Compute burden for the period" and the
+   *  "Close earned value for the period" checks. */
+  governmentContracting?: boolean;
+};
+
+/** The company's `PeriodCloseEntitlements` (Government Contracting 5b: the
+ *  burden check; 5c: the earned value check). */
+export async function periodCloseEntitlements(
   client: SupabaseClient<Database>,
+  companyId: string
+): Promise<PeriodCloseEntitlements> {
+  return {
+    governmentContracting: await companyHasFeature(client, companyId, {
+      feature: "GOVERNMENT_CONTRACTING"
+    })
+  };
+}
+
+/**
+ * The "Compute burden for the period" decision (Government Contracting 5b).
+ * Not applicable, so passing, when the company lacks GOVERNMENT_CONTRACTING
+ * or has no active indirect pool that applies to projects. Otherwise it fails
+ * until the period's indirect rate run has computed burden.
+ */
+export function burdenComputedCheck({
+  entitled,
+  poolCount,
+  burdenComputedAt
+}: {
+  entitled: boolean;
+  poolCount: number;
+  burdenComputedAt: string | null;
+}): { failing: boolean; count: number } {
+  const failing = entitled && poolCount > 0 && !burdenComputedAt;
+  return { failing, count: failing ? 1 : 0 };
+}
+
+/**
+ * The "Compute burden for the period" close check. It reads with the
+ * privileged Kysely client, as the Timesheets complete check does, and only
+ * when the company has GOVERNMENT_CONTRACTING. A failed read counts as one,
+ * so the warning shows rather than a false pass.
+ */
+async function getPeriodBurdenReadiness(
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   startDate: string,
   endDate: string,
-  runPreview: PeriodRunPreview
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return burdenComputedCheck({
+      entitled,
+      poolCount: 0,
+      burdenComputedAt: null
+    });
+  }
+  try {
+    const pools = await db
+      .selectFrom("indirectPool")
+      .select((eb) => eb.fn.countAll<number>().as("count"))
+      .where("companyId", "=", companyId)
+      .where("active", "=", true)
+      .where("appliesToProjects", "=", true)
+      .executeTakeFirst();
+    const poolCount = Number(pools?.count ?? 0);
+    if (poolCount === 0) {
+      return burdenComputedCheck({
+        entitled,
+        poolCount,
+        burdenComputedAt: null
+      });
+    }
+    const run = await db
+      .selectFrom("indirectRateRun")
+      .select("burdenComputedAt")
+      .where("companyId", "=", companyId)
+      .where(
+        "accountingPeriodId",
+        "in",
+        db
+          .selectFrom("accountingPeriod")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("startDate", "=", startDate)
+          .where("endDate", "=", endDate)
+      )
+      .executeTakeFirst();
+    return burdenComputedCheck({
+      entitled,
+      poolCount,
+      burdenComputedAt: run?.burdenComputedAt ?? null
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * The "Close earned value for the period" decision (Government Contracting
+ * 5c, C14). Not applicable, so passing, when the company lacks
+ * GOVERNMENT_CONTRACTING or no project has earned value work packages.
+ * Otherwise it fails while a project with work packages has no snapshot for
+ * the period; the count is those projects.
+ */
+export function earnedValueClosedCheck({
+  entitled,
+  projectsWithoutSnapshot
+}: {
+  entitled: boolean;
+  projectsWithoutSnapshot: number;
+}): { failing: boolean; count: number } {
+  const count = entitled ? Math.max(0, projectsWithoutSnapshot) : 0;
+  return { failing: count > 0, count };
+}
+
+/**
+ * The "Close earned value for the period" close check. It reads with the
+ * privileged Kysely client, and only when the company has
+ * GOVERNMENT_CONTRACTING. One statement counts the Released, On Hold and
+ * Technically Complete projects with a work package (an element with a
+ * technique below a control account, C7) and no `earnedValuePeriod` row for
+ * the period. A failed read counts as one, so the warning shows rather than
+ * a false pass.
+ */
+async function getPeriodEarnedValueReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return earnedValueClosedCheck({ entitled, projectsWithoutSnapshot: 0 });
+  }
+  try {
+    const result = await sql<{ count: number }>`
+      WITH RECURSIVE ancestors AS (
+        SELECT e."projectId", e."parentId" AS "ancestorId"
+        FROM "projectElement" e
+        JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
+        WHERE e."companyId" = ${companyId}
+          AND e."earnedValueTechnique" IS NOT NULL
+          AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
+        UNION
+        SELECT a."projectId", parent."parentId"
+        FROM ancestors a
+        JOIN "projectElement" parent
+          ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
+      ),
+      projects AS (
+        SELECT DISTINCT a."projectId"
+        FROM ancestors a
+        JOIN "projectElement" ca
+          ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
+        WHERE ca."isControlAccount"
+      )
+      SELECT COUNT(*)::int AS "count"
+      FROM projects pr
+      WHERE NOT EXISTS (
+        SELECT 1 FROM "earnedValuePeriod" ev
+        JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
+        WHERE ev."companyId" = ${companyId}
+          AND ev."projectId" = pr."projectId"
+          AND ap."startDate" = ${startDate}::date
+          AND ap."endDate" = ${endDate}::date
+      )
+    `.execute(db);
+    return earnedValueClosedCheck({
+      entitled,
+      projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * Evaluates every Auto close check for the period. `runPreview` is what new
+ * revenue recognition and depreciation runs for `endDate` would hold
+ * (`getPeriodRunPreview`). `entitlements` gates the commercial checks.
+ */
+export async function computePeriodReadiness(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  runPreview: PeriodRunPreview,
+  entitlements: PeriodCloseEntitlements = {}
 ): Promise<{
   checks: PeriodReadinessCheck[];
   blockers: { key: string; label: string; count: number }[];
@@ -3823,6 +4063,31 @@ export async function computePeriodReadiness(
     runPreview.depreciation.count +
     (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
 
+  // Read last, and only in DCAA mode (see the helper).
+  const timesheets = await getPeriodTimesheetReadiness(
+    db,
+    companyId,
+    startDate,
+    endDate
+  );
+  // Read last, and only with GOVERNMENT_CONTRACTING (see the helpers).
+  const [burden, earnedValue] = await Promise.all([
+    getPeriodBurdenReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    ),
+    getPeriodEarnedValueReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    )
+  ]);
+
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
       !isBalanced(
@@ -3973,6 +4238,36 @@ export async function computePeriodReadiness(
       label: "Unmatched intercompany transactions involving this company",
       failing: (unmatchedIC.count ?? 0) > 0,
       count: unmatchedIC.count ?? 0
+    },
+    // This evaluator MUST exist for the seeded "Timesheets complete" task
+    // (Government Contracting 5a): an Auto task with no evaluator fails closed.
+    {
+      autoCheckKey: "timesheets-complete",
+      severity: "Warning",
+      label:
+        "Timesheet entries dated in this period that are not posted, and scheduled work days with no time entered",
+      failing: timesheets.failing,
+      count: timesheets.count
+    },
+    // This evaluator MUST exist for the seeded "Compute burden for the
+    // period" task (Government Contracting 5b), and it MUST pass when the
+    // check is not applicable: the task is required for every company.
+    {
+      autoCheckKey: "burden-computed",
+      severity: "Warning",
+      label: "Burden not yet computed for this period",
+      failing: burden.failing,
+      count: burden.count
+    },
+    // The same for the seeded "Close earned value for the period" task
+    // (Government Contracting 5c): it MUST pass when not applicable.
+    {
+      autoCheckKey: "earned-value-closed",
+      severity: "Warning",
+      label:
+        "Projects with work packages that have no earned value snapshot for this period",
+      failing: earnedValue.failing,
+      count: earnedValue.count
     }
   ];
 
@@ -4006,13 +4301,15 @@ export async function getPeriodCloseReadiness(
   }
   const { checks, blockers, warnings } = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
     await getPeriodRunPreview(client, db, {
       ...args,
       periodEnd: period.data.endDate
-    })
+    }),
+    await periodCloseEntitlements(client, companyId)
   );
   return { data: { checks, blockers, warnings }, error: null };
 }
@@ -4176,18 +4473,23 @@ export async function getPeriodCloseChecklist(
 ) {
   return loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
-    runPreviewer(client, db, args)
+    runPreviewer(client, db, args),
+    await periodCloseEntitlements(client, args.companyId)
   );
 }
 
-/** `getPeriodCloseChecklist` with the run previewer passed in. */
+/** `getPeriodCloseChecklist` with the run previewer and the entitlements
+ *  passed in. */
 export async function loadPeriodCloseChecklist(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   periodId: string,
-  previewRuns: PeriodRunPreviewer
+  previewRuns: PeriodRunPreviewer,
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const period = await getAccountingPeriodById(client, periodId, companyId);
   if (period.error || !period.data) {
@@ -4254,10 +4556,12 @@ export async function loadPeriodCloseChecklist(
 
   const readiness = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
-    await previewRuns(period.data.endDate)
+    await previewRuns(period.data.endDate),
+    entitlements
   );
 
   const evaluated = evaluateCloseChecklist(
@@ -4559,6 +4863,27 @@ export async function getFiscalYearSettings(
     .single();
 }
 
+/**
+ * The company's current fiscal year — today in its time zone, counted from
+ * its fiscal year's start month — and that start month (1–12).
+ */
+export async function getCurrentFiscalYear(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const [timeZone, settings] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    getFiscalYearSettings(client, companyId)
+  ]);
+  const startMonth = MONTH_NUMBER[settings.data?.startMonth ?? "January"] ?? 1;
+  const today = datetime.today(timeZone);
+  return {
+    startMonth,
+    fiscalYear: fiscalYearAndPeriodFor(today.year, today.month, startMonth)
+      .fiscalYear
+  };
+}
+
 export async function getPaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
@@ -4715,10 +5040,18 @@ export async function upsertAccount(
   if ("createdBy" in account) {
     return client.from("account").insert([account]).select("*").single();
   }
-  const { companyGroupId: _companyGroupId, ...accountUpdate } = account;
+  // `allowability` is NOT NULL: an update without it keeps the stored value.
+  const {
+    companyGroupId: _companyGroupId,
+    allowability,
+    ...accountUpdate
+  } = account;
   return client
     .from("account")
-    .update(sanitize(accountUpdate))
+    .update({
+      ...sanitize(accountUpdate),
+      ...(allowability ? { allowability } : {})
+    })
     .eq("id", account.id)
     .select("id")
     .single();
@@ -4861,91 +5194,6 @@ export async function upsertCostCenter(
     .from("costCenter")
     .update(sanitize(costCenter))
     .eq("id", costCenter.id)
-    .select("id")
-    .single();
-}
-
-export async function deleteProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string,
-  updatedBy: string
-) {
-  return client
-    .from("project")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
-
-export async function getProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string
-) {
-  return client
-    .from("project")
-    .select("*")
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getProjects(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("project")
-    .select("*", { count: LIST_COUNT })
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  if (args.search) {
-    query = query.or(searchFilter(["name", "description"], args.search));
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
-
-  return query;
-}
-
-export async function upsertProject(
-  client: SupabaseClient<Database>,
-  project:
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in project) {
-    return client
-      .from("project")
-      .insert([{ ...project, active: true }])
-      .select("id")
-      .single();
-  }
-
-  const { companyId, id, ...update } = project;
-  return client
-    .from("project")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -5212,15 +5460,38 @@ function getEntityDimensionValues(
         .eq("companyId", companyId)
         .order("name");
     case "Project":
-      // Only ACTIVE projects are selectable for new dimension assignments;
-      // soft-deleted (active = false) projects stay resolvable for history via
-      // getEntityValuesByIds but must not appear as new options.
+      // Only ACTIVE Standard projects are selectable for new dimension
+      // assignments; soft-deleted (active = false) projects stay resolvable
+      // for history via getEntityValuesByIds but must not appear as new
+      // options. A Service project's journal lines carry its Project value
+      // from posting, so reports still group by service order.
       return client
         .from("project")
         .select("id, name")
         .eq("companyId", companyId)
+        .eq("projectType", "Standard")
         .eq("active", true)
         .order("name");
+    case "ProjectElement":
+      // Only chargeable elements of Standard projects take a charge here, so
+      // only they are options. The label is the element's readable id and
+      // name ("ST-12 Optics").
+      return client
+        .from("projectElement")
+        .select(
+          "id, readableId, name, project:project!projectElement_project_fkey!inner(projectType)"
+        )
+        .eq("companyId", companyId)
+        .eq("isChargeable", true)
+        .eq("project.projectType", "Standard")
+        .order("readableId")
+        .then(({ data, error }) => ({
+          data: (data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.readableId} ${e.name}`
+          })),
+          error
+        }));
     // Customer / Supplier / Item are high-cardinality: intentionally NOT
     // eager-loaded here. The DimensionSelector sources their options lazily
     // from the client stores (useCustomers / useSuppliers / useItems).
@@ -5349,6 +5620,18 @@ function getEntityValuesByIds(
       return client.from("scrapReason").select("id, name").in("id", ids);
     case "Project":
       return client.from("project").select("id, name").in("id", ids);
+    case "ProjectElement":
+      return client
+        .from("projectElement")
+        .select("id, readableId, name")
+        .in("id", ids)
+        .then(({ data, error }) => ({
+          data: (data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.readableId} ${e.name}`
+          })),
+          error
+        }));
     case "FixedAssetClass":
       return client.from("fixedAssetClass").select("id, name").in("id", ids);
     case "Customer":
@@ -6038,6 +6321,8 @@ export type JournalSourceDocument = {
     | "fixedAsset"
     | "inventoryCount"
     | "maintenanceDispatch"
+    | "project"
+    | "projectTime"
     | "nonConformance"
     | "inspection"
     | "charge"
@@ -6262,6 +6547,45 @@ export async function getJournalEntryRelatedItems(
               id: r.id,
               readableId: r.maintenanceDispatchId
             }))
+          )
+      : none,
+    // A "Project Issue" line holds the project's id (the itemLedger
+    // documentId of the issue).
+    idsOf("Project Issue").length > 0
+      ? client
+          .from("project")
+          .select("id, identifier, name")
+          .in("id", idsOf("Project Issue"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "project" as const,
+              id: r.id,
+              readableId: r.identifier ?? r.name
+            }))
+          )
+      : none,
+    // A "Timesheet" line holds a timesheetEntry id; list the entry's project.
+    idsOf("Timesheet").length > 0
+      ? client
+          .from("timesheetEntry")
+          .select(
+            "project:project!timesheetEntry_project_fkey(id, identifier, name)"
+          )
+          .in("id", idsOf("Timesheet"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) =>
+              r.project
+                ? [
+                    {
+                      kind: "projectTime" as const,
+                      id: r.project.id,
+                      readableId: r.project.identifier ?? r.project.name
+                    }
+                  ]
+                : []
+            )
           )
       : none,
     idsOf("Non-Conformance").length > 0
@@ -7481,6 +7805,26 @@ export async function buildDepreciationRunLines(
     costAdjustments.data.map((transfer) => transfer.fixedAssetId)
   );
 
+  // An asset with a cost added after it went into service (a capital
+  // project's late cost, `postCapitalization`) depreciates Straight Line on
+  // its remaining life. Every other asset keeps its schedule unchanged.
+  const lateCosts = await fetchAllFromTable<{ fixedAssetId: string }>(
+    client,
+    "fixedAssetCipCost",
+    "id, fixedAssetId",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("postCapitalization", true)
+        .order("id", { ascending: true })
+  );
+  if (lateCosts.error || !lateCosts.data) {
+    return { data: null, error: lateCosts.error };
+  }
+  const remainingLifeAssetIds = new Set(
+    lateCosts.data.map((row) => row.fixedAssetId)
+  );
+
   const lines = buildDepreciationLines(
     assets.data
       .filter((asset) => !coveredAssetIds.has(asset.id))
@@ -7489,6 +7833,7 @@ export async function buildDepreciationRunLines(
         accumulatedTaxDepreciation: Number(
           asset.accumulatedTaxDepreciation ?? 0
         ),
+        remainingLifeBasis: remainingLifeAssetIds.has(asset.id),
         costAdjusted: costAdjustedAssetIds.has(asset.id)
       })),
     periodEnd,
@@ -7649,14 +7994,21 @@ export async function getRevenueRecognitionRunLines(
 ) {
   // The run line -> schedule FK is composite (scheduleId, companyId), so the
   // embed must name the target table and constraint; `schedule:scheduleId(...)`
-  // only resolves single-column FKs and fails with PGRST200.
-  return client
-    .from("revenueRecognitionRunLine")
-    .select(
-      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, leaseId, journalId)"
-    )
-    .eq("runId", runId)
-    .eq("companyId", companyId);
+  // only resolves single-column FKs and fails with PGRST200. A contract row
+  // also brings its month's progress figures and the line's billing element
+  // (the project revenue review, Phase 4b). Paged: the run page totals and
+  // journals every line, so a run past PostgREST's 1000-row cap must not be
+  // cut short.
+  return fetchAllRecords(() =>
+    client
+      .from("revenueRecognitionRunLine")
+      .select(
+        "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, customerContractLineId, leaseId, journalId, revenue:customerContractRevenue!revenueRecognitionSchedule_customerContractRevenue_fkey(id, periodStart, amount, earnedToDate, estimateAtCompletion, transactionPrice, progress), contractLine:customerContractLine!revenueRecognitionSchedule_customerContractLine_fkey(id, description, customerContractId, contract:customerContract!customerContractLine_contract_fkey(id, customerContractId), element:projectElement!customerContractLine_projectElement_fkey(id, readableId, name)))"
+      )
+      .eq("runId", runId)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
 }
 
 /**
@@ -8744,7 +9096,9 @@ export async function getFixedAssetRelatedItems(
     Promise.all([
       client
         .from("purchaseOrderLine")
-        .select("id, purchaseOrder(id, purchaseOrderId, status, supplierId)")
+        .select(
+          "id, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId)"
+        )
         .eq("assetId", fixedAssetId)
         .eq("companyId", companyId),
       client
@@ -10598,6 +10952,8 @@ export type RevenueRecognitionDimensionIds = {
   location?: string;
   /** Contract rows only: the contract line's project, else the contract's. */
   project?: string;
+  /** Contract rows only: the contract line's billing element. */
+  projectElement?: string;
   /** Lessee lease rows only: the lease's supplier. */
   supplier?: string;
 };
@@ -10726,11 +11082,16 @@ export async function postRevenueRecognitionRun(
               )
             )
             .executeTakeFirst();
+    // Only a contract month's Deferral or Accrual row names its month row; a
+    // Cost Relief or Loss Provision row is written with the line and no month
+    // row by design (Phase 4b decision R6).
     const drifted = rows.some(
       (row) =>
         row.scheduleStatus !== "Planned" ||
         !equals(Number(row.amount), Number(row.scheduleAmount)) ||
-        (row.customerContractLineId && !row.customerContractRevenueId)
+        ((row.type === "Deferral" || row.type === "Accrual") &&
+          row.customerContractLineId &&
+          !row.customerContractRevenueId)
     );
     if (unclaimed || unsynthesizedContractRevenue || drifted) {
       throw new RunOutOfDateError(
@@ -10846,6 +11207,7 @@ export async function postRevenueRecognitionRun(
               "ccl.itemId",
               "cc.id as customerContractId",
               "cc.customerId",
+              "ccl.projectElementId",
               sql<string | null>`COALESCE(ccl."projectId", cc."projectId")`.as(
                 "projectId"
               )
@@ -10927,6 +11289,7 @@ export async function postRevenueRecognitionRun(
       Item: dimensionIds.item,
       Location: dimensionIds.location,
       Project: dimensionIds.project,
+      ProjectElement: dimensionIds.projectElement,
       Supplier: dimensionIds.supplier
     };
 
@@ -13741,6 +14104,25 @@ async function repointReferences(
     pairs.map((p) => sql`(${p.source}, ${p.target})`)
   )}) AS m(source, target)`;
   const inCompanies = sql`t."companyId" IN (${sql.join(companyIds)})`;
+
+  // A pool account row that a merge would put on top of another (same pool,
+  // account, dimension value and role) goes first; the target's own row stays.
+  await sql`DELETE FROM "indirectPoolAccount" AS t
+    WHERE t."id" IN (
+      SELECT x."id" FROM (
+        SELECT r."id", ROW_NUMBER() OVER (
+          PARTITION BY r."companyId", r."indirectPoolId",
+            COALESCE(m.target, r."accountId"),
+            COALESCE(r."dimensionValueId", ''), r."role"
+          ORDER BY (m.source IS NOT NULL), r."id"
+        ) AS n
+        FROM "indirectPoolAccount" AS r
+        LEFT JOIN ${m} ON m.source = r."accountId"
+        WHERE r."companyId" IN (${sql.join(companyIds)})
+      ) x
+      WHERE x.n > 1
+    )`.execute(trx);
+
   for (const ref of REFERENCE_POLICY) {
     const t = sql.table(ref.table);
     const col = sql.id(ref.column);
@@ -14186,6 +14568,10 @@ export interface ChargeLineInput {
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   description?: string | null;
 }
 
@@ -14220,6 +14606,9 @@ export interface ChargeJournalLine {
   documentId: string;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** Index of the coding line this journal line posts, if any. */
+  sourceLineIndex?: number;
 }
 
 export interface BuildChargeJournalResult {
@@ -14275,6 +14664,8 @@ export function buildChargeJournal(
       description: string;
       costCenterId?: string | null;
       projectId?: string | null;
+      projectElementId?: string | null;
+      sourceLineIndex?: number;
     }
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
@@ -14288,9 +14679,19 @@ export function buildChargeJournal(
       documentType: "Charge",
       documentId,
       costCenterId: fields.costCenterId ?? null,
-      projectId: fields.projectId ?? null
+      projectId: fields.projectId ?? null,
+      ...(fields.sourceLineIndex === undefined
+        ? {}
+        : {
+            projectElementId: fields.projectElementId ?? null,
+            sourceLineIndex: fields.sourceLineIndex
+          })
     });
   };
+
+  // A line charged to a non-Statistical project posts to the project account.
+  const postingAccountOf = (line: ChargeLineInput) =>
+    line.projectAccountId ?? line.accountId;
 
   // Line-bearing types must have lines that sum to the header amount, or the
   // subledger and the GL disagree. Throw a typed error naming the mismatch.
@@ -14341,16 +14742,18 @@ export function buildChargeJournal(
     case "Charge": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("debit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("debit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card charge",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("credit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -14362,16 +14765,18 @@ export function buildChargeJournal(
     case "Credit": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("credit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("credit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card credit",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("debit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -14423,12 +14828,19 @@ export function buildChargeJournal(
         description: "Card repayment"
       });
       lines.forEach((line, index) => {
-        pushLine("credit", classOf(line.accountId), lineMagnitudes[index]!, {
-          accountId: line.accountId,
-          description: line.description ?? "Card repayment",
-          costCenterId: line.costCenterId,
-          projectId: line.projectId
-        });
+        pushLine(
+          "credit",
+          classOf(postingAccountOf(line)),
+          lineMagnitudes[index]!,
+          {
+            accountId: postingAccountOf(line),
+            description: line.description ?? "Card repayment",
+            costCenterId: line.costCenterId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceLineIndex: index
+          }
+        );
       });
       break;
     }
@@ -14578,6 +14990,47 @@ export async function postChargeJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the charge's date) in place of its own account.
+  const projectChargeByLineId = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    charge.postingDate ?? charge.transactionDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+
+  // The project account's journal line for each coding line, by line id.
+  const projectJournalLineIdByLineId = new Map<string, string>();
   let postingDate = charge.postingDate ?? charge.transactionDate;
   // A Provisional journal has no accounting period, and no posting creates a
   // period before the cutover.
@@ -14606,6 +15059,8 @@ export async function postChargeJournal(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectElementId: line.projectElementId,
+      projectAccountId: projectAccountByLineId.get(line.id) ?? null,
       description: line.description
     })),
     accounts,
@@ -14622,6 +15077,19 @@ export async function postChargeJournal(
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
+  // The element tag is written where the group has the dimension.
+  const projectElementDimension = lines.some((line) => line.projectElementId)
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "ProjectElement")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .executeTakeFirst()
+    : undefined;
 
   const journal = await trx
     .insertInto("journal")
@@ -14708,6 +15176,97 @@ export async function postChargeJournal(
         .execute();
     }
   }
+  if (projectElementDimension) {
+    const elementDimensionValues = built.journalLines.flatMap((line, index) => {
+      const journalLineId = journalLineIds[index];
+      if (!line.projectElementId) return [];
+      if (!journalLineId) throw new Error("Failed to map card journal line");
+      return [
+        {
+          journalLineId,
+          dimensionId: projectElementDimension.id,
+          valueId: line.projectElementId,
+          companyId
+        }
+      ];
+    });
+    if (elementDimensionValues.length) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(elementDimensionValues)
+        .execute();
+    }
+  }
+  built.journalLines.forEach((line, index) => {
+    const sourceLine =
+      line.sourceLineIndex === undefined
+        ? undefined
+        : lines[line.sourceLineIndex];
+    const journalLineId = journalLineIds[index];
+    if (sourceLine && journalLineId) {
+      projectJournalLineIdByLineId.set(sourceLine.id, journalLineId);
+    }
+  });
+
+  // One projectLedger row per line charged to a project account: a Charge
+  // adds cost, a Credit or Repayment takes it back.
+  const projectSign = charge.type === "Charge" ? 1 : -1;
+  const projectRows = lines.flatMap((line) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Charge",
+            documentId: charge.id,
+            documentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            journalLineId: projectJournalLineIdByLineId.get(line.id) ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
+  }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Charge",
+            sourceDocumentId: charge.id,
+            sourceDocumentLineId: line.id,
+            amount:
+              projectSign *
+              toBaseAmount(Number(line.amount), Number(charge.exchangeRate)),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("charge")
@@ -14821,6 +15380,9 @@ export async function voidCharge(
     CHARGE_VOID_BEFORE_CUTOVER_ERROR
   );
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (charge.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -14855,18 +15417,101 @@ export async function voidCharge(
     ) {
       throw new Error("Original charge journal has invalid lines");
     }
-    await insertNegatedJournal(trx, {
-      companyId,
-      userId,
-      originalLines,
-      description: `VOID Charge ${charge.chargeId}`,
-      sourceType: "Charge",
-      postingStatus,
-      date: today,
-      periodMode: "current",
-      postedAt: timestamp
-    });
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequenceInTransaction(
+          trx,
+          "journalEntry",
+          companyId
+        ),
+        accountingPeriodId: period?.id ?? null,
+        description: `VOID Charge ${charge.chargeId}`,
+        postingDate: period?.postingDate ?? today,
+        companyId,
+        sourceType: "Charge",
+        status: postingStatus,
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length
+    );
+    await trx
+      .insertInto("journalLine")
+      .values(
+        originalLines.map((line, index) => ({
+          id: reversalLineIds[index],
+          journalId: reversal.id,
+          accountId: line.accountId,
+          amount: -Number(line.amount),
+          quantity: line.quantity,
+          description: `VOID: ${line.description ?? ""}`,
+          documentType: "Charge" as const,
+          documentId: charge.id,
+          documentLineReference: line.documentLineReference,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    const dimensions = await trx
+      .selectFrom("journalLineDimension")
+      .select(["journalLineId", "dimensionId", "valueId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "journalLineId",
+        "in",
+        originalLines.map((line) => line.id)
+      )
+      .execute();
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
+    if (dimensions.length) {
+      const reversedDimensions = dimensions.map((dimension) => {
+        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+        if (!journalLineId) {
+          throw new Error("Failed to map reversed journal line");
+        }
+        return {
+          ...dimension,
+          journalLineId,
+          companyId
+        };
+      });
+      await trx
+        .insertInto("journalLineDimension")
+        .values(reversedDimensions)
+        .execute();
+    }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Charge",
+    documentId: charge.id,
+    postingDate: today,
+    userId,
+    reversalLineIds: reversalByOriginal
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Charge",
+    sourceDocumentId: charge.id
+  });
 
   await trx
     .updateTable("charge")
@@ -14914,6 +15559,9 @@ export async function postCharge(
 }
 export interface ReimbursementLineInput {
   accountId: string;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
@@ -15053,8 +15701,9 @@ export function buildReimbursementJournal(
   for (const line of lines) {
     const magnitude = toBase(line.amount);
     payableMagnitude += magnitude;
-    pushLine("debit", classOf(line.accountId), magnitude, {
-      accountId: line.accountId,
+    const postingAccountId = line.projectAccountId ?? line.accountId;
+    pushLine("debit", classOf(postingAccountId), magnitude, {
+      accountId: postingAccountId,
       description: line.description ?? "Employee reimbursement",
       costCenterId: line.costCenterId,
       projectId: line.projectId
@@ -15228,6 +15877,47 @@ export async function postReimbursementJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the reimbursement's date) in place of its own.
+  const projectChargeByLineId = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    reimbursement.postingDate ?? reimbursement.reimbursementDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+  const postingAccountOf = (line: (typeof lines)[number]) =>
+    projectAccountByLineId.get(line.id) ?? line.accountId;
+
   let postingDate =
     reimbursement.postingDate ?? reimbursement.reimbursementDate;
   // A Provisional journal has no accounting period, and no posting creates a
@@ -15255,6 +15945,7 @@ export async function postReimbursementJournal(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectAccountId: projectAccountByLineId.get(line.id) ?? null,
       description: line.description
     })),
     accounts,
@@ -15267,7 +15958,8 @@ export async function postReimbursementJournal(
   if (
     built.journalLines.length !== lines.length + 1 ||
     lines.some(
-      (line, index) => built.journalLines[index]?.accountId !== line.accountId
+      (line, index) =>
+        built.journalLines[index]?.accountId !== postingAccountOf(line)
     )
   ) {
     throw new Error("Reimbursement journal lines do not match coding lines");
@@ -15283,6 +15975,19 @@ export async function postReimbursementJournal(
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
+  // The element tag is written where the group has the dimension.
+  const projectElementDimension = lines.some((line) => line.projectElementId)
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "ProjectElement")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .executeTakeFirst()
+    : undefined;
 
   // The generic per-line dimension rows — where a human's edit in the line
   // editor lands.
@@ -15399,6 +16104,9 @@ export async function postReimbursementJournal(
     if (projectDimensionId && journalLine.projectId) {
       byDimension.set(projectDimensionId, journalLine.projectId);
     }
+    if (projectElementDimension && sourceLine.projectElementId) {
+      byDimension.set(projectElementDimension.id, sourceLine.projectElementId);
+    }
     for (const row of genericByLineId.get(sourceLine.id) ?? []) {
       byDimension.set(row.dimensionId, row.valueId);
     }
@@ -15417,6 +16125,68 @@ export async function postReimbursementJournal(
       .values(dimensionRows)
       .execute();
   }
+
+  // One projectLedger row per line charged to a project account. The builder
+  // emits one debit per coding line in order, so line i is journal line i.
+  const projectRows = lines.flatMap((line, index) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Reimbursement",
+            documentId: reimbursement.id,
+            documentLineId: line.id,
+            employeeId: reimbursement.employeeId,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            journalLineId: journalLineIds[index] ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
+  }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Reimbursement",
+            sourceDocumentId: reimbursement.id,
+            sourceDocumentLineId: line.id,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("reimbursement")
@@ -15568,6 +16338,9 @@ export async function voidReimbursement(
     throw new Error("Cannot void a paid reimbursement; void its payment first");
   }
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (reimbursement.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -15603,18 +16376,101 @@ export async function voidReimbursement(
     ) {
       throw new Error("Original reimbursement journal has invalid lines");
     }
-    await insertNegatedJournal(trx, {
-      companyId,
-      userId,
-      originalLines,
-      description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
-      sourceType: "Reimbursement",
-      postingStatus,
-      date: today,
-      periodMode: "current",
-      postedAt: timestamp
-    });
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequenceInTransaction(
+          trx,
+          "journalEntry",
+          companyId
+        ),
+        accountingPeriodId: period?.id ?? null,
+        description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
+        postingDate: period?.postingDate ?? today,
+        companyId,
+        sourceType: "Reimbursement",
+        status: postingStatus,
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length
+    );
+    await trx
+      .insertInto("journalLine")
+      .values(
+        originalLines.map((line, index) => ({
+          id: reversalLineIds[index],
+          journalId: reversal.id,
+          accountId: line.accountId,
+          amount: -Number(line.amount),
+          quantity: line.quantity,
+          description: `VOID: ${line.description ?? ""}`,
+          documentType: "Reimbursement" as const,
+          documentId: reimbursement.id,
+          documentLineReference: line.documentLineReference,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    const dimensions = await trx
+      .selectFrom("journalLineDimension")
+      .select(["journalLineId", "dimensionId", "valueId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "journalLineId",
+        "in",
+        originalLines.map((line) => line.id)
+      )
+      .execute();
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
+    if (dimensions.length) {
+      const reversedDimensions = dimensions.map((dimension) => {
+        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+        if (!journalLineId) {
+          throw new Error("Failed to map reversed journal line");
+        }
+        return {
+          ...dimension,
+          journalLineId,
+          companyId
+        };
+      });
+      await trx
+        .insertInto("journalLineDimension")
+        .values(reversedDimensions)
+        .execute();
+    }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Reimbursement",
+    documentId: reimbursement.id,
+    postingDate: today,
+    userId,
+    reversalLineIds: reversalByOriginal
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Reimbursement",
+    sourceDocumentId: reimbursement.id
+  });
 
   await trx
     .updateTable("reimbursement")
@@ -18417,6 +19273,7 @@ async function loadRecognitionRows(
           "contractLine.itemId",
           "contract.id as customerContractId",
           "contract.customerId",
+          "contractLine.projectElementId",
           sql<
             string | null
           >`coalesce("contractLine"."projectId", "contract"."projectId")`.as(
@@ -19762,6 +20619,21 @@ export async function promoteJournals(
 }
 const RECOST_DESCRIPTION = "Cutover recost";
 
+type ProjectLedgerRow = Database["public"]["Tables"]["projectLedger"]["Row"];
+
+/**
+ * Why the enable refuses a project stock payback whose cost the re-cost
+ * changes: a payback returns the lender's cost at the borrowed unit cost and
+ * books the difference as Payback Variance, and the re-cost cannot move that
+ * variance with it.
+ */
+export function paybackRecostRefusal(
+  transferId: string,
+  postingDate: string
+): string {
+  return `The cutover changes the cost of project stock payback ${transferId}, posted ${postingDate}. Carbon cannot re-cost a payback. Pick a cutover date after ${postingDate}.`;
+}
+
 /** Sets each row's `column` to its value, one statement per chunk. */
 async function setCostLedger(
   trx: KyselyTx,
@@ -19782,8 +20654,18 @@ async function setCostLedger(
 }
 
 /**
+ * The pool a cost row relieves from or opens into: its item, on its stock
+ * stripe. `calculateCOGS` relieves a project stripe from that stripe's
+ * layers only. Common stock keys on the item alone.
+ */
+function poolKey(itemId: string, projectId: string | null): string {
+  return projectId ? `${itemId}\u0000${projectId}` : itemId;
+}
+
+/**
  * Closes the cost layers dated before the cutover and opens one layer per
- * item at the reviewed unit cost. Then re-costs every outbound movement of a
+ * item and stock stripe at the reviewed unit cost
+ * (`splitOpeningLayersByStripe`). Then re-costs every outbound movement of a
  * FIFO or LIFO item dated on or after the cutover: the opening layer and
  * every layer and movement after it run again in the order they were posted
  * (`recostOutbound`), each movement relieving the layers open then as
@@ -19794,6 +20676,13 @@ async function setCostLedger(
  * their cost. A serial recost (`costLedgerType` "Revaluation") keeps its
  * cost: it relieves the layers in the run, but the account its difference
  * was booked against is not stored, so it is not re-costed.
+ *
+ * Each stock stripe is its own pool, as `calculateCOGS` relieves it. A
+ * project stock Transfer or Borrow moves stock at cost between two stripes
+ * of one inventory account: the layer it opens takes the re-costed cost of
+ * the stock it drew, and it books no journal. A Payback whose cost changes
+ * is refused: its lender layers, variance journal and Payback Variance
+ * ledger row would all have to move with it.
  */
 export async function resetAndRecostInventory(
   trx: KyselyTx,
@@ -19833,9 +20722,33 @@ export async function resetAndRecostInventory(
       ])
     )
     .execute();
-  const openingLayers = planInventoryReset(
-    inventory.map((item) => ({ itemId: item.itemId, quantity: item.quantity })),
-    new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+  // Project stock at the cutover, per item and stripe.
+  const projectOnHand = await trx
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "projectId",
+      sql<number>`sum("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("postingDate", "<", cutoverDate)
+    .where("projectId", "is not", null)
+    .groupBy(["itemId", "projectId"])
+    .having(sql`sum("quantity")`, ">", 0)
+    .execute();
+  const openingLayers = splitOpeningLayersByStripe(
+    planInventoryReset(
+      inventory.map((item) => ({
+        itemId: item.itemId,
+        quantity: item.quantity
+      })),
+      new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+    ),
+    projectOnHand.map((row) => ({
+      itemId: row.itemId,
+      projectId: row.projectId!,
+      quantity: Number(row.quantity)
+    }))
   );
 
   // The FIFO and LIFO items' layers and movements after the cutover, in the
@@ -19870,7 +20783,8 @@ export async function resetAndRecostInventory(
           "costLedgerType",
           "documentType",
           "documentId",
-          "postingDate"
+          "postingDate",
+          "projectId"
         ])
         .where((eb) => eb.or([isCostLayer(eb), isCostRelief(eb)]))
         .orderBy("postingDate")
@@ -19923,15 +20837,51 @@ export async function resetAndRecostInventory(
     (row) => `${row.documentId}:${row.itemId}`
   );
 
-  const openingKey = (itemId: string) => `opening:${itemId}`;
+  // The type of each project stock transfer after the cutover: a Transfer
+  // or a Borrow opens its layer at the cost of the stock it drew.
+  const transferIds = [
+    ...new Set(
+      ledger.flatMap((row) =>
+        row.documentType === "Project Transfer" && row.documentId
+          ? [row.documentId]
+          : []
+      )
+    )
+  ];
+  const transferById = new Map(
+    (
+      await readByIds(transferIds, (ids) =>
+        trx
+          .selectFrom("projectStockTransfer")
+          .select(["id", "type", "projectStockTransferId"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", ids)
+          .execute()
+      )
+    ).map((transfer) => [transfer.id, transfer])
+  );
+  const transferType = (row: (typeof ledger)[number]) =>
+    row.documentType === "Project Transfer" && row.documentId
+      ? transferById.get(row.documentId)?.type
+      : undefined;
+  const movesAtCost = (row: (typeof ledger)[number]) => {
+    const type = transferType(row);
+    return type === "Transfer" || type === "Borrow";
+  };
+
+  const openingKey = (itemId: string, projectId: string | null) =>
+    `opening:${poolKey(itemId, projectId)}`;
+  // Each layer a Transfer or Borrow opens pairs with the relief before it
+  // of the same document and item: the one line that drew the stock.
+  const pendingReliefs = new Map<string, string[]>();
   // Every layer runs again from its full quantity.
   const events: RecostEvent[] = [
     ...openingLayers
       .filter((layer) => methodByItem.has(layer.itemId))
       .map((layer) => ({
         layer: {
-          id: openingKey(layer.itemId),
-          itemId: layer.itemId,
+          id: openingKey(layer.itemId, layer.projectId),
+          itemId: poolKey(layer.itemId, layer.projectId),
           quantity: layer.quantity,
           cost: layer.cost,
           remainingQuantity: layer.quantity,
@@ -19941,46 +20891,73 @@ export async function resetAndRecostInventory(
       })),
     ...ledger.map((row): RecostEvent => {
       const itemId = row.itemId!;
-      return Number(row.quantity) > 0
-        ? {
-            layer: {
-              id: row.id,
-              itemId,
-              quantity: Number(row.quantity),
-              cost: Number(row.cost),
-              remainingQuantity: Number(row.quantity),
-              trackedEntityId: row.trackedEntityId,
-              children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
-                id: child.id,
-                quantity: Number(child.quantity),
-                cost: Number(child.cost),
-                remainingQuantity: Number(child.quantity)
-              }))
-            }
-          }
-        : {
-            outbound: {
-              costLedgerId: row.id,
-              itemId,
-              quantity: -Number(row.quantity),
-              cost: -Number(row.cost),
-              trackedEntityIds: row.trackedEntityId
-                ? [row.trackedEntityId]
-                : (
-                    leavingByDocumentItem.get(`${row.documentId}:${itemId}`) ??
-                    []
-                  ).map((unit) => unit.trackedEntityId!)
-            }
-          };
+      const pool = poolKey(itemId, row.projectId);
+      const lineKey = `${row.documentId}:${itemId}`;
+      if (Number(row.quantity) > 0) {
+        const costOf = movesAtCost(row)
+          ? pendingReliefs.get(lineKey)?.shift()
+          : undefined;
+        return {
+          layer: {
+            id: row.id,
+            itemId: pool,
+            quantity: Number(row.quantity),
+            cost: Number(row.cost),
+            remainingQuantity: Number(row.quantity),
+            trackedEntityId: row.trackedEntityId,
+            children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
+              id: child.id,
+              quantity: Number(child.quantity),
+              cost: Number(child.cost),
+              remainingQuantity: Number(child.quantity)
+            }))
+          },
+          ...(costOf ? { costOf } : {})
+        };
+      }
+      if (movesAtCost(row)) {
+        const pending = pendingReliefs.get(lineKey) ?? [];
+        pending.push(row.id);
+        pendingReliefs.set(lineKey, pending);
+      }
+      return {
+        outbound: {
+          costLedgerId: row.id,
+          itemId: pool,
+          quantity: -Number(row.quantity),
+          cost: -Number(row.cost),
+          trackedEntityIds: row.trackedEntityId
+            ? [row.trackedEntityId]
+            : (leavingByDocumentItem.get(lineKey) ?? []).map(
+                (unit) => unit.trackedEntityId!
+              )
+        }
+      };
     })
   ];
-  // A quantity no layer covers costs at the item's unit cost, as
-  // calculateCOGS costs negative inventory.
-  const recost = recostOutbound(
-    events,
-    methodByItem,
-    new Map(layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)]))
+  // Every pool of a FIFO or LIFO item relieves by the item's method. A
+  // quantity no layer covers costs at the item's unit cost, as calculateCOGS
+  // costs negative inventory.
+  const unitCostByItem = new Map(
+    layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)])
   );
+  const poolItem = new Map<string, string>([
+    ...openingLayers.map(
+      (layer) => [poolKey(layer.itemId, layer.projectId), layer.itemId] as const
+    ),
+    ...ledger.map(
+      (row) => [poolKey(row.itemId!, row.projectId), row.itemId!] as const
+    )
+  ]);
+  const methodByPool = new Map<string, CostingMethod>();
+  const unitCostByPool = new Map<string, number>();
+  for (const [pool, itemId] of poolItem) {
+    const method = methodByItem.get(itemId);
+    if (method) methodByPool.set(pool, method);
+    const unitCost = unitCostByItem.get(itemId);
+    if (unitCost !== undefined) unitCostByPool.set(pool, unitCost);
+  }
+  const recost = recostOutbound(events, methodByPool, unitCostByPool);
 
   // The opening layers, with what the re-cost left of them.
   if (openingLayers.length > 0) {
@@ -19995,12 +20972,14 @@ export async function resetAndRecostInventory(
           documentType: "Purchase Receipt" as const,
           adjustment: false,
           itemId: layer.itemId,
+          projectId: layer.projectId,
           quantity: layer.quantity,
           cost: layer.cost,
           nominalCost: layer.cost,
           remainingQuantity:
-            recost.remainingById.get(openingKey(layer.itemId)) ??
-            layer.quantity,
+            recost.remainingById.get(
+              openingKey(layer.itemId, layer.projectId)
+            ) ?? layer.quantity,
           postingDate: cutoverDate,
           // Before any layer posted on the cutover day, so later relief
           // takes the opening stock first.
@@ -20033,24 +21012,51 @@ export async function resetAndRecostInventory(
       Math.abs(movement.delta) > EPSILON &&
       ledgerById.get(movement.costLedgerId)!.costLedgerType !== "Revaluation"
   );
-  if (changed.length === 0) return;
-  await setCostLedger(
-    trx,
-    companyId,
-    "cost",
-    changed.map((movement) => [movement.costLedgerId, -movement.newCost])
+  const payback = changed.find(
+    (movement) =>
+      transferType(ledgerById.get(movement.costLedgerId)!) === "Payback"
   );
+  if (payback) {
+    const row = ledgerById.get(payback.costLedgerId)!;
+    const transfer = transferById.get(row.documentId!);
+    throw new ServerFnError(
+      paybackRecostRefusal(
+        transfer?.projectStockTransferId ?? row.documentId!,
+        String(row.postingDate)
+      ),
+      409
+    );
+  }
+  // The layers a Transfer or Borrow opened, at the re-costed cost of the
+  // stock they drew.
+  const movedLayers = [...recost.layerCostById].filter(
+    ([id, cost]) => !equals(Number(ledgerById.get(id)?.cost ?? cost), cost)
+  );
+  await setCostLedger(trx, companyId, "cost", [
+    ...changed.map((movement): [string, number] => [
+      movement.costLedgerId,
+      -movement.newCost
+    ]),
+    ...movedLayers
+  ]);
 
-  // One Provisional journal per document and posting date.
-  await postRecostJournals(trx, {
+  // One Provisional journal per document and posting date. A Transfer or
+  // Borrow moves cost between two stripes of one inventory account, so it
+  // has no journal to adjust.
+  const journaled = changed.filter(
+    (movement) => !movesAtCost(ledgerById.get(movement.costLedgerId)!)
+  );
+  if (journaled.length === 0) return;
+  const posted = await postRecostJournals(trx, {
     companyId,
     companyGroupId,
     userId,
     cutoverDate,
     defaults,
-    deltas: changed.map((movement) => {
+    deltas: journaled.map((movement) => {
       const row = ledgerById.get(movement.costLedgerId)!;
       return {
+        costLedgerId: row.id,
         itemId: row.itemId!,
         documentId: row.documentId,
         documentType: row.documentType,
@@ -20060,15 +21066,164 @@ export async function resetAndRecostInventory(
       };
     })
   });
+  await recostProjectIssues(trx, {
+    companyId,
+    userId,
+    recosted: posted.filter(
+      (entry) => entry.delta.documentType === "Project Issue"
+    )
+  });
+}
+
+/**
+ * A re-costed Project Issue changes the project's cost too: one
+ * `projectLedger` adjustment row per issue (quantity 0, the cost difference,
+ * the issue's project, element and cost type, `journalLineId` the re-cost's
+ * project account line), written through `insertProjectLedgerRows` so a
+ * Time & Materials line bills it like any row, and for a Capitalize project
+ * the matching `fixedAssetCipCost` row. The issue's cost rows and its ledger
+ * row are written in one transaction, so they share `createdAt`: that and
+ * the project, item and date find the ledger row of each cost row. A
+ * Statistical issue has no ledger row and gets none.
+ */
+async function recostProjectIssues(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    recosted
+  }: { companyId: string; userId: string; recosted: PostedRecost[] }
+) {
+  if (recosted.length === 0) return;
+  const recostByCostLedger = new Map(
+    recosted.map((entry) => [entry.delta.costLedgerId, entry])
+  );
+  const issues: (ProjectLedgerRow & { costLedgerId: string })[] = [];
+  for (const ids of chunkArray(
+    [...recostByCostLedger.keys()],
+    ROWS_PER_STATEMENT
+  )) {
+    // An issue of stock charged at receipt (C2) also wrote a relocation
+    // pair: never its inventory side, and one ledger row per cost row (the
+    // ordinary row, else the pair's project side), so a delta counts once.
+    const { rows } = await sql<ProjectLedgerRow & { costLedgerId: string }>`
+      SELECT DISTINCT ON (c."id") c."id" AS "costLedgerId", pl.*
+      FROM "costLedger" c
+      JOIN "projectLedger" pl
+        ON pl."companyId" = c."companyId"
+       AND pl."documentType" = 'Project Issue'
+       AND pl."reversalOfId" IS NULL
+       AND pl."projectId" = c."documentId"
+       AND pl."itemId" = c."itemId"
+       AND pl."postingDate" = c."postingDate"
+       AND pl."createdAt" = c."createdAt"
+      WHERE c."companyId" = ${companyId}
+        AND c."id" = ANY(${ids}::text[])
+        AND NOT (pl."relocatesReceiptCharge" AND ${onInventoryAccount("pl")})
+      ORDER BY c."id", pl."relocatesReceiptCharge", pl."id"
+    `.execute(trx);
+    issues.push(...rows);
+  }
+  if (issues.length === 0) return;
+
+  // One adjustment per issue: an issue split across stock stripes has one
+  // cost row per stripe and one ledger row.
+  const byIssue = Map.groupBy(issues, (issue) => issue.id);
+  const adjustments = [...byIssue.values()].flatMap((rows) => {
+    const issue = rows[0]!;
+    const entries = rows.map(
+      (row) => recostByCostLedger.get(row.costLedgerId)!
+    );
+    const amount = round(
+      entries.reduce((sum, entry) => sum + entry.delta.delta, 0)
+    );
+    if (Math.abs(amount) <= EPSILON) return [];
+    return [{ issue, amount, recost: entries[0]! }];
+  });
+  if (adjustments.length === 0) return;
+
+  await insertProjectLedgerRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) =>
+      buildProjectLedgerRow({
+        companyId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        postingDate: String(issue.postingDate),
+        costType: issue.costType,
+        documentType: issue.documentType,
+        documentId: issue.documentId,
+        documentLineId: issue.documentLineId,
+        itemId: issue.itemId,
+        quantity: 0,
+        unitOfMeasureCode: issue.unitOfMeasureCode,
+        amount,
+        journalLineId: recost.offsetJournalLineId,
+        coverage: issue.coverage,
+        coverageReason: issue.coverageReason,
+        unallowable: issue.unallowable,
+        createdBy: userId
+      })
+    )
+  });
+
+  // A Capitalize project's issue raised its asset's cost: the difference
+  // goes on the same asset.
+  const cipRows = await readByIds(
+    adjustments.map(({ issue }) => issue.documentId),
+    (ids) =>
+      trx
+        .selectFrom("fixedAssetCipCost")
+        .select(["sourceDocumentId", "fixedAssetId", "postCapitalization"])
+        .where("companyId", "=", companyId)
+        .where("sourceType", "=", "Project Issue")
+        .where("projectId", "is not", null)
+        .where("sourceDocumentId", "in", ids)
+        .execute()
+  );
+  const cipByIssue = new Map(cipRows.map((row) => [row.sourceDocumentId, row]));
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) => {
+      const cip = cipByIssue.get(issue.documentId);
+      if (!cip) return null;
+      return buildProjectCipRow({
+        resolved: {
+          fixedAssetId: cip.fixedAssetId,
+          postCapitalization: cip.postCapitalization
+        },
+        companyId,
+        userId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        sourceType: "Project Issue",
+        sourceDocumentId: issue.documentId,
+        amount,
+        costDate: String(issue.postingDate),
+        journalId: recost.journalId
+      });
+    })
+  });
 }
 
 type RecostDelta = {
+  costLedgerId: string;
   itemId: string;
   documentId: string | null;
   documentType: string | null;
   postingDate: string;
   quantity: number;
   delta: number;
+};
+
+/** A re-costed movement and the journal line its difference posted to on
+ *  the account its document charged (the inventory line's pair). */
+type PostedRecost = {
+  delta: RecostDelta;
+  journalId: string;
+  offsetJournalLineId: string;
 };
 
 /**
@@ -20100,7 +21255,7 @@ async function postRecostJournals(
     defaults: AccountDefaults;
     deltas: RecostDelta[];
   }
-) {
+): Promise<PostedRecost[]> {
   const label = (delta: RecostDelta) =>
     `${delta.documentType ?? "document"} ${delta.documentId ?? "(none)"}`;
   const missingDocument = deltas.find((delta) => !delta.documentId);
@@ -20282,6 +21437,12 @@ async function postRecostJournals(
     journals.map((journal) => [journal.journalEntryId, journal.id])
   );
 
+  // Each movement's pair of lines shares one reference; the offset is the
+  // line on its pair's offset account.
+  const offsetByReference = new Map<
+    string,
+    { delta: RecostDelta; journalId: string; accountId: string | null }
+  >();
   const lineInserts: JournalLineInsert[] = groups.flatMap((entries, index) => {
     const journalId = journalIdByEntry.get(entryIds[index]!)!;
     return entries.flatMap(({ delta, pair }) => {
@@ -20297,6 +21458,11 @@ async function postRecostJournals(
       }
       const inventoryAmount = round(credit("asset", delta.delta));
       const journalLineReference = nanoid();
+      offsetByReference.set(journalLineReference, {
+        delta,
+        journalId,
+        accountId: pair.offset.accountId
+      });
       const keys = (line: Line) => ({
         documentType: line.documentType,
         documentId: line.documentId,
@@ -20329,9 +21495,25 @@ async function postRecostJournals(
       ];
     });
   });
+  const posted: PostedRecost[] = [];
   for (const rows of chunkArray(lineInserts, ROWS_PER_STATEMENT)) {
-    await trx.insertInto("journalLine").values(rows).execute();
+    const inserted = await trx
+      .insertInto("journalLine")
+      .values(rows)
+      .returning(["id", "journalLineReference", "accountId"])
+      .execute();
+    for (const line of inserted) {
+      const offset = offsetByReference.get(line.journalLineReference);
+      if (offset && line.accountId === offset.accountId) {
+        posted.push({
+          delta: offset.delta,
+          journalId: offset.journalId,
+          offsetJournalLineId: line.id
+        });
+      }
+    }
   }
+  return posted;
 }
 const activateAccountingLogger = getLogger(
   "server-functions",
@@ -21049,6 +22231,9 @@ export async function synthesizeContractRevenue(
     .select("id")
     .where("companyId", "=", companyId)
     .where("status", "=", "Planned")
+    // Only revenue rows hang off a month row. A Cost Relief or Loss Provision
+    // row has a line and no month row by design (decision R6).
+    .where("type", "in", ["Deferral", "Accrual"])
     .where("customerContractLineId", "is not", null)
     .where("customerContractRevenueId", "is", null)
     .execute();
@@ -21247,11 +22432,19 @@ export async function synthesizeContractRevenue(
 
 /** The synthesizers a run of `type` runs before it selects its rows. A lease
  *  run synthesizes rental accruals; a revenue recognition run synthesizes
- *  contract revenue. Neither ever runs the other's. */
-export function runRowSynthesizers(type: RunType): RunRowSynthesizer[] {
+ *  project and contract revenue. Neither ever runs the other's. `extra` is
+ *  the commercial project revenue synthesizer (`@carbon/ee`, decision R1),
+ *  which degrades to nothing without PROJECT_REVENUE; a test passes its own.
+ *  It runs, in a revenue recognition run, before the Right to Invoice and
+ *  contract synthesizers: the contract synthesizer moves the month rows both
+ *  project synthesizers write through the contract position. */
+export function runRowSynthesizers(
+  type: RunType,
+  extra: RunRowSynthesizer[] = projectRevenueSynthesizers(projectRevenueWriters)
+): RunRowSynthesizer[] {
   return type === "Lease"
     ? [synthesizeRentalAccruals]
-    : [synthesizeContractRevenue];
+    : [...extra, synthesizeProjectRevenue, synthesizeContractRevenue];
 }
 
 export type RunProposal = { id: string; runId: string; lineCount: number };

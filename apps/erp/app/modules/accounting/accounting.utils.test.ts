@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import { round, toDisplayCredit, toDisplayDebit } from "@carbon/utils";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
   acquisitionLines,
@@ -676,8 +676,9 @@ describe("calculateDepreciation", () => {
     it("uses lastPostedPeriodEnd to narrow the window", () => {
       // After a Jan 31 run, a Mar 31 run covers February and March. This
       // test used to expect one month: Jan 31 + 1 month overflowed to Mar 1.
+      // The Jan 31 run posted 1800, as a real run would have.
       const result = calculateDepreciation(
-        baseAsset,
+        { ...baseAsset, accumulatedDepreciation: 1800 },
         "2025-03-31",
         "2025-01-31",
         2
@@ -1344,6 +1345,147 @@ describe("diffJournalLines", () => {
     ]);
     expect(changes.map((c) => c.op)).toEqual(["insert", "insert"]);
     expect(deleteIds).toEqual(["jl_a", "jl_b"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Straight Line on a remaining-life basis (a capital project's late cost)
+// ---------------------------------------------------------------------------
+
+describe("Straight Line on a remaining-life basis", () => {
+  const asset = {
+    id: "asset-rl",
+    acquisitionCost: 120000,
+    accumulatedDepreciation: 0,
+    residualValuePercent: 0,
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    depreciationStartDate: "2024-01-01",
+    acquisitionDate: "2024-01-01",
+    assetLifetimeUsage: null,
+    accumulatedTaxDepreciation: 0,
+    taxDepreciationMethod: null,
+    taxUsefulLifeMonths: null,
+    taxResidualValuePercent: null,
+    macrsPropertyClass: null,
+    macrsConvention: null,
+    bonusDepreciationPercent: null
+  };
+
+  // The schedule before the remaining-life basis: base / life each month,
+  // capped at what is left.
+  function oldSchedule(args: {
+    cost: number;
+    residualValuePercent: number;
+    usefulLifeMonths: number;
+  }) {
+    const base = args.cost * (1 - args.residualValuePercent / 100);
+    const amounts: number[] = [];
+    let accumulated = 0;
+    for (let month = 0; month < args.usefulLifeMonths; month++) {
+      const amount = Math.min(
+        round(base / args.usefulLifeMonths, 2),
+        base - accumulated
+      );
+      amounts.push(amount);
+      accumulated += amount;
+    }
+    return amounts;
+  }
+
+  const lifeEnd = (start: string, months: number) =>
+    endOfMonth(parseDate(start).add({ months: months - 1 })).toString();
+
+  it("leaves the schedule of an asset with no additions unchanged, every month", () => {
+    const shapes = [
+      { cost: 120000, residualValuePercent: 10, usefulLifeMonths: 60 },
+      { cost: 100000, residualValuePercent: 0, usefulLifeMonths: 60 },
+      { cost: 9999.99, residualValuePercent: 5, usefulLifeMonths: 37 },
+      { cost: 54321, residualValuePercent: 12.5, usefulLifeMonths: 84 }
+    ];
+    for (const shape of shapes) {
+      const lines = buildDepreciationLines(
+        [
+          {
+            ...asset,
+            acquisitionCost: shape.cost,
+            residualValuePercent: shape.residualValuePercent,
+            usefulLifeMonths: shape.usefulLifeMonths
+          }
+        ],
+        lifeEnd("2024-01-01", shape.usefulLifeMonths),
+        null,
+        false,
+        new Map(),
+        2
+      );
+      expect(lines.map((line) => line.amount)).toEqual(oldSchedule(shape));
+    }
+  });
+
+  it("gives the old monthly amount on the remaining-life basis when nothing was added", () => {
+    const lines = buildDepreciationLines(
+      [{ ...asset, remainingLifeBasis: true }],
+      lifeEnd("2024-01-01", 60),
+      null,
+      false,
+      new Map(),
+      2
+    );
+    const old = oldSchedule({
+      cost: 120000,
+      residualValuePercent: 0,
+      usefulLifeMonths: 60
+    });
+    expect(lines).toHaveLength(60);
+    lines.forEach((line, month) => {
+      expect(Math.abs(line.amount - old[month]!)).toBeLessThanOrEqual(0.01);
+    });
+  });
+
+  it("spreads a book addition over the remaining life", () => {
+    // 120,000 over 60 months: 48,000 after 24 months. A 6,000 addition then
+    // leaves 78,000 over the 36 months left.
+    const addition = {
+      ...asset,
+      acquisitionCost: 126000,
+      accumulatedDepreciation: 48000,
+      remainingLifeBasis: true
+    };
+    const lines = buildDepreciationLines(
+      [addition],
+      "2026-01-31",
+      "2025-12-31",
+      false,
+      new Map(),
+      2
+    );
+    expect(lines.map((line) => [line.periodEnd, line.amount])).toEqual([
+      ["2026-01-31", 2166.67]
+    ]);
+  });
+
+  it("spreads a tax addition over the remaining tax life", () => {
+    const addition = {
+      ...asset,
+      acquisitionCost: 126000,
+      accumulatedDepreciation: 48000,
+      accumulatedTaxDepreciation: 48000,
+      taxDepreciationMethod: "Straight Line",
+      taxUsefulLifeMonths: 60,
+      taxResidualValuePercent: 0,
+      remainingLifeBasis: true
+    };
+    const lines = buildDepreciationLines(
+      [addition],
+      "2026-01-31",
+      "2025-12-31",
+      true,
+      new Map(),
+      2
+    );
+    expect(lines).toHaveLength(1);
+    expect(lines[0]!.taxAmount).toBe(2166.67);
   });
 });
 

@@ -42,6 +42,37 @@ export const DETAIL_TAB_SHORTCUTS = {
   processes: "mod+shift+r"
 } as const satisfies Record<string, ShortcutInput>;
 
+/**
+ * Project page tabs. Details keeps the shared detail-page combo; the others
+ * take the first free letter of their name.
+ */
+export const PROJECT_TAB_SHORTCUTS = {
+  elements: "mod+shift+e",
+  milestones: "mod+shift+m",
+  baselines: "mod+shift+b",
+  changeRequests: "mod+shift+r",
+  costs: "mod+shift+c",
+  time: "mod+shift+h",
+  billing: "mod+shift+i",
+  stock: "mod+shift+k",
+  pegging: "mod+shift+p",
+  settings: "mod+shift+s",
+  details: DETAIL_TAB_SHORTCUTS.details
+} as const satisfies Record<string, ShortcutInput>;
+
+/**
+ * Project Elements page and element page. Single letters, so they are bound
+ * only while one of those pages is mounted and never while typing in a
+ * field (the keyboard shortcuts spec rules out global single letters).
+ * New element is the list page's New key (`n`): bare `c` starts the global
+ * c-then-letter Create sequence, and the Create menu has no page context.
+ */
+export const PROJECT_SHORTCUTS = {
+  create: SHORTCUTS.newRecord,
+  logTime: "t",
+  issueMaterial: "i"
+} as const satisfies Record<string, ShortcutInput>;
+
 /** Document-line explorer actions (Quote, SO, PO, invoices, procedures…). */
 export const EXPLORER_SHORTCUTS = {
   addLine: "mod+shift+l",
@@ -120,6 +151,7 @@ export const CREATE_SHORTCUTS = {
   quote: "q",
   rfq: "r",
   salesOrder: "o",
+  serviceOrder: "v",
   stockTransfer: "x",
   supplier: "s",
   warehouseTransfer: "w"

@@ -242,6 +242,8 @@ export const purchaseOrderLineValidator = z
     itemId: zfd.text(z.string().optional()),
     accountId: zfd.text(z.string().optional()),
     costCenterId: zfd.text(z.string().optional()),
+    projectId: zfd.text(z.string().optional()),
+    projectElementId: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
     description: zfd.text(z.string().optional()),

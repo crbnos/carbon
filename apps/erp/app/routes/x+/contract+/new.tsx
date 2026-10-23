@@ -5,6 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import type { ContractBillingBasis } from "@carbon/utils";
 import { redirect, suggestContractType } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -12,30 +13,63 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUser } from "~/hooks";
-import { customerContractValidator } from "~/modules/sales/sales.models";
+import {
+  customerContractValidator,
+  projectContractTermDefaults
+} from "~/modules/sales/sales.models";
 import { getCustomerContractStatuses } from "~/modules/sales/sales.service";
 import {
   ContractDetailsForm,
-  ContractSetupSteps
+  ContractSetupSteps,
+  ProjectContractDetailsForm
 } from "~/modules/sales/ui/Contracts";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Service Contracts`,
+  breadcrumb: (_params: unknown, data: unknown) => [
+    (data as { billingBasis?: ContractBillingBasis } | undefined)
+      ?.billingBasis === "Project"
+      ? { breadcrumb: msg`Project Contracts`, to: path.to.projectContracts }
+      : { breadcrumb: msg`Service Contracts`, to: path.to.contracts }
+  ],
   to: path.to.contracts
 };
 
-/** A contract started from a customer (`?customerId=`) opens with that
- *  customer's currency and suggested type already filled in. */
+/** `?basis=Project` starts a project contract, `?projectId=` with its
+ *  project picked. A contract started from a customer (`?customerId=`) opens
+ *  with that customer's currency and suggested type already filled in. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     create: "sales"
   });
 
-  const customerId = new URL(request.url).searchParams.get("customerId");
-  if (!customerId) return { customerId: null, currencyCode: null, type: null };
+  const searchParams = new URL(request.url).searchParams;
+  const billingBasis: ContractBillingBasis =
+    searchParams.get("basis") === "Project" ? "Project" : "Schedule";
+  const requestedProjectId = searchParams.get("projectId");
+  const project =
+    billingBasis === "Project" && requestedProjectId
+      ? await client
+          .from("project")
+          .select("id")
+          .eq("id", requestedProjectId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null;
+  const projectId = project?.data?.id ?? null;
+
+  const customerId = searchParams.get("customerId");
+  if (!customerId) {
+    return {
+      billingBasis,
+      projectId,
+      customerId: null,
+      currencyCode: null,
+      type: null
+    };
+  }
 
   const [customer, previous] = await Promise.all([
     client
@@ -47,10 +81,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCustomerContractStatuses(client, companyId, customerId)
   ]);
   if (!customer.data) {
-    return { customerId: null, currencyCode: null, type: null };
+    return {
+      billingBasis,
+      projectId,
+      customerId: null,
+      currencyCode: null,
+      type: null
+    };
   }
 
   return {
+    billingBasis,
+    projectId,
     customerId,
     currencyCode: customer.data.currencyCode,
     type: previous.data ? suggestContractType(previous.data) : null
@@ -66,7 +108,11 @@ export async function action(args: ActionFunctionArgs) {
     customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
   if (!result.data) {
-    return respond(args.request, result).redirect(path.to.contracts, {
+    const listPath =
+      input.data.billingBasis === "Project"
+        ? path.to.projectContracts
+        : path.to.contracts;
+    return respond(args.request, result).redirect(listPath, {
       message: ""
     });
   }
@@ -77,6 +123,38 @@ export default function NewContractRoute() {
   const prefill = useLoaderData<typeof loader>();
   const { company, id: userId } = useUser();
   const companyToday = useCompanyToday();
+  const currencyCode =
+    prefill.currencyCode ?? company?.baseCurrencyCode ?? "USD";
+
+  if (prefill.billingBasis === "Project") {
+    return (
+      <SetupFrame
+        title={<Trans>New Project Contract</Trans>}
+        step="details"
+        steps={<ContractSetupSteps current="details" billingBasis="Project" />}
+      >
+        <ProjectContractDetailsForm
+          initialValues={{
+            id: undefined,
+            customerContractId: undefined,
+            name: "",
+            customerId: prefill.customerId ?? "",
+            projectId: prefill.projectId ?? undefined,
+            // The person setting the contract up is usually the one who sold it.
+            salesPersonId: userId,
+            closeDate: companyToday,
+            billingBasis: "Project",
+            startDate: companyToday,
+            endDate: undefined,
+            renewalUplift: 0,
+            billingFrequency: projectContractTermDefaults.billingFrequency,
+            currencyCode
+          }}
+          action={path.to.newContract}
+        />
+      </SetupFrame>
+    );
+  }
 
   const initialValues = {
     id: undefined,
@@ -95,7 +173,7 @@ export default function NewContractRoute() {
     billingFrequency: "Month" as const,
     billingAlignment: "Anniversary" as const,
     billingTiming: "Advance" as const,
-    currencyCode: prefill.currencyCode ?? company?.baseCurrencyCode ?? "USD"
+    currencyCode
   };
 
   return (

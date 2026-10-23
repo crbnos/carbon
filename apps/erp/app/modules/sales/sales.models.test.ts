@@ -19,7 +19,13 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 const {
+  contractBillingMethodsFor,
+  contractRevenueMethodsFor,
   contractTermFromServicePeriods,
+  customerContractValidator,
+  laborCategoriesWithoutBillRate,
+  projectContractFunded,
+  projectContractGaps,
   quoteLineValidator,
   quoteValidator,
   rentalAgreementChargeValidator,
@@ -260,5 +266,402 @@ describe("contractTermFromServicePeriods", () => {
       duration: "custom",
       endDate: "2027-03-15"
     });
+  });
+});
+
+// A project contract has a period of performance, not a term: it takes no
+// duration, renewal or billing timing, but it needs a project and an end date.
+describe("customerContractValidator billing basis", () => {
+  const header = {
+    name: "Phase 2 support",
+    customerId: "cust_1",
+    closeDate: "2026-10-21",
+    startDate: "2026-11-01",
+    renewalUplift: "0",
+    currencyCode: "USD"
+  };
+
+  it("parses a project contract with no duration and no renewal", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      billingBasis: "Project",
+      projectId: "proj_1",
+      endDate: "2027-10-31"
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("refuses a project contract without a project", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      billingBasis: "Project",
+      endDate: "2027-10-31"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path[0])).toContain(
+      "projectId"
+    );
+  });
+
+  it("refuses a project contract without an end date", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      billingBasis: "Project",
+      projectId: "proj_1"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path[0])).toContain(
+      "endDate"
+    );
+  });
+
+  it("still requires the term of a service contract", () => {
+    const result = customerContractValidator.safeParse(header);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path[0])).toEqual(
+      expect.arrayContaining([
+        "duration",
+        "renewal",
+        "billingFrequency",
+        "billingAlignment",
+        "billingTiming"
+      ])
+    );
+  });
+
+  it("parses a service contract with its term", () => {
+    const result = customerContractValidator.safeParse({
+      ...header,
+      duration: "12",
+      renewal: "Renew",
+      billingFrequency: "Month",
+      billingAlignment: "Calendar",
+      billingTiming: "Advance"
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("contractBillingMethodsFor", () => {
+  it("offers only Fixed on a service contract", () => {
+    expect(contractBillingMethodsFor("Schedule")).toEqual(["Fixed"]);
+  });
+
+  it("offers every billing method on a project contract", () => {
+    expect(contractBillingMethodsFor("Project")).toEqual([
+      "Fixed",
+      "Time & Materials",
+      "Cost Plus"
+    ]);
+  });
+});
+
+describe("contractRevenueMethodsFor", () => {
+  it("keeps every Fixed method on a service contract", () => {
+    expect(contractRevenueMethodsFor("Schedule", "Fixed")).toEqual([
+      "Daily",
+      "Even Period",
+      "Percent Complete"
+    ]);
+  });
+
+  it("offers Daily and Percent Complete for a Fixed Price line", () => {
+    expect(contractRevenueMethodsFor("Project", "Fixed")).toEqual([
+      "Daily",
+      "Percent Complete"
+    ]);
+  });
+
+  it("follows the billing method for a billing line", () => {
+    expect(contractRevenueMethodsFor("Project", "Time & Materials")).toEqual([
+      "Right to Invoice"
+    ]);
+    expect(contractRevenueMethodsFor("Project", "Cost Plus")).toEqual([
+      "Percent Complete",
+      "Right to Invoice"
+    ]);
+  });
+});
+
+describe("projectContractGaps", () => {
+  type Input = Parameters<typeof projectContractGaps>[0];
+  const tm = {
+    id: "line_tm",
+    billingMethod: "Time & Materials" as const,
+    revenueMethod: "Right to Invoice" as const,
+    projectId: "proj_1" as string | null,
+    projectElementId: "el_1"
+  };
+  const fixed = {
+    id: "line_fixed",
+    billingMethod: "Fixed" as const,
+    revenueMethod: "Daily" as const,
+    projectId: null,
+    projectElementId: null
+  };
+  const clean: Input = {
+    lines: [tm, fixed],
+    currencyCode: "USD",
+    baseCurrencyCode: "USD",
+    costTreatmentByProject: { proj_1: "Contract" },
+    billingElementById: { el_1: { projectId: "proj_1", isBilling: true } },
+    residuals: { line_fixed: 0 },
+    laborCategoriesWithoutBillRate: [],
+    emptyAccountDefaults: []
+  };
+  const keys = (input: Input) =>
+    projectContractGaps(input).map((gap) => [gap.key, gap.blocking]);
+
+  it("finds no gap on a ready contract", () => {
+    expect(projectContractGaps(clean)).toEqual([]);
+  });
+
+  it("blocks a contract with no line", () => {
+    expect(keys({ ...clean, lines: [] })).toEqual([["noLines", true]]);
+  });
+
+  it("blocks a billing line with no billing element", () => {
+    expect(
+      projectContractGaps({
+        ...clean,
+        lines: [{ ...tm, projectElementId: null }]
+      })
+    ).toEqual([{ key: "noBillingElement", blocking: true, lineId: "line_tm" }]);
+  });
+
+  it("blocks a billing line with no project of its own, as Confirm does", () => {
+    expect(
+      projectContractGaps({ ...clean, lines: [{ ...tm, projectId: null }] })
+    ).toEqual([{ key: "noBillingElement", blocking: true, lineId: "line_tm" }]);
+  });
+
+  it("blocks a billing element that is not on the line's project", () => {
+    expect(
+      projectContractGaps({
+        ...clean,
+        costTreatmentByProject: { proj_1: "Contract", proj_2: "Contract" },
+        billingElementById: { el_1: { projectId: "proj_2", isBilling: true } }
+      })
+    ).toEqual([
+      { key: "elementNotOnProject", blocking: true, lineId: "line_tm" }
+    ]);
+  });
+
+  it("blocks an element that is not a billing element", () => {
+    expect(
+      projectContractGaps({
+        ...clean,
+        billingElementById: { el_1: { projectId: "proj_1", isBilling: false } }
+      })
+    ).toEqual([
+      {
+        key: "notBillingElement",
+        blocking: true,
+        lineId: "line_tm",
+        projectId: "proj_1",
+        elementId: "el_1"
+      }
+    ]);
+  });
+
+  it("gives no element gap for an element it could not read", () => {
+    expect(projectContractGaps({ ...clean, billingElementById: {} })).toEqual(
+      []
+    );
+  });
+
+  it("blocks once per project whose cost treatment is not Contract", () => {
+    expect(
+      keys({
+        ...clean,
+        lines: [tm, { ...tm, id: "line_tm_2" }],
+        costTreatmentByProject: { proj_1: "Expense" },
+        billingElementById: { el_1: { projectId: "proj_1", isBilling: false } }
+      })
+    ).toEqual([["costTreatment", true]]);
+  });
+
+  it("blocks a contract in a foreign currency", () => {
+    expect(projectContractGaps({ ...clean, currencyCode: "EUR" })).toEqual([
+      { key: "currency", blocking: true, baseCurrencyCode: "USD" }
+    ]);
+  });
+
+  it("ignores the currency when only Fixed Daily lines bill", () => {
+    expect(
+      projectContractGaps({ ...clean, lines: [fixed], currencyCode: "EUR" })
+    ).toEqual([]);
+  });
+
+  it("blocks a Fixed Price line whose billing events miss its price", () => {
+    expect(
+      projectContractGaps({ ...clean, residuals: { line_fixed: 250 } })
+    ).toEqual([
+      {
+        key: "billingEvents",
+        blocking: true,
+        lineId: "line_fixed",
+        residual: 250
+      }
+    ]);
+  });
+
+  it("warns about labor categories with no bill rate on a T&M contract", () => {
+    expect(
+      projectContractGaps({
+        ...clean,
+        laborCategoriesWithoutBillRate: ["Engineer", "Technician"]
+      })
+    ).toEqual([{ key: "laborBillRate", blocking: false, count: 2 }]);
+    expect(
+      projectContractGaps({
+        ...clean,
+        lines: [fixed],
+        laborCategoriesWithoutBillRate: ["Engineer"]
+      })
+    ).toEqual([]);
+  });
+
+  it("warns about each empty default account, and not when unknown", () => {
+    expect(
+      keys({
+        ...clean,
+        emptyAccountDefaults: ["projectWorkInProgressAccount"]
+      })
+    ).toEqual([["accountDefault", false]]);
+    expect(
+      projectContractGaps({ ...clean, emptyAccountDefaults: null })
+    ).toEqual([]);
+  });
+});
+
+describe("laborCategoriesWithoutBillRate", () => {
+  const categories = [
+    {
+      id: "lc_eng",
+      name: "Engineer",
+      active: true,
+      rates: [{ billRate: 150 }]
+    },
+    {
+      id: "lc_tech",
+      name: "Technician",
+      active: true,
+      rates: [{ billRate: null }]
+    },
+    { id: "lc_old", name: "Retired", active: false, rates: [] }
+  ];
+
+  it("lists active categories with no bill rate", () => {
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: ["line_1"],
+        lineRates: []
+      })
+    ).toEqual(["Technician"]);
+  });
+
+  it("counts a contract labor rate on every T&M line as covered", () => {
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: ["line_1", "line_2"],
+        lineRates: [
+          { customerContractLineId: "line_1", laborCategoryId: "lc_tech" }
+        ]
+      })
+    ).toEqual(["Technician"]);
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: ["line_1"],
+        lineRates: [
+          { customerContractLineId: "line_1", laborCategoryId: "lc_tech" }
+        ]
+      })
+    ).toEqual([]);
+  });
+
+  it("lists nothing without a T&M line", () => {
+    expect(
+      laborCategoriesWithoutBillRate({
+        categories,
+        timeAndMaterialsLineIds: [],
+        lineRates: []
+      })
+    ).toEqual([]);
+  });
+});
+
+describe("projectContractFunded", () => {
+  it("adds billing lines' funding and Fixed Price lines' prices", () => {
+    expect(
+      projectContractFunded([
+        {
+          id: "line_tm",
+          amendsLineId: null,
+          billingMethod: "Time & Materials",
+          fundedAmount: 50000,
+          quantity: 1,
+          rate: 0
+        },
+        {
+          id: "line_cp",
+          amendsLineId: null,
+          billingMethod: "Cost Plus",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 0
+        },
+        {
+          id: "line_fixed",
+          amendsLineId: null,
+          billingMethod: "Fixed",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 90000
+        }
+      ])
+    ).toBe(140000);
+  });
+
+  it("counts an amended line once, at its new terms", () => {
+    expect(
+      projectContractFunded([
+        {
+          id: "line_fixed",
+          amendsLineId: null,
+          billingMethod: "Fixed",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 90000
+        },
+        {
+          id: "line_fixed_2",
+          amendsLineId: "line_fixed",
+          billingMethod: "Fixed",
+          fundedAmount: null,
+          quantity: 1,
+          rate: 120000
+        },
+        {
+          id: "line_tm",
+          amendsLineId: null,
+          billingMethod: "Time & Materials",
+          fundedAmount: 50000,
+          quantity: 1,
+          rate: 0
+        },
+        {
+          id: "line_tm_2",
+          amendsLineId: "line_tm",
+          billingMethod: "Time & Materials",
+          fundedAmount: 80000,
+          quantity: 1,
+          rate: 0
+        }
+      ])
+    ).toBe(200000);
   });
 });

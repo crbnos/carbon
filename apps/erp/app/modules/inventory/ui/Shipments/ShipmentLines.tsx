@@ -92,6 +92,8 @@ const ShipmentLines = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
+    /** A Sales Return Order shipment: the RMA lines whose disposition is Repair. */
+    repairLineIds?: string[];
     fixedAssetLines: {
       id: string;
       salesOrderLineId: string;
@@ -273,6 +275,10 @@ const ShipmentLines = () => {
                         key={line.id}
                         line={line}
                         shipment={routeData?.shipment}
+                        isRepairLine={
+                          !!line.lineId &&
+                          (routeData?.repairLineIds ?? []).includes(line.lineId)
+                        }
                         hasTrackingLabel={
                           routeData?.shipmentLineTracking?.some((t) => {
                             const attributes =
@@ -474,6 +480,7 @@ function ShipmentRentalLineItem({
 function ShipmentLineItem({
   line,
   shipment,
+  isRepairLine,
   className,
   hasTrackingLabel,
   isReadOnly,
@@ -484,6 +491,8 @@ function ShipmentLineItem({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  /** The line ships a repaired unit back on its RMA's Repair line. */
+  isRepairLine: boolean;
   className?: string;
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
@@ -731,6 +740,7 @@ function ShipmentLineItem({
       {line.requiresSerialTracking && (
         <SerialForm
           shipment={shipment}
+          isRepairLine={isRepairLine}
           line={line}
           hasTrackingLabel={hasTrackingLabel}
           serialNumbers={serialNumbers}
@@ -756,8 +766,16 @@ function ShipmentLineItem({
 
 // The statuses lines.tracking accepts for this shipment's source: On Hold
 // returned stock on a sales return, Available or Rejected units on a supplier
-// return, Available stock otherwise.
-function isShippable(shipment: Shipment | undefined, status: unknown) {
+// return, Available stock otherwise. A Repair line on a sales return ships the
+// customer's own unit back: it never entered stock, so it is Consumed.
+export function isShippable(
+  shipment: Pick<Shipment, "sourceDocument"> | undefined,
+  status: unknown,
+  isRepairLine = false
+) {
+  if (isRepairLine && shipment?.sourceDocument === "Sales Return Order") {
+    return status === "Consumed";
+  }
   return isShippableEntityStatus(shipment?.sourceDocument, status as string);
 }
 
@@ -1113,6 +1131,7 @@ function BatchForm({
 function SerialForm({
   line,
   shipment,
+  isRepairLine,
   hasTrackingLabel,
   serialNumbers,
   isReadOnly,
@@ -1120,6 +1139,7 @@ function SerialForm({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  isRepairLine: boolean;
   hasTrackingLabel: boolean;
   serialNumbers: { index: number; id: string }[];
   isReadOnly: boolean;
@@ -1173,14 +1193,14 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (!isShippable(shipment, serialNumber.status)) {
+      if (!isShippable(shipment, serialNumber.status, isRepairLine)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
 
       return null;
     },
-    [serialNumbers, serialNumbersData?.data, shipment]
+    [serialNumbers, serialNumbersData?.data, shipment, isRepairLine]
   );
 
   const updateSerialNumber = useCallback(
@@ -1295,7 +1315,7 @@ function SerialForm({
   // this off the same data `validateSerialNumber` checks keeps them in step.
   const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
     (entity) =>
-      isShippable(shipment, entity.status) &&
+      isShippable(shipment, entity.status, isRepairLine) &&
       !serialNumbers.some((assigned) => {
         if (!assigned.id) return false;
         const resolved = resolveTrackedEntity(
@@ -1343,7 +1363,7 @@ function SerialForm({
             : null;
           const isSerialNumberValid =
             // @ts-expect-error TS2339 - TODO: fix type
-            isShippable(shipment, resolvedSerial?.status);
+            isShippable(shipment, resolvedSerial?.status, isRepairLine);
 
           return (
             <div

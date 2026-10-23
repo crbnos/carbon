@@ -34,6 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const contracts = await getContracts(client, companyId, {
+    billingBasis: "Schedule",
     search,
     limit,
     offset,
@@ -59,7 +60,7 @@ export default function ContractsRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
-      <ContractsTable data={contracts} count={count} />
+      <ContractsTable data={contracts} count={count} billingBasis="Schedule" />
       <RecordOutlet />
     </VStack>
   );

@@ -5,15 +5,18 @@
 import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useCallback, useMemo, useRef } from "react";
+import { createElement, useCallback, useMemo, useRef } from "react";
+import { Link } from "react-router";
 import { actionsOfTypes } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
   type FenceRow,
   useTimeFenceOverrides
 } from "~/modules/production/ui/Planning/PlanningFence";
+import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
 import { actionsInsideFence } from "~/modules/production/ui/Planning/planning-fence";
 import { isStaleRelease } from "~/modules/production/ui/Planning/planning-review";
+import { path } from "~/utils/path";
 
 /**
  * The planning grids' MRP worklist state, shared by the production and
@@ -29,7 +32,7 @@ export function usePlanningActions({
   currentUserId,
   canUpdate
 }: {
-  data: FenceRow[];
+  data: (FenceRow & { planningSegmentId?: string | null })[];
   planningActions: PlanningAction[];
   /** The Actions-column filter; null shows every type. */
   actionTypes: string[] | null;
@@ -46,8 +49,42 @@ export function usePlanningActions({
   const actionsFetcher = useAction<PlanningActionsResult>({
     onSuccess: (result) => {
       const outcome = describePlanningResult(result, lastAction.current);
-      if (outcome?.ok) toast.success(outcome.message);
-      else if (outcome) toast.error(outcome.message);
+      if (!outcome) return;
+      // An applied Transfer leaves the worklist; the toast links its transfer.
+      // Purchasing answers `transfers` at the top level; production's
+      // service function answers it inside `data`.
+      const transfers =
+        ("transfers" in result ? result.transfers : undefined) ??
+        ("data" in result ? result.data?.transfers : undefined) ??
+        [];
+      const content =
+        transfers.length > 0
+          ? createElement(
+              "div",
+              { className: "flex flex-col gap-1" },
+              createElement("span", null, outcome.message),
+              createElement(
+                "span",
+                { className: "flex flex-wrap gap-2 text-xs" },
+                ...transfers.map((transfer) =>
+                  createElement(
+                    Link,
+                    {
+                      key: transfer.id,
+                      to: path.to.projectStockTransfer(transfer.id),
+                      className: "underline underline-offset-2 hover:opacity-80"
+                    },
+                    transfer.projectStockTransferId
+                  )
+                )
+              )
+            )
+          : outcome.message;
+      if (outcome.ok) {
+        toast.success(content, transfers.length > 0 ? { duration: 8000 } : {});
+      } else {
+        toast.error(content);
+      }
     },
     // The purchasing route answers `{ success: false, message }`; a service
     // function's error is `{ error: { message } }`.
@@ -63,14 +100,20 @@ export function usePlanningActions({
   });
   const isActionsBusy = actionsFetcher.state !== "idle";
 
-  const actionsByItemId = useMemo(() => {
+  // Keyed by the row (`planningRowKey`): the grid has a row per item and
+  // netting segment, and each row holds its own segment's actions only.
+  const actionsByRowKey = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
     for (const action of planningActions) {
       // a Release whose order moved on since MRP ran no longer applies
       if (isStaleRelease(action)) continue;
-      const list = map.get(action.itemId);
+      const key = planningRowKey({
+        id: action.itemId,
+        planningSegmentId: action.planningSegmentId
+      });
+      const list = map.get(key);
       if (list) list.push(action);
-      else map.set(action.itemId, [action]);
+      else map.set(key, [action]);
     }
     return map;
   }, [planningActions]);
@@ -80,30 +123,31 @@ export function usePlanningActions({
   // re-filters what is already loaded and never touches the item.
   const timeFence = useTimeFenceOverrides();
 
-  const fencedActionsByItemId = useMemo(() => {
+  const fencedActionsByRowKey = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
     for (const row of data) {
-      const actions = actionsByItemId.get(row.id);
+      const key = planningRowKey(row);
+      const actions = actionsByRowKey.get(key);
       if (!actions) continue;
       const fenced = actionsInsideFence(actions, timeFence.fenceDateFor(row));
-      if (fenced.length > 0) map.set(row.id, fenced);
+      if (fenced.length > 0) map.set(key, fenced);
     }
     return map;
-  }, [data, actionsByItemId, timeFence]);
+  }, [data, actionsByRowKey, timeFence]);
 
   // What the GRID shows and acts on: under the Actions-column filter, only
   // the filtered types. The order drawer keeps every fenced action — it lists
   // the item's open orders, and one shown without its pending suggestion
   // would read as "nothing to do".
-  const visibleActionsByItemId = useMemo(() => {
-    if (!actionTypes) return fencedActionsByItemId;
+  const visibleActionsByRowKey = useMemo(() => {
+    if (!actionTypes) return fencedActionsByRowKey;
     const map = new Map<string, PlanningAction[]>();
-    for (const [itemId, actions] of fencedActionsByItemId) {
+    for (const [key, actions] of fencedActionsByRowKey) {
       const visible = actionsOfTypes(actions, actionTypes);
-      if (visible.length > 0) map.set(itemId, visible);
+      if (visible.length > 0) map.set(key, visible);
     }
     return map;
-  }, [fencedActionsByItemId, actionTypes]);
+  }, [fencedActionsByRowKey, actionTypes]);
 
   // ONE batched request per click: the route derives each row's behaviour
   // from its persisted type, and a fetcher holds a single in-flight submission.
@@ -150,9 +194,9 @@ export function usePlanningActions({
     actionHandlers,
     isActionsBusy,
     timeFence,
-    actionsByItemId,
-    fencedActionsByItemId,
-    visibleActionsByItemId,
+    actionsByRowKey,
+    fencedActionsByRowKey,
+    visibleActionsByRowKey,
     submitActions
   };
 }
@@ -162,7 +206,12 @@ export function usePlanningActions({
  * (`{ data, error }`), or the purchasing route's `{ success, message }`.
  */
 type PlanningActionsResult =
-  | { success?: boolean; message?: string }
+  | {
+      success?: boolean;
+      message?: string;
+      /** The Draft project stock transfers an applied Transfer created. */
+      transfers?: { id: string; projectStockTransferId: string }[];
+    }
   | {
       data: {
         applied?: string[];
@@ -171,6 +220,8 @@ type PlanningActionsResult =
         errors?: string[];
         changed?: number;
         requested?: number;
+        /** The Draft project stock transfers an applied Transfer created. */
+        transfers?: { id: string; projectStockTransferId: string }[];
       } | null;
       error: { message: string } | null;
     };

@@ -18,6 +18,7 @@ import { forwardRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 export type CreatableComboboxProps = Omit<
   CreatableComboboxBaseProps,
@@ -72,6 +73,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       formState.isReadOnly || formState.isDisabled || props.isReadOnly;
     const resolvedIsOptional =
       isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+    const inlineField = useInlineField({
+      inline: !!props.inline,
+      label,
+      isEmpty: !value,
+      isReadOnly
+    });
 
     useEffect(() => {
       if (props.value !== null && props.value !== undefined)
@@ -98,7 +105,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
 
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
-        {label && (
+        {label && inlineField.showLabel && (
           <FormLabel
             htmlFor={name}
             isConfigured={isConfigured}
@@ -125,6 +132,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           isReadOnly={isReadOnly}
           label={label}
           emptyMessage={emptyMessage}
+          inlinePlaceholder={props.inlinePlaceholder ?? inlineField.placeholder}
           className="w-full"
           onChange={(newValue) => {
             flushSync(() => {

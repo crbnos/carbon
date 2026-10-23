@@ -21,6 +21,7 @@ import {
   getJob,
   getJobMaterialsWithQuantityOnHand,
   getJobOrderStatusMap,
+  getJobProjectCharge,
   getTrackedEntitiesByJobId
 } from "~/modules/production/production.service";
 import type { JobMethodTreeItem } from "~/modules/production/production.utils";
@@ -107,9 +108,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, tags] = await Promise.all([
+  const [job, tags, projectCharge] = await Promise.all([
     getJob(client, jobId),
-    getTagsList(client, companyId, "job")
+    getTagsList(client, companyId, "job"),
+    getJobProjectCharge(client, jobId, companyId)
   ]);
 
   if (companyId !== job.data?.companyId) {
@@ -145,6 +147,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     job: job.data,
+    projectCharge: projectCharge.data ?? null,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
     trackedEntities: getTrackedEntitiesByJobId(client, jobId),

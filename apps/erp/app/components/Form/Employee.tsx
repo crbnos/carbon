@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { Combobox } from "@carbon/form";
+import { Combobox, useField } from "@carbon/form";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { usePeople } from "~/stores";
@@ -29,18 +29,25 @@ const EmployeePreview = (
 const Employee = ({ type, inline, ...props }: EmployeeSelectProps) => {
   const { t } = useLingui();
   const [people] = usePeople();
+  // A deactivated user or an invite that was never accepted (or was revoked)
+  // is not active and cannot be picked, as in the Assignee picker. The person
+  // already selected stays listed, so an existing assignment still shows.
+  const { defaultValue } = useField(props.name);
+  const selected = (props as { value?: string }).value ?? defaultValue;
 
   const options = useMemo(() => {
     const base =
-      people.map((person) => ({
-        value: person.id,
-        label: (
-          <div className="flex flex-row items-center gap-2 flex-grow">
-            <Avatar name={person.name} path={person.avatarUrl} size="xs" />
-            <span>{person.name}</span>
-          </div>
-        )
-      })) ?? [];
+      people
+        .filter((person) => person.active !== false || person.id === selected)
+        .map((person) => ({
+          value: person.id,
+          label: (
+            <div className="flex flex-row items-center gap-2 flex-grow">
+              <Avatar name={person.name} path={person.avatarUrl} size="xs" />
+              <span>{person.name}</span>
+            </div>
+          )
+        })) ?? [];
 
     if (type === "assignee") {
       return [
@@ -53,7 +60,7 @@ const Employee = ({ type, inline, ...props }: EmployeeSelectProps) => {
     }
 
     return base;
-  }, [type, people, t]);
+  }, [type, people, selected, t]);
 
   const emptyMessage = useEmptyState("employee");
 

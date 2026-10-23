@@ -6,11 +6,13 @@ import type { Database } from "@carbon/database";
 import {
   bicMatchesCountry,
   conditionAstFormField,
+  equals,
   getBankFieldConfig,
   getFieldDef,
   isFieldAvailableOnSalesRuleSurfaces,
   isValidSwiftBic,
   RULE_SEVERITIES,
+  round,
   SALES_RULE_SURFACES
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -1274,12 +1276,27 @@ export const salesReturnDispositionType = [
   // "No Action Required",
   "Pending",
   // "Quarantine",
-  // "Repair",
+  "Repair",
   "Return to Customer",
   "Rework",
   "Scrap",
   "Use As Is"
 ] as const;
+
+/** Why a line's Repair disposition cannot change once it has received. */
+export const REPAIR_DISPOSITION_LOCKED_MESSAGE =
+  "A line's Repair disposition is set before receipt and cannot change after it. Void the receipt to change it.";
+
+/** Why a Repair line takes no credit memo: the unit goes back to the customer. */
+export const REPAIR_LINE_CREDIT_MESSAGE =
+  "Change the disposition before you credit a repair line.";
+
+/** Why an RMA of Repair lines only gets no replacement order. */
+export const REPAIR_ONLY_REPLACEMENT_MESSAGE =
+  "Every line is a repair. There is nothing to replace.";
+
+/** The dispositions a line can take before any quantity is received. */
+export const salesReturnPreReceiptDispositions = ["Pending", "Repair"] as const;
 
 export const SALES_RETURN_ORDER_LOCKED_STATUSES = [
   "Completed",
@@ -1638,6 +1655,18 @@ export const customerContractTypes = [
   "Contraction"
 ] as const satisfies readonly Enums["customerContractType"][];
 
+/**
+ * The R&D tax facts of a contract (Government Contracting 5d). They stay
+ * editable in any status: they are tax facts, not terms.
+ */
+export const customerContractResearchFields = [
+  "researchFunded",
+  "paymentContingentOnSuccess",
+  "contractorRetainsRights"
+] as const;
+export type CustomerContractResearchField =
+  (typeof customerContractResearchFields)[number];
+
 export const contractRevenueTypes = [
   "One-time",
   "Recurring"
@@ -1673,10 +1702,51 @@ export const contractRenewals = [
   "Renew"
 ] as const satisfies readonly Enums["contractRenewal"][];
 
+export const contractBillingMethods = [
+  "Fixed",
+  "Time & Materials",
+  "Cost Plus"
+] as const satisfies readonly Enums["contractBillingMethod"][];
+
+/** What a contract bills from: `Schedule` is a service contract (its invoice
+ *  schedule), `Project` a project contract (project cost and billing events). */
+export const contractBillingBases = [
+  "Schedule",
+  "Project"
+] as const satisfies readonly Enums["contractBillingBasis"][];
+
+/** The billing methods a contract's lines may use: a service contract bills
+ *  only on its schedule. */
+export function contractBillingMethodsFor(
+  basis: (typeof contractBillingBases)[number]
+): readonly (typeof contractBillingMethods)[number][] {
+  return basis === "Project" ? contractBillingMethods : ["Fixed"];
+}
+
+/** The header billing terms of a project contract. Its lines bill from
+ *  project cost each billing period, in arrears on calendar periods, and it
+ *  never renews; only the frequency is the user's choice. */
+export const projectContractTermDefaults = {
+  billingFrequency: "Month",
+  billingAlignment: "Calendar",
+  billingTiming: "Arrears",
+  renewal: "End"
+} as const satisfies {
+  billingFrequency: (typeof contractBillingFrequencies)[number];
+  billingAlignment: (typeof contractBillingAlignments)[number];
+  billingTiming: (typeof contractBillingTimings)[number];
+  renewal: (typeof contractRenewals)[number];
+};
+
 export const contractRevenueMethods = [
   "Daily",
-  "Even Period"
+  "Even Period",
+  "Right to Invoice",
+  "Percent Complete"
 ] as const satisfies readonly Enums["contractRevenueMethod"][];
+
+/** Revenue methods a Fixed line plans on a schedule. */
+export const contractScheduleRevenueMethods = ["Daily", "Even Period"] as const;
 
 export const contractAmendmentEffects = [
   "Change Date",
@@ -1822,24 +1892,27 @@ export const customerContractValidator = z
     projectId: zfd.text(z.string().optional()),
     customerReference: zfd.text(z.string().optional()),
     closeDate: z.string().min(1, { message: "Close date is required" }),
+    /** Omitted means `Schedule`, a service contract. A project contract has
+     *  a period of performance instead of a term, so it takes no duration,
+     *  renewal or billing timing. */
+    billingBasis: zfd.text(z.enum(contractBillingBases).optional()),
     startDate: z.string().min(1, { message: "Start date is required" }),
-    duration: z.enum(contractDurations, { error: "Duration is required" }),
-    /** Required when `duration` is `custom`; otherwise derived. */
+    /** Required on a service contract. */
+    duration: zfd.text(z.enum(contractDurations).optional()),
+    /** Required when `duration` is `custom` and on a project contract;
+     *  otherwise derived. */
     endDate: zfd.text(z.string().optional()),
-    renewal: z.enum(contractRenewals, { error: "Renewal is required" }),
+    /** Required on a service contract. */
+    renewal: zfd.text(z.enum(contractRenewals).optional()),
     /** Percent points: 3 = prices rise 3% at each renewal. */
     renewalUplift: zfd.numeric(
       z.number().min(0, { message: "Renewal uplift cannot be negative" })
     ),
-    billingFrequency: z.enum(contractBillingFrequencies, {
-      error: "Billing frequency is required"
-    }),
-    billingAlignment: z.enum(contractBillingAlignments, {
-      error: "Billing alignment is required"
-    }),
-    billingTiming: z.enum(contractBillingTimings, {
-      error: "Billing timing is required"
-    }),
+    /** Required on a service contract. The three billing terms of a
+     *  project contract default from `projectContractTermDefaults`. */
+    billingFrequency: zfd.text(z.enum(contractBillingFrequencies).optional()),
+    billingAlignment: zfd.text(z.enum(contractBillingAlignments).optional()),
+    billingTiming: zfd.text(z.enum(contractBillingTimings).optional()),
     firstInvoiceDate: zfd.text(z.string().optional()),
     billedThrough: zfd.text(z.string().optional()),
     recognizeRevenueFrom: zfd.text(z.string().optional()),
@@ -1850,10 +1923,40 @@ export const customerContractValidator = z
     exchangeRate: zfd.numeric(z.number().optional()),
     notes: optionalPlainTextDoc
   })
-  .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
-    message: "End date is required",
-    path: ["endDate"]
+  .refine((data) => data.billingBasis === "Project" || !!data.duration, {
+    message: "Duration is required",
+    path: ["duration"]
   })
+  .refine((data) => data.billingBasis === "Project" || !!data.renewal, {
+    message: "Renewal is required",
+    path: ["renewal"]
+  })
+  .refine(
+    (data) => data.billingBasis === "Project" || !!data.billingFrequency,
+    { message: "Billing frequency is required", path: ["billingFrequency"] }
+  )
+  .refine(
+    (data) => data.billingBasis === "Project" || !!data.billingAlignment,
+    { message: "Billing alignment is required", path: ["billingAlignment"] }
+  )
+  .refine((data) => data.billingBasis === "Project" || !!data.billingTiming, {
+    message: "Billing timing is required",
+    path: ["billingTiming"]
+  })
+  .refine((data) => data.billingBasis !== "Project" || !!data.projectId, {
+    message: "Project is required",
+    path: ["projectId"]
+  })
+  .refine(
+    (data) =>
+      data.duration === "custom" || data.billingBasis === "Project"
+        ? !!data.endDate
+        : true,
+    {
+      message: "End date is required",
+      path: ["endDate"]
+    }
+  )
   .refine((data) => isOnOrAfter(data.endDate, data.startDate, -1), {
     message: "End date cannot be before the start date",
     path: ["endDate"]
@@ -1872,6 +1975,72 @@ function percentPoints(label: string) {
       .max(100, { message: `${label} cannot exceed 100%` })
   );
 }
+
+/** An optional percent-points field (0–100); empty is absent. */
+function optionalPercentPoints(label: string) {
+  return zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} cannot be negative` })
+      .max(100, { message: `${label} cannot exceed 100%` })
+      .optional()
+  );
+}
+
+function optionalAmount(label: string) {
+  return zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} cannot be negative` })
+      .optional()
+  );
+}
+
+/** The funding of a billing line. `noticePercent` is in percent points
+ *  (75–85), as FAR 52.232-20/-22 allow. */
+const contractLineFundingFields = {
+  fundedAmount: optionalAmount("Funded amount"),
+  fundedCost: optionalAmount("Funded cost"),
+  ceilingAmount: optionalAmount("Ceiling"),
+  noticePercent: zfd.numeric(
+    z
+      .number()
+      .min(75, { message: "The notice percent is 75% to 85%" })
+      .max(85, { message: "The notice percent is 75% to 85%" })
+      .default(75)
+  ),
+  noticeWindowDays: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Enter whole days" })
+      .min(30, { message: "The notice window is 30 to 90 days" })
+      .max(90, { message: "The notice window is 30 to 90 days" })
+      .default(60)
+  )
+};
+
+/** The funding of one billing line, edited on an Active contract (P9). */
+export const contractLineFundingValidator = z.object({
+  id: z.string().min(1, { message: "Line is required" }),
+  ...contractLineFundingFields
+});
+
+/** One bill rate of a contract line: a labor category or an employee. */
+export const contractLaborRateValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    customerContractLineId: z.string().min(1, { message: "Line is required" }),
+    laborCategoryId: zfd.text(z.string().optional()),
+    employeeId: zfd.text(z.string().optional()),
+    billRate: zfd.numeric(
+      z.number().min(0, { message: "The bill rate cannot be negative" })
+    ),
+    effectiveFrom: z.string().min(1, { message: "Effective from is required" })
+  })
+  .refine((rate) => !!rate.laborCategoryId !== !!rate.employeeId, {
+    message: "Choose a labor category or an employee",
+    path: ["laborCategoryId"]
+  });
 
 /** The fields of one contract line, shared by the line form and an
  *  amendment's added line. */
@@ -1898,11 +2067,377 @@ const contractLineFields = {
   }),
   revenueStartDate: zfd.text(z.string().optional()),
   revenueEndDate: zfd.text(z.string().optional()),
-  projectId: zfd.text(z.string().optional())
+  projectId: zfd.text(z.string().optional()),
+  // Project billing (Phase 4a). Absent means a Fixed line.
+  billingMethod: zfd.text(z.enum(contractBillingMethods).default("Fixed")),
+  projectElementId: zfd.text(z.string().optional()),
+  materialHandlingPercent: optionalPercentPoints("Handling"),
+  feePercent: optionalPercentPoints("Fee"),
+  ...contractLineFundingFields
 };
 
+/** Revenue methods each billing method allows (plan decision P6). */
+export const contractRevenueMethodsByBillingMethod = {
+  Fixed: ["Daily", "Even Period", "Percent Complete"],
+  "Time & Materials": ["Right to Invoice"],
+  "Cost Plus": ["Percent Complete", "Right to Invoice"]
+} as const satisfies Record<
+  (typeof contractBillingMethods)[number],
+  readonly (typeof contractRevenueMethods)[number][]
+>;
+
+/** The revenue methods a line may use on a contract of this basis. A project
+ *  contract's Fixed Price line is earned by progress or by the day, never by
+ *  even period. */
+export function contractRevenueMethodsFor(
+  basis: (typeof contractBillingBases)[number] | null | undefined,
+  billingMethod: (typeof contractBillingMethods)[number]
+): readonly (typeof contractRevenueMethods)[number][] {
+  const methods = contractRevenueMethodsByBillingMethod[billingMethod];
+  return basis === "Project" && billingMethod === "Fixed"
+    ? methods.filter((method) => method !== "Even Period")
+    : methods;
+}
+
+/** The billing fields of a new line: Fixed, with the notice defaults. */
+export const newContractLineBillingValues = {
+  billingMethod: "Fixed",
+  noticePercent: 75,
+  noticeWindowDays: 60
+} as const;
+
+/** A stored line's billing fields as the line form's values: percents in
+ *  percent points. */
+export function contractLineBillingFormValues(line: {
+  billingMethod: (typeof contractBillingMethods)[number];
+  projectElementId: string | null;
+  materialHandlingPercent: number | null;
+  feePercent: number | null;
+  fundedAmount: number | null;
+  fundedCost: number | null;
+  ceilingAmount: number | null;
+  noticePercent: number;
+  noticeWindowDays: number;
+}) {
+  const points = (fraction: number | null) =>
+    fraction === null ? undefined : round(Number(fraction) * 100);
+  const amount = (value: number | null) =>
+    value === null ? undefined : Number(value);
+  return {
+    billingMethod: line.billingMethod,
+    projectElementId: line.projectElementId ?? undefined,
+    materialHandlingPercent: points(line.materialHandlingPercent),
+    feePercent: points(line.feePercent),
+    fundedAmount: amount(line.fundedAmount),
+    fundedCost: amount(line.fundedCost),
+    ceilingAmount: amount(line.ceilingAmount),
+    noticePercent: round(Number(line.noticePercent) * 100),
+    noticeWindowDays: Number(line.noticeWindowDays)
+  };
+}
+
+/** A line billed from project work rather than a schedule. */
+export function isProjectBillingMethod(
+  billingMethod: (typeof contractBillingMethods)[number] | null | undefined
+) {
+  return billingMethod === "Time & Materials" || billingMethod === "Cost Plus";
+}
+
+/** The lines no amendment replaced. Amend ends the old line and inserts a
+ *  copy that names it in `amendsLineId`; both stay on the contract. */
+export function currentContractLines<
+  T extends { id: string; amendsLineId: string | null }
+>(lines: T[]): T[] {
+  const replaced = new Set(
+    lines.flatMap((line) => (line.amendsLineId ? [line.amendsLineId] : []))
+  );
+  return lines.filter((line) => !replaced.has(line.id));
+}
+
+/** What a project contract is funded for: each current billing line's
+ *  funded amount and each current Fixed Price line's price (its rate, at
+ *  quantity 1). A billing line with no funded amount adds nothing; a line
+ *  an amendment replaced adds nothing, its copy counts instead. */
+export function projectContractFunded(
+  lines: {
+    id: string;
+    amendsLineId: string | null;
+    billingMethod: (typeof contractBillingMethods)[number];
+    fundedAmount: number | null;
+    quantity: number;
+    rate: number;
+  }[]
+): number {
+  return currentContractLines(lines).reduce(
+    (sum, line) =>
+      sum +
+      (isProjectBillingMethod(line.billingMethod)
+        ? Number(line.fundedAmount ?? 0)
+        : Number(line.quantity) * Number(line.rate)),
+    0
+  );
+}
+
+/** The default accounts a project contract posts through. An empty one does
+ *  not stop Confirm, but its first posting fails. */
+export const projectContractAccountDefaults = [
+  "projectWorkInProgressAccount",
+  "deferredRevenueAccount",
+  "contractAssetAccount",
+  "contractLossProvisionAccount"
+] as const;
+
+export type ProjectContractAccountDefault =
+  (typeof projectContractAccountDefaults)[number];
+
+/** What the Review step knows about a project contract. A fact the user may
+ *  not read (RLS) is absent or null: it is unknown, and gives no gap. */
+export type ProjectContractGapInput = {
+  lines: {
+    id: string;
+    billingMethod: (typeof contractBillingMethods)[number];
+    revenueMethod: (typeof contractRevenueMethods)[number];
+    projectId: string | null;
+    projectElementId: string | null;
+  }[];
+  currencyCode: string;
+  baseCurrencyCode: string | null;
+  costTreatmentByProject: Record<string, Enums["projectCostTreatment"]>;
+  /** Per element a line names: its project, and whether it is a billing
+   *  element. */
+  billingElementById: Record<string, { projectId: string; isBilling: boolean }>;
+  /** Per line: its price less the sum of its billing events. */
+  residuals: Record<string, number>;
+  /** The labor categories a Time & Materials line cannot price. */
+  laborCategoriesWithoutBillRate: string[];
+  emptyAccountDefaults: ProjectContractAccountDefault[] | null;
+};
+
+export type ProjectContractGap =
+  | { key: "noLines"; blocking: true }
+  | { key: "noBillingElement"; blocking: true; lineId: string }
+  | { key: "elementNotOnProject"; blocking: true; lineId: string }
+  | {
+      key: "notBillingElement";
+      blocking: true;
+      lineId: string;
+      projectId: string;
+      elementId: string;
+    }
+  | { key: "costTreatment"; blocking: true; projectId: string }
+  | { key: "currency"; blocking: true; baseCurrencyCode: string }
+  | { key: "billingEvents"; blocking: true; lineId: string; residual: number }
+  | { key: "laborBillRate"; blocking: false; count: number }
+  | {
+      key: "accountDefault";
+      blocking: false;
+      account: ProjectContractAccountDefault;
+    };
+
+/** What stops a project contract's Confirm, and what it should fix first.
+ *  The blocking gaps mirror `checkBillingLines` (post-customer-contract), so
+ *  the Review step says it before the server refuses it. Like the server, a
+ *  billing line bills its OWN project: the contract's project is not a
+ *  fallback. */
+export function projectContractGaps(
+  input: ProjectContractGapInput
+): ProjectContractGap[] {
+  const { lines } = input;
+  if (lines.length === 0) return [{ key: "noLines", blocking: true }];
+  const gaps: ProjectContractGap[] = [];
+
+  const progress = lines.filter(
+    (line) =>
+      line.billingMethod !== "Fixed" ||
+      line.revenueMethod === "Percent Complete"
+  );
+  if (
+    progress.length > 0 &&
+    input.baseCurrencyCode &&
+    input.baseCurrencyCode !== input.currencyCode
+  ) {
+    gaps.push({
+      key: "currency",
+      blocking: true,
+      baseCurrencyCode: input.baseCurrencyCode
+    });
+  }
+
+  const flaggedProjects = new Set<string>();
+  for (const line of lines.filter((l) =>
+    isProjectBillingMethod(l.billingMethod)
+  )) {
+    const { projectId } = line;
+    if (!projectId || !line.projectElementId) {
+      gaps.push({ key: "noBillingElement", blocking: true, lineId: line.id });
+      continue;
+    }
+    const treatment = input.costTreatmentByProject[projectId];
+    if (treatment && treatment !== "Contract") {
+      // One row per project; its elements cannot be billing elements yet.
+      if (!flaggedProjects.has(projectId)) {
+        flaggedProjects.add(projectId);
+        gaps.push({ key: "costTreatment", blocking: true, projectId });
+      }
+      continue;
+    }
+    const element = input.billingElementById[line.projectElementId];
+    if (!element) continue;
+    if (element.projectId !== projectId) {
+      gaps.push({
+        key: "elementNotOnProject",
+        blocking: true,
+        lineId: line.id
+      });
+      continue;
+    }
+    if (!element.isBilling) {
+      gaps.push({
+        key: "notBillingElement",
+        blocking: true,
+        lineId: line.id,
+        projectId,
+        elementId: line.projectElementId
+      });
+    }
+  }
+
+  for (const line of lines.filter((l) => l.billingMethod === "Fixed")) {
+    const residual = input.residuals[line.id];
+    if (residual !== undefined && !equals(residual, 0)) {
+      gaps.push({
+        key: "billingEvents",
+        blocking: true,
+        lineId: line.id,
+        residual
+      });
+    }
+  }
+
+  if (
+    lines.some((line) => line.billingMethod === "Time & Materials") &&
+    input.laborCategoriesWithoutBillRate.length > 0
+  ) {
+    gaps.push({
+      key: "laborBillRate",
+      blocking: false,
+      count: input.laborCategoriesWithoutBillRate.length
+    });
+  }
+
+  for (const account of input.emptyAccountDefaults ?? []) {
+    gaps.push({ key: "accountDefault", blocking: false, account });
+  }
+
+  return gaps;
+}
+
+/** The active labor categories a Time & Materials line cannot price: no bill
+ *  rate of their own, and no contract labor rate on every T&M line. */
+export function laborCategoriesWithoutBillRate(args: {
+  categories: {
+    id: string;
+    name: string;
+    active: boolean;
+    rates: { billRate: number | null }[];
+  }[];
+  timeAndMaterialsLineIds: string[];
+  lineRates: {
+    customerContractLineId: string;
+    laborCategoryId: string | null;
+  }[];
+}): string[] {
+  if (args.timeAndMaterialsLineIds.length === 0) return [];
+  const covered = new Set(
+    args.lineRates.flatMap((rate) =>
+      rate.laborCategoryId
+        ? [`${rate.customerContractLineId}:${rate.laborCategoryId}`]
+        : []
+    )
+  );
+  return args.categories
+    .filter(
+      (category) =>
+        category.active &&
+        !category.rates.some((rate) => rate.billRate !== null) &&
+        args.timeAndMaterialsLineIds.some(
+          (lineId) => !covered.has(`${lineId}:${category.id}`)
+        )
+    )
+    .map((category) => category.name);
+}
+
+type BillingTerms = {
+  revenueMethod: (typeof contractRevenueMethods)[number];
+  projectId?: string;
+  billingMethod: (typeof contractBillingMethods)[number];
+  projectElementId?: string;
+  feePercent?: number;
+};
+
+/** The billing rules of a line (plan decision P6 and the line CHECKs). */
+function checkBillingTerms(line: BillingTerms, ctx: z.RefinementCtx) {
+  const allowed: readonly string[] =
+    contractRevenueMethodsByBillingMethod[line.billingMethod];
+  if (!allowed.includes(line.revenueMethod)) {
+    ctx.addIssue({
+      code: "custom",
+      message: `A ${line.billingMethod} line cannot use ${line.revenueMethod}`,
+      path: ["revenueMethod"]
+    });
+  }
+  if (isProjectBillingMethod(line.billingMethod)) {
+    if (!line.projectId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A billing line needs a project",
+        path: ["projectId"]
+      });
+    }
+    if (!line.projectElementId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A billing line needs a billing element",
+        path: ["projectElementId"]
+      });
+    }
+  }
+  if (line.billingMethod === "Cost Plus" && line.feePercent === undefined) {
+    ctx.addIssue({
+      code: "custom",
+      message: "A Cost Plus line needs a fee",
+      path: ["feePercent"]
+    });
+  }
+  if (
+    line.revenueMethod === "Percent Complete" &&
+    !isProjectBillingMethod(line.billingMethod) &&
+    !line.projectElementId
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Percent Complete needs a billing element",
+      path: ["projectElementId"]
+    });
+  }
+}
+
+/** The billing terms of an amendment's added line, edited apart from the
+ *  amendment grid. Percents in percent points. */
+export const contractLineBillingTermsValidator = z
+  .object({
+    billingMethod: contractLineFields.billingMethod,
+    revenueMethod: contractLineFields.revenueMethod,
+    projectId: contractLineFields.projectId,
+    projectElementId: contractLineFields.projectElementId,
+    materialHandlingPercent: contractLineFields.materialHandlingPercent,
+    feePercent: contractLineFields.feePercent,
+    ...contractLineFundingFields
+  })
+  .superRefine(checkBillingTerms);
+
 function checkContractLine(
-  line: {
+  line: BillingTerms & {
     revenueType: (typeof contractRevenueTypes)[number];
     rateUnit?: string;
     startDate: string;
@@ -1911,6 +2446,7 @@ function checkContractLine(
   },
   ctx: z.RefinementCtx
 ) {
+  checkBillingTerms(line, ctx);
   if (line.revenueType === "Recurring" && !line.rateUnit) {
     ctx.addIssue({
       code: "custom",
@@ -1948,13 +2484,51 @@ function checkContractLine(
   }
 }
 
+/** A CLIN (`0001`), or a SubCLIN (`0001AA` or `000101`). */
+export const CONTRACT_LINE_ITEM_NUMBER_PATTERN =
+  /^[0-9]{4}([A-Z]{2}|[0-9]{2})?$/;
+
 export const customerContractLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     customerContractId: z.string().min(1, { message: "Contract is required" }),
-    ...contractLineFields
+    ...contractLineFields,
+    // Government Contracting 5a: the CLIN or SubCLIN number, and the CLIN a
+    // SubCLIN belongs to.
+    lineItemNumber: zfd.text(
+      z
+        .string()
+        .trim()
+        .regex(CONTRACT_LINE_ITEM_NUMBER_PATTERN, {
+          message: "Use 4 digits, then 2 letters or 2 digits for a SubCLIN"
+        })
+        .optional()
+    ),
+    parentLineId: zfd.text(z.string().optional())
   })
   .superRefine(checkContractLine);
+
+/** One funding action (a contract modification) on a billing line. */
+export const customerContractFundingValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  customerContractLineId: z.string().min(1, { message: "Line is required" }),
+  modificationNumber: z
+    .string()
+    .trim()
+    .min(1, { message: "Modification number is required" }),
+  fundedDate: z.string().min(1, { message: "Funded date is required" }),
+  acrn: z
+    .string()
+    .trim()
+    .regex(/^[A-Z0-9]{2}$/, { message: "Use 2 capital letters or digits" }),
+  fundedCost: zfd.numeric(
+    z.number().min(0, { message: "Funded cost cannot be negative" })
+  ),
+  fundedFee: zfd.numeric(
+    z.number().min(0, { message: "Funded fee cannot be negative" })
+  ),
+  expiresOn: zfd.text(z.string().optional())
+});
 
 /** One amount per contract line, JSON-encoded: an added invoice or month.
  *  At least one must be above zero. */

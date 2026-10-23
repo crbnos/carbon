@@ -2,10 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import EditableByRow from "./EditableByRow";
 import EditableDate from "./EditableDate";
 import EditableList from "./EditableList";
 import EditableNumber from "./EditableNumber";
 import EditableText from "./EditableText";
 
 export * from "./types";
-export { EditableDate, EditableList, EditableNumber, EditableText };
+export { useStableEditableComponents } from "./useStableEditableComponents";
+export {
+  EditableByRow,
+  EditableDate,
+  EditableList,
+  EditableNumber,
+  EditableText
+};

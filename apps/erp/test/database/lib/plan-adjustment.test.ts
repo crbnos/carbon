@@ -262,6 +262,7 @@ it("toJournalLineDocumentType falls back for types the journal enum lacks", () =
   expect(toJournalLineDocumentType("Inventory Count")).toEqual(
     "Inventory Count"
   );
+  expect(toJournalLineDocumentType("Project Issue")).toEqual("Project Issue");
 });
 
 it("buildJournalLineDimensions tags every line with the active dimensions", () => {

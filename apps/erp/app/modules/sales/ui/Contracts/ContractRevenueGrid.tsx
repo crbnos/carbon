@@ -43,7 +43,7 @@ import {
   usePermissions
 } from "~/hooks";
 import { path } from "~/utils/path";
-import { contractRevenueMethods } from "../../sales.models";
+import { contractScheduleRevenueMethods } from "../../sales.models";
 import ContractAmountsModal from "./ContractAmountsModal";
 import { Remaining } from "./ContractInvoiceGrid";
 import ContractMoney from "./ContractMoney";
@@ -398,7 +398,12 @@ export const ContractRecognitionGrid = ({
   const contractId = contract.id!;
   const canEdit = permissions.can("update", "sales");
   const methodLabels = useMemo<Record<ContractLine["revenueMethod"], string>>(
-    () => ({ Daily: t`Daily`, "Even Period": t`Even Period` }),
+    () => ({
+      Daily: t`Daily`,
+      "Even Period": t`Even Period`,
+      "Right to Invoice": t`Right to Invoice`,
+      "Percent Complete": t`Percent Complete`
+    }),
     [t]
   );
 
@@ -485,7 +490,7 @@ export const ContractRecognitionGrid = ({
     () => ({
       revenueMethod: EditableList<RecognitionRow>(
         onCellEdit,
-        contractRevenueMethods.map((value) => ({
+        contractScheduleRevenueMethods.map((value) => ({
           value,
           label: methodLabels[value]
         }))

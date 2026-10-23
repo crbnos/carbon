@@ -66,19 +66,21 @@ export function getApplyCreditHref(args: {
 
 type PaymentFormValues = z.infer<typeof paymentValidator>;
 
-// The picker's single value: the two ids travel as separate hidden fields
-// (`salesOrderId` / `rentalAgreementId`, at most one set — the validator and
-// `payment_deposit_document_check` both enforce it).
+// The picker's single value: the ids travel as separate hidden fields
+// (`salesOrderId` / `rentalAgreementId` / `customerContractId`, at most one
+// set — the validator and `payment_deposit_document_check` both enforce it).
 const depositValue = (doc: Pick<DepositDocument, "kind" | "id">) =>
   `${doc.kind}:${doc.id}`;
 const parseDepositValue = (value: string) => {
   const separator = value.indexOf(":");
-  if (separator < 0) return { salesOrderId: "", rentalAgreementId: "" };
+  if (separator < 0)
+    return { salesOrderId: "", rentalAgreementId: "", customerContractId: "" };
   const kind = value.slice(0, separator);
   const id = value.slice(separator + 1);
   return {
     salesOrderId: kind === "salesOrder" ? id : "",
-    rentalAgreementId: kind === "rentalAgreement" ? id : ""
+    rentalAgreementId: kind === "rentalAgreement" ? id : "",
+    customerContractId: kind === "customerContract" ? id : ""
   };
 };
 
@@ -92,6 +94,8 @@ type PaymentFormProps = {
   // Documents the "Deposit for" picker offers. Omitted = no picker (the saved
   // ids still round-trip through the hidden fields).
   depositDocuments?: DepositDocument[];
+  // A contract financing request the new payment receives.
+  financingRequestId?: string;
 };
 
 /**
@@ -102,7 +106,8 @@ type PaymentFormProps = {
 const PaymentForm = ({
   initialValues,
   seedInvoiceIds,
-  depositDocuments
+  depositDocuments,
+  financingRequestId
 }: PaymentFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
@@ -145,7 +150,12 @@ const PaymentForm = ({
       })
     : initialValues.salesOrderId
       ? depositValue({ kind: "salesOrder", id: initialValues.salesOrderId })
-      : "";
+      : initialValues.customerContractId
+        ? depositValue({
+            kind: "customerContract",
+            id: initialValues.customerContractId
+          })
+        : "";
   const [deposit, setDeposit] = useState(initialDeposit);
   // UI-only controlled fields are seeded through the form defaults so the
   // registered value matches what is shown on first render.
@@ -168,7 +178,11 @@ const PaymentForm = ({
         value: depositValue(doc),
         label: doc.readableId,
         helper: `${
-          doc.kind === "rentalAgreement" ? t`Rental Agreement` : t`Sales Order`
+          doc.kind === "rentalAgreement"
+            ? t`Rental Agreement`
+            : doc.kind === "customerContract"
+              ? t`Contract`
+              : t`Sales Order`
         } · ${doc.status}`
       }));
   }, [
@@ -224,7 +238,14 @@ const PaymentForm = ({
         )}
         <Hidden name="salesOrderId" value={depositIds.salesOrderId} />
         <Hidden name="rentalAgreementId" value={depositIds.rentalAgreementId} />
+        <Hidden
+          name="customerContractId"
+          value={depositIds.customerContractId}
+        />
         {isEditing && <Hidden name="paymentId" />}
+        {financingRequestId && (
+          <Hidden name="financingRequestId" value={financingRequestId} />
+        )}
         {seedInvoiceIds && seedInvoiceIds.length > 0 && (
           <Hidden name="seedInvoiceIds" value={seedInvoiceIds.join(",")} />
         )}

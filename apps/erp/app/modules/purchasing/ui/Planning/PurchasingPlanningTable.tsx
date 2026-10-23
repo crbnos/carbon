@@ -61,6 +61,10 @@ import {
 } from "~/modules/production/production.models";
 import type { PlanningAction } from "~/modules/production/types";
 import {
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey
+} from "~/modules/production/ui/Planning/planning-action-scope";
+import {
   isApplyablePlanningAction,
   isNewSupplyAction,
   PlanningActionLines,
@@ -75,7 +79,10 @@ import {
   supplierConversionFactor
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
-import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
+import {
+  type PlanningSegmentProject,
+  planningColumns
+} from "~/modules/production/ui/Planning/planningColumns";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
@@ -101,6 +108,8 @@ type PlanningTableProps = {
   /** The Actions-column filter in effect; null when the grid is not filtered
    *  by action type. */
   actionTypes: string[] | null;
+  /** The projects that net in their own segment, for the Segment column. */
+  segmentProjects: PlanningSegmentProject[];
   /** Today on the location's calendar (ISO date). */
   locationToday: string;
 };
@@ -114,6 +123,7 @@ const PlanningTable = memo(
     periods,
     planningActions,
     actionTypes,
+    segmentProjects,
     locationToday
   }: PlanningTableProps) => {
     const { t, i18n } = useLingui();
@@ -151,9 +161,9 @@ const PlanningTable = memo(
       actionHandlers: changeActionHandlers,
       isActionsBusy,
       timeFence,
-      actionsByItemId,
-      fencedActionsByItemId,
-      visibleActionsByItemId,
+      actionsByRowKey,
+      fencedActionsByRowKey,
+      visibleActionsByRowKey,
       submitActions
     } = usePlanningActions({
       data: drawerRows,
@@ -297,7 +307,10 @@ const PlanningTable = memo(
         const supplierId = suppliersMap[row.id];
         const item = items.find((item) => item.id === row.id);
         return plannedOrdersFromActions(
-          openNewSupplyActions(actionsByItemId.get(row.id), "Order"),
+          openNewSupplyActions(
+            actionsByRowKey.get(planningRowKey(row)),
+            "Order"
+          ),
           {
             conversionFactor: supplierConversionFactor(
               row.suppliers,
@@ -311,11 +324,14 @@ const PlanningTable = memo(
           }
         );
       },
-      [actionsByItemId, items, suppliersMap]
+      [actionsByRowKey, items, suppliersMap]
     );
 
-    const ordersByItemId = useMemo(
-      () => new Map(data.map((row) => [row.id, plannedOrdersFor(row)])),
+    const ordersByRowKey = useMemo(
+      () =>
+        new Map(
+          data.map((row) => [planningRowKey(row), plannedOrdersFor(row)])
+        ),
       [data, plannedOrdersFor]
     );
 
@@ -380,10 +396,10 @@ const PlanningTable = memo(
               // raises what is due inside the planning horizon, not the whole
               // planning window.
               const sourceOrders =
-                row.id! in ordersMap
-                  ? ordersMap[row.id!]!
+                planningRowKey(row) in ordersMap
+                  ? ordersMap[planningRowKey(row)]!
                   : splitOrdersByFence(
-                      ordersByItemId.get(row.id!) ?? [],
+                      ordersByRowKey.get(planningRowKey(row)) ?? [],
                       timeFence.fenceDateFor(row)
                     ).inside;
               const ordersWithPeriods = sourceOrders.map((order) => {
@@ -415,6 +431,7 @@ const PlanningTable = memo(
 
               return {
                 id: row.id,
+                planningSegmentId: row.planningSegmentId ?? "",
                 orders: ordersWithPeriods
               };
             }),
@@ -431,7 +448,7 @@ const PlanningTable = memo(
         bulkUpdateFetcher,
         locationId,
         ordersMap,
-        ordersByItemId,
+        ordersByRowKey,
         suppliersMap,
         t,
         timeFence
@@ -447,9 +464,12 @@ const PlanningTable = memo(
       (itemId: string, date: string | null) => {
         setFenceDate(itemId, date);
         setOrdersMap((prev) => {
-          if (!(itemId in prev)) return prev;
-          const { [itemId]: _dropped, ...rest } = prev;
-          return rest;
+          // the fence is per item, so every segment row of the item re-seeds
+          const kept = Object.entries(prev).filter(
+            ([key]) => key.split("\u001f")[0] !== itemId
+          );
+          if (kept.length === Object.keys(prev).length) return prev;
+          return Object.fromEntries(kept);
         });
       },
       [setFenceDate]
@@ -473,7 +493,7 @@ const PlanningTable = memo(
         if (item.id) {
           setOrdersMap((prev) => ({
             ...prev,
-            [item.id!]: orders
+            [planningRowKey(item)]: orders
           }));
         }
       },
@@ -509,11 +529,11 @@ const PlanningTable = memo(
     const selectedActions = useMemo(
       () =>
         selectedItem?.id
-          ? (fencedActionsByItemId.get(selectedItem.id) ?? []).filter(
-              (action) => !isNewSupplyAction(action)
-            )
+          ? (
+              fencedActionsByRowKey.get(planningRowKey(selectedItem)) ?? []
+            ).filter((action) => !isNewSupplyAction(action))
           : [],
-      [selectedItem, fencedActionsByItemId]
+      [selectedItem, fencedActionsByRowKey]
     );
 
     // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
@@ -529,7 +549,8 @@ const PlanningTable = memo(
         unitOfMeasures,
         itemPostingGroups,
         timeFence,
-        onFenceChange
+        onFenceChange,
+        segmentProjects
       });
 
       return [
@@ -575,12 +596,15 @@ const PlanningTable = memo(
           header: t`Item Name`,
           value: (row) => row.name ?? null
         }),
+        shared.segment,
         {
           id: PLANNING_ACTIONS_COLUMN,
           header: t`Actions`,
           cell: ({ row }) => (
             <PlanningActionsCell
-              actions={visibleActionsByItemId.get(row.original.id) ?? []}
+              actions={
+                visibleActionsByRowKey.get(planningRowKey(row.original)) ?? []
+              }
             />
           ),
           meta: {
@@ -592,7 +616,7 @@ const PlanningTable = memo(
             },
             exportValue: (row: PurchasingPlanningItem) =>
               planningActionsExportValue(
-                visibleActionsByItemId.get(row.id) ?? []
+                visibleActionsByRowKey.get(planningRowKey(row)) ?? []
               )
           }
         },
@@ -603,8 +627,11 @@ const PlanningTable = memo(
             <EmployeeAvatarGroup
               employeeIds={[
                 ...new Set(
-                  (visibleActionsByItemId.get(row.original.id) ?? []).flatMap(
-                    (action) => (action.assignee ? [action.assignee] : [])
+                  (
+                    visibleActionsByRowKey.get(planningRowKey(row.original)) ??
+                    []
+                  ).flatMap((action) =>
+                    action.assignee ? [action.assignee] : []
                   )
                 )
               ]}
@@ -623,8 +650,10 @@ const PlanningTable = memo(
             exportValue: (row: PurchasingPlanningItem) =>
               [
                 ...new Set(
-                  (visibleActionsByItemId.get(row.id) ?? []).flatMap(
-                    (action) => (action.assignee ? [action.assignee] : [])
+                  (
+                    visibleActionsByRowKey.get(planningRowKey(row)) ?? []
+                  ).flatMap((action) =>
+                    action.assignee ? [action.assignee] : []
                   )
                 )
               ]
@@ -699,7 +728,7 @@ const PlanningTable = memo(
             // only what is due inside the row's time fence
             const orders = row.original.id
               ? splitOrdersByFence(
-                  ordersByItemId.get(row.original.id) ?? [],
+                  ordersByRowKey.get(planningRowKey(row.original)) ?? [],
                   timeFence.fenceDateFor(row.original)
                 ).inside
               : [];
@@ -716,7 +745,7 @@ const PlanningTable = memo(
             // the dot too; a Decrease, Defer or Cancel does not.
             const dot =
               planningActionDot(
-                visibleActionsByItemId.get(row.original.id) ?? []
+                visibleActionsByRowKey.get(planningRowKey(row.original)) ?? []
               ) ?? (hasOrders ? "green" : null);
             return (
               <div className="flex justify-end">
@@ -756,12 +785,13 @@ const PlanningTable = memo(
       unitOfMeasures,
       suppliersMap,
       isDisabled,
-      visibleActionsByItemId,
+      visibleActionsByRowKey,
       actionTypeOptions,
       people,
       itemPostingGroups,
-      ordersByItemId,
+      ordersByRowKey,
       timeFence,
+      segmentProjects,
       locationToday
       // Note: ordersMap is intentionally not in deps to avoid column regeneration
       // getOrdersForItem inside the cell will access the latest ordersMap via closure
@@ -771,7 +801,7 @@ const PlanningTable = memo(
       (selectedRows: typeof data) => {
         // inside each row's time fence only — what the row is showing
         const applyableIds = selectedRows.flatMap((row) =>
-          (visibleActionsByItemId.get(row.id) ?? [])
+          (visibleActionsByRowKey.get(planningRowKey(row)) ?? [])
             .filter(isApplyablePlanningAction)
             .map((action) => action.id)
         );
@@ -814,7 +844,7 @@ const PlanningTable = memo(
       [
         bulkUpdateFetcher.state,
         onBulkUpdate,
-        visibleActionsByItemId,
+        visibleActionsByRowKey,
         canUpdateActions,
         isActionsBusy,
         submitActions
@@ -823,25 +853,27 @@ const PlanningTable = memo(
 
     const canExpandRow = useCallback(
       (row: PurchasingPlanningItem) =>
-        (visibleActionsByItemId.get(row.id)?.length ?? 0) > 0,
-      [visibleActionsByItemId]
+        (visibleActionsByRowKey.get(planningRowKey(row))?.length ?? 0) > 0,
+      [visibleActionsByRowKey]
     );
 
     const renderExpandedRow = useCallback(
       (row: PurchasingPlanningItem) => (
         <PlanningActionLines
-          actions={visibleActionsByItemId.get(row.id) ?? []}
+          actions={visibleActionsByRowKey.get(planningRowKey(row)) ?? []}
           todayIso={locationToday}
           {...actionHandlers}
           onOrder={() => openDrawer(row)}
         />
       ),
-      [visibleActionsByItemId, locationToday, actionHandlers, openDrawer]
+      [visibleActionsByRowKey, locationToday, actionHandlers, openDrawer]
     );
 
     const defaultColumnVisibility = {
       // carries the Assignee filter; the avatars are opt-in
       [PLANNING_ASSIGNEE_COLUMN]: false,
+      // only a company with project stock has more than one segment
+      [PLANNING_SEGMENT_COLUMN]: segmentProjects.length > 0,
       active: false,
       type: false
     };
@@ -929,7 +961,8 @@ const PlanningTable = memo(
             selectedSupplier={suppliersMap[selectedItem.id]}
             orders={
               selectedItem.id
-                ? ordersMap[selectedItem.id] || selectedOrders.inside
+                ? ordersMap[planningRowKey(selectedItem)] ||
+                  selectedOrders.inside
                 : []
             }
             beyondFenceOrders={selectedOrders.beyond}

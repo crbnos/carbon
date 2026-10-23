@@ -326,6 +326,14 @@ const REVENUE_LINE_DESCRIPTIONS: Record<
     debit: "Net investment interest",
     credit: "Lease interest income"
   },
+  "Cost Relief": {
+    debit: "Contract cost recognized",
+    credit: "Project WIP relieved"
+  },
+  "Loss Provision": {
+    debit: "Contract loss provided",
+    credit: "Contract loss provision"
+  },
   Amortization: {
     debit: "Lease cost recognized",
     credit: "Right-of-use asset amortized"
@@ -348,6 +356,24 @@ const CONTRACT_ACCRUAL_DESCRIPTIONS = {
   debit: "Contract asset accrued",
   credit: "Revenue recognized"
 };
+
+/**
+ * The two journal line descriptions of a revenue recognition schedule row. A
+ * lessee lease's row reads the lessee pair; a contract Accrual row accrues a
+ * contract asset, not unbilled rent; every other row reads its type's pair.
+ */
+export function revenueRowDescriptions(row: {
+  type: RevenueScheduleType;
+  customerContractLineId: string | null;
+  leaseId?: string | null;
+}): { debit: string; credit: string } {
+  return (
+    (row.leaseId ? LESSEE_LINE_DESCRIPTIONS[row.type] : undefined) ??
+    (row.customerContractLineId && row.type === "Accrual"
+      ? CONTRACT_ACCRUAL_DESCRIPTIONS
+      : REVENUE_LINE_DESCRIPTIONS[row.type])
+  );
+}
 
 /** A revenue recognition schedule row, with the amount its run posts. */
 export type RecognitionScheduleRow = {
@@ -396,6 +422,8 @@ export type RecognitionSources = {
       itemId: string | null;
       /** The contract line's project, else the contract's. */
       projectId: string | null;
+      /** The contract line's billing element. */
+      projectElementId?: string | null;
     }
   >;
   /** Lessee leases, by lease id. Every lessee row's lease must be here. */
@@ -498,7 +526,8 @@ function recognitionSource(
       Customer: source?.customerId ?? null,
       Item: source?.itemId ?? null,
       Location: (invoice ?? rental)?.locationId ?? null,
-      Project: contract?.projectId ?? null
+      Project: contract?.projectId ?? null,
+      ProjectElement: contract?.projectElementId ?? null
     }
   };
 }
@@ -567,11 +596,7 @@ export function buildRecognitionJournals(args: {
     }
     if (row.amount === 0) continue;
 
-    const descriptions =
-      (row.leaseId ? LESSEE_LINE_DESCRIPTIONS[row.type] : undefined) ??
-      (row.customerContractLineId && row.type === "Accrual"
-        ? CONTRACT_ACCRUAL_DESCRIPTIONS
-        : REVENUE_LINE_DESCRIPTIONS[row.type]);
+    const descriptions = revenueRowDescriptions(row);
     const magnitude = Math.abs(row.amount);
     const debitClass = classOf(row.debitAccountId);
     const creditClass = classOf(row.creditAccountId);

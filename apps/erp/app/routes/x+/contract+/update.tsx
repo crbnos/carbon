@@ -7,6 +7,7 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { customerContractResearchFields } from "~/modules/sales/sales.models";
 
 // The properties panel: one term, or the type or invoicing intent, by id.
 const propertyForm = z.object({
@@ -36,6 +37,22 @@ export async function action(args: ActionFunctionArgs) {
   }
   if (intent === "contractType") {
     return api.sales.setContractType({ id, contractType: value as never });
+  }
+  // R&D tax (Government Contracting 5d): tax facts, not terms, so they
+  // change in any status. Funded research "" is the default (null).
+  if (intent === "researchFlag") {
+    const flag = customerContractResearchFields.find((name) => name === field);
+    if (
+      !flag ||
+      (value !== "true" && value !== "false" && value !== "") ||
+      (value === "" && flag !== "researchFunded")
+    ) {
+      return { error: { message: "Invalid research flag" }, data: null };
+    }
+    return api.sales.updateContractResearchFlags({
+      id,
+      [flag]: value === "" ? null : value === "true"
+    });
   }
   return api.sales.setContractTerm({ id, field: field as never, value });
 }

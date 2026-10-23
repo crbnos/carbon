@@ -6,6 +6,7 @@ import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { getIntegrationConfigById } from "@carbon/ee";
+import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import {
   exchangeCodeForTokens,
   getAccessibleResources
@@ -109,10 +110,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companyId: companyId
     });
 
+    // Prefer the server hook (it converges the issue-sync subscriptions),
+    // as the settings install route does.
     const config = getIntegrationConfigById("jira");
+    const onInstall = (getIntegrationServerHooks("jira")?.onInstall ??
+      config?.onInstall) as
+      | ((companyId: string) => void | Promise<void>)
+      | undefined;
 
-    typeof config?.onInstall === "function" &&
-      (await config.onInstall(companyId));
+    if (typeof onInstall === "function") {
+      await onInstall(companyId);
+    }
 
     if (createdJiraIntegration?.data?.metadata) {
       // Redirect on the canonical public origin — `request.url`'s origin is the

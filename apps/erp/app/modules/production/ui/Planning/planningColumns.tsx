@@ -19,6 +19,7 @@ import {
   LuCalendarRange,
   LuChartNoAxesColumn,
   LuCircleCheck,
+  LuFolderKanban,
   LuGroup,
   LuTrendingDown
 } from "react-icons/lu";
@@ -46,6 +47,10 @@ import {
   planningWeekValues
 } from "~/modules/production/ui/Planning/PlanningWeekStrip";
 import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
+import {
+  COMMON_SEGMENT_OPTION,
+  PLANNING_SEGMENT_COLUMN
+} from "./planning-action-scope";
 
 // Labels as descriptors: this factory is not a component, so it cannot use
 // `useLingui`'s `t`; the grid's `i18n` renders them.
@@ -59,13 +64,21 @@ const LABELS = {
   firstNegativeDate: msg`1st Negative On Hand`,
   latestOrderDate: msg`Latest Order Date`,
   timeFence: msg`Planning Horizon`,
-  type: msg`Type`
+  type: msg`Type`,
+  segment: msg`Segment`,
+  common: msg`Common`
 };
 
 const weekLabel = (weekNumber: number) => msg`Week ${weekNumber}`;
 
 type PlanningRow = ProductionPlanningItem | PurchasingPlanningItem;
 type Option = { value: string; label: string };
+/** A project that nets in its own segment: one with project stock. */
+export type PlanningSegmentProject = {
+  id: string;
+  identifier: string | null;
+  name: string;
+};
 
 /**
  * The columns the production and purchasing planning grids share, built once.
@@ -87,6 +100,7 @@ export function planningColumns<T extends PlanningRow>(ctx: {
   itemPostingGroups: Option[];
   timeFence: ReturnType<typeof useTimeFenceOverrides>;
   onFenceChange: (itemId: string, date: string | null) => void;
+  segmentProjects: PlanningSegmentProject[];
 }) {
   const {
     i18n,
@@ -96,8 +110,19 @@ export function planningColumns<T extends PlanningRow>(ctx: {
     unitOfMeasures,
     itemPostingGroups,
     timeFence,
-    onFenceChange
+    onFenceChange,
+    segmentProjects
   } = ctx;
+
+  // A row's segment: Common, or the project's identifier and name.
+  const segmentProjectById = new Map(segmentProjects.map((p) => [p.id, p]));
+  const segmentLabel = (segmentId: string | null | undefined) => {
+    if (!segmentId) return i18n._(LABELS.common);
+    const project = segmentProjectById.get(segmentId);
+    return project
+      ? [project.identifier, project.name].filter(Boolean).join(" ")
+      : segmentId;
+  };
 
   const columns = {
     // The grid shows every week as one bar in a strip; the CSV keeps a column
@@ -261,6 +286,50 @@ export function planningColumns<T extends PlanningRow>(ctx: {
       meta: {
         icon: <LuCalendarRange />,
         exportValue: (row: PlanningRow) => timeFence.fenceDateFor(row)
+      }
+    } as ColumnDef<PlanningRow>,
+    // The netting segment of the row: Common, or a project with project
+    // stock. The filter writes `planningSegment`, which the loader turns into
+    // a filter on `planningSegmentId` (Common is the empty id).
+    segment: {
+      id: PLANNING_SEGMENT_COLUMN,
+      header: i18n._(LABELS.segment),
+      cell: ({ row }) => {
+        const segmentId = row.original.planningSegmentId;
+        const project = segmentId ? segmentProjectById.get(segmentId) : null;
+        if (!segmentId) {
+          return (
+            <span className="text-muted-foreground">
+              {i18n._(LABELS.common)}
+            </span>
+          );
+        }
+        return (
+          <HStack spacing={2} className="min-w-0">
+            <span className="whitespace-nowrap font-medium">
+              {project?.identifier ?? segmentId}
+            </span>
+            {project?.name && (
+              <span className="truncate text-muted-foreground">
+                {project.name}
+              </span>
+            )}
+          </HStack>
+        );
+      },
+      meta: {
+        icon: <LuFolderKanban />,
+        filter: {
+          type: "static",
+          options: [
+            { value: COMMON_SEGMENT_OPTION, label: i18n._(LABELS.common) },
+            ...segmentProjects.map((project) => ({
+              value: project.id,
+              label: segmentLabel(project.id)
+            }))
+          ]
+        },
+        exportValue: (row: PlanningRow) => segmentLabel(row.planningSegmentId)
       }
     } as ColumnDef<PlanningRow>,
     type: {

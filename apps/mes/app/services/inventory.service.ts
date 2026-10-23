@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { trackedEntityStripe } from "@carbon/api/stock-stripes";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
+import { fetchAll } from "@carbon/database/fetch-all";
 import type {
   DocumentTemplate,
   DocumentTemplateType
@@ -16,7 +18,11 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { erpPosting } from "~/services/erp";
 import type { SuggestedAllocationLot } from "./allocation";
-import { greedyFillAllocation, sortLotsByPickMethod } from "./allocation";
+import {
+  greedyFillAllocation,
+  keepEntitiesInStripes,
+  sortLotsByPickMethod
+} from "./allocation";
 
 export type { SuggestedAllocationLot };
 export { greedyFillAllocation, sortLotsByPickMethod };
@@ -54,6 +60,9 @@ export async function getBatchNumbersForItem(
     itemId: string;
     companyId: string;
     isReadOnly?: boolean;
+    // The job's stock stripes, in draw order (getJobOperationStockStripes).
+    // Every lot when omitted.
+    stripes?: (string | null)[];
   }
 ) {
   let itemIds = [args.itemId];
@@ -76,7 +85,7 @@ export async function getBatchNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
+  const entities = await client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
@@ -85,6 +94,13 @@ export async function getBatchNumbersForItem(
     .gt("quantity", 0)
     .order("expirationDate", { ascending: true, nullsFirst: false })
     .order("createdAt", { ascending: true });
+
+  return keepEntitiesOfStripes(client, {
+    companyId: args.companyId,
+    itemIds,
+    entities,
+    stripes: args.stripes
+  });
 }
 
 export async function getCompanySettings(
@@ -131,6 +147,9 @@ export async function getSerialNumbersForItem(
   args: {
     itemId: string;
     companyId: string;
+    // The job's stock stripes, in draw order (getJobOperationStockStripes).
+    // Every serial when omitted.
+    stripes?: (string | null)[];
   }
 ) {
   let itemIds = [args.itemId];
@@ -153,7 +172,7 @@ export async function getSerialNumbersForItem(
 
   // Smart default order: expiring soonest first (FEFO, nulls last), then oldest
   // first (FIFO).
-  return client
+  const entities = await client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
@@ -163,6 +182,101 @@ export async function getSerialNumbersForItem(
     .gt("quantity", 0)
     .order("expirationDate", { ascending: true, nullsFirst: false })
     .order("createdAt", { ascending: true });
+
+  return keepEntitiesOfStripes(client, {
+    companyId: args.companyId,
+    itemIds,
+    entities,
+    stripes: args.stripes
+  });
+}
+
+/**
+ * Keeps the tracked entities in the stock stripes a job may draw (Projects
+ * Phase 2a), project stock first, then common stock. `issue` refuses a lot
+ * outside the job's stripes, so the picker does not offer one. Every entity
+ * is kept when `stripes` is omitted.
+ *
+ * An entity's stripe is the stripe of its rows with the most net on-hand, as
+ * `issue` decides it (`trackedEntityStripe`). Two reads: the item's ledger
+ * rows in project stock, then every row of the entities they name. With no
+ * project stock of the item, the first read finds nothing and every entity
+ * is common stock.
+ */
+async function keepEntitiesOfStripes<
+  T extends { id: string },
+  R extends { data: T[] | null; error: unknown }
+>(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    itemIds: string[];
+    entities: R;
+    stripes?: (string | null)[];
+  }
+): Promise<R> {
+  const { entities, stripes } = args;
+  if (!stripes || entities.error || !entities.data?.length) return entities;
+
+  const striped = await fetchAll<{ trackedEntityId: string | null }>(() =>
+    client
+      .from("itemLedger")
+      .select("trackedEntityId")
+      .in("itemId", args.itemIds)
+      .eq("companyId", args.companyId)
+      .not("trackedEntityId", "is", null)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+  if (striped.error) return { ...entities, data: null, error: striped.error };
+
+  const stripedEntityIds = [
+    ...new Set(
+      (striped.data ?? [])
+        .map((row) => row.trackedEntityId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+
+  const stripeById = new Map<string, string | null>();
+  if (stripedEntityIds.length > 0) {
+    const rows = await fetchAll<{
+      trackedEntityId: string | null;
+      projectId: string | null;
+      quantity: number | null;
+    }>(() =>
+      client
+        .from("itemLedger")
+        .select("trackedEntityId, projectId, quantity")
+        .in("trackedEntityId", stripedEntityIds)
+        .eq("companyId", args.companyId)
+        .order("id")
+    );
+    if (rows.error) return { ...entities, data: null, error: rows.error };
+
+    const rowsByEntity = new Map<string, NonNullable<typeof rows.data>>();
+    for (const row of rows.data ?? []) {
+      if (!row.trackedEntityId) continue;
+      const list = rowsByEntity.get(row.trackedEntityId) ?? [];
+      list.push(row);
+      rowsByEntity.set(row.trackedEntityId, list);
+    }
+    for (const [trackedEntityId, entityRows] of rowsByEntity) {
+      stripeById.set(
+        trackedEntityId,
+        trackedEntityStripe(entityRows, trackedEntityId)
+      );
+    }
+  }
+
+  return {
+    ...entities,
+    data: keepEntitiesInStripes(
+      entities.data,
+      (trackedEntityId) => stripeById.get(trackedEntityId) ?? null,
+      stripes
+    )
+  };
 }
 
 /**
@@ -181,6 +295,9 @@ export async function getAvailableTrackedEntities(
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
     sortMethod?: Database["public"]["Enums"]["pickMethodSortMethod"];
+    // The stock stripes to list, in draw order: a project id, or null for
+    // common stock. Common stock only when omitted.
+    projectIds?: (string | null)[];
   }
 ) {
   return client.rpc("get_available_tracked_entities", {
@@ -190,7 +307,9 @@ export async function getAvailableTrackedEntities(
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
     p_exclude_line_id: args.excludeLineId ?? undefined,
-    p_sort_method: args.sortMethod ?? undefined
+    p_sort_method: args.sortMethod ?? undefined,
+    // A null element is common stock; the generated type cannot say so.
+    p_project_ids: args.projectIds as string[] | undefined
   });
 }
 
@@ -233,7 +352,7 @@ export async function getPickingListRecommendations(
     client
       .from("pickingListLine")
       .select(
-        "id, itemId, quantityToPick, quantityPicked, status, item(itemTrackingType)"
+        "id, itemId, projectId, quantityToPick, quantityPicked, status, item(itemTrackingType)"
       )
       .eq("pickingListId", pickingListId)
       .order("jobOperationId")
@@ -246,20 +365,24 @@ export async function getPickingListRecommendations(
   const recommendations: Record<string, PickingListRecommendation[]> = {};
   if (linesResult.error || availableResult.error) return recommendations;
 
-  // Ordered, mutable pool of available lots per item (the RPC already orders each
-  // item's rows by its configured pick method).
+  // Ordered, mutable pool of available lots per item and stock stripe (the RPC
+  // already orders each item's rows by its configured pick method). A line
+  // draws only its own stripe: a project's stock, or common stock ('').
+  const poolKey = (itemId: string, projectId: string | null) =>
+    `${itemId}:${projectId ?? ""}`;
   const poolByItem = new Map<
     string,
     Array<{ trackedEntityId: string; readableId: string | null; qty: number }>
   >();
   for (const row of availableResult.data ?? []) {
-    const list = poolByItem.get(row.itemId) ?? [];
+    const key = poolKey(row.itemId, row.projectId);
+    const list = poolByItem.get(key) ?? [];
     list.push({
       trackedEntityId: row.trackedEntityId,
       readableId: row.readableId,
       qty: Number(row.availableQuantity ?? 0)
     });
-    poolByItem.set(row.itemId, list);
+    poolByItem.set(key, list);
   }
 
   for (const line of linesResult.data ?? []) {
@@ -271,7 +394,7 @@ export async function getPickingListRecommendations(
       Number(line.quantityToPick ?? 0) - Number(line.quantityPicked ?? 0);
     if (remaining <= 0) continue;
 
-    const pool = poolByItem.get(line.itemId);
+    const pool = poolByItem.get(poolKey(line.itemId, line.projectId));
     if (!pool?.length) continue;
 
     const picks: PickingListRecommendation[] = [];
@@ -293,6 +416,39 @@ export async function getPickingListRecommendations(
 }
 
 /**
+ * The stock stripes a job operation's demand may draw, in order (Projects
+ * Phase 2a): its job's project stock first when the project has project
+ * stock, then common stock (null). Common stock only otherwise.
+ */
+export async function getJobOperationStockStripes(
+  client: SupabaseClient<Database>,
+  args: { jobOperationId: string; companyId: string }
+): Promise<(string | null)[]> {
+  const operation = await client
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  if (!operation.data?.jobId) return [null];
+  const job = await client
+    .from("job")
+    .select("projectId")
+    .eq("id", operation.data.jobId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  const projectId = job.data?.projectId;
+  if (!projectId) return [null];
+  const project = await client
+    .from("project")
+    .select("projectStock")
+    .eq("id", projectId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+  return project.data?.projectStock ? [projectId, null] : [null];
+}
+
+/**
  * On-the-fly batch/lot suggestion for issuing a single tracked material when no
  * picking list has allocated it — the same allocation the picking list would make,
  * computed per material. Sources the ordered, allocation-netted, warehouse-only
@@ -307,6 +463,9 @@ export async function getSuggestedAllocationForMaterial(
     companyId: string;
     locationId: string;
     quantity: number;
+    // The job's stock stripes, in draw order (getJobOperationStockStripes).
+    // Common stock only when omitted.
+    projectIds?: (string | null)[];
   }
 ): Promise<SuggestedAllocationLot[]> {
   if (args.quantity <= 0) return [];
@@ -323,7 +482,8 @@ export async function getSuggestedAllocationForMaterial(
     locationId: args.locationId,
     excludeLineside: true,
     excludeAllocated: true,
-    sortMethod
+    sortMethod,
+    projectIds: args.projectIds
   });
   if (error || !data) return [];
 

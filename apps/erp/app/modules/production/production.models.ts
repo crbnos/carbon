@@ -77,7 +77,10 @@ export const planningActionType = [
   "Cancel",
   "Increase",
   "Decrease",
-  "Release"
+  "Release",
+  // Projects Phase 2b: move stock between owners (common and project stock).
+  "Transfer",
+  "Borrow"
 ] as const;
 
 export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
@@ -87,10 +90,15 @@ export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
 // transform (see apps/erp/test/job-complete-logic.test.ts).
 export {
   actionsOfTypes,
+  COMMON_SEGMENT_OPTION,
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey,
+  planningSegmentFilter,
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope
 } from "./ui/Planning/planning-action-scope";
 
 /**
@@ -273,7 +281,16 @@ const baseJobValidator = z.object({
   // either capitalised into a class, or its cost swept onto one asset that is
   // already under construction. At most one is set (DB CHECK, refined below).
   fixedAssetClassId: zfd.text(z.string().optional()),
-  fixedAssetId: zfd.text(z.string().optional())
+  fixedAssetId: zfd.text(z.string().optional()),
+  // The charge number. With consumeToProject the job's cost goes to the
+  // project at completion instead of into inventory (projects Phase 1a).
+  projectId: zfd.text(z.string().optional()),
+  projectElementId: zfd.text(z.string().optional()),
+  consumeToProject: zfd.checkbox(),
+  // Receive to project stock: the output enters the stock of the charge
+  // number's project (projects Phase 2a). The project must have project
+  // stock; the route action checks that (chargeNumberError).
+  receiveToProjectStock: zfd.checkbox()
 });
 
 export const bulkJobValidator = z
@@ -357,7 +374,51 @@ export const jobValidator = baseJobValidator
     message:
       "A job completes to a fixed-asset class or to one asset under construction, not both",
     path: ["fixedAssetId"]
-  });
+  })
+  .refine((data) => !data.consumeToProject || !!data.projectId, {
+    message: "Pick a charge number to consume the job to a project",
+    path: ["consumeToProject"]
+  })
+  .refine(
+    (data) =>
+      !data.consumeToProject || !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to a project or to a fixed asset, not both",
+      path: ["consumeToProject"]
+    }
+  )
+  .refine((data) => !data.receiveToProjectStock || !!data.projectId, {
+    message: "Pick a charge number to receive the job into project stock",
+    path: ["receiveToProjectStock"]
+  })
+  .refine((data) => !(data.receiveToProjectStock && data.consumeToProject), {
+    message:
+      "A job consumes to its project or receives into its stock, not both",
+    path: ["receiveToProjectStock"]
+  })
+  .refine(
+    (data) =>
+      !data.receiveToProjectStock ||
+      !(data.fixedAssetClassId || data.fixedAssetId),
+    {
+      message: "A job completes to project stock or to a fixed asset, not both",
+      path: ["receiveToProjectStock"]
+    }
+  );
+
+/**
+ * The job form field a `createJob` / `updateJobDetails` refusal belongs on:
+ * a refused charge number (`validation`, from `chargeNumberError`) on the
+ * Charge Number picker, a budget Block (`conflict`) on the quantity. Any other
+ * refusal has no field. `rule` (the item) is handled by the routes.
+ */
+export function jobFormRefusalField(
+  category: string | undefined
+): string | null {
+  if (category === "validation") return "projectId__projectElementId";
+  if (category === "conflict") return "quantity";
+  return null;
+}
 
 /**
  * The Make to Asset item rule, the same one `complete_job_to_inventory`
@@ -422,6 +483,16 @@ export const salesOrderToJobValidator = baseJobValidator
     quoteLineId: zfd.text(z.string().optional()),
     salesOrderId: zfd.text(z.string()),
     salesOrderLineId: zfd.text(z.string())
+  })
+  .refine((data) => !data.consumeToProject, {
+    message:
+      "A job for a sales order line ships to the customer and cannot consume to a project",
+    path: ["consumeToProject"]
+  })
+  .refine((data) => !data.receiveToProjectStock, {
+    message:
+      "A job for a sales order line ships from unassigned stock and cannot receive into project stock",
+    path: ["receiveToProjectStock"]
   })
   .refine(
     (data) => {

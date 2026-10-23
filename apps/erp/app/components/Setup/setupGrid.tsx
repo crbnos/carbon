@@ -46,7 +46,9 @@ export function rowMenuColumn<T>(
  * Saves one grid cell: posts `fields` to `action` with `quiet` set, so the
  * route answers `{ error }` instead of a redirect and a flash. A failure
  * toasts and the cell reverts (the editable cells read `error`); a success
- * revalidates the page so totals and footers follow.
+ * revalidates the page so totals and footers follow, and toasts the route's
+ * `warning` when it sends one. `data` is the route's answer (a created
+ * line's `id`, for example), or null.
  */
 export function useCellSave() {
   const { t } = useLingui();
@@ -68,21 +70,28 @@ export function useCellSave() {
         body: formData
       }).catch(() => null);
       const body = (await response?.json().catch(() => null)) as {
-        error?: string | null;
+        error?: string | { message?: string } | null;
+        warning?: string | null;
       } | null;
+      // Routes answer `{ error: "…" }` or `{ error: { message } }`.
+      const bodyError =
+        typeof body?.error === "string" ? body.error : body?.error?.message;
 
       const message =
         !response?.ok || body?.error
-          ? (body?.error ?? t`Failed to save the change`)
+          ? (bodyError ?? t`Failed to save the change`)
           : null;
       if (message) {
         toast.error(message);
       } else {
+        // A saved change can still carry a warning, such as a timesheet entry
+        // that takes an element over its budget.
+        if (body?.warning) toast.warning(body.warning);
         revalidator.revalidate();
       }
 
       return {
-        data: null,
+        data: message ? null : (body ?? null),
         error: message ? { message } : null
       } as unknown as PostgrestSingleResponse<unknown>;
     },

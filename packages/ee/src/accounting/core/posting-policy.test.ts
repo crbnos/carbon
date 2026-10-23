@@ -78,6 +78,10 @@ describe("POSTING_POLICY", () => {
         // Added post-v2 with maintenance labor: time on a maintenance dispatch
         // posts Dr maintenance / Cr labor absorption, like Production Event.
         "Maintenance Event"
+        // Project and service journal types (Timesheet, Project Issue,
+        // Project Expense, Project Transfer, Service Order, Burden, Project
+        // Close) are off by default, like every journal type added after the
+        // returns types.
       ].sort()
     );
 

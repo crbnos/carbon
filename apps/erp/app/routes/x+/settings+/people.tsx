@@ -68,9 +68,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { companySettings: companySettings.data };
 }
 
-// One switch per setting, told apart by its intent.
+// One switch per setting, told apart by its intent. The Timecards switch
+// moved to Settings → Time.
 const peopleSettingsForm = z.discriminatedUnion("intent", [
-  settingsToggle("timeCard", "timeCardEnabled"),
   settingsToggle("console", "consoleEnabled")
 ]);
 
@@ -99,10 +99,8 @@ export default function PeopleSettingsRoute() {
         toast.error(
           t`Console mode enabled, but ${data.pinError.toLowerCase()}. Set one from Users → Employees → Set Console PIN.`
         );
-      } else if (data.consoleEnabled !== undefined) {
-        toast.success(t`Console mode settings updated`);
       } else {
-        toast.success(t`Timecard settings updated`);
+        toast.success(t`Console mode settings updated`);
       }
     }
   });
@@ -113,16 +111,6 @@ export default function PeopleSettingsRoute() {
     (checked: boolean) => {
       fetcher.submit(
         { intent: "console", enabled: String(checked) },
-        { method: "POST" }
-      );
-    },
-    [fetcher]
-  );
-
-  const handleTimeCardToggle = useCallback(
-    (checked: boolean) => {
-      fetcher.submit(
-        { intent: "timeCard", enabled: String(checked) },
         { method: "POST" }
       );
     },
@@ -186,48 +174,6 @@ export default function PeopleSettingsRoute() {
                   disabled={isToggling}
                 />
               )}
-            </HStack>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Timecards</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>Enable timecard tracking for work shifts.</Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2 max-md:flex-wrap">
-                  <span className="font-medium">
-                    {companySettings.timeCardEnabled ? (
-                      <Trans>Timecards are enabled</Trans>
-                    ) : (
-                      <Trans>Timecards are disabled</Trans>
-                    )}
-                  </span>
-                  <Badge variant="yellow" className="max-md:shrink-0">
-                    <Trans>Beta</Trans>
-                  </Badge>
-                </HStack>
-
-                <span className="text-sm text-muted-foreground">
-                  {companySettings.timeCardEnabled ? (
-                    <Trans>Work shift tracking is active.</Trans>
-                  ) : (
-                    <Trans>Enable to start tracking work shifts.</Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={companySettings.timeCardEnabled ?? false}
-                onCheckedChange={handleTimeCardToggle}
-                disabled={isToggling}
-              />
             </HStack>
           </CardContent>
         </Card>

@@ -18,6 +18,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 export type MultiSelectProps = Omit<
   MultiSelectBaseProps,
@@ -82,6 +83,12 @@ const MultiSelect = ({
   const formState = useFormStateContext();
   const isReadOnly =
     formState.isReadOnly || formState.isDisabled || props.isReadOnly;
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label,
+    isEmpty: (value ?? []).filter(Boolean).length === 0,
+    isReadOnly
+  });
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)
@@ -94,7 +101,7 @@ const MultiSelect = ({
 
   return (
     <FormControl isInvalid={!!error}>
-      {label && (
+      {label && inlineField.showLabel && (
         <FormLabel htmlFor={name} isOptional={fieldIsOptional ?? false}>
           <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
@@ -118,6 +125,7 @@ const MultiSelect = ({
         }}
         isReadOnly={isReadOnly}
         emptyMessage={emptyMessage}
+        inlinePlaceholder={props.inlinePlaceholder ?? inlineField.placeholder}
         className="w-full"
       />
 

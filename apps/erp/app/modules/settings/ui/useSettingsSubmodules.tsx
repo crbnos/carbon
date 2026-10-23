@@ -16,6 +16,7 @@ import {
   LuFactory,
   LuFileText,
   LuFlaskConical,
+  LuFolderKanban,
   LuHistory,
   LuImage,
   LuKey,
@@ -27,6 +28,7 @@ import {
   LuSheet,
   LuShieldCheck,
   LuShoppingCart,
+  LuTimer,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -148,6 +150,18 @@ export default function useSettingsSubmodules() {
             to: path.to.productionSettings,
             role: "employee",
             icon: <LuFactory />
+          },
+          {
+            name: t`Projects`,
+            to: path.to.projectsSettings,
+            role: "employee",
+            icon: <LuFolderKanban />
+          },
+          {
+            name: t`Time`,
+            to: path.to.timeSettings,
+            role: "employee",
+            icon: <LuTimer />
           },
           {
             name: t`Quality`,

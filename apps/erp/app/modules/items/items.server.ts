@@ -4495,7 +4495,12 @@ export const upsertItemCustomerPart = defineServiceFn({
 });
 
 /**
- * Upsert item unit sale price
+ * Save an item's sales settings.
+ *
+ * @remarks
+ * Its unit sale price, and the labor and parts warranty months a shipped
+ * serial gets. A warranty field sent empty (null) is cleared; one not sent
+ * is left alone.
  *
  * @mcp
  */
@@ -4503,15 +4508,19 @@ export const upsertItemUnitSalePrice = defineServiceFn({
   input: z.looseObject({
     itemId: z.string().min(1),
     unitSalePrice: z.number().min(0),
+    laborWarrantyMonths: z.number().int().min(0).nullable().optional(),
+    partsWarrantyMonths: z.number().int().min(0).nullable().optional(),
     customFields: z.unknown().optional()
   }),
   permission: { create: "parts", update: "parts" },
   async run(ctx, input) {
+    // The service scopes the update to the company and strips `companyId`
+    // from the row it writes.
     return unwrap(
       ctx,
       await service.upsertItemUnitSalePrice(
         ctx.asCaller.supabase,
-        payload(ctx, input).withoutCompany().forUpdate() as never
+        payload(ctx, input).forUpdate() as never
       )
     );
   }

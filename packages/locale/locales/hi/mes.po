@@ -32,6 +32,12 @@ msgstr "{0} पहले"
 msgid "{0} customers"
 msgstr "{0} ग्राहक"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr "{0} घंटे"
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} के पास लॉट संख्या नहीं है। इसे Carbon में बैच या जॉब पर सेट करें, फिर पूर्ण करें।"
@@ -93,12 +99,19 @@ msgstr "{completions} उत्तीर्ण इकाई(यों) को �
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
 
+msgid "{hour} h"
+msgstr "{hour} घंटे"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} जॉब्स"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr "+{0} घंटे"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
@@ -147,6 +160,9 @@ msgstr "वास्तविक"
 msgid "Add"
 msgstr "जोड़ें"
 
+msgid "Add {phrase}"
+msgstr "जोड़ें {phrase}"
+
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
@@ -162,11 +178,20 @@ msgstr "इन्वेंटरी जोड़ें"
 msgid "Add Passkey"
 msgstr "पासकी जोड़ें"
 
+msgid "Add PTO"
+msgstr "अवकाश जोड़ें"
+
 msgid "Add Sample"
 msgstr "नमूना जोड़ें"
 
 msgid "Add Spare Part"
 msgstr "स्पेयर पार्ट जोड़ें"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr "इस सप्ताह आपने जो काम किया वह जोड़ें, फिर समय दर्ज करने के लिए किसी दिन को टैप करें।"
+
+msgid "Add what you worked on to start logging time."
+msgstr "समय दर्ज करना शुरू करने के लिए आपने जो काम किया वह जोड़ें।"
 
 msgid "Added"
 msgstr "जोड़ा गया"
@@ -334,8 +359,17 @@ msgstr "कार्बन लोगो"
 msgid "Cards"
 msgstr "कार्ड"
 
+msgid "Certify and submit"
+msgstr "प्रमाणित करें और सबमिट करें"
+
+msgid "Certify and Submit"
+msgstr "प्रमाणित करें और सबमिट करें"
+
 msgid "Change"
 msgstr "बदलें"
+
+msgid "Change Time"
+msgstr "समय बदलें"
 
 msgid "Changelog newsletter"
 msgstr "परिवर्तनलॉग समाचारपत्र"
@@ -345,6 +379,9 @@ msgstr "विशेषता"
 
 msgid "Characteristics"
 msgstr "विशेषताएं"
+
+msgid "Charge numbers"
+msgstr "चार्ज नंबर"
 
 msgid "Chat"
 msgstr "चैट"
@@ -393,6 +430,9 @@ msgstr "समय दर्ज"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> से घड़ी चालू है"
+
+msgid "Clocked on your timecard"
+msgstr "आपके टाइमकार्ड पर दर्ज किया"
 
 msgid "Close"
 msgstr "बंद करें"
@@ -734,6 +774,12 @@ msgstr "माप को सहेजने में विफल"
 msgid "Failed to save result"
 msgstr "परिणाम को सहेजने में विफल"
 
+msgid "Failed to save the hours"
+msgstr "घंटे सहेजने में विफल रहा"
+
+msgid "Failed to submit the week"
+msgstr "सप्ताह सबमिट करने में विफल रहा"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} अपलोड करने में विफल"
@@ -814,6 +860,9 @@ msgstr "वास्तव में कितने चुने गए?"
 
 msgid "How many?"
 msgstr "कितने?"
+
+msgid "I certify this statement"
+msgstr "मैं इस विवरण को प्रमाणित करता हूं"
 
 msgid "I understand and want to complete without issuing"
 msgstr "मैं समझता हूँ और बिना जारी किए पूरा करना चाहता हूँ"
@@ -933,6 +982,9 @@ msgstr "किट"
 msgid "Labor"
 msgstr "श्रम"
 
+msgid "Labor category"
+msgstr "श्रम श्रेणी"
+
 msgid "Last completed"
 msgstr "अंतिम पूर्ण"
 
@@ -941,6 +993,9 @@ msgstr "अंतिम नाम"
 
 msgid "Last used"
 msgstr "अंतिम उपयोग"
+
+msgid "Late Entry"
+msgstr "देरी से प्रविष्टि"
 
 msgid "Learn more"
 msgstr "अधिक जानें"
@@ -1118,6 +1173,9 @@ msgstr "{minValue} और {maxValue} के बीच होना चाहि�
 msgid "My Hours"
 msgstr "मेरे घंटे"
 
+msgid "My Time"
+msgstr "मेरा समय"
+
 msgid "Name"
 msgstr "नाम"
 
@@ -1138,6 +1196,9 @@ msgstr "अगला"
 
 msgid "Next step"
 msgstr "अगला चरण"
+
+msgid "Next week"
+msgstr "अगला सप्ताह"
 
 msgid "No"
 msgstr "नहीं"
@@ -1166,6 +1227,9 @@ msgstr "कोई उपलब्ध सीरियल नंबर नही�
 msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। किसी प्रशासक को सेटिंग्स → समय में इसे सेट करने के लिए कहें।"
+
 msgid "No dispatches assigned to you"
 msgstr "आपको कोई असाइन किया गया रखरखाव कार्य नहीं है"
 
@@ -1180,6 +1244,9 @@ msgstr "कोई प्रभाव नहीं"
 
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
+
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr "अभी कोई अवकाश सेट नहीं है। अपने प्रबंधक से ERP में एक सेट करने के लिए कहें।"
 
 msgid "No maintenance scheduled for today"
 msgstr "आज के लिए कोई रखरखाव निर्धारित नहीं है"
@@ -1273,6 +1340,9 @@ msgstr "कोई नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
+
+msgid "Nothing matches your search."
+msgstr "आपकी खोज से कुछ नहीं मिला।"
 
 msgid "Nothing running"
 msgstr "कुछ नहीं चल रहा"
@@ -1434,8 +1504,14 @@ msgstr "पिकिंग {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "एक शैली और अवतार चुनें, या नए के लिए शफल करें।"
 
+msgid "Pick the leave for your time off."
+msgstr "अपनी छुट्टी के लिए अवकाश चुनें।"
+
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
+
+msgid "Pick what you worked on, then the labor category."
+msgstr "उस जॉब या कार्य को चुनें जिस पर आपने काम किया, फिर श्रम श्रेणी को चुनें।"
 
 msgid "Picked"
 msgstr "उठाया गया"
@@ -1497,6 +1573,9 @@ msgstr "निवारक"
 msgid "Previous step"
 msgstr "पिछला चरण"
 
+msgid "Previous week"
+msgstr "पिछला सप्ताह"
+
 msgid "Print"
 msgstr "प्रिंट करें"
 
@@ -1530,6 +1609,12 @@ msgstr "प्रोफाइल"
 msgid "Progress"
 msgstr "प्रगति"
 
+msgid "Project"
+msgstr "प्रकल्प"
+
+msgid "PTO"
+msgstr "अवकाश"
+
 msgid "Purchasing"
 msgstr "क्रय"
 
@@ -1553,6 +1638,12 @@ msgstr "कतार खाली"
 
 msgid "Quotes"
 msgstr "कोटेशन"
+
+msgid "Reason for change"
+msgstr "परिवर्तन का कारण"
+
+msgid "Reason for late entry"
+msgstr "देरी से प्रविष्टि का कारण"
 
 msgid "Reason for rework"
 msgstr "पुनः कार्य का कारण"
@@ -1733,6 +1824,9 @@ msgstr "गेज खोजें..."
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
+msgid "Search projects and tasks"
+msgstr "परियोजनाओं और कार्यों को खोजें"
+
 msgid "Search..."
 msgstr "खोजें..."
 
@@ -1880,6 +1974,9 @@ msgstr "साइन आउट"
 msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
+msgid "Signature pad"
+msgstr "हस्ताक्षर पैड"
+
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
 
@@ -1963,6 +2060,9 @@ msgstr "सब-असेंबली {0} · {1} — स्वयं पर द�
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
 
+msgid "Submit week"
+msgstr "सप्ताह सबमिट करें"
+
 msgid "Suggestion"
 msgstr "सुझाव"
 
@@ -1984,11 +2084,21 @@ msgstr "सिस्टम"
 msgid "Tag"
 msgstr "टैग"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr "दिन को टैप करके {0} में समय जोड़ें। घंटे बदलने के लिए बार के निचले किनारे को खींचें।"
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "परिवर्तन और इसका कारण टाइमशीट के इतिहास में रखा जाता है।"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "तारीख प्रविष्टि विंडो से पहले है। कारण प्रविष्टि के साथ रखा जाता है।"
 
 msgid "The jobs and parts that make up this run."
 msgstr "जॉब्स और पार्ट्स जो इस रन को बनाते हैं।"
@@ -2042,6 +2152,9 @@ msgstr "यह हिस्सा स्टॉक से स्क्रैप �
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट सीरियल नंबर बनाया जाएगा।"
 
+msgid "This week"
+msgstr "इस सप्ताह"
+
 msgid "Thumbnail"
 msgstr "थंबनेल"
 
@@ -2093,6 +2206,9 @@ msgstr "विषय"
 
 msgid "Total"
 msgstr "कुल"
+
+msgid "Total hours"
+msgstr "कुल घंटे"
 
 msgid "Total Quantity"
 msgstr "कुल मात्रा"
@@ -2184,7 +2300,7 @@ msgid "Updated {0}"
 msgstr "अपडेट किया गया {0}"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "अवतार अपडेट किया गया"
 
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"

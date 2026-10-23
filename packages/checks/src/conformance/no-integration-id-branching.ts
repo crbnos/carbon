@@ -46,6 +46,9 @@ const EXCLUDED = [
   /^packages\/ee\/src\/hooks\.server\.ts$/,
   /^packages\/ee\/src\/integrations\/secrets\.ts$/,
   /^packages\/ee\/src\/sync\//,
+  // The issue-tracker sync engine dispatches each linked issue to its
+  // tracker, as the accounting sync engine does to its provider.
+  /^packages\/ee\/src\/issue-sync\//,
   /^apps\/erp\/app\/modules\/settings\/integration-errors\.ts$/,
   // A provider's own directory may name itself.
   /^packages\/ee\/src\/(xero|quickbooks|rillet|ramp|slack|jira|linear|onshape|paperless-parts|email|sage|stripe-connect|sense)\//

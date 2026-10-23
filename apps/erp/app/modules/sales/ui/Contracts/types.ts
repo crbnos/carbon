@@ -106,4 +106,11 @@ export type ContractRouteData = {
   revenueIsStored: boolean;
   /** Per line: what it bills − Σ its revenue rows. Non-zero blocks Confirm. */
   revenueResiduals: Record<string, number>;
+  /** The R&D tax facts (Government Contracting 5d). The `customerContracts`
+   *  view predates them, so the loader reads them from the table. */
+  researchFlags: {
+    researchFunded: boolean | null;
+    paymentContingentOnSuccess: boolean;
+    contractorRetainsRights: boolean;
+  };
 };

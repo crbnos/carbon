@@ -12,6 +12,8 @@ import {
   LuFactory,
   LuFiles,
   LuFolderCheck,
+  LuFolderKanban,
+  LuHeadphones,
   LuLandmark,
   LuSettings,
   LuShield,
@@ -101,6 +103,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       icon: LuFactory
     },
     {
+      key: "projects",
+      permission: "projects",
+      name: t`Projects`,
+      to: path.to.projects,
+      icon: LuFolderKanban
+    },
+    {
       key: "purchasing",
       permission: "purchasing",
       name: t`Purchasing`,
@@ -127,6 +136,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       name: t`Sales`,
       to: path.to.sales,
       icon: LuCrown
+    },
+    {
+      key: "service",
+      permission: "service",
+      name: t`Service`,
+      to: path.to.serviceOrders,
+      icon: LuHeadphones
     },
     {
       key: "settings",

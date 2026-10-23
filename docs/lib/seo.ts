@@ -73,6 +73,9 @@ export const SEO = {
     "manufacturing-accounting": {
       description: "How a job costs out and posts to the ledger.",
     },
+    "project-to-cash": {
+      description: "From a project contract to billed work and earned revenue.",
+    },
   } as Record<string, { description: string }>,
 };
 

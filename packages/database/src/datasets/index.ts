@@ -117,8 +117,14 @@ export async function applyDatasetTiers(
   } = opts;
 
   const anchor = today(timeZone);
-  const ctx = await buildCtx(client, companyId, userId, dataset, anchor, (m) =>
-    log(`  ${m}`)
+  const ctx = await buildCtx(
+    client,
+    companyId,
+    userId,
+    dataset,
+    anchor,
+    timeZone,
+    (m) => log(`  ${m}`)
   );
   const selected = selectTiers(tiers ?? null);
 

@@ -18,12 +18,15 @@ import type {
 import {
   ContractConfirmModal,
   ContractSetupSteps,
-  contractSetupSteps
+  contractSetupSteps,
+  contractSetupStepsFor,
+  useProjectContractGaps
 } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
 /** The setup wizard is for a Draft: once confirmed, a contract is worked on
- *  from its page and changed with Amend. */
+ *  from its page and changed with Amend. A project contract has no Revenue
+ *  step, so a link to it lands on Review. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "sales"
@@ -34,12 +37,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const contract = await client
     .from("customerContract")
-    .select("status")
+    .select("status, billingBasis")
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
   if (contract.data?.status !== "Draft") {
     throw redirect(path.to.contractDetails(id));
+  }
+  if (
+    contract.data.billingBasis === "Project" &&
+    new URL(request.url).pathname
+      .replace(/\.data$/, "")
+      .endsWith("/setup/revenue")
+  ) {
+    throw redirect(path.to.contractSetup(id, "review"));
   }
   return null;
 }
@@ -66,22 +77,33 @@ export default function ContractSetupRoute() {
   const formatter = useCurrencyFormatter({
     currency: routeData?.contract.currencyCode
   });
+  // A project contract's Review step lists its gaps; a blocking one keeps
+  // Confirm disabled, as the server would refuse it.
+  const projectGaps = useProjectContractGaps(id);
 
   if (!routeData) return null;
   const { contract, lines, lineTotals, residuals, revenueResiduals } =
     routeData;
 
+  const isProject = contract.billingBasis === "Project";
   const total = Object.values(lineTotals).reduce((sum, v) => sum + v, 0);
-  const index = contractSetupSteps.indexOf(step);
-  const previous = index > 0 ? contractSetupSteps[index - 1] : null;
-  const next =
-    index < contractSetupSteps.length - 1
-      ? contractSetupSteps[index + 1]
-      : null;
+  // A project contract has no contract total: its Time & Materials and Cost
+  // Plus lines bill from project cost. Only its Fixed Price lines have a
+  // price (the rate, at quantity 1).
+  const fixedLines = lines.filter((line) => line.billingMethod === "Fixed");
+  const fixedPriceTotal = fixedLines.reduce(
+    (sum, line) => sum + Number(line.rate) * Number(line.quantity),
+    0
+  );
+  const steps = contractSetupStepsFor(contract.billingBasis);
+  const index = steps.indexOf(step);
+  const previous = index > 0 ? steps[index - 1] : null;
+  const next = index < steps.length - 1 ? steps[index + 1] : null;
   const hasLines = lines.length > 0;
   const isBalanced =
     Object.values(residuals).every((r) => equals(r, 0)) &&
     Object.values(revenueResiduals).every((r) => equals(r, 0));
+  const hasBlockingGap = (projectGaps ?? []).some((gap) => gap.blocking);
 
   return (
     <SetupFrame
@@ -90,7 +112,13 @@ export default function ContractSetupRoute() {
         .filter(Boolean)
         .join(" · ")}
       step={step}
-      steps={<ContractSetupSteps current={step} contractId={id} />}
+      steps={
+        <ContractSetupSteps
+          current={step}
+          contractId={id}
+          billingBasis={contract.billingBasis}
+        />
+      }
     >
       <RecordOutlet />
       {/* The Details step is a form and renders its own footer, with Next
@@ -98,14 +126,27 @@ export default function ContractSetupRoute() {
       {step !== "details" && (
         <SetupFooter
           summary={
-            <span className="flex items-baseline gap-2">
-              <span className="text-muted-foreground">
-                <Trans>Contract Total</Trans>
+            isProject ? (
+              fixedLines.length > 0 ? (
+                <span className="flex items-baseline gap-2">
+                  <span className="text-muted-foreground">
+                    <Trans>Fixed Price Total</Trans>
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {formatter.format(fixedPriceTotal)}
+                  </span>
+                </span>
+              ) : null
+            ) : (
+              <span className="flex items-baseline gap-2">
+                <span className="text-muted-foreground">
+                  <Trans>Contract Total</Trans>
+                </span>
+                <span className="font-medium tabular-nums">
+                  {formatter.format(total)}
+                </span>
               </span>
-              <span className="font-medium tabular-nums">
-                {formatter.format(total)}
-              </span>
-            </span>
+            )
           }
           actions={
             <>
@@ -119,7 +160,11 @@ export default function ContractSetupRoute() {
               {step === "review" ? (
                 <>
                   <Button variant="secondary" asChild>
-                    <Link to={path.to.contracts}>
+                    <Link
+                      to={
+                        isProject ? path.to.projectContracts : path.to.contracts
+                      }
+                    >
                       <Trans>Save as Draft</Trans>
                     </Link>
                   </Button>
@@ -128,6 +173,7 @@ export default function ContractSetupRoute() {
                     isDisabled={
                       !hasLines ||
                       !isBalanced ||
+                      hasBlockingGap ||
                       !permissions.can("update", "sales")
                     }
                     onClick={confirm.onOpen}

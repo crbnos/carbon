@@ -32,6 +32,12 @@ msgstr "{0} önce"
 msgid "{0} customers"
 msgstr "{0} müşteri"
 
+#. placeholder {0}: formatHours(dayTotals[index] ?? 0)
+#. placeholder {0}: formatHours(hours)
+#. placeholder {0}: formatQuantity(rowTotal(row))
+msgid "{0} h"
+msgstr "{0} s"
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} Lot numarasına sahip değil. Bunu Carbon'da Partide veya İş emrinde ayarla, sonra Tamamla."
@@ -93,12 +99,19 @@ msgstr "{completions} geçti birim(ler) tamamlanacak."
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
 
+msgid "{hour} h"
+msgstr "{hour} s"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} iş emirleri"
+
+#. placeholder {0}: formatHours(preview - selectedHours)
+msgid "+{0} h"
+msgstr "+{0} s"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
@@ -147,6 +160,9 @@ msgstr "Gerçek"
 msgid "Add"
 msgstr "Ekle"
 
+msgid "Add {phrase}"
+msgstr "Ekle {phrase}"
+
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
@@ -162,11 +178,20 @@ msgstr "Envantere Ekle"
 msgid "Add Passkey"
 msgstr "Geçiş Anahtarı Ekle"
 
+msgid "Add PTO"
+msgstr "İzin Ekle"
+
 msgid "Add Sample"
 msgstr "Örnek Ekle"
 
 msgid "Add Spare Part"
 msgstr "Yedek Parça Ekle"
+
+msgid "Add what you worked on this week, then tap a day to log time."
+msgstr "Bu hafta üzerinde çalıştığınız işleri ekleyin, ardından saat kaydı yapmak için bir gün seçin."
+
+msgid "Add what you worked on to start logging time."
+msgstr "Saat kaydı başlatmak için üzerinde çalıştığınız işi ekleyin."
 
 msgid "Added"
 msgstr "Eklendi"
@@ -334,8 +359,17 @@ msgstr "Carbon Logosu"
 msgid "Cards"
 msgstr "Kartlar"
 
+msgid "Certify and submit"
+msgstr "Onayla ve gönder"
+
+msgid "Certify and Submit"
+msgstr "Onayla ve Gönder"
+
 msgid "Change"
 msgstr "Değiştir"
+
+msgid "Change Time"
+msgstr "Zamanı Değiştir"
 
 msgid "Changelog newsletter"
 msgstr "Değişiklik günlüğü bülteni"
@@ -345,6 +379,9 @@ msgstr "Özellik"
 
 msgid "Characteristics"
 msgstr "Özellikler"
+
+msgid "Charge numbers"
+msgstr "Masraf numaraları"
 
 msgid "Chat"
 msgstr "Sohbet"
@@ -393,6 +430,9 @@ msgstr "İşe başlandı"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>'den beri kaydedilmiş"
+
+msgid "Clocked on your timecard"
+msgstr "Zaman kartınızda kaydedildi"
 
 msgid "Close"
 msgstr "Kapat"
@@ -734,6 +774,12 @@ msgstr "Ölçüm kaydedilemedi"
 msgid "Failed to save result"
 msgstr "Sonuç kaydedilemedi"
 
+msgid "Failed to save the hours"
+msgstr "Saatler kaydedilemedi"
+
+msgid "Failed to submit the week"
+msgstr "Hafta gönderilemedi"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} yüklenemedi"
@@ -814,6 +860,9 @@ msgstr "Gerçekte kaç tane alındı?"
 
 msgid "How many?"
 msgstr "Kaç tane?"
+
+msgid "I certify this statement"
+msgstr "Bu beyanı onaylarım"
 
 msgid "I understand and want to complete without issuing"
 msgstr "Anladığımı ve çıkarmadan tamamlamak istediğimi anlıyorum"
@@ -933,6 +982,9 @@ msgstr "Set"
 msgid "Labor"
 msgstr "İşçilik"
 
+msgid "Labor category"
+msgstr "İşçilik kategorisi"
+
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
 
@@ -941,6 +993,9 @@ msgstr "Soyadı"
 
 msgid "Last used"
 msgstr "Son kullanılmış"
+
+msgid "Late Entry"
+msgstr "Geç Giriş"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
@@ -1118,6 +1173,9 @@ msgstr "{minValue} ile {maxValue} {unitOfMeasureCode} arasında olmalıdır"
 msgid "My Hours"
 msgstr "Saatlik Çalışmalarım"
 
+msgid "My Time"
+msgstr "Benim Zamanım"
+
 msgid "Name"
 msgstr "Adı"
 
@@ -1138,6 +1196,9 @@ msgstr "Sonraki"
 
 msgid "Next step"
 msgstr "Sonraki adım"
+
+msgid "Next week"
+msgstr "Sonraki hafta"
 
 msgid "No"
 msgstr "Hayır"
@@ -1166,6 +1227,9 @@ msgstr "Kullanılabilir seri numarası bulunamadı"
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
+
 msgid "No dispatches assigned to you"
 msgstr "Size atanmış bakım emri yok"
 
@@ -1180,6 +1244,9 @@ msgstr "Etki Yok"
 
 msgid "No issue types configured"
 msgstr "Sorun türü yapılandırılmadı"
+
+msgid "No leave is set up yet. Ask your manager to set one up in the ERP."
+msgstr "Henüz izin ayarlanmadı. Yöneticinizden ERP'de bir tane ayarlamasını isteyin."
 
 msgid "No maintenance scheduled for today"
 msgstr "Bugün planlanmış bakım yok"
@@ -1273,6 +1340,9 @@ msgstr "Hiçbiri"
 
 msgid "Notes"
 msgstr "Notlar"
+
+msgid "Nothing matches your search."
+msgstr "Aramanızla eşleşen hiçbir şey yok."
 
 msgid "Nothing running"
 msgstr "Hiçbir şey çalışmıyor"
@@ -1434,8 +1504,14 @@ msgstr "Toplama {0}"
 msgid "Pick a style and an avatar, or shuffle for new ones."
 msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
 
+msgid "Pick the leave for your time off."
+msgstr "Zaman aşınız için izni seçin."
+
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
+
+msgid "Pick what you worked on, then the labor category."
+msgstr "Çalıştığınız işi, ardından işçilik kategorisini seçin."
 
 msgid "Picked"
 msgstr "Alındı"
@@ -1497,6 +1573,9 @@ msgstr "Önleyici"
 msgid "Previous step"
 msgstr "Önceki adım"
 
+msgid "Previous week"
+msgstr "Önceki hafta"
+
 msgid "Print"
 msgstr "Yazdır"
 
@@ -1530,6 +1609,12 @@ msgstr "Profil"
 msgid "Progress"
 msgstr "İlerleme"
 
+msgid "Project"
+msgstr "Proje"
+
+msgid "PTO"
+msgstr "İzin"
+
 msgid "Purchasing"
 msgstr "Satın alma"
 
@@ -1553,6 +1638,12 @@ msgstr "Kuyruk boş"
 
 msgid "Quotes"
 msgstr "Teklifler"
+
+msgid "Reason for change"
+msgstr "Değişiklik Nedeni"
+
+msgid "Reason for late entry"
+msgstr "Geç Giriş Nedeni"
 
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
@@ -1733,6 +1824,9 @@ msgstr "Ölçüm aletlerini ara..."
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
+msgid "Search projects and tasks"
+msgstr "Projeleri ve Görevleri Arayın"
+
 msgid "Search..."
 msgstr "Ara..."
 
@@ -1880,6 +1974,9 @@ msgstr "Oturumu Kapat"
 msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
+msgid "Signature pad"
+msgstr "İmza Yastığı"
+
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
 
@@ -1963,6 +2060,9 @@ msgstr "Alt derleme {0} · {1} — kendi başına gösterilir"
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"
 
+msgid "Submit week"
+msgstr "Haftayı Gönder"
+
 msgid "Suggestion"
 msgstr "Öneri"
 
@@ -1984,11 +2084,21 @@ msgstr "Sistem"
 msgid "Tag"
 msgstr "Etiket"
 
+#. placeholder {0}: selected.readableId
+msgid "Tap a day to add time to {0}. Drag the lower edge of a bar to change its hours."
+msgstr "{0}'ye zaman eklemek için bir gün seçin. Saatleri değiştirmek için çubuğun alt kenarını sürükleyin."
+
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Değişiklik ve nedeni zaman tablosunun geçmişinde tutulur."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "Tarih giriş penceresinden önce. Neden giriş ile tutulur."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."
@@ -2042,6 +2152,9 @@ msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böyl
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
 
+msgid "This week"
+msgstr "Bu hafta"
+
 msgid "Thumbnail"
 msgstr "Küçük Resim"
 
@@ -2093,6 +2206,9 @@ msgstr "Konular"
 
 msgid "Total"
 msgstr "Toplam"
+
+msgid "Total hours"
+msgstr "Toplam saat"
 
 msgid "Total Quantity"
 msgstr "Toplam Miktar"
@@ -2184,7 +2300,7 @@ msgid "Updated {0}"
 msgstr "{0} tarihinde güncellendi"
 
 msgid "Updated avatar"
-msgstr ""
+msgstr "Avatar güncellendi"
 
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"

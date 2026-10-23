@@ -36,6 +36,7 @@ import {
 } from "./Icons";
 import { ItemLifecycleBadge } from "./ItemLifecycleBadge";
 import ItemThumbnail from "./ItemThumbnail";
+import JournalPreview, { type JournalPreviewRow } from "./JournalPreview";
 import LinkValue from "./LinkValue";
 import Location from "./Location";
 import MetricCard from "./MetricCard";
@@ -48,6 +49,7 @@ import {
   onboardingFormClassName
 } from "./OnboardingCard";
 import PeriodSelector from "./PeriodSelector";
+import { ReadOnlyField, ReadOnlyFields } from "./ReadOnlyField";
 import RealtimeDataProvider from "./RealtimeDataProvider";
 import { RevisionSuffix } from "./RevisionSuffix";
 import SearchFilter from "./SearchFilter";
@@ -84,6 +86,7 @@ export {
   Hyperlink,
   ItemLifecycleBadge,
   ItemThumbnail,
+  JournalPreview,
   LinkValue,
   Location,
   MethodBadge,
@@ -101,6 +104,8 @@ export {
   onboardingFormClassName,
   PeriodSelector,
   PrintButton,
+  ReadOnlyField,
+  ReadOnlyFields,
   RealtimeDataProvider,
   RevisionSuffix,
   SearchFilter,
@@ -115,3 +120,4 @@ export {
   useOptimisticAssignment,
   VersionMenu
 };
+export type { JournalPreviewRow };

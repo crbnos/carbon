@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { useControlField, useField } from "@carbon/form";
+import { useControlField, useField, useInlineField } from "@carbon/form";
 import { RefreshRate, useLoaderQuery } from "@carbon/query";
 import {
   Button,
@@ -267,6 +267,12 @@ const Item = ({
             : label === "Consumable"
               ? t`Consumable`
               : (label ?? translateItemType(type));
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label: fieldLabel,
+    isEmpty: !value,
+    isReadOnly
+  });
 
   const entityKey: EntityKey =
     type === "Part"
@@ -296,7 +302,7 @@ const Item = ({
   return (
     <>
       <FormControl isInvalid={!!error} className="w-full">
-        {type && (
+        {type && inlineField.showLabel && (
           <FormLabel
             htmlFor={name}
             isConfigured={isConfigured}
@@ -329,6 +335,7 @@ const Item = ({
             {...props}
             isReadOnly={isReadOnly}
             inline={props.inline ? ItemPreview : undefined}
+            inlinePlaceholder={inlineField.placeholder}
             value={value?.replace(/"/g, '\\"')}
             onChange={(newValue) => {
               setValue(newValue?.replace(/"/g, '\\"') ?? "");

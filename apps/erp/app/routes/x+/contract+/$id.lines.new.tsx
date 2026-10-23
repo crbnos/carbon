@@ -11,9 +11,16 @@ import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { customerContractLineValidator } from "~/modules/sales/sales.models";
-import { getContract, upsertContractLine } from "~/modules/sales/sales.service";
+import {
+  getContract,
+  projectRevenueRefusal,
+  upsertContractLine
+} from "~/modules/sales/sales.service";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import { ContractLineForm } from "~/modules/sales/ui/Contracts";
+import {
+  ContractLineForm,
+  newContractLineFormValues
+} from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -43,6 +50,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...line } = validation.data;
+
+  const upgrade = await projectRevenueRefusal(client, companyId, [line]);
+  if (upgrade) {
+    throw redirect(
+      path.to.contractDetails(id),
+      await flash(request, error(null, upgrade))
+    );
+  }
 
   // `upsertContractLine` refuses a contract that is not a Draft and an item
   // that is not a Service; its refusal message is what the user reads.
@@ -82,22 +97,9 @@ export default function NewContractLineRoute() {
   return (
     <ContractLineForm
       key={id}
-      initialValues={{
-        customerContractId: id,
-        revenueType: "Recurring",
-        itemId: "",
-        description: "",
-        quantity: 1,
-        rate: 0,
-        // Every billing frequency is also a rate unit.
-        rateUnit: contract.billingFrequency ?? "Month",
-        discountPercent: 0,
-        taxPercent: 0,
-        startDate: contract.startDate ?? "",
-        revenueMethod: "Daily",
-        projectId: contract.projectId ?? undefined
-      }}
+      initialValues={newContractLineFormValues(contract)}
       currencyCode={contract.currencyCode}
+      billingBasis={contract.billingBasis}
       isLocked={contract.status !== "Draft"}
     />
   );

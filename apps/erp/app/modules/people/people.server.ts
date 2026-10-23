@@ -89,15 +89,17 @@ export const updateShift = defineServiceFn({
 });
 
 /**
- * Change a person's job: title, start date, location, shift, department and
- * manager.
+ * Change a person's job: title, start date, location, shift, department,
+ * manager, and the project time fields (labor category, FLSA status,
+ * officer, timesheet required).
  *
  * @remarks
  * Every id is checked against the company, and the person's shift
  * assignment for scheduling is kept in step with the job, in one
  * transaction. Then the company's active jobs are marked as needing a new
- * schedule. Refused when the person, location, shift, department or manager
- * is not in the company.
+ * schedule. Refused when the person, location, shift, department, manager
+ * or labor category is not in the company. `isOfficer` and
+ * `timesheetRequired` left out keep their stored values.
  *
  * @mcp
  */
@@ -1129,6 +1131,37 @@ export const getTimecardEntries = defineServiceFn({
     return paged(
       ctx,
       await service.getTimecardEntries(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        payload(ctx, input).build() as never
+      )
+    );
+  }
+});
+
+/**
+ * List the imported payroll totals.
+ *
+ * @remarks
+ * One row per employee and pay period, from the payroll system's export:
+ * the gross wages and the hours paid. Newest period first.
+ *
+ * @mcp read
+ */
+export const getPayrollPeriodTotals = defineServiceFn({
+  input: z.looseObject({
+    limit: z
+      .number()
+      .int()
+      .describe("Rows per page. Left out, the read is not paged.")
+      .optional(),
+    offset: z.number().int().default(0)
+  }),
+  permission: { view: "people" },
+  async run(ctx, input) {
+    return paged(
+      ctx,
+      await service.getPayrollPeriodTotals(
         ctx.asCaller.supabase,
         ctx.company.id,
         payload(ctx, input).build() as never

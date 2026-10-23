@@ -133,6 +133,7 @@ function toClientLines(
     sequence: number;
     costCenterId: string | null;
     projectId: string | null;
+    projectElementId: string | null;
     reimbursementLineDimension?:
       | { dimensionId: string; valueId: string }[]
       | null;
@@ -149,6 +150,7 @@ function toClientLines(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectElementId: line.projectElementId,
       // Every stored pair is kept, INCLUDING one whose dimension is no longer
       // active. `upsertReimbursementLines` replaces the lines wholesale — it
       // deletes them and reinserts only what the editor submitted — so dropping

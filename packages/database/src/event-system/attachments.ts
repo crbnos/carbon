@@ -286,6 +286,11 @@ export const attachments = {
     events: true,
     statement: ["broadcast_table_changes"]
   },
+  // The audit log's "Billable Item" entity: billing review (hold, release,
+  // write off, edit price) reaches it only through these event triggers.
+  projectBillableItem: { events: true },
+  // The Linear and Jira issue sync pushes linked elements (ISSUE_SYNC).
+  projectElement: { events: true },
   purchaseInvoice: {
     before: ["prevent_posted_purchase_invoice_deletion"],
     after: ["sync_advance_document_sequence"],

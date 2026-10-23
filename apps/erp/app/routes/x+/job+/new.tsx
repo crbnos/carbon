@@ -13,7 +13,10 @@ import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
 import { getFixedAssets } from "~/modules/accounting/accounting.service";
-import { jobValidator } from "~/modules/production/production.models";
+import {
+  jobFormRefusalField,
+  jobValidator
+} from "~/modules/production/production.models";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
@@ -82,8 +85,21 @@ export async function action(args: ActionFunctionArgs) {
   if (result.error?.category === "rule") {
     return validationError({ fieldErrors: { itemId: result.error.message } });
   }
+  // The charge number is refused, or the project's budget blocks the job.
+  const field = jobFormRefusalField(result.error?.category);
+  if (result.error && field) {
+    return validationError({ fieldErrors: { [field]: result.error.message } });
+  }
   if (result.error) {
     return respond(args.request, result).redirect(path.to.jobs);
+  }
+  // The project's budget warns: the job is created, and the flash says by how
+  // much it runs over.
+  if (result.data.budgetNote) {
+    return respond(args.request, result).redirect(
+      path.to.job(result.data.jobId),
+      { message: `Job created. ${result.data.budgetNote}` }
+    );
   }
   throw redirect(path.to.job(result.data.jobId));
 }
@@ -104,6 +120,10 @@ export default function JobNewRoute() {
     dueDate: "",
     fixedAssetClassId: fixedAssetClassId ?? "",
     fixedAssetId: "",
+    projectId: params.get("projectId") ?? "",
+    projectElementId: params.get("projectElementId") ?? "",
+    consumeToProject: false,
+    receiveToProjectStock: false,
     itemId: "",
     itemType: "Item" as MethodItemType,
     jobId: undefined,

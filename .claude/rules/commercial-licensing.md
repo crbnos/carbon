@@ -189,6 +189,47 @@ Refactor one at a time; each PR should leave the tree green.
   the former deletable in-route `companyHasFeature`. The dispatch, tool manifest and
   generated `tool-metadata.json` STAY in the app (derive from `~/modules/*`) and are
   INJECTED as `deps`.
+- ✅ **Project revenue** (`PROJECT_REVENUE`) — Cost Plus pricing lives in
+  `packages/ee/src/project-revenue/` (`@carbon/ee/project-revenue` for the pure
+  `priceCostPlusItem`, `@carbon/ee/project-revenue.server` for
+  `generateCostPlusItems`, which degrades with `gated: true` via
+  `projectRevenueEnabledForCompany`). The community postings write Time & Materials
+  items only and never price Cost Plus, so a Cost Plus line bills nothing without ee
+  code — that is the lock. `generateCostPlusItems` runs from the `generateContractBillableItems`
+  operation (`sales.server.ts`) and the jobs `recurring-billing` step. `requireProjectRevenueEntitlement` is the
+  authoring check for Cost Plus or Percent Complete; the contract line routes and the
+  `amendContract` / `createContractLine` / `updateContractLine` operations reach it through
+  `projectRevenueRefusal` (`sales.service.ts`) and return the upgrade message. The forms
+  keep both choices visible with an upgrade notice. The Percent Complete synthesizer and
+  the loss provision (`synthesizeCommercialProjectRevenue`, same module) degrade through
+  `projectRevenueEnabledForCompany`: without the feature the run writes no Percent
+  Complete month. Both are factories over the community writers the ERP passes in
+  (`projectRevenueSynthesizers(projectRevenueWriters)`, `accounting/project-revenue.ts`),
+  because ee cannot import the ERP; `runRowSynthesizers` (`accounting.service.ts`) adds
+  them to every revenue recognition run. See `project-billing.md`.
+- ✅ **Government contracting (5b)** — indirect pools, rates, burden and burden billing in
+  `packages/ee/src/indirect-rates/` (`@carbon/ee/indirect-rates` client-safe,
+  `@carbon/ee/indirect-rates.server` server), feature `GOVERNMENT_CONTRACTING`.
+  `requireEntitlement` is embedded in every authoring function and every run
+  (`upsertIndirectPool`, `setIndirectRate`, `upsertContractRateCeiling`,
+  `updateBurdenSettings`, `runIndirectRatePeriod`, `runFinalTrueUp`, `buildIceSchedule`, …);
+  the `indirect-rates` job degrades with `companyHasFeature`. The Burden rows and the
+  applied burden journal are written by the community `postProjectBurden` body
+  (`projects.service.ts`), which the ee run calls as the `post-project-burden` posting
+  (`posting(…)`, `@carbon/api/postings.server`). Accounting → Indirect Pools and
+  Indirect Rates show `IndirectRatesUpgradeOverlay` when gated; the contract line's rate
+  ceilings use `UpgradeOverlaySection`. See `indirect-rates.md`.
+- ✅ **Government contracting (5c)** — budget control, earned value, the ACWP export and
+  stop-work orders in `packages/ee/src/project-control/` (`@carbon/ee/project-control`
+  client-safe, `@carbon/ee/project-control.server` server), feature
+  `GOVERNMENT_CONTRACTING`. `requireEntitlement` is embedded in
+  `updateProjectControlSettings`, `updateElementEarnedValue`, `closeEarnedValuePeriod`,
+  `buildAcwpExport` and `stopWork`; `checkBudgetAvailability`, `checkTimesheetBudget` and
+  `getEarnedValue` degrade with `companyHasFeature`. `resumeWork` is deliberately NOT
+  gated, so a company that loses the feature can still release a stopped project. The
+  project Settings section, the element sidebar section, the Costs tab section and the
+  Stop work modal are `.ee.tsx` and show the upgrade overlay when gated. See
+  `project-control.md`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision

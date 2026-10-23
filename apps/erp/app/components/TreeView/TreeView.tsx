@@ -10,7 +10,11 @@ import type { MutableRefObject, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type { NodeState, NodesState } from "./reducer";
 import { reducer } from "./reducer";
-import { concreteStateFromInput, selectedIdFromState } from "./utils";
+import {
+  applyFilterToState,
+  concreteStateFromInput,
+  selectedIdFromState
+} from "./utils";
 
 export type TreeViewProps<TData> = {
   tree: FlatTree<TData>;
@@ -225,9 +229,12 @@ export function useTree<TData, TFilterValue>({
   const previousTreeShape = useRef(treeShape);
   const previousSelectedId = useRef<string | undefined>(selectedId);
 
+  // A filter set at mount (a search kept in the URL) applies at once.
   const [state, dispatch] = useReducer(
     reducer,
-    concreteStateFromInput({ tree, selectedId, collapsedIds, filter })
+    applyFilterToState(
+      concreteStateFromInput({ tree, selectedId, collapsedIds, filter })
+    )
   );
 
   //fire onSelectedIdChanged()

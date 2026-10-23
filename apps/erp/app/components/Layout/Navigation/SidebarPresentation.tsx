@@ -46,14 +46,18 @@ export function SheetNavRow({
   icon,
   label,
   isActive,
+  count,
   inset = false
 }: {
   to: string;
   icon?: ReactNode;
   label: ReactNode;
   isActive: boolean;
+  /** Items waiting, shown at the right of the row when above 0. */
+  count?: number;
   inset?: boolean;
 }) {
+  const shownCount = count !== undefined && count > 0 ? count : null;
   const style = useContext(SheetNavStyleContext);
   if (style === "menu") {
     return (
@@ -68,6 +72,11 @@ export function SheetNavRow({
           </span>
         ) : null}
         <span className="min-w-0 flex-1 truncate">{label}</span>
+        {shownCount !== null && (
+          <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+            {shownCount}
+          </span>
+        )}
       </PrefetchLink>
     );
   }
@@ -84,6 +93,7 @@ export function SheetNavRow({
       <SheetRowContent
         icon={icon}
         label={label}
+        detail={shownCount}
         trailing={isActive ? "check" : null}
       />
     </PrefetchLink>

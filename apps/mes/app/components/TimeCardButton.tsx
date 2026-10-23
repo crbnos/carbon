@@ -5,7 +5,7 @@
 import { Badge, NavRailItem, NavRailLink } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import { LuClock, LuPlay, LuSquare } from "react-icons/lu";
+import { LuClock, LuPlay, LuSquare, LuTimer } from "react-icons/lu";
 import { useFetcher, useLocation } from "react-router";
 import { path } from "~/utils/path";
 
@@ -92,6 +92,13 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
         icon={<LuClock />}
         label={t`My Hours`}
         isActive={isOnTimeCardPage}
+      />
+
+      <NavRailLink
+        to={path.to.timesheet}
+        icon={<LuTimer />}
+        label={t`My Time`}
+        isActive={pathname.includes("/timesheet")}
       />
     </>
   );

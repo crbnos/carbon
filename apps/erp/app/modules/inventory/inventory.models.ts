@@ -66,7 +66,8 @@ export const itemLedgerDocumentTypes = [
   "Purchase Order",
   "Maintenance Consumption",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Project Issue"
 ] as const;
 
 export const trackedEntityStatus = [
@@ -221,6 +222,10 @@ export const inventoryAdjustmentValidator = z
     // Unscrap: the original scrap movement to reverse against (resolved
     // server-side from the tracked entity when omitted).
     unscrapOfItemLedgerId: zfd.text(z.string().optional()),
+    // The stock owner of untracked stock (Projects Phase 2a): a project with
+    // project stock, or omitted for common stock. The quantities page passes
+    // the row's owner; an existing tracked entity keeps its own.
+    projectId: zfd.text(z.string().optional()),
     // Set by serial-tracked forms so the quantity can be capped server-side.
     requiresSerialTracking: zfd
       .text(z.string().optional())

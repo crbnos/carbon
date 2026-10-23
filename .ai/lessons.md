@@ -3570,6 +3570,58 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `scripts/restore-database.sh`, `packages/dev/src/commands/restore.ts`, and any tool that loads a plain-text dump through psql.
 
+## A migration from main can fail on a local database that already ran a newer branch migration
+
+**Context:** Merging `origin/main` into `projects-wbs-research-spec` (2026-10-11). The branch's `20261021004800_planning-rpcs-segment.sql` drops and creates `get_purchasing_planning` with an extra output column, `planningSegmentId`. Main's `20261009181437_supplier-part-currency.sql` has an OLDER timestamp. It renames `supplierPart.unitPrice` to `supplierUnitPrice` and then does `CREATE OR REPLACE` on the same function with main's return type.
+
+**Problem:** Local databases on the branch had run 135634 already. `pnpm db:migrate` then applied 181437 out of order, and statement 8 failed with `cannot change return type of existing function`. The migration rolled back, so nothing was half-applied. On a NEW database the order reverses: 181437 runs first and renames the column, and then 135634 failed too, because a `LANGUAGE sql` body is checked at creation (`check_function_bodies` is on) and it read `ps."unitPrice"`. The clobbers check saw neither problem: the branch DROPs and CREATEs, and the check compares names, not bodies.
+
+**Rule:** After you merge main, compare the function names that main's new migrations define with the names that the branch's migrations define (DROP + CREATE included). For each match, do these things:
+
+1. Write one NEW migration, dated after both, that carries both changes (here `20261021010900_merge-main-job-costing-and-planning.sql`).
+2. If the branch migration has not shipped, also fix the branch migration so that it applies AFTER main's migration on a new database (here `20261021004800` now reads `supplierUnitPrice` and `currencyCode`).
+3. For a local database that ran the branch migration first, do this one-off step before `pnpm db:migrate`. It is safe because nothing depends on the function in `pg_depend`, and the new migration creates the function again:
+
+```bash
+docker exec -i <worktree>-postgres-1 psql -U postgres \
+  -c 'DROP FUNCTION public.get_purchasing_planning(text, text, text[]);'
+pnpm db:migrate
+```
+
+Never edit main's migration to make it apply.
+
+**Applies to:** every local database of this branch that applied `20261021004800` before it merged main; any merge where both sides redefine one function and the return type differs.
+
+## Every UI task names its precedent screen and is checked by screenshot against it
+
+**Context:** The Projects, Field Service, project billing and government contracting UI (2026-10-07 to 10-11), built by autonomous executors from plans whose UI tasks said what each screen shows but not which existing Carbon screen it copies. Brad reviewed the result on 2026-10-12: "completely over the top, incoherent, and overly complicated". The rebuild plan is `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`; the rejected patterns are `.ai/scratch/ui-reference/bad-*.jpg`.
+
+**Problem:** With no precedent named, each executor invented its own layout. Typecheck, Biome and the tests all passed, and every screen "worked", but the screens did not look like Carbon: an 8-tab strip and about 28 header controls on the project, two header rows, a panel inside a panel for an element, boxed number inputs in a timesheet table, dashed empty cards, striped progress bars, several primary buttons per screen, a `Subheading` on every section, and collapsible sidebar groups. Nothing in the gates looks at a screen, so nothing stopped it.
+
+**Rule:** Every UI task in a plan or spec names its precedent: the existing screen it copies (a route or component path, for example Settings → Inventory, the inventory count grid, `IssueProperties`, the Revenue Recognition runs list) and a screenshot of that screen. The executor screenshots the new screen at 1440 px with the same data, puts it next to the precedent, and answers the seven questions of the plan's *screenshot check* (one toolbar row, at most one primary action, no input box in a table, secondary actions in a ⋯ or row menu, advanced fields collapsed or hidden). A "no" is a failed task, the same as a failed test. When no Carbon screen fits, the executor stops and asks; it does not invent a layout. Before a UI task, read `.claude/skills/carbon-design/SKILL.md`.
+
+**Applies to:** every plan, spec and autonomous run (`/execute`, `/conductor`, overnight executors) that adds or changes UI in `apps/erp`, `apps/mes`, `packages/react` or `packages/form`.
+
+## A collapsed form section keeps its fields mounted
+
+**Context:** The New Project drawer and the project Settings page fold advanced fields into sections (`FormSection`, `apps/erp/app/modules/projects/ui/Projects/ProjectForm.tsx`). The form posts the whole record (`projectValidator`), and the action writes every column it receives.
+
+**Problem:** A section that unmounts its fields when closed posts nothing for them. The action would then write null or the default for each of those columns, so saving the name on Settings would clear the cost account, the planning group or the plan lock, with no error. (Decision D14 of the rebuild plan; caught at design time, not in production.)
+
+**Rule:** A collapsible section inside a form that saves the whole record renders its children with `forceMount` and hides them (`CollapsibleContent forceMount className={cn(!open && "hidden")}`). It also opens while one of its fields has a validation error (`fieldNames`), so an error is never hidden. The same holds for any field hidden by a condition (a DCAA-only card): hide it, keep it mounted.
+
+**Applies to:** `FormSection` and every collapsible group or conditional card inside a `ValidatedForm` whose action saves all fields at once.
+
+## A company with time zone UTC shifts every business day
+
+**Context:** The week views of My Time (ERP and MES) and the DCAA entry window compute the week in the company time zone (`timesheetWeek`, `datetime.weekBounds(companyTimeZone, offset)`).
+
+**Problem:** The dev bootstrap inserted the company with no time zone, so `company.timezone` was `UTC` while its locations were `America/Chicago`. On a Sunday evening in Chicago the server's day was already Monday, and the timesheet opened on next week. It looked like a week-math bug; the math was correct for the wrong zone.
+
+**Rule:** A company row always gets a real IANA time zone at creation (`seedCompanyReferenceData` now uses the default location's zone). When a date-bound view is off by one day or one week, check `company.timezone` and the location time zones before the date code.
+
+**Applies to:** `packages/database/src/datasets/bootstrap.ts`, onboarding, every view that derives a business day or week from the company time zone.
+
 ## A new record type copies its sibling's UI, not the generic archetype
 
 **Context:** The lessee lease (2026-10-11) shipped a Card form on `new.tsx` that redirected to a 3-pane workspace, with Draft terms edited in the properties panel. Its siblings — the rental agreement and the AR contract — are set up in a full-page wizard (`~/components/Setup`). The user called it a big mistake, and the UI was rewritten.
@@ -3640,7 +3692,6 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
 
-
 ## A cookie that was only ever written is not a stored preference
 
 **Context:** The navigation rail's pin toggle (2026-10-13) first restored the pinned state from `SidebarProvider`'s `sidebar:state` cookie.
@@ -3653,6 +3704,25 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `SidebarProvider` and any other write-only client state (`document.cookie`, `localStorage`) that a loader or component begins to read.
 
+## A PostgREST filter on an embedded column needs `!inner`, or it filters nothing
+
+**Context:** The Linear and Jira inbound sync matched an issue's assignee to a Carbon employee with `userToCompany.select("userId,user(email)").in("user.email", [email])` (2026-10-19).
+
+**Problem:** Without `!inner`, PostgREST applies the filter to the embed only: every `userToCompany` row comes back, with `user` set to null where the email did not match. The job took `employees[0]`, so every synced issue assigned the task to the company's first employee. Typecheck and a "returns rows" check both pass.
+
+**Rule:** When a filter on an embedded column must restrict the parent rows, embed it as `relation!inner(...)`. Test it with a non-matching value and expect zero rows.
+
+**Applies to:** every `.eq/.in/.ilike("embed.column", …)` on a Supabase select.
+
+## A JSONB column returns object keys in another order than you wrote them
+
+**Context:** The issue sync stores a hash of a record's rich text (Tiptap JSON) to tell its own writes from real changes (2026-10-19).
+
+**Problem:** `projectElement.description` is JSONB, which re-sorts object keys; action-task `notes` is JSON, which keeps them. A hash of `JSON.stringify` of the written object did not match the hash of the row read back, so every inbound description change looked like a new Carbon change and echoed back to the tracker.
+
+**Rule:** Fingerprint JSON with sorted keys (`hashText` in `packages/ee/src/issue-sync/maps.ts`), never with plain `JSON.stringify`, when one side of the comparison may be a JSONB read.
+
+**Applies to:** snapshot, dedupe or change-detection hashes over JSON/JSONB columns.
 ## The manifest-digest hook checks the working tree, not the staged copy
 
 **Context:** The trial balance PR (2026-10-13) left `tool-manifest.digest.json` out of a commit, thinking its diff was unrelated drift.

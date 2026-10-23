@@ -6,24 +6,24 @@ import { NotFoundError } from "@carbon/api/errors";
 import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
-import type { ActionTaskEntityType } from "@carbon/ee/action-task-entity";
-import {
-  actionTaskEntities,
-  actionTaskParentId,
-  actionTaskPermissions
-} from "@carbon/ee/action-task-entity";
 import { resolveIntegrationSecrets } from "@carbon/ee/integrations/secrets";
+import {
+  type SyncedEntityType,
+  syncedEntities,
+  syncedEntityParentId,
+  syncedEntityPermissions
+} from "@carbon/ee/issue-sync";
+import { linkExistingIssue, linkNewIssue } from "@carbon/ee/issue-sync.server";
 import {
   getJiraClient,
   getJiraIssueFromExternalId,
-  linkActionToJiraIssue,
   type TiptapDocument,
   tiptapToAdf,
   unlinkActionFromJiraIssue
 } from "@carbon/ee/jira.server";
 import {
   getLinearClient,
-  linkActionToLinearIssue,
+  getLinearIssueFromExternalId,
   unlinkActionFromLinearIssue
 } from "@carbon/ee/linear.server";
 import {
@@ -657,32 +657,39 @@ export const startStripeConnectOnboarding = defineServiceFn({
   }
 });
 
-const actionTaskEntityTypes = Object.keys(actionTaskEntities) as [
-  ActionTaskEntityType,
-  ...ActionTaskEntityType[]
+const syncedEntityTypes = Object.keys(syncedEntities) as [
+  SyncedEntityType,
+  ...SyncedEntityType[]
 ];
 
-// An issue's tasks are quality's, a change notice's are parts'.
+// An issue's tasks are quality's, a change notice's are parts', a project
+// element is projects'.
 const actionTaskRule = {
   by: "entityType",
   rules: {
-    nonConformanceActionTask: actionTaskPermissions("nonConformanceActionTask"),
-    changeOrderActionTask: actionTaskPermissions("changeOrderActionTask")
+    nonConformanceActionTask: syncedEntityPermissions(
+      "nonConformanceActionTask"
+    ),
+    changeOrderActionTask: syncedEntityPermissions("changeOrderActionTask"),
+    projectElement: syncedEntityPermissions("projectElement")
   }
 } as const;
 
 const actionTaskInput = {
-  entityType: z.enum(actionTaskEntityTypes),
+  entityType: z.enum(syncedEntityTypes),
   actionId: z.string().min(1)
 };
+
 /**
- * Create a Jira issue for an action task, and link the two.
+ * Create a Jira issue for an action task or a project element, and link the
+ * two.
  *
  * @remarks
- * The task's notes become the issue's description, else `description`
- * (Tiptap JSON or plain text). A change notice's task is refused once the
- * notice's workflow is locked. The Jira issue gets a link back to the task's
- * issue or change notice in Carbon.
+ * The record's description becomes the issue's, else `description` (Tiptap
+ * JSON or plain text). A change notice's task is refused once the notice's
+ * workflow is locked, an element once its project is Closed. The Jira issue
+ * gets a link back to the record in Carbon, and the record's fields are
+ * pushed to it.
  */
 export const createJiraIssue = defineServiceFn({
   input: z.object({
@@ -700,10 +707,7 @@ export const createJiraIssue = defineServiceFn({
     const { entityType, actionId } = input;
     const jira = getJiraClient();
 
-    const [task, siteUrl] = await Promise.all([
-      service.editableActionTask(ctx, entityType, actionId),
-      jira.getSiteUrl(companyId)
-    ]);
+    const task = await service.editableActionTask(ctx, entityType, actionId);
     if (task instanceof CarbonError) return task;
 
     let description: ReturnType<typeof tiptapToAdf> | undefined;
@@ -740,99 +744,74 @@ export const createJiraIssue = defineServiceFn({
     });
     if (!issue) return ctx.error("internal", "Failed to create Jira issue");
 
-    const linked = await linkActionToJiraIssue(
-      ctx.asCaller.supabase,
+    const linked = await linkNewIssue(ctx.asSystem.supabase, {
       companyId,
-      { entityType, actionId, issue, siteUrl }
-    );
-    if (!linked || linked.data?.length === 0) {
-      return ctx.error("internal", "Failed to link issue");
-    }
+      tracker: "jira",
+      entityType,
+      entityId: actionId,
+      issueId: issue.id
+    });
+    if ("error" in linked) return ctx.error("internal", linked.error);
 
     await jira.createRemoteLink(
       companyId,
       issue.id,
-      service.actionTaskUrl(linked.data, entityType),
+      service.actionTaskUrl(entityType, task.parentId ?? "", actionId),
       `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     );
+    await service.pushToIssue(companyId, entityType, actionId, true);
     return { issueId: issue.id };
   }
 });
 
 /**
- * Link an action task to an existing Jira issue.
+ * Link an action task or a project element to an existing Jira issue.
  *
  * @remarks
- * The issue's assignee becomes the task's when a Carbon user has their
- * email. A change notice's task is refused once the notice's workflow is
- * locked. The task's notes replace the issue's description (best effort),
- * and the Jira issue gets a link back to Carbon.
+ * The record takes the issue's fields first, except a description it
+ * already has; then that description goes to the issue. An issue already
+ * linked to another record is refused, as is a change notice's task once the
+ * notice's workflow is locked and an element once its project is Closed.
+ * The Jira issue gets a link back to Carbon.
  */
 export const linkJiraIssue = defineServiceFn({
   input: z.object({ ...actionTaskInput, issueId: z.string().min(1) }),
   permission: actionTaskRule,
 
   async run(ctx, { entityType, actionId, issueId }) {
-    const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const jira = getJiraClient();
 
-    const [task, issue, siteUrl] = await Promise.all([
-      service.editableActionTask(ctx, entityType, actionId),
-      jira.getIssue(companyId, issueId),
-      jira.getSiteUrl(companyId)
-    ]);
+    const task = await service.editableActionTask(ctx, entityType, actionId);
     if (task instanceof CarbonError) return task;
-    if (!issue) return ctx.error("notFound", "Issue not found");
 
-    const email = issue.fields.assignee?.emailAddress ?? "";
-    let assignee: string | null = null;
-    if (email) {
-      const user = await client
-        .from("user")
-        .select("id")
-        .eq("email", email)
-        .single();
-      assignee = user.data?.id ?? null;
-    }
-
-    const linked = await linkActionToJiraIssue(client, companyId, {
-      entityType,
-      actionId,
-      issue,
-      siteUrl,
-      assignee
-    });
-    if (!linked || linked.data?.length === 0) {
-      return ctx.error("internal", "Failed to link issue");
-    }
-
-    if (task.notes && typeof task.notes === "object") {
-      try {
-        await jira.updateIssue(companyId, issue.id, {
-          description: tiptapToAdf(task.notes as TiptapDocument)
-        });
-      } catch (error) {
-        logger.error("Failed to update Jira issue description", { error });
-      }
-    }
-
-    await jira.createRemoteLink(
+    const linked = await linkExistingIssue(ctx.asSystem.supabase, {
       companyId,
-      issue.id,
-      service.actionTaskUrl(linked.data, entityType),
+      tracker: "jira",
+      entityType,
+      entityId: actionId,
+      issueId
+    });
+    if ("error" in linked) return ctx.error("rule", linked.error);
+
+    const linkedIssueId = String(linked.issue.id);
+    await getJiraClient().createRemoteLink(
+      companyId,
+      linkedIssueId,
+      service.actionTaskUrl(entityType, task.parentId ?? "", actionId),
       `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     );
-    return { issueId: issue.id };
+    await service.pushToIssue(companyId, entityType, actionId, false);
+    return { issueId: linkedIssueId };
   }
 });
 
 /**
- * Unlink an action task from its Jira issue.
+ * Unlink an action task or a project element from its Jira issue.
  *
  * @remarks
- * A change notice's task is refused once the notice's workflow is locked.
- * The link back to Carbon is then removed from the Jira issue (best effort).
+ * A change notice's task is refused once the notice's workflow is locked,
+ * an element once its project is Closed. The link back to Carbon is then
+ * removed from the Jira issue (best effort).
  */
 export const unlinkJiraIssue = defineServiceFn({
   input: z.object(actionTaskInput),
@@ -841,7 +820,7 @@ export const unlinkJiraIssue = defineServiceFn({
   async run(ctx, { entityType, actionId }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    if (entityType === "changeOrderActionTask") {
+    if (entityType !== "nonConformanceActionTask") {
       const task = await service.editableActionTask(ctx, entityType, actionId);
       if (task instanceof CarbonError) return task;
     }
@@ -885,12 +864,14 @@ export const unlinkJiraIssue = defineServiceFn({
 });
 
 /**
- * Create a Linear issue for an action task, and link the two.
+ * Create a Linear issue for an action task or a project element, and link
+ * the two.
  *
  * @remarks
- * A change notice's task is refused once the notice's workflow is locked.
- * The Linear issue gets an attachment linking back to the task's issue or
- * change notice in Carbon.
+ * A change notice's task is refused once the notice's workflow is locked,
+ * an element once its project is Closed. The Linear issue gets an
+ * attachment linking back to the record in Carbon, and the record's fields
+ * are pushed to it.
  */
 export const createLinearIssue = defineServiceFn({
   input: z.object({
@@ -918,112 +899,110 @@ export const createLinearIssue = defineServiceFn({
     });
     if (!issue) return ctx.error("internal", "Failed to create Linear issue");
 
-    const linked = await linkActionToLinearIssue(
-      ctx.asCaller.supabase,
+    const linked = await linkNewIssue(ctx.asSystem.supabase, {
       companyId,
-      { entityType, actionId, issue }
-    );
-    if (!linked || linked.data?.length === 0) {
-      return ctx.error("internal", "Failed to link issue");
-    }
+      tracker: "linear",
+      entityType,
+      entityId: actionId,
+      issueId: issue.id
+    });
+    if ("error" in linked) return ctx.error("internal", linked.error);
 
     await linear.createAttachmentLink(companyId, {
       issueId: issue.id,
-      url: service.actionTaskUrl(linked.data, entityType),
+      url: service.actionTaskUrl(entityType, task.parentId ?? "", actionId),
       title: `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     });
+    await service.pushToIssue(companyId, entityType, actionId, true);
     return { issueId: issue.id };
   }
 });
 
 /**
- * Link an action task to an existing Linear issue.
+ * Link an action task or a project element to an existing Linear issue.
  *
  * @remarks
- * The issue's assignee becomes the task's when a Carbon user has their
- * email. A change notice's task is refused once the notice's workflow is
- * locked. The Linear issue gets an attachment linking back to Carbon.
+ * The record takes the issue's fields first, except a description it
+ * already has; then that description goes to the issue. An issue already
+ * linked to another record is refused, as is a change notice's task once the
+ * notice's workflow is locked and an element once its project is Closed.
+ * The Linear issue gets an attachment linking back to Carbon.
  */
 export const linkLinearIssue = defineServiceFn({
   input: z.object({ ...actionTaskInput, issueId: z.string().min(1) }),
   permission: actionTaskRule,
 
   async run(ctx, { entityType, actionId, issueId }) {
-    const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    const linear = getLinearClient();
 
-    const [task, issue] = await Promise.all([
-      service.editableActionTask(ctx, entityType, actionId),
-      linear.getIssueById(companyId, issueId)
-    ]);
+    const task = await service.editableActionTask(ctx, entityType, actionId);
     if (task instanceof CarbonError) return task;
-    if (!issue) return ctx.error("notFound", "Issue not found");
 
-    const email = issue.assignee?.email ?? "";
-    let assignee: string | null = null;
-    if (email) {
-      const user = await client
-        .from("user")
-        .select("id")
-        .eq("email", email)
-        .single();
-      assignee = user.data?.id ?? null;
-    }
-
-    const linked = await linkActionToLinearIssue(client, companyId, {
+    const linked = await linkExistingIssue(ctx.asSystem.supabase, {
+      companyId,
+      tracker: "linear",
       entityType,
-      actionId,
-      issue,
-      assignee
+      entityId: actionId,
+      issueId
     });
-    if (!linked || linked.data?.length === 0) {
-      return ctx.error("internal", "Failed to link issue");
-    }
+    if ("error" in linked) return ctx.error("rule", linked.error);
 
-    await linear.createAttachmentLink(companyId, {
-      issueId: issue.id as string,
-      url: service.actionTaskUrl(linked.data, entityType),
+    const linkedIssueId = String(linked.issue.id);
+    await getLinearClient().createAttachmentLink(companyId, {
+      issueId: linkedIssueId,
+      url: service.actionTaskUrl(entityType, task.parentId ?? "", actionId),
       title: `Linked Carbon Issue: ${task.parentReadableId ?? ""}`
     });
-    return { issueId: issue.id as string };
+    await service.pushToIssue(companyId, entityType, actionId, false);
+    return { issueId: linkedIssueId };
   }
 });
 
 /**
- * Unlink an action task from its Linear issue.
+ * Unlink an action task or a project element from its Linear issue.
  *
  * @remarks
- * A change notice's task is refused once the notice's workflow is locked.
- * The attachment linking back to Carbon is then removed from the Linear
- * issue (best effort).
+ * A change notice's task is refused once the notice's workflow is locked,
+ * an element once its project is Closed. This record's link back to Carbon
+ * is then removed from the Linear issue (best effort); the other records of
+ * the same project keep theirs.
  */
 export const unlinkLinearIssue = defineServiceFn({
   input: z.object(actionTaskInput),
   permission: actionTaskRule,
 
   async run(ctx, { entityType, actionId }) {
+    const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
-    if (entityType === "changeOrderActionTask") {
+    if (entityType !== "nonConformanceActionTask") {
       const task = await service.editableActionTask(ctx, entityType, actionId);
       if (task instanceof CarbonError) return task;
     }
 
-    const unlinked = await unlinkActionFromLinearIssue(
-      ctx.asCaller.supabase,
+    const mapping = await getLinearIssueFromExternalId(
+      client,
       companyId,
-      { entityType, actionId }
+      actionId,
+      entityType
     );
+    const unlinked = await unlinkActionFromLinearIssue(client, companyId, {
+      entityType,
+      actionId
+    });
     if (unlinked.error) {
       return ctx.error("internal", "Failed to unlink issue", unlinked.error);
     }
 
     try {
-      const parentId = actionTaskParentId(unlinked.data, entityType);
-      if (parentId) {
-        const linear = getLinearClient();
-        const [found] = await linear.listAttachments(companyId, parentId);
-        if (found) await linear.removeAttachment(companyId, found.id);
+      // Remove only this record's back-link: records of one project share a
+      // URL prefix, so match the exact URL on this issue.
+      const parentId = syncedEntityParentId(unlinked.data, entityType);
+      if (parentId && mapping) {
+        await getLinearClient().removeIssueLink(
+          companyId,
+          mapping.id,
+          service.actionTaskUrl(entityType, parentId, actionId)
+        );
       }
     } catch (error) {
       logger.error("Failed to clean up Linear attachment", { error });

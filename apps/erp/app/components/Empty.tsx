@@ -6,16 +6,20 @@ import { cn, VStack } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ComponentProps, ReactNode } from "react";
 
+type EmptyProps = Omit<ComponentProps<"div">, "title"> & {
+  /** The heading. Defaults to "No data yet". */
+  title?: ReactNode;
+  /** The line under the heading. Pass `null` to render no line. */
+  description?: ReactNode;
+};
+
 export default function Empty({
   className,
   children,
   title,
   description,
   ...props
-}: Omit<ComponentProps<"div">, "title"> & {
-  title?: ReactNode;
-  description?: ReactNode;
-}) {
+}: EmptyProps) {
   return (
     <VStack
       className={cn(
@@ -42,14 +46,16 @@ export default function Empty({
       <h3 className="text-lg font-medium tracking-tight text-foreground max-md:text-[17px] max-md:font-semibold">
         {title ?? <Trans>No data yet</Trans>}
       </h3>
-      <p className="max-w-56 text-center text-xs text-muted-foreground text-balance">
-        {description ?? (
-          <Trans>
-            Your data will appear here once you create or import your first
-            records
-          </Trans>
-        )}
-      </p>
+      {description !== null && (
+        <p className="max-w-56 text-center text-xs text-muted-foreground text-balance">
+          {description ?? (
+            <Trans>
+              Your data will appear here once you create or import your first
+              records
+            </Trans>
+          )}
+        </p>
+      )}
       {children}
     </VStack>
   );

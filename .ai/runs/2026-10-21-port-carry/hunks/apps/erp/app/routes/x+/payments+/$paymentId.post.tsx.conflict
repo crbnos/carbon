@@ -1,0 +1,120 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+<<<<<<< HEAD
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { markFinancingRequestsPaid } from "@carbon/ee/contract-financing.server";
+import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
+||||||| 23bd5d6e0b
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
+=======
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
+>>>>>>> 0a1bd961b2
+import type { ActionFunctionArgs } from "react-router";
+import { path } from "~/utils/path";
+
+<<<<<<< HEAD
+const logger = getLogger("erp", "payment-post");
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { companyId, userId } = await requirePermissions(request, {
+    update: "invoicing"
+||||||| 23bd5d6e0b
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { companyId, userId } = await requirePermissions(request, {
+    update: "invoicing"
+=======
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["paymentId"] });
+  if ("invalid" in input) return input.invalid;
+  const paymentId = input.params.paymentId;
+  const api = await carbon(args.request);
+  const result = await api.invoicing.postPayment({ paymentId: paymentId });
+  return respond(args.request, result).redirect(path.to.payment(paymentId), {
+    message: "Payment posted"
+>>>>>>> 0a1bd961b2
+  });
+<<<<<<< HEAD
+  const { paymentId } = params;
+  if (!paymentId) {
+    return { success: false, message: "Missing paymentId" };
+  }
+  try {
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-payment", { type: "post", paymentId });
+    if (result.error) {
+      const message = result.error.message || "Failed to post payment";
+      throw redirect(
+        path.to.payment(paymentId),
+        await flash(request, error(result.error, message))
+      );
+    }
+  } catch (err) {
+    throw redirect(
+      path.to.payment(paymentId),
+      await flash(request, error(err, "Failed to post payment"))
+    );
+  }
+
+  // A contract deposit can receive a financing request: it is now Paid.
+  try {
+    await markFinancingRequestsPaid(getDatabaseClient(), {
+      companyId,
+      paymentId,
+      userId
+    });
+  } catch (err) {
+    logger.error("Failed to mark the financing request paid", {
+      companyId,
+      paymentId,
+      error: err
+    });
+  }
+
+  throw redirect(
+    path.to.payment(paymentId),
+    await flash(request, success("Payment posted"))
+  );
+||||||| 23bd5d6e0b
+  const { paymentId } = params;
+  if (!paymentId) {
+    return { success: false, message: "Missing paymentId" };
+  }
+  try {
+    const result = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-payment", { type: "post", paymentId });
+    if (result.error) {
+      const message = result.error.message || "Failed to post payment";
+      throw redirect(
+        path.to.payment(paymentId),
+        await flash(request, error(result.error, message))
+      );
+    }
+  } catch (err) {
+    throw redirect(
+      path.to.payment(paymentId),
+      await flash(request, error(err, "Failed to post payment"))
+    );
+  }
+
+  throw redirect(
+    path.to.payment(paymentId),
+    await flash(request, success("Payment posted"))
+  );
+=======
+>>>>>>> 0a1bd961b2
+}

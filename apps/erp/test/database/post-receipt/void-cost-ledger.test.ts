@@ -63,7 +63,8 @@ describe("planReceiptVoidCostLedger", () => {
         quantity: 3,
         cost: 27,
         supplierId: "sup1",
-        trackedEntityId: null
+        trackedEntityId: null,
+        projectId: null
       }
     ]);
   });

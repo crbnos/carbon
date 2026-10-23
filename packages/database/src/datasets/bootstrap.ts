@@ -133,8 +133,11 @@ export async function seedCompanyReferenceData(
   const companyGroupId = companyGroupResult.rows[0].id as string;
 
   await client.query(
-    `INSERT INTO company (id, name, "baseCurrencyCode", "companyGroupId") VALUES ($1, $2, 'USD', $3)`,
-    [companyId, companyName, companyGroupId]
+    // The company calendar is the plant's: the week views, posting dates and
+    // sequences read `company.timezone`, and UTC put a Sunday evening in
+    // Chicago into the next week.
+    `INSERT INTO company (id, name, "baseCurrencyCode", "companyGroupId", timezone) VALUES ($1, $2, 'USD', $3, $4)`,
+    [companyId, companyName, companyGroupId, defaultLocation.timezone]
   );
 
   // The AFTER INSERT trigger on company (20260917163108) already provisions

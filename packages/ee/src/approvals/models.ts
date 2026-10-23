@@ -21,6 +21,7 @@ export const approvalDocumentType = [
   "purchaseOrder",
   "qualityDocument",
   "supplier",
+  "projectChangeRequest",
   "changeOrder"
 ] as const;
 
@@ -31,6 +32,7 @@ export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   purchaseOrder: "Purchase Order",
   qualityDocument: "Quality Document",
   supplier: "Supplier",
+  projectChangeRequest: "Project change request",
   changeOrder: "Change Notice"
 };
 

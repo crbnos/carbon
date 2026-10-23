@@ -55,7 +55,8 @@ export class NotificationPipeline {
   }
 
   private isNotificationService(integrationId: string): boolean {
-    const notificationServiceIds = ["slack", "linear"];
+    // Linear and Jira sync through the issue-sync engine (ISSUE_SYNC events).
+    const notificationServiceIds = ["slack"];
     return notificationServiceIds.includes(integrationId);
   }
 }
@@ -171,34 +172,6 @@ export async function notifyTaskAssigned(
   await pipeline.send(
     {
       type: "task.assigned",
-      companyId: data.companyId,
-      userId: data.userId,
-      carbonUrl: data.carbonUrl,
-      data: data.task
-    },
-    integrations
-  );
-}
-
-export async function notifyTaskNotesChanged(
-  context: NotificationContext,
-  integrations: CompanyIntegration[],
-  data: {
-    companyId: string;
-    userId: string;
-    carbonUrl: string;
-    task: {
-      id: string;
-      table: string;
-      notes: any; // Tiptap JSONContent
-      title?: string;
-    };
-  }
-): Promise<void> {
-  const pipeline = createNotificationPipeline(context);
-  await pipeline.send(
-    {
-      type: "task.notes.changed",
       companyId: data.companyId,
       userId: data.userId,
       carbonUrl: data.carbonUrl,

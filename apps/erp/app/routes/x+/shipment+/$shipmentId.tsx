@@ -106,6 +106,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
   }
 
+  // A return-to-customer shipment: the RMA lines whose disposition is Repair
+  // ship the customer's unit back, which stays Consumed (not On Hold).
+  let repairLineIds: string[] = [];
+  if (
+    shipment.data.sourceDocument === "Sales Return Order" &&
+    shipment.data.sourceDocumentId
+  ) {
+    const repairLines = await client
+      .from("salesReturnOrderLine")
+      .select("id")
+      .eq("salesReturnOrderId", shipment.data.sourceDocumentId)
+      .eq("disposition", "Repair")
+      .eq("companyId", companyId);
+    repairLineIds = (repairLines.data ?? []).map((line) => line.id);
+  }
+
   let rentalLines: RentalShipmentLine[] = [];
 
   if (shipment.data.sourceDocument === "Rental Agreement") {
@@ -156,6 +172,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
+    repairLineIds,
     fixedAssetLines,
     rentalLines,
     shipmentLineTracking: shipmentLineTracking.data ?? [],

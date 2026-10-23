@@ -35,11 +35,9 @@ import { DateTime } from "~/components";
 import { useCompanyToday, useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import {
-  getShipmentTracking,
-  isShippableEntityStatus
-} from "../../inventory.utils";
+import { getShipmentTracking } from "../../inventory.utils";
 import type { Shipment, ShipmentLine } from "../../types";
+import { isShippable } from "./ShipmentLines";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -52,6 +50,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const routeData = useRouteData<{
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
+    repairLineIds?: string[];
     fixedAssetLines: {
       id: string;
       shipped: boolean;
@@ -64,10 +63,17 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const [postingDate, setPostingDate] = useState(companyToday);
 
   // Mirror the statuses lines.tracking accepted when the entity was assigned:
-  // On Hold on a return to a customer, Available or Rejected on a return to a
-  // supplier, Available otherwise.
-  const isShippable = (status: string | null | undefined) =>
-    isShippableEntityStatus(routeData?.shipment?.sourceDocument, status);
+  // On Hold on a return to a customer (Consumed for a Repair line's unit),
+  // Available or Rejected on a return to a supplier, Available otherwise.
+  const isLineShippable = (
+    line: ShipmentLine,
+    status: string | null | undefined
+  ) =>
+    isShippable(
+      routeData?.shipment,
+      status,
+      !!line.lineId && (routeData?.repairLineIds ?? []).includes(line.lineId)
+    );
 
   const navigation = useNavigation();
 
@@ -172,7 +178,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Shipment Line"] === line.id;
         });
 
-        if (!isShippable(trackedEntity?.status)) {
+        if (!isLineShippable(line, trackedEntity?.status)) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,
@@ -210,7 +216,10 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
         const quantityAvailable = trackedEntities?.reduce((acc, tracking) => {
           const trackingQuantity = Number(tracking.quantity);
 
-          return acc + (isShippable(tracking.status) ? trackingQuantity : 0);
+          return (
+            acc +
+            (isLineShippable(line, tracking.status) ? trackingQuantity : 0)
+          );
         }, 0);
 
         if (quantityAvailable !== line.shippedQuantity) {
