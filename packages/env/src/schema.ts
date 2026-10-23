@@ -120,6 +120,7 @@ export const schema = define({
   },
   TENANT_TYPE: {
     group: "core",
+    type: z.enum(["single", "multi"]),
     description:
       "single for a deployment one customer owns (BYOC, self-hosted); multi (default) for Carbon Cloud"
   },

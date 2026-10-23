@@ -7,7 +7,7 @@ description: Send outbound email through this server's mail settings, Resend, or
 
 Carbon uses email for transactional messages such as order confirmations and notifications. Email is available on **every plan** and supports server mail, Resend, or SMTP delivery.
 
-When the server has mail settings, every company can email quotes, orders, invoices and RFQs without installing this integration: they go out through the server's mail settings, from the server's address under the company's name. Install the integration to have replies go to your own address, or to use your own Resend or SMTP account. If the server has no mail settings, ask your administrator to set them up, or use Resend or SMTP.
+On a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings, every company can email quotes, orders, invoices and RFQs without installing this integration: they go out through the server's mail settings, from the server's address under the company's name. Install the integration to have replies go to your own address, or to use your own Resend or SMTP account. On Carbon Cloud, or a server without mail settings, install the integration with Resend or SMTP.
 
 These settings apply to document emails only. Sign-in, security and notification emails always go out from the server's sender address.
 
