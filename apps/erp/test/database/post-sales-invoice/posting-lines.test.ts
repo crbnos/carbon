@@ -15,7 +15,7 @@ import {
   planSalesInvoiceAccounts,
   resolveSalesInvoiceAccounts,
   type SalesInvoiceAccountNeeds,
-  type SalesInvoiceAccounts, buildSalesInvoiceJournal, fillDirectCogs, postingAccountNeeds, postingLineRevenue, type SalesInvoiceJournalFacts, type SalesInvoiceLine, salesLineDimensions } from "../../../app/modules/invoicing/invoicing.service";
+  type SalesInvoiceAccounts, buildSalesInvoiceJournal, fillDirectCogs, isDirectItemLine, postingAccountNeeds, postingLineRevenue, type SalesInvoiceJournalFacts, type SalesInvoiceLine, salesLineDimensions } from "../../../app/modules/invoicing/invoicing.service";
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 type Status = "Provisional" | "Posted";
 
@@ -416,6 +416,20 @@ describe("a direct inventory line's COGS pair", () => {
       })
     ).toEqual([]);
     expect(pairs({ lines: [direct], directCost: () => null })).toEqual([]);
+  });
+
+  it("is not written for a contract line, even one naming an inventory part", () => {
+    // A project contract line can name a part; the job already charged its
+    // cost to the project, and a contract delivery moves no stock. The COGS
+    // pair and the shipment on the invoice both read `isDirectItemLine`.
+    const contractLine = {
+      ...direct,
+      invoiceLineType: "Service" as const,
+      customerContractId: "contract-1",
+      customerContractLineId: "contract-line-1"
+    };
+    expect(isDirectItemLine(direct)).toBe(true);
+    expect(isDirectItemLine(contractLine)).toBe(false);
   });
 });
 

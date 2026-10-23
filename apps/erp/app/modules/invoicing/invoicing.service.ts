@@ -6882,12 +6882,15 @@ export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
  * An item line with no sales order that is not built to order. Its posting
  * ships it: it writes the shipment and the item ledger, and its COGS pair
  * is in the invoice journal. A sales-order or Make-to-Order line keeps the
- * COGS that its shipment posted.
+ * COGS that its shipment posted. A contract line never ships: a project
+ * contract line may name a part, but its job already charged the cost to the
+ * project, and its delivery moves no stock.
  */
 export function isDirectItemLine(line: SalesInvoiceLine): boolean {
   return (
     ITEM_LINE_TYPES.has(line.invoiceLineType) &&
     line.salesOrderLineId === null &&
+    line.customerContractLineId === null &&
     line.methodType !== "Make to Order"
   );
 }
