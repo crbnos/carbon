@@ -2,6 +2,38 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+/**
+ * On a phone the card is the whole screen: no border, corners or outer
+ * margin, and less padding. A rounded border hugging the screen's edges
+ * reads as a mistake. `darkPage` is the page colour the card takes in dark
+ * mode, so it does not sit as a lighter band; leave it out for an email that
+ * renders light only.
+ */
+export function flatCardOnPhones(card: string, darkPage?: string) {
+  return `
+  @media only screen and (max-width: 600px) {
+    .${card} {
+      border-width: 0 !important;
+      border-radius: 0 !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+    }
+    .${card} > tbody > tr > td {
+      padding: 32px 20px !important;
+    }
+  }${
+    darkPage
+      ? `
+  @media only screen and (max-width: 600px) and (prefers-color-scheme: dark) {
+    .${card} {
+      background-color: ${darkPage} !important;
+    }
+  }`
+      : ""
+  }
+`;
+}
+
 // Dark-mode-aware styles shared by every card-style email (notifications and
 // the standalone lifecycle emails). Backgrounds are intentionally set via CSS
 // classes (not inline styles) so `!important` overrides in dark-mode media
@@ -127,4 +159,4 @@ export const notificationStyles = `
   [data-ogsc] .nf-fallback {
     color: #a1a1aa !important;
   }
-`;
+${flatCardOnPhones("nf-card", "#0C0C0C")}`;

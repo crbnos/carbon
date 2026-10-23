@@ -14,6 +14,7 @@ import {
 } from "react-email";
 import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
+import { flatCardOnPhones } from "./components/notificationStyles";
 import {
   EmailThemeProvider,
   getEmailInlineStyles,
@@ -46,6 +47,7 @@ const getStartedStyles = `
   .gs-chevron {
     color: #9ca3af !important;
   }
+${flatCardOnPhones("gs-card")}
 `;
 
 interface ResourceProps {

@@ -3,41 +3,27 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getAppUrl } from "@carbon/env";
-import type React from "react";
 import { Img, Section } from "react-email";
 
 const baseUrl = getAppUrl();
 
-// Two wordmarks. The outlined dark one reads on either background, so it
-// is what a client shows when it inverts colours on its own (Gmail, classic
-// Outlook). A client that runs the theme's dark CSS swaps it for the white
-// one: `.dark-mode-hide` hides the first, `.dark-mode-show` reveals the
-// second, which stays hidden everywhere else. Classic Outlook can still paint
-// an image inside a hidden div, so a non-MSO conditional keeps it out there.
+// One image for every client and mode: the white mark on its own dark tile.
+// Gmail's apps and classic Outlook recolour an email in dark mode themselves
+// and never run the theme's dark CSS, so a light/dark logo swap reaches only
+// some clients. They never recolour an image, so a tile with its background
+// baked in reads the same on a white card and on a dark one.
+// carbon-word-dark-outline.png, the old fallback, stays in public/: emails
+// already sent still load it.
 export function Logo() {
   return (
     <Section className="mt-[32px]">
       <Img
-        src={`${baseUrl}/carbon-word-dark-outline.png`}
-        width="auto"
-        height="45"
+        src={`${baseUrl}/carbon-email-mark.png`}
+        width="48"
+        height="48"
         alt="Carbon"
-        className="mb-4 mx-auto block dark-mode-hide"
+        className="mb-4 mx-auto block"
       />
-      <span dangerouslySetInnerHTML={{ __html: "<!--[if !mso]><!-->" }} />
-      <div
-        className="dark-mode-show"
-        style={{ display: "none", msoHide: "all" } as React.CSSProperties}
-      >
-        <Img
-          src={`${baseUrl}/carbon-word-dark.png`}
-          width="auto"
-          height="44"
-          alt="Carbon"
-          className="mb-4 mx-auto block"
-        />
-      </div>
-      <span dangerouslySetInnerHTML={{ __html: "<!--<![endif]-->" }} />
     </Section>
   );
 }

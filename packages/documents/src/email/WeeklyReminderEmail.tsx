@@ -13,6 +13,7 @@ import {
 } from "react-email";
 import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
+import { flatCardOnPhones } from "./components/notificationStyles";
 import {
   EmailThemeProvider,
   getEmailThemeClasses,
@@ -176,6 +177,7 @@ const weeklyReminderStyles = `
   [data-ogsc] .wr-fallback {
     color: #a1a1aa !important;
   }
+${flatCardOnPhones("wr-card", "#0C0C0C")}
 `;
 
 // Content props get no sample defaults — fabricated data must never reach a
