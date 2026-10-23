@@ -287,6 +287,9 @@ msgstr "Detalles del lote de producción"
 msgid "Batch is not available"
 msgstr "El lote no está disponible"
 
+msgid "Batch notes"
+msgstr "Notas del lote de producción"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Número de lote {0}"

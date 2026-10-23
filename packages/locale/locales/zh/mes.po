@@ -287,6 +287,9 @@ msgstr "生产批次详情"
 msgid "Batch is not available"
 msgstr "批次不可用"
 
+msgid "Batch notes"
+msgstr "生产批次备注"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "批次号 {0}"

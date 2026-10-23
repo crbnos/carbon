@@ -287,6 +287,9 @@ msgstr "Szczegóły partii produkcyjnej"
 msgid "Batch is not available"
 msgstr "Partia jest niedostępna"
 
+msgid "Batch notes"
+msgstr "Notatki partii produkcyjnej"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Numer partii {0}"

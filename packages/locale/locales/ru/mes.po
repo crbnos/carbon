@@ -287,6 +287,9 @@ msgstr "Детали серии"
 msgid "Batch is not available"
 msgstr "Партия недоступна"
 
+msgid "Batch notes"
+msgstr "Примечания к серии"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "Номер партии {0}"

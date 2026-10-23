@@ -287,6 +287,9 @@ msgstr "バッチ詳細"
 msgid "Batch is not available"
 msgstr "バッチは利用可能ではありません"
 
+msgid "Batch notes"
+msgstr "バッチメモ"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "バッチ番号 {0}"

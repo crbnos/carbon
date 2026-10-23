@@ -287,6 +287,9 @@ msgstr "बैच विवरण"
 msgid "Batch is not available"
 msgstr "बैच उपलब्ध नहीं है"
 
+msgid "Batch notes"
+msgstr "बैच नोट्स"
+
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
 msgstr "बैच नंबर {0}"

@@ -490,6 +490,9 @@ export async function getActiveJobOperationsByLocation(
   });
 }
 
+/**
+ * The member operations of the given batches: quantities and the job number.
+ */
 export async function getJobOperationBatchMembers(
   client: SupabaseClient<Database>,
   batchIds: string[],
