@@ -175,6 +175,9 @@ msgstr "認証アプリを追加"
 msgid "Add Inventory"
 msgstr "在庫追加"
 
+msgid "Add Part"
+msgstr ""
+
 msgid "Add Passkey"
 msgstr "パスキーを追加"
 
@@ -780,6 +783,9 @@ msgstr "storageUnitsの取得に失敗しました"
 msgid "Failed to get options"
 msgstr "オプションの取得に失敗しました"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "測定器の記録に失敗しました"
 
@@ -794,6 +800,9 @@ msgstr "結果の保存に失敗しました"
 
 msgid "Failed to save the hours"
 msgstr "時間の保存に失敗しました"
+
+msgid "Failed to save the signature"
+msgstr ""
 
 msgid "Failed to submit the week"
 msgstr "週の提出に失敗しました"
@@ -1184,6 +1193,9 @@ msgstr "その他のアクション"
 msgid "More options"
 msgstr "その他のオプション"
 
+msgid "More than one unit has this serial. Choose one."
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "カラムを移動: {0}"
@@ -1217,6 +1229,9 @@ msgstr ""
 
 msgid "New Record"
 msgstr "新規レコード"
+
+msgid "New Service Job"
+msgstr ""
 
 msgid "Newest first"
 msgstr "最新順"
@@ -1259,6 +1274,10 @@ msgstr "利用可能な追跡対象エンティティが見つかりません"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
+
+#. placeholder {0}: lookup.serial
+msgid "No customer asset has the serial {0}. Choose the customer."
+msgstr ""
 
 msgid "No dispatches assigned to you"
 msgstr "あなたに割り当てられた保全指示はありません。"
@@ -1373,6 +1392,9 @@ msgstr "作業区が存在しません。"
 
 msgid "None"
 msgstr "なし"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Notes"
 msgstr "メモ"
@@ -1630,6 +1652,9 @@ msgstr "プリンター設定"
 msgid "Priority"
 msgstr "優先度"
 
+msgid "Problem"
+msgstr ""
+
 msgid "Procedure"
 msgstr "手順書"
 
@@ -1794,6 +1819,9 @@ msgstr "すべての製造指図で同じ"
 msgid "Save"
 msgstr "保存"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "編集中のフォームを保存"
 
@@ -1802,6 +1830,9 @@ msgstr "スキャン"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "追跡対象をスキャンして、最初のサンプル列を追加します。"
+
+msgid "Scan or enter a serial"
+msgstr ""
 
 msgid "Scan or enter serial number"
 msgstr "シリアル番号をスキャンまたは入力"
@@ -1883,6 +1914,9 @@ msgstr "選択"
 
 msgid "Select a completion quantity"
 msgstr "完了数量を選択"
+
+msgid "Select a customer"
+msgstr ""
 
 msgid "Select a rework quantity"
 msgstr "手直し数量を選択"
@@ -1998,6 +2032,9 @@ msgstr "キーボードショートカットを表示"
 msgid "Shuffle"
 msgstr "シャッフル"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインしてください。パスキーはFace ID、Touch ID、またはデバイスPINで保護されています。"
 
@@ -2019,8 +2056,17 @@ msgstr "サインアウト"
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
 msgstr "署名パッド"
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
@@ -2049,6 +2095,9 @@ msgstr "開始"
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
 msgstr "{0}を開始"
+
+msgid "Start Job"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "工程を開始 / 一時停止"
@@ -2108,6 +2157,9 @@ msgstr "匿名で提出"
 msgid "Submit week"
 msgstr "週を提出"
 
+msgid "Suggested coverage"
+msgstr ""
+
 msgid "Suggestion"
 msgstr "提案"
 
@@ -2144,6 +2196,9 @@ msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っ
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "日付がエントリー期間前です。理由はエントリーと共に保持されます。"
+
+msgid "The job opens with your clock running."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "このランを構成する製造指図と部品"

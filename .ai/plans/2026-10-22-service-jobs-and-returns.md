@@ -101,7 +101,7 @@ Phase 1 — RMA and the depot service job
 - [x] Task 24: Wire Complete, Reopen, coverage change and Create Invoice
 - [x] Task 25: Re-home the customer assets
 - [x] Task 26: Rebuild the RMA line: return type, assets, next steps
-- [ ] Task 27: Seed service jobs in the demo datasets
+- [x] Task 27: Seed service jobs in the demo datasets
 
 Phase 2 — MES, My Time and the dispatch grid
 

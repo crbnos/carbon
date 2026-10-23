@@ -175,6 +175,9 @@ msgstr "인증 앱 추가"
 msgid "Add Inventory"
 msgstr "재고 추가"
 
+msgid "Add Part"
+msgstr ""
+
 msgid "Add Passkey"
 msgstr "패스키 추가"
 
@@ -780,6 +783,9 @@ msgstr "저장 단위를 불러오지 못했습니다"
 msgid "Failed to get options"
 msgstr "옵션을 불러올 수 없습니다."
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "계측기 기록 실패"
 
@@ -794,6 +800,9 @@ msgstr "결과 저장 실패"
 
 msgid "Failed to save the hours"
 msgstr "시간 저장 실패"
+
+msgid "Failed to save the signature"
+msgstr ""
 
 msgid "Failed to submit the week"
 msgstr "주 제출 실패"
@@ -1184,6 +1193,9 @@ msgstr "추가 작업"
 msgid "More options"
 msgstr "추가 옵션"
 
+msgid "More than one unit has this serial. Choose one."
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "열 이동: {0}"
@@ -1217,6 +1229,9 @@ msgstr ""
 
 msgid "New Record"
 msgstr "새 레코드"
+
+msgid "New Service Job"
+msgstr ""
 
 msgid "Newest first"
 msgstr "최신순"
@@ -1259,6 +1274,10 @@ msgstr "가용 추적 항목을 찾을 수 없습니다"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
+
+#. placeholder {0}: lookup.serial
+msgid "No customer asset has the serial {0}. Choose the customer."
+msgstr ""
 
 msgid "No dispatches assigned to you"
 msgstr "당신에게 할당된 유지보수 지시가 없습니다"
@@ -1373,6 +1392,9 @@ msgstr "존재하는 작업장이 없습니다"
 
 msgid "None"
 msgstr "없음"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Notes"
 msgstr "메모"
@@ -1630,6 +1652,9 @@ msgstr "프린터 설정"
 msgid "Priority"
 msgstr "우선순위"
 
+msgid "Problem"
+msgstr ""
+
 msgid "Procedure"
 msgstr "절차서"
 
@@ -1794,6 +1819,9 @@ msgstr "모든 작업 지시에 동일"
 msgid "Save"
 msgstr "저장"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
 
@@ -1802,6 +1830,9 @@ msgstr "스캔"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "첫 번째 샘플 열을 추가하려면 추적 대상을 스캔하세요."
+
+msgid "Scan or enter a serial"
+msgstr ""
 
 msgid "Scan or enter serial number"
 msgstr "시리얼 번호를 스캔하거나 입력하세요"
@@ -1883,6 +1914,9 @@ msgstr "선택"
 
 msgid "Select a completion quantity"
 msgstr "완료 수량을 선택하세요"
+
+msgid "Select a customer"
+msgstr ""
 
 msgid "Select a rework quantity"
 msgstr "재작업 수량을 선택하세요"
@@ -1998,6 +2032,9 @@ msgstr "키보드 바로가기 표시"
 msgid "Shuffle"
 msgstr "섞기"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "매직 링크 대신 생체 인식으로 로그인하십시오. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
 
@@ -2019,8 +2056,17 @@ msgstr "로그아웃"
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
 msgstr "서명 패드"
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
@@ -2049,6 +2095,9 @@ msgstr "시작"
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
 msgstr "{0} 시작"
+
+msgid "Start Job"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
@@ -2108,6 +2157,9 @@ msgstr "익명으로 제출"
 msgid "Submit week"
 msgstr "주 제출"
 
+msgid "Suggested coverage"
+msgstr ""
+
 msgid "Suggestion"
 msgstr "제안"
 
@@ -2144,6 +2196,9 @@ msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보�
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 보관됩니다."
+
+msgid "The job opens with your clock running."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."

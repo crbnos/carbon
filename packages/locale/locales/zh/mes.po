@@ -175,6 +175,9 @@ msgstr "添加身份验证应用"
 msgid "Add Inventory"
 msgstr "添加库存管理"
 
+msgid "Add Part"
+msgstr ""
+
 msgid "Add Passkey"
 msgstr "添加通行密钥"
 
@@ -780,6 +783,9 @@ msgstr "获取存储单位失败"
 msgid "Failed to get options"
 msgstr "获取选项失败"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "无法记录量具"
 
@@ -794,6 +800,9 @@ msgstr "无法保存结果"
 
 msgid "Failed to save the hours"
 msgstr "工时保存失败"
+
+msgid "Failed to save the signature"
+msgstr ""
 
 msgid "Failed to submit the week"
 msgstr "周提交失败"
@@ -1184,6 +1193,9 @@ msgstr "更多操作"
 msgid "More options"
 msgstr "更多选项"
 
+msgid "More than one unit has this serial. Choose one."
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "移动列：{0}"
@@ -1217,6 +1229,9 @@ msgstr ""
 
 msgid "New Record"
 msgstr "新记录"
+
+msgid "New Service Job"
+msgstr ""
 
 msgid "Newest first"
 msgstr "最新优先"
@@ -1259,6 +1274,10 @@ msgstr "未找到可用的追踪实体"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
+
+#. placeholder {0}: lookup.serial
+msgid "No customer asset has the serial {0}. Choose the customer."
+msgstr ""
 
 msgid "No dispatches assigned to you"
 msgstr "没有分配给您的维护工单"
@@ -1373,6 +1392,9 @@ msgstr "无工作中心"
 
 msgid "None"
 msgstr "无"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Notes"
 msgstr "备注"
@@ -1630,6 +1652,9 @@ msgstr "打印机设置"
 msgid "Priority"
 msgstr "优先级"
 
+msgid "Problem"
+msgstr ""
+
 msgid "Procedure"
 msgstr "程序文件"
 
@@ -1794,6 +1819,9 @@ msgstr "对所有工单相同"
 msgid "Save"
 msgstr "保存"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "保存您正在编辑的表单"
 
@@ -1802,6 +1830,9 @@ msgstr "扫码"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "扫码追踪实体以添加第一个样本列。"
+
+msgid "Scan or enter a serial"
+msgstr ""
 
 msgid "Scan or enter serial number"
 msgstr "扫码或输入序列号"
@@ -1883,6 +1914,9 @@ msgstr "选择"
 
 msgid "Select a completion quantity"
 msgstr "选择完成数量"
+
+msgid "Select a customer"
+msgstr ""
 
 msgid "Select a rework quantity"
 msgstr "选择返工数量"
@@ -1998,6 +2032,9 @@ msgstr "显示键盘快捷键"
 msgid "Shuffle"
 msgstr "随机生成"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别功能而非魔法链接登录。通行密钥由 Face ID、Touch ID 或设备 PIN 保护。"
 
@@ -2019,8 +2056,17 @@ msgstr "退出登录"
 msgid "Sign out instead"
 msgstr "改为登出"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
 msgstr "签名板"
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
@@ -2049,6 +2095,9 @@ msgstr "开始"
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
 msgstr "开始 {0}"
+
+msgid "Start Job"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "开始或暂停工序"
@@ -2108,6 +2157,9 @@ msgstr "匿名提交"
 msgid "Submit week"
 msgstr "提交周"
 
+msgid "Suggested coverage"
+msgstr ""
+
 msgid "Suggestion"
 msgstr "建议"
 
@@ -2144,6 +2196,9 @@ msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "日期在输入窗口之前。原因与条目一起保存。"
+
+msgid "The job opens with your clock running."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "组成此次运行的工单和零件。"

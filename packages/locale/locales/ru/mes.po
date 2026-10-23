@@ -175,6 +175,9 @@ msgstr "Добавить приложение аутентификатора"
 msgid "Add Inventory"
 msgstr "Добавить запас"
 
+msgid "Add Part"
+msgstr ""
+
 msgid "Add Passkey"
 msgstr "Добавить ключ доступа"
 
@@ -780,6 +783,9 @@ msgstr "Не удалось получить единицы хранения"
 msgid "Failed to get options"
 msgstr "Не удалось получить параметры"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Не удалось записать средство измерения"
 
@@ -794,6 +800,9 @@ msgstr "Не удалось сохранить результат"
 
 msgid "Failed to save the hours"
 msgstr "Не удалось сохранить часы"
+
+msgid "Failed to save the signature"
+msgstr ""
 
 msgid "Failed to submit the week"
 msgstr "Не удалось отправить неделю"
@@ -1184,6 +1193,9 @@ msgstr "Дополнительные действия"
 msgid "More options"
 msgstr "Дополнительные действия"
 
+msgid "More than one unit has this serial. Choose one."
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Переместить столбец: {0}"
@@ -1217,6 +1229,9 @@ msgstr ""
 
 msgid "New Record"
 msgstr "Новая запись"
+
+msgid "New Service Job"
+msgstr ""
 
 msgid "Newest first"
 msgstr "Новые в первую очередь"
@@ -1259,6 +1274,10 @@ msgstr "Не найдено доступных отслеживаемых объ
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
+
+#. placeholder {0}: lookup.serial
+msgid "No customer asset has the serial {0}. Choose the customer."
+msgstr ""
 
 msgid "No dispatches assigned to you"
 msgstr "Вам не назначены никакие заявки на техобслуживание"
@@ -1373,6 +1392,9 @@ msgstr "Рабочие центры отсутствуют"
 
 msgid "None"
 msgstr "Нет"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Notes"
 msgstr "Примечания"
@@ -1630,6 +1652,9 @@ msgstr "Настройки принтера"
 msgid "Priority"
 msgstr "Приоритет"
 
+msgid "Problem"
+msgstr ""
+
 msgid "Procedure"
 msgstr "Процедура"
 
@@ -1794,6 +1819,9 @@ msgstr "То же самое для всех производственных з
 msgid "Save"
 msgstr "Сохранить"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Сохранить редактируемую форму"
 
@@ -1802,6 +1830,9 @@ msgstr "Сканировать"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Сканировать отслеживаемый объект, чтобы добавить первый столбец образца."
+
+msgid "Scan or enter a serial"
+msgstr ""
 
 msgid "Scan or enter serial number"
 msgstr "Сканировать или ввести серийный номер"
@@ -1883,6 +1914,9 @@ msgstr "Выбрать"
 
 msgid "Select a completion quantity"
 msgstr "Выберите количество готовой продукции"
+
+msgid "Select a customer"
+msgstr ""
 
 msgid "Select a rework quantity"
 msgstr "Выберите количество для доработки"
@@ -1998,6 +2032,9 @@ msgstr "Показать горячие клавиши"
 msgid "Shuffle"
 msgstr "Перемешать"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с помощью биометрии вместо волшебной ссылки. Ключи доступа защищены с помощью Face ID, Touch ID или PIN вашего устройства."
 
@@ -2019,8 +2056,17 @@ msgstr "Выйти"
 msgid "Sign out instead"
 msgstr "Вместо этого выйдите"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
 msgstr "Подпись"
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Вход выполнен как {stationName}"
@@ -2049,6 +2095,9 @@ msgstr "Старт"
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
 msgstr "Начать {0}"
+
+msgid "Start Job"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "Запустить или приостановить операцию"
@@ -2108,6 +2157,9 @@ msgstr "Отправить анонимно"
 msgid "Submit week"
 msgstr "Отправить неделю"
 
+msgid "Suggested coverage"
+msgstr ""
+
 msgid "Suggestion"
 msgstr "Предложение"
 
@@ -2144,6 +2196,9 @@ msgstr "Количество готовой продукции по этой о�
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "Дата находится перед окном ввода. Причина хранится с записью."
+
+msgid "The job opens with your clock running."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Производственные заказы и детали, которые составляют этот запуск."

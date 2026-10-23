@@ -280,6 +280,18 @@ export const SERVICES: ItemSpec[] = [
     description:
       "Calibration scheduling and recall tracking for customer-owned gauges.",
     standardCost: 650
+  },
+  {
+    // The service jobs' labor item (sales.serviceLaborItem): cost and bill
+    // rate per hour. No bundled thumbnail.
+    readableId: "Service Technician",
+    name: "Service Technician",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Bench and on-site work on a customer's manifold, billed by the hour.",
+    standardCost: 54,
+    unitSalePrice: 125
   }
 ];
 

@@ -283,6 +283,18 @@ export const SERVICES: ItemSpec[] = [
     description:
       "Vibration and thermal trend monitoring for installed drive motors.",
     standardCost: 480
+  },
+  {
+    // The service jobs' labor item (sales.serviceLaborItem): cost and bill
+    // rate per hour. No bundled thumbnail.
+    readableId: "Service Technician",
+    name: "Service Technician",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Bench and on-site work on a customer's motor, billed by the hour.",
+    standardCost: 58,
+    unitSalePrice: 135
   }
 ];
 

@@ -14,6 +14,7 @@ import type {
   SalesOpportunitySpec,
   SalesReturnSpec,
   SalesStatusOrderSpec,
+  ServiceJobSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
 
@@ -953,8 +954,10 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
   },
   {
     // A unit back for repair: SAT-1000-S013, the "expired" customer asset.
+    // Received, so its service job (SERVICE_JOBS "bus-repair") is open and
+    // the RMA is In Progress.
     key: "bus-repair",
-    status: "To Receive",
+    status: "In Progress",
     customer: "Apex Space Research",
     returnReason: "Defective",
     dateOffset: -3,
@@ -962,7 +965,10 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
       {
         item: "SAT-1000",
         quantity: 1,
-        unitPrice: 1800000
+        unitPrice: 1800000,
+        returnType: "Return for Service",
+        asset: "expired",
+        problem: "Reaction wheel telemetry drops out above 40 °C."
       }
     ]
   },
@@ -1062,6 +1068,159 @@ export const CUSTOMER_ASSETS: CustomerAssetSpec[] = [
   }
 ];
 
+// Service jobs: one per status the job page and the RMA show. The Open job is
+// the one the "bus-repair" RMA receipt created; Completed and Invoiced carry
+// their completion journal (tier 09), and Invoiced its Draft invoice. No parts:
+// an issued part needs the issue posting's ledger, cost and journal rows.
+export const SERVICE_JOBS: ServiceJobSpec[] = [
+  {
+    key: "bus-repair",
+    status: "Open",
+    coverage: "Billable",
+    workSite: "Depot",
+    priority: "High",
+    asset: "expired",
+    salesReturnLine: { salesReturn: "bus-repair", line: 1 },
+    problem: "Reaction wheel telemetry drops out above 40 °C.",
+    time: [],
+    charges: []
+  },
+  {
+    key: "estimate",
+    status: "Awaiting Approval",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 6,
+    dueOffset: 10,
+    problem:
+      "S-band downlink margin is 3 dB below the link budget on every pass.",
+    findings:
+      "The feed cable connector at the antenna panel is corroded. The patch antenna tests in specification.",
+    repairable: true,
+    estimate: {
+      status: "Sent",
+      sentWorkdaysBack: 3,
+      lines: [
+        { item: "Field Service Engineer", quantity: 12, unitPrice: 225 },
+        {
+          item: "Thermal Vacuum Test",
+          description: "Post-repair thermal vacuum requalification",
+          quantity: 1,
+          unitPrice: 12750
+        }
+      ]
+    },
+    time: [
+      {
+        workdaysBack: 4,
+        hours: 3,
+        note: "On-site VNA sweep of the feed path"
+      }
+    ],
+    charges: []
+  },
+  {
+    key: "on-site",
+    status: "In Progress",
+    coverage: "Warranty",
+    workSite: "Customer Site",
+    priority: "High",
+    asset: "in-warranty",
+    openedWorkdaysBack: 3,
+    dueOffset: 4,
+    problem: "The star tracker loses lock during eclipse transitions.",
+    findings:
+      "Stray light from the solar array edge reaches the baffle at one sun angle.",
+    repairable: true,
+    time: [
+      {
+        workdaysBack: 2,
+        hours: 3.5,
+        clock: { start: "08:00:00", end: "11:30:00" },
+        note: "Reproduced the loss of lock on the customer's flatsat"
+      },
+      {
+        workdaysBack: 1,
+        hours: 4,
+        note: "Fitted the extended baffle and re-ran the eclipse profile"
+      }
+    ],
+    charges: []
+  },
+  {
+    key: "warranty-repair",
+    status: "Completed",
+    coverage: "Warranty",
+    workSite: "Depot",
+    priority: "Medium",
+    asset: "in-warranty",
+    openedWorkdaysBack: 30,
+    problem: "The battery heater cycles too often in thermal vacuum.",
+    findings:
+      "The heater controller setpoint band is 0.5 °C, tighter than the specification.",
+    resolution:
+      "Reset the setpoint band to 2 °C and ran a 24-hour thermal soak with no fault.",
+    repairable: true,
+    time: [
+      { workdaysBack: 28, hours: 5 },
+      { workdaysBack: 27, hours: 3.5 }
+    ],
+    charges: [],
+    completedWorkdaysBack: 27
+  },
+  {
+    key: "invoiced",
+    status: "Invoiced",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 18,
+    problem: "The solar array drive stalls at one end of travel.",
+    findings: "The limit switch bracket has worked loose and trips early.",
+    resolution:
+      "Re-torqued the bracket, set the limit switch and ran a full travel test.",
+    repairable: true,
+    estimate: {
+      status: "Accepted",
+      sentWorkdaysBack: 16,
+      respondedWorkdaysBack: 15,
+      respondedBy: "Sofia Lindqvist",
+      lines: [
+        { item: "Field Service Engineer", quantity: 8, unitPrice: 225 },
+        {
+          item: "Thermal Vacuum Test",
+          description: "Post-repair thermal vacuum requalification",
+          quantity: 1,
+          unitPrice: 12750
+        }
+      ]
+    },
+    time: [
+      { workdaysBack: 14, hours: 4 },
+      { workdaysBack: 13, hours: 3.5 },
+      {
+        workdaysBack: 13,
+        hours: 1,
+        billable: false,
+        note: "Travel to site, not billed"
+      }
+    ],
+    charges: [
+      {
+        item: "Thermal Vacuum Test",
+        description: "Post-repair thermal vacuum requalification",
+        quantity: 1,
+        unitPrice: 12750
+      }
+    ],
+    completedWorkdaysBack: 12,
+    invoiceWorkdaysBack: 11
+  }
+];
+
 export const satelliteSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1113,5 +1272,7 @@ export const satelliteSales: SalesData = {
       isPrimary: true
     }
   ],
-  customerAssets: CUSTOMER_ASSETS
+  customerAssets: CUSTOMER_ASSETS,
+  serviceLaborItem: "Field Service Engineer",
+  serviceJobs: SERVICE_JOBS
 };

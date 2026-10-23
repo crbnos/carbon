@@ -18,12 +18,24 @@ import {
   horizon,
   planInvoiceSchedule
 } from "../../contract-schedule.ts";
-import { resolveDate, resolveTimestamp } from "../dates.ts";
+import { round } from "../../precision.ts";
+import {
+  resolveDate,
+  resolveLocalTimestamp,
+  resolveTimestamp,
+  workdayBefore
+} from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import { copyMethodToQuoteLine } from "../helpers/method-copy.ts";
 import { seedReturnCredit } from "../helpers/return-credit.ts";
 import { insertId, insertRow, need, nextSequence, RICH } from "../sql.ts";
-import type { Ctx, PriceBreak, SalesOpportunitySpec } from "../types.ts";
+import type {
+  Ctx,
+  PriceBreak,
+  SalesOpportunitySpec,
+  SalesReturnLineSpec,
+  ServiceJobSpec
+} from "../types.ts";
 
 async function insertPriceBreaks(
   ctx: Ctx,
@@ -61,18 +73,25 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   // already exists and only needs the digital-quote flags flipped on. Without
   // digitalQuoteEnabled the public quote page renders no Accept/Reject buttons,
   // and without digitalQuoteIncludesPurchaseOrders the PO-upload field is gone.
-  ctx.log("company settings — digital quotes enabled");
+  // The service labor item is the default every new service job time entry
+  // names (tier 02 created it).
+  ctx.log("company settings — digital quotes enabled, service labor item");
   await insertRow(
     ctx,
     "companySettings",
     {
       id: companyId,
       digitalQuoteEnabled: true,
-      digitalQuoteIncludesPurchaseOrders: true
+      digitalQuoteIncludesPurchaseOrders: true,
+      serviceLaborItemId: need(
+        ctx.refs.items,
+        data.serviceLaborItem,
+        "service labor item"
+      ).id
     },
     {
       onConflict:
-        '("id") DO UPDATE SET "digitalQuoteEnabled" = true, "digitalQuoteIncludesPurchaseOrders" = true'
+        '("id") DO UPDATE SET "digitalQuoteEnabled" = true, "digitalQuoteIncludesPurchaseOrders" = true, "serviceLaborItemId" = EXCLUDED."serviceLaborItemId"'
     }
   );
 
@@ -475,9 +494,15 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     await insertOpportunity(spec);
   }
 
-  // Completed mirrors post-receipt's Sales Return Order branch: a Posted receipt
-  // plus a Sales Return Receipt ledger row per line. A `credit` adds Issue
-  // Credit's memo (helpers/return-credit.ts); tier 09 journals it if Posted.
+  // Before the returns: a Service or Warranty line names its asset.
+  await seedCustomerAssets(ctx);
+
+  // In Progress and Completed mirror post-receipt's Sales Return Order branch:
+  // a Posted receipt plus a Sales Return Receipt ledger row per Return to Stock
+  // line. A Service or Warranty line enters no stock (receipt-service-return.ts):
+  // no ledger row, its asset goes At Depot, and seedServiceJobs creates its job.
+  // A `credit` adds Issue Credit's memo (helpers/return-credit.ts); tier 09
+  // journals it if Posted.
   if (data.salesReturns.length > 0) {
     ctx.log("sales returns");
     for (const spec of data.salesReturns) {
@@ -493,7 +518,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         "returnReason",
         spec.returnReason
       );
-      const completed = spec.status === "Completed";
+      const received =
+        spec.status === "Completed" || spec.status === "In Progress";
       const orderDate = resolveDate(ctx.anchor, spec.dateOffset);
       const rmaReadableId = await nextSequence(ctx, "salesReturnOrder");
       const rmaId = await insertId(ctx, "salesReturnOrder", {
@@ -518,16 +544,22 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           itemId: item.id,
           lineNumber: index + 1,
           quantity: line.quantity,
-          quantityReceived: completed ? line.quantity : 0,
+          quantityReceived: received ? line.quantity : 0,
           returnReasonId,
           unitOfMeasureCode: "EA",
-          unitPrice: line.unitPrice
+          unitPrice: line.unitPrice,
+          returnType: line.returnType,
+          customerAssetId:
+            line.asset === undefined
+              ? undefined
+              : need(ctx.refs.misc, `asset:${line.asset}`, "customer asset"),
+          problem: line.problem
         });
         lineIds.push(lineId);
         ctx.refs.documents[`rmaline:${spec.key}:${index + 1}`] = lineId;
       }
 
-      if (completed) {
+      if (received) {
         const receiptReadableId = await nextSequence(ctx, "receipt");
         const receiptId = await insertId(ctx, "receipt", {
           receiptId: receiptReadableId,
@@ -541,9 +573,30 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         });
         for (const [index, line] of spec.lines.entries()) {
           const item = need(ctx.refs.items, line.item);
+          if (isServiceLine(line)) {
+            await insertId(ctx, "receiptLine", {
+              receiptId,
+              lineId: lineIds[index],
+              itemId: item.id,
+              orderQuantity: line.quantity,
+              outstandingQuantity: 0,
+              receivedQuantity: line.quantity,
+              locationId: plantId,
+              unitOfMeasure: "EA",
+              unitPrice: line.unitPrice
+            });
+            if (line.asset !== undefined) {
+              await ctx.client.query(
+                `UPDATE "customerAsset" SET status = 'At Depot'
+                 WHERE id = $1 AND "companyId" = $2`,
+                [need(ctx.refs.misc, `asset:${line.asset}`), companyId]
+              );
+            }
+            continue;
+          }
           if (line.toShelf === undefined) {
             throw new Error(
-              `Seed: completed return "${spec.key}" line "${line.item}" has no toShelf`
+              `Seed: received return "${spec.key}" line "${line.item}" has no toShelf`
             );
           }
           const shelfId = need(ctx.refs.shelves, line.toShelf);
@@ -573,6 +626,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           });
         }
         ctx.refs.documents[`rma-receipt:${spec.key}`] = receiptId;
+        ctx.refs.misc[`rma-receipt-readable:${spec.key}`] = receiptReadableId;
       }
 
       if (spec.credit) {
@@ -859,7 +913,14 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     userId
   });
 
-  await seedCustomerAssets(ctx);
+  await seedServiceJobs(ctx);
+}
+
+function isServiceLine(line: SalesReturnLineSpec): boolean {
+  return (
+    line.returnType === "Return for Service" ||
+    line.returnType === "Return for Warranty"
+  );
 }
 
 /**
@@ -902,4 +963,327 @@ async function seedCustomerAssets(ctx: Ctx): Promise<void> {
       source: "Manual"
     });
   }
+}
+
+/**
+ * Service jobs, as the app leaves them (`service.service.ts`):
+ * - a job from an RMA line is created Open at the receipt by
+ *   `createServiceJobsForReturn` (receipt-service-return.ts), with its
+ *   `Return Receipt` activity on the asset's serial;
+ * - time entries are the employee's, on the labor item; a Completed or
+ *   Invoiced job stores each entry's cost (`postServiceJob` complete), and
+ *   tier 09 writes the completion journal;
+ * - an Invoiced job has the Draft invoice `createServiceInvoice` drafts: one
+ *   line per labor item (billable hours × its sale price), then each billable
+ *   charge, every line with `serviceJobId`, tax 0.
+ */
+async function seedServiceJobs(ctx: Ctx): Promise<void> {
+  const data = ctx.dataset.sales;
+  if (data.serviceJobs.length === 0) return;
+  const { companyId, userId } = ctx;
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+  const labor = need(ctx.refs.items, data.serviceLaborItem, "labor item");
+  const laborSalePrice = Number(
+    (
+      await ctx.client.query<{ unitSalePrice: string | null }>(
+        `SELECT "unitSalePrice" FROM "itemUnitSalePrice"
+         WHERE "itemId" = $1 AND "companyId" = $2`,
+        [labor.id, companyId]
+      )
+    ).rows[0]?.unitSalePrice ?? 0
+  );
+  const assetByKey = Object.fromEntries(
+    data.customerAssets.map((asset) => [asset.key, asset])
+  );
+  const returnByKey = Object.fromEntries(
+    data.salesReturns.map((rma) => [rma.key, rma])
+  );
+  const day = (workdaysBack: number) => workdayBefore(ctx.anchor, workdaysBack);
+  const at = (date: string, timeOfDay: string) =>
+    resolveLocalTimestamp(date, timeOfDay, ctx.timeZone);
+
+  for (const spec of data.serviceJobs) {
+    ctx.log(`service job ${spec.key} — ${spec.status}`);
+    const asset = need(assetByKey, spec.asset, "customer asset");
+    const customerId = need(ctx.refs.customers, asset.customer, "customer");
+    const customerLocationId = need(
+      ctx.refs.misc,
+      `cloc:${asset.customer}`,
+      "customer location"
+    );
+    const rma = spec.salesReturnLine;
+    // A job from an RMA line opens at the receipt.
+    const openedDate =
+      rma === undefined
+        ? day(spec.openedWorkdaysBack ?? 0)
+        : resolveDate(
+            ctx.anchor,
+            need(returnByKey, rma.salesReturn, "sales return").dateOffset
+          );
+    const done = spec.status === "Completed" || spec.status === "Invoiced";
+    const completedDate =
+      spec.completedWorkdaysBack === undefined
+        ? undefined
+        : day(spec.completedWorkdaysBack);
+    const estimate = spec.estimate;
+
+    const serviceJobId = await nextSequence(ctx, "serviceJob");
+    const jobId = await insertId(ctx, "serviceJob", {
+      serviceJobId,
+      status: spec.status,
+      coverage: spec.coverage,
+      workSite: spec.workSite,
+      billingMethod: "Time and Materials",
+      priority: spec.priority,
+      customerId,
+      customerLocationId,
+      customerAssetId: need(ctx.refs.misc, `asset:${spec.asset}`),
+      itemId: need(ctx.refs.items, asset.item, "item").id,
+      trackedEntityId: need(ctx.refs.misc, `asset-serial:${spec.asset}`),
+      locationId: plantId,
+      salesReturnOrderLineId:
+        rma === undefined
+          ? undefined
+          : need(
+              ctx.refs.documents,
+              `rmaline:${rma.salesReturn}:${rma.line}`,
+              "sales return line"
+            ),
+      // The receipt assigns nobody; an office job is the user's.
+      assignee: rma === undefined ? userId : undefined,
+      dueDate:
+        spec.dueOffset === undefined
+          ? undefined
+          : resolveDate(ctx.anchor, spec.dueOffset),
+      problem: spec.problem,
+      findings: spec.findings === undefined ? undefined : RICH(spec.findings),
+      resolution:
+        spec.resolution === undefined ? undefined : RICH(spec.resolution),
+      repairable: spec.repairable,
+      estimateStatus: estimate?.status,
+      estimateSentAt:
+        estimate?.sentWorkdaysBack === undefined
+          ? undefined
+          : at(day(estimate.sentWorkdaysBack), "15:00:00"),
+      estimateRespondedAt:
+        estimate?.respondedWorkdaysBack === undefined
+          ? undefined
+          : at(day(estimate.respondedWorkdaysBack), "10:00:00"),
+      estimateRespondedBy: estimate?.respondedBy,
+      completedAt:
+        completedDate === undefined ? undefined : at(completedDate, "16:30:00"),
+      createdAt: at(openedDate, "09:00:00")
+    });
+    ctx.refs.documents[`sj:${spec.key}`] = jobId;
+    ctx.refs.misc[`sj-readable:${spec.key}`] = serviceJobId;
+
+    for (const [index, line] of (estimate?.lines ?? []).entries()) {
+      const item = need(ctx.refs.items, line.item, "item");
+      await insertRow(ctx, "serviceJobEstimateLine", {
+        serviceJobId: jobId,
+        itemId: item.id,
+        description: line.description ?? item.name,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        sortOrder: index + 1
+      });
+    }
+
+    for (const entry of spec.time) {
+      const entryDate = day(entry.workdaysBack);
+      await insertRow(ctx, "serviceJobTime", {
+        serviceJobId: jobId,
+        employeeId: userId,
+        laborItemId: labor.id,
+        entryDate,
+        startTime:
+          entry.clock === undefined
+            ? undefined
+            : at(entryDate, entry.clock.start),
+        endTime:
+          entry.clock === undefined
+            ? undefined
+            : at(entryDate, entry.clock.end),
+        hours: entry.hours,
+        billable: entry.billable ?? true,
+        // Stored by post-service-job complete: the labor item's unit cost.
+        unitCost: done ? labor.unitCost : undefined,
+        note: entry.note,
+        createdAt: at(entryDate, "17:00:00")
+      });
+    }
+
+    for (const charge of spec.charges) {
+      const item = need(ctx.refs.items, charge.item, "item");
+      await insertRow(ctx, "serviceJobItem", {
+        serviceJobId: jobId,
+        lineType: "Charge",
+        itemId: item.id,
+        description: charge.description ?? item.name,
+        quantity: charge.quantity,
+        unitOfMeasureCode: item.unitOfMeasureCode,
+        unitCost: 0,
+        unitPrice: charge.unitPrice,
+        billable: charge.billable ?? true
+      });
+    }
+
+    // createServiceJobsForReturn: the Return Receipt activity on the serial.
+    if (rma !== undefined) {
+      const activityId = await insertId(ctx, "trackedActivity", {
+        type: "Return Receipt",
+        sourceDocument: "Receipt",
+        sourceDocumentId: need(
+          ctx.refs.documents,
+          `rma-receipt:${rma.salesReturn}`,
+          "return receipt"
+        ),
+        sourceDocumentReadableId: need(
+          ctx.refs.misc,
+          `rma-receipt-readable:${rma.salesReturn}`
+        ),
+        attributes: JSON.stringify({
+          "Sales Return Order": need(
+            ctx.refs.documents,
+            `rma:${rma.salesReturn}`
+          ),
+          Receipt: need(ctx.refs.documents, `rma-receipt:${rma.salesReturn}`),
+          Employee: userId,
+          "At Depot": true,
+          "Service Job": jobId
+        }),
+        createdAt: openedDate
+      });
+      await insertRow(ctx, "trackedActivityOutput", {
+        trackedActivityId: activityId,
+        trackedEntityId: need(ctx.refs.misc, `asset-serial:${spec.asset}`),
+        quantity: 1,
+        createdAt: openedDate
+      });
+    }
+
+    if (spec.status === "Invoiced") {
+      await insertServiceInvoice(ctx, spec, {
+        jobId,
+        serviceJobId,
+        customerId,
+        customerLocationId,
+        plantId,
+        labor: {
+          id: labor.id,
+          name: labor.name,
+          unitOfMeasureCode: labor.unitOfMeasureCode,
+          salePrice: laborSalePrice
+        }
+      });
+    }
+  }
+}
+
+/** createServiceInvoice's Draft invoice of one Invoiced job. */
+async function insertServiceInvoice(
+  ctx: Ctx,
+  spec: ServiceJobSpec,
+  args: {
+    jobId: string;
+    serviceJobId: string;
+    customerId: string;
+    customerLocationId: string;
+    plantId: string;
+    labor: {
+      id: string;
+      name: string;
+      unitOfMeasureCode: string;
+      salePrice: number;
+    };
+  }
+): Promise<void> {
+  if (spec.invoiceWorkdaysBack === undefined) {
+    throw new Error(
+      `Seed: Invoiced service job "${spec.key}" has no invoice day`
+    );
+  }
+  const billableHours = round(
+    spec.time
+      .filter((entry) => entry.billable ?? true)
+      .reduce((sum, entry) => sum + entry.hours, 0)
+  );
+  const lines = [
+    ...(billableHours > 0
+      ? [
+          {
+            itemId: args.labor.id,
+            description: args.labor.name,
+            quantity: billableHours,
+            unitPrice: round(args.labor.salePrice),
+            unitOfMeasureCode: args.labor.unitOfMeasureCode
+          }
+        ]
+      : []),
+    ...spec.charges
+      .filter((charge) => charge.billable ?? true)
+      .map((charge) => {
+        const item = need(ctx.refs.items, charge.item, "item");
+        return {
+          itemId: item.id,
+          description: charge.description ?? item.name,
+          quantity: charge.quantity,
+          unitPrice: round(charge.unitPrice),
+          unitOfMeasureCode: item.unitOfMeasureCode
+        };
+      })
+  ];
+  if (lines.length === 0) {
+    throw new Error(`Seed: Invoiced service job "${spec.key}" bills nothing`);
+  }
+  const subtotal = round(
+    lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+  );
+  const dateIssued = workdayBefore(ctx.anchor, spec.invoiceWorkdaysBack);
+  const opportunityId = await insertId(ctx, "opportunity", {
+    customerId: args.customerId
+  });
+  const invoiceId = await insertId(ctx, "salesInvoice", {
+    invoiceId: await nextSequence(ctx, "salesInvoice"),
+    status: "Draft",
+    customerId: args.customerId,
+    invoiceCustomerId: args.customerId,
+    locationId: args.plantId,
+    paymentTermId: ctx.refs.misc.paymentTermId,
+    currencyCode: "USD",
+    exchangeRate: 1,
+    customerReference: args.serviceJobId,
+    dateIssued,
+    subtotal,
+    totalDiscount: 0,
+    totalTax: 0,
+    totalAmount: subtotal,
+    opportunityId
+  });
+  await insertRow(ctx, "salesInvoiceShipment", {
+    id: invoiceId,
+    locationId: args.plantId,
+    customerLocationId: args.customerLocationId,
+    shippingCost: 0
+  });
+  for (const [index, line] of lines.entries()) {
+    await insertRow(ctx, "salesInvoiceLine", {
+      invoiceId,
+      invoiceLineType: "Service",
+      itemId: line.itemId,
+      description: line.description,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      unitOfMeasureCode: line.unitOfMeasureCode,
+      taxPercent: 0,
+      exchangeRate: 1,
+      locationId: args.plantId,
+      serviceJobId: args.jobId,
+      sortOrder: index + 1
+    });
+  }
+  await ctx.client.query(
+    `UPDATE "serviceJob" SET "salesInvoiceId" = $1 WHERE id = $2 AND "companyId" = $3`,
+    [invoiceId, args.jobId, ctx.companyId]
+  );
 }

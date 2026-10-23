@@ -312,7 +312,8 @@ const DOCUMENT_JOURNAL_SOURCES = [
   "Purchase Receipt",
   "Sales Shipment",
   "Inventory Adjustment",
-  "Reimbursement"
+  "Reimbursement",
+  "Service Job"
 ];
 
 /**
@@ -343,6 +344,7 @@ async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
              UNION ALL SELECT id FROM receipt WHERE "companyId" = $1
              UNION ALL SELECT id FROM shipment WHERE "companyId" = $1
              UNION ALL SELECT id FROM "reimbursement" WHERE "companyId" = $1
+             UNION ALL SELECT id FROM "serviceJob" WHERE "companyId" = $1
              UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1))
          -- a zero-cash payment's journal has no lines to match on
          OR j.id IN (SELECT "journalId" FROM payment WHERE "companyId" = $1)

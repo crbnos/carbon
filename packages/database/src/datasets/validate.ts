@@ -43,6 +43,7 @@ import {
   receiptJournal,
   salesInvoiceJournal,
   scrapJournal,
+  serviceJobCompletionJournal,
   shipmentJournal,
   signedNet,
   voidJournal
@@ -70,7 +71,11 @@ import type {
   ReturnCreditSpec,
   RuleConditionValue,
   RuleOperator,
-  SalesOpportunitySpec
+  SalesOpportunitySpec,
+  SalesReturnLineSpec,
+  SalesReturnSpec,
+  ServiceJobLineSpec,
+  ServiceJobSpec
 } from "./types.ts";
 
 export const OPEN_JOB_STATUSES = new Set([
@@ -210,12 +215,16 @@ export const COVERAGE = {
   },
   salesReturn: {
     values: enumValues("salesReturnOrderStatus", {
-      Cancelled: OPTIONAL,
-      // Remove when the datasets seed service jobs (service jobs plan, Task 27).
-      "In Progress":
-        "needs a received Service or Warranty line with an open service job, which the datasets do not seed yet"
+      Cancelled: OPTIONAL
     }),
     missing: matrix("sales status matrix", "salesReturn with status")
+  },
+  serviceJob: {
+    values: enumValues("serviceJobStatus", {
+      "On Hold": OPTIONAL,
+      Cancelled: OPTIONAL
+    }),
+    missing: matrix("field service matrix", "serviceJob with status")
   },
   arAgingBucket: {
     // get_ar_aging's default buckets, by days past due as of today.
@@ -705,6 +714,9 @@ export function documentRefs(dataset: Dataset): DocumentRefs {
     register(`sales.salesReturns "${rma.key}"`, `rma:${rma.key}`);
     seenBy.salesReturns.push(count);
   }
+  for (const job of sales.serviceJobs) {
+    register(`sales.serviceJobs "${job.key}"`, `sj:${job.key}`);
+  }
 
   const p = dataset.purchasing;
   for (const quote of p.rfqQuotes) {
@@ -955,8 +967,9 @@ export function onHandLedger(
   for (const spec of dataset.sales.opportunities) shipped(spec);
   for (const spec of dataset.sales.releasedOrders) shipped(spec);
   for (const rma of dataset.sales.salesReturns) {
-    if (rma.status !== "Completed") continue;
+    if (!isReceivedReturn(rma)) continue;
     for (const line of rma.lines) {
+      if (isServiceReturnLine(line)) continue;
       if (line.toShelf !== undefined && shelves.has(line.toShelf)) {
         add(line.item, line.toShelf, line.quantity);
       }
@@ -2334,6 +2347,282 @@ export function netOnHand(ctx: ValidationCtx): void {
 /** Today's warranty states every dataset shows on the asset list. */
 const WARRANTY_STATES = ["In warranty", "Labor ended", "Expired"] as const;
 
+/** In Progress and Completed RMAs are fully received (tier 04 posts their receipt). */
+function isReceivedReturn(rma: SalesReturnSpec): boolean {
+  return rma.status === "In Progress" || rma.status === "Completed";
+}
+
+/** A Service or Warranty line is serviced, not restocked. */
+function isServiceReturnLine(line: SalesReturnLineSpec): boolean {
+  return (
+    line.returnType === "Return for Service" ||
+    line.returnType === "Return for Warranty"
+  );
+}
+
+/**
+ * The most calendar days `workdaysBack` working days can span (two weekend
+ * days per started week, plus a weekend anchor). Only an upper bound: the
+ * pure validator has no anchor.
+ */
+function maxCalendarDaysBack(workdaysBack: number): number {
+  return workdaysBack + 2 * Math.ceil(workdaysBack / 5) + 2;
+}
+
+const DONE_SERVICE_JOB_STATUSES = new Set(["Completed", "Invoiced"]);
+
+/**
+ * Service jobs: each names a seeded asset and bills the dataset's labor item
+ * (a Service item with a cost and a sale price). A job from an RMA line names
+ * a received Service or Warranty line of the asset's unit, with the coverage
+ * that return type gives it, and every such line has exactly one job; an In
+ * Progress RMA has a job that is not done. Dates follow the job: time on or
+ * after opening, completion after the last entry and in an open period, the
+ * invoice after completion. Completed and Invoiced jobs post a balanced
+ * completion journal; an Invoiced job is Billable and bills something.
+ */
+function serviceJobs(ctx: ValidationCtx): void {
+  const { dataset, fail, need } = ctx;
+  const sales = dataset.sales;
+  const services = new Map(
+    dataset.items.services.map((item) => [item.readableId, item])
+  );
+  const labor = services.get(sales.serviceLaborItem);
+  if (!labor) {
+    fail(
+      `sales.serviceLaborItem: "${sales.serviceLaborItem}" is not a Service item`
+    );
+  } else if (
+    !((labor.standardCost ?? 0) > 0 && (labor.unitSalePrice ?? 0) > 0)
+  ) {
+    fail(
+      `sales.serviceLaborItem: "${labor.readableId}" needs a cost per hour (standardCost) and a bill rate (unitSalePrice)`
+    );
+  }
+  const assets = new Map(sales.customerAssets.map((a) => [a.key, a]));
+  const returns = new Map(sales.salesReturns.map((r) => [r.key, r]));
+  const seen = new Set<string>();
+  const statuses = new Set<string>();
+  const jobByReturnLine = new Map<string, ServiceJobSpec>();
+
+  const checkLine = (where: string, line: ServiceJobLineSpec) => {
+    need("item", where, line.item);
+    if (!services.has(line.item)) {
+      fail(`${where} "${line.item}": not a Service item`);
+    }
+    if (line.quantity <= 0)
+      fail(`${where} "${line.item}": quantity must be positive`);
+    if (line.unitPrice < 0) fail(`${where} "${line.item}": negative price`);
+  };
+
+  for (const job of sales.serviceJobs) {
+    const where = `sales.serviceJobs "${job.key}"`;
+    if (seen.has(job.key)) fail(`${where}: duplicate key`);
+    seen.add(job.key);
+    statuses.add(job.status);
+    const done = DONE_SERVICE_JOB_STATUSES.has(job.status);
+
+    const asset = assets.get(job.asset);
+    if (!asset) fail(`${where}: unknown customer asset "${job.asset}"`);
+    if (
+      job.coverage === "Warranty" &&
+      asset &&
+      !(
+        (asset.laborWarrantyEndOffset ?? -1) >= 0 ||
+        (asset.partsWarrantyEndOffset ?? -1) >= 0
+      )
+    ) {
+      fail(`${where}: Warranty coverage on an asset whose warranty has ended`);
+    }
+
+    const origin = job.salesReturnLine;
+    if (origin) {
+      if (job.openedWorkdaysBack !== undefined) {
+        fail(
+          `${where}: a job from an RMA line opens on the receipt day, so it has no openedWorkdaysBack`
+        );
+      }
+      const rma = returns.get(origin.salesReturn);
+      const line = rma?.lines[origin.line - 1];
+      if (!rma || !line) {
+        fail(
+          `${where}: unknown sales return line ${origin.salesReturn} ${origin.line}`
+        );
+      } else {
+        const lineKey = `${origin.salesReturn}:${origin.line}`;
+        if (jobByReturnLine.has(lineKey)) {
+          fail(`${where}: RMA line ${lineKey} already has a job`);
+        }
+        jobByReturnLine.set(lineKey, job);
+        if (!isServiceReturnLine(line)) {
+          fail(
+            `${where}: RMA line ${lineKey} is not a Service or Warranty line`
+          );
+        } else if (
+          job.coverage !==
+          (line.returnType === "Return for Warranty" ? "Warranty" : "Billable")
+        ) {
+          fail(
+            `${where}: a ${line.returnType} line's job starts ${line.returnType === "Return for Warranty" ? "Warranty" : "Billable"}`
+          );
+        }
+        if (!isReceivedReturn(rma)) {
+          fail(
+            `${where}: RMA "${rma.key}" is ${rma.status}; the receipt creates the job`
+          );
+        }
+        if (line.asset !== job.asset) {
+          fail(
+            `${where}: RMA line ${lineKey} returns asset "${line.asset ?? ""}", not "${job.asset}"`
+          );
+        }
+      }
+    } else if (job.openedWorkdaysBack === undefined) {
+      fail(`${where}: needs openedWorkdaysBack`);
+    }
+
+    const opened = job.openedWorkdaysBack;
+    for (const entry of job.time) {
+      if (!(entry.hours > 0)) fail(`${where} time: hours must be positive`);
+      if (entry.workdaysBack < 0) fail(`${where} time: in the future`);
+      if (opened !== undefined && entry.workdaysBack > opened) {
+        fail(
+          `${where} time: ${entry.workdaysBack} working days back, before the job opened`
+        );
+      }
+      if (entry.clock) {
+        const start = secondsOfDay(entry.clock.start);
+        const end = secondsOfDay(entry.clock.end);
+        if (start === null || end === null || end <= start) {
+          fail(
+            `${where} time: clock ${entry.clock.start}–${entry.clock.end} is not a forward "HH:MM:SS" span`
+          );
+        } else if (Math.abs((end - start) / 3600 - entry.hours) > EPSILON) {
+          fail(
+            `${where} time: ${entry.hours} hours, but the clock spans ${(end - start) / 3600}`
+          );
+        }
+      }
+    }
+
+    const estimate = job.estimate;
+    if (estimate) {
+      for (const line of estimate.lines) checkLine(`${where} estimate`, line);
+      if (estimate.lines.length === 0) fail(`${where}: an estimate has lines`);
+      if (job.coverage !== "Billable")
+        fail(`${where}: only a Billable job has an estimate`);
+      const sent = estimate.sentWorkdaysBack;
+      const responded = estimate.respondedWorkdaysBack;
+      if ((estimate.status === "Draft") !== (sent === undefined)) {
+        fail(
+          `${where}: sentWorkdaysBack is set exactly when the estimate is past Draft`
+        );
+      }
+      const answered =
+        estimate.status === "Accepted" || estimate.status === "Declined";
+      if (answered !== (responded !== undefined)) {
+        fail(
+          `${where}: respondedWorkdaysBack is set exactly when the estimate is Accepted or Declined`
+        );
+      }
+      if (sent !== undefined && responded !== undefined && responded > sent) {
+        fail(`${where}: the customer responds before the estimate is sent`);
+      }
+    }
+    if (job.status === "Awaiting Approval" && estimate?.status !== "Sent") {
+      fail(`${where}: an Awaiting Approval job has a Sent estimate`);
+    }
+    // canComplete (@carbon/utils service-job.ts).
+    if (
+      done &&
+      job.coverage === "Billable" &&
+      job.repairable !== false &&
+      origin &&
+      estimate?.status !== "Accepted"
+    ) {
+      fail(
+        `${where}: a Billable job from an RMA line completes only with an Accepted estimate`
+      );
+    }
+    for (const charge of job.charges) checkLine(`${where} charge`, charge);
+
+    const completed = job.completedWorkdaysBack;
+    if (done !== (completed !== undefined)) {
+      fail(
+        `${where}: completedWorkdaysBack is set exactly when the job is Completed or Invoiced`
+      );
+    }
+    if (completed !== undefined) {
+      if (job.time.some((entry) => entry.workdaysBack < completed)) {
+        fail(`${where}: time is logged after the job completed`);
+      }
+      if (maxCalendarDaysBack(completed) > -OPEN_PERIOD_MIN_OFFSET) {
+        fail(`${where}: the completion journal needs an Open period`);
+      }
+      const journal = serviceJobCompletionJournal({
+        serviceJobReadableId: job.key,
+        coverage: job.coverage,
+        laborItemName: sales.serviceLaborItem,
+        unitCost: labor?.standardCost ?? 0,
+        hours: job.time.map((entry) => entry.hours)
+      });
+      const net = round(journal.lines.reduce((sum, l) => sum + l.amount, 0));
+      if (Math.abs(net) > EPSILON) {
+        fail(`${where}: completion journal does not balance (net ${net})`);
+      }
+      if (journal.lines.length === 0) {
+        fail(
+          `${where}: a done job with no costed time posts no completion journal`
+        );
+      }
+    }
+    const invoiced = job.invoiceWorkdaysBack;
+    if ((job.status === "Invoiced") !== (invoiced !== undefined)) {
+      fail(
+        `${where}: invoiceWorkdaysBack is set exactly when the job is Invoiced`
+      );
+    }
+    if (job.status === "Invoiced") {
+      if (job.coverage !== "Billable")
+        fail(`${where}: only a Billable job is invoiced`);
+      if (
+        invoiced !== undefined &&
+        completed !== undefined &&
+        invoiced > completed
+      ) {
+        fail(`${where}: invoiced before it completed`);
+      }
+      const bills =
+        job.time.some((entry) => entry.billable ?? true) ||
+        job.charges.some((charge) => charge.billable ?? true);
+      if (!bills) fail(`${where}: an Invoiced job bills time or a charge`);
+    }
+  }
+
+  for (const rma of sales.salesReturns) {
+    if (!isReceivedReturn(rma)) continue;
+    let open = false;
+    for (const [index, line] of rma.lines.entries()) {
+      if (!isServiceReturnLine(line)) continue;
+      const job = jobByReturnLine.get(`${rma.key}:${index + 1}`);
+      if (!job) {
+        fail(
+          `sales.salesReturns "${rma.key}" line ${index + 1}: the receipt creates a service job, and none names it`
+        );
+      } else if (!DONE_SERVICE_JOB_STATUSES.has(job.status)) {
+        open = true;
+      }
+    }
+    if (rma.status === "In Progress" && !open) {
+      fail(
+        `sales.salesReturns "${rma.key}": In Progress needs a Service or Warranty line whose job is not done`
+      );
+    }
+  }
+
+  checkCoverage(fail, { serviceJob: statuses });
+}
+
 /**
  * Field service: the assets are serials of serial-tracked items at customers
  * with a contact, with a warranty that ends after the ship date and the three
@@ -2406,6 +2695,8 @@ export function fieldService(ctx: ValidationCtx): void {
     }
     projectNames.add(contract.name);
   }
+
+  serviceJobs(ctx);
 }
 
 export function sales(ctx: ValidationCtx): void {
@@ -2579,25 +2870,70 @@ export function sales(ctx: ValidationCtx): void {
       fail(`${where}: unknown sales order ref "${rma.salesOrder}"`);
     }
     if (rma.lines.length === 0) fail(`${where}: no lines`);
+    const received = isReceivedReturn(rma);
     for (const line of rma.lines) {
       need("item", where, line.item);
       if (line.quantity <= 0) {
         fail(`${where} line "${line.item}": quantity must be positive`);
       }
+      if (line.toShelf !== undefined) need("shelf", where, line.toShelf);
+      if (isServiceReturnLine(line)) {
+        // salesReturnOrderLine_service_quantity_check; the unit enters no
+        // stock (receipt-service-return.ts), so it has no shelf.
+        if (line.quantity !== 1) {
+          fail(
+            `${where} line "${line.item}": a ${line.returnType} line holds one unit`
+          );
+        }
+        if (line.toShelf !== undefined) {
+          fail(
+            `${where} line "${line.item}": a ${line.returnType} line enters no stock, so it has no toShelf`
+          );
+        }
+        const asset = dataset.sales.customerAssets.find(
+          (a) => a.key === line.asset
+        );
+        if (!asset) {
+          fail(
+            `${where} line "${line.item}": unknown customer asset "${line.asset ?? ""}"`
+          );
+        } else {
+          if (asset.item !== line.item) {
+            fail(
+              `${where} line "${line.item}": asset "${asset.key}" is a ${asset.item}`
+            );
+          }
+          if (asset.customer !== rma.customer) {
+            fail(
+              `${where} line "${line.item}": asset "${asset.key}" belongs to "${asset.customer}"`
+            );
+          }
+        }
+        // The seed never ships a serviced unit back, which completing the
+        // line needs.
+        if (rma.status === "Completed") {
+          fail(
+            `${where} line "${line.item}": a Completed return's ${line.returnType} line needs a ship-back the seed does not model`
+          );
+        }
+        continue;
+      }
+      if (line.asset !== undefined) {
+        fail(
+          `${where} line "${line.item}": only a Service or Warranty line names an asset`
+        );
+      }
       // A return that is not received writes only its lines, so a tracked
       // item is fine there; receiving one needs per-entity rows.
-      if (rma.status === "Completed" && isTracked(line.item)) {
+      if (received && isTracked(line.item)) {
         fail(
           `${where} line "${line.item}": tracked items need per-entity returns the seed does not model`
         );
       }
-      if (line.toShelf !== undefined) need("shelf", where, line.toShelf);
-      if (rma.status === "Completed") {
-        if (line.toShelf === undefined) {
-          fail(
-            `${where} line "${line.item}": Completed return line needs a toShelf`
-          );
-        }
+      if (received && line.toShelf === undefined) {
+        fail(
+          `${where} line "${line.item}": a received return line needs a toShelf`
+        );
       }
     }
   }

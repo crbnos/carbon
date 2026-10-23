@@ -276,6 +276,18 @@ export const SERVICES: ItemSpec[] = [
     description:
       "Flight dynamics, anomaly response and pass planning for a flying bus.",
     standardCost: 9500
+  },
+  {
+    // The service jobs' labor item (sales.serviceLaborItem): cost and bill
+    // rate per hour. No bundled thumbnail.
+    readableId: "Field Service Engineer",
+    name: "Field Service Engineer",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Bench and on-site work on a customer's bus, billed by the hour.",
+    standardCost: 95,
+    unitSalePrice: 225
   }
 ];
 

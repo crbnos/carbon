@@ -175,6 +175,9 @@ msgstr "Aggiungi App Autenticatore"
 msgid "Add Inventory"
 msgstr "Aggiungi Inventario"
 
+msgid "Add Part"
+msgstr ""
+
 msgid "Add Passkey"
 msgstr "Aggiungi Passkey"
 
@@ -780,6 +783,9 @@ msgstr "Impossibile recuperare le unità di archiviazione"
 msgid "Failed to get options"
 msgstr "Impossibile ottenere le opzioni"
 
+msgid "Failed to read the signature"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Impossibile registrare lo strumento di misura"
 
@@ -794,6 +800,9 @@ msgstr "Errore durante il salvataggio del risultato"
 
 msgid "Failed to save the hours"
 msgstr "Impossibile salvare le ore"
+
+msgid "Failed to save the signature"
+msgstr ""
 
 msgid "Failed to submit the week"
 msgstr "Impossibile inviare la settimana"
@@ -1184,6 +1193,9 @@ msgstr "Altre azioni"
 msgid "More options"
 msgstr "Altre opzioni"
 
+msgid "More than one unit has this serial. Choose one."
+msgstr ""
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Sposta colonna: {0}"
@@ -1217,6 +1229,9 @@ msgstr ""
 
 msgid "New Record"
 msgstr "Nuova Registrazione"
+
+msgid "New Service Job"
+msgstr ""
 
 msgid "Newest first"
 msgstr "Più recenti prima"
@@ -1259,6 +1274,10 @@ msgstr "Nessuna entità tracciata disponibile trovata"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Nessun testo di certificazione è impostato per te. Chiedi a un amministratore di impostarlo in Impostazioni → Tempo."
+
+#. placeholder {0}: lookup.serial
+msgid "No customer asset has the serial {0}. Choose the customer."
+msgstr ""
 
 msgid "No dispatches assigned to you"
 msgstr "Nessun intervento di manutenzione assegnato"
@@ -1373,6 +1392,9 @@ msgstr "Nessun centro di lavoro esistente"
 
 msgid "None"
 msgstr "Nessuno"
+
+msgid "Not signed."
+msgstr ""
 
 msgid "Notes"
 msgstr "Note"
@@ -1630,6 +1652,9 @@ msgstr "Impostazioni Stampante"
 msgid "Priority"
 msgstr "Priorità"
 
+msgid "Problem"
+msgstr ""
+
 msgid "Procedure"
 msgstr "Procedura"
 
@@ -1794,6 +1819,9 @@ msgstr "Uguale per ogni ordine di produzione"
 msgid "Save"
 msgstr "Salva"
 
+msgid "Save Signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Salva il modulo che stai modificando"
 
@@ -1802,6 +1830,9 @@ msgstr "Scansiona"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Scansiona un'entità tracciata per aggiungere la prima colonna campione."
+
+msgid "Scan or enter a serial"
+msgstr ""
 
 msgid "Scan or enter serial number"
 msgstr "Scansiona o inserisci il numero di serie"
@@ -1883,6 +1914,9 @@ msgstr "Seleziona"
 
 msgid "Select a completion quantity"
 msgstr "Seleziona una quantità completata"
+
+msgid "Select a customer"
+msgstr ""
 
 msgid "Select a rework quantity"
 msgstr "Seleziona una quantità da rilavorare"
@@ -1998,6 +2032,9 @@ msgstr "Mostra i tasti di scelta rapida"
 msgid "Shuffle"
 msgstr "Mescola"
 
+msgid "Sign Again"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Accedi con dati biometrici invece di un link magico. I Passkey sono protetti da Face ID, Touch ID o dal PIN del tuo dispositivo."
 
@@ -2019,8 +2056,17 @@ msgstr "Esci"
 msgid "Sign out instead"
 msgstr "Esci invece"
 
+msgid "Signature"
+msgstr ""
+
 msgid "Signature pad"
 msgstr "Pad firma"
+
+msgid "Signed by"
+msgstr ""
+
+msgid "Signed by {signedByName}"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
@@ -2049,6 +2095,9 @@ msgstr "Avvia"
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
 msgstr "Avvia {0}"
+
+msgid "Start Job"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "Avvia o sospendi l'operazione"
@@ -2108,6 +2157,9 @@ msgstr "Invia in forma anonima"
 msgid "Submit week"
 msgstr "Invia settimana"
 
+msgid "Suggested coverage"
+msgstr ""
+
 msgid "Suggestion"
 msgstr "Proposta"
 
@@ -2144,6 +2196,9 @@ msgstr "La quantità completata per questa operazione è inferiore alla quantit�
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "La data è precedente alla finestra di voce. Il motivo viene conservato con la voce."
+
+msgid "The job opens with your clock running."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Gli ordini di produzione e i componenti che compongono questa esecuzione."

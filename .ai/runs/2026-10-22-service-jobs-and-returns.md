@@ -40,6 +40,8 @@
   - Checks: the erp and documents typecheck passes. ERP unit tests pass (710), as do the PDF test, the post-service-job, invoice and issue tests (13) and conformance.
 - 2026-10-23: Task 33 committed. The shared `~/components/ScheduleMatrix` (`@dnd-kit/core`) and People matrix drag and drop, backed by the `movePersonCell` operation (`update: production`), which reschedules like the existing move. Clicking a cell still opens the hours modal.
   - Checks: the erp typecheck passes. `schedule-matrix.test.ts` passes (5 tests), and so do the ERP unit tests and the permission tests. There is no live database test: `apps/erp/test/database` has no people-assignment harness.
+- 2026-10-23: Task 27 committed. Each dataset seeds 5 service jobs (Open from an RMA receipt, Awaiting Approval, In Progress, Completed Warranty, Invoiced Billable), 8 time rows, 4 estimate lines and 1 charge. Each also gets a labor item set as `serviceLaborItemId`, and an In Progress RMA with a received Return for Service line. The temporary 'In Progress' exclusion is removed. New floors: `serviceJob` 5, `serviceJobTime` 8, `serviceJobEstimateLine` 4, `serviceJobItem` 1.
+  - Checks: the database typecheck passes. `db:check:datasets` passes for all four datasets, including the re-apply. In satellite, the Warranty completion posted Dr 6120 / Cr 5060 807.50, and the Billable completion posted Dr 5010 (COGS fallback) / Cr 5060.
 
 ## Decisions made without Brad
 
@@ -80,6 +82,9 @@
 | 24 | Start, Send Estimate, Complete and Create Invoice submit with no confirm dialog. A refused Complete shows an error toast | Maintenance's Complete does the same. |
 | 24 | The properties panel shows the estimate's status and who responded, read-only | After acceptance, nothing else on the page shows it. |
 | 33 | **For Brad:** dragging a chip onto a day where the person already works a different station is refused, with "This person already works another work center that day. Open the day to split their hours." Same station merges. | `peopleAssignment_person_day_key` allows one row per person, day and shift, and the plan did not cover this case. The first drag to "the next day" often hits it, so Brad may want another behavior. |
+| 27 | The seeded jobs carry no issued parts, only time and charges | An issued part needs the issue posting's stock ledger, cost layer and journal rows, which the tiers do not model. |
+| 27 | The Invoiced job's invoice is Draft | `createServiceInvoice` leaves a Draft. Tier 09's invoice posting refuses lines that are not Part lines. |
+| 27 | The wipe voids 'Service Job' journals, like the other document sources | A re-apply must void the journals of documents it deletes. |
 | 3 | Contract project seeding moved from `seedServiceWork` to a new `seedContractProjects` | `seedServiceWork` also created contract projects, which are not service work. |
 
 ## Blocked

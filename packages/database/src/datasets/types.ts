@@ -820,8 +820,16 @@ export type SalesReturnLineSpec = {
   item: string;
   quantity: number;
   unitPrice: number;
-  /** Required when Completed — the receipt books stock back onto it. */
+  /**
+   * Required on a received Return to Stock line — the receipt books stock
+   * back onto it. A Service or Warranty line enters no stock and has none.
+   */
   toShelf?: string;
+  /** Defaults to Return to Stock. A Service or Warranty line holds one unit. */
+  returnType?: "Return to Stock" | "Return for Service" | "Return for Warranty";
+  /** A customer asset key: the unit sent back. Required on a Service or Warranty line. */
+  asset?: string;
+  problem?: string;
 };
 
 /**
@@ -838,13 +846,17 @@ export type ReturnCreditSpec = {
 };
 
 /**
- * RMA. Completed mirrors post-receipt's Sales Return Order branch (Posted receipt
- * plus one ledger row per line). Line ids are registered as `rmaline:<key>:<n>`.
+ * RMA. In Progress and Completed are fully received and mirror post-receipt's
+ * Sales Return Order branch: a Posted receipt, one ledger row per Return to
+ * Stock line, and for a Service or Warranty line no ledger row and one service
+ * job (`sales.serviceJobs`, `salesReturnLine`). In Progress is received with a
+ * Service or Warranty line whose job is not done. Line ids are registered as
+ * `rmaline:<key>:<n>`.
  */
 export type SalesReturnSpec = {
   /** Registered in ctx.refs.documents as `rma:<key>`. */
   key: string;
-  status: "Draft" | "To Receive" | "Completed";
+  status: "Draft" | "To Receive" | "In Progress" | "Completed";
   customer: string;
   /** Applied to every line (the column is per-line). */
   returnReason: string;
@@ -930,6 +942,79 @@ export type CustomerAssetSpec = {
   partsWarrantyEndOffset: DayOffset | null;
 };
 
+/** A service job time entry, on the labor item `sales.serviceLaborItem`. */
+export type ServiceJobTimeSpec = {
+  /** Working days before the anchor, Saturday and Sunday skipped (`workdayBefore`). */
+  workdaysBack: number;
+  hours: number;
+  /** A clocked entry: "HH:MM:SS" on the company's clock; hours = end − start. */
+  clock?: { start: string; end: string };
+  /** Defaults to true. */
+  billable?: boolean;
+  note?: string;
+};
+
+/** An estimate line or a charge: a Service item at a price. */
+export type ServiceJobLineSpec = {
+  item: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+/**
+ * A service job on a customer asset (Time and Materials). Completed and
+ * Invoiced store each time entry's cost (the labor item's unit cost) and get
+ * the completion journal post-service-job writes (tier 09: Dr the coverage
+ * account / Cr labor absorption). Invoiced also has the Draft invoice
+ * createServiceInvoice leaves, every line carrying `serviceJobId`. A job from
+ * an RMA line names it in `salesReturnLine`. Parts are not seeded: an issued
+ * part needs the issue posting's ledger, cost and journal rows. Registered in
+ * ctx.refs.documents as `sj:<key>`.
+ */
+export type ServiceJobSpec = {
+  key: string;
+  status:
+    | "Open"
+    | "Awaiting Approval"
+    | "In Progress"
+    | "On Hold"
+    | "Completed"
+    | "Invoiced";
+  coverage: "Billable" | "Warranty";
+  workSite: "Depot" | "Customer Site";
+  priority: "Low" | "Medium" | "High" | "Critical";
+  /** A customer asset key: the job's customer, item and serial. */
+  asset: string;
+  /** The received Service or Warranty RMA line the job was created for (1-based). */
+  salesReturnLine?: { salesReturn: string; line: number };
+  /**
+   * The day the job was opened, in working days before the anchor. A job
+   * from an RMA line has none: it opens on the receipt day.
+   */
+  openedWorkdaysBack?: number;
+  dueOffset?: DayOffset;
+  problem: string;
+  findings?: string;
+  resolution?: string;
+  repairable?: boolean;
+  estimate?: {
+    status: "Draft" | "Sent" | "Accepted" | "Declined";
+    sentWorkdaysBack?: number;
+    respondedWorkdaysBack?: number;
+    /** The customer's name, as the user types it. */
+    respondedBy?: string;
+    lines: ServiceJobLineSpec[];
+  };
+  time: ServiceJobTimeSpec[];
+  /** Charges: Service items at a price and no cost (phase 1). */
+  charges: (ServiceJobLineSpec & { billable?: boolean })[];
+  /** Completed and Invoiced: the completion day, in working days before the anchor. */
+  completedWorkdaysBack?: number;
+  /** Invoiced: the Draft invoice's issue day, in working days before the anchor. */
+  invoiceWorkdaysBack?: number;
+};
+
 export type SalesData = {
   opportunities: SalesOpportunitySpec[];
   statusOrders: SalesStatusOrderSpec[];
@@ -942,6 +1027,13 @@ export type SalesData = {
   customerBankAccounts: (BankAccountSpec & { customer: string })[];
   /** Field service: units at customers. */
   customerAssets: CustomerAssetSpec[];
+  /**
+   * The Service item every time entry names, with its cost per hour
+   * (standardCost) and bill rate (unitSalePrice). Tier 04 sets it as
+   * `companySettings.serviceLaborItemId`.
+   */
+  serviceLaborItem: string;
+  serviceJobs: ServiceJobSpec[];
 };
 
 export type RfqLineSpec = {

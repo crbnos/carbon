@@ -538,3 +538,47 @@ export function consumeFifo(
   if (toConsume > 0) total += toConsume * fallbackUnitCost;
   return total;
 }
+
+/** A completion journal line: which of the two accounts, and its amount. */
+export type ServiceJobCompletionLine = {
+  account: "coverage" | "laborAbsorption";
+  description: string;
+  /** Both accounts are Expense: a debit is positive. */
+  amount: number;
+};
+
+/**
+ * post-service-job `complete` (`buildServiceJobCompletionLines`): one pair for
+ * the job's one labor item, Dr the coverage account / Cr labor absorption at
+ * Σ hours × the item's cost per hour. No lines when the time costs nothing.
+ */
+export function serviceJobCompletionJournal(args: {
+  serviceJobReadableId: string;
+  coverage: "Billable" | "Warranty" | "Contract";
+  laborItemName: string;
+  unitCost: number;
+  hours: readonly number[];
+}): { description: string; lines: ServiceJobCompletionLine[] } {
+  const cost = round(
+    args.hours.reduce((sum, hours) => sum + hours * args.unitCost, 0)
+  );
+  const description = `Service Job ${args.serviceJobReadableId}`;
+  if (cost < EPSILON) return { description, lines: [] };
+  const coverageLabel =
+    args.coverage === "Warranty" ? "Warranty Expense" : "Cost of Service";
+  return {
+    description,
+    lines: [
+      {
+        account: "coverage",
+        description: `${coverageLabel}: ${args.laborItemName}`,
+        amount: debit("expense", cost)
+      },
+      {
+        account: "laborAbsorption",
+        description: `Labor Absorption: ${args.laborItemName}`,
+        amount: credit("expense", cost)
+      }
+    ]
+  };
+}

@@ -14,6 +14,7 @@ import type {
   SalesOpportunitySpec,
   SalesReturnSpec,
   SalesStatusOrderSpec,
+  ServiceJobSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
 
@@ -961,6 +962,27 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
     dateOffset: -1,
     salesOrder: "so:solstice-screws",
     lines: [{ item: "HW-SHCS-M6", quantity: 40, unitPrice: 0.75 }]
+  },
+  {
+    // A unit back for repair: HMA-4000-S013, the "expired" customer asset.
+    // Received, so its service job (SERVICE_JOBS "manifold-repair") is open and
+    // the RMA is In Progress.
+    key: "manifold-repair",
+    status: "In Progress",
+    customer: "Granite State Instruments",
+    returnReason: "Defective",
+    dateOffset: -3,
+    lines: [
+      {
+        item: "HMA-4000",
+        quantity: 1,
+        unitPrice: 4200,
+        returnType: "Return for Service",
+        asset: "expired",
+        problem:
+          "The manifold leaks at the relief valve cavity at full pressure."
+      }
+    ]
   }
 ];
 
@@ -1047,6 +1069,158 @@ export const CUSTOMER_ASSETS: CustomerAssetSpec[] = [
   }
 ];
 
+// Service jobs: one per status the job page and the RMA show. The Open job is
+// the one the "manifold-repair" RMA receipt created; Completed and Invoiced carry
+// their completion journal (tier 09), and Invoiced its Draft invoice. No parts:
+// an issued part needs the issue posting's ledger, cost and journal rows.
+export const SERVICE_JOBS: ServiceJobSpec[] = [
+  {
+    key: "manifold-repair",
+    status: "Open",
+    coverage: "Billable",
+    workSite: "Depot",
+    priority: "High",
+    asset: "expired",
+    salesReturnLine: { salesReturn: "manifold-repair", line: 1 },
+    problem: "The manifold leaks at the relief valve cavity at full pressure.",
+    time: [],
+    charges: []
+  },
+  {
+    key: "estimate",
+    status: "Awaiting Approval",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 6,
+    dueOffset: 10,
+    problem:
+      "System pressure falls by 15 bar over an hour with the pump stopped.",
+    findings:
+      "The check valve seat in port P2 is scored. The block itself tests in specification.",
+    repairable: true,
+    estimate: {
+      status: "Sent",
+      sentWorkdaysBack: 3,
+      lines: [
+        { item: "Service Technician", quantity: 6, unitPrice: 125 },
+        {
+          item: "CMM Program Development",
+          description: "CMM re-inspection program after the repair",
+          quantity: 1,
+          unitPrice: 1600
+        }
+      ]
+    },
+    time: [
+      {
+        workdaysBack: 4,
+        hours: 3,
+        note: "On-site pressure decay test, port by port"
+      }
+    ],
+    charges: []
+  },
+  {
+    key: "on-site",
+    status: "In Progress",
+    coverage: "Warranty",
+    workSite: "Customer Site",
+    priority: "High",
+    asset: "in-warranty",
+    openedWorkdaysBack: 3,
+    dueOffset: 4,
+    problem: "The directional valve sticks when the oil is cold.",
+    findings: "Varnish on the spool from oil that is past its change interval.",
+    repairable: true,
+    time: [
+      {
+        workdaysBack: 2,
+        hours: 3.5,
+        clock: { start: "08:00:00", end: "11:30:00" },
+        note: "Reproduced the sticking spool at 10 °C oil temperature"
+      },
+      {
+        workdaysBack: 1,
+        hours: 4,
+        note: "Cleaned the spool and bore and flushed the circuit"
+      }
+    ],
+    charges: []
+  },
+  {
+    key: "warranty-repair",
+    status: "Completed",
+    coverage: "Warranty",
+    workSite: "Depot",
+    priority: "Medium",
+    asset: "in-warranty",
+    openedWorkdaysBack: 30,
+    problem: "Port A leaks at the fitting after installation.",
+    findings: "The port A thread was cut 0.1 mm undersize at the factory.",
+    resolution:
+      "Re-cut the port A thread to size, fitted a new seal and pressure-tested the block.",
+    repairable: true,
+    time: [
+      { workdaysBack: 28, hours: 5 },
+      { workdaysBack: 27, hours: 3.5 }
+    ],
+    charges: [],
+    completedWorkdaysBack: 27
+  },
+  {
+    key: "invoiced",
+    status: "Invoiced",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 18,
+    problem: "The pressure gauge port weeps oil.",
+    findings:
+      "The gauge adapter was over-torqued on site and its seal is extruded.",
+    resolution:
+      "Replaced the adapter seal, torqued it to specification and ran a pressure test.",
+    repairable: true,
+    estimate: {
+      status: "Accepted",
+      sentWorkdaysBack: 16,
+      respondedWorkdaysBack: 15,
+      respondedBy: "Lucia Bertrand",
+      lines: [
+        { item: "Service Technician", quantity: 8, unitPrice: 125 },
+        {
+          item: "CMM Program Development",
+          description: "CMM re-inspection program after the repair",
+          quantity: 1,
+          unitPrice: 1600
+        }
+      ]
+    },
+    time: [
+      { workdaysBack: 14, hours: 4 },
+      { workdaysBack: 13, hours: 3.5 },
+      {
+        workdaysBack: 13,
+        hours: 1,
+        billable: false,
+        note: "Travel to site, not billed"
+      }
+    ],
+    charges: [
+      {
+        item: "CMM Program Development",
+        description: "CMM re-inspection program after the repair",
+        quantity: 1,
+        unitPrice: 1600
+      }
+    ],
+    completedWorkdaysBack: 12,
+    invoiceWorkdaysBack: 11
+  }
+];
+
 export const precisionSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1098,5 +1272,7 @@ export const precisionSales: SalesData = {
       isPrimary: true
     }
   ],
-  customerAssets: CUSTOMER_ASSETS
+  customerAssets: CUSTOMER_ASSETS,
+  serviceLaborItem: "Service Technician",
+  serviceJobs: SERVICE_JOBS
 };

@@ -175,6 +175,9 @@ msgstr "Add Authenticator App"
 msgid "Add Inventory"
 msgstr "Add Inventory"
 
+msgid "Add Part"
+msgstr "Add Part"
+
 msgid "Add Passkey"
 msgstr "Add Passkey"
 
@@ -780,6 +783,9 @@ msgstr "Failed to fetch storageUnits"
 msgid "Failed to get options"
 msgstr "Failed to get options"
 
+msgid "Failed to read the signature"
+msgstr "Failed to read the signature"
+
 msgid "Failed to record gauge"
 msgstr "Failed to record gauge"
 
@@ -794,6 +800,9 @@ msgstr "Failed to save result"
 
 msgid "Failed to save the hours"
 msgstr "Failed to save the hours"
+
+msgid "Failed to save the signature"
+msgstr "Failed to save the signature"
 
 msgid "Failed to submit the week"
 msgstr "Failed to submit the week"
@@ -1184,6 +1193,9 @@ msgstr "More Actions"
 msgid "More options"
 msgstr "More options"
 
+msgid "More than one unit has this serial. Choose one."
+msgstr "More than one unit has this serial. Choose one."
+
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
 msgstr "Move column: {0}"
@@ -1217,6 +1229,9 @@ msgstr "New Job"
 
 msgid "New Record"
 msgstr "New Record"
+
+msgid "New Service Job"
+msgstr "New Service Job"
 
 msgid "Newest first"
 msgstr "Newest first"
@@ -1259,6 +1274,10 @@ msgstr "No available tracked entities found"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+
+#. placeholder {0}: lookup.serial
+msgid "No customer asset has the serial {0}. Choose the customer."
+msgstr "No customer asset has the serial {0}. Choose the customer."
 
 msgid "No dispatches assigned to you"
 msgstr "No dispatches assigned to you"
@@ -1373,6 +1392,9 @@ msgstr "No work centers exist"
 
 msgid "None"
 msgstr "None"
+
+msgid "Not signed."
+msgstr "Not signed."
 
 msgid "Notes"
 msgstr "Notes"
@@ -1630,6 +1652,9 @@ msgstr "Printer Settings"
 msgid "Priority"
 msgstr "Priority"
 
+msgid "Problem"
+msgstr "Problem"
+
 msgid "Procedure"
 msgstr "Procedure"
 
@@ -1794,6 +1819,9 @@ msgstr "Same for every job"
 msgid "Save"
 msgstr "Save"
 
+msgid "Save Signature"
+msgstr "Save Signature"
+
 msgid "Save the form you're editing"
 msgstr "Save the form you're editing"
 
@@ -1802,6 +1830,9 @@ msgstr "Scan"
 
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "Scan a tracked entity to add the first sample column."
+
+msgid "Scan or enter a serial"
+msgstr "Scan or enter a serial"
 
 msgid "Scan or enter serial number"
 msgstr "Scan or enter serial number"
@@ -1883,6 +1914,9 @@ msgstr "Select"
 
 msgid "Select a completion quantity"
 msgstr "Select a completion quantity"
+
+msgid "Select a customer"
+msgstr "Select a customer"
 
 msgid "Select a rework quantity"
 msgstr "Select a rework quantity"
@@ -1998,6 +2032,9 @@ msgstr "Show keyboard shortcuts"
 msgid "Shuffle"
 msgstr "Shuffle"
 
+msgid "Sign Again"
+msgstr "Sign Again"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
@@ -2019,8 +2056,17 @@ msgstr "Sign Out"
 msgid "Sign out instead"
 msgstr "Sign out instead"
 
+msgid "Signature"
+msgstr "Signature"
+
 msgid "Signature pad"
 msgstr "Signature pad"
+
+msgid "Signed by"
+msgstr "Signed by"
+
+msgid "Signed by {signedByName}"
+msgstr "Signed by {signedByName}"
 
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
@@ -2049,6 +2095,9 @@ msgstr "Start"
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
 msgstr "Start {0}"
+
+msgid "Start Job"
+msgstr "Start Job"
 
 msgid "Start or pause the operation"
 msgstr "Start or pause the operation"
@@ -2108,6 +2157,9 @@ msgstr "Submit anonymously"
 msgid "Submit week"
 msgstr "Submit week"
 
+msgid "Suggested coverage"
+msgstr "Suggested coverage"
+
 msgid "Suggestion"
 msgstr "Suggestion"
 
@@ -2144,6 +2196,9 @@ msgstr "The completed quantity for this operation is less than the required quan
 
 msgid "The date is before the entry window. The reason is kept with the entry."
 msgstr "The date is before the entry window. The reason is kept with the entry."
+
+msgid "The job opens with your clock running."
+msgstr "The job opens with your clock running."
 
 msgid "The jobs and parts that make up this run."
 msgstr "The jobs and parts that make up this run."

@@ -279,6 +279,18 @@ export const SERVICES: ItemSpec[] = [
     description:
       "Remote monitoring and next-day field service for an installed robot fleet.",
     standardCost: 1400
+  },
+  {
+    // The service jobs' labor item (sales.serviceLaborItem): cost and bill
+    // rate per hour. No bundled thumbnail.
+    readableId: "Field Service Engineer",
+    name: "Field Service Engineer",
+    type: "Service",
+    replenishment: "Buy",
+    description:
+      "Bench and on-site work on a customer's robot, billed by the hour.",
+    standardCost: 72,
+    unitSalePrice: 165
   }
 ];
 
