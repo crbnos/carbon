@@ -7668,6 +7668,10 @@ export async function updatePurchasedPrices(
           .set(itemCostUpdate)
           .where("itemId", "=", itemCostUpdate.itemId!)
           .where("companyId", "=", companyId)
+          // An Average item's unit cost is its moving average, kept by the
+          // receipts and invoices that move its value; a year of purchase
+          // history is not what is on hand.
+          .where("costingMethod", "!=", "Average")
           .execute();
       }
     }

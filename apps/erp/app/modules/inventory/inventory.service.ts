@@ -138,6 +138,8 @@ import {
 import * as settingsService from "~/modules/settings/settings.service";
 import {
   type AdjustmentItemCost,
+  type AverageCostChange,
+  applyAverageCostChanges,
   assertCompanyRecords,
   assertPostable,
   attributesContain,
@@ -10358,6 +10360,22 @@ export async function postReceipt(
             "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
           );
         }
+        // The receipt's units leave an Average item at the cost they came
+        // in at. Before the reversing item ledger rows: on-hand as it stood.
+        await applyAverageCostChanges(trx, {
+          companyId,
+          changes: receiptCostLedger.flatMap((row) =>
+            row.itemId
+              ? [
+                  {
+                    itemId: row.itemId,
+                    quantity: -Number(row.quantity),
+                    value: -Number(row.cost)
+                  }
+                ]
+              : []
+          )
+        });
         if (costLedgerPlan.layerIdsToClose.length > 0) {
           await trx
             .updateTable("costLedger")
@@ -10608,6 +10626,8 @@ export async function postReceipt(
           itemId: string;
           quantity: number;
         }[] = [];
+        // What each positive line books, for an Average item's unit cost.
+        const averageCostChanges: AverageCostChange[] = [];
 
         const isOutsideProcessing =
           purchaseOrder.data.purchaseOrderType === "Outside Processing";
@@ -11083,6 +11103,11 @@ export async function postReceipt(
           // Cost layers: the receipt is the sole creator of purchase layers.
           // The invoice later adjusts them via appliesToCostLedgerId children.
           if (createsLayers && !isNegativeReceipt) {
+            averageCostChanges.push({
+              itemId: receiptLine.itemId!,
+              quantity: receivedQuantity,
+              value: receiptLineCosts[index]!.cost
+            });
             if (invoiceFirstQty > 0) {
               costLedgerInserts.push({
                 itemLedgerType: "Purchase",
@@ -11548,6 +11573,11 @@ export async function postReceipt(
                 .execute();
             }
           }
+          // Before the item ledger rows below: on-hand as it stood.
+          await applyAverageCostChanges(trx, {
+            companyId,
+            changes: averageCostChanges
+          });
 
           for await (const [purchaseOrderLineId, update] of Object.entries(
             purchaseOrderLineUpdates
