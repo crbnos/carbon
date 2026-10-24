@@ -89,11 +89,16 @@ export async function action({ request }: ActionFunctionArgs) {
   // Pre-session: no user-authed client yet, so query memberships with the
   // service role. Prefer an employee company as the active one; fall back to
   // any membership so auth/RLS can deny a pure portal user later.
-  const employeeCompanies =
-    (await getEmployeeCompanies(serviceRole, userId)).data ?? [];
+  const employeeLookup = await getEmployeeCompanies(serviceRole, userId);
+  const employeeCompanies = employeeLookup.data ?? [];
+  const companyLookup = employeeCompanies.length
+    ? null
+    : await getCompanies(serviceRole, userId);
   const pickable = employeeCompanies.length
     ? employeeCompanies
-    : ((await getCompanies(serviceRole, userId)).data ?? []);
+    : (companyLookup?.data ?? []);
+  // A failed read is not "no company": nothing is accepted on its say-so.
+  const membershipKnown = !employeeLookup.error && !companyLookup?.error;
 
   const cookieCompanyId = getCompanyId(request);
   const match =
@@ -461,7 +466,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // button, arrives with no company and the invite still open, and the
     // shell sends a company-less user to onboarding. Signing in proved the
     // invited address, so accept the invite here, as the SSO path does.
-    if (pickable.length === 0) {
+    if (pickable.length === 0 && membershipKnown) {
       const pendingInvite = await serviceRole
         .from("invite")
         .select("code")
