@@ -43,7 +43,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { isInvoiceFullyPaid } from "~/modules/invoicing";
+import { isInvoiceFullyPaid } from "~/modules/invoicing/invoicing.models";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";

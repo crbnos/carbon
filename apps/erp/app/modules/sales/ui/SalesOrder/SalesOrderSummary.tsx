@@ -68,7 +68,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { isInvoiceFullyPaid } from "~/modules/invoicing";
+import { isInvoiceFullyPaid } from "~/modules/invoicing/invoicing.models";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";

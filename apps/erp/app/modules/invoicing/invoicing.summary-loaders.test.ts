@@ -54,30 +54,32 @@ vi.mock("~/modules/invoicing/stripe-customer.server", () => ({}));
 vi.mock("~/services/database.server", () => ({}));
 vi.mock("~/utils/handle", () => ({ detailBreadcrumb: () => undefined }));
 vi.mock("~/utils/path", () => ({ path: { to: {} } }));
-vi.mock("~/modules/accounting", () => ({
+vi.mock("~/modules/accounting/accounting.service", () => ({
   getCurrencyByCode: async () => ({ data: null })
 }));
 vi.mock("~/modules/documents", () => ({}));
 vi.mock("~/modules/shared", () => ({}));
 vi.mock("~/modules/users/users.server", () => ({}));
 vi.mock("~/routes/file+/purchase-order+/$orderId[.]pdf", () => ({}));
-vi.mock("~/modules/settings", () => ({
+vi.mock("~/modules/settings/settings.service", () => ({
   getCompanySettings: async () => ({ data: {} })
 }));
 vi.mock("~/modules/sales/sales.service", () => ({
   getOpportunityDocuments: async () => [],
   getOpportunity: async () => ({ data: {} })
 }));
-vi.mock("~/modules/purchasing", () => ({
+vi.mock("~/modules/purchasing/purchasing.service", () => ({
   getPurchaseOrder: async () => ({
     data: { id: "order", companyId: "co", currencyCode: "USD" },
     error: null
   }),
   getPurchaseOrderLines: async () => ({ data: [], error: null }),
   getPurchaseOrderDelivery: async () => ({ data: {}, error: null }),
+  getSupplier: async () => ({ data: null }),
   getSupplierInteraction: async () => ({ data: {} }),
   getSupplierInteractionDocuments: async () => [],
   getDefaultAttachmentsForPO: async () => [],
+  withoutStoredPurchaseOrderPdfs: (x: unknown) => x,
   getPurchaseOrderInvoiceLines: async () => ({
     data: [{ invoiceId: "invoice" }],
     error: null
@@ -96,6 +98,9 @@ vi.mock("~/modules/purchasing", () => ({
   })
 }));
 vi.mock("~/modules/purchasing/ui/PurchaseOrder", () => ({}));
+vi.mock("~/modules/invoicing/ui", () => ({
+  PurchaseInvoiceHeader: () => null
+}));
 vi.mock("~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer", () => ({
   default: () => null
 }));
@@ -113,10 +118,8 @@ vi.mock(
   "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties",
   () => ({ default: () => null })
 );
-vi.mock("./invoicing.service", () => ({ getInvoicePaidAmounts: vi.fn() }));
-vi.mock("~/modules/invoicing", async () => ({
-  ...(await import("./invoicing.models")),
-  ...(await import("./invoicing.service")),
+vi.mock("./invoicing.service", () => ({
+  getInvoicePaidAmounts: vi.fn(),
   getCompanyHasOpenCredits: async () => false,
   getSalesInvoice: async () => ({
     data: { invoiceTotal: 100, balance: 0, status: "Paid" },
@@ -141,17 +144,20 @@ describe("invoice summary loader cash totals", () => {
   it.each([
     ["sales", salesLoader],
     ["purchase", purchaseLoader]
-  ] as const)("%s invoice does not treat a credit-only settled balance as cash", async (side, loader) => {
-    const result = await loader({
-      request: new Request("http://test/invoice"),
-      params: { invoiceId: "invoice" },
-      context: {}
-    } as unknown as Parameters<typeof loader>[0]);
-    expect(result.invoicePaidAmount).toBe(0);
-    expect(getInvoicePaidAmounts).toHaveBeenCalledWith(client, "co", side, [
-      "invoice"
-    ]);
-  });
+  ] as const)(
+    "%s invoice does not treat a credit-only settled balance as cash",
+    async (side, loader) => {
+      const result = await loader({
+        request: new Request("http://test/invoice"),
+        params: { invoiceId: "invoice" },
+        context: {}
+      } as unknown as Parameters<typeof loader>[0]);
+      expect(result.invoicePaidAmount).toBe(0);
+      expect(getInvoicePaidAmounts).toHaveBeenCalledWith(client, "co", side, [
+        "invoice"
+      ]);
+    }
+  );
   it("purchase order keeps credit relief out of Paid", async () => {
     const result = await orderLoader({
       request: new Request("http://test/order"),
@@ -172,8 +178,3 @@ describe("invoice summary loader cash totals", () => {
     );
   });
 });
-
-vi.mock("~/modules/purchasing/purchasing.service", () => ({
-  getSupplierInteraction: async () => ({ data: {} }),
-  getSupplierInteractionDocuments: async () => []
-}));

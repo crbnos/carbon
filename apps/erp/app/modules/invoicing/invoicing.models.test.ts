@@ -339,11 +339,12 @@ describe("invoiceSettlementDisplayAmounts", () => {
 });
 
 describe("isInvoiceFullyPaid", () => {
-  it.each([
-    0.003, 0.009, 0.01
-  ])("does not hide a positive remainder of %s", (balance) => {
-    expect(isInvoiceFullyPaid(balance, 100, "Paid")).toBe(false);
-  });
+  it.each([0.003, 0.009, 0.01])(
+    "does not hide a positive remainder of %s",
+    (balance) => {
+      expect(isInvoiceFullyPaid(balance, 100, "Paid")).toBe(false);
+    }
+  );
 
   it("requires zero balance and payment progress or paid status", () => {
     expect(isInvoiceFullyPaid(0, 100)).toBe(true);

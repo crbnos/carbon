@@ -34,10 +34,6 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
-  getInvoicePaidAmounts,
-  invoiceSettlementDisplayAmounts
-} from "~/modules/invoicing";
-import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderDelivery,
@@ -65,6 +61,9 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "purchase-order");
+
+import { invoiceSettlementDisplayAmounts } from "~/modules/invoicing/invoicing.models";
+import { getInvoicePaidAmounts } from "~/modules/invoicing/invoicing.service";
 
 export const handle: Handle = {
   appBarSubtitle: msg`Purchase Order`,
