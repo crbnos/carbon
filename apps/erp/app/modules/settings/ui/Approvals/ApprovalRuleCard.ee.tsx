@@ -53,7 +53,8 @@ const ApprovalRuleCard = memo(
       purchaseOrder: t`Purchase Order`,
       qualityDocument: t`Quality Document`,
       supplier: t`Supplier`,
-      changeOrder: t`Change Notice`
+      changeOrder: t`Change Notice`,
+      scrap: t`Scrap`
     };
     const documentTypeLabel = documentTypeLabels[documentType];
 
@@ -94,7 +95,9 @@ const ApprovalRuleCard = memo(
                       ) &&
                         (upperBound != null
                           ? ` ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)} – ${currencyFormatter.format(upperBound)}`
-                          : ` over ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)}`)}
+                          : (rule.lowerBoundAmount ?? 0) > 0
+                            ? ` over ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)}`
+                            : ` ${t`of any value`}`)}
                     </Heading>
                     <Status
                       color={rule.enabled ? "green" : "gray"}

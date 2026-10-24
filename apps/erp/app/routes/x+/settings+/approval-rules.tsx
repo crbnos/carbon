@@ -81,16 +81,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (r) => r.documentType === "changeOrder"
   );
 
+  const scrapRules = enrichedRules
+    .filter((r) => r.documentType === "scrap")
+    .sort((a, b) => (a.lowerBoundAmount ?? 0) - (b.lowerBoundAmount ?? 0));
+
   return {
     poRules,
     qdRules,
     supplierRules,
-    changeOrderRules
+    changeOrderRules,
+    scrapRules
   };
 }
 
 export default function ApprovalSettingsRoute() {
-  const { poRules, qdRules, supplierRules, changeOrderRules } =
+  const { poRules, qdRules, supplierRules, changeOrderRules, scrapRules } =
     useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "APPROVAL_RULES" });
 
@@ -105,6 +110,7 @@ export default function ApprovalSettingsRoute() {
         qdRules={qdRules}
         supplierRules={supplierRules}
         changeOrderRules={changeOrderRules}
+        scrapRules={scrapRules}
       />
       <RecordOutlet />
     </>

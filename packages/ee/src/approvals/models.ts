@@ -21,7 +21,8 @@ export const approvalDocumentType = [
   "purchaseOrder",
   "qualityDocument",
   "supplier",
-  "changeOrder"
+  "changeOrder",
+  "scrap"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -31,11 +32,14 @@ export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   purchaseOrder: "Purchase Order",
   qualityDocument: "Quality Document",
   supplier: "Supplier",
-  changeOrder: "Change Notice"
+  changeOrder: "Change Notice",
+  scrap: "Scrap"
 };
 
+// Scrap is tiered by the estimated value of what is scrapped.
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
-  "purchaseOrder"
+  "purchaseOrder",
+  "scrap"
 ];
 
 export const approvalFiltersValidator = z.object({
@@ -67,7 +71,8 @@ export const approvalRuleValidator = z.object({
     z.string().min(1, { message: "Invalid selection" })
   ),
   defaultApproverId: zfd.text(z.string().optional()),
-  lowerBoundAmount: zfd.numeric(z.number().gt(0).default(0)).optional(),
+  // 0 is a real floor: every document of the type needs approval.
+  lowerBoundAmount: zfd.numeric(z.number().min(0).default(0)).optional(),
   enabled: zfd.checkbox()
 });
 

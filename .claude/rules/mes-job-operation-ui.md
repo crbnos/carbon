@@ -57,6 +57,24 @@ redirects kinds it does not serve (no loops).
   scrap doesn't consume the good `targetQuantity`, so app-side remaining/Done
   mirrors (`complete.tsx` `willBeFinished`, `InspectionView`/`quality.server`
   `opRemaining`) also dropped the scrap term.
+- **Scrap approval** (`.ai/specs/2026-10-24-scrap-approval.md`): the operation
+  scrap route, the component scrap route and `batch.$batchId.complete.tsx`
+  (when a member scraps) wrap their posting in `postScrapWithApproval`
+  (`services/scrap-approval.server.ts`). With an enabled `scrap` approval rule
+  whose tier the estimated value meets, the first submit answers
+  `{ scrapApproval: prompt }` (value, currency, the approvers with a console
+  PIN) and posts nothing; the modal (`ScrapApprovalStep` / `useScrapApproval`,
+  `components/JobOperation/components/ScrapApproval.tsx`) stays open and sends
+  the same form again with `approverId` + `approverPin` + `approvedValue` (the
+  value shown; a changed scrap quantity clears the prompt). The route refuses
+  the recorder as approver, checks authority (`authorizeScrapApprover`), refuses
+  an approver the prompt did not offer (inactive, no PIN) and a value that
+  differs from `approvedValue`, checks the PIN under the console pin-in budgets
+  (`services/pin-limits.server.ts`, shared with `console.pin-in.tsx`), records
+  the approval, posts, and marks it posted. Only a 4xx refusal deletes the
+  record; any other failure keeps it unconfirmed. A batch whose phase 2 failed
+  keeps its record posted and resumes without a second approval
+  (`alreadyApproved` / `postedDespiteError`). No rule: the posting runs as before.
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`

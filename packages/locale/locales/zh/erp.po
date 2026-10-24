@@ -2997,6 +2997,9 @@ msgstr "审批{changeOrderId}"
 msgid "Approve {displayName}"
 msgstr "审批{displayName}"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "批准人"
 
@@ -9402,6 +9405,9 @@ msgstr "应用于批量生产批次中每个工单的估计报废数量。"
 msgid "Estimated time"
 msgstr "预计时间"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "估计值与实际值"
 
@@ -13814,6 +13820,9 @@ msgstr "最小订单:"
 msgid "Minimum Reserve Quantity"
 msgstr "最小储备数量"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "分钟/100件"
 
@@ -15471,6 +15480,9 @@ msgstr "未配置"
 msgid "Not Configured"
 msgstr "未配置"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "未交付"
 
@@ -15649,6 +15661,9 @@ msgstr "的"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "共 {0}h"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "关闭"
@@ -18564,6 +18579,9 @@ msgstr "记录向员工支付 {displayId} 的款项。支付少于应付总额�
 msgid "Record type"
 msgstr "记录类型"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "在校准记录中标记该量具需要修理才能使其读数可信。"
 
@@ -19160,6 +19178,9 @@ msgstr "需要客户联系人和地点"
 
 msgid "Require a Supplier Contact and Location"
 msgstr "需要供应商联系人和地点"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "排程前需要已分配的操作员才能在地点安排工作。启用时，无人工作中心不会分配工作，且无人工覆盖的工序显示为无法排程。熄灯（24×7）工作中心豁免。"
@@ -20289,6 +20310,9 @@ msgstr "报废 {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "报废率"
 
@@ -20318,6 +20342,9 @@ msgstr "报废原因"
 
 msgid "Scrap Reasons"
 msgstr "报废原因"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "已报废"

@@ -7,11 +7,18 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
-import { scrapTrackedEntityValidator } from "~/services/models";
+import {
+  scrapApproverValidator,
+  scrapTrackedEntityValidator
+} from "~/services/models";
 import { getTrackedEntity } from "~/services/operations.service";
+import { postScrapWithApproval } from "~/services/scrap-approval.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    {}
+  );
 
   const { trackedEntityId, materialId } = params;
   if (!materialId) throw new Error("Could not find materialId");
@@ -36,22 +43,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { status: 400 }
     );
   }
-  const issued = await erpPosting(
-    "issue",
-    { companyId, userId },
-    {
-      trackedEntityId,
-      materialId,
-      parentTrackedEntityId: parentTrackedEntityId!,
-      type: "scrapTrackedEntity",
-      scrapReasonId: validation.data.scrapReasonId,
-      makeReplacement: validation.data.makeReplacement
-    }
-  );
 
-  if (issued.error) {
+  const approver = await validator(scrapApproverValidator).validate(formData);
+  const outcome = await postScrapWithApproval({
+    request,
+    companyId,
+    userId,
+    sessionUserId,
+    subject: {
+      type: "material",
+      jobMaterialId: materialId,
+      trackedEntityId,
+      scrapReasonId: validation.data.scrapReasonId,
+      notes: validation.data.notes
+    },
+    approver: approver.error ? {} : approver.data,
+    post: () =>
+      erpPosting(
+        "issue",
+        { companyId, userId },
+        {
+          trackedEntityId,
+          materialId,
+          parentTrackedEntityId: parentTrackedEntityId!,
+          type: "scrapTrackedEntity",
+          scrapReasonId: validation.data.scrapReasonId,
+          makeReplacement: validation.data.makeReplacement
+        }
+      )
+  });
+
+  if (outcome.status === "approval-required") {
+    return { scrapApproval: outcome.prompt };
+  }
+
+  if (outcome.status === "refused") {
     return data(
-      { success: false, message: "Failed to scrap entity" },
+      { success: false, message: outcome.message || "Failed to scrap entity" },
       { status: 400 }
     );
   }

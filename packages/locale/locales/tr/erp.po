@@ -2997,6 +2997,9 @@ msgstr "Onayla {changeOrderId}"
 msgid "Approve {displayName}"
 msgstr "Onayla {displayName}"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Onaylayan"
 
@@ -9402,6 +9405,9 @@ msgstr "Toplu parti içindeki her iş emrine uygulanan tahmini fire miktarı."
 msgid "Estimated time"
 msgstr "Tahmini zaman"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "Tahminler ve Gerçekleşenler"
 
@@ -13814,6 +13820,9 @@ msgstr "Minimum Siparişi:"
 msgid "Minimum Reserve Quantity"
 msgstr "Minimum Rezerv Miktarı"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "Dakika/100 Parça"
 
@@ -15471,6 +15480,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "Teslim Edilmedi"
 
@@ -15649,6 +15661,9 @@ msgstr "adet"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "başında {0}s"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "Kapalı"
@@ -18564,6 +18579,9 @@ msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için 
 msgid "Record type"
 msgstr "Kayıt türü"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Ölçü aletiyle ilgili kalibrasyonda, okumaları güvenilir olması için aletin onarılması gerektiği kaydedilmiştir."
 
@@ -19160,6 +19178,9 @@ msgstr "Müşteri İlgili Kişisi ve Lokasyonu İste"
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Tedarikçi İlgili Kişisi ve Lokasyonu İste"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış bir operatör gerekli kılın. Etkinleştirildiğinde, personel olmayan iş merkezleri iş almaz ve uygun personel olmayan bir operasyon zamanlanmaz olarak görünür. Tam otomasyonlu (24×7) iş merkezleri muaftır."
@@ -20289,6 +20310,9 @@ msgstr "Fire {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Fire / Kalite Maliyeti"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "Fire Oranı"
 
@@ -20318,6 +20342,9 @@ msgstr "Fire nedenleri"
 
 msgid "Scrap Reasons"
 msgstr "Fire Nedenleri"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "Çıkartıldı"

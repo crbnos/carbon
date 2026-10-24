@@ -249,6 +249,15 @@ export const scrapQuantityValidator = baseQuantityValidator.extend({
   notes: zfd.text(z.string().optional())
 });
 
+// The approver who signs a scrap at the tablet, sent with the scrap form when a
+// scrap approval rule applies. Both are absent on the first submit.
+export const scrapApproverValidator = z.object({
+  approverId: zfd.text(z.string().optional()),
+  approverPin: zfd.text(z.string().optional()),
+  // The estimated value the approver was shown, so they sign that value.
+  approvedValue: zfd.numeric(z.number().optional())
+});
+
 // Scrapping an already-made/staged BOM entity from the Materials section.
 // makeReplacement (Make-to-Order materials only) reopens the subassembly's
 // routing and spawns a replacement unit.

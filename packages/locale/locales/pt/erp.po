@@ -2997,6 +2997,9 @@ msgstr "Aprovar {changeOrderId}"
 msgid "Approve {displayName}"
 msgstr "Aprovar {displayName}"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Aprovado Por"
 
@@ -9402,6 +9405,9 @@ msgstr "Quantidade de refugo estimada aplicada a cada ordem de produção no lot
 msgid "Estimated time"
 msgstr "Tempo estimado"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "Estimativas vs Real"
 
@@ -13814,6 +13820,9 @@ msgstr "Pedido Mínimo:"
 msgid "Minimum Reserve Quantity"
 msgstr "Quantidade Mínima de Reserva"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "Minutos/100 Peças"
 
@@ -15471,6 +15480,9 @@ msgstr "Não configurado"
 msgid "Not Configured"
 msgstr "Não Configurado"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "Não entregue"
 
@@ -15649,6 +15661,9 @@ msgstr "de"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "de {0}h"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "Desligado"
@@ -18564,6 +18579,9 @@ msgstr "Registre o desembolso de {displayId} para o funcionário. Pague menos do
 msgid "Record type"
 msgstr "Tipo de registro"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Registrado em uma calibração que o instrumento de medição precisa de reparo antes que suas leituras possam ser confiáveis."
 
@@ -19160,6 +19178,9 @@ msgstr "Exigir um Contato e Local do Cliente"
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Exigir um Contato e Local do Fornecedor"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Exigir um operador atribuído antes que o programador coloque trabalho em um local. Quando ativado, centros de trabalho sem pessoal não recebem trabalho e uma operação sem cobertura de pessoal aparece como improgramável. Centros de trabalho lights-out (24×7) são isentos."
@@ -20289,6 +20310,9 @@ msgstr "Refugo {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Refugo / Custo da qualidade"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "Percentual de refugo"
 
@@ -20318,6 +20342,9 @@ msgstr "motivos de refugo"
 
 msgid "Scrap Reasons"
 msgstr "Motivos de refugo"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "Sucatada"

@@ -23,7 +23,7 @@ import {
   ModalTitle
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuLayers, LuTriangleAlert } from "react-icons/lu";
 import type { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -31,6 +31,7 @@ import { completeJobOperationBatchValidator } from "~/services/models";
 import type { JobOperationBatch } from "~/services/operations.service";
 import { decimalInput } from "~/utils/display";
 import { path } from "~/utils/path";
+import { ScrapApprovalStep, useScrapApproval } from "./ScrapApproval";
 
 // Spreadsheet-style numeric cell — a bare input (no react-aria stepper arrows),
 // full-cell, right-aligned monospace numerals, focus ring inset so it never
@@ -139,10 +140,13 @@ export function BatchCompleteModal({
       scrapQuantity: String(m.scrapQuantity)
     }))
   );
-  const setRow = (i: number, key: "quantity" | "scrapQuantity", v: string) =>
+  const setRow = (i: number, key: "quantity" | "scrapQuantity", v: string) => {
     setRows((prev) =>
       prev.map((r, idx) => (idx === i ? { ...r, [key]: decimalInput(v) } : r))
     );
+    // A changed scrap quantity is a new value for the approver to see.
+    if (key === "scrapQuantity") approval.reset();
+  };
 
   const isExcludedRow = (i: number) =>
     toNumber(rows[i]?.quantity ?? "0") === 0 &&
@@ -150,6 +154,22 @@ export function BatchCompleteModal({
   const allExcluded = rows.every(
     (r) => toNumber(r.quantity) === 0 && toNumber(r.scrapQuantity) === 0
   );
+  const anyScrap = rows.some((r) => toNumber(r.scrapQuantity) > 0);
+
+  // A scrap approval rule answers a completion with scrap with the approvers;
+  // the grid stays open for the approver's PIN and the same form is sent
+  // again. The fetcher lives in JobOperation and outlives this modal, so an
+  // answer from before it opened is not read.
+  const approval = useScrapApproval();
+  const { settle } = approval;
+  const settledData = useRef<unknown>(fetcher.data);
+  useEffect(() => {
+    if (fetcher.state !== "idle" || fetcher.data === settledData.current) {
+      return;
+    }
+    settledData.current = fetcher.data;
+    settle(fetcher.data);
+  }, [fetcher.state, fetcher.data, settle]);
 
   // Lot identity was planned when the batch was created — the floor only
   // reads it. A merged batch has one lot for everything; otherwise each
@@ -329,6 +349,14 @@ export function BatchCompleteModal({
               </table>
             </div>
             <BatchErrorSummary />
+            {anyScrap && (
+              <div className="mt-4">
+                <ScrapApprovalStep
+                  approval={approval}
+                  isSubmitting={fetcher.state !== "idle"}
+                />
+              </div>
+            )}
             <p className="mt-3 text-pretty text-xs text-muted-foreground">
               <Trans>
                 Leave an operation at 0 to skip it — it returns to the schedule
@@ -337,13 +365,22 @@ export function BatchCompleteModal({
             </p>
           </ModalBody>
           <ModalFooter>
-            <Submit size="lg" isDisabled={allExcluded || unplanned.length > 0}>
+            <Submit
+              size="lg"
+              isDisabled={
+                allExcluded ||
+                unplanned.length > 0 ||
+                (anyScrap && approval.isIncomplete)
+              }
+            >
               {/* While the submit is in flight the realtime revalidation sees the
                   batch pass through Completing — don't flip the label mid-run;
                   "Retry" is only true once we are idle and still parked there. */}
               {fetcher.state === "idle" && isCompleting
                 ? t`Retry Completion`
-                : t`Complete Batch`}
+                : anyScrap && approval.prompt
+                  ? t`Approve and Complete`
+                  : t`Complete Batch`}
             </Submit>
           </ModalFooter>
         </ValidatedForm>

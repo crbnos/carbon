@@ -2997,6 +2997,9 @@ msgstr "{changeOrderId}を承認"
 msgid "Approve {displayName}"
 msgstr "{displayName}を承認"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "承認者"
 
@@ -9402,6 +9405,9 @@ msgstr "バルク一括処理の各ジョブに適用される推定スクラッ
 msgid "Estimated time"
 msgstr "推定時間"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "見積と実績の比較"
 
@@ -13814,6 +13820,9 @@ msgstr "最小注文数:"
 msgid "Minimum Reserve Quantity"
 msgstr "最小予備数量"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "分/100個"
 
@@ -15471,6 +15480,9 @@ msgstr "未設定"
 msgid "Not Configured"
 msgstr "未設定"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "未配送"
 
@@ -15649,6 +15661,9 @@ msgstr "の"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "{0}h中"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "オフ"
@@ -18564,6 +18579,9 @@ msgstr "{displayId}の従業員への支払を記録します。支払うべき�
 msgid "Record type"
 msgstr "レコード種別"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "この校正で、測定器の読み取り値を信頼できる前に修理が必要であることを記録した。"
 
@@ -19160,6 +19178,9 @@ msgstr "得意先の担当者と拠点が必須"
 
 msgid "Require a Supplier Contact and Location"
 msgstr "仕入先の担当者と拠点が必須"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"
@@ -20289,6 +20310,9 @@ msgstr "スクラップ {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "スクラップ/品質原価"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "スクラップ率"
 
@@ -20318,6 +20342,9 @@ msgstr "不良理由"
 
 msgid "Scrap Reasons"
 msgstr "不良理由"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "スクラップ済み"

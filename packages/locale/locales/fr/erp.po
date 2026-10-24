@@ -2997,6 +2997,9 @@ msgstr "Approuver {changeOrderId}"
 msgid "Approve {displayName}"
 msgstr "Approuver {displayName}"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Approuvé par"
 
@@ -9402,6 +9405,9 @@ msgstr "Quantité de rebut estimée appliquée à chaque travail dans le lot."
 msgid "Estimated time"
 msgstr "Temps estimé"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "Estimations vs Réel"
 
@@ -13814,6 +13820,9 @@ msgstr "Commande minimale :"
 msgid "Minimum Reserve Quantity"
 msgstr "Quantité de réserve minimale"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "Minutes/100 Pièces"
 
@@ -15471,6 +15480,9 @@ msgstr "Non configuré"
 msgid "Not Configured"
 msgstr "Non configuré"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "Non livré"
 
@@ -15649,6 +15661,9 @@ msgstr "de"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "de {0}h"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "Désactivé"
@@ -18564,6 +18579,9 @@ msgstr "Enregistrer le versement de {displayId} à l'employé. Payer moins que l
 msgid "Record type"
 msgstr "Type d'enregistrement"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Enregistré lors d'un étalonnage que l'instrument de mesure a besoin d'une réparation avant que ses mesures puissent être fiables."
 
@@ -19160,6 +19178,9 @@ msgstr "Exiger un Contact Client et un Site"
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Exiger un Contact Fournisseur et un Site"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Exiger un opérateur assigné avant que le planificateur ne place le travail sur un site. Lorsque c'est activé, les postes de travail non dotés en personnel ne reçoivent pas de travail et une opération sans couverture en main-d'œuvre s'affiche comme non planifiable. Les postes de travail sans interruption (24×7) sont exemptés."
@@ -20289,6 +20310,9 @@ msgstr "Rebut {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Rebut / Coût de la qualité"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "Pourcentage de rebut"
 
@@ -20318,6 +20342,9 @@ msgstr "Motifs de rebut"
 
 msgid "Scrap Reasons"
 msgstr "Motifs de rebut"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "Mise au rebut"

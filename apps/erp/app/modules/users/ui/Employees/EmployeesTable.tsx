@@ -52,6 +52,8 @@ type EmployeesTableProps = {
   employeeTypes: ListItem[];
   unrevokedInviteEmails: string[];
   mfaEnrolledUserIds: string[];
+  /** A scrap approval rule is on: approvers need a console PIN to sign. */
+  scrapApproverPins?: boolean;
 };
 
 const defaultColumnVisibility = {
@@ -65,7 +67,8 @@ const EmployeesTable = memo(
     count,
     employeeTypes,
     unrevokedInviteEmails,
-    mfaEnrolledUserIds
+    mfaEnrolledUserIds,
+    scrapApproverPins = false
   }: EmployeesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -387,8 +390,9 @@ const EmployeesTable = memo(
                 </MenuItem>
                 {/* Resetting a PIN hands over that person's console identity:
                     console operators need users_update, anyone else also
-                    settings_update (enforced again by the route). */}
-                {settings.consoleEnabled &&
+                    settings_update (enforced again by the route). Scrap
+                    approvers sign with the same PIN. */}
+                {(settings.consoleEnabled || scrapApproverPins) &&
                   permissions.can("update", "users") &&
                   (permissions.can("update", "settings") ||
                     row.email?.endsWith("@console.internal")) && (
@@ -461,6 +465,7 @@ const EmployeesTable = memo(
         permissions,
         resendInviteModal,
         revokeInviteModal,
+        scrapApproverPins,
         settings.consoleEnabled,
         unrevokedInviteSet
       ]
