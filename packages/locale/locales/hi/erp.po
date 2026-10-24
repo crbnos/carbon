@@ -4252,6 +4252,9 @@ msgstr "ब्लाइंड"
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "त्रुटि के साथ ब्लॉक करें"
 
@@ -8162,6 +8165,9 @@ msgstr "डॉलर उपयोग"
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
 
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
+
 msgid "Don't see a serial number?"
 msgstr "सीरियल नंबर नहीं दिख रहा?"
 
@@ -11377,6 +11383,9 @@ msgstr "कच्चे माल के लिए ID और विवरण उ
 
 msgid "If"
 msgstr "यदि"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "यदि मूल्यह्रास पहले ही चला है, तो अगला रन उन महीनों को पकड़ता है जो एक सीधी रेखा परिसंपत्ति को पुरानी लागत पर ले गए।"
@@ -15840,6 +15849,9 @@ msgstr "केवल ड्राफ्ट कार्यविधियाँ 
 
 msgid "Only employees can post receipts."
 msgstr "केवल कर्मचारी प्राप्ति पोस्ट कर सकते हैं।"
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
@@ -21289,6 +21301,9 @@ msgstr "ग्राहक सूची, ग्राहक फॉर्म औ�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
 
 msgid "Show All"
 msgstr "सभी दिखाएँ"

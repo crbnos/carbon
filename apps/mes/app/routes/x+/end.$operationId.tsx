@@ -13,6 +13,7 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { erpPosting } from "~/services/erp";
 import {
+  abilityBlockRefusal,
   finishJobOperation,
   getNextIncompleteSerialEntity,
   getTrackedEntitiesByMakeMethodId,
@@ -79,6 +80,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     );
   }
+  const abilityRefusal = await abilityBlockRefusal(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+  if (abilityRefusal) {
+    return redirect(
+      path.to.operation(operationId),
+      await flash(request, error(null, abilityRefusal))
+    );
+  }
+
   const completeAll = jobOperation.data?.completeAllOnScan ?? false;
 
   const [jobMakeMethod] = await Promise.all([

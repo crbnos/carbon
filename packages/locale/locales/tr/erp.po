@@ -4252,6 +4252,9 @@ msgstr "Kör"
 msgid "Blind Count"
 msgstr "Kör Sayımı"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Hata ile engelle"
 
@@ -8162,6 +8165,9 @@ msgstr "Dolar Kullanım Oranı"
 msgid "Don't Cancel"
 msgstr "İptal Etme"
 
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
+
 msgid "Don't see a serial number?"
 msgstr "Seri numarası göremiyorsunuz?"
 
@@ -11377,6 +11383,9 @@ msgstr "Kimlikler ve açıklamalar hammadde için oluşturulur."
 
 msgid "If"
 msgstr "Eğer"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Amortisman zaten çalıştıysa, sonraki çalıştırma Doğrusal bir varlığın eski maliyette harcadığı ayları yakalama yapar."
@@ -15840,6 +15849,9 @@ msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş 
 
 msgid "Only employees can post receipts."
 msgstr "Yalnızca çalışanlar mal kabul muhasebeleştirebilir."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
@@ -21289,6 +21301,9 @@ msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde oku
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Tedarikçi listesinde, tedarikçi formlarında ve açılır menülerde okunabilir bir Tedarikçi Kimliği sütunu gösterir. Tedarikçiler her iki durumda da dahili olarak tanımlanmaya devam eder."
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
 
 msgid "Show All"
 msgstr "Tümünü göster"

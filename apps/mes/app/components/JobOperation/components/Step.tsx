@@ -128,7 +128,8 @@ export function StepsListItem({
   operationId,
   className,
   onRecord,
-  onDelete
+  onDelete,
+  disabled = false
 }: {
   activeStep: number;
   step: JobOperationStep;
@@ -137,6 +138,8 @@ export function StepsListItem({
   className: string;
   onRecord: (step: JobOperationStep) => void;
   onDelete: (step: JobOperationStep) => void;
+  // The operator may not record on this operation (ability policy 'block')
+  disabled?: boolean;
 }) {
   const fetcher = useFetcher<{ success: boolean }>();
   const user = useUser();
@@ -186,7 +189,7 @@ export function StepsListItem({
                     variant="secondary"
                     size="lg"
                     icon={<LuCircleCheck />}
-                    isDisabled={record?.createdBy !== user?.id}
+                    isDisabled={disabled || record?.createdBy !== user?.id}
                     onClick={() => onRecord(step)}
                     className={cn(
                       "text-emerald-500",
@@ -205,6 +208,7 @@ export function StepsListItem({
                     variant="secondary"
                     size="lg"
                     rightIcon={<LuCircleCheck />}
+                    isDisabled={disabled}
                     onClick={() => onRecord(step)}
                   >
                     <Trans>Update</Trans>
@@ -215,7 +219,7 @@ export function StepsListItem({
                 variant="secondary"
                 size="lg"
                 icon={<LuTrash />}
-                isDisabled={record?.createdBy !== user?.id}
+                isDisabled={disabled || record?.createdBy !== user?.id}
                 onClick={() => onDelete(step)}
               />
             </div>
@@ -233,7 +237,7 @@ export function StepsListItem({
                   icon={<LuCircleCheck />}
                   type="submit"
                   isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
+                  isDisabled={disabled || fetcher.state !== "idle"}
                 />
               ) : (
                 <Button
@@ -242,7 +246,7 @@ export function StepsListItem({
                   size="lg"
                   rightIcon={<LuCircleCheck />}
                   isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
+                  isDisabled={disabled || fetcher.state !== "idle"}
                 >
                   <Trans>Complete</Trans>
                 </Button>
@@ -254,6 +258,7 @@ export function StepsListItem({
               variant="secondary"
               size="lg"
               icon={<LuCircleCheck />}
+              isDisabled={disabled}
               onClick={() => onRecord(step)}
             />
           ) : (
@@ -261,6 +266,7 @@ export function StepsListItem({
               variant="secondary"
               size="lg"
               rightIcon={<LuCircleCheck />}
+              isDisabled={disabled}
               onClick={() => onRecord(step)}
             >
               <Trans>Record</Trans>

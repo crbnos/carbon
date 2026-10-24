@@ -13,6 +13,7 @@ import { useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getAbilityShortfall,
   getBatchMaterialTotals,
   getBatchWorkInstructions,
   getJobByOperationId,
@@ -244,7 +245,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobMakeMethod,
     kanban,
     bomIdMap,
-    companySettings
+    companySettings,
+    abilityWarning
   ] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
     getTrackedEntitiesByMakeMethodId(
@@ -255,7 +257,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
     getKanbanByJobId(serviceRole, job.data.id),
     getJobMethodBomIdMap(serviceRole, job.data.id!),
-    getCompanySettings(serviceRole, companyId)
+    getCompanySettings(serviceRole, companyId),
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    })
   ]);
 
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
@@ -364,6 +371,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     }),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
+    abilityWarning,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
@@ -388,6 +396,7 @@ export default function OperationRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const {
+    abilityWarning,
     batch,
     batchMaterialTotals,
     batchWorkInstructions,
@@ -411,6 +420,7 @@ export default function OperationRoute() {
   return (
     <JobOperation
       key={`job-operation-${operationId}`}
+      abilityWarning={abilityWarning}
       batch={batch}
       batchMaterialTotals={batchMaterialTotals}
       batchWorkInstructions={batchWorkInstructions}
