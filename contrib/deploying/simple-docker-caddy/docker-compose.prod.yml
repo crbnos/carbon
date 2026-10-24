@@ -342,7 +342,7 @@ services:
           memory: 512M
 
   realtime:
-    image: supabase/realtime:v2.89.0
+    image: supabase/realtime:v2.145.3
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     command: ["/usr/bin/tini", "-s", "-g", "--", "/app/run.sh", "/app/bin/server"]
     networks:
