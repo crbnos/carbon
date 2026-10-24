@@ -99,6 +99,12 @@ export async function action({ request }: ActionFunctionArgs) {
     : (companyLookup?.data ?? []);
   // A failed read is not "no company": nothing is accepted on its say-so.
   const membershipKnown = !employeeLookup.error && !companyLookup?.error;
+  if (!membershipKnown) {
+    logger.error("Failed to read memberships on sign-in", {
+      error: employeeLookup.error ?? companyLookup?.error,
+      userId
+    });
+  }
 
   const cookieCompanyId = getCompanyId(request);
   const match =
@@ -479,6 +485,13 @@ export async function action({ request }: ActionFunctionArgs) {
         .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      if (pendingInvite.error) {
+        logger.error("Failed to look up a pending invite on sign-in", {
+          error: pendingInvite.error,
+          userId: authSession.userId
+        });
+      }
 
       if (pendingInvite.data) {
         const accept = await acceptInvite(
