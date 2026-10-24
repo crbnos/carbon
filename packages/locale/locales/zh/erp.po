@@ -496,6 +496,8 @@ msgstr "{count, plural, one {# 项资产} other {# 项资产}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, other {{fenceLabel}之后还有 # 个}}"
 
@@ -3980,6 +3982,8 @@ msgstr "备份"
 msgid "Balance"
 msgstr "余额"
 
+msgid "Balance Remaining:"
+msgstr "剩余余额："
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0} 的余额"
@@ -16498,12 +16502,14 @@ msgstr "页面"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "第 {pdfViewPage} 页，共 {documentPageCount} 页"
 
-msgid "Paid Amount:"
-msgstr "已支付金额："
+msgid "Paid"
+msgstr "已付清"
 
 msgid "Paid Date"
 msgstr "支付日期"
 
+msgid "Paid:"
+msgstr "已付："
 msgid "Paid outside Carbon"
 msgstr "在 Carbon 外已支付"
 

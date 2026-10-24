@@ -496,6 +496,8 @@ msgstr "{count, plural, one {# 個の資産} other {# 個の資産}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, other {{fenceLabel}以降の追加 # 件}}"
 
@@ -3980,6 +3982,8 @@ msgstr "バックアップ"
 msgid "Balance"
 msgstr "残高"
 
+msgid "Balance Remaining:"
+msgstr "残額:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0}の残高"
@@ -16498,12 +16502,14 @@ msgstr "ページ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "ページ {pdfViewPage} / {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "支払済み金額:"
+msgid "Paid"
+msgstr "支払済"
 
 msgid "Paid Date"
 msgstr "支払日"
 
+msgid "Paid:"
+msgstr "支払済:"
 msgid "Paid outside Carbon"
 msgstr "Carbonの外で支払済み"
 
