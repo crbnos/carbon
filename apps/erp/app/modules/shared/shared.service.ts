@@ -16045,6 +16045,116 @@ export function computeCurrentUnitCost(
       return Number(itemCost.unitCost ?? 0);
   }
 }
+
+/**
+ * An Average item's unit cost after `quantity` units worth `value` come in
+ * (or go out, both negative) at a cost of their own: a receipt, a voided
+ * receipt, an invoice's write-up (`quantity` 0). The same moving average
+ * complete_job_to_inventory keeps, so on-hand × unit cost stays what the
+ * journals booked. With nothing left on hand the cost stays as it was.
+ */
+export function movingAverageUnitCost({
+  onHand,
+  unitCost,
+  quantity,
+  value
+}: {
+  onHand: number;
+  unitCost: number;
+  quantity: number;
+  value: number;
+}): number {
+  const after = onHand + quantity;
+  if (after <= EPSILON) return unitCost;
+  return (onHand * unitCost + value) / after;
+}
+
+/** Units and value a posting moves at their own cost, per item. */
+export type AverageCostChange = {
+  itemId: string;
+  quantity: number;
+  value: number;
+};
+
+/**
+ * Folds `changes` into the unit cost of every Average item among them
+ * (`movingAverageUnitCost`); other costing methods are left alone. Call it
+ * BEFORE the posting inserts its own item ledger rows: on-hand is read as it
+ * stood before them. Locks the cost rows, so two postings of one item
+ * average in turn.
+ */
+export async function applyAverageCostChanges(
+  trx: Transaction<DB>,
+  { companyId, changes }: { companyId: string; changes: AverageCostChange[] }
+): Promise<void> {
+  const byItem = new Map<string, { quantity: number; value: number }>();
+  for (const change of changes) {
+    const total = byItem.get(change.itemId) ?? { quantity: 0, value: 0 };
+    total.quantity += change.quantity;
+    total.value += change.value;
+    byItem.set(change.itemId, total);
+  }
+  if (byItem.size === 0) return;
+
+  const averageCosts = await trx
+    .selectFrom("itemCost")
+    .select(["itemId", "unitCost"])
+    .where("companyId", "=", companyId)
+    .where("itemId", "in", [...byItem.keys()])
+    .where("costingMethod", "=", "Average")
+    .orderBy("itemId")
+    .forUpdate()
+    .execute();
+  if (averageCosts.length === 0) return;
+
+  const onHand = await trx
+    .selectFrom("itemLedger")
+    .select((eb) => ["itemId", eb.fn.sum<number>("quantity").as("quantity")])
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      averageCosts.map((row) => row.itemId)
+    )
+    .groupBy("itemId")
+    .execute();
+  const onHandByItem = new Map(
+    onHand.map((row) => [row.itemId, Number(row.quantity ?? 0)])
+  );
+
+  const updates = averageCosts.flatMap((row) => {
+    const unitCost = Number(row.unitCost ?? 0);
+    const change = byItem.get(row.itemId)!;
+    const next = round(
+      movingAverageUnitCost({
+        onHand: onHandByItem.get(row.itemId) ?? 0,
+        unitCost,
+        quantity: change.quantity,
+        value: change.value
+      })
+    );
+    return equals(next, unitCost) ? [] : [{ itemId: row.itemId, next }];
+  });
+  if (updates.length === 0) return;
+
+  await trx
+    .updateTable("itemCost")
+    .set({
+      unitCost: sql<number>`CASE "itemId" ${sql.join(
+        updates.map(
+          ({ itemId, next }) => sql`WHEN ${itemId} THEN ${next}::numeric`
+        ),
+        sql` `
+      )} END`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      updates.map((update) => update.itemId)
+    )
+    .execute();
+}
 export interface BookAdjustmentArgs {
   ledger: {
     postingDate: string; // yyyy-MM-dd

@@ -6758,6 +6758,9 @@ msgstr "покупатель"
 msgid "Customer"
 msgstr "Покупатель"
 
+msgid "Customer / Supplier"
+msgstr "Покупатель / Поставщик"
+
 msgid "Customer Accounts"
 msgstr "Счета покупателя"
 
