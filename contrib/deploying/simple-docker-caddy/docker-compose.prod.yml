@@ -595,7 +595,7 @@ services:
           memory: 512M
 
   inngest:
-    image: inngest/inngest:v1.19.4
+    image: inngest/inngest:v1.46.0
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     command:
       - inngest
