@@ -1588,6 +1588,9 @@ msgstr "针对工单工序记录的换型、人工或机器工作的计时记录
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "刀具是用于制造零件的物理物料，可在多个工单中使用"
 
+msgid "A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "当以下任何条件为真时，件作为销售处理，否则作为租赁处理。"
 
@@ -2698,6 +2701,9 @@ msgstr "物料的补货方式更改"
 
 msgid "An item's revision status changes"
 msgstr "物料的修订版状态更改"
+
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
 
 msgid "An item's tracking type changes"
 msgstr "物料的追踪类型更改"
@@ -5303,6 +5309,9 @@ msgstr "公司"
 msgid "Company default"
 msgstr "公司默认值"
 
+msgid "Company default ({companyDefault})"
+msgstr ""
+
 msgid "Company default ({companyLabel})"
 msgstr "公司默认值 ({companyLabel})"
 
@@ -7132,6 +7141,9 @@ msgstr "决定操作员在尝试发放已过期的批次或序列号时看到的
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "决定当操作员在车间按下完成时且原材料仍未拣货时发生的情况。"
+
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "决定何时将拣货到工作中心但未消耗的原材料流回仓库。"
@@ -9494,6 +9506,12 @@ msgstr "每一行都已成功导入。"
 
 msgid "Every unit has a rate."
 msgstr "每件都有费率。"
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "每个人在打开此公司之前都必须设置身份验证器应用程序。"
@@ -20808,6 +20826,18 @@ msgstr "序列号："
 msgid "Serial Numbers"
 msgstr "序列号"
 
+msgid "Serial numbers are drawn when a unit is produced"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is created"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
@@ -24529,6 +24559,9 @@ msgstr "计时器运行中"
 msgid "Timezone"
 msgstr "时区"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "向远离你的方向倾斜"
 
@@ -26444,6 +26477,12 @@ msgstr "当客户请求不再最新时;此日期之后,RFQ将自动关闭,除非
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "货物实际到达时;在收据上记录,用于供应商准时交货评分。"
 
+msgid "When the job is created"
+msgstr ""
+
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "当扫描看板卡时，工单自动从草稿移出并已下达到工厂。"
 
@@ -26465,11 +26504,17 @@ msgstr "供应商何时承诺交货;计划使用该日期进行入库库存到�
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "供应商定价不再被遵守时;此日期之后将该报价转换为PO可能需要重新报价。"
 
+msgid "When the unit is produced"
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "该量具何时需要校准；过期后读数显示为失准。"
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "此量具最后一次成功校准时；下一个校准日期从此值加上间隔重新计算。"
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "当这看起来正确时，将其标记为已同意。这将完成您的指挥中心上的发现步骤。"

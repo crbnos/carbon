@@ -1241,6 +1241,9 @@ msgstr "不需要样本。"
 msgid "No scheduled time"
 msgstr "无排定时间"
 
+msgid "No serial number yet"
+msgstr "尚无序列号"
+
 msgid "No serial numbers"
 msgstr "无序列号"
 
@@ -2048,8 +2051,8 @@ msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "此零件将从库存报废。其要求保持未结，以便您可以领料替代品。"
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "此单元将被永久报废，并将创建替换序列号。"
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "此单元将被永久报废，并将创建替换单元。"
 
 msgid "Thumbnail"
 msgstr "缩略图"

@@ -61,6 +61,7 @@ vi.mock("@carbon/planning", () => ({
 }));
 vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  assignJobSerialNumbersAtRelease: vi.fn(async () => {}),
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   runMRP: vi.fn(async () => ({ data: null, error: null })),

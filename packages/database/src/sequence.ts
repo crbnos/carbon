@@ -5,7 +5,7 @@
 // Document-number allocation lives in one place: duplicate implementations
 // silently diverge and mint duplicate sequence IDs.
 import { CalendarDate, getDayOfWeek, now } from "@internationalized/date";
-import { sql, type Transaction } from "kysely";
+import { type Kysely, sql, type Transaction } from "kysely";
 import type { KyselyDatabase } from "./client.ts";
 import { getCompanyTimeZone } from "./timezone.ts";
 
@@ -23,7 +23,8 @@ const isoWeekFromYmd = (year: number, month: number, day: number): number => {
 // Date tokens derive in the company's business timezone so document prefixes
 // roll over at the company's midnight, not the process's. The ERP's live
 // preview (`interpolateSequenceDate` in apps/erp/app/utils/string.ts) mirrors
-// this — keep the two in sync, along with get_next_sequence (SQL) and
+// this — keep the two in sync, along with get_next_sequence (SQL),
+// interpolate_serial_segment (SQL, the serial numbers' tokens) and
 // util.document_sequence_pattern (src/event-system/functions), which reads a
 // saved number back to keep the counter ahead of it.
 const interpolateSequenceDate = (value?: string | null, timezone = "UTC") => {
@@ -44,22 +45,6 @@ const interpolateSequenceDate = (value?: string | null, timezone = "UTC") => {
   }
 
   return result;
-};
-
-// Serial-number segment interpolation: the date/week tokens above, plus the
-// job-context %{location} token (location.code, falling back to location.name).
-const interpolateSerialNumber = (
-  value: string | null | undefined,
-  context: {
-    locationCode?: string | null;
-    locationName?: string | null;
-    timezone?: string;
-  }
-) => {
-  const withDates = interpolateSequenceDate(value, context.timezone);
-  if (!withDates.includes("%{location}")) return withDates;
-  const location = (context.locationCode ?? context.locationName ?? "").trim();
-  return withDates.replace(/%{location}/g, location);
 };
 
 export async function getNextSequence(
@@ -150,18 +135,21 @@ export async function getNextRevisionSequence(
 
 /**
  * Atomically reserve and format the next `count` serial numbers for an item from
- * its configured `itemSerialSequence`. Returns `[]` when the item has no sequence
- * (so callers leave `readableId` null, exactly as before). Runs inside the
- * caller's Kysely transaction, so the counter reservation commits — or rolls back
- * — together with the write that consumes the numbers.
+ * its configured `itemSerialSequence`, through the SQL `get_next_serial_numbers`.
+ * Returns `[]` when the item has no sequence (so callers leave `readableId` null,
+ * exactly as before). Runs inside the caller's Kysely transaction, so the counter
+ * reservation commits — or rolls back — together with the write that consumes
+ * the numbers.
  *
- * Each number interpolates the date/week tokens (%{yyyy} %{yy} %{mm} %{ww} %{dd})
- * plus %{location} (location.code, falling back to the location name).
+ * Each number interpolates the date/week tokens (%{yyyy} %{yy} %{mm} %{ww} %{dd}
+ * %{hh} %{ss}) in the company's timezone, plus %{location} (location.code,
+ * falling back to the location name).
  *
- * Used by both `assign-serial-numbers` (the N units that exist at job creation)
- * and `issue` (a unit spawned lazily on completion, e.g. after the job quantity
- * was increased), so serials follow the pattern regardless of when the entity is
- * created.
+ * Used by `assign-serial-numbers` (the N units that exist at job creation),
+ * `issue` (a unit spawned lazily on completion, e.g. after the job quantity was
+ * increased) and the `serialNumberTiming = 'production'` first-touch paths
+ * (`assignSerialNumberIfMissing`, the ERP completion), so serials follow the
+ * pattern regardless of when the entity is numbered.
  */
 export async function getNextSerialNumbers(
   trx: Transaction<KyselyDatabase>,
@@ -174,37 +162,144 @@ export async function getNextSerialNumbers(
   }
 ): Promise<string[]> {
   if (args.count < 1) return [];
+  // One allocator: get_next_serial_numbers formats in SQL, so the database's
+  // own completion path (number_serial_units_for_completion) and every
+  // TypeScript caller produce the same numbers.
+  const result = await sql<{ serials: string[] | null }>`
+    SELECT get_next_serial_numbers(
+      ${args.itemId},
+      ${args.companyId},
+      ${args.count}::integer,
+      ${args.locationCode ?? null},
+      ${args.locationName ?? null}
+    ) AS serials
+  `.execute(trx);
+  return result.rows[0]?.serials ?? [];
+}
 
-  const reserved = await trx
-    .updateTable("itemSerialSequence")
-    .set({
-      next: sql<number>`"next" + ${args.count} * "step"`,
-      updatedBy: "system",
-      updatedAt: new Date().toISOString()
-    })
-    .where("itemId", "=", args.itemId)
+export const serialNumberTimings = [
+  "jobCreation",
+  "jobRelease",
+  "production"
+] as const;
+export type SerialNumberTiming = (typeof serialNumberTimings)[number];
+
+function asSerialNumberTiming(value: unknown): SerialNumberTiming | null {
+  return serialNumberTimings.find((timing) => timing === value) ?? null;
+}
+
+/**
+ * When a produced unit draws its serial number: `jobCreation` (the default)
+ * numbers every unit when the job is created; `jobRelease` when the job is
+ * released to the shop floor; `production` leaves the job's units unnumbered
+ * and numbers each one the first time it is touched (its first production
+ * event, its first operation completion, its scrap, or the receipt that
+ * completes the job).
+ *
+ * With an item, its serial sequence's own timing wins and the company's is the
+ * default. Anything unreadable falls back to `jobCreation`, which is what every
+ * company had before the setting existed.
+ */
+export async function getSerialNumberTiming(
+  db: Transaction<KyselyDatabase> | Kysely<KyselyDatabase>,
+  companyId: string,
+  itemId?: string | null
+): Promise<SerialNumberTiming> {
+  if (itemId) {
+    const sequence = await db
+      .selectFrom("itemSerialSequence")
+      .select(["serialNumberTiming"])
+      .where("itemId", "=", itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const itemTiming = asSerialNumberTiming(sequence?.serialNumberTiming);
+    if (itemTiming) return itemTiming;
+  }
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["serialNumberTiming"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  return asSerialNumberTiming(settings?.serialNumberTiming) ?? "jobCreation";
+}
+
+/**
+ * Number ONE tracked entity from its item's `itemSerialSequence`, if it has no
+ * number yet. Returns the assigned serial, or null when nothing was assigned:
+ * the entity is already numbered, has no item, or its item has no sequence.
+ *
+ * This is the `serialNumberTiming = 'production'` path, so every call site is a
+ * "first touch" hook and must be safe to fire repeatedly on the same unit:
+ * hence the `readableId IS NULL` guard and the row lock. Two operators touching
+ * the same unit at once serialize on the entity row, and the second sees the
+ * first one's number instead of reserving and burning another. Runs inside the
+ * caller's transaction, so the counter reservation commits or rolls back with
+ * the write that prompted it.
+ *
+ * `onlyIfSingleUnit` leaves an entity holding more than one unit unnumbered.
+ * A caller that does not cut the entity to one unit in the same transaction
+ * passes it, or a job's unsplit seed would carry one serial for every unit.
+ */
+export async function assignSerialNumberIfMissing(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    trackedEntityId: string;
+    companyId: string;
+    onlyIfSingleUnit?: boolean;
+  }
+): Promise<string | null> {
+  const entity = await trx
+    .selectFrom("trackedEntity")
+    .select(["id", "itemId", "readableId", "attributes", "quantity"])
+    .where("id", "=", args.trackedEntityId)
     .where("companyId", "=", args.companyId)
-    .returning(["next", "prefix", "suffix", "size", "step"])
+    .forUpdate()
     .executeTakeFirst();
 
-  if (!reserved) return []; // item has no serial sequence configured
+  if (!entity || entity.readableId || !entity.itemId) return null;
+  if (args.onlyIfSingleUnit && Number(entity.quantity) !== 1) return null;
 
-  const size = reserved.size ?? 5;
-  const step = reserved.step ?? 1;
-  const startNext = reserved.next - args.count * step;
-  const context = {
-    locationCode: args.locationCode,
-    locationName: args.locationName,
-    timezone: await getCompanyTimeZone(trx, args.companyId)
-  };
+  const [readableId] = await getNextSerialNumbers(trx, {
+    itemId: entity.itemId,
+    companyId: args.companyId,
+    count: 1,
+    ...(await getEntityJobLocation(trx, entity.attributes, args.companyId))
+  });
+  if (!readableId) return null;
 
-  const serials: string[] = [];
-  for (let i = 1; i <= args.count; i++) {
-    const value = startNext + i * step;
-    const counter = value.toString().padStart(size, "0");
-    const prefix = interpolateSerialNumber(reserved.prefix, context);
-    const suffix = interpolateSerialNumber(reserved.suffix, context);
-    serials.push(`${prefix}${counter}${suffix}`);
+  await trx
+    .updateTable("trackedEntity")
+    .set({ readableId })
+    .where("id", "=", entity.id)
+    .where("companyId", "=", args.companyId)
+    .execute();
+
+  return readableId;
+}
+
+/**
+ * The %{location} context for a job's unit: the location of the job named by
+ * its `Job` attribute. A unit with no Job attribute interpolates the token to
+ * nothing, as it would at job creation for a job with no location.
+ */
+export async function getEntityJobLocation(
+  trx: Transaction<KyselyDatabase>,
+  attributes: unknown,
+  companyId: string
+): Promise<{ locationCode: string | null; locationName: string | null }> {
+  const jobId = (attributes as Record<string, unknown> | null)?.Job;
+  if (typeof jobId !== "string") {
+    return { locationCode: null, locationName: null };
   }
-  return serials;
+  const location = await trx
+    .selectFrom("job")
+    .innerJoin("location", "location.id", "job.locationId")
+    .select(["location.code as code", "location.name as name"])
+    .where("job.id", "=", jobId)
+    .where("job.companyId", "=", companyId)
+    .executeTakeFirst();
+  return {
+    locationCode: location?.code ?? null,
+    locationName: location?.name ?? null
+  };
 }

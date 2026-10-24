@@ -1588,6 +1588,9 @@ msgstr "Фиксированная по времени запись работы
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Инструмент — это физический предмет, используемый для производства детали, который можно использовать на нескольких производственных заказах"
 
+msgid "A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none."
+msgstr ""
+
 msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 msgstr "Единица рассматривается как продажа, если выполнено одно из этих условий, в противном случае — как аренда."
 
@@ -2698,6 +2701,9 @@ msgstr "Способ пополнения номенклатуры измени�
 
 msgid "An item's revision status changes"
 msgstr "Статус ревизии номенклатуры изменился"
+
+msgid "An item's serial number sequence can override this choice."
+msgstr ""
 
 msgid "An item's tracking type changes"
 msgstr "Тип отслеживания элемента изменяется"
@@ -5303,6 +5309,9 @@ msgstr "Организация"
 msgid "Company default"
 msgstr "По умолчанию организации"
 
+msgid "Company default ({companyDefault})"
+msgstr ""
+
 msgid "Company default ({companyLabel})"
 msgstr "Значение по умолчанию организации ({companyLabel})"
 
@@ -7132,6 +7141,9 @@ msgstr "Решите, что видит оператор при попытке �
 
 msgid "Decide what happens when an operator presses Finish on the shop floor with material still unpicked."
 msgstr "Решите, что происходит, когда оператор нажимает «Завершить» на цехе с еще не отобранным материалом."
+
+msgid "Decide when a produced unit draws its number from the item's serial sequence. Items without a sequence are unaffected."
+msgstr ""
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Решение о том, когда материал, отобранный в рабочий центр, но не использованный, поступает обратно на склад."
@@ -9494,6 +9506,12 @@ msgstr "Каждая строка была успешно импортирова
 
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
+
+msgid "Every unit is numbered up front, so serials can be printed before work starts."
+msgstr ""
+
+msgid "Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none."
+msgstr ""
 
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Все должны установить приложение-аутентификатор перед открытием этой организации."
@@ -20808,6 +20826,18 @@ msgstr "Серийный номер:"
 msgid "Serial Numbers"
 msgstr "Серийные номера"
 
+msgid "Serial numbers are drawn when a unit is produced"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is created"
+msgstr ""
+
+msgid "Serial numbers are drawn when the job is released"
+msgstr ""
+
+msgid "Serial numbers are drawn when the units are received."
+msgstr ""
+
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Серийные номера генерируются только для серийных или партионно отслеживаемых товаров."
 
@@ -24529,6 +24559,9 @@ msgstr "Таймер запущен"
 msgid "Timezone"
 msgstr "Часовой пояс"
 
+msgid "Timing"
+msgstr ""
+
 msgid "Tip away from you"
 msgstr "Наклонить от себя"
 
@@ -26444,6 +26477,12 @@ msgstr "Когда запрос покупателя перестает быть
 msgid "When the goods actually arrived; recorded on the receipt and used for supplier on-time-delivery scoring."
 msgstr "Когда товары действительно прибыли; записано в квитанцию и используется для оценки доставки поставщика вовремя."
 
+msgid "When the job is created"
+msgstr ""
+
+msgid "When the job is released"
+msgstr ""
+
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Когда карточка канбана сканируется, задание автоматически удаляется из черновика и выпускается на пол."
 
@@ -26465,11 +26504,17 @@ msgstr "Когда поставщик обязался доставить; пл�
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Когда ценообразование поставщика перестает действовать; преобразование этого Коммерческого предложения в Заказ поставщику после этой даты может потребовать переквотирования."
 
+msgid "When the unit is produced"
+msgstr ""
+
 msgid "When this gauge becomes due for calibration; once past due it reads Out-of-Calibration."
 msgstr "Когда это Средство измерения подлежит Калибровке; после истечения срока оно показывает « Вне калибровки »."
 
 msgid "When this gauge was last successfully calibrated; the next-calibration date recomputes from this value plus the interval."
 msgstr "Когда это средство измерения последний раз успешно калибровалось; дата следующей калибровки пересчитывается из этого значения плюс интервал."
+
+msgid "When this item's units draw their serial numbers. Leave empty to follow Settings → Production."
+msgstr ""
 
 msgid "When this looks right, mark it agreed. That completes the Discovery step on your command center."
 msgstr "Когда это выглядит правильно, отметьте это как согласованное. Это завершает шаг Открытия на вашем центре управления."

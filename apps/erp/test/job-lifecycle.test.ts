@@ -58,6 +58,10 @@ vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
 vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
 vi.mock("../app/modules/production/production.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  // The SQL numbering and receipt need a database;
+  // serial-number-timing.test.ts covers them.
+  numberSerialUnitsForCompletion: vi.fn(async () => ({ numbered: 0 })),
+  completeJobToInventory: vi.fn(async () => {}),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(async () => ({ data: {}, error: null })),
@@ -68,6 +72,7 @@ vi.mock("../app/modules/production/production.service", async (importOriginal) =
 }));
 
 import {
+  completeJobToInventory,
   returnPickedRemaindersForJob,
   upsertProductionQuantity
 } from "../app/modules/production/production.service";
@@ -84,11 +89,8 @@ import { createServiceContext } from "@carbon/api/service-fn.server";
 /** Every status the job was moved to, with the statuses the move allowed. */
 let statusWrites: { status: unknown; fromStatuses?: unknown }[] = [];
 
-/** The user client: the job as read, its status writes, and the completion RPC's answer. */
-function callerWith(
-  job: Record<string, unknown> | null,
-  rpc: { error: { message: string } | null } = { error: null }
-) {
+/** The user client: the job as read and its status writes. */
+function callerWith(job: Record<string, unknown> | null) {
   const read: Record<string, unknown> = {};
   for (const method of ["select", "eq"]) read[method] = () => read;
   read.maybeSingle = async () => ({ data: job, error: null });
@@ -106,10 +108,7 @@ function callerWith(
     };
     return write;
   };
-  return {
-    from: () => ({ ...read, update }),
-    rpc: async () => ({ data: null, ...rpc })
-  };
+  return { from: () => ({ ...read, update }) };
 }
 
 const contextWith = (caller: unknown) =>
@@ -124,7 +123,9 @@ const contextWith = (caller: unknown) =>
     company: { id: "c1", groupId: "g1" },
     caller: caller as never,
     system: () => ({}) as never,
-    pg: () => ({}) as never,
+    // An open transaction: ctx.transaction joins it, and the service
+    // functions that would use it are stubbed above.
+    pg: () => ({ isTransaction: true }) as never,
     kv: () => ({}) as never
   });
 
@@ -265,11 +266,10 @@ describe("completeJob", () => {
     completeJob(contextWith(caller), { jobId: "j1", quantityComplete: 5 });
 
   it("returns the database's refusal as a rule, and returns nothing picked", async () => {
-    const result = await complete(
-      callerWith(null, {
-        error: { message: "Quantity is below what was received" }
-      })
+    vi.mocked(completeJobToInventory).mockRejectedValueOnce(
+      new Error("Quantity is below what was received")
     );
+    const result = await complete(callerWith(null));
     expect(result.error).toMatchObject({
       category: "rule",
       message: "Quantity is below what was received"

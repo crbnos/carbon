@@ -79,7 +79,8 @@ import {
 import {
   getNextRevisionSequence,
   getNextSequence,
-  getNextSerialNumbers
+  getNextSerialNumbers,
+  getSerialNumberTiming
 } from "@carbon/database/sequence";
 import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
 import {
@@ -3808,15 +3809,28 @@ export async function insertJob(
 }
 
 /**
- * Assign configured serial numbers to a freshly-created job's tracked entities.
- * Best-effort and cheap: it skips the operation entirely unless the item has
- * an `itemSerialSequence` configured. Shared by every job-creation path so serial
- * numbering is applied consistently (insertJob, sales-order conversion, ...).
+ * Assign configured serial numbers to a job's tracked entities, when the job is
+ * created or when it is released. Best-effort and cheap: it skips the operation
+ * entirely unless the item has an `itemSerialSequence` configured. Shared by
+ * every job-creation path (insertJob, sales-order conversion, ...) and by
+ * `releaseCheckedJobs`, so serial numbering is applied consistently.
+ *
+ * Runs only at the moment the item's timing names (`getSerialNumberTiming`):
+ * `jobCreation` at creation, `jobRelease` at release. Under `production` the
+ * job's units stay unnumbered and each draws its number the first time it is
+ * touched (see `assignSerialNumberIfMissing` and
+ * `numberSerialUnitsForCompletion`).
  */
-async function assignJobSerialNumbers(
+export async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { jobId: string; itemId: string; companyId: string; userId: string }
+  args: {
+    jobId: string;
+    itemId: string;
+    companyId: string;
+    userId: string;
+    moment?: "creation" | "release";
+  }
 ) {
   const serialSequence = await client
     .from("itemSerialSequence")
@@ -3835,6 +3849,25 @@ async function assignJobSerialNumbers(
     return;
   }
   if (!serialSequence.data) return;
+  // The timing is for serial units. A Batch job's one lot is numbered when the
+  // job is created, as before: number_serial_units_for_completion numbers
+  // serial units only, so a deferred lot would be received with no number.
+  const item = await db
+    .selectFrom("item")
+    .select("itemTrackingType")
+    .where("id", "=", args.itemId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  const timing =
+    item?.itemTrackingType === "Batch"
+      ? "jobCreation"
+      : await getSerialNumberTiming(db, args.companyId, args.itemId);
+  if (
+    timing !==
+    ((args.moment ?? "creation") === "creation" ? "jobCreation" : "jobRelease")
+  ) {
+    return;
+  }
   const { error } = await invokePosting(
     { client, db, companyId: args.companyId, userId: args.userId },
     "assign-serial-numbers",
@@ -3844,6 +3877,40 @@ async function assignJobSerialNumbers(
   );
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
+  }
+}
+
+/**
+ * Number a job's units when `releaseCheckedJobs` releases it, under the
+ * `jobRelease` timing (the item's, else the company's). Best-effort: the job is
+ * already Ready, so a failure is logged and the release goes on; the units then
+ * draw their numbers at their first touch or at completion
+ * (`number_serial_units_for_completion`).
+ */
+export async function assignJobSerialNumbersAtRelease(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+) {
+  try {
+    const job = await db
+      .selectFrom("job")
+      .select(["itemId"])
+      .where("id", "=", args.jobId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!job?.itemId) return;
+    await assignJobSerialNumbers(client, db, {
+      ...args,
+      itemId: job.itemId,
+      moment: "release"
+    });
+  } catch (error) {
+    logger.error("Failed to number serial units at release", {
+      error,
+      jobId: args.jobId,
+      companyId: args.companyId
+    });
   }
 }
 
@@ -12732,6 +12799,67 @@ export async function assignSerialNumbers(
     return { assigned: count };
   });
 }
+
+/**
+ * Receipt as first touch: before `complete_job_to_inventory` takes
+ * `quantityComplete` units of a serial job, split what it needs off the job's
+ * unsplit seed and number every unit it takes. Without this an untouched job
+ * would be received as one unnumbered entity holding every unit.
+ *
+ * Under the `jobRelease` and `production` timings that is the normal case.
+ * Under `jobCreation` every unit is numbered at creation, so it numbers
+ * nothing, unless the job was created under another timing before the item or
+ * company switched back. The timing is not read here for that reason.
+ *
+ * The SQL `number_serial_units_for_completion` does the work, so this path and
+ * the `sync_finish_job_operation` interceptor (an operation marked Done) share
+ * one implementation. It is a no-op when every unit taken is numbered, for an
+ * item with no serial sequence, and when the job cannot cover the completion.
+ * `completeJob` runs it in the completion's own transaction, so a refused
+ * completion rolls the numbering back.
+ */
+export async function numberSerialUnitsForCompletion(
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; quantityComplete: number; companyId: string }
+): Promise<{ numbered: number }> {
+  const result = await sql<{ numbered: number }>`
+    SELECT number_serial_units_for_completion(
+      ${args.jobId},
+      ${args.quantityComplete}::numeric,
+      ${args.companyId}
+    ) AS numbered
+  `.execute(db);
+  return { numbered: Number(result.rows[0]?.numbered ?? 0) };
+}
+
+/**
+ * Receive a job's completion through `complete_job_to_inventory`, on the given
+ * connection or transaction. It throws when the function refuses; the message
+ * says what to fix.
+ */
+export async function completeJobToInventory(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    jobId: string;
+    quantityComplete: number;
+    storageUnitId?: string;
+    locationId?: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  await sql`
+    SELECT complete_job_to_inventory(
+      p_job_id := ${args.jobId},
+      p_quantity_complete := ${args.quantityComplete}::numeric,
+      p_storage_unit_id := ${args.storageUnitId ?? null},
+      p_location_id := ${args.locationId ?? null},
+      p_company_id := ${args.companyId},
+      p_user_id := ${args.userId}
+    )
+  `.execute(db);
+}
+
 const sandboxLogger = getLogger("erp", "configuration-rule");
 
 /**

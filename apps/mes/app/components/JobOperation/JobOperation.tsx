@@ -2148,9 +2148,16 @@ export const JobOperation = ({
                                               </span>
                                             </>
                                           ) : (
-                                            <span className="font-mono truncate">
-                                              {entity.id}
-                                            </span>
+                                            <>
+                                              <span className="font-medium text-muted-foreground truncate">
+                                                <Trans>
+                                                  No serial number yet
+                                                </Trans>
+                                              </span>
+                                              <span className="text-xs text-muted-foreground font-mono truncate">
+                                                {entity.id}
+                                              </span>
+                                            </>
                                           )}
                                         </div>
                                         {entity.id === trackedEntityId && (

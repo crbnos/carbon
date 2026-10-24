@@ -229,8 +229,9 @@ export const planDraftJob = defineServiceFn({
  *
  * @remarks
  * The step every release path shares (`releaseJobs`, `releaseBatchMemberJobs`).
- * Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
- * operations on purchase orders, stamp releasedDate. Scheduling is the
+ * Per job, in order: refresh requirements, run MRP, flip to Ready, number the
+ * serial units when the item's timing is `jobRelease`, put outside operations
+ * on purchase orders, stamp releasedDate. Scheduling is the
  * caller's (one location run, or a notify, after all jobs are released).
  * Validation (`getJobReleaseReadiness`) is the caller's, BEFORE this runs.
  *
@@ -320,6 +321,14 @@ export const releaseCheckedJobs = defineServiceFn({
         );
       }
       releasedJobIds.push(id);
+
+      // Under the jobRelease serial number timing (the item's, else the
+      // company's) every unit is numbered now. Best-effort: a failure is logged.
+      await service.assignJobSerialNumbersAtRelease(
+        ctx.asSystem.supabase,
+        ctx.asSystem.pg,
+        { jobId: id, companyId, userId }
+      );
 
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
@@ -864,9 +873,13 @@ export const closeJob = defineServiceFn({
  * job's own), backflushes materials, rolls up cost and, for a Make to Asset
  * job, creates the fixed assets. It refuses a quantity of zero or below what
  * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). Then the picked
- * material the job did not consume is returned to the warehouse; a failure
- * there leaves the job completed and is returned as `warning`.
+ * rules; its message says what to fix (a `rule` error). When the item's serial
+ * number timing (its own, else the company's) is release or production, the
+ * units the completion takes are split off the job's seed, created when no
+ * record holds them yet, and numbered first, in the completion's transaction,
+ * so a refused completion spends no numbers. Then the picked material the job did not
+ * consume is returned to the warehouse; a failure there leaves the job
+ * completed and is returned as `warning`.
  *
  * @mcp
  */
@@ -883,23 +896,48 @@ export const completeJob = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    // It must NOT write job.quantityShipped: that column is advanced only by
-    // post-shipment, and the shipment builder ships quantityComplete less it.
-    const rpc = await ctx.asCaller.supabase.rpc("complete_job_to_inventory", {
-      p_job_id: jobId,
-      p_quantity_complete: quantityComplete,
-      p_storage_unit_id: storageUnitId,
-      p_location_id: locationId,
-      p_company_id: companyId,
-      p_user_id: userId
+    // The units this completion takes may be unnumbered, or still one unsplit
+    // seed (a deferred serial number timing, or a job left so when its timing
+    // changed): the receipt is their first touch, so split and number them
+    // before complete_job_to_inventory receives them. Both run in one
+    // transaction, as in the sync_finish_job_operation interceptor, so a
+    // refused completion spends no serial numbers.
+    const completed = await ctx.transaction(async (tx) => {
+      try {
+        await service.numberSerialUnitsForCompletion(tx.asSystem.pg, {
+          jobId,
+          quantityComplete,
+          companyId
+        });
+      } catch (error) {
+        return ctx.error(
+          "internal",
+          "Failed to number the serial units being completed",
+          error
+        );
+      }
+
+      // It must NOT write job.quantityShipped: that column is advanced only by
+      // post-shipment, and the shipment builder ships quantityComplete less it.
+      try {
+        await service.completeJobToInventory(tx.asSystem.pg, {
+          jobId,
+          quantityComplete,
+          storageUnitId,
+          locationId,
+          companyId,
+          userId
+        });
+      } catch (error) {
+        return ctx.error(
+          "rule",
+          (error instanceof Error && error.message) || "Failed to complete job",
+          error
+        );
+      }
+      return null;
     });
-    if (rpc.error) {
-      return ctx.error(
-        "rule",
-        rpc.error.message || "Failed to complete job",
-        rpc.error
-      );
-    }
+    if (completed.error) return completed.error;
 
     // A re-completion is supported; the job id is the idempotency key, so a
     // repeat collapses rather than counting a second completion.

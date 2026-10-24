@@ -24577,6 +24577,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequences.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequences.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/rowFilter.itemSerialSequences.itemReadableId"
           },
           {
@@ -77461,6 +77464,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -77556,6 +77562,9 @@ export default {
             $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -77603,6 +77612,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemSerialSequence.serialNumberTiming"
           },
           {
             $ref: "#/parameters/body.itemSerialSequence"
@@ -102421,6 +102433,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -102702,6 +102717,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -102935,6 +102953,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -110291,6 +110312,49 @@ export default {
         tags: ["(rpc) prevent_posted_sales_invoice_deletion"]
       }
     },
+    "/rpc/number_serial_units_for_completion": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_quantity_complete: {
+                  format: "numeric",
+                  type: "number"
+                }
+              },
+              required: ["p_job_id", "p_quantity_complete", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) number_serial_units_for_completion"]
+      }
+    },
     "/rpc/purchaseLineDimensionPivot": {
       post: {
         parameters: [
@@ -113751,6 +113815,85 @@ export default {
           }
         },
         tags: ["(rpc) sync_job_complete_or_canceled"]
+      }
+    },
+    "/rpc/interpolate_serial_segment": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_value",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "timestamp without time zone",
+            in: "query",
+            name: "p_now",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_location",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) interpolate_serial_segment"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_location: {
+                  format: "text",
+                  type: "string"
+                },
+                p_now: {
+                  format: "timestamp without time zone",
+                  type: "string"
+                },
+                p_value: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_value", "p_now", "p_location"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) interpolate_serial_segment"]
       }
     },
     "/rpc/get_my_claim": {
@@ -117422,6 +117565,57 @@ export default {
           }
         },
         tags: ["(rpc) get_ap_open_by_supplier"]
+      }
+    },
+    "/rpc/get_next_serial_numbers": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_count: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_code: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_name: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_item_id", "p_company_id", "p_count"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_next_serial_numbers"]
       }
     },
     "/rpc/get_job_operation_step_records": {
@@ -129694,6 +129888,10 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        serialNumberTiming: {
+          format: "text",
           type: "string"
         },
         itemReadableId: {
@@ -154785,6 +154983,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        serialNumberTiming: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -166797,7 +166999,8 @@ export default {
         "leaseReminderDays",
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
-        "receiptQuantitiesStartAtZero"
+        "receiptQuantitiesStartAtZero",
+        "serialNumberTiming"
       ],
       properties: {
         id: {
@@ -167200,6 +167403,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        serialNumberTiming: {
+          default: "jobCreation",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -180993,6 +181201,12 @@ export default {
     },
     "rowFilter.itemSerialSequences.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemSerialSequences.serialNumberTiming": {
+      name: "serialNumberTiming",
       required: false,
       in: "query",
       type: "string"
@@ -208936,6 +209150,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.itemSerialSequence.serialNumberTiming": {
+      name: "serialNumberTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.batchProperty": {
       name: "batchProperty",
       description: "batchProperty",
@@ -222809,6 +223029,12 @@ export default {
     },
     "rowFilter.companySettings.receiptQuantitiesStartAtZero": {
       name: "receiptQuantitiesStartAtZero",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serialNumberTiming": {
+      name: "serialNumberTiming",
       required: false,
       in: "query",
       type: "string"

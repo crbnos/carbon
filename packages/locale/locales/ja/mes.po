@@ -1241,6 +1241,9 @@ msgstr "サンプルは必要ありません。"
 msgid "No scheduled time"
 msgstr "予定時間なし"
 
+msgid "No serial number yet"
+msgstr "シリアル番号はまだありません"
+
 msgid "No serial numbers"
 msgstr "シリアル番号なし"
 
@@ -2048,8 +2051,8 @@ msgstr "この部品は受注生産で製造されました。スクラップす
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "この部品は在庫からスクラップされます。その要求事項は開いたままなので、代替品を出庫できます。"
 
-msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
+msgid "This unit will be permanently scrapped and a replacement unit will be created."
+msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
 
 msgid "Thumbnail"
 msgstr "サムネイル"

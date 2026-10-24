@@ -91,6 +91,7 @@ import {
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   returnPickedMaterialTimings,
+  serialNumberTimings,
   subsidiaryValidator
 } from "./settings.models";
 import * as service from "./settings.service";
@@ -369,11 +370,13 @@ export const updateItemsSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: who is notified when an
  * inventory or a sales job completes, whether opening an operation starts its
  * timer, whether the job traveler lists materials and operations, whether
- * tracked material is pre-selected without a picking list, and whether one
- * location requires an assigned operator before the scheduler places work
- * there. The staffing rule lives on the location row and is written for the
- * company's own location only, so a settings admin without the resources
- * permission can still set it.
+ * tracked material is pre-selected without a picking list, when a produced
+ * unit draws its serial number (when the job is created, or the first time
+ * the unit is worked on, scrapped or received), and whether one location
+ * requires an assigned operator before the scheduler places work there. The
+ * staffing rule lives on the location row and is written for the company's
+ * own location only, so a settings admin without the resources permission can
+ * still set it.
  *
  * @mcp
  */
@@ -385,6 +388,7 @@ export const updateProductionSettings = defineServiceFn({
     includeMaterialsOnTraveler: z.boolean().optional(),
     includeOperationsOnTraveler: z.boolean().optional(),
     autoSelectMaterialWithoutPickingList: z.boolean().optional(),
+    serialNumberTiming: z.enum(serialNumberTimings).optional(),
     locationStaffing: z
       .object({
         locationId: z.string().min(1),
@@ -2794,6 +2798,13 @@ export const createItemSerialSequence = defineServiceFn({
     next: z.number().min(0),
     step: z.number().min(1),
     size: z.number().min(1).max(20),
+    serialNumberTiming: z
+      .enum(serialNumberTimings)
+      .nullable()
+      .optional()
+      .describe(
+        "When this item's units draw their serial numbers. Omit or null to follow the company setting."
+      ),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -2828,6 +2839,13 @@ export const updateItemSerialSequence = defineServiceFn({
       next: z.number().min(0),
       step: z.number().min(1),
       size: z.number().min(1).max(20),
+      serialNumberTiming: z
+        .enum(serialNumberTimings)
+        .nullable()
+        .optional()
+        .describe(
+          "When this item's units draw their serial numbers. Omit or null to follow the company setting."
+        ),
       id: z
         .string()
         .describe("Send to update that record; omit to create a new one.")
