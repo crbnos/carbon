@@ -1,0 +1,18 @@
+{
+  "name": "carbon",
+  "owner": {
+    "name": "Carbon",
+    "email": "support@carbon.ms"
+  },
+  "metadata": {
+    "description": "Carbon ERP connector for Cursor and Grok Bot.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "carbon",
+      "source": "./plugins/carbon",
+      "description": "Operate Carbon ERP over MCP. OAuth into Carbon Cloud, then search, describe, and call."
+    }
+  ]
+}
