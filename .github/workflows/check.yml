@@ -1,9 +1,9 @@
 name: Checks
 
+# Pull requests only: a merge to main already passed these on its PR, and a
+# push to main goes straight to Build images.
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
 
 permissions:
@@ -282,3 +282,31 @@ jobs:
           node-version-file: .nvmrc
 
       - run: pnpm audit --audit-level=critical
+
+  # The result as a PR label, for filtering the PR list. Here rather than a
+  # workflow_run, which GitHub pins to main's latest commit. Not on PRs from
+  # forks: their token cannot edit the PR.
+  label:
+    name: Label
+    needs:
+      [install, lint, typecheck, lingui, catalog, test, edge-functions, audit]
+    if: >-
+      !cancelled() &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      PASSED: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    steps:
+      - name: Apply checks label
+        run: |
+          if [ "$PASSED" = "true" ]; then
+            gh pr edit "$PR_NUMBER" --remove-label "checks: failing" --add-label "checks: passing"
+          else
+            gh pr edit "$PR_NUMBER" --remove-label "checks: passing" --add-label "checks: failing"
+          fi
