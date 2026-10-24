@@ -442,7 +442,10 @@ export const attachments = {
   trackedActivity: { statement: ["broadcast_table_changes"] },
   trackedEntity: { statement: ["broadcast_table_changes"] },
   unattributedMachineTime: { statement: ["broadcast_table_changes"] },
-  unitOfMeasure: { statement: ["broadcast_reference_changes"] },
+  unitOfMeasure: {
+    before: ["unit_of_measure_enforce_unique_code"],
+    statement: ["broadcast_reference_changes"]
+  },
   user: {
     after: [
       "sync_create_user_identity_group",

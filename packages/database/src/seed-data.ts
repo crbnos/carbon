@@ -120,25 +120,11 @@ export const paymentTerms = [
   }
 ] as const;
 
-export const unitOfMeasures = [
-  { name: "Each", code: "EA", createdBy: "system" },
-  { name: "Case", code: "CS", createdBy: "system" },
-  { name: "Pack", code: "PK", createdBy: "system" },
-  { name: "Pallet", code: "PL", createdBy: "system" },
-  { name: "Roll", code: "RL", createdBy: "system" },
-  { name: "Box", code: "BX", createdBy: "system" },
-  { name: "Bag", code: "BG", createdBy: "system" },
-  { name: "Drum", code: "DR", createdBy: "system" },
-  { name: "Gallon", code: "GL", createdBy: "system" },
-  { name: "Liter", code: "LT", createdBy: "system" },
-  { name: "Ounce", code: "OZ", createdBy: "system" },
-  { name: "Pound", code: "LB", createdBy: "system" },
-  { name: "Ton", code: "TN", createdBy: "system" },
-  { name: "Yard", code: "YD", createdBy: "system" },
-  { name: "Meter", code: "MT", createdBy: "system" },
-  { name: "Inch", code: "INCH", createdBy: "system" },
-  { name: "Foot", code: "FOOT", createdBy: "system" }
-] as const;
+export {
+  getStandardUnitOfMeasure,
+  seedUnitsOfMeasure,
+  unitOfMeasureCatalog
+} from "./units-of-measure.ts";
 
 export const gaugeTypes = [
   "Gauge Block",

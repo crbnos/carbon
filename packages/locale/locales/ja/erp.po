@@ -11556,6 +11556,9 @@ msgstr "無効"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "無効なアクションは選択リストに表示されません。"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "受入検査"
 
@@ -24971,6 +24974,12 @@ msgstr "別の名前を試してください。"
 msgid "Tuesday"
 msgstr "火曜日"
 
+msgid "Turn Off"
+msgstr ""
+
+msgid "Turn On"
+msgstr ""
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "<0>設定 → 会計で短期リースの簡便処理をオンにしてください</0>、または"
 
@@ -25136,6 +25145,9 @@ msgstr "まず{conflictsWith}をアンインストールしてください"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "単位"

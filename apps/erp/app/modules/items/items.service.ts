@@ -2408,13 +2408,17 @@ export async function getUnitOfMeasures(
   return query;
 }
 
+/**
+ * Every unit of the company, inactive ones too: records that use an inactive
+ * unit still show its name. The unit pickers offer active units only.
+ */
 export async function getUnitOfMeasuresList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client
     .from("unitOfMeasure")
-    .select("name, code")
+    .select("name, code, active")
     .eq("companyId", companyId)
     .order("name");
 }
@@ -6215,6 +6219,32 @@ export async function updateServiceName(
 
     return { data: { readableId: name }, error: null };
   });
+}
+
+/**
+ * Turns units of measure on or off. Each stays active: the database refuses
+ * to change it, so it is left out of the update.
+ */
+export async function updateUnitsOfMeasureActive(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    ids: string[];
+    active: boolean;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("unitOfMeasure")
+    .update({
+      active: args.active,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .neq("code", EACH_UNIT_OF_MEASURE_CODE)
+    .select("id");
 }
 
 export async function upsertUnitOfMeasure(

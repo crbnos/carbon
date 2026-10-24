@@ -44,6 +44,27 @@ Costs, the sale price, and stock are not copied. They belong to the revision the
 An item's <Term>costing method</Term>, one of *Standard*, *Average*, *FIFO*, or *LIFO*, lives on its cost record, not the item itself, and decides how consumption is valued.
 </Callout>
 
+## Units of measure
+
+A unit of measure is a name and a code, such as *Kilogram* (`kg`), kept per company under **Items → Units of Measure**. An item's unit is its stock unit. A supplier part can buy in another unit with a conversion factor; see [purchase orders](/docs/reference/purchase-orders).
+
+Every company holds Carbon's standard units, metric and imperial. The units of the company's measurement system, which `useMetric` in [company settings](/docs/reference/company-settings) records, are active; the others are inactive:
+
+| Units | Active in a metric company | Active in an imperial company |
+|---|---|---|
+| Each (`EA`), Case (`CS`), Pack (`PK`), Pallet (`PL`), Roll (`RL`), Box (`BX`), Bag (`BG`), Drum (`DR`) | Yes | Yes |
+| Meter (`m`), Liter (`L`) | Yes | Yes |
+| Gram (`g`), Kilogram (`kg`), Tonne (`t`), Millimeter (`mm`), Centimeter (`cm`), Square Meter (`m2`), Cubic Meter (`m3`), Milliliter (`mL`) | Yes | No |
+| Ounce (`OZ`), Pound (`LB`), Ton (`TN`), Inch (`INCH`), Foot (`FOOT`), Yard (`YD`), Square Foot (`FT2`), Cubic Foot (`FT3`), Gallon (`GL`) | No | Yes |
+
+An inactive unit is not offered when you choose a unit for an item, a BOM line or an order line. A record that already uses it keeps it. To turn units on or off, select them in the list and choose **Turn On** or **Turn Off**, or open one and change **Active**. Each (`EA`) is always active. Agents do the same with `items_updateUnitsOfMeasureActive`.
+
+A company created before the standard list keeps its units and their codes: Meter stays `MT` and Liter stays `LT`. It was given the standard units it lacked, matched by code or name ignoring case. Any other unit is created with **New** or a CSV import.
+
+<Callout type="note">
+A code keeps its case, so metric units use their SI symbols (`kg`, `mm`). Two units cannot share a code that differs only in case. Documents print the code beside a quantity. Carbon does not convert between units on its own: a conversion factor is set where one unit is bought and another stocked.
+</Callout>
+
 ## Related
 
 <Cards>

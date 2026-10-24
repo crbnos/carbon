@@ -11556,6 +11556,9 @@ msgstr "Inattivo"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Le azioni inattive non appariranno negli elenchi di selezione"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Controllo in accettazione"
 
@@ -24971,6 +24974,12 @@ msgstr "Prova un nome diverso."
 msgid "Tuesday"
 msgstr "Martedì"
 
+msgid "Turn Off"
+msgstr ""
+
+msgid "Turn On"
+msgstr ""
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Attiva <0>l'opzione per i contratti di locazione a breve termine in Impostazioni → Contabilità</0>, oppure"
 
@@ -25136,6 +25145,9 @@ msgstr "Disinstalla {conflictsWith} prima"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Univoco, maiuscolo, senza spazi (max 10 caratteri)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Unità"

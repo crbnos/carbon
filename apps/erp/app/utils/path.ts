@@ -2605,6 +2605,7 @@ export const path = {
       generatePath(`${x}/production/machine-time/${id}`),
     unattributedMachineTimes: `${x}/production/machine-time`,
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
+    uomActive: `${x}/items/uom/active`,
     uoms: `${x}/items/uom`,
     updateAssemblyUnit: (id: string, unitId: string) =>
       generatePath(`${x}/assembly/${id}/units/${unitId}`),

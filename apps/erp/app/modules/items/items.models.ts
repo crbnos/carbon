@@ -1046,10 +1046,29 @@ export const toolFields = itemValidator.merge(
 
 export const toolValidator = applyStorageAndShelfLifeRefines(toolFields);
 
+/**
+ * The message for a unit of measure whose name or code another unit has. The
+ * units of the other measurement system exist inactive, so a user who types
+ * Inch in a metric company finds it this way.
+ */
+export const UNIT_OF_MEASURE_TAKEN =
+  "Another unit of measure has this name or code. If it is turned off, turn it on in the list instead.";
+
 export const unitOfMeasureValidator = z.object({
   id: zfd.text(z.string().optional()),
   code: z.string().trim().min(1, { message: "Code is required" }).max(10),
-  name: z.string().trim().min(1, { message: "Name is required" }).max(50)
+  name: z.string().trim().min(1, { message: "Name is required" }).max(50),
+  active: zfd.checkbox()
+});
+
+/** Activate or Deactivate on the Units of Measure list: the selected units. */
+export const unitsOfMeasureActiveValidator = z.object({
+  ids: zfd.repeatable(
+    z.array(z.string().min(1)).min(1, { message: "Select at least one unit" })
+  ),
+  active: zfd
+    .text(z.enum(["true", "false"]))
+    .transform((value) => value === "true")
 });
 
 export const itemRevisionStatus = [

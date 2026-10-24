@@ -11556,6 +11556,9 @@ msgstr "Неактивно"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Неактивные действия не будут отображаться в списках выбора"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Входной контроль"
 
@@ -24971,6 +24974,12 @@ msgstr "Попробуйте другое имя."
 msgid "Tuesday"
 msgstr "Вторник"
 
+msgid "Turn Off"
+msgstr ""
+
+msgid "Turn On"
+msgstr ""
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Включите <0>упрощение для краткосрочной аренды в Настройках → Бухгалтерия</0>, или"
 
@@ -25136,6 +25145,9 @@ msgstr "Сначала удалите {conflictsWith}"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Уникальный, заглавными буквами, без пробелов (макс. 10 символов)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Единица"

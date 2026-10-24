@@ -11556,6 +11556,9 @@ msgstr "Inactive"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Inactive actions will not appear in selection lists"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr "Inactive units are not offered when choosing a unit"
+
 msgid "Inbound inspection"
 msgstr "Inbound inspection"
 
@@ -24971,6 +24974,12 @@ msgstr "Try a different name."
 msgid "Tuesday"
 msgstr "Tuesday"
 
+msgid "Turn Off"
+msgstr "Turn Off"
+
+msgid "Turn On"
+msgstr "Turn On"
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 
@@ -25136,6 +25145,9 @@ msgstr "Uninstall {conflictsWith} first"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, uppercase, without spaces (max 10 characters)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr "Unique, without spaces (max 10 characters), such as kg or BX"
 
 msgid "Unit"
 msgstr "Unit"

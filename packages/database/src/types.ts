@@ -94818,6 +94818,10 @@ export type Database = {
           netChange: number
         }[]
       }
+      unit_of_measure_enforce_unique_code: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       update_receipt_line_batch_tracking: {
         Args: {
           p_batch_number: string
