@@ -15097,6 +15097,8 @@ msgstr "已停用的操作不会出现在选择列表中"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "已停用的分类无法为新工时选择"
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "来料检验"
@@ -32339,6 +32341,8 @@ msgstr "星期二"
 
 msgid "Turn On"
 msgstr "打开"
+msgid "Turn Off"
+msgstr ""
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "启用<0>设置 → 会计中的短期租赁豁免</0>，或"
@@ -32560,6 +32564,9 @@ msgstr "未开票发货"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "唯一、大写、无空格（最多 10 个字符）"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "单位"

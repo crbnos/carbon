@@ -15097,6 +15097,8 @@ msgstr "Nieaktywne akcje nie będą wyświetlane na listach wyboru"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Nieaktywne kategorie nie mogą być wybrane do nowego czasu"
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Kontrola dostaw"
@@ -32339,6 +32341,8 @@ msgstr "Wtorek"
 
 msgid "Turn On"
 msgstr "Włącz"
+msgid "Turn Off"
+msgstr ""
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Włącz <0>Uproszczenie dla dzierżaw krótkoterminowych w Ustawienia → Księgowość</0>, lub"
@@ -32560,6 +32564,9 @@ msgstr "Niezafakturowane wysyłki"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unikalny, wielkie litery, bez spacji (maks. 10 znaków)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Jednostka"
