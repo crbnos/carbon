@@ -2411,6 +2411,7 @@ export const path = {
     saveViews: `${x}/shared/views`,
     scheduleForecast: `${x}/scheduling/forecast`,
     scheduleOutbound: `${x}/scheduling/outbound`,
+    scrapApprovals: `${x}/production/scrap-approvals`,
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,

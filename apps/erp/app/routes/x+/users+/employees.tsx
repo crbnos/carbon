@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { hasScrapApprovalRules } from "@carbon/ee/approvals/scrap.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -41,12 +42,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [employees, employeeTypes, invites, mfaUsers] = await Promise.all([
-    getEmployees(client, companyId, { search, limit, offset, sorts, filters }),
-    getEmployeeTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId),
-    getUsersWithVerifiedMfa(client, companyId)
-  ]);
+  const [employees, employeeTypes, invites, mfaUsers, scrapApproverPins] =
+    await Promise.all([
+      getEmployees(client, companyId, {
+        search,
+        limit,
+        offset,
+        sorts,
+        filters
+      }),
+      getEmployeeTypes(client, companyId),
+      getUnrevokedInviteEmails(client, companyId),
+      getUsersWithVerifiedMfa(client, companyId),
+      // Scrap approvers sign with a console PIN, console mode on or off.
+      hasScrapApprovalRules(client, companyId).catch(() => false)
+    ]);
 
   if (mfaUsers.error) {
     getLogger("users").error("Failed to load MFA status for employees", {
@@ -76,6 +86,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     employees: employees.data ?? [],
     employeeTypes: employeeTypes.data,
     unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? [],
+    scrapApproverPins,
     // Surfaced rather than swallowed: a missing/stale RPC (e.g. PostgREST's
     // schema cache not yet reloaded after the migration) otherwise looks
     // exactly like "nobody has 2FA", which is a silently wrong answer.
@@ -92,7 +103,8 @@ export default function UsersEmployeesRoute() {
     employees,
     employeeTypes,
     unrevokedInviteEmails,
-    mfaEnrolledUserIds
+    mfaEnrolledUserIds,
+    scrapApproverPins
   } = useLoaderData<typeof loader>();
 
   return (
@@ -103,6 +115,7 @@ export default function UsersEmployeesRoute() {
         employeeTypes={employeeTypes}
         unrevokedInviteEmails={unrevokedInviteEmails}
         mfaEnrolledUserIds={mfaEnrolledUserIds}
+        scrapApproverPins={scrapApproverPins}
       />
       <RecordOutlet />
     </VStack>

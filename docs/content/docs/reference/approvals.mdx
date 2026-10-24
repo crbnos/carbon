@@ -1,6 +1,6 @@
 ---
 title: Approvals
-description: Route purchase orders, quality documents, and suppliers for sign-off before they take effect, with amount-tiered approval rules.
+description: Route purchase orders, quality documents, suppliers and shop-floor scrap for sign-off before they take effect, with amount-tiered approval rules.
 ---
 
 An **approval** keeps a document pending until an authorized user approves or rejects it. Per-company **approval rules** determine whether approval is required and who can decide. <Term id="purchase-order">Purchase-order</Term> rules can use amount tiers.
@@ -9,17 +9,18 @@ For example, with a **$25,000** purchase-order rule, a $4,000 order can finalize
 
 ## What can be approved
 
-Three document types support approval, each with its own pending status:
+These document types support approval. Each document waits in its pending status; scrap waits for an approver's PIN instead:
 
 | Document | Pending status | Approved → | Rejected → | Amount-tiered? |
 | --- | --- | --- | --- | --- |
 | Purchase order | "Needs Approval" | recomputed (e.g. "To Receive") | "Rejected" | Yes, the order total |
 | Quality document | "Draft" | "Active" | stays "Draft" | No |
 | Supplier | "Pending" | "Active" | "Rejected" | No |
+| Scrap | none: signed at the tablet | posts at once | not recorded | Yes, the estimated material value |
 
 <Callout type="info">
-Only **purchase orders** use the amount threshold. Quality documents and suppliers match a single rule (its
-minimum is 0), so for them approval is simply on or off.
+Only **purchase orders** and **scrap** use the amount threshold. Quality documents and suppliers match a single
+rule (its minimum is 0), so for them approval is simply on or off.
 </Callout>
 
 ## Approval rules
@@ -27,7 +28,7 @@ minimum is 0), so for them approval is simply on or off.
 Rules live under **Settings → Approval Rules**, grouped by document type. Each rule:
 
 <FieldTable>
-  <Field name="Minimum amount">The tier floor: approval applies at or above this, up to the next rule's minimum. (Purchase orders only.)</Field>
+  <Field name="Minimum amount">The tier floor: approval applies at or above this, up to the next rule's minimum. 0 means every document of the type. (Purchase orders and scrap.)</Field>
   <Field name="Who can approve">Groups **and/or** individual users eligible to decide.</Field>
   <Field name="Default approver">A named fallback approver for the tier.</Field>
   <Field name="Enabled">Whether the rule is live.</Field>
@@ -66,6 +67,31 @@ they can see spend that cleared above their level.
 Approval is **single-step**. Carbon selects one rule, and one authorized decision finalizes the document. It does not support sequential stages, parallel sign-offs, quorums, or delegation. Amount tiers select a rule; they are not approval stages.
 </Callout>
 
+## Scrap at the tablet
+
+Scrap posts the moment it is logged, so a scrap rule is met on the shop floor rather than in a queue. When an
+operator logs scrap whose estimated value meets a rule, the scrap dialog shows the value and the people who may
+approve it. One of them picks their name and enters their console PIN on the same tablet; the scrap then posts
+as usual and the approval is recorded with it.
+
+- **Value**: the material in the scrapped units: the materials the operation consumes (kitted sub-assemblies
+  included) and those of the operations before it, times the quantity scrapped. For a scrapped component it is
+  that component's cost. A standard-cost item counts at its standard cost, any other at its unit cost (its
+  standard cost when the unit cost is 0). Labor and overhead are not counted. The scrap journal can write off
+  less: it stops at the job's planned material, and a batch completion posts no scrap journal.
+- **What the approver signs**: the value on the screen. Changing the quantity after the approver enters their
+  PIN clears the PIN, and the new value is shown again.
+- **Who may approve**: the approvers of the matched tier and every higher tier who have a console PIN. The person
+  logging the scrap cannot approve it. Set a PIN from **Users → Employees → Set Console PIN**.
+- **Paths**: scrapping a unit on an operation, scrapping a component, and completing a batch with scrap. Scrap
+  typed in on a job's **Quantities** in the ERP can be recorded only by an approver at that tier.
+- **Records**: every approved scrap is listed under **Production → Scrap Approvals** with its value, who logged
+  it and who approved it. A row marked **Not confirmed** was approved but its posting never answered; check the
+  job's scrap.
+
+A wrong PIN counts against the same lockout as console pin-in. Approval rules for scrap need the Business plan,
+like every approval rule.
+
 ## Related
 
 <Cards>
@@ -77,5 +103,8 @@ Approval is **single-step**. Carbon selects one rule, and one authorized decisio
   </Card>
   <Card title="Suppliers & customers" href="/docs/reference/suppliers-and-customers">
     A new supplier can be held at Pending until approved.
+  </Card>
+  <Card title="Scrap and unscrap" href="/docs/reference/scrap">
+    Scrap above a value can need an approver's PIN before it posts.
   </Card>
 </Cards>

@@ -60225,6 +60225,126 @@ export default {
         tags: ["purchasingRfqToSupplierQuote"]
       }
     },
+    "/scrapRequests": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.jobReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.operationDescription"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.jobOperationBatchId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.batchReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.jobMaterialId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.trackedEntityReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.itemReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.itemName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.scrapReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.scrapReasonName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.estimatedValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.approvalRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.approvalStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequests.approvedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scrapRequests"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scrapRequests"]
+      }
+    },
     "/assemblyInstructionStep": {
       get: {
         parameters: [
@@ -95100,6 +95220,249 @@ export default {
         tags: ["productionEvent"]
       }
     },
+    "/scrapRequest": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobOperationBatchId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobMaterialId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.scrapReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.estimatedValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scrapRequest"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scrapRequest"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.scrapRequest"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["scrapRequest"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobOperationBatchId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobMaterialId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.scrapReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.estimatedValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scrapRequest"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobOperationBatchId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.jobMaterialId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.trackedEntityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.scrapReasonId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.estimatedValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scrapRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.scrapRequest"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scrapRequest"]
+      }
+    },
     "/periodCloseTaskDefinition": {
       get: {
         parameters: [
@@ -121228,7 +121591,13 @@ export default {
           type: "string"
         },
         documentType: {
-          enum: ["purchaseOrder", "qualityDocument", "supplier", "changeOrder"],
+          enum: [
+            "purchaseOrder",
+            "qualityDocument",
+            "supplier",
+            "changeOrder",
+            "scrap"
+          ],
           format: 'public."approvalDocumentType"',
           type: "string"
         },
@@ -146547,6 +146916,135 @@ export default {
       },
       type: "object"
     },
+    scrapRequests: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobReadableId: {
+          format: "text",
+          type: "string"
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        operationDescription: {
+          format: "text",
+          type: "string"
+        },
+        jobOperationBatchId: {
+          format: "text",
+          type: "string"
+        },
+        batchReadableId: {
+          format: "text",
+          type: "string"
+        },
+        jobMaterialId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMaterial.id`.<fk table='jobMaterial' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityReadableId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string"
+        },
+        itemName: {
+          format: "text",
+          type: "string"
+        },
+        scrapReasonId: {
+          description:
+            "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        scrapReasonName: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        estimatedValue: {
+          format: "numeric",
+          type: "number"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        approvalRequestId: {
+          format: "text",
+          type: "string"
+        },
+        approvalStatus: {
+          enum: ["Pending", "Approved", "Rejected", "Cancelled"],
+          format: 'public."approvalStatus"',
+          type: "string"
+        },
+        approvedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        approvedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     assemblyInstructionStep: {
       required: [
         "id",
@@ -149998,7 +150496,13 @@ export default {
           type: "string"
         },
         documentType: {
-          enum: ["purchaseOrder", "qualityDocument", "supplier", "changeOrder"],
+          enum: [
+            "purchaseOrder",
+            "qualityDocument",
+            "supplier",
+            "changeOrder",
+            "scrap"
+          ],
           format: 'public."approvalDocumentType"',
           type: "string"
         },
@@ -163546,6 +164050,109 @@ export default {
       },
       type: "object"
     },
+    scrapRequest: {
+      required: [
+        "id",
+        "companyId",
+        "quantity",
+        "estimatedValue",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('scr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobOperationBatchId: {
+          format: "text",
+          type: "string"
+        },
+        jobMaterialId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMaterial.id`.<fk table='jobMaterial' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        trackedEntityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        scrapReasonId: {
+          description:
+            "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
+        },
+        estimatedValue: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     periodCloseTaskDefinition: {
       required: [
         "id",
@@ -167403,7 +168010,13 @@ export default {
           type: "string"
         },
         documentType: {
-          enum: ["purchaseOrder", "qualityDocument", "supplier", "changeOrder"],
+          enum: [
+            "purchaseOrder",
+            "qualityDocument",
+            "supplier",
+            "changeOrder",
+            "scrap"
+          ],
           format: 'public."approvalDocumentType"',
           type: "string"
         },
@@ -199801,6 +200414,171 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.scrapRequests": {
+      name: "scrapRequests",
+      description: "scrapRequests",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scrapRequests"
+      }
+    },
+    "rowFilter.scrapRequests.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.jobReadableId": {
+      name: "jobReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.operationDescription": {
+      name: "operationDescription",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.jobOperationBatchId": {
+      name: "jobOperationBatchId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.batchReadableId": {
+      name: "batchReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.jobMaterialId": {
+      name: "jobMaterialId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.trackedEntityId": {
+      name: "trackedEntityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.trackedEntityReadableId": {
+      name: "trackedEntityReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.itemName": {
+      name: "itemName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.scrapReasonId": {
+      name: "scrapReasonId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.scrapReasonName": {
+      name: "scrapReasonName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.estimatedValue": {
+      name: "estimatedValue",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.approvalRequestId": {
+      name: "approvalRequestId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.approvalStatus": {
+      name: "approvalStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.approvedBy": {
+      name: "approvedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequests.approvedAt": {
+      name: "approvedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.assemblyInstructionStep": {
       name: "assemblyInstructionStep",
       description: "assemblyInstructionStep",
@@ -218841,6 +219619,117 @@ export default {
     },
     "rowFilter.productionEvent.jobOperationBatchId": {
       name: "jobOperationBatchId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.scrapRequest": {
+      name: "scrapRequest",
+      description: "scrapRequest",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scrapRequest"
+      }
+    },
+    "rowFilter.scrapRequest.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.jobOperationBatchId": {
+      name: "jobOperationBatchId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.jobMaterialId": {
+      name: "jobMaterialId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.trackedEntityId": {
+      name: "trackedEntityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.scrapReasonId": {
+      name: "scrapReasonId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.estimatedValue": {
+      name: "estimatedValue",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scrapRequest.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

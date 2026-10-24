@@ -17,6 +17,12 @@ Carbon records a **Scrap** production quantity, <Term id="backflush">backflushes
 A scrapped unit is not treated as output. Its quantity never counts toward the operation's target, completed operations reopen to **"Ready"**, and a replacement serial is spawned automatically, so the job keeps producing until the *good* quantity meets the target. The planned quantity itself is never rewritten; Carbon only tops up the operation's run quantity when cumulative scrap runs past the allowance you planned for.
 </Callout>
 
+<Callout type="note" title="Scrap above a value can need an approver.">
+With a scrap [approval rule](/docs/reference/approvals#scrap-at-the-tablet), scrap whose estimated material value
+meets the rule waits in the dialog until an approver enters their PIN on the tablet. The same applies to scrapping
+a subcomponent and to completing a batch with scrap.
+</Callout>
+
 ## Scrapping a subcomponent
 
 A component that was picked or already issued into the unit is scrapped from the **"Scrap"** tab of the issue-material dialog, which lists that material's **Available** and **Consumed** tracked entities. Each row's **"Scrap"** button opens a dialog for the reason and, for a <Term id="make-to-order">make-to-order</Term> component, an optional **"Make a replacement"**.

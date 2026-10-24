@@ -31,26 +31,35 @@ type ApprovalRulesProps = {
   qdRules: ApprovalRule[];
   supplierRules: ApprovalRule[];
   changeOrderRules: ApprovalRule[];
+  scrapRules: ApprovalRule[];
 };
+
+// A tiered rule's ceiling is the next-higher tier's minimum (null for the top
+// tier).
+function tierCeilings(rules: ApprovalRule[]) {
+  const floors = Array.from(
+    new Set(rules.map((r) => r.lowerBoundAmount ?? 0))
+  ).sort((a, b) => a - b);
+  return (lowerBoundAmount: number): number | null =>
+    floors.find((f) => f > lowerBoundAmount) ?? null;
+}
 
 const ApprovalRules = memo(
   ({
     poRules,
     qdRules,
     supplierRules,
-    changeOrderRules
+    changeOrderRules,
+    scrapRules
   }: ApprovalRulesProps) => {
     const permissions = usePermissions();
     const canCreate = permissions.can("update", "settings");
 
-    // A rule's ceiling is the next-higher tier's minimum (null for the top tier).
-    const nextTierFloor = useMemo(() => {
-      const floors = Array.from(
-        new Set(poRules.map((r) => r.lowerBoundAmount ?? 0))
-      ).sort((a, b) => a - b);
-      return (lowerBoundAmount: number): number | null =>
-        floors.find((f) => f > lowerBoundAmount) ?? null;
-    }, [poRules]);
+    const nextTierFloor = useMemo(() => tierCeilings(poRules), [poRules]);
+    const nextScrapTierFloor = useMemo(
+      () => tierCeilings(scrapRules),
+      [scrapRules]
+    );
 
     return (
       <ScrollArea className="h-full w-full">
@@ -226,6 +235,51 @@ const ApprovalRules = memo(
                           key={rule.id}
                           rule={rule}
                           documentType="changeOrder"
+                        />
+                      ))}
+                  </VStack>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
+                  <div>
+                    <CardTitle className="text-lg">
+                      <Trans>Scrap</Trans>
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      <Trans>
+                        Require an approver's PIN on the shop floor before scrap
+                        above an estimated material value is recorded
+                      </Trans>
+                    </CardDescription>
+                  </div>
+                  {canCreate && (
+                    <Button variant="primary" leftIcon={<LuPlus />} asChild>
+                      <Link to={path.to.newApprovalRule("scrap")}>
+                        <Trans>New Rule</Trans>
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {scrapRules.length === 0 ? (
+                  <Empty className="my-4" />
+                ) : (
+                  <VStack spacing={3} className="items-stretch">
+                    {scrapRules
+                      .filter((r) => r.id)
+                      .map((rule) => (
+                        <ApprovalRuleCard
+                          key={rule.id}
+                          rule={rule}
+                          documentType="scrap"
+                          upperBound={nextScrapTierFloor(
+                            rule.lowerBoundAmount ?? 0
+                          )}
                         />
                       ))}
                   </VStack>

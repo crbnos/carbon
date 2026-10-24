@@ -8,6 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   type ApprovalDocumentType,
+  approvalDocumentType,
   approvalRuleValidator
 } from "@carbon/ee/approvals";
 import { upsertApprovalRule } from "@carbon/ee/approvals.server";
@@ -36,12 +37,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const typeParam = url.searchParams.get("type");
   const documentType: ApprovalDocumentType | null =
-    typeParam === "purchaseOrder" ||
-    typeParam === "qualityDocument" ||
-    typeParam === "supplier" ||
-    typeParam === "changeOrder"
-      ? typeParam
-      : null;
+    approvalDocumentType.find((type) => type === typeParam) ?? null;
 
   return {
     rule: null,

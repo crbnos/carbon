@@ -19,6 +19,7 @@ import { useEffect, useRef } from "react";
 import { useFetcher } from "react-router";
 import { scrapTrackedEntityValidator } from "~/services/models";
 import { path } from "~/utils/path";
+import { ScrapApprovalStep, useScrapApproval } from "./ScrapApproval";
 import ScrapReason from "./ScrapReason";
 
 // Scrap an already-made / issued BOM entity from the Materials section (both
@@ -44,12 +45,18 @@ export function ScrapEntityModal({
   const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean; message: string }>();
   const submitted = useRef(false);
+  // A scrap approval rule answers the first submit with the approvers; the
+  // modal stays open for the approver's PIN and the same form is sent again.
+  const approval = useScrapApproval();
+  const { settle } = approval;
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
+      submitted.current = false;
+      if (settle(fetcher.data)) return;
       onClose();
     }
-  }, [fetcher.state, onClose]);
+  }, [fetcher.state, fetcher.data, settle, onClose]);
 
   return (
     <Modal
@@ -111,6 +118,10 @@ export function ScrapEntityModal({
                 />
               )}
               <TextArea label={t`Notes`} name="notes" size="lg" />
+              <ScrapApprovalStep
+                approval={approval}
+                isSubmitting={fetcher.state !== "idle"}
+              />
             </VStack>
           </ModalBody>
           <ModalFooter>
@@ -122,9 +133,13 @@ export function ScrapEntityModal({
               size="lg"
               type="submit"
               isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle" || approval.isIncomplete}
             >
-              <Trans>Scrap</Trans>
+              {approval.prompt ? (
+                <Trans>Approve and Scrap</Trans>
+              ) : (
+                <Trans>Scrap</Trans>
+              )}
             </Button>
           </ModalFooter>
         </ValidatedForm>

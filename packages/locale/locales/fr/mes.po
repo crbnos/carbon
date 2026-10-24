@@ -205,8 +205,20 @@ msgstr "Allouer les unités"
 msgid "Appearance"
 msgstr "Apparence"
 
+msgid "Approval needed"
+msgstr ""
+
 msgid "Approvals"
 msgstr "Approbations"
+
+msgid "Approve and Complete"
+msgstr ""
+
+msgid "Approve and Log Scrap"
+msgstr ""
+
+msgid "Approve and Scrap"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Êtes-vous sûr de vouloir supprimer cette clé d'accès ? Vous ne pourrez plus l'utiliser pour vous connecter."
@@ -660,6 +672,7 @@ msgstr "Arrêter les opérations"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Entrez la valeur de chaque ordre de fabrication, ou remplissez tous les ordres à la fois à partir de la première ligne. Les lignes vides sont ignorées."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Saisir le NIP pour {0}"
@@ -1157,6 +1170,9 @@ msgstr "Aucune opération active"
 msgid "No active work centers at this location."
 msgstr "Aucun poste de travail actif à ce site."
 
+msgid "No approver available"
+msgstr ""
+
 msgid "No assigned operations"
 msgstr "Aucune opération assignée"
 
@@ -1195,6 +1211,9 @@ msgstr "Aucun matériau"
 
 msgid "No materials on this batch."
 msgstr "Aucune matière sur ce lot de production."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr ""
 
 msgid "No open jobs"
 msgstr "Aucun ordre de fabrication ouvert"
@@ -2047,6 +2066,9 @@ msgstr "Cette pièce a été fabriquée sur commande. La mettre au rebut peut ro
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Cette pièce sera mise au rebut du stock. Son exigence reste ouverte pour que vous puissiez sortir un remplacement."
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Cette unité sera définitivement mise au rebut et un nouveau numéro de série de remplacement sera créé."

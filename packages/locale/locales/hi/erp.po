@@ -2997,6 +2997,9 @@ msgstr "अनुमोदित करें {changeOrderId}"
 msgid "Approve {displayName}"
 msgstr "अनुमोदित करें {displayName}"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "द्वारा अनुमोदित"
 
@@ -9402,6 +9405,9 @@ msgstr "बल्क बैच में प्रत्येक नौकर�
 msgid "Estimated time"
 msgstr "अनुमानित समय"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "अनुमान बनाम वास्तविक"
 
@@ -13814,6 +13820,9 @@ msgstr "न्यूनतम ऑर्डर:"
 msgid "Minimum Reserve Quantity"
 msgstr "न्यूनतम आरक्षित मात्रा"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "मिनट/100 पीस"
 
@@ -15471,6 +15480,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "डिलीवर नहीं किया गया"
 
@@ -15649,6 +15661,9 @@ msgstr "का"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "का {0}h"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "बंद"
@@ -18564,6 +18579,9 @@ msgstr "कर्मचारी को {displayId} का भुगतान �
 msgid "Record type"
 msgstr "रिकॉर्ड प्रकार"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "अंशांकन पर दर्ज किया गया कि गेज को मरम्मत की आवश्यकता है इससे पहले कि इसकी रीडिंग पर भरोसा किया जा सके।"
 
@@ -19160,6 +19178,9 @@ msgstr "ग्राहक संपर्क और स्थान की आ�
 
 msgid "Require a Supplier Contact and Location"
 msgstr "आपूर्तिकर्ता संपर्क और स्थान की आवश्यकता है"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
@@ -20289,6 +20310,9 @@ msgstr "स्क्रैप {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "स्क्रैप / गुणवत्ता की लागत"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "स्क्रैप प्रतिशत"
 
@@ -20318,6 +20342,9 @@ msgstr "स्क्रैप कारण"
 
 msgid "Scrap Reasons"
 msgstr "स्क्रैप कारण"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
