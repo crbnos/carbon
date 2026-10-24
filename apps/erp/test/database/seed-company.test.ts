@@ -5,6 +5,7 @@
 // Runs against the local database (SUPABASE_DB_URL); skipped without one.
 
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { unitOfMeasureCatalog } from "@carbon/database/units-of-measure";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -96,6 +97,97 @@ databaseTest(
       });
     } catch (err) {
       if (!(err instanceof Rollback)) throw err;
+    } finally {
+      await db.destroy();
+    }
+  }
+);
+
+databaseTest(
+  "seeds every standard unit, those of the company's measurement system active",
+  async () => {
+    const db = await connectLocalTestDatabase();
+    await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
+      db
+    );
+    // Country decides; with no country, the base currency does.
+    const cases = [
+      { suffix: "no", countryCode: "NO", baseCurrencyCode: "NOK", metric: true },
+      { suffix: "us", countryCode: "US", baseCurrencyCode: "USD", metric: false },
+      { suffix: "pr", countryCode: "PR", baseCurrencyCode: "USD", metric: false },
+      { suffix: "ec", countryCode: "EC", baseCurrencyCode: "USD", metric: true },
+      { suffix: "eur", countryCode: null, baseCurrencyCode: "EUR", metric: true },
+      { suffix: "usd", countryCode: null, baseCurrencyCode: "USD", metric: false }
+    ];
+    try {
+      // One transaction per company, as signing up seeds one company.
+      for (const { suffix, countryCode, baseCurrencyCode, metric } of cases) {
+        const prefix = `seedtest-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
+        const companyId = `${prefix}-company`;
+        const userId = `${prefix}-user`;
+        try {
+          await db.transaction().execute(async (trx) => {
+            await trx
+              .insertInto("user")
+              .values({
+                id: userId,
+                email: `${prefix}@example.com`,
+                firstName: "Seed",
+                lastName: "Test"
+              })
+              .execute();
+            await trx
+              .insertInto("userPermission")
+              .values({ id: userId, permissions: {} })
+              .execute();
+            await trx
+              .insertInto("company")
+              .values({
+                id: companyId,
+                name: prefix,
+                countryCode,
+                baseCurrencyCode,
+                timezone: "UTC"
+              })
+              .execute();
+            const seeded = await invokePosting(
+              { db: joined(trx), companyId, userId },
+              "seed-company",
+              { identityOnly: false },
+              seedCompany
+            );
+            expect(seeded.error, suffix).toBeNull();
+
+            const settings = await trx
+              .selectFrom("companySettings")
+              .select("useMetric")
+              .where("id", "=", companyId)
+              .executeTakeFirstOrThrow();
+            expect(settings.useMetric, suffix).toBe(metric);
+
+            const units = await trx
+              .selectFrom("unitOfMeasure")
+              .select(["code", "active"])
+              .where("companyId", "=", companyId)
+              .execute();
+            const active = new Map(units.map((u) => [u.code, u.active]));
+            expect([...active.keys()].sort(), suffix).toEqual(
+              unitOfMeasureCatalog.map((u) => u.code).sort()
+            );
+            expect(active.get("EA"), suffix).toBe(true);
+            expect(active.get("kg"), suffix).toBe(metric);
+            expect(active.get("m2"), suffix).toBe(metric);
+            expect(active.get("LB"), suffix).toBe(!metric);
+            expect(active.get("INCH"), suffix).toBe(!metric);
+            // Meter and Liter were in every company's list before.
+            expect(active.get("m"), suffix).toBe(true);
+            expect(active.get("L"), suffix).toBe(true);
+            throw new Rollback();
+          });
+        } catch (err) {
+          if (!(err instanceof Rollback)) throw err;
+        }
+      }
     } finally {
       await db.destroy();
     }

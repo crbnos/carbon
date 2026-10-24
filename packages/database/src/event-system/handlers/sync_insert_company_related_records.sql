@@ -9,7 +9,17 @@ BEGIN
   INSERT INTO "terms" ("id")
   VALUES (p_new->>'id');
 
-  INSERT INTO "companySettings" ("id")
-  VALUES (p_new->>'id');
+  -- Metric unless the company is in the US or one of its territories. A
+  -- company with no country falls back to its base currency. seedCompany
+  -- reads this to pick the units of measure it seeds.
+  INSERT INTO "companySettings" ("id", "useMetric")
+  VALUES (
+    p_new->>'id',
+    CASE
+      WHEN NULLIF(p_new->>'countryCode', '') IS NOT NULL
+        THEN upper(p_new->>'countryCode') NOT IN ('US', 'AS', 'GU', 'MP', 'PR', 'UM', 'VI')
+      ELSE COALESCE(NULLIF(p_new->>'baseCurrencyCode', ''), 'USD') <> 'USD'
+    END
+  );
 END;
 $function$;

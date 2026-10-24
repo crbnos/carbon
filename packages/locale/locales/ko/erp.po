@@ -11556,6 +11556,9 @@ msgstr "비활성"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "비활성 조치는 선택 목록에 표시되지 않습니다"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "수입 검사"
 
@@ -24971,6 +24974,12 @@ msgstr "다른 이름을 시도하세요."
 msgid "Tuesday"
 msgstr "화요일"
 
+msgid "Turn Off"
+msgstr ""
+
+msgid "Turn On"
+msgstr ""
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "<0>설정 → 회계에서 단기 리스 간편법</0>을 켜세요, 또는"
 
@@ -25136,6 +25145,9 @@ msgstr "먼저 {conflictsWith}를 제거하세요"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "고유하고 대문자이며 공백 없이(최대 10자)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "단위"

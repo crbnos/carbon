@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
+  Boolean,
   CustomFormFields,
   Hidden,
   Input,
@@ -116,17 +117,25 @@ const UnitOfMeasureForm = ({
                   name="code"
                   label={t`Code`}
                   value={code}
-                  onChange={(value) =>
-                    setCode(value.toUpperCase().replace(/\s/g, ""))
-                  }
+                  // Case is kept: SI symbols such as kg and mm are lowercase.
+                  onChange={(value) => setCode(value.replace(/\s/g, ""))}
                   characterLimit={10}
                   isReadOnly={isBuiltIn}
                   helperText={
                     isBuiltIn
                       ? undefined
-                      : t`Unique, uppercase, without spaces (max 10 characters)`
+                      : t`Unique, without spaces (max 10 characters), such as kg or BX`
                   }
                 />
+                {isBuiltIn ? (
+                  <Hidden name="active" value="on" />
+                ) : (
+                  <Boolean
+                    name="active"
+                    label={t`Active`}
+                    description={t`Inactive units are not offered when choosing a unit`}
+                  />
+                )}
                 <CustomFormFields table="unitOfMeasure" />
               </VStack>
             </ModalDrawerBody>

@@ -17,6 +17,7 @@ import { motor } from "./data/motor/index.ts";
 import { precision } from "./data/precision/index.ts";
 import { robotics } from "./data/robotics/index.ts";
 import { satellite } from "./data/satellite/index.ts";
+import { ensureUnitsOfMeasure } from "./helpers/units-of-measure.ts";
 import { ensureSequences } from "./sql.ts";
 import { selectTiers } from "./tiers/index.ts";
 import {
@@ -132,6 +133,7 @@ export async function applyDatasetTiers(
 
   // Must run before resetSequences, and before any nextSequence() call.
   await ensureSequences(client, companyId);
+  await ensureUnitsOfMeasure(client, companyId, dataset);
 
   if (wipeFirst) {
     log("Wiping existing business data...");

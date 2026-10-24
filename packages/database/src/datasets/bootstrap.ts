@@ -26,8 +26,8 @@ import {
   periodCloseTaskDefinitions,
   returnReasons,
   scrapReasons,
-  sequences,
-  unitOfMeasures
+  seedUnitsOfMeasure,
+  sequences
 } from "../seed-data.ts";
 import type { Database } from "../types.ts";
 import type { Resolved } from "./types.ts";
@@ -233,10 +233,17 @@ export async function seedCompanyReferenceData(
     );
   }
 
-  for (const uom of unitOfMeasures) {
+  // The same choice seedCompany makes: the company-insert interceptor sets
+  // useMetric from the company's country.
+  const measurement = await client.query<{ useMetric: boolean }>(
+    `SELECT "useMetric" FROM "companySettings" WHERE id = $1`,
+    [companyId]
+  );
+  const useMetric = measurement.rows[0]?.useMetric ?? false;
+  for (const uom of seedUnitsOfMeasure(useMetric)) {
     await client.query(
-      `INSERT INTO "unitOfMeasure" (name, code, "companyId", "createdBy") VALUES ($1, $2, $3, 'system')`,
-      [uom.name, uom.code, companyId]
+      `INSERT INTO "unitOfMeasure" (name, code, active, "companyId", "createdBy") VALUES ($1, $2, $3, $4, 'system')`,
+      [uom.name, uom.code, uom.active, companyId]
     );
   }
 

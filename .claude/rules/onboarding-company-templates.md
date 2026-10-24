@@ -70,6 +70,13 @@ sequences before tier 1. So **apply** uses the dataset wipe, and **revert** uses
 restore wipe (the snapshot carries the config back, so nothing needs keeping). The
 asymmetry is deliberate: each wipe is paired with whatever repopulates after it.
 
+Units are the one piece of that config the apply adjusts itself. `ensureUnitsOfMeasure`
+(`helpers/units-of-measure.ts`, run beside `ensureSequences`) makes every catalog unit the
+dataset names (any key ending in `unitOfMeasureCode`) active, and adds back one the company
+deleted: a metric company holds the imperial units the datasets use (LB, INCH, FOOT, GL, YD)
+inactive. The validator's `unitsOfMeasure` rule refuses a code outside the catalog
+(`@carbon/database/units-of-measure`).
+
 `wipeCompanyBusinessData` is NOT exported on its own — `wipeFirst` is the only way to
 reach it, so no caller can wipe without also re-seeding.
 
