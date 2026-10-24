@@ -4226,6 +4226,11 @@ export const resolveItemIdFromExtractedText = defineServiceFn({
 /**
  * Update item
  *
+ * @remarks
+ * Writes the item's own fields. Refused when the item is not of `type`, or
+ * when `readableId` differs from the item's: change the number with
+ * `setItemReadableId`, which also renames the type row keyed by it.
+ *
  * @mcp
  */
 export const updateItem = defineServiceFn({
