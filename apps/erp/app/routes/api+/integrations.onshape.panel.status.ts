@@ -3,28 +3,38 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { PanelAssemblyLineInput, PanelItemRow } from "@carbon/ee";
+import type {
+  PanelAssemblyLineInput,
+  PanelItemRow,
+  StandardSources
+} from "@carbon/ee";
 import {
   buildAssemblyLineStatuses,
   buildPartStatuses,
   describeBomPayload,
   externalIdForAssembly,
   externalIdForBomLine,
-  metadataProperty,
+  hasIdentityOverride,
+  identityValue,
   missingBomColumnsMessage,
   normalizeConfiguration,
-  parseBomTree
+  parseBomTree,
+  parseProperties,
+  sourceLabel,
+  withIdentitySources
 } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
   loadReleasedRevisions,
+  loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { readPartProperties } from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -103,6 +113,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ kind }, { headers: { "Cache-Control": "no-store" } });
   }
 
+  // The company's choice of property for part number, revision, Item, …
+  let sources: StandardSources;
+  try {
+    sources = await loadStandardSources(getCarbonServiceRole(), companyId);
+  } catch (error) {
+    logger.error("Failed to read the Onshape property map", {
+      companyId,
+      error
+    });
+    return data(
+      { error: "Failed to read the Onshape property map" },
+      { status: 500 }
+    );
+  }
+
   if (kind === "assembly") {
     let bom: unknown;
     try {
@@ -116,7 +141,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return data(failure.body, { status: failure.status });
     }
 
-    const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
+    const { root: bomRoot, lines, missingColumns } = parseBomTree(bom, sources);
     // Without its required columns every line would read "Not in Carbon".
     if (missingColumns.length > 0) {
       const diagnostics = {
@@ -144,9 +169,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         elementId,
         configuration
       );
+      const properties = parseProperties(metadata);
       rootPartNumber =
-        metadataProperty(metadata, "Part number") ?? rootPartNumber;
-      rootName = metadataProperty(metadata, "Name") ?? rootName;
+        identityValue(properties, "partNumber", sources) ?? rootPartNumber;
+      rootName = identityValue(properties, "name", sources) ?? rootName;
     } catch {
       rootIdentityUnavailable = true;
     }
@@ -283,6 +309,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         assembly: {
           root: {
             partNumber: rootPartNumber,
+            partNumberSource: sourceLabel("partNumber", sources),
             name: rootName,
             identityUnavailable: rootIdentityUnavailable,
             state: rootReleased
@@ -324,6 +351,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       elementId,
       configuration
     );
+    // A part number from another property: one metadata read, only then.
+    if (hasIdentityOverride(sources)) {
+      parts = withIdentitySources(
+        parts,
+        await readPartProperties(
+          onshape.client,
+          document,
+          elementId,
+          parts.filter((part) => !part.isHidden).map((part) => part.partId),
+          configuration
+        ),
+        sources
+      );
+    }
   } catch (error) {
     const failure = onshapeFailure(error);
     return data(failure.body, { status: failure.status });

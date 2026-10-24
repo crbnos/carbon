@@ -3,14 +3,20 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Onshape indented BOM → typed tree. Columns are addressed by Onshape's
- * property name, then by display name (`headerIdFor`); nesting
- * comes from the dotted "Item" index ("1.1.2"). Non-empty cells are
- * kept as properties keyed by column id, so a row resolves through the
- * company's property map like a part.
+ * Onshape indented BOM → typed tree. Columns are found by `bomColumnIds`
+ * (`standard-sources.ts`): the property map's choice, else Onshape's own
+ * column by property name, id or label in any case. Nesting comes from the
+ * dotted Item index ("1.1.2"). Non-empty cells are kept as properties keyed by
+ * column id, so a row resolves through the company's property map like a part.
  */
 
 import { isNotApplicable, type OnshapePropertyValue } from "./properties";
+import {
+  bomColumnIds,
+  DEFAULT_STANDARD_SOURCES,
+  type StandardSources,
+  sourceLabel
+} from "./standard-sources";
 
 export type OnshapeBomNode = {
   /** Dotted position, e.g. "1.2". */
@@ -66,65 +72,20 @@ function cell(value: unknown): string | null {
 }
 
 /**
- * Without "Item" every row reads as the root and a push would apply an empty
- * BOM. "Part number" is the join key to Carbon. Without "Quantity" every line
+ * Without Item every row reads as the root and a push would apply an empty
+ * BOM. Part number is the join key to Carbon. Without Quantity every line
  * would push as 1.
  */
-export const BOM_REQUIRED_COLUMNS = [
-  "Item",
-  "Part number",
-  "Quantity"
-] as const;
+const BOM_REQUIRED_FIELDS = ["item", "partNumber", "quantity"] as const;
 
-/**
- * Onshape's property name for each column the parser reads. A BOM template
- * can relabel a column ("PART NUMBER", "Qty") but never renames its property.
- */
-const COLUMN_PROPERTY_NAMES: Record<string, string> = {
-  Item: "item",
-  "Part number": "partNumber",
-  Quantity: "quantity",
-  Revision: "revision",
-  Name: "name",
-  Description: "description",
-  "Subassembly BOM behavior": "bomBehavior"
-};
-
-const labelKey = (label: string) => label.trim().toLowerCase();
-
-/**
- * The column id for a label: by property name, then by the exact label (the
- * lookup this replaced), then by label ignoring case. A repeated label keeps
- * its last header, as that lookup did.
- */
-function headerIdFor(headers: BomHeader[]) {
-  const byPropertyName = new Map<string, string>();
-  const byExactLabel = new Map<string, string>();
-  const byLabel = new Map<string, string>();
-  for (const header of headers) {
-    if (typeof header.propertyName === "string") {
-      byPropertyName.set(header.propertyName, header.id);
-    }
-    if (typeof header.name === "string") {
-      byExactLabel.set(header.name, header.id);
-      byLabel.set(labelKey(header.name), header.id);
-    }
-  }
-  return (label: string) => {
-    const propertyName = COLUMN_PROPERTY_NAMES[label];
-    return (
-      (propertyName ? byPropertyName.get(propertyName) : undefined) ??
-      byExactLabel.get(label) ??
-      byLabel.get(labelKey(label))
-    );
-  };
-}
-
-export function parseBomTree(payload: unknown): {
+export function parseBomTree(
+  payload: unknown,
+  sources: StandardSources = DEFAULT_STANDARD_SOURCES
+): {
   /** The assembly's own row (index "0"), when the export included it. */
   root: OnshapeBomNode | null;
   lines: OnshapeBomNode[];
-  /** Non-empty: callers refuse to plan from `lines`. */
+  /** Labels of the required columns not found; non-empty: callers refuse to plan. */
   missingColumns: string[];
 } {
   const bom = (payload ?? {}) as {
@@ -134,23 +95,25 @@ export function parseBomTree(payload: unknown): {
   const headers = Array.isArray(bom.headers) ? bom.headers : [];
   const rows = Array.isArray(bom.rows) ? bom.rows : [];
 
-  const headerId = headerIdFor(headers);
+  const columns = bomColumnIds(headers, sources);
   const missingColumns =
     rows.length === 0
       ? []
-      : BOM_REQUIRED_COLUMNS.filter((name) => !headerId(name));
-  const get = (row: BomRow, name: string) => {
-    const id = headerId(name);
+      : BOM_REQUIRED_FIELDS.filter((field) => !columns[field]).map((field) =>
+          sourceLabel(field, sources)
+        );
+  const get = (row: BomRow, field: keyof typeof columns) => {
+    const id = columns[field];
     return id ? cell(row.headerIdToValue?.[id]) : null;
   };
 
   const nodes: OnshapeBomNode[] = rows.map((row) => {
-    const index = get(row, "Item") ?? "";
-    const quantityText = get(row, "Quantity");
+    const index = get(row, "item") ?? "";
+    const quantityText = get(row, "quantity");
     const quantity = quantityText ? Number(quantityText) : Number.NaN;
     const source = row.itemSource ?? null;
     const shownAsUnit =
-      get(row, "Subassembly BOM behavior")?.toLowerCase() === SHOWN_AS_UNIT;
+      get(row, "bomBehavior")?.toLowerCase() === SHOWN_AS_UNIT;
     const standardContent =
       row.isStandardContent === true || source?.isStandardContent === true;
     const properties: OnshapePropertyValue[] = [];
@@ -168,10 +131,10 @@ export function parseBomTree(payload: unknown): {
     return {
       index,
       level: index === "" ? 0 : index.split(".").length,
-      partNumber: get(row, "Part number"),
-      revision: get(row, "Revision"),
-      name: get(row, "Name"),
-      description: get(row, "Description"),
+      partNumber: get(row, "partNumber"),
+      revision: get(row, "revision"),
+      name: get(row, "name"),
+      description: get(row, "description"),
       quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
       ...(shownAsUnit ? { shownAsUnit: true as const } : {}),
       ...(standardContent ? { standardContent: true as const } : {}),
@@ -291,7 +254,9 @@ export function missingBomColumnsMessage(missingColumns: string[]): string {
   const plural = missingColumns.length > 1;
   return `Onshape's BOM for this assembly has no ${names} column${
     plural ? "s" : ""
-  }. Add ${plural ? "them" : "it"} back to the assembly's BOM table in Onshape, then try again.`;
+  }. Add ${plural ? "them" : "it"} back to the assembly's BOM table in Onshape, or choose the column${
+    plural ? "s" : ""
+  } on the Fields page, then try again.`;
 }
 
 /** At most this many headers go into a diagnostics report. */
@@ -364,22 +329,4 @@ export function flattenBomTree(lines: OnshapeBomNode[]): OnshapeBomNode[] {
   };
   walk(lines);
   return out;
-}
-
-/** Non-empty string value of a named property in Onshape metadata. */
-export function metadataProperty(
-  payload: unknown,
-  name: string
-): string | null {
-  const properties = (payload as { properties?: unknown })?.properties;
-  if (!Array.isArray(properties)) return null;
-  for (const property of properties) {
-    const p = property as { name?: unknown; value?: unknown };
-    if (p.name === name) {
-      const value = p.value;
-      if (typeof value === "string" && value.trim() !== "") return value;
-      return null;
-    }
-  }
-  return null;
 }

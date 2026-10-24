@@ -14,6 +14,13 @@ import {
   standardField,
   translateValue
 } from "./standard-fields";
+import {
+  BOM_LINE_FIELDS,
+  type BomLineField,
+  IDENTITY_FIELDS,
+  type IdentityField,
+  isReservedProperty
+} from "./standard-sources";
 
 export type OnshapePropertyValue = {
   propertyId: string;
@@ -33,9 +40,17 @@ export type OnshapePropertyValue = {
 export const MAPPING_MODES = ["create", "everyPush"] as const;
 export type MappingMode = (typeof MAPPING_MODES)[number];
 
+/**
+ * `identity`: the property a push reads Part number, Revision, Name or
+ * Description from, instead of Onshape's own. `bomLine`: the BOM column
+ * holding Item or Quantity, by column id, when the BOM has no column the panel
+ * recognises. Neither writes a field of its own.
+ */
 export type PropertyMapTarget =
   | { kind: "customField"; fieldId: string }
-  | { kind: "item"; field: StandardFieldId };
+  | { kind: "item"; field: StandardFieldId }
+  | { kind: "identity"; field: IdentityField }
+  | { kind: "bomLine"; field: BomLineField };
 
 export type PropertyMapEntry = {
   onshapePropertyId: string;
@@ -134,20 +149,6 @@ export const MAPPABLE_VALUE_TYPES: Record<string, readonly number[]> = {
   // Material and similar objects map as their display name.
   OBJECT: [CUSTOM_FIELD_DATA_TYPES.text]
 };
-
-/**
- * Identity, description and lifecycle properties: never "not mapped". Lower
- * case, since a BOM template can relabel a column in any case.
- */
-const RESERVED_PROPERTY_NAMES = new Set([
-  "name",
-  "part number",
-  "revision",
-  "description",
-  "state",
-  "exclude from bom",
-  "not revision managed"
-]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -313,6 +314,14 @@ export function coerceOnshapeValue(
   }
 }
 
+function isIdentityField(value: unknown): value is IdentityField {
+  return (IDENTITY_FIELDS as readonly unknown[]).includes(value);
+}
+
+function isBomLineField(value: unknown): value is BomLineField {
+  return (BOM_LINE_FIELDS as readonly unknown[]).includes(value);
+}
+
 function isMappingMode(value: unknown): value is MappingMode {
   return value === "create" || value === "everyPush";
 }
@@ -351,6 +360,10 @@ export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
       target = { kind: "customField", fieldId: stored.fieldId };
     } else if (stored?.kind === "item" && isStandardFieldId(stored.field)) {
       target = { kind: "item", field: stored.field };
+    } else if (stored?.kind === "identity" && isIdentityField(stored.field)) {
+      target = { kind: "identity", field: stored.field };
+    } else if (stored?.kind === "bomLine" && isBomLineField(stored.field)) {
+      target = { kind: "bomLine", field: stored.field };
     } else if (!stored && typeof carbonFieldId === "string") {
       target = { kind: "customField", fieldId: carbonFieldId };
     }
@@ -415,7 +428,7 @@ export function everyPushTargets(metadata: unknown): {
 export function targetKey(target: PropertyMapTarget): string {
   return target.kind === "customField"
     ? `customField:${target.fieldId}`
-    : `item:${target.field}`;
+    : `${target.kind}:${target.field}`;
 }
 
 /**
@@ -461,6 +474,18 @@ export function propertyMapEqual(
  * `matchByName` is for a BOM row: its cells are keyed by column, and a column
  * whose id is not the property id still matches by the property's name.
  */
+/**
+ * Whether the map writes a field from part properties. Identity and BOM line
+ * sources are read by the push itself, so a map of only those costs no
+ * property read.
+ */
+export function mapsPartProperties(map: readonly PropertyMapEntry[]): boolean {
+  return map.some(
+    (entry) =>
+      entry.target.kind === "customField" || entry.target.kind === "item"
+  );
+}
+
 export function resolveMappedFields({
   properties,
   map,
@@ -500,6 +525,10 @@ export function resolveMappedFields({
       (entry.onshapeName ? propertyByName.get(entry.onshapeName) : undefined);
     if (!property) continue;
     used.add(property.propertyId);
+    // Read by the push itself (`standard-sources.ts`), never written here.
+    if (entry.target.kind === "identity" || entry.target.kind === "bomLine") {
+      continue;
+    }
 
     if (entry.target.kind === "item") {
       const field = standardField(entry.target.field);
@@ -559,10 +588,7 @@ export function resolveMappedFields({
   for (const property of properties) {
     if (used.has(property.propertyId)) continue;
     const value = propertyDisplayValue(property.value);
-    if (
-      value !== null &&
-      !RESERVED_PROPERTY_NAMES.has(String(property.name).trim().toLowerCase())
-    ) {
+    if (value !== null && !isReservedProperty(property)) {
       unmapped.push({
         propertyId: property.propertyId,
         name: property.name,
