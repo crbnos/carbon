@@ -161,7 +161,7 @@ services:
       PGRST_APP_SETTINGS_JWT_EXP: 3600
 
   realtime:
-    image: supabase/realtime:v2.89.0
+    image: supabase/realtime:v2.145.3
     restart: on-failure
     deploy:
       resources:
