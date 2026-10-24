@@ -8,16 +8,17 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { inspectionDispositionValidator } from "~/services/models";
 import {
   finishJobOperation,
   insertScrapQuantity
 } from "~/services/operations.service";
 import {
+  checkStrictBackflush,
   createInspectionRejectionIssue,
   getInspectionOutcomeState,
   getSerialCompletionCandidates,
@@ -207,6 +208,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Strict backflush: refuse before the lot closes; a closed lot cannot be
+  // dispositioned again.
+  const backflushCheck = await checkStrictBackflush({
+    jobOperationId: state.jobOperationId,
+    quantity: completionQuantity + (scrapReasonId ? scrapTotal : 0),
+    companyId,
+    userId
+  });
+  if (backflushCheck.error) {
+    return fail(backflushCheck.error, backflushCheck.message!);
+  }
+
   // ---------------------------------------------------------------
   // 2. Close the lot FIRST — the one-shot requireOpen update is the
   //    serialization point; a concurrent second POST dies here before
@@ -295,22 +308,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const backflush = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const backflush = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         id: state.jobOperationId,
         type: "jobOperation",
         quantity: scrapTotal
-      });
+      }
+    );
     if (backflush.error) {
       warnings.push("failed to issue materials for scrap");
     }
   }
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
-    const rework = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("trigger-rework", {
+    const rework = await erpPosting(
+      "trigger-rework",
+      { companyId, userId },
+      {
         jobId: state.jobId,
         triggeredAtJobOperationId: state.jobOperationId,
         targetJobOperationId: targetOperationId,
@@ -320,7 +336,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           ? reworkEntityIds
           : undefined,
         inspectionId: id
-      });
+      }
+    );
     if (rework.error) {
       return fail(
         rework.error,
@@ -328,12 +345,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const recalculated = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("recalculate", {
+    const recalculated = await erpPosting(
+      "recalculate",
+      { companyId, userId },
+      {
         type: "jobRequirements",
         id: state.jobId
-      });
+      }
+    );
     if (recalculated.error) {
       warnings.push("failed to recalculate job requirements");
     }
@@ -362,15 +381,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         state.operation.operationQuantity ??
         0);
   if (willBeFinished) {
-    const finishResult = await finishJobOperation(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        jobOperationId: state.jobOperationId,
-        userId,
-        companyId
-      }
-    );
+    const finishResult = await finishJobOperation(serviceRole, {
+      jobOperationId: state.jobOperationId,
+      userId,
+      companyId
+    });
     if (finishResult.error) {
       warnings.push("failed to finish the operation");
     }

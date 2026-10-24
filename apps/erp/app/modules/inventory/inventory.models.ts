@@ -185,6 +185,19 @@ export const serialUnitRecostValidator = z.object({
   postingDate: z.string().min(1, { message: "Posting date is required" })
 });
 
+// Exactly the types the post-inventory-adjustment server function accepts —
+// NOT itemLedgerTypes. That wider ledger enum leaked into the published API
+// schema here, so API/MCP callers were offered "Purchase" etc. and every such
+// call failed with the generic fallback message. Keep in sync with the server
+// function's payloadValidator.
+export const inventoryAdjustmentTypes = [
+  "Positive Adjmt.",
+  "Negative Adjmt.",
+  "Set Quantity",
+  "Scrap",
+  "Unscrap"
+] as const;
+
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
@@ -194,18 +207,7 @@ export const inventoryAdjustmentValidator = z
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    // Exactly the types the post-inventory-adjustment server function accepts —
-    // NOT itemLedgerTypes. That wider ledger enum leaked into the published API
-    // schema here, so API/MCP callers were offered "Purchase" etc. and every
-    // such call failed with the generic fallback message. Keep in sync with
-    // the server function's payloadValidator.
-    adjustmentType: z.enum([
-      "Positive Adjmt.",
-      "Negative Adjmt.",
-      "Set Quantity",
-      "Scrap",
-      "Unscrap"
-    ]),
+    adjustmentType: z.enum(inventoryAdjustmentTypes),
     quantity: zfd.numeric(z.number()),
     trackedEntityId: zfd.text(z.string().optional()),
     readableId: zfd.text(z.string().optional()),
@@ -528,7 +530,8 @@ export type ReceiptSerialEntity = {
  * can never disagree on which serials count:
  *   - `missingIndexes`  — required indices with no serial yet (post validation)
  *   - `surplusEntityIds` — orphan/duplicate entities to delete before posting,
- *     keeping the earliest-created entity for each in-range index.
+ *     keeping, for each in-range index, a serial-bearing entity over a blank
+ *     one, then the earliest-created.
  */
 export function reconcileReceiptLineSerials(
   entities: ReceiptSerialEntity[],
@@ -546,8 +549,10 @@ export function reconcileReceiptLineSerials(
 
   const keptIndexes = new Set<number>();
   const surplusEntityIds: string[] = [];
-  const ordered = [...entities].sort((a, b) =>
-    (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
+  const ordered = [...entities].sort(
+    (a, b) =>
+      Number(b.hasSerial) - Number(a.hasSerial) ||
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
   );
   for (const entity of ordered) {
     const index = entity.index;
@@ -562,13 +567,72 @@ export function reconcileReceiptLineSerials(
   return { missingIndexes, surplusEntityIds };
 }
 
+export type SerialBoxEntity = { id: string; hasHistory: boolean };
+
+export type SerialBoxWrite =
+  | { kind: "clear"; releaseIds: string[] }
+  | { kind: "taken"; reason: "box" | "unit"; releaseIds: string[] }
+  | { kind: "write"; targetId: string | undefined; releaseIds: string[] };
+
+export function planSerialBoxWrite(args: {
+  receiptLineId: string;
+  index: number;
+  serialNumber: string;
+  box: SerialBoxEntity[];
+  withSerial: (SerialBoxEntity & {
+    attributes: Record<string, unknown>;
+    /** Its `Receipt` is voided: the box it names no longer holds it. */
+    onVoidedReceipt?: boolean;
+  })[];
+}): SerialBoxWrite {
+  const boxIds = args.box.map((entity) => entity.id);
+  if (!args.serialNumber.trim()) return { kind: "clear", releaseIds: boxIds };
+
+  const isInThisBox = (attributes: Record<string, unknown>) =>
+    attributes["Receipt Line"] === args.receiptLineId &&
+    attributes["Receipt Line Index"] === args.index;
+
+  if (args.withSerial.some((entity) => entity.hasHistory)) {
+    return { kind: "taken", reason: "unit", releaseIds: boxIds };
+  }
+
+  // Only this box's record or one from a voided receipt can be taken over;
+  // any other record with the serial belongs to another box or document (a
+  // job's reserved serial).
+  const elsewhere = args.withSerial.filter(
+    (entity) => !entity.onVoidedReceipt && !isInThisBox(entity.attributes)
+  );
+  if (elsewhere.length > 0) {
+    return {
+      kind: "taken",
+      reason: elsewhere.some(
+        (entity) => "Receipt Line Index" in entity.attributes
+      )
+        ? "box"
+        : "unit",
+      releaseIds: boxIds
+    };
+  }
+
+  const targetId =
+    (
+      args.withSerial.find((entity) => isInThisBox(entity.attributes)) ??
+      args.withSerial[0]
+    )?.id ?? args.box.find((entity) => !entity.hasHistory)?.id;
+
+  return {
+    kind: "write",
+    targetId,
+    releaseIds: boxIds.filter((id) => id !== targetId)
+  };
+}
+
 export const warehouseTransferValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     transferId: zfd.text(z.string().optional()),
     fromLocationId: z.string().min(1, { message: "From Location is required" }),
     toLocationId: z.string().min(1, { message: "To Location is required" }),
-    status: z.enum(warehouseTransferStatusType).optional(),
     transferDate: zfd.text(z.string().optional()),
     expectedReceiptDate: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional()),
@@ -605,6 +669,20 @@ export const stockTransferStatusType = [
   "In Progress",
   "Completed"
 ] as const;
+
+/**
+ * The status a count must be in to move to `to`, and the refusal when it is
+ * not. Confirm takes a Draft to Pending, reopen a Pending back to Draft; only
+ * posting reaches Posted.
+ */
+export function inventoryCountStatusFrom(to: "Draft" | "Pending"): {
+  status: "Draft" | "Pending";
+  refusal: string;
+} {
+  return to === "Pending"
+    ? { status: "Draft", refusal: "Only a draft count can be confirmed" }
+    : { status: "Pending", refusal: "Only a pending count can be reopened" };
+}
 
 export function isStockTransferLocked(
   status: string | null | undefined
@@ -654,7 +732,6 @@ export const stockTransferLineValidator = z
         .number()
         .min(0, { message: "Quantity must be greater than or equal to 0" })
     ),
-    pickedQuantity: zfd.numeric(z.number().min(0).optional()),
     requiresBatchTracking: zfd.text(
       z.string().transform((val) => val === "true")
     ),
@@ -753,6 +830,42 @@ export function isPickingListLocked(
   return (
     status === "Completed" || status === "Partial" || status === "Cancelled"
   );
+}
+
+/**
+ * What finishing a picking list does, given its unresolved lines (neither
+ * fully picked, cancelled nor marked Short) and the company's
+ * incomplete-list policy: refuse (`error`), ask first (`warn`, until
+ * acknowledged), or finish — Partial when anything was left or short.
+ */
+export function finishPickingList({
+  unresolvedItemNames,
+  hasShort,
+  policy,
+  acknowledged
+}: {
+  unresolvedItemNames: string[];
+  hasShort: boolean;
+  policy: string | null;
+  acknowledged: boolean;
+}):
+  | { outcome: "refuse"; message: string }
+  | { outcome: "ask" }
+  | { outcome: "finish"; status: "Completed" | "Partial" } {
+  if (unresolvedItemNames.length > 0) {
+    if (policy === "error") {
+      return {
+        outcome: "refuse",
+        message: `Can't finish — still unpicked: ${unresolvedItemNames.join(", ")}`
+      };
+    }
+    if (!acknowledged) return { outcome: "ask" };
+  }
+  return {
+    outcome: "finish",
+    status:
+      unresolvedItemNames.length === 0 && !hasShort ? "Completed" : "Partial"
+  };
 }
 
 export const pickingListValidator = z.object({

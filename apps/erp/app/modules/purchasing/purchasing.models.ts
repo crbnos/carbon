@@ -24,7 +24,11 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { incoterms, itemType, taxExemptionReasons } from "../shared";
+import {
+  incoterms,
+  itemType,
+  taxExemptionReasons
+} from "../shared/shared.models";
 
 export const KPIs = [
   {
@@ -887,6 +891,30 @@ export function canCreatePurchaseOrderRevision(transition: {
   );
 }
 
+/**
+ * Why `userId` may not delete a purchase order, or null. Only a Draft,
+ * Planned or Needs Approval order can be deleted, and one that needs approval
+ * only by the person who requested it (`requestedBy`, its latest pending
+ * request): an approver rejects it instead.
+ */
+export function purchaseOrderDeleteRefusal({
+  status,
+  requestedBy,
+  userId
+}: {
+  status: string | null | undefined;
+  requestedBy: string | null | undefined;
+  userId: string;
+}): "status" | "notRequester" | null {
+  if (!["Draft", "Planned", "Needs Approval"].includes(status ?? "")) {
+    return "status";
+  }
+  if (status === "Needs Approval" && requestedBy && requestedBy !== userId) {
+    return "notRequester";
+  }
+  return null;
+}
+
 // ─── Purchase Return Orders (Supplier Returns) ───
 
 export const purchaseReturnOrderStatusType = [
@@ -944,6 +972,72 @@ export const purchaseReturnOrderLineValidator = z.object({
   purchaseInvoiceLineId: zfd.text(z.string().optional()),
   trackedEntityIds: zfd.repeatableOfType(z.string()).optional()
 });
+
+/**
+ * The first field a change to a confirmed return line would move that is
+ * locked after confirmation, by its label; null when none. A field counts as
+ * changed only when it was sent AND differs — the update writes only the
+ * fields it is given.
+ */
+export function lockedReturnLineField(
+  next: {
+    quantity: number;
+    itemId: string;
+    unitPrice: number;
+    restockFeePercent?: number;
+    unitOfMeasureCode?: string;
+    purchaseOrderLineId?: string;
+    receiptLineId?: string;
+    purchaseInvoiceLineId?: string;
+  },
+  current: {
+    quantity: number | null;
+    itemId: string | null;
+    unitPrice: number | null;
+    restockFeePercent: number | null;
+    unitOfMeasureCode: string | null;
+    purchaseOrderLineId: string | null;
+    receiptLineId: string | null;
+    purchaseInvoiceLineId: string | null;
+  }
+): string | null {
+  const fields: [string, unknown, unknown][] = [
+    ["Quantity", Number(next.quantity), Number(current.quantity)],
+    ["Item", next.itemId, current.itemId],
+    ["Unit price", Number(next.unitPrice), Number(current.unitPrice)],
+    [
+      "Restocking fee",
+      next.restockFeePercent === undefined
+        ? undefined
+        : Number(next.restockFeePercent),
+      Number(current.restockFeePercent)
+    ],
+    [
+      "Unit of measure",
+      next.unitOfMeasureCode,
+      current.unitOfMeasureCode ?? undefined
+    ],
+    [
+      "Purchase order line link",
+      next.purchaseOrderLineId,
+      current.purchaseOrderLineId ?? undefined
+    ],
+    [
+      "Receipt line link",
+      next.receiptLineId,
+      current.receiptLineId ?? undefined
+    ],
+    [
+      "Invoice line link",
+      next.purchaseInvoiceLineId,
+      current.purchaseInvoiceLineId ?? undefined
+    ]
+  ];
+  const changed = fields.find(
+    ([, value, saved]) => value !== undefined && value !== saved
+  );
+  return changed ? changed[0] : null;
+}
 
 // Credit dialog: repeatable per-line quantity rows (same encoding as
 // selectedLines — a JSON-encoded field)
@@ -1423,3 +1517,26 @@ export const leasePurchaseValidator = z.object({
   name: z.string().trim().min(1, { message: "Asset name is required" }),
   notes: zfd.text(z.string().optional())
 });
+
+/**
+ * Which RFQ models go in the email and which go as download links: in line
+ * order, each model that still fits in `budgetBytes` is attached, the rest are
+ * linked, so one large model does not push out the small ones after it.
+ */
+export function splitRfqModelAttachments<T extends { size: number }>(
+  models: T[],
+  budgetBytes: number
+): { attach: T[]; link: T[] } {
+  const attach: T[] = [];
+  const link: T[] = [];
+  let left = budgetBytes;
+  for (const model of models) {
+    if (model.size <= left) {
+      attach.push(model);
+      left -= model.size;
+    } else {
+      link.push(model);
+    }
+  }
+  return { attach, link };
+}

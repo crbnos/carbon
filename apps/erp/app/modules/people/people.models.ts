@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 
 export const attributeValidator = z
   .object({

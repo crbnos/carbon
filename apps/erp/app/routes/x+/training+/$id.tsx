@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, useCarbon } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
@@ -20,12 +20,12 @@ import {
   RichTextView,
   ToggleGroup,
   ToggleGroupItem,
+  toast,
   useDebounce,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { redirect } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -33,15 +33,16 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { Confirm } from "~/components/Modals";
-import { useImageUpload, usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions } from "~/hooks";
+import { getTraining } from "~/modules/resources/resources.service";
 import {
-  getTraining,
   TrainingExplorer,
   TrainingGuide,
   TrainingHeader,
-  TrainingProperties
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+  TrainingProperties,
+  TrainingVideo
+} from "~/modules/resources/ui";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -123,6 +124,11 @@ export default function TrainingRoute() {
   );
 }
 
+const contentTypes = ["write", "pdf", "video"] as const;
+type ContentType = (typeof contentTypes)[number];
+const isContentType = (value: string): value is ContentType =>
+  (contentTypes as readonly string[]).includes(value);
+
 function TrainingContent() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -135,19 +141,24 @@ function TrainingContent() {
     (loaderData?.training?.content ?? {}) as JSONContent
   );
 
-  const { carbon } = useCarbon();
-  const { id: userId } = useUser();
-
+  // A quiet POST, not a fetcher: an autosave every pause in typing must not
+  // reload every loader on the page.
   const updateTraining = useDebounce(
     async (content: JSONContent) => {
-      await carbon
-        ?.from("training")
-        .update({
-          content: content ?? {},
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId
-        })
-        .eq("id", id!);
+      const formData = new FormData();
+      formData.append("ids", id);
+      formData.append("field", "content");
+      formData.append("value", JSON.stringify(content ?? {}));
+      const response = await fetch(path.to.bulkUpdateTraining, {
+        method: "post",
+        body: formData
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
+        error?: { message: string } | null;
+      } | null;
+      if (!response?.ok || body?.error) {
+        toast.error(body?.error?.message ?? t`Failed to save the content`);
+      }
     },
     500,
     true
@@ -157,14 +168,22 @@ function TrainingContent() {
 
   const canEdit =
     permissions.can("update", "people") &&
+    permissions.can("update", "resources") &&
     loaderData?.training?.status === "Draft";
 
   const guidePath = loaderData?.training?.guidePath ?? null;
-  // Content is written text or a PDF, never both. A training with a guide is a
-  // PDF training; the toggle only remembers "PDF" before the first upload.
-  const [pdfChosen, setPdfChosen] = useState(false);
-  const [isRemovePdfOpen, setIsRemovePdfOpen] = useState(false);
-  const contentType = guidePath || pdfChosen ? "pdf" : "write";
+  const videoUrl = loaderData?.training?.videoUrl ?? null;
+  // Content is written text, a PDF or a video, never two of them. A training
+  // with a guide is a PDF training and one with a video a video training; the
+  // toggle only remembers the choice before the first upload or link.
+  const savedType: ContentType | null = guidePath
+    ? "pdf"
+    : videoUrl
+      ? "video"
+      : null;
+  const [chosenType, setChosenType] = useState<ContentType>("write");
+  const [switchTo, setSwitchTo] = useState<ContentType | null>(null);
+  const contentType = savedType ?? chosenType;
 
   return (
     <Card>
@@ -174,7 +193,7 @@ function TrainingContent() {
             <Trans>Content</Trans>
           </CardTitle>
           <CardDescription>
-            <Trans>What employees read before the questions</Trans>
+            <Trans>What employees read or watch before the questions</Trans>
           </CardDescription>
         </CardHeader>
         <CardAction>
@@ -183,11 +202,9 @@ function TrainingContent() {
             value={contentType}
             disabled={!canEdit}
             onValueChange={(value) => {
-              if (value === "pdf") setPdfChosen(true);
-              if (value === "write") {
-                if (guidePath) setIsRemovePdfOpen(true);
-                else setPdfChosen(false);
-              }
+              if (!isContentType(value) || value === contentType) return;
+              if (savedType) setSwitchTo(value);
+              else setChosenType(value);
             }}
           >
             <ToggleGroupItem size="sm" value="write">
@@ -195,6 +212,9 @@ function TrainingContent() {
             </ToggleGroupItem>
             <ToggleGroupItem size="sm" value="pdf">
               <Trans>Upload PDF</Trans>
+            </ToggleGroupItem>
+            <ToggleGroupItem size="sm" value="video">
+              <Trans>YouTube Video</Trans>
             </ToggleGroupItem>
           </ToggleGroup>
         </CardAction>
@@ -208,6 +228,12 @@ function TrainingContent() {
           <TrainingGuide
             trainingId={id}
             guidePath={guidePath}
+            canEdit={canEdit}
+          />
+        ) : contentType === "video" ? (
+          <TrainingVideo
+            trainingId={id}
+            videoUrl={videoUrl}
             canEdit={canEdit}
           />
         ) : canEdit ? (
@@ -236,21 +262,35 @@ function TrainingContent() {
           />
         )}
       </CardContent>
-      {isRemovePdfOpen && (
+      {savedType && switchTo && (
         <Confirm
           action={path.to.bulkUpdateTraining}
-          title={t`Switch to Written Content`}
-          text={t`This removes the PDF. Employees will see the written content instead.`}
-          confirmText={t`Remove PDF`}
+          title={
+            switchTo === "write"
+              ? t`Switch to Written Content`
+              : switchTo === "pdf"
+                ? t`Switch to PDF`
+                : t`Switch to Video`
+          }
+          text={
+            savedType === "pdf"
+              ? t`This removes the PDF. Employees will see the new content instead.`
+              : t`This removes the video. Employees will see the new content instead.`
+          }
+          confirmText={savedType === "pdf" ? t`Remove PDF` : t`Remove Video`}
           confirmVariant="destructive"
-          onCancel={() => setIsRemovePdfOpen(false)}
+          onCancel={() => setSwitchTo(null)}
           onSubmit={() => {
-            setIsRemovePdfOpen(false);
-            setPdfChosen(false);
+            setChosenType(switchTo);
+            setSwitchTo(null);
           }}
         >
           <input type="hidden" name="ids" value={id} />
-          <input type="hidden" name="field" value="guidePath" />
+          <input
+            type="hidden"
+            name="field"
+            value={savedType === "pdf" ? "guidePath" : "videoUrl"}
+          />
           <input type="hidden" name="value" value="" />
         </Confirm>
       )}

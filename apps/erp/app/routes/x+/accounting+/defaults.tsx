@@ -13,12 +13,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
-import type { AccountListItem } from "~/modules/accounting";
+import { defaultAccountValidator } from "~/modules/accounting/accounting.models";
 import {
-  defaultAccountValidator,
   getDefaultAccounts,
   updateDefaultAccounts
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import type { AccountListItem } from "~/modules/accounting/types";
 import { AccountDefaultsForm } from "~/modules/accounting/ui/AccountDefaults";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

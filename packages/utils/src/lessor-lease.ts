@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  leaseMonthEnd,
+  leaseMonthsThrough
+} from "@carbon/database/lease-months";
 import { RoundingMode, round, SCALE } from "@carbon/database/precision";
 import {
   type RateUnit,
@@ -233,7 +237,7 @@ const DAYS_PER_28_DAY_PERIOD = 28;
 const DAYS_PER_YEAR = 365;
 const MONTHS_PER_YEAR = 12;
 /** The calendar months of a 365-day year, for a Daily or Weekly unit's
- *  average month on a Calendar Month agreement. */
+ *  average month on a Calendar Month or Monthly agreement. */
 const MONTH_LENGTHS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 /** Whole calendar months from `startDate` through `endDate` (both inclusive:
@@ -249,6 +253,30 @@ export function wholeMonthsInTerm(startDate: string, endDate: string): number {
   return after.day < start.day ? months - 1 : months;
 }
 
+/** Whole `Monthly` billing periods from `startDate` through `endDate` (both
+ *  inclusive), counted the way billing cuts them: 2027-01-31 → 2027-02-27
+ *  is 1, because 31 Jan + 1 month clamps to 28 Feb. */
+function monthlyPeriodsInTerm(startDate: string, endDate: string): number {
+  // Validates both dates and refuses an end before the start.
+  daysBetweenInclusive(startDate, endDate);
+  return leaseMonthsThrough(startDate, endDate);
+}
+
+/** Whole months of a rental agreement's term, as its classification counts
+ *  them; null when it is open-ended. A Monthly cycle counts the months its
+ *  billing cuts (`monthlyPeriodsInTerm`); the others count calendar months
+ *  (`wholeMonthsInTerm`). The two differ only for a start on the 29th–31st. */
+export function rentalTermMonths(
+  cycle: RentalBillingCycle,
+  startDate: string,
+  endDate: string | null
+): number | null {
+  if (endDate === null) return null;
+  return cycle === "Monthly"
+    ? monthlyPeriodsInTerm(startDate, endDate)
+    : wholeMonthsInTerm(startDate, endDate);
+}
+
 export type LeasePaymentTerms = {
   /** Whole months of the term; null when the agreement is open-ended. */
   termMonths: number | null;
@@ -258,7 +286,7 @@ export type LeasePaymentTerms = {
   periods: number;
   /** The annual percentage passed to `presentValue` / `buildLessorSchedule`.
    *  Those derive the PERIOD rate as annualRate / 100 / 12, which is right
-   *  for a Calendar Month cycle. A 28 Days cycle's period rate must be
+   *  for a Calendar Month or Monthly cycle. A 28 Days cycle's period rate must be
    *  annual × 28 / 365, so its rate is passed scaled by 12 × 28 / 365 —
    *  (annual × 12 × 28 / 365) / 12 = annual × 28 / 365. */
   annualRate: number;
@@ -276,6 +304,11 @@ export type LeasePaymentTerms = {
  *   month covers), so it is valued at its average month over a 365-day year
  *   — the classification tests need a level payment; a unit treated as a
  *   sale must be Monthly (`salesTypeRequirementError`).
+ * - Monthly: the same, with months counted from the start date — every
+ *   period of a whole-month term is a whole month, so a mid-month start
+ *   bills exactly the periods it is valued over. A start on the 29th–31st
+ *   clamps in a short month (31 Jan → 27 Feb is one month), so the months
+ *   are counted the way billing cuts them (`leaseMonthsThrough`).
  * - 28 Days: the unit's charge for 28 days (whole units of its frequency)
  *   per period, one period per WHOLE 28 days of the term; a trailing partial
  *   period is not part of the level-payment stream.
@@ -298,10 +331,9 @@ export function leasePaymentTerms(args: {
   decimals: number;
 }): LeasePaymentTerms {
   const { cycle, rateUnit, rate, startDate, endDate, decimals } = args;
-  const termMonths =
-    endDate === null ? null : wholeMonthsInTerm(startDate, endDate);
+  const termMonths = rentalTermMonths(cycle, startDate, endDate);
 
-  if (cycle === "Calendar Month") {
+  if (cycle === "Calendar Month" || cycle === "Monthly") {
     const payment =
       rateUnit === "Month"
         ? round(rate, decimals)
@@ -450,10 +482,11 @@ export function classifyRentalLine(args: {
  * as a level payment over `leasePaymentTerms().periods`, and every sales-type
  * Rent invoice credits Net Investment in Leases in full — so the rent billed
  * must be exactly payment × periods, or the account never closes on the
- * schedule. Billing prices a partial calendar month pro rata and cuts a
- * trailing partial 28-day period, neither of which the valuation contains:
- * a Calendar Month term starts on the first of a month and ends on a month
- * end; a 28 Days term is a whole number of 28-day periods.
+ * schedule. Billing prices a partial month pro rata and cuts a trailing
+ * partial 28-day period, neither of which the valuation contains: a Calendar
+ * Month term starts on the first of a month and ends on a month end; a
+ * Monthly term ends the day before a monthly anniversary of its start; a 28
+ * Days term is a whole number of 28-day periods.
  *
  * A sales-type lease also commences no earlier than the month it is
  * activated in. Activation books the commencement (lease revenue, cost of
@@ -485,12 +518,21 @@ export function salesTypeRequirementError(args: {
   if (args.fairValue === null || !(args.fairValue > 0)) {
     return `${name} is treated as a sale; enter the unit's fair value`;
   }
-  if (args.cycle === "Calendar Month") {
+  if (args.cycle === "Calendar Month" || args.cycle === "Monthly") {
     // A Daily or Weekly unit bills a different amount each month, and a sale
     // is valued as a level payment that the invoices must match.
     if (args.rateUnit !== "Month") {
-      return `${name} is treated as a sale, which on a Calendar Month agreement needs a monthly rate`;
+      return `${name} is treated as a sale, which on a ${args.cycle} agreement needs a monthly rate`;
     }
+  }
+  if (args.cycle === "Monthly") {
+    const months = monthlyPeriodsInTerm(startDate, endDate);
+    if (months === 0 || leaseMonthEnd(startDate, months - 1) !== endDate) {
+      return `${name} is treated as a sale, which runs whole billing periods: end it the day before a monthly anniversary of its start date, such as ${leaseMonthEnd(startDate, months)}`;
+    }
+    return null;
+  }
+  if (args.cycle === "Calendar Month") {
     if (parseIsoDate(startDate).day !== 1 || monthEnd(endDate) !== endDate) {
       return `${name} is treated as a sale, which runs whole billing periods: start on the first of a month and end on a month end`;
     }

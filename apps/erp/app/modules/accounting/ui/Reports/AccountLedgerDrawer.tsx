@@ -27,7 +27,7 @@ import type {
   AccountClass,
   AccountLedgerLine,
   AccountLedgerSummary
-} from "~/modules/accounting";
+} from "~/modules/accounting/types";
 import { path } from "~/utils/path";
 import JournalEntryStatus from "../JournalEntries/JournalEntryStatus";
 

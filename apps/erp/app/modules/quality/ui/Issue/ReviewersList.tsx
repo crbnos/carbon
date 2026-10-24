@@ -29,9 +29,8 @@ import { useCallback, useRef, useState } from "react";
 import { LuCirclePlus } from "react-icons/lu";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { IssueReviewer } from "~/modules/quality";
-import { nonConformanceReviewerValidator } from "~/modules/quality";
-import type { Issue } from "~/modules/quality/types";
+import { nonConformanceReviewerValidator } from "~/modules/quality/quality.models";
+import type { Issue, IssueReviewer } from "~/modules/quality/types";
 import type { action as reviewAction } from "~/routes/x+/issue+/$id.review";
 import { path } from "~/utils/path";
 import { TaskItem, TaskProgress } from "./IssueTask";
@@ -43,6 +42,9 @@ export function ReviewersList({
   reviewers: IssueReviewer[];
   isDisabled: boolean;
 }) {
+  const { id } = useParams();
+  if (!id) throw new Error("id not found");
+
   const disclosure = useDisclosure();
   const { isPhone } = useViewport();
 
@@ -96,6 +98,7 @@ export function ReviewersList({
               <Button
                 variant="secondary"
                 leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled}
                 onClick={disclosure.onOpen}
               >
                 <Trans>Add</Trans>
@@ -127,6 +130,7 @@ export function ReviewersList({
               <ModalContent>
                 <ValidatedForm
                   method="post"
+                  action={path.to.issueReview(id)}
                   validator={nonConformanceReviewerValidator}
                   fetcher={fetcher}
                   onSubmit={() => {
@@ -167,7 +171,11 @@ export function ReviewersList({
                 <Trans>Cancel</Trans>
               </Button>
             ) : (
-              <Button leftIcon={<LuCirclePlus />} onClick={disclosure.onOpen}>
+              <Button
+                leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled}
+                onClick={disclosure.onOpen}
+              >
                 <Trans>Add Requirement</Trans>
               </Button>
             )}

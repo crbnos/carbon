@@ -2,13 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { postingOrThrow } from "@carbon/api/postings.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { NotificationEvent } from "@carbon/notifications";
-import { serverFns } from "@carbon/server-functions";
-import { ENDED_LEASE_STATUSES } from "@carbon/server-functions/post-purchase-invoice";
 import type { InvoiceAutomation } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, ENDED_LEASE_STATUSES } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import {
   attachPostedInvoicePdf,
@@ -221,13 +220,15 @@ export const recurringBillingFunction = inngest.createFunction(
               const tz = await getCompanyTimeZone(serviceRole, company.id);
               const asOf = datetime.today(tz).toString();
 
-              const drafted = await serverFns
-                .system({
+              const drafted = await postingOrThrow(
+                "create-rental-invoices",
+                {
                   db: getJobDatabaseClient(),
                   companyId: company.id,
                   userId: "system"
-                })
-                .invokeOrThrow("create-rental-invoices", { asOf });
+                },
+                { asOf }
+              );
 
               for (const failure of drafted.failures) {
                 logger.error(
@@ -292,13 +293,15 @@ export const recurringBillingFunction = inngest.createFunction(
                   .today(await getCompanyTimeZone(serviceRole, company.id))
                   .toString();
 
-              const drafted = await serverFns
-                .system({
+              const drafted = await postingOrThrow(
+                "create-contract-invoices",
+                {
                   db: getJobDatabaseClient(),
                   companyId: company.id,
                   userId: "system"
-                })
-                .invokeOrThrow("create-contract-invoices", { asOf });
+                },
+                { asOf }
+              );
 
               for (const failure of drafted.failures) {
                 logger.error(
@@ -359,13 +362,15 @@ export const recurringBillingFunction = inngest.createFunction(
                   .today(await getCompanyTimeZone(serviceRole, company.id))
                   .toString();
 
-              const drafted = await serverFns
-                .system({
+              const drafted = await postingOrThrow(
+                "create-lease-invoices",
+                {
                   db: getJobDatabaseClient(),
                   companyId: company.id,
                   userId: "system"
-                })
-                .invokeOrThrow("create-lease-invoices", { asOf });
+                },
+                { asOf }
+              );
 
               for (const failure of drafted.failures) {
                 logger.error("Failed to bill lease {leaseId} for {company}", {

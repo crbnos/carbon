@@ -55,29 +55,27 @@ import {
   LuSplit,
   LuTrash
 } from "react-icons/lu";
-import {
-  Outlet,
-  useFetcher,
-  useFetchers,
-  useParams,
-  useSubmit
-} from "react-router";
+import { Outlet, useFetchers, useParams } from "react-router";
 import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
+import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   getBatchNumbersForItem,
-  getSerialNumbersForItem,
+  getSerialNumbersForItem
+} from "~/modules/inventory/inventory.service";
+import { isShippableEntityStatus } from "~/modules/inventory/inventory.utils";
+import type {
   ItemTracking,
   RentalShipmentLine,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking
-} from "~/modules/inventory";
-import { splitValidator } from "~/modules/inventory";
+} from "~/modules/inventory/types";
+import type { action as shipmentLinesSplitAction } from "~/routes/x+/shipment+/lines.split";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -87,7 +85,7 @@ const ShipmentLines = () => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
-  const fetcher = useFetcher<typeof shipmentLinesUpdateAction>();
+  const fetcher = useAction<typeof shipmentLinesUpdateAction>();
   const [items] = useItems();
 
   const routeData = useRouteData<{
@@ -382,7 +380,7 @@ function ShipmentFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
-  const fetcher = useFetcher();
+  const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
 
   const updateField = (field: string, value: string) => {
@@ -446,7 +444,7 @@ function ShipmentRentalLineItem({
   className?: string;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher();
+  const fetcher = useAction();
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -756,13 +754,11 @@ function ShipmentLineItem({
   );
 }
 
-// Sales-return shipments (source "Sales Return Order") ship returned stock,
-// which is deliberately On Hold until it leaves — mirror the status
-// lines.tracking accepts when validating entities for this source.
-function expectedEntityStatus(shipment?: Shipment) {
-  return shipment?.sourceDocument === "Sales Return Order"
-    ? "On Hold"
-    : "Available";
+// The statuses lines.tracking accepts for this shipment's source: On Hold
+// returned stock on a sales return, Available or Rejected units on a supplier
+// return, Available stock otherwise.
+function isShippable(shipment: Shipment | undefined, status: unknown) {
+  return isShippableEntityStatus(shipment?.sourceDocument, status as string);
 }
 
 function BatchForm({
@@ -789,7 +785,8 @@ function BatchForm({
   }) => Promise<void>;
 }) {
   const { t } = useLingui();
-  const submit = useSubmit();
+  // A refused assignment (wrong item, not available) is toasted.
+  const assign = useAction();
   const [values, setValues] = useState<{
     number: string;
     properties: any;
@@ -829,7 +826,7 @@ function BatchForm({
     : null;
   const isBatchNumberValid =
     // @ts-expect-error TS2339 - TODO: fix type
-    resolvedBatch?.status === expectedEntityStatus(shipment);
+    isShippable(shipment, resolvedBatch?.status);
 
   // Verify batch quantity is sufficient for the shipped quantity
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -847,7 +844,7 @@ function BatchForm({
       if (
         batchNumber &&
         // @ts-expect-error TS2339 - TODO: fix type
-        batchNumber.status === expectedEntityStatus(shipment) &&
+        isShippable(shipment, batchNumber.status) &&
         // @ts-expect-error TS2339 - TODO: fix type
         (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
@@ -922,7 +919,7 @@ function BatchForm({
     );
 
     // @ts-expect-error TS2339 - TODO: fix type
-    if (batchNumber && batchNumber.status !== expectedEntityStatus(shipment)) {
+    if (batchNumber && !isShippable(shipment, batchNumber.status)) {
       // @ts-expect-error TS2339 - TODO: fix type
       setError(`Batch number is ${batchNumber.status}`);
       setValues({
@@ -979,10 +976,9 @@ function BatchForm({
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
     formData.append("quantity", (line.shippedQuantity || 0).toString());
 
-    submit(formData, {
+    assign.submit(formData, {
       method: "post",
-      action: path.to.shipmentLinesTracking(shipment.id),
-      navigate: false
+      action: path.to.shipmentLinesTracking(shipment.id)
     });
   };
 
@@ -990,8 +986,8 @@ function BatchForm({
   // scanners, and the QR affordance opens the list of batches this line accepts.
   // Quantity is shown alongside each one because a batch smaller than the
   // shipped quantity is split on posting, which is worth seeing before picking.
-  const selectableBatches = (batchNumbers?.data ?? []).filter(
-    (entity) => entity.status === expectedEntityStatus(shipment)
+  const selectableBatches = (batchNumbers?.data ?? []).filter((entity) =>
+    isShippable(shipment, entity.status)
   );
 
   return (
@@ -1177,7 +1173,7 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== expectedEntityStatus(shipment)) {
+      if (!isShippable(shipment, serialNumber.status)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
@@ -1231,7 +1227,12 @@ function SerialForm({
           }
         );
 
-        if (response.ok) {
+        // The operation's result, `{ data, error }`; a refused form is a 422.
+        const result: { error: { message: string } | null } | null = response.ok
+          ? await response.json()
+          : null;
+
+        if (result && !result.error) {
           // Clear error if submission was successful
           setErrors((prev) => {
             const newErrors = { ...prev };
@@ -1239,9 +1240,8 @@ function SerialForm({
             return newErrors;
           });
         } else {
-          const responseData = await response.json();
           const errorMessage =
-            responseData.message || "Failed to track serial number";
+            result?.error?.message || "Failed to track serial number";
 
           setErrors((prev) => ({
             ...prev,
@@ -1295,7 +1295,7 @@ function SerialForm({
   // this off the same data `validateSerialNumber` checks keeps them in step.
   const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
     (entity) =>
-      entity.status === expectedEntityStatus(shipment) &&
+      isShippable(shipment, entity.status) &&
       !serialNumbers.some((assigned) => {
         if (!assigned.id) return false;
         const resolved = resolveTrackedEntity(
@@ -1343,7 +1343,7 @@ function SerialForm({
             : null;
           const isSerialNumberValid =
             // @ts-expect-error TS2339 - TODO: fix type
-            resolvedSerial?.status === expectedEntityStatus(shipment);
+            isShippable(shipment, resolvedSerial?.status);
 
           return (
             <div
@@ -1463,12 +1463,8 @@ function SplitShipmentLineModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useAction<{ success: boolean }>({
-    onSuccess: (data) => {
-      if (data?.success) {
-        onClose();
-      }
-    }
+  const fetcher = useAction<typeof shipmentLinesSplitAction>({
+    onSuccess: onClose
   });
   return (
     <Modal open onOpenChange={onClose}>

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { serviceErrorMessage, useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -13,9 +14,8 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
-import { useFetcher } from "react-router";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 
 // One settings card = one saved concern (archetype F): whether purchase orders
 // the planning pages raise skip the approval rule when they are finalized.
@@ -25,19 +25,24 @@ export function PlanningPurchaseOrderApprovalCard({
 }: {
   skipApprovalForPlanningPurchaseOrders: boolean;
 }) {
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  const { t } = useLingui();
   const [enabled, setEnabled] = useState(skipApprovalForPlanningPurchaseOrders);
-
-  useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data?.message) return;
-    if (fetcher.data.success) {
-      toast.success(fetcher.data.message);
-    } else {
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      toast.success(
+        data?.skipApprovalForPlanningPurchaseOrders
+          ? t`Planning purchase orders skip approval`
+          : t`Planning purchase orders need approval`
+      );
+    },
+    onError: (result) => {
       // the switch moved before the save: put it back
       setEnabled(skipApprovalForPlanningPurchaseOrders);
-      toast.error(fetcher.data.message);
+      toast.error(
+        serviceErrorMessage(result) ?? t`Failed to update the setting`
+      );
     }
-  }, [fetcher.state, fetcher.data, skipApprovalForPlanningPurchaseOrders]);
+  });
 
   return (
     <Card>

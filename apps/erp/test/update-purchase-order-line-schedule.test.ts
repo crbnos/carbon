@@ -23,7 +23,6 @@ vi.mock("@carbon/content/glossary", () => ({
   termSlug: vi.fn(),
   glossaryEntries: () => []
 }));
-vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 // The service's module graph reaches @carbon/onboarding, whose content builds
 // Lingui `msg` descriptors at load; the macro is not compiled under vitest
 // (same stub as production.service.test.ts).

@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -15,18 +16,14 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
+import { quoteValidator } from "~/modules/sales/sales.models";
+import { getQuote } from "~/modules/sales/sales.service";
 import type {
   Opportunity,
   Quotation,
   QuotationPayment,
   QuotationShipment
-} from "~/modules/sales";
-import {
-  getQuote,
-  isQuoteLocked,
-  quoteValidator,
-  updateQuote
-} from "~/modules/sales";
+} from "~/modules/sales/types";
 import {
   OpportunityDocuments,
   OpportunityNotes,
@@ -39,7 +36,6 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import type { QuoteShipmentFormRef } from "~/modules/sales/ui/Quotes/QuoteShipmentForm";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -64,66 +60,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(quoteValidator).request(args, {
+    params: ["quoteId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { quoteId } = input.params;
 
-  const { quoteId: id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+  const api = await carbon(args.request);
+  const result = await api.sales.updateQuoteDetails({
+    ...input.data,
+    id: quoteId,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  const quote = await getQuote(viewClient, id);
-  await requireUnlocked({
-    request,
-    isLocked: isQuoteLocked(quote.data?.status),
-    redirectTo: path.to.quote(id),
-    message: "Cannot modify a locked quote. Reopen it first."
+  return respond(args.request, result).redirect(path.to.quote(quoteId), {
+    message: "Updated quote"
   });
-
-  const formData = await request.formData();
-  const validation = await validator(quoteValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const result = await updateQuote(client, {
-    id,
-    status: validation.data.status,
-    currencyCode: validation.data.currencyCode,
-    expirationDate: validation.data.expirationDate || null,
-    customerId: validation.data.customerId,
-    customerContactId: validation.data.customerContactId || null,
-    customerLocationId: validation.data.customerLocationId || null,
-    customerEngineeringContactId:
-      validation.data.customerEngineeringContactId || null,
-    customerReference: validation.data.customerReference || null,
-    salesPersonId: validation.data.salesPersonId || null,
-    estimatorId: validation.data.estimatorId || null,
-    locationId: validation.data.locationId,
-    dueDate: validation.data.dueDate || null,
-    digitalQuoteAcceptedBy: validation.data.digitalQuoteAcceptedBy || null,
-    digitalQuoteAcceptedByEmail:
-      validation.data.digitalQuoteAcceptedByEmail || null,
-    notes: validation.data.notes,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
-  });
-  if (result.error) {
-    throw redirect(
-      path.to.quote(id),
-      await flash(request, error(result.error, "Failed to update quote"))
-    );
-  }
-
-  throw redirect(
-    path.to.quote(id),
-    await flash(request, success("Updated quote"))
-  );
 }
 
 export default function QuoteDetailsRoute() {

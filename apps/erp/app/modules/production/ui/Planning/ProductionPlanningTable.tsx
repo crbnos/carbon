@@ -32,7 +32,7 @@ import {
   LuSquareChartGantt,
   LuUserCheck
 } from "react-icons/lu";
-import { Link, useFetcher, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import {
   EmployeeAvatarGroup,
   exportOnlyColumn,
@@ -49,12 +49,13 @@ import {
   useQuantityFormatter,
   useUser
 } from "~/hooks";
-import type { PlanningAction, ProductionOrder } from "~/modules/production";
+import type { ProductionOrder } from "~/modules/production/production.models";
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM
-} from "~/modules/production";
+} from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import {
   isApplyablePlanningAction,
   isNewSupplyAction,
@@ -165,56 +166,15 @@ const ProductionPlanningTable = ({
     }),
     [changeActionHandlers, isReleasing, onRelease]
   );
-  const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
-
-  // The drawer's draft orders are page state keyed by item. They are dropped
-  // when the page's scope changes (location, filters, search, sort, page) and
-  // when MRP recalculates (mrpFetcher above) or an order is placed (below) —
-  // NOT on every reload of the loader: Apply, Dismiss and Assign inside the
-  // drawer revalidate it, and that used to wipe the planner's edits in the
-  // suggested-orders table above them.
-  const [searchParams] = useSearchParams();
-  // The open drawer is in the address too, and is not a change of scope.
-  const pageScope = useMemo(() => {
-    const scope = new URLSearchParams(searchParams);
-    scope.delete(PLANNING_DRAWER_PARAM);
-    return scope.toString();
-  }, [searchParams]);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the scope string is the dependency
-  useEffect(() => {
-    setOrdersMap({});
-  }, [pageScope]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    // Once per completed submission: the fetcher settles to idle with that
-    // submission's data. Keyed on `data.success` alone, a second Create Jobs in
-    // the same session (success again) never re-ran this — no toast, and the
-    // spent drafts stayed in `ordersMap`.
-    if (bulkUpdateFetcher.state !== "idle" || !bulkUpdateFetcher.data) {
-      return;
-    }
-
-    if (
-      bulkUpdateFetcher.data?.success === false &&
-      bulkUpdateFetcher?.data?.message
-    ) {
-      toast.error(bulkUpdateFetcher.data.message);
-      return;
-    }
-
-    if (bulkUpdateFetcher.data?.success === true) {
+  // Create Jobs: the order's created jobs, and the parts it skipped. A refusal
+  // is toasted by useAction.
+  const bulkUpdateFetcher = useAction<typeof bulkUpdateAction>({
+    onSuccess: (result) => {
+      const data = "data" in result ? result.data : null;
+      if (!data || !("jobs" in data)) return;
       // The drafts became jobs; the next open re-seeds from the new split.
       setOrdersMap({});
-      const {
-        jobs = [],
-        alreadyPlannedItemCount = 0,
-        noDemandItemCount = 0
-      } = bulkUpdateFetcher.data as {
-        jobs?: { id: string; readableId: string }[];
-        alreadyPlannedItemCount?: number;
-        noDemandItemCount?: number;
-      };
+      const { jobs, alreadyPlannedItemCount, noDemandItemCount } = data;
 
       const skipped: string[] = [];
       if (alreadyPlannedItemCount > 0) {
@@ -273,7 +233,25 @@ const ProductionPlanningTable = ({
         { duration: 8000 }
       );
     }
-  }, [bulkUpdateFetcher.state, bulkUpdateFetcher.data]);
+  });
+
+  // The drawer's draft orders are page state keyed by item. They are dropped
+  // when the page's scope changes (location, filters, search, sort, page) and
+  // when MRP recalculates (mrpFetcher above) or an order is placed (below) —
+  // NOT on every reload of the loader: Apply, Dismiss and Assign inside the
+  // drawer revalidate it, and that used to wipe the planner's edits in the
+  // suggested-orders table above them.
+  const [searchParams] = useSearchParams();
+  // The open drawer is in the address too, and is not a change of scope.
+  const pageScope = useMemo(() => {
+    const scope = new URLSearchParams(searchParams);
+    scope.delete(PLANNING_DRAWER_PARAM);
+    return scope.toString();
+  }, [searchParams]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the scope string is the dependency
+  useEffect(() => {
+    setOrdersMap({});
+  }, [pageScope]);
 
   const isDisabled =
     !permissions.can("create", "production") ||

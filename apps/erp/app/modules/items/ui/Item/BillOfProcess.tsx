@@ -30,6 +30,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  ImageZoomViewer,
   Label,
   Loading,
   MENU_ITEM_SHORTCUTS,
@@ -72,6 +73,7 @@ import {
   LuMaximize2,
   LuMinimize2,
   LuSquareFunction,
+  LuTrash,
   LuTriangleAlert,
   LuWorkflow
 } from "react-icons/lu";
@@ -109,6 +111,7 @@ import Procedure from "~/components/Form/Procedure";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
+import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   SlidePinOverlay,
@@ -133,13 +136,9 @@ import {
 } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
-  OperationParameter,
-  OperationStep,
-  OperationStepSlide,
-  OperationTool,
   SlideAnnotation,
   SlideSize
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -148,7 +147,13 @@ import {
   operationTypes,
   procedureStepType,
   standardFactorType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationStepSlide,
+  OperationTool
+} from "~/modules/shared/types";
 import type { action as editMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.$id";
 import type { action as newMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.new";
 import type { action as editMethodOperationStepAction } from "~/routes/x+/items+/methods+/operation.step.$id";
@@ -278,7 +283,7 @@ const BillOfProcess = ({
 
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
+  const deleteOperationFetcher = useAction();
   const { id: userId } = useUser();
 
   const [allItems] = useItems();
@@ -464,34 +469,37 @@ const BillOfProcess = ({
     setSelectedItemId(operationId);
   };
 
-  const onRemoveItem = async (id: string) => {
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
     if (isReadOnly) return;
 
-    const operation = operationsById.get(id);
-    if (!operation) return;
-
-    // Check if this is a temporary item (exists in temporaryItems state)
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      deleteOperationFetcher.submit(
-        { id },
-        {
-          method: "post",
-          action: path.to.methodOperationsDelete
-        }
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
       );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      deleteOperationFetcher.submit(formData, {
+        method: "post",
+        action: path.to.methodOperationsDelete
+      });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
@@ -847,6 +855,16 @@ const BillOfProcess = ({
 
         <CardAction>
           <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
             <Button
               ref={addOperationButtonRef}
               variant="secondary"
@@ -2330,7 +2348,11 @@ function AttributesForm({
                 </div>
               )}
               {type === "List" && (
-                <ArrayInput name="listValues" label={t`List Options`} />
+                <ArrayInput
+                  name="listValues"
+                  label={t`List Options`}
+                  isRequired
+                />
               )}
 
               <SlidesEditor
@@ -2743,7 +2765,11 @@ function AttributesListItem({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
             <StepSlides step={attribute} isDisabled={isDisabled} />
             <StepParts
@@ -2807,27 +2833,15 @@ function AttributesListItem({
                 </HStack>
                 {attribute.type === "Measurement" && (
                   <span className="text-xs text-muted-foreground">
-                    {attribute.minValue !== null && attribute.maxValue !== null
-                      ? `Must be between ${attribute.minValue} and ${
-                          attribute.maxValue
-                        } ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : attribute.minValue !== null
-                        ? `Must be > ${attribute.minValue} ${
-                            unitOfMeasures.find(
-                              (u) => u.value === unitOfMeasureCode
-                            )?.label
-                          }`
-                        : attribute.maxValue !== null
-                          ? `Must be < ${attribute.maxValue} ${
-                              unitOfMeasures.find(
-                                (u) => u.value === unitOfMeasureCode
-                              )?.label
-                            }`
-                          : null}
+                    <MeasurementLimits
+                      minValue={attribute.minValue}
+                      maxValue={attribute.maxValue}
+                      unit={
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }
+                    />
                   </span>
                 )}
               </VStack>
@@ -3546,6 +3560,7 @@ function OperationPreview({
   const allTools = useTools();
   const [current, setCurrent] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
+  const [isViewingSlide, setIsViewingSlide] = useState(false);
 
   // Move to a step and reset to its first slide.
   const goToStep = (next: number) => {
@@ -3697,11 +3712,19 @@ function OperationPreview({
           </>
         ) : slideImage ? (
           <div className="relative inline-block">
-            <img
-              src={slideImage}
-              alt={slide.caption ?? ""}
-              className="block max-h-[520px] w-auto max-w-full rounded-md"
-            />
+            <button
+              type="button"
+              aria-label={t`View full size`}
+              title={t`View full size`}
+              className="block cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => setIsViewingSlide(true)}
+            >
+              <img
+                src={slideImage}
+                alt={slide.caption ?? ""}
+                className="block max-h-[520px] w-auto max-w-full rounded-md"
+              />
+            </button>
             <SlidePinOverlay pins={slide.annotations ?? []} />
           </div>
         ) : (
@@ -3714,6 +3737,19 @@ function OperationPreview({
       {slide?.caption ? (
         <p className="text-xs text-muted-foreground">{slide.caption}</p>
       ) : null}
+
+      <ImageZoomViewer
+        open={isViewingSlide && !!slideImage && !slide?.modelUploadId}
+        src={slideImage}
+        caption={slide?.caption}
+        annotations={slide?.annotations ?? []}
+        toolNameById={
+          isViewingSlide
+            ? new Map(allTools.map((tool) => [tool.id, tool.name]))
+            : undefined
+        }
+        onClose={() => setIsViewingSlide(false)}
+      />
 
       {pinLegend.length > 0 && (
         <div className="flex flex-col gap-1">

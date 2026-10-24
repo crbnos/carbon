@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 describe("employee invite email adapter", () => {
   it("uses the shared adapter and its configured sender", () => {
     const source = readFileSync(
-      path.resolve(__dirname, "../app/routes/x+/users+/employees.bulk-invite.tsx"),
+      path.resolve(__dirname, "../app/modules/users/users.service.ts"),
       "utf8"
     );
 

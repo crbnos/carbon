@@ -9,6 +9,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Combobox as ComboboxBase,
@@ -35,7 +36,7 @@ import {
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   LuCheck,
   LuChevronDown,
@@ -43,10 +44,10 @@ import {
   LuList,
   LuQrCode
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { z } from "zod";
 import { Item, UnitOfMeasure } from "~/components/Form";
 import type { MethodItemType } from "~/modules/shared/types";
+import type { action as addAndIssueAction } from "~/routes/x+/maintenance+/$dispatchId.add-and-issue";
 import { path } from "~/utils/path";
 
 export const maintenanceAddPartValidator = z.object({
@@ -73,7 +74,12 @@ export function MaintenanceAddPartModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  const fetcher = useAction<typeof addAndIssueAction>({
+    onSuccess: () => {
+      toast.success(t`Part added and issued successfully`);
+      onClose();
+    }
+  });
   const { carbon } = useCarbon();
 
   const [selectedItemId, setSelectedItemId] = useState<string>("");
@@ -302,17 +308,6 @@ export function MaintenanceAddPartModal({
       t
     ]
   );
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-      if (fetcher.data.message) {
-        toast.success(fetcher.data.message);
-      }
-    } else if (fetcher.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data, onClose]);
 
   return (
     <Modal open onOpenChange={onClose}>

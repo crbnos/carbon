@@ -26,7 +26,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { incoterms } from "~/modules/shared";
+import { incoterms } from "~/modules/shared/shared.models";
 import { customerShippingValidator } from "../../sales.models";
 
 type CustomerShippingFormProps = {

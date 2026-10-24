@@ -31,7 +31,7 @@ import {
   isSsoRequiredForEmail
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
-import { AccountLockout, redis } from "@carbon/kv";
+import { AccountLockout, redis, SIGN_IN_CODE_LOCKOUT_PREFIX } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -191,6 +191,10 @@ export async function action({ request }: ActionFunctionArgs) {
     authSession.ssoProviderId = ssoProviderId;
 
     await new AccountLockout({ redis }).reset(authSession.email);
+    await new AccountLockout({
+      redis,
+      prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
+    }).reset(authSession.email);
 
     // The IdP owns MFA for SSO sessions, including controlled environments
     // (user decision — attestation shifts to the IdP policy).
@@ -262,6 +266,10 @@ export async function action({ request }: ActionFunctionArgs) {
     // accumulated per-account lockout state (NIST 3.1.8 reset-on-success). Runs
     // before the TOTP gate so an MFA-enrolled user's counter clears too.
     await new AccountLockout({ redis }).reset(authSession.email);
+    await new AccountLockout({
+      redis,
+      prefix: SIGN_IN_CODE_LOCKOUT_PREFIX
+    }).reset(authSession.email);
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.

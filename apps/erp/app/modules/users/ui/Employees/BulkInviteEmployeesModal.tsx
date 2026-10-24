@@ -37,14 +37,14 @@ import {
 } from "~/components/Form";
 import { useFlags, useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import type { getEmployeeTypes } from "~/modules/users";
 import {
   type BulkInviteActionData,
   type BulkInviteResult,
   bulkCreateEmployeeValidator,
   type createEmployeeValidator,
   indexBulkInviteResultsByRowId
-} from "~/modules/users";
+} from "~/modules/users/users.models";
+import type { getEmployeeTypes } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export type { BulkInviteActionData, BulkInviteResult };

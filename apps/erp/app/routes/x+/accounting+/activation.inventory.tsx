@@ -9,7 +9,7 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import {
   ActivationFooter,
   InventoryCostTable

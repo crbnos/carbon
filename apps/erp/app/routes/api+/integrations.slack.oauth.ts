@@ -19,8 +19,8 @@ import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
-import { oAuthCallbackSchema } from "~/modules/shared";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
+import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

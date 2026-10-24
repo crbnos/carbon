@@ -10,13 +10,15 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
+  pushSubscriptionEndpointValidator,
+  pushSubscriptionValidator
+} from "~/modules/users/users.models";
+import {
   deleteBrowserPushSubscriptions,
   deletePushSubscription,
   getPushSubscription,
-  pushSubscriptionEndpointValidator,
-  pushSubscriptionValidator,
   upsertPushSubscription
-} from "~/modules/account";
+} from "~/modules/users/users.service";
 
 const logger = getLogger("erp", "push-subscription");
 
@@ -62,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 // This browser's Web Push subscription for the signed-in user.
-// PUT saves it (also from push-worker.js after a pushsubscriptionchange),
+// PUT saves it (also from service-worker.js after a pushsubscriptionchange),
 // DELETE removes it.
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});

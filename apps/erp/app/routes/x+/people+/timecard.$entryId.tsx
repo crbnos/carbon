@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { timecardValidator } from "~/modules/people/people.models";
 import {
   getTimeCardEntry,
-  timecardValidator,
   updateTimeCardEntry
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { TimecardForm } from "~/modules/people/ui/Timecards";
 import { path } from "~/utils/path";
 

@@ -26,8 +26,8 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
-import type { InventoryCount } from "~/modules/inventory";
-import { InventoryCountStatus } from "~/modules/inventory";
+import type { InventoryCount } from "~/modules/inventory/types";
+import { InventoryCountStatus } from "~/modules/inventory/ui";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 

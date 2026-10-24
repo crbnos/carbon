@@ -5,6 +5,7 @@
 import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -32,9 +33,8 @@ import {
 } from "@carbon/react";
 import { getLabelSizeLabel, labelSizes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LuEllipsisVertical, LuPlay, LuPlus, LuTrash } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
@@ -50,14 +50,26 @@ export function PrintersCard({
   printerRoutes: PrinterRoute[];
 }) {
   const { t } = useLingui();
-  const routeFetcher = useFetcher<{ success: boolean; message: string }>();
+  const newPrinterDisclosure = useDisclosure();
+  const routeFetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("created" in data) {
+        toast.success(
+          data.created ? t`Printer route created` : t`Printer route updated`
+        );
+        newPrinterDisclosure.onClose();
+      } else {
+        toast.success(t`Test label sent to printer`);
+      }
+    }
+  });
 
   const formatOptions = [
     { value: "zpl", label: t`ZPL (Thermal Label)` },
     { value: "pdf", label: t`PDF (Document)` }
   ];
 
-  const newPrinterDisclosure = useDisclosure();
   const deletePrinterDisclosure = useDisclosure();
   const [printerToDelete, setPrinterToDelete] = useState<{
     id: string;
@@ -73,17 +85,6 @@ export function PrintersCard({
         .map((s) => ({ value: s.id, label: getLabelSizeLabel(s) })),
     [selectedFormat]
   );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we don't need to re-run this effect when onClose changes
-  useEffect(() => {
-    if (routeFetcher.data?.success === true && routeFetcher.data?.message) {
-      toast.success(routeFetcher.data.message);
-      newPrinterDisclosure.onClose();
-    }
-    if (routeFetcher.data?.success === false && routeFetcher.data?.message) {
-      toast.error(routeFetcher.data.message);
-    }
-  }, [routeFetcher.data?.message, routeFetcher.data?.success]);
 
   return (
     <>

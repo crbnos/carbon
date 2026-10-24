@@ -11,14 +11,13 @@ import {
 import {
   Body,
   Column,
-  Container,
   Hr,
   Img,
   Preview,
   Row,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
 import type { Email } from "../types";
 import {
   getLineDescription,
@@ -27,6 +26,13 @@ import {
   getTotal
 } from "../utils/sales-invoice";
 import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
+import { DocumentCard } from "./components/DocumentCard";
+import {
+  detailText,
+  labelText,
+  lineDetail,
+  lineTitle
+} from "./components/documentStyles";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -88,14 +94,7 @@ const SalesInvoiceEmail = ({
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}
       >
-        <Container
-          className={`mx-auto py-5 px-0 w-[660px] max-w-full ${themeClasses.container}`}
-          style={{
-            borderStyle: "solid",
-            borderWidth: "1px",
-            borderColor: lightStyles.container.borderColor
-          }}
-        >
+        <DocumentCard>
           <Section>
             <Row>
               <Column>
@@ -117,8 +116,14 @@ const SalesInvoiceEmail = ({
               </Column>
               <Column className="text-right">
                 <Text
-                  className={`text-3xl font-light ${themeClasses.mutedText}`}
-                  style={{ color: lightStyles.mutedText.color }}
+                  className={themeClasses.text}
+                  style={{
+                    margin: 0,
+                    paddingLeft: "16px",
+                    fontSize: "22px",
+                    lineHeight: "28px",
+                    color: lightStyles.text.color
+                  }}
                 >
                   Sales Invoice
                 </Text>
@@ -136,19 +141,22 @@ const SalesInvoiceEmail = ({
             </Text>
           </Section>
           <ExternalNotes content={salesInvoice.externalNotes} />
-          <Section className={`bg-gray-50 rounded-lg text-xs`}>
+          <Section className="bg-gray-50 rounded-[8px] text-xs email-panel">
             <Row>
-              <Column className="p-5" colSpan={2}>
+              <Column className="p-5 align-top" colSpan={2}>
                 <Section>
                   <Row>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Payment Terms
                       </Text>
-                      <Text>
+                      <Text style={detailText}>
                         {
                           paymentTerms?.find(
                             (term) => term.id === salesInvoice.paymentTermId
@@ -160,21 +168,27 @@ const SalesInvoiceEmail = ({
                   <Row>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Invoice ID
                       </Text>
-                      <Text>{salesInvoice.invoiceId}</Text>
+                      <Text style={detailText}>{salesInvoice.invoiceId}</Text>
                     </Column>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Due Date
                       </Text>
-                      <Text>
+                      <Text style={detailText}>
                         {salesInvoice.dateDue
                           ? formatDate(salesInvoice.dateDue, undefined, locale)
                           : "-"}
@@ -183,30 +197,34 @@ const SalesInvoiceEmail = ({
                   </Row>
                 </Section>
               </Column>
-              <Column className="p-5" colSpan={2}>
+              <Column className="p-5 align-top" colSpan={2}>
                 <Text
-                  className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                  style={{ color: lightStyles.mutedText.color }}
+                  className={`${themeClasses.mutedText} uppercase`}
+                  style={{ ...labelText, color: lightStyles.mutedText.color }}
                 >
                   Ship To
                 </Text>
-                <Text>{invoiceCustomerName}</Text>
-                {invoiceAddressLine1 && <Text>{invoiceAddressLine1}</Text>}
-                {invoiceAddressLine2 && <Text>{invoiceAddressLine2}</Text>}
-                <Text>
+                <Text style={detailText}>{invoiceCustomerName}</Text>
+                {invoiceAddressLine1 && (
+                  <Text style={detailText}>{invoiceAddressLine1}</Text>
+                )}
+                {invoiceAddressLine2 && (
+                  <Text style={detailText}>{invoiceAddressLine2}</Text>
+                )}
+                <Text style={detailText}>
                   {formatCityStatePostalCode(
                     invoiceCity,
                     invoiceStateProvince,
                     invoicePostalCode
                   )}
                 </Text>
-                <Text>{invoiceCountryName}</Text>
+                <Text style={detailText}>{invoiceCountryName}</Text>
               </Column>
             </Row>
           </Section>
 
           <Section>
-            <Row className="mb-2.5 pl-5">
+            <Row className="mb-2.5">
               <Column>
                 <Text
                   className={`text-xs uppercase ${themeClasses.mutedText}`}
@@ -215,7 +233,7 @@ const SalesInvoiceEmail = ({
                   Description
                 </Text>
               </Column>
-              <Column className="text-right pr-5 align-top w-[100px]">
+              <Column className="text-right align-top w-[100px]">
                 <Text
                   className={`text-xs uppercase ${themeClasses.mutedText}`}
                   style={{ color: lightStyles.mutedText.color }}
@@ -223,7 +241,7 @@ const SalesInvoiceEmail = ({
                   Quantity
                 </Text>
               </Column>
-              <Column className="text-right pr-5 align-top w-[100px]">
+              <Column className="text-right align-top w-[100px]">
                 <Text
                   className={`text-xs uppercase ${themeClasses.mutedText}`}
                   style={{ color: lightStyles.mutedText.color }}
@@ -231,7 +249,7 @@ const SalesInvoiceEmail = ({
                   Unit Price
                 </Text>
               </Column>
-              <Column className="text-right pr-5 align-top w-[100px]">
+              <Column className="text-right align-top w-[100px]">
                 <Text
                   className={`text-xs uppercase ${themeClasses.mutedText}`}
                   style={{ color: lightStyles.mutedText.color }}
@@ -241,32 +259,33 @@ const SalesInvoiceEmail = ({
               </Column>
             </Row>
             {salesInvoiceLines.map((line) => (
-              <Row key={line.id} className="mb-2.5 pl-5">
+              <Row key={line.id} className="mb-2.5">
                 <Column>
-                  <Text className="text-xs font-semibold">
-                    {getLineDescription(line)}
-                  </Text>
+                  <Text style={lineTitle}>{getLineDescription(line)}</Text>
                   {getLineDescriptionDetails(line)
                     ?.split("\n")
                     .map((l, i) => (
                       <Text
                         key={i}
-                        className={`text-xs ${themeClasses.mutedText}`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={themeClasses.mutedText}
+                        style={{
+                          ...lineDetail,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         {l}
                       </Text>
                     ))}
                 </Column>
-                <Column className="text-right pr-5 align-top w-[100px]">
-                  <Text className="text-xs font-semibold">
+                <Column className="text-right align-top w-[100px]">
+                  <Text style={lineTitle}>
                     {line.invoiceLineType === "Comment"
                       ? ""
                       : `${line.quantity}`}
                   </Text>
                 </Column>
-                <Column className="text-right pr-5 align-top w-[100px]">
-                  <Text className="text-xs font-semibold">
+                <Column className="text-right align-top w-[100px]">
+                  <Text style={lineTitle}>
                     {line.invoiceLineType === "Comment"
                       ? "-"
                       : rateFormatter.format(line.convertedUnitPrice ?? 0)}
@@ -274,15 +293,18 @@ const SalesInvoiceEmail = ({
                   {line.invoiceLineType !== "Comment" &&
                   (line.discountPercent ?? 0) > 0 ? (
                     <Text
-                      className={`text-xs ${themeClasses.mutedText}`}
-                      style={{ color: lightStyles.mutedText.color }}
+                      className={themeClasses.mutedText}
+                      style={{
+                        ...lineDetail,
+                        color: lightStyles.mutedText.color
+                      }}
                     >
                       {formatPercent(-(line.discountPercent ?? 0), locale)}
                     </Text>
                   ) : null}
                 </Column>
-                <Column className="text-right pr-5 align-top w-[100px]">
-                  <Text className="text-xs font-semibold">
+                <Column className="text-right align-top w-[100px]">
+                  <Text style={lineTitle}>
                     {line.invoiceLineType === "Comment"
                       ? "-"
                       : formatter.format(getLineTotal(line))}
@@ -303,7 +325,7 @@ const SalesInvoiceEmail = ({
                 </Text>
               </Column>
               <Column className={`border-l border-gray-200 h-12`}></Column>
-              <Column className="w-[90px] pr-5">
+              <Column className="w-[90px]">
                 <Text className="text-base font-semibold whitespace-nowrap">
                   {formatter.format(
                     getTotal(
@@ -338,7 +360,7 @@ const SalesInvoiceEmail = ({
               </Column>
             </Row>
           </Section>
-        </Container>
+        </DocumentCard>
       </Body>
     </EmailThemeProvider>
   );

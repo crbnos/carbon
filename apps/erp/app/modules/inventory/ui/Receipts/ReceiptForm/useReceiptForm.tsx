@@ -7,8 +7,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import type { z } from "zod";
 import { useUser } from "~/hooks";
-import type { receiptStatusType } from "~/modules/inventory";
-import type { receiptValidator } from "~/modules/inventory/inventory.models";
+import type {
+  receiptStatusType,
+  receiptValidator
+} from "~/modules/inventory/inventory.models";
 import type { ReceiptSourceDocument } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 

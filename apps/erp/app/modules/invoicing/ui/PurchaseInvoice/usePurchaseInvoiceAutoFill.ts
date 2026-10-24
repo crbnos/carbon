@@ -12,13 +12,13 @@ import type {
   ExtractedDocumentData,
   PurchaseInvoiceExtraction,
   PurchaseInvoiceLineItem
-} from "~/modules/documents";
+} from "~/modules/documents/documents.models";
 import {
   findMatchingContactId,
   findMatchingLocationId,
   getExtractionMatchCandidates
-} from "~/modules/documents";
-import type { purchaseInvoiceValidator } from "~/modules/invoicing";
+} from "~/modules/documents/documents.models";
+import type { purchaseInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 
 type PurchaseInvoiceFormValues = z.infer<typeof purchaseInvoiceValidator>;
 

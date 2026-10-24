@@ -9,7 +9,7 @@ import type {
   getPickingList,
   getPickingListLines,
   PickingListRecommendation
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service";
 import {
   PickingListLines,
   PickingListNotes

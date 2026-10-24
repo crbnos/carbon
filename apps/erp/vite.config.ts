@@ -2,20 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  applyDotenvToProcessEnv,
-  clientOnlyAlias,
-  linguiWithoutIdQuery,
-  precompressedAssets,
-  stackActivity,
-} from "@carbon/dev/vite";
-import { getConfig } from "@lingui/conf";
-import { lingui } from "@lingui/vite-plugin";
-import optimizeLocales from "@react-aria/optimize-locales-plugin";
+import { applyDotenvToProcessEnv, carbon } from "@carbon/dev/vite";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
-import { defineConfig, PluginOption } from "vite";
+import { defineConfig } from "vite";
 
 export default defineConfig(({ command, isSsrBuild, mode }) => {
   applyDotenvToProcessEnv(mode, import.meta.dirname);
@@ -29,6 +20,13 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
     process.env.VERCEL_DEPLOYMENT_ID?.replace(/^dpl_/, "").slice(0, 12) ??
     process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ??
     Date.now().toString(36);
+
+  // root.tsx loads Vercel Web Analytics only in a build Vercel ran: its script
+  // is served nowhere else. Vercel's React Router preset exposes no VITE_ copy
+  // of its system variables, so make the one Vercel's Vite preset would.
+  if (process.env.VERCEL === "1") {
+    process.env.VITE_VERCEL_ENV ??= process.env.VERCEL_ENV;
+  }
 
   /**
    * Dev-server SSR dependencies that must be inlined rather than left as bare
@@ -146,21 +144,25 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
       ],
     },
     plugins: [
-      stackActivity(),
       tailwindcss(),
-      linguiWithoutIdQuery(lingui({ macroTransform: true })),
       reactRouter(),
-      precompressedAssets({ command, mode }),
-      // react-aria ships strings for ~34 locales; keep the ones the app translates.
-      optimizeLocales.vite({ locales: getConfig().locales }),
-      // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser, which
-      // runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it out there
-      // only: on the server it is the one engine PDF reading has.
-      clientOnlyAlias(
-        "unpdf/pdfjs",
-        path.resolve(import.meta.dirname, "app/ssr-shims/unpdf-pdfjs-stub.mjs")
-      ),
-    ] as PluginOption[],
+      carbon({
+        command,
+        mode,
+        locales: true,
+        precompress: true,
+        splitServer: true,
+        // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser,
+        // which runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it
+        // out there only: on the server it is the one engine PDF reading has.
+        clientOnly: {
+          "unpdf/pdfjs": path.resolve(
+            import.meta.dirname,
+            "app/ssr-shims/unpdf-pdfjs-stub.mjs"
+          ),
+        },
+      }),
+    ],
     resolve: {
       tsconfigPaths: true,
       alias: {

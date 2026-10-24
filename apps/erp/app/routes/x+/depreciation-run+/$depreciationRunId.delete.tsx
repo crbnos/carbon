@@ -12,7 +12,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteDepreciationRun,
   getDepreciationRun
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

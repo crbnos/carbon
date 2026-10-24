@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  SINGLE_TENANT,
   SMTP_FROM,
   SMTP_HOST,
   SMTP_PASSWORD,
@@ -16,8 +17,8 @@ import nodemailer from "nodemailer";
 const log = getLogger("lib", "email");
 
 export type SendEmailPayload = {
-  /** Defaults to DEFAULT_FROM (SMTP_FROM). */
-  from?: string;
+  /** Defaults to DEFAULT_FROM (SMTP_FROM). An object's name is quoted for you. */
+  from?: string | { name: string; address: string };
   to: string | string[];
   cc?: string | string[];
   bcc?: string | string[];
@@ -38,6 +39,17 @@ export type SendEmailResult = {
 
 export const DEFAULT_FROM =
   SMTP_FROM ?? `Carbon <no-reply@${process.env.RESEND_DOMAIN ?? "carbon.ms"}>`;
+
+/**
+ * Whether companies can send their documents through this server's own mail
+ * settings: only when the deployment is single-tenant (TENANT_TYPE=single)
+ * and SMTP_HOST is set. On a multi-tenant one (Carbon Cloud) the server's
+ * mail is Carbon's, shared by every customer, so a company there sends
+ * documents only through an Email integration it set up itself. The legacy
+ * RESEND_API_KEY fallback below still sends sign-in and system mail, but it
+ * is a shared account, so it never carries a company's documents.
+ */
+export const SERVER_MAIL_CONFIGURED = SINGLE_TENANT && Boolean(SMTP_HOST);
 
 /** Domain of the default from-address, e.g. "carbon.ms". */
 export const EMAIL_DOMAIN =

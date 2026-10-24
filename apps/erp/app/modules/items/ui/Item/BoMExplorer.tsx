@@ -30,7 +30,7 @@ import {
 import { OnshapeSync } from "~/components/OnshapeSync";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { MakeMethod, Method } from "../../types";
 

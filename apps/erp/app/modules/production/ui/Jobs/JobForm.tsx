@@ -44,12 +44,12 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUser } from "~/hooks";
-import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting";
+import { CONSTRUCTION_IN_PROGRESS_ENABLED } from "~/modules/accounting/accounting.models";
 import type {
   ConfigurationParameter,
   ConfigurationParameterGroup
 } from "~/modules/items/types";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
 import {

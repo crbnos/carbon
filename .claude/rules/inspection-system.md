@@ -10,7 +10,7 @@ paths:
   - "apps/mes/app/routes/x+/inspection*.tsx"
   - "packages/database/src/quality.ts"
   - "packages/database/supabase/migrations/*inspection*.sql"
-  - "packages/server-functions/src/post-receipt/index.ts"
+  - "apps/erp/app/modules/inventory/inventory.service.ts"
 ---
 
 # Inspection System
@@ -62,7 +62,10 @@ full-screen execution UI at `/x/inspection/{id}` (`InspectionView` +
 (The pre-unification "fallback" samples table and the scanner's `mode="record"`
 pass/fail path were removed 2026-07-25; scanning is always identify.)
 
-Disposition is always a human decision; Reject/Partial can auto-create an NCR
+Disposition is always a human decision. The ERP's **Reject Lot** is available on any open
+receipt lot: with no statistical failure, `RejectLotModal` requires a reason (a suspected
+counterfeit, the wrong part, transit damage), which `rejectInspection` passes to the engine
+as `reason`. Reject/Partial can auto-create an NCR
 whose description includes the failed features (documentation only — never
 required, and the NCR does not drive the physical outcome). The **ERP receipt
 UI** exposes **Accept** and **Reject** (its `$id.partial.tsx` route exists but
@@ -176,9 +179,9 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
   station is its operation's `workCenterId`; **all receipts are one station**.
   No Gauge column on the no-document "Overall result" row.
 
-## Receipt → inspection flow (`post-receipt/index.ts`, server function)
+## Receipt → inspection flow (`postReceipt`, `inventory.service.ts`)
 
-`packages/server-functions/src/post-receipt/index.ts`:
+`apps/erp/app/modules/inventory/inventory.service.ts`:
 1. Loads items (`id, itemTrackingType, replenishmentSystem`), company `samplingStandard`,
    Receipt-usage `itemInspectionDocumentAssignment` rows (`assignmentByItemId`), and the
    assigned documents' `inspectionFeature` rows + default sampling columns.
@@ -295,7 +298,7 @@ discrete entity per sample; non-serial (Batch/Inventory/Non-Inventory) record pa
 status to flip, so a Reject posts a compensating write-off instead (see disposition).
 
 **Reject / disposition GL posting.** A non-tracked `Inventory` reject and every NCR disposition
-route their inventory value through the **`post-nonconformance` server function** (`itemLedger` +
+route their inventory value through the **`post-nonconformance` posting** (`postNonconformance`, `quality.service.ts`: `itemLedger` +
 `costLedger` relief + a `journal` offset to `accountDefault.scrapAccount` for every company,
 Provisional before the accounting cutover; idempotent per `(documentType, documentId)`). The reject route
 (`$id.reject.tsx`) invokes it with the lot write-off (`documentType 'Inbound Inspection'`,
@@ -342,11 +345,20 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Server** — the transactional engine lives in **`@carbon/database/quality`**
   (`packages/database/src/quality.ts`; moved 2026-07-26 so ERP and MES run one
   engine). Every function takes a `Kysely<KyselyDatabase>` first param; ERP's
-  `quality.server.ts` curries `getDatabaseClient()` into those engine calls, and
+  `quality.service.ts` wraps those engine calls with the caller's `db` (a
+  route's `getDatabaseClient()`, a service function's `ctx.asSystem.pg`), and
   also holds the plan editor's server-only helpers (legacy save-payload
-  translation, the balloon-region vision call). `packages/database/src/sampling.ts`
+  translation `translateLegacyInspectionSavePayload`, the balloon-region vision
+  call `runInspectionBalloonRegionVisionAnalysis`). `packages/database/src/sampling.ts`
   is the pure resolver; the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
+  - **Voided receipt (2026-10-16):** a Receipt lot whose receipt is `Voided` is
+    closed too. `assertReceiptNotVoided` (reads the receipt `FOR SHARE`, so it waits
+    for a void in progress) refuses samples, measurements, gauges, document swaps and
+    dispositions with "The receipt of this inspection was voided", and the `$id` loader
+    passes `receiptVoided` so `InspectionView` treats the lot as closed and shows a
+    "Receipt voided" badge. The lot keeps its Pending status: there is no cancelled
+    inspection status.
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
     statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
     is NEW — it had none) and `upsertInspectionMeasurement` ("Inspection is
@@ -373,8 +385,11 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   - `changeInspectionDocument` — swap/clear guarded to unmeasured non-terminal lots; wipes
     plan rows for re-resolution.
   - `dispositionInspection` — per-feature gating when the lot has features (Accept: every
-    feature `recorded >= n && failed <= Ac`; Reject: some feature `failed >= Re` or a failed
-    sample); Accept releases every non-failed lot entity to Available (un-sampled AND
+    feature `recorded >= n && failed <= Ac`; Reject: the pure `isRejectableWithoutReason`
+    (some feature `failed >= Re` or a failed sample; with no features, failed samples > Ac —
+    the rule both apps' Reject buttons apply, pinned by `packages/database/src/quality.test.ts`)
+    or a `reason`, so a lot can be rejected with nothing failed, e.g. a suspected counterfeit,
+    and the reason is stored as the lot's `notes`); Accept releases every non-failed lot entity to Available (un-sampled AND
     partially-inspected Pending samples included); Reject flips all lot entities to
     Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
     negative adjustment); Partial leaves entities; always writes `inspectionHistory`.
@@ -385,9 +400,16 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     predicate against the committed terminal status, and matches nothing. ERP
     receipt lots do NOT pass it, preserving re-disposition (write-off retry)
     semantics.
-  - NCR auto-creation lives in the **reject route** (`x+/inspection+/$id.reject.tsx`),
-    optional via `createNcr`, linking through `nonConformanceInspection`; the description
-    includes a "Failed features" block built from the lot's measurements.
+  - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
+    called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
+    includes the `reason` and a "Failed features" block built from the lot's measurements,
+    and the lot's
+    `supplierId` is written as the issue's `nonConformanceSupplier` (`insertIssue`'s
+    `supplierId`). The `$id` loader reads the lot's issues (`getInspectionIssues`) and the
+    header links them (one: a button with the issue's readable id; several: an Issues
+    menu). The header's **Create Issue** button passes the failed entities and the lot's
+    `supplierId`, never the inspection: an inspection link tells `closeIssue` the lot was
+    written off at reject, which is only true for a rejected lot.
 - **Service** `quality.service.ts`: `getInspections` (list), `getInspection`,
   `getInspectionTrackedEntities`, `getInspectionSamplingPlans` (embeds
   `inspectionFeature(...)` by table name), `getInspectionMeasurements`,

@@ -27,7 +27,7 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Form, useLoaderData, useNavigation } from "react-router";
-import { getEmployeeCompanies } from "~/modules/settings";
+import { getEmployeeCompanies } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

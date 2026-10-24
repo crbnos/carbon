@@ -20,7 +20,7 @@ import { usePermissions } from "~/hooks";
 import {
   abilityRecertifyValidator,
   abilityValidator
-} from "~/modules/resources";
+} from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type AbilityFormProps = {

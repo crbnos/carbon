@@ -17,7 +17,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Contractor } from "~/modules/resources";
+import type { Contractor } from "~/modules/resources/types";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 

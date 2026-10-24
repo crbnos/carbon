@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getDocument } from "~/modules/documents";
+import { getDocument } from "~/modules/documents/documents.service";
 import DocumentView from "~/modules/documents/ui/Documents/DocumentView";
 import { path } from "~/utils/path";
 

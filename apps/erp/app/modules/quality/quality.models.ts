@@ -219,6 +219,7 @@ export const issueValidator = z.object({
   items: z.array(z.string()).optional(),
   jobOperationId: z.string().optional(),
   customerId: z.string().optional(),
+  supplierId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
   operationSupplierProcessId: z.string().optional()
 });
@@ -829,7 +830,7 @@ export const inspectionSaveAnchorsPayloadValidator = z
  *
  * Breaking change vs legacy: `type` and `unit` are closed vocabularies, not arbitrary strings.
  *
- * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.server.ts`.
+ * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.service.ts`.
  */
 
 /** POST body for `/api/quality/inspection-document/:id/balloon-analyze` */

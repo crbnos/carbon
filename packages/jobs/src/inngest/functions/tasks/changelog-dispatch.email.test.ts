@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { render } from "@react-email/components";
+import { render } from "react-email";
 import { describe, expect, it, vi } from "vitest";
 
 // @carbon/env validates required vars at import; the template reaches it via Logo.

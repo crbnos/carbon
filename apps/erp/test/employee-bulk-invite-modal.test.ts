@@ -8,7 +8,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   gated: true,
-  types: [] as { id: string; name: string; systemType?: string; protected?: boolean }[],
+  types: [] as {
+    id: string;
+    name: string;
+    systemType?: string;
+    protected?: boolean;
+  }[],
   fetcherCall: 0,
   load: vi.fn()
 }));
@@ -16,7 +21,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@carbon/form", () => ({
   ValidatedForm: ({ children }: { children: ReactNode }) => children,
   useFieldArray: () => [
-    ["row-a", "row-b"].map((rowId) => ({ key: rowId, defaultValue: { rowId } })),
+    ["row-a", "row-b"].map((rowId) => ({
+      key: rowId,
+      defaultValue: { rowId }
+    })),
     { push: vi.fn(), remove: vi.fn() },
     undefined
   ]
@@ -24,10 +32,18 @@ vi.mock("@carbon/form", () => ({
 vi.mock("@carbon/react", () => {
   const wrapper = ({ children }: { children?: ReactNode }) => children ?? null;
   return {
-    Badge: wrapper, Button: wrapper, HStack: wrapper, IconButton: wrapper,
-    Modal: wrapper, ModalBody: wrapper, ModalContent: wrapper,
-    ModalFooter: wrapper, ModalHeader: wrapper, ModalOverlay: wrapper,
-    ModalTitle: wrapper, VStack: wrapper,
+    Badge: wrapper,
+    Button: wrapper,
+    HStack: wrapper,
+    IconButton: wrapper,
+    Modal: wrapper,
+    ModalBody: wrapper,
+    ModalContent: wrapper,
+    ModalFooter: wrapper,
+    ModalHeader: wrapper,
+    ModalOverlay: wrapper,
+    ModalTitle: wrapper,
+    VStack: wrapper,
     toast: { error: vi.fn() },
     useMount: (callback: () => void) => callback()
   };
@@ -38,9 +54,10 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 vi.mock("react-router", () => ({
   useNavigate: () => vi.fn(),
-  useFetcher: () => mocks.fetcherCall++ === 0
-    ? { state: "idle", data: undefined }
-    : { data: { data: mocks.types }, load: mocks.load }
+  useFetcher: () =>
+    mocks.fetcherCall++ === 0
+      ? { state: "idle", data: undefined }
+      : { data: { data: mocks.types }, load: mocks.load }
 }));
 vi.mock("~/components/Form", () => ({
   Boolean: () => null,
@@ -49,7 +66,13 @@ vi.mock("~/components/Form", () => ({
   Input: ({ name }: { name: string }) => createElement("input", { name }),
   Location: () => null,
   Select: ({ name }: { name: string }) => createElement("select", { name }),
-  Submit: ({ isDisabled, children }: { isDisabled: boolean; children: ReactNode }) =>
+  Submit: ({
+    isDisabled,
+    children
+  }: {
+    isDisabled: boolean;
+    children: ReactNode;
+  }) =>
     createElement("button", { type: "submit", disabled: isDisabled }, children)
 }));
 vi.mock("~/hooks", () => ({
@@ -59,9 +82,13 @@ vi.mock("~/hooks", () => ({
 vi.mock("~/hooks/usePlanGate", () => ({
   usePlanGate: () => ({ isGated: mocks.gated })
 }));
-vi.mock("~/modules/users", async () => import("../app/modules/users/users.models"));
 vi.mock("~/utils/path", () => ({
-  path: { to: { api: { employeeTypes: "/api/employee-types" }, bulkInviteEmployees: "/x/users/employees/bulk-invite" } }
+  path: {
+    to: {
+      api: { employeeTypes: "/api/employee-types" },
+      bulkInviteEmployees: "/x/users/employees/bulk-invite"
+    }
+  }
 }));
 
 import BulkInviteEmployeesModal from "../app/modules/users/ui/Employees/BulkInviteEmployeesModal";
@@ -72,7 +99,8 @@ beforeEach(() => {
   mocks.fetcherCall = 0;
   vi.clearAllMocks();
 });
-const renderModal = () => renderToStaticMarkup(createElement(BulkInviteEmployeesModal));
+const renderModal = () =>
+  renderToStaticMarkup(createElement(BulkInviteEmployeesModal));
 
 describe("bulk invite upstream role selector gate", () => {
   it("disables gated submission until the shared Admin lookup resolves", () => {
@@ -100,7 +128,9 @@ describe("bulk invite upstream role selector gate", () => {
       { id: "worker-a", name: "Worker" },
       { id: "protected-a", name: "Protected", protected: true }
     ];
-    expect(renderModal()).toContain('name="employees[0].employeeType" value="protected-a"');
+    expect(renderModal()).toContain(
+      'name="employees[0].employeeType" value="protected-a"'
+    );
   });
 
   it("retains a selectable employee type for ungated rows", () => {

@@ -4,7 +4,7 @@
 
 import { useRouteData } from "@carbon/react";
 import { datetime } from "@carbon/utils";
-import type { Company } from "~/modules/settings";
+import type { Company } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 /**

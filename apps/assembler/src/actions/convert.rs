@@ -2,14 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-//! `convert` action — STEP → GLB + graph.json. Async job: the caller long-polls
-//! and hands fresh signed upload URLs (`glb`, `graph`) per poll (late-mint). The
+//! `convert` action — STEP → GLB + graph.json. Async job: the caller hands the
+//! signed upload URLs (`glb`, `graph`) at submit and long-polls. The
 //! in-process result cache still skips re-tessellation for repeated content; the
 //! artifacts are re-uploaded to each job's own paths.
 
 use crate::cache::{CachedConvert, ResultCache};
 use crate::jobs::{Done, Output};
-use crate::{admission, config, http, progress, telemetry, AppState};
+use crate::{admission, compute, config, http, progress, telemetry, AppState};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
@@ -20,7 +20,7 @@ pub struct ConvertReq {
     /// Caller-declared content identity (storage etag); a hit skips the download.
     pub declared_hash: Option<String>,
     /// Storage paths recorded in the completion pointer (the app persists these);
-    /// the actual signed PUT URLs are late-minted per poll, keyed `glb`/`graph`.
+    /// the signed PUT URLs come with the submit, keyed `glb`/`graph`.
     pub glb_path: Option<String>,
     pub graph_path: Option<String>,
     pub lin: f64,
@@ -34,14 +34,14 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     let cache = Arc::clone(&state.cache);
     let progress_store = state.progress.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "convert", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
         let tracker = progress_store.start(&job_id);
-        eprintln!("[{job_id}] convert running");
+        eprintln!("[{job_id}] convert started");
         let started = Instant::now();
 
         // Declared-hash pre-check: a hit skips the source download entirely.
@@ -54,17 +54,18 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
             }
         }
 
-        let tmp = http::temp_path("step");
-        let content_hash =
-            match http::download_hashed(&req.source_url, &tmp, Some(&tracker.progress)).await {
-                Ok(h) => h,
-                Err(e) => {
-                    let _ = tokio::fs::remove_file(&tmp).await;
-                    eprintln!("[{job_id}] convert failed: source download: {}", e.message);
-                    jobs.set_error(&job_id, &e.code, e.message).await;
-                    return;
-                }
-            };
+        let src = match sources
+            .download(&req.source_url, "step", Some(&tracker.progress))
+            .await
+        {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] convert failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let content_hash = src.hash;
         tracker.progress.set_phase(progress::PHASE_CONVERT);
 
         let key = match &req.declared_hash {
@@ -73,19 +74,26 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
         };
         let entry = match cache.get(&key) {
             Some(entry) => {
-                let _ = tokio::fs::remove_file(&tmp).await;
+                drop(src);
                 entry
             }
             None => {
                 // Held for the tessellation only: the download before it streams
                 // to disk and the upload after it holds just the outputs.
-                let _grant = admission
-                    .acquire(admission::estimate_mb(http::file_len(&tmp).await))
+                let grant = admission
+                    .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                     .await;
-                let tmp_str = tmp.to_string_lossy().to_string();
+                // The wait may have been long: a job cancelled meanwhile is
+                // dropped before it takes the memory it was granted.
+                if jobs.is_canceled(&job_id).await {
+                    return;
+                }
+                // Running from here on: the wait for memory is queue time, not work.
+                jobs.set_status(&job_id, "running").await;
+                let tmp_str = src.path_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);
-                let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
+                let res = compute::run(Some(grant), move || {
                     // Compacted retained raws are BinXCAF (`.xbf`) — binary, no
                     // STEP header to unit-detect (already mm); running the lossy
                     // text scan on them is wasted work at best.
@@ -119,9 +127,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                             },
                         )
                     })
-                }))
+                })
                 .await;
-                let _ = tokio::fs::remove_file(&tmp).await;
+                drop(src);
                 match res {
                     Ok(Ok(entry)) => entry,
                     Ok(Err(e)) => {
@@ -131,9 +139,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                         return;
                     }
                     Err(e) => {
-                        let msg = format!("convert panicked: {e}");
+                        let msg = format!("convert {e}");
                         eprintln!("[{job_id}] {msg}");
-                        jobs.set_error(&job_id, "TESSELLATION_FAILED", msg).await;
+                        jobs.set_error(&job_id, e.code("TESSELLATION_FAILED"), msg).await;
                         return;
                     }
                 }
@@ -145,7 +153,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     });
 }
 
-/// Enforce the part-count limit, then hold the GLB + graph for late-mint upload.
+/// Enforce the part-count limit, then upload the GLB + graph.
 async fn complete(
     jobs: &crate::jobs::JobStore,
     job_id: &str,

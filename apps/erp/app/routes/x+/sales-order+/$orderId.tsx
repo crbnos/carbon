@@ -23,13 +23,13 @@ import {
   getSalesOrderInvoicesByIds,
   getSalesOrderLines,
   getSalesOrderRelatedItems
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import {
   SalesOrderExplorer,
   SalesOrderHeader,
   SalesOrderProperties
 } from "~/modules/sales/ui/SalesOrder";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

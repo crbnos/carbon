@@ -36,8 +36,8 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { DataType } from "~/modules/shared";
-import type { EmployeeType } from "~/modules/users";
+import { DataType } from "~/modules/shared/types";
+import type { EmployeeType } from "~/modules/users/types";
 import { path } from "~/utils/path";
 import type { AttributeCategory, Person } from "../../types";
 

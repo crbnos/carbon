@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { ValidatedForm, validator } from "@carbon/form";
 import {
   Button,
   HStack,
@@ -23,9 +24,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
 import { Customer, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { getFixedAsset } from "~/modules/accounting";
-import { insertSalesOrder } from "~/modules/sales";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getFixedAsset } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 const sellAssetValidator = z.object({
@@ -58,78 +57,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "sales"
-    });
-
-  const { fixedAssetId } = params;
-  if (!fixedAssetId) throw notFound("fixedAssetId not found");
-
-  const formData = await request.formData();
-  const validation = await validator(sellAssetValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { customerId } = validation.data;
-
-  const [asset, defaults] = await Promise.all([
-    getFixedAsset(client, fixedAssetId, companyId),
-    getUserDefaults(client, userId, companyId)
-  ]);
-
-  if (asset.error || !asset.data) {
-    throw redirect(
-      path.to.fixedAssets,
-      await flash(request, error(asset.error, "Failed to get fixed asset"))
-    );
-  }
-
-  const locationId = asset.data.locationId ?? defaults.data?.locationId ?? "";
-
-  const newSO = await insertSalesOrder(client, {
-    customerId,
-    locationId: locationId ?? "",
-    status: "Draft",
-    companyId,
-    companyGroupId,
-    createdBy: userId
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(sellAssetValidator).request(args, {
+    params: ["fixedAssetId"]
   });
-
-  if (newSO.error || !newSO.data) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(newSO.error, "Failed to create sales order"))
-    );
-  }
-
-  const salesOrderId = newSO.data.id;
-
-  const nbv =
-    Number(asset.data.acquisitionCost) -
-    Number(asset.data.accumulatedDepreciation);
-
-  await client.from("salesOrderLine").insert({
-    salesOrderId,
-    salesOrderLineType: "Fixed Asset",
-    assetId: fixedAssetId,
-    description: asset.data.name,
-    saleQuantity: 1,
-    unitPrice: nbv,
-    locationId: asset.data.locationId ?? "",
-    taxPercent: 0,
-    exchangeRate: 1,
-    companyId,
-    createdBy: userId
+  if ("invalid" in input) return input.invalid;
+  const { fixedAssetId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.accounting.sellFixedAsset({
+    fixedAssetId,
+    customerId: input.data.customerId
   });
-
-  throw redirect(
-    path.to.salesOrder(salesOrderId),
-    await flash(request, success("Sales order created"))
+  return respond(args.request, result).redirect(
+    result.data
+      ? path.to.salesOrder(result.data.salesOrderId)
+      : path.to.fixedAsset(fixedAssetId),
+    { message: "Sales order created" }
   );
 }
 

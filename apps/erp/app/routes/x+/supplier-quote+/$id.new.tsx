@@ -10,12 +10,14 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getSupplierQuote,
   isSupplierQuoteLocked,
-  supplierQuoteLineValidator,
+  supplierQuoteLineValidator
+} from "~/modules/purchasing/purchasing.models";
+import {
+  getSupplierQuote,
   upsertSupplierQuoteLine
-} from "~/modules/purchasing";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+} from "~/modules/purchasing/purchasing.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

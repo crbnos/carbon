@@ -14,18 +14,19 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { GaugeType } from "~/modules/quality";
+import { gaugeValidator } from "~/modules/quality/quality.models";
 import {
-  gaugeValidator,
   getGauge,
   getGaugeCalibrationRecordsByGaugeId,
   updateGauge
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
+import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { getParams, path } from "~/utils/path";
+
 export const handle: Handle = {
   breadcrumb: msg`Gauges`,
   to: path.to.gauges

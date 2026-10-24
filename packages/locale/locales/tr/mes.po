@@ -272,6 +272,9 @@ msgstr "Geri"
 msgid "Back to batch"
 msgstr "Partiye geri dön"
 
+msgid "Back to ERP"
+msgstr "ERP'ye geri dön"
+
 msgid "Background"
 msgstr "Arka plan"
 
@@ -283,6 +286,9 @@ msgstr "Parti Detayları"
 
 msgid "Batch is not available"
 msgstr "Parti kullanılabilir değil"
+
+msgid "Batch notes"
+msgstr "Parti Notları"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -299,12 +305,6 @@ msgstr "parti toplamı"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "{0} ile {1} arasında {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1109,14 +1109,14 @@ msgstr "Daha fazla seçenek"
 msgid "Move column: {0}"
 msgstr "Sütunu taşı: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Küçük olmalı < {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "En az {minValue} {unitOfMeasureCode} olmalıdır"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Küçük olmalı > {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "En fazla {maxValue} {unitOfMeasureCode} olmalıdır"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
-msgstr "Aralması gereken değer {minValue} ile {maxValue} arasındadır"
+msgstr "{minValue} ile {maxValue} {unitOfMeasureCode} arasında olmalıdır"
 
 msgid "My Hours"
 msgstr "Saatlik Çalışmalarım"
@@ -1470,6 +1470,9 @@ msgstr "Sabitle veya sabitliği kaldır"
 msgid "Pin Out"
 msgstr "Çıkış Yap"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Yakınlaştırmak için kıstırın veya kaydırın · kaydırmak için sürükleyin · sıfırlamak için iki kez dokunun"
+
 msgid "Planned"
 msgstr "Planlı"
 
@@ -1582,6 +1585,9 @@ msgstr "Kısmi Kaydı"
 
 msgid "Recorded"
 msgstr "Kaydedildi"
+
+msgid "Reference image"
+msgstr "Referans görseli"
 
 msgid "Registration failed"
 msgstr "Kayıt başarısız"
@@ -1859,6 +1865,9 @@ msgstr "Karıştır"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bir bağlantı yerine biyometrik veriler ile oturum açın. Geçiş anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
 
@@ -1876,6 +1885,9 @@ msgstr "Oturumu Kapat"
 
 msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
@@ -2180,6 +2192,9 @@ msgstr "Güncelle"
 msgid "Updated {0}"
 msgstr "{0} tarihinde güncellendi"
 
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "Başarıyla güncellendi"
 
@@ -2224,8 +2239,8 @@ msgstr "Bakım emrini Görüntüle"
 msgid "View or open"
 msgstr "Görüntüle veya aç"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"

@@ -119,7 +119,17 @@ export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
 
 export const MAINTENANCE_MODE = parseBoolean(getEnv("MAINTENANCE_MODE"), false);
 
+// "single": one customer owns this deployment and everything in it (BYOC, a
+// self-hosted install), so the server's own settings, such as its mail, are
+// theirs to share across their companies. Anything else, unset included, is
+// Carbon Cloud's "multi": many customers, one server.
+export const SINGLE_TENANT = getEnv("TENANT_TYPE") === "single";
+
 export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
+
+export const INTEGRATION_EARLY_ACCESS_USER_IDS = getEnv(
+  "INTEGRATION_EARLY_ACCESS_USER_IDS"
+);
 
 // Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
 // `docHash` stamped onto every ITAR certification, and the target of the
@@ -134,6 +144,13 @@ export const ITAR_RIDER_PDF_PATH = "https://carbon.ms/itar-rider.pdf";
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID");
 export const ONSHAPE_CLIENT_SECRET = getEnv("ONSHAPE_CLIENT_SECRET");
 export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL");
+// The panel (`onshape-v2`) is its own Onshape app: it shares no variable with
+// the sync integration above.
+export const ONSHAPE_V2_CLIENT_ID = getEnv("ONSHAPE_V2_CLIENT_ID");
+export const ONSHAPE_V2_CLIENT_SECRET = getEnv("ONSHAPE_V2_CLIENT_SECRET");
+export const ONSHAPE_V2_OAUTH_REDIRECT_URL = getEnv(
+  "ONSHAPE_V2_OAUTH_REDIRECT_URL"
+);
 // Path to the native gltfpack binary (github.com/zeux/meshoptimizer), used to
 // compress oversized Onshape GLTF exports into viewer-ready GLBs. Optional:
 // when unset (and gltfpack isn't on PATH), oversized models are skipped
@@ -360,6 +377,7 @@ export function getBrowserEnv() {
     MES_URL,
     NODE_ENV,
     ONSHAPE_CLIENT_ID,
+    ONSHAPE_V2_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,

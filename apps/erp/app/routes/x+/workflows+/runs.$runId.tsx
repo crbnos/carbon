@@ -15,15 +15,15 @@ import {
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { collectEntityRefs } from "~/modules/workflows/ui/Runs/entityRefs";
+import { WorkflowRunDetail } from "~/modules/workflows/ui/Runs/WorkflowRunDetail";
 import {
   getWorkflowRun,
   getWorkflowRunChain,
   getWorkflowRunRecordNames,
-  getWorkflowRunSteps,
-  MAX_RUN_STEPS
-} from "~/modules/workflows";
-import { collectEntityRefs } from "~/modules/workflows/ui/Runs/entityRefs";
-import { WorkflowRunDetail } from "~/modules/workflows/ui/Runs/WorkflowRunDetail";
+  getWorkflowRunSteps
+} from "~/modules/workflows/workflows.service";
+import { MAX_RUN_STEPS } from "~/modules/workflows/workflows.utils";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

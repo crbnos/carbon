@@ -7,7 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
 
 import { ContentSidebar } from "~/components/Layout/Navigation";
-import { useDocumentsSubmodules } from "~/modules/documents";
+import { useDocumentsSubmodules } from "~/modules/documents/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

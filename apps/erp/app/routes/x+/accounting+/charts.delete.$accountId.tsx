@@ -12,7 +12,10 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteAccount, getAccount } from "~/modules/accounting";
+import {
+  deleteAccount,
+  getAccount
+} from "~/modules/accounting/accounting.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

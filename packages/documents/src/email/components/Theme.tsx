@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// credit: pontus@midday.ai
-import { Font, Head, Html, Tailwind } from "@react-email/components";
 import type React from "react";
+// credit: pontus@midday.ai
+import { Font, Head, Html, pixelBasedPreset, Tailwind } from "react-email";
 
 // Re-export Button component for convenience
 export { Button } from "./Button";
@@ -16,15 +16,22 @@ export const emailTheme = {
     foreground: "#0e0e0e", // Slightly off-black to prevent auto-inversion
     muted: "#6b7280",
     border: "#e5e7eb",
+    // A raised box inside the card: a code, a document's details.
+    panel: "#f8f9fa",
     accent: "#0e0e0e",
     secondary: "#9ca3af"
   },
+  // What Gmail's apps make of the light palette when they recolour an email
+  // for dark mode (measured), so a client that runs this theme's dark CSS
+  // (Apple Mail, Outlook) shows the same email as one that inverts it.
   dark: {
-    background: "#0C0C0C",
+    background: "#131314",
     foreground: "#fefefe", // Slightly off-white to prevent auto-inversion
-    muted: "#a1a1aa",
-    border: "#1D1D1D",
-    accent: "#fefefe",
+    muted: "#9fa7b6",
+    border: "#2e2f33",
+    panel: "#242527",
+    accent: "#f3f3f3",
+    accentForeground: "#202124",
     secondary: "#6b7280"
   }
 } as const;
@@ -40,7 +47,8 @@ export const getEmailDarkModeCSS = () => {
 
     /* Apple Mail, iOS Mail, and some webview clients */
     @media (prefers-color-scheme: dark) {
-      .email-body {
+      .email-body,
+      .email-body > table > tbody > tr > td {
         background-color: ${emailTheme.dark.background} !important;
         color: ${emailTheme.dark.foreground} !important;
       }
@@ -63,6 +71,18 @@ export const getEmailDarkModeCSS = () => {
       .email-border {
         border-color: ${emailTheme.dark.border} !important;
       }
+      .email-panel {
+        background-color: ${emailTheme.dark.panel} !important;
+        border-color: ${emailTheme.dark.border} !important;
+      }
+      .email-panel-text {
+        color: ${emailTheme.dark.foreground} !important;
+      }
+      .email-button {
+        background-color: ${emailTheme.dark.accent} !important;
+        border-color: ${emailTheme.dark.accent} !important;
+        color: ${emailTheme.dark.accentForeground} !important;
+      }
       
       /* Image swapping for dark mode */
       .dark-mode-hide {
@@ -77,8 +97,11 @@ export const getEmailDarkModeCSS = () => {
     @media (prefers-color-scheme: dark) {
       /* Gmail specific selectors */
       .gmail_dark .email-body,
+      .gmail_dark .email-body > table > tbody > tr > td,
       .gmail_dark_theme .email-body,
-      [data-darkmode="true"] .email-body {
+      .gmail_dark_theme .email-body > table > tbody > tr > td,
+      [data-darkmode="true"] .email-body,
+      [data-darkmode="true"] .email-body > table > tbody > tr > td {
         background-color: ${emailTheme.dark.background} !important;
         color: ${emailTheme.dark.foreground} !important;
       }
@@ -103,13 +126,22 @@ export const getEmailDarkModeCSS = () => {
         color: ${emailTheme.dark.accent} !important;
         border-color: ${emailTheme.dark.accent} !important;
       }
+      .gmail_dark .email-button,
+      .gmail_dark_theme .email-button,
+      [data-darkmode="true"] .email-button {
+        background-color: ${emailTheme.dark.accent} !important;
+        border-color: ${emailTheme.dark.accent} !important;
+        color: ${emailTheme.dark.accentForeground} !important;
+      }
     }
 
     /* Gmail Desktop conditional dark mode targeting */
     @media screen and (prefers-color-scheme: dark) {
       /* More aggressive Gmail desktop targeting */
       div[style*="background"] .email-body,
-      .ii .email-body {
+      div[style*="background"] .email-body > table > tbody > tr > td,
+      .ii .email-body,
+      .ii .email-body > table > tbody > tr > td {
         background-color: ${emailTheme.dark.background} !important;
         color: ${emailTheme.dark.foreground} !important;
       }
@@ -149,16 +181,49 @@ export const getEmailDarkModeCSS = () => {
     [data-ogsc] .dark-mode-show {
       display: block !important;
     }
+    [data-ogsc] .email-button {
+      color: ${emailTheme.dark.accentForeground} !important;
+    }
+    [data-ogsb] .email-button {
+      background-color: ${emailTheme.dark.accent} !important;
+      border-color: ${emailTheme.dark.accent} !important;
+    }
 
     /* Outlook background targeting */
-    [data-ogsb] .email-body {
+    [data-ogsb] .email-body,
+    [data-ogsb] .email-body > table > tbody > tr > td {
       background-color: ${emailTheme.dark.background} !important;
+    }
+    [data-ogsb] .email-panel {
+      background-color: ${emailTheme.dark.panel} !important;
+      border-color: ${emailTheme.dark.border} !important;
+    }
+    [data-ogsc] .email-panel-text {
+      color: ${emailTheme.dark.foreground} !important;
+    }
+    /* Gmail dark mode */
+    [data-darkmode="true"] .email-panel {
+      background-color: ${emailTheme.dark.panel} !important;
+      border-color: ${emailTheme.dark.border} !important;
+    }
+    [data-darkmode="true"] .email-panel-text {
+      color: ${emailTheme.dark.foreground} !important;
     }
     [data-ogsb] .email-container {
       border-color: ${emailTheme.dark.border} !important;
     }
   `;
 };
+
+/**
+ * A stylesheet for an email's <head>, written as it is. As a text child,
+ * React escapes it: `>` becomes `&gt;` and `"` becomes `&quot;`, and a rule
+ * with either in its selector (`.email-body > table`, `div[style*="…"]`) is
+ * invalid and dropped whole. The CSS is always our own constant.
+ */
+export function HeadStyle({ css }: { css: string }) {
+  return <style dangerouslySetInnerHTML={{ __html: css }} />;
+}
 
 // Comprehensive email theme provider that wraps everything
 interface EmailThemeProviderProps {
@@ -176,7 +241,9 @@ export function EmailThemeProvider({
 }: EmailThemeProviderProps) {
   return (
     <Html className={disableDarkMode ? "disable-dark-mode" : ""}>
-      <Tailwind>
+      {/* px, not rem: classic Outlook for Windows drops every rem
+          size, and the email loses its spacing and type scale. */}
+      <Tailwind config={{ presets: [pixelBasedPreset] }}>
         <Head>
           {/* Essential meta tags for email dark mode support */}
           {!disableDarkMode && (
@@ -187,7 +254,7 @@ export function EmailThemeProvider({
               {/* Additional Gmail dark mode hints */}
               <meta
                 name="theme-color"
-                content="#0C0C0C"
+                content={emailTheme.dark.background}
                 media="(prefers-color-scheme: dark)"
               />
               <meta
@@ -195,10 +262,13 @@ export function EmailThemeProvider({
                 content="#ffffff"
                 media="(prefers-color-scheme: light)"
               />
-              <meta name="msapplication-navbutton-color" content="#0C0C0C" />
+              <meta
+                name="msapplication-navbutton-color"
+                content={emailTheme.dark.background}
+              />
 
               {/* Dark mode styles */}
-              <style>{getEmailDarkModeCSS()}</style>
+              <HeadStyle css={getEmailDarkModeCSS()} />
             </>
           )}
 
@@ -208,18 +278,12 @@ export function EmailThemeProvider({
               <meta name="color-scheme" content="light only" />
               <meta name="supported-color-schemes" content="light" />
               <meta name="theme-color" content="#ffffff" />
-              <style>{`
-                /* Force light mode styles */
-                :root {
-                  color-scheme: light only;
-                  supported-color-schemes: light;
-                }
-                
-                /* Override any potential dark mode styles */
-                * {
-                  color-scheme: light !important;
-                }
-              `}</style>
+              <HeadStyle
+                css={`
+                  :root { color-scheme: light only; supported-color-schemes: light; }
+                  * { color-scheme: light !important; }
+                `}
+              />
             </>
           )}
 

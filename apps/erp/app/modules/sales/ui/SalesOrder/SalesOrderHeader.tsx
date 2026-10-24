@@ -21,14 +21,13 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import type { SalesOrderForProductionCheck } from "@carbon/utils";
 import { hasLinesRequiringJobs } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   LuCheckCheck,
   LuChevronDown,
@@ -44,7 +43,6 @@ import {
   LuTruck,
   LuUndo2
 } from "react-icons/lu";
-import type { FetcherWithComponents } from "react-router";
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { CSVLink } from "~/components/CSVLink";
@@ -99,19 +97,8 @@ const SalesOrderConfirmModal = ({
     action: path.to.salesOrderConfirm(orderId),
     onSuccess: onClose
   });
-  const fetcher = ruleViolations.fetcher as FetcherWithComponents<{
-    success?: boolean;
-    message?: string;
-    violations?: unknown[];
-  }>;
-
-  useEffect(() => {
-    // Violations render in the ViolationModal; don't also toast their message.
-    if ((fetcher.data?.violations ?? []).length > 0) return;
-    if (fetcher.data?.success === false && fetcher.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data]);
+  // The hook toasts a failed confirm and shows violations in its modal.
+  const { fetcher } = ruleViolations;
 
   return (
     <Modal

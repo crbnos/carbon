@@ -66,7 +66,7 @@ import { useFetcher, useParams, useSearchParams } from "react-router";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { useImageUpload, usePermissions } from "~/hooks";
-import { procedureStepType } from "~/modules/shared";
+import { procedureStepType } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import {
   assemblyInstructionStepValidator,
@@ -619,7 +619,7 @@ function StepForm({
           </VStack>
         )}
         {stepType === "List" && (
-          <ArrayInput name="listValues" label={t`List Options`} />
+          <ArrayInput name="listValues" label={t`List Options`} isRequired />
         )}
         <BooleanInput
           name="required"

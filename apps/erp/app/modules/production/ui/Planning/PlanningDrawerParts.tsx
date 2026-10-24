@@ -15,7 +15,7 @@ import type { ReactNode } from "react";
 import { LuCalendarRange } from "react-icons/lu";
 import { useQuantityFormatter } from "~/hooks";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
-import type { ProductionPlanningItem } from "~/modules/production";
+import type { ProductionPlanningItem } from "~/modules/production/types";
 import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
 
 // What the production and purchasing order drawers share. They used to keep

@@ -8,7 +8,7 @@ import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import { getClientIp } from "@carbon/utils";
 import { data, type LoaderFunctionArgs } from "react-router";
 
-import { DAY_CACHE_HEADERS } from "~/modules/shared/shared.server";
+import { DAY_CACHE_HEADERS } from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const ip = getClientIp(request) ?? "127.0.0.1";

@@ -24,8 +24,8 @@ Each kanban is a small record: an item, where it lives, how much to reorder, and
   <Field name="Replenishment level">The <Term id="kanban-replenishment-level">replenishment level</Term> for the To storage unit, 0 or more. Leave it blank for a scan-only kanban. (`Transfer` only.)</Field>
   <Field name="Supplier">Who to buy from. **Required for `Buy` kanbans.**</Field>
   <Field name="Purchase unit of measure / Conversion factor">The unit you buy in and how many stock units that equals. Carbon applies both to the PO line. (`Buy` only.)</Field>
-  <Field name="Auto Release">On a `Make` scan, release the created job to the floor immediately instead of leaving it in draft. (`Make` only.)</Field>
-  <Field name="Auto Start Job">On a `Make` scan, drop the operator straight into the first operation in MES. Requires Auto Release. (`Make` only.)</Field>
+  <Field name="Auto Release">On a `Make` scan, release the created job to the floor when it passes the release checks, instead of leaving it in draft. (`Make` only.)</Field>
+  <Field name="Auto Start Job">On a `Make` scan, drop the operator straight into the first operation in MES. Requires Auto Release, and applies only when the job was released. (`Make` only.)</Field>
   <Field name="Completion Barcode">The code operators scan to mark the job complete; auto-generated when left blank. (`Make` only.)</Field>
 </FieldTable>
 
@@ -37,9 +37,15 @@ The **order** scan (the create signal) branches on the replenishment system:
 
 <StatusFlow>
   <Status name="Buy" accent>The scan finds an open (`Draft` or `Planned`) purchase order for that supplier and adds a line for the kanban's quantity. If none exists, it creates a new draft PO. It applies the kanban's conversion factor, purchase unit, and storage unit to the line, then drops you on the purchase order.</Status>
-  <Status name="Make">The scan creates a <Term id="job">job</Term> for the item at the kanban's quantity, copies the item's method onto it, and links the job back to the card. With **Auto Release** on, it also runs planning and scheduling and marks the job `Ready`; with **Auto Start Job** on, it sends the operator straight into the first operation in MES.</Status>
+  <Status name="Make">The scan creates a <Term id="job">job</Term> for the item at the kanban's quantity, copies the item's method onto it, and links the job back to the card. With **Auto Release** on, it runs the release checks, then releases the job: it recalculates and plans it, marks it `Ready`, and schedules it. With **Auto Start Job** on, a released job sends the operator straight into the first operation in MES.</Status>
   <Status name="Transfer">The scan creates a `Released` stock transfer for the kanban's quantity, from the From storage unit to the To storage unit, then drops you on the transfer. A scan always creates a transfer, whether or not the kanban has a replenishment level.</Status>
 </StatusFlow>
+
+<Callout type="warn" title="Auto Release can leave the job in Draft">
+The scan runs the same checks as the job's **Release** dialog. When one fails, for example a material with no storage unit under [strict backflush](/docs/reference/strict-backflush), the job stays `Draft` and linked to the card. The scan opens the job page with the reason, so you can fix it and release the job from there. The same happens when the item's method could not be copied onto the job.
+
+Outside operations go on the supplier's newest `Draft` purchase order, or a new one. Nobody at the card can choose an order, so an existing draft does not stop the release.
+</Callout>
 
 **Start** and **complete** scans only apply to `Make` kanbans. They resolve the linked job's active operation and hand off to the MES operation start / complete screens, so an operator can drive the whole build from the same card that created the job.
 
@@ -100,6 +106,15 @@ The reorder quantity is below 1. Each scan reorders a fixed amount, which must b
 
 ### "There's already a job for this kanban."
 You scanned **order** on a `Make` kanban that already created a job (it's linked by `jobId`). Carbon won't make a duplicate — it routes you to the collision screen showing the existing job, where you can view it or remove the link so a fresh scan can start over. The link clears automatically once the job is completed or cancelled.
+
+### "J… was created but not released: …"
+An **order** scan on a `Make` kanban with Auto Release created the job, but it failed the release checks: nothing to make, manufacturing blocked, an assembly without operations, an outside operation without a supplier, or, under strict backflush, "set a Pull From storage unit on …". The job stays `Draft` and linked to the kanban, and the scan opens the job. Fix the named problem, then release the job from its **Release** dialog. The next scan of the card is a collision until the job is completed, cancelled or unlinked.
+
+### "J… was created, but its method could not be copied. Use Get Method on the job before releasing it."
+The `Make` scan created and linked the job, but copying the item's make method failed, so the job has no materials or operations. It is not released. Run **Get Method** on the job, then release it.
+
+### "J…: The job is no longer Draft or Planned"
+Someone released or cancelled the job while the scan was releasing it. Nothing else changed; open the job to see its status.
 
 ### "No job found for kanban"
 A **start** or **complete** scan ran on a kanban that has no linked job yet. Those actions only work on `Make` kanbans after an **order** scan has created the job — scan order first.

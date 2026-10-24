@@ -27,7 +27,7 @@ import type {
   ActivityInput,
   ActivityOutput,
   TrackedEntity
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import { COMPACT_FIT_PADDING, clampDepth } from "./constants";
 import { QuantityEdge } from "./edges/QuantityEdge";
 import { GraphLegend } from "./GraphLegend";

@@ -4,9 +4,9 @@
 
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { loadPeriodRuns } from "~/modules/accounting/period-runs.server";
 import { PeriodRunsPage } from "~/modules/accounting/ui/RevenueRecognition";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
+import { loadPeriodRuns } from "~/routes/x+/accounting+/period-runs.server";
 import type { Handle } from "~/utils/handle";
 
 export const handle: Handle = {

@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { toResult } from "@carbon/api/service-fn.server";
+import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -18,6 +19,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  toast,
   useDebounce,
   useDisclosure,
   useMode,
@@ -28,29 +30,26 @@ import { useLingui } from "@lingui/react/macro";
 import { useCallback, useRef, useState } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  useFetcher,
-  useLoaderData,
-  useParams,
-  useSubmit
-} from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import z from "zod";
 import { zfd } from "zod-form-data";
 import { actionTaskStatusActions } from "~/components/ActionTasks/ActionTaskCard";
-import { getSupplier } from "~/modules/purchasing";
-import type { IssueActionTask } from "~/modules/quality";
+import { getSupplier } from "~/modules/purchasing/purchasing.service";
+import { nonConformanceTaskStatus } from "~/modules/quality/quality.models";
+import {
+  setScarTaskStatus,
+  updateScarTaskNotes
+} from "~/modules/quality/quality.server";
 import {
   getIssueActionTasks,
   getIssueFromExternalLink,
-  nonConformanceTaskStatus,
-  updateIssueTaskContent,
-  updateIssueTaskStatus
-} from "~/modules/quality";
+  scarLinkContext
+} from "~/modules/quality/quality.service";
+import type { IssueActionTask } from "~/modules/quality/types";
 import { TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import { getCompany } from "~/modules/settings";
-import { getExternalLink } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service";
+import { getExternalLink } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { ErrorMessage } from "./quote.$id";
 
@@ -153,110 +152,32 @@ export const scarValidator = z.object({
     })
 });
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const serviceRole = getCarbonServiceRole();
-
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const externalLink = await getExternalLink(serviceRole, id);
-  if (
-    !externalLink.data ||
-    !externalLink.data?.documentId ||
-    !isScarLink(externalLink.data)
-  ) {
-    logger.error("SCAR link not found", { externalLinkId: id });
-    throw new Error("Could not find id");
+// Unauthenticated: the share link is the only credential, so it states the
+// company and the actor.
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(scarValidator).request(args, {
+    params: ["id"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const externalLinkId = input.params.id;
+  const ctx = await scarLinkContext(externalLinkId);
+  if (!ctx) {
+    logger.error("SCAR link not found", { externalLinkId });
+    throw notFound("Could not find id");
   }
 
-  const issue = await getIssueFromExternalLink(
-    serviceRole,
-    externalLink.data.documentId
-  );
-  if (!issue.data || issue.data.companyId !== externalLink.data.companyId) {
-    logger.error("SCAR issue not found for link", {
-      companyId: externalLink.data.companyId,
-      externalLinkId: id,
-      error: issue.error
-    });
-    throw new Error("Could not find the issue");
-  }
-
-  if (issue.data.nonConformance.status === "Closed") {
-    throw new Error("Issue has been closed already. Unable to make changes");
-  }
-  const formData = await request.formData();
-  const validation = await validator(scarValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const tasks = await getIssueActionTasks(
-    serviceRole,
-    issue.data.nonConformanceId,
-    externalLink.data.companyId,
-    issue.data.supplierId
-  );
-
-  const isTaskValid = tasks.data?.find((t) => t.id === validation.data.taskId);
-  if (!isTaskValid) {
-    throw new Error("Invalid task id");
-  }
-
-  if (validation.data.status) {
-    const statusUpdate = await updateIssueTaskStatus(serviceRole, {
-      id: validation.data.taskId,
-      status: validation.data.status,
-      type: validation.data.type
-    });
-
-    if (statusUpdate.error) {
-      return data(
-        {
-          success: false
-        },
-        await flash(
-          request,
-          error(statusUpdate.error, "Failed to update task status")
-        )
-      );
-    }
-
-    return data(
-      {
-        success: true
-      },
-      await flash(request, success("Updated task status"))
+  const { taskId, status, content } = input.data;
+  if (status) {
+    return toResult(
+      await setScarTaskStatus(ctx, { externalLinkId, taskId, status })
     );
   }
-
-  if (validation.data.content) {
-    const contentUpdate = await updateIssueTaskContent(serviceRole, {
-      id: validation.data.taskId,
-      content: validation.data.content,
-      type: validation.data.type
-    });
-
-    if (contentUpdate.error) {
-      return data(
-        {
-          success: false
-        },
-        await flash(
-          request,
-          error(contentUpdate.error, "Failed to update content")
-        )
-      );
-    }
-
-    return { succes: true };
+  if (content) {
+    return toResult(
+      await updateScarTaskNotes(ctx, { externalLinkId, taskId, notes: content })
+    );
   }
-
-  return {
-    success: true
-  };
+  return { data: null, error: null };
 }
 
 const Header = ({
@@ -309,7 +230,10 @@ function useTaskStatus({
   const { id } = useParams();
   if (!id) throw new Error("Could not find external quote id");
 
-  const submit = useSubmit();
+  const { t } = useLingui();
+  const { submit } = useAction<typeof action>({
+    onSuccess: () => toast.success(t`Updated task status`)
+  });
 
   const onOperationStatusChange = useCallback(
     (taskId: string, status: IssueActionTask["status"]) => {
@@ -321,12 +245,7 @@ function useTaskStatus({
           type,
           supplierId: task.supplierId ?? ""
         },
-        {
-          method: "post",
-          action: path.to.externalScar(id),
-          navigate: false,
-          fetcherKey: `externalScar:${id}`
-        }
+        { method: "post", action: path.to.externalScar(id) }
       );
     },
     [onChange, task.supplierId, type, id, submit]
@@ -354,7 +273,7 @@ function useTaskNotes({
   const { id } = useParams();
   if (!id) throw new Error("Could not find external quote id");
 
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>();
   const [content, setContent] = useState(initialContent ?? {});
 
   const onUpdateContent = useDebounce(

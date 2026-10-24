@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,6 +13,7 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -30,26 +32,22 @@ import {
 import { INPUT_FORMAT, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { z } from "zod";
 import { Users } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   digitalQuoteValidator,
-  getCompanySettings,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
   salesRuleNotificationValidator,
-  updateDigitalQuoteSetting,
-  updateQuoteLineCategoryMarkups,
-  updateRequireCustomerContactSetting,
-  updateRfqReadySetting,
-  updateSalesRuleNotificationSetting,
-  updateShowCustomerReadableIdSetting
-} from "~/modules/settings";
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -77,148 +75,79 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.sales.update` it saves.
+const salesSettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle(
+    "requireCustomerContactAndLocationToggle",
+    "requireCustomerContactAndLocation"
+  ),
+  settingsToggle("showCustomerReadableIdToggle", "showCustomerReadableId"),
+  digitalQuoteValidator
+    .extend({ intent: z.literal("digitalQuote") })
+    .transform((form) => ({
+      digitalQuoteEnabled: form.digitalQuoteEnabled,
+      digitalQuoteNotificationGroup: form.digitalQuoteNotificationGroup ?? [],
+      digitalQuoteIncludesPurchaseOrders:
+        form.digitalQuoteIncludesPurchaseOrders
+    })),
+  rfqReadyValidator
+    .extend({ intent: z.literal("rfq") })
+    .transform(({ rfqReadyNotificationGroup }) => ({
+      rfqReadyNotificationGroup: rfqReadyNotificationGroup ?? []
+    })),
+  salesRuleNotificationValidator
+    .extend({ intent: z.literal("salesRuleViolations") })
+    .transform(({ salesRuleNotificationGroup }) => ({
+      salesRuleNotificationGroup: salesRuleNotificationGroup ?? []
+    })),
+  quoteLineCategoryMarkupsSettingsValidator
+    .extend({ intent: z.literal("categoryMarkups") })
+    .transform(({ intent: _, ...quoteLineCategoryMarkups }) => ({
+      quoteLineCategoryMarkups
+    }))
+]);
 
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  switch (intent) {
-    case "requireCustomerContactAndLocationToggle": {
-      const enabled = formData.get("enabled") === "true";
-      const result = await updateRequireCustomerContactSetting(
-        client,
-        companyId,
-        enabled
-      );
-      if (result.error) {
-        return { success: false, message: result.error.message };
-      }
-      return {
-        success: true,
-        message: `Customer contact requirement ${enabled ? "enabled" : "disabled"}`
-      };
-    }
-
-    case "showCustomerReadableIdToggle":
-      const showCustomerReadableId = formData.get("enabled") === "true";
-      const showCustomerReadableIdResult =
-        await updateShowCustomerReadableIdSetting(
-          client,
-          companyId,
-          showCustomerReadableId
-        );
-      if (showCustomerReadableIdResult.error) {
-        return {
-          success: false,
-          message: showCustomerReadableIdResult.error.message
-        };
-      }
-      return {
-        success: true,
-        message: `Customer IDs ${showCustomerReadableId ? "shown" : "hidden"}`
-      };
-
-    case "digitalQuote":
-      const validation = await validator(digitalQuoteValidator).validate(
-        formData
-      );
-
-      if (validation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const digitalQuote = await updateDigitalQuoteSetting(
-        client,
-        companyId,
-        validation.data.digitalQuoteEnabled,
-        validation.data.digitalQuoteNotificationGroup ?? [],
-        validation.data.digitalQuoteIncludesPurchaseOrders
-      );
-      if (digitalQuote.error)
-        return { success: false, message: digitalQuote.error.message };
-
-      return { success: true, message: "Digital quote setting updated" };
-
-    case "rfq":
-      const rfqValidation =
-        await validator(rfqReadyValidator).validate(formData);
-
-      if (rfqValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const rfqSettings = await updateRfqReadySetting(
-        client,
-        companyId,
-        rfqValidation.data.rfqReadyNotificationGroup ?? []
-      );
-
-      if (rfqSettings.error)
-        return { success: false, message: rfqSettings.error.message };
-
-      return { success: true, message: "RFQ setting updated" };
-
-    case "salesRuleViolations":
-      const salesRuleValidation = await validator(
-        salesRuleNotificationValidator
-      ).validate(formData);
-
-      if (salesRuleValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const salesRuleSettings = await updateSalesRuleNotificationSetting(
-        client,
-        companyId,
-        salesRuleValidation.data.salesRuleNotificationGroup ?? []
-      );
-
-      if (salesRuleSettings.error)
-        return { success: false, message: salesRuleSettings.error.message };
-
-      return {
-        success: true,
-        message: "Sales rule notification settings updated"
-      };
-
-    case "categoryMarkups":
-      const categoryMarkupsValidation = await validator(
-        quoteLineCategoryMarkupsSettingsValidator
-      ).validate(formData);
-
-      if (categoryMarkupsValidation.error) {
-        return { success: false, message: "Invalid form data" };
-      }
-
-      const categoryMarkupsResult = await updateQuoteLineCategoryMarkups(
-        client,
-        companyId,
-        categoryMarkupsValidation.data
-      );
-
-      if (categoryMarkupsResult.error)
-        return {
-          success: false,
-          message: categoryMarkupsResult.error.message
-        };
-
-      return {
-        success: true,
-        message: "Default category markups updated"
-      };
-  }
-
-  return { success: false, message: "Unknown intent" };
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesSettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateSalesSettings(input.data);
 }
 
 export default function SalesSettingsRoute() {
   const { t } = useLingui();
   const { companySettings } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const toggleFetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.digitalQuoteEnabled !== undefined)
+        toast.success(t`Digital quote setting updated`);
+      else if (data.rfqReadyNotificationGroup)
+        toast.success(t`RFQ setting updated`);
+      else if (data.salesRuleNotificationGroup)
+        toast.success(t`Sales rule notification settings updated`);
+      else toast.success(t`Default category markups updated`);
+    }
+  });
+  const toggleFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.requireCustomerContactAndLocation !== undefined) {
+        toast.success(
+          data.requireCustomerContactAndLocation
+            ? t`Customer contact requirement enabled`
+            : t`Customer contact requirement disabled`
+        );
+      } else if (data.showCustomerReadableId !== undefined) {
+        toast.success(
+          data.showCustomerReadableId
+            ? t`Customer IDs shown`
+            : t`Customer IDs hidden`
+        );
+      }
+    }
+  });
 
   const requireCustomerContactAndLocation = useSavedToggle(
     toggleFetcher,
@@ -259,25 +188,6 @@ export default function SalesSettingsRoute() {
   const [digitalQuoteEnabled, setDigitalQuoteEnabled] = useState(
     companySettings.digitalQuoteEnabled ?? false
   );
-
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
-    }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
-
-  useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
-      toast.success(toggleFetcher.data.message);
-    }
-    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
-      toast.error(toggleFetcher.data.message);
-    }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
@@ -624,7 +534,7 @@ function CategoryMarkupsCard({
   companySettings: ReturnType<
     typeof useLoaderData<typeof loader>
   >["companySettings"];
-  fetcher: ReturnType<typeof useFetcher<typeof action>>;
+  fetcher: ReturnType<typeof useAction<typeof action>>;
 }) {
   const saved = (companySettings as Record<string, unknown>)
     .quoteLineCategoryMarkups as Record<string, number> | null;

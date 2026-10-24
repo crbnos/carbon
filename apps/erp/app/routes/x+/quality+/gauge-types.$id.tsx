@@ -10,11 +10,11 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { gaugeTypeValidator } from "~/modules/quality/quality.models";
 import {
-  gaugeTypeValidator,
   getGaugeType,
   upsertGaugeType
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import GaugeTypeForm from "~/modules/quality/ui/GaugeTypes/GaugeTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { ChangeNoticeStatus } from "~/modules/items";
+import type { ChangeNoticeStatus } from "~/modules/items/types";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
   getGaugeCalibrationRecords,
@@ -12,6 +12,7 @@ import type {
   getInspection,
   getInspectionDocuments,
   getInspectionGauges,
+  getInspectionIssues,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspections,
@@ -188,6 +189,12 @@ export type ItemInspectionDocumentAssignment =
 
 export type InspectionMeasurementRow =
   Database["public"]["Tables"]["inspectionMeasurement"]["Row"];
+
+export type InspectionIssue = NonNullable<
+  NonNullable<
+    Awaited<ReturnType<typeof getInspectionIssues>>["data"]
+  >[number]["nonConformance"]
+>;
 
 export type InspectionSamplingPlan = NonNullable<
   Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]

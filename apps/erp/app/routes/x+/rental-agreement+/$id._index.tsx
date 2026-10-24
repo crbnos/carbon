@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { draftRentalAgreementSetupPath } from "~/modules/sales/sales.server";
+import { draftRentalAgreementSetupPath } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 /** Opening an agreement: a Draft continues its setup, anything else shows

@@ -7,14 +7,13 @@ import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import {
   Body,
   Column,
-  Container,
   Hr,
   Img,
   Preview,
   Row,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
 import type { Email } from "../types";
 import {
   getLineDescription,
@@ -23,6 +22,13 @@ import {
   getTotal
 } from "../utils/purchase-order";
 import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
+import { DocumentCard } from "./components/DocumentCard";
+import {
+  detailText,
+  labelText,
+  lineDetail,
+  lineTitle
+} from "./components/documentStyles";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -99,14 +105,7 @@ const PurchaseOrderEmail = ({
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}
       >
-        <Container
-          className={`mx-auto py-5 px-0 w-[660px] max-w-full ${themeClasses.container}`}
-          style={{
-            borderStyle: "solid",
-            borderWidth: "1px",
-            borderColor: lightStyles.container.borderColor
-          }}
-        >
+        <DocumentCard>
           <Section>
             <Row>
               <Column>
@@ -128,8 +127,14 @@ const PurchaseOrderEmail = ({
               </Column>
               <Column className="text-right">
                 <Text
-                  className={`text-3xl font-light ${themeClasses.mutedText}`}
-                  style={{ color: lightStyles.mutedText.color }}
+                  className={themeClasses.text}
+                  style={{
+                    margin: 0,
+                    paddingLeft: "16px",
+                    fontSize: "22px",
+                    lineHeight: "28px",
+                    color: lightStyles.text.color
+                  }}
                 >
                   Purchase Order
                 </Text>
@@ -147,41 +152,52 @@ const PurchaseOrderEmail = ({
             </Text>
           </Section>
           <ExternalNotes content={purchaseOrder.externalNotes} />
-          <Section className="bg-gray-50 rounded-lg text-xs">
+          <Section className="bg-gray-50 rounded-[8px] text-xs email-panel">
             <Row>
-              <Column className="p-5" colSpan={2}>
+              <Column className="p-5 align-top" colSpan={2}>
                 <Section>
                   {paymentTerm && (
                     <Row>
                       <Column>
                         <Text
-                          className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                          style={{ color: lightStyles.mutedText.color }}
+                          className={`${themeClasses.mutedText} uppercase`}
+                          style={{
+                            ...labelText,
+                            color: lightStyles.mutedText.color
+                          }}
                         >
                           Payment Terms
                         </Text>
-                        <Text>{paymentTerm.name}</Text>
+                        <Text style={detailText}>{paymentTerm.name}</Text>
                       </Column>
                     </Row>
                   )}
                   <Row>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Order ID
                       </Text>
-                      <Text>{getPurchaseOrderDisplayId(purchaseOrder)}</Text>
+                      <Text style={detailText}>
+                        {getPurchaseOrderDisplayId(purchaseOrder)}
+                      </Text>
                     </Column>
                     <Column>
                       <Text
-                        className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={`${themeClasses.mutedText} uppercase`}
+                        style={{
+                          ...labelText,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         Requested Date
                       </Text>
-                      <Text>
+                      <Text style={detailText}>
                         {purchaseOrder.receiptRequestedDate
                           ? formatDate(
                               purchaseOrder.receiptRequestedDate,
@@ -194,49 +210,49 @@ const PurchaseOrderEmail = ({
                   </Row>
                 </Section>
               </Column>
-              <Column className="p-5" colSpan={2}>
+              <Column className="p-5 align-top" colSpan={2}>
                 <Text
-                  className={`${themeClasses.mutedText} uppercase text-[10px]`}
-                  style={{ color: lightStyles.mutedText.color }}
+                  className={`${themeClasses.mutedText} uppercase`}
+                  style={{ ...labelText, color: lightStyles.mutedText.color }}
                 >
                   Ship To
                 </Text>
                 {dropShipment ? (
                   <>
-                    <Text>{customerName}</Text>
+                    <Text style={detailText}>{customerName}</Text>
                     {customerAddressLine1 && (
-                      <Text>{customerAddressLine1}</Text>
+                      <Text style={detailText}>{customerAddressLine1}</Text>
                     )}
                     {customerAddressLine2 && (
-                      <Text>{customerAddressLine2}</Text>
+                      <Text style={detailText}>{customerAddressLine2}</Text>
                     )}
-                    <Text>
+                    <Text style={detailText}>
                       {formatCityStatePostalCode(
                         customerCity,
                         customerStateProvince,
                         customerPostalCode
                       )}
                     </Text>
-                    <Text>{customerCountryName}</Text>
+                    <Text style={detailText}>{customerCountryName}</Text>
                   </>
                 ) : (
                   <>
-                    <Text>{company.name}</Text>
-                    <Text>{deliveryName}</Text>
+                    <Text style={detailText}>{company.name}</Text>
+                    <Text style={detailText}>{deliveryName}</Text>
                     {deliveryAddressLine1 && (
-                      <Text>{deliveryAddressLine1}</Text>
+                      <Text style={detailText}>{deliveryAddressLine1}</Text>
                     )}
                     {deliveryAddressLine2 && (
-                      <Text>{deliveryAddressLine2}</Text>
+                      <Text style={detailText}>{deliveryAddressLine2}</Text>
                     )}
-                    <Text>
+                    <Text style={detailText}>
                       {formatCityStatePostalCode(
                         deliveryCity,
                         deliveryStateProvince,
                         deliveryPostalCode
                       )}
                     </Text>
-                    <Text>{deliveryCountryName}</Text>
+                    <Text style={detailText}>{deliveryCountryName}</Text>
                   </>
                 )}
               </Column>
@@ -244,40 +260,41 @@ const PurchaseOrderEmail = ({
           </Section>
           <Section className="mt-8 mb-4">
             <Text
-              className={`${themeClasses.mutedText} uppercase text-[10px] pl-5`}
-              style={{ color: lightStyles.mutedText.color }}
+              className={`${themeClasses.mutedText} uppercase`}
+              style={{ ...labelText, color: lightStyles.mutedText.color }}
             >
               Purchase Order Lines
             </Text>
           </Section>
           <Section>
             {purchaseOrderLines.map((line) => (
-              <Row key={line.id} className="mb-2.5 pl-5">
+              <Row key={line.id} className="mb-2.5">
                 <Column>
-                  <Text className="text-xs font-semibold">
-                    {getLineDescription(line)}
-                  </Text>
+                  <Text style={lineTitle}>{getLineDescription(line)}</Text>
                   {getLineDescriptionDetails(line)
                     ?.split("\n")
                     .map((l, i) => (
                       <Text
                         key={i}
-                        className={`text-xs ${themeClasses.mutedText}`}
-                        style={{ color: lightStyles.mutedText.color }}
+                        className={themeClasses.mutedText}
+                        style={{
+                          ...lineDetail,
+                          color: lightStyles.mutedText.color
+                        }}
                       >
                         {l}
                       </Text>
                     ))}
                 </Column>
-                <Column className="text-right pr-5 align-top w-[100px]">
-                  <Text className="text-xs font-semibold">
+                <Column className="text-right align-top w-[100px]">
+                  <Text style={lineTitle}>
                     {line.purchaseOrderLineType === "Comment"
                       ? ""
                       : `(${line.purchaseQuantity} ${line.purchaseUnitOfMeasureCode})`}
                   </Text>
                 </Column>
-                <Column className="text-right pr-5 align-top w-[100px]">
-                  <Text className="text-xs font-semibold">
+                <Column className="text-right align-top w-[100px]">
+                  <Text style={lineTitle}>
                     {line.purchaseOrderLineType === "Comment"
                       ? "-"
                       : // `formatter` is the SUPPLIER's currency (above), and
@@ -307,7 +324,7 @@ const PurchaseOrderEmail = ({
                 </Text>
               </Column>
               <Column className="border-l border-gray-200 h-12"></Column>
-              <Column className="w-[90px] pr-5">
+              <Column className="w-[90px]">
                 <Text className="text-base font-semibold whitespace-nowrap">
                   {formatter.format(
                     getTotal(purchaseOrderLines) +
@@ -339,7 +356,7 @@ const PurchaseOrderEmail = ({
               </Column>
             </Row>
           </Section>
-        </Container>
+        </DocumentCard>
       </Body>
     </EmailThemeProvider>
   );

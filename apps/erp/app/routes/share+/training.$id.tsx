@@ -55,10 +55,13 @@ import {
 } from "react-router";
 import {
   getTrainingAssignmentForCompletion,
-  TrainingGuideViewer
-} from "~/modules/resources";
-import { recordTrainingCompletion } from "~/modules/resources/resources.server";
+  recordTrainingCompletion
+} from "~/modules/resources/resources.service";
 import type { TrainingQuestion } from "~/modules/resources/types";
+import {
+  TrainingGuideViewer,
+  TrainingVideoPlayer
+} from "~/modules/resources/ui";
 
 const logger = getLogger("erp", "share", "training");
 
@@ -149,7 +152,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       frequency: training.frequency,
       type: training.type,
       estimatedDuration: training.estimatedDuration,
-      guidePath: training.guidePath
+      guidePath: training.guidePath,
+      videoUrl: training.videoUrl
     },
     questions: sortedQuestions,
     userId,
@@ -531,6 +535,7 @@ function ContentStep({
     content: unknown;
     estimatedDuration: string | null;
     guidePath: string | null;
+    videoUrl: string | null;
   };
 }) {
   const hasContent =
@@ -559,9 +564,11 @@ function ContentStep({
         </div>
       )}
 
-      {/* A training's content is either its PDF guide or written text. */}
+      {/* A training's content is its PDF guide, its video or written text. */}
       {training.guidePath ? (
         <TrainingGuideViewer guidePath={training.guidePath} />
+      ) : training.videoUrl ? (
+        <TrainingVideoPlayer videoUrl={training.videoUrl} />
       ) : htmlContent ? (
         <div
           className="prose dark:prose-invert max-w-none w-full"

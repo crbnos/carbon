@@ -14,6 +14,9 @@ vi.mock("nodemailer", () => ({
 // The real @carbon/env throws at import on unrelated required vars; mirror just
 // the SMTP accessors, reading process.env lazily so vi.stubEnv applies.
 vi.mock("@carbon/env", () => ({
+  get SINGLE_TENANT() {
+    return process.env.TENANT_TYPE === "single";
+  },
   get SMTP_FROM() {
     return process.env.SMTP_FROM || undefined;
   },
@@ -154,6 +157,28 @@ describe("sendEmail", () => {
     expect(createTransport).toHaveBeenCalledWith(
       expect.objectContaining({ host: "mail.example.com" })
     );
+  });
+
+  it("reports server mail as configured by SMTP_HOST only", async () => {
+    vi.stubEnv("TENANT_TYPE", "single");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
+    // The legacy shared Resend account never carries companies' documents.
+    vi.stubEnv("RESEND_API_KEY", "re_123");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
+    vi.stubEnv("RESEND_API_KEY", "");
+    vi.stubEnv("SMTP_HOST", "mail.example.com");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(true);
+  });
+
+  it("offers server mail only on a single-tenant deployment", async () => {
+    // Multi-tenant (Carbon Cloud, and the default): the server's mail is
+    // Carbon's, shared by every customer.
+    vi.stubEnv("SMTP_HOST", "mail.example.com");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
+    vi.stubEnv("TENANT_TYPE", "multi");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(false);
+    vi.stubEnv("TENANT_TYPE", "single");
+    expect((await loadMailer()).SERVER_MAIL_CONFIGURED).toBe(true);
   });
 
   it("no-ops without error when nothing is configured", async () => {

@@ -80,14 +80,13 @@
     },
     "//#generate:mcp": {
       "inputs": [
-        "apps/erp/app/modules/**/*.ts",
+        "apps/erp/app/modules/**",
+        "apps/erp/app/components/TreeView/**",
+        "apps/erp/app/services/**",
         "apps/erp/app/types/**",
         "apps/erp/app/utils/**",
-        "apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts",
-        "apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts",
         "apps/erp/tsconfig.json",
-        "packages/{account,api,database,documents,files,locale,logger,notifications,printing,server-functions,utils}/src/**",
-        "packages/database/supabase/migrations/**",
+        "packages/{account,api,auth,database,documents,ee,env,files,form,jobs,kv,lib,locale,logger,notifications,onboarding,planning,printing,react,stripe,utils}/src/**",
         "scripts/generate-mcp.ts",
         "scripts/lib/**"
       ],

@@ -10,7 +10,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { operationTypes, standardFactorType } from "../shared";
+import { operationTypes, standardFactorType } from "../shared/shared.models";
 
 // Batch compatibility rule levels — mirrors BatchRuleLevel in @carbon/utils.
 // A tuple literal is needed for z.enum; kept in sync with BATCH_RULE_DIMENSIONS.
@@ -433,6 +433,45 @@ export function isValidTrainingGuideKey(key: string, prefix: string) {
   if (!key.startsWith(prefix) || isUnsafeStoragePath(key)) return false;
   const segments = key.slice(prefix.length).split("/");
   return segments.length === 2 && segments.every((segment) => segment !== "");
+}
+
+const YOUTUBE_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "m.youtube.com",
+  "music.youtube.com",
+  "youtube-nocookie.com",
+  "www.youtube-nocookie.com"
+]);
+const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
+
+// The video id of a YouTube link: watch, youtu.be, shorts, live and embed
+// links. Null for anything else, so the server can refuse it.
+export function getYouTubeVideoId(url: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(url.trim());
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+
+  const host = parsed.hostname.toLowerCase();
+  const segments = parsed.pathname.split("/").filter(Boolean);
+  let id: string | null | undefined = null;
+  if (host === "youtu.be") {
+    id = segments[0];
+  } else if (YOUTUBE_HOSTS.has(host)) {
+    if (segments[0] === "watch") id = parsed.searchParams.get("v");
+    else if (["shorts", "live", "embed", "v"].includes(segments[0] ?? ""))
+      id = segments[1];
+  }
+  return id && YOUTUBE_VIDEO_ID.test(id) ? id : null;
+}
+
+// A training's video is stored as the canonical watch link.
+export function youTubeWatchUrl(videoId: string) {
+  return `https://www.youtube.com/watch?v=${videoId}`;
 }
 
 export function trainingCertificateKeyPrefix(

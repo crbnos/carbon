@@ -62,54 +62,6 @@ export function documentHasImages(
   return traverse(content);
 }
 
-export const textToTiptap = (text: string) => {
-  const lines = text.split("\n");
-  const content = lines.map((line) =>
-    // ProseMirror text nodes cannot be empty, so blank lines become a bare paragraph
-    line === ""
-      ? { type: "paragraph" }
-      : { type: "paragraph", content: [{ type: "text", text: line }] }
-  );
-  return { type: "doc", content };
-};
-
-/**
- * Convert a Tiptap JSON document to plain text (inverse of textToTiptap).
- * Block nodes become newline-separated lines; marks and non-text inline
- * content are dropped.
- */
-export function tiptapToText(doc: JSONContent | null | undefined): string {
-  if (!doc || !doc.content) return "";
-
-  function inlineText(node: JSONContent): string {
-    if (node.type === "text") return node.text ?? "";
-    if (node.type === "hardBreak") return "\n";
-    if (node.content) return node.content.map(inlineText).join("");
-    return "";
-  }
-
-  function blockText(node: JSONContent): string[] {
-    switch (node.type) {
-      case "bulletList":
-      case "orderedList":
-      case "blockquote":
-        return (node.content ?? []).flatMap(blockText);
-      case "listItem":
-        return (node.content ?? []).flatMap(blockText);
-      case "horizontalRule":
-        return [];
-      default:
-        return [node.content ? node.content.map(inlineText).join("") : ""];
-    }
-  }
-
-  return doc.content
-    .flatMap(blockText)
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
 /**
  * Convert a Tiptap JSON document to an HTML string.
  * Works server-side without DOM dependencies.
@@ -192,7 +144,7 @@ function tiptapInlineToHTML(node: JSONContent): string {
   return "";
 }
 
-function escapeHTMLChars(str: string): string {
+export function escapeHTMLChars(str: string): string {
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

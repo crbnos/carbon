@@ -2,13 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
-import { ValidatedForm, validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
+import { ValidatedForm, validator } from "@carbon/form";
 import {
   Button,
   Copy,
@@ -23,114 +19,30 @@ import {
   useCloseRoute,
   VStack
 } from "@carbon/react";
-import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useNavigate } from "react-router";
 import { Input, Location, Submit } from "~/components/Form";
 import { useUser } from "~/hooks";
 import { createOperatorValidator } from "~/modules/users/users.models";
-import { createConsoleOperator } from "~/modules/users/users.server";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "operators-new");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, { create: "users" });
   return null;
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "users"
-  });
-
-  const validation = await validator(createOperatorValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(createOperatorValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.users.addConsoleOperator(input.data);
+  // The PIN is generated on the server and stored only as a hash; the result
+  // carries it so the modal can show it to the admin exactly once.
+  if (result.error) {
+    return respond(args.request, result).redirect(path.to.operators);
   }
-
-  const { firstName, lastName, locationId } = validation.data;
-
-  // Auto-assign Console Operator employee type
-  const serviceRole = getCarbonServiceRole();
-  const operatorType = await serviceRole
-    .from("employeeType")
-    .select("id")
-    .eq("companyId", companyId)
-    .eq("systemType", "Console Operator")
-    .single();
-
-  if (operatorType.error || !operatorType.data) {
-    throw redirect(
-      path.to.operators,
-      await flash(
-        request,
-        error(
-          null,
-          "Console Operator employee type not found. Run the migration."
-        )
-      )
-    );
-  }
-
-  const result = await createConsoleOperator(client, {
-    firstName,
-    lastName,
-    employeeType: operatorType.data.id,
-    locationId,
-    companyId,
-    createdBy: userId
-  });
-
-  if (!result.success) {
-    throw redirect(
-      path.to.operators,
-      await flash(
-        request,
-        error(result, result.message ?? "Failed to create console operator")
-      )
-    );
-  }
-
-  // The PIN is generated HERE, on the server, and stored only as a hash — the
-  // action returns it so the modal can show it to the admin exactly once.
-  const pin = generateConsolePin();
-  try {
-    await setEmployeePin(getDatabaseClient(), {
-      employeeId: result.userId,
-      companyId,
-      pin,
-      updatedBy: userId
-    });
-  } catch (err) {
-    logger.error("Failed to set PIN for operator", {
-      companyId,
-      operatorId: result.userId,
-      error: err
-    });
-    await updateSubscriptionQuantityForCompany(companyId);
-    throw redirect(
-      path.to.operators,
-      await flash(
-        request,
-        error(
-          err,
-          "Operator created, but the PIN could not be set. Use Reset PIN."
-        )
-      )
-    );
-  }
-
-  await updateSubscriptionQuantityForCompany(companyId);
-
-  return { success: true as const, pin, name: result.name };
+  return result;
 }
 
 export default function NewOperatorRoute() {
@@ -140,7 +52,9 @@ export default function NewOperatorRoute() {
   const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<typeof action>();
   const created =
-    formFetcher.data && "pin" in formFetcher.data ? formFetcher.data : null;
+    formFetcher.data && "data" in formFetcher.data
+      ? formFetcher.data.data
+      : null;
 
   return (
     <Modal

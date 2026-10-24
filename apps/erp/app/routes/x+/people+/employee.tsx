@@ -13,9 +13,9 @@ import {
   getAttributeCategories,
   getPeople,
   getShiftsList
-} from "~/modules/people";
+} from "~/modules/people/people.service";
 import { PeopleTable } from "~/modules/people/ui/People";
-import { getEmployeeTypes } from "~/modules/users";
+import { getEmployeeTypes } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

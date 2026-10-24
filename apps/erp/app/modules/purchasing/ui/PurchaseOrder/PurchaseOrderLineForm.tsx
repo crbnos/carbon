@@ -75,21 +75,22 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import {
-  EACH_UNIT_OF_MEASURE_CODE,
-  getSupplierPartPricing
-} from "~/modules/items";
-import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.models";
+import type {
+  PurchaseOrder,
+  PurchaseOrderLine
+} from "~/modules/purchasing/types";
 import {
-  type ItemType,
   itemType,
-  resolveSupplierPrice,
   type SupplierPartPricing
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
+import type { ItemType } from "~/modules/shared/types";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";

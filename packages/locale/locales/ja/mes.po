@@ -272,6 +272,9 @@ msgstr "戻る"
 msgid "Back to batch"
 msgstr "バッチへ戻る"
 
+msgid "Back to ERP"
+msgstr "ERP へ戻る"
+
 msgid "Background"
 msgstr "背景"
 
@@ -283,6 +286,9 @@ msgstr "バッチ詳細"
 
 msgid "Batch is not available"
 msgstr "バッチは利用可能ではありません"
+
+msgid "Batch notes"
+msgstr "バッチメモ"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -299,12 +305,6 @@ msgstr "バッチ合計"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "{0}から{1} {2}まで"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1109,11 +1109,11 @@ msgstr "その他のオプション"
 msgid "Move column: {0}"
 msgstr "カラムを移動: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "{maxValue} {unitOfMeasureCode} 未満である必要があります"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "{minValue} {unitOfMeasureCode} 以上である必要があります"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "{minValue} {unitOfMeasureCode} より大きい必要があります"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "{maxValue} {unitOfMeasureCode} 以下である必要があります"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "{minValue} から {maxValue} {unitOfMeasureCode} の間である必要があります"
@@ -1470,6 +1470,9 @@ msgstr "ピン留めまたはピン留め解除"
 msgid "Pin Out"
 msgstr "ピンアウト"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ピンチまたはスクロールで拡大縮小 · ドラッグで移動 · ダブルタップでリセット"
+
 msgid "Planned"
 msgstr "計画済み"
 
@@ -1582,6 +1585,9 @@ msgstr "一部を記録"
 
 msgid "Recorded"
 msgstr "記録済"
+
+msgid "Reference image"
+msgstr "参照画像"
 
 msgid "Registration failed"
 msgstr "登録に失敗しました"
@@ -1859,6 +1865,9 @@ msgstr "シャッフル"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインしてください。パスキーはFace ID、Touch ID、またはデバイスPINで保護されています。"
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
 
@@ -1876,6 +1885,9 @@ msgstr "サインアウト"
 
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
@@ -2180,6 +2192,9 @@ msgstr "更新"
 msgid "Updated {0}"
 msgstr "{0} に更新"
 
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "正常に更新されました"
 
@@ -2224,8 +2239,8 @@ msgstr "保全指示を表示"
 msgid "View or open"
 msgstr "表示または開く"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "アカウントにサインインするためのマジックリンクをお送りしました。"
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"

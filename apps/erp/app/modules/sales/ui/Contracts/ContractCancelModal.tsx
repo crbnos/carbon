@@ -19,7 +19,6 @@ import {
   useDebounce,
   VStack
 } from "@carbon/react";
-import type { ContractCancellationPreview } from "@carbon/server-functions/post-customer-contract";
 import { currentPeriodEnd } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
@@ -33,6 +32,7 @@ import {
   TextArea
 } from "~/components/Form";
 import { useCompanyToday, useCurrencyFormatter, usePermissions } from "~/hooks";
+import type { ContractCancellationPreview } from "~/modules/sales/sales.service";
 import { customerContractCancelValidator } from "../../sales.models";
 import { toContractTerms } from "./contractTerms";
 import type { Contract } from "./types";

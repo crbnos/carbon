@@ -4,12 +4,16 @@
 
 import type { ManifestEntry } from "@carbon/api";
 import {
+  closestToolNames,
   deriveNameDescription,
   formatParamSummary,
+  formatSchemaType,
+  formatSearchResults,
   formatToolDescription,
   getServerInstructions,
   MCP_DEFAULT_LIMIT,
-  paginatingSibling
+  paginatingSibling,
+  searchLineDescription
 } from "@carbon/ee/mcp";
 import { describe, expect, test } from "vitest";
 import toolMetadata from "./tool-metadata.json";
@@ -19,13 +23,9 @@ const baseTool: ManifestEntry = {
   module: "sales",
   classification: "READ",
   description: "get customer",
-  paramCount: 1,
-  serviceParams: ["client", "id"],
-  contextParams: { client: "client" },
-  injectAuth: ["companyId"],
-  resultShape: "envelope",
   permission: { module: "sales", actions: ["view"] },
   paginates: true,
+  serviceFn: { path: ["sales", "getCustomer"] },
   schema: {
     type: "object",
     properties: {
@@ -68,11 +68,16 @@ describe("formatParamSummary", () => {
 describe("formatToolDescription", () => {
   test("prints the full contract including the response schema", () => {
     const text = formatToolDescription(baseTool, { isList: false });
-    expect(text).toContain("Tool: sales_getCustomer");
-    expect(text).toContain("Permission: sales_view");
-    expect(text).toContain("Input Schema:\n{");
+    expect(text.split("\n").slice(0, 3)).toEqual([
+      "sales_getCustomer [READ]",
+      "get customer",
+      "Permission: sales_view"
+    ]);
     expect(text).toContain(
-      "Response Schema (null fields are omitted from results):"
+      "Input: { id: string; includeContacts?: boolean; status?: string }"
+    );
+    expect(text).toContain(
+      "Returns (null fields are omitted): { id?: string; name?: string }"
     );
     expect(text).not.toContain("List operation:");
   });
@@ -116,7 +121,144 @@ describe("formatToolDescription", () => {
       { ...baseTool, responseSchema: undefined },
       { isList: false }
     );
-    expect(text).not.toContain("Response Schema");
+    expect(text).not.toContain("Returns");
+  });
+});
+
+describe("formatSchemaType", () => {
+  test("renders nullable, enum, array and nested object types", () => {
+    expect(
+      formatSchemaType({
+        type: ["array", "null"],
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            status: { type: "string", enum: ["Draft", "Posted"] },
+            tags: { type: "array", items: { type: "string" } },
+            lines: {
+              type: "array",
+              items: { anyOf: [{ type: "string" }, { type: "number" }] }
+            },
+            "odd-key": { type: "integer" },
+            note: { type: ["string", "null"], description: "free text" }
+          },
+          required: ["id", "status"],
+          additionalProperties: {}
+        }
+      })
+    ).toBe(
+      '{ id: string; status: "Draft" | "Posted"; tags?: string[]; lines?: (string | number)[]; "odd-key"?: number; note?: string | null /* free text */ }[] | null'
+    );
+  });
+
+  test("renders records, empty schemas and bare objects", () => {
+    expect(
+      formatSchemaType({
+        type: "object",
+        additionalProperties: { type: "number" }
+      })
+    ).toBe("Record<string, number>");
+    expect(formatSchemaType({})).toBe("unknown");
+    expect(formatSchemaType({ type: "object" })).toBe("object");
+  });
+
+  test("is far shorter than the JSON Schema across the manifest", () => {
+    let json = 0;
+    let typed = 0;
+    for (const tool of toolMetadata.tools as unknown as ManifestEntry[]) {
+      for (const schema of [tool.schema, tool.responseSchema]) {
+        if (!schema) continue;
+        json += JSON.stringify(schema).length;
+        typed += formatSchemaType(schema).length;
+      }
+    }
+    expect(typed).toBeLessThan(json / 2);
+  });
+});
+
+describe("formatSearchResults", () => {
+  const tool = (
+    name: string,
+    description: string,
+    classification: ManifestEntry["classification"] = "READ"
+  ) => ({ ...baseTool, name, description, classification });
+
+  test("lists tools in rank order, one line each, with the next page", () => {
+    const text = formatSearchResults(
+      [
+        tool("sales_getCustomer", "get customer"),
+        tool("inventory_postReceipt", "Post a receipt.", "WRITE"),
+        tool(
+          "sales_deleteCustomer",
+          "Remove a customer and its contacts.",
+          "DESTRUCTIVE"
+        )
+      ],
+      40,
+      0
+    );
+    expect(text.split("\n")).toEqual([
+      "Found 40 tools, ranked by relevance (showing 1-3; next page: offset 3):",
+      "sales_getCustomer [READ] (id, +2 optional)",
+      "inventory_postReceipt [WRITE] (id, +2 optional)",
+      "sales_deleteCustomer [DESTRUCTIVE] (id, +2 optional) — Remove a customer and its contacts."
+    ]);
+  });
+
+  test("omits the page note when every match is shown", () => {
+    expect(formatSearchResults([tool("sales_getCustomer", "x")], 1, 0)).toBe(
+      "Found 1 tool, ranked by relevance:\nsales_getCustomer [READ] (id, +2 optional) — x"
+    );
+  });
+});
+
+describe("closestToolNames", () => {
+  const names = (toolMetadata.tools as unknown as ManifestEntry[]).map(
+    (tool) => tool.name
+  );
+
+  test("puts the real name first for a near-typo", () => {
+    expect(closestToolNames("inventory_getInventoryItem", names)[0]).toBe(
+      "inventory_getInventoryItems"
+    );
+    expect(closestToolNames("sales_getCustomr", names)[0]).toBe(
+      "sales_getCustomer"
+    );
+  });
+
+  test("suggests nothing for a name nowhere near a tool", () => {
+    expect(closestToolNames("weather_forecast", names)).toEqual([]);
+  });
+});
+
+describe("searchLineDescription", () => {
+  test("keeps the first paragraph of a long description", () => {
+    expect(
+      searchLineDescription({
+        name: "inventory_getSerialUnitCosts",
+        description: "Value an item's serial units on hand.\n\nWhat each unit…"
+      })
+    ).toBe("Value an item's serial units on hand.");
+  });
+
+  test("skips a description that restates the name", () => {
+    for (const [name, description] of [
+      ["sales_getCustomers", "get customers"],
+      ["inventory_getReceipt", "Get receipt."],
+      ["inventory_postReceipt", "Post a receipt."]
+    ]) {
+      expect(searchLineDescription({ name, description })).toBe(null);
+    }
+  });
+
+  test("keeps a description that says more than the name", () => {
+    expect(
+      searchLineDescription({
+        name: "invoicing_postPayment",
+        description: "Post a Draft payment."
+      })
+    ).toBe("Post a Draft payment.");
   });
 });
 

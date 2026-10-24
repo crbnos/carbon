@@ -21,7 +21,7 @@ import {
   MethodIcon,
   Table
 } from "~/components";
-import { getJobOperationAttachments } from "~/modules/production";
+import { getJobOperationAttachments } from "~/modules/production/production.service";
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
 import {
@@ -391,6 +391,9 @@ export default function CustomerPortal() {
           columns={columns}
           count={count ?? 0}
           compact
+          // Signed out: the export names ids from the signed-in company's
+          // lists, and there is no company here to read them from.
+          withCsvExport={false}
           defaultColumnPinning={defaultColumnPinning}
           sort={<PortalSort columns={sortableColumns} />}
         />

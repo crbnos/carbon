@@ -8,6 +8,7 @@ import type { HTMLAttributes, InputHTMLAttributes } from "react";
 import { cloneElement, createContext, forwardRef, useContext } from "react";
 import * as ReactAria from "react-aria-components";
 
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 import { getValidChildren } from "./utils/react";
 import { usePhoneAutoFocus } from "./Viewport";
@@ -58,7 +59,7 @@ const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(
   (
     {
       className,
-      isInvalid = false,
+      isInvalid: isInvalidProp,
       isDisabled = false,
       insetRing,
       size,
@@ -67,6 +68,7 @@ const InputGroup = forwardRef<HTMLDivElement, InputGroupProps>(
     },
     ref
   ) => {
+    const { isInvalid } = useFormControl({ isInvalid: isInvalidProp });
     const validChildren = getValidChildren(children);
 
     const _children = validChildren.map((child, index) => {
@@ -196,7 +198,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       size,
       isFirstChild = true,
       isLastChild = true,
-      isInvalid = false,
+      isInvalid: isInvalidProp,
       isDisabled,
       isReadOnly = false,
       borderless = false,
@@ -206,6 +208,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     ref
   ) => {
     const isInputGroup = useContext(InputGroupContext) ?? false;
+    const { isInvalid, ariaProps } = useFormControl({
+      ...props,
+      isInvalid: isInvalidProp
+    });
     const disabled = isDisabled ?? props.disabled ?? false;
     const autoFocus = usePhoneAutoFocus(props.autoFocus);
 
@@ -225,6 +231,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         {...props}
+        {...ariaProps}
         autoFocus={autoFocus}
         // Explicit disabled must survive the spread; it was being overwritten.
         disabled={disabled}

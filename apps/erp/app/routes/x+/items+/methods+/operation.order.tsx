@@ -2,60 +2,32 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { success } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateOperationOrder } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "parts"
-  });
+// The list posts its new order as one JSON field: row id → position.
+const order = z.object({
+  updates: zfd.json(z.record(z.string(), z.coerce.number()))
+});
 
-  const updateMap = (await request.formData()).get("updates") as string;
-  if (!updateMap) {
-    return data(
-      {},
-      await flash(request, error(null, "Failed to receive a new sort order"))
-    );
-  }
-
-  const updates = Object.entries(JSON.parse(updateMap)).map(
-    ([id, orderString]) => ({
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(order).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.items.updateOperationOrder({
+    updates: Object.entries(input.data.updates).map(([id, position]) => ({
       id,
-      order: Number(orderString),
-      updatedBy: userId
-    })
-  );
-
-  // Release-lock gate: enforce -> block; warn -> proceed + flash; off -> no-op.
-  // All operations in a reorder share one make method, so resolve from the first.
-  const lock = await checkRevisionLock(client, {
-    kind: "operation",
-    id: updates[0]?.id,
-    companyId
+      order: position
+    }))
   });
-  if (!lock.ok) {
-    return data({}, await flash(request, error(null, lock.message)));
+  if (result.data?.notice) {
+    return data(result, await flash(args.request, success(result.data.notice)));
   }
-
-  const updateSortOrders = await updateOperationOrder(client, updates);
-  if (updateSortOrders.some((update) => update.error))
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateSortOrders, "Failed to update sort order")
-      )
-    );
-
-  if (lock.warn) {
-    return data(null, await flash(request, success(lock.message)));
-  }
-
-  return null;
+  return result;
 }

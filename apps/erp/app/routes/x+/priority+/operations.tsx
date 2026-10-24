@@ -52,7 +52,7 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams, useUser } from "~/hooks";
-import { getActiveJobOperationsByLocation } from "~/modules/production";
+import { getActiveJobOperationsByLocation } from "~/modules/production/production.service";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 import type {
   BatchItem,
@@ -67,9 +67,11 @@ import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/Sche
 import {
   getProcessesList,
   getWorkCentersByLocation
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
-import { resolveLocationId } from "~/modules/shared/location.server";
+} from "~/modules/resources/resources.service";
+import {
+  getTagsList,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";

@@ -33,7 +33,7 @@ import {
   useUser
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import { accountLabel, useAccountsById } from "./ActivationSteps";
 

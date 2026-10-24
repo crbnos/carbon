@@ -272,6 +272,9 @@ msgstr "वापस"
 msgid "Back to batch"
 msgstr "बैच पर वापस"
 
+msgid "Back to ERP"
+msgstr "ERP पर वापस"
+
 msgid "Background"
 msgstr "पृष्ठभूमि"
 
@@ -283,6 +286,9 @@ msgstr "बैच विवरण"
 
 msgid "Batch is not available"
 msgstr "बैच उपलब्ध नहीं है"
+
+msgid "Batch notes"
+msgstr "बैच नोट्स"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -299,12 +305,6 @@ msgstr "बैच कुल"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "{0} और {1} के बीच {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1109,11 +1109,11 @@ msgstr "अधिक विकल्प"
 msgid "Move column: {0}"
 msgstr "कॉलम को स्थानांतरित करें: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "{maxValue} {unitOfMeasureCode} से कम होना चाहिए"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "कम से कम {minValue} {unitOfMeasureCode} होना चाहिए"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "{minValue} से अधिक होना चाहिए {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "अधिकतम {maxValue} {unitOfMeasureCode} होना चाहिए"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "{minValue} और {maxValue} के बीच होना चाहिए {unitOfMeasureCode}"
@@ -1470,6 +1470,9 @@ msgstr "पिन करें या अनपिन करें"
 msgid "Pin Out"
 msgstr "पिन आउट"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ज़ूम करने के लिए पिंच या स्क्रॉल करें · खिसकाने के लिए खींचें · रीसेट करने के लिए दो बार टैप करें"
+
 msgid "Planned"
 msgstr "नियोजित"
 
@@ -1582,6 +1585,9 @@ msgstr "आंशिक रिकॉर्ड करें"
 
 msgid "Recorded"
 msgstr "रिकॉर्ड किया गया"
+
+msgid "Reference image"
+msgstr "संदर्भ छवि"
 
 msgid "Registration failed"
 msgstr "पंजीकरण विफल"
@@ -1859,6 +1865,9 @@ msgstr "शफल करें"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स से साइन इन करें। पासकी को Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित किया जाता है।"
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
 
@@ -1876,6 +1885,9 @@ msgstr "साइन आउट"
 
 msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
@@ -2180,6 +2192,9 @@ msgstr "अपडेट करें"
 msgid "Updated {0}"
 msgstr "अपडेट किया गया {0}"
 
+msgid "Updated avatar"
+msgstr ""
+
 msgid "Updated successfully"
 msgstr "सफलतापूर्वक अपडेट किया गया"
 
@@ -2224,8 +2239,8 @@ msgstr "रखरखाव कार्य देखें"
 msgid "View or open"
 msgstr "देखें या खोलें"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"

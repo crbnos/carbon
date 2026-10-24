@@ -224,6 +224,11 @@ type JobOperationProps = {
   >;
 };
 
+/**
+ * The operator's screen for one job operation. When the operation is in a
+ * released batch, the same screen runs the batch: its details, timer and
+ * completion.
+ */
 export const JobOperation = ({
   batch,
   batchMaterialTotals,
@@ -1259,6 +1264,18 @@ export const JobOperation = ({
                         <Trans>Back to batch</Trans>
                       </Button>
                     </div>
+                    {/* Member links land here, so the planner's notes
+                        follow the operator out of the batch view. */}
+                    {batch.notes?.trim() && (
+                      <div className="mt-3 border-t pt-3">
+                        <p className="font-medium text-foreground">
+                          <Trans>Batch notes</Trans>
+                        </p>
+                        <p className="whitespace-pre-wrap break-words">
+                          {batch.notes}
+                        </p>
+                      </div>
+                    )}
                   </AlertDescription>
                 </Alert>
               </div>

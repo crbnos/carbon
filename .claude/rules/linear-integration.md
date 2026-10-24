@@ -36,9 +36,9 @@ type, not just `action`.
   `mapLinearStatusToCarbonStatus` / `mapCarbonStatusToLinearStatus`. `started`→"In
   Progress", `completed`→"Completed", `canceled`→"Skipped", else (triage/backlog/todo/
   unstarted)→"Pending".
-- **Rich text:** `lib/richtext.ts` — `markdownToTiptap` / `tiptapToMarkdown`
-  (+ `tiptapDocumentsEqual`, `isTiptapEmpty`). Linear description (markdown) ↔ Carbon
-  task `notes` (Tiptap JSON).
+- **Rich text:** `TiptapText` (`@carbon/files/markdown`) — `TiptapText(description).toDocument()`
+  reads a Linear description (Markdown) into Carbon task `notes` (Tiptap JSON);
+  `TiptapText(notes).toMarkdown()` writes it back.
 - **Types:** `lib/types.ts` — `LinearIssueSchema` (zod): `id, title, description?, url,
   state{name,color,type}, identifier, dueDate?, assignee{email}?`.
 
@@ -88,6 +88,9 @@ actionId)` looks up by **`entityId`** (the action id, despite the name) and pars
 
 ## Outbound: Carbon → Linear
 
+- The POST/DELETE writes below are operations in `apps/erp/app/modules/shared/shared.server.ts`
+  (`createLinearIssue` / `linkLinearIssue` / `unlinkLinearIssue`, `shared.server.ts`), gated on the task's module
+  (`actionTaskPermissions`) and refused on a change notice whose workflow is locked.
 - **Link existing** `api+/integrations.linear.issue.link.ts`: GET search issues; POST
   link `{actionId, issueId}` (map assignee email→user, link, create back-link attachment
   to `/x/issue/{nonConformanceId}/details`); DELETE unlink + best-effort remove the
@@ -95,7 +98,7 @@ actionId)` looks up by **`entityId`** (the action id, despite the name) and pars
 - **Create new** `api+/integrations.linear.issue.create.ts`: GET teams (+ team members
   filtered to matching Carbon employees when `?teamId`); POST create issue, link, attach.
 - **Sync notes** `api+/integrations.linear.issue.sync-notes.ts`: POST `{actionId, notes}`
-  → `tiptapToMarkdown` → `updateIssue({description})`.
+  → `TiptapText(notes).toMarkdown()` → `updateIssue({description})`.
 - **Notification service** `packages/ee/src/notifications/services/linear.ts`
   (`LinearNotificationService`, id `"linear"`, registered in
   `packages/ee/src/notifications/index.ts`). Reacts to events (`notifications/types.ts`):

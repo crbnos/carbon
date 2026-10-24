@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSupplierLocations } from "~/modules/purchasing";
+import { getSupplierLocations } from "~/modules/purchasing/purchasing.service";
 import SupplierLocations from "~/modules/purchasing/ui/Supplier/SupplierLocations";
 import { path } from "~/utils/path";
 

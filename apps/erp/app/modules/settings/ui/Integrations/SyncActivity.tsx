@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -26,7 +26,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -44,7 +45,7 @@ import {
   LuSend,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -288,7 +289,25 @@ export function SyncActivity({
   const [, setParams] = useUrlParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      const { count, to } = data;
+      if (to === "Skipped") {
+        toast.success(
+          count === 1
+            ? t`Skipped sync operation`
+            : t`Skipped ${count} sync operations`
+        );
+      } else {
+        toast.success(
+          count === 1
+            ? t`Queued sync operation for sync`
+            : t`Queued ${count} sync operations for sync`
+        );
+      }
+    }
+  });
   const isTransitioning = fetcher.state !== "idle";
 
   // The tab's data (operations, tie-out, reconciliation) lives in the

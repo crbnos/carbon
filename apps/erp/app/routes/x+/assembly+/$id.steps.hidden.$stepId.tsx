@@ -8,10 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  assemblyInstructionStepHiddenComponentsValidator,
-  updateAssemblyStepHiddenComponents
-} from "~/modules/production";
+import { assemblyInstructionStepHiddenComponentsValidator } from "~/modules/production/production.models";
+import { updateAssemblyStepHiddenComponents } from "~/modules/production/production.service";
 
 // Autosave target for the per-step hide controls; touches only the hidden list.
 export async function action({ request, params }: ActionFunctionArgs) {

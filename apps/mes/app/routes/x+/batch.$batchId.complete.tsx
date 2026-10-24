@@ -8,10 +8,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import {
   getJobOperationBatch,
@@ -22,9 +21,9 @@ const logger = getLogger("mes", "batch-complete");
 
 // A batch planned with a combined output merges every member's produced lot
 // into the planned lot number once completion lands. Parent ids are derived
-// SERVER-SIDE from membership: this route invokes `issue` with the SERVICE
-// ROLE, so the server fn's `inventory` check validates the service role rather
-// than the operator. A second call finds nothing (parents are Consumed), so a
+// SERVER-SIDE from membership: this route runs the `issue` posting with the
+// SERVICE ROLE, so its `inventory` check passes for the system rather than
+// for the operator. A second call finds nothing (parents are Consumed), so a
 // resume never double-merges.
 async function getPlannedMergeLots(
   serviceRole: Awaited<ReturnType<typeof getCarbonServiceRole>>,
@@ -77,8 +76,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Lot identity was planned at creation: a merged batch stamps its one lot
   // number on every member's output; otherwise each member keeps its own
   // planned number (null leaves the entity's readableId untouched, and the
-  // server fn refuses an output with no number at all).
-  // The server function is invoked with the service role, so the submitted
+  // posting refuses an output with no number at all).
+  // The posting runs with the service role, so the submitted
   // member ids must be this batch's members, and any tracked entity this
   // company's — one scoped query for the entity list.
   const memberIds = new Set(
@@ -127,9 +126,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // (phase 1, one txn), then issue each member's BOM + flip members Done + post GL
   // (phase 2, idempotent). A phase-2 failure leaves the batch 'Completing'; the
   // operator re-submitting this form re-invokes and resumes without double effects.
-  const completeResult = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("batch-operations", {
+  const completeResult = await erpPosting(
+    "batch-operations",
+    { companyId, userId },
+    {
       type: "complete",
       batchId,
       // An excluded ("not in this run") member detaches back to the schedule;
@@ -146,7 +146,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           excluded
         };
       })
-    });
+    }
+  );
 
   // "Already completed" is not a failure: a duplicate submit (double click,
   // a retry after a slow first attempt) means the work landed. Fall through to
@@ -184,13 +185,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
   if (mergeLots && mergeLots.length >= 2) {
-    const mergeResult = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("issue", {
+    const mergeResult = await erpPosting(
+      "issue",
+      { companyId, userId },
+      {
         type: "mergeTrackedEntities",
         trackedEntityIds: mergeLots,
         readableId: plannedLotNumber
-      });
+      }
+    );
     if (mergeResult.error) {
       return data(
         { completed: true },

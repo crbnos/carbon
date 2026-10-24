@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useRouteData } from "~/hooks";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { isChangeNoticeOpen } from "../../items.models";
 import type { ChangeNoticeForItem } from "../../items.service";

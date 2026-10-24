@@ -272,6 +272,9 @@ msgstr "Back"
 msgid "Back to batch"
 msgstr "Back to batch"
 
+msgid "Back to ERP"
+msgstr "Back to ERP"
+
 msgid "Background"
 msgstr "Background"
 
@@ -283,6 +286,9 @@ msgstr "Batch Details"
 
 msgid "Batch is not available"
 msgstr "Batch is not available"
+
+msgid "Batch notes"
+msgstr "Batch notes"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -299,12 +305,6 @@ msgstr "batch total"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Behind target by {daysBehindTarget} day(s)"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "Between {0} and {1} {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1109,11 +1109,11 @@ msgstr "More options"
 msgid "Move column: {0}"
 msgstr "Move column: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Must be < {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "Must be at least {minValue} {unitOfMeasureCode}"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Must be > {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "Must be at most {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
@@ -1470,6 +1470,9 @@ msgstr "Pin or unpin"
 msgid "Pin Out"
 msgstr "Pin Out"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+
 msgid "Planned"
 msgstr "Planned"
 
@@ -1582,6 +1585,9 @@ msgstr "Record Partial"
 
 msgid "Recorded"
 msgstr "Recorded"
+
+msgid "Reference image"
+msgstr "Reference image"
 
 msgid "Registration failed"
 msgstr "Registration failed"
@@ -1859,6 +1865,9 @@ msgstr "Shuffle"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
+msgid "Sign in with code"
+msgstr "Sign in with code"
+
 msgid "Sign in with Google"
 msgstr "Sign in with Google"
 
@@ -1876,6 +1885,9 @@ msgstr "Sign Out"
 
 msgid "Sign out instead"
 msgstr "Sign out instead"
+
+msgid "Sign-in code"
+msgstr "Sign-in code"
 
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
@@ -2180,6 +2192,9 @@ msgstr "Update"
 msgid "Updated {0}"
 msgstr "Updated {0}"
 
+msgid "Updated avatar"
+msgstr "Updated avatar"
+
 msgid "Updated successfully"
 msgstr "Updated successfully"
 
@@ -2224,8 +2239,8 @@ msgstr "View maintenance dispatch"
 msgid "View or open"
 msgstr "View or open"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "We've sent you a magic link to sign in to your account."
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"

@@ -27,6 +27,7 @@ import {
   generateHTML,
   hasOpenDialog,
   IconButton,
+  ImageZoomViewer,
   Modal,
   ModalBody,
   ModalContent,
@@ -92,7 +93,6 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigate, useSearchParams } from "react-router";
 import { TrackingTypeIcon } from "~/components/Icons";
-import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";
@@ -105,6 +105,7 @@ import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { useRealtime, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
+import { ownsLooseMaterial } from "~/services/step-backflush";
 import type {
   JobMaterial,
   JobOperationStep,
@@ -771,12 +772,17 @@ export function AssemblyView({
   // with NO step link are unassigned ("General") and show on the FIRST step only — loose
   // untracked parts are backflushed when the unit's first step is recorded, so that's
   // where the operator sees and handles them; repeating them on every step just buries
-  // the step-specific parts. Quantity and issuing live on the jobMaterial (the part), so
-  // a part on several assigned steps never multiplies the requirement.
+  // the step-specific parts. A General part on another operation shows on that
+  // operation's first step instead. Quantity and issuing live on the jobMaterial (the
+  // part), so a part on several assigned steps never multiplies the requirement.
   const stepNumberById = new Map(steps.map((s, i) => [s.id, i + 1] as const));
   const allMaterials: any[] = materials?.materials ?? [];
   const isGeneralMaterial = (m: any) =>
-    (m.jobOperationStepIds ?? []).length === 0;
+    (m.jobOperationStepIds ?? []).length === 0 &&
+    ownsLooseMaterial(
+      { jobOperationId: m.jobOperationId ?? null },
+      operationId
+    );
   const isOnCurrentStep = (m: any) =>
     step?.id != null && (m.jobOperationStepIds ?? []).includes(step.id);
   // Visible here = parts assigned to the current step, plus (first step only) the

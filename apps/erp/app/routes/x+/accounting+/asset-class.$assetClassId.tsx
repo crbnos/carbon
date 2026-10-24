@@ -10,13 +10,13 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { fixedAssetClassValidator } from "~/modules/accounting/accounting.models";
 import {
-  fixedAssetClassValidator,
   getFixedAssetClass,
   upsertFixedAssetClass
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import { AssetClassForm } from "~/modules/accounting/ui/FixedAssets";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

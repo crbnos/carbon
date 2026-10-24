@@ -33,7 +33,7 @@ import {
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";

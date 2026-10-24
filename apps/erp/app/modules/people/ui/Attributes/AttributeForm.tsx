@@ -26,7 +26,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { attributeValidator } from "../../people.models";
 

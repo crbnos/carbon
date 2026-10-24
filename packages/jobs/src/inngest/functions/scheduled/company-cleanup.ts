@@ -243,15 +243,12 @@ export async function deleteCompanies(
         continue;
       }
       // Outside the transaction: see `removeCompanyFiles`.
-      const failures = await removeCompanyFiles(serviceRole, company.id);
-      if (failures.length > 0) {
-        for (const failure of failures) {
-          logger.error("Failed to remove company {failurePart}", {
-            failurePart: failure.part,
-            ...company,
-            error: failure.error
-          });
-        }
+      const filesError = await removeCompanyFiles(serviceRole, company.id);
+      if (filesError) {
+        logger.error("Failed to remove company bucket", {
+          ...company,
+          error: filesError
+        });
         results.push({ id: company.id, deleted: false });
         continue;
       }

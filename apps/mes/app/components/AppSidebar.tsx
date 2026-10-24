@@ -29,6 +29,7 @@ import { useLingui } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
 import {
   LuActivity,
+  LuArrowLeft,
   LuArrowUpRight,
   LuCalendarDays,
   LuChevronsUpDown,
@@ -162,6 +163,7 @@ export function AppSidebar({
       }
       footer={
         <>
+          <BackToErpLink />
           {timeCard}
           <UserNav
             consoleEnabled={consoleEnabled}
@@ -263,6 +265,23 @@ function CompanyLink({ company }: { company: Company }) {
     >
       <Link to={ERP_URL} />
     </NavRailSwitcher>
+  );
+}
+
+/**
+ * A labelled way back to the ERP, in the same tab. Desktop and tablet only:
+ * on phones the company row at the top of the More sheet leads there.
+ */
+function BackToErpLink() {
+  const { t } = useLingui();
+
+  return (
+    <NavRailLink
+      to={ERP_URL}
+      icon={<LuArrowLeft />}
+      label={t`Back to ERP`}
+      external
+    />
   );
 }
 

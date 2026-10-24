@@ -9,11 +9,11 @@ import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { requiredActionValidator } from "~/modules/quality/quality.models";
 import {
   getRequiredAction,
-  requiredActionValidator,
   upsertRequiredAction
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
 import { path } from "~/utils/path";
 

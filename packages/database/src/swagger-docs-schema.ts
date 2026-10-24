@@ -96799,6 +96799,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.guidePath"
           },
           {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -96915,6 +96918,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.guidePath"
           },
           {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96983,6 +96989,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.training.guidePath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
           },
           {
             $ref: "#/parameters/body.training"
@@ -102403,6 +102412,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -102675,6 +102693,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -102899,6 +102926,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -106538,6 +106574,45 @@ export default {
         tags: ["(rpc) users_with_verified_mfa"]
       }
     },
+    "/rpc/rotate_webhook_signing_secret": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_webhook_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_webhook_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) rotate_webhook_signing_secret"]
+      }
+    },
     "/rpc/get_companies_with_employee_role": {
       get: {
         produces: [
@@ -109407,6 +109482,45 @@ export default {
           }
         },
         tags: ["(rpc) get_active_job_operations_by_location"]
+      }
+    },
+    "/rpc/get_webhook_signing_secret": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_webhook_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_webhook_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_webhook_signing_secret"]
       }
     },
     "/rpc/populate_company_search_index": {
@@ -112702,41 +112816,6 @@ export default {
         tags: ["(rpc) sync_create_supplier_org_group"]
       }
     },
-    "/rpc/populate_sales_search_results": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                p_company_id: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["p_company_id"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) populate_sales_search_results"]
-      }
-    },
     "/rpc/sync_add_customer_account_to_group": {
       post: {
         parameters: [
@@ -113973,6 +114052,45 @@ export default {
           }
         },
         tags: ["(rpc) sync_archive_other_procedures"]
+      }
+    },
+    "/rpc/delete_webhook_signing_secret": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_webhook_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_webhook_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) delete_webhook_signing_secret"]
       }
     },
     "/rpc/get_material_naming_details": {
@@ -125365,7 +125483,7 @@ export default {
           type: "string"
         },
         billingCycle: {
-          enum: ["Calendar Month", "28 Days"],
+          enum: ["Calendar Month", "28 Days", "Monthly"],
           format: 'public."rentalBillingCycle"',
           type: "string"
         },
@@ -128319,7 +128437,7 @@ export default {
         },
         billingCycle: {
           default: "Calendar Month",
-          enum: ["Calendar Month", "28 Days"],
+          enum: ["Calendar Month", "28 Days", "Monthly"],
           format: 'public."rentalBillingCycle"',
           type: "string"
         },
@@ -148530,15 +148648,7 @@ export default {
       type: "object"
     },
     notificationPreference: {
-      required: [
-        "id",
-        "userId",
-        "companyId",
-        "channel",
-        "topic",
-        "enabled",
-        "updatedAt"
-      ],
+      required: ["id", "userId", "channel", "topic", "enabled", "updatedAt"],
       properties: {
         id: {
           default: "public.xid()",
@@ -164231,6 +164341,10 @@ export default {
         guidePath: {
           format: "text",
           type: "string"
+        },
+        videoUrl: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -166680,7 +166794,10 @@ export default {
         "invoiceNotificationGroup",
         "leaseIncrementalBorrowingRate",
         "leaseShortTermExpedient",
-        "leaseReminderDays"
+        "leaseReminderDays",
+        "requireBackflushStorageUnit",
+        "preventNegativeBackflush",
+        "receiptQuantitiesStartAtZero"
       ],
       properties: {
         id: {
@@ -167068,6 +167185,21 @@ export default {
           default: 90,
           format: "integer",
           type: "integer"
+        },
+        requireBackflushStorageUnit: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        preventNegativeBackflush: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        receiptQuantitiesStartAtZero: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -219575,6 +219707,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.training.videoUrl": {
+      name: "videoUrl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.gauge": {
       name: "gauge",
       description: "gauge",
@@ -222653,6 +222791,24 @@ export default {
     },
     "rowFilter.companySettings.leaseReminderDays": {
       name: "leaseReminderDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireBackflushStorageUnit": {
+      name: "requireBackflushStorageUnit",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.preventNegativeBackflush": {
+      name: "preventNegativeBackflush",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.receiptQuantitiesStartAtZero": {
+      name: "receiptQuantitiesStartAtZero",
       required: false,
       in: "query",
       type: "string"

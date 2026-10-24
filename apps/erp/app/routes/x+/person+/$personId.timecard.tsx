@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -33,7 +32,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  toast
 } from "@carbon/react";
 import {
   datetime,
@@ -50,7 +50,7 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -61,24 +61,24 @@ import {
   LuTrash
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useLoaderData, useParams } from "react-router";
+import { Link, useLoaderData, useParams } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { DateTime } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import {
-  clockIn,
   clockInValidator,
-  clockOut,
   clockOutValidator,
-  deleteTimeCardEntry,
   deleteTimeCardEntryValidator,
-  getOpenClockEntry,
-  getTimeCardEntries,
-  updateTimeCardEntry,
   updateTimeCardEntryValidator
-} from "~/modules/people";
-import { getCompanySettings } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/people/people.models";
+import {
+  getOpenClockEntry,
+  getTimeCardEntries
+} from "~/modules/people/people.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 function formatDuration(clockIn: string, clockOut: string | null) {
@@ -178,121 +178,53 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "people"
+const timecardForm = z.discriminatedUnion("intent", [
+  clockInValidator,
+  clockOutValidator,
+  updateTimeCardEntryValidator,
+  deleteTimeCardEntryValidator,
+  z.object({
+    intent: z.literal("addEntry"),
+    clockIn: z.string().min(1),
+    clockOut: zfd.text(z.string().optional())
+  })
+]);
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(timecardForm).request(args, {
+    params: ["personId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { personId } = input.params;
+  const form = input.data;
+  const api = await carbon(args.request);
 
-  const { personId } = params;
-  if (!personId) throw new Error("No person ID provided");
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "clockIn") {
-    const validation = await validator(clockInValidator).validate(formData);
-    if (validation.error) return data({}, { status: 400 });
-
-    const employeeId = validation.data.employeeId || personId;
-    const result = await clockIn(client, {
-      employeeId,
-      companyId,
-      createdBy: userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, result.error.message))
-      );
-    }
-    return data({}, await flash(request, success("Clocked in")));
+  switch (form.intent) {
+    case "clockIn":
+      return api.people.clockInPerson({
+        employeeId: form.employeeId || personId
+      });
+    case "clockOut":
+      return api.people.clockOutPerson({
+        employeeId: form.employeeId || personId,
+        note: form.note
+      });
+    case "updateEntry":
+      return api.people.updatePersonTimeCardEntry({
+        entryId: form.entryId,
+        clockIn: form.clockIn,
+        clockOut: form.clockOut,
+        note: form.note
+      });
+    case "deleteEntry":
+      return api.people.deletePersonTimeCardEntry({ entryId: form.entryId });
+    case "addEntry":
+      return api.people.addPersonTimeCardEntry({
+        employeeId: personId,
+        clockIn: form.clockIn,
+        clockOut: form.clockOut
+      });
   }
-
-  if (intent === "clockOut") {
-    const validation = await validator(clockOutValidator).validate(formData);
-    if (validation.error) return data({}, { status: 400 });
-
-    const employeeId = validation.data.employeeId || personId;
-    const result = await clockOut(client, {
-      employeeId,
-      companyId,
-      updatedBy: userId,
-      note: validation.data.note
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, result.error.message))
-      );
-    }
-    return data({}, await flash(request, success("Clocked out")));
-  }
-
-  if (intent === "updateEntry") {
-    const validation = await validator(updateTimeCardEntryValidator).validate(
-      formData
-    );
-    if (validation.error) return data({}, { status: 400 });
-
-    const result = await updateTimeCardEntry(client, {
-      entryId: validation.data.entryId,
-      clockIn: validation.data.clockIn,
-      clockOut: validation.data.clockOut || null,
-      note: validation.data.note || null,
-      updatedBy: userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to update entry"))
-      );
-    }
-    return data({}, await flash(request, success("Entry updated")));
-  }
-
-  if (intent === "deleteEntry") {
-    const validation = await validator(deleteTimeCardEntryValidator).validate(
-      formData
-    );
-    if (validation.error) return data({}, { status: 400 });
-
-    const result = await deleteTimeCardEntry(client, validation.data.entryId);
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to delete entry"))
-      );
-    }
-    return data({}, await flash(request, success("Entry deleted")));
-  }
-
-  if (intent === "addEntry") {
-    const clockInVal = formData.get("clockIn") as string;
-    const clockOutVal = formData.get("clockOut") as string | null;
-    if (!clockInVal) return data({}, { status: 400 });
-
-    const result = await client.from("timeCardEntry").insert({
-      employeeId: personId,
-      companyId,
-      clockIn: clockInVal,
-      clockOut: clockOutVal || null,
-      createdBy: userId
-    });
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(request, error(result.error, "Failed to add entry"))
-      );
-    }
-    return data({}, await flash(request, success("Entry added")));
-  }
-
-  return data({}, { status: 400 });
 }
 
 function getShiftTimesForDate(
@@ -340,14 +272,31 @@ export default function PersonTimecardRoute() {
   const { entries, openEntry, weekOffset, weekStart, weekEnd, shift } =
     useLoaderData<typeof loader>();
   const { personId } = useParams();
+  // The intent of the submission in flight, for the toast once it settles.
+  const intent = useRef<string | null>(null);
   const fetcher = useAction<typeof action>({
     onSettled: (data) => {
       if (data) {
         setEditingId(null);
         setShowAddForm(false);
       }
+    },
+    onSuccess: () => {
+      const messages: Record<string, string> = {
+        clockIn: t`Clocked in`,
+        clockOut: t`Clocked out`,
+        updateEntry: t`Entry updated`,
+        deleteEntry: t`Entry deleted`,
+        addEntry: t`Entry added`
+      };
+      const message = intent.current && messages[intent.current];
+      if (message) toast.success(message);
     }
   });
+  const submitting = fetcher.formData?.get("intent");
+  useEffect(() => {
+    if (typeof submitting === "string") intent.current = submitting;
+  }, [submitting]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editClockIn, setEditClockIn] = useState<CalendarDateTime | null>(null);
   const [editClockOut, setEditClockOut] = useState<CalendarDateTime | null>(

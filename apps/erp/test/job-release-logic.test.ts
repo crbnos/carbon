@@ -2,14 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The models import the glossary, whose `msg` macro only runs compiled.
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
+}));
 import {
   jobReleaseProblems,
+  materialsWithoutStorageUnit,
   makeMethodsMissingOperations,
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier,
   type SupplierProcessRef
 } from "../app/modules/production/ui/Jobs/job-release-logic";
+import { makeToAssetReleaseError } from "../app/modules/production/production.models";
 
 const op = (
   id: string,
@@ -108,7 +115,8 @@ describe("jobReleaseProblems", () => {
   const ready = {
     manufacturingBlocked: false,
     missingAssemblies: [],
-    outsideOperationsWithoutSupplier: []
+    outsideOperationsWithoutSupplier: [],
+    materialsWithoutStorageUnit: []
   };
 
   it("finds nothing to fix on a job that is ready", () => {
@@ -126,13 +134,122 @@ describe("jobReleaseProblems", () => {
         outsideOperationsWithoutSupplier: [
           { description: "Heat Treat", missing: "choose" },
           { description: "Paint", missing: "none" }
+        ],
+        materialsWithoutStorageUnit: [
+          { description: "BOLT-10" },
+          { description: "NUT-10" }
         ]
       })
     ).toEqual([
       "manufacturing is blocked",
       "no operations on Bracket, Housing",
       "choose a supplier for Heat Treat on the job",
-      "Paint has no supplier"
+      "Paint has no supplier",
+      "set a Pull From storage unit on BOLT-10; NUT-10"
     ]);
+  });
+});
+
+describe("jobReleaseProblems with a long BoM", () => {
+  it("names the first five parts and counts the rest", () => {
+    expect(
+      jobReleaseProblems({
+        manufacturingBlocked: false,
+        missingAssemblies: [],
+        outsideOperationsWithoutSupplier: [],
+        materialsWithoutStorageUnit: Array.from({ length: 40 }, (_, i) => ({
+          description: `PART-${i + 1}`
+        }))
+      })
+    ).toEqual([
+      "set a Pull From storage unit on PART-1; PART-2; PART-3; PART-4; PART-5; and 35 more"
+    ]);
+  });
+});
+
+describe("jobReleaseProblems: what the job page also refuses", () => {
+  const base = {
+    manufacturingBlocked: false,
+    missingAssemblies: [],
+    outsideOperationsWithoutSupplier: [],
+    materialsWithoutStorageUnit: []
+  };
+
+  it("names a job with nothing to make and one that cannot complete to its asset", () => {
+    expect(
+      jobReleaseProblems({
+        ...base,
+        nothingToMake: true,
+        makeToAssetError: "Make to Asset needs a serialized item or a quantity of one"
+      })
+    ).toEqual([
+      "nothing to make",
+      "Make to Asset needs a serialized item or a quantity of one"
+    ]);
+  });
+});
+
+describe("materialsWithoutStorageUnit", () => {
+  const line = {
+    methodType: "Pull from Inventory",
+    itemType: "Part",
+    storageUnitId: null,
+    item: { itemTrackingType: "Inventory", readableIdWithRevision: "BOLT-10" }
+  };
+
+  it("names each part once, even when it is on several lines", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt" },
+        { ...line, id: "jm-2", description: "Bolt" }
+      ])
+    ).toEqual([{ id: "jm-1", description: "BOLT-10" }]);
+  });
+
+  it("skips lines with a storage unit, built lines and non-stock items", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt", storageUnitId: "bin-1" },
+        {
+          ...line,
+          id: "jm-2",
+          description: "Bracket",
+          methodType: "Make to Order"
+        },
+        {
+          ...line,
+          id: "jm-3",
+          description: "Paint",
+          item: { itemTrackingType: "Non-Inventory", readableIdWithRevision: "PAINT" }
+        }
+      ])
+    ).toEqual([]);
+  });
+
+  it("falls back to the line description when the item has no readable id", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt", item: null }
+      ])
+    ).toEqual([{ id: "jm-1", description: "Bolt" }]);
+  });
+});
+
+describe("makeToAssetReleaseError", () => {
+  it("is null for a job that does not complete to an asset", () => {
+    expect(makeToAssetReleaseError({ quantity: 3 })).toBeNull();
+  });
+
+  it("refuses an asset job on a sales order line, after the item rule", () => {
+    expect(
+      makeToAssetReleaseError({
+        fixedAssetId: "fa-1",
+        itemTrackingType: "Serial",
+        salesOrderLineId: "sol-1"
+      })
+    ).toBe("A job linked to a sales order line cannot complete to a fixed asset");
+    expect(
+      makeToAssetReleaseError({ fixedAssetClassId: "fac-1", salesOrderLineId: "sol-1" })
+    ).toBe("A job that completes to a fixed asset class needs a serialized item");
   });
 });

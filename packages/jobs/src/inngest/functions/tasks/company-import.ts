@@ -440,7 +440,7 @@ export const companyImportFunction = inngest.createFunction(
 
       // Storage files travel outside the transaction — failures here leave the
       // imported rows intact and are surfaced as warnings. Copy them server-side
-      // from the artifact's `.assets/` folder into the shared `private` bucket,
+      // from the artifact's `.assets/` folder into the company's own bucket,
       // with the path rewritten for the target company (and remapped ids on
       // reseed) to match the path columns rewritten above.
       //

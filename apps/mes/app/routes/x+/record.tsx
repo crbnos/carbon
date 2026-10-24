@@ -10,7 +10,6 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { stepRecordValidator } from "~/services/models";
 import {
   backflushUntrackedMaterialsOnStepRecord,
@@ -37,6 +36,10 @@ export async function action({ request }: ActionFunctionArgs) {
     createdBy: userId
   });
 
+  if (attributeRecord.refusal) {
+    return data({}, await flash(request, error(null, attributeRecord.refusal)));
+  }
+
   if (attributeRecord.error) {
     return data(
       {},
@@ -52,15 +55,11 @@ export async function action({ request }: ActionFunctionArgs) {
   // (unassigned) on the operation's first step. The operator builds unit by unit
   // and never scans these. A backflush failure (e.g. insufficient stock) never
   // blocks the record; the part just stays manually issuable.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      jobOperationStepId: validation.data.jobOperationStepId,
-      companyId,
-      userId
-    }
-  );
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(serviceRole, {
+    jobOperationStepId: validation.data.jobOperationStepId,
+    companyId,
+    userId
+  });
   if (backflush.error) {
     log.error("Backflush on step record failed", {
       error: backflush.error,

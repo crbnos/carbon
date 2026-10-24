@@ -17,7 +17,7 @@ import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { currencyCodes } from "../accounting";
+import { currencyCodes } from "../accounting/types";
 import {
   incoterms,
   itemType,
@@ -25,10 +25,11 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  optionalPlainTextDoc,
   optionalTiptapDoc,
   standardFactorType,
   taxExemptionReasons
-} from "../shared";
+} from "../shared/shared.models";
 import { pricingRuleConfigurationPriceValidator } from "./sales.utils";
 
 export const KPIs = [
@@ -583,53 +584,55 @@ export const quoteMaterialValidator = z
     }
   );
 
-export const quoteOperationValidator = z
-  .object({
-    id: z.string().min(1, { message: "Operation ID is required" }),
-    quoteMakeMethodId: z
-      .string()
-      .min(1, { message: "Quote Make Method is required" }),
-    order: zfd.numeric(z.number().min(0)),
-    operationOrder: z.enum(methodOperationOrders, {
-      error: "Operation order is required"
-    }),
-    operationType: z.enum(operationTypes, {
-      error: "Operation type is required"
-    }),
-    processId: z.string().min(1, { message: "Process is required" }),
-    procedureId: zfd.text(z.string().optional()),
-    assemblyInstructionId: zfd.text(z.string().optional()),
-    inspectionDocumentId: zfd.text(z.string().optional()),
-    workCenterId: zfd.text(z.string().optional()),
-    description: zfd.text(
-      z.string().min(0, { message: "Description is required" })
-    ),
-    setupUnit: z
-      .enum(standardFactorType, {
-        error: "Setup unit is required"
-      })
-      .optional(),
-    setupTime: zfd.numeric(z.number().min(0).optional()),
-    laborUnit: z
-      .enum(standardFactorType, {
-        error: "Labor unit is required"
-      })
-      .optional(),
-    laborTime: zfd.numeric(z.number().min(0).optional()),
-    machineUnit: z
-      .enum(standardFactorType, {
-        error: "Machine unit is required"
-      })
-      .optional(),
-    machineTime: zfd.numeric(z.number().min(0).optional()),
-    machineRate: zfd.numeric(z.number().min(0).optional()),
-    overheadRate: zfd.numeric(z.number().min(0).optional()),
-    laborRate: zfd.numeric(z.number().min(0).optional()),
-    operationSupplierProcessId: zfd.text(z.string().optional()),
-    operationMinimumCost: zfd.numeric(z.number().min(0).optional()),
-    operationUnitCost: zfd.numeric(z.number().min(0).optional()),
-    operationLeadTime: zfd.numeric(z.number().min(0).optional())
-  })
+/** The quote operation's fields, without the bill of process form's checks. */
+export const baseQuoteOperationValidator = z.object({
+  id: z.string().min(1, { message: "Operation ID is required" }),
+  quoteMakeMethodId: z
+    .string()
+    .min(1, { message: "Quote Make Method is required" }),
+  order: zfd.numeric(z.number().min(0)),
+  operationOrder: z.enum(methodOperationOrders, {
+    error: "Operation order is required"
+  }),
+  operationType: z.enum(operationTypes, {
+    error: "Operation type is required"
+  }),
+  processId: z.string().min(1, { message: "Process is required" }),
+  procedureId: zfd.text(z.string().optional()),
+  assemblyInstructionId: zfd.text(z.string().optional()),
+  inspectionDocumentId: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional()),
+  description: zfd.text(
+    z.string().min(0, { message: "Description is required" })
+  ),
+  setupUnit: z
+    .enum(standardFactorType, {
+      error: "Setup unit is required"
+    })
+    .optional(),
+  setupTime: zfd.numeric(z.number().min(0).optional()),
+  laborUnit: z
+    .enum(standardFactorType, {
+      error: "Labor unit is required"
+    })
+    .optional(),
+  laborTime: zfd.numeric(z.number().min(0).optional()),
+  machineUnit: z
+    .enum(standardFactorType, {
+      error: "Machine unit is required"
+    })
+    .optional(),
+  machineTime: zfd.numeric(z.number().min(0).optional()),
+  machineRate: zfd.numeric(z.number().min(0).optional()),
+  overheadRate: zfd.numeric(z.number().min(0).optional()),
+  laborRate: zfd.numeric(z.number().min(0).optional()),
+  operationSupplierProcessId: zfd.text(z.string().optional()),
+  operationMinimumCost: zfd.numeric(z.number().min(0).optional()),
+  operationUnitCost: zfd.numeric(z.number().min(0).optional()),
+  operationLeadTime: zfd.numeric(z.number().min(0).optional())
+});
+
+export const quoteOperationValidator = baseQuoteOperationValidator
   .refine(
     (data) => {
       if (data.operationType === "Outside Processing") {
@@ -1110,8 +1113,8 @@ export const salesRfqValidator = z.object({
   customerId: z.string().min(1, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
-  externalNotes: zfd.text(z.string().optional()),
-  internalNotes: zfd.text(z.string().optional()),
+  externalNotes: optionalTiptapDoc,
+  internalNotes: optionalTiptapDoc,
   locationId: zfd.text(z.string().optional()),
   rfqDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesRFQStatusType).optional(),
@@ -1190,6 +1193,14 @@ export function isSalesOrderLocked(status: string | null | undefined): boolean {
     status as (typeof SALES_ORDER_LOCKED_STATUSES)[number]
   );
 }
+
+/**
+ * The sales-rule acknowledgement a gated form re-submits with: the violation
+ * modal's "proceed" sets `acknowledged=true`, which lets warnings through.
+ */
+export const salesRuleAcknowledgementValidator = z.object({
+  acknowledged: zfd.checkbox({ trueValue: "true" })
+});
 
 // Sales RFQ Locked Status
 export function isSalesRfqLocked(status: string | null | undefined): boolean {
@@ -1374,7 +1385,11 @@ export const rentalAgreementLineStatuses = [
   "Sold"
 ] as const;
 
-export const rentalBillingCycles = ["Calendar Month", "28 Days"] as const;
+export const rentalBillingCycles = [
+  "Calendar Month",
+  "Monthly",
+  "28 Days"
+] as const;
 
 export const rentalBillingTimings = ["Advance", "Arrears"] as const;
 
@@ -1710,6 +1725,19 @@ export function contractEndDate(
   };
 }
 
+/** The duration a stored contract was signed for: its term in months when
+ *  that is one of the presets, open-ended with no end date, else custom. */
+export function contractDurationOf(contract: {
+  endDate: string | null;
+  termMonths: number | null;
+}): ContractDuration {
+  if (!contract.endDate) return "open";
+  const months = String(contract.termMonths ?? "");
+  return months === "6" || months === "12" || months === "24" || months === "36"
+    ? months
+    : "custom";
+}
+
 /**
  * The contract term that covers sales order lines' service periods: the
  * earliest start and the latest end of the lines that have one. The term is a
@@ -1820,7 +1848,7 @@ export const customerContractValidator = z
     paymentTermId: zfd.text(z.string().optional()),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().optional()),
-    notes: optionalTiptapDoc
+    notes: optionalPlainTextDoc
   })
   .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
     message: "End date is required",

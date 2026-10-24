@@ -11,11 +11,14 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getUnattributedMachineTimes } from "~/modules/production";
+import { getUnattributedMachineTimes } from "~/modules/production/production.service";
 import MachineTimeTable from "~/modules/production/ui/MachineTime/MachineTimeTable.ee";
 import MachineTimeUpgradeOverlay from "~/modules/production/ui/MachineTime/MachineTimeUpgradeOverlay.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
-import { getLocationsList, getWorkCentersList } from "~/modules/resources";
+import {
+  getLocationsList,
+  getWorkCentersList
+} from "~/modules/resources/resources.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

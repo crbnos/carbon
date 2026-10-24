@@ -11,7 +11,7 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import RichText from "~/components/RichText";
-import { getNotes } from "~/modules/shared";
+import { getNotes } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

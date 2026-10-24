@@ -2,108 +2,36 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  updateWarehouseTransferStatus,
-  warehouseTransferStatusType
-} from "~/modules/inventory";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { warehouseTransferStatusType } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+const statusForm = z.object({
+  status: z.enum(warehouseTransferStatusType),
+  acknowledged: zfd.checkbox({ trueValue: "true" })
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(statusForm).request(args, {
+    params: ["transferId"]
   });
-
-  const { transferId: id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  const status = formData.get(
-    "status"
-  ) as (typeof warehouseTransferStatusType)[number];
-  const acknowledged = formData.get("acknowledged") === "true";
-
-  if (!status || !warehouseTransferStatusType.includes(status)) {
-    throw redirect(
-      path.to.warehouseTransfer(id),
-      await flash(request, error(null, "Invalid status"))
-    );
-  }
-
-  // Storage Rule evaluation at every "go" transition — the user is committing to
-  // the transfer plan. Pre-flight blocks early (before child shipment/receipt
-  // are created). Cancel + Reopen are intentionally excluded — they're not
-  // commits.
-  const COMMITTING_STATUSES = new Set([
-    "To Ship and Receive",
-    "To Ship",
-    "To Receive",
-    "Completed"
-  ]);
-  if (COMMITTING_STATUSES.has(status)) {
-    const serviceRole = getCarbonServiceRole();
-    const { data: lines } = await serviceRole
-      .from("warehouseTransferLine")
-      .select(
-        "id, itemId, fromStorageUnitId, toStorageUnitId, toLocationId, quantity"
-      )
-      .eq("transferId", id)
-      .eq("companyId", companyId);
-
-    const evalLines = (lines ?? []).map((l) => ({
-      lineId: l.id as string,
-      itemId: l.itemId as string | null,
-      storageUnitId: l.toStorageUnitId as string | null,
-      quantity: Number(l.quantity ?? 0),
-      locationId: l.toLocationId as string | null
-    }));
-
-    const { violations, ruleNames } = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "item",
-      surface: "warehouseTransfer",
-      // Evaluate against the destination side — that's where stock is landing.
-      lines: evalLines
-    });
-
-    if (violations.length > 0 && isBlocked(violations, acknowledged)) {
-      return {
-        error: null,
-        data: null,
-        violations,
-        ruleNames
-      };
-    }
-  }
-
-  const update = await updateWarehouseTransferStatus(
-    client,
-    id,
-    status,
-    userId
-  );
-
-  if (update.error) {
-    throw redirect(
-      path.to.warehouseTransfer(id),
-      await flash(
-        request,
-        error(update.error, "Failed to update warehouse transfer status")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.warehouseTransfer(id),
-    await flash(request, success("Updated warehouse transfer status"))
+  if ("invalid" in input) return input.invalid;
+  const { transferId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.inventory.setWarehouseTransferStatus({
+    id: transferId,
+    ...input.data
+  });
+  // An error is toasted by the rule-violation fetcher that sent it.
+  if (!result.data) return result;
+  // A blocking rule: the violation modal reads these.
+  if ("violations" in result.data) return result.data;
+  return respond(args.request, result).redirect(
+    path.to.warehouseTransfer(transferId),
+    { message: "Updated warehouse transfer status" }
   );
 }

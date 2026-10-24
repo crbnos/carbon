@@ -5,8 +5,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import type { JobReleaseReadiness } from "~/modules/production";
-import { getJobReleaseReadiness } from "~/modules/production";
+import type { JobReleaseReadiness } from "~/modules/production/production.service";
+import { getJobReleaseReadiness } from "~/modules/production/production.service";
 
 // What releasing a batch would release, and what stands in its way: the
 // Draft/Planned jobs behind `?batchId=` (an existing batch) or `?jobId=`

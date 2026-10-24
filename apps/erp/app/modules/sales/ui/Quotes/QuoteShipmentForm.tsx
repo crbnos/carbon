@@ -32,7 +32,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { incoterms } from "~/modules/shared";
+import { incoterms } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import { isQuoteLocked, quoteShipmentValidator } from "../../sales.models";
 import type { Quotation } from "../../types";

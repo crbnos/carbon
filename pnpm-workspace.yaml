@@ -34,29 +34,32 @@ overrides:
   "brace-expansion@2": 2.1.7
   "brace-expansion@5": 5.0.12
   fast-uri: 3.1.8
+  follow-redirects: 1.16.1
   "form-data@3": 3.0.5
   "form-data@4": 4.0.6
   hono: 4.13.7
   ip-address: 10.7.1
   js-cookie: 3.0.7
   js-yaml: 4.3.2
+  jsondiffpatch: 0.7.6
   linkify-it: 5.0.2
   lodash: 4.18.1
+  markdown-it: 14.3.3
   "nanoid@3": 3.3.18
   "nanoid@5": 5.1.16
-  "next@15": 15.5.27
-  "next@16": 16.3.8
+  "next@15": 15.5.28
+  "next@16": 16.4.2
   postcss: 8.5.29
   protobufjs: 7.6.5
   sharp: 0.35.5
   shell-quote: 1.11.0
   "socket.io-parser": 4.2.7
   source-map-js: 1.2.2
-  tar: 7.5.19
+  tar: 7.5.21
   tmp: 0.2.7
   turbo-stream: 3.0.0
   valibot: 1.4.2
-  "vite@7": 7.3.5
+  "vite-node>vite": 7.3.7
   "ws@8": 8.21.0
 
 catalog:
@@ -92,7 +95,7 @@ catalog:
   '@opentelemetry/semantic-conventions': 1.40.0
   '@paralleldrive/cuid2': 2.2.2
   '@react-aria/i18n': 3.12.16
-  '@react-email/components': 0.3.3
+  react-email: 6.11.3
   '@react-pdf/renderer': 3.4.5
   '@react-aria/optimize-locales-plugin': 2.0.2
   '@fastify/compress': 9.2.0
@@ -141,7 +144,7 @@ catalog:
   class-variance-authority: 0.7.1
   cookie: 1.1.1
   cross-env: 7.0.3
-  dompurify: 3.4.16
+  dompurify: 3.4.17
   fast-xml-parser: 5.3.1
   fastify: 5.12.5
   intl-parse-accept-language: 1.0.0
@@ -175,7 +178,7 @@ catalog:
   tsup: 8.5.1
   tsx: 4.21.0
   typescript: 5.8.3
-  vite: 8.3.1
+  vite: 8.3.3
   vitest: 4.1.11
   wait-on: 7.2.0
   zbsearch: 4.0.0

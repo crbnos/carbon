@@ -27,6 +27,7 @@ type CompanySettings = Partial<
     | "digitalQuoteEnabled"
     | "digitalQuoteIncludesPurchaseOrders"
     | "mrpRunTime"
+    | "requireBackflushStorageUnit"
     | "showBomExplorerReadableId"
     | "showCurrencyTrailingZeros"
     | "showCustomerReadableId"

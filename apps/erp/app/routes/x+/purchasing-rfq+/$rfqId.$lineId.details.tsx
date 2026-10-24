@@ -16,21 +16,23 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { PurchasingRFQ } from "~/modules/purchasing";
+import {
+  isRfqLocked,
+  purchasingRfqLineValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getPurchasingRFQ,
   getPurchasingRFQLine,
   getSupplierInteractionLineDocuments,
-  isRfqLocked,
-  purchasingRfqLineValidator,
   upsertPurchasingRFQLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type { PurchasingRFQ } from "~/modules/purchasing/types";
 import { PurchasingRFQLineForm } from "~/modules/purchasing/ui/PurchasingRfq";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
 } from "~/modules/purchasing/ui/SupplierInteraction";
-import { getModelByItemId } from "~/modules/shared";
+import { getModelByItemId } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

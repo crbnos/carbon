@@ -8,10 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
-import type {
-  CustomerContact as CustomerContactType,
-  getCustomerContacts
-} from "~/modules/sales";
+import type { getCustomerContacts } from "~/modules/sales/sales.service";
+import type { CustomerContact as CustomerContactType } from "~/modules/sales/types";
 import CustomerContactForm from "~/modules/sales/ui/Customer/CustomerContactForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";

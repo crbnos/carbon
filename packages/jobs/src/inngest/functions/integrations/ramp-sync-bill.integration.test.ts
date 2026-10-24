@@ -2,13 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import { createMappingService } from "@carbon/ee/accounting";
 import {
   confirmSyncs,
   type RampBill,
   type RampClient
 } from "@carbon/ee/ramp.server";
-import { ServerFnError } from "@carbon/server-functions/errors";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
@@ -21,12 +21,11 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 // Only the posting operation is substituted. All staging, status transitions,
 // queries, mappings, FKs and rollback use real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions", () => {
-  const bind = (actor: string) => (fields: object) => ({
-    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
-  });
-  return { serverFns: { system: bind("system"), as: bind("caller") } };
-});
+// A posting with a client runs as the caller behind it, else as the system.
+vi.mock("@carbon/api/postings.server", () => ({
+  posting: (_name: string, handles: { client?: unknown }, input: unknown) =>
+    post({ ...handles, actor: handles.client ? "caller" : "system" }, input)
+}));
 
 vi.mock("@carbon/ee/ramp.server", async (original) => ({
   ...(await original<typeof import("@carbon/ee/ramp.server")>()),

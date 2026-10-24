@@ -8,8 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { methodMaterialValidator, upsertMethodMaterial } from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+import { methodMaterialValidator } from "~/modules/items/items.models";
+import {
+  checkRevisionLock,
+  upsertMethodMaterial
+} from "~/modules/items/items.service";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {

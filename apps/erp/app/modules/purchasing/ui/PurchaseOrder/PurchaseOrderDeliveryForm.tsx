@@ -30,12 +30,12 @@ import {
   Submit
 } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
-import type { PurchaseOrder } from "~/modules/purchasing";
 import {
   isPurchaseOrderLocked,
   purchaseOrderDeliveryValidator
-} from "~/modules/purchasing";
-import { incoterms } from "~/modules/shared";
+} from "~/modules/purchasing/purchasing.models";
+import type { PurchaseOrder } from "~/modules/purchasing/types";
+import { incoterms } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.delivery";
 import { path } from "~/utils/path";
 

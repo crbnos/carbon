@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { createThread, deleteThread, getThreads } from "~/modules/agent";
+import { deleteAgentThread } from "~/modules/agent/agent.server";
+import { getThreads } from "~/modules/agent/agent.service";
 
 const logger = getLogger("erp", "agent-threads");
 
@@ -22,30 +25,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { threads: threads.data };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
-
-  if (request.method === "DELETE") {
-    const threadId = String((await request.formData()).get("threadId") ?? "");
-    if (!threadId) return { success: false };
-    const deleted = await deleteThread(client, { threadId, companyId, userId });
-    if (deleted.error) {
-      logger.error("Failed to delete agent thread", {
-        companyId,
-        threadId,
-        error: deleted.error
-      });
-    }
-    return { success: !deleted.error };
-  }
-
-  const created = await createThread(client, { companyId, userId });
-  if (created.error) {
-    logger.error("Failed to create agent thread", {
-      companyId,
-      error: created.error
+export async function action(args: ActionFunctionArgs) {
+  if (args.request.method === "DELETE") {
+    const input = await validator(deleteAgentThread.input).request(args, {
+      method: "DELETE"
     });
-    return { success: false, threadId: null };
+    if ("invalid" in input) return input.invalid;
+    const api = await carbon(args.request);
+    return api.agent.deleteAgentThread(input.data);
   }
-  return { success: true, threadId: created.data.id };
+  const input = await validator().request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.agent.createAgentThread({});
 }

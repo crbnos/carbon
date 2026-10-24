@@ -2,93 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
 import {
   batchRuleInitialValues,
-  ensureProcessAbility,
-  ProcessForm,
-  processValidator,
-  upsertProcess
-} from "~/modules/resources";
+  processValidator
+} from "~/modules/resources/resources.models";
+import { ProcessForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(processValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.createProcess({
+    ...input.data,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-
-  const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
-  const validation = await validator(processValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
-
-  const createProcess = await upsertProcess(client, {
-    ...d,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
+  // The modal form reads the result and closes itself.
+  if (input.formData?.get("type") === "modal") return result;
+  return respond(args.request, result).redirect(path.to.processes, {
+    message: "Process created"
   });
-
-  if (createProcess.error) {
-    return modal
-      ? createProcess
-      : redirect(
-          path.to.processes,
-          await flash(
-            request,
-            error(createProcess.error, "Failed to create process.")
-          )
-        );
-  }
-
-  if (d.requiresAbility && createProcess.data?.id) {
-    const abilityResult = await ensureProcessAbility(client, {
-      processId: createProcess.data.id,
-      companyId,
-      userId
-    });
-    if (abilityResult.error) {
-      // Don't leave an unschedulable process behind: requiresAbility=true
-      // without its backing ability gates scheduling on a qualification
-      // nobody can hold
-      await client
-        .from("process")
-        .update({ requiresAbility: false })
-        .eq("id", createProcess.data.id)
-        .eq("companyId", companyId);
-      return modal
-        ? abilityResult
-        : redirect(
-            path.to.processes,
-            await flash(
-              request,
-              error(abilityResult.error, "Failed to create process ability.")
-            )
-          );
-    }
-  }
-
-  return modal
-    ? createProcess
-    : redirect(
-        path.to.processes,
-        await flash(request, success("Process created"))
-      );
 }
 
 export default function NewProcessRoute() {

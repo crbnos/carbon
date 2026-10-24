@@ -21,7 +21,7 @@ import {
   getMaintenanceDispatchComments,
   getMaintenanceDispatchEvents,
   getMaintenanceDispatchItems
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import { MaintenanceDispatchExplorer } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchExplorer";
 import MaintenanceDispatchHeader from "~/modules/resources/ui/Maintenance/MaintenanceDispatchHeader";
 import {

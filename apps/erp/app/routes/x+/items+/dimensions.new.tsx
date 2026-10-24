@@ -10,12 +10,10 @@ import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  materialDimensionValidator,
-  upsertMaterialDimension
-} from "~/modules/items";
+import { materialDimensionValidator } from "~/modules/items/items.models";
+import { upsertMaterialDimension } from "~/modules/items/items.service";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

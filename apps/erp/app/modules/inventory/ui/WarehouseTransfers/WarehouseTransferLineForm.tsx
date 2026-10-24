@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -12,13 +13,12 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  toast,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
-import { useFetcher, useParams } from "react-router";
+import { useState } from "react";
+import { useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -105,13 +105,8 @@ const WarehouseTransferLineForm = ({
     ? path.to.warehouseTransferLine(transferId, initialValues.id)
     : path.to.newWarehouseTransferLine(transferId);
 
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.success, fetcher.data?.message]);
+  // A refused save is toasted; field errors show on the form.
+  const fetcher = useAction();
 
   return (
     <Drawer

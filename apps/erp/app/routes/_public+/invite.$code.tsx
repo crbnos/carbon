@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
@@ -18,23 +17,19 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
-import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { Ratelimit, redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/email.server";
-import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
-import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import {
   datetime,
-  Edition,
   getClientIp,
   redirect,
   redirectExternal
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { render } from "@react-email/components";
 import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -44,10 +39,9 @@ import { Form, Link, useLoaderData } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
-} from "~/modules/users/users.server";
+} from "~/modules/users/users.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "invite");
 
 export const meta: MetaFunction = () => {
   return [{ title: "Accept Invite | Carbon" }];
@@ -96,7 +90,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const authSession = await getAuthSession(request);
 
-  const accept = await acceptInvite(serviceRole, code, authSession?.email);
+  const accept = await acceptInvite(
+    serviceRole,
+    getDatabaseClient(),
+    code,
+    authSession?.email,
+    request
+  );
   if (accept.error) {
     throw redirect(
       path.to.root,
@@ -105,31 +105,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(accept.error, accept.error.message ?? "Failed to accept invite")
       )
     );
-  }
-
-  // Best-effort audit of the acceptance, with request metadata.
-  try {
-    await insertAuditLogEntries(serviceRole, accept.data.companyId, [
-      {
-        tableName: "invite",
-        entityType: "invite",
-        entityId: accept.data.id,
-        recordId: accept.data.id,
-        operation: "UPDATE",
-        actorId: null,
-        diff: { acceptedAt: { old: null, new: accept.data.acceptedAt } },
-        metadata: {
-          ipAddress: getClientIp(request) ?? undefined,
-          userAgent: request.headers.get("user-agent") ?? undefined
-        }
-      }
-    ]);
-  } catch (err) {
-    logger.warn("[invite] audit write skipped for accept", { error: err });
-  }
-
-  if (CarbonEdition === Edition.Cloud) {
-    await updateSubscriptionQuantityForCompany(accept.data.companyId);
   }
 
   if (authSession) {

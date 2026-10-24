@@ -6,7 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -9,6 +9,7 @@
     "./media/node": "./src/media/node.ts",
     "./cad": "./src/cad/index.ts",
     "./csv": "./src/csv/index.ts",
+    "./markdown": "./src/markdown/index.ts",
     "./pdf": "./src/pdf/index.ts",
     "./pdf/worker": "./src/pdf/worker.ts"
   },
@@ -27,6 +28,7 @@
     "@jsquash/webp": "1.5.0",
     "@supabase/storage-js": "catalog:",
     "@supabase/supabase-js": "catalog:",
+    "@tiptap/pm": "catalog:",
     "libheif-js": "1.23.2",
     "nanoid": "catalog:",
     "papaparse": "5.3.2",

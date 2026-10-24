@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { writeFileSync } from "node:fs";
+import { rmSync, writeFileSync } from "node:fs";
 import { box, intro, log, outro } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
@@ -43,6 +43,7 @@ import {
 } from "../services/compose.js";
 import {
   activityFile,
+  asleepFile,
   stackStateDir,
   startWaker,
   watchIdle
@@ -323,6 +324,9 @@ export async function up(opts: UpOpts = {}) {
   // one under --borrow, whose own `crbn up` does the hibernating.
   const stateDir = stackStateDir(borrowSlug ?? slug);
   process.env.CRBN_STACK_STATE = stateDir;
+  // The stack is awake. `--no-hibernate` never runs `watchIdle`, which clears a
+  // stale marker that would hold every request for 120 s.
+  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
   const idleMinutes = Number(process.env.CRBN_IDLE_MINUTES ?? 30);
   const hibernates =
     opts.hibernate !== false &&

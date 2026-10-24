@@ -4,17 +4,21 @@
 
 import {
   Body,
-  Button,
   Container,
   Heading,
   Link,
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
+import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
 import { notificationStyles } from "./components/notificationStyles";
-import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
+import {
+  EmailThemeProvider,
+  getEmailThemeClasses,
+  HeadStyle
+} from "./components/Theme";
 
 interface Props {
   recipientName?: string;
@@ -36,7 +40,7 @@ export const MfaRequiredEmail = ({
   return (
     <EmailThemeProvider
       preview={<Preview>Two-factor authentication is now required</Preview>}
-      additionalHeadContent={<style>{notificationStyles}</style>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
     >
       <Body
         className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
@@ -112,28 +116,7 @@ export const MfaRequiredEmail = ({
           </Section>
 
           <Section className="text-center mb-[24px]">
-            <Button
-              href={setupUrl}
-              className="nf-cta"
-              style={{
-                backgroundColor: "#0e0e0e",
-                borderColor: "#0e0e0e",
-                borderRadius: 10,
-                borderStyle: "solid",
-                borderWidth: 1,
-                color: "#ffffff",
-                display: "inline-block",
-                fontSize: 14,
-                fontWeight: 500,
-                padding: "13px 24px",
-                textAlign: "center",
-                textDecoration: "none"
-              }}
-            >
-              <span style={{ verticalAlign: "middle" }}>
-                Set up two-factor authentication
-              </span>
-            </Button>
+            <Button href={setupUrl}>Set up two-factor authentication</Button>
           </Section>
 
           <Text

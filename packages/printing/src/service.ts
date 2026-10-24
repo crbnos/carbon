@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { searchFilter } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   PrinterRoute,
@@ -54,7 +55,7 @@ export async function getPrintJobs(
 
   if (args?.search) {
     query = query.or(
-      `description.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
+      searchFilter(["description", "sourceDocumentReadableId"], args.search)
     );
   }
 

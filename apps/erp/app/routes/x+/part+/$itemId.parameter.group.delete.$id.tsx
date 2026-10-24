@@ -5,7 +5,7 @@
 import { assertIsPost, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteConfigurationParameterGroup } from "~/modules/items";
+import { deleteConfigurationParameterGroup } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

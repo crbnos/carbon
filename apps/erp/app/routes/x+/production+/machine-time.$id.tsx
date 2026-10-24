@@ -29,20 +29,22 @@ import {
 import {
   assignMachineTimeValidator,
   dismissMachineTimeValidator,
+  isJobLocked
+} from "~/modules/production/production.models";
+import {
   getMachineTimeAssignTarget,
   getMachineTimeOperationCandidates,
   getUnattributedMachineTime,
   getUnattributedMachineTimeNeighbors,
-  getWorkCenterDayEvents,
-  isJobLocked
-} from "~/modules/production";
+  getWorkCenterDayEvents
+} from "~/modules/production/production.service";
 import MachineTimeDrawer from "~/modules/production/ui/MachineTime/MachineTimeDrawer.ee";
 import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
 import { suggestMachineTimeOperations } from "~/modules/production/ui/MachineTime/machine-time-suggestions.ee";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
-} from "~/modules/shared/timezone.server";
+} from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";

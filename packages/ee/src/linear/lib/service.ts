@@ -4,13 +4,13 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { TiptapText } from "@carbon/files/markdown";
 import { getLogger } from "@carbon/logger";
 import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type { ActionTaskEntityType } from "../../lib/actionTaskEntity";
 import { actionTaskEntities } from "../../lib/actionTaskEntity";
-import { markdownToTiptap } from "./richtext";
 import { LinearIssueSchema } from "./types";
 import { mapLinearStatusToCarbonStatus } from "./utils";
 
@@ -48,7 +48,7 @@ export async function linkActionToLinearIssue(
   let notes: any = undefined;
   if (input.syncNotes && data.description) {
     try {
-      notes = markdownToTiptap(data.description);
+      notes = TiptapText(data.description).toDocument();
     } catch (e) {
       logger.error("Failed to convert Linear description to Tiptap", {
         error: e

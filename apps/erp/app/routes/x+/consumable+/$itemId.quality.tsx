@@ -10,12 +10,12 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import invariant from "tiny-invariant";
+import { itemInspectionDocumentAssignmentValidator } from "~/modules/quality/quality.models";
 import {
   getInspectionDocumentsForItem,
   getItemInspectionDocumentAssignments,
-  itemInspectionDocumentAssignmentValidator,
   upsertItemInspectionDocumentAssignment
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
 import ItemQualityView from "~/modules/quality/ui/Item/ItemQualityView";
 import { path } from "~/utils/path";

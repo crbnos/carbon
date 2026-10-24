@@ -11,7 +11,10 @@ import { useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
 import { useUser } from "~/hooks";
-import type { SlideAnnotation, SlideSize } from "~/modules/shared";
+import type {
+  SlideAnnotation,
+  SlideSize
+} from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 import type { AssemblyStepSlide } from "../../types";
 

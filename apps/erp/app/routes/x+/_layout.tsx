@@ -20,10 +20,13 @@ import {
   requireAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
+import { withEmailDelivery } from "@carbon/ee";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import { getVapidDetails } from "@carbon/env/push.server";
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
@@ -80,18 +83,22 @@ import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
-import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
-import AccountSettings from "~/modules/account/ui/AccountSettings";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
-import { getOpenClockEntry } from "~/modules/people";
-import { employeeCompaniesOf, getEmployeeCompanies } from "~/modules/settings";
+import { getOpenClockEntry } from "~/modules/people/people.service";
+import {
+  employeeCompaniesOf,
+  getEmployeeCompanies
+} from "~/modules/settings/settings.service";
 import {
   getAppShell,
   getCustomFieldsSchemas,
   getImplementationSignals
-} from "~/modules/shared/shared.server";
-import { getItarCertificationStatus } from "~/modules/users";
-import { getUserClaims } from "~/modules/users/users.server";
+} from "~/modules/shared/shared.service";
+import AccountSettings from "~/modules/users/ui/AccountSettings";
+import {
+  getCachedChangelogPanelEntry,
+  getItarCertificationStatus
+} from "~/modules/users/users.service";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
@@ -218,6 +225,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
   const companies = read(shell.data?.companies);
   const integrations = read(shell.data?.companyIntegrations);
+  // Whether documents can be emailed, settled once for every
+  // `integrations.has("email")` (withEmailDelivery).
+  const companyIntegrations = withEmailDelivery(
+    integrations.data ?? [],
+    companyId,
+    SERVER_MAIL_CONFIGURED
+  );
   const companySettings = read(shell.data?.companySettings ?? undefined);
   const savedViews = read(shell.data?.savedViews);
   const user = read(shell.data?.user ?? undefined);
@@ -334,7 +348,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
-    integrations: integrations.data ?? [],
+    integrations: companyIntegrations,
     groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan,

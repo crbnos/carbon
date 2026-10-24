@@ -30,7 +30,7 @@ import { useLoaderData, useNavigate } from "react-router";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import { getAccountingSyncTieOutCell } from "~/modules/accounting";
+import { getAccountingSyncTieOutCell } from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

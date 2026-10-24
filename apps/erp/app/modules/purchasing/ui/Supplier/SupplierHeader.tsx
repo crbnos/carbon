@@ -71,7 +71,7 @@ import {
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
-import type { SupplierDetail } from "~/modules/purchasing";
+import type { SupplierDetail } from "~/modules/purchasing/types";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";

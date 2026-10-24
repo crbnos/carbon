@@ -114,7 +114,7 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   `itemPostingGroupResponsibility.responsibleEmployee` and `planningAction.assignee` (all
   `TEXT REFERENCES "user"("id")`, so the database accepts any user's id, including another
   company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
-  (`apps/erp/app/modules/shared/shared.server.ts`), which fails closed on a read error.
+  (`apps/erp/app/modules/shared/shared.service.ts`), which fails closed on a read error.
 - Re-adding a deactivated person through Add Account (`createEmployeeAccount`) reuses the surviving
   rows rather than failing: it refuses only when the existing `employee` row is `active`. A person
   whose invite is still pending is re-added the same way, which issues a new code and invalidates
@@ -134,7 +134,7 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - **A re-used invite row restarts `createdAt`** (`insertInvite` and the reuse path both set it). The
   controlled-environment expiry (`isControlledInviteExpired`) counts from it, and the reused row is
   the person's original invite, so keeping it expired the new invite on arrival.
-- Re-activation happens on invite acceptance — `acceptInvite` (`apps/erp/app/modules/users/users.server.ts`) restores the
+- Re-activation happens on invite acceptance — `acceptInvite` (`apps/erp/app/modules/users/users.service.ts`) restores the
   employee-type `membership` the deactivation removed (the `sync_add_employee_to_type_group` trigger
   fires on INSERT only, so an UPDATE cannot rely on it), flips `active` back to true, and stamps
   `acceptedAt` in one Kysely transaction, so a failed restore leaves the invite unaccepted and

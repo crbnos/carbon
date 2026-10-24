@@ -9,7 +9,7 @@ import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { draftLeaseSetupPath } from "~/modules/purchasing/purchasing.server";
+import { draftLeaseSetupPath } from "~/modules/purchasing/purchasing.service";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import {
   LeaseAssetSummary,

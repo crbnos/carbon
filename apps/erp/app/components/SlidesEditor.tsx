@@ -6,10 +6,12 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { serviceErrorMessage } from "@carbon/query";
 import {
   Button,
   cn,
   IconButton,
+  ImageZoomViewer,
   Label,
   Tooltip,
   TooltipContent,
@@ -19,9 +21,12 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LuBox, LuCirclePlus, LuMapPin, LuX } from "react-icons/lu";
-import type { SlideAnnotation, SlideSize } from "~/modules/shared";
+import type {
+  SlideAnnotation,
+  SlideSize
+} from "~/modules/shared/shared.models";
 import { getPrivateUrl, path } from "~/utils/path";
 import { SlideAnnotator } from "./SlideAnnotator";
 
@@ -65,7 +70,7 @@ export async function uploadStepSlideModel(
     method: "POST",
     body: formData
   });
-  if (!response.ok) return null;
+  if (!response.ok || serviceErrorMessage(await response.json())) return null;
   return modelUploadId;
 }
 
@@ -192,14 +197,42 @@ export function SlidesEditor({
   const { t } = useLingui();
   const [annotatingIndex, setAnnotatingIndex] = useState<number | null>(null);
   const annotating = annotatingIndex == null ? null : slides[annotatingIndex];
+  // The image slide open full size. A model slide has no image to enlarge.
+  const [viewingIndex, setViewingIndex] = useState<number | null>(null);
+  const viewing = viewingIndex == null ? null : slides[viewingIndex];
   const models = useSlideModels(slides);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isHidden = isDisabled && slides.length === 0;
 
-  if (isDisabled && slides.length === 0) return null;
+  // A caption saves on blur. Submitting the surrounding form from inside a
+  // caption (⌘/Ctrl+Enter, or Enter) never blurs it, and the step form closes
+  // with the edit unsaved. So a submit first blurs a focused caption of this
+  // editor, which runs its own save.
+  useEffect(() => {
+    if (isHidden) return;
+    const form = containerRef.current?.closest("form");
+    if (!form) return;
+    const saveFocusedCaption = () => {
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLInputElement &&
+        active.dataset.slideCaption !== undefined &&
+        containerRef.current?.contains(active)
+      ) {
+        active.blur();
+      }
+    };
+    form.addEventListener("submit", saveFocusedCaption);
+    return () => form.removeEventListener("submit", saveFocusedCaption);
+  }, [isHidden]);
+
+  if (isHidden) return null;
 
   const withModels = !!modelInputRef && !!onModelFileChange;
 
   return (
     <VStack
+      ref={containerRef}
       spacing={2}
       className="w-full col-span-2 max-md:col-span-full border-t pt-4"
     >
@@ -312,16 +345,26 @@ export function SlidesEditor({
                     </div>
                   ) : (
                     <>
-                      <img
-                        src={
-                          slide.imagePath ? getPrivateUrl(slide.imagePath) : ""
-                        }
-                        alt={slide.caption ?? "Slide"}
-                        className={cn(
-                          "w-full rounded-md bg-muted/40 object-contain",
-                          SLIDE_IMAGE_HEIGHT
-                        )}
-                      />
+                      <button
+                        type="button"
+                        aria-label={t`View full size`}
+                        title={t`View full size`}
+                        className="block w-full cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => setViewingIndex(index)}
+                      >
+                        <img
+                          src={
+                            slide.imagePath
+                              ? getPrivateUrl(slide.imagePath)
+                              : ""
+                          }
+                          alt={slide.caption ?? "Slide"}
+                          className={cn(
+                            "w-full rounded-md bg-muted/40 object-contain",
+                            SLIDE_IMAGE_HEIGHT
+                          )}
+                        />
+                      </button>
                       {/* Read-only pin preview so an annotated slide reads at a glance. */}
                       <SlidePinOverlay pins={pins} />
                     </>
@@ -360,6 +403,7 @@ export function SlidesEditor({
                 )}
                 <input
                   type="text"
+                  data-slide-caption=""
                   aria-label={t`Caption`}
                   placeholder={t`Caption`}
                   defaultValue={slide.caption ?? ""}
@@ -372,6 +416,14 @@ export function SlidesEditor({
           })}
         </div>
       )}
+
+      <ImageZoomViewer
+        open={!!viewing?.imagePath && !viewing.modelUploadId}
+        src={viewing?.imagePath ? getPrivateUrl(viewing.imagePath) : null}
+        caption={viewing?.caption}
+        annotations={viewing?.annotations ?? []}
+        onClose={() => setViewingIndex(null)}
+      />
 
       {annotating?.imagePath && annotatingIndex != null && (
         <SlideAnnotator

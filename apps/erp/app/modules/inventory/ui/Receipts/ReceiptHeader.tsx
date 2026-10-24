@@ -8,6 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   MENU_ITEM_SHORTCUTS,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -17,7 +20,11 @@ import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ItemTracking, Receipt, ReceiptLine } from "~/modules/inventory";
+import type {
+  ItemTracking,
+  Receipt,
+  ReceiptLine
+} from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import ReceiptPostModal from "./ReceiptPostModal";
 import ReceiptStatus from "./ReceiptStatus";
@@ -65,6 +72,12 @@ const ReceiptHeader = () => {
     receiptLines.some((line) => (line.receivedQuantity ?? 0) !== 0) ||
     hasReceivableFaLines ||
     hasReceivableRentalLines;
+  const hasAnyLine =
+    receiptLines.length > 0 ||
+    (routeData?.fixedAssetLines ?? []).length > 0 ||
+    (routeData?.rentalLines ?? []).length > 0;
+  const isEmployee = permissions.is("employee");
+  const postDisabled = !canPost || !isEmployee;
 
   const hasTrackingLabels = (routeData?.receiptLineTracking ?? []).length > 0;
 
@@ -174,21 +187,50 @@ const ReceiptHeader = () => {
                 </Button>
               ))}
             {!isPosted && !isVoided && (
-              <Button
-                variant="primary"
-                onClick={postModal.onOpen}
-                isDisabled={!canPost || !permissions.is("employee")}
-                leftIcon={<LuCheckCheck />}
-              >
-                <Trans>Post</Trans>
-              </Button>
+              // A disabled button gets no pointer events or focus, so the span is the trigger.
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={postDisabled ? 0 : undefined}>
+                    <Button
+                      variant="primary"
+                      onClick={postModal.onOpen}
+                      isDisabled={postDisabled}
+                      leftIcon={<LuCheckCheck />}
+                    >
+                      <Trans>Post</Trans>
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {postDisabled && (
+                  <TooltipContent>
+                    {!isEmployee ? (
+                      <Trans>Only employees can post receipts.</Trans>
+                    ) : hasAnyLine ? (
+                      <Trans>
+                        Enter a received quantity, or tick a unit, on at least
+                        one line.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        This receipt has no lines. Choose a source document to
+                        add them.
+                      </Trans>
+                    )}
+                  </TooltipContent>
+                )}
+              </Tooltip>
             )}
           </>
         }
       />
 
       {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
-      {voidModal.isOpen && <ReceiptVoidModal onClose={voidModal.onClose} />}
+      {voidModal.isOpen && (
+        <ReceiptVoidModal
+          isSalesReturn={receipt.sourceDocument === "Sales Return Order"}
+          onClose={voidModal.onClose}
+        />
+      )}
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
           action={path.to.deleteReceipt(receiptId)}

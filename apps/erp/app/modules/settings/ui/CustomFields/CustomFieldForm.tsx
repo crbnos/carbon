@@ -33,9 +33,10 @@ import { useParams } from "react-router";
 import type { z } from "zod";
 import { Array, Boolean, Hidden, Input, Submit, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { customFieldValidator } from "~/modules/settings";
-import { DataType, tablesWithTags } from "~/modules/shared";
+import type { AttributeDataType } from "~/modules/people/types";
+import { customFieldValidator } from "~/modules/settings/settings.models";
+import { tablesWithTags } from "~/modules/shared/shared.models";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 type CustomFieldFormProps = {

@@ -14,7 +14,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteItemSerialSequence,
   getItemSerialSequence
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

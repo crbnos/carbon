@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -13,16 +14,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
-import {
-  insertRentalAgreement,
-  rentalAgreementValidator,
-  upsertRentalAgreementLine
-} from "~/modules/sales";
+import { rentalAgreementValidator } from "~/modules/sales/sales.models";
 import {
   RentalAgreementDetailsForm,
   RentalSetupSteps
 } from "~/modules/sales/ui/Rentals";
-import { getCompanySettings, getNextSequence } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -45,83 +42,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(rentalAgreementValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const {
-    id: _id,
-    rentalAgreementId: _rentalAgreementId,
-    ...data
-  } = validation.data;
-
-  const sequence = await getNextSequence(client, "rentalAgreement", companyId);
-  if (sequence.error || !sequence.data) {
-    throw redirect(
-      path.to.rentalAgreements,
-      await flash(
-        request,
-        error(sequence.error, "Failed to get the next rental agreement number")
-      )
-    );
-  }
-
-  const agreement = await insertRentalAgreement(client, {
-    ...data,
-    rentalAgreementId: sequence.data,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (agreement.error || !agreement.data) {
-    throw redirect(
-      path.to.rentalAgreements,
-      await flash(
-        request,
-        error(agreement.error, "Failed to create rental agreement")
-      )
-    );
-  }
-
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(rentalAgreementValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const formData = input.formData ?? new FormData();
   // The fleet register's Rent action opens this form with the unit to rent.
   const fixedAssetId = formData.get("fixedAssetId");
-  if (typeof fixedAssetId === "string" && fixedAssetId) {
-    const line = await upsertRentalAgreementLine(client, {
-      rentalAgreementId: agreement.data.id,
-      fixedAssetId,
-      // The rate starts from the customer's, customer type's or item's
-      // monthly rate; the planner can change it on the unit.
-      rateUnit: "Month",
-      companyId,
-      createdBy: userId
+  const api = await carbon(args.request);
+  const result = await api.sales.createRentalAgreement({
+    ...input.data,
+    fixedAssetId:
+      typeof fixedAssetId === "string" && fixedAssetId
+        ? fixedAssetId
+        : undefined,
+    customFields: setCustomFields(formData)
+  });
+  if (!result.data) {
+    return respond(args.request, result).redirect(path.to.rentalAgreements, {
+      message: ""
     });
-    if (line.error) {
-      throw redirect(
-        path.to.rentalAgreementSetup(agreement.data.id, "units"),
-        await flash(
-          request,
-          error(
-            line.error,
-            "Agreement created, but the unit could not be added"
-          )
-        )
-      );
-    }
   }
-
-  throw redirect(path.to.rentalAgreementSetup(agreement.data.id, "units"));
+  // A unit that could not be added leaves the agreement, and says so.
+  const { id, warning } = result.data;
+  throw redirect(
+    path.to.rentalAgreementSetup(id, "units"),
+    warning ? await flash(args.request, error(null, warning)) : undefined
+  );
 }
 
 /** Step 1 of the rental agreement setup: creating the Draft. Every later

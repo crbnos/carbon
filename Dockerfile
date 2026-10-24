@@ -5,8 +5,8 @@ ARG APP
 # reads them at runtime (no --enable-source-maps), so they go by default.
 ARG SOURCEMAPS=0
 
-# slim, not node:22 — every native dep ships prebuilt, nothing needs the toolchain.
-FROM node:24-slim AS deps
+# slim, not the full node image — every native dep ships prebuilt, nothing needs the toolchain.
+FROM node:24.22.1-slim AS deps
 WORKDIR /repo
 RUN corepack enable
 # Store on a cache mount, so a source-only commit relinks instead of refetching.
@@ -49,7 +49,7 @@ RUN rm -rf apps/${APP}/node_modules/.vite apps/${APP}/node_modules/.ignored_*
 # not build on `deps`. It keeps the supabase CLI and tsx/esbuild that `runner`
 # strips for its CVE posture, so it is never exposed and is scanned
 # report-only. Kept BEFORE `runner` so `runner` stays the default build stage.
-FROM node:24-slim AS bootstrap-deps
+FROM node:24.22.1-slim AS bootstrap-deps
 WORKDIR /repo
 RUN corepack enable
 ENV npm_config_store_dir=/pnpm/store
@@ -82,7 +82,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
     find node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' -o -name '*.d.cts' \
         -o -name '*.md' -o -name '*.map' \) -delete 2>/dev/null || true
 
-FROM node:24-slim AS bootstrap
+FROM node:24.22.1-slim AS bootstrap
 # slim ships no CA certs, and the supabase CLI is a Go binary that verifies TLS
 # against the system store — migrations default to sslmode=require.
 RUN apt-get update \
@@ -106,7 +106,10 @@ FROM bootstrap AS ops
 # the supabase CLI and its fix is unpublished), packages the lockfile hydrates
 # but nothing links (a frozen install materializes every importer, docs/
 # included — hence next/@mui; react-icons is inlined via ssr.noExternal), and
-# sourcemaps/.d.ts/readmes. Verify additions the same way — monaco-editor looks
+# sourcemaps/.d.ts/readmes. react-email 6 ships its CLI in the runtime package:
+# the runtime entry imports only @react-email/render, css-tree, marked, prismjs
+# and tailwindcss, so the preview UI and the CLI-only deps nothing else in the
+# lockfile uses go. Verify additions the same way — monaco-editor looks
 # strippable but the server bundle imports @monaco-editor/react.
 FROM deps AS pruned
 ARG SOURCEMAPS
@@ -122,7 +125,10 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         -name '@turbo+*' -o \
         -name '@rolldown+binding-*' -o \
         -name 'vitest@*' -o -name '@vitest+*' -o \
-        -name '@react-email+preview-server@*' -o \
+        -name '@react-email+ui@*' -o \
+        -name 'socket.io@*' -o -name 'socket.io-adapter@*' -o -name 'engine.io@*' -o \
+        -name 'conf@*' -o -name 'nypm@*' -o -name 'picospinner@*' -o -name 'prompts@*' -o \
+        -name 'tsconfig-paths@*' -o \
         -name 'next@*' -o -name '@next+*' -o \
         -name '@mui+*' -o \
         -name 'react-icons@*' \
@@ -135,7 +141,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         find node_modules -type f -name '*.map' -delete 2>/dev/null || true ; \
     fi
 
-FROM node:24-slim AS runner
+FROM node:24.22.1-slim AS runner
 ARG APP
 WORKDIR /repo
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0

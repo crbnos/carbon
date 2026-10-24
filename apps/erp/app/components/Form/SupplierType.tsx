@@ -8,9 +8,8 @@ import { useLoaderQuery } from "@carbon/query";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { Enumerable } from "~/components/Enumerable";
-import type { getSupplierTypesList } from "~/modules/purchasing";
+import type { getSupplierTypesList } from "~/modules/purchasing/purchasing.service";
 import SupplierTypeForm from "~/modules/purchasing/ui/SupplierTypes/SupplierTypeForm";
-
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

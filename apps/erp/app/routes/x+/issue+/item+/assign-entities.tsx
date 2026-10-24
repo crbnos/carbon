@@ -11,8 +11,9 @@ import { data } from "react-router";
 import {
   assignIssueItemEntitiesValidator,
   isIssueLocked
-} from "~/modules/quality";
-import { assignEntitiesToIssueItem } from "~/modules/quality/quality-disposition.server";
+} from "~/modules/quality/quality.models";
+import { assignEntitiesToIssueItem } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -43,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   if (lockedError) return lockedError;
 
-  const result = await assignEntitiesToIssueItem({
+  const result = await assignEntitiesToIssueItem(getDatabaseClient(), {
     nonConformanceItemId,
     targetItemId,
     assignments: entityAssignments,

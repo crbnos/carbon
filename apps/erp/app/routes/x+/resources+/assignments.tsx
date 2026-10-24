@@ -36,7 +36,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions } from "~/hooks";
-import { getTrainingAssignmentSummary } from "~/modules/resources";
+import { getTrainingAssignmentSummary } from "~/modules/resources/resources.service";
 import type { TrainingAssignmentSummaryItem } from "~/modules/resources/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

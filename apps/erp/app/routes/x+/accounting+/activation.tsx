@@ -11,14 +11,14 @@ import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useMatches } from "react-router";
 import { SetupFrame } from "~/components/Setup";
-import { getActivationCutover } from "~/modules/accounting/accounting.server";
+import { getActivationCutover } from "~/modules/accounting/accounting.service";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   type ActivationStep,
   ActivationSteps,
   activationSteps
 } from "~/modules/accounting/ui/Activation";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

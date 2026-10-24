@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -13,10 +14,8 @@ import {
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
 import { Hidden, Number, Submit } from "~/components/Form";
-import { rescheduleToleranceValidator } from "~/modules/settings";
+import { rescheduleToleranceValidator } from "~/modules/settings/settings.models";
 
 // One settings card = one saved concern (archetype F): the reschedule
 // tolerance MRP applies before it raises an Expedite / Defer suggestion.
@@ -27,16 +26,9 @@ export function RescheduleToleranceCard({
   rescheduleToleranceDays: number;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
-
-  useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data?.message) return;
-    if (fetcher.data.success) {
-      toast.success(fetcher.data.message);
-    } else {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.state, fetcher.data]);
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Reschedule tolerance updated`)
+  });
 
   return (
     <Card>

@@ -14,6 +14,7 @@ export type Group =
   | "quickbooks"
   | "jira"
   | "onshape"
+  | "onshapeV2"
   | "ramp"
   | "ai"
   | "assembler"
@@ -30,6 +31,7 @@ export const FEATURES = {
   quickbooks: "QuickBooks",
   jira: "Jira",
   onshape: "Onshape",
+  onshapeV2: "Onshape V2",
   ramp: "Ramp",
   ai: "AI",
   assembler: "Assembler"
@@ -116,6 +118,12 @@ export const schema = define({
     description: "true for an ITAR / controlled deployment",
     browser: true
   },
+  TENANT_TYPE: {
+    group: "core",
+    type: z.enum(["single", "multi"]),
+    description:
+      "single for a deployment one customer owns (BYOC, self-hosted); multi (default) for Carbon Cloud"
+  },
   MAINTENANCE_MODE: {
     group: "core",
     description: "true answers every request except /health with a 503"
@@ -125,6 +133,11 @@ export const schema = define({
     description:
       "URL of a JSON document with the latest version and an announcement",
     type: url
+  },
+  INTEGRATION_EARLY_ACCESS_USER_IDS: {
+    group: "core",
+    description:
+      "Comma-separated user ids that can install Coming soon integrations on Cloud"
   },
   DEFAULT_LANGUAGE: {
     group: "core",
@@ -244,6 +257,12 @@ export const schema = define({
   RATE_LIMIT: {
     group: "auth",
     description: "Sign-in attempts allowed per window (5)",
+    type: number
+  },
+  TRUSTED_PROXIES: {
+    group: "auth",
+    description:
+      "Proxies in front of the app that append to X-Forwarded-For (1); 2 behind an ALB and Traefik",
     type: number
   },
   BOT_PROTECTION: {
@@ -414,19 +433,38 @@ export const schema = define({
   // ── onshape ───────────────────────────────────────────────────────────────
   ONSHAPE_CLIENT_ID: {
     group: "onshape",
-    description: "Onshape app client id",
+    description: "Onshape sync app client id",
     browser: true,
     needed: true
   },
   ONSHAPE_CLIENT_SECRET: {
     group: "onshape",
-    description: "Onshape app client secret",
+    description: "Onshape sync app client secret",
     secret: true,
     needed: true
   },
   ONSHAPE_OAUTH_REDIRECT_URL: {
     group: "onshape",
-    description: "Onshape OAuth callback URL",
+    description: "Onshape sync app OAuth callback URL",
+    type: url
+  },
+
+  // ── onshapeV2 (the panel's own Onshape app) ───────────────────────────────
+  ONSHAPE_V2_CLIENT_ID: {
+    group: "onshapeV2",
+    description: "Onshape panel app client id",
+    browser: true,
+    needed: true
+  },
+  ONSHAPE_V2_CLIENT_SECRET: {
+    group: "onshapeV2",
+    description: "Onshape panel app client secret",
+    secret: true,
+    needed: true
+  },
+  ONSHAPE_V2_OAUTH_REDIRECT_URL: {
+    group: "onshapeV2",
+    description: "Onshape panel app OAuth callback URL",
     type: url
   },
 

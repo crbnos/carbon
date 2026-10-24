@@ -10,10 +10,8 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getPurchaseInvoices,
-  PurchaseInvoicesTable
-} from "~/modules/invoicing";
+import { getPurchaseInvoices } from "~/modules/invoicing/invoicing.service";
+import { PurchaseInvoicesTable } from "~/modules/invoicing/ui";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

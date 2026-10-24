@@ -49,7 +49,7 @@ import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { documentTypes } from "~/modules/shared";
+import { documentTypes } from "~/modules/shared/shared.models";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { documentSourceTypes } from "../../documents.models";
