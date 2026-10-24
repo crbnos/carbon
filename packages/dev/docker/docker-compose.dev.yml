@@ -402,7 +402,7 @@ services:
   # Each worktree gets its own logical DB index (0-15) via REDIS_URL.
 
   inngest:
-    image: inngest/inngest:v1.19.4
+    image: inngest/inngest:v1.46.0
     restart: on-failure
     deploy:
       resources:
