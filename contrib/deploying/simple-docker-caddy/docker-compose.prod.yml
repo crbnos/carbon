@@ -518,7 +518,7 @@ services:
           memory: 512M
 
   edge-runtime:
-    image: supabase/edge-runtime:v1.74.0
+    image: supabase/edge-runtime:v1.77.4
     entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
     command: ["edge-runtime", "start", "--main-service", "/home/deno/main"]
     networks: [internal]
