@@ -29,6 +29,9 @@ import {
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
+  type BulkInviteResult,
+  bulkCreateEmployeeValidator,
+  bulkInviteResultForEmailDelivery,
   createOperatorValidator,
   employeeTypePermissionsValidator,
   itarEntityCertificationValidator,
@@ -140,6 +143,165 @@ export const inviteEmployee = defineServiceFn({
     return { userId: created.userId };
   }
 });
+/**
+ * Invite one or more employees: create each account in the company and email
+ * each invite link, returning per-row outcomes.
+ */
+export const bulkInviteEmployees = defineServiceFn({
+  input: z.object({
+    employees: bulkCreateEmployeeValidator.shape.employees,
+    ...requestOrigin
+  }),
+  permission: { create: "users" },
+  async run(ctx, { employees, ip, city }) {
+    const companyId = ctx.company.id;
+    const client = ctx.asCaller.supabase;
+
+    // Preserve the single-invite role policy for every row. Resolve once, not
+    // once per employee: Community / Starter receives the seeded Admin type.
+    const canAuthorRoles = await companyHasFeature(client, companyId, {
+      feature: "PERMISSIONS"
+    });
+    let adminEmployeeType: string | undefined;
+    if (!canAuthorRoles) {
+      const adminType = await client
+        .from("employeeType")
+        .select("id")
+        .eq("companyId", companyId)
+        .eq("systemType", "Admin")
+        .maybeSingle();
+      adminEmployeeType = adminType.data?.id;
+    }
+
+    const sender = await service.inviteSender(ctx);
+    if (!sender) return ctx.error("internal", "Failed to load company or user");
+
+    const results: BulkInviteResult[] = [];
+
+    for (const employee of employees) {
+      const email = employee.email.toLowerCase();
+      const {
+        rowId = "",
+        firstName,
+        lastName,
+        locationId,
+        employeeType,
+        usPersonAttestation
+      } = employee;
+
+      if (CONTROLLED_ENVIRONMENT && !usPersonAttestation) {
+        results.push({
+          rowId,
+          email,
+          success: false,
+          message: US_PERSON_ATTESTATION_REQUIRED
+        });
+        continue;
+      }
+
+      // Once SSO is active for the company, an employee invite outside its
+      // covered domains is refused before anything is created or emailed.
+      const outsideSso = await service.refuseEmailOutsideSso(ctx, email);
+      if (outsideSso) {
+        results.push({
+          rowId,
+          email,
+          success: false,
+          message: outsideSso.message
+        });
+        continue;
+      }
+
+      const result = await service.createEmployeeAccount(
+        client,
+        ctx.asSystem.pg,
+        {
+          email,
+          firstName,
+          lastName,
+          employeeType: adminEmployeeType ?? employeeType,
+          locationId,
+          companyId,
+          createdBy: ctx.auditUserId,
+          attestedBy: CONTROLLED_ENVIRONMENT ? ctx.auditUserId : null,
+          attestedAt: CONTROLLED_ENVIRONMENT ? datetime.timestamp() : null
+        }
+      );
+
+      if (!result.success) {
+        logger.error("Failed to create employee account", { result });
+        results.push({
+          rowId,
+          email,
+          success: false,
+          message: result.message ?? "Failed to create employee account"
+        });
+        continue;
+      }
+
+      try {
+        const emailResult = await service.sendInviteEmail(ctx, {
+          ...sender,
+          email,
+          code: result.code,
+          name: `${firstName} ${lastName}`.trim(),
+          ip,
+          city
+        });
+
+        if (emailResult.error) {
+          logger.error("Invite email send failed", {
+            error: emailResult.error.message ?? "Email send failed"
+          });
+          results.push(
+            bulkInviteResultForEmailDelivery({
+              rowId,
+              email,
+              delivered: false
+            })
+          );
+          continue;
+        }
+
+        results.push(
+          bulkInviteResultForEmailDelivery({
+            rowId,
+            email,
+            delivered: true
+          })
+        );
+      } catch (emailError) {
+        logger.error("Invite email send failed", {
+          error:
+            emailError instanceof Error
+              ? emailError.message
+              : "Email send failed"
+        });
+        results.push(
+          bulkInviteResultForEmailDelivery({
+            rowId,
+            email,
+            delivered: false
+          })
+        );
+      }
+    }
+
+    const succeeded = results.filter((r) => r.success).length;
+    const failed = results.length - succeeded;
+    const message =
+      failed === 0
+        ? `Successfully invited ${succeeded} employee${succeeded === 1 ? "" : "s"}`
+        : `${succeeded} of ${results.length} invited successfully, ${failed} failed`;
+
+    return {
+      success: failed === 0,
+      message,
+      results
+    };
+  }
+});
+
 /**
  * Invite a customer contact: create their portal account and email them the
  * invite link.
