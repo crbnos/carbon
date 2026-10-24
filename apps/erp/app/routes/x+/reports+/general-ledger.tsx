@@ -11,7 +11,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useLocation } from "react-router";
 import {
   getAccountsList,
-  getGeneralLedgerLines
+  getGeneralLedgerLines,
+  withGeneralLedgerCounterparties
 } from "~/modules/accounting/accounting.service";
 import {
   GeneralLedgerTable,
@@ -54,8 +55,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  const rows = await withGeneralLedgerCounterparties(
+    client,
+    selectedCompany.id,
+    lines.data ?? []
+  );
+  if (rows.error) {
+    throw redirect(
+      path.to.reports,
+      await flash(request, error(rows.error, "Failed to load general ledger"))
+    );
+  }
+
   return {
-    lines: lines.data ?? [],
+    lines: rows.data,
     count: lines.count ?? 0,
     accounts: accounts.data ?? [],
     companies,
