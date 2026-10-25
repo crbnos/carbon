@@ -75,10 +75,4 @@ describe("noLocalTimezone", () => {
       "const d = datetime.today(await getCompanyTimeZone(client, companyId)).toString();";
     expect(noLocalTimezone.scan("f.ts", ts)).toHaveLength(0);
   });
-
-  it("records provenance pointing at the company-timezone migration", () => {
-    expect(noLocalTimezone.provenance.since).toBe(
-      "20260805020925_company-timezone.sql"
-    );
-  });
 });

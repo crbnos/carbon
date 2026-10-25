@@ -8,7 +8,10 @@ import {
   addMonths,
   bicMatchesCountry,
   getBankFieldConfig,
+  getCompletionAfterQuantityChange,
   isValidSwiftBic,
+  RoundingMode,
+  round,
   type TaxPair,
   taxableBase,
   taxPairFromAmount,
@@ -808,6 +811,85 @@ export function taxPairForQuantity(
     rate,
     currencyDecimals
   );
+}
+
+/** A purchase order line as a planning Increase / Decrease reads it. */
+export type PlanningQuantityLine = {
+  supplierUnitPrice: number | null;
+  supplierShippingCost: number | null;
+  purchaseQuantity: number | null;
+  quantityReceived: number | null;
+  quantityInvoiced: number | null;
+  receivedComplete: boolean | null;
+  taxPercent: number | null;
+  supplierTaxAmount: number | null;
+  conversionFactor: number | null;
+  currencyCode: string | null;
+  baseCurrencyCode: string | null;
+};
+
+/** A PO with no currency is in the company's base currency, as the PO line
+ *  form reads it. */
+export function planningLineCurrencyCode(line: {
+  currencyCode: string | null;
+  baseCurrencyCode: string | null;
+}): string | null {
+  return line.currencyCode ?? line.baseCurrencyCode;
+}
+
+/**
+ * The write a planning Increase / Decrease makes on its PO line, or why it
+ * cannot. `suggestedQuantity` is in INVENTORY units and is what the line
+ * should still BRING (MRP reads a line's `quantityToReceive`): it is
+ * converted by the line's own `conversionFactor`, rounded up to a whole
+ * purchase unit, and what was already received is added back.
+ */
+export function planningQuantityChange(
+  line: PlanningQuantityLine | undefined,
+  decimalsByCode: Map<string, number>,
+  suggestedQuantity: number
+):
+  | {
+      ok: true;
+      quantity: number;
+      percent: number;
+      amount: number;
+      receivedComplete: boolean;
+      invoicedComplete: boolean;
+    }
+  | { ok: false; message: string } {
+  const currencyCode = line ? planningLineCurrencyCode(line) : null;
+  const decimals = currencyCode ? decimalsByCode.get(currencyCode) : undefined;
+  if (!line || decimals === undefined) {
+    return {
+      ok: false,
+      message: line
+        ? `Currency ${currencyCode ?? "(none)"} has no precision`
+        : "Purchase order line not found"
+    };
+  }
+  const conversionFactor = Number(line.conversionFactor) || 1;
+  // MRP suggests a whole number of purchase units already
+  // (`quantityAfterApply`, @carbon/planning); the inner round strips float
+  // noise (1.1 / 0.1 = 11.000000000000002) that would otherwise ceil it a
+  // whole purchase unit up.
+  const toReceive =
+    conversionFactor > 0
+      ? round(
+          round(Number(suggestedQuantity) / conversionFactor),
+          0,
+          RoundingMode.Up
+        )
+      : Number(suggestedQuantity);
+  const quantity = round((Number(line.quantityReceived) || 0) + toReceive);
+  const pair = taxPairForQuantity(line, quantity, decimals);
+  return {
+    ok: true,
+    quantity,
+    percent: pair.percent,
+    amount: pair.amount,
+    ...getCompletionAfterQuantityChange(line, quantity)
+  };
 }
 
 /**

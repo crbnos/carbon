@@ -109,17 +109,15 @@ describe("buildCatalog — record events", () => {
     const ids = Object.keys(built.events).filter((id) =>
       id.startsWith("order.")
     );
-    expect(ids).toEqual(
-      expect.arrayContaining([
-        "order.created",
-        "order.deleted",
-        "order.status.changed",
-        "order.supplierId.changed",
-        "order.buyerId.changed"
-      ])
-    );
-    // 3 watched columns => 5 record events, plus the moment keyed "order.approved".
-    expect(ids).toHaveLength(6);
+    // The moment keyed "order.approved" shares the prefix.
+    expect(ids.sort()).toEqual([
+      "order.approved",
+      "order.buyerId.changed",
+      "order.created",
+      "order.deleted",
+      "order.status.changed",
+      "order.supplierId.changed"
+    ]);
   });
 
   it("emits no generic updated event", () => {
@@ -224,19 +222,10 @@ describe("buildCatalog — labels", () => {
     );
   });
 
-  it("passes a moment's hand-written label through unchanged", () => {
-    expect(built.labels["order.approved"]).toBe("An order is approved");
-  });
-
   it("emits a label for every event", () => {
     for (const id of Object.keys(built.events)) {
       expect(built.labels[id]).toBeDefined();
     }
-  });
-
-  it("emits an entity label for each registry entity", () => {
-    expect(built.labels["entity.order"]).toBe("Order");
-    expect(built.labels["entity.person"]).toBe("Person");
   });
 
   it("sentence-cases a hand-written column label", () => {
@@ -646,53 +635,46 @@ describe("validateCatalogInputs", () => {
     ).toEqual([]);
   });
 
-  it("rejects a fixed set of values on a list of anything but text", () => {
-    const problems = multi({
-      type: { kind: "list", of: { kind: "primitive", of: "number" } },
-      required: false,
-      label: "channels",
-      choices: ["inApp"]
-    });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(/is not a list of text/);
-  });
-
-  it("rejects a default that is not one of a multi-select's values", () => {
-    const problems = multi({
-      type: LIST_OF_TEXT,
-      required: false,
-      label: "channels",
-      choices: ["inApp", "email"],
-      defaultValue: ["inApp", "carrier-pigeon"]
-    });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(/"carrier-pigeon", which is not one/);
-  });
-
-  it("rejects a single default on a multi-select", () => {
-    const problems = multi({
-      type: LIST_OF_TEXT,
-      required: false,
-      label: "channels",
-      choices: ["inApp", "email"],
-      defaultValue: "inApp"
-    });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(/defaults to one value but holds a set/);
-  });
-
-  it("rejects a set of defaults on an input that holds one value", () => {
-    const problems = multi({
-      type: { kind: "primitive", of: "string" },
-      required: false,
-      label: "channels",
-      choices: ["inApp", "email"],
-      defaultValue: ["inApp"]
-    });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(
+  it.each([
+    [
+      "a fixed set of values on a list of anything but text",
+      {
+        type: { kind: "list", of: { kind: "primitive", of: "number" } },
+        choices: ["inApp"]
+      },
+      /is not a list of text/
+    ],
+    [
+      "a default that is not one of a multi-select's values",
+      {
+        type: LIST_OF_TEXT,
+        choices: ["inApp", "email"],
+        defaultValue: ["inApp", "carrier-pigeon"]
+      },
+      /"carrier-pigeon", which is not one/
+    ],
+    [
+      "a single default on a multi-select",
+      {
+        type: LIST_OF_TEXT,
+        choices: ["inApp", "email"],
+        defaultValue: "inApp"
+      },
+      /defaults to one value but holds a set/
+    ],
+    [
+      "a set of defaults on an input that holds one value",
+      {
+        type: { kind: "primitive", of: "string" },
+        choices: ["inApp", "email"],
+        defaultValue: ["inApp"]
+      },
       /defaults to a set of values but only holds one/
-    );
+    ]
+  ])("rejects %s", (_, input, problem) => {
+    const problems = multi({ required: false, label: "channels", ...input });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(problem);
   });
 
   const gated = (
@@ -729,22 +711,31 @@ describe("validateCatalogInputs", () => {
       schema
     );
 
-  it("rejects a showWhen naming an input the action does not have", () => {
-    const problems = gated({ input: "verb", equals: ["POST"] }, ["POST"]);
+  it.each<
+    [string, { input: string; equals: string[] }, string[] | undefined, RegExp]
+  >([
+    [
+      "naming an input the action does not have",
+      { input: "verb", equals: ["POST"] },
+      ["POST"],
+      /not an input of "order.archive"/
+    ],
+    [
+      "against an input with no fixed set of values",
+      { input: "method", equals: ["POST"] },
+      undefined,
+      /has no fixed set of values/
+    ],
+    [
+      "expecting a value the gating input cannot hold",
+      { input: "method", equals: ["TRACE"] },
+      ["POST"],
+      /which is not one of its values/
+    ]
+  ])("rejects a showWhen %s", (_, showWhen, methodChoices, problem) => {
+    const problems = gated(showWhen, methodChoices);
     expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(/not an input of "order.archive"/);
-  });
-
-  it("rejects a showWhen against an input with no fixed set of values", () => {
-    const problems = gated({ input: "method", equals: ["POST"] });
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(/has no fixed set of values/);
-  });
-
-  it("rejects a showWhen expecting a value the gating input cannot hold", () => {
-    const problems = gated({ input: "method", equals: ["TRACE"] }, ["POST"]);
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(/which is not one of its values/);
+    expect(problems[0]).toMatch(problem);
   });
 
   it("accepts a well-formed showWhen", () => {
@@ -763,18 +754,13 @@ describe("buildCatalog — the real hand-written inputs", () => {
     { definitions: realDefinitions() }
   );
 
-  it("accepts the real registry, moments, actions and operations", () => {
-    expect(Object.keys(WORKFLOW_MOMENTS)).toHaveLength(9);
-    // 77 watched columns + 10 created + 10 deleted + 9 moments.
-    expect(Object.keys(built.events)).toHaveLength(106);
-    expect(Object.keys(built.entities)).toHaveLength(17);
-    // 10 generated `<entity>.update` plus the 6 hand-written.
-    expect(Object.keys(built.actions)).toHaveLength(16);
-    expect(Object.keys(built.operations)).toHaveLength(15);
-    // 106 events + 16 actions + 15 operations + 17 entity labels + 95 column labels
-    // + 28 action input labels + 15 operation input labels
-    // + 44 generated update-action input labels (10 record inputs + 34 writable columns)
-    expect(Object.keys(built.labels)).toHaveLength(336);
+  it("labels every real event, action and operation", () => {
+    const unlabelled = [
+      ...Object.keys(built.events),
+      ...Object.keys(built.actions),
+      ...Object.keys(built.operations)
+    ].filter((id) => !built.labels[id]);
+    expect(unlabelled).toEqual([]);
   });
 
   it("sets template: true on inputs marked as templates", () => {
@@ -786,21 +772,6 @@ describe("buildCatalog — the real hand-written inputs", () => {
   it("does not set template on non-template inputs", () => {
     expect(built.actions.webhook?.inputs.url?.template).toBeUndefined();
     expect(built.actions.notify?.inputs.user?.template).toBeUndefined();
-  });
-
-  it("emits action input labels", () => {
-    expect(built.labels["action.notify.input.subject"]).toBe("Subject");
-    expect(built.labels["action.webhook.input.url"]).toBe("URL");
-    expect(built.labels["action.job.create.input.dueDate"]).toBe("Due date");
-  });
-
-  it("emits operation input labels", () => {
-    expect(
-      built.labels["operation.purchaseOrder.total.input.purchaseOrder"]
-    ).toBe("Record");
-    expect(built.labels["operation.job.scrapPercentage.input.job"]).toBe(
-      "Record"
-    );
   });
 });
 

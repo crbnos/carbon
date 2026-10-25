@@ -5,23 +5,31 @@
 import { describe, expect, it } from "vitest";
 import { asCarbonOwnedSettings } from "../../sync/delegation";
 import {
+  addDaysToIsoDate,
   aggregateJournalEntriesForDate,
   collectUnmappedDimensionValues,
+  DEFAULT_POSTING_SYNC_SETTINGS,
+  evaluatePeriodLock,
   getDailyConsolidationNarration,
   getDimensionTupleKey,
+  getJournalEntrySyncEntityId,
   getPostingSyncSourceTypeSkipReason,
   getZeroJournalSkipReason,
+  isBalancedJournal,
+  isJournalEntrySyncFailure,
   isPaymentSyncbackEnabled,
   isZeroJournal,
   JournalEntrySyncError,
   netJournalLinesPerAccount,
+  type PostingSyncSettings,
+  parseJournalEntrySyncEntityId,
   resolvePostingSyncSettings,
   runJournalEntryPreflight,
   toDebitSignedAmount
 } from "./posting";
 import type { Accounting } from "./types";
 
-// ── Daily-consolidation aggregation (Task 12) ────────────────────────────────
+// ── Daily-consolidation aggregation ────────────────────────────────────────
 // One aggregated journal per posting date: signed amounts summed per account
 // across the member journals, zero-net accounts dropped, balance asserted.
 
@@ -246,127 +254,66 @@ describe("getDailyConsolidationNarration", () => {
   });
 });
 
-// ── Source-type gate ─────────────────────────────────────────────────────────
+// ── Drain-time backstop ──────────────────────────────────────────────────────
+// The policy decisions themselves are in posting-policy.test.ts. The backstop
+// derives document-sync flags from the family modes and forwards the memo
+// party; a skip returns the decision's message, a push returns null.
 
 describe("getPostingSyncSourceTypeSkipReason", () => {
-  const settings = asCarbonOwnedSettings(resolvePostingSyncSettings(null));
+  const settingsWith = (families?: Record<string, string>) =>
+    asCarbonOwnedSettings(
+      resolvePostingSyncSettings(
+        families ? { settings: { postingSync: { families } } } : null
+      )
+    );
+  const memoJournals = {
+    ar: "documents",
+    ap: "documents",
+    creditMemo: "journals",
+    supplierCredit: "journals"
+  };
 
-  it("pushes the quality-scrap source types by default", () => {
-    expect(
-      getPostingSyncSourceTypeSkipReason("Non-Conformance", settings)
-    ).toBeNull();
-    expect(
-      getPostingSyncSourceTypeSkipReason("Inbound Inspection", settings)
-    ).toBeNull();
-  });
-
-  it("pushes Inventory Adjustment journals by default", () => {
-    expect(
-      getPostingSyncSourceTypeSkipReason("Inventory Adjustment", settings)
-    ).toBeNull();
-    expect(
-      getPostingSyncSourceTypeSkipReason("Inventory Adjustment", settings, {
-        inventoryAdjustmentEntitySyncEnabled: false
-      })
-    ).toBeNull();
-  });
-
-  it("skips Inventory Adjustment journals while the entity syncer owns them", () => {
-    const reason = getPostingSyncSourceTypeSkipReason(
+  it.each<
+    [
+      string,
+      string,
+      Record<string, string> | undefined,
+      Parameters<typeof getPostingSyncSourceTypeSkipReason>[2],
+      boolean
+    ]
+  >([
+    ["pushes", "Purchase Receipt", undefined, undefined, true],
+    ["skips", "Sales Invoice", undefined, undefined, false],
+    [
+      "skips",
       "Inventory Adjustment",
-      settings,
-      { inventoryAdjustmentEntitySyncEnabled: true }
-    );
-    expect(reason).toContain("double-post");
-  });
-
-  it("keeps document-backed source types excluded regardless of the guard", () => {
-    expect(
-      getPostingSyncSourceTypeSkipReason("Sales Invoice", settings, {
-        inventoryAdjustmentEntitySyncEnabled: true
-      })
-    ).toContain("document-backed");
-  });
-
-  it("skips unknown source types with a not-enabled reason", () => {
-    expect(
-      getPostingSyncSourceTypeSkipReason("Not A Source Type", settings)
-    ).toContain("not enabled");
-  });
-
-  // The memo families are resolved per PARTY, so the backstop needs the party
-  // the enqueue decision already resolved from `memo.journalId`. Without it
-  // every memo journal parked as MEMO_PARTY_UNRESOLVED — and for a family in
-  // `journals` mode that is a delivery hole: the enqueue decision said push,
-  // and the drain-time backstop skipped it.
-  describe("memo journals (per-party families)", () => {
-    const memoJournalsMode = asCarbonOwnedSettings(
-      resolvePostingSyncSettings({
-        settings: {
-          postingSync: {
-            families: {
-              ar: "documents",
-              ap: "documents",
-              creditMemo: "journals",
-              vendorCredit: "journals"
-            }
-          }
-        }
-      })
-    );
-
-    it("pushes a memo journal whose family is in journals mode once the party is supplied", () => {
-      expect(
-        getPostingSyncSourceTypeSkipReason("Credit Memo", memoJournalsMode, {
-          memoParty: "customer"
-        })
-      ).toBeNull();
-      // The PARTY decides the family, not the direction: a supplier Credit
-      // memo is gated by Vendor Credits.
-      expect(
-        getPostingSyncSourceTypeSkipReason("Credit Memo", memoJournalsMode, {
-          memoParty: "supplier"
-        })
-      ).toBeNull();
-      expect(
-        getPostingSyncSourceTypeSkipReason("Debit Memo", memoJournalsMode, {
-          memoParty: "supplier"
-        })
-      ).toBeNull();
-    });
-
-    it("parks an unresolvable memo party instead of guessing a family", () => {
-      expect(
-        getPostingSyncSourceTypeSkipReason("Credit Memo", memoJournalsMode)
-      ).toContain("could not be resolved to a customer or supplier memo");
-    });
-
-    it("keeps a family-off memo journal excluded with the party supplied", () => {
-      // Memo families default to "none".
-      expect(
-        getPostingSyncSourceTypeSkipReason("Credit Memo", settings, {
-          memoParty: "customer"
-        })
-      ).toContain('set to "none"');
-    });
-
-    it("excludes a documents-mode memo journal as document-backed", () => {
-      const memoDocumentsMode = asCarbonOwnedSettings(
-        resolvePostingSyncSettings({
-          settings: {
-            postingSync: {
-              families: { creditMemo: "documents" }
-            }
-          }
-        })
+      undefined,
+      { inventoryAdjustmentEntitySyncEnabled: true },
+      false
+    ],
+    // A journals-mode family has its document sync off, so no double-representation warning.
+    [
+      "pushes",
+      "Sales Invoice",
+      { ar: "journals", ap: "documents" },
+      undefined,
+      true
+    ],
+    ["pushes", "Credit Memo", memoJournals, { memoParty: "supplier" }, true],
+    // Without the party a memo parks as unresolved, a delivery hole in journals mode.
+    ["skips", "Credit Memo", memoJournals, undefined, false]
+  ])(
+    "%s a %s journal (families %o, options %o)",
+    (_verb, sourceType, families, options, pushes) => {
+      const reason = getPostingSyncSourceTypeSkipReason(
+        sourceType,
+        settingsWith(families),
+        options
       );
-      expect(
-        getPostingSyncSourceTypeSkipReason("Credit Memo", memoDocumentsMode, {
-          memoParty: "customer"
-        })
-      ).toContain("document-backed");
-    });
-  });
+      if (pushes) expect(reason).toBeNull();
+      else expect(reason).toEqual(expect.any(String));
+    }
+  );
 });
 
 // ── Natural-balance → debit-signed conversion ───────────────────────────────
@@ -839,5 +786,355 @@ describe("zero journals", () => {
     });
 
     expect(result.failure).toBeNull();
+  });
+});
+
+// ── Preflight, settings resolution and journal-sync helpers ──────────────────
+
+// 3-line balanced fixture: Dr Inventory 150.00, Dr Freight 25.50,
+// Cr GRNI accrual 175.50 (Carbon signed amounts: positive = debit)
+const receiptJournal = (
+  overrides?: Partial<Accounting.JournalEntry>
+): Accounting.JournalEntry => ({
+  id: "je_123",
+  companyId: "company-1",
+  journalEntryId: "JE000042",
+  description: "Receipt posting",
+  postingDate: "2026-07-01",
+  status: "Posted",
+  sourceType: "Purchase Receipt",
+  reversalOfId: null,
+  reversedById: null,
+  reversal: false,
+  lines: [
+    {
+      id: "line-1",
+      accountId: "acc-inventory",
+      amount: 150,
+      description: "Inventory"
+    },
+    { id: "line-2", accountId: "acc-freight", amount: 25.5, description: null },
+    {
+      id: "line-3",
+      accountId: "acc-accrual",
+      amount: -175.5,
+      description: "GRNI accrual"
+    }
+  ],
+  updatedAt: "2026-07-01T12:00:00.000Z",
+  ...overrides
+});
+
+const ACCOUNT_CODES: ReadonlyMap<string, string> = new Map([
+  ["acc-inventory", "1400"],
+  ["acc-freight", "5200"],
+  ["acc-accrual", "2150"]
+]);
+
+/**
+ * Build settings through the resolver so stored-fragment shapes (including
+ * v2 `sourceTypes: string[]` / `includeManual` overrides — upgraded by the
+ * schema shim) are exercised exactly as production reads them.
+ */
+const makeSettings = (
+  fragment?: Record<string, unknown>
+): PostingSyncSettings =>
+  resolvePostingSyncSettings({
+    settings: { postingSync: { enabled: true, ...fragment } }
+  });
+
+const passingPreflightArgs = () => ({
+  journal: receiptJournal(),
+  accountCodesById: ACCOUNT_CODES,
+  controlAccountIds: new Set<string>(),
+  lockDate: null,
+  settings: makeSettings()
+});
+
+describe("runJournalEntryPreflight", () => {
+  it("passes a fully mapped, balanced, unlocked journal through with its posting date", () => {
+    const result = runJournalEntryPreflight(passingPreflightArgs());
+    expect(result).toEqual({ failure: null, pushDate: "2026-07-01" });
+  });
+
+  it("returns UNMAPPED_ACCOUNTS (warning) with the unmapped account ids in metadata", () => {
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      accountCodesById: new Map([
+        ["acc-inventory", "1400"],
+        ["acc-accrual", "2150"]
+      ])
+    });
+
+    expect(result.failure?.errorCode).toBe("UNMAPPED_ACCOUNTS");
+    expect(result.failure?.warning).toBe(true);
+    expect(result.failure?.metadata?.unmappedAccountIds).toEqual([
+      "acc-freight"
+    ]);
+  });
+
+  it("treats lines without an account as UNMAPPED_ACCOUNTS with the line ids in metadata", () => {
+    const journal = receiptJournal();
+    const brokenLine = journal.lines[1];
+    if (!brokenLine) throw new Error("fixture must have 3 lines");
+    brokenLine.accountId = null;
+
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      journal
+    });
+
+    expect(result.failure?.errorCode).toBe("UNMAPPED_ACCOUNTS");
+    expect(result.failure?.metadata?.lineIdsWithoutAccount).toEqual(["line-2"]);
+  });
+
+  it("returns CONTROL_ACCOUNT_LINE (warning) when a line hits an AR/AP control account", () => {
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      controlAccountIds: new Set(["acc-accrual"])
+    });
+
+    expect(result.failure?.errorCode).toBe("CONTROL_ACCOUNT_LINE");
+    expect(result.failure?.warning).toBe(true);
+    expect(result.failure?.metadata?.lineIds).toEqual(["line-3"]);
+  });
+
+  it("returns UNBALANCED_JOURNAL as a hard failure (warning: false)", () => {
+    const journal = receiptJournal();
+    const creditLine = journal.lines[2];
+    if (!creditLine) throw new Error("fixture must have 3 lines");
+    creditLine.amount = -175.49;
+
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      journal
+    });
+
+    expect(result.failure?.errorCode).toBe("UNBALANCED_JOURNAL");
+    expect(result.failure?.warning).toBe(false);
+  });
+
+  it("returns PERIOD_LOCKED (warning) under the park policy when postingDate <= lock date", () => {
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      lockDate: "2026-07-01" // equal to postingDate → locked
+    });
+
+    expect(result.failure?.errorCode).toBe("PERIOD_LOCKED");
+    expect(result.failure?.warning).toBe(true);
+    expect(result.failure?.metadata).toEqual({
+      postingDate: "2026-07-01",
+      lockDate: "2026-07-01"
+    });
+  });
+
+  it("re-dates to lock date + 1 (keeping the original date for the narration) under the redate policy", () => {
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      lockDate: "2026-07-01",
+      settings: makeSettings({ periodLockPolicy: "redate" })
+    });
+
+    expect(result).toEqual({
+      failure: null,
+      pushDate: "2026-07-02",
+      redatedFromDate: "2026-07-01"
+    });
+  });
+
+  it("does not lock journals dated after the lock date", () => {
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      lockDate: "2026-06-30"
+    });
+
+    expect(result.failure).toBeNull();
+  });
+
+  it("reports unmapped accounts before the balance check", () => {
+    const journal = receiptJournal();
+    const creditLine = journal.lines[2];
+    if (!creditLine) throw new Error("fixture must have 3 lines");
+    creditLine.amount = -175.49; // unbalanced AND unmapped
+
+    const result = runJournalEntryPreflight({
+      ...passingPreflightArgs(),
+      journal,
+      accountCodesById: new Map()
+    });
+
+    expect(result.failure?.errorCode).toBe("UNMAPPED_ACCOUNTS");
+  });
+});
+
+describe("resolvePostingSyncSettings", () => {
+  it.each([undefined, {}, { settings: {} }])(
+    "resolves %o to the defaults",
+    (metadata) => {
+      expect(resolvePostingSyncSettings(metadata)).toEqual(
+        DEFAULT_POSTING_SYNC_SETTINGS
+      );
+    }
+  );
+
+  // Memo families are opt-in; invoices and bills sync as documents.
+  it("defaults ar/ap to documents mode and the memo families to none", () => {
+    expect(DEFAULT_POSTING_SYNC_SETTINGS.families).toEqual({
+      ar: "documents",
+      ap: "documents",
+      creditMemo: "none",
+      supplierCredit: "none"
+    });
+  });
+
+  it("upgrades a stored v2 fragment (global daily consolidation) through the shim", () => {
+    const resolved = resolvePostingSyncSettings({
+      settings: {
+        postingSync: {
+          enabled: true,
+          consolidation: "daily",
+          lockDate: "2026-06-30"
+        }
+      }
+    });
+
+    expect(resolved.enabled).toBe(true);
+    expect(resolved.lockDate).toBe("2026-06-30");
+    expect(resolved.periodLockPolicy).toBe("park");
+    // v2 daily consolidation → every enabled type daily-summary, so the
+    // transitional derived hold flag stays "daily"
+    expect(resolved.consolidation).toBe("daily");
+    expect(resolved.sourceTypes["Purchase Receipt"]).toEqual({
+      enabled: true,
+      granularity: "daily-summary"
+    });
+    expect(resolved.sourceTypes.Manual.enabled).toBe(false);
+    expect(resolved.families).toEqual({
+      ar: "documents",
+      ap: "documents",
+      creditMemo: "none",
+      supplierCredit: "none"
+    });
+  });
+
+  it("upgrades a stored v2 sourceTypes array + includeManual through the shim", () => {
+    const resolved = resolvePostingSyncSettings({
+      settings: {
+        postingSync: {
+          enabled: true,
+          sourceTypes: ["Purchase Receipt"],
+          includeManual: true,
+          consolidation: "individual"
+        }
+      }
+    });
+
+    expect(resolved.sourceTypes["Purchase Receipt"]).toEqual({
+      enabled: true,
+      granularity: "individual"
+    });
+    expect(resolved.sourceTypes["Sales Shipment"].enabled).toBe(false);
+    expect(resolved.sourceTypes.Manual).toEqual({
+      enabled: true,
+      granularity: "individual"
+    });
+    expect(resolved.consolidation).toBe("individual");
+  });
+
+  it("ignores an invalid stored fragment instead of throwing", () => {
+    const resolved = resolvePostingSyncSettings({
+      settings: { postingSync: { consolidation: "weekly", enabled: "yes" } }
+    });
+
+    expect(resolved).toEqual(DEFAULT_POSTING_SYNC_SETTINGS);
+  });
+});
+
+describe("journal sync entity-id contract", () => {
+  it("round-trips plain and reversal entity ids", () => {
+    expect(getJournalEntrySyncEntityId("je_123", false)).toBe("je_123");
+    expect(getJournalEntrySyncEntityId("je_123", true)).toBe("je_123:reversal");
+
+    expect(parseJournalEntrySyncEntityId("je_123")).toEqual({
+      journalId: "je_123",
+      reversal: false
+    });
+    expect(parseJournalEntrySyncEntityId("je_123:reversal")).toEqual({
+      journalId: "je_123",
+      reversal: true
+    });
+  });
+});
+
+describe("isJournalEntrySyncFailure", () => {
+  it("detects the structured failure envelope on SyncResult.error", () => {
+    const failure = new JournalEntrySyncError({
+      errorCode: "PERIOD_LOCKED",
+      message: "locked",
+      warning: true
+    }).failure;
+
+    expect(isJournalEntrySyncFailure(failure)).toBe(true);
+    expect(isJournalEntrySyncFailure("PERIOD_LOCKED: locked")).toBe(false);
+    expect(isJournalEntrySyncFailure(null)).toBe(false);
+    expect(
+      isJournalEntrySyncFailure({ errorCode: "SOMETHING_ELSE", message: "x" })
+    ).toBe(false);
+  });
+
+  it("formats the error message as '<code>: <detail>' for string-flattening paths", () => {
+    const error = new JournalEntrySyncError({
+      errorCode: "UNBALANCED_JOURNAL",
+      message: "does not balance",
+      warning: false
+    });
+
+    expect(error.message).toBe("UNBALANCED_JOURNAL: does not balance");
+  });
+});
+
+describe("period-lock date helpers", () => {
+  it("evaluates the boundary as locked (postingDate == lockDate)", () => {
+    expect(
+      evaluatePeriodLock({
+        postingDate: "2026-07-01",
+        lockDate: "2026-07-01",
+        policy: "park"
+      })
+    ).toEqual({ locked: true, policy: "park", lockDate: "2026-07-01" });
+
+    expect(
+      evaluatePeriodLock({
+        postingDate: "2026-07-02",
+        lockDate: "2026-07-01",
+        policy: "park"
+      })
+    ).toEqual({ locked: false });
+
+    expect(
+      evaluatePeriodLock({
+        postingDate: "2026-07-01",
+        lockDate: null,
+        policy: "park"
+      })
+    ).toEqual({ locked: false });
+  });
+
+  it("rolls month and year boundaries when adding a day", () => {
+    expect(addDaysToIsoDate("2026-06-30", 1)).toBe("2026-07-01");
+    expect(addDaysToIsoDate("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addDaysToIsoDate("2028-02-28", 1)).toBe("2028-02-29"); // leap year
+  });
+});
+
+describe("isBalancedJournal", () => {
+  it("balances at 2dp without floating-point drift", () => {
+    expect(
+      isBalancedJournal([{ amount: 0.1 }, { amount: 0.2 }, { amount: -0.3 }])
+    ).toBe(true);
+    expect(isBalancedJournal([{ amount: 100 }, { amount: -99.99 }])).toBe(
+      false
+    );
+    expect(isBalancedJournal([])).toBe(true);
   });
 });

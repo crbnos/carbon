@@ -213,6 +213,7 @@ import type {
   warehouseTransferValidator
 } from "./inventory.models";
 import {
+  type inventoryAdjustmentTypes,
   isPickingListLocked,
   isStockTransferLocked,
   isWarehouseTransferLocked,
@@ -4931,6 +4932,51 @@ export function serverFnFailure(
     message,
     error
   );
+}
+
+/**
+ * A posting's refusal below 500 is written for the person and keeps its
+ * message; anything else is ours, behind `message`.
+ */
+export function postingFailure(
+  ctx: ServiceContext,
+  error: ServerFnError,
+  message: string
+): CarbonError {
+  return error.status < 500
+    ? serverFnFailure(ctx, error, error.message)
+    : ctx.error("internal", message, error);
+}
+
+/**
+ * A count that cannot post names the lines to fix, so the page can mark them;
+ * the count stays Pending. Any other failure is an error.
+ */
+export function inventoryCountPostingFailure(
+  ctx: ServiceContext,
+  error: ServerFnError
+): { invalidLineIds: string[]; message: string } | CarbonError {
+  const message = getErrorMessage(error, "Failed to post inventory count");
+  const invalidLineIds = error.body.invalidLineIds;
+  if (Array.isArray(invalidLineIds)) {
+    return { invalidLineIds: invalidLineIds as string[], message };
+  }
+  return serverFnFailure(ctx, error, message);
+}
+
+/**
+ * The storage-rule surfaces an adjustment is checked on. `quantity` is a
+ * positive magnitude, so the type alone says which way stock moves: a
+ * decrease or scrap takes from the bin (`pick`), anything else adds (`place`).
+ */
+export function adjustmentRuleSurfaces(
+  adjustmentType: (typeof inventoryAdjustmentTypes)[number],
+  storageUnitId: string | undefined
+): RuleSurface[] {
+  if (!storageUnitId) return ["inventoryAdjustment"];
+  const removes =
+    adjustmentType === "Negative Adjmt." || adjustmentType === "Scrap";
+  return ["inventoryAdjustment", removes ? "pick" : "place"];
 }
 
 /** The caller's default location, from their user defaults. */

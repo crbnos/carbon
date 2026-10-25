@@ -2954,16 +2954,7 @@ export const postInventoryCount = defineServiceFn({
       service.postInventoryCount
     );
     if (posted.error) {
-      const message = getErrorMessage(
-        posted.error,
-        "Failed to post inventory count"
-      );
-      // The rows to highlight: the count stays Pending.
-      const invalidLineIds = posted.error.body.invalidLineIds;
-      if (Array.isArray(invalidLineIds)) {
-        return { invalidLineIds: invalidLineIds as string[], message };
-      }
-      return service.serverFnFailure(ctx, posted.error, message);
+      return service.inventoryCountPostingFailure(ctx, posted.error);
     }
     return { inventoryCountId };
   }
@@ -3033,16 +3024,12 @@ export const adjustInventory = defineServiceFn({
         locationId: adjustment.locationId ?? null
       }
     ];
-    // The bin surface comes from the type alone: `quantity` is a positive
-    // magnitude, so its sign cannot say which way stock moves.
-    const removes =
-      adjustment.adjustmentType === "Negative Adjmt." ||
-      adjustment.adjustmentType === "Scrap";
     const rules = await service.storageRuleViolations(
       ctx,
-      adjustment.storageUnitId
-        ? ["inventoryAdjustment", removes ? "pick" : "place"]
-        : ["inventoryAdjustment"],
+      service.adjustmentRuleSurfaces(
+        adjustment.adjustmentType,
+        adjustment.storageUnitId
+      ),
       line
     );
     const violations = dedupeViolations(rules.violations);
@@ -3057,14 +3044,11 @@ export const adjustInventory = defineServiceFn({
       service.postInventoryAdjustment
     );
     if (posted.error) {
-      // Below 500 the posting refused the adjustment, in words for the person.
-      return posted.error.status < 500
-        ? service.serverFnFailure(ctx, posted.error, posted.error.message)
-        : ctx.error(
-            "internal",
-            "Failed to create manual inventory adjustment",
-            posted.error
-          );
+      return service.postingFailure(
+        ctx,
+        posted.error,
+        "Failed to create manual inventory adjustment"
+      );
     }
     return { itemLedgerId: posted.data.itemLedger?.id ?? null };
   }

@@ -14,18 +14,20 @@
     "license-headers": "tsx src/scripts/license-headers.ts",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "workflow-events": "tsx src/scripts/check-workflow-events.ts"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@carbon/ee": "workspace:*",
+    "@carbon/env": "workspace:*",
     "@types/node": "^22",
     "@types/pg": "8.15.6",
     "pg": "8.20.0",
     "rimraf": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
+    "typescript5": "npm:typescript@5.8.3",
     "vitest": "catalog:"
   }
 }

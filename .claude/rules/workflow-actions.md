@@ -65,7 +65,7 @@ may write. Adding a column to `watch` does not make it writable, and that is the
 point.
 
 Both maps are keyed by `ColumnOf<T>` for the entry's own table, so a migration
-that renames a column fails `tsgo` at the registry line. `write` entries carry
+that renames a column fails `tsc` at the registry line. `write` entries carry
 the same `ref` escape hatch as `watch` for composite foreign keys, and a `ref`
 that disagrees with a present foreign key is a build error.
 
