@@ -15,6 +15,7 @@ import {
   linkedConnections,
   resolveConnectedProviderName
 } from "./lib/connection-status";
+import { extractEntityIds, planRampConvergence } from "./lib/convergence";
 import { rampOwnsCodingSurface, resolveRampModeProfile } from "./lib/modes";
 import {
   clearRampConnectionMetadata,
@@ -60,7 +61,7 @@ async function convergeRamp(
     );
   }
 
-  const ownsCodingSurface = rampOwnsCodingSurface(metadata);
+  const plan = planRampConvergence(metadata);
 
   // Connecting a platform that cannot create a vendor without a reachable
   // contact AND an identifiable location is what makes both mandatory, so
@@ -91,7 +92,7 @@ async function convergeRamp(
   // Only the seat-holder may create the accounting connection. In push-only
   // another system holds it, and claiming it is precisely what this mode exists
   // to avoid.
-  if (ownsCodingSurface) {
+  if (plan.claimConnection) {
     await ensureRampConnection(serviceRole, companyId);
   }
 
@@ -107,7 +108,7 @@ async function convergeRamp(
   // transient Ramp outage. Confirmed 2026-09-26 that a push-only token (no
   // `accounting:write`) may call this endpoint, so a refusal here is unexpected
   // rather than routine.
-  if (!ownsCodingSurface) {
+  if (plan.refreshConnectionOwner) {
     try {
       await patchRampAccountingConnectionProvider(
         serviceRole,
@@ -156,23 +157,26 @@ async function convergeRamp(
   // does not even offer the field. Returning here would have skipped the sync
   // enqueue below, so push-only would have pushed nothing until the next hourly
   // sweep.
-  if (ownsCodingSurface && !metadata.cardLiabilityAccountId) {
+  if (!plan.launchSync) {
     return;
   }
 
-  if (metadata.entityId) {
+  if (plan.validateEntityId) {
     let response: unknown;
     try {
       response = await client.getEntities();
     } catch (error) {
-      throw new Error(`Could not validate Ramp entity ${metadata.entityId}`, {
-        cause: error
-      });
+      throw new Error(
+        `Could not validate Ramp entity ${plan.validateEntityId}`,
+        {
+          cause: error
+        }
+      );
     }
 
-    if (!extractEntityIds(response).has(metadata.entityId)) {
+    if (!extractEntityIds(response).has(plan.validateEntityId)) {
       throw new Error(
-        `Ramp entity ${metadata.entityId} is not available to this connection`
+        `Ramp entity ${plan.validateEntityId} is not available to this connection`
       );
     }
   }
@@ -184,7 +188,7 @@ async function convergeRamp(
   //
   // The sync still launches below: push-only has plenty to do (purchase orders,
   // receipts, provisional bills, and pulling bill payments back).
-  if (ownsCodingSurface) {
+  if (plan.pushCodingMasters) {
     await pushChartOfAccounts(serviceRole, companyId);
     // Converge the cost-center ("project") field + its options. It re-runs on
     // every ramp-sync too, so a Ramp-side rejection here must not abort a valid
@@ -330,28 +334,6 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
       }`
     );
   }
-}
-
-/** Extract entity ids from Ramp's `{ data }`, `{ entities }`, or bare-array shape. */
-function extractEntityIds(response: unknown): Set<string> {
-  let rows: unknown[] = [];
-  if (Array.isArray(response)) {
-    rows = response;
-  } else if (response && typeof response === "object") {
-    const value = response as { data?: unknown; entities?: unknown };
-    if (Array.isArray(value.data)) rows = value.data;
-    else if (Array.isArray(value.entities)) rows = value.entities;
-  }
-
-  return new Set(
-    rows.flatMap((row) =>
-      row &&
-      typeof row === "object" &&
-      typeof (row as { id?: unknown }).id === "string"
-        ? [(row as { id: string }).id]
-        : []
-    )
-  );
 }
 
 export async function rampHealthcheck(

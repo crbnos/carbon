@@ -2,20 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("../config/env", () => ({
-  AUTH_COOKIE_SUFFIX: undefined,
-  CarbonEdition: "Community",
-  DOMAIN: "localhost",
-  SESSION_SECRET: "test-session-secret"
-}));
-
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
 import {
   consumeOAuthState,
   issueOAuthState,
   issueOAuthStates
 } from "./oauth-state.server";
+
+// The module reads its configuration once, at import.
+vi.hoisted(() => {
+  vi.stubEnv("DOMAIN", "localhost");
+  vi.stubEnv("CARBON_EDITION", "");
+  vi.stubEnv("AUTH_COOKIE_SUFFIX", "");
+  vi.stubEnv("SESSION_SECRET", "test-session-secret");
+});
+
+afterAll(() => vi.unstubAllEnvs());
 
 /** The cookie value (name=value) from a Set-Cookie header, as a browser sends it. */
 function cookieHeader(setCookie: string) {
