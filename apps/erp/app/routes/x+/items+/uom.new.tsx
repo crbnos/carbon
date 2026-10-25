@@ -7,10 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { unitOfMeasureValidator } from "~/modules/items/items.models";
+import {
+  UNIT_OF_MEASURE_TAKEN,
+  unitOfMeasureValidator
+} from "~/modules/items/items.models";
 import { upsertUnitOfMeasure } from "~/modules/items/items.service";
 import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { setCustomFields } from "~/utils/form";
@@ -53,7 +56,12 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(insertUnitOfMeasure.error, "Failed to insert unit of measure")
+        error(
+          insertUnitOfMeasure.error,
+          isUniqueViolation(insertUnitOfMeasure.error)
+            ? UNIT_OF_MEASURE_TAKEN
+            : "Failed to insert unit of measure"
+        )
       )
     );
   }
@@ -70,7 +78,8 @@ export default function NewUnitOfMeasuresRoute() {
   const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
-    code: ""
+    code: "",
+    active: true
   };
 
   return (

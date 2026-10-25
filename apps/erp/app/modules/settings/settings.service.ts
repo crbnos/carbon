@@ -50,8 +50,8 @@ import {
   periodCloseTaskDefinitions,
   returnReasons,
   scrapReasons,
-  sequences,
-  unitOfMeasures
+  seedUnitsOfMeasure,
+  sequences
 } from "@carbon/database/seed-data";
 import {
   getPullFromLocations,
@@ -3650,9 +3650,22 @@ export async function seedCompany(
         .values(paymentTerms.map((pt) => ({ ...pt, companyId })))
         .execute();
 
+      // Every standard unit, those of the company's measurement system
+      // active. The company-insert interceptor sets useMetric from the
+      // company's country.
+      const measurement = await trx
+        .selectFrom("companySettings")
+        .select("useMetric")
+        .where("id", "=", companyId)
+        .executeTakeFirst();
       await trx
         .insertInto("unitOfMeasure")
-        .values(unitOfMeasures.map((uom) => ({ ...uom, companyId })))
+        .values(
+          seedUnitsOfMeasure(measurement?.useMetric ?? false).map((uom) => ({
+            ...uom,
+            companyId
+          }))
+        )
         .execute();
 
       await trx

@@ -2,12 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Checkbox,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBookMarked, LuCode, LuPencil, LuTrash } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import {
+  LuBookMarked,
+  LuCheck,
+  LuCode,
+  LuPencil,
+  LuToggleLeft,
+  LuToggleRight,
+  LuTrash
+} from "react-icons/lu";
+import { useFetcher, useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -52,10 +70,72 @@ const UnitOfMeasuresTable = memo(
             mobile: "P2",
             icon: <LuCode />
           }
+        },
+        {
+          accessorKey: "active",
+          header: t`Active`,
+          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          meta: {
+            filter: {
+              type: "static",
+              options: [
+                { value: "true", label: t`Active` },
+                { value: "false", label: t`Inactive` }
+              ]
+            },
+            pluralHeader: t`Active Statuses`,
+            icon: <LuCheck />
+          }
         }
       ];
       return [...defaultColumns, ...customColumns];
     }, [customColumns, t]);
+
+    // Every company holds the standard units of both measurement systems;
+    // the other system's start inactive and are turned on here.
+    const fetcher = useFetcher();
+    const onSetActive = useCallback(
+      (selectedRows: (typeof data)[number][], active: boolean) => {
+        const formData = new FormData();
+        for (const row of selectedRows) formData.append("ids", row.id);
+        formData.append("active", String(active));
+        fetcher.submit(formData, {
+          method: "post",
+          action: path.to.uomActive
+        });
+      },
+      [fetcher]
+    );
+
+    const renderActions = useCallback(
+      (selectedRows: (typeof data)[number][]) => (
+        <DropdownMenuContent align="end" className="min-w-[200px]">
+          <DropdownMenuLabel>
+            <Trans>Update</Trans>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={
+              !permissions.can("update", "parts") || fetcher.state !== "idle"
+            }
+            onClick={() => onSetActive(selectedRows, true)}
+          >
+            <DropdownMenuIcon icon={<LuToggleRight />} />
+            <Trans>Turn On</Trans>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={
+              !permissions.can("update", "parts") || fetcher.state !== "idle"
+            }
+            onClick={() => onSetActive(selectedRows, false)}
+          >
+            <DropdownMenuIcon icon={<LuToggleLeft />} />
+            <Trans>Turn Off</Trans>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      ),
+      [fetcher.state, onSetActive, permissions]
+    );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
@@ -111,8 +191,10 @@ const UnitOfMeasuresTable = memo(
             />
           )
         }
+        renderActions={renderActions}
         renderContextMenu={renderContextMenu}
         title={t`Unit of Measures`}
+        withSelectableRows
       />
     );
   }

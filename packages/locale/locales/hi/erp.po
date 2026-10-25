@@ -11556,6 +11556,9 @@ msgstr "निष्क्रिय"
 msgid "Inactive actions will not appear in selection lists"
 msgstr "निष्क्रिय क्रियाएं चयन सूचियों में दिखाई नहीं देंगी"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "इनबाउंड निरीक्षण"
 
@@ -24971,6 +24974,12 @@ msgstr "एक अलग नाम आज़माएँ।"
 msgid "Tuesday"
 msgstr "मंगलवार"
 
+msgid "Turn Off"
+msgstr ""
+
+msgid "Turn On"
+msgstr ""
+
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "सेटिंग्स → लेखांकन में <0>अल्पकालिक पट्टा उपाय चालू करें</0>, या"
 
@@ -25136,6 +25145,9 @@ msgstr "पहले {conflictsWith} को अनइंस्टॉल कर�
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "अद्वितीय, बड़े अक्षरों में, बिना स्थान के (अधिकतम 10 वर्ण)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "इकाई"

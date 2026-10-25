@@ -54,6 +54,7 @@
     "./receipt-serials": "./src/receipt-serials.ts",
     "./storage-objects": "./src/storage-objects.ts",
     "./seed-data": "./src/seed-data.ts",
+    "./units-of-measure": "./src/units-of-measure.ts",
     "./seed-workflows": "./src/datasets/tiers/workflow-definitions.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",

@@ -25,7 +25,7 @@ import {
   periodCloseTaskDefinitions,
   returnReasons,
   scrapReasons,
-  unitOfMeasures
+  unitOfMeasureCatalog
 } from "../seed-data.ts";
 import { Constants } from "../types.ts";
 import { NOT_CLOSED_MIN_OFFSET, OPEN_PERIOD_MIN_OFFSET } from "./dates.ts";
@@ -47,6 +47,7 @@ import {
   signedNet,
   voidJournal
 } from "./helpers/posting-journals.ts";
+import { datasetUnitOfMeasureCodes } from "./helpers/units-of-measure.ts";
 import { RULE_FIELDS, type RuleValueKind } from "./rule-fields.ts";
 import type {
   AccountClass,
@@ -127,7 +128,11 @@ export const CO_TYPE_NAMES = new Set<string>(
 export const CO_ACTION_NAMES = new Set<string>(
   changeOrderRequiredActions.map((a) => a.name)
 );
-export const UOM_CODES = new Set<string>(unitOfMeasures.map((u) => u.code));
+// Any catalog unit, not only the seeded ones: the apply adds the units a
+// dataset uses (ensureUnitsOfMeasure).
+export const UOM_CODES = new Set<string>(
+  unitOfMeasureCatalog.map((u) => u.code)
+);
 export const FAILURE_MODE_NAMES = new Set<string>(failureModes);
 
 export const ACCOUNT_CLASS_BY_NUMBER = new Map<string, AccountClass>(
@@ -4695,7 +4700,7 @@ export function quality(ctx: ValidationCtx): void {
           fail(`${stepWhere}: Measurement step needs a unitOfMeasureCode`);
         } else if (!UOM_CODES.has(step.unitOfMeasureCode)) {
           fail(
-            `${stepWhere}: unitOfMeasureCode "${step.unitOfMeasureCode}" is not a bootstrap unit of measure`
+            `${stepWhere}: unitOfMeasureCode "${step.unitOfMeasureCode}" is not a standard unit of measure`
           );
         }
       } else if (step.unitOfMeasureCode !== undefined) {
@@ -6838,7 +6843,17 @@ export function planning(ctx: ValidationCtx): void {
   }
 }
 
+/** Every unit code the dataset names is a catalog unit the apply can add. */
+export function unitsOfMeasure(ctx: ValidationCtx): void {
+  for (const code of datasetUnitOfMeasureCodes(ctx.dataset)) {
+    if (!UOM_CODES.has(code)) {
+      ctx.fail(`unit of measure "${code}" is not a standard unit of measure`);
+    }
+  }
+}
+
 const RULES: Rule[] = [
+  unitsOfMeasure,
   itemIdentity,
   foundation,
   items,
