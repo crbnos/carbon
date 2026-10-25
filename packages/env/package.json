@@ -14,7 +14,7 @@
   "scripts": {
     "clean": "rimraf .turbo node_modules",
     "lint": "biome lint --fix",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

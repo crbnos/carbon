@@ -56,7 +56,7 @@
     "email:previews": "node ./scripts/email-dev.mjs ./src/email/previews",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0"

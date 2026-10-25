@@ -39,7 +39,7 @@
     "lint": "biome lint --write ",
     "dev:stripe": "tsx ./stripe.dev.ts",
     "register:stripe": "tsx ./stripe.register.ts",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0"

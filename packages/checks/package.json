@@ -14,7 +14,7 @@
     "license-headers": "tsx src/scripts/license-headers.ts",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "workflow-events": "tsx src/scripts/check-workflow-events.ts"
   },
   "devDependencies": {
@@ -27,6 +27,7 @@
     "rimraf": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
+    "typescript5": "npm:typescript@5.8.3",
     "vitest": "catalog:"
   }
 }

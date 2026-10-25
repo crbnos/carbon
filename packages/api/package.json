@@ -19,7 +19,7 @@
     "clean": "rimraf .turbo node_modules dist",
     "lint": "biome lint --write ",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@carbon/auth": "workspace:*",
