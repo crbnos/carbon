@@ -21,8 +21,12 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
+      # These jobs run the pull request's code, so the token is not left in
+      # .git/config for it to read; nothing here talks to git afterwards.
       - &checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - &pnpm
         uses: pnpm/action-setup@v6
       # No pnpm store cache: it is keyed on the lockfile, as node_modules
