@@ -496,6 +496,8 @@ msgstr "{count, plural, one {# संपत्ति} other {# संपत्�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# अधिक {fenceLabel} के बाद} other {# अधिक {fenceLabel} के बाद}}"
 
@@ -3980,6 +3982,8 @@ msgstr "बैकअप"
 msgid "Balance"
 msgstr "शेष राशि"
 
+msgid "Balance Remaining:"
+msgstr "शेष राशि:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0} के लिए शेष राशि"
@@ -16498,12 +16502,14 @@ msgstr "पृष्ठ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "पृष्ठ {pdfViewPage} का {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "भुगतान की गई राशि:"
+msgid "Paid"
+msgstr "भुगतान किया"
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
 
+msgid "Paid:"
+msgstr "भुगतान:"
 msgid "Paid outside Carbon"
 msgstr "Carbon के बाहर भुगतान किया गया"
 

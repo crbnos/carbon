@@ -6647,7 +6647,8 @@ export const getSalesOrderInvoiceLines = defineServiceFn({
       ctx,
       await service.getSalesOrderInvoiceLines(
         ctx.asCaller.supabase,
-        input.salesOrderId as never
+        input.salesOrderId as never,
+        ctx.company.id
       )
     );
   }
@@ -6666,7 +6667,8 @@ export const getSalesOrderInvoicesByIds = defineServiceFn({
       ctx,
       await service.getSalesOrderInvoicesByIds(
         ctx.asCaller.supabase,
-        payload(ctx, input.invoiceIds).build() as never
+        payload(ctx, input.invoiceIds).build() as never,
+        ctx.company.id
       )
     );
   }

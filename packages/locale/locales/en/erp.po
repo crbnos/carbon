@@ -496,6 +496,8 @@ msgstr "{count, plural, one {# asset} other {# assets}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 
@@ -3980,6 +3982,8 @@ msgstr "Backups"
 msgid "Balance"
 msgstr "Balance"
 
+msgid "Balance Remaining:"
+msgstr "Balance Remaining:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Balance for {0}"
@@ -16498,12 +16502,14 @@ msgstr "Page"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Page {pdfViewPage} of {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Paid Amount:"
+msgid "Paid"
+msgstr "Paid"
 
 msgid "Paid Date"
 msgstr "Paid Date"
 
+msgid "Paid:"
+msgstr "Paid:"
 msgid "Paid outside Carbon"
 msgstr "Paid outside Carbon"
 
