@@ -4,14 +4,6 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// The service's imports reach the glossary, whose `msg` macro only runs compiled.
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
-}));
-
 const { evaluate, invoke, recorded } = vi.hoisted(() => ({
   // The sales-rule evaluator: what the rules find on the document.
   evaluate: vi.fn(),
@@ -34,10 +26,6 @@ vi.mock("@carbon/ee/rules.server", async () => {
 vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
 vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  refuseUnlessOwned: vi.fn(async () => null),
-  sendSalesOrderEmail: vi.fn(),
-  getCompanyTimeZone: vi.fn(async () => "UTC"),
-  getLocationTimeZone: vi.fn(async () => "UTC"),
   // The postings (convert, create) run through invokePosting / invokeCreate.
   invokePosting: (_from: unknown, name: string, input: unknown) =>
     invoke(name, input),
@@ -83,6 +71,7 @@ function serviceRole(rows: Record<string, unknown> = {}) {
     for (const method of [
       "select",
       "eq",
+      "match",
       "in",
       "limit",
       "order",
@@ -105,12 +94,15 @@ function serviceRole(rows: Record<string, unknown> = {}) {
   return { from } as any;
 }
 
+// The company's own quote and order.
+const owned = { quote: { id: "quote-1" }, salesOrder: { id: "order-1" } };
+
 const contextFor = (permissions: Permissions) =>
   createServiceContext({
     actor: { type: "user", userId: "user-1", permissions },
     company: { id: "company-1", groupId: "group-1" },
     caller: serviceRole(),
-    system: () => serviceRole(),
+    system: () => serviceRole(owned),
     pg: () => ({}) as any,
     kv: () => ({}) as any
   });

@@ -94,7 +94,8 @@ import {
   productionQuantityValidator,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
-  scheduleOperationReorderValidator
+  scheduleOperationReorderValidator,
+  shouldStartAssemblyPlan
 } from "./production.models";
 import type { JobStatus } from "./production.service";
 import * as service from "./production.service";
@@ -5247,10 +5248,7 @@ export const generateAssemblySteps = defineServiceFn({
           result.modelUploadId
         )
       ]);
-      const isConverting =
-        model.data?.processingStatus === "Queued" ||
-        model.data?.processingStatus === "Processing";
-      if (!isConverting && !isAssemblyPlanRunning(planJob.data)) {
+      if (shouldStartAssemblyPlan(model.data?.processingStatus, planJob.data)) {
         await service.startAssemblyPlan(ctx, result.modelUploadId);
       }
       return { planning: true, created: 0, unmappedComponentCount: 0 };

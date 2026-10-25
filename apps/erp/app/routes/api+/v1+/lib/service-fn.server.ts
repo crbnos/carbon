@@ -67,7 +67,16 @@ export async function runServiceFn(
   context: AuthedContext,
   input: unknown
 ): Promise<{ data: unknown; count?: number }> {
-  const fn = serviceFnAt(meta.serviceFn.path);
+  return callServiceFn(serviceFnAt(meta.serviceFn.path), meta, context, input);
+}
+
+/** `runServiceFn` for a function already resolved from the router. */
+export async function callServiceFn<I extends z.ZodType>(
+  fn: ServiceFn<I, unknown>,
+  meta: Pick<ManifestEntry, "paginates">,
+  context: AuthedContext,
+  input: z.input<I>
+): Promise<{ data: unknown; count?: number }> {
   const result = await fn(contextFromAuthed(context), input);
   if (result.error) {
     const { category, message, status } = result.error;
