@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { emailTheme } from "./Theme";
+import { darkModeMedia, emailTheme } from "./Theme";
 
 const dark = emailTheme.dark;
 
@@ -63,7 +63,7 @@ export const notificationStyles = `
     color: #6b7280 !important;
   }
 
-  @media (prefers-color-scheme: dark) {
+  ${darkModeMedia(`
     .nf-body,
     .nf-body > table > tbody > tr > td {
       background-color: ${dark.background} !important;
@@ -88,5 +88,5 @@ export const notificationStyles = `
     .nf-fallback {
       color: ${dark.muted} !important;
     }
-  }
+  `)}
 ${flatCardOnPhones("nf-card")}`;
