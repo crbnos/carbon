@@ -12,12 +12,23 @@ import {
   type RampReimbursementDraft
 } from "./ramp-sync-reimbursement";
 
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+const hasLocalDatabase = (() => {
+  try {
+    return LOCAL_HOSTS.includes(
+      new URL(process.env.SUPABASE_DB_URL ?? "").hostname
+    );
+  } catch {
+    return false;
+  }
+})();
+
 /**
  * The create-only rule, against a real Postgres.
  *
- * `RUN_RAMP_DB_TESTS=true SUPABASE_DB_URL=... pnpm --filter @carbon/jobs test`
+ * `SUPABASE_DB_URL=… pnpm --filter @carbon/jobs exec vitest run ramp-sync-reimbursement-create`
  */
-describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
+describe.skipIf(!hasLocalDatabase)(
   "Ramp reimbursement import (Postgres)",
   () => {
     let db: Kysely<KyselyDatabase>;
