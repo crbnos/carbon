@@ -4,6 +4,7 @@
 
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { trigger } from "@carbon/lib/trigger";
 import { SpendProviderID } from "../accounting/core/models";
 import { ensureProviderSubscriptions } from "../accounting/core/subscriptions";
 import { resolveCapabilities } from "../sync/capabilities";
@@ -213,23 +214,13 @@ async function convergeRamp(
     }
   }
 
-  // `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency (jobs -> ee,
-  // never the reverse), so the `ramp-sync` task — registered in
-  // packages/jobs/src/inngest/index.ts + packages/lib/src/trigger.ts — is
-  // reached via a lazy runtime import resolved through the app that owns both
-  // packages. The non-literal specifier keeps TS from resolving/type-checking a
-  // module ee cannot see.
+  // Queued through @carbon/lib's trigger, as the Slack service does: ee cannot
+  // depend on @carbon/jobs (jobs depends on ee), and importing jobs at runtime
+  // fails in the built server, which runs its TypeScript source.
   // A failure to enqueue the initial sync must not fail the connect — the
   // hourly `ramp-sweep` fires `ramp-sync` for every active company regardless.
   try {
-    const jobsModule = "@carbon/jobs";
-    const jobs = (await import(/* @vite-ignore */ jobsModule)) as {
-      trigger: (
-        task: string,
-        payload: { companyId: string; reason: string }
-      ) => Promise<unknown>;
-    };
-    await jobs.trigger("ramp-sync", {
+    await trigger("ramp-sync", {
       companyId,
       reason: opts.syncReason
     });
