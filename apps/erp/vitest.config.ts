@@ -74,7 +74,9 @@ export default defineConfig({
       SUPABASE_DB_URL:
         process.env.SUPABASE_DB_URL ?? "postgresql://stub.invalid/postgres",
       SESSION_SECRET: "test",
-      REDIS_URL: "redis://localhost"
+      // No Redis, as on CI: a test that reaches it hangs here too, rather
+      // than passing against a developer's local Redis and failing on CI.
+      REDIS_URL: "redis://stub.invalid"
     }
   }
 });

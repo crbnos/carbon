@@ -26,6 +26,8 @@ vi.mock("@carbon/ee/rules.server", async () => {
 vi.mock("@carbon/lib/workflows", () => ({ raiseMoment: vi.fn() }));
 vi.mock("../app/modules/shared/shared.service", async (importOriginal) => ({
   ...(await importOriginal<object>()),
+  // Cached in Redis, which tests have none of.
+  getCompanyTimeZone: vi.fn(async () => "UTC"),
   // The postings (convert, create) run through invokePosting / invokeCreate.
   invokePosting: (_from: unknown, name: string, input: unknown) =>
     invoke(name, input),
