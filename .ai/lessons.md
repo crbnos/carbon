@@ -694,7 +694,7 @@ refuse to save over a row it could not read.
 
 **Problem:** Five switches each had a `default:` or simply returned `undefined`
 for unhandled members, so adding a seventh node type produced **zero** compile
-errors — verified with `tsgo --noEmit`. The new node type got default handles and
+errors — verified with `tsc --noEmit`. The new node type got default handles and
 no validation at all, and would activate.
 
 **Rule:** For behaviour that must exist for every member of a union, prefer one
@@ -759,7 +759,7 @@ and the plan specified FNV-1a via `BigInt`.
 **Problem:** `apps/erp/tsconfig.json` sets `"target": "ES2019"` and compiles
 workspace package **source**, not built output. A `0xcbf29ce484222325n` literal
 in `packages/workflows` fails the erp typecheck with TS2737 even though the
-package's own `tsgo --noEmit` passes — the package config targets `esnext`.
+package's own `tsc --noEmit` passes — the package config targets `esnext`.
 
 **Rule:** Anything in a package `apps/erp` imports must be ES2019-safe. Reach for
 `Math.imul` and two 32-bit passes rather than one 64-bit BigInt pass. Always run
@@ -1045,7 +1045,7 @@ canvas hosting Radix popovers/selects.
 
 **Context:** `upsertQuoteLinePrices` was converted from supabase-js to a Kysely transaction so its delete + reinsert would roll back as a unit. The conversion typechecked, and the shipped result silently stopped preserving `shippingCost`, `discountPercent` and `leadTime` on every markup change.
 
-**Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsgo` cannot see it — the mismatch exists only at runtime.
+**Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsc` cannot see it — the mismatch exists only at runtime.
 
 **Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
 
@@ -2658,7 +2658,7 @@ gate executes it.
 ## Never `git checkout` a generated file to undo a local patch — the user may have regenerated it
 
 **Context:** Typechecking a new-column change in a worktree with no local database, the
-generated `packages/database/src/types.ts` was patched by hand as a throwaway so `tsgo`
+generated `packages/database/src/types.ts` was patched by hand as a throwaway so `tsc`
 could see the columns, then "restored" with `git checkout -- …/types.ts`. Meanwhile the
 user had run `pnpm db:migrate`, which regenerated that file with the real columns.
 

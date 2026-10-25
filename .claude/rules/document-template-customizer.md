@@ -34,7 +34,7 @@ Created by `packages/database/supabase/migrations/20260609143732_document-templa
 
 JSON columns are untyped in generated DB types. `toDocumentTemplate(row, type)`
 (`template/schema.ts`) is the **one** cast point — callers use it instead of
-re-deriving the shape. Expect tsgo `.blocks does not exist` errors until DB types
+re-deriving the shape. Expect tsc `.blocks does not exist` errors until DB types
 are regenerated; that's expected, not a bug.
 
 ## Template model (`packages/documents/src/template/`)

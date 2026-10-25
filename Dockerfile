@@ -71,7 +71,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         -name 'sst@*' -o -name 'sst-linux-*' -o -name 'sst-darwin-*' -o -name 'sst-win32-*' -o \
         -name '@biomejs+*' -o \
         -name 'turbo@*' -o -name '@turbo+*' -o \
-        -name 'typescript@*' -o -name '@typescript+native-preview*' -o \
+        -name 'typescript@*' -o \
         -name 'ts-morph@*' -o -name '@ts-morph+*' -o \
         -name 'vite@*' -o -name 'rolldown@*' -o -name '@rolldown+*' -o \
         -name 'vitest@*' -o -name '@vitest+*' -o \

@@ -3044,8 +3044,8 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // tsgo's limit; the cliff shifts as unrelated modules join the program.
-  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
+  // TypeScript's limit; the cliff shifts as unrelated modules join the
+  // program. ts-ignore, not ts-expect-error, since the error comes and goes.
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")

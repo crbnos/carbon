@@ -25,7 +25,7 @@ Developer CLI (`crbn` command) — worktree management, Docker Compose stacks, m
 
 ```bash
 pnpm --filter @carbon/dev test        # vitest
-pnpm --filter @carbon/dev typecheck   # tsgo --noEmit
+pnpm --filter @carbon/dev typecheck   # tsc --noEmit
 pnpm --filter @carbon/dev smoke       # real containers: slots, fresh migrate, up, status, purge (~40 s, needs Docker; run from a worktree with no stack)
 ```
 
