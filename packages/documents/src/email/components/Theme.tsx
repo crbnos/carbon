@@ -164,54 +164,12 @@ export const getEmailDarkModeCSS = () => {
       }
     }
 
-    /* Outlook Web App and Outlook mobile targeting */
-    [data-ogsc] .email-text {
-      color: ${emailTheme.dark.foreground} !important;
-    }
-    [data-ogsc] .email-muted {
-      color: ${emailTheme.dark.muted} !important;
-    }
-    [data-ogsc] .email-accent {
-      color: ${emailTheme.dark.accent} !important;
-      border-color: ${emailTheme.dark.accent} !important;
-    }
-    [data-ogsc] .dark-mode-hide {
-      display: none !important;
-    }
-    [data-ogsc] .dark-mode-show {
-      display: block !important;
-    }
-    [data-ogsc] .email-button {
-      color: ${emailTheme.dark.accentForeground} !important;
-    }
-    [data-ogsb] .email-button {
-      background-color: ${emailTheme.dark.accent} !important;
-      border-color: ${emailTheme.dark.accent} !important;
-    }
-
-    /* Outlook background targeting */
-    [data-ogsb] .email-body,
-    [data-ogsb] .email-body > table > tbody > tr > td {
-      background-color: ${emailTheme.dark.background} !important;
-    }
-    [data-ogsb] .email-panel {
-      background-color: ${emailTheme.dark.panel} !important;
-      border-color: ${emailTheme.dark.border} !important;
-    }
-    [data-ogsc] .email-panel-text {
-      color: ${emailTheme.dark.foreground} !important;
-    }
-    /* Gmail dark mode */
-    [data-darkmode="true"] .email-panel {
-      background-color: ${emailTheme.dark.panel} !important;
-      border-color: ${emailTheme.dark.border} !important;
-    }
-    [data-darkmode="true"] .email-panel-text {
-      color: ${emailTheme.dark.foreground} !important;
-    }
-    [data-ogsb] .email-container {
-      border-color: ${emailTheme.dark.border} !important;
-    }
+    /* Nothing outside a dark media query. Outlook (web and the new app) and
+       Gmail's apps recolour an email for dark mode themselves. Outlook tags
+       the email with data-ogsc / data-ogsb when it does, and rules keyed on
+       those tags also fired with the message shown on a light background: a
+       purchase order's panel went dark and its heading turned white on
+       white. */
   `;
 };
 
