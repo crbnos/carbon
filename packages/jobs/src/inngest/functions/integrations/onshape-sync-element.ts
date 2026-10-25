@@ -520,7 +520,7 @@ async function currentModelFromSource(
  * means the export runs again.
  */
 export function reusableModelUploadId(
-  mapping: { externalId: string; metadata: unknown } | null,
+  mapping: { externalId: string | null; metadata: unknown } | null,
   itemModelUploadId: string | null | undefined,
   source: string
 ): string | null {

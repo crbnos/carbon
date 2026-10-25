@@ -29,7 +29,10 @@ const shipping = {
   parentId: parent.id
 };
 const resolve = (
-  accounts = [parent, shipping],
+  accounts: Parameters<typeof resolveShippingDefault>[0]["accounts"] = [
+    parent,
+    shipping
+  ],
   parentDefaultId: string | null = null
 ) =>
   resolveShippingDefault({

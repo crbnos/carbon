@@ -50,7 +50,7 @@ it.each(["account", "document"])(
         request: new Request("http://localhost/x/invoicing/charges/card-1"),
         params: { id: "card-1" },
         context: {}
-      } as Parameters<typeof loader>[0])
+      } as unknown as Parameters<typeof loader>[0])
     ).rejects.toMatchObject({ status: 302 });
   }
 );

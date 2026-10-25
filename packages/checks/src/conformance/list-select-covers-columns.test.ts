@@ -33,7 +33,8 @@ const others = () => {
 
 const snippets = (partsList: string | null, partsTable: string) => {
   const { services, tables } = others();
-  const constants = partsList === null ? {} : { PARTS_LIST_COLUMNS: partsList };
+  const constants: Record<string, string> =
+    partsList === null ? {} : { PARTS_LIST_COLUMNS: partsList };
   return findUnselectedListColumns(
     [...services, service(constants)],
     [...tables, table(partsTable)]
