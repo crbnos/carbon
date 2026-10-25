@@ -45,8 +45,10 @@ export const emailTheme = {
  * email, `@media (prefers-color-scheme)`). Outlook prefixes every class with
  * `x_`, in the markup and the CSS alike, so `:not([class^="x_"])` on each
  * selector's first class matches everywhere but there, and Outlook does its
- * own dark mode. A selector with no class would still reach Outlook, so it is
- * refused.
+ * own dark mode. Outlook.com also drops any rule containing `:not()` (Can I
+ * email, `:not()`: not supported, tested 2024-01, on a test where stripping
+ * only the `:not()` would have shown), so the rule never reaches it either
+ * way. A selector with no class would still reach Outlook, so it is refused.
  */
 export function darkModeMedia(rules: string) {
   const scoped = rules
