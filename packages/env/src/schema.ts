@@ -49,7 +49,8 @@ export type EnvVar = {
   browser?: boolean;
   /**
    * "error" stops startup. "warn" is reported and becomes an error in the next
-   * release; do not flip one without updating deployments.test.ts.
+   * release; do not flip one until every deployment sets it (the
+   * `deployments-set-required-env` check in @carbon/checks).
    */
   required?: "error" | "warn";
   /** Lifts `required` when it returns true. */

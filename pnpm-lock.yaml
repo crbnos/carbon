@@ -2201,6 +2201,9 @@ importers:
       '@carbon/ee':
         specifier: workspace:*
         version: link:../ee
+      '@carbon/env':
+        specifier: workspace:*
+        version: link:../env
       '@types/node':
         specifier: ^22
         version: 22.19.7

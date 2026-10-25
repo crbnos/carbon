@@ -4,6 +4,7 @@
 
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import { validateEnv } from "@carbon/env/validate";
 import { keyOf, loadBaseline } from "./baseline";
 import type {
   ConformanceCheck,
@@ -13,16 +14,29 @@ import type {
   Violation
 } from "./check";
 import {
+  DEPLOYMENTS_SET_REQUIRED_ENV,
+  findDeploymentEnvGaps
+} from "./conformance/deployments-set-required-env";
+import {
   DOCUMENT_SEQUENCE_SYNCED,
   findUnsyncedDocumentSequences
 } from "./conformance/document-sequence-synced";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
+import {
+  EVENT_IGNORED_COLUMNS,
+  findIgnoredColumnDrift
+} from "./conformance/event-ignored-columns";
 import {
   FUNCTION_REDEFINITION_KEEPS_CHANGES,
   findDroppedFunctionChanges
 } from "./conformance/function-redefinition-keeps-changes";
 import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
 import { journalStatusFilter } from "./conformance/journal-status-filter";
+import { linguiMacroMisuse } from "./conformance/lingui-macro-misuse";
+import {
+  findUnselectedListColumns,
+  LIST_SELECT_COVERS_COLUMNS
+} from "./conformance/list-select-covers-columns";
 import { moduleShape } from "./conformance/module-shape";
 import {
   MANAGED_FUNCTION_SETS,
@@ -61,7 +75,15 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import {
+  findProviderRoleDrift,
+  PROVIDER_ROLE_BACKFILLED
+} from "./conformance/provider-role-backfilled";
 import { routeActionShape } from "./conformance/route-action-shape";
+import {
+  findScheduledSqlDrift,
+  SCHEDULED_SQL_CONSTANTS
+} from "./conformance/scheduled-sql-constants";
 import { serviceFnFile } from "./conformance/service-fn-file";
 import {
   findUndeclaredSideEffectImports,
@@ -72,6 +94,15 @@ import {
   findStampColumnMismatches,
   STAMP_MATCHES_COLUMNS
 } from "./conformance/stamp-matches-columns";
+import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
+import { testReadsSource } from "./conformance/test-reads-source";
+import {
+  loadDeploymentEnvSources,
+  loadEventFunctionSources,
+  loadIntegrationConfigs,
+  loadListSources,
+  loadScheduledConstantSources
+} from "./sources/cross-file";
 import { loadDbTableColumns } from "./sources/db-columns";
 import { loadDocumentSequenceSources } from "./sources/document-sequences";
 import { loadEdgeFunctions } from "./sources/edge-functions";
@@ -84,6 +115,7 @@ import {
 } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
 import { loadSideEffectPackages } from "./sources/side-effect-packages";
+import { loadTestFiles } from "./sources/test-files";
 import {
   loadTypescriptFiles,
   REQUEST_HANDLING_ROOTS,
@@ -121,6 +153,12 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noNoopOpenChange,
   noPostgresChanges,
   journalStatusFilter
+];
+
+/** Checks that run over git-tracked vitest files (apps, packages, scripts, docs). */
+export const TEST_CHECKS: ConformanceCheck[] = [
+  testReadsSource,
+  testMocksOwnModule
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */
@@ -181,6 +219,9 @@ export function loadManagedFunctions(root: string): ManagedFunction[] {
 
 /** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
+  const migrations = loadSqlFiles(migrationsDir(root));
+  const listSources = loadListSources(root);
+  const eventSources = loadEventFunctionSources(root);
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
       ...CONFORMANCE_CHECKS,
@@ -198,7 +239,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders,
       noInterpolatedErrorLog,
-      noRawRedirect
+      noRawRedirect,
+      linguiMacroMisuse
     ]),
     ...scanAll(loadTypescriptFiles(root), [
       noRawOrSearch,
@@ -218,19 +260,37 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
       (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
     ),
-    ...findDroppedFunctionChanges(loadSqlFiles(migrationsDir(root))).map(
-      (violation) => ({
-        checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
-        violation
-      })
-    ),
+    ...findDroppedFunctionChanges(migrations).map((violation) => ({
+      checkId: FUNCTION_REDEFINITION_KEEPS_CHANGES,
+      violation
+    })),
     ...findStampColumnMismatches(
       loadModuleServerFiles(root),
       loadDbTableColumns(root)
     ).map((violation) => ({ checkId: STAMP_MATCHES_COLUMNS, violation })),
     ...findUndeclaredSideEffectImports(loadSideEffectPackages(root)).map(
       (violation) => ({ checkId: SIDE_EFFECT_IMPORT_DECLARED, violation })
-    )
+    ),
+    ...scanAll(loadTestFiles(root), TEST_CHECKS),
+    ...findUnselectedListColumns(listSources.services, listSources.tables).map(
+      (violation) => ({ checkId: LIST_SELECT_COVERS_COLUMNS, violation })
+    ),
+    ...findProviderRoleDrift(loadIntegrationConfigs(root), migrations).map(
+      (violation) => ({ checkId: PROVIDER_ROLE_BACKFILLED, violation })
+    ),
+    ...findIgnoredColumnDrift(
+      eventSources.functions,
+      eventSources.auditConfig
+    ).map((violation) => ({ checkId: EVENT_IGNORED_COLUMNS, violation })),
+    ...findScheduledSqlDrift(
+      migrations,
+      loadScheduledConstantSources(root)
+    ).map((violation) => ({ checkId: SCHEDULED_SQL_CONSTANTS, violation })),
+    ...findDeploymentEnvGaps(loadDeploymentEnvSources(root), (env) =>
+      validateEnv(env)
+        .problems.filter((p) => p.level === "error")
+        .map((p) => p.name)
+    ).map((violation) => ({ checkId: DEPLOYMENTS_SET_REQUIRED_ENV, violation }))
   ];
 }
 

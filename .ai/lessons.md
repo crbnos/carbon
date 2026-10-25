@@ -2869,8 +2869,8 @@ them away. Nothing was wrong in any single place; the waste was the sum.
 type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
 UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` is not queued for AUDIT,
 SEARCH or EMBEDDING (`20261001195204`). When forking `dispatch_event_batch()` into a new
-migration, fork the NEWEST definition; `packages/database/src/event-dispatch.test.ts` fails
-if the filter is lost.
+migration, fork the NEWEST definition; the `event-ignored-columns` check (`@carbon/checks`)
+fails if the filter is lost.
 
 **Applies to:** `packages/planning/src/scheduling/`, any job or route that rewrites many rows
 of a table with event subscriptions, and every migration that redefines
@@ -3799,7 +3799,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Problem:** `vi.mock` replaces a module's exports for importers in other files. A call from one function to another inside the same file goes to the real function, so tests that mocked the callee started calling the database, or passed while testing nothing.
 
-**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing-no-mock-theater.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
+**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
 
 **Applies to:** tests under `apps/erp/test/` and `apps/erp/app/modules/**`.
 

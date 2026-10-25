@@ -14,7 +14,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-function validateDatabaseUrl(value: string | undefined): string {
+export function validateDatabaseUrl(value: string | undefined): string {
   if (!value?.trim()) {
     throw new Error(
       "SUPABASE_DB_URL is not set. Configure the local database before generating types."
