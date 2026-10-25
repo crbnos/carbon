@@ -55,6 +55,23 @@ describe("movingAverageUnitCost", () => {
     ).toBe(10);
   });
 
+  it("takes the receipt's own cost into negative stock", () => {
+    // 5 shipped before any were received, then 10 received for 200. Blending
+    // the -5 at 10 read 30; for 20, (−50 + 20) / 5 read a negative cost.
+    expect(
+      movingAverageUnitCost({ onHand: -5, unitCost: 10, quantity: 10, value: 200 })
+    ).toBe(20);
+    expect(
+      movingAverageUnitCost({ onHand: -5, unitCost: 10, quantity: 10, value: 20 })
+    ).toBe(2);
+  });
+
+  it("keeps the cost when a receipt does not cover negative stock", () => {
+    expect(
+      movingAverageUnitCost({ onHand: -5, unitCost: 10, quantity: -2, value: -20 })
+    ).toBe(10);
+  });
+
   it("keeps the cost when nothing is left on hand", () => {
     expect(
       movingAverageUnitCost({

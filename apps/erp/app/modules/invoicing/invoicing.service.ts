@@ -14849,7 +14849,31 @@ export async function postPurchaseInvoice(
       );
 
       // What the void takes back off an Average item: the units a direct
-      // line received and their cost, and the write-ups on receipt layers.
+      // line received and their cost, and the write-up each received PO line
+      // booked. The write-up is read from the journal, where it is that
+      // line's only debit to an inventory account: it is the posting's
+      // `inventoryShare` whether it went onto receipt layers, into a legacy
+      // self-heal layer (whose cost also holds the receipt's) or nowhere.
+      const accountDefaultsVoid = await getDefaultPostingGroup(db, companyId);
+      if (accountDefaultsVoid.error || !accountDefaultsVoid.data) {
+        throw new Error("Failed to fetch account defaults");
+      }
+      const inventoryAccountsVoid = new Set([
+        accountDefaultsVoid.data.rawMaterialsAccount,
+        accountDefaultsVoid.data.finishedGoodsAccount
+      ]);
+      const itemIdByLineReferenceVoid = new Map(
+        invoiceLinesVoid.data.flatMap((line) =>
+          line.purchaseOrderLineId && line.itemId
+            ? [
+                [
+                  journalReference.to.purchaseInvoice(line.purchaseOrderLineId),
+                  line.itemId
+                ] as const
+              ]
+            : []
+        )
+      );
       const receivedItemIdsVoid = new Set(
         originalItemLedger.data.map((entry) => entry.itemId)
       );
@@ -14859,13 +14883,8 @@ export async function postPurchaseInvoice(
           quantity: -Number(entry.quantity),
           value: 0
         })),
-        ...[
-          ...plainCostLedgerVoid.filter(
-            (entry) => entry.itemId && receivedItemIdsVoid.has(entry.itemId)
-          ),
-          ...adjustmentChildrenVoid
-        ].flatMap((entry) =>
-          entry.itemId
+        ...plainCostLedgerVoid.flatMap((entry) =>
+          entry.itemId && receivedItemIdsVoid.has(entry.itemId)
             ? [
                 {
                   itemId: entry.itemId,
@@ -14874,7 +14893,17 @@ export async function postPurchaseInvoice(
                 }
               ]
             : []
-        )
+        ),
+        ...originalJournalLines.flatMap((entry) => {
+          const itemId = entry.documentLineReference
+            ? itemIdByLineReferenceVoid.get(entry.documentLineReference)
+            : undefined;
+          return itemId &&
+            entry.accountId &&
+            inventoryAccountsVoid.has(entry.accountId)
+            ? [{ itemId, quantity: 0, value: -Number(entry.amount) }]
+            : [];
+        })
       ];
 
       const reversingCostLedger: Database["public"]["Tables"]["costLedger"]["Insert"][] =

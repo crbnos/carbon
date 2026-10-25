@@ -10626,7 +10626,8 @@ export async function postReceipt(
           itemId: string;
           quantity: number;
         }[] = [];
-        // What each positive line books, for an Average item's unit cost.
+        // What each line books (a negative line at the cost it relieves),
+        // for an Average item's unit cost.
         const averageCostChanges: AverageCostChange[] = [];
 
         const isOutsideProcessing =
@@ -11437,6 +11438,11 @@ export async function postReceipt(
                 ? cogsResult.totalCost
                 : receiptLineCosts[consumption.index]!.cost;
             relievedCostByLine.set(consumption.index, consumedCost);
+            averageCostChanges.push({
+              itemId: consumption.itemId,
+              quantity: -consumption.quantity,
+              value: -consumedCost
+            });
             costLedgerInserts.push({
               itemLedgerType: "Purchase",
               costLedgerType: "Direct Cost",

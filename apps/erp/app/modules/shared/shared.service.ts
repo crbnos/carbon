@@ -16052,6 +16052,9 @@ export function computeCurrentUnitCost(
  * receipt, an invoice's write-up (`quantity` 0). The same moving average
  * complete_job_to_inventory keeps, so on-hand × unit cost stays what the
  * journals booked. With nothing left on hand the cost stays as it was.
+ * Negative on-hand (shipped before it was received) blends in as zero: those
+ * units hold no stock to average with, so a receipt into them takes its own
+ * cost rather than a skewed, possibly negative, one.
  */
 export function movingAverageUnitCost({
   onHand,
@@ -16064,9 +16067,10 @@ export function movingAverageUnitCost({
   quantity: number;
   value: number;
 }): number {
-  const after = onHand + quantity;
+  const held = Math.max(onHand, 0);
+  const after = held + quantity;
   if (after <= EPSILON) return unitCost;
-  return (onHand * unitCost + value) / after;
+  return (held * unitCost + value) / after;
 }
 
 /** Units and value a posting moves at their own cost, per item. */
