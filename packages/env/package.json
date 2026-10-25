@@ -19,11 +19,11 @@
   },
   "dependencies": {
     "@carbon/utils": "workspace:*",
-    "@types/node": "20.19.39",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@types/node": "20.19.39",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

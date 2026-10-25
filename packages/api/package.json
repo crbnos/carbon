@@ -23,19 +23,19 @@
   },
   "dependencies": {
     "@carbon/auth": "workspace:*",
-    "@carbon/database": "workspace:*",
-    "@carbon/kv": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
-    "@orpc/client": "catalog:",
-    "@orpc/contract": "catalog:",
-    "@orpc/openapi-client": "catalog:",
-    "@supabase/supabase-js": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@carbon/kv": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/contract": "catalog:",
     "@orpc/openapi": "catalog:",
+    "@orpc/openapi-client": "catalog:",
+    "@supabase/supabase-js": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

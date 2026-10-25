@@ -18,12 +18,12 @@
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
-    "@supabase/supabase-js": "catalog:",
     "kysely": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
