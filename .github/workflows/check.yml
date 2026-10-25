@@ -13,12 +13,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Three jobs that need the workspace installed, started together: a job is a
+# Two jobs that need the workspace installed, started together: a job is a
 # fresh runner, and its setup (about a minute) cost more than most checks.
-# Test is the longest, so nothing waits in front of it.
+# Test is the longest, so nothing waits in front of it; the lint checks and
+# the typecheck share the other runner and run side by side.
 jobs:
   lint:
-    name: Lint
+    name: Lint and typecheck
     runs-on: ubuntu-latest
     steps:
       # These jobs run the pull request's code, so the token is not left in
@@ -60,33 +61,25 @@ jobs:
       - &install
         run: pnpm install --frozen-lockfile
 
-      - run: pnpm exec biome check
-      - name: Conformance checks
-        run: |
-          pnpm --filter @carbon/config build
-          pnpm --filter @carbon/checks exec vitest run src/run.test.ts
-      - name: Lingui
-        if: ${{ !cancelled() }}
-        run: pnpm run lingui:check
-      - name: Catalog
-        if: ${{ !cancelled() }}
-        run: pnpm run check:workflow-catalog
-      - name: Audit
-        if: ${{ !cancelled() }}
-        run: pnpm audit --audit-level=critical
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - *checkout
-      - *pnpm
-      - *node
-      - *node-modules
-      - *turbo
-      - *install
+      # The route types the typecheck and the lint checks read; written
+      # before they start, so none of them reads a half-written file.
       - run: pnpm run typegen
-      - run: pnpm run typecheck
+
+      - parallel:
+          - name: Typecheck
+            run: pnpm run typecheck
+          - name: Biome
+            run: pnpm exec biome check
+          - name: Conformance checks
+            run: |
+              pnpm --filter @carbon/config build
+              pnpm --filter @carbon/checks exec vitest run src/run.test.ts
+          - name: Lingui
+            run: pnpm run lingui:check
+          - name: Catalog
+            run: pnpm run check:workflow-catalog
+          - name: Audit
+            run: pnpm audit --audit-level=critical
 
   test:
     name: Test
@@ -131,7 +124,7 @@ jobs:
   # forks: their token cannot edit the PR.
   label:
     name: Label
-    needs: [lint, typecheck, test, edge-functions]
+    needs: [lint, test, edge-functions]
     if: >-
       !cancelled() &&
       github.event.pull_request.head.repo.full_name == github.repository
