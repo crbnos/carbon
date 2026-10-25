@@ -15,6 +15,7 @@ import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
 import { flatCardOnPhones } from "./components/notificationStyles";
 import {
+  darkModeMedia,
   EmailThemeProvider,
   emailTheme,
   getEmailThemeClasses,
@@ -83,7 +84,7 @@ const weeklyReminderStyles = `
     color: #6b7280 !important;
   }
 
-  @media (prefers-color-scheme: dark) {
+  ${darkModeMedia(`
     .wr-body {
       background-color: ${dark.background} !important;
     }
@@ -110,7 +111,7 @@ const weeklyReminderStyles = `
     .wr-fallback {
       color: ${dark.muted} !important;
     }
-  }
+  `)}
 ${flatCardOnPhones("wr-card")}
 `;
 
