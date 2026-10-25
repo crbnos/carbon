@@ -1363,10 +1363,7 @@ export async function createEmployeeAccount(
         return null;
       }
     );
-    if (
-      !hasPermission(claims?.permissions, "users", "update", companyId) ||
-      !hasPermission(claims?.permissions, "people", "create", companyId)
-    ) {
+    if (!canReAddDeactivatedEmployee(claims?.permissions, companyId)) {
       logger.error("Re-adding a deactivated employee was refused", {
         companyId,
         userId,
@@ -2163,7 +2160,21 @@ export async function convertConsoleOperatorToUser(
   return { success: true };
 }
 
-function makePermissionsFromEmployeeType({
+/** Re-adding a deactivated employee writes outside RLS, so the inviter needs
+ *  what a first-time add's RLS inserts need: users update and people create. */
+export function canReAddDeactivatedEmployee(
+  permissions: Parameters<typeof hasPermission>[0],
+  companyId: string
+): boolean {
+  return (
+    hasPermission(permissions, "users", "update", companyId) &&
+    hasPermission(permissions, "people", "create", companyId)
+  );
+}
+
+/** An employee type's permission rows as invite permissions, keyed
+ *  `module_action`. */
+export function makePermissionsFromEmployeeType({
   data
 }: {
   data: {
