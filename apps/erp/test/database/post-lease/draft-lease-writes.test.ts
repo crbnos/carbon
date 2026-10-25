@@ -3,84 +3,30 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // A Draft lease's terms and assets are saved together with the payment rows
-// cut from them, in one transaction. Live database: the writes are Kysely
-// transactions, so they cannot be faked.
+// cut from them, in one transaction.
 
-import { readFileSync } from "node:fs";
 import { sql } from "kysely";
-import { expect, it, vi } from "vitest";
-
-// purchasing.server's operations reach modules whose `msg` macros only run
-// compiled.
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("@carbon/content/glossary", () => ({
-  getDefinitionText: () => "",
-  getEntry: () => undefined,
-  getTermText: () => "",
-  glossaryEntries: () => [],
-  hasEntry: () => false,
-  listEntries: () => [],
-  lookupEntry: () => undefined,
-  termSlug: (t: string) => t,
-  terms: {}
-}));
-
-import { leaseFixture } from "../../../test/database/fixtures/lease";
+import { expect } from "vitest";
 import {
   leaseOpeningAsOf,
   regenerateLeasePayments,
   saveDraftLeaseLine,
   updateDraftLease
-} from "./purchasing.service";
-
-const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
-
-// vitest.config.ts stubs SUPABASE_DB_URL for every ERP test, so the local
-// database is read from the repository's .env.local. Without one, or with
-// the stack down, the tests skip.
-const localDatabaseUrl = (() => {
-  try {
-    const env = readFileSync(
-      new URL("../../../../../.env.local", import.meta.url),
-      "utf8"
-    );
-    const url = env.match(/^SUPABASE_DB_URL=(.+)$/m)?.[1]?.trim();
-    return url && LOCAL_HOSTS.includes(new URL(url).hostname) ? url : null;
-  } catch {
-    return null;
-  }
-})();
+} from "../../../app/modules/purchasing/purchasing.service";
+import { leaseFixture } from "../fixtures/lease";
+import { databaseTest } from "../fixtures/local-database";
 
 type Fixture = Awaited<ReturnType<typeof leaseFixture>>;
 
 function leaseTest(name: string, fn: (f: Fixture) => Promise<void>) {
-  it.skipIf(!localDatabaseUrl)(
-    name,
-    async (context) => {
-      process.env.SUPABASE_DB_URL = localDatabaseUrl!;
-      let f: Fixture;
-      try {
-        f = await leaseFixture();
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          "code" in error &&
-          error.code === "ECONNREFUSED"
-        ) {
-          context.skip();
-        }
-        throw error;
-      }
-      try {
-        await fn(f);
-      } finally {
-        await f.cleanup();
-      }
-    },
-    60_000
-  );
+  databaseTest(name, async () => {
+    const f = await leaseFixture();
+    try {
+      await fn(f);
+    } finally {
+      await f.cleanup();
+    }
+  });
 }
 
 /** The terms the fixture's lease was created with, as the validator gives
