@@ -46,7 +46,11 @@ import {
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
-import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
+import {
+  getPurchaseOrderDisplayId,
+  type PurchaseOrderApproval
+} from "@carbon/documents/pdf";
+import { getDocumentApproval } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
@@ -597,6 +601,31 @@ export async function getPurchaseOrderLocations(
     .select("*")
     .eq("id", purchaseOrderId)
     .single();
+}
+
+/**
+ * Who approved a purchase order and on which day in the company's timezone,
+ * for the PDF's `order.approved*` merge fields. Null when it was not approved.
+ */
+export async function getPurchaseOrderApproval(
+  serviceRole: SupabaseClient<Database>,
+  {
+    companyId,
+    purchaseOrderId,
+    timezone
+  }: { companyId: string; purchaseOrderId: string; timezone: string }
+): Promise<PurchaseOrderApproval | null> {
+  const approval = await getDocumentApproval(
+    serviceRole,
+    "purchaseOrder",
+    purchaseOrderId,
+    companyId
+  );
+  if (!approval) return null;
+  return {
+    approvedBy: approval.approvedBy,
+    approvedDate: datetime.businessDay(approval.approvedAt, timezone).toString()
+  };
 }
 
 export async function getPurchaseOrderPayment(
