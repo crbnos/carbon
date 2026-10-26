@@ -141,7 +141,8 @@ function useModuleDefinitions(): ModuleDefinition[] {
       to: path.to.external.mes,
       icon: LuTvMinimalPlay,
       role: "employee",
-      external: true
+      external: true,
+      newTab: true
     },
     {
       key: "users",

@@ -7,23 +7,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // A card dropped on the schedule boards: which moves are refused before
 // anything is written, and when the scheduler is told.
 
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("@carbon/env", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@carbon/env")>()),
-  ASSEMBLER_SERVICE_URL: ""
-}));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
-}));
-vi.mock("@carbon/jobs", () => ({ trigger: vi.fn(), batchTrigger: vi.fn() }));
-vi.mock("@carbon/planning", () => ({ runLocationSchedule: vi.fn() }));
-vi.mock("../app/modules/production/production.service", () => ({
-  notifyScheduleInputsChanged: vi.fn()
-}));
+// The scheduler is told through an event.
+const { trigger } = vi.hoisted(() => ({ trigger: vi.fn() }));
+vi.mock("@carbon/jobs", () => ({ trigger }));
 
-import { notifyScheduleInputsChanged } from "../app/modules/production/production.service";
 import {
   moveScheduleJob,
   reorderScheduleOperations
@@ -171,7 +158,7 @@ describe("reorderScheduleOperations", () => {
       message: "Invalid scheduling request"
     });
     expect(caller.writes).toEqual([]);
-    expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
+    expect(trigger).not.toHaveBeenCalled();
   });
 });
 
@@ -189,7 +176,9 @@ describe("moveScheduleJob", () => {
     const result = await move(caller);
     expect(result.error).toBeNull();
     expect(caller.writes).toEqual(["job"]);
-    expect(notifyScheduleInputsChanged).toHaveBeenCalledOnce();
+    expect(trigger.mock.calls.map(([event]) => event)).toEqual([
+      "schedule-inputs-changed"
+    ]);
   });
 
   it("refuses a column that is not a date before writing", async () => {
@@ -205,11 +194,11 @@ describe("moveScheduleJob", () => {
       category: "conflict",
       message: "Job unavailable or locked"
     });
-    expect(notifyScheduleInputsChanged).not.toHaveBeenCalled();
+    expect(trigger).not.toHaveBeenCalled();
   });
 
   it("keeps the move when the scheduler cannot be told", async () => {
-    vi.mocked(notifyScheduleInputsChanged).mockResolvedValueOnce(false);
+    trigger.mockRejectedValueOnce(new Error("event bus down"));
     const result = await move(callerWith({ job: { data: { id: "j1" }, error: null } }));
     expect(result.error).toBeNull();
   });

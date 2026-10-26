@@ -33,15 +33,6 @@ import type { ColumnFilter } from "../Filter/types";
 import { useFilters } from "../Filter/useFilters";
 import { FilterSortSheet } from "./FilterSortSheet";
 
-const NO_EXPORT: DownloadProps = {
-  data: [],
-  columnAccessors: {},
-  exportValues: {},
-  exportOnlyColumns: [],
-  columnOrder: [],
-  columnVisibility: {}
-};
-
 type CompactToolbarProps = {
   title?: string;
   tableName?: string;
@@ -93,7 +84,6 @@ export function CompactToolbar({
   const { t } = useLingui();
   const { urlFiltersParams, hasFilters } = useFilters();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const exportCsv = useCsvDownload(csvExport ?? NO_EXPORT);
   const [importTable, setImportTable] = useState<
     keyof typeof fieldMappings | null
   >(null);
@@ -124,11 +114,8 @@ export function CompactToolbar({
       <DropdownMenuContent align="end">
         {menuItems}
         {menuItems && hasBuiltIns ? <DropdownMenuSeparator /> : null}
-        {canExport ? (
-          <DropdownMenuItem onClick={exportCsv}>
-            <DropdownMenuIcon icon={<LuDownload />} />
-            <Trans>Export CSV</Trans>
-          </DropdownMenuItem>
+        {canExport && csvExport ? (
+          <ExportCsvItem csvExport={csvExport} />
         ) : null}
         {importCSV?.map(({ table, label }) => (
           <DropdownMenuItem key={table} onClick={() => setImportTable(table)}>
@@ -219,5 +206,22 @@ export function CompactToolbar({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * Export CSV, mounted only when there is something to export. Its hook reads
+ * the signed-in company's items, suppliers, people and customers to name the
+ * ids in the file, and a signed-out page — a customer portal — has no company
+ * to read: called unconditionally, it threw "useUser must be used within an
+ * authenticated route" and the page answered 500.
+ */
+function ExportCsvItem({ csvExport }: { csvExport: DownloadProps }) {
+  const exportCsv = useCsvDownload(csvExport);
+  return (
+    <DropdownMenuItem onClick={exportCsv}>
+      <DropdownMenuIcon icon={<LuDownload />} />
+      <Trans>Export CSV</Trans>
+    </DropdownMenuItem>
   );
 }

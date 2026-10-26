@@ -219,6 +219,7 @@ export const path = {
       locationEmployees: (locationId: string) =>
         generatePath(`${api}/people/employees/${locationId}`),
       locations: `${api}/resources/locations`,
+      loginVerifyCode: `${api}/login/verify-code`,
       maintenanceDispatches: `${api}/resources/maintenance`,
       maintenanceSchedules: `${api}/resources/scheduled-maintenance`,
       materialDimensions: (formId: string) =>
@@ -522,6 +523,7 @@ export const path = {
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
     bulkUpdateTraining: `${x}/training/update`,
     calibrations: `${x}/quality/calibrations`,
+    callback: "/callback",
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
     // The `?app=` hint lets the docs' Subscribe popover link to this instance.
@@ -1118,6 +1120,7 @@ export const path = {
     external: {
       mes: MES_URL,
       mesBatch: (id: string) => `${MES_URL}/x/batch/${id}`,
+      mesJob: (id: string) => `${MES_URL}/x/job/${id}`,
       mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
       mesJobOperationComplete: (id: string) => `${MES_URL}/x/end/${id}`,
       mesJobOperationStart: (id: string, type: "Setup" | "Labor" | "Machine") =>

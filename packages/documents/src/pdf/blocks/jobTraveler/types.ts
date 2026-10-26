@@ -17,6 +17,8 @@ type JobOperationStep = Database["public"]["Tables"]["jobOperationStep"]["Row"];
 export type JobOperationWithSteps =
   Database["public"]["Tables"]["jobOperation"]["Row"] & {
     jobOperationStep?: JobOperationStep[];
+    // The operation batch it runs in, when it has one.
+    jobOperationBatch?: { readableId: string; notes?: string | null } | null;
   };
 
 /** One BOM line rendered in the opt-in Materials section. */

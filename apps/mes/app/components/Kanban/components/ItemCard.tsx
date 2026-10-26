@@ -79,6 +79,10 @@ const cardVariants = cva(
   }
 );
 
+/**
+ * A schedule card for one operation, or for a whole batch when the batch's
+ * operations are collapsed into one card.
+ */
 export function ItemCard({
   item,
   progressByItemId,

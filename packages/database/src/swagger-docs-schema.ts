@@ -97021,6 +97021,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.guidePath"
           },
           {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -97137,6 +97140,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.guidePath"
           },
           {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -97205,6 +97211,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.training.guidePath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
           },
           {
             $ref: "#/parameters/body.training"
@@ -149100,15 +149109,7 @@ export default {
       type: "object"
     },
     notificationPreference: {
-      required: [
-        "id",
-        "userId",
-        "companyId",
-        "channel",
-        "topic",
-        "enabled",
-        "updatedAt"
-      ],
+      required: ["id", "userId", "channel", "topic", "enabled", "updatedAt"],
       properties: {
         id: {
           default: "public.xid()",
@@ -164885,6 +164886,10 @@ export default {
           type: "string"
         },
         guidePath: {
+          format: "text",
+          type: "string"
+        },
+        videoUrl: {
           format: "text",
           type: "string"
         }
@@ -220338,6 +220343,12 @@ export default {
     },
     "rowFilter.training.guidePath": {
       name: "guidePath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.training.videoUrl": {
+      name: "videoUrl",
       required: false,
       in: "query",
       type: "string"

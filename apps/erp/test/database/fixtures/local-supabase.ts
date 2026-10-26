@@ -32,9 +32,20 @@ export function localServiceRoleKey(): string | null {
  * when there is no local stack: the tests that need it skip.
  */
 export function localServiceRoleClient(): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_SERVICE_ROLE_KEY");
+}
+
+/** The same PostgREST with the anonymous key: a caller with no permissions. */
+export function localAnonClient(): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_ANON_KEY");
+}
+
+function localClient(
+  keyName: "SUPABASE_SERVICE_ROLE_KEY" | "SUPABASE_ANON_KEY"
+): SupabaseClient<Database> | null {
   const env = localEnv();
   const port = env?.PORT_API;
-  const key = env?.SUPABASE_SERVICE_ROLE_KEY;
+  const key = env?.[keyName];
   if (!port || !key) return null;
   return createClient<Database>(`http://localhost:${port}`, key, {
     auth: { autoRefreshToken: false, persistSession: false }

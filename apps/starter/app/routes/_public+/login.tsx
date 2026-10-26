@@ -19,6 +19,7 @@ import {
   verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -125,7 +126,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return { success: true };
+  // This browser asked: the email's link completes only here.
+  return data(
+    { success: true as const },
+    { headers: { "Set-Cookie": await markSignInBrowser() } }
+  );
 }
 
 export default function LoginRoute() {

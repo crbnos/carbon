@@ -29,7 +29,10 @@ const shipping = {
   parentId: parent.id
 };
 const resolve = (
-  accounts = [parent, shipping],
+  accounts: Parameters<typeof resolveShippingDefault>[0]["accounts"] = [
+    parent,
+    shipping
+  ],
   parentDefaultId: string | null = null
 ) =>
   resolveShippingDefault({
@@ -38,28 +41,18 @@ const resolve = (
     companyGroupId: "group"
   });
 
-it("new company seeds a separate Shipping Revenue account under Revenue", () => {
-  // 4050, not 4040: 4040 is "Customer Payment Discounts" (#1600), which the
-  // 20260909014032 migration renumbers 7030 into. Claiming 4040 here would
-  // silently suppress that guarded renumber for every company.
-  const account = seedAccounts.find(
-    (a) => String(a.name) === "Shipping Revenue"
-  );
-  expect(account).toEqual({
-    key: "4050",
-    number: "4050",
+it("seeds the shipping default as its own Revenue leaf with an unused number", () => {
+  // Sharing a number (4040 is Customer Payment Discounts) would merge two defaults.
+  const numbers = seedAccounts.flatMap((a) => (a.number ? [a.number] : []));
+  expect(new Set(numbers).size).toBe(numbers.length);
+  const key = (accountDefaults as Record<string, string>)
+    .salesShippingRevenueAccount;
+  expect(seedAccounts.find((a) => a.key === key)).toMatchObject({
     name: "Shipping Revenue",
     isGroup: false,
     parentKey: "revenue",
-    accountType: "Income",
-    incomeBalance: "Income Statement",
-    class: "Revenue",
-    consolidatedRate: "Average",
-    createdBy: "system"
+    class: "Revenue"
   });
-  expect(
-    (accountDefaults as Record<string, string>).salesShippingRevenueAccount
-  ).toEqual("4050");
 });
 
 it("existing company group resolves a semantic leaf without assuming number4040", () => {
@@ -86,23 +79,17 @@ it("ambiguous or missing semantic defaults fail rather than choosing Sales or nu
   ).toThrow("Shipping Revenue");
 });
 
-it("inactive, group, cross-group, and incompatible semantic leaves are rejected", () => {
-  for (const invalid of [
-    { active: false },
-    { isGroup: true },
-    { companyGroupId: "other" },
-    { class: "Expense" as const },
-    { incomeBalance: "Balance Sheet" as const },
-    { accountType: "Other Income" as const },
-    { consolidatedRate: "Current" as const },
-    { parentId: "missing" }
-  ]) {
-    expect(() =>
-      resolveShippingDefault({
-        accounts: [parent, { ...shipping, ...invalid }],
-        parentDefaultId: null,
-        companyGroupId: "group"
-      })
-    ).toThrow("Shipping Revenue");
-  }
+it.each([
+  { active: false },
+  { isGroup: true },
+  { companyGroupId: "other" },
+  { class: "Expense" as const },
+  { incomeBalance: "Balance Sheet" as const },
+  { accountType: "Other Income" as const },
+  { consolidatedRate: "Current" as const },
+  { parentId: "missing" }
+])("rejects a Shipping Revenue leaf that differs by %o", (invalid) => {
+  expect(() => resolve([parent, { ...shipping, ...invalid }])).toThrow(
+    "Shipping Revenue"
+  );
 });

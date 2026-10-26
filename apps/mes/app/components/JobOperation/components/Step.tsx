@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { storage } from "@carbon/files";
+import { TiptapText } from "@carbon/files/markdown";
 import {
   Combobox,
   DateTimePicker,
@@ -23,6 +24,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  ImageZoomViewer,
   Modal,
   ModalBody,
   ModalContent,
@@ -42,8 +44,7 @@ import {
 import {
   documentHasImages,
   parseMentionsFromDocument,
-  stripSpecialCharacters,
-  tiptapToText
+  stripSpecialCharacters
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -60,10 +61,12 @@ import {
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
-import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { useUser } from "~/hooks";
-import { stepRecordValidator } from "~/services/models";
+import {
+  measurementStepRecordValidator,
+  stepRecordValidator
+} from "~/services/models";
 import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -89,12 +92,33 @@ export function hasStepDescription(
 ): boolean {
   if (!description) return false;
   const doc = description as JSONContent;
-  const text = tiptapToText(doc).trim();
+  const text = TiptapText(doc).toString().trim();
   if (text.length > 0 && text !== "{}") return true;
   if (parseMentionsFromDocument(doc).length > 0) return true;
   // A step's reference imagery is frequently an image-only description (no text,
   // no @-mention). Without this the description block — and its <img> — is hidden.
   return documentHasImages(doc);
+}
+
+// The limits a Measurement must fall within, in its unit, as the step lists
+// and the record windows state them. Both limits are inclusive: a value equal
+// to either one passes.
+export function useMeasurementLimits(step: {
+  minValue: number | null;
+  maxValue: number | null;
+  unitOfMeasureCode: string | null;
+}) {
+  const { t } = useLingui();
+  const { minValue, maxValue } = step;
+  const unitOfMeasureCode = step.unitOfMeasureCode ?? "";
+  if (minValue !== null && maxValue !== null) {
+    return t`Must be between ${minValue} and ${maxValue} ${unitOfMeasureCode}`;
+  }
+  if (minValue !== null)
+    return t`Must be at least ${minValue} ${unitOfMeasureCode}`;
+  if (maxValue !== null)
+    return t`Must be at most ${maxValue} ${unitOfMeasureCode}`;
+  return null;
 }
 
 export function StepsListItem({
@@ -116,9 +140,8 @@ export function StepsListItem({
 }) {
   const fetcher = useFetcher<{ success: boolean }>();
   const user = useUser();
-  const { t } = useLingui();
-  const { name, description, type, unitOfMeasureCode, minValue, maxValue } =
-    step;
+  const { name, description, type } = step;
+  const limits = useMeasurementLimits(step);
 
   const hasDescription = hasStepDescription(description);
   const disclosure = useDisclosure({
@@ -145,15 +168,7 @@ export function StepsListItem({
                 </span>
               </HStack>
               {type === "Measurement" && (
-                <span className="text-xs text-muted-foreground">
-                  {minValue !== null && maxValue !== null
-                    ? t`Must be between ${minValue} and ${maxValue} ${unitOfMeasureCode}`
-                    : minValue !== null
-                      ? t`Must be > ${minValue} ${unitOfMeasureCode}`
-                      : maxValue !== null
-                        ? t`Must be < ${maxValue} ${unitOfMeasureCode}`
-                        : null}
-                </span>
+                <span className="text-xs text-muted-foreground">{limits}</span>
               )}
             </VStack>
             {!compact && (
@@ -492,6 +507,7 @@ export function RecordModal({
   const { t } = useLingui();
   const { carbon } = useCarbon();
   const { company } = useUser();
+  const limits = useMeasurementLimits(attribute);
   const [file, setFile] = useState<File | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
   // Bumped on every drop/remove so a stale in-flight upload can't set state
@@ -559,7 +575,11 @@ export function RecordModal({
       <ModalContent>
         <ValidatedForm
           method="post"
-          validator={stepRecordValidator}
+          validator={
+            attribute.type === "Measurement"
+              ? measurementStepRecordValidator
+              : stepRecordValidator
+          }
           action={path.to.record}
           defaultValues={{
             index: activeStep,
@@ -567,7 +587,9 @@ export function RecordModal({
             value:
               record?.value ??
               (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
-            numericValue: record?.numericValue ?? 0,
+            // Empty until recorded: a prefilled 0 could be recorded as a
+            // real measurement.
+            numericValue: record?.numericValue ?? undefined,
             userValue: record?.userValue ?? ""
           }}
           fetcher={fetcher}
@@ -614,7 +636,12 @@ export function RecordModal({
                 <InputField name="value" label="" size="lg" />
               )}
               {attribute.type === "Measurement" && (
-                <Number name="numericValue" label="" size="lg" />
+                <Number
+                  name="numericValue"
+                  label={attribute.unitOfMeasureCode ?? ""}
+                  helperText={limits ?? undefined}
+                  size="lg"
+                />
               )}
               {attribute.type === "Timestamp" && (
                 <DateTimePicker name="value" label="" size="lg" />

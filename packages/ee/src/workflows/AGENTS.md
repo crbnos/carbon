@@ -330,7 +330,7 @@ event id still exists in the catalog.
 
 ```bash
 pnpm --filter @carbon/ee test                      # vitest
-pnpm --filter @carbon/ee exec tsgo --noEmit        # typecheck
+pnpm --filter @carbon/ee exec tsc --noEmit        # typecheck
 pnpm exec biome check packages/ee/src/workflows    # lint
 pnpm run generate:workflow-catalog                 # after editing entities/moments/actions/operations.ts
 pnpm run check:workflow-catalog                    # the CI `catalog` job

@@ -4,20 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { createClient } from "@supabase/supabase-js";
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@carbon/content/glossary", () => ({
-  terms: {},
-  getEntry: () => null,
-  lookupEntry: () => null,
-  hasEntry: () => false,
-  termSlug: (s: string) => s,
-  glossaryEntries: () => []
-}));
-
-vi.mock("../people/people.service", () => ({}));
-vi.mock("../sales/sales.service", () => ({}));
-vi.mock("../accounting/accounting.service", () => ({}));
+import { describe, expect, it } from "vitest";
 
 import {
   getInvoiceSettlements,

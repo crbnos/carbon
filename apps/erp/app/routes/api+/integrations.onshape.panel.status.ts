@@ -7,6 +7,7 @@ import type { PanelAssemblyLineInput, PanelItemRow } from "@carbon/ee";
 import {
   buildAssemblyLineStatuses,
   buildPartStatuses,
+  describeBomPayload,
   externalIdForAssembly,
   externalIdForBomLine,
   metadataProperty,
@@ -24,12 +25,15 @@ import {
   selectInBatches
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "integrations-onshape-panel-status");
 
 /** Carbon status for the current Onshape element: its parts or its BOM. */
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -115,8 +119,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
     // Without its required columns every line would read "Not in Carbon".
     if (missingColumns.length > 0) {
+      const diagnostics = {
+        request: { documentId, wv, wvId, elementId, configuration },
+        onshapeApi: onshape.client.apiOrigin,
+        missingColumns,
+        bom: describeBomPayload(bom)
+      };
+      logger.warn("Onshape BOM is missing required columns", {
+        companyId,
+        ...diagnostics
+      });
       return data(
-        { error: missingBomColumnsMessage(missingColumns) },
+        { error: missingBomColumnsMessage(missingColumns), diagnostics },
         { status: 422 }
       );
     }

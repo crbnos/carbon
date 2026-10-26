@@ -57,9 +57,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install compatible Pulumi version
@@ -73,11 +73,12 @@ jobs:
       - name: Run deployment
         run: pnpm --filter ci ci:deploy
 
-  # Inngest learns the new function list once the new tasks serve it.
+  # Inngest learns the new function list, and hosted Supabase the Auth
+  # emails, once the new tasks serve them.
   sync:
-    name: Sync Inngest
+    name: Post Deploy Sync
     needs: deploy
-    uses: ./.github/workflows/inngest.yml
+    uses: ./.github/workflows/post-deploy.yml
     secrets: inherit
 
   # One leg per AWS account (prod and govcloud); each deploys only its own
@@ -158,9 +159,9 @@ jobs:
           docker push "$TO"
 
       - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install compatible Pulumi version

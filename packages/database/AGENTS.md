@@ -8,7 +8,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - Tables: composite PK `("id", "companyId")`, `id` default `id()` or `id('prefix')` — never raw UUID. Audit columns (`createdBy`/`createdAt`/`updatedBy`/`updatedAt`) with inline `REFERENCES "user"("id")`.
 - RLS: every public table's policies are a rule in `src/authz/manifest.ts` (usually `company("<module>")` — the four standard policies) and the RLS helpers are `src/authz/helpers/<name>.sql`. `pnpm db:migrate` syncs them locally; `pnpm --filter @carbon/database authz migration <name>` ships them to production (`migration.test.ts` fails until it does). See `.claude/rules/authz-manifest.md`.
 - Event-system functions (dispatch, subscriptions, queue wake-up, audit log, search index, embeddings) are one file each in `src/event-system/functions/` (`<name>.sql`, `util.<name>.sql` for the `util` schema), synced and shipped by the same `authz sync` / `authz migration` commands. Edit the file; never redefine one in a migration.
-- Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. Never hand-edit `src/types.ts` — it's generated.
+- Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. A function that may be handed a transaction runs its writes through `withTransaction(db, fn)` from the same file: it joins the transaction `db` already is, else opens one (Kysely refuses `transaction()` on a `Transaction`). Never hand-edit `src/types.ts` — it's generated.
 - `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
   composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
   `ci/src/migrations.ts` runs after `supabase db push` — see `scripts/one-off/README.md`.
@@ -17,7 +17,12 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
   `PRIMARY KEY ("id")` and no `createdBy`/`updatedBy`. A row belongs to one user and only that
   user writes it, so the audit columns would always repeat `userId`. They keep `companyId`
   (FK, `ON DELETE CASCADE`) for tenant attribution and the RLS rule `owner("userId")` +
-  `member("companyId")`. `pushSubscription` is unique per browser `endpoint`, not per company
+  `member("companyId")`. `notificationPreference.companyId` is NULL for an account-level topic
+  (only the changelog newsletter, `getNotificationTopicScope` in `@carbon/notifications`): one
+  row per user, unique `NULLS NOT DISTINCT`, RLS `owner("userId")` alone for that row. No CHECK
+  names the topics: `getNotificationTopicScope` is the only place that decides, and every reader
+  and writer goes through `notificationPreferenceCompanyId`, so a row stored under the wrong scope
+  (a per-company newsletter row from an older backup) is never read. `pushSubscription` is unique per browser `endpoint`, not per company
   (one browser, one owner); see `.ai/specs/2026-10-08-web-push-notifications.md`.
   It is intentionally NOT tenant-scoped so `selectWipeableTables` (company-backup.ts) cannot
   select it and a company restore cannot erase it. A migration landing in this package is

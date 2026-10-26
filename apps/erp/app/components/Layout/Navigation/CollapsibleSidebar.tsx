@@ -97,6 +97,16 @@ CollapsibleSidebarTrigger.displayName = "CollapsibleSidebarTrigger";
 const easeOutQuart = [0.165, 0.84, 0.44, 1] as const;
 
 /**
+ * How a docked panel slides in and out: this module sidebar, and a record's
+ * properties panel (`ResizablePanels`).
+ */
+export const dockedPanelTransition = {
+  duration: 0.2,
+  ease: easeOutQuart,
+  opacity: { duration: 0.15 }
+} as const;
+
+/**
  * The location a module sidebar highlights against: the pending one while it
  * is still inside this sidebar, otherwise the one on screen. A sidebar about
  * to be replaced keeps its highlight instead of going blank for the length of
@@ -220,15 +230,7 @@ const CollapsibleSidebar = ({
       // No enter animation: arriving from a page without a sidebar must not
       // replay the collapse.
       initial={false}
-      transition={
-        shouldReduceMotion
-          ? { duration: 0 }
-          : {
-              duration: 0.2,
-              ease: easeOutQuart,
-              opacity: { duration: 0.15 }
-            }
-      }
+      transition={shouldReduceMotion ? { duration: 0 } : dockedPanelTransition}
       variants={variants}
       className="relative flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]"
     >

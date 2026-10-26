@@ -91,7 +91,11 @@ in the migrations — **newest wins**; core tables created in
   failure aborts the close). Movement rules: tracked Scrap/Return → `-link.qty` per
   entity; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
-  (undoing the reject write-off); tracked Use-As-Is/Rework and any `Non-Inventory` move
+  (undoing the reject write-off); inspection-originated Return to Supplier → nothing, because
+  the supplier return shipment puts those units back before it ships them
+  (`getReturnLineWriteOffs` in `postShipment`, at the write-off's own cost, Dr Inventory /
+  Cr Scrap; voiding the shipment writes them off again) — without it the shipment relieved
+  units the reject had already written off; tracked Use-As-Is/Rework and any `Non-Inventory` move
   no value. Origin detected via the `nonConformanceInspection` link. Reopen is blocked
   once a `Non-Conformance` `itemLedger` row exists (`setIssueStatus`). See
   `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.

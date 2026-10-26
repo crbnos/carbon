@@ -25,8 +25,11 @@ import {
   SUPABASE_ANON_KEY,
   VERCEL_URL
 } from "../config/env";
-import { getCarbon } from "../lib/supabase";
-import { getCarbonAPIKeyClient, getCarbonClient } from "../lib/supabase/client";
+import {
+  getCarbon,
+  getCarbonAPIKeyClient,
+  getCarbonClient
+} from "../lib/supabase/client";
 import {
   getCarbonServiceRole,
   requestFetch

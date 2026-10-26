@@ -27,6 +27,7 @@ import {
   generateHTML,
   hasOpenDialog,
   IconButton,
+  ImageZoomViewer,
   Modal,
   ModalBody,
   ModalContent,
@@ -92,7 +93,6 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigate, useSearchParams } from "react-router";
 import { TrackingTypeIcon } from "~/components/Icons";
-import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
 import { IssueMaterialModal } from "~/components/JobOperation/components/IssueMaterialModal";
 import { MaintenanceDispatch } from "~/components/JobOperation/components/MaintenanceDispatch";

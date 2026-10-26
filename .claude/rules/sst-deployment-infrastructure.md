@@ -5,7 +5,7 @@ paths:
   - "ci/**"
   - ".github/workflows/deploy.yml"
   - ".github/workflows/build-images.yml"
-  - ".github/workflows/inngest.yml"
+  - ".github/workflows/post-deploy.yml"
   - "Dockerfile"
   - "apps/erp/app/utils/inngest-self-sync.server.ts"
   - "apps/erp/app/entry.server.tsx"
@@ -124,14 +124,21 @@ registration handshake, not Carbon-specific. Two independent triggers exist:
   app code that reads them for its own base-URL detection), but the adapter
   path (`server/app.ts`, `@vercel/react-router` in `entry.server.tsx`) is
   still live, so this stays inert there rather than retrying uselessly.
-- **CI-triggered sync** (`.github/workflows/inngest.yml`, `ci/src/jobs.ts`):
-  called by `deploy.yml` (job `sync`) after its deploy job succeeds; also
-  runnable by hand. Reads every row in the
+- **CI-triggered sync** (`.github/workflows/post-deploy.yml`, `ci/src/post-deploy.ts`):
+  the one post-deploy step, whatever hosts the ERP. Called by `deploy.yml`
+  (job `sync`) after its deploy job succeeds, run on a successful production
+  deploy of the ERP's Vercel projects (`deployment_status`, environment
+  `Production – carbon*`), and runnable by hand. Reads every row in the
   `workspaces` table and does the same `PUT .../api/inngest` against each
   `url_erp`. Redundant with boot self-sync today, but kept as an
   externally-triggered backstop (e.g. if a task's own retries were exhausted
   before the app was reachable). Only targets `url_erp`, never `url_mes` — MES
-  has no `/api/inngest` route to sync.
+  has no `/api/inngest` route to sync. For a workspace with a `project_id`
+  (hosted Supabase) it then copies the ERP's `/templates/*.html` into the
+  project's Auth emails (`ci/src/auth-emails.ts`): hosted Auth cannot
+  download templates the way self-hosted Auth does. One sync at a time
+  (job-level `concurrency: post-deploy-sync`): each ERP deploy starts a run
+  that syncs every workspace, and two concurrent PUTs to one ERP collide.
 
 Both hit the same handler (`apps/erp/app/routes/api+/inngest.ts`, `serve()`
 from `inngest/remix`) — the registration target URL is fixed by that route's

@@ -670,9 +670,9 @@ Pushing to `main` triggers each Vercel project's Git-integrated build. AWS deplo
 | -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks; an edge-functions job fails any `../` import out of a function's directory, then runs `deno check` |
 | `build-images.yml` | every merge to `main` | builds or re-tags every image, tagged with the commit; when the merge touched `apps/erp`, `apps/mes`, `packages` or `docs/content` and both app images succeeded, it calls `deploy.yml` |
-| `deploy.yml`   | called by `build-images.yml`, or run by hand | fans out `sst deploy` per workspace, then calls `inngest.yml` |
+| `deploy.yml`   | called by `build-images.yml`, or run by hand | fans out `sst deploy` per workspace, then calls `post-deploy.yml` |
 | `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
-| `inngest.yml`  | called by `deploy.yml` after it succeeds                      | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
+| `post-deploy.yml` | after every ERP deploy: called by `deploy.yml` on AWS, or on a successful Vercel production deploy | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs, and copies each ERP's Auth emails into its hosted Supabase project        |
 
 `check.yml` does not build application images, so a successful pull request can still fail during image build.
 Database and application deployments run without ordering, so migrations must remain compatible with the previous application version.

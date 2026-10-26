@@ -64,6 +64,10 @@ msgstr "（非所有者权益过账账户）"
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# 条阻止记录} other {# 条阻止记录}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {此组中的 # 个组件} other {此组中的 # 个组件}}"
@@ -80,6 +84,14 @@ msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 条记录需要关注} other {# 条记录需要关注}}"
@@ -91,6 +103,14 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当�
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。跳过它可以备份其他所有内容。} other {# 行链接到该公司外的数据，无法备份。跳过它们可以备份其他所有内容。}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -531,6 +551,9 @@ msgstr "{documentTypeLabel}审批规则"
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -548,6 +571,9 @@ msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录�
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "还有{hiddenCount}个：{hiddenNames}"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -688,6 +714,9 @@ msgstr "{sectionLineCount} 行"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -741,6 +770,9 @@ msgstr "{unread} 条未读"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}无法排程"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "已上传{uploadedFileName}——字段从文件填充。"
@@ -2322,6 +2354,9 @@ msgstr "为此客户添加"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "添加到所选配置的单价中，在折扣和加价之前生效。使用负数金额可作为抵扣。"
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "正在添加演示记录"
@@ -4894,6 +4929,9 @@ msgstr "变更通知"
 
 msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
 msgstr "无法加载变更通知，因此新版本和修订版被阻止。重新加载以重试。"
+
+msgid "Change notices could not be loaded, so the active version cannot be changed. Reload to try again."
+msgstr "无法加载变更通知，因此无法更改有效版本。重新加载以重试。"
 
 msgid "Change order"
 msgstr "变更单"
@@ -8537,6 +8575,9 @@ msgstr "例：MI"
 msgid "e.g. Suite 200"
 msgstr "例：Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "例如：疑似假冒、零件错误、运输中损坏"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "例如前3到4周"
 
@@ -9307,6 +9348,9 @@ msgstr "请在至少一行上输入收货数量或勾选一个件。"
 
 msgid "Enter a web address, such as https://example.com"
 msgstr "请输入网址，例如 https://example.com"
+
+msgid "Enter a YouTube video link"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "自己输入物料和数量。"
@@ -11848,6 +11892,15 @@ msgstr "检验"
 msgid "Inspection · {itemReadableId}"
 msgstr "检验 · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "检验 {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "检验 {0} · {1}"
+
 msgid "Inspection document"
 msgstr "检验文件"
 
@@ -14243,6 +14296,15 @@ msgstr "MRP 仅在现有订单的日期偏差超过此天数时才建议移动�
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机、炉子或电镀槽"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "必须不小于 {minValue} {unitLabel}"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "必须不大于 {maxValue} {unitLabel}"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "必须在 {minValue} 到 {maxValue} {unitLabel} 之间"
+
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
 
@@ -14491,6 +14553,9 @@ msgstr "新问题"
 
 msgid "New Item Group"
 msgstr "新建项目组"
+
+msgid "New jobs use version {activeVersion}"
+msgstr "新工单使用版本 {activeVersion}"
 
 msgid "New Kanban"
 msgstr "新看板"
@@ -14907,6 +14972,14 @@ msgstr "还没有变更。"
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "暂无更改。租赁启用后，修改在页眉中，终止和购买在每个资产的页面上。"
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "没有特性不合格，请说明拒绝该批次的原因。全部 {0} 个实体将被标记为已拒绝。"
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "没有特性不合格，请说明拒绝该批次的原因。整个批次 {0} 将被拒绝。"
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "无费用。里程、损毁、交付或清洁费用计入下一张发票。"
 
@@ -15286,6 +15359,9 @@ msgstr "无零件ID"
 msgid "No parts"
 msgstr "没有零件"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "还没有已登记的通行密钥。"
 
@@ -15534,6 +15610,9 @@ msgstr "没有可用的变量"
 
 msgid "No versions available"
 msgstr "没有可用的版本"
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
@@ -16100,8 +16179,14 @@ msgstr "未结维护工单"
 msgid "Open in Carbon"
 msgstr "在 Carbon 中打开"
 
+msgid "Open in change notice {ids}. Release it to change the active version."
+msgstr "打开于变更通知 {ids}。下达它以更改有效版本。"
+
 msgid "Open in change notice {ids}. Release it to create new versions or revisions."
 msgstr "打开于变更通知 {ids}。下达它来创建新版本或修订版。"
+
+msgid "Open in change notices {ids}. Release them to change the active version."
+msgstr "打开于变更通知 {ids}。下达它们以更改有效版本。"
 
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "打开于变更通知 {ids}。下达它们来创建新版本或修订版。"
@@ -16186,6 +16271,9 @@ msgstr "打开 Ramp 集成，然后重新连接以完成配置。"
 
 msgid "Open the Setup Map"
 msgstr "打开设置地图"
+
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr ""
 
 msgid "Open transactions"
 msgstr "未结交易"
@@ -16794,6 +16882,9 @@ msgstr "逾期"
 msgid "Past end date"
 msgstr "已过截止日期"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML"
 
@@ -17167,6 +17258,9 @@ msgstr "固定{0}"
 
 msgid "Pin or unpin"
 msgstr "固定或取消固定"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "双指捏合或滚动以缩放 · 拖动以平移 · 双击以重置"
 
 msgid "Pinned"
 msgstr "已固定"
@@ -18490,6 +18584,9 @@ msgstr "已实现汇兑损失"
 msgid "Reason"
 msgstr "原因"
 
+msgid "Reason (optional)"
+msgstr "原因（可选）"
+
 msgid "Reason Account"
 msgstr "原因账户"
 
@@ -18798,6 +18895,9 @@ msgstr "放宽检验"
 
 msgid "Reference"
 msgstr "参考"
+
+msgid "Reference image"
+msgstr "参考图像"
 
 msgid "Refresh"
 msgstr "刷新"
@@ -19112,6 +19212,9 @@ msgstr "移除双因素认证"
 msgid "Remove Unit"
 msgstr "移除单位"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "已移除"
 
@@ -19413,6 +19516,12 @@ msgstr "需要采取行动"
 
 msgid "Requires Adjustment"
 msgstr "需要调整"
+
+msgid "Requires inspection"
+msgstr "需要检验"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "需要检验。过账收据时将创建一个批次。"
 
 msgid "Requires Repair"
 msgstr "需要维修"
@@ -21590,11 +21699,17 @@ msgstr "当此规则失败时向用户显示。"
 msgid "Shuffle"
 msgstr "随机"
 
+msgid "Sign in here instead"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "登录 Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。通行密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
+
+msgid "Sign in with code"
+msgstr ""
 
 msgid "Sign in with Google"
 msgstr "用 Google 登录"
@@ -21613,6 +21728,9 @@ msgstr "登出"
 
 msgid "Sign out instead"
 msgstr "改为登出"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "在进入下一步骤前进行签署评审"
@@ -22689,8 +22807,14 @@ msgstr "切换模块"
 msgid "Switch to pan mode"
 msgstr "切换到平移模式"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "切换到选择模式"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "切换到书面内容"
@@ -24550,8 +24674,11 @@ msgstr "本季度"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "此收货单没有行。请选择源单据以添加行。"
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "这将移除 PDF。员工将改为查看书面内容。"
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔法链接。当他们无法访问其身份验证器时使用此选项。它影响其所属每个公司的登录。"
@@ -25181,6 +25308,9 @@ msgstr "培训计划"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "在 Carbon 外进行的培训，例如供应商课程。该作业仅有名称。管理员将每位员工标记为完成，并可附加其证书。"
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "通过 Academy 和应用内指南培训班组"
@@ -26171,6 +26301,9 @@ msgstr "查看客户"
 msgid "View Employees"
 msgstr "查看员工"
 
+msgid "View full size"
+msgstr "查看原图"
+
 msgid "View History"
 msgstr "查看历史记录"
 
@@ -26434,14 +26567,14 @@ msgstr "我们自动匹配了每一列。继续前请查看下面的值。"
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "在您的班组适应期间，我们快速分类和修复问题"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
+
 msgid "We've sent a verification code to {email}"
 msgstr "我们已向 {email} 发送了验证码"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "我们已向 {signupEmail} 发送了验证码"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "我们已向您发送了一个魔法链接以登录您的账户。"
 
 msgid "Webhook"
 msgstr "Webhook"
@@ -26574,8 +26707,8 @@ msgstr "每项资产的价值、使用期限以及租期结束时的处理方式
 msgid "What each period's payment is for this asset in the first year"
 msgstr "第一年内该资产每个期间的付款是多少"
 
-msgid "What employees read before the questions"
-msgstr "员工答题前阅读的内容"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "发票创建后会发生什么"
@@ -27149,6 +27282,9 @@ msgstr "库存核销报废或通过检验拒收和 NCR 处置退回"
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "在资产的生命周期内减少其价值——你创建的每月批次,作为草稿进行评审,然后过账。"
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -27179,6 +27315,9 @@ msgstr "是的，更新 ID"
 
 msgid "You"
 msgstr "你"
+
+msgid "You are editing draft version {draftVersion}. Its changes reach new jobs once it is the Active version."
+msgstr "您正在编辑草稿版本 {draftVersion}。其更改将在它成为启用版本后应用于新工单。"
 
 msgid "You belong to more than one company. Pick where to work."
 msgstr "您属于多个公司。选择在哪个公司工作。"
@@ -27368,6 +27507,12 @@ msgstr "您的供应商列表"
 
 msgid "yourself"
 msgstr "你自己"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4检验水平(I / II / III);较高级别意味着同一批次的样本量更大。"

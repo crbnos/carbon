@@ -70,6 +70,8 @@ export type NavItem = Omit<Route, "icon"> & {
   backgroundColor?: string;
   foregroundColor?: string;
   external?: boolean;
+  /** Opens in a new tab, leaving this one where it was. */
+  newTab?: boolean;
 };
 
 export type Result = {

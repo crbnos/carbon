@@ -1,9 +1,9 @@
 ---
 title: Training
-description: Training programs, written or PDF content, quiz questions, group assignments, external training, per-period completion tracking, and the weekly reminder digest.
+description: Training programs, written, PDF or YouTube video content, quiz questions, group assignments, external training, per-period completion tracking, and the weekly reminder digest.
 ---
 
-**Training** manages required courses, employee-group assignments, and completion records. A training program contains written content or a PDF, and a quiz. Training taken outside Carbon is an external assignment with only a name, which an admin marks complete. Carbon tracks completion for each employee and period, sends weekly reminders for outstanding assignments, and allows managers to record manual completion. Training belongs to the [resources](/docs/reference/work-centers) area and uses the `resources` permission.
+**Training** manages required courses, employee-group assignments, and completion records. A training program contains written content, a PDF or a YouTube video, and a quiz. Training taken outside Carbon is an external assignment with only a name, which an admin marks complete. Carbon tracks completion for each employee and period, sends weekly reminders for outstanding assignments, and allows managers to record manual completion. Training belongs to the [resources](/docs/reference/work-centers) area and uses the `resources` permission.
 
 For example, create a "Lockout/Tagout" training with type **"Mandatory"** and frequency **"Annual"**, then assign it to the "Machinists" group. Each group member remains **"Pending"** for the current year until completion and receives a Sunday reminder while outstanding.
 
@@ -11,7 +11,7 @@ For example, create a "Lockout/Tagout" training with type **"Mandatory"** and fr
 
 Each training is a row in the `training` table (`packages/database/supabase/migrations/20251205021915_training.sql:18`). The create form requires only a **Name** (`apps/erp/app/modules/resources/ui/Training/TrainingForm.tsx:76`). Configure the remaining fields in the **Properties** panel (`apps/erp/app/modules/resources/ui/Training/TrainingProperties.tsx`), which saves each change through a bulk-update action.
 
-<Screenshot label="Training detail page: the Questions list on the left, the Content card with its Write | Upload PDF toggle in the middle, and the Properties panel on the right" caption="Questions on the left, the content in the middle, properties on the right." />
+<Screenshot label="Training detail page: the Questions list on the left, the Content card with its Write | Upload PDF | YouTube Video toggle in the middle, and the Properties panel on the right" caption="Questions on the left, the content in the middle, properties on the right." />
 
 <FieldTable>
 <Field name="name" required>The training's title.</Field>
@@ -20,6 +20,7 @@ Each training is a row in the `training` table (`packages/database/supabase/migr
 <Field name="status" type="Draft | Active | Archived">Lifecycle of the training itself, changed from the page header. See below.</Field>
 <Field name="content">The written training material, stored as rich JSON (`content`). Employees read it before the questions.</Field>
 <Field name="guidePath">The uploaded PDF. A training with a PDF shows the PDF to employees instead of the written content.</Field>
+<Field name="videoUrl">The YouTube video, stored as its watch link. A training with a video shows the video to employees instead of the written content.</Field>
 <Field name="estimatedDuration">A free-text estimate of how long the training takes.</Field>
 <Field name="tags">Free-form tags for filtering the catalog.</Field>
 <Field name="assignee">The person responsible for the training.</Field>
@@ -36,17 +37,18 @@ Change the status from the page header: a Draft training shows **Publish**, an A
 </StatusFlow>
 
 <Callout type="note" title="Only a Draft training can change">
-The content, the PDF, and the questions are editable only while the training is **"Draft"**; the server refuses a PDF change on any other status (`apps/erp/app/routes/x+/training+/update.tsx`). Employees can open and complete only an **"Active"** training. To change a published training, **Reopen** it first.
+The content, the PDF, the video, and the questions are editable only while the training is **"Draft"**; the server refuses a PDF or video change on any other status (`apps/erp/app/routes/x+/training+/update.tsx`). Employees can open and complete only an **"Active"** training. To change a published training, **Reopen** it first.
 </Callout>
 
-## Written content or a PDF
+## Written content, a PDF or a video
 
-A training's content is one of two kinds, chosen with the **Write | Upload PDF** toggle on the **Content** card:
+A training's content is one of three kinds, chosen with the **Write | Upload PDF | YouTube Video** toggle on the **Content** card:
 
 - **Write:** type the material in the editor.
 - **Upload PDF:** drop one PDF, for shops that already have their training material as a document. **Replace** swaps it (`apps/erp/app/modules/resources/ui/Training/TrainingGuide.tsx`).
+- **YouTube Video:** paste a link to one YouTube video (a `youtube.com/watch`, `youtu.be`, Shorts or live link). Carbon stores it as the video's watch link; **Change** swaps it (`apps/erp/app/modules/resources/ui/Training/TrainingVideo.tsx`). Carbon does not host video files.
 
-Employees see the PDF in a viewer when the training has one, and the written content when it does not. To go back to written content, choose **Write**; Carbon asks before it removes the PDF. Both change only while the training is Draft.
+Employees see the PDF in a viewer, or the video in YouTube's player, when the training has one, and the written content when it has neither. To switch to another kind, choose it on the toggle; Carbon asks before it removes the PDF or the video. All three change only while the training is Draft.
 
 ## Quiz questions
 
@@ -173,8 +175,11 @@ A certificate attached to an external assignment's **Mark Complete** must be of 
 ### "This employee is not assigned this training"
 **Mark Complete** was sent for a person outside the assignment's groups (`assignments.complete.tsx`). Add the person to one of its groups first.
 
-### "The guide can only change while the training is Draft"
-The PDF was changed on an Active or Archived training. **Reopen** it first.
+### "The guide can only change while the training is Draft" / "The video can only change while the training is Draft"
+The PDF or the video was changed on an Active or Archived training. **Reopen** it first.
+
+### "Enter a YouTube video link"
+The link is not a YouTube video (`getYouTubeVideoId`, `apps/erp/app/modules/resources/resources.models.ts`). Only YouTube is supported; copy the link from the video's **Share** button.
 
 ### "A completed training re-appeared as Pending"
 Expected for recurring frequencies. A **"Quarterly"** or **"Annual"** training tracks completion per period; when the new period starts (a new `Q?-YYYY` or `YYYY`), a fresh completion is required and the employee resets to **"Pending"** (`20251206000000_training_assignments.sql`). Only **"Once"** trainings stay completed forever.

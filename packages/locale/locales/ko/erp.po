@@ -64,6 +64,10 @@ msgstr "(자본 전기 계정이 아님)"
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# 차단 레코드} other {# 차단 레코드}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {이 그룹의 # 부품} other {이 그룹의 # 부품}}"
@@ -80,6 +84,14 @@ msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 기록에 주의가 필요합니다} other {# 기록에 주의가 필요합니다}}"
@@ -91,6 +103,14 @@ msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 백업할 수 없습니다. 이를 건너뛰면 다른 모든 것이 백업됩니다.}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -531,6 +551,9 @@ msgstr "{documentTypeLabel} 승인 규칙"
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -548,6 +571,9 @@ msgstr "{hidden, plural, one {그리고 # 개 이상의 기록.} other {그리�
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount}개 추가: {hiddenNames}"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -688,6 +714,9 @@ msgstr "{sectionLineCount} 라인"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -741,6 +770,9 @@ msgstr "{unread} 미읽음"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
@@ -2322,6 +2354,9 @@ msgstr "이 고객을 위해 추가됨"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "선택한 값에 대해 단가에 추가되며, 할인 및 마크업 전입니다. 대변을 위해 음수 금액을 사용하세요."
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "데모 레코드 추가 중"
@@ -4894,6 +4929,9 @@ msgstr "변경 통지"
 
 msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
 msgstr "변경 통지를 로드할 수 없으므로 새 버전과 리비전이 차단되었습니다. 다시 시도하려면 새로 고침하십시오."
+
+msgid "Change notices could not be loaded, so the active version cannot be changed. Reload to try again."
+msgstr "변경 통지를 로드할 수 없으므로 활성 버전을 변경할 수 없습니다. 다시 시도하려면 새로 고침하십시오."
 
 msgid "Change order"
 msgstr "변경 오더"
@@ -8537,6 +8575,9 @@ msgstr "예: MI"
 msgid "e.g. Suite 200"
 msgstr "예: Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "예: 위조품 의심, 잘못된 부품, 운송 중 파손"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "예: 처음 3~4주"
 
@@ -9307,6 +9348,9 @@ msgstr "최소한 하나의 라인에 수량을 입력하거나 개를 체크하
 
 msgid "Enter a web address, such as https://example.com"
 msgstr "웹 주소를 입력하세요(예: https://example.com)"
+
+msgid "Enter a YouTube video link"
+msgstr ""
 
 msgid "Enter an item and quantity yourself."
 msgstr "품목과 수량을 직접 입력하세요."
@@ -11848,6 +11892,15 @@ msgstr "검사"
 msgid "Inspection · {itemReadableId}"
 msgstr "검사 · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "검사 {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "검사 {0} · {1}"
+
 msgid "Inspection document"
 msgstr "검사 문서"
 
@@ -14243,6 +14296,15 @@ msgstr "MRP는 주문의 날짜가 이 일수보다 더 차이날 때만 기존 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "여러 작업 지시가 이 공법에서 동시에 실행될 수 있습니다 — 예: 레이저 테이블, 용광로 또는 도금 조에"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "{minValue} {unitLabel} 이상이어야 합니다"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "{maxValue} {unitLabel} 이하여야 합니다"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "{minValue}에서 {maxValue} {unitLabel} 사이여야 합니다"
+
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
 
@@ -14491,6 +14553,9 @@ msgstr "새 이슈"
 
 msgid "New Item Group"
 msgstr "새 품목 그룹"
+
+msgid "New jobs use version {activeVersion}"
+msgstr "새 작업 지시는 버전 {activeVersion}을(를) 사용합니다"
 
 msgid "New Kanban"
 msgstr "새 칸반"
@@ -14907,6 +14972,14 @@ msgstr "아직 변경사항이 없습니다."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "변경 사항이 없습니다. 리스가 활성화되면 수정은 헤더에 있고 종료와 구매는 각 자산 페이지에 있습니다."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "불합격된 특성이 없으므로 로트를 거부하는 사유를 입력하세요. {0}개 엔터티가 모두 거부됨으로 표시됩니다."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "불합격된 특성이 없으므로 로트를 거부하는 사유를 입력하세요. {0}개 로트 전체가 거부됩니다."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "요금이 없습니다. 주행 거리, 손상, 배송 또는 청소 요금은 다음 송장에 포함됩니다."
 
@@ -15286,6 +15359,9 @@ msgstr "품목 ID 없음"
 msgid "No parts"
 msgstr "부품 없음"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "등록된 패스키가 없습니다."
 
@@ -15534,6 +15610,9 @@ msgstr "사용 가능한 변수가 없습니다."
 
 msgid "No versions available"
 msgstr "가용한 버전이 없습니다"
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
@@ -16100,8 +16179,14 @@ msgstr "미결 유지보수 지시"
 msgid "Open in Carbon"
 msgstr "Carbon에서 열기"
 
+msgid "Open in change notice {ids}. Release it to change the active version."
+msgstr "변경 통지 {ids}에서 열기. 활성 버전을 변경하려면 릴리스하세요."
+
 msgid "Open in change notice {ids}. Release it to create new versions or revisions."
 msgstr "변경 통지 {ids}에서 열기. 새로운 버전 또는 리비전을 생성하려면 릴리스하세요."
+
+msgid "Open in change notices {ids}. Release them to change the active version."
+msgstr "변경 통지 {ids}에서 열기. 활성 버전을 변경하려면 릴리스하세요."
 
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "변경 통지 {ids}에서 열기. 새로운 버전 또는 리비전을 생성하려면 릴리스하세요."
@@ -16186,6 +16271,9 @@ msgstr "Ramp 연동을 열고 다시 연결하여 설정을 완료해 보세요.
 
 msgid "Open the Setup Map"
 msgstr "설정 맵 열기"
+
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr ""
 
 msgid "Open transactions"
 msgstr "미결 거래"
@@ -16794,6 +16882,9 @@ msgstr "기한 초과"
 msgid "Past end date"
 msgstr "종료 날짜 지남"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "자격 증명 공급자가 메타데이터 URL을 게시하지 않는 경우 메타데이터 XML을 붙여넣으세요"
 
@@ -17167,6 +17258,9 @@ msgstr "{0} 고정"
 
 msgid "Pin or unpin"
 msgstr "고정 또는 고정 해제"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "핀치하거나 스크롤하여 확대/축소 · 드래그하여 이동 · 두 번 탭하여 초기화"
 
 msgid "Pinned"
 msgstr "고정됨"
@@ -18490,6 +18584,9 @@ msgstr "실현 환차손"
 msgid "Reason"
 msgstr "사유"
 
+msgid "Reason (optional)"
+msgstr "사유(선택)"
+
 msgid "Reason Account"
 msgstr "사유 계정"
 
@@ -18798,6 +18895,9 @@ msgstr "수월한 검사"
 
 msgid "Reference"
 msgstr "참조"
+
+msgid "Reference image"
+msgstr "참조 이미지"
 
 msgid "Refresh"
 msgstr "새로고침"
@@ -19112,6 +19212,9 @@ msgstr "2단계 인증 제거"
 msgid "Remove Unit"
 msgstr "단위 제거"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "제거됨"
 
@@ -19413,6 +19516,12 @@ msgstr "조치 필요"
 
 msgid "Requires Adjustment"
 msgstr "조정 필요"
+
+msgid "Requires inspection"
+msgstr "검사 필요"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "검사가 필요합니다. 입고를 전기하면 로트가 생성됩니다."
 
 msgid "Requires Repair"
 msgstr "수리 필요"
@@ -21590,11 +21699,17 @@ msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 msgid "Shuffle"
 msgstr "섞기"
 
+msgid "Sign in here instead"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Carbon에 로그인"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "매직 링크 대신 생체 인식으로 로그인하세요. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
+
+msgid "Sign in with code"
+msgstr ""
 
 msgid "Sign in with Google"
 msgstr "Google로 로그인"
@@ -21613,6 +21728,9 @@ msgstr "로그아웃"
 
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "다음 단계로 넘어가기 전 서명 검토"
@@ -22689,8 +22807,14 @@ msgstr "모듈 전환"
 msgid "Switch to pan mode"
 msgstr "팬 모드로 전환"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "선택 모드로 전환"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "작성된 콘텐츠로 전환"
@@ -24550,8 +24674,11 @@ msgstr "이번 분기"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "이 입고에는 항목이 없습니다. 추가하려면 원본 문서를 선택하십시오."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "이렇게 하면 PDF가 제거됩니다. 직원들은 대신 작성된 콘텐츠를 보게 됩니다."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 그들이 인증 수단에 대한 접근을 잃었을 때 이것을 사용하세요. 이것은 그들이 속한 모든 회사에 대한 로그인에 영향을 미칩니다."
@@ -25181,6 +25308,9 @@ msgstr "교육 계획"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbon 외부에서 수행된 교육(예: 공급업체 과정). 할당은 이름만 있습니다. 관리자가 각 직원을 완료 처리하고 인증서를 첨부할 수 있습니다."
+
+msgid "Training video"
+msgstr ""
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
@@ -26171,6 +26301,9 @@ msgstr "고객 보기"
 msgid "View Employees"
 msgstr "직원 보기"
 
+msgid "View full size"
+msgstr "전체 크기로 보기"
+
 msgid "View History"
 msgstr "이력 보기"
 
@@ -26434,14 +26567,14 @@ msgstr "각 열을 자동으로 매칭했습니다. 계속하기 전에 아래 �
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "팀이 적응하는 동안 저희가 이슈를 신속하게 분류하고 해결합니다"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
+
 msgid "We've sent a verification code to {email}"
 msgstr "{email}로 인증 코드를 보냈습니다"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "{signupEmail}로 인증 코드를 보냈습니다"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
 
 msgid "Webhook"
 msgstr "웹훅"
@@ -26574,8 +26707,8 @@ msgstr "각 자산의 가치, 지속 기간, 계약 종료 시 처리 방법입�
 msgid "What each period's payment is for this asset in the first year"
 msgstr "첫 해에 이 자산에 대한 각 기간의 지불액"
 
-msgid "What employees read before the questions"
-msgstr "직원들이 질문 전에 읽는 내용"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "송장이 생성된 후 어떤 일이 일어나는지"
@@ -27149,6 +27282,9 @@ msgstr "검사 거부 및 NCR 처분 결정을 통해 폐기되거나 반품된 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 생성하여 초안으로 검토한 후 전기하는 배치 작업입니다."
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -27179,6 +27315,9 @@ msgstr "예, ID 업데이트"
 
 msgid "You"
 msgstr "나"
+
+msgid "You are editing draft version {draftVersion}. Its changes reach new jobs once it is the Active version."
+msgstr "초안 버전 {draftVersion}을(를) 편집하고 있습니다. 변경 사항은 이 버전이 활성 버전이 된 후 새 작업 지시에 반영됩니다."
 
 msgid "You belong to more than one company. Pick where to work."
 msgstr "둘 이상의 회사에 속해 있습니다. 작업할 회사를 선택하세요."
@@ -27365,6 +27504,12 @@ msgstr "공급업체 목록"
 
 msgid "yourself"
 msgstr "본인"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 검사 수준(I / II / III)으로, 수준이 높을수록 동일 로트에 대한 샘플 크기가 커집니다."

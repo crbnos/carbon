@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it, vi } from "vitest";
+import { fakeDatabase } from "../../../../core/fake-database-test-fixture";
 import type { RilletVendorWrite } from "../../models";
 import { RilletVendorSyncer } from "../vendor";
 
@@ -17,38 +18,6 @@ import { RilletVendorSyncer } from "../vendor";
  * refuses a claimed record, and an adoption links before it mutates.
  */
 
-/**
- * The mapping write runs inside `withTriggersDisabled`, a real Kysely transaction
- * that opens with a `SET LOCAL` statement. Stub it so the write is observable in
- * `writeOrder` — and so it can REFUSE, which is what the partial unique index
- * does when the remote vendor already belongs to another supplier.
- */
-const { writeOrder, linkBehaviour } = vi.hoisted(() => ({
-  writeOrder: [] as string[],
-  linkBehaviour: { throws: false }
-}));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    cb: (tx: unknown) => Promise<unknown>
-  ) => {
-    const builder: Record<string, any> = {};
-    builder.values = () => builder;
-    builder.onConflict = () => builder;
-    builder.execute = async () => {
-      writeOrder.push("link");
-      if (linkBehaviour.throws) {
-        throw new Error(
-          'duplicate key value violates unique constraint "externalIntegrationMapping_external_unique"'
-        );
-      }
-      return [];
-    };
-    return cb({ insertInto: () => builder });
-  }
-}));
-
 const COMPANY_ID = "company-1";
 
 const payload = (
@@ -62,22 +31,42 @@ const payload = (
     ...overrides
   }) as RilletVendorWrite;
 
+const mapping = (entityId: string, externalId: string) => ({
+  entityType: "vendor",
+  entityId,
+  integration: "rillet",
+  externalId,
+  companyId: COMPANY_ID
+});
+
 function setup(opts: {
   /** The Carbon supplier the matched remote vendor is already mapped to. */
-  claimedBy?: string | null;
+  claimedBy?: string;
   /** Make the mapping write refuse, as the partial unique index would. */
   linkThrows?: boolean;
 }) {
-  const order = writeOrder;
-  order.length = 0;
-  linkBehaviour.throws = opts.linkThrows === true;
-
-  const createVendor = vi.fn(async () => {
-    order.push("createVendor");
-    return { id: "V-NEW" };
+  // No mapping row for THIS supplier — the ladder is what resolves it.
+  const db = fakeDatabase({
+    externalIntegrationMapping: opts.claimedBy
+      ? [mapping(opts.claimedBy, "V1")]
+      : []
   });
+  if (opts.linkThrows)
+    db.failNextWrite(
+      "externalIntegrationMapping",
+      new Error(
+        'duplicate key value violates unique constraint "externalIntegrationMapping_external_unique"'
+      )
+    );
+
+  const createVendor = vi.fn(async () => ({ id: "V-NEW" }));
+  /** The mapping rows as they stood when the remote vendor was rewritten. */
+  let mappingsAtUpdate: unknown[] = [];
   const updateVendor = vi.fn(async () => {
-    order.push("updateVendor");
+    mappingsAtUpdate = db.rows("externalIntegrationMapping").map((row) => ({
+      entityId: row.entityId,
+      externalId: row.externalId
+    }));
     return { id: "V1" };
   });
   const findRemoteCandidates = vi.fn(async () => [
@@ -85,7 +74,7 @@ function setup(opts: {
   ]);
 
   const syncer = new RilletVendorSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: COMPANY_ID,
     entityType: "vendor",
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
@@ -98,20 +87,12 @@ function setup(opts: {
     } as never
   });
 
-  (syncer as any).mappingService = {
-    // No mapping row for THIS supplier — the ladder is what resolves it.
-    getExternalId: async () => null,
-    // ...but the matched remote vendor may already belong to another one.
-    getEntityId: async (_integration: string, remoteId: string) =>
-      remoteId === "V1" ? (opts.claimedBy ?? null) : null
-  };
-
   return {
     push: (localId = "sup_2") =>
       (syncer as any).upsertRemote(payload(), localId) as Promise<string>,
     createVendor,
     updateVendor,
-    order
+    mappingsAtUpdate: () => mappingsAtUpdate
   };
 }
 
@@ -127,16 +108,18 @@ describe("RilletVendorSyncer.upsertRemote — the counterpart ladder", () => {
   });
 
   it("writes the mapping BEFORE it mutates an adopted vendor", async () => {
-    const test = setup({ claimedBy: null });
+    const test = setup({});
 
     expect(await test.push("sup_2")).toBe("V1");
     // Order, not presence: the unique index is the only check that can catch a
     // mis-resolution, so it has to run while the remote record is intact.
-    expect(test.order).toEqual(["link", "updateVendor"]);
+    expect(test.mappingsAtUpdate()).toEqual([
+      { entityId: "sup_2", externalId: "V1" }
+    ]);
   });
 
   it("leaves the remote vendor untouched when the mapping write refuses", async () => {
-    const test = setup({ claimedBy: null, linkThrows: true });
+    const test = setup({ linkThrows: true });
 
     await expect(test.push("sup_2")).rejects.toThrow(/unique constraint/);
     expect(test.updateVendor).not.toHaveBeenCalled();

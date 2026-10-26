@@ -10,8 +10,10 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import {
   integrations as availableIntegrations,
+  emailSettingsForm,
   getIntegrationConfigById,
   type IntegrationID,
+  picksServerMail,
   resolveIntegrationTopology
 } from "@carbon/ee";
 import {
@@ -69,6 +71,7 @@ import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
 import {
@@ -520,6 +523,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions.reimbursementBankAccountId = assetOptions;
   }
 
+  // Server mail is offered only where the server has mail settings.
+  const emailForm = emailSettingsForm(integrationId, SERVER_MAIL_CONFIGURED);
+  if (emailForm?.providerOptions) {
+    dynamicOptions.provider = emailForm.providerOptions;
+  }
+
   const integrationData = await getIntegration(
     client,
     integrationId,
@@ -529,7 +538,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (integrationData.error || !integrationData.data) {
     return {
       installed: false,
-      metadata: {},
+      // A fresh Email install starts on server mail where the server has it.
+      metadata: emailForm?.initialMetadata ?? {},
       dynamicOptions,
       syncActivity: null,
       accountMapping: null,
@@ -1205,7 +1215,8 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     await isIntegrationInstallWithheld(client, {
       companyId,
       integrationId,
-      email
+      email,
+      userId
     })
   ) {
     // The connect route's refusal: the integrations page resolves the code to
@@ -1320,6 +1331,19 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // integration active but non-functional, so require one here. Scoped to
   // form-entered secrets — OAuth providers get their credentials via the
   // callback, so they are never blocked here.
+  const usesServerMail = picksServerMail(integrationId, metadata);
+  if (usesServerMail && !SERVER_MAIL_CONFIGURED) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(
+          null,
+          "This server has no mail settings. Ask your administrator to set them up, or pick Resend or Custom SMTP."
+        )
+      )
+    );
+  }
   const FORM_SECRET_INTEGRATIONS = new Set([
     "linear",
     "mount",
@@ -1330,7 +1354,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     "sense"
   ]);
   if (
-    FORM_SECRET_INTEGRATIONS.has(integrationId) ||
+    (FORM_SECRET_INTEGRATIONS.has(integrationId) && !usesServerMail) ||
     integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
   ) {
     const alreadyVaulted = existing.data?.secretRef != null;

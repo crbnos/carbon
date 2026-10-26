@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@carbon/auth": "workspace:*",
-    "@carbon/database": "workspace:*",
     "@carbon/files": "workspace:*",
     "@carbon/form": "workspace:*",
     "@carbon/logger": "workspace:*",
@@ -18,7 +17,6 @@
     "@carbon/query": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
-    "@lingui/core": "catalog:",
     "@lingui/react": "catalog:",
     "@simplewebauthn/browser": "^13.3.0",
     "react": "catalog:",
@@ -30,6 +28,8 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@lingui/core": "catalog:",
     "@types/react": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:"
@@ -37,6 +37,6 @@
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
     "lint": "biome lint --write ",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   }
 }

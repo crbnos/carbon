@@ -12,6 +12,7 @@ import type {
   getInspection,
   getInspectionDocuments,
   getInspectionGauges,
+  getInspectionIssues,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspections,
@@ -188,6 +189,12 @@ export type ItemInspectionDocumentAssignment =
 
 export type InspectionMeasurementRow =
   Database["public"]["Tables"]["inspectionMeasurement"]["Row"];
+
+export type InspectionIssue = NonNullable<
+  NonNullable<
+    Awaited<ReturnType<typeof getInspectionIssues>>["data"]
+  >[number]["nonConformance"]
+>;
 
 export type InspectionSamplingPlan = NonNullable<
   Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]

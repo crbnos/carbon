@@ -38,8 +38,9 @@ description, optional zod `type`, `secret`, `browser`, `required` and `aliases`.
   a half-configured feature (some of a group's `needed` variables set, not all)
   are only printed for now and become errors in the next release.
 - Not validated under Vitest or with `SKIP_ENV_VALIDATION` set.
-- `src/deployments.test.ts` reads what `sst.config.ts` and `crbn up` set and
-  fails when either would hit a startup error.
+- The `deployments-set-required-env` check (`@carbon/checks`) reads what
+  `sst.config.ts`, `crbn up` and the Vercel projects set and fails when any
+  would hit a startup error.
 
 `window.env` is populated by `getBrowserEnv()`, injected via an inline script in
 each app's `root.tsx` (`apps/erp/app/root.tsx`, `apps/mes/app/root.tsx`). Only the
@@ -165,7 +166,7 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
 (optional, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
-`CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `DEFAULT_LANGUAGE`
+`CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `INTEGRATION_EARLY_ACCESS_USER_IDS` (server-only, comma-separated user ids that can install an `internalOnly` integration on Cloud), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
 
 **Maintenance and status (both optional, server-only)** — `MAINTENANCE_MODE=true`

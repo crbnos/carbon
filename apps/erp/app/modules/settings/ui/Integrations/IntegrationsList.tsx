@@ -37,12 +37,15 @@ type IntegrationsListProps = {
   availableIntegrations: Integration[];
   integrations: Array<IntegrationHealth>;
   quickInstallConnectors?: QuickInstallConnector[];
+  /** The user may install Coming soon integrations (`hasIntegrationEarlyAccess`). */
+  hasEarlyAccess: boolean;
 };
 
 const IntegrationsList = ({
   integrations,
   availableIntegrations,
-  quickInstallConnectors = []
+  quickInstallConnectors = [],
+  hasEarlyAccess
 }: IntegrationsListProps) => {
   const { t } = useLingui();
   const [params] = useUrlParams();
@@ -77,12 +80,24 @@ const IntegrationsList = ({
         (integration) =>
           !installedIds.includes(integration.id) &&
           integration.active &&
-          !isIntegrationComingSoon(integration, { edition, email })
+          !isIntegrationComingSoon(integration, {
+            edition,
+            email,
+            hasEarlyAccess
+          })
       );
     }
 
     return filtered;
-  }, [availableIntegrations, installedIds, search, filter, edition, email]);
+  }, [
+    availableIntegrations,
+    installedIds,
+    search,
+    filter,
+    edition,
+    email,
+    hasEarlyAccess
+  ]);
 
   const anyWhitelistedVisible = useAnyVisible({
     containerRef: gridRef,
@@ -129,6 +144,7 @@ const IntegrationsList = ({
               key={integration.id}
               integration={integration}
               installed={installed.find((i) => i.id === integration.id) || null}
+              hasEarlyAccess={hasEarlyAccess}
             />
           );
         })}

@@ -20,7 +20,9 @@ export {
   DEFAULT_WINDOW,
   evaluateLockFromPttl,
   lockDurationSeconds,
-  normalizeLoginIdentifier
+  maxAttemptsForRateLimit,
+  normalizeLoginIdentifier,
+  SIGN_IN_CODE_LOCKOUT_PREFIX
 } from "./lockout";
 export type {
   Duration,

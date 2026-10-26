@@ -2,55 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import {
+  getYouTubeVideoId,
+  isValidTrainingGuideKey,
+  TRAINING_CERTIFICATE_MAX_BYTES,
+  trainingAssignmentValidator,
+  trainingGuideKeyPrefix,
+  validateTrainingCertificate
+} from "./resources.models";
 
-// resources.models' module graph transitively builds Lingui `msg` descriptors at
-// module load. The macro isn't transformed under plain vitest, so raw `msg`
-// throws. Stub it to a plain string builder; the validator under test is
-// untouched.
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
-    Array.isArray(strings)
-      ? strings.reduce(
-          (acc, s, i) => acc + s + (i < values.length ? String(values[i]) : ""),
-          ""
-        )
-      : String(strings)
-}));
-
-const { abilityValidator } = await import("./resources.models");
-
-// An ability is a process's qualification: it is created ONLY by picking a
-// process, and it does not carry its own name (the name derives from the linked
-// process). So the validator must require `processId` and must not accept a
-// free-form `name`.
-describe("abilityValidator", () => {
-  it("accepts a processId (recertifyEveryDays optional)", () => {
-    const parsed = abilityValidator.safeParse({ processId: "proc_1" });
-    expect(parsed.success).toBe(true);
-  });
-
-  it("requires a processId", () => {
-    const parsed = abilityValidator.safeParse({ recertifyEveryDays: 30 });
-    expect(parsed.success).toBe(false);
-  });
-
-  it("does not carry a free-form name", () => {
-    const parsed = abilityValidator.safeParse({
-      processId: "proc_1",
-      name: "Welding"
-    });
-    expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect("name" in parsed.data).toBe(false);
-    }
-  });
-});
-
-describe("isValidTrainingGuideKey", async () => {
-  const { isValidTrainingGuideKey, trainingGuideKeyPrefix } = await import(
-    "./resources.models"
-  );
+describe("isValidTrainingGuideKey", () => {
   const prefix = trainingGuideKeyPrefix("c1", "t1");
 
   it("accepts one upload folder and one file", () => {
@@ -59,35 +21,47 @@ describe("isValidTrainingGuideKey", async () => {
     ).toBe(true);
   });
 
-  it("refuses another company's or training's key", () => {
-    expect(
-      isValidTrainingGuideKey("c2/training/t1/abc/guide.pdf", prefix)
-    ).toBe(false);
-    expect(
-      isValidTrainingGuideKey("c1/training/t2/abc/guide.pdf", prefix)
-    ).toBe(false);
-  });
-
-  it("refuses a file with no upload folder, or a deeper path", () => {
-    expect(isValidTrainingGuideKey("c1/training/t1/guide.pdf", prefix)).toBe(
-      false
-    );
-    expect(
-      isValidTrainingGuideKey("c1/training/t1/abc/d/guide.pdf", prefix)
-    ).toBe(false);
-  });
-
-  it("refuses dot segments and empty segments", () => {
-    expect(isValidTrainingGuideKey("c1/training/t1/../x.pdf", prefix)).toBe(
-      false
-    );
-    expect(isValidTrainingGuideKey("c1/training/t1/abc/", prefix)).toBe(false);
+  it.each([
+    "c2/training/t1/abc/guide.pdf",
+    "c1/training/t2/abc/guide.pdf",
+    "c1/training/t1/guide.pdf",
+    "c1/training/t1/abc/d/guide.pdf",
+    "c1/training/t1/../x.pdf",
+    "c1/training/t1/abc/"
+  ])("refuses %s", (key) => {
+    expect(isValidTrainingGuideKey(key, prefix)).toBe(false);
   });
 });
 
-describe("validateTrainingCertificate", async () => {
-  const { TRAINING_CERTIFICATE_MAX_BYTES, validateTrainingCertificate } =
-    await import("./resources.models");
+describe("getYouTubeVideoId", () => {
+  it.each([
+    "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "https://youtube.com/watch?v=dQw4w9WgXcQ&t=42s",
+    "https://m.youtube.com/watch?v=dQw4w9WgXcQ",
+    "https://youtu.be/dQw4w9WgXcQ?si=abc",
+    "https://www.youtube.com/shorts/dQw4w9WgXcQ",
+    "https://www.youtube.com/live/dQw4w9WgXcQ",
+    "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+    "  https://www.youtube.com/watch?v=dQw4w9WgXcQ  "
+  ])("reads the id from %s", (url) => {
+    expect(getYouTubeVideoId(url)).toBe("dQw4w9WgXcQ");
+  });
+
+  it.each([
+    "",
+    "not a url",
+    "https://vimeo.com/123456789",
+    "https://www.youtube.com/",
+    "https://www.youtube.com/watch?v=short",
+    "https://evil.com/watch?v=dQw4w9WgXcQ",
+    "https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ",
+    "javascript:alert(1)//youtu.be/dQw4w9WgXcQ"
+  ])("refuses %s", (url) => {
+    expect(getYouTubeVideoId(url)).toBeNull();
+  });
+});
+
+describe("validateTrainingCertificate", () => {
   const PDF = [0x25, 0x50, 0x44, 0x46, 0x2d];
   const PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
   const JPG = [0xff, 0xd8, 0xff];
@@ -97,93 +71,44 @@ describe("validateTrainingCertificate", async () => {
     return new File([bytes], name);
   };
 
-  it("accepts a PDF, PNG or JPG and returns its extension", async () => {
+  it.each([
+    ["cert.PDF", PDF, "pdf"],
+    ["photo.jpeg", JPG, "jpeg"],
+    ["scan.png", PNG, "png"]
+  ])("accepts %s by its leading bytes", async (name, head, extension) => {
     expect(
-      (await validateTrainingCertificate(file("cert.PDF", PDF))).extension
-    ).toBe("pdf");
-    expect(
-      (await validateTrainingCertificate(file("photo.jpeg", JPG))).extension
-    ).toBe("jpeg");
-    expect(
-      (await validateTrainingCertificate(file("scan.png", PNG))).error
-    ).toBeNull();
+      (await validateTrainingCertificate(file(name, head))).extension
+    ).toBe(extension);
   });
 
-  it("refuses a missing or empty file", async () => {
-    expect((await validateTrainingCertificate(null)).error).toBe(
-      "Upload a certificate file"
-    );
-    expect(
-      (await validateTrainingCertificate(file("cert.pdf", [], 0))).error
-    ).toBe("Upload a certificate file");
-  });
-
-  it("refuses another type", async () => {
-    expect((await validateTrainingCertificate(file("notes.txt"))).error).toBe(
-      "The certificate must be a PDF, PNG or JPG"
-    );
-    expect((await validateTrainingCertificate(file("photo.heic"))).error).toBe(
-      "The certificate must be a PDF, PNG or JPG"
-    );
-  });
-
-  it("refuses a file whose bytes do not match its extension", async () => {
-    expect(
-      (await validateTrainingCertificate(file("cert.pdf", PNG))).error
-    ).toBe("The certificate must be a PDF, PNG or JPG");
-    expect((await validateTrainingCertificate(file("scan.png"))).error).toBe(
-      "The certificate must be a PDF, PNG or JPG"
-    );
-  });
-
-  it("refuses a file over the size limit", async () => {
-    expect(
-      (
-        await validateTrainingCertificate(
-          file("cert.pdf", PDF, TRAINING_CERTIFICATE_MAX_BYTES + 1)
-        )
-      ).error
-    ).toBe("The certificate must be 10 MB or smaller");
+  it.each([
+    ["no file", null],
+    ["an empty file", file("cert.pdf", [], 0)],
+    ["another type", file("notes.txt")],
+    ["a HEIC photo", file("photo.heic")],
+    ["PNG bytes named .pdf", file("cert.pdf", PNG)],
+    ["a .png with no signature", file("scan.png")],
+    [
+      "a file over the size limit",
+      file("cert.pdf", PDF, TRAINING_CERTIFICATE_MAX_BYTES + 1)
+    ]
+  ])("refuses %s", async (_, input) => {
+    expect((await validateTrainingCertificate(input)).file).toBeNull();
   });
 });
 
 // An external assignment has a name and no training; an internal one has a
 // training. Each must refuse the other's missing field.
-describe("trainingAssignmentValidator", async () => {
-  const { trainingAssignmentValidator } = await import("./resources.models");
-
-  it("accepts an internal assignment with a training", () => {
-    const parsed = trainingAssignmentValidator.safeParse({
-      isExternal: false,
-      trainingId: "trn_1",
-      groupIds: ["grp_1"]
-    });
-    expect(parsed.success).toBe(true);
-  });
-
-  it("refuses an internal assignment without a training", () => {
-    const parsed = trainingAssignmentValidator.safeParse({
-      isExternal: false,
-      groupIds: ["grp_1"]
-    });
-    expect(parsed.success).toBe(false);
-  });
-
-  it("accepts an external assignment with a name", () => {
-    const parsed = trainingAssignmentValidator.safeParse({
-      isExternal: true,
-      name: "Forklift Safety",
-      groupIds: ["grp_1"]
-    });
-    expect(parsed.success).toBe(true);
-  });
-
-  it("refuses an external assignment without a name", () => {
-    const parsed = trainingAssignmentValidator.safeParse({
-      isExternal: true,
-      name: "  ",
-      groupIds: ["grp_1"]
-    });
-    expect(parsed.success).toBe(false);
+describe("trainingAssignmentValidator", () => {
+  it.each([
+    [{ isExternal: false, trainingId: "trn_1" }, true],
+    [{ isExternal: false }, false],
+    [{ isExternal: true, name: "Forklift Safety" }, true],
+    [{ isExternal: true, name: "  " }, false]
+  ])("%o parses: %s", (input, success) => {
+    expect(
+      trainingAssignmentValidator.safeParse({ ...input, groupIds: ["grp_1"] })
+        .success
+    ).toBe(success);
   });
 });

@@ -275,6 +275,9 @@ msgstr "Wstecz"
 msgid "Back to batch"
 msgstr "Powrót do partii produkcyjnej"
 
+msgid "Back to ERP"
+msgstr "Powrót do ERP"
+
 msgid "Background"
 msgstr "Tło"
 
@@ -286,6 +289,9 @@ msgstr "Szczegóły partii produkcyjnej"
 
 msgid "Batch is not available"
 msgstr "Partia jest niedostępna"
+
+msgid "Batch notes"
+msgstr "Notatki partii produkcyjnej"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -302,12 +308,6 @@ msgstr "razem partia produkcyjna"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Opóźnione o {daysBehindTarget} dni"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "Między {0} a {1} {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1112,11 +1112,11 @@ msgstr "Więcej opcji"
 msgid "Move column: {0}"
 msgstr "Przenieś kolumnę: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Musi być < {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "Musi wynosić co najmniej {minValue} {unitOfMeasureCode}"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Musi być > {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "Musi wynosić co najwyżej {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "Musi być pomiędzy {minValue} a {maxValue} {unitOfMeasureCode}"
@@ -1476,6 +1476,9 @@ msgstr "Przypnij lub odepnij"
 msgid "Pin Out"
 msgstr "Wyloguj PIN"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Zsuń palce lub przewiń, aby powiększyć · przeciągnij, aby przesunąć · stuknij dwukrotnie, aby zresetować"
+
 msgid "Planned"
 msgstr "Planowane"
 
@@ -1588,6 +1591,9 @@ msgstr "Zapisz częściowo"
 
 msgid "Recorded"
 msgstr "Zaraportowano"
+
+msgid "Reference image"
+msgstr "Obraz referencyjny"
 
 msgid "Registration failed"
 msgstr "Rejestracja nie powiodła się"
@@ -1865,6 +1871,9 @@ msgstr "Tasuj"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Zaloguj się za pomocą biometrii zamiast magicznego linku. Klucze dostępu są chronione za pomocą Face ID, Touch ID lub PIN urządzenia."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Zaloguj się przez Google"
 
@@ -1882,6 +1891,9 @@ msgstr "Wyloguj się"
 
 msgid "Sign out instead"
 msgstr "Zamiast tego wyloguj się"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Zalogowany jako {stationName}"
@@ -2236,8 +2248,8 @@ msgstr "Wyświetl zlecenie utrzymania ruchu"
 msgid "View or open"
 msgstr "Wyświetl lub otwórz"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Wysłaliśmy Ci link do logowania na Twoje konto."
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Co to jest {translatedTerm}?"

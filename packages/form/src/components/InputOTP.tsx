@@ -96,6 +96,8 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
         ) : null}
 
         <InputOTPBase
+          // FormLabel points at FormControl's generated id, not this input.
+          aria-label={typeof label === "string" && label ? label : undefined}
           name={name}
           maxLength={6}
           value={value}

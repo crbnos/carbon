@@ -3,6 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  accountMappingRows,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { ReimbursementSource } from "../../../../core/reimbursement-source";
 import type {
@@ -14,42 +18,6 @@ import {
   mapReimbursementToRilletReimbursement,
   RilletReimbursementSyncer
 } from "../reimbursement";
-
-// Only the DB loaders in ./shared are stubbed; the base syncer's push
-// workflow under test stays the production one.
-vi.mock("../shared", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../shared")>();
-  return {
-    ...original,
-    loadRilletAccountCodesById: vi.fn(
-      async () =>
-        new Map([
-          ["acct_travel", "6100"],
-          ["acct_meals", "6200"],
-          ["acct_employee_payable", "2180"]
-        ])
-    )
-  };
-});
-
-const { linked } = vi.hoisted(() => ({ linked: [] as unknown[] }));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    cb: (tx: unknown) => Promise<unknown>
-  ) => {
-    const b = {
-      values: (row: unknown) => {
-        linked.push(row);
-        return b;
-      },
-      onConflict: () => b,
-      execute: async () => []
-    };
-    return cb({ insertInto: () => b });
-  }
-}));
 
 const reimbursement = (
   overrides: Partial<ReimbursementSource> = {}
@@ -213,22 +181,36 @@ describe("mapReimbursementToRilletReimbursement", () => {
   });
 });
 
-/** In-memory ExternalIntegrationMappingService stand-in. */
-function fakeMappingService(mapping: unknown = null) {
-  return {
-    getByEntity: vi.fn(async () => mapping),
-    getExternalId: vi.fn(async () => null),
-    link: vi.fn(async () => undefined)
-  };
-}
-
 function setupSyncer(args: {
   local: ReimbursementSource;
-  mapping?: unknown;
+  /** The reimbursement's existing mapping row, when it was pushed before. */
+  mapping?: Record<string, unknown>;
   /** What Rillet's vendor list already holds (the strand-recovery source). */
   vendors?: Array<Partial<Rillet.Vendor>>;
 }) {
-  linked.length = 0;
+  const db = fakeDatabase({
+    externalIntegrationMapping: [
+      ...accountMappingRows(
+        {
+          acct_travel: "6100",
+          acct_meals: "6200",
+          acct_employee_payable: "2180"
+        },
+        "rillet"
+      ),
+      ...(args.mapping
+        ? [
+            {
+              entityType: "reimbursement",
+              entityId: "reimb_1",
+              integration: "rillet",
+              companyId: "company-1",
+              ...args.mapping
+            }
+          ]
+        : [])
+    ]
+  });
   const createReimbursement = vi.fn(
     async (_payload: RilletReimbursementCreate) => ({
       id: "rillet-reimbursement-1"
@@ -243,7 +225,7 @@ function setupSyncer(args: {
   const listVendors = vi.fn(async () => args.vendors ?? []);
 
   const syncer = new RilletReimbursementSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     entityType: "reimbursement",
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
@@ -258,7 +240,6 @@ function setupSyncer(args: {
   });
 
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.local);
-  (syncer as any).mappingService = fakeMappingService(args.mapping ?? null);
   (syncer as any).resolveLineDimensions = vi.fn(async () => ({
     fieldIdByDimensionId: new Map(),
     fieldValueIdsByValue: new Map()
@@ -269,7 +250,8 @@ function setupSyncer(args: {
     createReimbursement,
     deleteReimbursement,
     createVendor,
-    listVendors
+    listVendors,
+    links: () => db.rows("externalIntegrationMapping")
   };
 }
 
@@ -295,7 +277,7 @@ describe("RilletReimbursementSyncer", () => {
   });
 
   it("creates the provider-side employee vendor when the employee is not linked yet", async () => {
-    const { syncer, createVendor, createReimbursement } = setupSyncer({
+    const { syncer, createVendor, createReimbursement, links } = setupSyncer({
       local: reimbursement({ employeeVendorExternalId: null })
     });
 
@@ -313,14 +295,14 @@ describe("RilletReimbursementSyncer", () => {
     );
     // Linked under employeeVendor, NOT vendor: that id space holds Carbon
     // supplier ids.
-    expect(linked).toContainEqual(
+    expect(links()).toContainEqual(
       expect.objectContaining({
         entityType: "employeeVendor",
         entityId: "emp_1",
         externalId: "rillet-new-vendor-1"
       })
     );
-    expect(linked).not.toContainEqual(
+    expect(links()).not.toContainEqual(
       expect.objectContaining({ entityType: "vendor" })
     );
   });
@@ -384,7 +366,7 @@ describe("RilletReimbursementSyncer — stranded employee vendor", () => {
   });
 
   it("adopts the stranded vendor instead of creating a duplicate", async () => {
-    const { syncer, createVendor, createReimbursement } = setupSyncer({
+    const { syncer, createVendor, createReimbursement, links } = setupSyncer({
       local: reimbursement({ employeeVendorExternalId: null }),
       vendors: [strandedVendor()]
     });
@@ -398,7 +380,7 @@ describe("RilletReimbursementSyncer — stranded employee vendor", () => {
       "rillet-stranded-vendor-1"
     );
     // And the missing mapping is written, so the next push short-circuits.
-    expect(linked).toContainEqual(
+    expect(links()).toContainEqual(
       expect.objectContaining({
         entityType: "employeeVendor",
         entityId: "emp_1",

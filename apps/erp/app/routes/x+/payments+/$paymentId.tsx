@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { FundingSource } from "@carbon/utils";
-import { fundingScopeOf, redirect } from "@carbon/utils";
+import { fundingScopeOf, getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -225,10 +225,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.payments,
       await flash(
         request,
-        error(
-          e,
-          e instanceof Error ? e.message : "Failed to load payment balances"
-        )
+        // The log keeps the fixed text so occurrences group as one error;
+        // the person sees the cause, which a service returns as a plain
+        // `{ message }` object rather than an `Error`.
+        {
+          ...error(e, "Failed to load payment balances"),
+          message: getErrorMessage(e, "Failed to load payment balances")
+        }
       )
     );
   }
@@ -287,13 +290,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (e) {
     throw redirect(
       path.to.payment(paymentId),
-      await flash(
-        request,
-        error(
-          e,
-          e instanceof Error ? e.message : "Invalid currency configuration"
-        )
-      )
+      await flash(request, {
+        ...error(e, "Invalid currency configuration"),
+        message: getErrorMessage(e, "Invalid currency configuration")
+      })
     );
   }
 

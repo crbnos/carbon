@@ -6,6 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { PlanItemRow, PlanMappingContext } from "@carbon/ee";
 import {
   buildAssemblyPlan,
+  describeBomPayload,
   externalIdForAssembly,
   externalIdForBomLine,
   flattenNodes,
@@ -33,6 +34,7 @@ import {
   withRefusedMethods
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -41,6 +43,8 @@ import { loadMethodWriteRefusals } from "~/modules/settings/settings.service";
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "integrations-onshape-panel-plan-assembly");
 
 const payloadSchema = z.object({
   documentId: z.string().min(1),
@@ -112,8 +116,18 @@ export async function action({ request }: ActionFunctionArgs) {
   const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
   // An empty plan from an unreadable tree would drop every Onshape line.
   if (missingColumns.length > 0) {
+    const diagnostics = {
+      request: { documentId, wv, wvId, elementId, configuration, depth },
+      onshapeApi: onshape.client.apiOrigin,
+      missingColumns,
+      bom: describeBomPayload(bom)
+    };
+    logger.warn("Onshape BOM is missing required columns", {
+      companyId,
+      ...diagnostics
+    });
     return data(
-      { error: missingBomColumnsMessage(missingColumns) },
+      { error: missingBomColumnsMessage(missingColumns), diagnostics },
       { status: 422 }
     );
   }
