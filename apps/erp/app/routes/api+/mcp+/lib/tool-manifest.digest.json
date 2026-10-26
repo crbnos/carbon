@@ -750,7 +750,7 @@
     {"name":"production_getJobOperationBatchEvents","classification":"READ","schema":"1a62d6c430a5","response":"031cdafdafbd","permission":"production:view","paginates":false},
     {"name":"production_getJobOperationBatchMembers","classification":"READ","schema":"d429e4a46057","response":"66bcdc105c00","permission":"production:view","paginates":false},
     {"name":"production_getJobOperationBatchMemberStats","classification":"READ","schema":"d429e4a46057","response":"03aaee65a70b","permission":"production:view","paginates":false},
-    {"name":"production_getJobOperationBatchWithMembers","classification":"READ","schema":"1a62d6c430a5","response":"520bac578dba","permission":"production:view","paginates":false},
+    {"name":"production_getJobOperationBatchWithMembers","classification":"READ","schema":"1a62d6c430a5","response":"0cbc9a774c45","permission":"production:view","paginates":false},
     {"name":"production_getJobOperationDependencies","classification":"READ","schema":"ca49bc65b712","response":"9214ed6d51dd","permission":"production:view","paginates":false},
     {"name":"production_getJobOperations","classification":"READ","schema":"f67274205e12","response":"7f24f7881568","permission":"production:view","paginates":true},
     {"name":"production_getJobOperationsByMethodId","classification":"READ","schema":"7679db37b5f9","response":"02e990581d5b","permission":"production:view","paginates":false},
