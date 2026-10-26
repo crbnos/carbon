@@ -1447,8 +1447,11 @@ export const saveDocumentTemplate = defineServiceFn({
           content: []
         }) as JSONContent,
         config: headerConfig as Record<string, unknown>,
-        createdBy: ctx.auditUserId,
-        updatedBy: ctx.auditUserId
+        // A company's own header section already exists: update it. Sending
+        // createdBy for it made upsertDocumentSection insert the id again.
+        ...(header && !header.builtIn
+          ? { updatedBy: ctx.auditUserId }
+          : { createdBy: ctx.auditUserId })
       });
       if (section.error) {
         return ctx.error("internal", "Failed to save header", section.error);
