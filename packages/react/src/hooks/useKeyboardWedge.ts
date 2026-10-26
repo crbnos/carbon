@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 
 interface UseKeyboardWedgeOptions {
   test: (input: string) => boolean;
-  callback: (input: string) => void;
+  callback?: (input: string) => void;
   active?: boolean;
 }
 
@@ -18,12 +18,20 @@ export function useKeyboardWedge(options?: UseKeyboardWedgeOptions) {
   // Default test and callback for backward compatibility
   const defaultTest = (input: string) => input.startsWith("http");
   const defaultCallback = (input: string) => {
+    let url: URL;
     try {
-      const url = new URL(input);
-      navigate(url.pathname + url.search);
+      url = new URL(input);
     } catch {
       navigate(input);
+      return;
     }
+    // A link into the other app (an ERP kanban scanned in the MES) has a
+    // different origin, and its path does not exist here: load it there.
+    if (url.origin !== window.location.origin) {
+      window.location.assign(url.href);
+      return;
+    }
+    navigate(url.pathname + url.search);
   };
 
   const test = options?.test ?? defaultTest;

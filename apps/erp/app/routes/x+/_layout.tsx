@@ -62,7 +62,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
+import { Await, data, Outlet, useLoaderData } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
 import {
@@ -428,7 +428,6 @@ export default function AuthenticatedRoute() {
   useEffect(() => {
     shellLoadedAt = Date.now();
   }, [loaderData]);
-  const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
   const changelogPanel = useChangelogPanel();
@@ -444,15 +443,7 @@ export default function AuthenticatedRoute() {
 
   useNProgress();
   useKeyboardWedge({
-    test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL),
-    callback: (input) => {
-      try {
-        const url = new URL(input);
-        navigate(url.pathname + url.search);
-      } catch {
-        navigate(input);
-      }
-    }
+    test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
 
   const userId = user?.id;
