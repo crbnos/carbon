@@ -16,6 +16,7 @@ import {
   getTrackedEntitiesByMakeMethodId,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
 import {
   getInspection,
   getInspectionMeasurements,
@@ -506,6 +507,8 @@ export async function postSerialCompletions(
       inspectionSampleId: string | null;
     }[];
     jobOperationId: string;
+    // The operation's work center, for the first-operation label auto-print.
+    workCenterId: string | null;
     inspectionId: string;
     eventIds: ProductionEventIds;
     companyId: string;
@@ -531,6 +534,14 @@ export async function postSerialCompletions(
     );
     if (response.error) return { completed, error: response.error };
     completed += 1;
+    // Auto-print label on first operation only (entity was just minted)
+    await autoPrintFirstOperationLabel({
+      serviceRole,
+      trackedEntityId: candidate.trackedEntityId,
+      workCenterId: args.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
   }
   return { completed, error: null };
 }
@@ -575,6 +586,14 @@ export async function postBulkCompletion(
         message: response.error.message || "Failed to complete units"
       };
     }
+    // Auto-print label on first operation only (batch entity was just minted)
+    await autoPrintFirstOperationLabel({
+      serviceRole,
+      trackedEntityId: state.batchTrackedEntityId,
+      workCenterId: state.operation.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
     return { error: null, message: null };
   }
 
