@@ -59,6 +59,7 @@ import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { InstallButton } from "./InstallButton";
+import { useInstallGate } from "./useInstallGate";
 
 /**
  * Live state an installed integration supplies for one of its actions. With it
@@ -672,6 +673,7 @@ export function IntegrationForm({
   const integration = integrationId
     ? availableIntegrations.find((i) => i.id === integrationId)
     : undefined;
+  const installGate = useInstallGate(integration, installed);
 
   // Extract connected organisation name from metadata (e.g. Xero tenant
   // name). New credentials keep provider fields under providerMetadata;
@@ -815,8 +817,15 @@ export function IntegrationForm({
 
   // An integration with no settings has no form to submit, so Install is a button rather
   // than a Submit — the same one the card offers, so the drawer is never a dead end when
-  // it is opened by URL on something that isn't installed yet.
-  const canInstallHere = !installed && integration?.settings.length === 0;
+  // it is opened by URL on something that isn't installed yet. The card's checks
+  // hold here too: a withheld install, a role another integration holds, and a
+  // mode to choose (the card asks it) are installed from the card or not at all.
+  const canInstallHere =
+    !installed &&
+    integration?.settings.length === 0 &&
+    !installGate.comingSoon &&
+    !installGate.conflictsWith &&
+    !installGate.needsModeChoice;
 
   if (!integrationId) {
     throw new Error("Integration ID is required");
@@ -1044,6 +1053,11 @@ export function IntegrationForm({
                 </Trans>
               </p>
             )}
+            {!installed && installGate.conflictsWith && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>Uninstall {installGate.conflictsWith} first</Trans>
+              </p>
+            )}
 
             {!collapseSettings && setupInstructions}
 
@@ -1076,7 +1090,13 @@ export function IntegrationForm({
                 <Trans>Update</Trans>
               </Submit>
             ) : (
-              <Submit isDisabled={isDisabled}>
+              <Submit
+                isDisabled={
+                  isDisabled ||
+                  installGate.comingSoon ||
+                  !!installGate.conflictsWith
+                }
+              >
                 <Trans>Install</Trans>
               </Submit>
             )

@@ -3,10 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Integration } from "@carbon/ee";
-import {
-  isIntegrationComingSoon,
-  isIntegrationWhitelisted
-} from "@carbon/ee/plan";
+import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { useRevalidator } from "@carbon/query";
 import {
   Badge,
@@ -20,21 +17,19 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
-  useEdition,
-  useRouteData
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { useUser } from "~/hooks/useUser";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
 import { path } from "~/utils/path";
 import { InstallButton } from "./InstallButton";
 import { InstallModeDialog } from "./InstallModeDialog";
+import { useInstallGate } from "./useInstallGate";
 import { startOAuthConnect } from "./useIntegrationInstall";
 
 /** Mirrors `IntegrationHealthStatus` in settings.server (not importable here). */
@@ -61,12 +56,10 @@ export type IntegrationHealth = {
 
 export function IntegrationCard({
   integration,
-  installed,
-  hasEarlyAccess
+  installed
 }: {
   integration: Integration;
   installed: IntegrationHealth | null;
-  hasEarlyAccess: boolean;
 }) {
   const fetcher = useFetcher<{}>();
   const revalidator = useRevalidator();
@@ -85,53 +78,18 @@ export function IntegrationCard({
         }
       ).modes?.find((m) => m.id === installed.installMode)
     : undefined;
-  const routeData = useRouteData<{
-    activeRoles: Record<string, string | null>;
-  }>(path.to.integrations);
   const [showModeDialog, setShowModeDialog] = useState(false);
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
-  const edition = useEdition();
-  const user = useUser();
   // Only an install is withheld: a company where it was installed keeps a
-  // working card.
-  const comingSoon =
-    !installed &&
-    isIntegrationComingSoon(integration, {
-      edition,
-      email: user.email,
-      hasEarlyAccess
-    });
-
-  // At most one ACTIVE integration per provider role, enforced by a database
-  // trigger. Surfacing it here is what keeps a customer from meeting that
-  // refusal as a failed install — and it names the incumbent, so the next step
-  // is obvious.
-  const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" | "oee" }
-  ).providerRole;
-  // Several OEE providers may be active at once (the database exempts the
-  // role), so an active one is never an incumbent.
-  const roleIncumbent =
-    providerRole && providerRole !== "oee"
-      ? (routeData?.activeRoles?.[providerRole] ?? null)
-      : null;
-  const modes =
-    (
-      integration as {
-        modes?: Array<{ id: string; label: string; description: string }>;
-      }
-    ).modes ?? [];
-
-  const conflictsWith =
-    roleIncumbent && roleIncumbent !== integration.id ? roleIncumbent : null;
-
-  // An OAuth integration declaring install MODES needs that question answered
-  // before consent, because the mode decides which scopes are requested. Every
-  // other install goes through the shared `InstallButton`.
-  const needsModeChoice =
-    "oauth" in integration && !!integration.oauth && modes.length > 0;
+  // working card. The role conflict is surfaced here so a customer never meets
+  // the database's one-per-role refusal as a failed install, and it names the
+  // incumbent, so the next step is obvious.
+  const { comingSoon, conflictsWith, modes, needsModeChoice } = useInstallGate(
+    integration,
+    !!installed
+  );
 
   // An OAuth callback that ran inside the popup `onClientInstall` opened posts
   // its outcome here and closes the popup (see oauth-popup.server.ts).
