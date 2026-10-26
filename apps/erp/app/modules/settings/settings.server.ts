@@ -1721,6 +1721,13 @@ export const renameIntegrationConnection = defineServiceFn({
       name,
       ctx.auditUserId
     );
+    // Names are unique per app: the unique index refuses a taken one.
+    if (update.error?.code === "23505") {
+      return ctx.error(
+        "conflict",
+        "An account is already called that — pick a different name."
+      );
+    }
     if (update.error) {
       return ctx.error("internal", "Failed to rename connection", update.error);
     }

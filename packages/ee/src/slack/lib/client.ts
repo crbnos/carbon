@@ -63,6 +63,30 @@ export async function verifySlackWebhook(req: Request) {
 }
 
 /**
+ * Tell the channel picked during install that the bot is live there, so the
+ * person who installed it can see it worked.
+ */
+export async function postSlackWelcome({
+  token,
+  channelId
+}: {
+  token: string;
+  channelId: string;
+}) {
+  const client = createSlackWebClient({ token });
+  const text =
+    "Ahoy maties! 🦜🏴‍☠️ Here be your new Cargh-bon bot. Use `/` to get started.";
+
+  return client.chat.postMessage({
+    channel: channelId,
+    text,
+    blocks: [{ type: "section", text: { type: "mrkdwn", text } }],
+    unfurl_links: false,
+    unfurl_media: false
+  });
+}
+
+/**
  * Post a message to a Slack thread
  */
 export async function postToSlackThread({

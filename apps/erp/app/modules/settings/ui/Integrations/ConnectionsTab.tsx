@@ -195,12 +195,18 @@ function ConnectionItem({
   onReconnect: () => void;
 }) {
   const { t, i18n } = useLingui();
-  const renamer = useAction({ onSuccess: () => toast.success(t`Renamed`) });
+  // What the user is typing, until the rename settles; the stored name otherwise,
+  // so a refused rename shows the name the account still has.
+  const [draft, setDraft] = useState<string | null>(null);
+  const name = draft ?? connection.name;
+  const renamer = useAction({
+    onSuccess: () => toast.success(t`Renamed`),
+    onSettled: () => setDraft(null)
+  });
   const disconnecter = useAction({
     onSuccess: () => toast.success(t`Disconnected`)
   });
   const pending = renamer.isPending || disconnecter.isPending;
-  const [name, setName] = useState(connection.name);
   const usable = connectionUsable(connection);
   // Connected before this piece needed a scope (a Slack workspace installed for the
   // Assistant, say). Everything it already did keeps working; workflow steps do not.
@@ -215,10 +221,10 @@ function ConnectionItem({
             className="min-w-0 flex-1"
             value={name}
             aria-label={t`Connection name`}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => setDraft(event.target.value)}
             onBlur={() => {
               if (name.trim() === "" || name === connection.name) {
-                setName(connection.name);
+                setDraft(null);
                 return;
               }
               renamer.submit(

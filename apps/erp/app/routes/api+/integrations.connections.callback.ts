@@ -13,6 +13,7 @@ import {
   exchangeAuthorizationCode,
   TOKEN_REQUEST_TIMEOUT_MS
 } from "@carbon/ee/integrations/connections";
+import { postSlackWelcome } from "@carbon/ee/slack.server";
 import type { AllowlistEntry } from "@carbon/jobs/integrations";
 import {
   accountLabelFromBody,
@@ -66,7 +67,7 @@ function connectionReply(
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -148,18 +149,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return connectionFailed("token-exchange");
   }
 
+  // Workspace facts the row asked for (Slack: team, bot user, webhook channel).
+  const metadata = connectionMetadataFrom(entry, tokens.body);
   try {
     await createConnection(getCarbonServiceRole(), {
       companyId,
       pieceName,
       name,
       connectionId: state.connectionId,
+      // Card Install names the account after the card; a Revoked row from an
+      // earlier install may still hold that name for another account.
+      renameIfTaken: state.connectionId === undefined && name === entry.label,
       authType: "OAUTH2",
       accountLabel:
         accountLabelFromBody(entry, tokens.body) ??
         (await accountLabelFor(entry, tokens.accessToken)),
-      // Workspace facts the row asked for (Slack: team, bot user, webhook channel).
-      metadata: connectionMetadataFrom(entry, tokens.body),
+      metadata,
       tokens: {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken
@@ -191,7 +196,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // "installed" means for it. Without this row the grid would keep offering
   // Install for an account that is already connected. Never overwrite an
   // existing row — it may hold settings that are not this callback's to touch.
-  const installed = await markIntegrationInstalled(client, {
+  // The service role, as for the connection: inserting the row would need
+  // settings create through RLS, and this route (like every install) requires
+  // settings update. Failing here would leave a live token behind a card that
+  // still offers Install.
+  const installed = await markIntegrationInstalled(getCarbonServiceRole(), {
     id: pieceName,
     companyId,
     updatedBy: userId
@@ -203,6 +212,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return connectionFailed("save-failed");
   }
   await invalidateIntegrationHealthCache(pieceName, companyId);
+
+  // A new Slack install says hello in the channel picked on the consent screen,
+  // so the person can see the bot is live there. Best-effort: the install is done.
+  const channelId = metadata.channel_id;
+  if (
+    pieceName === "slack" &&
+    state.connectionId === undefined &&
+    typeof channelId === "string" &&
+    channelId !== ""
+  ) {
+    try {
+      await postSlackWelcome({ token: tokens.accessToken, channelId });
+    } catch (err) {
+      logger.warn("Slack welcome message not posted: {detail}", {
+        detail: describeError(err)
+      });
+    }
+  }
 
   return connectionReply(pieceName, consumed.cookie);
 }

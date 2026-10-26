@@ -88,7 +88,8 @@ which `packages/jobs/src/workflows/actions/services.ts` implements over the exis
 `actions/integration.ts`. A record in prose renders as a LINK only where the input's
 catalog `links` declaration says the vendor renders one — Slack mrkdwn `<url|label>`,
 Gmail `<a href>` gated on `body_type = html` — via `renderTemplate`'s per-dialect
-renderers (`LINK_RENDERERS`) in `runtime/resolve.ts`; `linkState` (`definition/links.ts`)
+renderers (`LINK_RENDERERS`) in `runtime/resolve.ts`, which also escape every other
+value in that input for the dialect (`TEXT_ESCAPERS`); `linkState` (`definition/links.ts`)
 is the one verdict, for the run and the builder hint alike. Everywhere else a record stays its plain name, and the
 builder says so with a muted one-liner under the field (`definition/notices.ts`
 `fieldNotices` → the store's `notices` → `Field`'s `hint`; copy in `noticeCopy.ts`).
@@ -148,11 +149,11 @@ as `null` — pieces branch on `undefined`.
 company. A company may connect several Google accounts, so integration connections get
 their own table.
 
-`integrationConnection` (`20261021123100_workflow-integration-connections.sql`) —
+`integrationConnection` (`20261026151302_workflow-integration-connections.sql`) —
 `id('icn')`, `companyId`, `pieceName`, `name`, `authType`, `accountLabel`, `metadata`,
 `secretRef`, `expiresAt`, `refreshingAt`, `status`, `lastError` + audit columns. Unique on
 `(companyId, pieceName, name)`. RLS is `settings_view` to read and NO API-role writes
-(`20261021123104`): a user-written row could claim another company's Slack `team_id` or
+(`20261026151306`): a user-written row could claim another company's Slack `team_id` or
 point `secretRef` anywhere. Every write — create, rename, disconnect, revoke — goes
 through the service role, scoped by `companyId`. Rename and Disconnect are the service
 functions `renameIntegrationConnection` / `disconnectIntegrationConnection`
@@ -186,7 +187,12 @@ row's id in the OAuth state; Add account and Install name the row by its unique 
 `accountLabel`) and refuses a different one — `ConnectionAccountMismatchError` for
 Reconnect, `ConnectionNameTakenError` for a name. Without that check, every saved
 workflow on the row silently started acting as whoever signed in. When either side has
-no identity (the label read failed), the consent is accepted.
+no identity (the label read failed), the consent is accepted, and `save_connection` keeps
+the stored `accountLabel` (a NULL label never overwrites it, or the check would pass for
+anyone from then on). Card Install names the account after the card (`entry.label`), and an
+earlier Uninstall leaves a Revoked row under that name: the callback passes
+`renameIfTaken`, so a different account takes the next free name ("Gmail 2") instead of
+`duplicate-name`. A name the user typed is still refused.
 
 A vendor workspace belongs to ONE company. Before it saves, `createConnection` reads every
 company's rows of that piece with the same `metadata.team_id` (`readConnectionsByTeamId`, the
@@ -238,6 +244,12 @@ which is before the token exchange finishes. So `resolveConnectionAuth` claims t
 with a conditional UPDATE on `refreshingAt` (`IS NULL OR < NOW() - 30s`) and the loser polls
 for the winner's token (250 ms × 20). Google omits the refresh token on a refresh response,
 so the stored one is carried forward rather than overwritten with `undefined`.
+
+A disconnect or uninstall can land while a refresh is in flight. `upsert_connection_secret`
+locks the row and writes only onto an Active one (else `no_data_found`, which
+`writeTokens` turns into `ConnectionRevokedError`), the settle UPDATE matches `status =
+'Active'` only, and `markExpired` never touches a Revoked row. So a revoked account stays
+revoked.
 
 ## Who reads the token
 
@@ -363,8 +375,11 @@ category, `active`, and the two descriptions.
 - `settings: []` and `schema: z.object({})` (set by `definePieceIntegration`), so the drawer
   shows no settings form and no Submit. Install runs `onClientInstall` → the connect route → the consent popup, exactly
   like Onshape and Slack.
-- The callback calls **`markIntegrationInstalled`**, which inserts the `companyIntegration`
-  row if absent or re-activates it, and **never overwrites metadata**. That row is what
+- The callback calls **`markIntegrationInstalled`** with the service role (an RLS insert
+  would need settings create; the route requires settings update, like every install),
+  which inserts the `companyIntegration` row if absent or re-activates it, and **never
+  overwrites metadata**. A new Slack install (not a Reconnect) then posts a welcome message
+  in the webhook channel picked on the consent screen (`postSlackWelcome`, best-effort). That row is what
   "Installed" means to the grid; without it the card would keep offering Install for an
   already-connected account.
 - **Slack's card IS the piece card.** The Carbon Assistant (slash commands, issue threads,
@@ -378,7 +393,7 @@ category, `active`, and the two descriptions.
   `SLACK_STATE_SECRET` are gone. `SLACK_OAUTH_REDIRECT_URL` keeps its name and may keep its
   deployed value: `api+/integrations.slack.oauth.ts` is now a 302 forwarder onto the
   connections callback, so no environment or Slack-app redirect change is needed to ship. Migration
-  `20261021123102_slack-connections-single-source.sql` backfilled existing installs. The
+  `20261026151304_slack-connections-single-source.sql` backfilled existing installs. The
   builder's "Connect …" link deep-links to `?tab=connections`.
 - `ui/Integrations/ConnectionsTab.tsx` is an `IntegrationFormTab` ("Accounts") on that card,
   listing the connected accounts with rename, Disconnect and Add account. It is the ONE place
@@ -389,6 +404,10 @@ category, `active`, and the two descriptions.
   customer can no longer see. `hooks.server.ts` builds that hook for every entry of
   `ACTIVEPIECES_PIECES` (`pieceHooks`), so a new piece needs no hooks entry and no hooks
   FILE: the behaviour is identical for every piece.
+- The card and the Details drawer read the same install checks (`useInstallGate`): a
+  withheld (coming soon) install, a provider role another integration holds, and a mode to
+  choose. The drawer offers Install only when none applies; opened by URL it used to
+  install past all three.
 - Both Install (the card) and Add account (the drawer) go through
   `integrations/connect.ts` `startIntegrationConnect`, so the two entry points cannot
   drift into different failure behaviour. It opens the popup with `beginOAuthPopup`
@@ -462,7 +481,7 @@ in this path.
    NOTHING`): `companyIntegration.id` is an FK to `integration.id`, so without it
    `markIntegrationInstalled` fails the callback with a bare PostgREST error after the token
    is already in the vault. The `INSERT INTO "integration"` at the end of
-   `20261021123100_workflow-integration-connections.sql` is the shape (one row per piece).
+   `20261026151302_workflow-integration-connections.sql` is the shape (one row per piece).
 6. Check every action you expose ships an `outputSchema` — the generator refuses one
    that does not, and coverage is all-or-nothing per piece. Then run the generator and read
    its refusals: each unmappable prop is a decision — `omit` it (optional, or required with

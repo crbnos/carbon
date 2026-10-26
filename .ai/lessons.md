@@ -1359,7 +1359,7 @@ any new `memo` writer.
 reading `companyIntegration.metadata.access_token` directly (`send-slack.ts`, `integrations.slack.interactive.ts`,
 `notify.ts`). They did not fail — they got `undefined`, fell back or returned `[]`, and Slack DMs /
 slash commands silently stopped for weeks. When Slack later moved to `integrationConnection`
-(`20261021123102`), the same class of miss happened again with `notify.ts` because the consumer map
+(`20261026151304`), the same class of miss happened again with `notify.ts` because the consumer map
 was built from module exports, not from a grep of the column.
 
 **Rule:** A credential has exactly one reader (`resolveIntegrationSecrets` for `companyIntegration`,

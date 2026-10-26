@@ -41,6 +41,15 @@ ALTER TABLE "public"."integrationConnection" ENABLE ROW LEVEL SECURITY;
 -- Vault RPCs. The existing upsert/get/delete_integration_secret functions are
 -- hard-wired to "companyIntegration" and the 'integration:' name prefix, so these
 -- mirror them against the new table with a 'connection:' prefix.
+--
+-- A connection's token is written only while the row is Active, so a token
+-- refresh still running when someone disconnects the account (or uninstalls its
+-- card) cannot write a fresh secret onto the Revoked row and bring it back.
+--
+-- The row is locked before the vault write, so a concurrent `revoke_connections`
+-- either commits first (the row is no longer Active here, and the write is
+-- refused with no_data_found) or waits and deletes the secret written here.
+-- `save_connection` and the Slack backfill set the row Active before they call it.
 CREATE OR REPLACE FUNCTION upsert_connection_secret(p_company_id text, p_connection_id text, p_secret jsonb)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, vault AS $$
 DECLARE
@@ -50,6 +59,15 @@ BEGIN
   IF current_setting('role', true) IN ('anon', 'authenticated') THEN
     RAISE EXCEPTION 'upsert_connection_secret is service role only'
       USING ERRCODE = 'insufficient_privilege';
+  END IF;
+
+  PERFORM 1 FROM "integrationConnection"
+    WHERE "companyId" = p_company_id AND "id" = p_connection_id
+      AND "status" = 'Active'
+    FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Connection % is not active.', p_connection_id
+      USING ERRCODE = 'no_data_found';
   END IF;
 
   SELECT id INTO v_id FROM vault.secrets WHERE name = v_name;
@@ -200,7 +218,9 @@ BEGIN
   ELSE
     UPDATE "integrationConnection"
     SET "authType" = p_auth_type,
-        "accountLabel" = p_account_label,
+        -- No label (the account lookup failed) keeps the stored one: without it
+        -- the same-account check passes for anyone on the next Reconnect.
+        "accountLabel" = COALESCE(p_account_label, "accountLabel"),
         "metadata" = COALESCE(p_metadata, "metadata"),
         "expiresAt" = p_expires_at,
         "refreshingAt" = NULL,

@@ -291,6 +291,11 @@ export async function createConnection(
     name: string;
     /** Set by Reconnect: the one row this consent is for. */
     connectionId?: string;
+    /** The name is the card's default, not one the user typed: when another
+     * account holds it, the new account takes the next free name ("Gmail 2")
+     * instead of being refused. Card Install after an Uninstall needs this, since
+     * the revoked rows keep their names. */
+    renameIfTaken?: boolean;
     authType?: string;
     accountLabel?: string | null;
     metadata?: Record<string, unknown>;
@@ -336,11 +341,20 @@ export async function createConnection(
     throw new Error(`Connection ${args.connectionId} was not found.`);
   }
 
+  let name = args.name;
+  let revive = existing.data;
   if (existing.data !== null && !sameAccount(existing.data, args)) {
     if (args.connectionId !== undefined) {
       throw new ConnectionAccountMismatchError(existing.data.id);
     }
-    throw new ConnectionNameTakenError(args.name);
+    if (!args.renameIfTaken) throw new ConnectionNameTakenError(args.name);
+    name = await freeConnectionName(
+      serviceClient,
+      args.companyId,
+      args.pieceName,
+      args.name
+    );
+    revive = null;
   }
 
   // One RPC writes the row (revive or insert) and the vault secret together, so a
@@ -349,7 +363,7 @@ export async function createConnection(
   const { data, error } = await serviceClient.rpc("save_connection", {
     p_company_id: args.companyId,
     p_piece_name: args.pieceName,
-    p_name: args.name,
+    p_name: name,
     p_auth_type: args.authType ?? "OAUTH2",
     p_secret: args.tokens as never,
     p_user_id: args.createdBy,
@@ -358,15 +372,34 @@ export async function createConnection(
     // "reconnect needed" account clears. Omitted keeps the stored metadata.
     p_metadata: args.metadata as never,
     p_expires_at: args.expiresAt ?? undefined,
-    ...(existing.data === null ? {} : { p_connection_id: existing.data.id })
+    ...(revive === null ? {} : { p_connection_id: revive.id })
   });
 
   // Two people adding the same name at once: the unique index decides.
-  if (error?.code === "23505") throw new ConnectionNameTakenError(args.name);
+  if (error?.code === "23505") throw new ConnectionNameTakenError(name);
   if (error || typeof data !== "string") {
     throw error ?? new Error("Connection not saved.");
   }
   return { id: data };
+}
+
+/** `base` followed by the first number no connection of the piece is named. */
+async function freeConnectionName(
+  serviceClient: SupabaseClient<Database>,
+  companyId: string,
+  pieceName: string,
+  base: string
+): Promise<string> {
+  const { data, error } = await serviceClient
+    .from("integrationConnection")
+    .select("name")
+    .eq("companyId", companyId)
+    .eq("pieceName", pieceName);
+  if (error) throw error;
+  const taken = new Set(data.map((row) => row.name));
+  let suffix = 2;
+  while (taken.has(`${base} ${suffix}`)) suffix += 1;
+  return `${base} ${suffix}`;
 }
 
 export async function renameConnection(
@@ -436,6 +469,9 @@ async function writeTokens(
     p_connection_id: connectionId,
     p_secret: tokens as never
   });
+  // The function writes only onto an Active row: one disconnected while its
+  // token was being refreshed answers no_data_found and stays revoked.
+  if (error?.code === "P0002") throw new ConnectionRevokedError(connectionId);
   if (error)
     throw new ConnectionSecretUnavailableError(companyId, connectionId);
 }
@@ -632,19 +668,25 @@ export async function resolveConnectionAuth(
       refreshToken: refreshed.refreshToken ?? refreshToken
     });
 
+    // Only a row still Active: a disconnect between the token write and here
+    // has deleted the token, and must not be undone.
     const settled = await serviceClient
       .from("integrationConnection")
       .update({
         expiresAt: refreshed.expiresAt,
         refreshingAt: null,
-        status: "Active",
         lastError: null
       })
       .eq("companyId", companyId)
-      .eq("id", connectionId);
+      .eq("id", connectionId)
+      .eq("status", "Active")
+      .select("id");
     // A silent failure here leaves `expiresAt` stale and the claim held, so every
     // later request loses the claim and polls out a timeout that names nothing.
     if (settled.error) throw new Error(settled.error.message);
+    if (settled.data.length === 0) {
+      throw new ConnectionRevokedError(connectionId);
+    }
   } catch (cause) {
     // The token itself is fine — storing it was not. Release the claim so the next
     // attempt can retry immediately rather than waiting out a phantom refresh.
@@ -734,11 +776,13 @@ async function markExpired(
 ): Promise<void> {
   // A failed write here would leave a condemned connection Active — the next use
   // would retry a grant the vendor already rejected instead of saying "reconnect".
+  // A Revoked row stays Revoked: the account was disconnected on purpose.
   const { error } = await serviceClient
     .from("integrationConnection")
     .update({ status: "Expired", lastError, refreshingAt: null })
     .eq("companyId", companyId)
-    .eq("id", connectionId);
+    .eq("id", connectionId)
+    .neq("status", "Revoked");
   if (error) throw new Error(error.message);
 }
 
