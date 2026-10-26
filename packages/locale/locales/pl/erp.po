@@ -23024,8 +23024,8 @@ msgstr "Umowa kończy się w dniu końcowym i nie jest odnawiana. Zaplanowane fa
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Faktury umowy będą fakturowane wobec klienta Stripe już powiązanego z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w panelu Stripe."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "Oczekiwana dostępność pracownika zewnętrznego co tydzień; planowanie używa tego jako górnego limitu podczas przydzielania pracownika do operacji w ciągu tygodnia."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "Przewidywana tygodniowa dostępność wykonawcy, wyłącznie informacyjnie. Harmonogram nie przydziela wykonawców do operacji."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Poprawiona data wygaśnięcia dla tego lotu/numeru seryjnego; istniejące zapasy w ręce są ponownie oceniane na podstawie polityki żywotności przechowywania po zmianie."

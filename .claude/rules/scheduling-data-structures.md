@@ -92,11 +92,17 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   (`PeopleCapacity.tsx`). Capacity math: Demand = open `jobOperation` hours by
   due date via `makeDurations` (Draft/Planned jobs excluded — released work
   only; ops overdue up to 28 days land in a Past-due column); Scheduled =
-  `capacityReservation.workHours` distributed across each reservation's span
-  per day; Available = people headcount × real shift hours resolved through
+  `capacityReservation.workHours` split across the days of the booking by
+  the work center's WORKING time in each day (`getWorkCenterWorkingWindows`,
+  the same ladder and holidays the engine uses; a station's linked shifts at
+  another location are loaded too, `getShiftsWithTimesByIds`), so a booking from Monday
+  noon to Tuesday 11:30 puts its hours in shift time and none on the night
+  or a weekend; a booking with no working time falls back to the clock-time
+  share; Available = people headcount × real shift hours resolved through
   the ladder assignment `shiftId` → the person's `employeeShift` →
   most-common shift duration at the location → 8h (unassigned stations fall
-  back to the location's per-weekday shift calendar); Load renders as hours
+  back to the location's per-weekday shift calendar; a company holiday is
+  0, and nobody manned on it counts as staffed); Load renders as hours
   over/free (+Xh / Xh free), not %. Shift + location filters live in header
   popovers; the shift filter's "All shifts" option (`shiftId` null on
   drag) creates shift-less assignments that resolve hours via the ladder.
@@ -138,6 +144,14 @@ never abandons the location run.
   guard defers to a human pick landing mid-wave). Release therefore never
   requires a work center; no candidates at all degrades to per-member
   placement.
+- **What blocks a batch**: `batchBlockingReservations` decides which live
+  reservations a batch is placed around. It keeps other jobs' bookings and
+  other batches' rows. It drops this location's own batch rows, and every
+  non-batch row of a job the run re-plans (`orderedJobIds`): the run replaces
+  those bookings, so they must not push the batch later. Before this, the
+  batch drifted later on every regen. A job that throws during the run is left
+  out of the write, so `persistLocationWrites` clears its stored bookings too
+  (`failedJobIds`): otherwise the batch could sit on top of one.
 - **One reservation per Released (`Active`/`Completing`) batch**, tagged
   `capacityReservation.jobOperationBatchId`; `operationId`/`jobId` stay NOT
   NULL by anchoring on the min member op id. Placeholder semantics mirror
@@ -197,7 +211,14 @@ Two Inngest functions listen on that event
 - **MARK** (`markScheduleStaleFunction`, immediate, concurrency 1 per company):
   stamps the affected jobs' `scheduleOutdatedReason` / `scheduleOutdatedAt` (scoped
   per kind — a qualification change in a shop with no gated ops stamps nothing;
-  `location` / `reorder` stamp company-wide). Recomputes nothing.
+  `location` / `reorder` stamp company-wide). A `shift` event with a shift id also
+  stamps every job with an open op on a work center whose hours come from that shift
+  (`workCentersOnShift`, `shift-work-centers.ts`: the stations linked to it, plus the
+  stations at its location with no link to an active shift; lights-out stations never
+  count), or on a process those stations run (`processesOfWorkCenters`: an unstarted op
+  can move onto them). An unknown shift id stamps company-wide. `createShift`,
+  `updateShift` and `deleteShift` send the id; an update that moves the shift to
+  another location sends kind `location` instead, so the stations it left re-plan too. Recomputes nothing.
 - **WAVE** (`scheduleReplanWaveFunction`, **debounce 30s / timeout 10m**,
   concurrency 1 per company): loads the company's stale jobs, groups them by
   **LOCATION**, and calls `runLocationSchedule({ db: getJobDatabaseClient(),
@@ -316,10 +337,18 @@ only; its output is read by nothing in the placement path (spec
   forward from `max(now, placed-dependency-ends)` — **no backward-pass floor** — into the
   first feasible span. Two finite resources gate it: the work center (capacity 1 — one op
   at a time, decided by actual `capacityReservation` intervals) AND, for ability-gated
-  processes, ≥1 qualified employee on shift and unreserved. **Work-center selection is
-  sticky**: an op keeps its `workCenterId` when that work center is in the capacity set;
-  an op with no work center (or whose WC has no capacity data, e.g. deactivated) gets
-  earliest-finish selection among its process candidates. A placement past the job's
+  processes, ≥1 qualified employee on shift and unreserved. **Only a started op is
+  sticky** (`isOperationStarted`, `apply-work-center-selections.ts`: status In Progress
+  or Paused, or `quantityComplete > 0`): it stays on its `workCenterId`. An op that has
+  not started gets earliest-finish selection across its process's work centers, even
+  when it carries a work center (the stored one is the fallback when the process has no
+  mapped centers). `applyWorkCenterSelections` then puts the chosen work center on a
+  placed op that has not started, and `placementWrites` (`run-overlay.ts`) writes it,
+  so `jobOperation.workCenterId` and the op's `capacityReservation` always name the
+  same station. A started op and a placeholder
+  keep the stored one; an op with no work center gets one either way. Consequence: a
+  card dragged to another column on the operations board can move back at the next
+  regen when another station finishes it earlier. A placement past the job's
   `dueDate` sets `hasConflict`/`conflictReason` but keeps the placement.
 - **Machine availability windows** come from the ladder resolved per work center in
   `machine-availability.ts` (`resolveWorkCenterWindows`) — the provider's
@@ -336,6 +365,21 @@ only; its output is read by nothing in the placement path (spec
   dispatch restores the hours at the next regen. People with no `employeeShift` rows now
   default to the job LOCATION's calendar (rung 3/4 via `getLocationCalendarWindows`),
   not 24×7.
+- **Company holidays close the plant.** The provider reads the company's `holiday`
+  dates once per run (`getHolidayDates`). `closeHolidays` (`machine-availability.ts`)
+  removes each holiday's whole day, in the plant timezone, from every work center that
+  is not `alwaysOn`; a lights-out station keeps running. `loadLocationCalendarWindows`
+  removes them from the location calendar, and `buildFiniteContext` adds each holiday as
+  an absence for every person (`withHolidays`, `people-utils.ts`). The ERP reads the same
+  dates (`getHolidayDates`, `production.service.ts`): the Forecast shades a holiday as
+  closed, and the Capacity view shows 0 Available on it. `createHoliday`,
+  `updateHoliday` and `deleteHoliday` (`people.server.ts`) notify kind `location`.
+- **A qualification ends at its expiry.** `isEligibleOperator` tests an operator at the
+  op's earliest start only. `clipToQualification` (`operator-eligibility.ts`) then cuts
+  the operator's windows at the start of the `expiresAt` day in the plant timezone, and
+  `buildEligibleMembers` drops an operator with no window left. Without the clip, an op
+  that waited for its machine could be booked on a day after the qualification expired.
+  The People board treats the expiry day as expired too (`expiresAt <= date`).
 - **Attended-window labor model is UNCHANGED** (`slot-allocator.ts`): ability gating,
   manning-board / team mode, attended windows, wait attribution, absence subtraction
   (`peopleAbsence`), overtime extension (`peopleAssignment.overtimeHours`), split-day

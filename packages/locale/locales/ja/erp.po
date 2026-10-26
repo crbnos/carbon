@@ -23024,8 +23024,8 @@ msgstr "契約は終了日に終了し、更新されません。その後の計
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この契約の請求書は、このCarbon得意先にリンク済みのStripeカスタマーに請求されます。詳細を変更するにはStripeダッシュボードで編集してください。"
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "外部作業者の期待される毎週の利用可能性。スケジューリングはこれを、週間を通じてこの外部作業者を工程に割り当てる際の上限として使用します。"
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "請負業者の想定される週ごとの稼働可能時間（参考値）。スケジューラーは請負業者を作業に割り当てません。"
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "このロット/シリアル番号の修正された有効期限。変更後、既存のオンハンド在庫は棚寿命ポリシーに対して再評価されます。"

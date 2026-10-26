@@ -23024,8 +23024,8 @@ msgstr "계약이 종료 날짜에 끝나고 갱신되지 않습니다. 그 이�
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "계약의 송장은 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집하세요."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동안의 공정에 할당할 때 스케줄링이 이를 상한선으로 사용합니다."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "계약자의 예상 주간 가용 시간(참고용)입니다. 스케줄러는 계약자를 작업에 배정하지 않습니다."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기존 보유 재고가 유통기한 정책에 따라 재평가됩니다."

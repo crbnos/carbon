@@ -23024,8 +23024,8 @@ msgstr "अनुबंध अंतिम तारीख को समाप�
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "अनुबंध के चालान पहले से इस Carbon ग्राहक से जुड़े Stripe ग्राहक को बिल किए जाएंगे। इसके विवरण बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "ठेकेदार की अपेक्षित साप्ताहिक उपलब्धता; शेड्यूलिंग इसे इस सप्ताह भर में इस ठेकेदार को ऑपरेशन के लिए असाइन करते समय ऊपरी सीमा के रूप में उपयोग करती है।"
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "ठेकेदार की अपेक्षित साप्ताहिक उपलब्धता, केवल संदर्भ के लिए। शेड्यूलर ठेकेदारों को ऑपरेशनों पर नहीं लगाता।"
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "इस लॉट/सीरीज़ के लिए सही की गई समाप्ति तिथि; परिवर्तन के बाद मौजूदा ऑन-हैंड स्टॉक को शेल्फ-लाइफ नीति के विरुद्ध पुनः मूल्यांकन किया जाता है।"

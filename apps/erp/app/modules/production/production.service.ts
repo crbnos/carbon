@@ -105,8 +105,12 @@ import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import {
+  type CalendarWindow,
+  closeHolidays,
   type LadderShiftRow,
   resolveLocationWindows,
+  resolveWorkCenterWindows,
+  subtractDates,
   subtractIntervals
 } from "@carbon/planning";
 import type { JSONContent } from "@carbon/react";
@@ -11452,16 +11456,37 @@ export function getForecastNonWorkingIntervals(args: {
   shifts: ShiftRow[];
   windowStartMs: number;
   windowEndMs: number;
+  /** Company holidays ("YYYY-MM-DD"): shaded as closed all day. */
+  holidayDates?: Set<string>;
 }): { start: number; end: number }[] {
   const { timeZone, shifts, windowStartMs, windowEndMs } = args;
 
-  const locationShiftRows: LadderShiftRow[] = [];
+  const working = subtractDates(
+    resolveLocationWindows({
+      timezone: timeZone,
+      locationShiftRows: expandShiftRows(shifts, timeZone),
+      rangeStart: windowStartMs,
+      rangeEnd: windowEndMs
+    }),
+    args.holidayDates ?? new Set(),
+    timeZone
+  );
+
+  return subtractIntervals(
+    [{ start: windowStartMs, end: windowEndMs }],
+    working
+  ).map((w) => ({ start: w.start, end: w.end }));
+}
+
+/** A shift's weekday windows in the ladder's row shape (0 = Sunday). */
+function expandShiftRows(shifts: ShiftRow[], timeZone: string) {
+  const rows: LadderShiftRow[] = [];
   for (const shift of shifts) {
     if (!shift.startTime || !shift.endTime) continue;
     for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
       const flag = WEEKDAY_FLAGS[dayOfWeek];
       if (!flag || !shift[flag]) continue;
-      locationShiftRows.push({
+      rows.push({
         dayOfWeek,
         startTime: String(shift.startTime),
         endTime: String(shift.endTime),
@@ -11469,18 +11494,80 @@ export function getForecastNonWorkingIntervals(args: {
       });
     }
   }
+  return rows;
+}
 
-  const working = resolveLocationWindows({
-    timezone: timeZone,
-    locationShiftRows,
-    rangeStart: windowStartMs,
-    rangeEnd: windowEndMs
+/**
+ * Each work center's working windows: the scheduler's availability ladder
+ * (`resolveWorkCenterWindows`) minus the company's holidays.
+ */
+export function getWorkCenterWorkingWindows(args: {
+  workCenters: { id: string; alwaysOn: boolean }[];
+  workCenterShifts: { workCenterId: string; shiftId: string }[];
+  /** The location's active shifts. */
+  shifts: (ShiftRow & { id: string })[];
+  /** Shifts a work center is linked to at another location. */
+  linkedShifts?: (ShiftRow & { id: string })[];
+  timeZone: string;
+  holidayDates: Set<string>;
+  rangeStart: number;
+  rangeEnd: number;
+}): Map<string, CalendarWindow[]> {
+  const { workCenters, workCenterShifts, shifts, timeZone } = args;
+  const shiftById = new Map(
+    [...shifts, ...(args.linkedShifts ?? [])].map((shift) => [shift.id, shift])
+  );
+  const ladderWorkCenters = workCenters.map((wc) => ({
+    id: wc.id,
+    alwaysOn: wc.alwaysOn,
+    locationId: "location",
+    timezone: timeZone
+  }));
+  const windows = resolveWorkCenterWindows({
+    workCenters: ladderWorkCenters,
+    workCenterShiftRows: workCenterShifts.flatMap((link) => {
+      const shift = shiftById.get(link.shiftId);
+      return shift
+        ? expandShiftRows([shift], timeZone).map((row) => ({
+            ...row,
+            workCenterId: link.workCenterId
+          }))
+        : [];
+    }),
+    locationShiftRows: expandShiftRows(shifts, timeZone).map((row) => ({
+      ...row,
+      locationId: "location"
+    })),
+    rangeStart: args.rangeStart,
+    rangeEnd: args.rangeEnd
   });
+  return closeHolidays({
+    windowsByWorkCenter: windows,
+    workCenters: ladderWorkCenters,
+    holidayDates: args.holidayDates
+  });
+}
 
-  return subtractIntervals(
-    [{ start: windowStartMs, end: windowEndMs }],
-    working
-  ).map((w) => ({ start: w.start, end: w.end }));
+/** The company's holiday dates ("YYYY-MM-DD") between two dates, inclusive. */
+export async function getHolidayDates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { from: string; to: string }
+): Promise<{ data: Set<string>; error: PostgrestError | null }> {
+  const { data, error } = await client
+    .from("holiday")
+    .select("date")
+    .eq("companyId", companyId)
+    .gte("date", args.from)
+    .lte("date", args.to);
+  if (error) {
+    logger.error("Failed to load holidays", { companyId, error });
+    return { data: new Set(), error };
+  }
+  return {
+    data: new Set((data ?? []).map((row) => row.date.slice(0, 10))),
+    error: null
+  };
 }
 type CapacityOperation = {
   workCenterId: string | null;
@@ -11534,11 +11621,21 @@ export function getWorkCenterCalendarHoursByDay(args: {
   workCenters: { id: string; alwaysOn: boolean }[];
   workCenterShifts: { workCenterId: string; shiftId: string }[];
   locationShifts: CapacityShift[];
+  /** Shifts a work center is linked to at another location. */
+  linkedShifts?: CapacityShift[];
   weekDates: string[];
+  /** Company holidays: 0 hours, except on a lights-out station. */
+  holidayDates?: Set<string>;
 }): Map<string, Map<string, number>> {
   const { workCenters, workCenterShifts, locationShifts, weekDates } = args;
+  const holidayDates = args.holidayDates ?? new Set<string>();
 
-  const shiftById = new Map(locationShifts.map((shift) => [shift.id, shift]));
+  const shiftById = new Map(
+    [...locationShifts, ...(args.linkedShifts ?? [])].map((shift) => [
+      shift.id,
+      shift
+    ])
+  );
   const shiftIdsByWorkCenter = new Map<string, string[]>();
   for (const link of workCenterShifts) {
     const list = shiftIdsByWorkCenter.get(link.workCenterId);
@@ -11570,6 +11667,8 @@ export function getWorkCenterCalendarHoursByDay(args: {
       let hours: number;
       if (workCenter.alwaysOn) {
         hours = 24;
+      } else if (holidayDates.has(day)) {
+        hours = 0;
       } else if (wcShifts.length > 0) {
         hours = sumShiftHours(wcShifts, dow);
       } else if (locationShifts.length > 0) {
@@ -11582,6 +11681,20 @@ export function getWorkCenterCalendarHoursByDay(args: {
     result.set(workCenter.id, byDate);
   }
   return result;
+}
+
+/** Milliseconds of `windows` inside [from, to). */
+function workingOverlapMs(
+  windows: CalendarWindow[],
+  from: number,
+  to: number
+): number {
+  let total = 0;
+  for (const window of windows) {
+    const overlap = Math.min(to, window.end) - Math.max(from, window.start);
+    if (overlap > 0) total += overlap;
+  }
+  return total;
 }
 
 /**
@@ -11602,6 +11715,13 @@ export function buildPeopleCapacityBuckets(args: {
   reservations: CapacityReservation[];
   /** per-work-center calendar hours (the ladder above) — clamps null-workHours reservations. */
   calendarHoursByWorkCenter: Map<string, Map<string, number>>;
+  /**
+   * Each work center's working windows (`getWorkCenterWorkingWindows`). A
+   * booking's hours are divided over the working time inside each day, not
+   * its wall-clock span: an 8h booking from Monday 12:00 to Tuesday 11:30 on
+   * a 06:00–14:30 shift is 2.5h Monday and 5.5h Tuesday, never hours at night.
+   */
+  workingWindowsByWorkCenter?: Map<string, CalendarWindow[]>;
 }): {
   demandByWorkCenter: Record<
     string,
@@ -11614,7 +11734,8 @@ export function buildPeopleCapacityBuckets(args: {
     timezone,
     operations,
     reservations,
-    calendarHoursByWorkCenter
+    calendarHoursByWorkCenter,
+    workingWindowsByWorkCenter
   } = args;
   const weekStartDate = weekDates[0];
 
@@ -11680,14 +11801,22 @@ export function buildPeopleCapacityBuckets(args: {
       workMs = Math.min(spanMs, calendarMsWithinSpan);
     }
 
+    // A booking with no working time (a station with no windows) falls back to
+    // the wall-clock share.
+    const windows =
+      workingWindowsByWorkCenter?.get(reservation.resourceId) ?? [];
+    const workingSpanMs = workingOverlapMs(windows, startMs, endMs);
     for (const { day, startMs: dayStartMs, endMs: dayEndMs } of dayBounds) {
-      const overlapMs =
-        Math.min(endMs, dayEndMs) - Math.max(startMs, dayStartMs);
-      if (overlapMs > 0) {
-        const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
-        byDay[day] =
-          (byDay[day] ?? 0) + (overlapMs / spanMs) * (workMs / HOUR_MS);
-      }
+      const from = Math.max(startMs, dayStartMs);
+      const to = Math.min(endMs, dayEndMs);
+      if (to <= from) continue;
+      const share =
+        workingSpanMs > 0
+          ? workingOverlapMs(windows, from, to) / workingSpanMs
+          : (to - from) / spanMs;
+      if (share <= 0) continue;
+      const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
+      byDay[day] = (byDay[day] ?? 0) + share * (workMs / HOUR_MS);
     }
   }
 

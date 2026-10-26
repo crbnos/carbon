@@ -4100,6 +4100,26 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `apps/erp/app/hooks/useAppBadge.ts`, `apps/erp/public/service-worker.js`, the `send-push` badge count.
 
+## A scheduler decision is only stored when every write-back guard agrees
+
+**Context:** The scheduler balances an operation that has not started onto any work center of its process (F10, 2026-10-26).
+
+**Problem:** Two separate "never overwrite a stored work center" guards sat between the decision and the database: one in `applyWorkCenterSelections`, one in the engine's `buildWrites`. Fixing the first one alone changed nothing in the database. The `capacityReservation` row named the chosen station while `jobOperation.workCenterId` kept the old one, and every unit test still passed.
+
+**Rule:** When you change what the scheduler decides, trace the value to the write (`placementWrites`, `run-overlay.ts`). Test the decision and the write together, then remove the write fix and confirm a test goes red.
+
+**Applies to:** `packages/planning/src/scheduling/` — `apply-work-center-selections.ts`, `run-overlay.ts`, `scheduling-engine.ts`.
+
+## An SQL test that inserts an employee needs the company's root group first
+
+**Context:** Seeding employees in a `supabase/tests/*.test.sql` file (`rpc-privileges.test.sql`, 2026-10-26).
+
+**Problem:** The `employee` insert fires the employee-type group interceptor, which needs the company's "All Employees" root group. A test company made by hand has no root group, so the insert fails. `SET session_replication_role` is not permitted there.
+
+**Rule:** Insert the root group first, with the id `getGroupId` builds: `'00000000-0000-' || substr(c,1,4) || '-' || substr(c,5,4) || '-' || substr(c,9,12)` for company id `c`. Then insert the employee type and the employee.
+
+**Applies to:** SQL tests under `packages/database/supabase/tests/` that create employees.
+
 ## `setGenericQueryFilters` erases a query's row type
 
 **Context:** Inventory → Receiving read a view through `setGenericQueryFilters` and its route annotated the rows with a hand-written type (2026-10-26).
