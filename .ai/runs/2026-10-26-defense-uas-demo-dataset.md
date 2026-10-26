@@ -47,7 +47,12 @@ The stack came up, so the database checks ran:
 | `NODE_EXTRA_CA_CERTS=~/.portless/ca.pem pnpm db:seed:dev -- --email defense-demo@example.com --dataset defense` | seeded; MRP and schedule ran. Without the CA variable, user creation fails with "fetch failed" |
 
 The hero swap then ran from that seeded company (renamed to "Halberd Unmanned Systems"
-for the capture): step 18 of the ISR-4 assembly, light and dark, 3258 × 2128 WebP stills, and
-24 s 1920 × 1254 H.264 loops of the main build (step 6 to the end, 1.73× speed). Files
-replaced: `www/public/screenshots/assembly-{light,dark}.{webp,mp4,jpeg}` and
-`.github/assets/readme/assembly-{light,dark}.webp`.
+for the capture): step 17 of the ISR-4 assembly (propellers fitted, front view), light and
+dark, 1920 × 1254 WebP stills, and 9.4 s 1920 × 1254 H.264 loops of the end of the main build
+(step 15 to the end, 1.73× speed). Files replaced: `www/public/screenshots/assembly-{light,dark}.{webp,mp4,jpeg}`
+and `.github/assets/readme/assembly-{light,dark}.webp`.
+
+A later pass changed the propeller colour from near-black to gunmetal grey (sRGB 0.38, 0.39,
+0.41), so the propellers show against the dark theme. The bake ran again at the same 0.5 / 0.3
+deflection. Every node id stayed the same, so `assembly.ts` needed no edit. The pass also
+lightened `PRP-2270-CF.svg` to match and captured the hero loops and stills again.
