@@ -313,9 +313,11 @@ A bulk route that gets `allMatching` in place of ids calls
 6. Steps per slice: each reads `idsPerStep` ids (default 1,000; Jobs Release
    25, Batches Release 10, Batches Dissolve 100) and runs the action 100 ids
    per call (`BULK_CHUNK_SIZE`). Each call gets the `carry` the call before
-   it returned and returns the next one. Jobs Release carries the PO each
-   supplier went on, so a later slice adds to the PO an earlier slice made
-   (`bulkReleaseStartingPurchaseOrders`) instead of refusing the job.
+   it returned and returns the next one. Jobs Release and Batches Release
+   carry the PO each supplier went on, so a later slice adds to the PO an
+   earlier slice made (`bulkReleaseStartingPurchaseOrders`) instead of
+   refusing the job or batch. Inside one call, `releaseBatches` passes the
+   same map from batch to batch (`carriedPurchaseOrders`).
 7. Step `notify` sends `NotificationEvent.TableBulkAction` with the counts
    in the title: done, skipped, failed. Its event id
    (`table-bulk-action:{id}:done`) stops a second send on a retry.

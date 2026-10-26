@@ -164,7 +164,8 @@ type BulkActionRun = (
   carry?: TableBulkActionCarry
 ) => Promise<TableBulkActionResult>;
 
-/** The supplier → PO map a Jobs Release chunk carries to the next one. */
+/** The supplier → PO map a Jobs or Batches Release chunk carries to the
+ *  next one. */
 function carriedPurchaseOrders(
   carry: TableBulkActionCarry | undefined
 ): Record<string, string> {
@@ -266,16 +267,18 @@ const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
       failed: result.failed
     };
   },
-  "batches.release": async (ids, _params, context) => {
+  "batches.release": async (ids, _params, context, carry) => {
     const result = await bulkReleaseBatches(await jobServiceContext(context), {
-      batchIds: ids
+      batchIds: ids,
+      purchaseOrdersBySupplierId: carriedPurchaseOrders(carry)
     });
     if (!result.success) throw new Error(result.message);
     return {
       done: result.done,
       skipped: result.skipped,
       failed: result.failed.length,
-      ...problemLines(result.failed)
+      ...problemLines(result.failed),
+      carry: { purchaseOrdersBySupplierId: result.purchaseOrdersBySupplierId }
     };
   },
   "batches.dissolve": async (ids, _params, context) => {

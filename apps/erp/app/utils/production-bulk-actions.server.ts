@@ -218,20 +218,47 @@ export type BulkBatchResult =
     }
   | { success: false; message: string };
 
+export type BulkReleaseBatchesResult =
+  | (Extract<BulkBatchResult, { success: true }> & {
+      /** The PO each supplier's outside operations went on. The next slice
+       *  of the same release takes it. */
+      purchaseOrdersBySupplierId: Record<string, string>;
+    })
+  | { success: false; message: string };
+
 /**
  * Releases the Planned batches (`releaseBatches`): a batch whose member jobs
  * fail their checks, or that has a PO to choose, is reported in `failed`
  * while the rest still release. Any other status is skipped.
+ *
+ * `purchaseOrdersBySupplierId` is the map the previous slice returned: a
+ * supplier keeps the PO an earlier batch of this release created instead of
+ * being asked to choose.
  */
 export async function bulkReleaseBatches(
   ctx: ServiceContext,
-  { batchIds }: { batchIds: string[] }
-): Promise<BulkBatchResult> {
+  {
+    batchIds,
+    purchaseOrdersBySupplierId = {}
+  }: {
+    batchIds: string[];
+    purchaseOrdersBySupplierId?: Record<string, string>;
+  }
+): Promise<BulkReleaseBatchesResult> {
   const ids = [...new Set(batchIds.filter(Boolean))];
   if (ids.length === 0) {
-    return { success: true, done: 0, failed: [], skipped: 0 };
+    return {
+      success: true,
+      done: 0,
+      failed: [],
+      skipped: 0,
+      purchaseOrdersBySupplierId
+    };
   }
-  const result = await releaseBatches(ctx, { batchIds: ids });
+  const result = await releaseBatches(ctx, {
+    batchIds: ids,
+    carriedPurchaseOrders: purchaseOrdersBySupplierId
+  });
   if (result.error) {
     logger.error("Failed to release batches", {
       companyId: ctx.company.id,
@@ -246,7 +273,8 @@ export async function bulkReleaseBatches(
       readableId,
       message
     })),
-    skipped: result.data.skipped.length
+    skipped: result.data.skipped.length,
+    purchaseOrdersBySupplierId: result.data.purchaseOrdersBySupplierId
   };
 }
 

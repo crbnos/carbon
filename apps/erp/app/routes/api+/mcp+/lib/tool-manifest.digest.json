@@ -818,7 +818,7 @@
     {"name":"production_reassignAssemblyComponents","classification":"DESTRUCTIVE","schema":"71d135315dea","response":"3797626bd17e","permission":"production:update","paginates":false},
     {"name":"production_recalculateJobRequirements","classification":"WRITE","schema":"7f8214d1083f","response":"9e056a59d695","permission":"production:update","paginates":false},
     {"name":"production_reconvertAssemblyModel","classification":"DESTRUCTIVE","schema":"3797626bd17e","response":"277f7d872d8c","permission":"production:update","paginates":false},
-    {"name":"production_releaseBatches","classification":"WRITE","schema":"cdc90750ed35","response":"3c7bc982eae0","permission":"production:update","paginates":false},
+    {"name":"production_releaseBatches","classification":"WRITE","schema":"b6b41ae3a2b7","response":"340a1cb28ff4","permission":"production:update","paginates":false},
     {"name":"production_releaseJobs","classification":"WRITE","schema":"9d50f93189c8","response":"9655f6ea4d0d","permission":"production:update","paginates":false},
     {"name":"production_reopenJob","classification":"WRITE","schema":"4999bd4be598","response":"64aaffa78287","permission":"production:update","paginates":false},
     {"name":"production_reopenProductionPlanningActions","classification":"WRITE","schema":"8c0c1ffe0fab","response":"2a69a1e7d58b","permission":"production:update","paginates":false},

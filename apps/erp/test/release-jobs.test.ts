@@ -520,4 +520,78 @@ describe("releaseBatches", () => {
     expect(data?.failed.map((ref) => ref.batchId)).toEqual(["b3"]);
     expect(events).not.toContain("batch:b3");
   });
+
+  describe("a supplier's purchase order", () => {
+    const draft = { id: "po-1", purchaseOrderId: "PO1" };
+    // Each batch reads its suppliers after the batches before it released:
+    // the PO the first one created is a Draft by the time the second reads.
+    const readinessAfterFirstPo = () => {
+      let calls = 0;
+      vi.mocked(getJobReleaseReadiness).mockImplementation(
+        async (_client, jobIds) =>
+          ({
+            data: {
+              jobs: jobIds.map((id) => ready(id)),
+              suppliers: [
+                {
+                  supplierId: "s1",
+                  draftPurchaseOrders: calls++ === 0 ? [] : [draft]
+                }
+              ]
+            },
+            error: null
+          }) as any
+      );
+    };
+    // The PO map each purchase-order posting got, copied when it ran: the
+    // release keeps adding to the same object.
+    let creates: Record<string, string>[] = [];
+    const createdPo = (created: Record<string, string>) =>
+      postings({
+        create: async (input) => {
+          creates.push({ ...input.purchaseOrdersBySupplierId });
+          return {
+            data: { purchaseOrderIdsBySupplierId: created },
+            error: null
+          };
+        }
+      });
+    beforeEach(() => {
+      creates = [];
+      invoke.mockImplementation(createdPo({}));
+    });
+
+    it("is the one the first batch created, for every batch after it", async () => {
+      readinessAfterFirstPo();
+      invoke.mockImplementation(createdPo({ s1: "po-1" }));
+      const { data } = await release(["b1", "b3"]);
+      expect(data?.released.map((ref) => ref.batchId)).toEqual(["b1", "b3"]);
+      expect(creates).toEqual([{ s1: "new" }, { s1: "po-1" }]);
+      expect(data?.purchaseOrdersBySupplierId).toEqual({ s1: "po-1" });
+    });
+
+    it("is the one an earlier call of the same release carried", async () => {
+      readiness([ready("j3")], [{ supplierId: "s1", draftPurchaseOrders: [draft] }]);
+      const { data } = await releaseBatches(
+        contextFor(database(tables()).client),
+        { batchIds: ["b3"], carriedPurchaseOrders: { s1: "po-1" } }
+      );
+      expect(data?.released.map((ref) => ref.batchId)).toEqual(["b3"]);
+      expect(creates).toEqual([{ s1: "po-1" }]);
+    });
+
+    it("needs a choice when the Draft is not this release's own", async () => {
+      readiness([ready("j3")], [{ supplierId: "s1", draftPurchaseOrders: [draft] }]);
+      const { data } = await release(["b3"]);
+      expect(data?.failed).toEqual([
+        {
+          batchId: "b3",
+          readableId: "BAT3",
+          message:
+            "Outside operations need a purchase order choice — open the batch to release it"
+        }
+      ]);
+      expect(creates).toEqual([]);
+    });
+  });
 });

@@ -100,7 +100,10 @@ import {
 import type { JobStatus } from "./production.service";
 import * as service from "./production.service";
 import * as utils from "./production.utils";
-import { jobReleaseProblems } from "./ui/Jobs/job-release-logic";
+import {
+  bulkReleaseStartingPurchaseOrders,
+  jobReleaseProblems
+} from "./ui/Jobs/job-release-logic";
 
 const logger = getLogger("erp", "production");
 
@@ -942,16 +945,24 @@ export const completeJob = defineServiceFn({
  * `purchaseOrdersBySupplierId` is the planner's PO choice from the Release
  * dialog; unattended callers (bulk release) send none, and a batch that needs
  * a choice — a supplier with Draft POs to pick from — is refused so the
- * planner can release it from its dialog.
+ * planner can release it from its dialog. An unattended release of several
+ * batches passes `carriedPurchaseOrders`, the PO each supplier went on in an
+ * earlier batch of the same release: that supplier stays on it instead of
+ * being refused (`bulkReleaseStartingPurchaseOrders`). The PO map is
+ * returned for the next batch.
  */
 export const releaseBatchMemberJobs = defineServiceFn({
   input: z.object({
     jobIds: z.array(z.string()),
-    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional()
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
+    carriedPurchaseOrders: z.record(z.string(), z.string()).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { jobIds, purchaseOrdersBySupplierId }) {
+  async run(
+    ctx,
+    { jobIds, purchaseOrdersBySupplierId, carriedPurchaseOrders }
+  ) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
 
@@ -971,7 +982,12 @@ export const releaseBatchMemberJobs = defineServiceFn({
     const toRelease = (jobs.data ?? [])
       .filter((job) => job.status === "Draft" || job.status === "Planned")
       .map((job) => job.id);
-    if (toRelease.length === 0) return { releasedJobIds: [] as string[] };
+    if (toRelease.length === 0) {
+      return {
+        releasedJobIds: [] as string[],
+        purchaseOrdersBySupplierId: {} as Record<string, string>
+      };
+    }
 
     const readiness = await service.getJobReleaseReadiness(
       client,
@@ -996,28 +1012,34 @@ export const releaseBatchMemberJobs = defineServiceFn({
       );
     }
 
-    if (
-      !purchaseOrdersBySupplierId &&
-      readiness.data.suppliers.some((s) => s.draftPurchaseOrders.length > 0)
-    ) {
-      return ctx.error(
-        "rule",
-        "Outside operations need a purchase order choice — open the batch to release it"
+    let purchaseOrders: Record<string, string>;
+    if (purchaseOrdersBySupplierId) {
+      // Only a Draft PO of that supplier is a valid target; anything else is "new".
+      purchaseOrders = Object.fromEntries(
+        readiness.data.suppliers.map((supplier) => {
+          const picked = purchaseOrdersBySupplierId[supplier.supplierId];
+          return [
+            supplier.supplierId,
+            picked &&
+            supplier.draftPurchaseOrders.some((po) => po.id === picked)
+              ? picked
+              : "new"
+          ];
+        })
       );
+    } else {
+      const starting = bulkReleaseStartingPurchaseOrders(
+        readiness.data.suppliers,
+        carriedPurchaseOrders
+      );
+      if (starting.suppliersToChoose.size > 0) {
+        return ctx.error(
+          "rule",
+          "Outside operations need a purchase order choice — open the batch to release it"
+        );
+      }
+      purchaseOrders = starting.purchaseOrders;
     }
-
-    // Only a Draft PO of that supplier is a valid target; anything else is "new".
-    const purchaseOrders = Object.fromEntries(
-      readiness.data.suppliers.map((supplier) => {
-        const picked = purchaseOrdersBySupplierId?.[supplier.supplierId];
-        return [
-          supplier.supplierId,
-          picked && supplier.draftPurchaseOrders.some((po) => po.id === picked)
-            ? picked
-            : "new"
-        ];
-      })
-    );
 
     const released = await releaseCheckedJobs(ctx, {
       jobIds: toRelease,
@@ -1025,7 +1047,10 @@ export const releaseBatchMemberJobs = defineServiceFn({
     });
     if (released.error) return released.error;
     if (released.data.failure) return released.data.failure;
-    return { releasedJobIds: released.data.releasedJobIds };
+    return {
+      releasedJobIds: released.data.releasedJobIds,
+      purchaseOrdersBySupplierId: released.data.purchaseOrdersBySupplierId
+    };
   }
 });
 
@@ -1039,18 +1064,27 @@ export const releaseBatchMemberJobs = defineServiceFn({
  * batch on the floor, then tell the scheduler. A batch that is not Planned is
  * listed in `skipped`. `purchaseOrdersBySupplierId` is the release dialog's
  * choice; without one, a batch whose suppliers have Draft purchase orders is
- * refused.
+ * refused, except for the PO this release itself made: a supplier's
+ * outside operations from every batch go on the one PO the first batch
+ * created. `carriedPurchaseOrders` names the POs an earlier call of the same
+ * release made; the result returns the map for the next call.
+ *
+ * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
  *
  * @mcp
  */
 export const releaseBatches = defineServiceFn({
   input: z.object({
     batchIds: z.array(z.string()).min(1),
-    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional()
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()).optional(),
+    carriedPurchaseOrders: z.record(z.string(), z.string()).optional()
   }),
   permission: { update: "production" },
 
-  async run(ctx, { batchIds, purchaseOrdersBySupplierId }) {
+  async run(
+    ctx,
+    { batchIds, purchaseOrdersBySupplierId, carriedPurchaseOrders }
+  ) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     const ids = [...new Set(batchIds)];
@@ -1079,7 +1113,19 @@ export const releaseBatches = defineServiceFn({
       });
       return false;
     });
-    if (planned.length === 0) return { released: [], failed, skipped };
+    // The PO each supplier went on so far: a "new" PO the first batch
+    // creates is the one the batches after it use.
+    const purchaseOrders = {
+      ...(purchaseOrdersBySupplierId ?? carriedPurchaseOrders)
+    };
+    if (planned.length === 0) {
+      return {
+        released: [],
+        failed,
+        skipped,
+        purchaseOrdersBySupplierId: purchaseOrders
+      };
+    }
 
     const members = await client
       .from("jobOperation")
@@ -1106,12 +1152,15 @@ export const releaseBatches = defineServiceFn({
       const ref = { batchId: batch.id, readableId: batch.readableId };
       const jobs = await releaseBatchMemberJobs(ctx, {
         jobIds: (jobIdsByBatch[batch.id] ?? []).map((op) => op.jobId),
-        purchaseOrdersBySupplierId
+        ...(purchaseOrdersBySupplierId
+          ? { purchaseOrdersBySupplierId: purchaseOrders }
+          : { carriedPurchaseOrders: purchaseOrders })
       });
       if (jobs.error) {
         failed.push({ ...ref, message: jobs.error.message });
         continue;
       }
+      Object.assign(purchaseOrders, jobs.data.purchaseOrdersBySupplierId);
 
       const result = await service.releaseJobOperationBatch(
         client,
@@ -1140,7 +1189,12 @@ export const releaseBatches = defineServiceFn({
       released.push(ref);
     }
 
-    return { released, failed, skipped };
+    return {
+      released,
+      failed,
+      skipped,
+      purchaseOrdersBySupplierId: purchaseOrders
+    };
   }
 });
 
