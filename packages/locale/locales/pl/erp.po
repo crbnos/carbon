@@ -18242,6 +18242,9 @@ msgstr "Częstotliwość Stawki"
 msgid "Rate Limit"
 msgstr "Limit Szybkości"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Kurs używany do przeliczenia kont kapitału własnego w konsolidacji (IAS 21). Pozostaw puste, aby użyć bieżącego kursu wymiany."
 

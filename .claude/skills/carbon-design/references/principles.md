@@ -174,7 +174,8 @@ bug: "pending no longer lies" (`daaddf5a85`), read-only cells don't show an edit
   failed, loading vs nothing, editable vs read-only, saved vs pending.)*
 
 ### P14. Status is color + icon + words, from one map
-`<Status color>` = tinted uppercase pill + a fixed icon per color + tooltip. Colors come from
+`<Status color>` = tinted uppercase pill + a fixed icon per color; a tooltip only when it adds
+something (`tooltip`) or the label is hidden (`iconOnly`) — never one repeating the label. Colors come from
 `packages/utils/src/status-colors.ts`; choose by lifecycle *position* (not started gray,
 waiting yellow, released/with another party blue, being worked orange, done green, dead/failed
 red, special purple).

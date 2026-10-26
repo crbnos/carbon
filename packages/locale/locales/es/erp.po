@@ -18242,6 +18242,9 @@ msgstr "Frecuencia de Tasa"
 msgid "Rate Limit"
 msgstr "Límite de Velocidad"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Tipo de cambio utilizado para la conversión de cuentas de patrimonio en la consolidación (IAS 21). Déjelo en blanco para usar el tipo de cambio actual."
 

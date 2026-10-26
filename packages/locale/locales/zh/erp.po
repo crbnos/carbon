@@ -18242,6 +18242,9 @@ msgstr "费率频率"
 msgid "Rate Limit"
 msgstr "速率限制"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空则使用当前汇率。"
 

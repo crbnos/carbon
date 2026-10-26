@@ -18242,6 +18242,9 @@ msgstr "レート頻度"
 msgid "Rate Limit"
 msgstr "レート制限"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "連結における純資産勘定の換算に使用されるレート（IAS 21）。空欄の場合は現在の為替レートが使用されます。"
 

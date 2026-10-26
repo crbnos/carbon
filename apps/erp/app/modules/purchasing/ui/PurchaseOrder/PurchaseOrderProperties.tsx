@@ -25,7 +25,6 @@ import {
   LuCirclePlay,
   LuCopy,
   LuExternalLink,
-  LuInfo,
   LuKeySquare,
   LuLink,
   LuRefreshCcw
@@ -35,8 +34,8 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Assignee,
-  DateTime,
   EmployeeAvatar,
+  ExchangeRateUpdatedAt,
   Hyperlink,
   useOptimisticAssignment
 } from "~/components";
@@ -458,13 +457,9 @@ const PurchaseOrderProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.purchaseOrder?.exchangeRateUpdatedAt && (
-                <DateTime
+                <ExchangeRateUpdatedAt
                   value={routeData?.purchaseOrder?.exchangeRateUpdatedAt}
-                  variant="absolute"
-                  side="bottom"
-                >
-                  <LuInfo className="h-4 w-4 text-muted-foreground" />
-                </DateTime>
+                />
               )}
             </HStack>
             <HStack className="w-full justify-between">

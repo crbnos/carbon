@@ -18242,6 +18242,9 @@ msgstr "Oran Sıklığı"
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur (IAS 21). Güncel döviz kurunu kullanmak için boş bırakın."
 
