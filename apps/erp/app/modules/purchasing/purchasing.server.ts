@@ -4118,6 +4118,61 @@ export const getPurchaseOrder = defineServiceFn({
 });
 
 /**
+ * Get who approved a purchase order and when.
+ *
+ * @remarks
+ * Reads the order's latest approval request that was not cancelled. When it
+ * is Approved, answers the approver (`approvedBy` is the name, `approvedById`
+ * the user id) and `approvedDate`, the business day of the decision in the
+ * company's timezone. All three are null when the order was never approved,
+ * is waiting on a decision, or its latest request was rejected.
+ *
+ * @param purchaseOrderId - The purchase order's id (`po_…`), not its number.
+ * @mcp read
+ */
+export const getPurchaseOrderApproval = defineServiceFn({
+  input: z.object({ purchaseOrderId: z.string().min(1) }),
+  permission: { view: "purchasing" },
+  async run(ctx, { purchaseOrderId }) {
+    // approvalRequest has no RLS policies: prove the caller can see the order.
+    const order = await ctx.asCaller.supabase
+      .from("purchaseOrder")
+      .select("id")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (order.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load purchase order",
+        order.error
+      );
+    }
+    if (!order.data) {
+      return ctx.error("notFound", "Purchase order not found");
+    }
+
+    const approval = await service.getPurchaseOrderApproval(
+      ctx.asSystem.supabase,
+      {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        timezone: await getCompanyTimeZone(
+          ctx.asSystem.supabase,
+          ctx.company.id
+        )
+      }
+    );
+    return {
+      purchaseOrderId,
+      approvedBy: approval?.approvedBy ?? null,
+      approvedById: approval?.approvedById ?? null,
+      approvedDate: approval?.approvedDate ?? null
+    };
+  }
+});
+
+/**
  * Get purchase orders
  *
  * @mcp read

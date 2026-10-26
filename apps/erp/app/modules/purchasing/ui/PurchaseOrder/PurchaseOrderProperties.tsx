@@ -19,6 +19,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import {
@@ -67,6 +68,10 @@ const PurchaseOrderProperties = () => {
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     supplierQuote: SupplierQuote;
+    approval: {
+      approvedById: string | null;
+      approvedDate: string;
+    } | null;
   }>(path.to.purchaseOrder(orderId));
 
   const fetcher = useAction<typeof action>({
@@ -489,6 +494,18 @@ const PurchaseOrderProperties = () => {
           employeeId={routeData?.purchaseOrder?.createdBy ?? null}
         />
       </VStack>
+
+      {routeData?.approval && (
+        <VStack spacing={2}>
+          <span className="text-xs font-medium text-muted-foreground">
+            <Trans>Approved By</Trans>
+          </span>
+          <EmployeeAvatar employeeId={routeData.approval.approvedById} />
+          <span className="text-xs text-muted-foreground">
+            {formatDate(routeData.approval.approvedDate)}
+          </span>
+        </VStack>
+      )}
 
       <CustomFormInlineFields
         customFields={

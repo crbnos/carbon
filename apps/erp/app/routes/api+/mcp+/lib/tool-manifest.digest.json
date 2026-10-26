@@ -1,5 +1,5 @@
 {
-  "totalTools": 1617,
+  "totalTools": 1618,
   "modules": 14,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -948,6 +948,7 @@
     {"name":"purchasing_getLeaseSchedule","classification":"READ","schema":"dc3a69d0ccf7","response":"8c06f01ac6f1","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getLinkedSupplierQuotes","classification":"READ","schema":"a03ea9b74e8a","response":"cb143b1fe761","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrder","classification":"READ","schema":"47850e9f092b","response":"259ccf5593fd","permission":"purchasing:view","paginates":false},
+    {"name":"purchasing_getPurchaseOrderApproval","classification":"READ","schema":"1dc426e5562a","response":"fdc5ca69959c","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrderDelivery","classification":"READ","schema":"47850e9f092b","response":"1b814db8a608","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrderLine","classification":"READ","schema":"555dd21fcbd0","response":"d1fd90a42c26","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrderLines","classification":"READ","schema":"47850e9f092b","response":"085f671f872c","permission":"purchasing:view","paginates":false},
