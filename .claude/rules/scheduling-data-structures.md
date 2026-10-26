@@ -459,7 +459,10 @@ only; its output is read by nothing in the placement path (spec
   placed end, the forecast finish) while clearing
   `scheduleOutdatedReason`/`scheduleOutdatedAt` for each job. The engine's `buildWrites` also computes the
   **newly-late** flag (was on-time-or-unforecast before, now projected past `dueDate`
-  on the location calendar) for the wave's digest.
+  on the location calendar) for the wave's digest. Every due-date judgement — need-by
+  targets, lateness conflicts, newly-late, the behind-target sentence — reads
+  `committedDueDate` (`priority-calculator.ts`): only a Hard or Soft Deadline job has
+  one; the date left on an ASAP or No Deadline job (the job form hides it) is ignored.
 - **Behind-target attribution (informational only):** when the JOB's verdict is late,
   `getCause()` appends `composeBehindTarget` (`conflict-messages.ts`) — "First behind
   target: {op} (due X, projected Y)", the first op in topological order whose

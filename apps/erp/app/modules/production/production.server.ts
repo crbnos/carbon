@@ -1596,7 +1596,9 @@ export const setJobItem = defineServiceFn({
  * Refused when any job is locked. Each job's priority is recalculated among
  * the jobs at its location on the new date (`nextJobPriority`), in one read
  * and one write for every job. A field left out keeps the job's current
- * value; a `dueDate` of null clears it.
+ * value; a `dueDate` of null clears it. The two stay in step
+ * (`nextJobDeadline`): ASAP and No Deadline clear the date, and a date given
+ * to a No Deadline job makes it a Soft Deadline.
  *
  * @mcp
  */
@@ -1617,8 +1619,7 @@ export const setJobDeadline = defineServiceFn({
     const moves = jobs.map((job) => ({
       id: job.id,
       locationId: job.locationId,
-      dueDate: dueDate !== undefined ? dueDate || null : job.dueDate,
-      deadlineType: deadlineType ?? job.deadlineType
+      ...service.nextJobDeadline(job, { dueDate, deadlineType })
     }));
 
     // The jobs already on each new date at each location, in one read: a

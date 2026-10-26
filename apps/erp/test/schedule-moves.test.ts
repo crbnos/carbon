@@ -15,7 +15,10 @@ import {
   moveScheduleJob,
   reorderScheduleOperations
 } from "../app/modules/production/production.server";
-import { deadlineTypeForDueDate } from "../app/modules/production/production.service";
+import {
+  deadlineTypeForDueDate,
+  nextJobDeadline
+} from "../app/modules/production/production.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
 type Answer = { data: unknown; error: { message: string } | null };
@@ -220,6 +223,45 @@ describe("deadlineTypeForDueDate", () => {
     ["No Deadline", null, "No Deadline"]
   ] as const)("a %s job given due date %s is %s", (type, dueDate, expected) => {
     expect(deadlineTypeForDueDate(type, dueDate)).toBe(expected);
+  });
+});
+
+describe("nextJobDeadline", () => {
+  const soft = { dueDate: "2026-10-24", deadlineType: "Soft Deadline" } as const;
+  const undated = { dueDate: null, deadlineType: "No Deadline" } as const;
+
+  it.each([
+    ["ASAP clears the date", soft, { deadlineType: "ASAP" }, null, "ASAP"],
+    [
+      "No Deadline clears the date",
+      soft,
+      { deadlineType: "No Deadline" },
+      null,
+      "No Deadline"
+    ],
+    [
+      "Hard Deadline keeps it",
+      soft,
+      { deadlineType: "Hard Deadline" },
+      "2026-10-24",
+      "Hard Deadline"
+    ],
+    [
+      "a date makes a No Deadline job Soft",
+      undated,
+      { dueDate: "2026-10-30" },
+      "2026-10-30",
+      "Soft Deadline"
+    ],
+    [
+      "clearing the date makes a Soft job No Deadline",
+      soft,
+      { dueDate: null },
+      null,
+      "No Deadline"
+    ]
+  ] as const)("%s", (_, job, change, dueDate, deadlineType) => {
+    expect(nextJobDeadline(job, change)).toEqual({ dueDate, deadlineType });
   });
 });
 

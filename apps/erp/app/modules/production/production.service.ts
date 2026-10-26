@@ -679,6 +679,36 @@ export function deadlineTypeForDueDate(
 }
 
 /**
+ * A job's due date and deadline type after a change to either, kept in step:
+ * a type that takes no date (ASAP, No Deadline) clears the date, which the
+ * job form hides for those; a date set on its own follows
+ * `deadlineTypeForDueDate`.
+ */
+export function nextJobDeadline(
+  job: { dueDate: string | null; deadlineType: DeadlineType },
+  change: { dueDate?: string | null; deadlineType?: DeadlineType }
+): { dueDate: string | null; deadlineType: DeadlineType } {
+  const dueDate =
+    change.dueDate !== undefined ? change.dueDate || null : job.dueDate;
+  if (change.deadlineType !== undefined) {
+    const takesDate =
+      change.deadlineType === "Hard Deadline" ||
+      change.deadlineType === "Soft Deadline";
+    return {
+      dueDate: takesDate ? dueDate : null,
+      deadlineType: change.deadlineType
+    };
+  }
+  return {
+    dueDate,
+    deadlineType:
+      change.dueDate !== undefined
+        ? deadlineTypeForDueDate(job.deadlineType, dueDate)
+        : job.deadlineType
+  };
+}
+
+/**
  * The priority of a job placed among `siblings` — the jobs that share its due
  * date (or lack of one) at its location, in priority order. Fractional
  * indexing: before the first job whose deadline type ranks lower than this
