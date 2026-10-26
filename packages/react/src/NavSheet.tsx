@@ -2,6 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+/// <reference path="./css.d.ts" />
+// Packages that import @carbon/react typecheck this file in their own program,
+// where this package's css.d.ts is not included; the `?inline` imports need it.
+
 "use client";
 
 import type { ReactNode } from "react";
