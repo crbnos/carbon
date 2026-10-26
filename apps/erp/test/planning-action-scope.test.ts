@@ -10,105 +10,57 @@ import {
   resolvePlanningActionScope
 } from "../app/modules/production/ui/Planning/planning-action-scope";
 
+const partFilter = { column: "type", operator: "eq", value: "Part" };
+
 describe("resolvePlanningActionScope", () => {
-  it("passes the grid's own filters through untouched and restricts nothing", () => {
-    const filters = [{ column: "type", operator: "eq", value: "Part" }];
-    expect(
-      resolvePlanningActionScope({ filters })
-    ).toEqual({
-      gridFilters: filters,
+  it("passes the grid's own filters through and restricts nothing", () => {
+    expect(resolvePlanningActionScope({ filters: [partFilter] })).toEqual({
+      gridFilters: [partFilter],
       actionTypes: undefined,
       actionAssignees: undefined
     });
   });
 
-  it("strips the Actions-column filter and returns it as the RPC's type argument", () => {
-    const { gridFilters, actionTypes } = resolvePlanningActionScope({
-      filters: [
-        { column: "type", operator: "eq", value: "Part" },
-        { column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "Cancel" }
-      ],
-    });
-    expect(gridFilters).toEqual([
-      { column: "type", operator: "eq", value: "Part" }
-    ]);
-    expect(actionTypes).toEqual(["Cancel"]);
-  });
-
-  it("accepts the multi-value `in` encoding, without duplicates", () => {
+  it("strips the Actions and Assignee filters into the RPC's arguments", () => {
     expect(
       resolvePlanningActionScope({
         filters: [
-          {
-            column: PLANNING_ACTIONS_COLUMN,
-            operator: "in",
-            value: "Cancel,Order"
-          },
-          { column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "Cancel" }
-        ],
-          }).actionTypes
-    ).toEqual(["Cancel", "Order"]);
-  });
-
-  it("strips the Assignee filter and returns its people as the RPC's assignees argument", () => {
-    expect(
-      resolvePlanningActionScope({
-        filters: [
-          { column: "type", operator: "eq", value: "Part" },
-          { column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "user-a" }
-        ]
-      })
-    ).toEqual({
-      gridFilters: [{ column: "type", operator: "eq", value: "Part" }],
-      actionTypes: undefined,
-      actionAssignees: ["user-a"]
-    });
-  });
-
-  it("accepts several people in the `in` encoding, without duplicates", () => {
-    expect(
-      resolvePlanningActionScope({
-        filters: [
-          {
-            column: PLANNING_ASSIGNEE_COLUMN,
-            operator: "in",
-            value: "user-a,user-b"
-          },
-          { column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "user-a" }
-        ]
-      }).actionAssignees
-    ).toEqual(["user-a", "user-b"]);
-  });
-
-  it("returns assignees and types together — the RPC matches both on the same action", () => {
-    expect(
-      resolvePlanningActionScope({
-        filters: [
+          partFilter,
           { column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "Cancel" },
           { column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "user-a" }
         ]
       })
     ).toEqual({
-      gridFilters: [],
+      gridFilters: [partFilter],
       actionTypes: ["Cancel"],
       actionAssignees: ["user-a"]
     });
   });
 
-  it("an empty Assignee filter value restricts nothing", () => {
-    expect(
-      resolvePlanningActionScope({
-        filters: [{ column: PLANNING_ASSIGNEE_COLUMN, operator: "eq", value: "" }]
-      }).actionAssignees
-    ).toBeUndefined();
-  });
+  it.each([
+    ["actionTypes", PLANNING_ACTIONS_COLUMN],
+    ["actionAssignees", PLANNING_ASSIGNEE_COLUMN]
+  ] as const)(
+    "reads the `in` encoding into %s without duplicates",
+    (key, column) => {
+      const scope = resolvePlanningActionScope({
+        filters: [
+          { column, operator: "in", value: "x,y" },
+          { column, operator: "eq", value: "x" }
+        ]
+      });
+      expect(scope[key]).toEqual(["x", "y"]);
+    }
+  );
 
-  it("an empty filter value restricts nothing", () => {
-    expect(
-      resolvePlanningActionScope({
-        filters: [{ column: PLANNING_ACTIONS_COLUMN, operator: "eq", value: "" }],
-          }).actionTypes
-    ).toBeUndefined();
+  it.each([
+    ["actionTypes", PLANNING_ACTIONS_COLUMN],
+    ["actionAssignees", PLANNING_ASSIGNEE_COLUMN]
+  ] as const)("an empty value restricts no %s", (key, column) => {
+    const scope = resolvePlanningActionScope({
+      filters: [{ column, operator: "eq", value: "" }]
+    });
+    expect(scope[key]).toBeUndefined();
   });
 });
 
@@ -120,26 +72,18 @@ describe("actionsOfTypes", () => {
     { id: "d", type: "Cancel" }
   ] as const;
 
-  it("shows every action when the grid is not filtered by type", () => {
-    expect(actionsOfTypes(actions, undefined)).toEqual([...actions]);
-    expect(actionsOfTypes(actions, null)).toEqual([...actions]);
-    expect(actionsOfTypes(actions, [])).toEqual([...actions]);
-  });
+  it.each([undefined, null, []])(
+    "shows every action when the type filter is %j",
+    (types) => {
+      expect(actionsOfTypes(actions, types)).toEqual([...actions]);
+    }
+  );
 
-  it("keeps only the filtered type, in the original order", () => {
-    expect(actionsOfTypes(actions, ["Expedite"]).map((a) => a.id)).toEqual([
-      "a",
-      "c"
-    ]);
-  });
-
-  it("keeps any of several filtered types", () => {
-    expect(
-      actionsOfTypes(actions, ["Cancel", "Defer"]).map((a) => a.id)
-    ).toEqual(["b", "d"]);
-  });
-
-  it("returns nothing when the row has no action of the filtered type", () => {
-    expect(actionsOfTypes(actions, ["Order"])).toEqual([]);
+  it.each([
+    [["Expedite"], ["a", "c"]],
+    [["Cancel", "Defer"], ["b", "d"]],
+    [["Order"], []]
+  ])("keeps only actions of %j, in the original order", (types, ids) => {
+    expect(actionsOfTypes(actions, types).map((a) => a.id)).toEqual(ids);
   });
 });

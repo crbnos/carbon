@@ -67,6 +67,7 @@ import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem
 } from "~/modules/inventory/inventory.service";
+import { isShippableEntityStatus } from "~/modules/inventory/inventory.utils";
 import type {
   ItemTracking,
   RentalShipmentLine,
@@ -753,13 +754,11 @@ function ShipmentLineItem({
   );
 }
 
-// Sales-return shipments (source "Sales Return Order") ship returned stock,
-// which is deliberately On Hold until it leaves — mirror the status
-// lines.tracking accepts when validating entities for this source.
-function expectedEntityStatus(shipment?: Shipment) {
-  return shipment?.sourceDocument === "Sales Return Order"
-    ? "On Hold"
-    : "Available";
+// The statuses lines.tracking accepts for this shipment's source: On Hold
+// returned stock on a sales return, Available or Rejected units on a supplier
+// return, Available stock otherwise.
+function isShippable(shipment: Shipment | undefined, status: unknown) {
+  return isShippableEntityStatus(shipment?.sourceDocument, status as string);
 }
 
 function BatchForm({
@@ -827,7 +826,7 @@ function BatchForm({
     : null;
   const isBatchNumberValid =
     // @ts-expect-error TS2339 - TODO: fix type
-    resolvedBatch?.status === expectedEntityStatus(shipment);
+    isShippable(shipment, resolvedBatch?.status);
 
   // Verify batch quantity is sufficient for the shipped quantity
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -845,7 +844,7 @@ function BatchForm({
       if (
         batchNumber &&
         // @ts-expect-error TS2339 - TODO: fix type
-        batchNumber.status === expectedEntityStatus(shipment) &&
+        isShippable(shipment, batchNumber.status) &&
         // @ts-expect-error TS2339 - TODO: fix type
         (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
@@ -920,7 +919,7 @@ function BatchForm({
     );
 
     // @ts-expect-error TS2339 - TODO: fix type
-    if (batchNumber && batchNumber.status !== expectedEntityStatus(shipment)) {
+    if (batchNumber && !isShippable(shipment, batchNumber.status)) {
       // @ts-expect-error TS2339 - TODO: fix type
       setError(`Batch number is ${batchNumber.status}`);
       setValues({
@@ -987,8 +986,8 @@ function BatchForm({
   // scanners, and the QR affordance opens the list of batches this line accepts.
   // Quantity is shown alongside each one because a batch smaller than the
   // shipped quantity is split on posting, which is worth seeing before picking.
-  const selectableBatches = (batchNumbers?.data ?? []).filter(
-    (entity) => entity.status === expectedEntityStatus(shipment)
+  const selectableBatches = (batchNumbers?.data ?? []).filter((entity) =>
+    isShippable(shipment, entity.status)
   );
 
   return (
@@ -1174,7 +1173,7 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== expectedEntityStatus(shipment)) {
+      if (!isShippable(shipment, serialNumber.status)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
@@ -1296,7 +1295,7 @@ function SerialForm({
   // this off the same data `validateSerialNumber` checks keeps them in step.
   const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
     (entity) =>
-      entity.status === expectedEntityStatus(shipment) &&
+      isShippable(shipment, entity.status) &&
       !serialNumbers.some((assigned) => {
         if (!assigned.id) return false;
         const resolved = resolveTrackedEntity(
@@ -1344,7 +1343,7 @@ function SerialForm({
             : null;
           const isSerialNumberValid =
             // @ts-expect-error TS2339 - TODO: fix type
-            resolvedSerial?.status === expectedEntityStatus(shipment);
+            isShippable(shipment, resolvedSerial?.status);
 
           return (
             <div

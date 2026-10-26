@@ -73,7 +73,11 @@ import {
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
+import {
+  storage,
+  storedDocumentPdfName,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -114,7 +118,6 @@ import {
   wholeRateUnits
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
@@ -124,6 +127,7 @@ import type {
 import { generateText, Output } from "ai";
 import { type Selectable, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -151,7 +155,6 @@ import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -11934,9 +11937,7 @@ export async function attachDocumentPdf(
   }
   const companyId = ctx.company.id;
   const file = await args.pdf.arrayBuffer();
-  const fileName = stripSpecialCharacters(
-    `${args.identifier} - ${datetime.timestamp().slice(0, -5)}.pdf`
-  );
+  const fileName = storedDocumentPdfName(args.identifier, datetime.timestamp());
   const documentFilePath = `${companyId}/${args.folder}/${fileName}`;
 
   const upload = await storage(ctx.asSystem.supabase)
@@ -12210,8 +12211,8 @@ export async function emailQuote(
       lastName: user.data.lastName
     }
   });
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
+  const html = await render(emailTemplate);
+  const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
     .createSignedUrl(args.documentFilePath, 3600);
@@ -12223,6 +12224,7 @@ export async function emailQuote(
   }
 
   await trigger("send-email", {
+    document: true,
     to: [user.data.email, customerContact.data.contact!.email!],
     cc: args.cc?.length ? args.cc : undefined,
     from: user.data.email,

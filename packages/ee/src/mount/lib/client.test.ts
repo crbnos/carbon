@@ -8,20 +8,16 @@ import {
   type AxiosRequestConfig,
   type AxiosResponse
 } from "axios";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
+import { MountClient } from "./client";
 
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({})
-}));
-vi.mock("../../integrations/secrets", () => ({
-  resolveIntegrationSecrets: vi.fn()
-}));
-vi.mock("./service", () => ({
-  getMountIntegration: vi.fn(),
-  MOUNT_INTEGRATION_ID: "mount"
-}));
+// Import-safety: @carbon/auth builds a Supabase client at import.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+});
 
-const { MountClient } = await import("./client");
+afterAll(() => vi.unstubAllEnvs());
 
 const COMPANY_ID = "company_1";
 

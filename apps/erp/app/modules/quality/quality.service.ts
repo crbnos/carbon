@@ -1646,6 +1646,7 @@ export async function insertIssue(
     items?: string[];
     jobOperationId?: string;
     customerId?: string;
+    supplierId?: string;
     salesOrderLineId?: string;
     operationSupplierProcessId?: string;
     customFields?: Json;
@@ -1679,6 +1680,7 @@ export async function insertIssue(
     items,
     jobOperationId,
     customerId,
+    supplierId,
     salesOrderLineId,
     operationSupplierProcessId,
     ...data
@@ -1789,6 +1791,24 @@ export async function insertIssue(
     }
   }
 
+  // The outside-processing operation's supplier (below) is skipped when it is
+  // this one, so the issue never lists a supplier twice.
+  if (supplierId) {
+    const supplierInsert = await client.from("nonConformanceSupplier").insert([
+      {
+        companyId: input.companyId,
+        createdBy: input.createdBy,
+        supplierId,
+        nonConformanceId: ncrId
+      }
+    ]);
+    if (supplierInsert.error) {
+      logger.error("Failed to insert non-conformance supplier", {
+        error: supplierInsert.error
+      });
+    }
+  }
+
   if (salesOrderLineId) {
     const salesOrderLine = await client
       .from("salesOrderLine")
@@ -1825,7 +1845,10 @@ export async function insertIssue(
       .eq("companyId", input.companyId)
       .single();
 
-    if (operationSupplierProcess.data) {
+    if (
+      operationSupplierProcess.data &&
+      operationSupplierProcess.data.supplierId !== supplierId
+    ) {
       const nonConformanceSupplierInsert = await client
         .from("nonConformanceSupplier")
         .insert([
@@ -2196,11 +2219,37 @@ export async function getReceiptInspections(
 ) {
   return client
     .from("inspection")
-    .select("id, inspectionId, itemId, itemReadableId, status")
+    .select(
+      "id, inspectionId, itemId, itemReadableId, sourceDocumentLineId, status"
+    )
     .eq("sourceDocument", "Receipt")
     .eq("sourceDocumentId", receiptId)
     .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
+}
+
+/**
+ * The items, of those given, that are inspected at receipt: each has a
+ * Receipt-usage inspection document assigned, which is what makes posting a
+ * purchase receipt open an inspection lot for the line.
+ */
+export async function getReceiptInspectedItemIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[]
+) {
+  if (itemIds.length === 0) return { data: [] as string[], error: null };
+  const assignments = await client
+    .from("itemInspectionDocumentAssignment")
+    .select("itemId")
+    .eq("usage", "Receipt")
+    .eq("companyId", companyId)
+    .in("itemId", itemIds);
+  if (assignments.error) return { data: null, error: assignments.error };
+  return {
+    data: [...new Set(assignments.data.map((a) => a.itemId))],
+    error: null
+  };
 }
 
 // Receipt-sourced lots only: the received tracked entities are linked to the
@@ -2215,6 +2264,20 @@ export async function getInspectionTrackedEntities(
     .select("*")
     .eq("attributes ->> Receipt Line", receiptLineId)
     .eq("companyId", companyId);
+}
+
+/** The issues an inspection is linked to (a rejected lot's NCR, or a manual link). */
+export async function getInspectionIssues(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceInspection")
+    .select("id, nonConformance(id, nonConformanceId, name, status)")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
 }
 
 export async function getInspectionSamplingPlans(

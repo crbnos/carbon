@@ -82,7 +82,7 @@ import {
   evaluateSalesRuleLines,
   isBlocked
 } from "@carbon/ee/rules.server";
-import { storage } from "@carbon/files";
+import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import {
   loadSalesInvoiceDocument,
@@ -155,11 +155,11 @@ import {
   type VarianceAllocation
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Selectable, Transaction } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -212,7 +212,6 @@ import {
 import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -5237,8 +5236,9 @@ export async function sendPostedSalesInvoice(
       storageUrl: SUPABASE_URL ?? ""
     });
     const file = await renderSalesInvoicePdf(document.pdfProps);
-    const fileName = stripSpecialCharacters(
-      `${salesInvoice.data.invoiceId} - ${datetime.timestamp().slice(0, -5)}.pdf`
+    const fileName = storedDocumentPdfName(
+      salesInvoice.data.invoiceId ?? "",
+      datetime.timestamp()
     );
     const { opportunityId } = salesInvoice.data;
     const path = `${companyId}/${opportunityId ? `opportunity/${opportunityId}` : `sales-invoice/${invoiceId}`}/${fileName}`;
@@ -5319,8 +5319,8 @@ export async function sendPostedSalesInvoice(
           lastName: seller.data.lastName
         }
       });
-      const html = await renderAsync(template);
-      const text = await renderAsync(template, { plainText: true });
+      const html = await render(template);
+      const text = await render(template, { plainText: true });
       const signed = await storage(serviceRole)
         .company(companyId)
         .createSignedUrl(filed.path, 3600);
@@ -5332,6 +5332,7 @@ export async function sendPostedSalesInvoice(
       }
 
       await trigger("send-email", {
+        document: true,
         to: [seller.data.email, contact.email!],
         cc: args.cc?.length ? args.cc : undefined,
         from: seller.data.email,
@@ -10068,6 +10069,10 @@ export async function supplierReturnCarriedCosts(
       .select(["documentId", "itemId", "quantity", "cost"])
       .where("documentType", "=", "Purchase Return Shipment")
       .where("documentId", "in", shipmentIds)
+      // What the shipment relieved. A shipment that ships units an inspection
+      // reject wrote off first puts them back (a positive row at the
+      // write-off's cost), which is not carried cost the return took out.
+      .where("quantity", "<", 0)
       .where("companyId", "=", companyId)
       .execute(),
     trx

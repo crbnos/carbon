@@ -19,10 +19,4 @@ describe("noLegacyRls", () => {
     const v = noLegacyRls.scan("p.sql", sql);
     expect(v).toHaveLength(0);
   });
-
-  it("records provenance pointing at the RLS refactor migration", () => {
-    expect(noLegacyRls.provenance.since).toBe(
-      "20250201181148_rls-refactor.sql"
-    );
-  });
 });

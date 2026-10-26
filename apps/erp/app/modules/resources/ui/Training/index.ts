@@ -13,3 +13,7 @@ export { default as TrainingHeader } from "./TrainingHeader";
 export { default as TrainingProperties } from "./TrainingProperties";
 export { default as TrainingStatus } from "./TrainingStatus";
 export { default as TrainingsTable } from "./TrainingsTable";
+export {
+  default as TrainingVideo,
+  TrainingVideoPlayer
+} from "./TrainingVideo";

@@ -109,7 +109,7 @@ Conventions (see also `conventions-services.md`):
 - Always scope list queries by `companyId` (`.eq("companyId", companyId)`) — defense in depth even though RLS also enforces it.
 - List endpoints take `GenericQueryFilters` and run through `setGenericQueryFilters(query, args, [...])` (`~/utils/query`) for search/sort/pagination.
 - Count/select for list endpoints: prefer `{ count: LIST_COUNT }` (`LIST_COUNT = "estimated"`, `~/utils/query`) over `count: "exact"`. `exact` is `COUNT(*) OVER ()`, which materializes the whole filtered set just to produce a total the UI shows approximately anyway — on 500k `trackedEntity` rows that is 652 ms vs 1.5 ms. `estimated` is a hybrid: PostgREST still returns an exact count below its threshold, so small tenants see no change. Currently used by the ten view-backed endpoints plus `getJobs` and `getTrackedEntities`.
-- The ten endpoints backed by the big multi-join **views** (`parts`, `materials`, `tools`, `consumables`, `services`, `purchaseOrders`, `quotes`, `salesOrders`, `purchaseInvoices`, `salesInvoices`) additionally select an explicit `*_LIST_COLUMNS` constant instead of `select("*")`, so Postgres can prune the views' unreferenced computed columns. Adding a column to one of those tables means adding it to the constant — `apps/erp/test/list-select-columns.test.ts` fails if an `accessorKey` is missing, because the CSV export reads accessors untyped. The rationale lives once on `LIST_COUNT` in `apps/erp/app/utils/query.ts`, not at each constant.
+- The ten endpoints backed by the big multi-join **views** (`parts`, `materials`, `tools`, `consumables`, `services`, `purchaseOrders`, `quotes`, `salesOrders`, `purchaseInvoices`, `salesInvoices`) additionally select an explicit `*_LIST_COLUMNS` constant instead of `select("*")`, so Postgres can prune the views' unreferenced computed columns. Adding a column to one of those tables means adding it to the constant — the `list-select-covers-columns` check (`@carbon/checks`) fails if an `accessorKey` is missing (a new constant needs a `LIST_TABLES` entry there), because the CSV export reads accessors untyped. The rationale lives once on `LIST_COUNT` in `apps/erp/app/utils/query.ts`, not at each constant.
 - Use `sanitize(...)` (re-exported from `@carbon/utils`) to strip empty values before insert/update.
 - Upserts are done either with a manual `id ? update : insert` branch or supabase's native `.upsert(...)`; both are in use.
 - `fetchAllFromTable(client, table, columns, qb)` (from `@carbon/database`) pages through large result sets:
@@ -291,6 +291,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 - Never query inside a loop — one set-based statement (`UPDATE … FROM (VALUES …)`, `.in()`, a
   join) per logical write.
 - Single writes are already atomic — don't reach for a transaction.
+- A building block that may be handed a transaction opens its own with `withTransaction(db, fn)`
+  (`@carbon/database/client`), never `db.transaction()`: Kysely refuses `transaction()` on a
+  `Transaction`, and joining lets the caller commit its own writes with it
+  (`createMakeMethodVersion`, every `getMethod` body).
 - Kysely auto-quotes reserved column names (e.g. `order`), so `.set({ order: sortOrder })` is
   safe; in raw `sql`, use `sql.ref(column)`.
 

@@ -912,6 +912,7 @@ export async function getTrainingAssignmentForCompletion(
         status,
         estimatedDuration,
         guidePath,
+        videoUrl,
         trainingQuestion(*)
       )`
     )

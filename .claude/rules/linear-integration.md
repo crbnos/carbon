@@ -36,9 +36,9 @@ type, not just `action`.
   `mapLinearStatusToCarbonStatus` / `mapCarbonStatusToLinearStatus`. `started`→"In
   Progress", `completed`→"Completed", `canceled`→"Skipped", else (triage/backlog/todo/
   unstarted)→"Pending".
-- **Rich text:** `lib/richtext.ts` — `markdownToTiptap` / `tiptapToMarkdown`
-  (+ `tiptapDocumentsEqual`, `isTiptapEmpty`). Linear description (markdown) ↔ Carbon
-  task `notes` (Tiptap JSON).
+- **Rich text:** `TiptapText` (`@carbon/files/markdown`) — `TiptapText(description).toDocument()`
+  reads a Linear description (Markdown) into Carbon task `notes` (Tiptap JSON);
+  `TiptapText(notes).toMarkdown()` writes it back.
 - **Types:** `lib/types.ts` — `LinearIssueSchema` (zod): `id, title, description?, url,
   state{name,color,type}, identifier, dueDate?, assignee{email}?`.
 
@@ -98,7 +98,7 @@ actionId)` looks up by **`entityId`** (the action id, despite the name) and pars
 - **Create new** `api+/integrations.linear.issue.create.ts`: GET teams (+ team members
   filtered to matching Carbon employees when `?teamId`); POST create issue, link, attach.
 - **Sync notes** `api+/integrations.linear.issue.sync-notes.ts`: POST `{actionId, notes}`
-  → `tiptapToMarkdown` → `updateIssue({description})`.
+  → `TiptapText(notes).toMarkdown()` → `updateIssue({description})`.
 - **Notification service** `packages/ee/src/notifications/services/linear.ts`
   (`LinearNotificationService`, id `"linear"`, registered in
   `packages/ee/src/notifications/index.ts`). Reacts to events (`notifications/types.ts`):

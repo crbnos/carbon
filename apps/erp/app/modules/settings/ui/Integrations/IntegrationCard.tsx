@@ -62,10 +62,12 @@ export type IntegrationHealth = {
 
 export function IntegrationCard({
   integration,
-  installed
+  installed,
+  hasEarlyAccess
 }: {
   integration: Integration;
   installed: IntegrationHealth | null;
+  hasEarlyAccess: boolean;
 }) {
   const fetcher = useFetcher<{}>();
   const navigate = useNavigate();
@@ -94,11 +96,15 @@ export function IntegrationCard({
   const isStarterPlan = isGated && !isWhitelisted;
   const edition = useEdition();
   const user = useUser();
-  // Only an install is withheld: a company where Carbon staff installed it
-  // keeps a working card.
+  // Only an install is withheld: a company where it was installed keeps a
+  // working card.
   const comingSoon =
     !installed &&
-    isIntegrationComingSoon(integration, { edition, email: user.email });
+    isIntegrationComingSoon(integration, {
+      edition,
+      email: user.email,
+      hasEarlyAccess
+    });
 
   // At most one ACTIVE integration per provider role, enforced by a database
   // trigger. Surfacing it here is what keeps a customer from meeting that

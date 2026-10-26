@@ -827,6 +827,37 @@ export async function hasPendingApproval(
   return result.data.length > 0;
 }
 
+/** The documents among `documentIds` that have a pending approval request. */
+export async function pendingApprovalDocumentIds(
+  client: SupabaseClient<Database>,
+  args: {
+    documentType: (typeof approvalDocumentType)[number];
+    documentIds: string[];
+    companyId: string;
+  }
+): Promise<Set<string>> {
+  if (args.documentIds.length === 0) return new Set();
+  const result = await client
+    .from("approvalRequest")
+    .select("documentId")
+    .eq("documentType", args.documentType)
+    .in("documentId", args.documentIds)
+    .eq("companyId", args.companyId)
+    .eq("status", "Pending");
+
+  // Fail closed, as hasPendingApproval does.
+  if (result.error) {
+    logger.error("Failed to check for pending approval requests", {
+      documentType: args.documentType,
+      companyId: args.companyId,
+      error: result.error
+    });
+    throw new Error("Failed to read approval requests");
+  }
+
+  return new Set(result.data.map((row) => row.documentId));
+}
+
 export async function isApprovalRequired(
   client: SupabaseClient<Database>,
   documentType: (typeof approvalDocumentType)[number],

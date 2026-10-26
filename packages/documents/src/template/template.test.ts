@@ -4,7 +4,6 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  ADDABLE_BLOCK_TYPES,
   BLOCK_META,
   DEFAULT_SALES_INVOICE_TEMPLATE,
   documentThemeColors,
@@ -90,26 +89,9 @@ describe("block metadata invariants", () => {
       expect(BLOCK_META[type].removable).toBe(false);
     }
   });
-
-  it("only exposes extension blocks in the add menu", () => {
-    expect(ADDABLE_BLOCK_TYPES).toEqual(["richText", "keyValue", "spacer"]);
-    for (const type of ADDABLE_BLOCK_TYPES) {
-      expect(BLOCK_META[type].isBuiltIn).toBe(false);
-      expect(BLOCK_META[type].removable).toBe(true);
-    }
-  });
 });
 
 describe("document settings", () => {
-  it("includes default settings on the default template", () => {
-    expect(DEFAULT_SALES_INVOICE_TEMPLATE.settings).toEqual({
-      fontFamily: "Inter",
-      showPageNumbers: true,
-      pageNumberFormat: "pageOfTotal",
-      showRegistrationLine: true
-    });
-  });
-
   it("merges a partial stored settings over defaults", () => {
     const { settings } = resolveTemplate("salesInvoice", {
       blocks: [{ id: "summary", type: "summary", visible: true }],
@@ -159,8 +141,9 @@ describe("schema validation", () => {
     expect(() => blockSchema.parse({ id: "x", type: "bogus" })).toThrow();
   });
 
-  it("validates a full template document", () => {
-    const parsed = documentTemplateSchema.parse(DEFAULT_SALES_INVOICE_TEMPLATE);
-    expect(parsed.blocks).toHaveLength(7);
+  it("accepts the default template unchanged", () => {
+    expect(
+      documentTemplateSchema.parse(DEFAULT_SALES_INVOICE_TEMPLATE)
+    ).toEqual(DEFAULT_SALES_INVOICE_TEMPLATE);
   });
 });

@@ -226,6 +226,9 @@ msgstr "Sei sicuro di voler lasciare questa pagina?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Sei sicuro di voler segnare questa operazione come completata? Questo terminerà tutti gli eventi di produzione attivi per questa operazione."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Passi di assemblaggio"
 
@@ -272,6 +275,9 @@ msgstr "Indietro"
 msgid "Back to batch"
 msgstr "Torna al lotto di produzione"
 
+msgid "Back to ERP"
+msgstr "Torna all'ERP"
+
 msgid "Background"
 msgstr "Sfondo"
 
@@ -283,6 +289,9 @@ msgstr "Dettagli del lotto di produzione"
 
 msgid "Batch is not available"
 msgstr "Lotto non disponibile"
+
+msgid "Batch notes"
+msgstr "Note del lotto di produzione"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -299,12 +308,6 @@ msgstr "totale Lotto di produzione"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "In ritardo rispetto al target di {daysBehindTarget} giorno(i)"
-
-#. placeholder {0}: step.minValue
-#. placeholder {1}: step.maxValue
-#. placeholder {2}: step.unitOfMeasureCode ?? ""
-msgid "Between {0} and {1} {2}"
-msgstr "Tra {0} e {1} {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -453,6 +456,9 @@ msgstr "Completa Lotto"
 
 msgid "Complete passed"
 msgstr "Completa i superati"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "Completato"
@@ -1109,11 +1115,11 @@ msgstr "Altre opzioni"
 msgid "Move column: {0}"
 msgstr "Sposta colonna: {0}"
 
-msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Deve essere < {maxValue} {unitOfMeasureCode}"
+msgid "Must be at least {minValue} {unitOfMeasureCode}"
+msgstr "Deve essere almeno {minValue} {unitOfMeasureCode}"
 
-msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Deve essere > {minValue} {unitOfMeasureCode}"
+msgid "Must be at most {maxValue} {unitOfMeasureCode}"
+msgstr "Deve essere al massimo {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "Deve essere compreso tra {minValue} e {maxValue} {unitOfMeasureCode}"
@@ -1470,6 +1476,9 @@ msgstr "Fissa o scollega"
 msgid "Pin Out"
 msgstr "Disconnetti"
 
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pizzica o scorri per ingrandire · trascina per spostare · tocca due volte per ripristinare"
+
 msgid "Planned"
 msgstr "Pianificato"
 
@@ -1582,6 +1591,9 @@ msgstr "Registra Parziale"
 
 msgid "Recorded"
 msgstr "Registrato"
+
+msgid "Reference image"
+msgstr "Immagine di riferimento"
 
 msgid "Registration failed"
 msgstr "Registrazione fallita"
@@ -1859,6 +1871,9 @@ msgstr "Mescola"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Accedi con dati biometrici invece di un link magico. I Passkey sono protetti da Face ID, Touch ID o dal PIN del tuo dispositivo."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Accedi con Google"
 
@@ -1876,6 +1891,9 @@ msgstr "Esci"
 
 msgid "Sign out instead"
 msgstr "Esci invece"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
@@ -2227,8 +2245,8 @@ msgstr "Visualizza intervento di manutenzione"
 msgid "View or open"
 msgstr "Visualizza o apri"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Ti abbiamo inviato un link di accesso al tuo account."
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Cos'è {translatedTerm}?"
@@ -2254,8 +2272,20 @@ msgstr "Scrivi una Nota…"
 msgid "Yes"
 msgstr "Sì"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbra fine?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Il tuo account non è ancora parte di un'azienda. Completa l'onboarding in Carbon ERP per continuare."

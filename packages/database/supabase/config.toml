@@ -112,7 +112,7 @@ subject = "You have been invited to Carbon"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Your Carbon Magic Link"
+subject = "Your Carbon sign-in code"
 content_path = "./supabase/templates/magic-link.html"
 
 

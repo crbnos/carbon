@@ -15,10 +15,9 @@ import {
   supportsPush,
   urlBase64ToUint8Array
 } from "~/utils/push";
+import { SERVICE_WORKER_URL } from "~/utils/service-worker";
 
 const logger = getLogger("erp", "usepushsubscription");
-
-const WORKER_URL = "/push-worker.js";
 
 export type PushState = "loading" | "unsupported" | "denied" | "off" | "on";
 
@@ -56,7 +55,7 @@ function isEnabledOnServer(endpoint: string) {
 // (subscribe() refuses a new key while it exists), and its endpoint comes
 // back as replacedEndpoint so the server drops that row.
 async function subscribe(publicKey: string) {
-  await navigator.serviceWorker.register(WORKER_URL, { scope: "/" });
+  await navigator.serviceWorker.register(SERVICE_WORKER_URL, { scope: "/" });
   const registration = await navigator.serviceWorker.ready;
   const existing = await registration.pushManager.getSubscription();
   let replacedEndpoint: string | null = null;

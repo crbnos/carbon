@@ -64,6 +64,10 @@ msgstr "(not an Equity posting account)"
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# blocking record} other {# blocking records}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr "{0, plural, one {# BOM line} other {# BOM lines}}"
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -80,6 +84,14 @@ msgstr "{0, plural, one {# day short} other {# days short}}"
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr "{0, plural, one {# operation} other {# operations}}"
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr "{0, plural, one {# parameter} other {# parameters}}"
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# record needs attention} other {# records need attention}}"
@@ -91,6 +103,14 @@ msgstr "{0, plural, one {# row links to data outside this company, so a safety c
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr "{0, plural, one {# step} other {# steps}}"
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr "{0, plural, one {# tool} other {# tools}}"
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -521,6 +541,9 @@ msgstr "{documentTypeLabel} approval rule"
 msgid "{done} of {total} phases complete"
 msgstr "{done} of {total} phases complete"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+
 msgid "{errors} failed"
 msgstr "{errors} failed"
 
@@ -538,6 +561,9 @@ msgstr "{hidden, plural, one {And # more record.} other {And # more records.}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} more: {hiddenNames}"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr "{inserted, plural, one {# part created} other {# parts created}}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -675,6 +701,9 @@ msgstr "{sectionLineCount} lines"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selected"
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+
 msgid "{stale} changed since the page loaded"
 msgstr "{stale} changed since the page loaded"
 
@@ -725,6 +754,9 @@ msgstr "{unread} unread"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} can't be scheduled"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr "{updated, plural, one {# part updated} other {# parts updated}}"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} uploaded — fields filled from the document."
@@ -2290,6 +2322,9 @@ msgstr "Added for this customer"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+
+msgid "Added:"
+msgstr "Added:"
 
 msgid "Adding demo records"
 msgstr "Adding demo records"
@@ -4217,6 +4252,9 @@ msgstr "Blind"
 msgid "Blind Count"
 msgstr "Blind Count"
 
+msgid "Block"
+msgstr "Block"
+
 msgid "Block with an error"
 msgstr "Block with an error"
 
@@ -4821,6 +4859,9 @@ msgstr "Change Notices"
 msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
 msgstr "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
 
+msgid "Change notices could not be loaded, so the active version cannot be changed. Reload to try again."
+msgstr "Change notices could not be loaded, so the active version cannot be changed. Reload to try again."
+
 msgid "Change order"
 msgstr "Change order"
 
@@ -5117,9 +5158,6 @@ msgstr "Close date"
 
 msgid "Close Date"
 msgstr "Close Date"
-
-msgid "Close menu"
-msgstr "Close menu"
 
 msgid "Close Period"
 msgstr "Close Period"
@@ -8124,6 +8162,9 @@ msgstr "Dollar Utilization"
 msgid "Don't Cancel"
 msgstr "Don't Cancel"
 
+msgid "Don't let them work on this process until they have the ability."
+msgstr "Don't let them work on this process until they have the ability."
+
 msgid "Don't see a serial number?"
 msgstr "Don't see a serial number?"
 
@@ -8393,6 +8434,9 @@ msgstr "e.g. MI"
 
 msgid "e.g. Suite 200"
 msgstr "e.g. Suite 200"
+
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "e.g. Suspected counterfeit, wrong part, damaged in transit"
 
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "e.g. the first 3 to 4 weeks"
@@ -9152,6 +9196,9 @@ msgstr "Enter a received quantity, or tick a unit, on at least one line."
 
 msgid "Enter a web address, such as https://example.com"
 msgstr "Enter a web address, such as https://example.com"
+
+msgid "Enter a YouTube video link"
+msgstr "Enter a YouTube video link"
 
 msgid "Enter an item and quantity yourself."
 msgstr "Enter an item and quantity yourself."
@@ -11334,6 +11381,9 @@ msgstr "IDs and descriptions are generated for raw materials."
 msgid "If"
 msgstr "If"
 
+msgid "If an operator isn't qualified"
+msgstr "If an operator isn't qualified"
+
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 
@@ -11656,6 +11706,15 @@ msgstr "Inspection"
 
 msgid "Inspection · {itemReadableId}"
 msgstr "Inspection · {itemReadableId}"
+
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Inspection {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Inspection {0} · {1}"
 
 msgid "Inspection document"
 msgstr "Inspection document"
@@ -14034,6 +14093,15 @@ msgstr "MRP suggests moving an existing order only when its date is off by more 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "Must be at least {minValue} {unitLabel}"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "Must be at most {maxValue} {unitLabel}"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "Must be between {minValue} and {maxValue} {unitLabel}"
+
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
 
@@ -14282,6 +14350,9 @@ msgstr "New Issue"
 
 msgid "New Item Group"
 msgstr "New Item Group"
+
+msgid "New jobs use version {activeVersion}"
+msgstr "New jobs use version {activeVersion}"
 
 msgid "New Kanban"
 msgstr "New Kanban"
@@ -14692,6 +14763,14 @@ msgstr "No changes yet."
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 
@@ -15065,6 +15144,9 @@ msgstr "No part ID"
 msgid "No parts"
 msgstr "No parts"
 
+msgid "No parts changed."
+msgstr "No parts changed."
+
 msgid "No passkeys registered yet."
 msgstr "No passkeys registered yet."
 
@@ -15313,6 +15395,9 @@ msgstr "No variables available"
 
 msgid "No versions available"
 msgstr "No versions available"
+
+msgid "No video added"
+msgstr "No video added"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
@@ -15762,6 +15847,9 @@ msgstr "Only Draft procedures are editable. Create a new version to change an Ac
 msgid "Only employees can post receipts."
 msgstr "Only employees can post receipts."
 
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr "Only employees with the {processName} ability can be scheduled for and run this process"
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
 
@@ -15867,8 +15955,14 @@ msgstr "Open Dispatches"
 msgid "Open in Carbon"
 msgstr "Open in Carbon"
 
+msgid "Open in change notice {ids}. Release it to change the active version."
+msgstr "Open in change notice {ids}. Release it to change the active version."
+
 msgid "Open in change notice {ids}. Release it to create new versions or revisions."
 msgstr "Open in change notice {ids}. Release it to create new versions or revisions."
+
+msgid "Open in change notices {ids}. Release them to change the active version."
+msgstr "Open in change notices {ids}. Release them to change the active version."
 
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "Open in change notices {ids}. Release them to create new versions or revisions."
@@ -15953,6 +16047,9 @@ msgstr "Open the Ramp integration and try connecting again to finish setup."
 
 msgid "Open the Setup Map"
 msgstr "Open the Setup Map"
+
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
 
 msgid "Open transactions"
 msgstr "Open transactions"
@@ -16557,6 +16654,9 @@ msgstr "Past due"
 msgid "Past end date"
 msgstr "Past end date"
 
+msgid "Paste a YouTube video link"
+msgstr "Paste a YouTube video link"
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Paste the metadata XML if your identity provider does not publish a metadata URL"
 
@@ -16927,6 +17027,9 @@ msgstr "Pin {0}"
 
 msgid "Pin or unpin"
 msgstr "Pin or unpin"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 
 msgid "Pinned"
 msgstr "Pinned"
@@ -18148,6 +18251,9 @@ msgstr "Rate Frequency"
 msgid "Rate Limit"
 msgstr "Rate Limit"
 
+msgid "Rate updated {relative}"
+msgstr "Rate updated {relative}"
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 
@@ -18243,6 +18349,9 @@ msgstr "Realized Exchange Loss"
 
 msgid "Reason"
 msgstr "Reason"
+
+msgid "Reason (optional)"
+msgstr "Reason (optional)"
 
 msgid "Reason Account"
 msgstr "Reason Account"
@@ -18527,6 +18636,9 @@ msgstr "Reduced"
 
 msgid "Reference"
 msgstr "Reference"
+
+msgid "Reference image"
+msgstr "Reference image"
 
 msgid "Refresh"
 msgstr "Refresh"
@@ -18837,6 +18949,9 @@ msgstr "Remove two-factor authentication"
 msgid "Remove Unit"
 msgstr "Remove Unit"
 
+msgid "Remove Video"
+msgstr "Remove Video"
+
 msgid "Removed"
 msgstr "Removed"
 
@@ -19129,6 +19244,12 @@ msgstr "Requires Action"
 
 msgid "Requires Adjustment"
 msgstr "Requires Adjustment"
+
+msgid "Requires inspection"
+msgstr "Requires inspection"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Requires inspection. A lot opens when the receipt posts."
 
 msgid "Requires Repair"
 msgstr "Requires Repair"
@@ -21181,6 +21302,9 @@ msgstr "Show a readable Customer ID column on the customer list, customer forms,
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr "Show a warning on the shop floor, but let them work."
+
 msgid "Show All"
 msgstr "Show All"
 
@@ -21279,11 +21403,17 @@ msgstr "Shown to the user when this rule fails."
 msgid "Shuffle"
 msgstr "Shuffle"
 
+msgid "Sign in here instead"
+msgstr "Sign in here instead"
+
 msgid "Sign in to Carbon"
 msgstr "Sign in to Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+
+msgid "Sign in with code"
+msgstr "Sign in with code"
 
 msgid "Sign in with Google"
 msgstr "Sign in with Google"
@@ -21302,6 +21432,9 @@ msgstr "Sign Out"
 
 msgid "Sign out instead"
 msgstr "Sign out instead"
+
+msgid "Sign-in code"
+msgstr "Sign-in code"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Sign-off review before moving to the next step"
@@ -22363,8 +22496,14 @@ msgstr "Switch module"
 msgid "Switch to pan mode"
 msgstr "Switch to pan mode"
 
+msgid "Switch to PDF"
+msgstr "Switch to PDF"
+
 msgid "Switch to select mode"
 msgstr "Switch to select mode"
+
+msgid "Switch to Video"
+msgstr "Switch to Video"
 
 msgid "Switch to Written Content"
 msgstr "Switch to Written Content"
@@ -24134,8 +24273,11 @@ msgstr "This Quarter"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "This receipt has no lines. Choose a source document to add them."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "This removes the PDF. Employees will see the written content instead."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr "This removes the PDF. Employees will see the new content instead."
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr "This removes the video. Employees will see the new content instead."
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
@@ -24747,6 +24889,9 @@ msgstr "Training Plan"
 
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
+
+msgid "Training video"
+msgstr "Training video"
 
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Training your team via the Academy and in-app guides"
@@ -25725,6 +25870,9 @@ msgstr "View Customers"
 msgid "View Employees"
 msgstr "View Employees"
 
+msgid "View full size"
+msgstr "View full size"
+
 msgid "View History"
 msgstr "View History"
 
@@ -25988,14 +26136,14 @@ msgstr "We auto-matched each column. Review the values below before continuing."
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "We triage and fix issues fast while your team settles in"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+
 msgid "We've sent a verification code to {email}"
 msgstr "We've sent a verification code to {email}"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "We've sent a verification code to {signupEmail}"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "We've sent you a magic link to sign in to your account."
 
 msgid "Webhook"
 msgstr "Webhook"
@@ -26128,8 +26276,8 @@ msgstr "What each asset is worth, how long it lasts, and what happens to it at t
 msgid "What each period's payment is for this asset in the first year"
 msgstr "What each period's payment is for this asset in the first year"
 
-msgid "What employees read before the questions"
-msgstr "What employees read before the questions"
+msgid "What employees read or watch before the questions"
+msgstr "What employees read or watch before the questions"
 
 msgid "What happens to an invoice once it is created"
 msgstr "What happens to an invoice once it is created"
@@ -26697,6 +26845,9 @@ msgstr "Write-off of stock scrapped or returned via inspection rejects and NCR d
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 
+msgid "Written with a warning"
+msgstr "Written with a warning"
+
 msgid "Wrote the missing journal of 1 document"
 msgstr "Wrote the missing journal of 1 document"
 
@@ -26727,6 +26878,9 @@ msgstr "Yes, Update IDs"
 
 msgid "You"
 msgstr "You"
+
+msgid "You are editing draft version {draftVersion}. Its changes reach new jobs once it is the Active version."
+msgstr "You are editing draft version {draftVersion}. Its changes reach new jobs once it is the Active version."
 
 msgid "You belong to more than one company. Pick where to work."
 msgstr "You belong to more than one company. Pick where to work."
@@ -26910,6 +27064,12 @@ msgstr "Your vendor list"
 
 msgid "yourself"
 msgstr "yourself"
+
+msgid "YouTube link"
+msgstr "YouTube link"
+
+msgid "YouTube Video"
+msgstr "YouTube Video"
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."

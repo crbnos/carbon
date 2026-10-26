@@ -356,6 +356,24 @@ salesOrderLineId?, convert? }`). The `temp-staging` storage policies read the ke
 scopes (`parts_create` / `parts_update`), so an API key with those scopes can mint
 the URL and upload — unlike the document pair above, which signs into a company bucket.
 
+## Rich text is Markdown
+
+A rich-text column (notes, work instructions, change-notice text) holds a
+TipTap document. A tool takes it as Markdown and stores it with
+`TiptapText(text).toDocument()` (`@carbon/files/markdown`, CommonMark, raw HTML
+kept as text, no DOM), so headings, bold, italic, lists, links, quotes and code render
+in the editor. The entry points: `toTiptapDoc` / `optionalTiptapDoc`
+(`shared.models.ts`; a JSON document string or object passes through), the
+three `set…WorkInstruction` tools, and `shared_setNotes`, which writes the
+notes a person edits in the app (`noteFields`: internal / external notes on
+sales and purchasing documents and lines, `notes` on jobs, items, fixed
+assets, picking lists and stock transfers) as the caller, like the editors.
+Empty text stores `{}`. `TiptapText(text, { format: "text" })` stores text as
+typed, for imported text that is not ours to read as Markdown (Paperless Parts)
+and for contract notes (`optionalPlainTextDoc`): the app edits them in a plain
+textarea read back with `TiptapText(doc).toString()`, which would drop the
+Markdown markers.
+
 ## Gotchas
 
 - **Renaming or moving a service function renames its tool**, and there are no
@@ -366,5 +384,13 @@ the URL and upload — unlike the document pair above, which signs into a compan
   runs the gate and `run`; nothing a route does around the call.
 - A function gated on several modules publishes `module: null` in the
   manifest; its own gate decides, as for every function.
+- **A form validator's `.refine()` checks are invisible in the published
+  schema**: the manifest says a field is optional, and the call refuses it
+  anyway. Give the API input the base object and fill or keep what a caller
+  leaves out. The job and quote operations do: `baseJobOperationValidator` /
+  `baseQuoteOperationValidator`, a create filled by `withOperationStandards`
+  (`shared.service.ts`, as the bill of process form fills it), an update
+  leaving out what it was not sent; only the inspection plan stays required
+  (`inspectionPlanRequired`). Pinned by `apps/erp/test/operation-api-input.test.ts`.
 - "Shelf" was renamed to **storage unit** (`inventory_*StorageUnit*`). "Shelf
   life" (`*ShelfLife*`) is a different, current concept.

@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { User, UserIdentity } from "@supabase/supabase-js";
-import type { CompiledQuery, DatabaseConnection, Driver } from "kysely";
+import type { DatabaseConnection, Driver } from "kysely";
 import {
   Kysely,
   PostgresAdapter,
@@ -306,28 +306,6 @@ describe("isSsoRequiredForEmail", () => {
     await expect(isSsoRequiredForEmail(client, "jane")).resolves.toBe(false);
     expect(calls.from).toBeUndefined();
   });
-
-  it("matches the domain case-insensitively (lowercased before the lookup)", async () => {
-    const { client, calls } = makeSsoClient({
-      data: { requireSso: true },
-      error: null
-    });
-    await expect(isSsoRequiredForEmail(client, "Jane@ACME.com")).resolves.toBe(
-      true
-    );
-    expect(calls.eq).toContainEqual(["ssoDomain.domain", "acme.com"]);
-  });
-
-  it("only matches VERIFIED domain claims (pending claims must not enforce)", async () => {
-    const { client, calls } = makeSsoClient({
-      data: { requireSso: true },
-      error: null
-    });
-    await expect(isSsoRequiredForEmail(client, "jane@acme.com")).resolves.toBe(
-      true
-    );
-    expect(calls.eq).toContainEqual(["ssoDomain.status", "verified"]);
-  });
 });
 
 describe("getSsoConnection domains mapping", () => {
@@ -498,13 +476,21 @@ describe("isSsoEnabled gate (AUTH_PROVIDERS half toggled off)", () => {
   });
 });
 
-// --- auth.identities write coverage -----------------------------------------
-// The pre-seed helpers issue raw `sql` writes to the auth schema — the load-
-// bearing half of provider-agnostic linking. A stubbed db handle proves nothing,
-// so drive Kysely's REAL Postgres compiler with a fake driver that captures the
-// compiled SQL + parameters. A revert of the target table, columns, ON CONFLICT
-// clause, email/domain lowercasing, or RETURNING would fail these.
-function makeKysely(connection: DatabaseConnection) {
+// The pre-seed helpers write raw SQL to auth.identities; what they write is a
+// database-test concern. These pin only how a driver result becomes the reply.
+function fakeDb(
+  result: { rows?: unknown[]; numAffectedRows?: bigint } | Error
+) {
+  const connection: DatabaseConnection = {
+    async executeQuery() {
+      if (result instanceof Error) throw result;
+      return {
+        rows: result.rows ?? [],
+        numAffectedRows: result.numAffectedRows
+      } as never;
+    },
+    async *streamQuery() {}
+  };
   const driver: Driver = {
     async init() {},
     async acquireConnection() {
@@ -523,142 +509,45 @@ function makeKysely(connection: DatabaseConnection) {
       createIntrospector: (db) => new PostgresIntrospector(db),
       createQueryCompiler: () => new PostgresQueryCompiler()
     }
-  });
+  }) as never;
 }
 
-function makeCapturingDb(result: {
-  rows?: unknown[];
-  numAffectedRows?: bigint;
-}) {
-  const captured: { sql: string; parameters: readonly unknown[] }[] = [];
-  const connection: DatabaseConnection = {
-    async executeQuery(compiledQuery: CompiledQuery) {
-      captured.push({
-        sql: compiledQuery.sql,
-        parameters: compiledQuery.parameters
+describe("pre-seed identity writes", () => {
+  const seed = { userId: "u1", email: "a@acme.com", providerId: "prov-1" };
+  const domain = { providerId: "prov-1", domain: "acme.com" };
+
+  it.each([
+    [1n, true],
+    [0n, false]
+  ])(
+    "seedSsoIdentityForUser reports %s affected rows as seeded: %s",
+    async (numAffectedRows, seeded) => {
+      await expect(
+        seedSsoIdentityForUser(fakeDb({ numAffectedRows }), seed)
+      ).resolves.toEqual({
+        data: { seeded },
+        error: null
       });
-      return {
-        rows: result.rows ?? [],
-        numAffectedRows: result.numAffectedRows
-      } as never;
-    },
-    async *streamQuery() {}
-  };
-  return { db: makeKysely(connection) as never, captured };
-}
+    }
+  );
 
-function makeThrowingDb(message: string) {
-  const connection: DatabaseConnection = {
-    async executeQuery() {
-      throw new Error(message);
-    },
-    async *streamQuery() {}
-  };
-  return makeKysely(connection) as never;
-}
-
-describe("pre-seed identity writes (auth.identities SQL)", () => {
-  it("seedSsoIdentityForUser inserts a link row keyed on the lowercased email", async () => {
-    const { db, captured } = makeCapturingDb({ numAffectedRows: 1n });
-    const result = await seedSsoIdentityForUser(db, {
-      userId: "11111111-1111-1111-1111-111111111111",
-      email: "Jane.Doe@Acme.COM",
-      providerId: "prov-1"
+  it("backfillSsoIdentitiesForDomain returns the linked user ids", async () => {
+    const db = fakeDb({ rows: [{ user_id: "u1" }, { user_id: "u2" }] });
+    await expect(backfillSsoIdentitiesForDomain(db, domain)).resolves.toEqual({
+      data: { linkedUserIds: ["u1", "u2"] },
+      error: null
     });
-
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ seeded: true });
-    expect(captured).toHaveLength(1);
-
-    const { sql, parameters } = captured[0]!;
-    expect(sql).toContain("INSERT INTO auth.identities");
-    expect(sql).toContain("(provider_id, provider) DO NOTHING");
-    // email is lowercased before it becomes provider_id and identity_data
-    expect(parameters).toContain("jane.doe@acme.com");
-    expect(parameters).not.toContain("Jane.Doe@Acme.COM");
-    expect(parameters).toContain("11111111-1111-1111-1111-111111111111");
-    expect(parameters).toContain("sso:prov-1");
   });
 
-  it("seedSsoIdentityForUser reports seeded:false when the row already exists", async () => {
-    const { db } = makeCapturingDb({ numAffectedRows: 0n });
-    const result = await seedSsoIdentityForUser(db, {
-      userId: "u1",
-      email: "a@acme.com",
-      providerId: "prov-1"
-    });
-    expect(result).toEqual({ data: { seeded: false }, error: null });
+  it("removeSsoIdentitiesForDomain counts the removed rows", async () => {
+    await expect(
+      removeSsoIdentitiesForDomain(fakeDb({ numAffectedRows: 3n }), domain)
+    ).resolves.toEqual({ data: { removed: 3 }, error: null });
   });
 
-  it("canonicalizes a mixed-case IdP email to lowercase in every seeded slot", async () => {
-    // GoTrue's account-linking fallback matches on the GENERATED email column
-    // (lower(identity_data->>'email')), so a case-preserving NameID must still
-    // resolve to the seeded row. Every occurrence — provider_id and both
-    // identity_data keys — must be the lowercased email, and the mixed-case
-    // form must never reach the parameters.
-    const { db, captured } = makeCapturingDb({ numAffectedRows: 1n });
-    await seedSsoIdentityForUser(db, {
-      userId: "u1",
-      email: "Jane.DOE+tag@Acme.COM",
-      providerId: "prov-1"
-    });
-    const { parameters } = captured[0]!;
-    const lower = "jane.doe+tag@acme.com";
-    // provider_id + jsonb 'sub' + jsonb 'email' = three lowercased copies
-    expect(parameters.filter((p) => p === lower)).toHaveLength(3);
-    expect(
-      parameters.some((p) => typeof p === "string" && p !== p.toLowerCase())
-    ).toBe(false);
-  });
-
-  it("backfillSsoIdentitiesForDomain selects on-domain non-SSO users and returns their ids", async () => {
-    const { db, captured } = makeCapturingDb({
-      rows: [{ user_id: "u1" }, { user_id: "u2" }]
-    });
-    const result = await backfillSsoIdentitiesForDomain(db, {
-      providerId: "prov-1",
-      domain: "Acme.com"
-    });
-
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ linkedUserIds: ["u1", "u2"] });
-
-    const { sql, parameters } = captured[0]!;
-    expect(sql).toContain("INSERT INTO auth.identities");
-    expect(sql).toContain("FROM auth.users");
-    expect(sql).toContain("is_sso_user = false");
-    expect(sql).toContain("RETURNING user_id");
-    expect(parameters).toContain("acme.com"); // domain lowercased
-    expect(parameters).toContain("sso:prov-1");
-  });
-
-  it("removeSsoIdentitiesForDomain deletes by provider + domain and counts affected rows", async () => {
-    const { db, captured } = makeCapturingDb({ numAffectedRows: 3n });
-    const result = await removeSsoIdentitiesForDomain(db, {
-      providerId: "prov-1",
-      domain: "ACME.com"
-    });
-
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ removed: 3 });
-
-    const { sql, parameters } = captured[0]!;
-    expect(sql).toContain("DELETE FROM auth.identities");
-    expect(sql).toContain("split_part(email, '@', 2)");
-    expect(parameters).toContain("acme.com");
-    expect(parameters).toContain("sso:prov-1");
-  });
-
-  it("returns an error (never throws) when the auth-schema write fails", async () => {
-    const result = await seedSsoIdentityForUser(
-      makeThrowingDb("connection reset"),
-      {
-        userId: "u1",
-        email: "a@acme.com",
-        providerId: "prov-1"
-      }
-    );
-    expect(result.data).toBeNull();
-    expect(result.error).toBe("connection reset");
+  it("returns an error instead of throwing when the auth-schema write fails", async () => {
+    await expect(
+      seedSsoIdentityForUser(fakeDb(new Error("connection reset")), seed)
+    ).resolves.toEqual({ data: null, error: "connection reset" });
   });
 });

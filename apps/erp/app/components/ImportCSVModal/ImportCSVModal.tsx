@@ -12,6 +12,7 @@ import {
   type fieldMappings,
   importSchemas
 } from "~/modules/shared/imports.models";
+import type { MethodRowsAdded } from "~/modules/shared/types";
 import type { action } from "~/routes/x+/shared+/import.$tableId";
 import { path } from "~/utils/path";
 import { AnimatedSizeContainer } from "../AnimatedSizeContainer";
@@ -40,10 +41,24 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
   const fetcher = useAction<typeof action>({
     onSuccess: (result) => {
       if (!("data" in result) || !result.data) return;
-      const { inserted, updated, errors, skipped } = result.data;
+      const { inserted, updated, errors, skipped, added, warnings } =
+        result.data;
       // The results modal renders next (see the early return below); just
       // surface a quick toast summary here.
-      if (errors.length > 0) {
+      if (added) {
+        const message = methodImportMessage({
+          inserted,
+          updated,
+          errors: errors.length,
+          skipped: skipped.length,
+          added
+        });
+        if (errors.length > 0 || skipped.length > 0 || warnings.length > 0) {
+          toast.info(message);
+        } else {
+          toast.success(message);
+        }
+      } else if (errors.length > 0) {
         toast.info(
           `Imported ${inserted}, updated ${updated} — ${errors.length} row(s) need fixing.`
         );
@@ -116,6 +131,8 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
         updated={imported.updated}
         errors={imported.errors}
         skipped={imported.skipped}
+        added={imported.added}
+        warnings={imported.warnings}
         columns={fileColumns}
         onClose={onClose}
       />
@@ -196,3 +213,37 @@ export const ImportCSVModal = ({ table, onClose }: ImportCSVModalProps) => {
     </Modal>
   );
 };
+
+// Method imports: inserted and updated count parts, the rest count rows. The
+// same sentences as the results dialog's MethodImportCounts.
+function methodImportMessage(counts: {
+  inserted: number;
+  updated: number;
+  errors: number;
+  skipped: number;
+  added: MethodRowsAdded;
+}) {
+  const { added } = counts;
+  const count = (n: number, one: string, other: string) =>
+    `${n} ${n === 1 ? one : other}`;
+  const parts = [
+    counts.inserted > 0 &&
+      count(counts.inserted, "part created", "parts created"),
+    counts.updated > 0 && count(counts.updated, "part updated", "parts updated")
+  ].filter(Boolean);
+  const rows = [
+    added.materials > 0 && count(added.materials, "BOM line", "BOM lines"),
+    added.operations > 0 && count(added.operations, "operation", "operations"),
+    added.steps > 0 && count(added.steps, "step", "steps"),
+    added.tools > 0 && count(added.tools, "tool", "tools"),
+    added.parameters > 0 && count(added.parameters, "parameter", "parameters")
+  ].filter(Boolean);
+  return [
+    parts.length > 0 ? `${parts.join(", ")}.` : "No parts changed.",
+    rows.length > 0 && `Added: ${rows.join(", ")}.`,
+    (counts.errors > 0 || counts.skipped > 0) &&
+      `${count(counts.errors, "row needs fixing", "rows need fixing")}, ${count(counts.skipped, "row skipped", "rows skipped")}.`
+  ]
+    .filter(Boolean)
+    .join(" ");
+}

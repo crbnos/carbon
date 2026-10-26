@@ -51,22 +51,46 @@ export function isIntegrationWhitelisted(id: string) {
 
 /**
  * Whether this user sees an `internalOnly` integration as "Coming soon" and
- * cannot install it. Carbon staff (`isInternalEmail`) can, in any company.
+ * cannot install it. Carbon staff (`isInternalEmail`) can, in any company, and
+ * so can a user with early access (`hasIntegrationEarlyAccess`, `plan.server`).
  * Only Carbon Cloud gates it: a self-hosted instance configures its own OAuth
  * app and has no Carbon staff to install it.
  *
- * It gates the install only. A company where staff installed it keeps it, so
+ * It gates the install only. A company where it was installed keeps it, so
  * its own admins can open, reconnect and uninstall it.
  */
 export function isIntegrationComingSoon(
   integration: { id: string; internalOnly?: boolean },
-  { edition, email }: { edition: Edition; email: string | null | undefined }
+  {
+    edition,
+    email,
+    hasEarlyAccess
+  }: {
+    edition: Edition;
+    email: string | null | undefined;
+    hasEarlyAccess: boolean;
+  }
 ): boolean {
   return (
     integration.internalOnly === true &&
     edition === Edition.Cloud &&
-    !isInternalEmail(email)
+    !isInternalEmail(email) &&
+    !hasEarlyAccess
   );
+}
+
+/**
+ * Whether `userId` is an entry of a comma-separated id list. Spaces and quotes
+ * around an entry are ignored, so a list pasted with them still matches.
+ */
+export function isListedUserId(
+  list: string | null | undefined,
+  userId: string | null | undefined
+): boolean {
+  if (!list || !userId) return false;
+  return list
+    .split(",")
+    .some((entry) => entry.replace(/^[\s"']+|[\s"']+$/g, "") === userId);
 }
 
 export type PlanRequirement = Plan | Plan[];

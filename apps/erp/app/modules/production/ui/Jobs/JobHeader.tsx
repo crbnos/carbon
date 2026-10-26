@@ -65,6 +65,7 @@ import {
   LuTable,
   LuTrash,
   LuTriangleAlert,
+  LuTvMinimalPlay,
   LuWorkflow,
   LuZap
 } from "react-icons/lu";
@@ -231,6 +232,18 @@ const JobHeader = () => {
   const menuItems = (
     <>
       {auditLogTrigger}
+      {["Ready", "In Progress", "Paused"].includes(status ?? "") && (
+        <DropdownMenuItem asChild>
+          <a
+            href={path.to.external.mesJob(jobId)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <DropdownMenuIcon icon={<LuTvMinimalPlay />} />
+            <Trans>Open in MES</Trans>
+          </a>
+        </DropdownMenuItem>
+      )}
       <DropdownMenuSeparator />
       <DropdownMenuItem
         disabled={

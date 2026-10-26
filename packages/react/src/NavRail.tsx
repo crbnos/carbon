@@ -138,6 +138,23 @@ export function NavRail({
     return () => setHolds((n) => n - 1);
   }, []);
 
+  // The rail is expanded while pinned OR hovered, and the toggle sits inside
+  // it, so unpinning alone changed nothing: hover still held it open. An
+  // unpin (the toggle, ⌘B or a page's `SidebarTrigger`) drops the hover too,
+  // and a mouse still over the rail cannot reopen it until it leaves.
+  const hoverSuppressed = useRef(false);
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (wasOpen.current && !open) {
+      cancelHoverOpen();
+      setHovered(false);
+      hoverSuppressed.current =
+        lastPointerType.current === "mouse" &&
+        (navRef.current?.matches(":hover") ?? false);
+    }
+    wasOpen.current = open;
+  }, [open, cancelHoverOpen]);
+
   // Links, go-to shortcuts and redirects all land here: whatever navigated,
   // the phone drawer must not stay over the destination.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs per navigation
@@ -162,12 +179,15 @@ export function NavRail({
     }
     // Touch browsers leave `:hover` stuck on the last tapped element, so only
     // a mouse's `:hover` counts.
-    const raf = requestAnimationFrame(() =>
-      setHovered(
+    const raf = requestAnimationFrame(() => {
+      const over =
         lastPointerType.current === "mouse" &&
-          (navRef.current?.matches(":hover") ?? false)
-      )
-    );
+        (navRef.current?.matches(":hover") ?? false);
+      // The pointer left while blocked: the leave was ignored, so end a
+      // collapse's hold-off here.
+      if (!over) hoverSuppressed.current = false;
+      setHovered(over && !hoverSuppressed.current);
+    });
     return () => cancelAnimationFrame(raf);
   }, [hoverBlocked, cancelHoverOpen, moveHoverCard]);
 
@@ -279,7 +299,7 @@ export function NavRail({
         onPointerMove={(event) => {
           lastPointerType.current = event.pointerType;
           if (hoverBlocked || hovered || openTimer.current) return;
-          if (event.pointerType !== "mouse") return;
+          if (event.pointerType !== "mouse" || hoverSuppressed.current) return;
           openTimer.current = setTimeout(() => {
             openTimer.current = undefined;
             setHovered(true);
@@ -296,6 +316,7 @@ export function NavRail({
           // The leave a Radix layer causes by disabling body pointer-events
           // can arrive before this render knows about the hold.
           if (document.body.style.pointerEvents === "none") return;
+          hoverSuppressed.current = false;
           cancelHoverOpen();
           setHovered(false);
           moveHoverCard(null);

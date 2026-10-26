@@ -41512,7 +41512,7 @@ export type Database = {
       notificationPreference: {
         Row: {
           channel: string
-          companyId: string
+          companyId: string | null
           enabled: boolean
           id: string
           topic: string
@@ -41521,7 +41521,7 @@ export type Database = {
         }
         Insert: {
           channel: string
-          companyId: string
+          companyId?: string | null
           enabled?: boolean
           id?: string
           topic: string
@@ -41530,7 +41530,7 @@ export type Database = {
         }
         Update: {
           channel?: string
-          companyId?: string
+          companyId?: string | null
           enabled?: boolean
           id?: string
           topic?: string
@@ -45825,6 +45825,7 @@ export type Database = {
       }
       process: {
         Row: {
+          abilityPolicy: Database["public"]["Enums"]["processAbilityPolicy"]
           active: boolean
           batchable: boolean
           batchRules: Json | null
@@ -45844,6 +45845,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          abilityPolicy?: Database["public"]["Enums"]["processAbilityPolicy"]
           active?: boolean
           batchable?: boolean
           batchRules?: Json | null
@@ -45863,6 +45865,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          abilityPolicy?: Database["public"]["Enums"]["processAbilityPolicy"]
           active?: boolean
           batchable?: boolean
           batchRules?: Json | null
@@ -69371,6 +69374,7 @@ export type Database = {
           updatedAt: string | null
           updatedBy: string | null
           version: number
+          videoUrl: string | null
         }
         Insert: {
           assignee?: string | null
@@ -69392,6 +69396,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           version?: number
+          videoUrl?: string | null
         }
         Update: {
           assignee?: string | null
@@ -69413,6 +69418,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           version?: number
+          videoUrl?: string | null
         }
         Relationships: [
           {
@@ -82226,6 +82232,9 @@ export type Database = {
       }
       processes: {
         Row: {
+          abilityPolicy:
+            | Database["public"]["Enums"]["processAbilityPolicy"]
+            | null
           active: boolean | null
           batchable: boolean | null
           batchRules: Json | null
@@ -95498,6 +95507,7 @@ export type Database = {
         | "File"
         | "Task"
         | "Inspection"
+      processAbilityPolicy: "Warn" | "Block"
       productionEventType: "Setup" | "Labor" | "Machine"
       productionQuantityType: "Rework" | "Scrap" | "Production"
       purchaseInvoiceStatus:
@@ -97057,6 +97067,7 @@ export const Constants = {
         "Task",
         "Inspection",
       ],
+      processAbilityPolicy: ["Warn", "Block"],
       productionEventType: ["Setup", "Labor", "Machine"],
       productionQuantityType: ["Rework", "Scrap", "Production"],
       purchaseInvoiceStatus: [

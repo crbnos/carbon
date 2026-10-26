@@ -113,6 +113,7 @@ import {
   storage
 } from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -139,8 +140,7 @@ import {
   resolveTrackedEntityBins,
   round,
   settleQuantity,
-  type TrackedEntityBin,
-  textToTiptap
+  type TrackedEntityBin
 } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -149,7 +149,6 @@ import {
   startOfMonth,
   startOfWeek
 } from "@internationalized/date";
-import { render, renderAsync } from "@react-email/components";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -158,6 +157,7 @@ import type {
 import type { Selectable } from "kysely";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { createCookieSessionStorage, data } from "react-router";
 import { z } from "zod";
 import {
@@ -168,6 +168,12 @@ import {
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage
 } from "~/modules/items/items.models";
+import {
+  getChangeNoticeEngineeringLocks,
+  getLockVerdict,
+  type LockCheck,
+  type ReleaseControl
+} from "~/modules/items/items.service";
 import { getMethod } from "~/modules/production/production.service";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import {
@@ -185,9 +191,17 @@ import {
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
-import type { assignableTables } from "./shared.models";
+import {
+  type assignableTables,
+  methodItemType,
+  type NoteField,
+  type NoteTable,
+  operationTypes,
+  type standardFactorType,
+  toTiptapDoc
+} from "./shared.models";
 import { assertMethodHasPullFrom, isStrictBackflush } from "./strict-backflush";
-import type { ItemModelUpload } from "./types";
+import type { ItemModelUpload, MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
 
@@ -816,16 +830,191 @@ export async function assign(
 }
 
 /**
- * The stored work instruction for plain text. Empty text is `{}`, as the
- * editor stores it: the column is NOT NULL, so `null` refused every clear.
+ * Replaces one notes field of a record, as the caller: row-level security
+ * decides what they may change. Markdown text becomes the editor's document;
+ * empty text clears it to `{}`, as the editor does.
  */
-export function workInstructionFromText(text: string) {
-  return text.trim() ? textToTiptap(text) : {};
+export async function setRecordNotes(
+  client: SupabaseClient<Database>,
+  args: {
+    table: NoteTable;
+    id: string;
+    field: NoteField;
+    text: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { table, id, field, text, companyId, userId } = args;
+  // Every notes table has `id`, `companyId` and the audit columns; one stands
+  // in for the union, and `noteFields` pins the field to a column of the table.
+  return client
+    .from(table as "job")
+    .update({
+      [field]: text.trim() ? TiptapText(text).toDocument() : {},
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    } as never)
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id");
+}
+
+type StandardFactor = (typeof standardFactorType)[number];
+
+type OperationStandards = {
+  processId: string;
+  workCenterId?: string;
+  operationSupplierProcessId?: string;
+  setupUnit?: StandardFactor;
+  setupTime?: number;
+  laborUnit?: StandardFactor;
+  laborTime?: number;
+  laborRate?: number;
+  machineUnit?: StandardFactor;
+  machineTime?: number;
+  machineRate?: number;
+  overheadRate?: number;
+  operationMinimumCost?: number;
+  operationUnitCost?: number;
+  operationLeadTime?: number;
+};
+
+type FilledStandards = Required<
+  Omit<
+    OperationStandards,
+    "processId" | "workCenterId" | "operationSupplierProcessId"
+  >
+>;
+
+type WorkCenterStandards = {
+  laborRate: number | null;
+  machineRate: number | null;
+  overheadRate: number | null;
+  defaultStandardFactor: StandardFactor | null;
+};
+
+/**
+ * What the bill of process form fills in for the fields a caller left out of
+ * a new operation: units and rates from the chosen work center, else the
+ * process's default standard factor and the average of its active work
+ * centers; an outside operation's minimum cost and lead time from its
+ * supplier process; times 0. A field the caller sent is kept as sent.
+ */
+export function fillOperationStandards<T extends OperationStandards>(
+  operation: T,
+  facts: {
+    processStandardFactor: StandardFactor | null;
+    workCenters: WorkCenterStandards[];
+    supplierProcess: {
+      minimumCost: number | null;
+      leadTime: number | null;
+    } | null;
+  }
+): T & FilledStandards {
+  const { workCenters, supplierProcess } = facts;
+  const average = (rate: "laborRate" | "machineRate" | "overheadRate") =>
+    workCenters.length
+      ? workCenters.reduce((sum, center) => sum + (center[rate] ?? 0), 0) /
+        workCenters.length
+      : 0;
+  const unit =
+    (operation.workCenterId ? workCenters[0]?.defaultStandardFactor : null) ??
+    facts.processStandardFactor ??
+    "Hours/Piece";
+
+  return {
+    ...operation,
+    setupUnit: operation.setupUnit ?? "Total Minutes",
+    setupTime: operation.setupTime ?? 0,
+    laborUnit: operation.laborUnit ?? unit,
+    laborTime: operation.laborTime ?? 0,
+    laborRate: operation.laborRate ?? average("laborRate"),
+    machineUnit: operation.machineUnit ?? unit,
+    machineTime: operation.machineTime ?? 0,
+    machineRate: operation.machineRate ?? average("machineRate"),
+    overheadRate: operation.overheadRate ?? average("overheadRate"),
+    operationMinimumCost:
+      operation.operationMinimumCost ?? supplierProcess?.minimumCost ?? 0,
+    operationUnitCost: operation.operationUnitCost ?? 0,
+    operationLeadTime:
+      operation.operationLeadTime ?? supplierProcess?.leadTime ?? 0
+  };
 }
 
 /**
- * Replaces one operation's work instruction, as the caller. The text becomes
- * the editor's document (`textToTiptap`); empty text clears it. An id the
+ * `fillOperationStandards` with the facts read: the process, the chosen work
+ * center (or the process's active ones) and the supplier process, all of
+ * this company.
+ */
+export async function withOperationStandards<T extends OperationStandards>(
+  ctx: ServiceContext,
+  operation: T
+): Promise<(T & FilledStandards) | CarbonError> {
+  const db = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [process, workCenters, supplierProcess] = await Promise.all([
+    db
+      .from("process")
+      .select("defaultStandardFactor")
+      .eq("id", operation.processId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    operation.workCenterId
+      ? db
+          .from("workCenter")
+          .select("laborRate, machineRate, overheadRate, defaultStandardFactor")
+          .eq("id", operation.workCenterId)
+          .eq("companyId", companyId)
+      : db
+          .from("workCenterProcess")
+          .select(
+            "workCenter!inner(laborRate, machineRate, overheadRate, defaultStandardFactor)"
+          )
+          .eq("processId", operation.processId)
+          .eq("companyId", companyId)
+          .eq("workCenter.active", true),
+    operation.operationSupplierProcessId
+      ? db
+          .from("supplierProcess")
+          .select("minimumCost, leadTime")
+          .eq("id", operation.operationSupplierProcessId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  const failed = process.error ?? workCenters.error ?? supplierProcess?.error;
+  if (failed) {
+    return ctx.error("internal", "Failed to read the process defaults", failed);
+  }
+  if (!process.data) return ctx.error("notFound", "Process not found");
+
+  const centers = (workCenters.data ?? []).map((row) =>
+    "workCenter" in row
+      ? (row.workCenter as WorkCenterStandards)
+      : (row as WorkCenterStandards)
+  );
+  if (operation.workCenterId && centers.length === 0) {
+    return ctx.error("notFound", "Work center not found");
+  }
+  return fillOperationStandards(operation, {
+    processStandardFactor: process.data.defaultStandardFactor,
+    workCenters: centers,
+    supplierProcess: supplierProcess?.data ?? null
+  });
+}
+
+/**
+ * The stored work instruction for Markdown text. Empty text is `{}`, as the
+ * editor stores it: the column is NOT NULL, so `null` refused every clear.
+ */
+export function workInstructionFromText(text: string) {
+  return text.trim() ? TiptapText(text).toDocument() : {};
+}
+
+/**
+ * Replaces one operation's work instruction, as the caller. The text is
+ * Markdown, stored as the editor's document; empty text clears it. An id the
  * caller cannot see, or of another company, is `notFound`.
  */
 export async function setOperationWorkInstruction(
@@ -1046,13 +1235,14 @@ export async function sendSalesOrderEmail(args: {
     paymentTerms: paymentTerms.data
   });
 
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
+  const html = await render(emailTemplate);
+  const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
     .createSignedUrl(documentFilePath, 3600);
 
   await trigger("send-email", {
+    document: true,
     to: [seller.data.email, customer.data.contact.email!],
     cc: ccSelections?.length ? ccSelections : undefined,
     from: seller.data.email,
@@ -2313,6 +2503,11 @@ type Summary = {
   updated: number;
   errors: Array<{ row: number; reason: string }>;
   skipped: Array<{ row: number; reason: string }>;
+  // Method imports only: the rows written, by kind. Inserted and updated
+  // count parts there, so the results name the rows separately.
+  added?: MethodRowsAdded;
+  // Method imports only: parts written under a release-control warning.
+  warnings?: string[];
 };
 
 // Company-scoped configuration lookups: small, flat, name-keyed tables a
@@ -3086,7 +3281,21 @@ type ItemInfo = {
   type: string;
   defaultMethodType: string | null;
   sourcingType: string | null;
+  revisionStatus: string | null;
+  unitOfMeasureCode: string | null;
 };
+
+type ProcessInfo = { name: string; processType: string | null };
+
+type RowIssue = { row: number; reason: string };
+
+// A part's recipe the import refuses as a whole. Thrown inside the part's
+// transaction so nothing it wrote survives, then reported as errors.
+class MethodImportRefused extends Error {
+  constructor(readonly issues: RowIssue[]) {
+    super("Method import refused");
+  }
+}
 
 // ---------------------------------------------------------------------------
 // small helpers
@@ -3117,14 +3326,38 @@ const normalizeOperationType = (value: string): string =>
 // rows) and the standard importer in index.ts — NOT a human CSV line number.
 const rowOf = (index: number) => index;
 
-// Plain text → minimal tiptap doc for a step's rich-text description.
-function plainTextToTiptap(value: string): Record<string, unknown> {
-  const t = (value ?? "").trim();
-  if (!t) return {};
-  return {
-    type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text: t }] }]
-  };
+// A step's rich-text description, converted as the step editor converts it.
+function stepDescription(value: string): Record<string, unknown> {
+  return value ? toTiptapDoc(value) : {};
+}
+
+// A List step's options: pipe-separated, blanks dropped.
+const listValues = (s: string | undefined): string[] =>
+  text(s)
+    .split("|")
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+// A filled-in number cell that is not a number of 0 or more. Blank passes.
+const notZeroOrMore = (s: string | undefined) => {
+  if (text(s) === "") return false;
+  const n = num(s);
+  return n === undefined || n < 0;
+};
+
+/**
+ * Why a Make Method Version cell is not a version number, or null. Blank
+ * passes. `makeMethod.version` keeps 2 decimals: Postgres would round 1.555
+ * to 1.56, and a re-run of the file could not find that version again.
+ */
+export function methodVersionIssue(version: string): string | null {
+  const value = version.trim();
+  if (!value) return null;
+  const n = num(value);
+  if (n === undefined || n <= 0 || !/^\d+(\.\d{1,2}0*)?$/.test(value)) {
+    return `Make Method Version "${value}" must be a number above 0 with at most 2 decimals`;
+  }
+  return null;
 }
 
 function normalizeRowType(
@@ -3154,6 +3387,10 @@ export async function importMethods(
   }
 ): Promise<void> {
   const { table, mappedRecords, companyId, userId, summary } = args;
+  const added = noMethodRowsAdded();
+  const warnings: string[] = [];
+  summary.added = added;
+  summary.warnings = warnings;
 
   // 1. classify + group by parent part ------------------------------------
   const groups = new Map<string, Group>();
@@ -3269,7 +3506,9 @@ export async function importMethods(
         "revision",
         "type",
         "defaultMethodType",
-        "sourcingType"
+        "sourcingType",
+        "revisionStatus",
+        "unitOfMeasureCode"
       ])
       .where("companyId", "=", companyId)
       .where("readableId", "in", Array.from(readableIds))
@@ -3281,18 +3520,56 @@ export async function importMethods(
           id: r.id,
           type: r.type,
           defaultMethodType: r.defaultMethodType ?? null,
-          sourcingType: r.sourcingType ?? null
+          sourcingType: r.sourcingType ?? null,
+          revisionStatus: r.revisionStatus ?? null,
+          unitOfMeasureCode: r.unitOfMeasureCode ?? null
         });
       }
     }
   }
 
-  const { map: processMap, ambiguous: processAmbiguous } = await nameMap(
+  // The BOM and BOP editors refuse a released (Production) revision when
+  // release control is "enforce"; the import applies the same verdict.
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["plmReleaseControl"])
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  const releaseControl = (settings?.plmReleaseControl ??
+    "enforce") as ReleaseControl;
+
+  // Change notice locks, read before any part's transaction opens: the
+  // pending-approval check behind them is a separate request.
+  const changeNoticeLocks = await loadChangeNoticeLocks(
     db,
-    "process",
     companyId,
-    processNames
+    [...groups.values()].flatMap((g) => {
+      const parent = itemMap.get(key(g.readableId, g.revision));
+      return parent ? [parent.id] : [];
+    })
   );
+
+  // A process also gives an operation its default type and description, as
+  // the Bill of Process editor fills them in when a process is picked.
+  const processMap = new Map<string, string>();
+  const processAmbiguous = new Set<string>();
+  const processById = new Map<string, ProcessInfo>();
+  if (processNames.size > 0) {
+    const rows = await db
+      .selectFrom("process")
+      .select(["id", "name", "processType"])
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const r of rows) {
+      const lower = r.name.toLowerCase();
+      if (processMap.has(lower)) processAmbiguous.add(lower);
+      else processMap.set(lower, r.id);
+      processById.set(r.id, {
+        name: r.name,
+        processType: r.processType ?? null
+      });
+    }
+  }
   const { map: workCenterMap, ambiguous: workCenterAmbiguous } = await nameMap(
     db,
     "workCenter",
@@ -3338,6 +3615,7 @@ export async function importMethods(
       fileCreatedParts,
       processMap,
       processAmbiguous,
+      processById,
       workCenterMap,
       workCenterAmbiguous,
       uomSet
@@ -3354,25 +3632,26 @@ export async function importMethods(
         userId,
         itemMap,
         processMap,
+        processById,
         workCenterMap,
-        supplierMap
+        supplierMap,
+        releaseControl,
+        changeNoticeLocks
       });
-      if (result.filledAny) {
-        // A new part counts as imported; an existing part as updated.
-        if (g.partRow) summary.inserted++;
-        else summary.updated++;
-      } else if (result.skippedExisting) {
-        // The targeted version already had content — create-only, never clobber.
-        // Benign: not something the user needs to fix, so it's a skip, not an error.
-        summary.skipped.push({
-          row: rowOf(g.firstIndex),
-          reason: `Part ${partLabel} already has a method; skipped`
-        });
-      } else if (g.partRow) {
-        // A PART row with no BOM/BOP rows — only the part itself was created.
-        summary.inserted++;
-      }
+      // Lines already on the method are skipped, never written twice. Benign:
+      // not something the user needs to fix, so a skip, not an error.
+      for (const s of result.skipped) summary.skipped.push(s);
+      addMethodRows(added, result.added);
+      warnings.push(...result.warnings);
+      // A part its PART row created counts as inserted; a part that existed
+      // counts as updated when the import wrote rows into its method.
+      if (result.createdPart) summary.inserted++;
+      else if (totalMethodRows(result.added) > 0) summary.updated++;
     } catch (err) {
+      if (err instanceof MethodImportRefused) {
+        for (const issue of err.issues) summary.errors.push(issue);
+        continue;
+      }
       summary.errors.push({
         row: rowOf(g.firstIndex),
         reason: `Part ${partLabel} failed to import: ${
@@ -3389,7 +3668,7 @@ export async function importMethods(
 
 async function nameMap(
   db: Kysely<KyselyDatabase>,
-  table: "process" | "workCenter",
+  table: "workCenter",
   companyId: string,
   names: Set<string>
 ): Promise<{ map: Map<string, string>; ambiguous: Set<string> }> {
@@ -3414,11 +3693,26 @@ async function nameMap(
 // validation (pure, given the resolved lookups)
 // ---------------------------------------------------------------------------
 
+// The operation type a BOP row gets: its own, else its process's type, as the
+// Bill of Process editor fills it in when a process is picked.
+function operationTypeFor(
+  record: Rec,
+  processId: string | undefined,
+  processById: Map<string, ProcessInfo>
+): string {
+  return (
+    normalizeOperationType(text(record.operationType)) ||
+    (processId ? processById.get(processId)?.processType : null) ||
+    "Process"
+  );
+}
+
 type Lookups = {
   itemMap: Map<string, ItemInfo>;
   fileCreatedParts: Set<string>;
   processMap: Map<string, string>;
   processAmbiguous: Set<string>;
+  processById: Map<string, ProcessInfo>;
   workCenterMap: Map<string, string>;
   workCenterAmbiguous: Set<string>;
   uomSet: Set<string>;
@@ -3448,25 +3742,40 @@ function validateGroup(
     }
   }
 
-  for (const bucket of g.versions.values()) {
-    // Op No uniqueness within the parent + a set to validate child references.
-    const opNos = new Set<string>();
+  for (const [version, bucket] of g.versions) {
+    const versionIssue = methodVersionIssue(version);
+    if (versionIssue) {
+      errors.push({ row: rowOf(firstIndexOf(bucket)), reason: versionIssue });
+    }
+
+    // An Op No is the operation's order, so it is a number and Op Nos compare
+    // by value: "10" and "10.0" name one operation. A re-run can only find an
+    // operation it wrote before by that number.
+    const opNoIssue = (e: Entry, rowType: string) => {
+      const opNo = text(e.record.opNo);
+      const order = num(opNo);
+      if (!opNo) return `${rowType} row is missing Op No`;
+      if (order === undefined || order < 0) {
+        return `${rowType} row Op No "${opNo}" must be a number of 0 or more`;
+      }
+      return null;
+    };
+    const opNos = new Set<number>();
     for (const e of bucket.bop) {
       const opNo = text(e.record.opNo);
-      if (!opNo) {
-        errors.push({
-          row: rowOf(e.index),
-          reason: "BOP row is missing Op No"
-        });
+      const issue = opNoIssue(e, "BOP");
+      if (issue) {
+        errors.push({ row: rowOf(e.index), reason: issue });
         continue;
       }
-      if (opNos.has(opNo)) {
+      const order = num(opNo)!;
+      if (opNos.has(order)) {
         errors.push({
           row: rowOf(e.index),
           reason: `Duplicate Op No "${opNo}" for ${partLabel}`
         });
       }
-      opNos.add(opNo);
+      opNos.add(order);
 
       // process required + resolvable
       const proc = text(e.record.process).toLowerCase();
@@ -3502,18 +3811,49 @@ function validateGroup(
         }
       }
 
-      // In-house operations need time units.
-      const opType =
-        normalizeOperationType(text(e.record.operationType)) || "Process";
-      if (opType !== "Outside Processing") {
-        if (
-          !text(e.record.setupUnit) ||
-          !text(e.record.laborUnit) ||
-          !text(e.record.machineUnit)
-        ) {
+      // The Bill of Process editor's rules: in-house operations need setup and
+      // labor units, a Process operation also a machine unit, and an
+      // Inspection operation an Inspection Plan, which a CSV cannot carry.
+      const opType = operationTypeFor(
+        e.record,
+        lk.processMap.get(proc),
+        lk.processById
+      );
+      if (!(operationTypes as readonly string[]).includes(opType)) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Op ${opNo}: Invalid Operation Type "${opType}"`
+        });
+      } else if (opType === "Inspection") {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Op ${opNo}: an Inspection operation needs an Inspection Plan; add it in the app`
+        });
+      } else if (opType !== "Outside Processing") {
+        const missing = [
+          !text(e.record.setupUnit) && "Setup",
+          !text(e.record.laborUnit) && "Labor",
+          opType === "Process" && !text(e.record.machineUnit) && "Machine"
+        ].filter(Boolean);
+        if (missing.length > 0) {
           errors.push({
             row: rowOf(e.index),
-            reason: `Op ${opNo}: In-house operations require Setup, Labor, and Machine units`
+            reason: `Op ${opNo}: ${opType} operations require ${missing.join(", ")} units`
+          });
+        }
+      }
+      for (const [field, label] of [
+        ["setupTime", "Setup Time"],
+        ["laborTime", "Labor Time"],
+        ["machineTime", "Machine Time"],
+        ["operationMinimumCost", "Minimum Cost"],
+        ["operationUnitCost", "Unit Cost"],
+        ["operationLeadTime", "Lead Time"]
+      ] as const) {
+        if (notZeroOrMore(e.record[field])) {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: ${label} must be a number of 0 or more`
           });
         }
       }
@@ -3530,16 +3870,32 @@ function validateGroup(
         continue;
       }
       const compKey = key(componentId, text(e.record.componentRevision));
-      if (!lk.itemMap.has(compKey) && !lk.fileCreatedParts.has(compKey)) {
+      const compLabel = `${componentId} rev ${text(e.record.componentRevision) || "0"}`;
+      // A part this file creates is a Part; anything else must already exist.
+      const compType = lk.fileCreatedParts.has(compKey)
+        ? "Part"
+        : lk.itemMap.get(compKey)?.type;
+      if (!compType) {
         errors.push({
           row: rowOf(e.index),
-          reason: `Material ${componentId} rev ${text(e.record.componentRevision) || "0"} not found`
+          reason: `Material ${compLabel} not found`
+        });
+      } else if (compKey === parentKey) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Material ${compLabel} is the part itself; an item cannot be added to its own BOM`
+        });
+      } else if (!(methodItemType as readonly string[]).includes(compType)) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Material ${compLabel} is a ${compType}; a BOM line takes a Part, Material or Consumable`
         });
       }
-      if (num(e.record.quantity) === undefined) {
+      const quantity = num(e.record.quantity);
+      if (quantity === undefined || quantity < 0) {
         errors.push({
           row: rowOf(e.index),
-          reason: "BOM row has an invalid Quantity"
+          reason: "BOM row Quantity must be a number of 0 or more"
         });
       }
       const uom = text(e.record.unitOfMeasureCode);
@@ -3551,15 +3907,19 @@ function validateGroup(
       }
     }
 
-    // STEP / TOOL / PARAM must reference a known Op No within this version.
-    for (const e of bucket.step) {
-      const opNo = text(e.record.opNo);
-      if (!opNos.has(opNo)) {
-        errors.push({
-          row: rowOf(e.index),
-          reason: `STEP references unknown Op No "${opNo}"`
-        });
+    // A STEP / TOOL / PARAM row's Op No may name an operation already on the
+    // method, so writeGroup resolves it once the target version is known.
+    for (const [rows, rowType] of [
+      [bucket.step, "STEP"],
+      [bucket.tool, "TOOL"],
+      [bucket.param, "PARAM"]
+    ] as const) {
+      for (const e of rows) {
+        const issue = opNoIssue(e, rowType);
+        if (issue) errors.push({ row: rowOf(e.index), reason: issue });
       }
+    }
+    for (const e of bucket.step) {
       if (!text(e.record.stepName)) {
         errors.push({
           row: rowOf(e.index),
@@ -3573,27 +3933,47 @@ function validateGroup(
           reason: `Invalid Step Type "${stepType}"`
         });
       }
-      if (stepType === "Measurement" && !text(e.record.stepUnitOfMeasureCode)) {
+      const stepUom = text(e.record.stepUnitOfMeasureCode);
+      if (stepType === "Measurement" && !stepUom) {
         errors.push({
           row: rowOf(e.index),
           reason: "Measurement step requires a Step Unit of Measure"
         });
+      } else if (stepUom && !lk.uomSet.has(stepUom)) {
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Step Unit of Measure "${stepUom}" not found`
+        });
       }
-      if (stepType === "List" && !text(e.record.stepListValues)) {
+      if (
+        stepType === "List" &&
+        listValues(e.record.stepListValues).length === 0
+      ) {
         errors.push({
           row: rowOf(e.index),
           reason: "List step requires Step List Values"
         });
       }
-    }
-    for (const e of bucket.tool) {
-      const opNo = text(e.record.opNo);
-      if (!opNos.has(opNo)) {
+      const min = num(e.record.stepMinValue);
+      const max = num(e.record.stepMaxValue);
+      if (
+        notZeroOrMore(e.record.stepMinValue) ||
+        notZeroOrMore(e.record.stepMaxValue)
+      ) {
         errors.push({
           row: rowOf(e.index),
-          reason: `TOOL references unknown Op No "${opNo}"`
+          reason:
+            "Step Min Value and Step Max Value must be numbers of 0 or more"
+        });
+      } else if (min !== undefined && max !== undefined && max < min) {
+        errors.push({
+          row: rowOf(e.index),
+          reason:
+            "Step Max Value must be greater than or equal to Step Min Value"
         });
       }
+    }
+    for (const e of bucket.tool) {
       const toolId = text(e.record.toolId);
       if (!toolId) {
         errors.push({
@@ -3602,28 +3982,31 @@ function validateGroup(
         });
       } else {
         const toolKey = key(toolId, text(e.record.toolRevision));
-        if (!lk.itemMap.has(toolKey) && !lk.fileCreatedParts.has(toolKey)) {
+        const toolLabel = `${toolId} rev ${text(e.record.toolRevision) || "0"}`;
+        const toolType = lk.fileCreatedParts.has(toolKey)
+          ? "Part"
+          : lk.itemMap.get(toolKey)?.type;
+        if (!toolType) {
           errors.push({
             row: rowOf(e.index),
-            reason: `Tool ${toolId} rev ${text(e.record.toolRevision) || "0"} not found`
+            reason: `Tool ${toolLabel} not found`
+          });
+        } else if (toolType !== "Tool") {
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Tool ${toolLabel} is a ${toolType}, not a Tool`
           });
         }
       }
-      if (num(e.record.toolQuantity) === undefined) {
+      const toolQuantity = num(e.record.toolQuantity);
+      if (toolQuantity === undefined || toolQuantity <= 0) {
         errors.push({
           row: rowOf(e.index),
-          reason: "TOOL row has an invalid Quantity"
+          reason: "TOOL row Quantity must be a number above 0"
         });
       }
     }
     for (const e of bucket.param) {
-      const opNo = text(e.record.opNo);
-      if (!opNos.has(opNo)) {
-        errors.push({
-          row: rowOf(e.index),
-          reason: `PARAM references unknown Op No "${opNo}"`
-        });
-      }
       if (!text(e.record.paramKey)) {
         errors.push({
           row: rowOf(e.index),
@@ -3643,6 +4026,187 @@ function validateGroup(
 }
 
 // ---------------------------------------------------------------------------
+// append planning (pure)
+// ---------------------------------------------------------------------------
+
+type MakeMethodVersion = {
+  id: string;
+  version: number;
+  status: string;
+  changeOrderId: string | null;
+};
+
+/**
+ * The make method version a part's rows go into. Blank: the highest
+ * non-archived version, the one being worked on. Explicit: that version. A
+ * version that does not exist is created as a Draft.
+ */
+export function pickMethodImportTarget(
+  methods: MakeMethodVersion[],
+  version: string
+): { method: MakeMethodVersion } | { createVersion: number } {
+  if (!version.trim()) {
+    const current = methods
+      .filter((m) => m.status !== "Archived")
+      .sort((a, b) => b.version - a.version)[0];
+    if (current) return { method: current };
+    const highest = methods.reduce((max, m) => Math.max(max, m.version), 0);
+    return { createVersion: highest + 1 };
+  }
+  const versionNumber = num(version) ?? 1;
+  const existing = methods.find((m) => m.version === versionNumber);
+  return existing ? { method: existing } : { createVersion: versionNumber };
+}
+
+/**
+ * Whether the import may write into a make method version, with the same rules
+ * and verdict as the BOM and BOP editors: only a Draft is editable, a change
+ * notice past engineering locks its Draft, and a released (Production)
+ * revision follows release control, which refuses, warns or allows.
+ */
+export function methodImportLock(args: {
+  status: string;
+  version: number;
+  changeNoticeLock: string | null;
+  revisionStatus: string | null;
+  releaseControl: ReleaseControl;
+}): LockCheck {
+  if (args.status !== "Draft") {
+    return {
+      ok: false,
+      warn: false,
+      message: `make method version ${args.version} is ${args.status}, and only a Draft version can change. Create a new version, then set Make Method Version to it`
+    };
+  }
+  if (args.changeNoticeLock) {
+    return { ok: false, warn: false, message: args.changeNoticeLock };
+  }
+  return getLockVerdict({
+    isLocked: args.revisionStatus === "Production",
+    releaseControl: args.releaseControl
+  });
+}
+
+/**
+ * The BOM lines to write onto a version that may already have lines. A line
+ * whose material is already on the version is skipped. The rest are ordered
+ * after the highest existing line, as the editor's add button does. Lines
+ * repeated inside the file are all written.
+ */
+export function planMaterialAppend(args: {
+  lines: Array<{ index: number; itemId: string }>;
+  existing: Array<{ itemId: string; order: number }>;
+}): { insert: Array<{ index: number; order: number }>; skipped: number[] } {
+  const onMethod = new Set(args.existing.map((m) => m.itemId));
+  let order = args.existing.reduce(
+    (max, m) => Math.max(max, Number(m.order)),
+    0
+  );
+  const insert: Array<{ index: number; order: number }> = [];
+  const skipped: number[] = [];
+  for (const line of args.lines) {
+    if (onMethod.has(line.itemId)) {
+      skipped.push(line.index);
+      continue;
+    }
+    order++;
+    insert.push({ index: line.index, order });
+  }
+  return { insert, skipped };
+}
+
+/** An Op No as one key per number: "10", "10.0" and "010" are the same. */
+export const opKey = (opNo: string): string => {
+  const order = num(opNo);
+  return order === undefined ? opNo : String(order);
+};
+
+/**
+ * How a version's BOP rows and the STEP / TOOL / PARAM rows that reference
+ * them map onto the operations already on it. An Op No is the operation's
+ * order. An Op No equal to an existing operation's order names that
+ * operation: its BOP row is skipped and its children attach to it. Any other
+ * BOP row is a new operation at that order. An Op No that is not a number is
+ * refused: nothing could find the operation again on a re-run.
+ * `existingIdByOpNo` is keyed by `opKey`.
+ */
+export function planOperationAppend(args: {
+  bop: Array<{ index: number; opNo: string }>;
+  children: Array<{
+    index: number;
+    opNo: string;
+    rowType: "STEP" | "TOOL" | "PARAM";
+  }>;
+  existing: Array<{ id: string; order: number }>;
+  partLabel: string;
+}): {
+  insert: Array<{ index: number; opNo: string; order: number }>;
+  skipped: Array<{ index: number; opNo: string }>;
+  existingIdByOpNo: Map<string, string>;
+  errors: RowIssue[];
+} {
+  const idsByOrder = new Map<number, string[]>();
+  for (const op of args.existing) {
+    const ids = idsByOrder.get(Number(op.order)) ?? [];
+    ids.push(op.id);
+    idsByOrder.set(Number(op.order), ids);
+  }
+  const ambiguous = (index: number, opNo: string, count: number) => ({
+    row: rowOf(index),
+    reason: `Op No "${opNo}" matches ${count} operations on ${args.partLabel}`
+  });
+  const notANumber = (index: number, opNo: string) => ({
+    row: rowOf(index),
+    reason: `Op No "${opNo}" must be a number`
+  });
+
+  const insert: Array<{ index: number; opNo: string; order: number }> = [];
+  const skipped: Array<{ index: number; opNo: string }> = [];
+  const existingIdByOpNo = new Map<string, string>();
+  const errors: RowIssue[] = [];
+
+  for (const { index, opNo } of args.bop) {
+    const order = num(opNo);
+    if (order === undefined) {
+      errors.push(notANumber(index, opNo));
+      continue;
+    }
+    const ids = idsByOrder.get(order) ?? [];
+    if (ids.length > 1) {
+      errors.push(ambiguous(index, opNo, ids.length));
+    } else if (ids.length === 1) {
+      skipped.push({ index, opNo });
+      existingIdByOpNo.set(opKey(opNo), ids[0]!);
+    } else {
+      insert.push({ index, opNo, order });
+    }
+  }
+
+  const fileOrders = new Set(args.bop.map((b) => num(b.opNo)));
+  for (const { index, opNo, rowType } of args.children) {
+    const order = num(opNo);
+    if (order === undefined) {
+      errors.push(notANumber(index, opNo));
+      continue;
+    }
+    if (fileOrders.has(order)) continue;
+    const ids = idsByOrder.get(order) ?? [];
+    if (ids.length > 1) {
+      errors.push(ambiguous(index, opNo, ids.length));
+    } else if (ids.length === 1) {
+      existingIdByOpNo.set(opKey(opNo), ids[0]!);
+    } else {
+      errors.push({
+        row: rowOf(index),
+        reason: `${rowType} references unknown Op No "${opNo}"`
+      });
+    }
+  }
+
+  return { insert, skipped, existingIdByOpNo, errors };
+}
+
+// ---------------------------------------------------------------------------
 // write (one transaction per part group → atomic per part, ADR-0001)
 // ---------------------------------------------------------------------------
 
@@ -3654,19 +4218,32 @@ async function writeGroup(
     userId: string;
     itemMap: Map<string, ItemInfo>;
     processMap: Map<string, string>;
+    processById: Map<string, ProcessInfo>;
     workCenterMap: Map<string, string>;
     supplierMap: Map<string, string>;
+    releaseControl: ReleaseControl;
+    changeNoticeLocks: Map<string, string | null>;
   }
-): Promise<{ filledAny: boolean; skippedExisting: boolean }> {
+): Promise<{
+  added: MethodRowsAdded;
+  skipped: RowIssue[];
+  warnings: string[];
+  createdPart: boolean;
+}> {
   const { companyId, userId } = ctx;
   const now = () => datetime.timestamp();
+  const partLabel = `${g.readableId} rev ${g.revision}`;
 
   return await db.transaction().execute(async (trx) => {
-    let filledAny = false;
-    let skippedExisting = false;
+    const added = noMethodRowsAdded();
+    const skipped: RowIssue[] = [];
+    const issues: RowIssue[] = [];
+    const warnings = new Set<string>();
 
     // Resolve (or create) the parent item.
     let parentItemId: string;
+    let revisionStatus: string | null;
+    let createdPart = false;
     if (g.partRow) {
       const r = g.partRow.record;
       const inserted = await trx
@@ -3695,9 +4272,24 @@ async function writeGroup(
             updatedBy: userId
           } as never)
         )
-        .returning(["id"])
+        // xmax is 0 on a row this statement inserted, not on one it updated.
+        .returning([
+          "id",
+          "revisionStatus",
+          sql<boolean>`xmax = 0`.as("created")
+        ])
         .execute();
       parentItemId = inserted[0]!.id;
+      revisionStatus = inserted[0]!.revisionStatus ?? null;
+      createdPart = inserted[0]!.created;
+      if (!createdPart) {
+        // The upsert keeps the existing part's fields, so the row writes
+        // nothing; its BOM and BOP rows still apply.
+        skipped.push({
+          row: rowOf(g.partRow.index),
+          reason: `Part ${partLabel} already exists; its PART row changes nothing`
+        });
+      }
 
       // The makeMethod Draft v1 is created by the AFTER INSERT trigger on item.
       // The part row links to the item by readableId (part.id = item.readableId).
@@ -3715,48 +4307,173 @@ async function writeGroup(
         .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
         .execute();
     } else {
-      const parent = ctx.itemMap.get(key(g.readableId, g.revision));
-      parentItemId = parent!.id;
+      const parent = ctx.itemMap.get(key(g.readableId, g.revision))!;
+      parentItemId = parent.id;
+      revisionStatus = parent.revisionStatus;
     }
 
-    for (const [version, bucket] of g.versions) {
-      const makeMethodId = await ensureMakeMethod(
-        trx,
-        parentItemId,
-        version,
-        companyId,
-        userId
-      );
+    // Imports of one part run one at a time from here, so a second import
+    // reads the version the first created instead of creating it again.
+    // NO KEY UPDATE leaves rows that reference the item (jobs, quote lines,
+    // other BOMs) free to be written meanwhile.
+    await trx
+      .selectFrom("item")
+      .select("id")
+      .where("id", "=", parentItemId)
+      .where("companyId", "=", companyId)
+      .forNoKeyUpdate()
+      .execute();
 
-      // Create-only: fill a version only if it has no method content yet.
-      const hasMaterial = await trx
+    const methods: MakeMethodVersion[] =
+      g.versions.size === 0
+        ? []
+        : (
+            await trx
+              .selectFrom("makeMethod")
+              .select(["id", "version", "status", "changeOrderId"])
+              .where("itemId", "=", parentItemId)
+              .where("companyId", "=", companyId)
+              .execute()
+          ).map((m) => ({ ...m, version: Number(m.version) }));
+    // Versions this file creates. A blank version still resolves against the
+    // versions that existed before the import, whatever the row order.
+    const createdIds = new Map<number, string>();
+
+    for (const [version, bucket] of g.versions) {
+      const target = pickMethodImportTarget(methods, version);
+      const methodVersion =
+        "method" in target ? target.method.version : target.createVersion;
+      let makeMethodId =
+        "method" in target ? target.method.id : createdIds.get(methodVersion);
+      if (!makeMethodId) {
+        makeMethodId = await insertDraftMakeMethod(
+          trx,
+          parentItemId,
+          methodVersion,
+          companyId,
+          userId
+        );
+        createdIds.set(methodVersion, makeMethodId);
+      }
+
+      // Imports into one version run one at a time: a second import waits
+      // here, then reads what the first wrote and skips it. The refusal reads
+      // the locked row, so it sees an editor that activated the Draft or
+      // linked it to a change notice after the read above. A refused part
+      // rolls back, with any version created for it. NO KEY UPDATE leaves
+      // BOM lines elsewhere that point at this method free to be written.
+      const locked = await trx
+        .selectFrom("makeMethod")
+        .select(["status", "changeOrderId"])
+        .where("id", "=", makeMethodId)
+        .where("companyId", "=", companyId)
+        .forNoKeyUpdate()
+        .executeTakeFirst();
+      const lock: LockCheck = locked
+        ? methodImportLock({
+            status: locked.status,
+            version: methodVersion,
+            changeNoticeLock: locked.changeOrderId
+              ? changeNoticeLockOf(ctx.changeNoticeLocks, locked.changeOrderId)
+              : null,
+            revisionStatus,
+            releaseControl: ctx.releaseControl
+          })
+        : {
+            ok: false,
+            warn: false,
+            message: `make method version ${methodVersion} was deleted while the import ran. Run the import again`
+          };
+      if (!lock.ok) {
+        issues.push({
+          row: rowOf(firstIndexOf(bucket)),
+          reason: `Part ${partLabel}: ${lock.message}`
+        });
+        continue;
+      }
+      const addedBefore = totalMethodRows(added);
+
+      const existingMaterials = await trx
         .selectFrom("methodMaterial")
-        .select("id")
+        .select(["itemId", "order"])
         .where("makeMethodId", "=", makeMethodId)
-        .limit(1)
-        .executeTakeFirst();
-      const hasOperation = await trx
+        .where("companyId", "=", companyId)
+        .execute();
+      const existingOperations = await trx
         .selectFrom("methodOperation")
-        .select("id")
+        .select(["id", "order"])
         .where("makeMethodId", "=", makeMethodId)
-        .limit(1)
-        .executeTakeFirst();
-      if (hasMaterial || hasOperation) {
-        skippedExisting = true;
+        .where("companyId", "=", companyId)
+        .execute();
+
+      const opPlan = planOperationAppend({
+        bop: bucket.bop.map((e) => ({
+          index: e.index,
+          opNo: text(e.record.opNo)
+        })),
+        children: [
+          ...bucket.step.map((e) => ({
+            index: e.index,
+            opNo: text(e.record.opNo),
+            rowType: "STEP" as const
+          })),
+          ...bucket.tool.map((e) => ({
+            index: e.index,
+            opNo: text(e.record.opNo),
+            rowType: "TOOL" as const
+          })),
+          ...bucket.param.map((e) => ({
+            index: e.index,
+            opNo: text(e.record.opNo),
+            rowType: "PARAM" as const
+          }))
+        ],
+        existing: existingOperations.map((op) => ({
+          id: op.id,
+          order: Number(op.order)
+        })),
+        partLabel
+      });
+      if (opPlan.errors.length > 0) {
+        issues.push(...opPlan.errors);
         continue;
       }
 
-      // --- materials (BOM), in file row order ---
-      let order = 1;
+      // --- materials (BOM), in file row order after the existing lines ---
+      const components = new Map<number, ItemInfo>();
       for (const e of bucket.bom) {
-        const r = e.record;
-        const component = await resolveItem(
-          trx,
-          companyId,
-          text(r.componentId),
-          text(r.componentRevision),
-          ctx.itemMap
+        components.set(
+          e.index,
+          await resolveItem(
+            trx,
+            companyId,
+            text(e.record.componentId),
+            text(e.record.componentRevision),
+            ctx.itemMap
+          )
         );
+      }
+      const materialPlan = planMaterialAppend({
+        lines: bucket.bom.map((e) => ({
+          index: e.index,
+          itemId: components.get(e.index)!.id
+        })),
+        existing: existingMaterials.map((m) => ({
+          itemId: m.itemId,
+          order: Number(m.order)
+        }))
+      });
+      const bomByIndex = new Map(bucket.bom.map((e) => [e.index, e.record]));
+      for (const index of materialPlan.skipped) {
+        const r = bomByIndex.get(index)!;
+        skipped.push({
+          row: rowOf(index),
+          reason: `Material ${text(r.componentId)} rev ${text(r.componentRevision) || "0"} is already on the BOM of ${partLabel}; skipped`
+        });
+      }
+      for (const { index, order } of materialPlan.insert) {
+        const r = bomByIndex.get(index)!;
+        const component = components.get(index)!;
         const methodType = component.defaultMethodType ?? "Pull from Inventory";
         const sourcingType = component.sourcingType ?? "Specified";
 
@@ -3782,29 +4499,37 @@ async function writeGroup(
               sourcingType,
               materialMakeMethodId,
               quantity: num(r.quantity) ?? 1,
-              unitOfMeasureCode: text(r.unitOfMeasureCode) || "EA",
+              // The BOM editor starts a line in the material's own unit.
+              unitOfMeasureCode:
+                text(r.unitOfMeasureCode) ||
+                component.unitOfMeasureCode ||
+                "EA",
               order,
               kit: bool(r.kit),
               storageUnitIds,
+              customFields: {},
               companyId,
               createdBy: userId,
               createdAt: now()
             } as never
           ])
           .execute();
-        order++;
-        filledAny = true;
+        added.materials += 1;
       }
 
       // --- operations (BOP), keyed by Op No ---
-      const opIdByNo = new Map<string, string>();
-      let opIndex = 1;
-      for (const e of bucket.bop) {
-        const r = e.record;
-        const opNo = text(r.opNo);
-        const opType =
-          normalizeOperationType(text(r.operationType)) || "Process";
+      const opIdByNo = new Map(opPlan.existingIdByOpNo);
+      for (const { opNo, index } of opPlan.skipped) {
+        skipped.push({
+          row: rowOf(index),
+          reason: `Op ${opNo} already exists on ${partLabel}; skipped`
+        });
+      }
+      const bopByIndex = new Map(bucket.bop.map((e) => [e.index, e.record]));
+      for (const { index, opNo, order } of opPlan.insert) {
+        const r = bopByIndex.get(index)!;
         const processId = ctx.processMap.get(text(r.process).toLowerCase())!;
+        const opType = operationTypeFor(r, processId, ctx.processById);
         const workCenterId = text(r.workCenter)
           ? ctx.workCenterMap.get(text(r.workCenter).toLowerCase())
           : undefined;
@@ -3824,12 +4549,16 @@ async function writeGroup(
           .values([
             {
               makeMethodId,
-              order: num(opNo) ?? opIndex,
+              order,
               operationOrder: text(r.operationOrder) || "After Previous",
               operationType: opType,
               processId,
               workCenterId,
-              description: text(r.operationDescription),
+              // The editor names a new operation after its process.
+              description:
+                text(r.operationDescription) ||
+                ctx.processById.get(processId)?.name ||
+                "",
               setupUnit: text(r.setupUnit) || undefined,
               setupTime: num(r.setupTime) ?? 0,
               laborUnit: text(r.laborUnit) || undefined,
@@ -3841,6 +4570,7 @@ async function writeGroup(
               operationUnitCost: num(r.operationUnitCost),
               operationLeadTime: num(r.operationLeadTime),
               workInstruction: {},
+              customFields: {},
               companyId,
               createdBy: userId,
               createdAt: now()
@@ -3848,16 +4578,33 @@ async function writeGroup(
           ])
           .returning(["id"])
           .execute();
-        opIdByNo.set(opNo, inserted[0]!.id);
-        opIndex++;
-        filledAny = true;
+        opIdByNo.set(opKey(opNo), inserted[0]!.id);
+        added.operations += 1;
       }
 
       // --- steps / tools / parameters per operation ---
-      const sortByOp = new Map<string, number>();
+      // An existing operation keeps what it has: a step with the same name, a
+      // tool with the same item and a parameter with the same key are skipped.
+      const children = await loadOperationChildren(
+        trx,
+        companyId,
+        [...new Set(opPlan.existingIdByOpNo.values())],
+        bucket
+      );
+
+      const sortByOp = new Map(children.maxStepSortOrder);
       for (const e of bucket.step) {
         const r = e.record;
-        const operationId = opIdByNo.get(text(r.opNo))!;
+        const opNo = text(r.opNo);
+        const operationId = opIdByNo.get(opKey(opNo))!;
+        const name = text(r.stepName);
+        if (children.stepNames.get(operationId)?.has(name)) {
+          skipped.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo} on ${partLabel} already has a step named "${name}"; skipped`
+          });
+          continue;
+        }
         const sortOrder = (sortByOp.get(operationId) ?? 0) + 1;
         sortByOp.set(operationId, sortOrder);
         const stepType = text(r.stepType) || "Task";
@@ -3866,8 +4613,8 @@ async function writeGroup(
           .values([
             {
               operationId,
-              name: text(r.stepName),
-              description: plainTextToTiptap(text(r.stepDescription)),
+              name,
+              description: stepDescription(text(r.stepDescription)),
               type: stepType,
               required: bool(r.stepRequired),
               sortOrder,
@@ -3878,23 +4625,20 @@ async function writeGroup(
               minValue: num(r.stepMinValue),
               maxValue: num(r.stepMaxValue),
               listValues:
-                stepType === "List" && text(r.stepListValues)
-                  ? text(r.stepListValues)
-                      .split("|")
-                      .map((v) => v.trim())
-                      .filter(Boolean)
-                  : undefined,
+                stepType === "List" ? listValues(r.stepListValues) : undefined,
               companyId,
               createdBy: userId,
               createdAt: now()
             } as never
           ])
           .execute();
+        added.steps += 1;
       }
 
       for (const e of bucket.tool) {
         const r = e.record;
-        const operationId = opIdByNo.get(text(r.opNo))!;
+        const opNo = text(r.opNo);
+        const operationId = opIdByNo.get(opKey(opNo))!;
         const tool = await resolveItem(
           trx,
           companyId,
@@ -3902,6 +4646,13 @@ async function writeGroup(
           text(r.toolRevision),
           ctx.itemMap
         );
+        if (children.toolIds.get(operationId)?.has(tool.id)) {
+          skipped.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo} on ${partLabel} already has tool ${text(r.toolId)} rev ${text(r.toolRevision) || "0"}; skipped`
+          });
+          continue;
+        }
         await trx
           .insertInto("methodOperationTool")
           .values([
@@ -3915,17 +4666,27 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        added.tools += 1;
       }
 
       for (const e of bucket.param) {
         const r = e.record;
-        const operationId = opIdByNo.get(text(r.opNo))!;
+        const opNo = text(r.opNo);
+        const operationId = opIdByNo.get(opKey(opNo))!;
+        const paramKey = text(r.paramKey);
+        if (children.paramKeys.get(operationId)?.has(paramKey)) {
+          skipped.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo} on ${partLabel} already has parameter "${paramKey}"; skipped`
+          });
+          continue;
+        }
         await trx
           .insertInto("methodOperationParameter")
           .values([
             {
               operationId,
-              key: text(r.paramKey),
+              key: paramKey,
               value: text(r.paramValue),
               companyId,
               createdBy: userId,
@@ -3933,16 +4694,37 @@ async function writeGroup(
             } as never
           ])
           .execute();
+        added.parameters += 1;
+      }
+
+      // The editors write into a released revision under release control
+      // "warn" and say so; the import says so for each part it wrote into.
+      if (lock.warn && totalMethodRows(added) > addedBefore) {
+        warnings.add(`Part ${partLabel}: ${lock.message}`);
       }
     }
 
-    return { filledAny, skippedExisting };
+    if (issues.length > 0) throw new MethodImportRefused(issues);
+    return { added, skipped, warnings: [...warnings], createdPart };
   });
 }
 
 // ---------------------------------------------------------------------------
 // transaction-scoped resolution helpers
 // ---------------------------------------------------------------------------
+
+// The row a version's refusal is reported on: the first of its rows.
+function firstIndexOf(bucket: VersionBucket): number {
+  return Math.min(
+    ...[
+      ...bucket.bom,
+      ...bucket.bop,
+      ...bucket.step,
+      ...bucket.tool,
+      ...bucket.param
+    ].map((e) => e.index)
+  );
+}
 
 // Resolve an item id by readableId + revision. Falls back to a DB lookup for a
 // part created earlier in this same file (not present in the prefetched map).
@@ -3959,7 +4741,14 @@ async function resolveItem(
 
   const row = await trx
     .selectFrom("item")
-    .select(["id", "type", "defaultMethodType", "sourcingType"])
+    .select([
+      "id",
+      "type",
+      "defaultMethodType",
+      "sourcingType",
+      "revisionStatus",
+      "unitOfMeasureCode"
+    ])
     .where("companyId", "=", companyId)
     .where("readableId", "=", readableId)
     .where("revision", "=", revision || "0")
@@ -3972,7 +4761,9 @@ async function resolveItem(
     id: row.id,
     type: row.type,
     defaultMethodType: row.defaultMethodType ?? null,
-    sourcingType: row.sourcingType ?? null
+    sourcingType: row.sourcingType ?? null,
+    revisionStatus: row.revisionStatus ?? null,
+    unitOfMeasureCode: row.unitOfMeasureCode ?? null
   };
   itemMap.set(k, info);
   return info;
@@ -4002,55 +4793,65 @@ async function currentMakeMethodId(
   return rows[0]!.id;
 }
 
-// Resolve the target make method for a version. Blank → the part's current
-// method (the trigger-created Draft v1 for a new part). Explicit → find-or-create
-// that version as a Draft; never auto-activate.
-async function ensureMakeMethod(
+// Why each change notice that owns a Draft of these items locks it, or null:
+// the check checkRevisionLock runs before every BOM and BOP write.
+async function loadChangeNoticeLocks(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[]
+): Promise<Map<string, string | null>> {
+  if (itemIds.length === 0) return new Map();
+  const notices = await db
+    .selectFrom("makeMethod")
+    .innerJoin("changeOrder", "changeOrder.id", "makeMethod.changeOrderId")
+    .select(["changeOrder.id", "changeOrder.status"])
+    .distinct()
+    .where("makeMethod.itemId", "in", itemIds)
+    .where("makeMethod.companyId", "=", companyId)
+    .where("changeOrder.companyId", "=", companyId)
+    .execute();
+  return getChangeNoticeEngineeringLocks(companyId, notices);
+}
+
+function noMethodRowsAdded(): MethodRowsAdded {
+  return { materials: 0, operations: 0, steps: 0, tools: 0, parameters: 0 };
+}
+
+const totalMethodRows = (added: MethodRowsAdded) =>
+  Object.values(added).reduce((sum, n) => sum + n, 0);
+
+function addMethodRows(total: MethodRowsAdded, part: MethodRowsAdded) {
+  for (const kind of Object.keys(total) as Array<keyof MethodRowsAdded>) {
+    total[kind] += part[kind];
+  }
+}
+
+// A Draft whose change notice was not read before the import (it was linked
+// while the import ran) is refused rather than written unchecked.
+function changeNoticeLockOf(
+  locks: Map<string, string | null>,
+  changeOrderId: string
+): string | null {
+  return locks.has(changeOrderId)
+    ? (locks.get(changeOrderId) ?? null)
+    : "its change notice changed while the import ran. Run the import again";
+}
+
+// A new Draft version of the part's make method; never auto-activated.
+async function insertDraftMakeMethod(
   trx: Transaction<KyselyDatabase>,
   itemId: string,
-  version: string,
+  version: number,
   companyId: string,
   userId: string
 ): Promise<string> {
-  if (!version.trim()) {
-    const current = await currentMakeMethodId(trx, itemId, companyId);
-    if (current) return current;
-    // No make method yet (e.g. a non-trigger item type) — create Draft v1.
-    const inserted = await trx
-      .insertInto("makeMethod")
-      .values([
-        {
-          itemId,
-          companyId,
-          version: 1,
-          status: "Draft",
-          createdBy: userId,
-          createdAt: datetime.timestamp()
-        } as never
-      ])
-      .returning(["id"])
-      .execute();
-    return inserted[0]!.id;
-  }
-
-  const versionNumber = num(version) ?? 1;
-  const existing = await trx
-    .selectFrom("makeMethod")
-    .select(["id"])
-    .where("itemId", "=", itemId)
-    .where("companyId", "=", companyId)
-    .where("version", "=", versionNumber)
-    .limit(1)
-    .executeTakeFirst();
-  if (existing) return existing.id;
-
   const inserted = await trx
     .insertInto("makeMethod")
     .values([
       {
         itemId,
         companyId,
-        version: versionNumber,
+        version,
         status: "Draft",
         createdBy: userId,
         createdAt: datetime.timestamp()
@@ -4059,6 +4860,77 @@ async function ensureMakeMethod(
     .returning(["id"])
     .execute();
   return inserted[0]!.id;
+}
+
+type OperationChildren = {
+  stepNames: Map<string, Set<string>>;
+  maxStepSortOrder: Map<string, number>;
+  toolIds: Map<string, Set<string>>;
+  paramKeys: Map<string, Set<string>>;
+};
+
+// What the existing operations a file's rows attach to already hold. Only the
+// child tables the file has rows for are read.
+async function loadOperationChildren(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  operationIds: string[],
+  bucket: VersionBucket
+): Promise<OperationChildren> {
+  const children: OperationChildren = {
+    stepNames: new Map(),
+    maxStepSortOrder: new Map(),
+    toolIds: new Map(),
+    paramKeys: new Map()
+  };
+  if (operationIds.length === 0) return children;
+
+  const add = (map: Map<string, Set<string>>, id: string, value: string) => {
+    const values = map.get(id) ?? new Set<string>();
+    values.add(value);
+    map.set(id, values);
+  };
+
+  if (bucket.step.length > 0) {
+    const steps = await trx
+      .selectFrom("methodOperationStep")
+      .select(["operationId", "name", "sortOrder"])
+      .where("operationId", "in", operationIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const step of steps) {
+      add(children.stepNames, step.operationId, step.name.trim());
+      children.maxStepSortOrder.set(
+        step.operationId,
+        Math.max(
+          children.maxStepSortOrder.get(step.operationId) ?? 0,
+          Number(step.sortOrder)
+        )
+      );
+    }
+  }
+  if (bucket.tool.length > 0) {
+    const tools = await trx
+      .selectFrom("methodOperationTool")
+      .select(["operationId", "toolId"])
+      .where("operationId", "in", operationIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const tool of tools)
+      add(children.toolIds, tool.operationId, tool.toolId);
+  }
+  if (bucket.param.length > 0) {
+    const params = await trx
+      .selectFrom("methodOperationParameter")
+      .select(["operationId", "key"])
+      .where("operationId", "in", operationIds)
+      .where("companyId", "=", companyId)
+      .execute();
+    for (const param of params) {
+      add(children.paramKeys, param.operationId, param.key.trim());
+    }
+  }
+  return children;
 }
 
 // Seed storageUnitIds from the component's pickMethod default bins (mirrors
@@ -5829,7 +6701,9 @@ export async function importCsvTable(
     // Rows the user should fix and re-import (validation / missing required data).
     errors: [] as Array<{ row: number; reason: string }>,
     // Rows intentionally not written (duplicates, already-existing) — informational.
-    skipped: [] as Array<{ row: number; reason: string }>
+    skipped: [] as Array<{ row: number; reason: string }>,
+    added: undefined as MethodRowsAdded | undefined,
+    warnings: undefined as string[] | undefined
   };
 
   const acceptedRows = await rejectForeignReferences(
@@ -7862,7 +8736,9 @@ export async function importCsvTable(
     inserted: summary.inserted,
     updated: summary.updated,
     errors: withValues(summary.errors),
-    skipped: withValues(summary.skipped)
+    skipped: withValues(summary.skipped),
+    added: summary.added ?? null,
+    warnings: summary.warnings ?? []
   };
 }
 
@@ -12343,15 +13219,18 @@ export async function createDocument(
         // Stamp each return line's picked entities onto its shipment line, so
         // the batch/serial flows through to posting. post-shipment splits a
         // batch when the shipped quantity is less than the entity's quantity.
+        // The index puts each serial in its own box on the shipment page,
+        // which shows a serial only at the index it was assigned to.
         for (const shipmentLine of insertedLines) {
           const entities = shipmentLine.lineId
             ? entitiesByReturnLine.get(shipmentLine.lineId)
             : undefined;
-          for (const entity of entities ?? []) {
+          for (const [index, entity] of (entities ?? []).entries()) {
             const attrs = {
               ...(entity.attributes ?? {}),
               Shipment: id,
-              "Shipment Line": shipmentLine.id
+              "Shipment Line": shipmentLine.id,
+              "Shipment Line Index": index
             };
             await trx
               .updateTable("trackedEntity")

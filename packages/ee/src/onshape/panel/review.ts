@@ -57,6 +57,8 @@ export type ReleaseReview = ReviewBase & {
   makeDefault: boolean;
   /** Assemblies whose BOM the plan could not read; their lines are empty. */
   warnings: string[];
+  /** What Onshape returned for those BOMs, for the panel's Details. */
+  diagnostics?: unknown;
 };
 
 export type ReviewState = PartReview | AssemblyReview | ReleaseReview;
@@ -81,6 +83,7 @@ export function createReview(input: {
   scope: string;
   plan: PartPlan | AssemblyPlan | ReleasePlan;
   warnings?: string[];
+  diagnostics?: unknown;
 }): ReviewState {
   const base: ReviewBase = {
     planId: input.planId,
@@ -111,7 +114,8 @@ export function createReview(input: {
         changeNotice: plan.changeNotice ? { ...plan.changeNotice } : null,
         createChangeNotice: plan.changeNotice !== null,
         makeDefault: plan.makeDefault,
-        warnings: input.warnings ?? []
+        warnings: input.warnings ?? [],
+        diagnostics: input.diagnostics
       };
   }
 }

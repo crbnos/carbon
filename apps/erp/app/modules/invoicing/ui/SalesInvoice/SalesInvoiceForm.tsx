@@ -105,9 +105,8 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       const [customerData, paymentTermData] = await Promise.all([
         // instantiation-depth cliff — the cliff shifts as unrelated modules
         // join the program (same class as the purchasing.service
-        // suppression). ts-ignore (not ts-expect-error) is used so it
-        // satisfies both checkers — tsgo would flag an unused expect-error
-        // directive in CI — and it survives the cliff receding.
+        // suppression). ts-ignore, not ts-expect-error: an unused
+        // expect-error directive fails the typecheck when the cliff recedes.
         carbon
           ?.from("customer")
           .select(

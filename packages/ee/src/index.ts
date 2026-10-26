@@ -21,6 +21,14 @@ import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 
 export { Email } from "./email/config";
+export type { EmailDelivery } from "./email/delivery";
+export {
+  documentSender,
+  emailSettingsForm,
+  picksServerMail,
+  resolveEmailDelivery,
+  withEmailDelivery
+} from "./email/delivery";
 export { defineIntegration } from "./fns";
 export type {
   Integration,
@@ -94,8 +102,9 @@ export {
   isOnshapeIntegrationId,
   ONSHAPE_INTEGRATION_IDS
 } from "./onshape/lib/connection";
-export type { OnshapeBomNode } from "./onshape/panel/bom";
+export type { BomDiagnostics, OnshapeBomNode } from "./onshape/panel/bom";
 export {
+  describeBomPayload,
   flattenBomTree,
   metadataProperty,
   missingBomColumnsMessage,

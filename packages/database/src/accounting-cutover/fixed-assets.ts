@@ -7,14 +7,10 @@
 // and the accumulated depreciation the wizard edits before the enable.
 
 import { sql } from "kysely";
+import { withTransaction } from "../client";
 import { assetsLeavingWithoutJournal } from "../legacy-documents";
 import { EPSILON, round } from "../precision";
-import {
-  type CutoverArgs,
-  type CutoverDb,
-  refuseAfterCutover,
-  withTransaction
-} from "./shared";
+import { type CutoverArgs, type CutoverDb, refuseAfterCutover } from "./shared";
 
 export type CutoverFixedAsset = {
   id: string;

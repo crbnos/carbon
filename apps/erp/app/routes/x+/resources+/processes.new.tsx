@@ -41,6 +41,7 @@ export default function NewProcessRoute() {
     batchable: false,
     batchType: "Sequential" as const,
     requiresAbility: false,
+    abilityPolicy: "Warn" as const,
     ...batchRuleInitialValues(null)
   };
 

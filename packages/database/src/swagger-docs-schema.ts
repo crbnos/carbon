@@ -29809,6 +29809,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -29919,6 +29922,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -29981,6 +29987,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.batchRules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
           },
           {
             $ref: "#/parameters/body.process"
@@ -78592,6 +78601,9 @@ export default {
             $ref: "#/parameters/rowFilter.processes.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.processes.abilityPolicy"
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.workCenters"
           },
           {
@@ -96799,6 +96811,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.guidePath"
           },
           {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -96915,6 +96930,9 @@ export default {
             $ref: "#/parameters/rowFilter.training.guidePath"
           },
           {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -96983,6 +97001,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.training.guidePath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.training.videoUrl"
           },
           {
             $ref: "#/parameters/body.training"
@@ -102394,9 +102415,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -102404,6 +102422,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
@@ -102675,9 +102696,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -102685,6 +102703,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
@@ -102910,9 +102931,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
           },
           {
@@ -102920,6 +102938,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.preventNegativeBackflush"
@@ -132129,7 +132150,8 @@ export default {
         "active",
         "requiresAbility",
         "batchable",
-        "batchType"
+        "batchType",
+        "abilityPolicy"
       ],
       properties: {
         id: {
@@ -132232,6 +132254,12 @@ export default {
           description:
             "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
           format: "jsonb"
+        },
+        abilityPolicy: {
+          default: "Warn",
+          enum: ["Warn", "Block"],
+          format: 'public."processAbilityPolicy"',
+          type: "string"
         }
       },
       type: "object"
@@ -148639,15 +148667,7 @@ export default {
       type: "object"
     },
     notificationPreference: {
-      required: [
-        "id",
-        "userId",
-        "companyId",
-        "channel",
-        "topic",
-        "enabled",
-        "updatedAt"
-      ],
+      required: ["id", "userId", "channel", "topic", "enabled", "updatedAt"],
       properties: {
         id: {
           default: "public.xid()",
@@ -155253,6 +155273,11 @@ export default {
         },
         batchRules: {
           format: "jsonb"
+        },
+        abilityPolicy: {
+          enum: ["Warn", "Block"],
+          format: 'public."processAbilityPolicy"',
+          type: "string"
         },
         workCenters: {
           format: "text[]",
@@ -164340,6 +164365,10 @@ export default {
         guidePath: {
           format: "text",
           type: "string"
+        },
+        videoUrl: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -166787,10 +166816,10 @@ export default {
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
         "invoiceNotificationGroup",
-        "requireBackflushStorageUnit",
         "leaseIncrementalBorrowingRate",
         "leaseShortTermExpedient",
         "leaseReminderDays",
+        "requireBackflushStorageUnit",
         "preventNegativeBackflush",
         "receiptQuantitiesStartAtZero"
       ],
@@ -167166,11 +167195,6 @@ export default {
           format: "text",
           type: "string"
         },
-        requireBackflushStorageUnit: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
         leaseIncrementalBorrowingRate: {
           default: 6,
           format: "numeric",
@@ -167185,6 +167209,11 @@ export default {
           default: 90,
           format: "integer",
           type: "integer"
+        },
+        requireBackflushStorageUnit: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         },
         preventNegativeBackflush: {
           default: true,
@@ -183849,6 +183878,12 @@ export default {
       name: "batchRules",
       description:
         "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.process.abilityPolicy": {
+      name: "abilityPolicy",
       required: false,
       in: "query",
       type: "string"
@@ -209450,6 +209485,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.processes.abilityPolicy": {
+      name: "abilityPolicy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.processes.workCenters": {
       name: "workCenters",
       required: false,
@@ -219702,6 +219743,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.training.videoUrl": {
+      name: "videoUrl",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.gauge": {
       name: "gauge",
       description: "gauge",
@@ -222766,12 +222813,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requireBackflushStorageUnit": {
-      name: "requireBackflushStorageUnit",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.leaseIncrementalBorrowingRate": {
       name: "leaseIncrementalBorrowingRate",
       required: false,
@@ -222786,6 +222827,12 @@ export default {
     },
     "rowFilter.companySettings.leaseReminderDays": {
       name: "leaseReminderDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireBackflushStorageUnit": {
+      name: "requireBackflushStorageUnit",
       required: false,
       in: "query",
       type: "string"

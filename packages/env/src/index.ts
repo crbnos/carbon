@@ -119,7 +119,17 @@ export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
 
 export const MAINTENANCE_MODE = parseBoolean(getEnv("MAINTENANCE_MODE"), false);
 
+// "single": one customer owns this deployment and everything in it (BYOC, a
+// self-hosted install), so the server's own settings, such as its mail, are
+// theirs to share across their companies. Anything else, unset included, is
+// Carbon Cloud's "multi": many customers, one server.
+export const SINGLE_TENANT = getEnv("TENANT_TYPE") === "single";
+
 export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
+
+export const INTEGRATION_EARLY_ACCESS_USER_IDS = getEnv(
+  "INTEGRATION_EARLY_ACCESS_USER_IDS"
+);
 
 // Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
 // `docHash` stamped onto every ITAR certification, and the target of the

@@ -61,6 +61,7 @@ import {
 import { Link, useNavigate } from "react-router";
 import { DateTime } from "~/components";
 import { useNotifications, useUser } from "~/hooks";
+import { useAppBadge } from "~/hooks/useAppBadge";
 import { useRestoreBrowserNotifications } from "~/hooks/usePushSubscription";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
@@ -926,6 +927,7 @@ const Notifications = () => {
   // The bell is always mounted on desktop (the Profile sheet is on phones), so
   // it is where a signed-back-in user's browser notifications come back.
   useRestoreBrowserNotifications({ publicKey: usePushPublicKey(), userId });
+  useAppBadge({ userId });
   const [isOpen, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("inbox");
   const notificationsState = useNotifications({

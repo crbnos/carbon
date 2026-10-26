@@ -5,6 +5,9 @@
 import { downloadText } from "@carbon/files";
 import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   Count,
   cn,
@@ -19,9 +22,16 @@ import {
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuCircleCheck, LuCircleX, LuDownload, LuInfo } from "react-icons/lu";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { Fragment, type ReactNode, useState } from "react";
+import {
+  LuCircleCheck,
+  LuCircleX,
+  LuDownload,
+  LuInfo,
+  LuTriangleAlert
+} from "react-icons/lu";
+import type { MethodRowsAdded } from "~/modules/shared/types";
 
 // A row the importer did not insert/update. `values` holds the original CSV cells
 // (keyed by the user's headers) exactly as the server parsed them — so the modal
@@ -40,6 +50,10 @@ type ImportResultsModalProps = {
   errors: RowIssue[];
   // Rows intentionally not written (duplicates, already-existing) — informational.
   skipped: RowIssue[];
+  // Method imports only: inserted and updated count parts there.
+  added?: MethodRowsAdded | null;
+  // Method imports only: parts written under a release-control warning.
+  warnings?: string[];
   columns: string[];
   onClose: () => void;
 };
@@ -52,6 +66,8 @@ export const ImportResultsModal = ({
   updated,
   errors,
   skipped,
+  added,
+  warnings = [],
   columns,
   onClose
 }: ImportResultsModalProps) => {
@@ -95,7 +111,15 @@ export const ImportResultsModal = ({
             <Trans>Import results</Trans>
           </ModalTitle>
           <ModalDescription>
-            {allClean ? (
+            {added ? (
+              <MethodImportCounts
+                inserted={inserted}
+                updated={updated}
+                errors={errors.length}
+                skipped={skipped.length}
+                added={added}
+              />
+            ) : allClean ? (
               <Trans>
                 All rows imported — {inserted} inserted, {updated} updated.
               </Trans>
@@ -108,6 +132,21 @@ export const ImportResultsModal = ({
           </ModalDescription>
         </ModalHeader>
         <ModalBody className="min-w-0">
+          {warnings.length > 0 && (
+            <Alert variant="warning" className="mb-4">
+              <LuTriangleAlert />
+              <AlertTitle>
+                <Trans>Written with a warning</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc pl-4">
+                  {warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
           {allClean ? (
             <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
               <LuCircleCheck className="h-8 w-8 text-emerald-500" />
@@ -225,3 +264,77 @@ export const ImportResultsModal = ({
     </Modal>
   );
 };
+
+// Method imports write many rows per part: name the parts, then the rows.
+function MethodImportCounts({
+  inserted,
+  updated,
+  errors,
+  skipped,
+  added
+}: {
+  inserted: number;
+  updated: number;
+  errors: number;
+  skipped: number;
+  added: MethodRowsAdded;
+}) {
+  const parts = [
+    inserted > 0 && (
+      <Plural value={inserted} one="# part created" other="# parts created" />
+    ),
+    updated > 0 && (
+      <Plural value={updated} one="# part updated" other="# parts updated" />
+    )
+  ].filter(Boolean) as ReactNode[];
+  const rows = [
+    added.materials > 0 && (
+      <Plural value={added.materials} one="# BOM line" other="# BOM lines" />
+    ),
+    added.operations > 0 && (
+      <Plural value={added.operations} one="# operation" other="# operations" />
+    ),
+    added.steps > 0 && (
+      <Plural value={added.steps} one="# step" other="# steps" />
+    ),
+    added.tools > 0 && (
+      <Plural value={added.tools} one="# tool" other="# tools" />
+    ),
+    added.parameters > 0 && (
+      <Plural value={added.parameters} one="# parameter" other="# parameters" />
+    )
+  ].filter(Boolean) as ReactNode[];
+  const list = (nodes: ReactNode[]) =>
+    nodes.map((node, i) => (
+      <Fragment key={i}>
+        {i > 0 && ", "}
+        {node}
+      </Fragment>
+    ));
+
+  return (
+    <>
+      {parts.length > 0 ? (
+        <>{list(parts)}.</>
+      ) : (
+        <Trans>No parts changed.</Trans>
+      )}{" "}
+      {rows.length > 0 && (
+        <>
+          <Trans>Added:</Trans> {list(rows)}.{" "}
+        </>
+      )}
+      {(errors > 0 || skipped > 0) && (
+        <>
+          <Plural
+            value={errors}
+            one="# row needs fixing"
+            other="# rows need fixing"
+          />
+          ,{" "}
+          <Plural value={skipped} one="# row skipped" other="# rows skipped" />.
+        </>
+      )}
+    </>
+  );
+}

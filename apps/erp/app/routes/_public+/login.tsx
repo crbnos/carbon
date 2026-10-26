@@ -11,7 +11,8 @@ import {
   getRedirectTo,
   isAuthProviderEnabled,
   magicLinkValidator,
-  RATE_LIMIT
+  RATE_LIMIT,
+  signInCodeValidator
 } from "@carbon/auth";
 import {
   botProtection,
@@ -35,11 +36,24 @@ import {
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
+import { markSignInBrowser } from "@carbon/auth/sign-in-browser.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { sendVerificationCode } from "@carbon/auth/verification.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
-import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
-import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
+import {
+  Hidden,
+  Input,
+  InputOTP,
+  Submit,
+  ValidatedForm,
+  validator
+} from "@carbon/form";
+import {
+  AccountLockout,
+  maxAttemptsForRateLimit,
+  Ratelimit,
+  redis
+} from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import {
   Alert,
@@ -69,6 +83,7 @@ import type {
 } from "react-router";
 import { data, useFetcher, useLoaderData, useSearchParams } from "react-router";
 import type { Result } from "~/types";
+import { setAppBadge } from "~/utils/app-badge";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -141,7 +156,10 @@ export async function action({ request }: ActionFunctionArgs) {
   // hammering one account to spam magic links / probe existence, is bounded per
   // account. The reply is deliberately GENERIC (never reveals whether the
   // account exists) to avoid user enumeration.
-  const lockout = new AccountLockout({ redis });
+  const lockout = new AccountLockout({
+    redis,
+    maxAttempts: maxAttemptsForRateLimit(RATE_LIMIT)
+  });
   const LOCKED_MESSAGE =
     "For your security, sign-in for this account is temporarily paused. Please try again later.";
 
@@ -242,7 +260,11 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     logAuthEvent("magic_link_sent", { actor: email, ip });
-    return { success: true, mode: "login" };
+    // This browser asked: the email's link completes only here.
+    return data(
+      { success: true, mode: "login", email },
+      { headers: { "Set-Cookie": await markSignInBrowser() } }
+    );
   } else if (CarbonEdition === Edition.Enterprise) {
     logAuthEvent("login_failed", {
       actor: email,
@@ -293,8 +315,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   // A signed-out user lands here however the session ended (sign out, expiry,
-  // a revoked account), so this is where the lists kept on the device go.
+  // a revoked account), so this is where the lists kept on the device go, and
+  // the app icon's unread badge with them.
   useEffect(() => {
+    setAppBadge(0);
     import("localforage")
       .then((storage) => storage.default.clear())
       .catch((error) =>
@@ -578,11 +602,18 @@ export default function LoginRoute() {
               <Heading size="h3">
                 <Trans>Check your email</Trans>
               </Heading>
-              <p className="text-muted-foreground tracking-tight text-sm">
+              <p className="text-muted-foreground tracking-tight text-sm text-center">
                 <Trans>
-                  We've sent you a magic link to sign in to your account.
+                  We've emailed you a sign-in link and a 6-digit code. Follow
+                  the link, or enter the code here.
                 </Trans>
               </p>
+              {fetcher.data.email ? (
+                <SignInCode
+                  email={fetcher.data.email}
+                  redirectTo={redirectTo}
+                />
+              ) : null}
             </VStack>
           </>
         ) : mode === "verify" ? (
@@ -879,5 +910,72 @@ function OutlookIcon(props: React.SVGProps<SVGSVGElement>) {
       />
       <path d="M1362.667 255.5h383.25v383.25h-383.25z" fill="#50D9FF" />
     </svg>
+  );
+}
+
+/**
+ * The code from the sign-in email, as an alternative to its link. It is
+ * the link's own one-time token: a mail scanner that only opens the link
+ * leaves it usable, one that presses the link page's button spends both
+ * (the button shows only in the browser that asked). A verified code
+ * yields the same session the link's redirect does, handed to /callback the
+ * same way, so everything after — company, SSO, MFA — is one path for both.
+ */
+function SignInCode({
+  email,
+  redirectTo
+}: {
+  email: string;
+  redirectTo?: string;
+}) {
+  const { t } = useLingui();
+  const code = useFetcher<
+    Result & { refreshToken?: string; userId?: string }
+  >();
+  const callback = useFetcher();
+  const signingIn = callback.state !== "idle";
+
+  useEffect(() => {
+    const { refreshToken, userId } = code.data ?? {};
+    if (!code.data?.success || !refreshToken || !userId) return;
+    const formData = new FormData();
+    formData.append("refreshToken", refreshToken);
+    formData.append("userId", userId);
+    if (redirectTo) formData.append("redirectTo", redirectTo);
+    callback.submit(formData, { method: "post", action: path.to.callback });
+  }, [code.data, redirectTo, callback.submit]);
+
+  return (
+    <ValidatedForm
+      fetcher={code}
+      validator={signInCodeValidator}
+      defaultValues={{ email }}
+      method="post"
+      action={path.to.api.loginVerifyCode}
+      className="w-full"
+    >
+      <Hidden name="email" value={email} />
+      <VStack spacing={3} className="items-center">
+        {code.data?.success === false && code.data.message ? (
+          <Alert variant="destructive">
+            <LuCircleAlert className="w-4 h-4" />
+            <AlertTitle>
+              <Trans>Authentication Error</Trans>
+            </AlertTitle>
+            <AlertDescription>{code.data.message}</AlertDescription>
+          </Alert>
+        ) : null}
+        <InputOTP name="code" label={t`Sign-in code`} autoFocus />
+        <Submit
+          isDisabled={code.state !== "idle" || signingIn}
+          isLoading={code.state !== "idle" || signingIn}
+          hideShortcutKey
+          size="lg"
+          className="w-full"
+        >
+          <Trans>Sign in with code</Trans>
+        </Submit>
+      </VStack>
+    </ValidatedForm>
   );
 }

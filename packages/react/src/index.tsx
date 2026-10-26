@@ -135,9 +135,6 @@ import {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -281,6 +278,7 @@ import {
   NavRailSwitcher,
   navRailItemClasses
 } from "./NavRail";
+import { NavSheet } from "./NavSheet";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -410,6 +408,7 @@ import { VStack } from "./VStack";
 export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
+export * from "./ImageZoomViewer";
 export * from "./RecordOutlet";
 export type {
   ActionPresentation,
@@ -545,9 +544,6 @@ export {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -668,6 +664,7 @@ export {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
+  NavSheet,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,

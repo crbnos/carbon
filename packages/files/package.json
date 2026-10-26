@@ -9,6 +9,7 @@
     "./media/node": "./src/media/node.ts",
     "./cad": "./src/cad/index.ts",
     "./csv": "./src/csv/index.ts",
+    "./markdown": "./src/markdown/index.ts",
     "./pdf": "./src/pdf/index.ts",
     "./pdf/worker": "./src/pdf/worker.ts"
   },
@@ -16,7 +17,7 @@
     "clean": "rimraf .turbo node_modules dist",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@carbon/database": "workspace:*",
@@ -26,7 +27,7 @@
     "@jsquash/resize": "2.1.1",
     "@jsquash/webp": "1.5.0",
     "@supabase/storage-js": "catalog:",
-    "@supabase/supabase-js": "catalog:",
+    "@tiptap/pm": "catalog:",
     "libheif-js": "1.23.2",
     "nanoid": "catalog:",
     "papaparse": "5.3.2",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
     "@types/papaparse": "5.5.2",
     "typescript": "catalog:",
     "vitest": "catalog:"
