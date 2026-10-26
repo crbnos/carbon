@@ -522,6 +522,9 @@ msgstr "{asset}: the payment due {dueDate} is Skipped (paid outside Carbon), so 
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Assets"
 
+msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
@@ -566,6 +569,9 @@ msgstr "{created} created, {updated} updated."
 
 msgid "{days}d"
 msgstr "{days}d"
+
+msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
@@ -3165,6 +3171,10 @@ msgstr "Are you sure you want to deactivate the {0} attribute category?"
 msgid "Are you sure you want to deactivate the {0} attribute?"
 msgstr "Are you sure you want to deactivate the {0} attribute?"
 
+#. placeholder {0}: workCenter.name
+msgid "Are you sure you want to deactivate the {0} work center?"
+msgstr "Are you sure you want to deactivate the {0} work center?"
+
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "Are you sure you want to deactivate the {label} configuration rule?"
 
@@ -4177,12 +4187,6 @@ msgstr "Before You Confirm"
 
 msgid "Beginning"
 msgstr "Beginning"
-
-msgid "Behind target by {behindDays} day(s)"
-msgstr "Behind target by {behindDays} day(s)"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Behind target by {daysBehindTarget} day(s)"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5899,9 +5903,11 @@ msgstr "Converting…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
-msgstr "Copied {0} assignments"
+msgid "Copied {copied} assignments"
+msgstr "Copied {copied} assignments"
+
+msgid "Copied 1 assignment"
+msgstr "Copied 1 assignment"
 
 msgid "Copied ID to clipboard"
 msgstr "Copied ID to clipboard"
@@ -13511,9 +13517,11 @@ msgstr "Mark Short"
 msgid "Mark to delete"
 msgstr "Mark to delete"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
-msgstr "Marked absent for {0} day(s)"
+msgid "Marked absent for {created} days"
+msgstr "Marked absent for {created} days"
+
+msgid "Marked absent for 1 day"
+msgstr "Marked absent for 1 day"
 
 msgid "Market rate"
 msgstr "Market rate"
@@ -14097,6 +14105,9 @@ msgstr "Move Out of Sub-Assembly"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
+
+msgid "Move these operations to another work center, or finish them, before you deactivate it."
+msgstr "Move these operations to another work center, or finish them, before you deactivate it."
 
 msgid "Move to"
 msgstr "Move to"
@@ -16536,9 +16547,11 @@ msgstr "Overtime"
 msgid "Overtime hours"
 msgstr "Overtime hours"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
-msgstr "Overtime set for {0} assignments"
+msgid "Overtime set for {updated} assignments"
+msgstr "Overtime set for {updated} assignments"
+
+msgid "Overtime set for 1 assignment"
+msgstr "Overtime set for 1 assignment"
 
 msgid "Overview"
 msgstr "Overview"

@@ -522,6 +522,9 @@ msgstr "{asset}: {dueDate} को देय भुगतान छोड़ा �
 msgid "{assetCount} Assets"
 msgstr "{assetCount} अचल संपत्तियाँ"
 
+msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
@@ -566,6 +569,9 @@ msgstr "{created} बनाया गया, {updated} अपडेट किय
 
 msgid "{days}d"
 msgstr "{days}d"
+
+msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} यह आपके लेजर में पोस्ट करता है, इसलिए Carbon इसे पुश नहीं करता है। आपकी सहेजी गई पसंद को इस बात के मामले में रखा जाता है कि यह बदल जाए।"
@@ -3165,6 +3171,10 @@ msgstr "क्या आप निश्चित हैं कि आप {0} �
 msgid "Are you sure you want to deactivate the {0} attribute?"
 msgstr "क्या आप निश्चित हैं कि आप {0} विशेषता को निष्क्रिय करना चाहते हैं?"
 
+#. placeholder {0}: workCenter.name
+msgid "Are you sure you want to deactivate the {0} work center?"
+msgstr ""
+
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "क्या आप निश्चित हैं कि आप {label} कॉन्फ़िगरेशन नियम को निष्क्रिय करना चाहते हैं?"
 
@@ -4177,12 +4187,6 @@ msgstr "पुष्टि करने से पहले"
 
 msgid "Beginning"
 msgstr "आरंभ"
-
-msgid "Behind target by {behindDays} day(s)"
-msgstr "लक्ष्य से {behindDays} दिन पीछे"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "लक्ष्य से {daysBehindTarget} दिन पीछे"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5899,8 +5903,10 @@ msgstr "परिवर्तित कर रहे हैं…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
+msgid "Copied {copied} assignments"
+msgstr ""
+
+msgid "Copied 1 assignment"
 msgstr ""
 
 msgid "Copied ID to clipboard"
@@ -13511,8 +13517,10 @@ msgstr "कम चिह्नित करें"
 msgid "Mark to delete"
 msgstr "हटाने के लिए चिह्नित करें"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
+msgid "Marked absent for {created} days"
+msgstr ""
+
+msgid "Marked absent for 1 day"
 msgstr ""
 
 msgid "Market rate"
@@ -14097,6 +14105,9 @@ msgstr "उप-असेंबली से बाहर स्थानां�
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "कुछ मात्रा को एक नई निपटान पंक्ति में स्थानांतरित करें ताकि MRB प्रत्येक भाग का अलग से निर्णय ले सके (जैसे कुछ स्क्रैप करें, कुछ पुनः कार्य करें)।"
+
+msgid "Move these operations to another work center, or finish them, before you deactivate it."
+msgstr ""
 
 msgid "Move to"
 msgstr "को स्थानांतरित करें"
@@ -16536,8 +16547,10 @@ msgstr "ओवरटाइम"
 msgid "Overtime hours"
 msgstr ""
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
+msgid "Overtime set for {updated} assignments"
+msgstr ""
+
+msgid "Overtime set for 1 assignment"
 msgstr ""
 
 msgid "Overview"

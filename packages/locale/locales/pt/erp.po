@@ -522,6 +522,9 @@ msgstr "{asset}: o pagamento vencido em {dueDate} é ignorado (pago fora do Carb
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Ativos"
 
+msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considere apontar esta peça diretamente para o sucessor final."
 
@@ -566,6 +569,9 @@ msgstr "{created} criado(s), {updated} atualizado(s)."
 
 msgid "{days}d"
 msgstr "{days}d"
+
+msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} publica isto no seu razão, portanto o Carbon não o envia. Sua escolha salva é mantida caso isso mude."
@@ -3165,6 +3171,10 @@ msgstr "Tem a certeza de que deseja desativar a categoria de atributo {0}?"
 msgid "Are you sure you want to deactivate the {0} attribute?"
 msgstr "Tem a certeza de que deseja desativar o atributo {0}?"
 
+#. placeholder {0}: workCenter.name
+msgid "Are you sure you want to deactivate the {0} work center?"
+msgstr ""
+
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "Tem a certeza de que deseja desativar a regra de configuração {label}?"
 
@@ -4177,12 +4187,6 @@ msgstr "Antes de Confirmar"
 
 msgid "Beginning"
 msgstr "Início"
-
-msgid "Behind target by {behindDays} day(s)"
-msgstr "Atrasado em relação ao alvo em {behindDays} dia(s)"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Atrasado em relação ao alvo em {daysBehindTarget} dia(s)"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5899,8 +5903,10 @@ msgstr "Convertendo…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte a unidade de compra de um fornecedor para sua unidade de inventário em uma linha de pedido, recebimento ou fatura — compre em caixas de 12, estoque em unidades."
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
+msgid "Copied {copied} assignments"
+msgstr ""
+
+msgid "Copied 1 assignment"
 msgstr ""
 
 msgid "Copied ID to clipboard"
@@ -13511,8 +13517,10 @@ msgstr "Marcar como Falta"
 msgid "Mark to delete"
 msgstr "Marcar para exclusão"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
+msgid "Marked absent for {created} days"
+msgstr ""
+
+msgid "Marked absent for 1 day"
 msgstr ""
 
 msgid "Market rate"
@@ -14097,6 +14105,9 @@ msgstr "Mover Para Fora do Sub-Conjunto"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Mover parte da quantidade para uma nova linha de disposição para que o Comitê de análise de materiais possa decidir cada parte separadamente (por exemplo, refugar parte, fazer retrabalho em parte)."
+
+msgid "Move these operations to another work center, or finish them, before you deactivate it."
+msgstr ""
 
 msgid "Move to"
 msgstr "Mover para"
@@ -16536,8 +16547,10 @@ msgstr "Horas Extras"
 msgid "Overtime hours"
 msgstr ""
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
+msgid "Overtime set for {updated} assignments"
+msgstr ""
+
+msgid "Overtime set for 1 assignment"
 msgstr ""
 
 msgid "Overview"

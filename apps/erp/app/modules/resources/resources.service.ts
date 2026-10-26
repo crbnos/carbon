@@ -873,7 +873,7 @@ export async function getProcessesList(
 ) {
   return client
     .from("process")
-    .select(`id, name`)
+    .select(`id, name, processType`)
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name");
@@ -1236,11 +1236,13 @@ export async function getProcessesWithoutAbility(
       .filter((id): id is string => Boolean(id))
   );
 
+  // Outside Processing runs at a supplier: no employee needs an ability for it.
   const processes = await client
     .from("process")
     .select("id, name")
     .eq("companyId", companyId)
     .eq("active", true)
+    .neq("processType", "Outside Processing")
     .order("name");
   if (processes.error) return processes;
 
@@ -1865,6 +1867,22 @@ export async function insertProcess(
  * centers it replaces, in one transaction. Kysely bypasses RLS, so every
  * statement is scoped to the company and only its own work centers are linked.
  */
+/** Another process of the company already holding `name` (unique per company). */
+export async function findProcessNamed(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  name: string,
+  exceptId?: string
+) {
+  let query = client
+    .from("process")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("name", name);
+  if (exceptId) query = query.neq("id", exceptId);
+  return query.limit(1).maybeSingle();
+}
+
 export async function updateProcess(
   db: Kysely<KyselyDatabase>,
   process: Omit<z.infer<typeof processValidator>, "id"> & {
@@ -2033,7 +2051,7 @@ export async function upsertWorkCenter(
       })
 ) {
   if ("createdBy" in workCenter) {
-    const { processes, shifts, ...insert } = workCenter;
+    const { processes, shifts, operatingHours: _hours, ...insert } = workCenter;
     const workCenterInsert = await client
       .from("workCenter")
       .insert([insert])
@@ -2079,7 +2097,7 @@ export async function upsertWorkCenter(
 
     return workCenterInsert;
   }
-  const { processes, shifts, ...update } = workCenter;
+  const { processes, shifts, operatingHours: _hours, ...update } = workCenter;
   const workCenterUpdate = await client
     .from("workCenter")
     .update(sanitize(update))

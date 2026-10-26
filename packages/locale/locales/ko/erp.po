@@ -522,6 +522,9 @@ msgstr "{asset}: {dueDate}에 납부 기한이 있는 지불이 건너뜀 상태
 msgid "{assetCount} Assets"
 msgstr "{assetCount} 자산"
 
+msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
@@ -566,6 +569,9 @@ msgstr "{created} 생성됨, {updated} 업데이트됨."
 
 msgid "{days}d"
 msgstr "{days}일"
+
+msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}가(이) 이를 귀사의 원장에 게시하므로 Carbon은 이를 푸시하지 않습니다. 변경되는 경우에 대비하여 저장된 선택 사항이 유지됩니다."
@@ -3165,6 +3171,10 @@ msgstr "{0} 속성 카테고리를 비활성화하시겠습니까?"
 msgid "Are you sure you want to deactivate the {0} attribute?"
 msgstr "{0} 속성을 비활성화하시겠습니까?"
 
+#. placeholder {0}: workCenter.name
+msgid "Are you sure you want to deactivate the {0} work center?"
+msgstr ""
+
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "{label} 설정 규칙을 비활성화하시겠습니까?"
 
@@ -4177,12 +4187,6 @@ msgstr "확인하기 전에"
 
 msgid "Beginning"
 msgstr "시작"
-
-msgid "Behind target by {behindDays} day(s)"
-msgstr "목표 대비 {behindDays}일 뒤떨어짐"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "목표 대비 {daysBehindTarget}일 뒤떨어짐"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5899,8 +5903,10 @@ msgstr "변환 중…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
+msgid "Copied {copied} assignments"
+msgstr ""
+
+msgid "Copied 1 assignment"
 msgstr ""
 
 msgid "Copied ID to clipboard"
@@ -13511,8 +13517,10 @@ msgstr "부족으로 표시"
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
+msgid "Marked absent for {created} days"
+msgstr ""
+
+msgid "Marked absent for 1 day"
 msgstr ""
 
 msgid "Market rate"
@@ -14097,6 +14105,9 @@ msgstr "부분 조립에서 이동"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "수량의 일부를 새로운 처분 결정 행으로 할당하여 MRB가 각 부분을 별도로 결정할 수 있도록 합니다(예: 일부는 스크랩, 일부는 재작업)."
+
+msgid "Move these operations to another work center, or finish them, before you deactivate it."
+msgstr ""
 
 msgid "Move to"
 msgstr "이동 대상"
@@ -16536,8 +16547,10 @@ msgstr "초과근무"
 msgid "Overtime hours"
 msgstr ""
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
+msgid "Overtime set for {updated} assignments"
+msgstr ""
+
+msgid "Overtime set for 1 assignment"
 msgstr ""
 
 msgid "Overview"

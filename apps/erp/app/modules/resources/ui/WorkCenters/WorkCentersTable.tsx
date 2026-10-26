@@ -495,12 +495,20 @@ function DeleteWorkCenterModal({
                     </li>
                   ))}
                 </ul>
+                <p className="mt-2">
+                  <Trans>
+                    Move these operations to another work center, or finish
+                    them, before you deactivate it.
+                  </Trans>
+                </p>
               </AlertDescription>
             </Alert>
           ) : (
             <p>
-              Are you sure you want to deactivate the {workCenter.name} work
-              center?
+              <Trans>
+                Are you sure you want to deactivate the {workCenter.name} work
+                center?
+              </Trans>
             </p>
           )}
         </ModalBody>

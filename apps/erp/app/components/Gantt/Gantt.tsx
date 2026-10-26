@@ -567,6 +567,7 @@ type GanttTimelineProps = Pick<
 };
 
 const TICK_COUNT = 5;
+const LABEL_MIN_PX = 40;
 
 /**
  * Split a bar's [offset, offset+duration] into its WORKING pieces by removing
@@ -1013,6 +1014,11 @@ const GanttTimeline = ({
                         onItemSelected={onItemSelected}
                         litBars={litBars}
                         nonWorkingOffsets={offsetsFor(node.id)}
+                        labelMinMs={
+                          // ~40px at the unzoomed width: narrower bars
+                          // truncate their label to "J." or ","
+                          (LABEL_MIN_PX / minTimelineWidth) * duration * 1.05
+                        }
                       />
                     ) : node.data.level === "TRACE" ? (
                       <>
@@ -1401,12 +1407,15 @@ function LaneItems({
   selectedItemId,
   onItemSelected,
   litBars,
-  nonWorkingOffsets
+  nonWorkingOffsets,
+  labelMinMs = 0
 }: {
   items: GanttEvent[];
   selectedItemId: string | undefined;
   onItemSelected: (id: string) => void;
   litBars: Set<string> | null;
+  /** A bar piece shorter than this is too narrow to label. */
+  labelMinMs?: number;
   nonWorkingOffsets: { start: number; end: number }[] | null;
 }) {
   const { t } = useLingui();
@@ -1442,6 +1451,7 @@ function LaneItems({
           isDimmed={isDimmed(item)}
           onSelect={() => onItemSelected(item.id)}
           nonWorkingOffsets={nonWorkingOffsets}
+          labelMinMs={labelMinMs}
         />
       ))}
       {groups.map((group) => {
@@ -1465,6 +1475,7 @@ function LaneItems({
               isDimmed={isDimmed(first)}
               onSelect={() => onItemSelected(first.id)}
               nonWorkingOffsets={nonWorkingOffsets}
+              labelMinMs={labelMinMs}
             />
           );
         }
@@ -1535,7 +1546,8 @@ function LaneBar({
   isSelected,
   isDimmed,
   onSelect,
-  nonWorkingOffsets
+  nonWorkingOffsets,
+  labelMinMs = 0
 }: {
   item: GanttEvent;
   /** Fraction of the row above the bar, 0–1. */
@@ -1550,6 +1562,7 @@ function LaneBar({
   isDimmed: boolean;
   onSelect: () => void;
   nonWorkingOffsets: { start: number; end: number }[] | null;
+  labelMinMs?: number;
 }) {
   const { offset, duration } = item.data;
   const pieces = nonWorkingOffsets
@@ -1609,14 +1622,16 @@ function LaneBar({
                 }}
               />
             )}
-            {showLabel && i === labelIndex && (
-              <>
-                {item.data.isUnschedulable && (
-                  <LuBan className="relative size-3 shrink-0" />
-                )}
-                <span className="relative truncate">{item.data.message}</span>
-              </>
-            )}
+            {showLabel &&
+              i === labelIndex &&
+              piece.durationMs >= labelMinMs && (
+                <>
+                  {item.data.isUnschedulable && (
+                    <LuBan className="relative size-3 shrink-0" />
+                  )}
+                  <span className="relative truncate">{item.data.message}</span>
+                </>
+              )}
           </button>
         </Timeline.Span>
       ))}

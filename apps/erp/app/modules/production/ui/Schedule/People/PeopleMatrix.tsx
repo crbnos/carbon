@@ -4,6 +4,9 @@
 
 import {
   cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Table,
   Tabs,
   TabsList,
@@ -12,9 +15,6 @@ import {
   Td,
   Th,
   Thead,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   Tr
 } from "@carbon/react";
 import { RoundingMode, round } from "@carbon/utils";
@@ -264,8 +264,8 @@ export function PeopleMatrix({
         </Tabs>
 
         {tab === "coverage" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -273,8 +273,8 @@ export function PeopleMatrix({
                 <LuInfo className="h-3.5 w-3.5" />
                 <Trans>How coverage is worked out</Trans>
               </button>
-            </TooltipTrigger>
-            <TooltipContent align="end" className="max-w-[320px]">
+            </PopoverTrigger>
+            <PopoverContent align="end" className="max-w-[320px] p-3">
               <div className="flex flex-col gap-1.5 text-xs">
                 <p>
                   <Trans>
@@ -298,8 +298,8 @@ export function PeopleMatrix({
                   </Trans>
                 </p>
               </div>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 

@@ -35,6 +35,8 @@ const DatePicker = (
     size?: "sm" | "md" | "lg";
     /** Days to flag with a dot in the calendar, e.g. days that have work due. */
     isDateMarked?: (date: CalendarDate) => boolean;
+    /** The field's name for assistive tech; defaults to `label`. */
+    "aria-label"?: string;
   }
 ) => {
   const state = useDatePickerState({
@@ -43,8 +45,20 @@ const DatePicker = (
   });
 
   const ref = useRef<HTMLDivElement>(null);
+  // The label is drawn by the form field, not here, so name the group with it
+  // directly; a label react-aria points at but nothing renders names nothing.
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
-    useDatePicker(props, state, ref);
+    useDatePicker(
+      {
+        ...props,
+        label: undefined,
+        "aria-label":
+          props["aria-label"] ??
+          (typeof props.label === "string" ? props.label : undefined)
+      },
+      state,
+      ref
+    );
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>

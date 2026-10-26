@@ -183,6 +183,7 @@ const WorkCenterForm = ({
                     name="processes"
                     label={t`Processes`}
                     termId="work-center-processes"
+                    inHouseOnly
                   />
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
@@ -344,6 +345,7 @@ const WorkCenterForm = ({
                   name="shifts"
                   active={scheduleMode === "some"}
                 />
+                <Hidden name="operatingHours" value={scheduleMode} />
                 {scheduleMode === "lightsOut" && (
                   <Hidden name="alwaysOn" value="on" />
                 )}

@@ -333,6 +333,20 @@ export const createProcess = defineServiceFn({
   async run(ctx, { id: _id, ...process }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
+    const taken = await service.findProcessNamed(
+      client,
+      companyId,
+      process.name
+    );
+    if (taken.error) {
+      return ctx.error("internal", "Failed to create process.", taken.error);
+    }
+    if (taken.data) {
+      return ctx.error(
+        "conflict",
+        `A process named ${process.name} already exists`
+      );
+    }
     const insert = await service.insertProcess(client, {
       ...process,
       companyId,
@@ -399,6 +413,22 @@ export const updateProcess = defineServiceFn({
     }
     if (!existing.data) return ctx.error("notFound", "Process not found");
     const previouslyRequiredAbility = existing.data.requiresAbility ?? false;
+
+    const taken = await service.findProcessNamed(
+      client,
+      companyId,
+      process.name,
+      id
+    );
+    if (taken.error) {
+      return ctx.error("internal", "Failed to update process.", taken.error);
+    }
+    if (taken.data) {
+      return ctx.error(
+        "conflict",
+        `A process named ${process.name} already exists`
+      );
+    }
 
     const update = await service.updateProcess(ctx.asSystem.pg, {
       id,

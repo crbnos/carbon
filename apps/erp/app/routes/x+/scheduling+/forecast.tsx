@@ -354,7 +354,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       toShiftInfo(shift)
     ])
   );
-  const locationShiftInfos = shifts.map(toShiftInfo);
+  // Shifts read in the order they run in a day.
+  const byStart = (a: AvailabilityShift, b: AvailabilityShift) =>
+    (a.startTime ?? "").localeCompare(b.startTime ?? "");
+  const locationShiftInfos = shifts.map(toShiftInfo).sort(byStart);
   const shiftIdsByWorkCenter = new Map<string, string[]>();
   for (const row of workCenterShiftRows.data ?? []) {
     const existing = shiftIdsByWorkCenter.get(row.workCenterId) ?? [];
@@ -368,7 +371,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (!workCenterId) continue;
     const workCenterShiftInfos = (shiftIdsByWorkCenter.get(workCenterId) ?? [])
       .map((shiftId) => shiftInfoById.get(shiftId))
-      .filter((info): info is AvailabilityShift => info !== undefined);
+      .filter((info): info is AvailabilityShift => info !== undefined)
+      .sort(byStart);
     const tier: WorkCenterAvailability["tier"] = workCenter.alwaysOn
       ? "alwaysOn"
       : workCenterShiftInfos.length > 0

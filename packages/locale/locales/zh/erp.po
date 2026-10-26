@@ -522,6 +522,9 @@ msgstr "{asset}: 应付日期为 {dueDate} 的付款已跳过（在 Carbon 外�
 msgid "{assetCount} Assets"
 msgstr "{assetCount} 个资产"
 
+msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
@@ -566,6 +569,9 @@ msgstr "已创建 {created} 条，已更新 {updated} 条。"
 
 msgid "{days}d"
 msgstr "{days}天"
+
+msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}将其发布到您的分类账，因此Carbon不会推送它。您保存的选择将被保留，以防情况发生变化。"
@@ -3165,6 +3171,10 @@ msgstr "您确定要停用 {0} 属性类别吗？"
 msgid "Are you sure you want to deactivate the {0} attribute?"
 msgstr "您确定要停用 {0} 属性吗？"
 
+#. placeholder {0}: workCenter.name
+msgid "Are you sure you want to deactivate the {0} work center?"
+msgstr ""
+
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "你确定要停用 {label} 配置规则吗？"
 
@@ -4177,12 +4187,6 @@ msgstr "确认前"
 
 msgid "Beginning"
 msgstr "开始"
-
-msgid "Behind target by {behindDays} day(s)"
-msgstr "落后目标 {behindDays} 天"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "落后目标 {daysBehindTarget} 天"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5899,8 +5903,10 @@ msgstr "转换中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
+msgid "Copied {copied} assignments"
+msgstr ""
+
+msgid "Copied 1 assignment"
 msgstr ""
 
 msgid "Copied ID to clipboard"
@@ -13511,8 +13517,10 @@ msgstr "标记短缺"
 msgid "Mark to delete"
 msgstr "标记删除"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
+msgid "Marked absent for {created} days"
+msgstr ""
+
+msgid "Marked absent for 1 day"
 msgstr ""
 
 msgid "Market rate"
@@ -14097,6 +14105,9 @@ msgstr "从子装配移出"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "将部分数量移动到新的处置行，以便MRB可以分别决定每一部分（例如报废部分、返工部分）。"
+
+msgid "Move these operations to another work center, or finish them, before you deactivate it."
+msgstr ""
 
 msgid "Move to"
 msgstr "移动到"
@@ -16536,8 +16547,10 @@ msgstr "加班"
 msgid "Overtime hours"
 msgstr ""
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
+msgid "Overtime set for {updated} assignments"
+msgstr ""
+
+msgid "Overtime set for 1 assignment"
 msgstr ""
 
 msgid "Overview"

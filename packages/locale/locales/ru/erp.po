@@ -522,6 +522,9 @@ msgstr "{asset}: платеж, подлежащий оплате {dueDate}, пр
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Активы"
 
+msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
@@ -566,6 +569,9 @@ msgstr "{created} создано, {updated} обновлено."
 
 msgid "{days}d"
 msgstr "{days}д"
+
+msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
+msgstr ""
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} отправляет это в вашу бухгалтерскую книгу, поэтому Carbon не отправляет это. Ваш сохраненный выбор сохраняется на случай, если это изменится."
@@ -3165,6 +3171,10 @@ msgstr "Вы уверены, что хотите деактивировать к
 msgid "Are you sure you want to deactivate the {0} attribute?"
 msgstr "Вы уверены, что хотите деактивировать атрибут {0}?"
 
+#. placeholder {0}: workCenter.name
+msgid "Are you sure you want to deactivate the {0} work center?"
+msgstr ""
+
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "Вы уверены, что хотите деактивировать правило конфигурации {label}?"
 
@@ -4177,12 +4187,6 @@ msgstr "Перед подтверждением"
 
 msgid "Beginning"
 msgstr "Начало"
-
-msgid "Behind target by {behindDays} day(s)"
-msgstr "Отстает от целевого показателя на {behindDays} день(дня)"
-
-msgid "Behind target by {daysBehindTarget} day(s)"
-msgstr "Отстает от целевого показателя на {daysBehindTarget} день(дня)"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -5899,8 +5903,10 @@ msgstr "Преобразование…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Преобразует единицу покупки поставщика в единицу инвентаря в строке заказа на покупку, квитанции или счета — покупайте в картонах по 12 штук, запасайте в единицах."
 
-#. placeholder {0}: counts.copied ?? 0
-msgid "Copied {0} assignments"
+msgid "Copied {copied} assignments"
+msgstr ""
+
+msgid "Copied 1 assignment"
 msgstr ""
 
 msgid "Copied ID to clipboard"
@@ -13511,8 +13517,10 @@ msgstr "Отметить как недостача"
 msgid "Mark to delete"
 msgstr "Отметить к удалению"
 
-#. placeholder {0}: counts.created ?? 0
-msgid "Marked absent for {0} day(s)"
+msgid "Marked absent for {created} days"
+msgstr ""
+
+msgid "Marked absent for 1 day"
 msgstr ""
 
 msgid "Market rate"
@@ -14097,6 +14105,9 @@ msgstr "Переместить из подсборки"
 
 msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
 msgstr "Переместить часть количества в новую строку решения, чтобы MRB мог решить каждую часть отдельно (например, отправить на брак, отправить на доработку)."
+
+msgid "Move these operations to another work center, or finish them, before you deactivate it."
+msgstr ""
 
 msgid "Move to"
 msgstr "Переместить в"
@@ -16536,8 +16547,10 @@ msgstr "Переработки"
 msgid "Overtime hours"
 msgstr ""
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "Overtime set for {0} assignments"
+msgid "Overtime set for {updated} assignments"
+msgstr ""
+
+msgid "Overtime set for 1 assignment"
 msgstr ""
 
 msgid "Overview"

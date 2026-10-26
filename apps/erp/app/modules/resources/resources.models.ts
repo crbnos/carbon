@@ -708,9 +708,16 @@ export const workCenterValidator = z
       .optional(),
     shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
     alwaysOn: zfd.checkbox(),
+    /** The form's Operating hours choice; "some" needs a shift picked. */
+    operatingHours: zfd.text(z.enum(["all", "some", "lightsOut"]).optional()),
     batchCapacity: zfd.numeric(z.number().int().min(1).optional()),
     minimumBatchQuantity: zfd.numeric(z.number().int().min(1).optional())
   })
+  .refine(
+    // With no shift picked, "Some Shifts" would save as every shift.
+    (data) => data.operatingHours !== "some" || (data.shifts?.length ?? 0) > 0,
+    { message: "Select at least one shift", path: ["shifts"] }
+  )
   .refine(
     (data) =>
       data.batchCapacity == null ||

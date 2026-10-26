@@ -6,6 +6,9 @@ import {
   Alert,
   AlertDescription,
   cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Table,
   Tabs,
   TabsList,
@@ -14,9 +17,6 @@ import {
   Td,
   Th,
   Thead,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   Tr
 } from "@carbon/react";
 import {
@@ -323,8 +323,8 @@ export function PeopleCapacity({
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -332,8 +332,8 @@ export function PeopleCapacity({
                 <LuInfo className="h-3.5 w-3.5" />
                 <Trans>What these rows mean</Trans>
               </button>
-            </TooltipTrigger>
-            <TooltipContent align="start" className="max-w-[320px]">
+            </PopoverTrigger>
+            <PopoverContent align="start" className="max-w-[320px] p-3">
               <div className="flex flex-col gap-1.5 text-xs">
                 <p>
                   <span className="font-medium">
@@ -375,8 +375,8 @@ export function PeopleCapacity({
                   </Trans>
                 </p>
               </div>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex items-center gap-2 text-xs tabular-nums">
           <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-700 dark:text-emerald-400">
