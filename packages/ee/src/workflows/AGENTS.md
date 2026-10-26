@@ -365,7 +365,9 @@ optional `when: { input, equals }` gate on a sibling input) marks an input as pr
 destination renders with links. `resolveStepInputs` (`runtime/resolve.ts`, shared by the action
 and integration executors) asks `linkState` (`definition/links.ts`) per input; only a `linked`
 input goes through `renderTemplate(template, ctx, { linkFor, format })`, which wraps a record
-part in that dialect's renderer (`LINK_RENDERERS`). Every other input, a webhook body included,
+part in that dialect's renderer (`LINK_RENDERERS`) and escapes every other value for it
+(`TEXT_ESCAPERS`: html and Slack mrkdwn; a value is customer data, never markup, so
+`AT&T <Sales>` or `<!channel>` reads as written). Every other input, a webhook body included,
 renders the record's plain name. The builder's hints (`notices.ts`) read the same `linkState`.
 This package constructs no URL — it is bundled for the browser with four runtime dependencies
 and cannot import `@carbon/env`; the engine supplies `ctx.linkFor`.

@@ -85,6 +85,28 @@ async function entityText(
   );
 }
 
+const escapeHtml = (raw: string) =>
+  raw
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+
+// Slack mrkdwn: `&`, `<`, `>` are the only escapes. Unescaped, a value holding
+// `<!channel>` pings the channel and `<url|text>` becomes a link.
+const escapeSlack = (raw: string) =>
+  raw.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+/** How a value that is not a link reads in each dialect. A value is customer data,
+ * never markup: in an html body or a Slack message it is escaped, so a customer
+ * named `AT&T <Sales>` reads as written. Markdown is Carbon's own notification
+ * renderer, which already treats it as text. */
+const TEXT_ESCAPERS: Record<LinkFormat, (text: string) => string> = {
+  markdown: (text) => text,
+  slack: escapeSlack,
+  html: escapeHtml
+};
+
 /** One entry per destination dialect. A record's NAME is customer data, so each
  * renderer sanitises the label until it cannot break out of its own link; the href
  * is Carbon's own URL from `linkFor`, never user text. */
@@ -102,22 +124,11 @@ const LINK_RENDERERS: Record<
   // Slack mrkdwn `<url|label>`: `&`, `<`, `>` are the only escapes and `|` would end
   // the label early, so it is dropped the way markdown drops brackets.
   slack: (label, href) => {
-    const clean = label
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll("|", "");
-    return clean.trim() === "" ? label : `<${href}|${clean}>`;
+    const clean = escapeSlack(label).replaceAll("|", "");
+    return clean.trim() === "" ? escapeSlack(label) : `<${href}|${clean}>`;
   },
-  html: (label, href) => {
-    const escape = (raw: string) =>
-      raw
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
-    return `<a href="${escape(href)}">${escape(label)}</a>`;
-  }
+  html: (label, href) =>
+    `<a href="${escapeHtml(href)}">${escapeHtml(label)}</a>`
 };
 
 /** How a template turns a record into a link: where it lives, and in whose dialect. */
@@ -130,20 +141,22 @@ export interface RenderOptions {
 /**
  * A record in prose reads as its name, and becomes a link when the caller knows
  * where it lives — in the destination's own dialect. Every other value renders
- * exactly as `renderValue` does — a LIST of records never reaches here, because
- * `rendersAsText` refuses one as a template part.
+ * as `renderValue` does, escaped for the dialect — a LIST of records never
+ * reaches here, because `rendersAsText` refuses one as a template part.
  */
 export async function renderPart(
   value: RuntimeValue,
   ctx: RuntimeContext,
   options?: RenderOptions
 ): Promise<string> {
-  if (value.kind !== "entity") return renderValue(value);
+  const format = options?.format ?? "markdown";
+  const escape = TEXT_ESCAPERS[format];
+  if (value.kind !== "entity") return escape(renderValue(value));
   const text = await entityText(value, ctx);
-  if (options?.linkFor === undefined || text === "") return text;
+  if (options?.linkFor === undefined || text === "") return escape(text);
   const href = options.linkFor(value.of, value.id);
-  if (href === null) return text;
-  return LINK_RENDERERS[options.format ?? "markdown"](text, href);
+  if (href === null) return escape(text);
+  return LINK_RENDERERS[format](text, href);
 }
 
 /** An unresolvable part fails the whole template; a blank would be a silent lie. */
