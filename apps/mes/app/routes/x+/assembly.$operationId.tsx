@@ -15,6 +15,7 @@ import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getAbilityShortfall,
   getAssemblyPlaybackByOperationId,
   getJobByOperationId,
   getJobMakeMethod,
@@ -168,7 +169,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // Expiry policy for the issue-material modal — same source as the operation view.
-  const companySettings = await getCompanySettings(serviceRole, companyId);
+  const [companySettings, abilityWarning] = await Promise.all([
+    getCompanySettings(serviceRole, companyId),
+    getAbilityShortfall(serviceRole, {
+      operationId,
+      employeeId: userId,
+      companyId
+    })
+  ]);
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
     null) as { expiredEntityPolicy?: ExpiredEntityPolicy } | null;
   const expiredEntityPolicy: ExpiredEntityPolicy =
@@ -266,6 +274,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isFirstOperation = !priorDependency.error && !priorDependency.data;
 
   return {
+    abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     thumbnailPath,

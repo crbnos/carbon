@@ -4252,6 +4252,9 @@ msgstr "ブラインド"
 msgid "Blind Count"
 msgstr "ブラインドカウント"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "エラーでブロック"
 
@@ -5155,9 +5158,6 @@ msgstr "完了日"
 
 msgid "Close Date"
 msgstr "終了日"
-
-msgid "Close menu"
-msgstr "メニューを閉じる"
 
 msgid "Close Period"
 msgstr "期間を閉じる"
@@ -8164,6 +8164,9 @@ msgstr "ドル利用額"
 
 msgid "Don't Cancel"
 msgstr "キャンセルしない"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "シリアル番号が見つかりませんか?"
@@ -11380,6 +11383,9 @@ msgstr "IDと説明は原材料に対して生成されます。"
 
 msgid "If"
 msgstr "条件"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "減価償却が既に実行されている場合、次回の減価償却実行時に定額法資産が旧原価で計上していた月分が埋め合わされます。"
@@ -15844,6 +15850,9 @@ msgstr "下書きの手順書のみが編集可能です。有効またはアー
 msgid "Only employees can post receipts."
 msgstr "従業員のみが入荷を転記することができます。"
 
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
+
 msgid "Only empty, open periods can be deleted."
 msgstr "空のオープン期間のみ削除できます。"
 
@@ -18244,6 +18253,9 @@ msgstr "レート頻度"
 
 msgid "Rate Limit"
 msgstr "レート制限"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "連結における純資産勘定の換算に使用されるレート（IAS 21）。空欄の場合は現在の為替レートが使用されます。"
@@ -21292,6 +21304,9 @@ msgstr "得意先リスト、得意先フォーム、ドロップダウンで読
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "仕入先リスト、仕入先フォーム、ドロップダウンで読みやすい仕入先IDカラムを表示します。仕入先はどちらの方法でも内部的に識別されます。"
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
 
 msgid "Show All"
 msgstr "すべて表示"

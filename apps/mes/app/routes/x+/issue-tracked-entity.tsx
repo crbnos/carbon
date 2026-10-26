@@ -4,11 +4,13 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
 
 const log = getLogger("mes");
 
@@ -44,6 +46,17 @@ export async function action({ request }: ActionFunctionArgs) {
       { success: false, message: "Failed to validate payload" },
       { status: 400 }
     );
+  }
+
+  if (!batchId && jobOperationId) {
+    const refusal = await abilityBlockRefusal(await getCarbonServiceRole(), {
+      operationId: jobOperationId,
+      employeeId: userId,
+      companyId
+    });
+    if (refusal) {
+      return data({ success: false, message: refusal }, { status: 403 });
+    }
   }
 
   // Batch mode: one pick for the whole operation batch. The posting splits the

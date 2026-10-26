@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { extensionTableFor } from "../item-tables.ts";
 import { assertSingle, insertId, insertMaybe, maybeOne } from "../sql.ts";
 import type {
   Ctx,
   ItemRef,
   ItemSpec,
-  ItemType,
   MethodType,
   OperationType
 } from "../types.ts";
@@ -157,23 +157,6 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     unitCost: spec.standardCost ?? 0,
     unitOfMeasureCode: uom
   };
-}
-
-function extensionTableFor(type: ItemType): string {
-  switch (type) {
-    case "Part":
-      return "part";
-    case "Material":
-      return "material";
-    case "Tool":
-      return "tool";
-    case "Consumable":
-      return "consumable";
-    case "Service":
-      return "service";
-    case "Fixture":
-      return "fixture";
-  }
 }
 
 /**

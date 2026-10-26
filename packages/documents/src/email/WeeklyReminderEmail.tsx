@@ -15,6 +15,7 @@ import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
 import { flatCardOnPhones } from "./components/notificationStyles";
 import {
+  darkModeMedia,
   EmailThemeProvider,
   emailTheme,
   getEmailThemeClasses,
@@ -83,7 +84,7 @@ const weeklyReminderStyles = `
     color: #6b7280 !important;
   }
 
-  @media (prefers-color-scheme: dark) {
+  ${darkModeMedia(`
     .wr-body {
       background-color: ${dark.background} !important;
     }
@@ -110,76 +111,7 @@ const weeklyReminderStyles = `
     .wr-fallback {
       color: ${dark.muted} !important;
     }
-  }
-
-  /* Gmail desktop dark mode targeting */
-  .gmail_dark .wr-body,
-  .gmail_dark_theme .wr-body,
-  [data-darkmode="true"] .wr-body {
-    background-color: ${dark.background} !important;
-  }
-  .gmail_dark .wr-card,
-  .gmail_dark_theme .wr-card,
-  [data-darkmode="true"] .wr-card {
-    background-color: ${dark.background} !important;
-    border-color: ${dark.border} !important;
-  }
-  .gmail_dark .wr-callout,
-  .gmail_dark_theme .wr-callout,
-  [data-darkmode="true"] .wr-callout {
-    background-color: ${dark.panel} !important;
-    border-color: ${dark.border} !important;
-  }
-  .gmail_dark .wr-row-divider,
-  .gmail_dark_theme .wr-row-divider,
-  [data-darkmode="true"] .wr-row-divider {
-    border-top-color: ${dark.border} !important;
-  }
-  .gmail_dark .wr-eyebrow,
-  .gmail_dark_theme .wr-eyebrow,
-  [data-darkmode="true"] .wr-eyebrow {
-    color: ${dark.muted} !important;
-  }
-  .gmail_dark .wr-status,
-  .gmail_dark_theme .wr-status,
-  [data-darkmode="true"] .wr-status {
-    color: ${dark.muted} !important;
-  }
-  .gmail_dark .wr-status-overdue,
-  .gmail_dark_theme .wr-status-overdue,
-  [data-darkmode="true"] .wr-status-overdue {
-    color: #f87171 !important;
-  }
-  .gmail_dark .wr-fallback,
-  .gmail_dark_theme .wr-fallback,
-  [data-darkmode="true"] .wr-fallback {
-    color: ${dark.muted} !important;
-  }
-
-  /* Outlook web/mobile dark mode targeting */
-  [data-ogsb] .wr-body {
-    background-color: ${dark.background} !important;
-  }
-  [data-ogsb] .wr-card {
-    background-color: ${dark.background} !important;
-    border-color: ${dark.border} !important;
-  }
-  [data-ogsb] .wr-callout {
-    background-color: ${dark.panel} !important;
-    border-color: ${dark.border} !important;
-  }
-  [data-ogsc] .wr-eyebrow {
-    color: ${dark.muted} !important;
-  }
-  [data-ogsc] .wr-status {
-    color: ${dark.muted} !important;
-  }
-  [data-ogsc] .wr-status-overdue {
-    color: #f87171 !important;
-  }
-  [data-ogsc] .wr-fallback {
-    color: ${dark.muted} !important;
-  }
+  `)}
 ${flatCardOnPhones("wr-card")}
 `;
 

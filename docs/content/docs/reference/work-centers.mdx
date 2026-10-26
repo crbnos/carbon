@@ -25,6 +25,19 @@ A **work center** is a location-specific station, machine, or cell where <Term i
 
 A **process** is a capability a work center can perform; work centers and processes are many-to-many. A process is *Inside*, *Outside*, or both. **<Term id="outside-operation">Outside</Term>** processes are subcontracted, and suppliers attach to them for outside-processing <Term id="purchase-order">purchase orders</Term>.
 
+### Requiring an ability
+
+Turn on **"Requires Ability"** on a process and only qualified people can be scheduled for it. What the shop floor does with someone who isn't qualified depends on the setting below. The process has one ability of its own, with the same name; the toggle's description names it. People get it by completing a [training](/docs/reference/training#training-can-grant-an-ability) that grants it, or a manager adds it on their Abilities page.
+
+While the toggle is on, **"If an operator isn't qualified"** decides what the shop floor does when someone without the ability opens an operation of this process:
+
+<FieldTable>
+  <Field name="Warn">The operator sees a warning on the operation and can still work. This is the default.</Field>
+  <Field name="Block">The operator sees why they can't work on it, and these production actions are refused: starting the timer, logging completed, scrap or rework, marking it done, recording steps, issuing material, and inspection verdicts. Pausing a timer that is already running, maintenance and quality issues stay available. Two actions are not blocked: a manager's **"Complete all steps"** override, and picking material for a whole batch at once.</Field>
+</FieldTable>
+
+See [running an operation without the ability](/docs/reference/mes#when-you-dont-have-the-required-ability) for what the operator sees.
+
 <Callout type="note">
 A work center is **not** a fixed asset. The machine you schedule production on (a work center) and the machine you depreciate (a fixed asset) are separate records in Carbon.
 

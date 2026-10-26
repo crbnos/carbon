@@ -13,6 +13,7 @@ import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   getJobOperationBatch,
   type JobOperationBatch
 } from "~/services/operations.service";
@@ -116,6 +117,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(request, error(null, "Batch member not found"))
     );
+  }
+
+  // Every member runs the batch's one process, so one member's check covers
+  // the whole batch.
+  const firstMemberId = validation.data.members[0]?.jobOperationId;
+  const abilityRefusal = firstMemberId
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: firstMemberId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (abilityRefusal) {
+    return data({}, await flash(request, error(null, abilityRefusal)));
   }
 
   const plannedLotNumber = planned.data.mergeOutput

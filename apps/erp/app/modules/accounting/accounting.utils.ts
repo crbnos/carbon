@@ -3,9 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
-import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
 import {
-  type CalendarDate,
+  credit,
+  debit,
+  equals,
+  type PeriodPostingSource,
+  round,
+  toStoredAmount
+} from "@carbon/utils";
+import {
+  CalendarDate,
   endOfMonth,
   parseDate,
   startOfMonth,
@@ -1185,4 +1192,97 @@ export function generalLedgerCounterparty(
     invoiceNumber: invoice?.invoiceNumber ?? null,
     supplierInvoiceNumber: invoice?.supplierInvoiceNumber ?? null
   };
+}
+
+/** The companies a financial report covers: every company for "all", the one
+ *  named, else the user's own. Null when the selection is empty or names a
+ *  company outside the group, so a report never reads another group's ledger. */
+export function selectReportCompanyIds(
+  companiesParam: string | null,
+  groupCompanyIds: string[],
+  companyId: string
+): string[] | null {
+  const selected =
+    companiesParam === "all"
+      ? groupCompanyIds
+      : companiesParam
+        ? [companiesParam]
+        : [companyId];
+  if (
+    selected.length === 0 ||
+    selected.some((id) => !groupCompanyIds.includes(id))
+  ) {
+    return null;
+  }
+  return selected;
+}
+
+/** A Superseded journal is a Provisional one the opening journal replaced at
+ *  the cutover. The journal list hides it unless a status filter asks for it. */
+export function hidesSupersededJournals(args: {
+  status: string | null;
+  filters?: { column: string; value?: unknown }[];
+}): boolean {
+  return !(
+    Boolean(args.status) ||
+    (args.filters ?? []).some(
+      (filter) => filter.column === "status" && Boolean(filter.value)
+    )
+  );
+}
+
+/** Why a posting dated in a period is refused, or null when it may post. A
+ *  Closed period takes nothing; a Locked one takes accounting adjustments but
+ *  not operational postings. */
+export function periodPostingRefusal(
+  closeStatus: string,
+  source: PeriodPostingSource
+): string | null {
+  if (closeStatus === "Closed") {
+    return "Accounting period is closed. Reopen it before posting.";
+  }
+  if (closeStatus === "Locked" && source === "operational") {
+    return "Accounting period is locked. Post as an accounting adjustment or unlock the period first.";
+  }
+  return null;
+}
+
+/** Why a period cannot be deleted, or null: only an Open period with no
+ *  journals posted to it can go. */
+export function periodDeletionRefusal(
+  closeStatus: string,
+  journalCount: number
+): string | null {
+  if (closeStatus !== "Open") {
+    return `Only open periods can be deleted — this period is ${closeStatus}.`;
+  }
+  if (journalCount > 0) {
+    return `This period has ${journalCount} journal ${
+      journalCount === 1 ? "entry" : "entries"
+    } posted to it and cannot be deleted.`;
+  }
+  return null;
+}
+
+/** The months of a fiscal year not yet created. A fiscal year is named by
+ *  its ending calendar year, so a non-January start begins the year before. */
+export function fiscalYearPeriodDates(
+  fiscalYear: number,
+  startMonth: number,
+  existingPeriodNumbers: Set<number | null>
+): { periodNumber: number; startDate: string; endDate: string }[] {
+  const firstYear = startMonth === 1 ? fiscalYear : fiscalYear - 1;
+  const rows = [];
+  for (let p = 1; p <= 12; p++) {
+    if (existingPeriodNumbers.has(p)) continue;
+    const start = new CalendarDate(firstYear, startMonth, 1).add({
+      months: p - 1
+    });
+    rows.push({
+      periodNumber: p,
+      startDate: start.toString(),
+      endDate: endOfMonth(start).toString()
+    });
+  }
+  return rows;
 }

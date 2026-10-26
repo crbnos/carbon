@@ -226,6 +226,9 @@ msgstr "Are you sure you want to leave this page?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr "Ask a supervisor to add the {processName} ability to your profile."
+
 msgid "Assembly steps"
 msgstr "Assembly steps"
 
@@ -286,6 +289,9 @@ msgstr "Batch Details"
 
 msgid "Batch is not available"
 msgstr "Batch is not available"
+
+msgid "Batch notes"
+msgstr "Batch notes"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -450,6 +456,9 @@ msgstr "Complete Batch"
 
 msgid "Complete passed"
 msgstr "Complete passed"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr "Complete the {trainingName} training to get the {processName} ability."
 
 msgid "Completed"
 msgstr "Completed"
@@ -2263,8 +2272,20 @@ msgstr "Write a note…"
 msgid "Yes"
 msgstr "Yes"
 
+msgid "You can still start this operation."
+msgstr "You can still start this operation."
+
+msgid "You can't work on this operation"
+msgstr "You can't work on this operation"
+
+msgid "You don't have the {processName} ability"
+msgstr "You don't have the {processName} ability"
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr "Your {processName} qualification expired on {expiredDate}."
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."

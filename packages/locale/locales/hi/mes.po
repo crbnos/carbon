@@ -226,6 +226,9 @@ msgstr "क्या आप वाकई इस पृष्ठ को छोड
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस ऑपरेशन को पूर्ण के रूप में चिह्नित करना चाहते हैं? यह इस ऑपरेशन के लिए सभी सक्रिय उत्पादन इवेंट को समाप्त कर देगा।"
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "असेंबली चरण"
 
@@ -286,6 +289,9 @@ msgstr "बैच विवरण"
 
 msgid "Batch is not available"
 msgstr "बैच उपलब्ध नहीं है"
+
+msgid "Batch notes"
+msgstr "बैच नोट्स"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -450,6 +456,9 @@ msgstr "बैच पूरा करें"
 
 msgid "Complete passed"
 msgstr "उत्तीर्ण को पूर्ण करें"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "पूर्ण"
@@ -2263,8 +2272,20 @@ msgstr "एक नोट लिखें…"
 msgid "Yes"
 msgstr "हां"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूर्ण करें।"

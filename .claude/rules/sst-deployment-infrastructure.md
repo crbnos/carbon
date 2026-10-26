@@ -136,7 +136,9 @@ registration handshake, not Carbon-specific. Two independent triggers exist:
   has no `/api/inngest` route to sync. For a workspace with a `project_id`
   (hosted Supabase) it then copies the ERP's `/templates/*.html` into the
   project's Auth emails (`ci/src/auth-emails.ts`): hosted Auth cannot
-  download templates the way self-hosted Auth does.
+  download templates the way self-hosted Auth does. One sync at a time
+  (job-level `concurrency: post-deploy-sync`): each ERP deploy starts a run
+  that syncs every workspace, and two concurrent PUTs to one ERP collide.
 
 Both hit the same handler (`apps/erp/app/routes/api+/inngest.ts`, `serve()`
 from `inngest/remix`) — the registration target URL is fixed by that route's

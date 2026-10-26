@@ -84,7 +84,7 @@ import {
 } from "@carbon/database/stock-transfer";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { evaluateLinesForSurface } from "@carbon/ee/rules.server";
-import { storage } from "@carbon/files";
+import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
@@ -194,7 +194,6 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { ruleError, sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.utils";
 import { rescheduleJob } from "../production/production.service";
@@ -216,6 +215,7 @@ import type {
   warehouseTransferValidator
 } from "./inventory.models";
 import {
+  type inventoryAdjustmentTypes,
   isPickingListLocked,
   isStockTransferLocked,
   isWarehouseTransferLocked,
@@ -4936,6 +4936,51 @@ export function serverFnFailure(
   );
 }
 
+/**
+ * A posting's refusal below 500 is written for the person and keeps its
+ * message; anything else is ours, behind `message`.
+ */
+export function postingFailure(
+  ctx: ServiceContext,
+  error: ServerFnError,
+  message: string
+): CarbonError {
+  return error.status < 500
+    ? serverFnFailure(ctx, error, error.message)
+    : ctx.error("internal", message, error);
+}
+
+/**
+ * A count that cannot post names the lines to fix, so the page can mark them;
+ * the count stays Pending. Any other failure is an error.
+ */
+export function inventoryCountPostingFailure(
+  ctx: ServiceContext,
+  error: ServerFnError
+): { invalidLineIds: string[]; message: string } | CarbonError {
+  const message = getErrorMessage(error, "Failed to post inventory count");
+  const invalidLineIds = error.body.invalidLineIds;
+  if (Array.isArray(invalidLineIds)) {
+    return { invalidLineIds: invalidLineIds as string[], message };
+  }
+  return serverFnFailure(ctx, error, message);
+}
+
+/**
+ * The storage-rule surfaces an adjustment is checked on. `quantity` is a
+ * positive magnitude, so the type alone says which way stock moves: a
+ * decrease or scrap takes from the bin (`pick`), anything else adds (`place`).
+ */
+export function adjustmentRuleSurfaces(
+  adjustmentType: (typeof inventoryAdjustmentTypes)[number],
+  storageUnitId: string | undefined
+): RuleSurface[] {
+  if (!storageUnitId) return ["inventoryAdjustment"];
+  const removes =
+    adjustmentType === "Negative Adjmt." || adjustmentType === "Scrap";
+  return ["inventoryAdjustment", removes ? "pick" : "place"];
+}
+
 /** The caller's default location, from their user defaults. */
 export async function defaultLocationOf(ctx: ServiceContext) {
   const defaults = await ctx.asCaller.supabase
@@ -5149,8 +5194,9 @@ export async function savePackingSlip(
     if (pdf.headers.get("content-type") !== "application/pdf") return;
 
     const file = await pdf.arrayBuffer();
-    const fileName = stripSpecialCharacters(
-      `${shipment.data.shipmentId} - ${datetime.timestamp().slice(0, -5)}.pdf`
+    const fileName = storedDocumentPdfName(
+      shipment.data.shipmentId,
+      datetime.timestamp()
     );
     const documentFilePath = `${companyId}/opportunity/${salesOrder.data.opportunityId}/${fileName}`;
     const upload = await storage(serviceRole)

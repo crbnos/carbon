@@ -28,7 +28,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -42,7 +42,7 @@ import {
   Boolean,
   CustomFormFields,
   Hidden,
-  Input,
+  InputControlled,
   Select,
   StandardFactor,
   Submit
@@ -71,6 +71,9 @@ const ProcessForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  // Controlled so the Requires Ability description can name the ability,
+  // which is the process's own name.
+  const [processName, setProcessName] = useState(initialValues.name ?? "");
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -125,7 +128,12 @@ const ProcessForm = ({
                 <Subheading variant="heavy" className="block">
                   <Trans>Basic Information</Trans>
                 </Subheading>
-                <Input name="name" label={t`Process Name`} />
+                <InputControlled
+                  name="name"
+                  label={t`Process Name`}
+                  value={processName}
+                  onChange={setProcessName}
+                />
                 <Select
                   name="processType"
                   label={t`Process Type`}
@@ -165,9 +173,14 @@ const ProcessForm = ({
                 <Boolean
                   name="requiresAbility"
                   label={t`Requires Ability`}
-                  description={t`Only qualified employees can be scheduled for and run this process`}
+                  description={
+                    processName
+                      ? t`Only employees with the ${processName} ability can be scheduled for and run this process`
+                      : t`Only qualified employees can be scheduled for and run this process`
+                  }
                   bordered
                 />
+                <AbilityPolicy />
 
                 <Boolean
                   name="batchable"
@@ -207,6 +220,34 @@ const ProcessForm = ({
 };
 
 export default ProcessForm;
+
+// What MES does when an operator without the ability works on this process.
+// Only shown while Requires Ability is on.
+function AbilityPolicy() {
+  const { t } = useLingui();
+  const [requiresAbility] = useControlField<boolean>("requiresAbility");
+
+  if (!requiresAbility) return null;
+
+  return (
+    <Select
+      name="abilityPolicy"
+      label={t`If an operator isn't qualified`}
+      options={[
+        {
+          value: "Warn",
+          label: t`Warn`,
+          helper: t`Show a warning on the shop floor, but let them work.`
+        },
+        {
+          value: "Block",
+          label: t`Block`,
+          helper: t`Don't let them work on this process until they have the ability.`
+        }
+      ]}
+    />
+  );
+}
 
 // Batch settings — only shown once a process is Batchable. The batch type
 // selector (sequential vs simultaneous) rides the same conditional as the

@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Pins today's unit return against the live database, so moving the return
-// body into `returnRentalUnit` cannot change what it writes. It acts through
-// a rental receipt, which re-cuts the periods exactly as the old return did.
+// Returning a rental unit through a rental receipt re-cuts its billing
+// periods: the invoiced period gets a credit for the unused days and the
+// periods after the return are dropped.
 
 import { sql } from "kysely";
 import { expect } from "vitest";
@@ -85,7 +85,31 @@ databaseTest(
         .where("companyId", "=", f.companyId)
         .executeTakeFirstOrThrow();
 
-      expect({ periods, line }).toMatchSnapshot();
+      // Sep (30 days, 300) was invoiced in advance; used Sep 1-20 = 20 days:
+      // 300 * 20/30 - 300 = -100. October, after the return, is dropped.
+      expect(periods).toEqual([
+        {
+          periodStart: "2026-09-01",
+          periodEnd: "2026-09-30",
+          days: 30,
+          amount: 300,
+          isAdjustment: false,
+          status: "Invoiced",
+          rateUnitApplied: null,
+          dueOn: "2026-09-01"
+        },
+        {
+          periodStart: "2026-09-01",
+          periodEnd: "2026-09-30",
+          days: 20,
+          amount: -100,
+          isAdjustment: true,
+          status: "Pending",
+          rateUnitApplied: "Month",
+          dueOn: "2026-09-20"
+        }
+      ]);
+      expect(line).toEqual({ status: "Returned", returnedAt: "2026-09-20" });
     } finally {
       await f.cleanup();
     }

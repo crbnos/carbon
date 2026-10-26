@@ -226,6 +226,9 @@ msgstr "您确定要离开此页面吗？"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "您确定要将此工序标记为完成吗？这会结束此工序的所有活跃生产事件。"
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "装配步骤"
 
@@ -286,6 +289,9 @@ msgstr "生产批次详情"
 
 msgid "Batch is not available"
 msgstr "批次不可用"
+
+msgid "Batch notes"
+msgstr "生产批次备注"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -450,6 +456,9 @@ msgstr "完成批次"
 
 msgid "Complete passed"
 msgstr "完成已通过"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "已完成"
@@ -2263,8 +2272,20 @@ msgstr "写备注…"
 msgid "Yes"
 msgstr "是"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"

@@ -226,6 +226,9 @@ msgstr "이 페이지를 나가시겠습니까?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "이 공정작업을 완료로 표시하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "조립 단계"
 
@@ -286,6 +289,9 @@ msgstr "배치 상세정보"
 
 msgid "Batch is not available"
 msgstr "배치는 가용하지 않습니다"
+
+msgid "Batch notes"
+msgstr "배치 메모"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -450,6 +456,9 @@ msgstr "배치 완료"
 
 msgid "Complete passed"
 msgstr "완료 처리 통과"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "완료됨"
@@ -2263,8 +2272,20 @@ msgstr "메모 작성…"
 msgid "Yes"
 msgstr "예"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온보딩을 완료해 주시기 바랍니다."

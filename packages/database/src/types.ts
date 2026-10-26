@@ -45825,6 +45825,7 @@ export type Database = {
       }
       process: {
         Row: {
+          abilityPolicy: Database["public"]["Enums"]["processAbilityPolicy"]
           active: boolean
           batchable: boolean
           batchRules: Json | null
@@ -45844,6 +45845,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          abilityPolicy?: Database["public"]["Enums"]["processAbilityPolicy"]
           active?: boolean
           batchable?: boolean
           batchRules?: Json | null
@@ -45863,6 +45865,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          abilityPolicy?: Database["public"]["Enums"]["processAbilityPolicy"]
           active?: boolean
           batchable?: boolean
           batchRules?: Json | null
@@ -82229,6 +82232,9 @@ export type Database = {
       }
       processes: {
         Row: {
+          abilityPolicy:
+            | Database["public"]["Enums"]["processAbilityPolicy"]
+            | null
           active: boolean | null
           batchable: boolean | null
           batchRules: Json | null
@@ -95501,6 +95507,7 @@ export type Database = {
         | "File"
         | "Task"
         | "Inspection"
+      processAbilityPolicy: "Warn" | "Block"
       productionEventType: "Setup" | "Labor" | "Machine"
       productionQuantityType: "Rework" | "Scrap" | "Production"
       purchaseInvoiceStatus:
@@ -97060,6 +97067,7 @@ export const Constants = {
         "Task",
         "Inspection",
       ],
+      processAbilityPolicy: ["Warn", "Block"],
       productionEventType: ["Setup", "Labor", "Machine"],
       productionQuantityType: ["Rework", "Scrap", "Production"],
       purchaseInvoiceStatus: [

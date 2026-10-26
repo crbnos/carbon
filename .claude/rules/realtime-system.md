@@ -64,8 +64,8 @@ a database without Supabase Realtime still accepts writes.
 | `broadcast_user_changes` | `user:<userId>:<table>` | notifications |
 
 - An UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` sends
-  nothing (the same list `dispatch_event_batch` ignores; `event-dispatch.test.ts`
-  keeps the copies equal).
+  nothing (the same list `dispatch_event_batch` ignores; the `event-ignored-columns`
+  check keeps the copies equal).
 - `itemSupersession` has no `id`: its message carries the `itemId`.
   `implementationHub` has no `companyId`: its `id` is the company.
 - Which tables broadcast is declared in `event-system/attachments.ts`, never in

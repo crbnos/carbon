@@ -4252,6 +4252,9 @@ msgstr "Aveugle"
 msgid "Blind Count"
 msgstr "Comptage à l'aveugle"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Bloquer avec une erreur"
 
@@ -5155,9 +5158,6 @@ msgstr "Date de fermeture"
 
 msgid "Close Date"
 msgstr "Date de fermeture"
-
-msgid "Close menu"
-msgstr "Fermer le menu"
 
 msgid "Close Period"
 msgstr "Fermer la période"
@@ -8164,6 +8164,9 @@ msgstr "Utilisation en dollars"
 
 msgid "Don't Cancel"
 msgstr "Ne pas annuler"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "Vous ne voyez pas de numéro de série ?"
@@ -11380,6 +11383,9 @@ msgstr "Les IDs et descriptions sont générés pour les matières premières."
 
 msgid "If"
 msgstr "Si"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Si l'amortissement a déjà été exécuté, le prochain calcul rattrape les mois qu'un actif linéaire a amortis à l'ancien coût."
@@ -15844,6 +15850,9 @@ msgstr "Seules les procédures en brouillon sont modifiables. Créez une nouvell
 msgid "Only employees can post receipts."
 msgstr "Seuls les employés peuvent comptabiliser les réceptions."
 
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
+
 msgid "Only empty, open periods can be deleted."
 msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
 
@@ -18244,6 +18253,9 @@ msgstr "Fréquence du taux"
 
 msgid "Rate Limit"
 msgstr "Limite de débit"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Taux utilisé pour la conversion des comptes de capitaux propres en consolidation (IAS 21). Laissez vide pour utiliser le taux de change actuel."
@@ -21292,6 +21304,9 @@ msgstr "Afficher une colonne ID client lisible sur la liste des clients, les for
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Afficher une colonne ID Fournisseur lisible sur la liste des fournisseurs, les formulaires de fournisseur et les listes déroulantes. Les fournisseurs sont toujours identifiés en interne de toute façon."
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
 
 msgid "Show All"
 msgstr "Tout afficher"

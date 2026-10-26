@@ -317,7 +317,7 @@ pnpm exec turbo run typecheck --filter=erp
 pnpm --dir apps/erp exec vitest run app/modules/accounting
 ```
 
-`lease-run-posting.test.ts` (a lease run stamps `leaseScheduleLine.journalId` / `postedAt`, Reverse Run clears them) runs `postRevenueRecognitionRun` / `reverseRevenueRecognitionRun` against the local database. `vitest.config.ts` stubs `SUPABASE_DB_URL` for every ERP test, so it reads the URL from the repository's `.env.local` and skips when there is none or it is not local. It builds on `leaseFixture` and `holdInDraftRun` (`apps/erp/test/database/fixtures/lease.ts`, `run.ts`).
+`apps/erp/test/database/post-lease/lease-run.test.ts` (a lease run stamps `leaseScheduleLine.journalId` / `postedAt`, Reverse Run clears them) runs `postRevenueRecognitionRun` / `reverseRevenueRecognitionRun` against the local database through `databaseTest`, which skips unless `SUPABASE_DB_URL` points at a local host. It builds on `leaseFixture` and `holdInDraftRun` (`apps/erp/test/database/fixtures/lease.ts`, `run.ts`).
 
 ## Key Data Model
 

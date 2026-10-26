@@ -16,6 +16,7 @@ import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   finishJobOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
@@ -128,6 +129,18 @@ export async function action({ request }: ActionFunctionArgs) {
         ...error(jobOperation.error, "Failed to fetch job operation"),
         flash: "error"
       })
+    );
+  }
+
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: jobOperation.data.id,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data(
+      {},
+      await flash(request, { ...error(null, refusal), flash: "error" })
     );
   }
 

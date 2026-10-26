@@ -51,7 +51,9 @@ import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
   getFileExtension,
+  isStoredDocumentPdf,
   storage,
+  storedDocumentPdfName,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { isModelRawDownloadable } from "@carbon/files/cad";
@@ -91,7 +93,6 @@ import {
   normalizeLesseeLegs,
   openEndedLeaseHorizon,
   paymentMonthIndex,
-  RoundingMode,
   remeasureLease,
   round,
   searchFilter
@@ -122,7 +123,6 @@ import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -181,6 +181,8 @@ import {
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
+  planningLineCurrencyCode,
+  planningQuantityChange,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -2426,41 +2428,36 @@ export async function applyPurchasingPlanningActions(
     );
     if (quantities.length > 0) {
       const lineIds = [...new Set(quantities.map((a) => a.lineId))];
-      // A PO with no currency is in the company's base currency, as the PO
-      // line form reads it; refusing it failed every Increase / Decrease on
-      // such a PO with "Currency (none) has no precision".
-      const lines = (
-        await trx
-          .selectFrom("purchaseOrderLine as pol")
-          .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
-          .innerJoin("company as c", "c.id", "po.companyId")
-          .select([
-            "pol.id",
-            "pol.supplierUnitPrice",
-            "pol.supplierShippingCost",
-            "pol.purchaseQuantity",
-            "pol.quantityReceived",
-            "pol.quantityInvoiced",
-            "pol.receivedComplete",
-            "pol.taxPercent",
-            "pol.supplierTaxAmount",
-            "pol.conversionFactor",
-            "po.currencyCode",
-            "c.baseCurrencyCode"
-          ])
-          .where("pol.id", "in", lineIds)
-          .where("pol.companyId", "=", companyId)
-          // the completion flags below are derived from these rows
-          .forUpdate("pol")
-          .execute()
-      ).map(({ baseCurrencyCode, ...line }) => ({
-        ...line,
-        currencyCode: line.currencyCode ?? baseCurrencyCode
-      }));
+      const lines = await trx
+        .selectFrom("purchaseOrderLine as pol")
+        .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
+        .innerJoin("company as c", "c.id", "po.companyId")
+        .select([
+          "pol.id",
+          "pol.supplierUnitPrice",
+          "pol.supplierShippingCost",
+          "pol.purchaseQuantity",
+          "pol.quantityReceived",
+          "pol.quantityInvoiced",
+          "pol.receivedComplete",
+          "pol.taxPercent",
+          "pol.supplierTaxAmount",
+          "pol.conversionFactor",
+          "po.currencyCode",
+          "c.baseCurrencyCode"
+        ])
+        .where("pol.id", "in", lineIds)
+        .where("pol.companyId", "=", companyId)
+        // the completion flags below are derived from these rows
+        .forUpdate("pol")
+        .execute();
       const lineById = new Map(lines.map((line) => [line.id, line]));
       const codes = [
         ...new Set(
-          lines.flatMap((l) => (l.currencyCode ? [l.currencyCode] : []))
+          lines.flatMap((l) => {
+            const code = planningLineCurrencyCode(l);
+            return code ? [code] : [];
+          })
         )
       ];
       const currencies =
@@ -2488,44 +2485,21 @@ export async function applyPurchasingPlanningActions(
       }[] = [];
       const unheld: string[] = [];
       for (const action of quantities) {
-        const line = lineById.get(action.lineId);
-        const decimals = line?.currencyCode
-          ? decimalsByCode.get(line.currencyCode)
-          : undefined;
-        if (!line || decimals === undefined) {
+        const change = planningQuantityChange(
+          lineById.get(action.lineId),
+          decimalsByCode,
+          Number(action.suggestedQuantity)
+        );
+        if (!change.ok) {
           result.failed.push({
             id: action.planningActionId,
-            message: line
-              ? `Currency ${line.currencyCode ?? "(none)"} has no precision`
-              : "Purchase order line not found"
+            message: change.message
           });
           unheld.push(action.planningActionId);
           continue;
         }
-        const conversionFactor = Number(line.conversionFactor) || 1;
-        // MRP suggests a whole number of purchase units already
-        // (`quantityAfterApply`, @carbon/planning); the inner round strips
-        // float noise (1.1 / 0.1 = 11.000000000000002) that would otherwise
-        // ceil it a whole purchase unit up.
-        const toReceive =
-          conversionFactor > 0
-            ? round(
-                round(Number(action.suggestedQuantity) / conversionFactor),
-                0,
-                RoundingMode.Up
-              )
-            : Number(action.suggestedQuantity);
-        const quantity = round(
-          (Number(line.quantityReceived) || 0) + toReceive
-        );
-        const pair = taxPairForQuantity(line, quantity, decimals);
-        values.push({
-          lineId: action.lineId,
-          quantity,
-          percent: pair.percent,
-          amount: pair.amount,
-          ...getCompletionAfterQuantityChange(line, quantity)
-        });
+        const { ok: _, ...value } = change;
+        values.push({ lineId: action.lineId, ...value });
       }
       // a failed computation never holds its claim
       for (const id of unheld) claimed.delete(id);
@@ -3070,8 +3044,8 @@ export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // tsgo's limit; the cliff shifts as unrelated modules join the program.
-  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
+  // TypeScript's limit; the cliff shifts as unrelated modules join the
+  // program. ts-ignore, not ts-expect-error, since the error comes and goes.
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")
@@ -6011,18 +5985,73 @@ export async function draftLeaseSetupPath(
   return path.to.leaseSetup(id, "assets");
 }
 
+/**
+ * A supplier interaction's files without the PDFs finalize stored for its
+ * purchase orders. Every order converted from one supplier quote shares the
+ * interaction's folder, so attaching the whole listing sent a supplier the
+ * other orders' PDFs and every earlier copy of the order's own. Throws when
+ * the orders cannot be read, rather than let those PDFs through.
+ */
+export async function withoutStoredPurchaseOrderPdfs<
+  T extends { name: string }
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  interactionId: string,
+  docs: T[]
+): Promise<T[]> {
+  if (docs.length === 0) return docs;
+  // Paged: a page missing would let that order's PDF through.
+  const orders = await fetchAllFromTable<{
+    id: string;
+    purchaseOrderId: string;
+  }>(client, "purchaseOrder", "id, purchaseOrderId", (query) =>
+    query
+      .eq("companyId", companyId)
+      .eq("supplierInteractionId", interactionId)
+      .order("id")
+  );
+  if (orders.error) {
+    logger.error("Failed to read the supplier interaction's purchase orders", {
+      companyId,
+      interactionId,
+      error: orders.error
+    });
+    throw new Error(
+      "Failed to read the supplier interaction's purchase orders"
+    );
+  }
+  const purchaseOrderIds = orders.data.flatMap((order) =>
+    order.purchaseOrderId ? [order.purchaseOrderId] : []
+  );
+  return docs.filter((doc) => !isStoredDocumentPdf(doc.name, purchaseOrderIds));
+}
+
 /** Signed links to a supplier interaction's documents, for an email. A file
- *  that cannot be signed is logged and left out. */
+ *  that cannot be signed is logged and left out. With
+ *  `withoutPurchaseOrderPdfs`, the PDFs finalize stored for the interaction's
+ *  purchase orders are left out too (`withoutStoredPurchaseOrderPdfs`). */
 export async function interactionAttachments(
   client: SupabaseClient<Database>,
   companyId: string,
-  interactionId: string
+  interactionId: string,
+  {
+    withoutPurchaseOrderPdfs = false
+  }: { withoutPurchaseOrderPdfs?: boolean } = {}
 ): Promise<{ filename: string; path: string; size?: number }[]> {
-  const docs = await getSupplierInteractionDocuments(
+  const listed = await getSupplierInteractionDocuments(
     client,
     companyId,
     interactionId
   );
+  const docs = withoutPurchaseOrderPdfs
+    ? await withoutStoredPurchaseOrderPdfs(
+        client,
+        companyId,
+        interactionId,
+        listed
+      )
+    : listed;
   return signedAttachments(
     client,
     companyId,
@@ -6480,10 +6509,9 @@ export async function attachPurchaseOrderPdf(
     return ctx.error("internal", "Failed to generate PDF", err);
   }
 
-  const fileName = stripSpecialCharacters(
-    `${getPurchaseOrderDisplayId(purchaseOrder)} - ${datetime
-      .timestamp()
-      .slice(0, -5)}.pdf`
+  const fileName = storedDocumentPdfName(
+    getPurchaseOrderDisplayId(purchaseOrder),
+    datetime.timestamp()
   );
   const path = `${companyId}/supplier-interaction/${purchaseOrder.supplierInteractionId}/${fileName}`;
   const upload = await storage(ctx.asSystem.supabase)

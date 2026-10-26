@@ -226,6 +226,9 @@ msgstr "Sei sicuro di voler lasciare questa pagina?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Sei sicuro di voler segnare questa operazione come completata? Questo terminerà tutti gli eventi di produzione attivi per questa operazione."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Passi di assemblaggio"
 
@@ -286,6 +289,9 @@ msgstr "Dettagli del lotto di produzione"
 
 msgid "Batch is not available"
 msgstr "Lotto non disponibile"
+
+msgid "Batch notes"
+msgstr "Note del lotto di produzione"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -450,6 +456,9 @@ msgstr "Completa Lotto"
 
 msgid "Complete passed"
 msgstr "Completa i superati"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "Completato"
@@ -2263,8 +2272,20 @@ msgstr "Scrivi una Nota…"
 msgid "Yes"
 msgstr "Sì"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbra fine?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Il tuo account non è ancora parte di un'azienda. Completa l'onboarding in Carbon ERP per continuare."

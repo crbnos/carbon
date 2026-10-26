@@ -4,9 +4,6 @@
 
 import { EPSILON, round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
-import { QboSalesInvoiceSyncer } from "../providers/quickbooks-online/entities/invoice";
-import { RilletSalesInvoiceSyncer } from "../providers/rillet/entities/invoice";
-import { SalesInvoiceSyncer } from "../providers/xero/entities/invoice";
 import { SalesInvoiceSchema } from "./models";
 import {
   assertNoAssetDisposalComponents,
@@ -15,9 +12,9 @@ import {
   isRevenueComponent
 } from "./sales-document-components";
 import {
-  loadSalesInvoices,
   requirePostedSalesAccountId,
-  requirePostedShippingAccountId
+  requirePostedShippingAccountId,
+  resolveReplayedRevenueAccounts
 } from "./sales-invoice-source";
 import type { Accounting } from "./types";
 
@@ -489,500 +486,145 @@ describe("normalized sales invoice currency/component contract", () => {
   });
 });
 
-function sourceDatabase(
-  missingCurrency = false,
-  postingRows = [
-    {
-      documentId: "invoice",
-      accountId: "posted-shipping",
-      description: "Shipping Revenue",
-      amount: 15,
-      accountClass: "Revenue",
-      isGroup: false
-    }
-  ],
-  invoiceIds = ["invoice"]
-) {
-  const source = fixture();
-  const headerValues: Record<string, unknown> = Object.fromEntries(
-    Object.entries(source).map(([key, value]) => [`salesInvoice.${key}`, value])
-  );
-  Object.assign(headerValues, {
-    "salesInvoice.subtotal": 999,
-    "salesInvoice.totalTax": 999,
-    "salesInvoice.totalAmount": 999,
-    "salesInvoices.subtotal": source.subtotal,
-    "salesInvoices.totalTax": source.totalTax,
-    "salesInvoices.totalAmount": source.totalAmount,
-    "salesInvoices.balance": source.balance,
-    "salesInvoiceShipment.shippingCost": source.headerShippingCost,
-    "company.baseCurrencyCode": source.baseCurrencyCode,
-    "baseCurrency.decimalPlaces": source.baseCurrencyDecimalPlaces,
-    "documentCurrency.decimalPlaces": missingCurrency
-      ? null
-      : source.currencyDecimalPlaces
+// The original revenue account a provider document replays, per role, from the
+// invoice's posted journal lines. A defect belongs to ONE invoice: the loader
+// is a batch, and a throw there parks every sibling invoice drained beside it.
+describe("resolveReplayedRevenueAccounts", () => {
+  const posting = (
+    documentId: string,
+    accountId: string,
+    overrides: Partial<{
+      description: string;
+      accountClass: string;
+      isGroup: boolean;
+    }> = {}
+  ) => ({
+    documentId,
+    accountId,
+    description: "Sales Account",
+    accountClass: "Revenue",
+    isGroup: false,
+    ...overrides
   });
-  const lineValues: Record<string, unknown> = Object.fromEntries(
-    Object.entries(source.lines[0]!).map(([key, value]) => [
-      `salesInvoiceLine.${key}`,
-      value
-    ])
-  );
-  lineValues["salesInvoiceLine.invoiceId"] = source.id;
-  lineValues["item.readableIdWithRevision"] = "SERVICE";
-  const reads: Array<{
-    table: string;
-    columns: string[];
-    where: unknown[][];
-    joins: string[];
-    on: unknown[][];
-  }> = [];
-  const database = {
-    selectFrom(table: string) {
-      const read = {
-        table,
-        columns: [] as string[],
-        where: [] as unknown[][],
-        joins: [] as string[],
-        on: [] as unknown[][]
-      };
-      reads.push(read);
-      const builder: any = {
-        select(columns: string[] | string) {
-          read.columns.push(...(Array.isArray(columns) ? columns : [columns]));
-          return builder;
-        },
-        where(...args: unknown[]) {
-          read.where.push(args);
-          return builder;
-        },
-        leftJoin(name: string, ...args: unknown[]) {
-          read.joins.push(name);
-          if (typeof args[0] === "function") {
-            const join: any = {
-              onRef(...refs: unknown[]) {
-                read.on.push(refs);
-                return join;
-              },
-              on(...refs: unknown[]) {
-                read.on.push(refs);
-                return join;
-              }
-            };
-            args[0](join);
-          }
-          return builder;
-        },
-        innerJoin(name: string, ...args: unknown[]) {
-          return builder.leftJoin(name, ...args);
-        },
-        async execute() {
-          if (table === "journalLine") return postingRows;
-          const values = table === "salesInvoice" ? headerValues : lineValues;
-          return invoiceIds.map((id) =>
-            Object.fromEntries(
-              read.columns.map((column) => {
-                const [name, alias] = column.split(" as ");
-                const value =
-                  name === "salesInvoice.id" ||
-                  name === "salesInvoiceLine.invoiceId"
-                    ? id
-                    : name === "salesInvoiceLine.id"
-                      ? `line-${id}`
-                      : values[name!];
-                return [alias ?? name!.split(".").at(-1)!, value];
-              })
-            )
-          );
-        }
-      };
-      return builder;
-    }
+  const shipping = (documentId: string, accountId: string) =>
+    posting(documentId, accountId, { description: "Shipping Revenue" });
+  const replay = (rows: ReturnType<typeof posting>[], invoiceId: string) => {
+    const resolve = resolveReplayedRevenueAccounts(rows);
+    return {
+      sales: resolve("SalesRevenue", invoiceId),
+      shipping: resolve("ShippingRevenue", invoiceId)
+    };
   };
-  return { database, reads };
-}
-describe.each([
-  SalesInvoiceSyncer,
-  QboSalesInvoiceSyncer,
-  RilletSalesInvoiceSyncer
-])("provider source fetch %s", (Syncer) => {
-  it("reads authoritative view totals, all charge columns and group-scoped currency metadata through the actual batch path", async () => {
-    const { database, reads } = sourceDatabase();
-    const syncer = new Syncer({
-      database: database as never,
-      companyId: "company",
-      provider: { id: "xero" } as never,
-      config: {
-        enabled: true,
-        direction: "push-to-accounting",
-        owner: "carbon"
-      },
-      entityType: "invoice"
-    });
-    const result = await (
-      syncer as unknown as {
-        fetchLocalBatch(
-          ids: string[]
-        ): Promise<Map<string, Accounting.SalesInvoice>>;
-      }
-    ).fetchLocalBatch(["invoice"]);
-    const source = result.get("invoice");
-    expect(source).toMatchObject({
-      subtotal: 133,
-      totalTax: 13,
-      totalAmount: 151,
-      balance: 151,
-      headerShippingCost: 5,
-      shippingRevenueAccountId: "posted-shipping",
-      baseCurrencyCode: "USD",
-      baseCurrencyDecimalPlaces: 2,
-      currencyDecimalPlaces: 2
-    });
-    expect(source?.lines[0]).toMatchObject({
-      shippingCost: 10,
-      addOnCost: 20,
-      nonTaxableAddOnCost: 3,
-      convertedUnitPrice: 80
-    });
-    expect(buildSalesDocumentComponents(source!)).toMatchObject({
-      subtotal: 110.4,
-      totalTax: 10.4,
-      totalAmount: 120.8
-    });
-    expect(reads).toHaveLength(3);
-    expect(reads[0]?.where).toContainEqual([
-      "salesInvoice.companyId",
-      "=",
-      "company"
-    ]);
-    expect(reads[1]?.where).toContainEqual([
-      "salesInvoiceLine.companyId",
-      "=",
-      "company"
-    ]);
-    expect(reads[0]?.on).toContainEqual([
-      "documentCurrency.companyGroupId",
-      "=",
-      "company.companyGroupId"
-    ]);
-    expect(reads[0]?.on).toContainEqual([
-      "baseCurrency.companyGroupId",
-      "=",
-      "company.companyGroupId"
-    ]);
-  });
-  it("fails source loading when authoritative currency precision is unavailable", async () => {
-    const { database } = sourceDatabase(true);
-    const syncer = new Syncer({
-      database: database as never,
-      companyId: "company",
-      provider: { id: "xero" } as never,
-      config: {
-        enabled: true,
-        direction: "push-to-accounting",
-        owner: "carbon"
-      },
-      entityType: "invoice"
-    });
-    await expect(syncer.fetchLocal("invoice")).rejects.toThrow(
-      /currency|precision/i
-    );
-  });
-});
-
-describe("canonical invoice posting source", () => {
-  it("keeps different original shipping accounts in one batch and scopes every posting read", async () => {
-    const postings = ["a", "b"].map((id) => ({
-      documentId: id,
-      accountId: `shipping-${id}`,
-      description: "Shipping Revenue",
-      amount: 15,
-      accountClass: "Revenue",
-      isGroup: false
-    }));
-    const { database, reads } = sourceDatabase(false, postings, ["a", "b"]);
-    const result = await loadSalesInvoices(database as never, {
-      companyId: "company",
-      ids: ["a", "b"]
-    });
-    expect(
-      [...result.values()].map((invoice) => invoice.shippingRevenueAccountId)
-    ).toEqual(["shipping-a", "shipping-b"]);
-    const read = reads.find((read) => read.table === "journalLine")!;
-    expect(read.where).toEqual(
-      expect.arrayContaining([
-        ["journalLine.companyId", "=", "company"],
-        ["journal.companyId", "=", "company"],
-        ["journal.sourceType", "=", "Sales Invoice"],
-        ["journalLine.documentType", "=", "Invoice"],
-        ["journal.status", "=", "Posted"],
-        ["journalLine.documentId", "in", ["a", "b"]]
-      ])
-    );
-    expect(read.on).toContainEqual([
-      "account.companyGroupId",
-      "=",
-      "company.companyGroupId"
-    ]);
-    expect(reads.some((read) => read.table === "accountDefault")).toBe(false);
-  });
-  it("refuses ambiguous original shipping accounts without choosing today's default", async () => {
-    const postings = ["a", "b"].map((id) => ({
-      documentId: "invoice",
-      accountId: `shipping-${id}`,
-      description: "Shipping Revenue",
-      amount: 15,
-      accountClass: "Revenue",
-      isGroup: false
-    }));
-    const { database } = sourceDatabase(false, postings);
-    // The refusal is the invoice's own, raised where the account is USED — the
-    // loader is a batch and must not fail its siblings. See the per-invoice
-    // isolation suite below.
-    const invoice = (
-      await loadSalesInvoices(database as never, {
-        companyId: "company",
-        ids: ["invoice"]
-      })
-    ).get("invoice")!;
-    expect(invoice.shippingRevenueAccountId).toBeNull();
-    expect(failureOf(() => requirePostedShippingAccountId(invoice))).toEqual({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      invoiceId: "invoice"
-    });
-  });
-  it("ignores reversal and arbitrary revenue descriptions as original shipping facts", async () => {
-    const postings = ["VOID: Shipping Revenue", "Some revenue"].map(
-      (description) => ({
-        documentId: "invoice",
-        accountId: "other",
-        description,
-        amount: 15,
-        accountClass: "Revenue",
-        isGroup: false
-      })
-    );
-    const { database } = sourceDatabase(false, postings);
-    expect(
-      (
-        await loadSalesInvoices(database as never, {
-          companyId: "company",
-          ids: ["invoice"]
-        })
-      ).get("invoice")?.shippingRevenueAccountId
-    ).toBeNull();
-  });
-});
-
-describe("replayed sales revenue account", () => {
-  /**
-   * The bug this exists to stop coming back: every test in this file used to post
-   * only a "Shipping Revenue" line, so the whole SalesRevenue extraction could be
-   * reverted to a shipping-only map and the suite stayed green — while every
-   * provider fixture hand-set `salesRevenueAccountId` and hid it.
-   */
-  it("extracts the account the original journal credited for merchandise", async () => {
-    const postings = [
-      {
-        documentId: "a",
-        accountId: "sales-4000",
-        description: "Sales Account",
-        amount: 100,
-        accountClass: "Revenue",
-        isGroup: false
-      },
-      {
-        documentId: "a",
-        accountId: "shipping-4100",
-        description: "Shipping Revenue",
-        amount: 15,
-        accountClass: "Revenue",
-        isGroup: false
-      }
-    ];
-    const { database } = sourceDatabase(false, postings, ["a"]);
-    const result = await loadSalesInvoices(database as never, {
-      companyId: "company",
-      ids: ["a"]
-    });
-    const invoice = result.get("a")!;
-    expect(invoice.salesRevenueAccountId).toBe("sales-4000");
-    expect(invoice.shippingRevenueAccountId).toBe("shipping-4100");
-  });
-
-  it("refuses an invoice whose merchandise revenue hit two accounts", async () => {
-    // Carbon posts ALL merchandise revenue to one account, so two means the
-    // journal is not the shape this replay assumes and guessing would misstate.
-    const postings = ["sales-4000", "sales-4001"].map((accountId) => ({
-      documentId: "a",
-      accountId,
-      description: "Sales Account",
-      amount: 50,
-      accountClass: "Revenue",
-      isGroup: false
-    }));
-    const { database } = sourceDatabase(false, postings, ["a"]);
-    const invoice = (
-      await loadSalesInvoices(database as never, {
-        companyId: "company",
-        ids: ["a"]
-      })
-    ).get("a")!;
-    expect(invoice.salesRevenueAccountId).toBeNull();
-    expect(failureOf(() => requirePostedSalesAccountId(invoice))).toEqual({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      invoiceId: "a"
-    });
-  });
-});
-
-/**
- * `loadSalesInvoices` is the batch loader behind every invoice syncer's
- * `fetchLocalBatch`. `pushBatchToAccounting` calls it ONCE for the whole claimed
- * group (`DEFAULT_CLAIM_LIMIT` = 20 operations) and its outer `catch` records
- * whatever the loader threw against EVERY id in the group — so a throw for one
- * invoice's malformed revenue posting parked up to 19 healthy posted invoices as
- * `Warning UNMAPPED_ACCOUNTS` naming a document they have nothing to do with.
- * Nothing automatic recovers them either: `shouldEnqueueMissingDocument` refuses
- * to re-enqueue a parked Warning, the capped re-drive arm in
- * `computeReconcileDecision` is `bill`-only, and the changed-since-failure retry
- * needs the invoice to be edited. One bad document therefore stopped AR sync for
- * its whole batch, permanently and silently.
- *
- * Before this branch only a *Shipping* Revenue row could reach those throws, so
- * an invoice with no shipping was immune. Replaying merchandise revenue put
- * every invoice on that path.
- */
-describe("per-invoice revenue-account defects do not fail their batch", () => {
-  const cleanPostings = (documentId: string) => [
-    {
-      documentId,
-      accountId: "sales-4000",
-      description: "Sales Account",
-      amount: 100,
-      accountClass: "Revenue",
-      isGroup: false
-    },
-    {
-      documentId,
-      accountId: "shipping-4100",
-      description: "Shipping Revenue",
-      amount: 15,
-      accountClass: "Revenue",
-      isGroup: false
-    }
+  const clean = (documentId: string) => [
+    posting(documentId, "sales-4000"),
+    shipping(documentId, "shipping-4100")
   ];
 
-  async function loadPair(
-    badPostings: Array<Record<string, unknown>>
-  ): Promise<Map<string, Accounting.SalesInvoice>> {
-    const { database } = sourceDatabase(
-      false,
-      [...cleanPostings("good"), ...badPostings] as never,
-      ["good", "bad"]
+  it("extracts the merchandise and shipping accounts the original journal credited", () => {
+    expect(replay(clean("a"), "a")).toEqual({
+      sales: "sales-4000",
+      shipping: "shipping-4100"
+    });
+  });
+
+  it("keeps a different original shipping account per invoice in one batch", () => {
+    const rows = [shipping("a", "shipping-a"), shipping("b", "shipping-b")];
+    expect(replay(rows, "a").shipping).toBe("shipping-a");
+    expect(replay(rows, "b").shipping).toBe("shipping-b");
+  });
+
+  it("answers null for an invoice with no revenue postings rather than today's default", () => {
+    expect(replay(clean("a"), "b")).toEqual({ sales: null, shipping: null });
+  });
+
+  it.each(["VOID: Shipping Revenue", "Some revenue"])(
+    "does not read a %s line as an original revenue posting",
+    (description) => {
+      expect(replay([posting("a", "other", { description })], "a")).toEqual({
+        sales: null,
+        shipping: null
+      });
+    }
+  );
+
+  // Carbon posts all merchandise revenue to one account and all shipping to
+  // another, so two of either means the journal is not the shape replayed.
+  it.each([
+    [
+      "merchandise",
+      [posting("bad", "sales-4000"), posting("bad", "sales-4001")],
+      { sales: null, shipping: null }
+    ],
+    [
+      "shipping",
+      [shipping("bad", "shipping-a"), shipping("bad", "shipping-b")],
+      { sales: null, shipping: null }
+    ],
+    [
+      "a group merchandise",
+      [posting("bad", "sales-parent", { isGroup: true })],
+      { sales: null, shipping: null }
+    ],
+    // Only the broken role is unresolved; an invoice with no shipping still syncs.
+    [
+      "a non-Revenue shipping",
+      [
+        posting("bad", "sales-4000"),
+        posting("bad", "shipping-asset", {
+          description: "Shipping Revenue",
+          accountClass: "Asset"
+        })
+      ],
+      { sales: "sales-4000", shipping: null }
+    ],
+    // Half-broken is still broken: picking the surviving account is a guess.
+    [
+      "a group posting beside a valid merchandise",
+      [
+        posting("bad", "sales-parent", { isGroup: true }),
+        posting("bad", "sales-4000")
+      ],
+      { sales: null, shipping: null }
+    ]
+  ])(
+    "leaves the role unresolved for %s posting without touching a sibling invoice",
+    (_case, badRows, expected) => {
+      const rows = [...clean("good"), ...badRows];
+      expect(replay(rows, "bad")).toEqual(expected);
+      expect(replay(rows, "good")).toEqual({
+        sales: "sales-4000",
+        shipping: "shipping-4100"
+      });
+    }
+  );
+});
+
+describe("requirePosted*AccountId", () => {
+  it.each([
+    ["sales", "salesRevenueAccountId", requirePostedSalesAccountId],
+    ["shipping", "shippingRevenueAccountId", requirePostedShippingAccountId]
+  ] as const)("returns the replayed %s account", (_role, field, require) => {
+    expect(require(fixture() as Accounting.SalesInvoice)).toBe(
+      fixture()[field]
     );
-    return loadSalesInvoices(database as never, {
-      companyId: "company",
-      ids: ["good", "bad"]
-    });
-  }
-
-  function expectGoodInvoiceUnaffected(
-    result: Map<string, Accounting.SalesInvoice>
-  ) {
-    const good = result.get("good")!;
-    expect(requirePostedSalesAccountId(good)).toBe("sales-4000");
-    expect(requirePostedShippingAccountId(good)).toBe("shipping-4100");
-  }
-
-  it("leaves a sibling invoice fully usable when merchandise revenue is ambiguous", async () => {
-    const result = await loadPair(
-      ["sales-4000", "sales-4001"].map((accountId) => ({
-        documentId: "bad",
-        accountId,
-        description: "Sales Account",
-        amount: 50,
-        accountClass: "Revenue",
-        isGroup: false
-      }))
-    );
-    expectGoodInvoiceUnaffected(result);
-    const bad = result.get("bad")!;
-    expect(failureOf(() => requirePostedSalesAccountId(bad))).toEqual({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      invoiceId: "bad"
-    });
   });
 
-  it("leaves a sibling invoice fully usable when a merchandise posting is not a Revenue leaf", async () => {
-    // A group account, and a non-Revenue class, were the two conditions that
-    // threw from inside the posting-row loop — before the result map was even
-    // built, so they took every invoice in the batch with them.
-    const result = await loadPair([
-      {
-        documentId: "bad",
-        accountId: "sales-parent",
-        description: "Sales Account",
-        amount: 100,
-        accountClass: "Revenue",
-        isGroup: true
-      }
-    ]);
-    expectGoodInvoiceUnaffected(result);
-    expect(result.get("bad")!.salesRevenueAccountId).toBeNull();
-  });
-
-  it("leaves a sibling invoice fully usable when a shipping posting is not a Revenue leaf", async () => {
-    const result = await loadPair([
-      ...cleanPostings("bad").slice(0, 1),
-      {
-        documentId: "bad",
-        accountId: "shipping-asset",
-        description: "Shipping Revenue",
-        amount: 15,
-        accountClass: "Asset",
-        isGroup: false
-      }
-    ]);
-    expectGoodInvoiceUnaffected(result);
-    const bad = result.get("bad")!;
-    // Only the broken ROLE is unresolved — the invoice's merchandise account is
-    // still replayed, so a document with no shipping component still syncs.
-    expect(bad.salesRevenueAccountId).toBe("sales-4000");
-    expect(failureOf(() => requirePostedShippingAccountId(bad))).toEqual({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      invoiceId: "bad"
-    });
-  });
-
-  it("does not fall back to the valid line when one posting of a role is unusable", async () => {
-    // Half-broken is still broken: picking the surviving account would be the
-    // guess the whole replay exists to avoid.
-    const result = await loadPair([
-      {
-        documentId: "bad",
-        accountId: "sales-parent",
-        description: "Sales Account",
-        amount: 40,
-        accountClass: "Revenue",
-        isGroup: true
-      },
-      {
-        documentId: "bad",
-        accountId: "sales-4000",
-        description: "Sales Account",
-        amount: 60,
-        accountClass: "Revenue",
-        isGroup: false
-      }
-    ]);
-    expectGoodInvoiceUnaffected(result);
-    expect(result.get("bad")!.salesRevenueAccountId).toBeNull();
-  });
+  it.each([
+    ["sales", "salesRevenueAccountId", requirePostedSalesAccountId],
+    ["shipping", "shippingRevenueAccountId", requirePostedShippingAccountId]
+  ] as const)(
+    "parks the one invoice whose %s account is unresolved as an UNMAPPED_ACCOUNTS warning",
+    (_role, field, require) => {
+      const invoice = { ...fixture(), id: "bad", [field]: null };
+      expect(
+        failureOf(() => require(invoice as Accounting.SalesInvoice))
+      ).toEqual({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        invoiceId: "bad"
+      });
+    }
+  );
 });
 
 describe("fixed-asset disposal components", () => {

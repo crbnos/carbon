@@ -76,6 +76,10 @@ type BatchTotals = {
   jobReadableIds: string[];
 };
 
+/**
+ * Per batch: the member count, summed quantities and member job numbers, from
+ * the batch members' rows.
+ */
 function getBatchTotals(
   members: NonNullable<
     Awaited<ReturnType<typeof getJobOperationBatchMembers>>["data"]
@@ -100,8 +104,10 @@ function getBatchTotals(
   return totals;
 }
 
-// Collapse operations sharing a jobOperationBatchId into one card: keep the first
-// as the card, tag it with the member count and summed quantities.
+/**
+ * Collapse operations sharing a jobOperationBatchId into one card: keep the
+ * first as the card, tag it with the member count and summed quantities.
+ */
 function collapseBatches(
   items: Item[],
   batchTotals: Map<string, BatchTotals>
