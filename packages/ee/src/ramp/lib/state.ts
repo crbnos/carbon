@@ -99,7 +99,8 @@ export async function patchRampOAuthCredentials(
     "credentials.accessToken": credentials.accessToken
   };
   const metadata: Record<string, Json | undefined> = {
-    "credentials.type": credentials.type
+    "credentials.type": credentials.type,
+    "credentials.environment": credentials.environment
   };
   if (args.syncMode) metadata.syncMode = args.syncMode;
   if (args.grantedScopes) metadata.grantedScopes = args.grantedScopes;
@@ -107,9 +108,7 @@ export async function patchRampOAuthCredentials(
     metadata.accountingConnectionProvider = args.accountingConnectionProvider;
   }
 
-  // `credentials.environment` is the retired sandbox/production stamp; a
-  // reconnect clears it from installs made while the sandbox switch was live.
-  const removeMetadata = ["credentials.clientId", "credentials.environment"];
+  const removeMetadata = ["credentials.clientId"];
   const removeSecrets = ["credentials.clientSecret"];
   if (credentials.expiresAt) {
     metadata["credentials.expiresAt"] = credentials.expiresAt;

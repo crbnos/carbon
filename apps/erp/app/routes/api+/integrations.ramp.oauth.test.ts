@@ -55,7 +55,8 @@ const credentials = {
   type: "oauth2",
   accessToken: "new-access",
   refreshToken: "new-refresh",
-  expiresAt: "2026-09-11T13:00:00.000Z"
+  expiresAt: "2026-09-11T13:00:00.000Z",
+  environment: "production"
 };
 
 // The real state module, so the mode round-trips through the signed cookie.

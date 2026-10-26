@@ -8,7 +8,8 @@ import { RampIntegrationMetadataSchema } from "../models";
 // Minimal oauth2 credentials — the shape a fresh "Connect to Ramp" install stores.
 const credentials = {
   type: "oauth2" as const,
-  accessToken: "token"
+  accessToken: "token",
+  environment: "production" as const
 };
 
 describe("RampIntegrationMetadataSchema — flat sync flags → runtime sync", () => {
@@ -41,5 +42,14 @@ describe("RampIntegrationMetadataSchema — flat sync flags → runtime sync", (
       pullBills: false
     });
     expect(parsed.sync.pullBills).toBe(false);
+  });
+});
+
+describe("RampCredentialsSchema — environment", () => {
+  it("reads credentials stored without an environment as production", () => {
+    const parsed = RampIntegrationMetadataSchema.parse({
+      credentials: { type: "oauth2", accessToken: "token" }
+    });
+    expect(parsed.credentials.environment).toBe("production");
   });
 });

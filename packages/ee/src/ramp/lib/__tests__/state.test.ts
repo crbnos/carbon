@@ -75,7 +75,8 @@ describe("Ramp integration state patches", () => {
         type: "oauth2",
         accessToken: "access-1",
         refreshToken: "refresh-1",
-        expiresAt: "2026-09-11T13:00:00.000Z"
+        expiresAt: "2026-09-11T13:00:00.000Z",
+        environment: "production"
       },
       updatedBy: "user-1"
     });
@@ -85,13 +86,14 @@ describe("Ramp integration state patches", () => {
       expect.objectContaining({
         p_metadata_patch: {
           "credentials.type": "oauth2",
-          "credentials.expiresAt": "2026-09-11T13:00:00.000Z"
+          "credentials.expiresAt": "2026-09-11T13:00:00.000Z",
+          "credentials.environment": "production"
         },
         p_secret_patch: {
           "credentials.accessToken": "access-1",
           "credentials.refreshToken": "refresh-1"
         },
-        p_metadata_remove: ["credentials.clientId", "credentials.environment"],
+        p_metadata_remove: ["credentials.clientId"],
         p_secret_remove: ["credentials.clientSecret"],
         p_active: true,
         p_updated_by: "user-1"
@@ -105,7 +107,8 @@ describe("Ramp integration state patches", () => {
     await patchRampOAuthCredentials(client, "company-1", {
       credentials: {
         type: "oauth2",
-        accessToken: "access-1"
+        accessToken: "access-1",
+        environment: "production"
       },
       updatedBy: "user-1"
     });
@@ -114,13 +117,10 @@ describe("Ramp integration state patches", () => {
       "upsert_company_integration_patch",
       expect.objectContaining({
         p_metadata_patch: {
-          "credentials.type": "oauth2"
+          "credentials.type": "oauth2",
+          "credentials.environment": "production"
         },
-        p_metadata_remove: [
-          "credentials.clientId",
-          "credentials.environment",
-          "credentials.expiresAt"
-        ],
+        p_metadata_remove: ["credentials.clientId", "credentials.expiresAt"],
         p_secret_remove: [
           "credentials.clientSecret",
           "credentials.refreshToken"

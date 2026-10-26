@@ -383,12 +383,21 @@ export type RampSyncResult = z.infer<typeof RampSyncResultSchema>;
 // *                    Credentials                         *
 // \********************************************************/
 
+export const RampEnvironmentSchema = z.enum(["production", "sandbox"]);
+export type RampEnvironment = z.infer<typeof RampEnvironmentSchema>;
+
+// Installs connected while the sandbox switch was removed (#1933) stored no
+// `environment`; they were authorized against api.ramp.com, so read them as
+// production rather than failing the whole metadata parse.
+const StoredRampEnvironmentSchema = RampEnvironmentSchema.default("production");
+
 export const RampCredentialsSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("client_credentials"),
       clientId: z.string(),
-      clientSecret: z.string()
+      clientSecret: z.string(),
+      environment: StoredRampEnvironmentSchema
     })
     .passthrough(),
   z
@@ -396,7 +405,8 @@ export const RampCredentialsSchema = z.discriminatedUnion("type", [
       type: z.literal("oauth2"),
       accessToken: z.string(),
       refreshToken: z.string().optional(),
-      expiresAt: z.string().optional()
+      expiresAt: z.string().optional(),
+      environment: StoredRampEnvironmentSchema
     })
     .passthrough()
 ]);
