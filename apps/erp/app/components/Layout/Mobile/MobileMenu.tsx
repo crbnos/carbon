@@ -9,12 +9,10 @@ import {
   DockFinderGroup,
   DockFinderItem,
   DockFinderSeparator,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSwitcher,
   dockMenuRowClassName,
+  NavSheet,
   PrefetchLink,
   useMode
 } from "@carbon/react";
@@ -298,24 +296,22 @@ function ModuleFinder({
 }
 
 /**
- * The dock's menu: the company and module switchers over one panel. The
- * panel lists the modules on Home and the current module's sections inside
- * a module — the same sidebar the desktop shows — then the account and
- * notifications. Picking a row navigates; any navigation closes the menu.
- * A tap on a switcher opens its full-screen finder; Esc returns from the
- * finder to the menu.
+ * The dock's menu, a bottom sheet: the company and module switchers in its
+ * header over one list. The list holds the modules on Home and the current
+ * module's sections inside a module — the same sidebar the desktop shows —
+ * then the account and notifications. Picking a row navigates; any
+ * navigation closes the menu. A tap on a switcher opens its full-screen
+ * finder over the sheet; Esc returns from the finder to the menu.
  */
 export function MobileMenu({
   open,
   onOpenChange,
-  dock,
   unread,
   onOpenProfile,
   onOpenNotifications
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  dock: ReactNode;
   unread: number;
   onOpenProfile: () => void;
   onOpenNotifications: () => void;
@@ -348,43 +344,34 @@ export function MobileMenu({
 
   return (
     <>
-      <DockMenu open={open} onOpenChange={onOpenChange}>
-        <DockMenuContent
-          label={t`Menu`}
-          dock={dock}
-          // A tap on a link closes the menu even when it leads to the page
-          // already open, where the path (and so the menu) would not change.
-          onClick={(event) => {
-            if ((event.target as HTMLElement).closest("a")) onOpenChange(false);
-          }}
-          onEscapeKeyDown={(event) => {
-            if (finder) {
-              event.preventDefault();
-              closeFinder();
-            }
-          }}
-          finder={
-            finder === "companies" ? (
-              <CompanyFinder
-                onClose={closeFinder}
-                onAddCompany={() => {
-                  onOpenChange(false);
-                  setAddingCompany(true);
-                }}
-              />
-            ) : finder === "modules" ? (
-              <ModuleFinder
-                currentKey={current?.key ?? null}
-                onClose={closeFinder}
-                onPick={(to) => {
-                  onOpenChange(false);
-                  navigate(to);
-                }}
-              />
-            ) : undefined
-          }
-        >
-          <div className="flex min-w-0 shrink-0 gap-2">
+      <NavSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        // The finder's list scrolls on its own; the sheet's lock would hold it.
+        scrollLocking={!finder}
+        sibling={
+          finder === "companies" ? (
+            <CompanyFinder
+              onClose={closeFinder}
+              onAddCompany={() => {
+                onOpenChange(false);
+                setAddingCompany(true);
+              }}
+            />
+          ) : finder === "modules" ? (
+            <ModuleFinder
+              currentKey={current?.key ?? null}
+              onClose={closeFinder}
+              onPick={(to) => {
+                onOpenChange(false);
+                navigate(to);
+              }}
+            />
+          ) : undefined
+        }
+        header={
+          <div className="flex min-w-0 gap-2 text-left">
+            <h2 className="sr-only">{t`Menu`}</h2>
             <DockSwitcher
               icon={
                 <AvatarBase
@@ -408,62 +395,71 @@ export function MobileMenu({
               className="shrink-0"
             />
           </div>
-          <DockMenuPanel>
-            {Sidebar ? (
-              <SidebarPresentationProvider value="sheet">
-                <SheetNavStyleProvider value="menu">
-                  <Sidebar />
-                </SheetNavStyleProvider>
-              </SidebarPresentationProvider>
-            ) : (
-              <ModuleRows currentKey={current?.key ?? null} />
-            )}
-            <DockMenuSection>
-              <button
-                type="button"
-                onClick={onOpenProfile}
-                className={dockMenuRowClassName}
-              >
-                <Avatar path={user.avatarUrl} name={name} size="xs" />
-                <span className="flex min-w-0 flex-1 flex-col py-1.5">
-                  <span className="truncate text-foreground">{name}</span>
-                  <span className="truncate text-sm">{user.email}</span>
-                </span>
-                <LuChevronRight className="size-5" />
-              </button>
-            </DockMenuSection>
-            <DockMenuSection>
-              <button
-                type="button"
-                onClick={onOpenNotifications}
-                className={dockMenuRowClassName}
-              >
-                <MenuRowContent
-                  label={
-                    <>
-                      <Trans>Notifications</Trans>
-                      {unread > 0 ? (
-                        <span className="sr-only">
-                          {" "}
-                          <Trans>{unread} unread</Trans>
-                        </span>
-                      ) : null}
-                    </>
-                  }
-                  trailing={
-                    <span className="relative flex size-5 items-center justify-center">
-                      <LuBell className="size-[18px]" />
-                      {unread > 0 ? (
-                        <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary ring-2 ring-popover" />
-                      ) : null}
-                    </span>
-                  }
-                />
-              </button>
-            </DockMenuSection>
-          </DockMenuPanel>
-        </DockMenuContent>
-      </DockMenu>
+        }
+      >
+        {/* A tap on a link closes the menu even when it leads to the page
+            already open, where the path (and so the menu) would not change. */}
+        <div
+          role="presentation"
+          className="px-1.5 pb-1.5"
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest("a")) onOpenChange(false);
+          }}
+        >
+          {Sidebar ? (
+            <SidebarPresentationProvider value="sheet">
+              <SheetNavStyleProvider value="menu">
+                <Sidebar />
+              </SheetNavStyleProvider>
+            </SidebarPresentationProvider>
+          ) : (
+            <ModuleRows currentKey={current?.key ?? null} />
+          )}
+          <DockMenuSection>
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className={dockMenuRowClassName}
+            >
+              <Avatar path={user.avatarUrl} name={name} size="xs" />
+              <span className="flex min-w-0 flex-1 flex-col py-1.5">
+                <span className="truncate text-foreground">{name}</span>
+                <span className="truncate text-sm">{user.email}</span>
+              </span>
+              <LuChevronRight className="size-5" />
+            </button>
+          </DockMenuSection>
+          <DockMenuSection>
+            <button
+              type="button"
+              onClick={onOpenNotifications}
+              className={dockMenuRowClassName}
+            >
+              <MenuRowContent
+                label={
+                  <>
+                    <Trans>Notifications</Trans>
+                    {unread > 0 ? (
+                      <span className="sr-only">
+                        {" "}
+                        <Trans>{unread} unread</Trans>
+                      </span>
+                    ) : null}
+                  </>
+                }
+                trailing={
+                  <span className="relative flex size-5 items-center justify-center">
+                    <LuBell className="size-[18px]" />
+                    {unread > 0 ? (
+                      <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary ring-2 ring-popover" />
+                    ) : null}
+                  </span>
+                }
+              />
+            </button>
+          </DockMenuSection>
+        </div>
+      </NavSheet>
       {user.admin ? (
         <AddCompanyModal
           open={addingCompany}

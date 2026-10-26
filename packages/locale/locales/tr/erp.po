@@ -5159,9 +5159,6 @@ msgstr "Kapanış tarihi"
 msgid "Close Date"
 msgstr "Kapatma Tarihi"
 
-msgid "Close menu"
-msgstr "Menüyü kapat"
-
 msgid "Close Period"
 msgstr "Dönemi Kapat"
 

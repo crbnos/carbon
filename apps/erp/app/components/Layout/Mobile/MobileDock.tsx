@@ -2,11 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { cn, Dock, DockBar, DockItem, DockSeparator } from "@carbon/react";
+import { cn, Dock, DockItem, DockSeparator } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { LuMenu, LuPlus, LuSearch, LuX } from "react-icons/lu";
+import { LuMenu, LuPlus, LuSearch } from "react-icons/lu";
 import { useLocation } from "react-router";
 import { useUser } from "~/hooks";
 import { useAppBadge } from "~/hooks/useAppBadge";
@@ -58,53 +57,36 @@ export function MobileDock() {
     setSheet(null);
   }, [pathname]);
 
-  const menuOpen = sheet === "menu";
-
-  // The pill's controls. The menu draws them again over its overlay, where
-  // the menu button reads ✕ and Create hands over to the Create menu.
-  const items = (inMenu: boolean): ReactNode => (
-    <>
-      <DockItem
-        icon={<LuSearch />}
-        label={t`Search`}
-        onClick={() => {
-          setSheet(null);
-          openSearchModal();
-        }}
-      />
-      <DockSeparator />
-      {!canCreate ? null : inMenu ? (
-        <DockItem
-          icon={<LuPlus />}
-          aria-label={t`Create`}
-          onClick={() => setSheet("create")}
-        />
-      ) : (
-        <CreateMenu
-          open={sheet === "create"}
-          onOpenChange={setOpen("create")}
-          trigger={<DockItem icon={<LuPlus />} aria-label={t`Create`} />}
-        />
-      )}
-      <DockItem
-        icon={inMenu ? <LuX /> : <LuMenu />}
-        aria-label={inMenu ? t`Close menu` : t`Open menu`}
-        aria-haspopup="dialog"
-        aria-expanded={inMenu}
-        onClick={() => setSheet(inMenu ? null : "menu")}
-      />
-    </>
-  );
-
   return (
     <>
       <Dock aria-label={t`Main`} className={cn(bottomBarActive && "hidden")}>
-        {items(false)}
+        <DockItem
+          icon={<LuSearch />}
+          label={t`Search`}
+          onClick={() => {
+            setSheet(null);
+            openSearchModal();
+          }}
+        />
+        <DockSeparator />
+        {canCreate ? (
+          <CreateMenu
+            open={sheet === "create"}
+            onOpenChange={setOpen("create")}
+            trigger={<DockItem icon={<LuPlus />} aria-label={t`Create`} />}
+          />
+        ) : null}
+        <DockItem
+          icon={<LuMenu />}
+          aria-label={t`Open menu`}
+          aria-haspopup="dialog"
+          aria-expanded={sheet === "menu"}
+          onClick={() => setSheet("menu")}
+        />
       </Dock>
       <MobileMenu
-        open={menuOpen}
+        open={sheet === "menu"}
         onOpenChange={setOpen("menu")}
-        dock={<DockBar aria-label={t`Main`}>{items(true)}</DockBar>}
         unread={unread}
         onOpenProfile={() => setSheet("profile")}
         onOpenNotifications={() => setSheet("notifications")}

@@ -5159,9 +5159,6 @@ msgstr "समापन तारीख"
 msgid "Close Date"
 msgstr "बंद करने की तारीख"
 
-msgid "Close menu"
-msgstr "मेनू बंद करें"
-
 msgid "Close Period"
 msgstr "अवधि बंद करें"
 

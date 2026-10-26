@@ -5159,9 +5159,6 @@ msgstr "完了日"
 msgid "Close Date"
 msgstr "終了日"
 
-msgid "Close menu"
-msgstr "メニューを閉じる"
-
 msgid "Close Period"
 msgstr "期間を閉じる"
 
