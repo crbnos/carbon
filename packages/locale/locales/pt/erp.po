@@ -5159,9 +5159,6 @@ msgstr "Data de fechamento"
 msgid "Close Date"
 msgstr "Data de Encerramento"
 
-msgid "Close menu"
-msgstr "Fechar menu"
-
 msgid "Close Period"
 msgstr "Fechar Período"
 

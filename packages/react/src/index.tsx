@@ -135,9 +135,6 @@ import {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -281,6 +278,7 @@ import {
   NavRailSwitcher,
   navRailItemClasses
 } from "./NavRail";
+import { NavSheet } from "./NavSheet";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -546,9 +544,6 @@ export {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -669,6 +664,7 @@ export {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
+  NavSheet,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
