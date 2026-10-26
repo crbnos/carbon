@@ -515,7 +515,8 @@ export async function postSerialCompletions(
     userId: string;
   }
 ): Promise<{ completed: number; error: unknown | null }> {
-  let completed = 0;
+  const completedEntityIds: string[] = [];
+  let error: unknown | null = null;
   for (const candidate of args.candidates) {
     const response = await erpPosting(
       "issue",
@@ -532,18 +533,27 @@ export async function postSerialCompletions(
         ...args.eventIds
       }
     );
-    if (response.error) return { completed, error: response.error };
-    completed += 1;
+    if (response.error) {
+      error = response.error;
+      break;
+    }
+    completedEntityIds.push(candidate.trackedEntityId);
+  }
+
+  // Labels go out after the postings, so a slow print enqueue never delays
+  // a unit's completion. Units completed before a failure still get theirs.
+  for (const trackedEntityId of completedEntityIds) {
     // Auto-print label on first operation only (entity was just minted)
     await autoPrintFirstOperationLabel({
       serviceRole,
-      trackedEntityId: candidate.trackedEntityId,
+      trackedEntityId,
       workCenterId: args.workCenterId ?? undefined,
       companyId: args.companyId,
       userId: args.userId
     });
   }
-  return { completed, error: null };
+
+  return { completed: completedEntityIds.length, error };
 }
 
 // Non-serial completion: one bulk Production posting (batch entities

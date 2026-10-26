@@ -77,6 +77,6 @@ export async function autoPrintFirstOperationLabel({
       });
     }
   } catch (e) {
-    log.error("Auto-print failed", { error: e });
+    log.error("Auto-print failed", { companyId, trackedEntityId, error: e });
   }
 }
