@@ -21,8 +21,10 @@ export {
   type CalendarWindow,
   subtractIntervals
 } from "./scheduling/calendar-utils.ts";
+export { remainingWorkHours } from "./scheduling/duration-calculator.ts";
 export {
   closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,

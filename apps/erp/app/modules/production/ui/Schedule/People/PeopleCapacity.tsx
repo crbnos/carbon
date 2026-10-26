@@ -85,7 +85,7 @@ type PeopleCapacityProps = {
   shiftHoursById: Record<string, number>;
   employeeShiftHours: Record<string, number>;
   defaultShiftHours: number;
-  /** per-work-center calendar hours (the availability ladder) — the Available series. */
+  /** per-work-center working hours (the scheduler's windows, less maintenance downtime) — the Available series. */
   calendarHoursByWorkCenter: Record<string, Record<string, number>>;
   /** Company holidays: the plant is closed, so nobody counts as staffed. */
   holidayDates: string[];
@@ -201,7 +201,7 @@ export function PeopleCapacity({
     defaultShiftHours
   ]);
 
-  // Available is the calendar-hours ladder, never people-derived — staffing a
+  // Available is the station's working time, never people-derived — staffing a
   // station no longer lowers its displayed available hours (the fallback cliff).
   const availableHours = useCallback(
     (workCenterId: string, date: string) =>
@@ -348,8 +348,9 @@ export function PeopleCapacity({
                   </span>{" "}
                   —{" "}
                   <Trans>
-                    the station's calendar hours from its shifts. Staffed hours
-                    (the people you've assigned) show beneath.
+                    the station's working hours from its shifts, less holidays
+                    and maintenance that takes it offline. Staffed hours (the
+                    people you've assigned) show beneath.
                   </Trans>
                 </p>
                 <p>
@@ -368,8 +369,9 @@ export function PeopleCapacity({
                   </span>{" "}
                   —{" "}
                   <Trans>
-                    the job hours due that day (a due-date basis, not the day
-                    the work runs), with overdue work in Past due.
+                    the job hours still to do that are due that day (a due-date
+                    basis, not the day the work runs), with overdue work in Past
+                    due.
                   </Trans>
                 </p>
               </div>

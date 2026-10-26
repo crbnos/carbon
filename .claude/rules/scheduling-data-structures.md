@@ -91,20 +91,27 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   re-plans too instead of keeping a stale booking), a
   week **matrix** (`PeopleMatrix.tsx`: employee×day grid + assigned-vs-needed
   coverage as sub-tabs, department filter), and a week **capacity** board
-  (`PeopleCapacity.tsx`). Capacity math: Demand = open `jobOperation` hours by
-  due date via `makeDurations` (Draft/Planned jobs excluded — released work
-  only; ops overdue up to 28 days land in a Past-due column); Scheduled =
-  `capacityReservation.workHours` split across the days of the booking by
-  the work center's WORKING time in each day (`getWorkCenterWorkingWindows`,
-  the same ladder and holidays the engine uses; a station's linked shifts at
-  another location are loaded too, `getShiftsWithTimesByIds`), so a booking from Monday
-  noon to Tuesday 11:30 puts its hours in shift time and none on the night
-  or a weekend; a booking with no working time falls back to the clock-time
-  share; Available = people headcount × real shift hours resolved through
-  the ladder assignment `shiftId` → the person's `employeeShift` →
-  most-common shift duration at the location → 8h (unassigned stations fall
-  back to the location's per-weekday shift calendar; a company holiday is
-  0, and nobody manned on it counts as staffed); Load renders as hours
+  (`PeopleCapacity.tsx`). Both read each station's working windows:
+  `getWorkCenterWorkingWindows` (the engine's ladder and holidays; a station's
+  linked shifts at another location are loaded too, `getShiftsWithTimesByIds`)
+  less the open offline maintenance outages (`getWorkCenterOutages` →
+  `downtimeOutages`, `@carbon/planning`, the rule the engine uses). Capacity
+  math: Demand = the hours each open `jobOperation` still needs as the engine
+  counts them (`remainingWorkHours`: setup + max(labor, machine), netted by
+  quantity complete, setup dropped once a production event exists) by due date
+  (Draft/Planned jobs excluded — released work only; overdue lands in a
+  Past-due column); Scheduled = `capacityReservation.workHours` split across
+  the days of the booking by the station's working time in each day, so a
+  booking from Monday noon to Tuesday 11:30 puts its hours in shift time and
+  none on the night or a weekend (no working time falls back to the clock-time
+  share); Available = the working hours in each plant day
+  (`workingHoursByDay`: 0 on a holiday, less maintenance downtime, and the
+  real day length on a lights-out station, 23 or 25 hours across DST).
+  Coverage (Matrix) needs `ceil(attended hours / person-day hours)` people per
+  station-day, where attended hours are the setup + labor share of each booking
+  laid on the station's working time from the booking's start
+  (`attendedHoursByDay`, `getOperationAttendedShares`); machine time and
+  lights-out stations need nobody. Load renders as hours
   over/free (+Xh / Xh free), not %. Shift + location filters live in header
   popovers; the shift filter's "All shifts" option (`shiftId` null on
   drag) creates shift-less assignments that resolve hours via the ladder.

@@ -17,7 +17,7 @@
  *      location's timezone.
  *
  * Downtime (open maintenance dispatches flagged `takesWorkCenterOffline`) is
- * subtracted from the resolved windows by the caller (see Task 17).
+ * subtracted from the resolved windows by the caller, using `downtimeOutages`.
  */
 
 import {
@@ -27,6 +27,7 @@ import {
   STOCK_WEEK_SHIFTS,
   unionWindows
 } from "./calendar-utils.ts";
+import { toInstantMs } from "./date-utils.ts";
 import { subtractDates } from "./people-utils.ts";
 
 /** One weekday window of a shift, with the timezone it is expressed in. */
@@ -192,4 +193,62 @@ export function closeHolidays(args: {
     result.set(wc.id, subtractDates(windows, holidayDates, wc.timezone));
   }
   return result;
+}
+
+type Instant = Date | string;
+
+/**
+ * Outage windows per work center from open maintenance dispatches flagged
+ * `takesWorkCenterOffline`. A dispatch is down from (actualStartTime ??
+ * plannedStartTime ?? createdAt) to (actualEndTime ?? plannedEndTime ??
+ * `rangeEnd`: no end estimate means down until further notice), on its own
+ * work center and every work center joined to it. Only `workCenterIds` are
+ * returned. An `alwaysOn` station is not exempt: a broken lights-out machine
+ * is still down.
+ */
+export function downtimeOutages(args: {
+  dispatches: {
+    id: string;
+    workCenterId: string | null;
+    plannedStartTime: Instant | null;
+    plannedEndTime: Instant | null;
+    actualStartTime: Instant | null;
+    actualEndTime: Instant | null;
+    createdAt: Instant;
+  }[];
+  dispatchWorkCenters: {
+    maintenanceDispatchId: string;
+    workCenterId: string;
+  }[];
+  workCenterIds: string[];
+  rangeEnd: number;
+}): Map<string, CalendarWindow[]> {
+  const joined = new Map<string, string[]>();
+  for (const row of args.dispatchWorkCenters) {
+    const list = joined.get(row.maintenanceDispatchId) ?? [];
+    list.push(row.workCenterId);
+    joined.set(row.maintenanceDispatchId, list);
+  }
+  const wanted = new Set(args.workCenterIds);
+  const outages = new Map<string, CalendarWindow[]>();
+  for (const dispatch of args.dispatches) {
+    const start = toInstantMs(
+      dispatch.actualStartTime ??
+        dispatch.plannedStartTime ??
+        dispatch.createdAt
+    );
+    const endAt = dispatch.actualEndTime ?? dispatch.plannedEndTime;
+    const end = endAt ? toInstantMs(endAt) : args.rangeEnd;
+    const affected = new Set(
+      [dispatch.workCenterId, ...(joined.get(dispatch.id) ?? [])].filter(
+        (id): id is string => id !== null && wanted.has(id)
+      )
+    );
+    for (const workCenterId of affected) {
+      const list = outages.get(workCenterId) ?? [];
+      list.push({ start, end });
+      outages.set(workCenterId, list);
+    }
+  }
+  return outages;
 }

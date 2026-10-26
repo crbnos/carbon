@@ -21,9 +21,8 @@ import {
   toInstantMs
 } from "./date-utils.ts";
 import {
-  calculateDurationBreakdown,
   calculateDurationHours,
-  remainingFractions
+  remainingWorkHours
 } from "./duration-calculator.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
@@ -576,21 +575,13 @@ export class WorkCenterSelector {
       // left. Labor + machine scale by remaining quantity; setup is done once
       // any production event exists. A fully-complete op nets to 0 hours and is
       // filtered from the reservation set in buildWrites (endAt > startAt).
-      const { setup: setupFrac, work: workFrac } = remainingFractions(
-        op,
-        ctx.operationsWithEvents.has(op.id)
-      );
-      const breakdown = calculateDurationBreakdown({
-        ...op,
-        priority: op.priority ?? undefined
-      });
-      const setupHours = breakdown.setupHours * setupFrac;
-      const laborHours = breakdown.laborHours * workFrac;
-      const machineHours = breakdown.machineHours * workFrac;
-      // Total = setup + max(labor, machine) since labor and machine overlap
-      const durationHours = setupHours + Math.max(laborHours, machineHours);
-      // Hands-on window (setup + labor); the rest of the span runs lights-out
-      const attendedHours = Math.min(setupHours + laborHours, durationHours);
+      const {
+        setupHours,
+        laborHours,
+        machineHours,
+        durationHours,
+        attendedHours
+      } = remainingWorkHours(op, ctx.operationsWithEvents.has(op.id));
       // Split components for people team mode (labor parallelizes across the
       // present people; setup and machine time don't)
       const teamComponents = { setupHours, laborHours, machineHours };

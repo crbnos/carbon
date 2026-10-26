@@ -68,9 +68,17 @@ msgstr "{0, plural, one {# blocking record} other {# blocking records}}"
 msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr "{0, plural, one {# BOM line} other {# BOM lines}}"
 
+#. placeholder {0}: counts.unschedulable
+msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
+msgstr "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# component in this group} other {# components in this group}}"
+
+#. placeholder {0}: counts.conflicts
+msgid "{0, plural, one {# conflict} other {# conflicts}}"
+msgstr "{0, plural, one {# conflict} other {# conflicts}}"
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -79,6 +87,10 @@ msgstr "{0, plural, one {# day of slack} other {# days of slack}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# day short} other {# days short}}"
+
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr "{0, plural, one {# job} other {# jobs}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -95,6 +107,14 @@ msgstr "{0, plural, one {# parameter} other {# parameters}}"
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# record needs attention} other {# records need attention}}"
+
+#. placeholder {0}: counts.reservations
+msgid "{0, plural, one {# reservation} other {# reservations}}"
+msgstr "{0, plural, one {# reservation} other {# reservations}}"
+
+#. placeholder {0}: counts.resources
+msgid "{0, plural, one {# resource} other {# resources}}"
+msgstr "{0, plural, one {# resource} other {# resources}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -487,9 +507,6 @@ msgstr "{completedLines} of {lines} lines complete"
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# component} other {# components}}"
 
-msgid "{conflictCount} conflicts"
-msgstr "{conflictCount} conflicts"
-
 msgid "{count, plural, one {# asset} other {# assets}}"
 msgstr "{count, plural, one {# asset} other {# assets}}"
 
@@ -528,6 +545,9 @@ msgstr "{days}d"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
+
+msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgstr "{departmentName} has no work centers at {locationName}. Pick another department or location."
 
 msgid "{discount} off"
 msgstr "{discount} off"
@@ -686,9 +706,6 @@ msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
 msgid "{removed} planned invoices are removed."
 msgstr "{removed} planned invoices are removed."
 
-msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
-msgstr "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
-
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 
@@ -751,9 +768,6 @@ msgstr "{unmappedRequiredCount, plural, one {Map the # remaining required accoun
 
 msgid "{unread} unread"
 msgstr "{unread} unread"
-
-msgid "{unschedulableCount} can't be scheduled"
-msgstr "{unschedulableCount} can't be scheduled"
 
 msgid "{updated, plural, one {# part updated} other {# parts updated}}"
 msgstr "{updated, plural, one {# part updated} other {# parts updated}}"
@@ -825,12 +839,6 @@ msgstr "1 asset to depreciate · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 batchable operation is not in a batch — it runs individually until batched"
-
-msgid "1 can't be scheduled"
-msgstr "1 can't be scheduled"
-
-msgid "1 conflict"
-msgstr "1 conflict"
 
 msgid "1 day"
 msgstr "1 day"
@@ -14156,8 +14164,8 @@ msgstr "Need the right columns?"
 msgid "Need-by target"
 msgstr "Need-by target"
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. Machine time and lights-out stations need nobody."
+msgstr "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. Machine time and lights-out stations need nobody."
 
 msgid "Needs a Business or Partner plan."
 msgstr "Needs a Business or Partner plan."
@@ -14666,6 +14674,9 @@ msgstr "No {0} sync operations"
 msgid "No {0} yet"
 msgstr "No {0} yet"
 
+msgid "No {departmentName} work is scheduled at this location."
+msgstr "No {departmentName} work is scheduled at this location."
+
 msgid "No {title} yet"
 msgstr "No {title} yet"
 
@@ -14759,9 +14770,6 @@ msgstr "No CAD model to preview."
 
 msgid "No calibration records found"
 msgstr "No calibration records found"
-
-msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
-msgstr "No capacity reservations to visualize. Schedule a job to see work-center load."
 
 msgid "No changes recorded"
 msgstr "No changes recorded"
@@ -15426,6 +15434,9 @@ msgstr "No work centers at this location"
 msgid "No work centers exist"
 msgstr "No work centers exist"
 
+msgid "No work centers in {departmentName}"
+msgstr "No work centers in {departmentName}"
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -15594,6 +15605,9 @@ msgstr "Nothing is synced until you turn sync on."
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Nothing is synced until you turn sync on. Every required account is mapped."
+
+msgid "Nothing matches the search and filters"
+msgstr "Nothing matches the search and filters"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nothing scheduled — add a station below."
@@ -23310,8 +23324,8 @@ msgstr "The item each job produces — require it to match to merge output lots"
 msgid "The item's rental rate"
 msgstr "The item's rental rate"
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
@@ -23456,9 +23470,11 @@ msgstr "The monthly periods you post into and close"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The most recent scheduled work at this location was {0}."
-msgstr "The most recent scheduled work at this location was {0}."
+msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgstr "The most recent {departmentName} work at this location was {nextWorkDate}."
+
+msgid "The most recent scheduled work at this location was {nextWorkDate}."
+msgstr "The most recent scheduled work at this location was {nextWorkDate}."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
@@ -23475,9 +23491,11 @@ msgstr "The new version number of the method"
 msgid "The new version number of the procedure"
 msgstr "The new version number of the procedure"
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The next scheduled work at this location starts {0}."
-msgstr "The next scheduled work at this location starts {0}."
+msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgstr "The next {departmentName} work at this location starts {nextWorkDate}."
+
+msgid "The next scheduled work at this location starts {nextWorkDate}."
+msgstr "The next scheduled work at this location starts {nextWorkDate}."
 
 msgid "The night shift suits you, {name}."
 msgstr "The night shift suits you, {name}."
@@ -23803,8 +23821,8 @@ msgstr "The state of this quote line — Draft, No Quote, Complete; No Quote rev
 msgid "The statement bucket all accounts under this group will use."
 msgstr "The statement bucket all accounts under this group will use."
 
-msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
+msgid "the station's working hours from its shifts, less holidays and maintenance that takes it offline. Staffed hours (the people you've assigned) show beneath."
+msgstr "the station's working hours from its shifts, less holidays and maintenance that takes it offline. Staffed hours (the people you've assigned) show beneath."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "The step's settings — this run predates recording the values it used."

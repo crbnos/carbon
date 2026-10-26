@@ -68,9 +68,17 @@ msgstr "{0, plural, one {# 차단 레코드} other {# 차단 레코드}}"
 msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
+#. placeholder {0}: counts.unschedulable
+msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {이 그룹의 # 부품} other {이 그룹의 # 부품}}"
+
+#. placeholder {0}: counts.conflicts
+msgid "{0, plural, one {# conflict} other {# conflicts}}"
+msgstr ""
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -79,6 +87,10 @@ msgstr "{0, plural, one {여유 # 일} other {여유 # 일}}"
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
+
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr ""
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -95,6 +107,14 @@ msgstr ""
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# 기록에 주의가 필요합니다} other {# 기록에 주의가 필요합니다}}"
+
+#. placeholder {0}: counts.reservations
+msgid "{0, plural, one {# reservation} other {# reservations}}"
+msgstr ""
+
+#. placeholder {0}: counts.resources
+msgid "{0, plural, one {# resource} other {# resources}}"
+msgstr ""
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -487,9 +507,6 @@ msgstr "{completedLines}/{lines} 라인 완료"
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# 구성품} other {# 구성품}}"
 
-msgid "{conflictCount} conflicts"
-msgstr "{conflictCount}개 충돌"
-
 msgid "{count, plural, one {# asset} other {# assets}}"
 msgstr "{count, plural, one {# 자산} other {# 자산}}"
 
@@ -528,6 +545,9 @@ msgstr "{days}일"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}가(이) 이를 귀사의 원장에 게시하므로 Carbon은 이를 푸시하지 않습니다. 변경되는 경우에 대비하여 저장된 선택 사항이 유지됩니다."
+
+msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgstr ""
 
 msgid "{discount} off"
 msgstr "{discount} 할인"
@@ -686,9 +706,6 @@ msgstr "{remaining}단계 남음"
 msgid "{removed} planned invoices are removed."
 msgstr "{removed}개 계획됨 송장이 제거됨"
 
-msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
-msgstr "{resourceCount}개 자원 · {reservationCount}개 예약 · {jobCount}개 작업 지시"
-
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel}이(가) 다음 리비전으로 계획을 위해 다시 열기됩니다. 이미 공급업체로 보낸 문서는 주문서를 최종화하고 다시 보낼 때까지 변경되지 않습니다."
 
@@ -751,9 +768,6 @@ msgstr "{unmappedRequiredCount, plural, one {먼저 # 남은 필수 계정을 �
 
 msgid "{unread} unread"
 msgstr "{unread} 미읽음"
-
-msgid "{unschedulableCount} can't be scheduled"
-msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
 
 msgid "{updated, plural, one {# part updated} other {# parts updated}}"
 msgstr ""
@@ -825,12 +839,6 @@ msgstr "1개의 감가상각 자산 · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1개 배치 가능한 공정은 배치에 포함되지 않음 — 배치될 때까지 개별적으로 실행됨"
-
-msgid "1 can't be scheduled"
-msgstr "1개는 일정을 짤 수 없습니다"
-
-msgid "1 conflict"
-msgstr "1개 충돌"
 
 msgid "1 day"
 msgstr "1일"
@@ -14156,8 +14164,8 @@ msgstr "적절한 열이 필요하신가요?"
 msgid "Need-by target"
 msgstr "소요 일자"
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "필요한 것은 그 날의 작업 지시 시간을 {personDayHours}h로 나눈 값(올림)입니다 — 필터링하는 교대조 또는 이 사업장의 가장 일반적인 교대조 길이입니다."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. Machine time and lights-out stations need nobody."
+msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "Business 또는 Partner 요금제가 필요합니다."
@@ -14666,6 +14674,9 @@ msgstr "{0} 동기화 작업 없음"
 msgid "No {0} yet"
 msgstr "아직 {0}이(가) 없습니다"
 
+msgid "No {departmentName} work is scheduled at this location."
+msgstr ""
+
 msgid "No {title} yet"
 msgstr "아직 {title} 없음"
 
@@ -14759,9 +14770,6 @@ msgstr "미리 볼 수 있는 CAD 모델이 없습니다."
 
 msgid "No calibration records found"
 msgstr "교정 기록이 없습니다"
-
-msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
-msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작업 센터 부하를 확인하세요."
 
 msgid "No changes recorded"
 msgstr "기록된 변경 사항이 없습니다"
@@ -15426,6 +15434,9 @@ msgstr "이 사업장에 작업장이 없습니다"
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
+msgid "No work centers in {departmentName}"
+msgstr ""
+
 msgid "Nom"
 msgstr "명목"
 
@@ -15594,6 +15605,9 @@ msgstr "동기화를 활성화할 때까지 아무것도 동기화되지 않습�
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "동기화를 켜야 동기화됩니다. 필요한 모든 계정이 매핑되었습니다."
+
+msgid "Nothing matches the search and filters"
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요."
@@ -23310,8 +23324,8 @@ msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하�
 msgid "The item's rental rate"
 msgstr "품목의 임차료"
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "그 날에 마감될 작업 지시 시간(작업이 실행되는 날이 아닌 마감일 기준)이며, 기한 초과 작업은 기한 초과 섹션에 표시됩니다."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."
@@ -23456,9 +23470,11 @@ msgstr "게시하고 종료하는 월별 기간"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "요청자가 의심하는 가장 유력한 고장 모드입니다. 기술자는 마감 시 이를 확인하거나 다른 것으로 교체하며, 예상과 실제의 차이는 신뢰성 보고서에 반영됩니다."
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The most recent scheduled work at this location was {0}."
-msgstr "이 사업장에서 가장 최근에 일정이 잡힌 작업은 {0}이었습니다."
+msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgstr ""
+
+msgid "The most recent scheduled work at this location was {nextWorkDate}."
+msgstr ""
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "이 라인에서 협상된 단가입니다. 인라인 추적 아이콘을 통해 어떤 가격 규칙 또는 재정의로 이 값이 산출되었는지 확인할 수 있습니다."
@@ -23475,9 +23491,11 @@ msgstr "방법의 새 버전 번호"
 msgid "The new version number of the procedure"
 msgstr "절차서의 새로운 버전 번호"
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The next scheduled work at this location starts {0}."
-msgstr "이 사업장의 다음 일정이 잡힌 작업은 {0}에 시작됩니다."
+msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgstr ""
+
+msgid "The next scheduled work at this location starts {nextWorkDate}."
+msgstr ""
 
 msgid "The night shift suits you, {name}."
 msgstr "야간 교대조가 당신에게 맞습니다, {name}."
@@ -23803,8 +23821,8 @@ msgstr "이 견적 라인의 상태 — 초안, 견적 거절, 완료됨. 견적
 msgid "The statement bucket all accounts under this group will use."
 msgstr "이 그룹에 속한 모든 계정이 사용할 재무제표 구분입니다."
 
-msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr "스테이션의 교대조로부터의 달력 시간입니다. 배정된 인원의 시간이 아래에 표시됩니다."
+msgid "the station's working hours from its shifts, less holidays and maintenance that takes it offline. Staffed hours (the people you've assigned) show beneath."
+msgstr ""
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "단계의 설정입니다 — 이 실행은 사용한 값을 기록하기 전의 것입니다."

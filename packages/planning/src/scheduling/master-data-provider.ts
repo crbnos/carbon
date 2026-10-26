@@ -27,6 +27,7 @@ import {
 } from "./date-utils.ts";
 import {
   closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
@@ -1318,38 +1319,12 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         dispatches.map((d) => d.id)
       )
       .execute();
-    const joinByDispatch = new Map<string, string[]>();
-    for (const j of joinRows) {
-      const list = joinByDispatch.get(j.maintenanceDispatchId) ?? [];
-      list.push(j.workCenterId);
-      joinByDispatch.set(j.maintenanceDispatchId, list);
-    }
-
-    const wcIdSet = new Set(workCenterIds);
-    const toMs = (v: unknown) => toInstantMs(v as unknown as Date | string);
-    for (const d of dispatches) {
-      const start = toMs(
-        d.actualStartTime ?? d.plannedStartTime ?? d.createdAt
-      );
-      const end = d.actualEndTime
-        ? toMs(d.actualEndTime)
-        : d.plannedEndTime
-          ? toMs(d.plannedEndTime)
-          : rangeEnd; // no end estimate = down until further notice
-      const affected = new Set<string>();
-      if (d.workCenterId && wcIdSet.has(d.workCenterId)) {
-        affected.add(d.workCenterId);
-      }
-      for (const wcId of joinByDispatch.get(d.id) ?? []) {
-        if (wcIdSet.has(wcId)) affected.add(wcId);
-      }
-      for (const wcId of affected) {
-        const list = outagesByWc.get(wcId) ?? [];
-        list.push({ start, end });
-        outagesByWc.set(wcId, list);
-      }
-    }
-    return outagesByWc;
+    return downtimeOutages({
+      dispatches,
+      dispatchWorkCenters: joinRows,
+      workCenterIds,
+      rangeEnd
+    });
   }
 
   async getLocationCalendarWindows(

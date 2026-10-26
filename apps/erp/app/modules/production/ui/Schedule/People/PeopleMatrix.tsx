@@ -80,7 +80,8 @@ type PeopleMatrixProps = {
   workCenters: MatrixWorkCenter[];
   assignments: MatrixAssignment[];
   absences: { id: string; employeeId: string; date: string }[];
-  demandByWorkCenter: Record<string, { days: Record<string, number> }>;
+  /** work center → date → hands-on hours the schedule books there */
+  attendedByWorkCenter: Record<string, Record<string, number>>;
   shiftId: string | null;
   locationId: string;
   shiftHoursById: Record<string, number>;
@@ -105,7 +106,7 @@ export function PeopleMatrix({
   workCenters,
   assignments,
   absences,
-  demandByWorkCenter,
+  attendedByWorkCenter,
   shiftId,
   locationId,
   shiftHoursById,
@@ -210,8 +211,8 @@ export function PeopleMatrix({
     (shiftId ? shiftHoursById[shiftId] : undefined) ?? defaultShiftHours;
 
   const neededCount = (workCenterId: string, date: string) => {
-    const demand = demandByWorkCenter[workCenterId]?.days[date] ?? 0;
-    return Math.ceil(demand / personDayHours);
+    const attended = attendedByWorkCenter[workCenterId]?.[date] ?? 0;
+    return Math.ceil(attended / personDayHours);
   };
 
   const dayHeaders = weekDates.map((date) => (
@@ -270,9 +271,11 @@ export function PeopleMatrix({
                 </p>
                 <p>
                   <Trans>
-                    Needed is the job hours due that day divided by{" "}
-                    {personDayHours}h, rounded up — the shift you're filtering
-                    by, or the most common shift length at this location.
+                    Needed is the setup and labor hours the schedule books at
+                    the station that day, divided by {personDayHours}h and
+                    rounded up — the shift you're filtering by, or the most
+                    common shift length at this location. Machine time and
+                    lights-out stations need nobody.
                   </Trans>
                 </p>
                 <p>

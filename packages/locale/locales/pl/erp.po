@@ -68,9 +68,17 @@ msgstr "{0, plural, one {# rekord blokujący} other {# rekordy blokujące}}"
 msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
+#. placeholder {0}: counts.unschedulable
+msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# składnik w tej grupie} other {# składników w tej grupie}}"
+
+#. placeholder {0}: counts.conflicts
+msgid "{0, plural, one {# conflict} other {# conflicts}}"
+msgstr ""
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -79,6 +87,10 @@ msgstr "{0, plural, one {# dzień luzu} few {# dni luzu} many {# dni luzu} other
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
 msgstr "{0, plural, one {# dzień za krótko} few {# dni za krótko} many {# dni za krótko} other {# dni za krótko}}"
+
+#. placeholder {0}: counts.jobs
+msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr ""
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -95,6 +107,14 @@ msgstr ""
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# rekord wymaga uwagi} other {# rekordy wymagają uwagi}}"
+
+#. placeholder {0}: counts.reservations
+msgid "{0, plural, one {# reservation} other {# reservations}}"
+msgstr ""
+
+#. placeholder {0}: counts.resources
+msgid "{0, plural, one {# resource} other {# resources}}"
+msgstr ""
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -487,9 +507,6 @@ msgstr "{completedLines} z {lines} pozycji ukończone"
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# komponent} other {# komponenty}}"
 
-msgid "{conflictCount} conflicts"
-msgstr "{conflictCount} konflikty"
-
 msgid "{count, plural, one {# asset} other {# assets}}"
 msgstr "{count, plural, one {# zasób} other {# zasoby}}"
 
@@ -528,6 +545,9 @@ msgstr "{days}d"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} wysyła to do Twojej księgi, więc Carbon tego nie wysyła. Twój zapisany wybór jest zachowywany na wypadek zmian."
+
+msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgstr ""
 
 msgid "{discount} off"
 msgstr "{discount} rabatu"
@@ -686,9 +706,6 @@ msgstr "{remaining, plural, one {# faza pozostała} other {# faz pozostało}}"
 msgid "{removed} planned invoices are removed."
 msgstr "{removed} zaplanowanych faktur zostało usunięte."
 
-msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
-msgstr "{resourceCount} zasobów · {reservationCount} rezerwacji · {jobCount} zleceń produkcyjnych"
-
 msgid "{revisionLabel} will be reopened for planning as its next revision. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{revisionLabel} zostanie otwarta ponownie do planowania jako jej następna rewizja. Dokument już wysłany dostawcy pozostaje niezmieniony do czasu sfinalizowania i ponownego wysłania zamówienia."
 
@@ -751,9 +768,6 @@ msgstr "{unmappedRequiredCount, plural, one {Najpierw zmapuj # pozostałe wymaga
 
 msgid "{unread} unread"
 msgstr "{unread} nieprzeczytane"
-
-msgid "{unschedulableCount} can't be scheduled"
-msgstr "Nie można zaplanować {unschedulableCount}"
 
 msgid "{updated, plural, one {# part updated} other {# parts updated}}"
 msgstr ""
@@ -825,12 +839,6 @@ msgstr "1 aktywo do amortyzacji · {amount}"
 
 msgid "1 batchable operation is not in a batch — it runs individually until batched"
 msgstr "1 operacja możliwa do tworzenia partii nie należy do partii — uruchamia się indywidualnie do czasu jej pogrupowania"
-
-msgid "1 can't be scheduled"
-msgstr "Nie można zaplanować 1"
-
-msgid "1 conflict"
-msgstr "1 konflikt"
 
 msgid "1 day"
 msgstr "1 dzień"
@@ -14156,8 +14164,8 @@ msgstr "Potrzebujesz odpowiednich kolumn?"
 msgid "Need-by target"
 msgstr "Termin zapotrzebowania"
 
-msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
-msgstr "Potrzebne = godziny pracy przypadające tego dnia podzielone przez {personDayHours}h, zaokrąglone w górę — zmiana, którą filtrujesz, lub najczęstsza długość zmiany w tej lokalizacji."
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. Machine time and lights-out stations need nobody."
+msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "Wymaga planu Business lub Partner."
@@ -14666,6 +14674,9 @@ msgstr "Brak operacji synchronizacji {0}"
 msgid "No {0} yet"
 msgstr "Jeszcze brak {0}"
 
+msgid "No {departmentName} work is scheduled at this location."
+msgstr ""
+
 msgid "No {title} yet"
 msgstr "Brak {title} na razie"
 
@@ -14759,9 +14770,6 @@ msgstr "Brak modelu CAD do podglądu."
 
 msgid "No calibration records found"
 msgstr "Nie znaleziono zapisów wzorcowania"
-
-msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
-msgstr "Brak rezerwacji pojemności do wizualizacji. Zaplanuj pracę, aby zobaczyć obciążenie centrum pracy."
 
 msgid "No changes recorded"
 msgstr "Brak zarejestrowanych zmian"
@@ -15426,6 +15434,9 @@ msgstr "Brak stanowisk roboczych w tej lokalizacji"
 msgid "No work centers exist"
 msgstr "Nie istnieją stanowiska robocze"
 
+msgid "No work centers in {departmentName}"
+msgstr ""
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -15594,6 +15605,9 @@ msgstr "Nic nie jest zsynchronizowane, dopóki nie włączysz synchronizacji."
 
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Nic nie jest synchronizowane, dopóki nie włączysz synchronizacji. Każde wymagane konto jest zmapowane."
+
+msgid "Nothing matches the search and filters"
+msgstr ""
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nic nie zaplanowano — dodaj stanowisko poniżej."
@@ -23310,8 +23324,8 @@ msgstr "Artykuł, który każde zlecenie produkcyjne wytwarza — wymagaj jego d
 msgid "The item's rental rate"
 msgstr "Stawka wynajmu artykułu"
 
-msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr "godziny zadania należne tego dnia (na podstawie terminu, nie dnia wykonania), z zalegającymi pracami w Zalegające."
+msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Zadanie, którego operacja pokrywa ta linia przetwarzania zewnętrznego; rachunek linii zamyka operację dla tego zadania."
@@ -23456,9 +23470,11 @@ msgstr "Miesięczne okresy, w których dokonujesz wpisów i które zamykasz"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "Najewidentnie tryb awarii, który podejrzewa żądający; technik potwierdza lub zastępuje to przy zamknięciu, a różnica między podejrzanym a rzeczywistym zaopatruje raporty niezawodności."
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The most recent scheduled work at this location was {0}."
-msgstr "Ostatnia zaplanowana praca w tej lokalizacji była {0}."
+msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgstr ""
+
+msgid "The most recent scheduled work at this location was {nextWorkDate}."
+msgstr ""
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Wynegocjowana cena za sztukę na tej pozycji; ikona śledzenia wbudowana pokazuje, która reguła cenowa lub nadpisanie ją wygenerowało."
@@ -23475,9 +23491,11 @@ msgstr "Nowy numer wersji metody"
 msgid "The new version number of the procedure"
 msgstr "Nowy numer wersji procedury"
 
-#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
-msgid "The next scheduled work at this location starts {0}."
-msgstr "Następna zaplanowana praca na tej lokalizacji zaczyna się {0}."
+msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgstr ""
+
+msgid "The next scheduled work at this location starts {nextWorkDate}."
+msgstr ""
 
 msgid "The night shift suits you, {name}."
 msgstr "Zmiana nocna pasuje do ciebie, {name}."
@@ -23803,8 +23821,8 @@ msgstr "Stan tej pozycji oferty — Wersja robocza, Odmowa oferty, Zakończone; 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Grupa sprawozdań, którą będą używać wszystkie konta w tej grupie."
 
-msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
-msgstr "godziny z kalendarza stacji wynikające z jej zmian. Godziny obsadzone (pracownicy, którym przypisano zadanie) pokazane poniżej."
+msgid "the station's working hours from its shifts, less holidays and maintenance that takes it offline. Staffed hours (the people you've assigned) show beneath."
+msgstr ""
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Ustawienia kroku — to uruchomienie pochodzi sprzed rejestracji wartości, które zastosowało."
