@@ -156,9 +156,21 @@ msgstr "{0, plural, other {#주}}"
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Carbon이 원가를 기록하기 전에 원가가 발생한 # 작업 지시를 완료 처리하거나 취소하세요.} other {Carbon이 원가를 기록하기 전에 원가가 발생한 # 작업 지시를 완료 처리하거나 취소하세요.}}"
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "{0, plural, one {Copied # assignment} other {Copied # assignments}}"
+msgstr ""
+
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
 msgstr "{0, plural, one {# 자산} other {# 자산}}"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
+msgstr ""
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "{0, plural, one {Overtime set for # assignment} other {Overtime set for # assignments}}"
+msgstr ""
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -5902,12 +5914,6 @@ msgstr "변환 중…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
-
-msgid "Copied {copied} assignments"
-msgstr ""
-
-msgid "Copied 1 assignment"
-msgstr ""
 
 msgid "Copied ID to clipboard"
 msgstr "ID를 클립보드에 복사했습니다"
@@ -13517,12 +13523,6 @@ msgstr "부족으로 표시"
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
-msgid "Marked absent for {created} days"
-msgstr ""
-
-msgid "Marked absent for 1 day"
-msgstr ""
-
 msgid "Market rate"
 msgstr "시장 환율"
 
@@ -16545,12 +16545,6 @@ msgid "Overtime"
 msgstr "초과근무"
 
 msgid "Overtime hours"
-msgstr ""
-
-msgid "Overtime set for {updated} assignments"
-msgstr ""
-
-msgid "Overtime set for 1 assignment"
 msgstr ""
 
 msgid "Overview"

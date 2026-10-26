@@ -156,9 +156,21 @@ msgstr "{0, plural, one {# tydzień} few {# tygodnie} many {# tygodni} other {# 
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Ukończ lub anuluj # zlecenie produkcyjne, które poniosło koszty przed ich zarejestrowaniem przez Carbon.} other {Ukończ lub anuluj # zleceń produkcyjnych, które poniosły koszty przed ich zarejestrowaniem przez Carbon.}}"
 
+#. placeholder {0}: counts.copied ?? 0
+msgid "{0, plural, one {Copied # assignment} other {Copied # assignments}}"
+msgstr ""
+
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
 msgstr "{0, plural, one {dla # zasobu} other {dla # zasobów}}"
+
+#. placeholder {0}: counts.created ?? 0
+msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
+msgstr ""
+
+#. placeholder {0}: counts.updated ?? 0
+msgid "{0, plural, one {Overtime set for # assignment} other {Overtime set for # assignments}}"
+msgstr ""
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -5902,12 +5914,6 @@ msgstr "Konwertowanie…"
 
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Konwertuje jednostkę zakupu dostawcy na Twoją jednostkę zapasów na pozycji zamówienia zakupu, przyjęcia lub faktury — zakup w kartonach po 12 sztuk, zapasy w sztukach."
-
-msgid "Copied {copied} assignments"
-msgstr ""
-
-msgid "Copied 1 assignment"
-msgstr ""
 
 msgid "Copied ID to clipboard"
 msgstr "Skopiowano ID do schowka"
@@ -13517,12 +13523,6 @@ msgstr "Oznacz jako brakujące"
 msgid "Mark to delete"
 msgstr "Oznacz do usunięcia"
 
-msgid "Marked absent for {created} days"
-msgstr ""
-
-msgid "Marked absent for 1 day"
-msgstr ""
-
 msgid "Market rate"
 msgstr "Kurs rynkowy"
 
@@ -16545,12 +16545,6 @@ msgid "Overtime"
 msgstr "Nadgodziny"
 
 msgid "Overtime hours"
-msgstr ""
-
-msgid "Overtime set for {updated} assignments"
-msgstr ""
-
-msgid "Overtime set for 1 assignment"
 msgstr ""
 
 msgid "Overview"

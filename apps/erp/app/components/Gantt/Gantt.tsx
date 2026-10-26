@@ -1015,9 +1015,12 @@ const GanttTimeline = ({
                         litBars={litBars}
                         nonWorkingOffsets={offsetsFor(node.id)}
                         labelMinMs={
-                          // ~40px at the unzoomed width: narrower bars
+                          // ~40px at the current zoom: narrower bars
                           // truncate their label to "J." or ","
-                          (LABEL_MIN_PX / minTimelineWidth) * duration * 1.05
+                          (LABEL_MIN_PX /
+                            lerp(minTimelineWidth, maxTimelineWidth, scale)) *
+                          duration *
+                          1.05
                         }
                       />
                     ) : node.data.level === "TRACE" ? (

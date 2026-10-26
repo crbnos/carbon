@@ -16,14 +16,20 @@ import { useEmptyState } from "./emptyStates";
 type ProcessSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
   /** Leave out Outside Processing — work a station or person never runs. */
   inHouseOnly?: boolean;
+  /** Processes already saved: shown whatever their type, so they can be removed. */
+  saved?: string[];
 };
 
-const Processes = ({ inHouseOnly = false, ...props }: ProcessSelectProps) => {
+const Processes = ({
+  inHouseOnly = false,
+  saved,
+  ...props
+}: ProcessSelectProps) => {
   const newProcessModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useProcesses({ inHouseOnly });
+  const options = useProcesses({ inHouseOnly, keep: saved });
 
   const emptyMessage = useEmptyState("process", {
     onCreate: () => newProcessModal.onOpen()
@@ -72,9 +78,12 @@ Processes.displayName = "Process";
 export default Processes;
 
 export const useProcesses = ({
-  inHouseOnly = false
+  inHouseOnly = false,
+  keep
 }: {
   inHouseOnly?: boolean;
+  /** Ids shown whatever their type. */
+  keep?: string[];
 } = {}) => {
   const fetcher = useLoaderQuery<Awaited<ReturnType<typeof getProcessesList>>>(
     path.to.api.processes
@@ -85,13 +94,15 @@ export const useProcesses = ({
       (fetcher.data?.data ?? [])
         .filter(
           (process) =>
-            !inHouseOnly || process.processType !== "Outside Processing"
+            !inHouseOnly ||
+            process.processType !== "Outside Processing" ||
+            keep?.includes(process.id)
         )
         .map((process) => ({
           value: process.id,
           label: process.name
         })),
-    [fetcher.data, inHouseOnly]
+    [fetcher.data, inHouseOnly, keep]
   );
 
   return options;

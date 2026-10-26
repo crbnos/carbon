@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toast } from "@carbon/react";
+import { plural } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { useFetchers } from "react-router";
@@ -42,28 +43,26 @@ export function usePeopleBoardFeedback() {
       }
       const intent = fetcher.formData?.get("intent");
       const counts = result.data ?? {};
-      // Separate messages, not plural(): this runs inside an effect callback,
-      // where the macro would reach for the global i18n instance.
       if (intent === "copy" || intent === "copy-week") {
-        const copied = counts.copied ?? 0;
         toast.success(
-          copied === 1
-            ? t`Copied 1 assignment`
-            : t`Copied ${copied} assignments`
+          t`${plural(counts.copied ?? 0, {
+            one: "Copied # assignment",
+            other: "Copied # assignments"
+          })}`
         );
       } else if (intent === "overtime-bulk") {
-        const updated = counts.updated ?? 0;
         toast.success(
-          updated === 1
-            ? t`Overtime set for 1 assignment`
-            : t`Overtime set for ${updated} assignments`
+          t`${plural(counts.updated ?? 0, {
+            one: "Overtime set for # assignment",
+            other: "Overtime set for # assignments"
+          })}`
         );
       } else if (intent === "absent-range") {
-        const created = counts.created ?? 0;
         toast.success(
-          created === 1
-            ? t`Marked absent for 1 day`
-            : t`Marked absent for ${created} days`
+          t`${plural(counts.created ?? 0, {
+            one: "Marked absent for # day",
+            other: "Marked absent for # days"
+          })}`
         );
       }
     }

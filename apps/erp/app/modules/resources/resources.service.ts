@@ -1862,11 +1862,6 @@ export async function insertProcess(
   return processInsert;
 }
 
-/**
- * The bare write under `resources.updateProcess`: the process and the work
- * centers it replaces, in one transaction. Kysely bypasses RLS, so every
- * statement is scoped to the company and only its own work centers are linked.
- */
 /** Another process of the company already holding `name` (unique per company). */
 export async function findProcessNamed(
   client: SupabaseClient<Database>,
@@ -1883,6 +1878,11 @@ export async function findProcessNamed(
   return query.limit(1).maybeSingle();
 }
 
+/**
+ * The bare write under `resources.updateProcess`: the process and the work
+ * centers it replaces, in one transaction. Kysely bypasses RLS, so every
+ * statement is scoped to the company and only its own work centers are linked.
+ */
 export async function updateProcess(
   db: Kysely<KyselyDatabase>,
   process: Omit<z.infer<typeof processValidator>, "id"> & {
@@ -2051,7 +2051,7 @@ export async function upsertWorkCenter(
       })
 ) {
   if ("createdBy" in workCenter) {
-    const { processes, shifts, operatingHours: _hours, ...insert } = workCenter;
+    const { processes, shifts, ...insert } = workCenter;
     const workCenterInsert = await client
       .from("workCenter")
       .insert([insert])
@@ -2097,7 +2097,7 @@ export async function upsertWorkCenter(
 
     return workCenterInsert;
   }
-  const { processes, shifts, operatingHours: _hours, ...update } = workCenter;
+  const { processes, shifts, ...update } = workCenter;
   const workCenterUpdate = await client
     .from("workCenter")
     .update(sanitize(update))

@@ -10,7 +10,7 @@ import {
   trainingAssignmentValidator,
   trainingGuideKeyPrefix,
   validateTrainingCertificate,
-  workCenterValidator
+  workCenterFormValidator
 } from "./resources.models";
 
 describe("isValidTrainingGuideKey", () => {
@@ -114,7 +114,7 @@ describe("trainingAssignmentValidator", () => {
   });
 });
 
-describe("workCenterValidator", () => {
+describe("workCenterFormValidator", () => {
   const workCenter = {
     name: "Laser Cell",
     description: "",
@@ -125,7 +125,7 @@ describe("workCenterValidator", () => {
     overheadRate: 0
   };
   const shiftsError = (fields: Record<string, unknown>) =>
-    workCenterValidator
+    workCenterFormValidator
       .safeParse({ ...workCenter, ...fields })
       .error?.issues.find((issue) => issue.path[0] === "shifts")?.message;
 
