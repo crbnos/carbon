@@ -19,20 +19,14 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import {
-  LuCopy,
-  LuInfo,
-  LuKeySquare,
-  LuLink,
-  LuRefreshCcw
-} from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Assignee,
-  DateTime,
   EmployeeAvatar,
+  ExchangeRateUpdatedAt,
   useOptimisticAssignment
 } from "~/components";
 import {
@@ -438,13 +432,9 @@ const SalesOrderProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.salesOrder?.exchangeRateUpdatedAt && (
-                <DateTime
+                <ExchangeRateUpdatedAt
                   value={routeData?.salesOrder?.exchangeRateUpdatedAt}
-                  variant="absolute"
-                  side="bottom"
-                >
-                  <LuInfo className="h-4 w-4 text-muted-foreground" />
-                </DateTime>
+                />
               )}
             </HStack>
             <HStack className="w-full justify-between">

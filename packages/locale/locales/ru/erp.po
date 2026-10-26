@@ -18230,6 +18230,9 @@ msgstr "Частота ставки"
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Курс, используемый для пересчета счетов собственного капитала при консолидации (IAS 21). Оставьте пустым, чтобы использовать текущий валютный курс."
 

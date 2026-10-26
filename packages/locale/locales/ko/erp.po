@@ -18230,6 +18230,9 @@ msgstr "요금 주기"
 msgid "Rate Limit"
 msgstr "요청 제한"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "연결 시 자본 계정 환산에 사용되는 환율(IAS 21)입니다. 비워 두면 현재 환율이 사용됩니다."
 
