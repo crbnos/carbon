@@ -747,11 +747,15 @@ export async function getDocumentApproval(
   documentType: (typeof approvalDocumentType)[number],
   documentId: string,
   companyId: string
-): Promise<{ approvedBy: string | null; approvedAt: string } | null> {
+): Promise<{
+  approvedBy: string | null;
+  approvedById: string | null;
+  approvedAt: string;
+} | null> {
   const latest = await serviceRole
     .from("approvalRequest")
     .select(
-      "status, decisionAt, decider:user!approvalRequest_decisionBy_fkey(fullName)"
+      "status, decisionAt, decisionBy, decider:user!approvalRequest_decisionBy_fkey(fullName)"
     )
     .eq("documentType", documentType)
     .eq("documentId", documentId)
@@ -776,6 +780,7 @@ export async function getDocumentApproval(
 
   return {
     approvedBy: latest.data.decider?.fullName ?? null,
+    approvedById: latest.data.decisionBy,
     approvedAt: latest.data.decisionAt
   };
 }

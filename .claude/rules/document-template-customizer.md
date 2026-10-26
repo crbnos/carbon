@@ -52,8 +52,12 @@ are regenerated; that's expected, not a bug.
   `resolveTemplate(type, stored)` (read-time normalizer: falls back to the default
   and **appends missing built-in blocks hidden** so old rows survive new blocks),
   `BUILT_IN_SECTIONS`, `collectSectionIds`.
-- **merge.ts** — `{{token}}` merge-field catalog; `interpolateContent` fills
-  header/footer/richText/keyValue at render.
+- **merge.ts** — `{token}` merge-field catalog; `interpolateContent` fills
+  header/footer/richText/shared/terms at render (keyValue/field use
+  `interpolateString`). A paragraph whose merge fields ALL resolve empty is
+  dropped (and a list left empty with it), so "Approved by {order.approvedBy}"
+  prints nothing on an unapproved PO; a Rich Text or Shared block whose
+  content drops out entirely is not rendered, heading included.
 
 ## Editor UI
 

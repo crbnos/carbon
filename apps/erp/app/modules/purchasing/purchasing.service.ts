@@ -604,8 +604,9 @@ export async function getPurchaseOrderLocations(
 }
 
 /**
- * Who approved a purchase order and on which day in the company's timezone,
- * for the PDF's `order.approved*` merge fields. Null when it was not approved.
+ * Who approved a purchase order and on which day in the company's timezone:
+ * the PDF's `order.approved*` merge fields, the order's properties panel and
+ * `purchasing.getPurchaseOrderApproval`. Null when it was not approved.
  */
 export async function getPurchaseOrderApproval(
   serviceRole: SupabaseClient<Database>,
@@ -614,7 +615,7 @@ export async function getPurchaseOrderApproval(
     purchaseOrderId,
     timezone
   }: { companyId: string; purchaseOrderId: string; timezone: string }
-): Promise<PurchaseOrderApproval | null> {
+): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
   const approval = await getDocumentApproval(
     serviceRole,
     "purchaseOrder",
@@ -624,6 +625,7 @@ export async function getPurchaseOrderApproval(
   if (!approval) return null;
   return {
     approvedBy: approval.approvedBy,
+    approvedById: approval.approvedById,
     approvedDate: datetime.businessDay(approval.approvedAt, timezone).toString()
   };
 }
