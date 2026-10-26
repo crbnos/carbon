@@ -496,8 +496,6 @@ msgstr "{count, plural, one {# संपत्ति} other {# संपत्�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
-msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# अधिक {fenceLabel} के बाद} other {# अधिक {fenceLabel} के बाद}}"
 
@@ -524,6 +522,9 @@ msgstr "{count} इकाइयाँ"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} बनाया गया, {updated} अपडेट किया गया।"
+
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -3982,11 +3983,12 @@ msgstr "बैकअप"
 msgid "Balance"
 msgstr "शेष राशि"
 
-msgid "Balance Remaining:"
-msgstr "शेष राशि:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0} के लिए शेष राशि"
+
+msgid "Balance Remaining:"
+msgstr "शेष राशि:"
 
 msgid "Balance Sheet"
 msgstr "तुलन पत्र"
@@ -16508,13 +16510,14 @@ msgstr "भुगतान किया"
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
 
-msgid "Paid:"
-msgstr "भुगतान:"
 msgid "Paid outside Carbon"
 msgstr "Carbon के बाहर भुगतान किया गया"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "अग्रिम भुगतान; इसे प्राप्त होने के बाद भुगतान के रूप में दर्ज करें"
+
+msgid "Paid:"
+msgstr "भुगतान:"
 
 msgid "Parameters"
 msgstr "पैरामीटर"
@@ -18247,6 +18250,9 @@ msgstr "दर आवृत्ति"
 
 msgid "Rate Limit"
 msgstr "दर सीमा"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "समेकन में इक्विटी खातों के रूपांतरण के लिए उपयोग की जाने वाली दर (IAS 21)। वर्तमान विनिमय दर का उपयोग करने के लिए खाली छोड़ें।"

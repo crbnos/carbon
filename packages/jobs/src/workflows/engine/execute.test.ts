@@ -24,7 +24,12 @@ vi.mock("./ledger", () => ({
   settleStep: vi.fn(async () => {}),
   failInterruptedSteps: vi.fn(async () => 0)
 }));
-vi.mock("./owner", () => ({
+// @carbon/auth builds its Supabase client at import time; ./owner imports it.
+vi.mock("@carbon/auth", () => ({}));
+vi.mock("@carbon/auth/client.server", () => ({}));
+// The owner's reads are faked; the permission rule itself is real.
+vi.mock("./owner", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./owner")>()),
   // The engine reads the company custom fields through this client; a bare {} has no
   // `.from`, so the stub answers that one query with an empty list.
   getOwnerClient: vi.fn(async () => ({
@@ -34,24 +39,28 @@ vi.mock("./owner", () => ({
       })
     })
   })),
-  readOwnerPermissions: vi.fn(async () => ({})),
-  hasPermission: vi.fn(() => true)
+  readOwnerPermissions: vi.fn()
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
-// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
-vi.mock("../../inngest/functions/notifications/content", () => ({
-  buildNotificationLink: (
-    event: string,
-    documentId: string,
-    companyId: string
-  ) =>
-    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
-}));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext, claimRun, finishRun } = await import("./log");
 const { claimStep, settleStep } = await import("./ledger");
-const { hasPermission } = await import("./owner");
+const { readOwnerPermissions } = await import("./owner");
+
+/** The owner's Purchasing grants in co1. */
+function purchasing(...actions: ("view" | "create" | "update" | "delete")[]) {
+  const grant = (action: string) =>
+    actions.includes(action as never) ? ["co1"] : [];
+  return {
+    purchasing: {
+      view: grant("view"),
+      create: grant("create"),
+      update: grant("update"),
+      delete: grant("delete")
+    }
+  };
+}
 const { createWorkflowServices } = await import("../actions");
 
 const definition = {
@@ -128,7 +137,9 @@ const runAction = vi.fn(
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(claimRun).mockResolvedValue(true);
-  vi.mocked(hasPermission).mockReturnValue(true);
+  vi.mocked(readOwnerPermissions).mockResolvedValue(
+    purchasing("view", "update")
+  );
   vi.mocked(claimStep).mockResolvedValue({ claimed: true, stepRunId: "s1" });
   vi.mocked(createWorkflowServices).mockReturnValue({
     runAction,
@@ -155,9 +166,7 @@ describe("the owner's permissions", () => {
   it("fails the action step by name when the owner has lost the module", async () => {
     const { step } = harness();
     // The trigger's own view check still passes; only the action's update is gone.
-    vi.mocked(hasPermission).mockImplementation(
-      (_permissions, _module, action) => action !== "update"
-    );
+    vi.mocked(readOwnerPermissions).mockResolvedValue(purchasing("view"));
 
     const result = await executeWorkflowRun({ payload, step, logger });
 
@@ -171,7 +180,7 @@ describe("the owner's permissions", () => {
 
   it("refuses the whole run when the trigger's own module is gone", async () => {
     const { ids, step } = harness();
-    vi.mocked(hasPermission).mockReturnValue(false);
+    vi.mocked(readOwnerPermissions).mockResolvedValue(purchasing());
 
     await executeWorkflowRun({ payload, step, logger });
 

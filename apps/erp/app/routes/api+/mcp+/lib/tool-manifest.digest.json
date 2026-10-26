@@ -263,7 +263,7 @@
     {"name":"inventory_pickPickingListLineEntity","classification":"WRITE","schema":"5a008770ac64","response":"3797626bd17e","permission":"inventory:update","paginates":false},
     {"name":"inventory_pickStockTransferLine","classification":"WRITE","schema":"0d3ec0c22afe","response":"7ad8a3f49853","permission":"inventory:create","paginates":false},
     {"name":"inventory_pickStockTransferLineEntity","classification":"WRITE","schema":"d077ae617fd9","response":"7ad8a3f49853","permission":"inventory:update","paginates":false},
-    {"name":"inventory_postInventoryCount","classification":"WRITE","schema":"e354150046fe","response":"c65e556842f4","permission":"inventory:update","paginates":false},
+    {"name":"inventory_postInventoryCount","classification":"WRITE","schema":"e354150046fe","response":"08fce539083e","permission":"inventory:update","paginates":false},
     {"name":"inventory_postReceipt","classification":"WRITE","schema":"748c476fdf2b","response":"727cf771e24b","permission":"inventory:update","paginates":false},
     {"name":"inventory_postShipment","classification":"WRITE","schema":"c5945bba6ca6","response":"d2fbdd9c8de9","permission":"inventory:update","paginates":false},
     {"name":"inventory_recostSerialUnit","classification":"WRITE","schema":"c3f4c85c02d3","response":"1791201245a6","permission":"accounting:update","paginates":false},

@@ -22,6 +22,7 @@ import {
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { invoiceSettlementDisplayAmounts } from "../invoicing/invoicing.models";
 import type {
   MatchedRule,
   PriceTraceStep,
@@ -428,6 +429,87 @@ export function leaseCommencementPreview(
     leaseRevenue: pv.pvPayments,
     carryingAmount: round(carryingAmount),
     sellingProfit: round(pv.pvPayments - costOfGoodsSold)
+  };
+}
+
+export type SalesOrderInvoiceSummary = {
+  invoicedAmount: number;
+  paidAmount: number;
+  balanceRemaining: number;
+  currencyMismatchCount: number;
+};
+
+// Draft/Pending are unposted; Voided/Return are non-revenue. Match the
+// invoice-view statuses that keep their stored (non-derived) values.
+const NON_POSTED_INVOICE_STATUSES = new Set([
+  "Draft",
+  "Pending",
+  "Voided",
+  "Return"
+]);
+
+/** Invoiced, paid, and remaining-balance totals in the order's currency.
+ *  Invoice totals, balances, and applied payments are base amounts; the
+ *  invoice's rate turns them into its document currency. Unposted or voided
+ *  invoices count for nothing, and an invoice in another currency is counted as
+ *  a mismatch rather than mixed in. */
+export function summarizeSalesOrderInvoices(
+  orderCurrency: string | null | undefined,
+  invoices: {
+    id: string | null;
+    invoiceTotal: number | null;
+    balance?: number | null;
+    status: string | null;
+    currencyCode: string | null;
+    exchangeRate: number | null;
+  }[],
+  settlements: { targetSalesInvoiceId: string | null; appliedAmount: number }[]
+): SalesOrderInvoiceSummary {
+  const paidBaseByInvoiceId = new Map<string, number>();
+  for (const settlement of settlements) {
+    if (!settlement.targetSalesInvoiceId) continue;
+    paidBaseByInvoiceId.set(
+      settlement.targetSalesInvoiceId,
+      (paidBaseByInvoiceId.get(settlement.targetSalesInvoiceId) ?? 0) +
+        settlement.appliedAmount
+    );
+  }
+
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let balanceRemaining = 0;
+  let currencyMismatchCount = 0;
+
+  for (const invoice of invoices) {
+    if (NON_POSTED_INVOICE_STATUSES.has(invoice.status ?? "")) continue;
+
+    if (
+      orderCurrency &&
+      invoice.currencyCode &&
+      invoice.currencyCode !== orderCurrency
+    ) {
+      currencyMismatchCount += 1;
+      continue;
+    }
+
+    const display = invoiceSettlementDisplayAmounts({
+      total: invoice.invoiceTotal ?? 0,
+      balance: invoice.balance,
+      exchangeRate: invoice.exchangeRate,
+      paidAmount: invoice.id ? (paidBaseByInvoiceId.get(invoice.id) ?? 0) : 0,
+      convertToDocument: true
+    });
+
+    invoicedAmount += display.invoicedAmount;
+    paidAmount += display.paidAmount;
+    balanceRemaining += display.balanceRemaining;
+  }
+
+  return {
+    invoicedAmount,
+    paidAmount,
+    balanceRemaining,
+    currencyMismatchCount
   };
 }
 

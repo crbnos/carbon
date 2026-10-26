@@ -496,8 +496,6 @@ msgstr "{count, plural, one {# cespite} other {# cespiti}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
 
-msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr "{currencyMismatchCount, plural, one {Esclude # fattura in una valuta diversa.} other {Esclude # fatture in una valuta diversa.}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# altri dopo {fenceLabel}} other {# altri dopo {fenceLabel}}}"
 
@@ -524,6 +522,9 @@ msgstr "{count} unità"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} creati, {updated} aggiornati."
+
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr "{currencyMismatchCount, plural, one {Esclude # fattura in una valuta diversa.} other {Esclude # fatture in una valuta diversa.}}"
 
 msgid "{days}d"
 msgstr "{days}g"
@@ -3982,11 +3983,12 @@ msgstr "Backup"
 msgid "Balance"
 msgstr "Saldo"
 
-msgid "Balance Remaining:"
-msgstr "Saldo residuo:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Saldo per {0}"
+
+msgid "Balance Remaining:"
+msgstr "Saldo residuo:"
 
 msgid "Balance Sheet"
 msgstr "Stato patrimoniale"
@@ -16508,13 +16510,14 @@ msgstr "Pagato"
 msgid "Paid Date"
 msgstr "Data di Pagamento"
 
-msgid "Paid:"
-msgstr "Pagato:"
 msgid "Paid outside Carbon"
 msgstr "Pagato al di fuori di Carbon"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Pagato in anticipo; registralo come pagamento una volta ricevuto"
+
+msgid "Paid:"
+msgstr "Pagato:"
 
 msgid "Parameters"
 msgstr "Parametri"
@@ -18247,6 +18250,9 @@ msgstr "Frequenza Tariffaria"
 
 msgid "Rate Limit"
 msgstr "Limite di Velocità"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Tasso utilizzato per la conversione dei conti di patrimonio netto nel consolidamento (IAS 21). Lasciare vuoto per usare il tasso di cambio corrente."

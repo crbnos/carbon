@@ -496,8 +496,6 @@ msgstr "{count, plural, one {# zasób} other {# zasoby}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
-msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# więcej po {fenceLabel}} few {# więcej po {fenceLabel}} many {# więcej po {fenceLabel}} other {# więcej po {fenceLabel}}}"
 
@@ -524,6 +522,9 @@ msgstr "{count} sztuk"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} utworzono, {updated} zaktualizowano."
+
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -3982,11 +3983,12 @@ msgstr "Kopie zapasowe"
 msgid "Balance"
 msgstr "Saldo"
 
-msgid "Balance Remaining:"
-msgstr "Pozostałe saldo:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Saldo dla {0}"
+
+msgid "Balance Remaining:"
+msgstr "Pozostałe saldo:"
 
 msgid "Balance Sheet"
 msgstr "Bilans"
@@ -16508,13 +16510,14 @@ msgstr "Zapłacono"
 msgid "Paid Date"
 msgstr "Data zapłaty"
 
-msgid "Paid:"
-msgstr "Zapłacono:"
 msgid "Paid outside Carbon"
 msgstr "Zapłacono poza Carbon"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Zapłacone z góry; zarejestruj to jako płatność po otrzymaniu"
+
+msgid "Paid:"
+msgstr "Zapłacono:"
 
 msgid "Parameters"
 msgstr "Parametry"
@@ -18247,6 +18250,9 @@ msgstr "Częstotliwość Stawki"
 
 msgid "Rate Limit"
 msgstr "Limit Szybkości"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Kurs używany do przeliczenia kont kapitału własnego w konsolidacji (IAS 21). Pozostaw puste, aby użyć bieżącego kursu wymiany."

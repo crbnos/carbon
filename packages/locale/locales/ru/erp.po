@@ -496,8 +496,6 @@ msgstr "{count, plural, one {# актив} few {# актива} many {# акти
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
-msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# еще после {fenceLabel}} few {# еще после {fenceLabel}} many {# еще после {fenceLabel}} other {# еще после {fenceLabel}}}"
 
@@ -524,6 +522,9 @@ msgstr "{count} единиц"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} создано, {updated} обновлено."
+
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}д"
@@ -3982,11 +3983,12 @@ msgstr "Резервные копии"
 msgid "Balance"
 msgstr "Остаток"
 
-msgid "Balance Remaining:"
-msgstr "Остаток:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Остаток для {0}"
+
+msgid "Balance Remaining:"
+msgstr "Остаток:"
 
 msgid "Balance Sheet"
 msgstr "Бухгалтерский баланс"
@@ -16508,13 +16510,14 @@ msgstr "Оплачено"
 msgid "Paid Date"
 msgstr "Дата оплаты"
 
-msgid "Paid:"
-msgstr "Оплачено:"
 msgid "Paid outside Carbon"
 msgstr "Оплачено вне Carbon"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Оплачено авансом; запишите это как платеж после получения"
+
+msgid "Paid:"
+msgstr "Оплачено:"
 
 msgid "Parameters"
 msgstr "Параметры"
@@ -18247,6 +18250,9 @@ msgstr "Частота ставки"
 
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Курс, используемый для пересчета счетов собственного капитала при консолидации (IAS 21). Оставьте пустым, чтобы использовать текущий валютный курс."

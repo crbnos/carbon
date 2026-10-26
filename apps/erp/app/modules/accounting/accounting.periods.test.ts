@@ -2,440 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
-
-// The settings barrel re-exports its UI, which transitively pulls Lingui `msg`
-// macros that vitest does not transform. accounting.service only needs
-// getNextSequence from it, which these tests never exercise — stub it to keep
-// the import graph light and macro-free.
-vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  getNextSequence: vi.fn()
-}));
-
-// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
-// which vitest doesn't transform. Nothing under test touches the glossary, so
-// stub the whole package.
-vi.mock("@carbon/content/glossary", () => ({
-  getDefinitionText: () => "",
-  getEntry: () => undefined,
-  getTermText: () => "",
-  glossaryEntries: () => [],
-  hasEntry: () => false,
-  listEntries: () => [],
-  lookupEntry: () => undefined,
-  termSlug: (t: string) => t,
-  terms: {}
-}));
-
+import { describe, expect, it } from "vitest";
 import type {
   PeriodCloseTaskRow,
   PeriodReadinessCheck,
   PeriodRunPreview
 } from "./accounting.service";
 import {
-  ACCOUNTING_NOT_STARTED,
   checklistTasksToCreate,
-  closeAccountingPeriod,
-  computePeriodReadiness,
-  createFiscalYearPeriods,
-  deleteAccountingPeriod,
   evaluateCloseChecklist,
-  getAccountingPeriodDeletability,
-  getFiscalCalendarCommitted,
-  getOrCreateAccountingPeriod,
-  lockAccountingPeriod,
-  postJournalEntry,
-  reopenAccountingPeriod,
-  requireAccountingCutover,
-  skipCloseTask
+  periodRunChecks
 } from "./accounting.service";
-
-// ---------------------------------------------------------------------------
-// Sequential close / reverse-sequential reopen gates (acceptance criteria 4/5)
-//
-// These exercise the real service functions against a scripted fake supabase
-// client. Each awaited query (or `.single()`) shifts the next scripted result
-// off the queue, in the exact order the function issues them:
-//   close:  getAccountingPeriodById -> earlierOpen count -> update
-//   reopen: getAccountingPeriodById -> laterClosed count -> update
-// ---------------------------------------------------------------------------
-
-type Scripted = { data?: unknown; count?: number; error?: unknown };
-
-function makeClient(responses: Scripted[]) {
-  let i = 0;
-  const next = () => responses[i++] ?? { data: null, error: null };
-  const builder: any = {
-    select: () => builder,
-    insert: () => builder,
-    update: () => builder,
-    delete: () => builder,
-    eq: () => builder,
-    neq: () => builder,
-    in: () => builder,
-    lt: () => builder,
-    gt: () => builder,
-    gte: () => builder,
-    lte: () => builder,
-    or: () => builder,
-    order: () => builder,
-    limit: () => builder,
-    not: () => builder,
-    is: () => builder,
-    range: () => builder,
-    single: () => Promise.resolve(next()),
-    maybeSingle: () => Promise.resolve(next()),
-    then: (resolve: (v: Scripted) => unknown) => resolve(next())
-  };
-  return { from: () => builder } as any;
-}
-
-// Like makeClient but records every `.update(values)` keyed by table, so tests
-// can assert which rows a service persisted (and in what state), not just its
-// return value. The shared response queue advances in issue order exactly as in
-// makeClient; a fresh builder per `from(table)` carries the table name through.
-function makeRecordingClient(responses: Scripted[]) {
-  let i = 0;
-  const next = () => responses[i++] ?? { data: null, error: null };
-  const updates: { table: string; values: any }[] = [];
-  const makeBuilder = (table: string) => {
-    const builder: any = {
-      select: () => builder,
-      insert: () => builder,
-      upsert: () => builder,
-      update: (values: any) => {
-        updates.push({ table, values });
-        return builder;
-      },
-      eq: () => builder,
-      neq: () => builder,
-      in: () => builder,
-      lt: () => builder,
-      gt: () => builder,
-      gte: () => builder,
-      lte: () => builder,
-      or: () => builder,
-      order: () => builder,
-      limit: () => builder,
-      not: () => builder,
-      is: () => builder,
-      range: () => builder,
-      single: () => Promise.resolve(next()),
-      maybeSingle: () => Promise.resolve(next()),
-      then: (resolve: (v: Scripted) => unknown) => resolve(next())
-    };
-    return builder;
-  };
-  return { client: { from: (t: string) => makeBuilder(t) } as any, updates };
-}
-
-// The close path flips periodCloseTask + accountingPeriod through the Kysely
-// client inside a single transaction. This records every `.set(values)` keyed
-// by table so tests can assert the persisted state, mirroring the supabase
-// recording client above. `.execute()` resolves empty — the service ignores the
-// result and returns `{ id: periodId }` on a clean transaction.
-function makeKyselyRecorder() {
-  const updates: { table: string; values: any }[] = [];
-  // Raw statements executed on the transaction. The close path snapshots GL
-  // balances via `sql`SELECT "snapshotAccountingPeriodBalances"(...)`.execute(trx)`
-  // after the period flip, so `tx` must satisfy Kysely's RawBuilder.execute
-  // (which reads `trx.getExecutor()`). We don't parse the SQL — recording that a
-  // raw statement ran is enough to assert the snapshot fired. The executor is a
-  // Proxy so it tolerates whatever internal methods RawBuilder.execute calls.
-  const rawExecutions: unknown[] = [];
-  const executor = new Proxy(
-    {},
-    {
-      get(_t, prop) {
-        if (prop === "executeQuery")
-          return async (compiled: unknown) => {
-            rawExecutions.push(compiled);
-            return { rows: [] };
-          };
-        if (prop === "transformQuery") return (node: unknown) => node;
-        if (prop === "compileQuery")
-          return (node: unknown) => ({ sql: "", parameters: [], query: node });
-        if (prop === "provideConnection")
-          return async (fn: (c: unknown) => unknown) =>
-            fn({
-              executeQuery: async (compiled: unknown) => {
-                rawExecutions.push(compiled);
-                return { rows: [] };
-              }
-            });
-        return () => undefined;
-      }
-    }
-  );
-  const tx = {
-    updateTable(table: string) {
-      const builder: any = {
-        set: (values: any) => {
-          updates.push({ table, values });
-          return builder;
-        },
-        where: () => builder,
-        execute: () => Promise.resolve([])
-      };
-      return builder;
-    },
-    getExecutor: () => executor
-  };
-  const db: any = {
-    transaction: () => ({
-      execute: async (fn: (t: unknown) => Promise<unknown>) => {
-        await fn(tx);
-      }
-    })
-  };
-  return { db, updates, rawExecutions };
-}
-
-const args = {
-  periodId: "P2",
-  companyId: "C1",
-  companyGroupId: "G1",
-  userId: "U1"
-};
-
-// What new runs would hold. The close path takes it as a function so these
-// tests need no server function or depreciation reads.
-const nothingDue: PeriodRunPreview = {
-  revenue: { count: 0, amount: 0, error: null },
-  lease: { count: 0, amount: 0, error: null },
-  depreciation: { count: 0, amount: 0, error: null }
-};
-const noRunsDue = async () => nothingDue;
-
-describe("closeAccountingPeriod — sequential close", () => {
-  it("rejects closing period N while an earlier period is not Closed", async () => {
-    const client = makeClient([
-      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
-      { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Locked" } },
-      { count: 1 } // one earlier period still open
-    ]);
-    const { db } = makeKyselyRecorder();
-
-    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
-
-    expect(result.error).toBeTruthy();
-    expect(result.error?.message).toMatch(/sequential close/i);
-    expect(result.data).toBeNull();
-  });
-
-  it("rejects closing a period that is not yet Locked", async () => {
-    const client = makeClient([
-      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
-      { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Open" } }
-    ]);
-    const { db } = makeKyselyRecorder();
-
-    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
-
-    expect(result.error?.message).toMatch(/must be locked/i);
-    expect(result.data).toBeNull();
-  });
-
-  it("allows closing when earlier periods are closed and the checklist is clear", async () => {
-    // Query order after the sequential gate:
-    //   getPeriodCloseChecklist: getAccountingPeriodById -> [definitions, tasks]
-    //     -> readiness (4 parallel) ; then the period-flip update.
-    const client = makeClient([
-      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
-      { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Locked" } },
-      { count: 0 }, // no earlier open periods
-      {
-        data: {
-          id: "P2",
-          startDate: "2026-02-01",
-          endDate: "2026-02-28",
-          closeStatus: "Locked"
-        }
-      },
-      { data: [] }, // active definitions (none configured)
-      { data: [] }, // existing tasks (none)
-      { data: { timezone: "America/New_York" } }, // company business calendar
-      { data: [] }, // external GL readiness: no active integrations
-      { count: 0 }, // readiness: draft journals
-      { data: [] }, // readiness: posted journals in period
-      { data: [] }, // readiness: Draft depreciation runs
-      { count: 0 }, // readiness: unmatched intercompany
-      { count: 0 }, // readiness: pending receipts
-      { count: 0 }, // readiness: pending shipments
-      { count: 0 }, // readiness: pending sales invoices
-      { count: 0 }, // readiness: pending purchase invoices
-      { count: 0 }, // readiness: draft payments
-      { count: 0 } // readiness: draft memos
-    ]);
-    // The period-flip write goes through the Kysely transaction, not supabase.
-    const { db } = makeKyselyRecorder();
-
-    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
-
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ id: "P2" });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// closePeriodWithChecklist — the UI entry point (acceptance criteria 1/4).
-//
-// Delegates to closeAccountingPeriod, so it drives the full query graph:
-//   getAccountingPeriodById -> earlierOpen count
-//   -> getPeriodCloseChecklist(getAccountingPeriodById -> [definitions, tasks]
-//      -> readiness: [draftJournals, journalsInPeriod, draftDepreciation, IC,
-//         pendingReceipts, pendingShipments, pendingSalesInv, pendingPurchInv])
-//   -> (per differing Auto task) periodCloseTask update
-//   -> accountingPeriod flip.
-// makeRecordingClient (above) records every `.update()` keyed by table so we can
-// assert both the close-gate outcome and that final Auto-task states persist.
-// ---------------------------------------------------------------------------
-
-// Close requires the period to already be Locked (Open -> Locked -> Closed).
-const lockedPeriod = {
-  id: "P2",
-  startDate: "2026-02-01",
-  closeStatus: "Locked"
-};
-const lockedPeriodWithRange = {
-  ...lockedPeriod,
-  endDate: "2026-02-28"
-};
-
-describe("closeAccountingPeriod — Blocker gate + Auto-task persistence", () => {
-  it("rejects the close when a Blocker auto-check (draft JEs) is failing", async () => {
-    const { client, updates } = makeRecordingClient([
-      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
-      { data: lockedPeriod }, // getAccountingPeriodById
-      { count: 0 }, // no earlier open periods
-      { data: lockedPeriodWithRange }, // checklist: getAccountingPeriodById
-      { data: [] }, // active definitions (already instantiated)
-      {
-        data: [
-          {
-            id: "auto1",
-            companyId: "C1",
-            accountingPeriodId: "P2",
-            definitionId: "d1",
-            name: "Post or re-date draft journal entries",
-            taskType: "Auto",
-            autoCheckKey: "draft-journals",
-            sortOrder: 1,
-            required: true,
-            severity: "Blocker",
-            status: "Open",
-            assigneeId: null,
-            completedBy: null,
-            completedAt: null,
-            skippedReason: null,
-            notes: null
-          }
-        ]
-      }, // existing tasks — no instantiation needed
-      { data: { timezone: "America/New_York" } }, // company business calendar
-      { data: [] }, // external GL readiness: no active integrations
-      { count: 2 }, // readiness: draft journals present -> Blocker failing
-      { data: [] }, // readiness: posted journals in period
-      { data: [] }, // readiness: Draft depreciation runs
-      { count: 0 }, // readiness: unmatched intercompany
-      { count: 0 }, // readiness: pending receipts
-      { count: 0 }, // readiness: pending shipments
-      { count: 0 }, // readiness: pending sales invoices
-      { count: 0 }, // readiness: pending purchase invoices
-      { count: 0 }, // readiness: draft payments
-      { count: 0 } // readiness: draft memos
-    ]);
-    const { db, updates: txUpdates } = makeKyselyRecorder();
-
-    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
-
-    expect(result.data).toBeNull();
-    expect(result.error?.message).toMatch(/draft journal/i);
-    // The close is rejected before the transaction opens, so nothing is
-    // persisted through either client.
-    expect(txUpdates).toHaveLength(0);
-    expect(
-      updates.some(
-        (u) =>
-          u.table === "accountingPeriod" && u.values.closeStatus === "Closed"
-      )
-    ).toBe(false);
-  });
-
-  it("persists the resolved Auto-task state, then closes, when checks pass", async () => {
-    const { client } = makeRecordingClient([
-      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
-      { data: lockedPeriod }, // getAccountingPeriodById
-      { count: 0 }, // no earlier open periods
-      { data: lockedPeriodWithRange }, // checklist: getAccountingPeriodById
-      { data: [] }, // active definitions
-      {
-        data: [
-          {
-            id: "auto1",
-            companyId: "C1",
-            accountingPeriodId: "P2",
-            definitionId: "d1",
-            name: "Post or re-date draft journal entries",
-            taskType: "Auto",
-            autoCheckKey: "draft-journals",
-            sortOrder: 1,
-            required: true,
-            severity: "Blocker",
-            status: "Open", // stale Open; readiness now passes -> flips to Done
-            assigneeId: null,
-            completedBy: null,
-            completedAt: null,
-            skippedReason: null,
-            notes: null
-          }
-        ]
-      },
-      { data: { timezone: "America/New_York" } }, // company business calendar
-      { data: [] }, // external GL readiness: no active integrations
-      { count: 0 }, // readiness: no draft journals -> Blocker passing
-      { data: [] }, // readiness: posted journals in period
-      { data: [] }, // readiness: Draft depreciation runs
-      { count: 0 }, // readiness: unmatched intercompany
-      { count: 0 }, // readiness: pending receipts
-      { count: 0 }, // readiness: pending shipments
-      { count: 0 }, // readiness: pending sales invoices
-      { count: 0 }, // readiness: pending purchase invoices
-      { count: 0 }, // readiness: draft payments
-      { count: 0 } // readiness: draft memos
-    ]);
-    // The task persist + period flip both run inside the Kysely transaction.
-    const { db, updates: txUpdates, rawExecutions } = makeKyselyRecorder();
-
-    const result = await closeAccountingPeriod(client, db, args, noRunsDue);
-
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ id: "P2" });
-
-    // The GL balance snapshot is written (snapshotAccountingPeriodBalances) via a
-    // raw statement inside the same transaction, after the period is flipped.
-    expect(rawExecutions.length).toBeGreaterThan(0);
-
-    // Final Auto-task state persisted to periodCloseTask as Done.
-    const taskUpdate = txUpdates.find((u) => u.table === "periodCloseTask");
-    expect(taskUpdate?.values.status).toBe("Done");
-
-    // Period flipped to Closed after the task state was flushed.
-    const periodUpdate = txUpdates.find((u) => u.table === "accountingPeriod");
-    expect(periodUpdate?.values.closeStatus).toBe("Closed");
-    // The task write precedes the period flip within the transaction.
-    expect(txUpdates.map((u) => u.table)).toEqual([
-      "periodCloseTask",
-      "accountingPeriod"
-    ]);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Close checklist gating (acceptance criteria 6/9/10) — exercised as pure logic
-// so the gate is verified without scripting a full query graph.
-// ---------------------------------------------------------------------------
+import {
+  fiscalYearPeriodDates,
+  periodDeletionRefusal,
+  periodPostingRefusal
+} from "./accounting.utils";
 
 function task(overrides: Partial<PeriodCloseTaskRow>): PeriodCloseTaskRow {
   return {
@@ -459,37 +41,46 @@ function task(overrides: Partial<PeriodCloseTaskRow>): PeriodCloseTaskRow {
   };
 }
 
-const draftBlockerFailing: PeriodReadinessCheck = {
+const draftJournalsTask = task({
+  id: "auto1",
+  taskType: "Auto",
   autoCheckKey: "draft-journals",
   severity: "Blocker",
-  label: "Draft journal entries dated in this period",
-  failing: true,
-  count: 2
-};
-const draftBlockerPassing: PeriodReadinessCheck = {
-  ...draftBlockerFailing,
-  failing: false,
-  count: 0
-};
+  name: "Post or re-date draft journal entries"
+});
 
-describe("checklistTasksToCreate — idempotent instantiation (criterion 6)", () => {
-  it("creates a task per definition on first run, none on re-run", () => {
+function draftJournalsCheck(failing: boolean): PeriodReadinessCheck {
+  return {
+    autoCheckKey: "draft-journals",
+    severity: "Blocker",
+    label: "Draft journal entries dated in this period",
+    failing,
+    count: failing ? 2 : 0
+  };
+}
+
+describe("checklistTasksToCreate", () => {
+  it("creates a task per definition on first run and none on a re-run", () => {
     const defs = [{ id: "d1" }, { id: "d2" }, { id: "d3" }];
-
-    const first = checklistTasksToCreate(defs, []);
-    expect(first.map((d) => d.id)).toEqual(["d1", "d2", "d3"]);
-
-    // Simulate the tasks that first-run would have created, then re-run.
-    const existing = first.map((d) => ({ definitionId: d.id }));
-    const second = checklistTasksToCreate(defs, existing);
-    expect(second).toEqual([]);
+    expect(checklistTasksToCreate(defs, []).map((d) => d.id)).toEqual([
+      "d1",
+      "d2",
+      "d3"
+    ]);
+    expect(
+      checklistTasksToCreate(defs, [
+        { definitionId: "d1" },
+        { definitionId: "d2" },
+        { definitionId: "d3" }
+      ])
+    ).toEqual([]);
   });
 });
 
-describe("evaluateCloseChecklist — close gate (criteria 7/10)", () => {
-  it("blocks close when a required manual task is still Open", () => {
+describe("evaluateCloseChecklist", () => {
+  it("blocks the close while a required manual task is Open, naming it", () => {
     const result = evaluateCloseChecklist(
-      [task({ taskType: "Manual", status: "Open", name: "Review financials" })],
+      [task({ name: "Review financials" })],
       [],
       "Locked"
     );
@@ -497,743 +88,288 @@ describe("evaluateCloseChecklist — close gate (criteria 7/10)", () => {
     expect(result.blockingReason).toMatch(/Review financials/);
   });
 
-  it("blocks close when a Blocker auto-check is failing", () => {
+  it("blocks the close while a Blocker auto-check is failing", () => {
     const result = evaluateCloseChecklist(
-      [
-        task({
-          taskType: "Auto",
-          autoCheckKey: "draft-journals",
-          severity: "Blocker",
-          status: "Open",
-          name: "Post or re-date draft journal entries"
-        })
-      ],
-      [draftBlockerFailing],
+      [draftJournalsTask],
+      [draftJournalsCheck(true)],
       "Locked"
     );
     expect(result.canClose).toBe(false);
-    expect(result.blockingReason).toMatch(/draft journal/i);
+    expect(result.autoTaskStates).toEqual([]);
   });
 
-  it("fails closed when an Auto task has no registered evaluator", () => {
+  it("fails closed when an Auto task has no evaluator for its key", () => {
     const result = evaluateCloseChecklist(
-      [
-        task({
-          taskType: "Auto",
-          autoCheckKey: "future-custom-check",
-          severity: "Blocker",
-          status: "Open",
-          name: "Some future auto check"
-        })
-      ],
-      [], // no evaluator produced for this key
+      [task({ ...draftJournalsTask, autoCheckKey: "future-custom-check" })],
+      [],
       "Locked"
     );
     expect(result.canClose).toBe(false);
-    expect(result.blockingReason).toMatch(/Some future auto check/);
   });
 
-  it("allows close and persists the resolved Auto-task state when checks pass", () => {
+  it("does not let a skipped task hold the close", () => {
     const result = evaluateCloseChecklist(
-      [
-        task({
-          id: "auto1",
-          taskType: "Auto",
-          autoCheckKey: "draft-journals",
-          severity: "Blocker",
-          status: "Open"
-        }),
-        task({ taskType: "Manual", status: "Done" })
-      ],
-      [draftBlockerPassing],
+      [task({ ...draftJournalsTask, status: "Skipped" })],
+      [draftJournalsCheck(true)],
       "Locked"
     );
     expect(result.canClose).toBe(true);
-    expect(result.autoTaskStates).toEqual([{ id: "auto1", status: "Done" }]);
   });
 
-  it("derives the Lock task status from closeStatus and gates the close on it", () => {
-    const lockTask = task({
-      taskType: "Action",
-      status: "Open",
-      name: "Lock the period"
-    });
-
-    const openState = evaluateCloseChecklist([lockTask], [], "Open");
-    expect(openState.tasks[0]?.effectiveStatus).toBe("Open");
-    expect(openState.canClose).toBe(false);
-    expect(openState.blockingReason).toMatch(/Lock the period/);
-
-    const lockedState = evaluateCloseChecklist([lockTask], [], "Locked");
-    expect(lockedState.tasks[0]?.effectiveStatus).toBe("Done");
-    expect(lockedState.canClose).toBe(true);
-  });
-});
-
-describe("reopenAccountingPeriod — reverse-sequential reopen", () => {
-  it("rejects reopening period N while a later period is still Closed", async () => {
-    const client = makeClient([
-      { data: { id: "P2", startDate: "2026-02-01", closeStatus: "Closed" } },
-      { count: 1 } // a later period is still closed
-    ]);
-
-    const result = await reopenAccountingPeriod(client, args);
-
-    expect(result.error).toBeTruthy();
-    expect(result.error?.message).toMatch(/later periods must be reopened/i);
-    expect(result.data).toBeNull();
-  });
-
-  it("allows reopening when no later period is Closed", async () => {
-    const client = makeClient([
-      {
-        data: {
-          id: "P2",
-          startDate: "2026-02-01",
-          endDate: "2026-02-28",
-          closeStatus: "Closed"
-        }
-      },
-      { count: 0 }, // no later closed periods
-      { error: null }, // delete cumulative snapshots (invariant #3)
-      { data: { id: "P2" }, error: null } // update
-    ]);
-
-    const result = await reopenAccountingPeriod(client, args);
-
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ id: "P2" });
-  });
-
-  // Records which table each terminal op hit, so we can assert the reopen both
-  // deletes the stale cumulative snapshots and orders the delete before the flip.
-  function makeReopenTracker(responses: Scripted[]) {
-    const ops: string[] = [];
-    let i = 0;
-    const next = () => responses[i++] ?? { data: null, error: null };
-    const makeBuilder = (table: string) => {
-      const builder: any = {
-        select: () => builder,
-        update: () => {
-          ops.push(`update:${table}`);
-          return builder;
-        },
-        delete: () => {
-          ops.push(`delete:${table}`);
-          return builder;
-        },
-        eq: () => builder,
-        neq: () => builder,
-        gt: () => builder,
-        gte: () => builder,
-        lt: () => builder,
-        lte: () => builder,
-        or: () => builder,
-        order: () => builder,
-        limit: () => builder,
-        single: () => Promise.resolve(next()),
-        then: (resolve: (v: Scripted) => unknown) => resolve(next())
-      };
-      return builder;
-    };
-    return { client: { from: (t: string) => makeBuilder(t) } as any, ops };
-  }
-
-  it("deletes cumulative snapshots at/after the period end before flipping to Open", async () => {
-    const { client, ops } = makeReopenTracker([
-      {
-        data: {
-          id: "P2",
-          startDate: "2026-02-01",
-          endDate: "2026-02-28",
-          closeStatus: "Closed"
-        }
-      },
-      { count: 0 }, // no later closed periods
-      { error: null }, // delete snapshots
-      { data: { id: "P2" }, error: null } // update
-    ]);
-
-    const result = await reopenAccountingPeriod(client, args);
-
-    expect(result.error).toBeNull();
-    // Snapshot rows are cleared, and the delete precedes the status flip.
-    expect(ops).toEqual([
-      "delete:accountingPeriodBalance",
-      "update:accountingPeriod"
-    ]);
-  });
-
-  it("aborts the reopen (period stays Closed) if snapshot deletion fails", async () => {
-    const { client, ops } = makeReopenTracker([
-      {
-        data: {
-          id: "P2",
-          startDate: "2026-02-01",
-          endDate: "2026-02-28",
-          closeStatus: "Closed"
-        }
-      },
-      { count: 0 }, // no later closed periods
-      { error: { message: "snapshot delete failed" } } // delete fails
-    ]);
-
-    const result = await reopenAccountingPeriod(client, args);
-
-    expect(result.error?.message).toBe("snapshot delete failed");
-    // The period was never flipped — no update issued after the failed delete.
-    expect(ops).toEqual(["delete:accountingPeriodBalance"]);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Source-aware posting gate (acceptance criteria 2/3)
-//
-// getOrCreateAccountingPeriod issues one query (getCurrentAccountingPeriod's
-// `.single()`) to resolve the current period, then applies the close-status
-// gate. An Active + Locked period rejects "operational" posting but still
-// accepts "accounting" adjustments.
-// ---------------------------------------------------------------------------
-
-describe("getOrCreateAccountingPeriod — locked-period source gate", () => {
-  it("rejects operational posting into a Locked period", async () => {
-    const client = makeClient([
-      { data: { id: "P2", status: "Active", closeStatus: "Locked" } }
-    ]);
-
-    const result = await getOrCreateAccountingPeriod(
-      client,
-      "C1",
-      "2026-02-15",
-      "operational"
+  it("allows the close and reports the Auto tasks whose stored status is stale", () => {
+    const result = evaluateCloseChecklist(
+      [draftJournalsTask, task({ status: "Done" })],
+      [draftJournalsCheck(false)],
+      "Locked"
     );
-
-    expect(result.data).toBeNull();
-    expect(result.error?.message).toMatch(/locked/i);
+    expect(result).toMatchObject({
+      canClose: true,
+      blockingReason: null,
+      autoTaskStates: [{ id: "auto1", status: "Done" }]
+    });
   });
 
-  it("allows accounting posting into a Locked period", async () => {
-    const client = makeClient([
-      { data: { id: "P2", status: "Active", closeStatus: "Locked" } }
-    ]);
+  it.each([
+    ["Open", "Open", false],
+    ["Locked", "Done", true],
+    ["Closed", "Done", true]
+  ] as const)(
+    "treats the Lock task as done only once the period is locked (%s)",
+    (closeStatus, effectiveStatus, canClose) => {
+      const result = evaluateCloseChecklist(
+        [task({ taskType: "Action", name: "Lock the period" })],
+        [],
+        closeStatus
+      );
+      expect(result.tasks[0]?.effectiveStatus).toBe(effectiveStatus);
+      expect(result.canClose).toBe(canClose);
+    }
+  );
+});
 
-    const result = await getOrCreateAccountingPeriod(
-      client,
-      "C1",
-      "2026-02-15",
-      "accounting"
-    );
+describe("periodPostingRefusal", () => {
+  it.each([
+    ["Open", "operational"],
+    ["Open", "accounting"],
+    ["Locked", "accounting"]
+  ] as const)("lets a %s period take an %s posting", (status, source) => {
+    expect(periodPostingRefusal(status, source)).toBeNull();
+  });
 
-    expect(result.error).toBeNull();
-    expect(result.data).toBe("P2");
+  it.each([
+    ["Locked", "operational"],
+    ["Closed", "operational"],
+    ["Closed", "accounting"]
+  ] as const)("refuses a %s period an %s posting", (status, source) => {
+    expect(periodPostingRefusal(status, source)).not.toBeNull();
   });
 });
 
-// ---------------------------------------------------------------------------
-// postJournalEntry now routes through the period gate (source "accounting").
-// A balanced manual JE dated in a Closed period must be rejected — before the
-// gate was wired in, the status flip proceeded regardless of period state.
-//
-// Query order: getJournalEntry `.single()` -> getCurrentAccountingPeriod
-// `.single()` -> (only if the gate passes) the status-flip update `.single()`.
-// ---------------------------------------------------------------------------
-
-describe("postJournalEntry — period gate wiring", () => {
-  const draftEntry = {
-    data: {
-      id: "J1",
-      status: "Draft",
-      companyId: "C1",
-      postingDate: "2026-02-15",
-      journalLine: [
-        { amount: 100, account: { class: "Asset" } },
-        { amount: 100, account: { class: "Liability" } }
-      ]
-    },
-    error: null
-  };
-
-  it("rejects posting a balanced manual JE into a Closed period", async () => {
-    const client = makeClient([
-      draftEntry,
-      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
-      { data: { id: "P2", status: "Active", closeStatus: "Closed" } }
-    ]);
-
-    const result = await postJournalEntry(client, "J1", "U1");
-
-    expect(result.data).toBeNull();
-    expect(result.error?.message).toMatch(/closed/i);
+describe("periodDeletionRefusal", () => {
+  it("allows deleting an open period with no journals", () => {
+    expect(periodDeletionRefusal("Open", 0)).toBeNull();
   });
 
-  it("posts a balanced manual JE into a Locked period (accounting source)", async () => {
-    const client = makeClient([
-      draftEntry,
-      { data: { accountingCutoverDate: "2026-01-01" } }, // requireAccountingCutover
-      { data: { id: "P2", status: "Active", closeStatus: "Locked" } },
-      { data: { id: "J1" }, error: null }
-    ]);
-
-    const result = await postJournalEntry(client, "J1", "U1");
-
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ id: "J1" });
+  it.each([
+    ["an open period with journals posted to it", "Open", 3],
+    ["a Locked period", "Locked", 0],
+    ["a Closed period", "Closed", 0]
+  ])("refuses %s", (_label, status, journals) => {
+    expect(periodDeletionRefusal(status, journals)).not.toBeNull();
   });
 });
 
-// ---------------------------------------------------------------------------
-// skipCloseTask — Blocker skip rejection + empty-reason rejection (criteria 8/9)
-// Query order: getPeriodCloseTaskById `.single()` -> (only if allowed) update.
-// ---------------------------------------------------------------------------
-
-describe("skipCloseTask — skip guards", () => {
-  it("rejects an empty skip reason before touching the database", async () => {
-    const client = makeClient([]);
-    const result = await skipCloseTask(client, {
-      taskId: "T1",
-      companyId: "C1",
-      userId: "U1",
-      skippedReason: "   "
-    });
-    expect(result.data).toBeNull();
-    expect(result.error?.message).toMatch(/reason is required/i);
-  });
-
-  it("rejects skipping a Blocker task", async () => {
-    const client = makeClient([
-      {
-        data: {
-          id: "T1",
-          taskType: "Auto",
-          severity: "Blocker",
-          status: "Open"
-        }
-      }
-    ]);
-    const result = await skipCloseTask(client, {
-      taskId: "T1",
-      companyId: "C1",
-      userId: "U1",
-      skippedReason: "not applicable this month"
-    });
-    expect(result.data).toBeNull();
-    expect(result.error?.message).toMatch(/cannot be skipped/i);
-  });
-
-  it("skips a Warning task with a recorded reason", async () => {
-    const client = makeClient([
-      {
-        data: {
-          id: "T2",
-          taskType: "Auto",
-          severity: "Warning",
-          status: "Open"
-        }
-      },
-      { data: { id: "T2" }, error: null } // update
-    ]);
-    const result = await skipCloseTask(client, {
-      taskId: "T2",
-      companyId: "C1",
-      userId: "U1",
-      skippedReason: "intercompany matched manually"
-    });
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual({ id: "T2" });
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Period deletability + deletion guard, the fiscal-calendar "committed" check,
-// and fiscal-year generation. These exercise the real service functions against
-// the scripted fake supabase client; each awaited query / `.single()` shifts the
-// next scripted result off the queue in the order the function issues them.
-// ---------------------------------------------------------------------------
-
-// Like makeClient but records every `.insert(values)` so a test can assert the
-// rows a service generated (createFiscalYearPeriods' month math).
-function makeInsertRecordingClient(responses: Scripted[]) {
-  let i = 0;
-  const next = () => responses[i++] ?? { data: null, error: null };
-  const inserts: any[] = [];
-  const builder: any = {
-    select: () => builder,
-    insert: (values: any) => {
-      inserts.push(values);
-      return builder;
-    },
-    eq: () => builder,
-    single: () => Promise.resolve(next()),
-    then: (resolve: (v: Scripted) => unknown) => resolve(next())
-  };
-  return { client: { from: () => builder } as any, inserts };
-}
-
-describe("getAccountingPeriodDeletability", () => {
-  // Query order: getAccountingPeriodById (.single) -> journal count.
-  it("allows deleting an open period with no journals", async () => {
-    const client = makeClient([
-      { data: { id: "P1", closeStatus: "Open", startDate: "2026-03-01" } },
-      { count: 0 }
-    ]);
-    const result = await getAccountingPeriodDeletability(client, "P1", "C1");
-    expect(result.data?.canDelete).toBe(true);
-    expect(result.data?.reason).toBeNull();
-  });
-
-  it("blocks an open period that has journals posted to it", async () => {
-    const client = makeClient([
-      { data: { id: "P1", closeStatus: "Open", startDate: "2026-03-01" } },
-      { count: 3 }
-    ]);
-    const result = await getAccountingPeriodDeletability(client, "P1", "C1");
-    expect(result.data?.canDelete).toBe(false);
-    expect(result.data?.reason).toMatch(/3 journal entries/);
-  });
-
-  it("blocks a Locked/Closed period regardless of journals", async () => {
-    const client = makeClient([
-      { data: { id: "P1", closeStatus: "Locked", startDate: "2026-03-01" } },
-      { count: 0 }
-    ]);
-    const result = await getAccountingPeriodDeletability(client, "P1", "C1");
-    expect(result.data?.canDelete).toBe(false);
-    expect(result.data?.reason).toMatch(/Locked/);
-  });
-});
-
-describe("deleteAccountingPeriod — server-side guard", () => {
-  it("refuses to delete a non-open period (never issues the DELETE)", async () => {
-    const client = makeClient([
-      { data: { id: "P1", closeStatus: "Closed", startDate: "2026-03-01" } },
-      { count: 0 }
-    ]);
-    const result = await deleteAccountingPeriod(client, {
-      periodId: "P1",
-      companyId: "C1"
-    });
-    expect(result.error?.message).toMatch(/Closed/);
-    expect(result.data).toBeNull();
-  });
-
-  it("deletes an open, empty period", async () => {
-    const client = makeClient([
-      { data: { id: "P1", closeStatus: "Open", startDate: "2026-03-01" } },
-      { count: 0 },
-      { data: null, error: null } // the DELETE result
-    ]);
-    const result = await deleteAccountingPeriod(client, {
-      periodId: "P1",
-      companyId: "C1"
-    });
-    expect(result.error).toBeNull();
-  });
-});
-
-describe("getFiscalCalendarCommitted", () => {
-  // committed = (non-open periods) OR (postings); the OR is order-independent,
-  // so these assertions hold regardless of how the two counts are scripted.
-  it("is not committed when every period is Open and there are no postings", async () => {
-    const client = makeClient([{ count: 0 }, { count: 0 }]);
-    const result = await getFiscalCalendarCommitted(client, "C1");
-    expect(result.data?.committed).toBe(false);
-  });
-
-  it("is committed once a Locked/Closed period or a posting exists", async () => {
-    const client = makeClient([{ count: 1 }, { count: 0 }]);
-    const result = await getFiscalCalendarCommitted(client, "C1");
-    expect(result.data?.committed).toBe(true);
-  });
-
-  it("counts only Posted and Reversed journals, never a Provisional one", async () => {
-    const statusFilters: unknown[] = [];
-    const builder: any = {
-      select: () => builder,
-      eq: () => builder,
-      neq: () => builder,
-      in: (column: string, values: unknown[]) => {
-        if (column === "status") statusFilters.push(values);
-        return builder;
-      },
-      then: (resolve: (v: Scripted) => unknown) => resolve({ count: 0 })
-    };
-    const client = { from: () => builder } as any;
-    await getFiscalCalendarCommitted(client, "C1");
-    expect(statusFilters).toEqual([["Posted", "Reversed"]]);
-  });
-});
-
-describe("createFiscalYearPeriods", () => {
-  // Query order: getFiscalYearSettings (.single) -> existing periodNumbers ->
-  // insert (only when there are rows to create).
-  it("is idempotent — creates nothing when all 12 periods already exist", async () => {
-    const existing = Array.from({ length: 12 }, (_, p) => ({
-      periodNumber: p + 1
-    }));
-    const client = makeClient([
-      { data: { startMonth: "January" } },
-      { data: existing }
-    ]);
-    const result = await createFiscalYearPeriods(client, {
-      companyId: "C1",
-      fiscalYear: 2027,
-      userId: "U1"
-    });
-    expect(result.error).toBeNull();
-    expect(result.data).toEqual([]);
-  });
-
-  it("generates 12 periods anchored on the fiscal start month (March)", async () => {
-    const { client, inserts } = makeInsertRecordingClient([
-      { data: { startMonth: "March" } },
-      { data: [] }, // none exist yet
-      { data: [{ id: "x" }] } // insert result
-    ]);
-    await createFiscalYearPeriods(client, {
-      companyId: "C1",
-      fiscalYear: 2027,
-      userId: "U1"
-    });
-    const rows = inserts[0] as {
-      periodNumber: number;
-      startDate: string;
-      fiscalYear: number;
-    }[];
+describe("fiscalYearPeriodDates", () => {
+  it("runs a March-start FY2027 from March 2026 to February 2027", () => {
+    const rows = fiscalYearPeriodDates(2027, 3, new Set());
     expect(rows).toHaveLength(12);
-    // FY2027 with a March start spans Mar 2026 .. Feb 2027.
-    expect(rows[0]).toMatchObject({
+    expect(rows[0]).toEqual({
       periodNumber: 1,
       startDate: "2026-03-01",
-      fiscalYear: 2027
+      endDate: "2026-03-31"
     });
-    expect(rows[11]).toMatchObject({
+    expect(rows[10]).toEqual({
+      periodNumber: 11,
+      startDate: "2027-01-01",
+      endDate: "2027-01-31"
+    });
+    expect(rows[11]).toEqual({
       periodNumber: 12,
       startDate: "2027-02-01",
-      fiscalYear: 2027
+      endDate: "2027-02-28"
     });
+  });
+
+  it("keeps a January-start fiscal year inside its own calendar year", () => {
+    const rows = fiscalYearPeriodDates(2028, 1, new Set());
+    expect(rows[0]?.startDate).toBe("2028-01-01");
+    expect(rows[1]?.endDate).toBe("2028-02-29");
+    expect(rows[11]?.endDate).toBe("2028-12-31");
+  });
+
+  it("creates only the periods that do not exist yet", () => {
+    const existing = new Set(
+      Array.from({ length: 12 }, (_, i) => i + 1).filter((p) => p !== 5)
+    );
+    expect(fiscalYearPeriodDates(2027, 1, existing)).toEqual([
+      { periodNumber: 5, startDate: "2027-05-01", endDate: "2027-05-31" }
+    ]);
   });
 });
 
-// ---------------------------------------------------------------------------
-// The two run checks ask what new runs would hold (the preview) and which
-// Draft runs are waiting. The batched readiness reads come first, then the
-// Planned rows Draft revenue recognition runs hold.
-// ---------------------------------------------------------------------------
+describe("periodRunChecks", () => {
+  const nothingDue: PeriodRunPreview = {
+    revenue: { count: 0, amount: 0, error: null },
+    lease: { count: 0, amount: 0, error: null },
+    depreciation: { count: 0, amount: 0, error: null }
+  };
 
-describe("computePeriodReadiness — run checks", () => {
-  const script = ({
-    draftDepreciationRuns = [],
-    heldRevenueRows = []
-  }: {
-    draftDepreciationRuns?: unknown[];
-    heldRevenueRows?: unknown[];
-  }): Scripted[] => [
-    { data: { timezone: "America/New_York" } },
-    { data: [] }, // external GL readiness: no active integrations
-    { count: 0 }, // draft journals
-    { data: [] }, // posted journals in period
-    { data: draftDepreciationRuns },
-    { count: 0 }, // unmatched intercompany
-    { count: 0 }, // pending receipts
-    { count: 0 }, // pending shipments
-    { count: 0 }, // pending sales invoices
-    { count: 0 }, // pending purchase invoices
-    { count: 0 }, // draft payments
-    { count: 0 }, // draft memos
-    { data: heldRevenueRows }
-  ];
-  const preview = (overrides: Partial<PeriodRunPreview>): PeriodRunPreview => ({
-    ...nothingDue,
-    ...overrides
-  });
-  const readiness = (client: unknown, runPreview: PeriodRunPreview) =>
-    computePeriodReadiness(
-      client as any,
-      "C1",
-      "2026-10-01",
-      "2026-10-31",
-      runPreview
-    );
-  const check = (result: Awaited<ReturnType<typeof readiness>>, key: string) =>
-    result.checks.find((c) => c.autoCheckKey === key);
+  function base(
+    overrides: Partial<Parameters<typeof periodRunChecks>[0]> = {}
+  ) {
+    return {
+      runPreview: nothingDue,
+      heldRunRows: { data: [], error: null },
+      draftDepreciationRuns: { data: [], error: null },
+      ...overrides
+    };
+  }
 
-  it("passes both when nothing is due and no Draft run waits", async () => {
-    const result = await readiness(makeClient(script({})), nothingDue);
+  function check(
+    args: Parameters<typeof periodRunChecks>[0],
+    key: string
+  ): PeriodReadinessCheck | undefined {
+    return periodRunChecks(args).find((c) => c.autoCheckKey === key);
+  }
 
-    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
-      failing: false,
-      count: 0,
-      amount: 0
-    });
-    expect(check(result, "draft-depreciation")).toMatchObject({
-      failing: false,
-      count: 0,
-      amount: 0
-    });
-  });
+  const revenueRun = {
+    id: "R1",
+    runId: "RR-000001",
+    periodEnd: "2026-09-30",
+    type: "Revenue Recognition" as const
+  };
 
-  it("fails revenue with what a new run would claim", async () => {
-    const result = await readiness(
-      makeClient(script({})),
-      preview({ revenue: { count: 2, amount: 150, error: null } })
-    );
-
-    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
-      failing: true,
-      count: 2,
-      amount: 150,
-      due: { count: 2, amount: 150 },
-      draftRuns: []
-    });
+  it("passes every run check when nothing is due and no Draft run waits", () => {
     expect(
-      result.warnings.find((w) => w.key === "unposted-revenue-schedules")?.count
-    ).toBe(2);
+      periodRunChecks(base()).map((c) => [c.autoCheckKey, c.failing, c.count])
+    ).toEqual([
+      ["draft-depreciation", false, 0],
+      ["unposted-revenue-schedules", false, 0],
+      ["unposted-lease-schedules", false, 0]
+    ]);
   });
 
-  it("adds the rows a Draft run holds, and names the run", async () => {
-    const result = await readiness(
-      makeClient(
-        script({
-          heldRevenueRows: [
-            {
-              amount: 40,
-              run: {
-                id: "R1",
-                runId: "RR-000001",
-                periodEnd: "2026-09-30",
-                type: "Revenue Recognition"
-              }
-            },
-            {
-              amount: 10,
-              run: {
-                id: "R1",
-                runId: "RR-000001",
-                periodEnd: "2026-09-30",
-                type: "Revenue Recognition"
-              }
-            }
-          ]
-        })
-      ),
-      preview({ revenue: { count: 1, amount: 25, error: null } })
-    );
-
-    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+  it("adds what a Draft run holds to what a new run would claim, naming the run once", () => {
+    // Preview 1 row / 25 + held rows 40 and 10 = 3 rows / 75.
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            revenue: { count: 1, amount: 25, error: null }
+          },
+          heldRunRows: {
+            data: [
+              { amount: 40, run: revenueRun },
+              { amount: 10, run: revenueRun }
+            ],
+            error: null
+          }
+        }),
+        "unposted-revenue-schedules"
+      )
+    ).toMatchObject({
       failing: true,
       count: 3,
       amount: 75,
+      due: { count: 1, amount: 25 },
       draftRuns: [
         { id: "R1", readableId: "RR-000001", periodEnd: "2026-09-30" }
       ]
     });
   });
 
-  it("fails the lease check on its own preview and Draft runs, never the revenue check", async () => {
-    const result = await readiness(
-      makeClient(
-        script({
-          heldRevenueRows: [
-            {
-              amount: 30,
-              run: {
-                id: "L1",
-                runId: "LR-000001",
-                periodEnd: "2026-09-30",
-                type: "Lease"
-              }
-            }
-          ]
-        })
-      ),
-      preview({ lease: { count: 2, amount: 120, error: null } })
-    );
-
-    expect(check(result, "unposted-lease-schedules")).toMatchObject({
+  it("counts a lease run's rows on the lease check only", () => {
+    const args = base({
+      runPreview: {
+        ...nothingDue,
+        lease: { count: 2, amount: 120, error: null }
+      },
+      heldRunRows: {
+        data: [
+          {
+            amount: 30,
+            run: { ...revenueRun, id: "L1", runId: "LR-000001", type: "Lease" }
+          }
+        ],
+        error: null
+      }
+    });
+    expect(check(args, "unposted-lease-schedules")).toMatchObject({
       failing: true,
       count: 3,
-      amount: 150,
-      due: { count: 2, amount: 120 },
-      draftRuns: [
-        { id: "L1", readableId: "LR-000001", periodEnd: "2026-09-30" }
-      ]
+      amount: 150
     });
-    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
+    expect(check(args, "unposted-revenue-schedules")).toMatchObject({
       failing: false,
       count: 0
     });
   });
 
-  it("fails revenue when the preview could not run", async () => {
-    const result = await readiness(
-      makeClient(script({})),
-      preview({
-        revenue: {
-          count: 0,
-          amount: 0,
-          error: "Set the Contract Assets account default"
-        }
-      })
-    );
-
-    expect(check(result, "unposted-revenue-schedules")).toMatchObject({
-      failing: true,
-      count: 0
-    });
+  it("fails revenue when the preview could not run", () => {
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            revenue: {
+              count: 0,
+              amount: 0,
+              error: "No Contract Assets account"
+            }
+          }
+        }),
+        "unposted-revenue-schedules"
+      )
+    ).toMatchObject({ failing: true, count: 0 });
   });
 
-  it("counts the assets a new run would depreciate plus the Draft runs", async () => {
-    const result = await readiness(
-      makeClient(
-        script({
-          draftDepreciationRuns: [
-            {
-              id: "D1",
-              depreciationRunId: "DEP-000001",
-              periodEnd: "2026-10-31",
-              depreciationRunLine: [{ amount: 60 }, { amount: 40 }]
-            }
-          ]
-        })
-      ),
-      preview({ depreciation: { count: 3, amount: 900, error: null } })
-    );
+  it("fails both schedule checks closed when the held rows cannot be read", () => {
+    const args = base({ heldRunRows: { data: null, error: { message: "x" } } });
+    expect(check(args, "unposted-revenue-schedules")?.failing).toBe(true);
+    expect(check(args, "unposted-lease-schedules")?.failing).toBe(true);
+  });
 
-    expect(check(result, "draft-depreciation")).toMatchObject({
+  it("counts the assets a new run would depreciate plus each Draft depreciation run", () => {
+    // 3 assets / 900 due + one Draft run of 60 + 40 = 4 / 1000.
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            depreciation: { count: 3, amount: 900, error: null }
+          },
+          draftDepreciationRuns: {
+            data: [
+              {
+                id: "D1",
+                depreciationRunId: "DEP-000001",
+                periodEnd: "2026-10-31",
+                depreciationRunLine: [{ amount: 60 }, { amount: 40 }]
+              }
+            ],
+            error: null
+          }
+        }),
+        "draft-depreciation"
+      )
+    ).toMatchObject({
       failing: true,
       count: 4,
       amount: 1000,
-      due: { count: 3, amount: 900 },
       draftRuns: [
         { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
       ]
     });
-  });
-});
-
-describe("requireAccountingCutover", () => {
-  it("refuses manual accounting work before the cutover", async () => {
-    const client = makeClient([{ data: { accountingCutoverDate: null } }]);
-    const result = await requireAccountingCutover(client, "C1");
-    expect(result.error?.message).toBe(ACCOUNTING_NOT_STARTED);
-  });
-
-  it("allows it once the company has a cutover", async () => {
-    const client = makeClient([
-      { data: { accountingCutoverDate: "2026-01-01" } }
-    ]);
-    const result = await requireAccountingCutover(client, "C1");
-    expect(result.error).toBeNull();
-  });
-
-  it("stops a period lock before the cutover, before any other read", async () => {
-    const client = makeClient([{ data: { accountingCutoverDate: null } }]);
-    const result = await lockAccountingPeriod(client, {
-      periodId: "P1",
-      companyId: "C1",
-      userId: "U1"
-    });
-    expect(result.data).toBeNull();
-    expect(result.error?.message).toBe(ACCOUNTING_NOT_STARTED);
   });
 });

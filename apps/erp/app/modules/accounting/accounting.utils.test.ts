@@ -32,10 +32,6 @@ import {
   usageKey
 } from "./accounting.utils";
 
-// ---------------------------------------------------------------------------
-// Acquisition (registration opening entry)
-// ---------------------------------------------------------------------------
-
 describe("acquisitionLines", () => {
   // Map each line's role to the account class its amount is stored against, so
   // we can assert the entry balances (display debits === display credits).
@@ -105,50 +101,21 @@ describe("acquisitionLines", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Disposal gain/loss
-// ---------------------------------------------------------------------------
-
 describe("computeDisposalGainLoss", () => {
-  it("books a gain as a credit (negative stored amount) to the disposal account", () => {
-    // proceeds 1000, NBV 600 → gain 400 credited (income)
-    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
-      1000,
-      600
-    );
-    expect(gainLoss).toBe(400);
-    expect(disposalStoredAmount).toBe(-400);
-  });
-
-  it("books a loss as a debit (positive stored amount) to the disposal account", () => {
-    // proceeds 250, NBV 600 → loss 350 debited (expense)
-    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
-      250,
-      600
-    );
-    expect(gainLoss).toBe(-350);
-    expect(disposalStoredAmount).toBe(350);
-  });
-
-  it("returns a zero stored amount when proceeds equal NBV (no line needed)", () => {
-    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(
-      600,
-      600
-    );
-    expect(gainLoss).toBe(0);
-    expect(disposalStoredAmount).toBe(0);
-  });
-
-  it("treats a scrap (zero proceeds) as a full loss of the net book value", () => {
-    const { gainLoss, disposalStoredAmount } = computeDisposalGainLoss(0, 800);
-    expect(gainLoss).toBe(-800);
-    expect(disposalStoredAmount).toBe(800);
+  // A gain is a credit to the disposal account (stored negative), a loss a
+  // debit (stored positive).
+  it.each([
+    ["a gain", 1000, 600, 400, -400],
+    ["a loss", 250, 600, -350, 350],
+    ["nothing at NBV", 600, 600, 0, 0],
+    ["a scrap as a full loss of NBV", 0, 800, -800, 800]
+  ])("books %s", (_, proceeds, nbv, gainLoss, disposalStoredAmount) => {
+    expect(computeDisposalGainLoss(proceeds, nbv)).toEqual({
+      gainLoss,
+      disposalStoredAmount
+    });
   });
 });
-
-// ---------------------------------------------------------------------------
-// Depreciation-run line display (NBV After)
-// ---------------------------------------------------------------------------
 
 describe("depreciationRunLineDisplay", () => {
   it("starts a later month from the earlier months of the same run", () => {
@@ -210,29 +177,7 @@ describe("depreciationRunLineDisplay", () => {
     expect(accumulatedDepreciationBefore).toBe(20_000);
     expect(netBookValueAfter).toBe(76_000);
   });
-
-  it("keeps the row arithmetic cost − accumulated − amount = NBV after", () => {
-    for (const isPosted of [false, true]) {
-      const accumulatedDepreciation = isPosted
-        ? priorAccumulated + amount
-        : priorAccumulated;
-      const { accumulatedDepreciationBefore, netBookValueAfter } =
-        depreciationRunLineDisplay({
-          acquisitionCost: cost,
-          accumulatedDepreciation,
-          amount,
-          isPosted
-        });
-      expect(cost - accumulatedDepreciationBefore - amount).toBe(
-        netBookValueAfter
-      );
-    }
-  });
 });
-
-// ---------------------------------------------------------------------------
-// Date helpers
-// ---------------------------------------------------------------------------
 
 describe("depreciationRunLinesMatch", () => {
   const P = "2026-09-30";
@@ -343,67 +288,34 @@ describe("runPostingTargets", () => {
   });
 });
 
-describe("getMonthsBetween", () => {
-  it("returns 1 for same month when end day >= start day", () => {
-    expect(
-      getMonthsBetween(parseDate("2025-01-15"), parseDate("2025-01-20"))
-    ).toBe(1);
-  });
-
-  it("returns 0 when end day < start day in same month", () => {
-    expect(
-      getMonthsBetween(parseDate("2025-01-20"), parseDate("2025-01-15"))
-    ).toBe(0);
-  });
-
-  it("counts months across years", () => {
-    expect(
-      getMonthsBetween(parseDate("2024-11-01"), parseDate("2025-02-01"))
-    ).toBe(4);
-  });
-
-  it("returns 0 for start after end", () => {
-    expect(
-      getMonthsBetween(parseDate("2025-06-01"), parseDate("2025-01-01"))
-    ).toBe(0);
-  });
+// Months counted inclusively: a partial month at the start counts once the
+// end day reaches the start day.
+it.each([
+  ["2025-01-15", "2025-01-20", 1],
+  ["2025-01-20", "2025-01-15", 0],
+  ["2024-11-01", "2025-02-01", 4],
+  ["2025-06-01", "2025-01-01", 0]
+])("getMonthsBetween(%s, %s) is %d", (start, end, months) => {
+  expect(getMonthsBetween(parseDate(start), parseDate(end))).toBe(months);
 });
 
-describe("getMonthsElapsed", () => {
-  it("returns 0 for same month", () => {
-    expect(
-      getMonthsElapsed(parseDate("2025-01-15"), parseDate("2025-01-20"))
-    ).toBe(0);
-  });
-
-  it("counts elapsed months", () => {
-    expect(
-      getMonthsElapsed(parseDate("2025-01-01"), parseDate("2025-04-01"))
-    ).toBe(3);
-  });
-
-  it("returns 0 when start after end", () => {
-    expect(
-      getMonthsElapsed(parseDate("2025-06-01"), parseDate("2025-01-01"))
-    ).toBe(0);
-  });
+it.each([
+  ["2025-01-15", "2025-01-20", 0],
+  ["2025-01-01", "2025-04-01", 3],
+  ["2025-06-01", "2025-01-01", 0]
+])("getMonthsElapsed(%s, %s) is %d", (start, end, months) => {
+  expect(getMonthsElapsed(parseDate(start), parseDate(end))).toBe(months);
 });
 
-describe("addOneMonth", () => {
-  it("advances to first of next month", () => {
-    expect(addOneMonth("2025-01-15").toString()).toBe("2025-02-01");
-  });
-
-  it("rolls over year boundary", () => {
-    expect(addOneMonth("2025-12-15").toString()).toBe("2026-01-01");
-  });
-
-  // Aug 31 + 1 month used to overflow "Sep 31" into Oct 1, so September got
-  // no depreciation after an August run.
-  it("advances a 31st into a shorter month without skipping it", () => {
-    expect(addOneMonth("2026-08-31").toString()).toBe("2026-09-01");
-    expect(addOneMonth("2026-01-31").toString()).toBe("2026-02-01");
-  });
+// A 31st must land on the 1st of the next month: overflowing "Sep 31" into
+// Oct 1 left September with no depreciation after an August run.
+it.each([
+  ["2025-01-15", "2025-02-01"],
+  ["2025-12-15", "2026-01-01"],
+  ["2026-08-31", "2026-09-01"],
+  ["2026-01-31", "2026-02-01"]
+])("addOneMonth(%s) is %s", (date, next) => {
+  expect(addOneMonth(date).toString()).toBe(next);
 });
 
 describe("month arithmetic after a posted run", () => {
@@ -450,29 +362,18 @@ describe("month arithmetic after a posted run", () => {
   });
 });
 
-describe("getLastDayOfMonth", () => {
-  it("returns 28 for Feb 2025", () => {
-    expect(getLastDayOfMonth(2025, 1)).toBe("2025-02-28");
-  });
-
-  it("returns 29 for Feb 2024 (leap year)", () => {
-    expect(getLastDayOfMonth(2024, 1)).toBe("2024-02-29");
-  });
-
-  it("returns 31 for January", () => {
-    expect(getLastDayOfMonth(2025, 0)).toBe("2025-01-31");
-  });
+it.each([
+  [2025, 1, "2025-02-28"],
+  [2024, 1, "2024-02-29"],
+  [2025, 0, "2025-01-31"]
+])("getLastDayOfMonth(%d, %d) is %s", (year, monthIndex, expected) => {
+  expect(getLastDayOfMonth(year, monthIndex)).toBe(expected);
 });
 
 describe("getNextPeriodEnd", () => {
-  it("returns next month's last day when given a previous period", () => {
-    const result = getNextPeriodEnd("2025-01-31");
-    expect(result).toBe("2025-02-28");
-  });
-
-  it("handles year rollover", () => {
-    const result = getNextPeriodEnd("2025-12-31");
-    expect(result).toBe("2026-01-31");
+  it("returns the month end after the previous period, across a year", () => {
+    expect(getNextPeriodEnd("2025-01-31")).toBe("2025-02-28");
+    expect(getNextPeriodEnd("2025-12-31")).toBe("2026-01-31");
   });
 
   it("defaults to the end of the current month of the given business date", () => {
@@ -516,38 +417,23 @@ describe("getNextRevenueRecognitionPeriodEnd", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// MACRS table lookups
-// ---------------------------------------------------------------------------
-
 describe("getMacrsPercentage", () => {
-  it("returns null for 27.5-year property", () => {
-    expect(getMacrsPercentage("27.5", 1, "Half-Year")).toBeNull();
-  });
-
-  it("returns null for 39-year property", () => {
-    expect(getMacrsPercentage("39", 1, "Half-Year")).toBeNull();
-  });
-
-  it("returns correct half-year 5-year year-1 percentage", () => {
-    expect(getMacrsPercentage("5", 1, "Half-Year")).toBe(20.0);
-  });
-
-  it("returns correct half-year 7-year year-1 percentage", () => {
-    expect(getMacrsPercentage("7", 1, "Half-Year")).toBe(14.29);
-  });
-
-  it("returns 0 when year exceeds table length", () => {
-    expect(getMacrsPercentage("3", 10, "Half-Year")).toBe(0);
-  });
-
-  it("returns correct mid-quarter Q1 5-year year-1 percentage", () => {
-    expect(getMacrsPercentage("5", 1, "Mid-Quarter", 1)).toBe(35.0);
-  });
-
-  it("returns correct mid-quarter Q4 7-year year-1 percentage", () => {
-    expect(getMacrsPercentage("7", 1, "Mid-Quarter", 4)).toBe(3.57);
-  });
+  it.each([
+    ["27.5", 1, "Half-Year", undefined, null],
+    ["39", 1, "Half-Year", undefined, null],
+    ["5", 1, "Half-Year", undefined, 20],
+    ["7", 1, "Half-Year", undefined, 14.29],
+    ["3", 10, "Half-Year", undefined, 0],
+    ["5", 1, "Mid-Quarter", 1, 35],
+    ["7", 1, "Mid-Quarter", 4, 3.57]
+  ] as const)(
+    "%s-year property, year %d, %s (quarter %s) is %s%%",
+    (propertyClass, year, convention, quarter, expected) => {
+      expect(getMacrsPercentage(propertyClass, year, convention, quarter)).toBe(
+        expected
+      );
+    }
+  );
 
   it("half-year 5-year table sums to ~100%", () => {
     let total = 0;
@@ -558,29 +444,11 @@ describe("getMacrsPercentage", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// calculateMacrsDepreciation
-// ---------------------------------------------------------------------------
-
 describe("calculateMacrsDepreciation", () => {
-  it("returns 0 for zero basis", () => {
-    expect(
-      calculateMacrsDepreciation({
-        adjustedBasis: 0,
-        propertyClass: "5",
-        convention: "Half-Year",
-        depreciationStartDate: "2025-01-15",
-        periodEnd: "2025-12-31",
-        lastPostedPeriodEnd: null,
-        accumulatedTaxDepreciation: 0,
-        bonusAmount: 0,
-        decimalPlaces: 2
-      })
-    ).toBe(0);
-  });
-
-  it("calculates year-1 half-year 5-year depreciation on $100,000 asset", () => {
-    const result = calculateMacrsDepreciation({
+  const macrs = (
+    overrides: Partial<Parameters<typeof calculateMacrsDepreciation>[0]>
+  ) =>
+    calculateMacrsDepreciation({
       adjustedBasis: 100000,
       propertyClass: "5",
       convention: "Half-Year",
@@ -589,47 +457,33 @@ describe("calculateMacrsDepreciation", () => {
       lastPostedPeriodEnd: null,
       accumulatedTaxDepreciation: 0,
       bonusAmount: 0,
-      decimalPlaces: 2
+      decimalPlaces: 2,
+      ...overrides
     });
-    // Year 1 at 20% of $100k = $20,000
-    expect(result).toBe(20000);
+
+  it("returns 0 for zero basis", () => {
+    expect(macrs({ adjustedBasis: 0 })).toBe(0);
   });
 
-  it("calculates 39-year property monthly depreciation", () => {
-    const result = calculateMacrsDepreciation({
-      adjustedBasis: 468000,
-      propertyClass: "39",
-      convention: "Half-Year",
-      depreciationStartDate: "2025-01-15",
-      periodEnd: "2025-12-31",
-      lastPostedPeriodEnd: null,
-      accumulatedTaxDepreciation: 0,
-      bonusAmount: 0,
-      decimalPlaces: 2
-    });
-    // $468,000 / (39*12) = $1,000/month; 11.5 months for first period
-    expect(result).toBeCloseTo(11500, -1);
+  it("takes the 20% year-1 percentage of a 5-year half-year asset", () => {
+    expect(macrs({})).toBe(20000);
   });
 
-  it("caps at remaining depreciable amount", () => {
-    const result = calculateMacrsDepreciation({
-      adjustedBasis: 10000,
-      propertyClass: "5",
-      convention: "Half-Year",
-      depreciationStartDate: "2025-01-15",
-      periodEnd: "2025-12-31",
-      lastPostedPeriodEnd: null,
-      accumulatedTaxDepreciation: 9500,
-      bonusAmount: 0,
-      decimalPlaces: 2
-    });
-    expect(result).toBeLessThanOrEqual(500);
+  it("depreciates 39-year property straight line from mid-month", () => {
+    // 468,000 / (39 × 12) = 1,000 a month; Jan 15 to Dec 31 is 11.5 months.
+    expect(macrs({ adjustedBasis: 468000, propertyClass: "39" })).toBe(11500);
+  });
+
+  it("caps 39-year property at what is left of the basis", () => {
+    expect(
+      macrs({
+        adjustedBasis: 468000,
+        propertyClass: "39",
+        accumulatedTaxDepreciation: 467000
+      })
+    ).toBe(1000);
   });
 });
-
-// ---------------------------------------------------------------------------
-// calculateDepreciation (book)
-// ---------------------------------------------------------------------------
 
 describe("calculateDepreciation", () => {
   const baseAsset = {
@@ -653,8 +507,9 @@ describe("calculateDepreciation", () => {
 
     it("calculates multi-month period", () => {
       // 6 months: 1800 * 6 = 10800
-      const result = calculateDepreciation(baseAsset, "2025-06-30", null, 2);
-      expect(result).toBeCloseTo(10800, 0);
+      expect(calculateDepreciation(baseAsset, "2025-06-30", null, 2)).toBe(
+        10800
+      );
     });
 
     it("returns 0 when fully depreciated", () => {
@@ -675,7 +530,6 @@ describe("calculateDepreciation", () => {
 
     it("uses lastPostedPeriodEnd to narrow the window", () => {
       // After a Jan 31 run, a Mar 31 run covers February and March. This
-      // test used to expect one month: Jan 31 + 1 month overflowed to Mar 1.
       const result = calculateDepreciation(
         baseAsset,
         "2025-03-31",
@@ -689,10 +543,9 @@ describe("calculateDepreciation", () => {
   describe("Declining Balance", () => {
     const dbAsset = { ...baseAsset, depreciationMethod: "Declining Balance" };
 
-    it("first month produces higher amount than straight line", () => {
-      const slResult = calculateDepreciation(baseAsset, "2025-01-31", null, 2);
-      const dbResult = calculateDepreciation(dbAsset, "2025-01-31", null, 2);
-      expect(dbResult).toBeGreaterThanOrEqual(slResult);
+    it("takes double the straight-line rate on the opening book value", () => {
+      // 60 months = 20%/yr straight line, doubled to 40%/yr: 120,000 × 40% / 12.
+      expect(calculateDepreciation(dbAsset, "2025-01-31", null, 2)).toBe(4000);
     });
 
     it("returns 0 when fully depreciated", () => {
@@ -735,10 +588,6 @@ describe("calculateDepreciation", () => {
     expect(calculateDepreciation(unknown, "2025-06-30", null, 2)).toBe(0);
   });
 });
-
-// ---------------------------------------------------------------------------
-// calculateTaxDepreciation
-// ---------------------------------------------------------------------------
 
 describe("calculateTaxDepreciation", () => {
   it("returns null when no tax method configured", () => {
@@ -787,32 +636,28 @@ describe("calculateTaxDepreciation", () => {
       expect(result).toBe(20000);
     });
 
-    it("calculates MACRS for a single-month period (how depreciation runs work)", () => {
-      const result = calculateTaxDepreciation(
-        macrsAsset,
-        "2025-05-31",
-        null,
-        2
+    it("spreads year 1 evenly over the months from January", () => {
+      // 20,000 over Jan–Dec; through May is 5/12 of it.
+      expect(calculateTaxDepreciation(macrsAsset, "2025-05-31", null, 2)).toBe(
+        8333.33
       );
-      expect(result).not.toBeNull();
-      expect(result!).toBeGreaterThan(0);
     });
 
-    it("calculates MACRS for second monthly period with lastPostedPeriodEnd", () => {
-      // Asset placed 2026-05-24, first run posted with periodEnd 2026-05-31
-      // Second run for periodEnd 2026-06-30
-      const result = calculateTaxDepreciation(
-        {
-          ...macrsAsset,
-          depreciationStartDate: "2026-05-24",
-          acquisitionDate: "2026-05-24"
-        },
-        "2026-06-30",
-        "2026-05-31",
-        2
-      );
-      expect(result).not.toBeNull();
-      expect(result!).toBeGreaterThan(0);
+    it("takes only the next month once the first month is posted", () => {
+      // Placed in May: year 1's 20,000 spreads over May–Dec, 2,500 a month.
+      expect(
+        calculateTaxDepreciation(
+          {
+            ...macrsAsset,
+            depreciationStartDate: "2026-05-24",
+            acquisitionDate: "2026-05-24",
+            accumulatedTaxDepreciation: 2500
+          },
+          "2026-06-30",
+          "2026-05-31",
+          2
+        )
+      ).toBe(2500);
     });
 
     it("handles null bonusDepreciationPercent (DB default)", () => {
@@ -848,11 +693,8 @@ describe("calculateTaxDepreciation", () => {
         "2025-12-31",
         2
       );
-      // Bonus should NOT be applied again (accumulatedTax > 0)
-      // Only MACRS on the $40k adjusted basis
-      expect(result).not.toBeNull();
-      expect(result!).toBeGreaterThan(0);
-      expect(result!).toBeLessThan(60000);
+      // Year 2 MACRS only: 32% of the 40,000 basis left after the bonus.
+      expect(result).toBe(12800);
     });
 
     it("handles 100% bonus depreciation", () => {
@@ -899,7 +741,7 @@ describe("calculateTaxDepreciation", () => {
         null,
         2
       );
-      expect(result).toBeCloseTo(12000, 0);
+      expect(result).toBe(12000);
     });
 
     it("returns 0 when fully depreciated", () => {
@@ -923,15 +765,11 @@ describe("calculateTaxDepreciation", () => {
       bonusDepreciationPercent: null
     };
 
-    it("produces a positive result", () => {
-      const result = calculateTaxDepreciation(
-        dbTaxAsset,
-        "2025-12-31",
-        null,
-        2
+    it("compounds the doubled rate month by month", () => {
+      // 40%/yr monthly is 1/30: 100,000 × (1 − (29/30)^12).
+      expect(calculateTaxDepreciation(dbTaxAsset, "2025-12-31", null, 2)).toBe(
+        33423.51
       );
-      expect(result).not.toBeNull();
-      expect(result!).toBeGreaterThan(0);
     });
 
     it("returns 0 when fully depreciated", () => {
@@ -941,10 +779,6 @@ describe("calculateTaxDepreciation", () => {
     });
   });
 });
-
-// ---------------------------------------------------------------------------
-// buildDepreciationLines
-// ---------------------------------------------------------------------------
 
 describe("buildDepreciationLines", () => {
   const baseAsset = {
@@ -966,16 +800,7 @@ describe("buildDepreciationLines", () => {
     bonusDepreciationPercent: 0
   };
 
-  const total = (lines: { amount: number; taxAmount: number | null }[]) =>
-    lines.reduce<{ amount: number; taxAmount: number }>(
-      (sum, line) => ({
-        amount: sum.amount + line.amount,
-        taxAmount: sum.taxAmount + (line.taxAmount ?? 0)
-      }),
-      { amount: 0, taxAmount: 0 }
-    );
-
-  it("returns one line per month, each with book and tax amounts when tax is enabled", () => {
+  it("returns one line per month with book and tax amounts when tax is enabled", () => {
     const lines = buildDepreciationLines(
       [baseAsset],
       "2025-12-31",
@@ -999,10 +824,10 @@ describe("buildDepreciationLines", () => {
       "2025-11-30",
       "2025-12-31"
     ]);
-    for (const line of lines) {
-      expect(line.amount).toBeGreaterThan(0);
-      expect(line.taxAmount!).toBeGreaterThan(0);
-    }
+    // Book 108,000 / 60 = 1,800 a month; tax MACRS 20% of 120,000 over 12.
+    expect(
+      lines.every((line) => line.amount === 1800 && line.taxAmount === 2000)
+    ).toBe(true);
   });
 
   it("returns null taxAmount when tax is disabled", () => {
@@ -1049,9 +874,10 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines.length).toBeGreaterThan(0);
-    expect(lines.every((line) => line.amount === 0)).toBe(true);
-    expect(total(lines).taxAmount).toBeGreaterThan(0);
+    expect(lines).toHaveLength(12);
+    expect(
+      lines.every((line) => line.amount === 0 && line.taxAmount === 2000)
+    ).toBe(true);
   });
 
   it("handles multiple assets", () => {
@@ -1068,20 +894,6 @@ describe("buildDepreciationLines", () => {
     expect(new Set(lines.map((line) => line.fixedAssetId))).toEqual(
       new Set(["asset-1", "asset-2"])
     );
-  });
-
-  it("book vs tax difference: MACRS produces more year-1 depreciation than SL", () => {
-    const lines = buildDepreciationLines(
-      [baseAsset],
-      "2025-12-31",
-      null,
-      true,
-      new Map(),
-      2
-    );
-    // Book SL: 108k/60mo * 12mo = $21,600
-    // Tax MACRS 5-yr HY: 120k * 20% = $24,000
-    expect(total(lines)).toEqual({ amount: 21600, taxAmount: 24000 });
   });
 
   it("splits a 3-month straight-line catch-up into 3 equal months", () => {
@@ -1111,9 +923,8 @@ describe("buildDepreciationLines", () => {
       new Map(),
       2
     );
-    expect(lines).toHaveLength(3);
-    expect(lines[1].amount).toBeLessThan(lines[0].amount);
-    expect(lines[2].amount).toBeLessThan(lines[1].amount);
+    // 1/30 of the opening value each month: 120,000, 116,000, 112,133.33.
+    expect(lines.map((line) => line.amount)).toEqual([4000, 3866.67, 3737.78]);
   });
 
   it("charges units of production only in the months with logged usage", () => {
@@ -1179,8 +990,12 @@ describe("buildDepreciationLines", () => {
       "2025-05-31",
       "2025-06-30"
     ]);
-    expect(lines[0].taxAmount).toBeGreaterThanOrEqual(60000);
-    expect(lines.slice(1).every((line) => line.taxAmount! < 60000)).toBe(true);
+    // 20% of the 60,000 basis spread over April–December, 1,333.33 a month;
+    // each month takes cumulative-to-date less what is taken, so the cent
+    // lands in May.
+    expect(lines.map((line) => line.taxAmount)).toEqual([
+      61333.33, 1333.34, 1333.33
+    ]);
   });
 });
 

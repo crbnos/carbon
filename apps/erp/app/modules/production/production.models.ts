@@ -200,6 +200,16 @@ export function isAssemblyPlanRunning(
   return job.status === "Queued" && age < ASSEMBLY_PLAN_QUEUED_STALE_MS;
 }
 
+/** Start a motion plan unless the model is still converting or a plan is live. */
+export function shouldStartAssemblyPlan(
+  processingStatus: string | null | undefined,
+  planJob: { status: string; createdAt: string } | null | undefined
+): boolean {
+  const isConverting =
+    processingStatus === "Queued" || processingStatus === "Processing";
+  return !isConverting && !isAssemblyPlanRunning(planJob);
+}
+
 export const jobOperationStatus = [
   "Todo",
   "Ready",

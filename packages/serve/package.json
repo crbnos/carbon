@@ -24,7 +24,7 @@
     "clean": "rimraf .turbo node_modules dist",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "type": "module"

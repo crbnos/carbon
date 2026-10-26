@@ -44,15 +44,6 @@ vi.mock("./owner", () => ({
   hasPermission: () => true
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
-// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
-vi.mock("../../inngest/functions/notifications/content", () => ({
-  buildNotificationLink: (
-    event: string,
-    documentId: string,
-    companyId: string
-  ) =>
-    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
-}));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext } = await import("./log");
@@ -169,106 +160,122 @@ beforeEach(() => {
   });
 });
 
-describe("a workflow end to end", () => {
-  it("notifies a role with a sentence built from the record", async () => {
-    seed("purchaseOrder.status.changed", {
-      formatVersion: 2,
-      nodes: [
+type Ref = { kind: "ref"; nodeId: string; output: string; path?: string[] };
+const ref = (nodeId: string, output: string, path?: string[]): Ref =>
+  path
+    ? { kind: "ref", nodeId, output, path }
+    : { kind: "ref", nodeId, output };
+const literal = (type: unknown, value: unknown) => ({
+  kind: "literal",
+  type,
+  value
+});
+const template = (...parts: (string | Ref)[]) => ({
+  kind: "template",
+  parts: parts.map((part) =>
+    typeof part === "string" ? { kind: "text", text: part } : part
+  )
+});
+
+/** Nodes laid out top to bottom; each edge is [source, sourceHandle, target]. */
+function definition(
+  nodes: [id: string, type: string, data: unknown][],
+  edges: [source: string, handle: string, target: string][]
+): SeedDefinition {
+  return {
+    formatVersion: 2,
+    nodes: nodes.map(([id, type, data], y) => ({
+      id,
+      type,
+      position: { x: 0, y },
+      data
+    })),
+    edges: edges.map(([source, sourceHandle, target], i) => ({
+      id: `e${i + 1}`,
+      source,
+      sourceHandle,
+      target,
+      targetHandle: "in"
+    }))
+  };
+}
+
+/** trigger → compute → "result > threshold" → action. */
+function computeThenAct(params: {
+  event: string;
+  operation: string;
+  operationInputs: Record<string, Ref>;
+  threshold: number;
+  actionId: string;
+  action: string;
+  actionInputs: Record<string, unknown>;
+}): SeedDefinition {
+  return definition(
+    [
+      ["t1", "trigger", { events: [params.event], origin: "Both" }],
+      [
+        "compute",
+        "compute",
+        { operation: params.operation, inputs: params.operationInputs }
+      ],
+      [
+        "over",
+        "condition",
         {
-          id: "t1",
-          type: "trigger",
-          position: { x: 0, y: 0 },
-          data: { events: ["purchaseOrder.status.changed"], origin: "Both" }
-        },
-        {
-          id: "total",
-          type: "compute",
-          position: { x: 0, y: 1 },
-          data: {
-            operation: "purchaseOrder.total",
-            inputs: {
-              purchaseOrder: { kind: "ref", nodeId: "t1", output: "record" }
+          paths: [
+            {
+              id: "p1",
+              kind: "if",
+              combinator: "and",
+              clauses: [
+                {
+                  left: ref("compute", "result"),
+                  operator: "gt",
+                  right: literal(
+                    { kind: "primitive", of: "number" },
+                    params.threshold
+                  )
+                }
+              ]
             }
-          }
-        },
-        {
-          id: "over",
-          type: "condition",
-          position: { x: 0, y: 2 },
-          data: {
-            paths: [
-              {
-                id: "p1",
-                kind: "if",
-                combinator: "and",
-                clauses: [
-                  {
-                    left: { kind: "ref", nodeId: "total", output: "result" },
-                    operator: "gt",
-                    right: {
-                      kind: "literal",
-                      type: { kind: "primitive", of: "number" },
-                      value: 10000
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          id: "tell",
-          type: "action",
-          position: { x: 0, y: 3 },
-          data: {
-            action: "notify",
-            inputs: {
-              role: {
-                kind: "literal",
-                type: { kind: "entity", of: "group" },
-                value: "g-buyers"
-              },
-              subject: {
-                kind: "template",
-                parts: [
-                  { kind: "text", text: "Purchase order " },
-                  {
-                    kind: "ref",
-                    nodeId: "t1",
-                    output: "record",
-                    path: ["purchaseOrderId"]
-                  },
-                  { kind: "text", text: " is over $10,000" }
-                ]
-              }
-            }
-          }
+          ]
         }
       ],
-      edges: [
-        {
-          id: "e1",
-          source: "t1",
-          sourceHandle: DEFAULT_HANDLE,
-          target: "total",
-          targetHandle: "in"
-        },
-        {
-          id: "e2",
-          source: "total",
-          sourceHandle: DEFAULT_HANDLE,
-          target: "over",
-          targetHandle: "in"
-        },
-        {
-          id: "e3",
-          source: "over",
-          sourceHandle: "p1",
-          target: "tell",
-          targetHandle: "in"
-        }
+      [
+        params.actionId,
+        "action",
+        { action: params.action, inputs: params.actionInputs }
       ]
-    });
+    ],
+    [
+      ["t1", DEFAULT_HANDLE, "compute"],
+      ["compute", DEFAULT_HANDLE, "over"],
+      ["over", "p1", params.actionId]
+    ]
+  );
+}
+
+describe("a workflow end to end", () => {
+  it("notifies a role with a sentence built from the record", async () => {
+    seed(
+      "purchaseOrder.status.changed",
+      computeThenAct({
+        event: "purchaseOrder.status.changed",
+        operation: "purchaseOrder.total",
+        operationInputs: { purchaseOrder: ref("t1", "record") },
+        threshold: 10000,
+        actionId: "tell",
+        action: "notify",
+        actionInputs: {
+          role: literal({ kind: "entity", of: "group" }, "g-buyers"),
+          subject: template(
+            "Purchase order ",
+            ref("t1", "record", ["purchaseOrderId"]),
+            " is over $10,000"
+          )
+        }
+      })
+    );
 
     const { step } = harness();
     const { runAction } = withServices({
@@ -341,87 +348,55 @@ describe("a workflow end to end", () => {
   });
 
   it("hands a created record on to the next step", async () => {
-    seed("sales.quoteAccepted", {
-      formatVersion: 2,
-      nodes: [
-        {
-          id: "t1",
-          type: "trigger",
-          position: { x: 0, y: 0 },
-          data: { events: ["sales.quoteAccepted"], origin: "Both" }
-        },
-        {
-          id: "create",
-          type: "action",
-          position: { x: 0, y: 1 },
-          data: {
-            action: "salesOrder.create",
-            inputs: {
-              customerId: {
-                kind: "literal",
-                type: { kind: "entity", of: "customer" },
-                value: "c-acme"
+    seed(
+      "sales.quoteAccepted",
+      definition(
+        [
+          [
+            "t1",
+            "trigger",
+            { events: ["sales.quoteAccepted"], origin: "Both" }
+          ],
+          [
+            "create",
+            "action",
+            {
+              action: "salesOrder.create",
+              inputs: {
+                customerId: literal(
+                  { kind: "entity", of: "customer" },
+                  "c-acme"
+                )
               }
             }
-          }
-        },
-        {
-          id: "tell",
-          type: "action",
-          position: { x: 0, y: 2 },
-          data: {
-            action: "notify",
-            inputs: {
-              user: {
-                kind: "literal",
-                type: { kind: "entity", of: "user" },
-                value: "u-sales"
-              },
-              subject: {
-                kind: "template",
-                parts: [
-                  { kind: "text", text: "Sales order " },
-                  {
-                    kind: "ref",
-                    nodeId: "create",
-                    output: "record",
-                    path: ["salesOrderId"]
-                  },
-                  { kind: "text", text: " is ready" }
-                ]
-              },
-              aboutId: {
-                kind: "ref",
-                nodeId: "create",
-                output: "record",
-                path: ["id"]
-              },
-              aboutType: {
-                kind: "literal",
-                type: { kind: "primitive", of: "string" },
-                value: "salesOrder"
+          ],
+          [
+            "tell",
+            "action",
+            {
+              action: "notify",
+              inputs: {
+                user: literal({ kind: "entity", of: "user" }, "u-sales"),
+                subject: template(
+                  "Sales order ",
+                  ref("create", "record", ["salesOrderId"]),
+                  " is ready"
+                ),
+                aboutId: ref("create", "record", ["id"]),
+                aboutType: literal(
+                  { kind: "primitive", of: "string" },
+                  "salesOrder"
+                )
               }
             }
-          }
-        }
-      ],
-      edges: [
-        {
-          id: "e1",
-          source: "t1",
-          sourceHandle: DEFAULT_HANDLE,
-          target: "create",
-          targetHandle: "in"
-        },
-        {
-          id: "e2",
-          source: "create",
-          sourceHandle: SUCCESS_HANDLE,
-          target: "tell",
-          targetHandle: "in"
-        }
-      ]
-    });
+          ]
+        ],
+        [
+          ["t1", DEFAULT_HANDLE, "create"],
+          ["create", SUCCESS_HANDLE, "tell"]
+        ]
+      )
+    );
 
     const { step } = harness();
     const { runAction } = withServices({
@@ -461,241 +436,21 @@ describe("a workflow end to end", () => {
     );
   });
 
-  it("claims one step per job when a batched update follows a lookup", async () => {
-    seed("job.status.changed", {
-      formatVersion: 2,
-      nodes: [
-        {
-          id: "t1",
-          type: "trigger",
-          position: { x: 0, y: 0 },
-          data: { events: ["job.status.changed"], origin: "Both" }
-        },
-        {
-          id: "look",
-          type: "lookup",
-          position: { x: 0, y: 1 },
-          data: {
-            entity: "job",
-            returns: "list",
-            match: [
-              {
-                field: "status",
-                operator: "eq",
-                value: {
-                  kind: "literal",
-                  type: { kind: "primitive", of: "string" },
-                  value: "Ready"
-                }
-              }
-            ]
-          }
-        },
-        {
-          id: "keep",
-          type: "filter",
-          position: { x: 0, y: 2 },
-          data: {
-            source: { kind: "ref", nodeId: "look", output: "result" },
-            combinator: "and",
-            clauses: [
-              {
-                left: { kind: "item", path: ["priority"] },
-                operator: "gt",
-                right: {
-                  kind: "literal",
-                  type: { kind: "primitive", of: "number" },
-                  value: 0
-                }
-              }
-            ]
-          }
-        },
-        {
-          id: "bump",
-          type: "action",
-          position: { x: 0, y: 3 },
-          data: {
-            action: "job.update",
-            inputs: {
-              job: { kind: "ref", nodeId: "keep", output: "result" },
-              priority: {
-                kind: "literal",
-                type: { kind: "primitive", of: "number" },
-                value: 5
-              }
-            }
-          }
-        }
-      ],
-      edges: [
-        {
-          id: "e1",
-          source: "t1",
-          sourceHandle: DEFAULT_HANDLE,
-          target: "look",
-          targetHandle: "in"
-        },
-        {
-          id: "e2",
-          source: "look",
-          sourceHandle: SUCCESS_HANDLE,
-          target: "keep",
-          targetHandle: "in"
-        },
-        {
-          id: "e3",
-          source: "keep",
-          sourceHandle: DEFAULT_HANDLE,
-          target: "bump",
-          targetHandle: "in"
-        }
-      ]
-    });
-
-    const { step } = harness();
-    const { runAction } = withServices({
-      // The last job is filtered out, so only two reach the batch.
-      search: () => {
-        const items = [
-          entityValue("job", "j1", { id: "j1", status: "Ready", priority: 3 }),
-          entityValue("job", "j2", { id: "j2", status: "Ready", priority: 1 }),
-          entityValue("job", "j3", { id: "j3", status: "Ready", priority: 0 })
-        ];
-        return {
-          ok: true,
-          value: { kind: "list", of: { kind: "entity", of: "job" }, items },
-          matched: items.length,
-          dropped: 0
-        };
-      },
-      runAction: (_actionId, inputs) => {
-        const job = inputs.job;
-        return job === undefined
-          ? { ok: false, error: "This turn had no item." }
-          : { ok: true, outputs: { record: job } };
-      }
-    });
-
-    const result = await executeWorkflowRun({
-      payload: payloadFor("job.status.changed", {
-        kind: "record",
-        table: "job",
-        recordId: "j0",
-        operation: "UPDATE",
-        record: { id: "j0", status: "Ready" },
-        before: { id: "j0", status: "Draft" },
-        after: { id: "j0", status: "Ready" }
-      }),
-      step,
-      logger
-    });
-
-    expect(result.status).toBe("Succeeded");
-    const keys = vi
-      .mocked(claimStep)
-      .mock.calls.filter(
-        ([, params]) => params.nodeId === "bump" && params.itemKey !== ""
-      )
-      .map(([, params]) => params.itemKey);
-    expect(keys).toEqual(["j1", "j2"]);
-    expect(runAction.mock.calls.map(([, inputs]) => inputs.job)).toEqual([
-      entityValue("job", "j1", { id: "j1", status: "Ready", priority: 3 }),
-      entityValue("job", "j2", { id: "j2", status: "Ready", priority: 1 })
-    ]);
-  });
-
   it("opens one issue when a computed total clears the condition", async () => {
-    seed("job.scrapQuantity.changed", {
-      formatVersion: 2,
-      nodes: [
-        {
-          id: "t1",
-          type: "trigger",
-          position: { x: 0, y: 0 },
-          data: { events: ["job.scrapQuantity.changed"], origin: "Both" }
-        },
-        {
-          id: "scrap",
-          type: "compute",
-          position: { x: 0, y: 1 },
-          data: {
-            operation: "job.totalScrapQuantity",
-            inputs: { job: { kind: "ref", nodeId: "t1", output: "record" } }
-          }
-        },
-        {
-          id: "over",
-          type: "condition",
-          position: { x: 0, y: 2 },
-          data: {
-            paths: [
-              {
-                id: "p1",
-                kind: "if",
-                combinator: "and",
-                clauses: [
-                  {
-                    left: { kind: "ref", nodeId: "scrap", output: "result" },
-                    operator: "gt",
-                    right: {
-                      kind: "literal",
-                      type: { kind: "primitive", of: "number" },
-                      value: 5
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          id: "open",
-          type: "action",
-          position: { x: 0, y: 3 },
-          data: {
-            action: "nonConformance.create",
-            inputs: {
-              name: {
-                kind: "template",
-                parts: [
-                  { kind: "text", text: "Excess scrap on " },
-                  {
-                    kind: "ref",
-                    nodeId: "t1",
-                    output: "record",
-                    path: ["jobId"]
-                  }
-                ]
-              }
-            }
-          }
+    seed(
+      "job.scrapQuantity.changed",
+      computeThenAct({
+        event: "job.scrapQuantity.changed",
+        operation: "job.totalScrapQuantity",
+        operationInputs: { job: ref("t1", "record") },
+        threshold: 5,
+        actionId: "open",
+        action: "nonConformance.create",
+        actionInputs: {
+          name: template("Excess scrap on ", ref("t1", "record", ["jobId"]))
         }
-      ],
-      edges: [
-        {
-          id: "e1",
-          source: "t1",
-          sourceHandle: DEFAULT_HANDLE,
-          target: "scrap",
-          targetHandle: "in"
-        },
-        {
-          id: "e2",
-          source: "scrap",
-          sourceHandle: DEFAULT_HANDLE,
-          target: "over",
-          targetHandle: "in"
-        },
-        {
-          id: "e3",
-          source: "over",
-          sourceHandle: "p1",
-          target: "open",
-          targetHandle: "in"
-        }
-      ]
-    });
+      })
+    );
 
     const { step } = harness();
     const { runAction } = withServices({

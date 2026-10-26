@@ -496,8 +496,6 @@ msgstr "{count, plural, one {# asset} other {# assets}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
-msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 
@@ -524,6 +522,9 @@ msgstr "{count} units"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} created, {updated} updated."
+
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -3982,11 +3983,12 @@ msgstr "Backups"
 msgid "Balance"
 msgstr "Balance"
 
-msgid "Balance Remaining:"
-msgstr "Balance Remaining:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Balance for {0}"
+
+msgid "Balance Remaining:"
+msgstr "Balance Remaining:"
 
 msgid "Balance Sheet"
 msgstr "Balance Sheet"
@@ -16508,13 +16510,14 @@ msgstr "Paid"
 msgid "Paid Date"
 msgstr "Paid Date"
 
-msgid "Paid:"
-msgstr "Paid:"
 msgid "Paid outside Carbon"
 msgstr "Paid outside Carbon"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Paid up front; record it as a payment once received"
+
+msgid "Paid:"
+msgstr "Paid:"
 
 msgid "Parameters"
 msgstr "Parameters"
@@ -18247,6 +18250,9 @@ msgstr "Rate Frequency"
 
 msgid "Rate Limit"
 msgstr "Rate Limit"
+
+msgid "Rate updated {relative}"
+msgstr "Rate updated {relative}"
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."

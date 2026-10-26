@@ -8,7 +8,10 @@ import {
   addMonths,
   bicMatchesCountry,
   getBankFieldConfig,
+  getCompletionAfterQuantityChange,
   isValidSwiftBic,
+  RoundingMode,
+  round,
   type TaxPair,
   taxableBase,
   taxPairFromAmount,
@@ -24,6 +27,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
+import { invoiceSettlementDisplayAmounts } from "../invoicing/invoicing.models";
 import {
   incoterms,
   itemType,
@@ -810,6 +814,85 @@ export function taxPairForQuantity(
   );
 }
 
+/** A purchase order line as a planning Increase / Decrease reads it. */
+export type PlanningQuantityLine = {
+  supplierUnitPrice: number | null;
+  supplierShippingCost: number | null;
+  purchaseQuantity: number | null;
+  quantityReceived: number | null;
+  quantityInvoiced: number | null;
+  receivedComplete: boolean | null;
+  taxPercent: number | null;
+  supplierTaxAmount: number | null;
+  conversionFactor: number | null;
+  currencyCode: string | null;
+  baseCurrencyCode: string | null;
+};
+
+/** A PO with no currency is in the company's base currency, as the PO line
+ *  form reads it. */
+export function planningLineCurrencyCode(line: {
+  currencyCode: string | null;
+  baseCurrencyCode: string | null;
+}): string | null {
+  return line.currencyCode ?? line.baseCurrencyCode;
+}
+
+/**
+ * The write a planning Increase / Decrease makes on its PO line, or why it
+ * cannot. `suggestedQuantity` is in INVENTORY units and is what the line
+ * should still BRING (MRP reads a line's `quantityToReceive`): it is
+ * converted by the line's own `conversionFactor`, rounded up to a whole
+ * purchase unit, and what was already received is added back.
+ */
+export function planningQuantityChange(
+  line: PlanningQuantityLine | undefined,
+  decimalsByCode: Map<string, number>,
+  suggestedQuantity: number
+):
+  | {
+      ok: true;
+      quantity: number;
+      percent: number;
+      amount: number;
+      receivedComplete: boolean;
+      invoicedComplete: boolean;
+    }
+  | { ok: false; message: string } {
+  const currencyCode = line ? planningLineCurrencyCode(line) : null;
+  const decimals = currencyCode ? decimalsByCode.get(currencyCode) : undefined;
+  if (!line || decimals === undefined) {
+    return {
+      ok: false,
+      message: line
+        ? `Currency ${currencyCode ?? "(none)"} has no precision`
+        : "Purchase order line not found"
+    };
+  }
+  const conversionFactor = Number(line.conversionFactor) || 1;
+  // MRP suggests a whole number of purchase units already
+  // (`quantityAfterApply`, @carbon/planning); the inner round strips float
+  // noise (1.1 / 0.1 = 11.000000000000002) that would otherwise ceil it a
+  // whole purchase unit up.
+  const toReceive =
+    conversionFactor > 0
+      ? round(
+          round(Number(suggestedQuantity) / conversionFactor),
+          0,
+          RoundingMode.Up
+        )
+      : Number(suggestedQuantity);
+  const quantity = round((Number(line.quantityReceived) || 0) + toReceive);
+  const pair = taxPairForQuantity(line, quantity, decimals);
+  return {
+    ok: true,
+    quantity,
+    percent: pair.percent,
+    amount: pair.amount,
+    ...getCompletionAfterQuantityChange(line, quantity)
+  };
+}
+
 /**
  * The week a planned PO line is ordered in, as the date that week starts.
  * Planning raises one PO per supplier per week, so each PO can be finalized
@@ -1539,4 +1622,75 @@ export function splitRfqModelAttachments<T extends { size: number }>(
     }
   }
   return { attach, link };
+}
+
+export type PurchaseOrderInvoiceSummary = {
+  invoicedAmount: number;
+  paidAmount: number;
+  balanceRemaining: number;
+  currencyMismatchCount: number;
+};
+
+// Draft/Pending are unposted; Voided/Return are non-spend. Match the
+// invoice-view statuses that keep their stored (non-derived) values.
+const NON_POSTED_PURCHASE_INVOICE_STATUSES = new Set([
+  "Draft",
+  "Pending",
+  "Voided",
+  "Return"
+]);
+
+/** Invoiced, paid, and remaining-balance totals for a purchase order in the
+ *  company's base currency. `orderTotal`, `balance`, and applied payments are
+ *  already company-base amounts, and the PO summary formats them with the
+ *  base-currency formatter. Unposted or voided invoices count for nothing, and
+ *  an invoice in another currency is counted as a mismatch rather than mixed in. */
+export function summarizePurchaseOrderInvoices(
+  orderCurrency: string | null | undefined,
+  invoices: {
+    id: string | null;
+    orderTotal: number | null;
+    balance?: number | null;
+    status: string | null;
+    currencyCode: string | null;
+  }[],
+  paidByInvoiceId: Record<string, number> | null | undefined
+): PurchaseOrderInvoiceSummary {
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let balanceRemaining = 0;
+  let currencyMismatchCount = 0;
+
+  for (const invoice of invoices) {
+    if (NON_POSTED_PURCHASE_INVOICE_STATUSES.has(invoice.status ?? "")) {
+      continue;
+    }
+
+    if (
+      orderCurrency &&
+      invoice.currencyCode &&
+      invoice.currencyCode !== orderCurrency
+    ) {
+      currencyMismatchCount += 1;
+      continue;
+    }
+
+    const display = invoiceSettlementDisplayAmounts({
+      total: invoice.orderTotal ?? 0,
+      balance: invoice.balance,
+      paidAmount: invoice.id ? (paidByInvoiceId?.[invoice.id] ?? 0) : 0,
+      convertToDocument: false
+    });
+
+    invoicedAmount += display.invoicedAmount;
+    paidAmount += display.paidAmount;
+    balanceRemaining += display.balanceRemaining;
+  }
+
+  return {
+    invoicedAmount,
+    paidAmount,
+    balanceRemaining,
+    currencyMismatchCount
+  };
 }

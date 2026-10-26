@@ -12,7 +12,6 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { invoiceSettlementDisplayAmounts } from "~/modules/invoicing/invoicing.models";
 import {
   getCustomer,
   getOpportunity,
@@ -25,6 +24,10 @@ import {
   getSalesOrderLines,
   getSalesOrderRelatedItems
 } from "~/modules/sales/sales.service";
+import {
+  type SalesOrderInvoiceSummary,
+  summarizeSalesOrderInvoices
+} from "~/modules/sales/sales.utils";
 import {
   SalesOrderExplorer,
   SalesOrderHeader,
@@ -149,10 +152,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await getQuote(client, opportunity.data.quotes[0].id)
     : null;
 
-  let invoicedAmount = 0;
-  let paidAmount = 0;
-  let balanceRemaining = 0;
-  let currencyMismatchCount = 0;
+  let invoiceSummary: SalesOrderInvoiceSummary = {
+    invoicedAmount: 0,
+    paidAmount: 0,
+    balanceRemaining: 0,
+    currencyMismatchCount: 0
+  };
 
   if (invoices && payments) {
     if (invoices.error) {
@@ -175,52 +180,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    const paidBaseByInvoiceId = new Map<string, number>();
-    for (const payment of payments.data ?? []) {
-      if (!payment.targetSalesInvoiceId) continue;
-      paidBaseByInvoiceId.set(
-        payment.targetSalesInvoiceId,
-        (paidBaseByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
-          payment.appliedAmount
-      );
-    }
-
-    const orderCurrency = salesOrder.data?.currencyCode;
-    // Draft/Pending are unposted; Voided/Return are non-revenue. Match the
-    // invoice-view statuses that keep their stored (non-derived) values.
-    const nonPostedStatuses = new Set(["Draft", "Pending", "Voided", "Return"]);
-
-    for (const invoice of invoices.data ?? []) {
-      if (nonPostedStatuses.has(invoice.status ?? "")) {
-        continue;
-      }
-
-      const invoiceCurrency = invoice.currencyCode;
-
-      // Avoid mixing currencies in the same displayed number.
-      if (
-        orderCurrency &&
-        invoiceCurrency &&
-        invoiceCurrency !== orderCurrency
-      ) {
-        currencyMismatchCount += 1;
-        continue;
-      }
-
-      // invoiceTotal/balance come from base-currency unitPrice; the summary
-      // renders in the sales order currency via the invoice exchangeRate.
-      const display = invoiceSettlementDisplayAmounts({
-        total: invoice.invoiceTotal ?? 0,
-        balance: invoice.balance,
-        exchangeRate: invoice.exchangeRate,
-        paidAmount: invoice.id ? (paidBaseByInvoiceId.get(invoice.id) ?? 0) : 0,
-        convertToDocument: true
-      });
-
-      invoicedAmount += display.invoicedAmount;
-      paidAmount += display.paidAmount;
-      balanceRemaining += display.balanceRemaining;
-    }
+    invoiceSummary = summarizeSalesOrderInvoices(
+      salesOrder.data?.currencyCode,
+      invoices.data ?? [],
+      payments.data ?? []
+    );
   }
 
   const defaultCc = customer?.data?.defaultCc?.length
@@ -239,12 +203,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,
-    invoiceSummary: {
-      invoicedAmount,
-      paidAmount,
-      balanceRemaining,
-      currencyMismatchCount
-    },
+    invoiceSummary,
     originatedFromQuote: !!opportunity.data.quotes[0]?.id,
     defaultCc
   };

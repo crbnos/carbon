@@ -496,8 +496,6 @@ msgstr "{count, plural, one {# 자산} other {# 자산}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
-msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, other {{fenceLabel} 이후 # 개}}"
 
@@ -524,6 +522,9 @@ msgstr "{count}개"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} 생성됨, {updated} 업데이트됨."
+
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}일"
@@ -3982,11 +3983,12 @@ msgstr "백업"
 msgid "Balance"
 msgstr "잔액"
 
-msgid "Balance Remaining:"
-msgstr "잔액:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0}의 잔액"
+
+msgid "Balance Remaining:"
+msgstr "잔액:"
 
 msgid "Balance Sheet"
 msgstr "재무상태표"
@@ -16508,13 +16510,14 @@ msgstr "지급 완료"
 msgid "Paid Date"
 msgstr "지급일"
 
-msgid "Paid:"
-msgstr "지급액:"
 msgid "Paid outside Carbon"
 msgstr "Carbon 외부에서 지불됨"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "선금으로 지불되며, 받으면 지불로 기록하세요."
+
+msgid "Paid:"
+msgstr "지급액:"
 
 msgid "Parameters"
 msgstr "파라미터"
@@ -18247,6 +18250,9 @@ msgstr "요금 주기"
 
 msgid "Rate Limit"
 msgstr "요청 제한"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "연결 시 자본 계정 환산에 사용되는 환율(IAS 21)입니다. 비워 두면 현재 환율이 사용됩니다."

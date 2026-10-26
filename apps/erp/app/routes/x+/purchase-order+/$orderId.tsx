@@ -22,7 +22,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
+import {
+  type PurchaseOrderInvoiceSummary,
+  purchaseOrderApprovalValidator,
+  summarizePurchaseOrderInvoices
+} from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
@@ -46,7 +50,6 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "purchase-order");
 
-import { invoiceSettlementDisplayAmounts } from "~/modules/invoicing/invoicing.models";
 import { getInvoicePaidAmounts } from "~/modules/invoicing/invoicing.service";
 
 export const handle: Handle = {
@@ -289,10 +292,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   ) as string[];
 
-  let invoicedAmount = 0;
-  let paidAmount = 0;
-  let balanceRemaining = 0;
-  let currencyMismatchCount = 0;
+  let invoiceSummary: PurchaseOrderInvoiceSummary = {
+    invoicedAmount: 0,
+    paidAmount: 0,
+    balanceRemaining: 0,
+    currencyMismatchCount: 0
+  };
 
   if (invoiceIds.length > 0) {
     const [invoices, invoicePayments] = await Promise.all([
@@ -319,41 +324,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    const orderCurrency = purchaseOrder.data?.currencyCode;
-    // Draft/Pending are unposted; Voided/Return are non-spend. Match the
-    // invoice-view statuses that keep their stored (non-derived) values.
-    const nonPostedStatuses = new Set(["Draft", "Pending", "Voided", "Return"]);
-
-    for (const invoice of invoices.data ?? []) {
-      if (nonPostedStatuses.has(invoice.status ?? "")) {
-        continue;
-      }
-
-      const invoiceCurrency = invoice.currencyCode;
-
-      // Avoid mixing currencies in the same displayed number.
-      if (
-        orderCurrency &&
-        invoiceCurrency &&
-        invoiceCurrency !== orderCurrency
-      ) {
-        currencyMismatchCount += 1;
-        continue;
-      }
-
-      // orderTotal/balance are already company-base. The PO summary formats
-      // them with the base-currency formatter, so do not convert again.
-      const display = invoiceSettlementDisplayAmounts({
-        total: invoice.orderTotal ?? 0,
-        balance: invoice.balance,
-        paidAmount: invoice.id ? (invoicePayments.data?.[invoice.id] ?? 0) : 0,
-        convertToDocument: false
-      });
-
-      invoicedAmount += display.invoicedAmount;
-      paidAmount += display.paidAmount;
-      balanceRemaining += display.balanceRemaining;
-    }
+    invoiceSummary = summarizePurchaseOrderInvoices(
+      purchaseOrder.data?.currencyCode,
+      invoices.data ?? [],
+      invoicePayments.data
+    );
   }
 
   return {
@@ -370,12 +345,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canDelete,
     defaultCc,
     resolvedAttachments,
-    invoiceSummary: {
-      invoicedAmount,
-      paidAmount,
-      balanceRemaining,
-      currencyMismatchCount
-    }
+    invoiceSummary
   };
 }
 

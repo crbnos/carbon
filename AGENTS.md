@@ -175,7 +175,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.claude/skills/self-review/SKILL.md` |
 | Resolving a merge or rebase conflict (always) | `.claude/skills/resolving-merge-conflicts/SKILL.md` |
-| Test-first work: good tests, seams, anti-patterns | `.claude/skills/tdd/SKILL.md` + `.claude/skills/test-driven-development/SKILL.md` |
+| Writing, reviewing or deleting a test (house style, where a check lives) | `.claude/rules/testing.md` |
+| Test-first work: the red→green loop, proof vs committed test | `.claude/skills/test-driven-development/SKILL.md` + `.claude/skills/tdd/SKILL.md` |
 
 ## Core Principles
 

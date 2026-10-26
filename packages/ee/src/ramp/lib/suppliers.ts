@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { escapeLike } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createMappingService } from "../../accounting/core/external-mapping";
 import { RAMP } from "./connection";
@@ -44,7 +45,7 @@ export async function resolveRampSupplier(
   // `%`/`_` must be escaped before `ilike` — otherwise a merchant like
   // "50% Off Supply" becomes a wildcard pattern and matches an unrelated
   // supplier, linking the two permanently.
-  const escapedName = vendor.name.replace(/[\\%_]/g, (m) => `\\${m}`);
+  const escapedName = escapeLike(vendor.name);
   const { data: matches } = await serviceRole
     .from("supplier")
     .select("id")
@@ -156,7 +157,7 @@ export async function resolveMerchantSupplier(
   // 2. Exact-name match to an EXISTING supplier. If the merchant is a real
   // vendor you already trade with, link card spend to it. `%`/`_` escaped so a
   // merchant like "50% Off Supply" cannot become a wildcard pattern.
-  const escapedName = merchant.name.replace(/[\\%_]/g, (m) => `\\${m}`);
+  const escapedName = escapeLike(merchant.name);
   const { data: matches } = await serviceRole
     .from("supplier")
     .select("id")

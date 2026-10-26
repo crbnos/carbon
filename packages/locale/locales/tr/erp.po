@@ -496,8 +496,6 @@ msgstr "{count, plural, one {# kıymet} other {# kıymetler}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
-msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
-msgstr ""
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# daha {fenceLabel} sonra} other {# daha {fenceLabel} sonra}}"
 
@@ -524,6 +522,9 @@ msgstr "{count} adet"
 
 msgid "{created} created, {updated} updated."
 msgstr "{created} oluşturuldu, {updated} güncellendi."
+
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}g"
@@ -3982,11 +3983,12 @@ msgstr "Yedeklemeler"
 msgid "Balance"
 msgstr "Bakiye"
 
-msgid "Balance Remaining:"
-msgstr "Kalan bakiye:"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0} için Bakiye"
+
+msgid "Balance Remaining:"
+msgstr "Kalan bakiye:"
 
 msgid "Balance Sheet"
 msgstr "Bilanço"
@@ -16508,13 +16510,14 @@ msgstr "Ödendi"
 msgid "Paid Date"
 msgstr "Ödeme Tarihi"
 
-msgid "Paid:"
-msgstr "Ödenen:"
 msgid "Paid outside Carbon"
 msgstr "Carbon dışında ödendi"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Peşin ödenen; alındığında bir ödeme olarak kaydedin"
+
+msgid "Paid:"
+msgstr "Ödenen:"
 
 msgid "Parameters"
 msgstr "Parametreler"
@@ -18247,6 +18250,9 @@ msgstr "Oran Sıklığı"
 
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur (IAS 21). Güncel döviz kurunu kullanmak için boş bırakın."

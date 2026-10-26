@@ -898,9 +898,9 @@ export async function getActiveProductionEvents(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  // TS2589 — supabase select-string instantiation depth sits on tsgo's limit;
-  // the cliff shifts as unrelated modules join the program. ts-ignore, not
-  // ts-expect-error, so it satisfies both tsc and tsgo.
+  // TS2589 — supabase select-string instantiation depth sits on TypeScript's
+  // limit; the cliff shifts as unrelated modules join the program. ts-ignore,
+  // not ts-expect-error, since the error comes and goes.
   // @ts-ignore TS2589
   return client
     .from("productionEvent")
@@ -11193,6 +11193,66 @@ export type ProductionPlanningDateApplyResult = {
 };
 
 /**
+ * The due date, deadline type and priority each moved job is written with.
+ * A job is ranked among the jobs already on its new date at its location
+ * (`siblings`, in priority order); several jobs moved to one date are placed
+ * one after the other, each seeing the ones placed before it. An action whose
+ * job was not found is left out: it is refused, since no row changes.
+ */
+export function planJobDateMoves(
+  moves: { jobId: string; suggestedDate: string }[],
+  jobs: { id: string; locationId: string | null; deadlineType: DeadlineType }[],
+  siblings: {
+    locationId: string | null;
+    dueDate: string | null;
+    priority: number | null;
+    deadlineType: DeadlineType;
+  }[]
+): {
+  jobId: string;
+  dueDate: string;
+  deadlineType: DeadlineType;
+  priority: number;
+}[] {
+  const jobById = new Map(jobs.map((job) => [job.id, job]));
+  const siblingsByKey = new Map<
+    string,
+    { priority: number | null; deadlineType: DeadlineType }[]
+  >();
+  for (const row of siblings) {
+    const key = `${row.locationId}\u001f${row.dueDate}`;
+    const list = siblingsByKey.get(key) ?? [];
+    list.push({ priority: row.priority, deadlineType: row.deadlineType });
+    siblingsByKey.set(key, list);
+  }
+
+  const values: {
+    jobId: string;
+    dueDate: string;
+    deadlineType: DeadlineType;
+    priority: number;
+  }[] = [];
+  for (const move of moves) {
+    const job = jobById.get(move.jobId);
+    if (!job) continue;
+    const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
+    const key = `${job.locationId}\u001f${move.suggestedDate}`;
+    const placed = siblingsByKey.get(key) ?? [];
+    const priority = nextJobPriority(placed, deadlineType);
+    placed.push({ priority, deadlineType });
+    placed.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    siblingsByKey.set(key, placed);
+    values.push({
+      jobId: move.jobId,
+      dueDate: move.suggestedDate,
+      deadlineType,
+      priority
+    });
+  }
+  return values;
+}
+
+/**
  * Apply a batch of Expedite / Defer actions to their jobs in ONE transaction,
  * set-based: the claim, two reads (the jobs, and the jobs that share their
  * new due dates) and one UPDATE for every date and priority. It used to be a
@@ -11254,7 +11314,6 @@ export async function applyProductionPlanningDateActions(
       .where("id", "in", jobIds)
       .where("companyId", "=", companyId)
       .execute();
-    const jobById = new Map(jobs.map((job) => [job.id, job]));
 
     // The jobs already on each target date, per location — the siblings a
     // moved job is ranked among. One read for every date in the batch.
@@ -11267,40 +11326,7 @@ export async function applyProductionPlanningDateActions(
       .where("id", "not in", jobIds)
       .orderBy("priority", "asc")
       .execute();
-    const siblingsByKey = new Map<
-      string,
-      { priority: number | null; deadlineType: DeadlineType }[]
-    >();
-    for (const row of siblingRows) {
-      const key = `${row.locationId}\u001f${row.dueDate}`;
-      const list = siblingsByKey.get(key) ?? [];
-      list.push({ priority: row.priority, deadlineType: row.deadlineType });
-      siblingsByKey.set(key, list);
-    }
-
-    const values: {
-      jobId: string;
-      dueDate: string;
-      deadlineType: DeadlineType;
-      priority: number;
-    }[] = [];
-    for (const action of held) {
-      const job = jobById.get(action.jobId);
-      if (!job) continue; // refused below: no row changed
-      const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
-      const key = `${job.locationId}\u001f${action.suggestedDate}`;
-      const siblings = siblingsByKey.get(key) ?? [];
-      const priority = nextJobPriority(siblings, deadlineType);
-      siblings.push({ priority, deadlineType });
-      siblings.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
-      siblingsByKey.set(key, siblings);
-      values.push({
-        jobId: action.jobId,
-        dueDate: action.suggestedDate,
-        deadlineType,
-        priority
-      });
-    }
+    const values = planJobDateMoves(held, jobs, siblingRows);
 
     const changedJobs = new Set<string>();
     if (values.length > 0) {

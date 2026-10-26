@@ -3,25 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it, vi } from "vitest";
-
-// @carbon/auth's barrel export pulls in @carbon/content/glossary, whose Lingui `msg`
-// macro isn't transformed under plain vitest (no lingui plugin configured for
-// apps/erp tests). Mock it the same way traceability.search.test.ts does -
-// getSearchTokens/setSearchFilter don't call badRequest or
-// parseNumberFromUrlParam, so the mock only needs to satisfy the import.
-vi.mock("@carbon/auth", () => ({
-  badRequest: vi.fn(),
-  parseNumberFromUrlParam: vi.fn()
-}));
-
-const {
+import {
   formatRangeFilter,
   getGenericFilter,
   getGenericQueryFilters,
   getSearchTokens,
   parseRangeFilter,
   setSearchFilter
-} = await import("./query");
+} from "./query";
 
 describe("getSearchTokens", () => {
   it("splits a multi-word search into tokens", () => {
@@ -40,7 +29,7 @@ describe("getSearchTokens", () => {
     ]);
   });
 
-  it("returns an empty array for a single word", () => {
+  it("returns a single word as one token", () => {
     expect(getSearchTokens("M8")).toEqual(["M8"]);
   });
 

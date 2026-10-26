@@ -2,17 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
-// Import-safety only: the module reads env and builds clients at import time.
-vi.mock("@carbon/auth", () => ({
-  CarbonEdition: "cloud",
-  DOMAIN: "localhost"
-}));
+// Import-safety only: the module builds a Supabase client and a Redis
+// connection at import.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+});
 vi.mock("@carbon/kv", () => ({ redis: {} }));
-vi.mock("../lib/supabase/client.server", () => ({
-  getCarbonServiceRole: vi.fn()
-}));
+
+afterAll(() => vi.unstubAllEnvs());
 
 import { planIdFromCache } from "./company.server";
 
