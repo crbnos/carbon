@@ -764,6 +764,25 @@ export function isPurchaseOrderBulkDeletable(
 }
 
 /**
+ * Purchase Order statuses reached once every line is received. Until then the
+ * promised receipt date stays editable, even on a locked order, so it can
+ * follow what the supplier says.
+ */
+export const PURCHASE_ORDER_RECEIVED_STATUSES = [
+  "To Invoice",
+  "Completed",
+  "Closed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+export function isPurchaseOrderPromisedDateEditable(
+  status: (typeof purchaseOrderStatusType)[number] | string | null | undefined
+): boolean {
+  return !PURCHASE_ORDER_RECEIVED_STATUSES.some(
+    (received) => received === status
+  );
+}
+
+/**
  * The PO statuses planning may change: Apply on a planning action, the order
  * drawer's inline edits, and Cancel's line delete. An allowlist on purpose —
  * a PO in approval (Needs Approval, To Review, Rejected) or sent to the supplier

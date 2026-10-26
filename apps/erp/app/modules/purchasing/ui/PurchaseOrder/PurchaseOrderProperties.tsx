@@ -58,7 +58,10 @@ import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/purchase-order+/$orderId.exchange-rate";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import {
+  isPurchaseOrderLocked,
+  isPurchaseOrderPromisedDateEditable
+} from "../../purchasing.models";
 import type { PurchaseOrder, SupplierQuote } from "../../types";
 
 const PurchaseOrderProperties = () => {
@@ -137,6 +140,10 @@ const PurchaseOrderProperties = () => {
   const canUpdate = permissions.can("update", "purchasing");
   const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
   const isDisabled = !canUpdate || isLocked;
+  // The promise moves with the supplier until everything is received.
+  const isPromisedDateDisabled =
+    !canUpdate ||
+    !isPurchaseOrderPromisedDateEditable(routeData?.purchaseOrder?.status);
 
   return (
     <VStack
@@ -384,7 +391,7 @@ const PurchaseOrderProperties = () => {
           name="receiptPromisedDate"
           label={t`Receipt Promised Date`}
           inline
-          isDisabled={isDisabled}
+          isDisabled={isPromisedDateDisabled}
           onChange={(date) => {
             onUpdate("receiptPromisedDate", date);
           }}

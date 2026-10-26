@@ -8,6 +8,7 @@ import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderBulkDeletable,
   isPurchaseOrderLocked,
+  isPurchaseOrderPromisedDateEditable,
   leaseDetailsValidator,
   leaseDurationOf,
   leaseEndDate,
@@ -548,5 +549,26 @@ describe("splitRfqModelAttachments", () => {
     const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
     expect(attach).toEqual([]);
     expect(link.map((m) => m.id)).toEqual(["a"]);
+  });
+});
+
+describe("isPurchaseOrderPromisedDateEditable", () => {
+  it("stays editable on a confirmed order until every line is received", () => {
+    const editable = purchaseOrderStatusType.filter(
+      isPurchaseOrderPromisedDateEditable
+    );
+    expect(editable).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "Rejected"
+    ]);
+  });
+
+  it("is editable on an order with no status yet", () => {
+    expect(isPurchaseOrderPromisedDateEditable(null)).toBe(true);
   });
 });

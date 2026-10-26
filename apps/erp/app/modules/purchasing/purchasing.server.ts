@@ -79,6 +79,7 @@ import {
   findPlanningPurchaseOrder,
   isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
+  isPurchaseOrderPromisedDateEditable,
   isPurchaseReturnOrderLocked,
   isRfqLocked,
   isSupplierQuoteLocked,
@@ -1841,9 +1842,12 @@ const purchaseOrderDeliveryFields = [
  * (an empty `supplierId` changes nothing). A new `supplierId` on one order
  * takes the supplier's currency and today's rate; a new `currencyCode` takes
  * today's rate (refused when there is none). `receiptRequestedDate`,
- * `locationId` and `deliveryDate` are the delivery's. `receiptPromisedDate`
- * also fills every line that has no promised date of its own. Refused when
- * any order is released, except for `deliveryDate`.
+ * `locationId` and `deliveryDate` are the delivery's. A new
+ * `receiptPromisedDate` also goes to every line not yet received complete
+ * whose promised date is empty or still the order's previous one; a line with
+ * its own date keeps it. Refused when any order is released, except for
+ * `deliveryDate`, and for `receiptPromisedDate` until the order is fully
+ * received (To Invoice, Completed or Closed).
  *
  * @mcp
  */
@@ -1869,7 +1873,16 @@ export const updatePurchaseOrders = defineServiceFn({
       updatedAt: datetime.timestamp()
     });
 
-    if (field !== "deliveryDate") {
+    if (field === "receiptPromisedDate") {
+      const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
+      if (statuses instanceof CarbonError) return statuses;
+      if (!statuses.every(isPurchaseOrderPromisedDateEditable)) {
+        return ctx.error(
+          "rule",
+          "Cannot change the promised date of a fully received purchase order."
+        );
+      }
+    } else if (field !== "deliveryDate") {
       const statuses = await service.statusesOf(ctx, "purchaseOrder", ids);
       if (statuses instanceof CarbonError) return statuses;
       if (statuses.some(isPurchaseOrderLocked)) {
@@ -1881,19 +1894,54 @@ export const updatePurchaseOrders = defineServiceFn({
       ctx.error("internal", "Failed to update the purchase order", error);
 
     if (field === "receiptPromisedDate") {
-      const lines = await client
-        .from("purchaseOrderLine")
-        .update({ promisedDate: value ?? undefined, ...stamp() })
-        .in("purchaseOrderId", ids)
-        .eq("companyId", companyId)
-        .is("promisedDate", null);
-      if (lines.error) return failed(lines.error);
+      // One transaction: the lines compare against the order's previous date,
+      // so they are written before the delivery row changes it.
+      const saved = await ctx
+        .transaction(async (tx) => {
+          const db = tx.asSystem.pg;
+          if (value) {
+            await db
+              .updateTable("purchaseOrderLine")
+              .set({ promisedDate: value, ...stamp() })
+              .where("purchaseOrderLine.companyId", "=", companyId)
+              .where("purchaseOrderLine.purchaseOrderId", "in", ids)
+              .where("purchaseOrderLine.receivedComplete", "=", false)
+              .where((eb) =>
+                eb.or([
+                  eb("purchaseOrderLine.promisedDate", "is", null),
+                  eb(
+                    "purchaseOrderLine.promisedDate",
+                    "=",
+                    eb
+                      .selectFrom("purchaseOrderDelivery")
+                      .select("purchaseOrderDelivery.receiptPromisedDate")
+                      .whereRef(
+                        "purchaseOrderDelivery.id",
+                        "=",
+                        "purchaseOrderLine.purchaseOrderId"
+                      )
+                      .whereRef(
+                        "purchaseOrderDelivery.companyId",
+                        "=",
+                        "purchaseOrderLine.companyId"
+                      )
+                  )
+                ])
+              )
+              .execute();
+          }
+          await db
+            .updateTable("purchaseOrderDelivery")
+            .set({ receiptPromisedDate: value, ...stamp() })
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .execute();
+        })
+        .catch(failed);
+      return saved instanceof CarbonError ? saved : { ids };
     }
 
-    if (
-      field === "receiptPromisedDate" ||
-      (purchaseOrderDeliveryFields as readonly string[]).includes(field)
-    ) {
+    if ((purchaseOrderDeliveryFields as readonly string[]).includes(field)) {
       const delivery = await client
         .from("purchaseOrderDelivery")
         .update(unchecked({ [field]: value, ...stamp() }))
