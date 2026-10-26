@@ -2535,6 +2535,9 @@ msgstr "{otherStationNames}에서도"
 msgid "Also notify"
 msgstr "또한 알림"
 
+msgid "Also open on {links}"
+msgstr "다른 미결 발주서: {links}"
+
 msgid "Always"
 msgstr "항상"
 
@@ -6023,6 +6026,9 @@ msgstr "절차서 고유 식별자 복사"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "매입 송장 고유 식별자 복사"
+
+msgid "Copy purchase order number"
+msgstr "발주서 번호 복사"
 
 msgid "Copy purchase order unique identifier"
 msgstr "발주서 고유 식별자 복사"
@@ -15095,6 +15101,9 @@ msgstr "미결 공정 없음"
 msgid "No open orders for this item are available to link."
 msgstr "이 품목에 연결할 수 있는 미결 발주서가 없습니다."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "검색과 일치하는 미결 발주서 라인이 없습니다. 모든 단어가 일치해야 하며 공백과 구두점은 무시됩니다."
+
 msgid "No open reimbursements"
 msgstr "미결 환급금 없음"
 
@@ -15209,6 +15218,9 @@ msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습�
 
 msgid "No production recorded yet."
 msgstr "아직 기록된 생산이 없습니다."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "수령 대기 중인 발주서가 없습니다."
 
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"

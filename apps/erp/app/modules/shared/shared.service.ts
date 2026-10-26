@@ -11648,6 +11648,8 @@ export async function createDocument(
             many(db, "purchaseOrderLine", {
               companyId,
               purchaseOrderId,
+              // The `purchaseOrderLinesToReceive` view (Inventory →
+              // Receiving) lists the same types: change both together.
               purchaseOrderLineType: [
                 "Part",
                 "Material",

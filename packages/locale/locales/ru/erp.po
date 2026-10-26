@@ -2535,6 +2535,9 @@ msgstr "также на {otherStationNames}"
 msgid "Also notify"
 msgstr "Также уведомить"
 
+msgid "Also open on {links}"
+msgstr "Также открыто на {links}"
+
 msgid "Always"
 msgstr "Всегда"
 
@@ -6023,6 +6026,9 @@ msgstr "Скопировать уникальный идентификатор �
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Скопировать уникальный идентификатор счета-фактуры полученного"
+
+msgid "Copy purchase order number"
+msgstr "Копировать номер заказа поставщику"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Скопировать уникальный идентификатор заказа поставщику"
@@ -15095,6 +15101,9 @@ msgstr "Нет открытых операций"
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "Нет открытых строк заказа поставщику, соответствующих вашему поиску. Каждое слово должно совпадать; пробелы и пунктуация игнорируются."
+
 msgid "No open reimbursements"
 msgstr "Нет открытых возмещений"
 
@@ -15209,6 +15218,9 @@ msgstr "Для этой операции еще не записано ни од�
 
 msgid "No production recorded yet."
 msgstr "Производство еще не записано."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "Нет заказов поставщику, ожидающих приемки."
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
