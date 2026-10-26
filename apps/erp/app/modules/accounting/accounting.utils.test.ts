@@ -18,6 +18,7 @@ import {
   depreciationRunLineDisplay,
   depreciationRunLinesMatch,
   diffJournalLines,
+  generalLedgerCounterparty,
   getLastDayOfMonth,
   getMacrsPercentage,
   getMonthsBetween,
@@ -1359,5 +1360,103 @@ describe("hasAccountingCutover", () => {
     );
     expect(hasAccountingCutover({ accountingCutoverDate: null })).toBe(false);
     expect(hasAccountingCutover(null)).toBe(false);
+  });
+});
+
+describe("generalLedgerCounterparty", () => {
+  const document = {
+    invoiceNumber: null,
+    supplierInvoiceNumber: null,
+    customerId: null,
+    supplierId: null,
+    merchantName: null
+  };
+  const documents = new Map([
+    ["si1", { ...document, invoiceNumber: "INV000012", customerId: "cust1" }],
+    [
+      "pi1",
+      {
+        ...document,
+        invoiceNumber: "PI000007",
+        supplierInvoiceNumber: "ACME-4471",
+        supplierId: "sup1"
+      }
+    ],
+    ["pay1", { ...document, customerId: "cust1" }],
+    ["ch1", { ...document, merchantName: "Hardware Store" }]
+  ]);
+  const partyNames = new Map([
+    ["cust1", "Orbital Corp"],
+    ["sup1", "Acme Metals"]
+  ]);
+  const line = (
+    documentType: string | null,
+    documentId: string | null,
+    documentLineReference: string | null = null
+  ) => ({ documentType, documentId, documentLineReference });
+
+  it("names a sales invoice's customer and number", () => {
+    expect(
+      generalLedgerCounterparty(line("Invoice", "si1"), documents, partyNames)
+    ).toEqual({
+      party: "Orbital Corp",
+      invoiceNumber: "INV000012",
+      supplierInvoiceNumber: null
+    });
+  });
+
+  it("names a purchase invoice's supplier and both numbers", () => {
+    expect(
+      generalLedgerCounterparty(line("Invoice", "pi1"), documents, partyNames)
+    ).toEqual({
+      party: "Acme Metals",
+      invoiceNumber: "PI000007",
+      supplierInvoiceNumber: "ACME-4471"
+    });
+  });
+
+  it("reads a payment line's invoice from its line reference", () => {
+    expect(
+      generalLedgerCounterparty(
+        line("Payment", "pay1", "si1"),
+        documents,
+        partyNames
+      )
+    ).toEqual({
+      party: "Orbital Corp",
+      invoiceNumber: "INV000012",
+      supplierInvoiceNumber: null
+    });
+  });
+
+  it("falls back to a charge's merchant when it has no supplier", () => {
+    expect(
+      generalLedgerCounterparty(line("Charge", "ch1"), documents, partyNames)
+    ).toEqual({
+      party: "Hardware Store",
+      invoiceNumber: null,
+      supplierInvoiceNumber: null
+    });
+  });
+
+  it("leaves a line with no document blank", () => {
+    expect(
+      generalLedgerCounterparty(line(null, null), documents, partyNames)
+    ).toEqual({
+      party: null,
+      invoiceNumber: null,
+      supplierInvoiceNumber: null
+    });
+    expect(
+      generalLedgerCounterparty(
+        line("Job Receipt", "job1"),
+        documents,
+        partyNames
+      )
+    ).toEqual({
+      party: null,
+      invoiceNumber: null,
+      supplierInvoiceNumber: null
+    });
   });
 });

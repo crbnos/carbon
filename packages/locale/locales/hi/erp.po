@@ -6758,6 +6758,9 @@ msgstr "ग्राहक"
 msgid "Customer"
 msgstr "ग्राहक"
 
+msgid "Customer / Supplier"
+msgstr "ग्राहक / आपूर्तिकर्ता"
+
 msgid "Customer Accounts"
 msgstr "ग्राहक खाते"
 

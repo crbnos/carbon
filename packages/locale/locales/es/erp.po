@@ -6758,6 +6758,9 @@ msgstr "cliente"
 msgid "Customer"
 msgstr "Cliente"
 
+msgid "Customer / Supplier"
+msgstr "Cliente / Proveedor"
+
 msgid "Customer Accounts"
 msgstr "Cuentas de Cliente"
 

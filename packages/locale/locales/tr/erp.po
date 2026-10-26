@@ -6758,6 +6758,9 @@ msgstr "müşteri"
 msgid "Customer"
 msgstr "Müşteri"
 
+msgid "Customer / Supplier"
+msgstr "Müşteri / Tedarikçi"
+
 msgid "Customer Accounts"
 msgstr "Müşteri Hesapları"
 

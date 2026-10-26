@@ -6758,6 +6758,9 @@ msgstr "得意先"
 msgid "Customer"
 msgstr "得意先"
 
+msgid "Customer / Supplier"
+msgstr "得意先 / 仕入先"
+
 msgid "Customer Accounts"
 msgstr "得意先アカウント"
 

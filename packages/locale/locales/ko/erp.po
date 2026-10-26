@@ -6758,6 +6758,9 @@ msgstr "고객"
 msgid "Customer"
 msgstr "고객"
 
+msgid "Customer / Supplier"
+msgstr "고객 / 공급업체"
+
 msgid "Customer Accounts"
 msgstr "고객 계정"
 
