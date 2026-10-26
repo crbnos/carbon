@@ -2535,6 +2535,9 @@ msgstr "也在 {otherStationNames}"
 msgid "Also notify"
 msgstr "同时通知"
 
+msgid "Also open on {links}"
+msgstr "其他未结采购订单：{links}"
+
 msgid "Always"
 msgstr "始终"
 
@@ -6023,6 +6026,9 @@ msgstr "复制程序文件唯一标识符"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "复制采购发票唯一标识符"
+
+msgid "Copy purchase order number"
+msgstr "复制采购订单编号"
 
 msgid "Copy purchase order unique identifier"
 msgstr "复制采购订单唯一标识符"
@@ -15095,6 +15101,9 @@ msgstr "没有未结工序"
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "没有未结采购订单行符合您的搜索。每个词都必须完全匹配;空格和标点符号被忽略。"
+
 msgid "No open reimbursements"
 msgstr "没有未结报销单"
 
@@ -15209,6 +15218,9 @@ msgstr "此操作尚未记录任何生产事件"
 
 msgid "No production recorded yet."
 msgstr "还没有生产记录。"
+
+msgid "No purchase orders are waiting to be received."
+msgstr "没有采购订单等待接收。"
 
 msgid "No purchases in this period"
 msgstr "此期间无采购"

@@ -2535,6 +2535,9 @@ msgstr "{otherStationNames}でも実施中"
 msgid "Also notify"
 msgstr "また通知する"
 
+msgid "Also open on {links}"
+msgstr "他のオープン発注書：{links}"
+
 msgid "Always"
 msgstr "常に"
 
@@ -6023,6 +6026,9 @@ msgstr "手順書の識別子をコピー"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "仕入先請求書の一意識別子をコピー"
+
+msgid "Copy purchase order number"
+msgstr "発注書番号をコピー"
 
 msgid "Copy purchase order unique identifier"
 msgstr "発注書の一意識別子をコピー"
@@ -15095,6 +15101,9 @@ msgstr "オープン状態の工程がありません"
 msgid "No open orders for this item are available to link."
 msgstr "この品目のオープン注文はリンク可能なものがありません。"
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "検索に一致するオープン発注書明細がありません。すべての単語が一致する必要があります。スペースと句読点は無視されます。"
+
 msgid "No open reimbursements"
 msgstr "オープンな払戻がありません"
 
@@ -15209,6 +15218,9 @@ msgstr "この操作で記録された生産イベントはまだありません
 
 msgid "No production recorded yet."
 msgstr "生産がまだ記録されていません。"
+
+msgid "No purchase orders are waiting to be received."
+msgstr "受け取り待ちの発注書はありません。"
 
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"

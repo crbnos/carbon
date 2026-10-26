@@ -2535,6 +2535,9 @@ msgstr "यह भी {otherStationNames} पर"
 msgid "Also notify"
 msgstr "साथ ही सूचित करें"
 
+msgid "Also open on {links}"
+msgstr "{links} पर भी खुला है"
+
 msgid "Always"
 msgstr "हमेशा"
 
@@ -6023,6 +6026,9 @@ msgstr "कार्यविधि की अद्वितीय पहचा
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "क्रय चालान की विशिष्ट पहचान नकल करें"
+
+msgid "Copy purchase order number"
+msgstr "क्रय आदेश संख्या कॉपी करें"
 
 msgid "Copy purchase order unique identifier"
 msgstr "क्रय आदेश की विशिष्ट पहचान नकल करें"
@@ -15095,6 +15101,9 @@ msgstr "कोई खुला ऑपरेशन नहीं"
 msgid "No open orders for this item are available to link."
 msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "कोई खुली क्रय आदेश पंक्तियाँ आपकी खोज से मेल नहीं खाती हैं। खोज में सभी शब्दों का मेल खाना चाहिए; रिक्त स्थान और विराम चिह्न को अनदेखा किया जाता है।"
+
 msgid "No open reimbursements"
 msgstr "कोई खुली प्रतिपूर्ति नहीं"
 
@@ -15209,6 +15218,9 @@ msgstr "इस ऑपरेशन के लिए अभी तक कोई �
 
 msgid "No production recorded yet."
 msgstr "अभी तक कोई उत्पादन दर्ज नहीं किया गया।"
+
+msgid "No purchase orders are waiting to be received."
+msgstr "कोई भी क्रय आदेश प्राप्ति की प्रतीक्षा में नहीं है।"
 
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"

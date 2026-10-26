@@ -23,6 +23,7 @@ import {
   Thead,
   Tr,
   useEscape,
+  useIsomorphicLayoutEffect,
   useMount,
   useOutsideClick,
   useViewport,
@@ -166,6 +167,8 @@ interface TableProps<T extends object> {
   // Renders a full-width header row above each run of consecutive rows that
   // share a key (e.g. a report grouped by date). Grouping follows `data`'s
   // order, so the caller sorts by the key; `header` receives the run's rows.
+  // The header is as wide as the visible table and stays in view when it
+  // scrolls sideways, so it can put actions at its right edge.
   groupRowsBy?: {
     key: (row: T) => string;
     header: (rows: T[]) => ReactNode;
@@ -332,11 +335,15 @@ const Table = <T extends object>({
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  // Visible width of the scroll container, for `pinExpandedRows`.
+  // Visible width of the scroll container, for `pinExpandedRows` and the
+  // `groupRowsBy` header rows: both stay in view as the table scrolls sideways.
+  // Measured before paint, so a group header never shows at its content width
+  // first and then jumps.
   const [containerWidth, setContainerWidth] = useState(0);
-  useEffect(() => {
+  const measureContainer = pinExpandedRows || !!groupRowsBy;
+  useIsomorphicLayoutEffect(() => {
     const el = tableContainerRef.current;
-    if (!pinExpandedRows || !el || typeof ResizeObserver === "undefined") {
+    if (!measureContainer || !el || typeof ResizeObserver === "undefined") {
       return;
     }
     const update = () => setContainerWidth(el.clientWidth);
@@ -344,7 +351,7 @@ const Table = <T extends object>({
     const observer = new ResizeObserver(update);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [pinExpandedRows]);
+  }, [measureContainer]);
 
   const { currentView, view } = useSavedViews();
 
@@ -1555,7 +1562,19 @@ const Table = <T extends object>({
                             colSpan={visibleColumns.length}
                             className="p-0 bg-muted/40 border-b border-border"
                           >
-                            <div className="sticky left-0 w-fit">
+                            {/* As wide as the visible table, so a header
+                                can put its actions at the right edge. */}
+                            <div
+                              className={cn(
+                                "sticky left-0",
+                                containerWidth === 0 && "w-fit"
+                              )}
+                              style={
+                                containerWidth > 0
+                                  ? { width: containerWidth }
+                                  : undefined
+                              }
+                            >
                               {groupRowsBy.header(groupRows)}
                             </div>
                           </Td>
