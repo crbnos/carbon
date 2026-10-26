@@ -2310,7 +2310,7 @@ export async function sendInviteEmail(
     invite.code,
     ctx.company.id
   );
-  await sendEmail({
+  return sendEmail({
     to: invite.email,
     subject: `You have been invited to join ${invite.companyName} on Carbon`,
     headers: { "X-Entity-Ref-ID": nanoid() },
