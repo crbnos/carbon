@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -75,9 +76,11 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         cell: ({ row }) => {
           // Qualified = has an ability row ∧ not expired. Presence of the row
           // is the qualification — there is no separate training gate.
-          const today = new Date().toISOString().slice(0, 10);
+          const todayDate = today(getLocalTimeZone()).toString();
           const employeeIds = (row.original.employeeAbility ?? [])
-            .filter((ea) => !ea.expiresAt || ea.expiresAt >= today)
+            .filter(
+              (ea) => !ea.expiresAt || ea.expiresAt.slice(0, 10) > todayDate
+            )
             .map((ea) => ea.employeeId);
           return employeeIds.length > 0 ? (
             <EmployeeAvatarGroup employeeIds={employeeIds} />

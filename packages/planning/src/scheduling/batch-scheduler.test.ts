@@ -5,8 +5,14 @@
 import { parseAbsolute } from "@internationalized/date";
 import { it } from "vitest";
 import type { BatchMemberInput, BatchToPlace } from "./batch-scheduler.ts";
-import { planBatchPlacements } from "./batch-scheduler.ts";
-import type { MasterDataProvider } from "./master-data-provider.ts";
+import {
+  batchBlockingReservations,
+  planBatchPlacements
+} from "./batch-scheduler.ts";
+import type {
+  LiveReservation,
+  MasterDataProvider
+} from "./master-data-provider.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
 import type { JobOperationDependency, ScheduledOperation } from "./types.ts";
 import {
@@ -157,6 +163,60 @@ it("two batches on one work center place sequentially in job order", () => {
     second.startAt >= first.endAt,
     "later batch starts after the earlier one ends"
   );
+});
+
+function liveReservation(
+  overrides: Partial<LiveReservation> & { jobId: string }
+): LiveReservation {
+  return {
+    resourceKind: "WorkCenter",
+    resourceId: "wc1",
+    startAt: NOW,
+    endAt: NOW + 8 * 60 * MIN,
+    readableJobId: overrides.jobId.toUpperCase(),
+    jobOperationBatchId: null,
+    ...overrides
+  };
+}
+
+it("a batch places around other jobs and other batches, never around the bookings this run replaces", () => {
+  const blocking = batchBlockingReservations({
+    reservations: [
+      liveReservation({ jobId: "job-a" }), // re-planned this run: replaced
+      liveReservation({ jobId: "job-x", startAt: NOW + MIN }), // a job this run does not re-plan: blocks
+      liveReservation({ jobId: "job-a", jobOperationBatchId: "b1" }), // this batch's old row
+      liveReservation({ jobId: "job-q", jobOperationBatchId: "b-other" }), // another batch: blocks
+      liveReservation({
+        jobId: "job-x",
+        resourceKind: "Employee",
+        resourceId: "emp"
+      })
+    ],
+    batchIds: ["b1"],
+    rerunJobIds: ["job-a", "job-b", "job-c"]
+  });
+
+  assertEquals(
+    [...blocking.entries()].map(([wc, list]) => [
+      wc,
+      list.map((r) => r.readableJobId)
+    ]),
+    [["wc1", ["JOB-X", "JOB-Q"]]]
+  );
+});
+
+it("a re-planned job's previous booking does not push the batch later", () => {
+  // The previous run booked job-a's own op on wc1 for 8h from NOW. This run
+  // re-plans job-a, so the batch must still start at NOW, as it did before.
+  const { reservations } = plan([makeBatch({ id: "b1" })], {
+    reservationsByWorkCenter: batchBlockingReservations({
+      reservations: [liveReservation({ jobId: "job-a" })],
+      batchIds: ["b1"],
+      rerunJobIds: ["job-a", "job-b", "job-c"]
+    })
+  });
+
+  assertEquals(reservations[0]?.startAt, NOW);
 });
 
 it("no work center AND no candidates → skipped (members place individually)", () => {

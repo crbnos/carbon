@@ -11,6 +11,7 @@ import { NonRetriableError } from "inngest";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { workCentersOnShift } from "./shift-work-centers";
 
 const log = getLogger("jobs", "schedule-replan");
 
@@ -65,6 +66,56 @@ const scheduleInputsChangedData = z.object({
 });
 
 /**
+ * The work centers whose hours come from this shift (`workCentersOnShift`),
+ * or null when the shift is not the company's.
+ */
+async function loadShiftWorkCenterIds(
+  serviceRole: ReturnType<typeof getCarbonServiceRole>,
+  companyId: string,
+  shiftId: string
+): Promise<string[] | null> {
+  const [shift, workCenters, links, activeShifts] = await Promise.all([
+    serviceRole
+      .from("shift")
+      .select("id, locationId")
+      .eq("id", shiftId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    fetchAllFromTable<{
+      id: string;
+      locationId: string | null;
+      alwaysOn: boolean;
+    }>(serviceRole, "workCenter", "id, locationId, alwaysOn", (query) =>
+      query.eq("companyId", companyId).eq("active", true).order("id")
+    ),
+    fetchAllFromTable<{ workCenterId: string; shiftId: string }>(
+      serviceRole,
+      "workCenterShift",
+      "workCenterId, shiftId",
+      (query) =>
+        query.eq("companyId", companyId).order("workCenterId").order("shiftId")
+    ),
+    fetchAllFromTable<{ id: string }>(serviceRole, "shift", "id", (query) =>
+      query.eq("companyId", companyId).eq("active", true).order("id")
+    )
+  ]);
+  const failed =
+    shift.error ?? workCenters.error ?? links.error ?? activeShifts.error;
+  if (failed) {
+    throw new Error(
+      `Failed to load the shift's work centers: ${failed.message}`
+    );
+  }
+  if (!shift.data) return null;
+  return workCentersOnShift({
+    shift: { id: shift.data.id, locationId: shift.data.locationId },
+    workCenters: workCenters.data ?? [],
+    workCenterShifts: links.data ?? [],
+    activeShiftIds: new Set((activeShifts.data ?? []).map((row) => row.id))
+  });
+}
+
+/**
  * Reactive replanning, part 1 — MARK (immediate, cheap).
  *
  * When a scheduling input changes (shift assignment, qualification, work
@@ -117,6 +168,8 @@ export const markScheduleStaleFunction = inngest.createFunction(
     // - ability/shift/employee-shift (no id) -> jobs with unfinished ops on ANY
     //   ability-gated process (people-availability changes only matter to gated work;
     //   a company with zero gated ops is untouched)
+    // - shift (with id)        -> the gated jobs above PLUS jobs with unfinished ops
+    //   on the work centers that run the shift (machine hours)
     // - work-center (with id)  -> jobs with unfinished ops assigned to that work center
     // - people (with id)         -> same as work-center (entityId = the assigned workCenterId)
     // - people (no id)           -> absence of an unassigned person; only gated ops care
@@ -145,44 +198,59 @@ export const markScheduleStaleFunction = inngest.createFunction(
         processIds = (gated.data ?? []).map((p) => p.id);
       }
 
+      // A shift is also machine hours: the work centers that run it re-plan
+      // too, gated or not.
+      let shiftWorkCenterIds: string[] = [];
+      if (kind === "shift" && entityId) {
+        const scope = await loadShiftWorkCenterIds(
+          serviceRole,
+          companyId,
+          entityId
+        );
+        if (scope === null) return null; // unknown shift: re-plan everything
+        shiftWorkCenterIds = scope;
+      }
+
       if (
         processIds !== null ||
         ((kind === "work-center" || kind === "people") && entityId)
       ) {
-        if (processIds !== null && processIds.length === 0) {
-          return []; // nothing gated -> nothing affected
-        }
-        // Chunk the .in() filter so a large gated-process set can't blow
-        // past PostgREST's URL limits
-        const processIdChunks: (string[] | null)[] =
+        const filters: {
+          column: "processId" | "workCenterId";
+          values: string[];
+        }[] =
           processIds !== null
-            ? chunkArray(processIds, IN_FILTER_CHUNK_SIZE)
-            : [null];
+            ? [
+                { column: "processId", values: processIds },
+                { column: "workCenterId", values: shiftWorkCenterIds }
+              ]
+            : [{ column: "workCenterId", values: [entityId as string] }];
         const jobIds = new Set<string>();
-        for (const processIdChunk of processIdChunks) {
-          const ops = await fetchAllFromTable<{ jobId: string }>(
-            serviceRole,
-            "jobOperation",
-            "jobId",
-            (query) => {
-              const scoped = query
-                .eq("companyId", companyId)
-                .not("status", "in", '("Done","Canceled")');
-              return processIdChunk !== null
-                ? scoped.in("processId", processIdChunk)
-                : scoped.eq("workCenterId", entityId);
-            }
-          );
-          if (ops.error) {
-            throw new Error(
-              `Failed to compute affected jobs: ${ops.error.message}`
+        for (const { column, values } of filters) {
+          // Chunk the .in() filter so a large set can't blow past
+          // PostgREST's URL limits
+          for (const chunk of chunkArray(values, IN_FILTER_CHUNK_SIZE)) {
+            const ops = await fetchAllFromTable<{ jobId: string }>(
+              serviceRole,
+              "jobOperation",
+              "jobId",
+              (query) =>
+                query
+                  .eq("companyId", companyId)
+                  .not("status", "in", '("Done","Canceled")')
+                  .in(column, chunk)
             );
-          }
-          for (const op of ops.data ?? []) {
-            jobIds.add(op.jobId);
+            if (ops.error) {
+              throw new Error(
+                `Failed to compute affected jobs: ${ops.error.message}`
+              );
+            }
+            for (const op of ops.data ?? []) {
+              jobIds.add(op.jobId);
+            }
           }
         }
-        return [...jobIds];
+        return [...jobIds]; // empty = nothing affected
       }
 
       return null; // company-wide (location, reorder, or no way to scope)

@@ -62,6 +62,8 @@ Deleting a shift marks it inactive instead of removing it, preserving historical
 
 A **holiday** is a company non-working day: a name and a date. The year is derived from the date automatically, and the list groups by year so you can review one calendar year at a time.
 
+A holiday closes the plant for [scheduling](/docs/reference/scheduling): no operation is placed on that day, except on a lights-out (24×7) work center, and nobody is counted as available. Forecast shades the day as closed, and the capacity view on Resource Planning shows no available hours for it. Adding, editing, or deleting a holiday queues a reschedule.
+
 <FieldTable>
   <Field name="Holiday Name" type="text">What the day is called.</Field>
   <Field name="Date" type="date">The calendar date. Its year is computed from this.</Field>

@@ -11,6 +11,7 @@ import {
 import { it } from "vitest";
 import { intersectWindows, subtractIntervals } from "./calendar-utils.ts";
 import {
+  closeHolidays,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
@@ -261,4 +262,44 @@ it("intersectWindows: multi-window sweep intersects each overlap once", () => {
   assertEquals(out[0]?.end, utc("2026-01-05T16:00:00.000Z"));
   assertEquals(out[1]?.start, utc("2026-01-06T08:00:00.000Z"));
   assertEquals(out[1]?.end, utc("2026-01-06T12:00:00.000Z"));
+});
+
+it("a holiday closes a shift-based work center for the whole local day; a lights-out one keeps running", () => {
+  // Mon 26 Oct 2026 is a holiday. America/Chicago is UTC-5 that day.
+  const dayShift = {
+    start: utc("2026-10-26T11:00:00Z"),
+    end: utc("2026-10-26T19:30:00Z")
+  };
+  const tuesday = {
+    start: utc("2026-10-27T11:00:00Z"),
+    end: utc("2026-10-27T19:30:00Z")
+  };
+  const around = {
+    start: utc("2026-10-25T05:00:00Z"),
+    end: utc("2026-10-28T05:00:00Z")
+  };
+  const result = closeHolidays({
+    windowsByWorkCenter: new Map([
+      ["wc-shift", [dayShift, tuesday]],
+      ["wc-lights-out", [around]]
+    ]),
+    workCenters: [
+      {
+        id: "wc-shift",
+        alwaysOn: false,
+        locationId: "loc",
+        timezone: "America/Chicago"
+      },
+      {
+        id: "wc-lights-out",
+        alwaysOn: true,
+        locationId: "loc",
+        timezone: "America/Chicago"
+      }
+    ],
+    holidayDates: new Set(["2026-10-26"])
+  });
+
+  assertEquals(result.get("wc-shift"), [tuesday]);
+  assertEquals(result.get("wc-lights-out"), [around]);
 });

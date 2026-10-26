@@ -23012,8 +23012,8 @@ msgstr "合同在期末日期结束，不会续期。之后的已计划发票将
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "合同的发票将计费给已与此Carbon客户关联的Stripe客户。要更改其详细信息，请在Stripe仪表板中编辑。"
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "外协人员的预期每周可用性；排程在整周将此外协人员分配给工序时使用此作为上限。"
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "承包商的预计每周可用时间，仅供参考。排程不会将承包商分配到工序。"
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "此批次/序列号的修正有效期；更改后，现有库存会根据保质期政策重新评估。"

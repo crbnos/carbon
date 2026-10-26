@@ -7,6 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { formatDate, redirect } from "@carbon/utils";
 import {
+  fromAbsolute,
   getLocalTimeZone,
   now,
   parseDate,
@@ -27,6 +28,7 @@ import {
 import {
   buildPeopleCapacityBuckets,
   getActiveEmployeeAbilities,
+  getHolidayDates,
   getLocationEmployees,
   getPeopleAbsences,
   getPeopleAbsencesRange,
@@ -36,7 +38,8 @@ import {
   getWorkCenterCalendarHoursByDay,
   getWorkCenterRequiredAbilities,
   getWorkCenterReservationsRange,
-  getWorkCenterShifts
+  getWorkCenterShifts,
+  getWorkCenterWorkingWindows
 } from "~/modules/production/production.service";
 import { OvertimeDialog } from "~/modules/production/ui/Schedule/People/OvertimeDialog";
 import { PeopleBoard } from "~/modules/production/ui/Schedule/People/PeopleBoard";
@@ -289,6 +292,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // each work center resolved via (the assumption banner) — Capacity view only
   let calendarHoursByWorkCenter: Record<string, Record<string, number>> = {};
   const capacityRungByWorkCenter: Record<string, number> = {};
+  let capacityHolidayDates: string[] = [];
 
   if (view !== "board" || range === "week") {
     const weekStartDate = weekDates[0];
@@ -350,8 +354,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // The engine (@carbon/planning) owns the authoritative machine-availability
     // ladder; this resolves the same rungs at day granularity for display.
     let calendarHoursMap = new Map<string, Map<string, number>>();
+    let workingWindowsByWorkCenter:
+      | ReturnType<typeof getWorkCenterWorkingWindows>
+      | undefined;
     if (view === "capacity") {
       const wcShiftLinks = workCenterShiftRows.data ?? [];
+      // A booking can run past the week on either side; its working windows
+      // (and holidays) are needed across its whole span to divide its hours.
+      let spanStartMs = weekWindowStart.getTime();
+      let spanEndMs = weekWindowEnd.getTime();
+      for (const reservation of reservations.data ?? []) {
+        spanStartMs = Math.min(spanStartMs, Date.parse(reservation.startAt));
+        spanEndMs = Math.max(spanEndMs, Date.parse(reservation.endAt));
+      }
+      const holidayDates = await getHolidayDates(client, companyId, {
+        from: toCalendarDate(fromAbsolute(spanStartMs, timezone)).toString(),
+        to: toCalendarDate(fromAbsolute(spanEndMs, timezone)).toString()
+      });
+      capacityHolidayDates = [...holidayDates];
       const ladderWorkCenters = (workCenters.data ?? []).flatMap(
         (workCenter) =>
           workCenter.id
@@ -380,7 +400,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
         workCenters: ladderWorkCenters,
         workCenterShifts: wcShiftLinks,
         locationShifts: locationLadderShifts,
-        weekDates
+        weekDates,
+        holidayDates
+      });
+      workingWindowsByWorkCenter = getWorkCenterWorkingWindows({
+        workCenters: ladderWorkCenters,
+        workCenterShifts: wcShiftLinks,
+        shifts: shiftRows,
+        timeZone: timezone,
+        holidayDates,
+        rangeStart: spanStartMs,
+        rangeEnd: spanEndMs
       });
       const wcHasOwnShifts = new Set(
         wcShiftLinks.map((link) => link.workCenterId)
@@ -406,7 +436,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       timezone,
       operations: capacityOperations.data ?? [],
       reservations: reservations.data ?? [],
-      calendarHoursByWorkCenter: calendarHoursMap
+      calendarHoursByWorkCenter: calendarHoursMap,
+      workingWindowsByWorkCenter
     });
     demandByWorkCenter = buckets.demandByWorkCenter;
     scheduledByWorkCenter = buckets.scheduledByWorkCenter;
@@ -442,7 +473,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   {
     const byEmployee = new Map<string, Set<string>>();
     for (const row of employeeAbilities.data ?? []) {
-      if (row.expiresAt && row.expiresAt.slice(0, 10) < date) continue;
+      // Expiring today = not qualified today, as in the scheduler and MES.
+      if (row.expiresAt && row.expiresAt.slice(0, 10) <= date) continue;
       const ability = Array.isArray(row.ability) ? row.ability[0] : row.ability;
       // The ability's name IS the linked process's name.
       const process = Array.isArray(ability?.process)
@@ -510,7 +542,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaultShiftEnd,
     defaultShiftHours,
     calendarHoursByWorkCenter,
-    capacityRungByWorkCenter
+    capacityRungByWorkCenter,
+    capacityHolidayDates
   };
 }
 
@@ -549,7 +582,8 @@ export default function SchedulePeopleRoute() {
     defaultShiftEnd,
     defaultShiftHours,
     calendarHoursByWorkCenter,
-    capacityRungByWorkCenter
+    capacityRungByWorkCenter,
+    capacityHolidayDates
   } = useLoaderData<typeof loader>();
   const { locale } = useLocale();
   const [overtimeOpen, setOvertimeOpen] = useState(false);
@@ -772,6 +806,7 @@ export default function SchedulePeopleRoute() {
             defaultShiftHours={defaultShiftHours}
             calendarHoursByWorkCenter={calendarHoursByWorkCenter}
             capacityRungByWorkCenter={capacityRungByWorkCenter}
+            holidayDates={capacityHolidayDates}
           />
         )}
       </div>

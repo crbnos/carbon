@@ -23012,8 +23012,8 @@ msgstr "Sözleşme bitiş tarihinde sona erer ve yenilenmez. Bundan sonraki plan
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Sözleşmenin faturaları, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalanacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "Taşeronun beklenen haftalık kullanılabilirliği; planlama bu taşeronun haftasındaki operasyonlara atanırken bunu üst sınır olarak kullanır."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "Yüklenicinin beklenen haftalık müsaitliği, bilgi amaçlıdır. Planlayıcı yüklenicileri operasyonlara atamaz."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut eldeki stok, değişiklikten sonra raf ömrü politikasına göre yeniden değerlendirilir."
