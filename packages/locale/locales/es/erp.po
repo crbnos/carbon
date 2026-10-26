@@ -2535,6 +2535,9 @@ msgstr "también en {otherStationNames}"
 msgid "Also notify"
 msgstr "También notificar"
 
+msgid "Also open on {links}"
+msgstr "También abierto en {links}"
+
 msgid "Always"
 msgstr "Siempre"
 
@@ -6023,6 +6026,9 @@ msgstr "Copiar identificador único del procedimiento"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copiar identificador único de factura de compra"
+
+msgid "Copy purchase order number"
+msgstr "Copiar número de orden de compra"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Copiar identificador único de orden de compra"
@@ -15095,6 +15101,9 @@ msgstr "Sin operaciones abiertas"
 msgid "No open orders for this item are available to link."
 msgstr "No hay pedidos abiertos disponibles para este artículo."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "Ninguna línea abierta de orden de compra coincide con su búsqueda. Cada palabra debe coincidir; los espacios y la puntuación se ignoran."
+
 msgid "No open reimbursements"
 msgstr "Sin reembolsos abiertos"
 
@@ -15209,6 +15218,9 @@ msgstr "Aún no se han registrado eventos de producción para esta operación"
 
 msgid "No production recorded yet."
 msgstr "Sin producción registrada aún."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "No hay órdenes de compra esperando a ser recibidas."
 
 msgid "No purchases in this period"
 msgstr "Sin compras en este período"

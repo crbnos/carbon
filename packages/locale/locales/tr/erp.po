@@ -2535,6 +2535,9 @@ msgstr "ayrıca {otherStationNames} adresinde"
 msgid "Also notify"
 msgstr "Ayrıca bildir"
 
+msgid "Also open on {links}"
+msgstr "{links} üzerinde de açık"
+
 msgid "Always"
 msgstr "Her zaman"
 
@@ -6023,6 +6026,9 @@ msgstr "Prosedürün benzersiz tanımlayıcısını kopyala"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Alış faturası benzersiz tanıtıcısını kopyala"
+
+msgid "Copy purchase order number"
+msgstr "Satın alma siparişi numarasını kopyala"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Satın alma siparişi benzersiz tanıtıcısını kopyala"
@@ -15095,6 +15101,9 @@ msgstr "Açık operasyon yok"
 msgid "No open orders for this item are available to link."
 msgstr "Bu Stok kartı için bağlantı kurmak amacıyla Açık siparişler bulunmamaktadır."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "Aramanızla eşleşen açık satın alma siparişi satırı yok. Her sözcük eşleşmelidir; boşluklar ve noktalama işaretleri dikkate alınmaz."
+
 msgid "No open reimbursements"
 msgstr "Açık Gider Talebileri Yok"
 
@@ -15209,6 +15218,9 @@ msgstr "Bu operasyon için henüz kaydedilmiş üretim olayı yok"
 
 msgid "No production recorded yet."
 msgstr "Henüz kayıtlı üretim yok."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "Alınması beklenen satın alma siparişi yok."
 
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"

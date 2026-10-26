@@ -2535,6 +2535,9 @@ msgstr "also at {otherStationNames}"
 msgid "Also notify"
 msgstr "Also notify"
 
+msgid "Also open on {links}"
+msgstr "Also open on {links}"
+
 msgid "Always"
 msgstr "Always"
 
@@ -6023,6 +6026,9 @@ msgstr "Copy procedure unique identifier"
 
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copy purchase invoice unique identifier"
+
+msgid "Copy purchase order number"
+msgstr "Copy purchase order number"
 
 msgid "Copy purchase order unique identifier"
 msgstr "Copy purchase order unique identifier"
@@ -15095,6 +15101,9 @@ msgstr "No open operations"
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+
 msgid "No open reimbursements"
 msgstr "No open reimbursements"
 
@@ -15209,6 +15218,9 @@ msgstr "No production events recorded for this operation yet"
 
 msgid "No production recorded yet."
 msgstr "No production recorded yet."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "No purchase orders are waiting to be received."
 
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
