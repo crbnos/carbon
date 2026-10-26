@@ -102,7 +102,7 @@ export const JOBS: JobSpec[] = [
     quantityComplete: 1,
     salesOrder: "so:completed",
     salesOrderLine: "soline:completed",
-    customer: "State Emergency Response Agency",
+    customer: "Defense Innovation Pilot Office",
     dueDateOffset: -328,
     releasedDateOffset: -434,
     completedDateOffset: -332

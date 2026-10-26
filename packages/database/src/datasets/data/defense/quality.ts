@@ -59,7 +59,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
     name: "Power harness short detected at integration",
     source: "Internal",
     status: "In Progress",
-    openDateOffset: -312,
+    openDateOffset: -296,
     quantity: 1,
     priority: "High",
     // An issue raised on the floor is raised against the operation that produced

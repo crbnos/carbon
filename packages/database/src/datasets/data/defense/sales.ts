@@ -16,21 +16,22 @@ import type {
   StaggeredDeliverySpec
 } from "../../types.ts";
 
-export const SAT_PRICE_BREAKS: readonly PriceBreak[] = [
-  { quantity: 1, unitPrice: 1950000, leadTime: 240 },
-  { quantity: 5, unitPrice: 1840000, leadTime: 270, discountPercent: 0.03 },
-  { quantity: 10, unitPrice: 1725000, leadTime: 300, discountPercent: 0.06 },
-  { quantity: 25, unitPrice: 1580000, leadTime: 360, discountPercent: 0.1 }
+// Priced against items.ts: ISR4-AV lists at 195,000 and BAT-700 at 13,500.
+export const ISR4_PRICE_BREAKS: readonly PriceBreak[] = [
+  { quantity: 1, unitPrice: 195000, leadTime: 90 },
+  { quantity: 5, unitPrice: 184000, leadTime: 105, discountPercent: 0.03 },
+  { quantity: 10, unitPrice: 172500, leadTime: 120, discountPercent: 0.06 },
+  { quantity: 25, unitPrice: 158000, leadTime: 150, discountPercent: 0.1 }
 ];
 
-export const EPS_PRICE_BREAKS: readonly PriceBreak[] = [
-  { quantity: 2, unitPrice: 128000, leadTime: 120 },
+export const BAT_PRICE_BREAKS: readonly PriceBreak[] = [
+  { quantity: 2, unitPrice: 13500, leadTime: 30 },
   {
     quantity: 10,
-    unitPrice: 118000,
-    leadTime: 150,
+    unitPrice: 12800,
+    leadTime: 45,
     discountPercent: 0.05,
-    shippingCost: 2400
+    shippingCost: 240
   }
 ];
 
@@ -138,14 +139,14 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
           item: "ISR4-AV",
           status: "Complete",
           sortOrder: 1,
-          priceBreaks: SAT_PRICE_BREAKS
+          priceBreaks: ISR4_PRICE_BREAKS
         },
         {
           ref: "quoteline:novasat:eps",
           item: "BAT-700",
           status: "Complete",
           sortOrder: 2,
-          priceBreaks: EPS_PRICE_BREAKS
+          priceBreaks: BAT_PRICE_BREAKS
         }
       ],
       externalLink: {
