@@ -7050,7 +7050,7 @@ export async function getJobOperationBatchMembers(
   const result = await client
     .from("jobOperation")
     .select(
-      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, modelUpload(thumbnailPath)))"
     )
     .in("jobOperationBatchId", batchIds)
     .eq("companyId", companyId);
@@ -7064,7 +7064,10 @@ export async function getJobOperationBatchMembers(
       jobReadableId: op.job?.jobId ?? null,
       itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
       itemName: op.jobMakeMethod?.item?.name ?? null,
-      thumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+      thumbnailPath:
+        op.jobMakeMethod?.item?.thumbnailPath ??
+        op.jobMakeMethod?.item?.modelUpload?.thumbnailPath ??
+        null,
       operationQuantity: op.operationQuantity ?? 0,
       quantityComplete: op.quantityComplete ?? 0,
       quantityScrapped: op.quantityScrapped ?? 0
@@ -7132,7 +7135,7 @@ export async function getJobOperationBatchWithMembers(
   const members = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId, status), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId, status), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, modelUpload(thumbnailPath)))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
