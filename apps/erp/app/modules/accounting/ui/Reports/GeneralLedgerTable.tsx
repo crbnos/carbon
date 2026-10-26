@@ -107,10 +107,12 @@ const GeneralLedgerTable = memo(
           accessorKey: "accountId",
           header: t`Account`,
           cell: ({ row }) => accountLabel(row.original) || "—",
+          // The journal line view has no account number to sort by, and
+          // sorting by accountId would order by the id, not the number
+          enableSorting: false,
           meta: {
             mobile: "P3",
             icon: <LuLandmark />,
-            sortBy: "account.number",
             exportValue: accountLabel,
             filter: {
               type: "static",
