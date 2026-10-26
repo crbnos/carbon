@@ -104,13 +104,13 @@ msgstr "{0, plural, one {# 일 부족} other {# 일 부족}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr ""
 
-#. placeholder {0}: impact.unschedulable
-msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-msgstr ""
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 공정에 표준시간이 없습니다} other {# 공정에 표준시간이 없습니다}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr ""
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -723,6 +723,12 @@ msgstr "{percent} 피킹 완료"
 
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr ""
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 행을 영구 삭제하시겠습니까?} other {# 행을 영구 삭제하시겠습니까?}}"
@@ -11624,6 +11630,12 @@ msgstr "출하에 여분 부품 포함"
 msgid "Include Inactive"
 msgstr "비활성 포함"
 
+msgid "Include materials on the traveler"
+msgstr ""
+
+msgid "Include operations on the traveler"
+msgstr ""
+
 msgid "Included"
 msgstr "포함됨"
 
@@ -15682,6 +15694,10 @@ msgstr "알림"
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "이 브라우저의 사이트 설정에서 Carbon의 알림이 차단되었습니다."
 
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr ""
+
 msgid "Notify"
 msgstr "알림"
 
@@ -16517,6 +16533,9 @@ msgstr "{label}의 유효기한을 재정의합니다."
 msgid "Overtime"
 msgstr "초과근무"
 
+msgid "Overtime hours"
+msgstr ""
+
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
 msgstr ""
@@ -17342,6 +17361,9 @@ msgstr "데이터 손실 가능성"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "유통기한이 고정 기간일 때 새 품목에 대해 미리 입력됨."
 
+msgid "Pre-select material"
+msgstr ""
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "영업 라인에서 발동하는 술어 기반 가드. 오류로 차단하거나 계속 진행 확인으로 경고합니다."
 
@@ -18071,9 +18093,6 @@ msgstr "자격 있음"
 
 msgid "Qualified Employees"
 msgstr "자격 있는 직원"
-
-msgid "Qualified people are committed elsewhere"
-msgstr ""
 
 msgid "Qualified to run it"
 msgstr ""
@@ -19271,6 +19290,10 @@ msgstr "필수 일치"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSO 필수"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr ""
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "금액 임계값 및 승인자 그룹을 기반으로 발주서, 품질 문서, 공급업체 및 변경 통지에 대한 계층화된 승인 필요"
@@ -21629,6 +21652,9 @@ msgstr "PDF에서 추출된 일부 라인을 재고 품목에 자동으로 매�
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "일부 라인이 청구하는 것보다 많거나 적게 인식합니다. 확인하기 전에 남은 것을 배치하세요."
 
+msgid "Some of this process's work can't be scheduled"
+msgstr ""
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "일부 레코드는 돌아오지 않습니다. 계속하려면 <0>{CONFIRM_WORD}</0>를 입력하세요."
 
@@ -21848,6 +21874,9 @@ msgstr "회계연도 시작"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "입고 수량을 0으로 시작"
+
+msgid "Start the timer automatically"
+msgstr ""
 
 msgid "Start Time"
 msgstr "시작 시간"
@@ -24529,14 +24558,8 @@ msgstr "이것은 {0}의 전표를 역전하고 초안으로 돌려놓습니다.
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "이것은 {0}의 전표를 역전하고 각 자산에서 감가상각을 제거한 후 초안으로 돌려놓습니다. 그 후 재계산하거나 전기하거나 삭제할 수 있습니다."
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "이것은 {previewCount} 인원에 대해 +{hoursInput}h의 초과근무를 설정합니다."
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "이는 그 주에 배치된 모든 사람을 위해 +{hoursInput}h의 초과 근무를 설정합니다."
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "이는 {previewCount}개 인원-일에 대해 +{hoursInput}h의 초과 근무를 설정합니다."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "이것은 생산 방법의 현재 버전을 활성으로 설정하여 읽기 전용으로 만듭니다."

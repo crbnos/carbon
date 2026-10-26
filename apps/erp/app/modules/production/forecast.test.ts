@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 import {
   getForecastNonWorkingIntervals,
-  getWorkCenterNonWorkingIntervals
+  getWorkCenterNonWorkingIntervals,
+  groupQualifiedPeople
 } from "./production.service";
 
 const iso = (s: string) => Date.parse(s);
@@ -163,6 +164,44 @@ describe("getWorkCenterNonWorkingIntervals", () => {
           ]
         ],
         ["oven", []]
+      ])
+    );
+  });
+});
+
+describe("groupQualifiedPeople", () => {
+  const group = (
+    overrides: Partial<Parameters<typeof groupQualifiedPeople>[0]> = {}
+  ) =>
+    groupQualifiedPeople({
+      processByAbility: new Map([
+        ["ab-weld", "weld"],
+        ["ab-paint", "paint"]
+      ]),
+      qualifications: [
+        { employeeId: "ana", abilityId: "ab-weld", expiresAt: null },
+        { employeeId: "ben", abilityId: "ab-weld", expiresAt: "2026-10-27" }
+      ],
+      nameById: new Map([
+        ["ana", "Ana"],
+        ["ben", "Ben"]
+      ]),
+      assignments: [
+        { employeeId: "ana", date: "2026-10-28", station: "Mill" },
+        { employeeId: "ana", date: "2026-10-29", station: "Lathe" },
+        { employeeId: "ana", date: "2026-10-30", station: "Saw" }
+      ],
+      absences: [{ employeeId: "ana", date: "2026-10-30" }],
+      fromDate: "2026-10-27",
+      ...overrides
+    });
+
+  // Ben's qualification expires today; Ana is away on the Saw day.
+  it("lists who is qualified today and the stations they are committed to", () => {
+    expect(group()).toEqual(
+      new Map([
+        ["weld", [{ name: "Ana", stations: ["Lathe", "Mill"] }]],
+        ["paint", []]
       ])
     );
   });

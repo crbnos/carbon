@@ -104,13 +104,13 @@ msgstr "{0, plural, one {# jour de retard} other {# jours de retard}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr ""
 
-#. placeholder {0}: impact.unschedulable
-msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-msgstr ""
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# opération n'a pas de normes de temps} other {# opérations n'ont pas de normes de temps}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr ""
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -723,6 +723,12 @@ msgstr "{percent} prélevé"
 
 msgid "{position} of {total}"
 msgstr "{position} sur {total}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr ""
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Supprimer définitivement # ligne ?} other {Supprimer définitivement # lignes ?}}"
@@ -11624,6 +11630,12 @@ msgstr "Inclure les pièces supplémentaires dans l'expédition"
 msgid "Include Inactive"
 msgstr "Inclure les inactifs"
 
+msgid "Include materials on the traveler"
+msgstr ""
+
+msgid "Include operations on the traveler"
+msgstr ""
+
 msgid "Included"
 msgstr "Inclus"
 
@@ -15682,6 +15694,10 @@ msgstr "Notifications"
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "Les notifications sont bloquées pour Carbon dans les paramètres du site de ce navigateur."
 
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr ""
+
 msgid "Notify"
 msgstr "Notifier"
 
@@ -16517,6 +16533,9 @@ msgstr "Modifier la date d'expiration sur {label}."
 msgid "Overtime"
 msgstr "Heures supplémentaires"
 
+msgid "Overtime hours"
+msgstr ""
+
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
 msgstr ""
@@ -17342,6 +17361,9 @@ msgstr "Perte de données potentielle"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pré-rempli pour un nouvel article quand la péremption est Durée fixe."
 
+msgid "Pre-select material"
+msgstr ""
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "Gardes basés sur des prédicats qui s'exécutent sur les lignes de vente. Bloquer avec des erreurs ou avertir avec un accusé de réception à continuer."
 
@@ -18071,9 +18093,6 @@ msgstr "Qualifié"
 
 msgid "Qualified Employees"
 msgstr "Employés qualifiés"
-
-msgid "Qualified people are committed elsewhere"
-msgstr ""
 
 msgid "Qualified to run it"
 msgstr ""
@@ -19271,6 +19290,10 @@ msgstr "Correspondance obligatoire"
 
 msgid "Require SAML SSO"
 msgstr "Exiger SAML SSO"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr ""
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Exiger une approbation à plusieurs niveaux sur les bons de commande, documents de qualité, fournisseurs et avis de modification en fonction des seuils de montant et des groupes d'approbateurs."
@@ -21629,6 +21652,9 @@ msgstr "Certaines lignes extraites du PDF n'ont pas pu être automatiquement ass
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "Certaines lignes reconnaissent plus ou moins qu'elles ne facturent. Placer ce qui reste avant de confirmer."
 
+msgid "Some of this process's work can't be scheduled"
+msgstr ""
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Certains enregistrements ne reviendront pas. Tapez <0>{CONFIRM_WORD}</0> pour continuer."
 
@@ -21848,6 +21874,9 @@ msgstr "Début de l'année fiscale"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "Initialiser les quantités de réception à zéro"
+
+msgid "Start the timer automatically"
+msgstr ""
 
 msgid "Start Time"
 msgstr "Heure de début"
@@ -24529,14 +24558,8 @@ msgstr "Cela va annuler les écritures comptables de {0} et le ramener en Brouil
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Cela va annuler les écritures comptables de {0}, retirer l'amortissement de chaque actif et le ramener en Brouillon. Vous pouvez alors le recalculer, le comptabiliser ou le supprimer."
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour {previewCount} personnes."
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Ceci définira +{hoursInput}h de temps supplémentaire pour tous les employés assignés cette semaine."
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "Ceci définira +{hoursInput}h de temps supplémentaire sur {previewCount} jours-personnes."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Cela définira la version actuelle de la méthode de fabrication sur Active, la rendant en lecture seule."

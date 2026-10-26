@@ -104,13 +104,13 @@ msgstr "{0, plural, one {# giorno di ritardo} other {# giorni di ritardo}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr ""
 
-#. placeholder {0}: impact.unschedulable
-msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-msgstr ""
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operazione senza standard di tempo} other {# operazioni senza standard di tempo}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr ""
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -723,6 +723,12 @@ msgstr "{percent} prelevato"
 
 msgid "{position} of {total}"
 msgstr "{position} di {total}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr ""
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Eliminare definitivamente # riga?} other {Eliminare definitivamente # righe?}}"
@@ -11624,6 +11630,12 @@ msgstr "Includi componenti aggiuntivi nella spedizione"
 msgid "Include Inactive"
 msgstr "Includi Inattivi"
 
+msgid "Include materials on the traveler"
+msgstr ""
+
+msgid "Include operations on the traveler"
+msgstr ""
+
 msgid "Included"
 msgstr "Incluso"
 
@@ -15682,6 +15694,10 @@ msgstr "Notifiche"
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "Le notifiche sono bloccate per Carbon nelle impostazioni del sito di questo browser."
 
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr ""
+
 msgid "Notify"
 msgstr "Notifica"
 
@@ -16517,6 +16533,9 @@ msgstr "Forza la scadenza su {label}."
 msgid "Overtime"
 msgstr "Straordinario"
 
+msgid "Overtime hours"
+msgstr ""
+
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
 msgstr ""
@@ -17342,6 +17361,9 @@ msgstr "Potenziale perdita di dati"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-compilato per un nuovo articolo quando la scadenza è Durata Fissa."
 
+msgid "Pre-select material"
+msgstr ""
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "Guard basate su predicati che si attivano sulle righe di vendita. Blocca con errori o avvisa con conferma per continuare."
 
@@ -18071,9 +18093,6 @@ msgstr "Qualificato"
 
 msgid "Qualified Employees"
 msgstr "Dipendenti Qualificati"
-
-msgid "Qualified people are committed elsewhere"
-msgstr ""
 
 msgid "Qualified to run it"
 msgstr ""
@@ -19271,6 +19290,10 @@ msgstr "Richiedi Corrispondenza"
 
 msgid "Require SAML SSO"
 msgstr "Richiedi SAML SSO"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr ""
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Richiedi firma a livelli su ordini di acquisto, documenti di qualità, fornitori e avvisi di modifica in base alle soglie di importo e ai gruppi di approvazione."
@@ -21629,6 +21652,9 @@ msgstr "Alcune righe estratte dal PDF non potevano essere mappate automaticament
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "Alcune righe riconoscono più o meno di quanto fatturano. Posiziona ciò che rimane prima di confermare."
 
+msgid "Some of this process's work can't be scheduled"
+msgstr ""
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Alcuni record non torneranno. Digita <0>{CONFIRM_WORD}</0> per continuare."
 
@@ -21848,6 +21874,9 @@ msgstr "Inizio dell'anno fiscale"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "Inizia le quantità di entrata merci a zero"
+
+msgid "Start the timer automatically"
+msgstr ""
 
 msgid "Start Time"
 msgstr "Ora di inizio"
@@ -24529,14 +24558,8 @@ msgstr "Questo invertirà la prima nota di {0} e lo riporterà a Bozza. Potrai q
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Questo invertirà la prima nota di {0}, toglierà l'ammortamento da ogni cespite e lo riporterà a Bozza. Potrai quindi ricalcolare, registrare o eliminarlo."
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "Questo imposterà +{hoursInput}h di straordinario per {previewCount} persone."
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "Questo imposterà +{hoursInput}h di straordinario per tutti i dipendenti assegnati quella settimana."
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "Questo imposterà +{hoursInput}h di straordinario su {previewCount} giorni-persona."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "Questo imposterà la versione corrente del metodo di produzione su Attivo, rendendola di sola lettura."

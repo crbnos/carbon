@@ -325,8 +325,8 @@ export function TimelineDetail({
               </p>
             ) : (
               <ul className="space-y-1 text-sm">
-                {detail.qualifiedPeople.map((person) => (
-                  <li key={person.name} className="text-pretty">
+                {detail.qualifiedPeople.map((person, index) => (
+                  <li key={`${index}:${person.name}`} className="text-pretty">
                     <span className="font-medium">{person.name}</span>{" "}
                     <span className="text-muted-foreground">
                       {person.stations.length > 0 ? (

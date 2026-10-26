@@ -5,6 +5,7 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -12,7 +13,7 @@ import {
   RecordOutlet,
   VStack
 } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";
@@ -23,8 +24,11 @@ import {
   getAbilityScheduleImpact
 } from "~/modules/resources/resources.service";
 import { AbilityEmployeesTable } from "~/modules/resources/ui";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "ability");
 
 export const handle: Handle = {
   breadcrumb: msg`Abilities`,
@@ -48,21 +52,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The warning is a hint: if its counts can't be read, the page still loads.
   const impact = ability.data.processId
     ? await getAbilityScheduleImpact(client, companyId, ability.data.processId)
     : null;
   if (impact?.error) {
-    throw redirect(
-      path.to.abilities,
-      await flash(request, error(impact.error, "Failed to fetch ability"))
-    );
+    logger.error("Failed to read the ability's schedule impact", {
+      companyId,
+      abilityId: id,
+      error: impact.error
+    });
   }
-  return { ability: ability.data, impact: impact?.data ?? null };
+  // Qualified today, by the scheduler's rule: not past the expiry day.
+  const today = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
+  const qualified = (ability.data.employeeAbility ?? []).filter(
+    (row) => !row.expiresAt || row.expiresAt.slice(0, 10) > today
+  ).length;
+  return {
+    ability: ability.data,
+    impact: impact && !impact.error ? { ...impact.data, qualified } : null
+  };
 }
 
 export default function AbilityRoute() {
   const { ability, impact } = useLoaderData<typeof loader>();
-  const qualified = ability.employeeAbility?.length ?? 0;
+  const qualified = impact?.qualified ?? 0;
 
   return (
     <VStack spacing={0} className="h-full">
@@ -75,7 +91,7 @@ export default function AbilityRoute() {
                 {qualified === 0 ? (
                   <Trans>Nobody is qualified for {ability.name}</Trans>
                 ) : (
-                  <Trans>Qualified people are committed elsewhere</Trans>
+                  <Trans>Some of this process's work can't be scheduled</Trans>
                 )}
               </AlertTitle>
               <AlertDescription>
@@ -89,8 +105,8 @@ export default function AbilityRoute() {
                 ) : (
                   <Plural
                     value={impact.unschedulable}
-                    one="# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else."
-                    other="# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else."
+                    one="# operation of this process can't be scheduled. The Forecast shows why, and who is qualified."
+                    other="# operations of this process can't be scheduled. The Forecast shows why, and who is qualified."
                   />
                 )}
               </AlertDescription>

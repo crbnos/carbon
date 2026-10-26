@@ -325,8 +325,10 @@ const PeopleBoard = ({
       }
 
       // the Unassigned pool = people with free hours: nobody scheduled yet
-      // (plain card) or a partially-allocated remainder ("Xh free")
-      if (rows.length === 0) {
+      // (plain card) or a partially-allocated remainder ("Xh free"). Hours at
+      // stations a department filter hides count too: dropping a plain card
+      // replaces the person's whole day, those rows included.
+      if (wholeDay.length === 0) {
         map.get(UNASSIGNED)!.push({
           employee,
           assignment: null,
@@ -343,10 +345,10 @@ const PeopleBoard = ({
           dayEndTime,
           note
         });
-      } else if (rows.every((row) => row.hours != null)) {
+      } else if (wholeDay.every((row) => row.hours != null)) {
         const free =
           baseShiftHoursFor(employee.id) -
-          rows.reduce((sum, row) => sum + effectiveHours(row), 0);
+          wholeDay.reduce((sum, row) => sum + effectiveHours(row), 0);
         if (free > 0.01) {
           map.get(UNASSIGNED)!.push({
             employee,

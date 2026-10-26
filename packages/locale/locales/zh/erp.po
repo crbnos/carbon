@@ -104,13 +104,13 @@ msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr ""
 
-#. placeholder {0}: impact.unschedulable
-msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-msgstr ""
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr ""
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -723,6 +723,12 @@ msgstr "{percent}已拣货"
 
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr ""
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
@@ -11624,6 +11630,12 @@ msgstr "在发货中包含额外零件"
 msgid "Include Inactive"
 msgstr "包括已停用"
 
+msgid "Include materials on the traveler"
+msgstr ""
+
+msgid "Include operations on the traveler"
+msgstr ""
+
 msgid "Included"
 msgstr "已包含"
 
@@ -15682,6 +15694,10 @@ msgstr "通知"
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "在此浏览器的网站设置中,Carbon 的通知被阻止。"
 
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr ""
+
 msgid "Notify"
 msgstr "通知"
 
@@ -16517,6 +16533,9 @@ msgstr "覆盖 {label} 上的过期日期。"
 msgid "Overtime"
 msgstr "加班"
 
+msgid "Overtime hours"
+msgstr ""
+
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
 msgstr ""
@@ -17342,6 +17361,9 @@ msgstr "潜在数据丢失"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当有效期为固定期间时，为新物料预填充。"
 
+msgid "Pre-select material"
+msgstr ""
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "谓词驱动的规则在销售行触发。可以使用错误阻止或发出警告并需要确认继续。"
 
@@ -18071,9 +18093,6 @@ msgstr "合格"
 
 msgid "Qualified Employees"
 msgstr "合格员工"
-
-msgid "Qualified people are committed elsewhere"
-msgstr ""
 
 msgid "Qualified to run it"
 msgstr ""
@@ -19271,6 +19290,10 @@ msgstr "必需匹配"
 
 msgid "Require SAML SSO"
 msgstr "需要 SAML SSO"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr ""
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "根据金额阈值和审批人组对采购订单、质量文档、供应商和变更通知进行分级审批。"
@@ -21629,6 +21652,9 @@ msgstr "从 PDF 提取的某些行无法自动映射到你的库存物料。查�
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "某些行的确认金额比开票金额多或少。确认前放置剩余的。"
 
+msgid "Some of this process's work can't be scheduled"
+msgstr ""
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "某些记录不会回来。输入 <0>{CONFIRM_WORD}</0> 继续。"
 
@@ -21848,6 +21874,9 @@ msgstr "税年开始"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "收货数量从零开始"
+
+msgid "Start the timer automatically"
+msgstr ""
 
 msgid "Start Time"
 msgstr "开始时间"
@@ -24529,14 +24558,8 @@ msgstr "这将冲销{0}的凭证，并将其返回至草稿状态。之后您可
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "这将冲销{0}的凭证，撤销每项资产的折旧，并将其返回至草稿状态。之后您可以重新计算、过账或删除。"
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "这将为 {previewCount} 人设置 +{hoursInput} 小时加班。"
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "这将为该周所有组员设置 +{hoursInput} 小时加班。"
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "这将为 {previewCount} 个人工作日设置 +{hoursInput} 小时加班。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "这会将制造方法的当前版本设置为启用，使其成为只读。"

@@ -583,7 +583,10 @@ function makeMannedElsewhereContext(mannedAt: string | null) {
   });
 }
 
-async function placeGatedOpOnWc1(ctx: FiniteSchedulingContext) {
+async function placeGatedOpOnWc1(
+  ctx: FiniteSchedulingContext,
+  times: { laborTime?: number; machineTime?: number } = {}
+) {
   const provider = {
     getProcessesWithWorkCenters: async () => [
       { id: "proc-1", workCenters: ["wc1"] }
@@ -600,9 +603,10 @@ async function placeGatedOpOnWc1(ctx: FiniteSchedulingContext) {
     startDate: null,
     dueDate: null,
     setupTime: 0,
-    laborTime: 2,
+    laborTime: times.laborTime ?? 2,
     laborUnit: "Total Hours",
-    machineTime: 0,
+    machineTime: times.machineTime ?? 0,
+    machineUnit: "Total Hours",
     operationQuantity: 1,
     quantityComplete: 0
   });
@@ -681,6 +685,17 @@ it("a person on the board is not pulled to another station by the fallback", asy
   assert(placeholder, "an unschedulable placeholder is emitted for the op");
   assertEquals(placeholder.isPlaceholder, true);
   assertEquals(placeholder.resourceId, "wc1");
+});
+
+it("gated work with no hands-on time places machine-only when nobody is free", async () => {
+  // The welder is spoken for at wc2, but this op is all machine time.
+  const { selection } = await placeGatedOpOnWc1(
+    makeMannedElsewhereContext("wc2"),
+    { laborTime: 0, machineTime: 2 }
+  );
+
+  assertEquals(selection?.conflict ?? null, null);
+  assertEquals(selection?.placedStart, "2026-01-05T00:00:00.000Z");
 });
 
 it("a genuinely-unassigned person still floats to another station's fallback", async () => {

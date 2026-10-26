@@ -104,13 +104,13 @@ msgstr "{0, plural, one {# दिन की कमी} other {# दिन की
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr ""
 
-#. placeholder {0}: impact.unschedulable
-msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-msgstr ""
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr ""
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -723,6 +723,12 @@ msgstr "{percent} पिक किया गया"
 
 msgid "{position} of {total}"
 msgstr "{position} में से {total}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr ""
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# पंक्ति को स्थायी रूप से हटाएँ?} other {# पंक्तियों को स्थायी रूप से हटाएँ?}}"
@@ -11624,6 +11630,12 @@ msgstr "शिपमेंट में अतिरिक्त पार्ट
 msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
 
+msgid "Include materials on the traveler"
+msgstr ""
+
+msgid "Include operations on the traveler"
+msgstr ""
+
 msgid "Included"
 msgstr "शामिल"
 
@@ -15682,6 +15694,10 @@ msgstr "सूचनाएं"
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "इस ब्राउज़र की साइट सेटिंग्स में Carbon के लिए सूचनाएं अवरुद्ध हैं।"
 
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr ""
+
 msgid "Notify"
 msgstr "सूचित करें"
 
@@ -16517,6 +16533,9 @@ msgstr "{label} पर समाप्ति को ओवरराइड कर
 msgid "Overtime"
 msgstr "ओवरटाइम"
 
+msgid "Overtime hours"
+msgstr ""
+
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
 msgstr ""
@@ -17342,6 +17361,9 @@ msgstr "संभावित डेटा हानि"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
 
+msgid "Pre-select material"
+msgstr ""
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "विधेय-संचालित सुरक्षा गार्ड जो बिक्री पंक्तियों पर सक्रिय होते हैं। त्रुटियों से ब्लॉक करें या स्वीकार-करके-जारी रखें के साथ चेतावनी दें।"
 
@@ -18071,9 +18093,6 @@ msgstr "योग्य"
 
 msgid "Qualified Employees"
 msgstr "योग्य कर्मचारी"
-
-msgid "Qualified people are committed elsewhere"
-msgstr ""
 
 msgid "Qualified to run it"
 msgstr ""
@@ -19271,6 +19290,10 @@ msgstr "मिलान आवश्यक है"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSO आवश्यक करें"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr ""
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "क्रय आदेशों, गुणवत्ता दस्तावेज़ों, आपूर्तिकर्ताओं और परिवर्तन सूचनाओं पर राशि सीमा और अनुमोदनकर्ता समूहों के आधार पर बहु-स्तरीय साइन-ऑफ आवश्यक है।"
@@ -21629,6 +21652,9 @@ msgstr "PDF से निकाली गई कुछ पंक्तियो�
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "कुछ पंक्तियाँ उससे अधिक या कम मान्यता देती हैं जो वे बिल करती हैं। पुष्टि करने से पहले जो बाकी है उसे रखें।"
 
+msgid "Some of this process's work can't be scheduled"
+msgstr ""
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "कुछ रिकॉर्ड वापस नहीं आएंगे। जारी रखने के लिए <0>{CONFIRM_WORD}</0> टाइप करें।"
 
@@ -21848,6 +21874,9 @@ msgstr "कर वर्ष की शुरुआत"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "प्राप्ति मात्रा को शून्य से शुरू करें"
+
+msgid "Start the timer automatically"
+msgstr ""
 
 msgid "Start Time"
 msgstr "शुरुआत का समय"
@@ -24529,14 +24558,8 @@ msgstr "यह {0} के जर्नल को उलटेगा और इ�
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "यह {0} के जर्नल को उलटेगा, हर संपत्ति से इसका मूल्यह्रास वापस लेगा और इसे ड्राफ्ट में वापस करेगा। आप फिर इसे पुनर्गणना कर सकते हैं, पोस्ट कर सकते हैं या हटा सकते हैं।"
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "यह +{hoursInput}h अतिरिक्त समय {previewCount} लोगों के लिए सेट करेगा।"
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "यह +{hoursInput}h अतिरिक्त समय उस सप्ताह सभी नियुक्त कर्मचारियों के लिए सेट करेगा।"
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "यह +{hoursInput}h अतिरिक्त समय {previewCount} व्यक्ति-दिनों पर सेट करेगा।"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "यह निर्माण विधि के वर्तमान संस्करण को सक्रिय सेट करेगा, इसे पढ़ने के लिए केवल बनाता है।"

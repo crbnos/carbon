@@ -337,12 +337,19 @@ const PeopleWeekBoard = ({
   const daysElsewhereByEmployee = useMemo(() => {
     const map = new Map<string, Set<string>>();
     for (const assignment of assignmentsElsewhere) {
+      // the shift filter applies here as it does to the visible rows
+      if (
+        shiftId &&
+        !assignmentMatchesShift(assignment, shiftId, employeeShiftId)
+      ) {
+        continue;
+      }
       const set = map.get(assignment.employeeId) ?? new Set<string>();
       set.add(assignment.date);
       map.set(assignment.employeeId, set);
     }
     return map;
-  }, [assignmentsElsewhere]);
+  }, [assignmentsElsewhere, shiftId, employeeShiftId]);
 
   const daysOffByEmployee = useMemo(() => {
     const map = new Map<string, Set<string>>();

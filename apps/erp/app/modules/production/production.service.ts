@@ -112,6 +112,7 @@ import {
   remainingWorkHours,
   resolveLocationWindows,
   resolveWorkCenterWindows,
+  SCHEDULING_HORIZON_DAYS,
   subtractDates,
   subtractIntervals
 } from "@carbon/planning";
@@ -5662,26 +5663,82 @@ export async function getWorkCenterRequiredAbilities(
 }
 
 /**
+ * Who is qualified for each gated process and where the manning board has
+ * them, by the scheduler's own rule: a qualification counts until the day it
+ * expires, and a board day the person is absent does not commit them. Every
+ * gated process gets an entry, so "nobody" can be shown. People sort by name,
+ * stations by name.
+ */
+export function groupQualifiedPeople(args: {
+  /** abilityId → processId, for active abilities of gated processes */
+  processByAbility: Map<string, string>;
+  qualifications: {
+    employeeId: string;
+    abilityId: string;
+    expiresAt: string | null;
+  }[];
+  nameById: Map<string, string>;
+  assignments: { employeeId: string; date: string; station: string }[];
+  absences: { employeeId: string; date: string }[];
+  fromDate: string;
+}): Map<string, { name: string; stations: string[] }[]> {
+  const absent = new Set(
+    args.absences.map((absence) => `${absence.employeeId}:${absence.date}`)
+  );
+  const stationsByEmployee = new Map<string, Set<string>>();
+  for (const row of args.assignments) {
+    if (absent.has(`${row.employeeId}:${row.date}`)) continue;
+    const stations = stationsByEmployee.get(row.employeeId) ?? new Set();
+    stations.add(row.station);
+    stationsByEmployee.set(row.employeeId, stations);
+  }
+
+  const result = new Map<string, { name: string; stations: string[] }[]>(
+    [...new Set(args.processByAbility.values())].map((processId) => [
+      processId,
+      []
+    ])
+  );
+  for (const row of args.qualifications) {
+    if (row.expiresAt && row.expiresAt.slice(0, 10) <= args.fromDate) continue;
+    const processId = args.processByAbility.get(row.abilityId);
+    if (!processId) continue;
+    result.get(processId)?.push({
+      name: args.nameById.get(row.employeeId) ?? "",
+      stations: [...(stationsByEmployee.get(row.employeeId) ?? [])].sort()
+    });
+  }
+  for (const people of result.values()) {
+    people.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return result;
+}
+
+/**
  * For operations the scheduler could not place: per process that requires an
- * ability, the people qualified for it on `fromDate` and the stations the
- * manning board has each of them at from then on. The board is a commitment,
- * so a person on it is never pulled to another station — this is who to move.
+ * ability, who is qualified and the stations the manning board has them at
+ * (`groupQualifiedPeople`), read across every location and the scheduling
+ * horizon, as the scheduler commits a person on the board anywhere in it.
  */
 export async function getQualifiedPeopleByProcess(
   client: SupabaseClient<Database>,
   companyId: string,
-  args: { processIds: string[]; locationId: string; fromDate: string }
+  args: { processIds: string[]; fromDate: string }
 ): Promise<{
   data: Map<string, { name: string; stations: string[] }[]>;
   error: PostgrestError | null;
 }> {
   const empty = new Map<string, { name: string; stations: string[] }[]>();
   if (args.processIds.length === 0) return { data: empty, error: null };
+  const toDate = parseDate(args.fromDate)
+    .add({ days: SCHEDULING_HORIZON_DAYS })
+    .toString();
 
   const abilities = await client
     .from("ability")
     .select("id, processId, process!inner(requiresAbility)")
     .eq("companyId", companyId)
+    .eq("active", true)
     .eq("process.requiresAbility", true)
     .in("processId", args.processIds);
   if (abilities.error) return { data: empty, error: abilities.error };
@@ -5692,59 +5749,78 @@ export async function getQualifiedPeopleByProcess(
   );
   if (processByAbility.size === 0) return { data: empty, error: null };
 
-  const qualified = await client
+  const qualifications = await client
     .from("employeeAbility")
     .select("employeeId, abilityId, expiresAt")
     .eq("companyId", companyId)
     .in("abilityId", [...processByAbility.keys()]);
-  if (qualified.error) return { data: empty, error: qualified.error };
-  // Expiring on the day is not qualified that day, as in the scheduler.
-  const current = qualified.data.filter(
-    (row) => !row.expiresAt || row.expiresAt.slice(0, 10) > args.fromDate
-  );
-  const employeeIds = [...new Set(current.map((row) => row.employeeId))];
+  if (qualifications.error) {
+    return { data: empty, error: qualifications.error };
+  }
+  const employeeIds = [
+    ...new Set(qualifications.data.map((row) => row.employeeId))
+  ];
 
-  // Every process that needs an ability gets an entry, so "nobody" shows.
-  const result = new Map<string, { name: string; stations: string[] }[]>(
-    [...new Set(processByAbility.values())].map((processId) => [processId, []])
-  );
-  if (employeeIds.length === 0) return { data: result, error: null };
-  const [users, assignments] = await Promise.all([
-    client.from("user").select("id, fullName").in("id", employeeIds),
-    client
-      .from("peopleAssignment")
-      .select("employeeId, workCenter(name)")
-      .eq("companyId", companyId)
-      .eq("locationId", args.locationId)
-      .gte("date", args.fromDate)
-      .in("employeeId", employeeIds)
-  ]);
-  if (users.error) return { data: empty, error: users.error };
-  if (assignments.error) return { data: empty, error: assignments.error };
-  const nameById = new Map(users.data.map((user) => [user.id, user.fullName]));
-  const stationsByEmployee = new Map<string, Set<string>>();
-  for (const row of assignments.data) {
-    const name = row.workCenter?.name;
-    if (!name) continue;
-    const stations = stationsByEmployee.get(row.employeeId) ?? new Set();
-    stations.add(name);
-    stationsByEmployee.set(row.employeeId, stations);
-  }
+  const [users, assignments, absences] =
+    employeeIds.length === 0
+      ? [
+          { data: [], error: null },
+          { data: [], error: null },
+          { data: [], error: null }
+        ]
+      : await Promise.all([
+          client.from("user").select("id, fullName").in("id", employeeIds),
+          fetchAllRecords<{
+            employeeId: string;
+            date: string;
+            workCenter: { name: string } | null;
+          }>(() =>
+            client
+              .from("peopleAssignment")
+              .select("id, employeeId, date, workCenter(name)")
+              .eq("companyId", companyId)
+              .gte("date", args.fromDate)
+              .lte("date", toDate)
+              .in("employeeId", employeeIds)
+              .order("id")
+          ),
+          fetchAllRecords<{ employeeId: string; date: string }>(() =>
+            client
+              .from("peopleAbsence")
+              .select("id, employeeId, date")
+              .eq("companyId", companyId)
+              .gte("date", args.fromDate)
+              .lte("date", toDate)
+              .in("employeeId", employeeIds)
+              .order("id")
+          )
+        ]);
+  const failed = users.error ?? assignments.error ?? absences.error;
+  if (failed) return { data: empty, error: failed };
 
-  for (const row of current) {
-    const processId = processByAbility.get(row.abilityId);
-    if (!processId) continue;
-    const people = result.get(processId) ?? [];
-    people.push({
-      name: nameById.get(row.employeeId) ?? "",
-      stations: [...(stationsByEmployee.get(row.employeeId) ?? [])].sort()
-    });
-    result.set(processId, people);
-  }
-  for (const people of result.values()) {
-    people.sort((a, b) => a.name.localeCompare(b.name));
-  }
-  return { data: result, error: null };
+  return {
+    data: groupQualifiedPeople({
+      processByAbility,
+      qualifications: qualifications.data,
+      nameById: new Map(
+        (users.data ?? []).map((user) => [user.id, user.fullName ?? ""])
+      ),
+      assignments: (assignments.data ?? []).flatMap((row) =>
+        row.workCenter?.name
+          ? [
+              {
+                employeeId: row.employeeId,
+                date: row.date,
+                station: row.workCenter.name
+              }
+            ]
+          : []
+      ),
+      absences: absences.data ?? [],
+      fromDate: args.fromDate
+    }),
+    error: null
+  };
 }
 
 export async function getActiveEmployeeAbilities(

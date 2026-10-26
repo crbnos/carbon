@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import { error, hasPermission } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
@@ -144,9 +144,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production"
-  });
+  const { client, companyId, userId, permissions } = await requirePermissions(
+    request,
+    { view: "production" }
+  );
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;
@@ -497,11 +498,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     )
   ];
-  const qualifiedPeople = await getQualifiedPeopleByProcess(client, companyId, {
-    processIds: unschedulableProcessIds,
-    locationId,
-    fromDate: toCalendarDate(now(timeZone)).toString()
-  });
+  // Qualifications are readable with resources view only; without it the list
+  // would read as "nobody is qualified", so it is left out.
+  const qualifiedPeople = hasPermission(
+    permissions,
+    "resources",
+    "view",
+    companyId
+  )
+    ? await getQualifiedPeopleByProcess(client, companyId, {
+        processIds: unschedulableProcessIds,
+        fromDate: toCalendarDate(now(timeZone)).toString()
+      })
+    : {
+        data: new Map<string, { name: string; stations: string[] }[]>(),
+        error: null
+      };
   if (qualifiedPeople.error) {
     throw redirect(
       path.to.production,

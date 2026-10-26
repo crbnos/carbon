@@ -104,13 +104,13 @@ msgstr "{0, plural, one {# 日の不足} other {# 日の不足}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr ""
 
-#. placeholder {0}: impact.unschedulable
-msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-msgstr ""
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# 工程に標準時間がない} other {# 工程に標準時間がない}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr ""
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -723,6 +723,12 @@ msgstr "{percent}ピッキング済"
 
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr ""
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr ""
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {# 行を永久に削除しますか？} other {# 行を永久に削除しますか？}}"
@@ -11624,6 +11630,12 @@ msgstr "出荷に追加部品を含める"
 msgid "Include Inactive"
 msgstr "無効を含める"
 
+msgid "Include materials on the traveler"
+msgstr ""
+
+msgid "Include operations on the traveler"
+msgstr ""
+
 msgid "Included"
 msgstr "含まれています"
 
@@ -15682,6 +15694,10 @@ msgstr "通知"
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "このブラウザのサイト設定でCarbonの通知がブロックされています。"
 
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr ""
+
 msgid "Notify"
 msgstr "通知"
 
@@ -16517,6 +16533,9 @@ msgstr "有効期限を {label} で上書きします。"
 msgid "Overtime"
 msgstr "残業"
 
+msgid "Overtime hours"
+msgstr ""
+
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
 msgstr ""
@@ -17342,6 +17361,9 @@ msgstr "潜在的データ損失"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "使用期限が固定期間の場合、新規品目に対して事前入力されます。"
 
+msgid "Pre-select material"
+msgstr ""
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "販売明細行で起動する述語駆動ガード。エラーでブロックするか、確認して続行する警告を出します。"
 
@@ -18071,9 +18093,6 @@ msgstr "適格"
 
 msgid "Qualified Employees"
 msgstr "適格従業員"
-
-msgid "Qualified people are committed elsewhere"
-msgstr ""
 
 msgid "Qualified to run it"
 msgstr ""
@@ -19271,6 +19290,10 @@ msgstr "照合が必須"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSOを必須にする"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr ""
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "金額しきい値と承認者グループに基づき、発注書、品質ドキュメント、仕入先、変更通知に多段階の承認を必須にします。"
@@ -21629,6 +21652,9 @@ msgstr "PDFから抽出された一部の明細は在庫品目に自動的にマ
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "いくつかの明細は、請求額と異なる金額を認識しています。確認する前に残りを配置してください。"
 
+msgid "Some of this process's work can't be scheduled"
+msgstr ""
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "いくつかのレコードは戻りません。続行するには<0>{CONFIRM_WORD}</0>と入力してください。"
 
@@ -21848,6 +21874,9 @@ msgstr "税年度の開始"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "入荷数量をゼロから開始"
+
+msgid "Start the timer automatically"
+msgstr ""
 
 msgid "Start Time"
 msgstr "開始時刻"
@@ -24529,14 +24558,8 @@ msgstr "これは{0}の仕訳を逆仕訳し、下書き状態に戻します。
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "これは{0}の仕訳を逆仕訳し、各資産から減価償却を取り消し、下書き状態に戻します。その後、再計算、転記、または削除できます。"
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "{previewCount}名の人員に対して、超勤時間 +{hoursInput}h を設定します。"
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "その週のクルーの全員に+{hoursInput}時間の残業を設定します。"
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "これは{previewCount}人日に+{hoursInput}時間の残業を設定します。"
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "これにより、製造方法の現在のバージョンがアクティブに設定され、読み取り専用になります。"

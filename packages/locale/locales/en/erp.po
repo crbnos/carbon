@@ -104,13 +104,13 @@ msgstr "{0, plural, one {# day short} other {# days short}}"
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# job} other {# jobs}}"
 
-#. placeholder {0}: impact.unschedulable
-msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-msgstr "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
-
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
+msgstr "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -723,6 +723,12 @@ msgstr "{percent} picked"
 
 msgid "{position} of {total}"
 msgstr "{position} of {total}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+msgstr "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
+
+msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
+msgstr "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
@@ -11624,6 +11630,12 @@ msgstr "Include extra parts in shipment"
 msgid "Include Inactive"
 msgstr "Include Inactive"
 
+msgid "Include materials on the traveler"
+msgstr "Include materials on the traveler"
+
+msgid "Include operations on the traveler"
+msgstr "Include operations on the traveler"
+
 msgid "Included"
 msgstr "Included"
 
@@ -15682,6 +15694,10 @@ msgstr "Notifications"
 msgid "Notifications are blocked for Carbon in this browser's site settings."
 msgstr "Notifications are blocked for Carbon in this browser's site settings."
 
+#. placeholder {0}: unreadNotifications.length
+msgid "Notifications, {0} unread"
+msgstr "Notifications, {0} unread"
+
 msgid "Notify"
 msgstr "Notify"
 
@@ -16517,6 +16533,9 @@ msgstr "Override the expiration on {label}."
 msgid "Overtime"
 msgstr "Overtime"
 
+msgid "Overtime hours"
+msgstr "Overtime hours"
+
 #. placeholder {0}: counts.updated ?? 0
 msgid "Overtime set for {0} assignments"
 msgstr "Overtime set for {0} assignments"
@@ -17342,6 +17361,9 @@ msgstr "Potential Data Loss"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-filled for a new item when expiry is Fixed Duration."
 
+msgid "Pre-select material"
+msgstr "Pre-select material"
+
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 
@@ -18071,9 +18093,6 @@ msgstr "Qualified"
 
 msgid "Qualified Employees"
 msgstr "Qualified Employees"
-
-msgid "Qualified people are committed elsewhere"
-msgstr "Qualified people are committed elsewhere"
 
 msgid "Qualified to run it"
 msgstr "Qualified to run it"
@@ -19271,6 +19290,10 @@ msgstr "Require Match"
 
 msgid "Require SAML SSO"
 msgstr "Require SAML SSO"
+
+#. placeholder {0}: location.name
+msgid "Require staffing at {0}"
+msgstr "Require staffing at {0}"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
@@ -21629,6 +21652,9 @@ msgstr "Some lines extracted from the PDF could not be automatically mapped to y
 msgid "Some lines recognize more or less than they bill. Place what is left before confirming."
 msgstr "Some lines recognize more or less than they bill. Place what is left before confirming."
 
+msgid "Some of this process's work can't be scheduled"
+msgstr "Some of this process's work can't be scheduled"
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 
@@ -21848,6 +21874,9 @@ msgstr "Start of Tax Year"
 
 msgid "Start Receipt Quantities at Zero"
 msgstr "Start Receipt Quantities at Zero"
+
+msgid "Start the timer automatically"
+msgstr "Start the timer automatically"
 
 msgid "Start Time"
 msgstr "Start Time"
@@ -24529,14 +24558,8 @@ msgstr "This will reverse the journals of {0} and return it to Draft. You can th
 msgid "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 msgstr "This will reverse the journals of {0}, take its depreciation back off each asset and return it to Draft. You can then recalculate, post or delete it."
 
-msgid "This will set +{hoursInput}h of overtime for {previewCount} people."
-msgstr "This will set +{hoursInput}h of overtime for {previewCount} people."
-
 msgid "This will set +{hoursInput}h of overtime for everyone assigned that week."
 msgstr "This will set +{hoursInput}h of overtime for everyone assigned that week."
-
-msgid "This will set +{hoursInput}h of overtime on {previewCount} person-days."
-msgstr "This will set +{hoursInput}h of overtime on {previewCount} person-days."
 
 msgid "This will set the current version of the make method to Active, making it read-only."
 msgstr "This will set the current version of the make method to Active, making it read-only."

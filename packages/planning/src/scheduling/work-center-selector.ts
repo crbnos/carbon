@@ -682,11 +682,17 @@ export class WorkCenterSelector {
                   employeeId: m.employeeId,
                   windows: intersectWindows(m.windows, capacity.windows)
                 }));
-              if (relayMembers.length === 0) {
+              // Work with no hands-on part (machine time only) needs nobody:
+              // the relay below places it machine-only.
+              if (relayMembers.length === 0 && attendedHours > 0) {
                 if (!firstConflict) {
+                  const assignedHere = (members ?? []).some((m) =>
+                    people?.memberPeopleDates.has(m.employeeId)
+                  );
                   firstConflict = composeNoFreeOperator(
                     requirement.abilityName,
-                    members?.length ?? 0
+                    members?.length ?? 0,
+                    assignedHere
                   );
                 }
                 continue;
