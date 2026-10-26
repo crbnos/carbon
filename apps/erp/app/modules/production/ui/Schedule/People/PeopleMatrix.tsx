@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
+import { RoundingMode, round } from "@carbon/utils";
 import {
   today as calendarToday,
   getLocalTimeZone
@@ -212,7 +213,7 @@ export function PeopleMatrix({
 
   const neededCount = (workCenterId: string, date: string) => {
     const attended = attendedByWorkCenter[workCenterId]?.[date] ?? 0;
-    return Math.ceil(attended / personDayHours);
+    return round(attended / personDayHours, 0, RoundingMode.Up);
   };
 
   const dayHeaders = weekDates.map((date) => (
