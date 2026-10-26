@@ -55,6 +55,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { TrackedEntity } from "~/modules/inventory/types";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -251,6 +252,14 @@ const JobProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">{routeData?.job?.jobId}</span>
+        {routeData?.job?.thumbnailPath && routeData?.job?.itemId && (
+          <ItemThumbnailUpload
+            path={routeData.job.thumbnailPath}
+            itemId={routeData.job.itemId}
+            modelId={routeData.job.modelId}
+            isReadOnly
+          />
+        )}
       </VStack>
 
       <VStack spacing={2}>

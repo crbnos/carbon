@@ -24,7 +24,7 @@ Shared server utilities — event system, Inngest client, trigger dispatch, SMTP
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/lib typecheck   # tsgo --noEmit
+pnpm --filter @carbon/lib typecheck   # tsc --noEmit
 pnpm --filter @carbon/lib test        # vitest run
 ```
 

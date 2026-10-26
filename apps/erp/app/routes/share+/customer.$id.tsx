@@ -395,6 +395,9 @@ export default function CustomerPortal() {
           count={count ?? 0}
           isTruncated={isTruncated}
           compact
+          // Signed out: the export names ids from the signed-in company's
+          // lists, and there is no company here to read them from.
+          withCsvExport={false}
           defaultColumnPinning={defaultColumnPinning}
           sort={<PortalSort columns={sortableColumns} />}
         />

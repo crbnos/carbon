@@ -41,8 +41,8 @@ type GenericSchema = {
  * than `select("*")`, for the same reason: naming the columns lets Postgres
  * prune the views' unreferenced computed columns instead of materializing them
  * per row. Adding a column to one of those tables means adding it to the
- * constant — `apps/erp/test/list-select-columns.test.ts` fails if an
- * `accessorKey` is missing, because the CSV export reads accessors untyped.
+ * constant — the `list-select-covers-columns` check (`@carbon/checks`) fails
+ * if an `accessorKey` is missing, because the CSV export reads accessors untyped.
  */
 export const LIST_COUNT = "estimated" as const;
 

@@ -6,15 +6,17 @@ import {
   Body,
   Container,
   Heading,
+  Hr,
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
 import { Logo } from "./components/Logo";
+import { notificationStyles } from "./components/notificationStyles";
 import {
   EmailThemeProvider,
-  getEmailInlineStyles,
-  getEmailThemeClasses
+  getEmailThemeClasses,
+  HeadStyle
 } from "./components/Theme";
 
 interface Props {
@@ -22,87 +24,91 @@ interface Props {
   verificationCode?: string;
 }
 
+// The email-verification code (packages/auth verification.server.ts). It
+// has no link to follow, so no button: the code is the whole message.
 export const VerificationEmail = ({
   email = "user@example.com",
   verificationCode = "123456"
 }: Props) => {
-  const text = `Your verification code is ${verificationCode}`;
   const themeClasses = getEmailThemeClasses();
-  const lightStyles = getEmailInlineStyles("light");
 
   return (
-    <EmailThemeProvider preview={<Preview>{text}</Preview>}>
+    <EmailThemeProvider
+      preview={
+        <Preview>{`Your verification code is ${verificationCode}`}</Preview>
+      }
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
+    >
       <Body
-        className={`my-auto mx-auto font-sans ${themeClasses.body}`}
-        style={lightStyles.body}
+        className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
       >
         <Container
-          className={`my-[40px] mx-auto p-[20px] max-w-[600px] text-center ${themeClasses.container}`}
+          className={`my-[40px] mx-auto p-[36px] max-w-[560px] rounded-[16px] nf-card ${themeClasses.container}`}
           style={{
+            borderRadius: 16,
             borderStyle: "solid",
-            borderWidth: 1,
-            borderColor: lightStyles.container.borderColor
+            borderWidth: 1
           }}
         >
           <Logo />
+
+          <Text
+            className={`text-[11px] leading-[16px] uppercase text-center font-medium m-0 mt-[40px] mb-[10px] nf-eyebrow ${themeClasses.mutedText}`}
+            style={{ letterSpacing: "0.14em" }}
+          >
+            Security
+          </Text>
+
           <Heading
-            className={`text-[21px] font-normal text-center p-0 my-[30px] mx-0 ${themeClasses.heading}`}
-            style={{ color: lightStyles.text.color }}
+            className={`text-[26px] font-medium text-center tracking-tight p-0 mt-0 mb-[32px] mx-0 ${themeClasses.heading}`}
           >
             Verify your email address
           </Heading>
 
-          <Text
-            className={`text-center ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            We've sent this verification code to{" "}
-            <span className="font-medium">{email}</span>
-          </Text>
-
-          <Section className="text-center my-[40px]">
-            <div
-              style={{
-                display: "inline-block",
-                padding: "20px 40px",
-                backgroundColor: "#f8f9fa",
-                borderRadius: "8px",
-                border: "1px solid #e9ecef"
-              }}
-            >
-              <Text
-                className="text-center font-mono"
-                style={{
-                  fontSize: "32px",
-                  fontWeight: "bold",
-                  letterSpacing: "8px",
-                  color: "#333",
-                  margin: 0
-                }}
-              >
-                {verificationCode}
-              </Text>
-            </div>
-          </Section>
-
-          <Text
-            className={`text-center ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            This code will expire in 10 minutes. If you didn't request this
-            verification code, please ignore this email.
-          </Text>
-
-          <Text
-            className={`text-center text-sm mt-[40px] ${themeClasses.text}`}
+          <Section
+            className="nf-callout"
             style={{
-              color: lightStyles.text.color,
-              fontSize: "14px",
-              opacity: 0.7
+              backgroundColor: "#fafafa",
+              borderColor: "#ececef",
+              borderRadius: 12,
+              borderStyle: "solid",
+              borderWidth: 1,
+              marginBottom: 28,
+              padding: "18px 20px"
             }}
           >
-            If you're having trouble, you can reply to this email or contact us
-            at support@carbon.ms
+            <table
+              role="presentation"
+              cellPadding={0}
+              cellSpacing={0}
+              width="100%"
+              style={{ borderCollapse: "collapse", width: "100%" }}
+            >
+              <tr>
+                <td style={{ verticalAlign: "middle" }}>
+                  <Text
+                    className={`text-[15px] leading-[24px] m-0 ${themeClasses.text}`}
+                  >
+                    Here is the verification code for {email}.
+                  </Text>
+                  <Text
+                    className={`text-[32px] leading-[40px] font-mono font-medium text-center m-0 mt-[16px] ${themeClasses.heading}`}
+                    style={{ letterSpacing: "0.3em" }}
+                  >
+                    {verificationCode}
+                  </Text>
+                </td>
+              </tr>
+            </table>
+          </Section>
+
+          <Hr className={`my-[32px] nf-divider ${themeClasses.border}`} />
+          <Text
+            className={`text-[12px] leading-[18px] m-0 nf-fallback ${themeClasses.mutedText}`}
+          >
+            This code expires in 10 minutes. If you didn't ask for it, you can
+            ignore this email. Having trouble? Reply to this email or contact
+            support@carbon.ms.
           </Text>
         </Container>
       </Body>

@@ -431,6 +431,64 @@ export function leaseCommencementPreview(
   };
 }
 
+export type SalesOrderInvoiceSummary = {
+  invoicedAmount: number;
+  paidAmount: number;
+  currencyMismatchCount: number;
+};
+
+/** Invoiced and paid totals in the order's currency. Invoice totals and
+ *  applied payments are base amounts; the invoice's rate turns them into its
+ *  document currency. Voided invoices count for nothing, and an invoice in
+ *  another currency is counted as a mismatch rather than mixed in. */
+export function summarizeSalesOrderInvoices(
+  orderCurrency: string | null | undefined,
+  invoices: {
+    id: string | null;
+    invoiceTotal: number | null;
+    status: string | null;
+    currencyCode: string | null;
+    exchangeRate: number | null;
+  }[],
+  settlements: { targetSalesInvoiceId: string | null; appliedAmount: number }[]
+): SalesOrderInvoiceSummary {
+  const paidBaseByInvoiceId = new Map<string, number>();
+  for (const settlement of settlements) {
+    if (!settlement.targetSalesInvoiceId) continue;
+    paidBaseByInvoiceId.set(
+      settlement.targetSalesInvoiceId,
+      (paidBaseByInvoiceId.get(settlement.targetSalesInvoiceId) ?? 0) +
+        settlement.appliedAmount
+    );
+  }
+
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let currencyMismatchCount = 0;
+
+  for (const invoice of invoices) {
+    if (invoice.status === "Voided") continue;
+
+    if (
+      orderCurrency &&
+      invoice.currencyCode &&
+      invoice.currencyCode !== orderCurrency
+    ) {
+      currencyMismatchCount += 1;
+      continue;
+    }
+
+    invoicedAmount += (invoice.invoiceTotal ?? 0) * (invoice.exchangeRate ?? 1);
+    if (invoice.id) {
+      paidAmount +=
+        (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
+        (invoice.exchangeRate ?? 1);
+    }
+  }
+
+  return { invoicedAmount, paidAmount, currencyMismatchCount };
+}
+
 export type RentalEquipmentStatus =
   | "To Deliver"
   | "Partially Delivered"

@@ -97,6 +97,7 @@ import UnitOfMeasure, {
   useUnitOfMeasure
 } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
+import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
@@ -1032,7 +1033,11 @@ function AttributesForm({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
 
             <Submit
@@ -1281,7 +1286,11 @@ function AttributesListItem({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
             <HStack className="w-full justify-end" spacing={2}>
               <Button variant="secondary" onClick={disclosure.onClose}>
@@ -1338,27 +1347,15 @@ function AttributesListItem({
                 </HStack>
                 {attribute.type === "Measurement" && (
                   <span className="text-xs text-muted-foreground">
-                    {attribute.minValue !== null && attribute.maxValue !== null
-                      ? `Must be between ${attribute.minValue} and ${
-                          attribute.maxValue
-                        } ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : attribute.minValue !== null
-                        ? `Must be > ${attribute.minValue} ${
-                            unitOfMeasures.find(
-                              (u) => u.value === unitOfMeasureCode
-                            )?.label
-                          }`
-                        : attribute.maxValue !== null
-                          ? `Must be < ${attribute.maxValue} ${
-                              unitOfMeasures.find(
-                                (u) => u.value === unitOfMeasureCode
-                              )?.label
-                            }`
-                          : null}
+                    <MeasurementLimits
+                      minValue={attribute.minValue}
+                      maxValue={attribute.maxValue}
+                      unit={
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }
+                    />
                   </span>
                 )}
               </VStack>

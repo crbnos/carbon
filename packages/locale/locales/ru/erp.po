@@ -64,6 +64,10 @@ msgstr "(не счет проведения собственного капит�
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# блокирующая запись} other {# блокирующие записи}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {# компонент в этой группе} other {# компонентов в этой группе}}"
@@ -80,6 +84,14 @@ msgstr "{0, plural, one {# день недостатка} few {# дня недо
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# операция не имеет временных нормативов} few {# операции не имеют временных нормативов} many {# операций не имеют временных нормативов} other {# операций не имеют временных нормативов}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# запись требует внимания} other {# записей требуют внимания}}"
@@ -91,6 +103,14 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому она не может быть зарезервирована. Пропуск позволит зарезервировать все остальное.} other {# строк связаны с данными вне этой организации, поэтому они не могут быть зарезервированы. Пропуск позволит зарезервировать все остальное.}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -548,6 +568,9 @@ msgstr "{documentTypeLabel} правило утверждения"
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -559,6 +582,9 @@ msgstr "{hidden, plural, one {Еще # запись.} other {Еще # запис
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -705,6 +731,9 @@ msgstr "{selectedCount, plural, one {Выбрано: #} other {Выбрано: #
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -758,6 +787,9 @@ msgstr "{unread} непрочитанных"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
@@ -2329,6 +2361,9 @@ msgstr "Добавлено для этого покупателя"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "Добавляется к цене за единицу для выбранных значений, до скидок и надбавок. Используйте отрицательную сумму для кредита."
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "Добавление демо-записей"
@@ -4868,6 +4903,9 @@ msgstr "Извещения об изменении"
 
 msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
 msgstr "Извещения об изменении не удалось загрузить, поэтому новые версии и ревизии заблокированы. Перезагрузите, чтобы повторить попытку."
+
+msgid "Change notices could not be loaded, so the active version cannot be changed. Reload to try again."
+msgstr "Извещения об изменении не удалось загрузить, поэтому активную версию нельзя изменить. Перезагрузите, чтобы повторить попытку."
 
 msgid "Change order"
 msgstr "Приказ об изменении"
@@ -8448,6 +8486,9 @@ msgstr "например MI"
 msgid "e.g. Suite 200"
 msgstr "например Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "например: подозрение на подделку, не та деталь, повреждено при транспортировке"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "например, первые 3-4 недели"
 
@@ -9207,6 +9248,9 @@ msgstr "Введите полученное количество или отме
 msgid "Enter a web address, such as https://example.com"
 msgstr "Введите веб-адрес, например https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "Введите номенклатуру и количество самостоятельно."
 
@@ -9451,6 +9495,9 @@ msgstr "Каждые 3 часа"
 msgid "Every account default is set"
 msgstr "Установлены все значения по умолчанию счета"
 
+msgid "Every account is mapped"
+msgstr "Все счета сопоставлены"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "Каждому активу требуется строка платежа перед активацией."
 
@@ -9486,6 +9533,9 @@ msgstr "Каждая строка признает выставленную су
 
 msgid "Every match"
 msgstr "Каждое совпадение"
+
+msgid "Every posted journal line in a period"
+msgstr "Все проведённые строки журнала за период"
 
 msgid "Every required action has already been added."
 msgstr "Все требуемые действия уже добавлены."
@@ -11717,6 +11767,15 @@ msgstr "Контроль"
 msgid "Inspection · {itemReadableId}"
 msgstr "Контроль · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "Контроль {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "Контроль {0} · {1}"
+
 msgid "Inspection document"
 msgstr "Документ контроля"
 
@@ -13389,6 +13448,9 @@ msgstr "Сопоставьте ваш план счетов с планом сч
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
 
+msgid "Mapped"
+msgstr "Сопоставленные"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14094,6 +14156,15 @@ msgstr "MRP предлагает переместить существующий
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Несколько производственных заказов могут выполняться на этом процессе одновременно — например, лазерный станок, печь или ванна для гальваники"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "Должно быть не менее {minValue} {unitLabel}"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "Должно быть не более {maxValue} {unitLabel}"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "Должно быть между {minValue} и {maxValue} {unitLabel}"
+
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
 
@@ -14342,6 +14413,9 @@ msgstr "Новая проблема"
 
 msgid "New Item Group"
 msgstr "Новая группа товаров"
+
+msgid "New jobs use version {activeVersion}"
+msgstr "Новые производственные заказы используют версию {activeVersion}"
 
 msgid "New Kanban"
 msgstr "Новый канбан"
@@ -14655,6 +14729,9 @@ msgstr "Нет добавленных навыков"
 msgid "No Access"
 msgstr "Нет доступа"
 
+msgid "No accounts are mapped yet"
+msgstr "Сопоставленных счетов пока нет"
+
 msgid "No accounts match your search"
 msgstr "Ни один счет не соответствует вашему поиску"
 
@@ -14748,6 +14825,14 @@ msgstr "Пока нет изменений."
 
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "Изменений еще нет. Когда аренда активна, кнопка \"Изменить\" находится в заголовке, а кнопки \"Завершить\" и \"Приобрести\" находятся на странице каждого актива."
+
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "Ни одна характеристика не забракована, поэтому укажите, почему партия отклоняется. Все {0} единиц будут отмечены как отклонённые."
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "Ни одна характеристика не забракована, поэтому укажите, почему партия отклоняется. Вся партия из {0} будет отклонена."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
@@ -15122,6 +15207,9 @@ msgstr "Нет ID детали"
 msgid "No parts"
 msgstr "Нет деталей"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "Ключи доступа еще не зарегистрированы."
 
@@ -15370,6 +15458,9 @@ msgstr "Нет доступных переменных"
 
 msgid "No versions available"
 msgstr "Нет доступных версий"
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
@@ -15924,8 +16015,14 @@ msgstr "Открыть Заявки на техобслуживание"
 msgid "Open in Carbon"
 msgstr "Открыть в Carbon"
 
+msgid "Open in change notice {ids}. Release it to change the active version."
+msgstr "Открыть в Извещении об изменении {ids}. Запустите его в работу, чтобы изменить активную версию."
+
 msgid "Open in change notice {ids}. Release it to create new versions or revisions."
 msgstr "Открыть в Извещении об изменении {ids}. Запустите его в работу, чтобы создать новые версии или ревизии."
+
+msgid "Open in change notices {ids}. Release them to change the active version."
+msgstr "Открыть в Извещениях об изменении {ids}. Запустите их в работу, чтобы изменить активную версию."
 
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "Открыть в Извещениях об изменении {ids}. Запустите их в работу, чтобы создать новые версии или ревизии."
@@ -16010,6 +16107,9 @@ msgstr "Откройте интеграцию Ramp и попробуйте по�
 
 msgid "Open the Setup Map"
 msgstr "Открыть карту настройки"
+
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr ""
 
 msgid "Open transactions"
 msgstr "Открытые транзакции"
@@ -16614,6 +16714,9 @@ msgstr "Просрочено"
 msgid "Past end date"
 msgstr "После даты завершения"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "Вставьте XML метаданных, если ваш поставщик удостоверений не публикует URL метаданных"
 
@@ -16984,6 +17087,9 @@ msgstr "Закрепить {0}"
 
 msgid "Pin or unpin"
 msgstr "Прикрепить или открепить"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "Сведите пальцы или прокрутите для масштабирования · перетащите для перемещения · коснитесь дважды для сброса"
 
 msgid "Pinned"
 msgstr "Закреплено"
@@ -18301,6 +18407,9 @@ msgstr "Реализованный убыток от обмена валют"
 msgid "Reason"
 msgstr "Причина"
 
+msgid "Reason (optional)"
+msgstr "Причина (необязательно)"
+
 msgid "Reason Account"
 msgstr "Счет причины"
 
@@ -18584,6 +18693,9 @@ msgstr "Ослабленный"
 
 msgid "Reference"
 msgstr "Ссылка"
+
+msgid "Reference image"
+msgstr "Справочное изображение"
 
 msgid "Refresh"
 msgstr "Обновить"
@@ -18897,6 +19009,9 @@ msgstr "Убрать двухфакторную аутентификацию"
 msgid "Remove Unit"
 msgstr "Убрать единицу"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "Удалено"
 
@@ -19189,6 +19304,12 @@ msgstr "Требует действия"
 
 msgid "Requires Adjustment"
 msgstr "Требует корректировки"
+
+msgid "Requires inspection"
+msgstr "Требует контроля"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "Требует контроля. Партия открывается при проведении квитанции."
 
 msgid "Requires Repair"
 msgstr "Требует ремонта"
@@ -21339,11 +21460,17 @@ msgstr "Показано пользователю при ошибке этого
 msgid "Shuffle"
 msgstr "Перемешать"
 
+msgid "Sign in here instead"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Войти в Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с использованием биометрии вместо волшебной ссылки. Ключи доступа защищены Face ID, Touch ID или PIN-кодом вашего устройства."
+
+msgid "Sign in with code"
+msgstr ""
 
 msgid "Sign in with Google"
 msgstr "Войти с помощью Google"
@@ -21362,6 +21489,9 @@ msgstr "Выход"
 
 msgid "Sign out instead"
 msgstr "Вместо этого выйти"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Подтверждение рассмотрения перед переходом к следующему шагу"
@@ -22423,8 +22553,14 @@ msgstr "Переключить модуль"
 msgid "Switch to pan mode"
 msgstr "Переключиться в режим панорамы"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "Переключиться в режим выделения"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "Переключиться на письменный контент"
@@ -24206,8 +24342,11 @@ msgstr "Этот квартал"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "В этом поступлении нет строк. Выберите документ-основание, чтобы добавить их."
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "Это удаляет PDF. Сотрудники вместо этого увидят письменный контент."
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Это удаляет их приложение аутентификатора, поэтому их следующий вход требует только волшебной ссылки. Используйте это, когда они потеряли доступ к своему аутентификатору. Это влияет на их вход для каждой организации, которой они принадлежат."
@@ -24823,6 +24962,9 @@ msgstr "План обучения"
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Обучение, пройденное вне Carbon, например курс поставщика. Задание содержит только название. Администратор отмечает каждого сотрудника завершённым и может прикрепить его сертификат."
 
+msgid "Training video"
+msgstr ""
+
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Обучение вашей команды через Academy и встроенные руководства"
 
@@ -25178,6 +25320,9 @@ msgstr "Разблокировать"
 
 msgid "Unlock with passkey"
 msgstr "Разблокировать с помощью ключа доступа"
+
+msgid "Unmapped"
+msgstr "Несопоставленные"
 
 msgid "Unmapped dimension values"
 msgstr "Неотображенные значения измерений"
@@ -25800,6 +25945,9 @@ msgstr "Просмотр Покупателей"
 msgid "View Employees"
 msgstr "Просмотр сотрудников"
 
+msgid "View full size"
+msgstr "Открыть в полном размере"
+
 msgid "View History"
 msgstr "Просмотр истории"
 
@@ -26063,14 +26211,14 @@ msgstr "Мы автоматически сопоставили каждый ст
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "Мы быстро разбираемся с проблемами и их решаем, пока ваша команда адаптируется"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
+
 msgid "We've sent a verification code to {email}"
 msgstr "Мы отправили код подтверждения на {email}"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "Мы отправили код подтверждения на {signupEmail}"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Мы отправили вам волшебную ссылку для входа в ваш аккаунт."
 
 msgid "Webhook"
 msgstr "Вебхук"
@@ -26203,8 +26351,8 @@ msgstr "Стоимость каждого актива, продолжитель
 msgid "What each period's payment is for this asset in the first year"
 msgstr "Размер платежа каждого периода для этого актива в первый год"
 
-msgid "What employees read before the questions"
-msgstr "То, что сотрудники читают перед вопросами"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "Что происходит со счетом-фактурой после его создания"
@@ -26772,6 +26920,9 @@ msgstr "Списание запасов, забракованных или во�
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Уменьшение стоимости актива в течение его жизни — ежемесячная серия, которую вы создаете, рассматриваете как черновик, затем проводите."
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -26802,6 +26953,9 @@ msgstr "Да, обновить ID"
 
 msgid "You"
 msgstr "Вы"
+
+msgid "You are editing draft version {draftVersion}. Its changes reach new jobs once it is the Active version."
+msgstr "Вы редактируете черновую версию {draftVersion}. Её изменения попадут в новые производственные заказы, когда она станет активной версией."
 
 msgid "You belong to more than one company. Pick where to work."
 msgstr "Вы принадлежите более чем одной организации. Выберите, где работать."
@@ -26988,6 +27142,12 @@ msgstr "Ваш список поставщиков"
 
 msgid "yourself"
 msgstr "себя"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 уровень контроля (I / II / III); более высокие уровни означают больший объем выборки для одной партии."

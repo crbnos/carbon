@@ -2,81 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
+import { hidesSupersededJournals } from "./accounting.utils";
 
-// The settings barrel re-exports its UI, which pulls Lingui `msg` macros that
-// vitest does not transform; the glossary evaluates them at module load.
-// Nothing under test touches either.
-vi.mock("~/modules/settings/settings.service", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  getNextSequence: vi.fn()
-}));
-vi.mock("@carbon/content/glossary", () => ({
-  getDefinitionText: () => "",
-  getEntry: () => undefined,
-  getTermText: () => "",
-  glossaryEntries: () => [],
-  hasEntry: () => false,
-  listEntries: () => [],
-  lookupEntry: () => undefined,
-  termSlug: (t: string) => t,
-  terms: {}
-}));
+it.each([
+  ["no status is asked for", { status: null }],
+  [
+    "a filter on another column has a value",
+    { status: null, filters: [{ column: "sourceType", value: "Manual" }] }
+  ],
+  [
+    "a status filter has no value",
+    { status: null, filters: [{ column: "status", value: "" }] }
+  ]
+])("hides Superseded journals when %s", (_label, args) => {
+  expect(hidesSupersededJournals(args)).toBe(true);
+});
 
-import { getJournalEntries } from "./accounting.service";
-
-/** A query builder that records every filter call made on it. */
-function recordingClient() {
-  const calls: [string, ...unknown[]][] = [];
-  const builder: any = new Proxy(
-    {},
-    {
-      get: (_target, method: string) => {
-        if (method === "then") return undefined;
-        return (...args: unknown[]) => {
-          calls.push([method, ...args]);
-          return builder;
-        };
-      }
-    }
-  );
-  return { client: { from: () => builder } as any, calls };
-}
-
-const listArgs = { search: null, status: null, limit: 25, cursor: null };
-
-describe("getJournalEntries", () => {
-  it("hides Superseded journals when no status is asked for", async () => {
-    const { client, calls } = recordingClient();
-    await getJournalEntries(client, "C1", listArgs);
-    expect(calls).toContainEqual(["neq", "status", "Superseded"]);
-  });
-
-  it("shows Superseded journals when the status param asks for them", async () => {
-    const { client, calls } = recordingClient();
-    await getJournalEntries(client, "C1", {
-      ...listArgs,
-      status: "Superseded"
-    });
-    expect(calls).toContainEqual(["eq", "status", "Superseded"]);
-    expect(calls).not.toContainEqual(["neq", "status", "Superseded"]);
-  });
-
-  it("leaves the status to a table filter on status", async () => {
-    const { client, calls } = recordingClient();
-    await getJournalEntries(client, "C1", {
-      ...listArgs,
-      filters: [{ column: "status", operator: "eq", value: "Superseded" }]
-    });
-    expect(calls).not.toContainEqual(["neq", "status", "Superseded"]);
-  });
-
-  it("still hides them when a filter on another column has a value", async () => {
-    const { client, calls } = recordingClient();
-    await getJournalEntries(client, "C1", {
-      ...listArgs,
-      filters: [{ column: "sourceType", operator: "eq", value: "Manual" }]
-    });
-    expect(calls).toContainEqual(["neq", "status", "Superseded"]);
-  });
+it.each([
+  ["the status param asks for one", { status: "Superseded" }],
+  [
+    "a table filter on status has a value",
+    { status: null, filters: [{ column: "status", value: "Superseded" }] }
+  ]
+])("shows Superseded journals when %s", (_label, args) => {
+  expect(hidesSupersededJournals(args)).toBe(false);
 });

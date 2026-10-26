@@ -3,41 +3,38 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { describe, expect, it, vi } from "vitest";
+import { fakeDatabase } from "../../../../core/fake-database-test-fixture";
 import { RilletBillSyncer } from "../bill";
 import { RilletChargeSyncer } from "../charge";
 import { RilletSalesInvoiceSyncer } from "../invoice";
-
-const { linked } = vi.hoisted(() => ({ linked: [] as unknown[] }));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    cb: (tx: unknown) => Promise<unknown>
-  ) => {
-    const b = {
-      values: (row: unknown) => {
-        linked.push(row);
-        return b;
-      },
-      onConflict: () => b,
-      execute: async () => []
-    };
-    return cb({ insertInto: () => b });
-  }
-}));
 
 describe.each([
   ["invoice", RilletSalesInvoiceSyncer],
   ["bill", RilletBillSyncer],
   ["charge", RilletChargeSyncer]
 ] as const)("Rillet %s void", (entityType, Syncer) => {
-  function setup(status: string, mapping: unknown, failure?: Error) {
-    linked.length = 0;
+  function setup(
+    status: string,
+    mapping: { externalId: string; metadata?: Record<string, unknown> },
+    failure?: Error
+  ) {
+    const db = fakeDatabase({
+      externalIntegrationMapping: [
+        {
+          entityType,
+          entityId: "doc-1",
+          integration: "rillet",
+          companyId: "company-1",
+          metadata: null,
+          ...mapping
+        }
+      ]
+    });
     const deletion = failure
       ? vi.fn().mockRejectedValue(failure)
       : vi.fn().mockResolvedValue(undefined);
     const syncer = new Syncer({
-      database: {} as never,
+      database: db.database,
       companyId: "company-1",
       entityType,
       config: {
@@ -56,11 +53,14 @@ describe.each([
       id: "doc-1",
       status
     } as never);
-    (syncer as any).mappingService = { getByEntity: async () => mapping };
-    return { syncer, deletion };
+    return {
+      syncer,
+      deletion,
+      mapping: () => db.rows("externalIntegrationMapping")[0]
+    };
   }
   it("propagates a mapped void before the existing mapping fast bailout", async () => {
-    const { syncer, deletion } = setup("Voided", {
+    const { syncer, deletion, mapping } = setup("Voided", {
       externalId: "remote-1",
       metadata: { retained: true }
     });
@@ -70,7 +70,7 @@ describe.each([
       remoteId: "remote-1"
     });
     expect(deletion).toHaveBeenCalledWith("remote-1");
-    expect(linked[0]).toMatchObject({
+    expect(mapping()).toMatchObject({
       entityId: "doc-1",
       externalId: "remote-1",
       metadata: { retained: true, voided: true }
@@ -88,7 +88,7 @@ describe.each([
     expect(deletion).not.toHaveBeenCalled();
   });
   it("does not hide failed remote deletion behind the old mapping", async () => {
-    const { syncer } = setup(
+    const { syncer, mapping } = setup(
       "Voided",
       { externalId: "remote-1" },
       new Error("document has payments")
@@ -97,7 +97,7 @@ describe.each([
       status: "error",
       error: "document has payments"
     });
-    expect(linked).toHaveLength(0);
+    expect(mapping()?.metadata).toBeNull();
   });
   it("keeps ordinary posted replay immutable", async () => {
     const { syncer, deletion } = setup("Submitted", { externalId: "remote-1" });

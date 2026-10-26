@@ -5,8 +5,8 @@ ARG APP
 # reads them at runtime (no --enable-source-maps), so they go by default.
 ARG SOURCEMAPS=0
 
-# slim, not node:22 — every native dep ships prebuilt, nothing needs the toolchain.
-FROM node:24-slim AS deps
+# slim, not the full node image — every native dep ships prebuilt, nothing needs the toolchain.
+FROM node:24.22.1-slim AS deps
 WORKDIR /repo
 RUN corepack enable
 # Store on a cache mount, so a source-only commit relinks instead of refetching.
@@ -49,7 +49,7 @@ RUN rm -rf apps/${APP}/node_modules/.vite apps/${APP}/node_modules/.ignored_*
 # not build on `deps`. It keeps the supabase CLI and tsx/esbuild that `runner`
 # strips for its CVE posture, so it is never exposed and is scanned
 # report-only. Kept BEFORE `runner` so `runner` stays the default build stage.
-FROM node:24-slim AS bootstrap-deps
+FROM node:24.22.1-slim AS bootstrap-deps
 WORKDIR /repo
 RUN corepack enable
 ENV npm_config_store_dir=/pnpm/store
@@ -71,7 +71,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         -name 'sst@*' -o -name 'sst-linux-*' -o -name 'sst-darwin-*' -o -name 'sst-win32-*' -o \
         -name '@biomejs+*' -o \
         -name 'turbo@*' -o -name '@turbo+*' -o \
-        -name 'typescript@*' -o -name '@typescript+native-preview*' -o \
+        -name 'typescript@*' -o \
         -name 'ts-morph@*' -o -name '@ts-morph+*' -o \
         -name 'vite@*' -o -name 'rolldown@*' -o -name '@rolldown+*' -o \
         -name 'vitest@*' -o -name '@vitest+*' -o \
@@ -82,7 +82,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
     find node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' -o -name '*.d.cts' \
         -o -name '*.md' -o -name '*.map' \) -delete 2>/dev/null || true
 
-FROM node:24-slim AS bootstrap
+FROM node:24.22.1-slim AS bootstrap
 # slim ships no CA certs, and the supabase CLI is a Go binary that verifies TLS
 # against the system store — migrations default to sslmode=require.
 RUN apt-get update \
@@ -100,42 +100,27 @@ CMD ["bash"]
 FROM bootstrap AS ops
 
 # --- Runtime dependency tree ----------------------------------------------
-# Runs in its own stage: done in `runner` after the COPY, a delete reclaims
-# nothing. Strips build CLIs/binaries (the remaining Trivy CRITICAL/HIGHs; the
-# `sst` JS package is kept, only its CLI binary goes; `tar`'s sole consumer is
-# the supabase CLI and its fix is unpublished), packages the lockfile hydrates
-# but nothing links (a frozen install materializes every importer, docs/
-# included — hence next/@mui; react-icons is inlined via ssr.noExternal), and
-# sourcemaps/.d.ts/readmes. Verify additions the same way — monaco-editor looks
-# strippable but the server bundle imports @monaco-editor/react.
-FROM deps AS pruned
+# The app's production dependencies, installed on their own: what the built
+# server loads from node_modules. The bundle inlines everything else, so that
+# is @carbon/serve, which `pnpm start` runs from source, and whatever the
+# bundle leaves external (erp's AI SDK). Every package lists in
+# `dependencies` only what its runtime code imports, so no build tool, CLI or
+# test runner is installed here. Its own stage, so the files it deletes leave
+# no layer behind in `runner`.
+FROM deps AS prod-deps
+ARG APP
 ARG SOURCEMAPS
-RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
-        -name 'sst-linux-*' -o -name 'sst-darwin-*' -o -name 'sst-win32-*' -o \
-        -name 'esbuild@*' -o -name '@esbuild+*' -o \
-        -name 'supabase@*' -o \
-        -name 'tar@*' -o \
-        -name 'npm@*' -o \
-        -name '@typescript+native-preview-*' -o \
-        -name '@biomejs+*' -o \
-        -name 'turbo@*' -o -name 'turbo-linux-*' -o -name 'turbo-darwin-*' -o \
-        -name '@turbo+*' -o \
-        -name '@rolldown+binding-*' -o \
-        -name 'vitest@*' -o -name '@vitest+*' -o \
-        -name '@react-email+preview-server@*' -o \
-        -name 'next@*' -o -name '@next+*' -o \
-        -name '@mui+*' -o \
-        -name 'react-icons@*' \
-    \) -prune -exec rm -rf {} + ; \
-    find node_modules -type d -name '@esbuild' -prune -exec rm -rf {} + 2>/dev/null || true ; \
-    find packages -type d \( -name '.ignored_*' -o -name '.vite' \) -prune -exec rm -rf {} + 2>/dev/null || true ; \
-    find node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' \
+RUN rm -rf node_modules apps/*/node_modules packages/*/node_modules docs/content/node_modules
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
+    pnpm install --prod --frozen-lockfile --prefer-offline --ignore-scripts --filter-prod "${APP}..."
+COPY --from=build /repo/apps/${APP}/build ./apps/${APP}/build
+RUN find node_modules -type f \( -name '*.d.ts' -o -name '*.d.mts' \
         -o -name '*.d.cts' -o -name '*.md' \) -delete 2>/dev/null || true ; \
     if [ "${SOURCEMAPS}" != "1" ]; then \
         find node_modules -type f -name '*.map' -delete 2>/dev/null || true ; \
     fi
 
-FROM node:24-slim AS runner
+FROM node:24.22.1-slim AS runner
 ARG APP
 WORKDIR /repo
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
@@ -145,9 +130,9 @@ ENV PORT=3000
 # Date derivation assumes UTC until company/location timezones are threaded everywhere
 ENV TZ=UTC
 COPY --from=deps /repo/package.json /repo/pnpm-lock.yaml /repo/pnpm-workspace.yaml /repo/.npmrc ./
-COPY --from=pruned /repo/node_modules ./node_modules
-COPY --from=pruned /repo/packages ./packages
-COPY --from=build /repo/apps/${APP} ./apps/${APP}
+COPY --from=prod-deps /repo/node_modules ./node_modules
+COPY --from=prod-deps /repo/packages ./packages
+COPY --from=prod-deps /repo/apps/${APP} ./apps/${APP}
 # The base image's npm is unused (corepack/pnpm only) and vendors the last Trivy CRITICALs.
 RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 EXPOSE 3000

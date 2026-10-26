@@ -2036,7 +2036,7 @@ export const assignShipmentLineEntity = defineServiceFn({
         .single(),
       client
         .from("shipment")
-        .select("sourceDocument, sourceDocumentId, status")
+        .select("sourceDocument, sourceDocumentId, status, supplierId")
         .eq("id", shipmentId)
         .eq("companyId", companyId)
         .single(),
@@ -2073,12 +2073,16 @@ export const assignShipmentLineEntity = defineServiceFn({
       );
     }
 
-    // A return-to-customer shipment ships returned stock, On Hold until it
-    // is dispositioned; everything else ships Available stock only. On Hold
-    // alone is not provenance: the entity must have COME BACK on a receipt
-    // of this return order.
+    // The statuses this source may ship (`shippableEntityStatuses`): a
+    // return-to-customer ships returned stock, On Hold until it is
+    // dispositioned; a return-to-supplier also ships rejected units;
+    // everything else ships Available stock only. On Hold alone is not
+    // provenance: the entity must have COME BACK on a receipt of this
+    // return order.
     const isReturn = shipment.data.sourceDocument === "Sales Return Order";
-    const allowedStatus = isReturn ? "On Hold" : "Available";
+    const allowedStatuses = utils.shippableEntityStatuses(
+      shipment.data.sourceDocument
+    );
     const attributes = (entity.data.attributes ?? {}) as Record<
       string,
       unknown
@@ -2111,11 +2115,45 @@ export const assignShipmentLineEntity = defineServiceFn({
       }
     }
 
-    if (entity.data.status !== allowedStatus) {
+    if (!allowedStatuses.includes(entity.data.status)) {
       return ctx.error(
         "rule",
         `Tracked entity is not available. Current status: ${entity.data.status}`
       );
+    }
+
+    // Rejected alone is not provenance either: a rejected unit goes back only
+    // to the supplier it came from, i.e. it was received on a posted receipt
+    // from this return's supplier (the rule the return-line picker applies).
+    if (
+      shipment.data.sourceDocument === "Purchase Return Order" &&
+      entity.data.status === "Rejected"
+    ) {
+      const receiptId = attributes.Receipt;
+      const provenance =
+        typeof receiptId === "string" && shipment.data.supplierId
+          ? await client
+              .from("receipt")
+              .select("id")
+              .eq("id", receiptId)
+              .eq("supplierId", shipment.data.supplierId)
+              .eq("status", "Posted")
+              .eq("companyId", companyId)
+              .maybeSingle()
+          : { data: null, error: null };
+      if (provenance.error) {
+        return ctx.error(
+          "internal",
+          "Failed to verify the entity's provenance",
+          provenance.error
+        );
+      }
+      if (!provenance.data) {
+        return ctx.error(
+          "rule",
+          "Rejected tracked entity was not received from this supplier and cannot be returned to it"
+        );
+      }
     }
 
     // Rounded: a lot left holding 0.020000000000000018 by an earlier split
@@ -2143,7 +2181,7 @@ export const assignShipmentLineEntity = defineServiceFn({
       .eq("id", trackedEntityId)
       .eq("companyId", companyId)
       // Guards a concurrent status change: no row matched is a conflict.
-      .eq("status", allowedStatus)
+      .eq("status", entity.data.status)
       .select("id");
     if (updated.error) {
       return ctx.error(
@@ -2155,7 +2193,7 @@ export const assignShipmentLineEntity = defineServiceFn({
     if (!updated.data?.length) {
       return ctx.error(
         "conflict",
-        `Tracked entity is no longer ${allowedStatus}`
+        `Tracked entity is no longer ${entity.data.status}`
       );
     }
 
@@ -2916,16 +2954,7 @@ export const postInventoryCount = defineServiceFn({
       service.postInventoryCount
     );
     if (posted.error) {
-      const message = getErrorMessage(
-        posted.error,
-        "Failed to post inventory count"
-      );
-      // The rows to highlight: the count stays Pending.
-      const invalidLineIds = posted.error.body.invalidLineIds;
-      if (Array.isArray(invalidLineIds)) {
-        return { invalidLineIds: invalidLineIds as string[], message };
-      }
-      return service.serverFnFailure(ctx, posted.error, message);
+      return service.inventoryCountPostingFailure(ctx, posted.error);
     }
     return { inventoryCountId };
   }
@@ -2995,16 +3024,12 @@ export const adjustInventory = defineServiceFn({
         locationId: adjustment.locationId ?? null
       }
     ];
-    // The bin surface comes from the type alone: `quantity` is a positive
-    // magnitude, so its sign cannot say which way stock moves.
-    const removes =
-      adjustment.adjustmentType === "Negative Adjmt." ||
-      adjustment.adjustmentType === "Scrap";
     const rules = await service.storageRuleViolations(
       ctx,
-      adjustment.storageUnitId
-        ? ["inventoryAdjustment", removes ? "pick" : "place"]
-        : ["inventoryAdjustment"],
+      service.adjustmentRuleSurfaces(
+        adjustment.adjustmentType,
+        adjustment.storageUnitId
+      ),
       line
     );
     const violations = dedupeViolations(rules.violations);
@@ -3019,14 +3044,11 @@ export const adjustInventory = defineServiceFn({
       service.postInventoryAdjustment
     );
     if (posted.error) {
-      // Below 500 the posting refused the adjustment, in words for the person.
-      return posted.error.status < 500
-        ? service.serverFnFailure(ctx, posted.error, posted.error.message)
-        : ctx.error(
-            "internal",
-            "Failed to create manual inventory adjustment",
-            posted.error
-          );
+      return service.postingFailure(
+        ctx,
+        posted.error,
+        "Failed to create manual inventory adjustment"
+      );
     }
     return { itemLedgerId: posted.data.itemLedger?.id ?? null };
   }

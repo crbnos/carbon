@@ -16,6 +16,7 @@ import {
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
 import { normalizeConfiguration } from "../panel/status";
+import { apiCallPathKey } from "./api-call-key";
 import {
   getOnshapeIntegration,
   isOnshapeIntegrationId,
@@ -84,7 +85,9 @@ export interface OnshapeElementRow {
 const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/parts\//,
   /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
-  /^\/api\/v\d+\/documents\//,
+  // Not currentmicroversion: the element sync compares it to skip unchanged
+  // exports, and a cached value would skip a changed one.
+  /^\/api\/v\d+\/documents\/(?!.*\/currentmicroversion)/,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
   /^\/api\/v\d+\/metadata\//,
   // A new release shows after the TTL; flush onshape-dev-cache:* for sooner.
@@ -174,12 +177,24 @@ function configurationQuery(configuration?: string | null): string {
 export class OnshapeApiError extends Error {
   status?: number;
   retryAfterSeconds?: number;
+  /** The `message` of Onshape's error body, when it sent one. */
+  onshapeMessage?: string;
+  /** The Onshape origin the failed call went to. */
+  apiOrigin?: string;
 
-  constructor(message: string, status?: number, retryAfterSeconds?: number) {
+  constructor(
+    message: string,
+    status?: number,
+    retryAfterSeconds?: number,
+    onshapeMessage?: string,
+    apiOrigin?: string
+  ) {
     super(message);
     this.name = "OnshapeApiError";
     this.status = status;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.onshapeMessage = onshapeMessage;
+    this.apiOrigin = apiOrigin;
   }
 }
 
@@ -214,6 +229,11 @@ export class OnshapeClient {
       // indefinitely (e.g. webhook reconcile during the settings-save request).
       timeout: 60_000
     });
+  }
+
+  /** The Onshape origin this client calls, e.g. `https://cad.onshape.com`. */
+  get apiOrigin(): string {
+    return this.baseUrl;
   }
 
   private getAuthHeaders(): Record<string, string> {
@@ -310,11 +330,16 @@ export class OnshapeClient {
     };
   }
 
-  /** Counts in Redis `onshape:api-calls:<year>`; never awaited. */
+  /** Counts in Redis `onshape:api-calls:<year>`, and per endpoint in the hash
+   *  `onshape:api-calls:<year>:paths`; never awaited. */
   private async countLiveCall(path: string) {
     try {
       const year = new Date().getUTCFullYear();
-      await redis.incr(`onshape:api-calls:${year}`);
+      await redis
+        .multi()
+        .incr(`onshape:api-calls:${year}`)
+        .hincrby(`onshape:api-calls:${year}:paths`, apiCallPathKey(path), 1)
+        .exec();
     } catch {
       // Never let accounting break a real request.
     }
@@ -327,17 +352,28 @@ export class OnshapeClient {
       // own message (e.g. "timeout of 60000ms exceeded") instead of the useless
       // "Onshape API error (undefined): undefined".
       if (status === undefined) {
-        return new OnshapeApiError(`Onshape request failed: ${error.message}`);
+        return new OnshapeApiError(
+          `Onshape request failed: ${error.message}`,
+          undefined,
+          undefined,
+          undefined,
+          this.baseUrl
+        );
       }
       const parsedRetryAfter = Number(error.response?.headers?.["retry-after"]);
+      const data = error.response?.data as unknown;
+      const onshapeMessage =
+        data && typeof data === "object"
+          ? (data as { message?: unknown }).message
+          : undefined;
       return new OnshapeApiError(
         `Onshape API error (${status}): ${
-          typeof error.response?.data === "string"
-            ? error.response.data
-            : JSON.stringify(error.response?.data)
+          typeof data === "string" ? data : JSON.stringify(data)
         }`,
         status,
-        Number.isFinite(parsedRetryAfter) ? parsedRetryAfter : undefined
+        Number.isFinite(parsedRetryAfter) ? parsedRetryAfter : undefined,
+        typeof onshapeMessage === "string" ? onshapeMessage : undefined,
+        this.baseUrl
       );
     }
     return error instanceof Error ? error : new Error(String(error));
@@ -361,28 +397,53 @@ export class OnshapeClient {
     return Array.isArray(response) ? response : (response.items ?? []);
   }
 
-  // Register a webhook subscription so Onshape POSTs lifecycle events to Carbon.
-  // Used to subscribe to onshape.revision.created (go-forward asset sync) on
-  // connect. Requires a publicly reachable callback URL and an OAuth app that
+  // Register a webhook subscription so Onshape POSTs events to Carbon: the
+  // release webhook (onshape.revision.created, company scope) and the element
+  // sync's translation webhook (onshape.model.translation.complete, document
+  // scope). Requires a publicly reachable callback URL and an OAuth app that
   // permits webhook management. The API also REQUIRES `options` and a scope
   // (`companyId` or `documentId`) — omitting either is a 400 ("options field is
-  // required" / "company id or document id required").
-  async createWebhook(params: {
-    url: string;
-    events: string[];
-    companyId: string; // Onshape company id — scopes the subscription
-    collapseEvents?: boolean;
-  }): Promise<{ id: string } & Record<string, unknown>> {
+  // required" / "company id or document id required"). A transient webhook is
+  // cleaned up by Onshape after a period of inactivity.
+  async createWebhook(
+    params: {
+      url: string;
+      events: string[];
+      collapseEvents?: boolean;
+      isTransient?: boolean;
+    } & ({ companyId: string } | { documentId: string })
+  ): Promise<{ id: string } & Record<string, unknown>> {
     return this.request<{ id: string } & Record<string, unknown>>(
       "POST",
       "/api/v10/webhooks",
       {
         url: params.url,
         events: params.events,
-        companyId: params.companyId,
+        ...("companyId" in params
+          ? { companyId: params.companyId }
+          : { documentId: params.documentId }),
+        ...(params.isTransient === undefined
+          ? {}
+          : { isTransient: params.isTransient }),
         options: { collapseEvents: params.collapseEvents ?? false }
       }
     );
+  }
+
+  /** The workspace's current microversion: it changes on every edit to the
+   *  document, so it names the workspace's exact state. */
+  async getCurrentMicroversion(
+    documentId: string,
+    workspaceId: string
+  ): Promise<string> {
+    const response = await this.request<{ microversion?: string }>(
+      "GET",
+      `/api/v10/documents/d/${documentId}/w/${workspaceId}/currentmicroversion`
+    );
+    if (!response.microversion) {
+      throw new Error("Onshape returned no current microversion");
+    }
+    return response.microversion;
   }
 
   // List the webhook subscriptions visible to the authenticated principal. Used
@@ -798,30 +859,6 @@ export class OnshapeClient {
           )}MB limit`
         );
       }
-      throw this.toApiError(error);
-    }
-  }
-
-  // Onshape-rendered element thumbnail at a version (shaded view PNG). Lets the
-  // sync set an item thumbnail with one small API call instead of screenshotting
-  // the viewer against the full decoded mesh (the model-thumbnail pipeline).
-  // `size` is a WxH string from Onshape's fixed set (e.g. "300x300").
-  async getElementThumbnail(
-    documentId: string,
-    versionId: string,
-    elementId: string,
-    size: string = "300x300",
-    wvm: "w" | "v" = "v"
-  ): Promise<ArrayBuffer> {
-    try {
-      const response = await this.axiosInstance.request<ArrayBuffer>({
-        method: "GET",
-        url: `/api/v10/thumbnails/d/${documentId}/${wvm}/${versionId}/e/${elementId}/s/${size}`,
-        responseType: "arraybuffer",
-        headers: { Accept: "image/png" }
-      });
-      return response.data;
-    } catch (error) {
       throw this.toApiError(error);
     }
   }

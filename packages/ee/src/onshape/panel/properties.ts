@@ -135,15 +135,18 @@ export const MAPPABLE_VALUE_TYPES: Record<string, readonly number[]> = {
   OBJECT: [CUSTOM_FIELD_DATA_TYPES.text]
 };
 
-/** Identity, description and lifecycle properties: never "not mapped". */
+/**
+ * Identity, description and lifecycle properties: never "not mapped". Lower
+ * case, since a BOM template can relabel a column in any case.
+ */
 const RESERVED_PROPERTY_NAMES = new Set([
-  "Name",
-  "Part number",
-  "Revision",
-  "Description",
-  "State",
-  "Exclude from BOM",
-  "Not revision managed"
+  "name",
+  "part number",
+  "revision",
+  "description",
+  "state",
+  "exclude from bom",
+  "not revision managed"
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -556,7 +559,10 @@ export function resolveMappedFields({
   for (const property of properties) {
     if (used.has(property.propertyId)) continue;
     const value = propertyDisplayValue(property.value);
-    if (value !== null && !RESERVED_PROPERTY_NAMES.has(property.name)) {
+    if (
+      value !== null &&
+      !RESERVED_PROPERTY_NAMES.has(String(property.name).trim().toLowerCase())
+    ) {
       unmapped.push({
         propertyId: property.propertyId,
         name: property.name,

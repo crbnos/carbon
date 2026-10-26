@@ -64,6 +64,10 @@ msgstr "(इक्विटी पोस्टिंग खाता नही�
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# अवरोधक रिकॉर्ड} other {# अवरोधक रिकॉर्डें}}"
 
+#. placeholder {0}: added.materials
+msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
+msgstr ""
+
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
 msgstr "{0, plural, one {इस समूह में # घटक} other {इस समूह में # घटक}}"
@@ -80,6 +84,14 @@ msgstr "{0, plural, one {# दिन की कमी} other {# दिन की
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
 msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
 
+#. placeholder {0}: added.operations
+msgid "{0, plural, one {# operation} other {# operations}}"
+msgstr ""
+
+#. placeholder {0}: added.parameters
+msgid "{0, plural, one {# parameter} other {# parameters}}"
+msgstr ""
+
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
 msgstr "{0, plural, one {# रिकॉर्ड को ध्यान की आवश्यकता है} other {# रिकॉर्ड को ध्यान की आवश्यकता है}}"
@@ -91,6 +103,14 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 #. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए इसे बैकअप नहीं किया जा सकता। इसे छोड़ने से सब कुछ और बैकअप हो जाता है।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए उन्हें बैकअप नहीं किया जा सकता। उन्हें छोड़ने से सब कुछ और बैकअप हो जाता है।}}"
+
+#. placeholder {0}: added.steps
+msgid "{0, plural, one {# step} other {# steps}}"
+msgstr ""
+
+#. placeholder {0}: added.tools
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
 
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
@@ -548,6 +568,9 @@ msgstr "{documentTypeLabel} अनुमोदन नियम"
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
+msgid "{errors, plural, one {# row needs fixing} other {# rows need fixing}}"
+msgstr ""
+
 msgid "{errors} failed"
 msgstr ""
 
@@ -559,6 +582,9 @@ msgstr "{hidden, plural, one {और # अधिक रिकॉर्ड।} ot
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "और {hiddenCount}: {hiddenNames}"
+
+msgid "{inserted, plural, one {# part created} other {# parts created}}"
+msgstr ""
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -705,6 +731,9 @@ msgstr "{selectedCount, plural, one {# चुना गया} other {# चु�
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
 
+msgid "{skipped, plural, one {# row skipped} other {# rows skipped}}"
+msgstr ""
+
 msgid "{stale} changed since the page loaded"
 msgstr ""
 
@@ -758,6 +787,9 @@ msgstr "{unread} अपठित"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} को शेड्यूल नहीं किया जा सकता"
+
+msgid "{updated, plural, one {# part updated} other {# parts updated}}"
+msgstr ""
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} अपलोड हो गया — दस्तावेज़ से फ़ील्ड भर दिए गए हैं।"
@@ -2329,6 +2361,9 @@ msgstr "इस ग्राहक के लिए जोड़ा गया"
 
 msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
 msgstr "इकाई मूल्य में चुने गए मानों के लिए जोड़ा जाता है, छूट और अधिशुल्क से पहले। जमा के लिए नकारात्मक राशि का उपयोग करें।"
+
+msgid "Added:"
+msgstr ""
 
 msgid "Adding demo records"
 msgstr "डेमो रिकॉर्ड जोड़ रहे हैं"
@@ -4868,6 +4903,9 @@ msgstr "परिवर्तन सूचनाएं"
 
 msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
 msgstr "परिवर्तन सूचना को लोड नहीं किया जा सका, इसलिए नए संस्करण और रिवीजन अवरुद्ध हैं। पुनः प्रयास करने के लिए फिर से लोड करें।"
+
+msgid "Change notices could not be loaded, so the active version cannot be changed. Reload to try again."
+msgstr "परिवर्तन सूचना को लोड नहीं किया जा सका, इसलिए सक्रिय संस्करण नहीं बदला जा सकता। पुनः प्रयास करने के लिए फिर से लोड करें।"
 
 msgid "Change order"
 msgstr "परिवर्तन आदेश"
@@ -8448,6 +8486,9 @@ msgstr "उदा. MI"
 msgid "e.g. Suite 200"
 msgstr "उदा. Suite 200"
 
+msgid "e.g. Suspected counterfeit, wrong part, damaged in transit"
+msgstr "उदा. संदिग्ध नकली, गलत पार्ट, परिवहन में क्षतिग्रस्त"
+
 msgid "e.g. the first 3 to 4 weeks"
 msgstr "उदाहरण के लिए पहले 3 से 4 सप्ताह"
 
@@ -9207,6 +9248,9 @@ msgstr "कम से कम एक पंक्ति पर एक प्र�
 msgid "Enter a web address, such as https://example.com"
 msgstr "वेब पता दर्ज करें, जैसे https://example.com"
 
+msgid "Enter a YouTube video link"
+msgstr ""
+
 msgid "Enter an item and quantity yourself."
 msgstr "आइटम और मात्रा स्वयं दर्ज करें।"
 
@@ -9451,6 +9495,9 @@ msgstr "हर 3 घंटे में"
 msgid "Every account default is set"
 msgstr "हर खाता डिफ़ॉल्ट सेट है"
 
+msgid "Every account is mapped"
+msgstr "सभी खाते मैप किए गए हैं"
+
 msgid "Every asset needs a payment row before activating."
 msgstr "सक्रियण से पहले प्रत्येक संपत्ति को एक भुगतान पंक्ति की आवश्यकता है।"
 
@@ -9486,6 +9533,9 @@ msgstr "प्रत्येक पंक्ति जो बिल करत�
 
 msgid "Every match"
 msgstr "हर मेल"
+
+msgid "Every posted journal line in a period"
+msgstr "किसी अवधि की प्रत्येक पोस्ट की गई जर्नल पंक्ति"
 
 msgid "Every required action has already been added."
 msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
@@ -11717,6 +11767,15 @@ msgstr "निरीक्षण"
 msgid "Inspection · {itemReadableId}"
 msgstr "निरीक्षण · {itemReadableId}"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Inspection {0}"
+msgstr "निरीक्षण {0}"
+
+#. placeholder {0}: inspection.inspectionId
+#. placeholder {1}: inspection.status
+msgid "Inspection {0} · {1}"
+msgstr "निरीक्षण {0} · {1}"
+
 msgid "Inspection document"
 msgstr "निरीक्षण दस्तावेज़"
 
@@ -13389,6 +13448,9 @@ msgstr "अपने खातों का चार्ट को प्रद�
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
 
+msgid "Mapped"
+msgstr "मैप किए गए"
+
 #. placeholder {0}: data.mapped
 #. placeholder {1}: data.totalComponents
 msgid "Mapped {0} of {1} components to the bill of materials"
@@ -14094,6 +14156,15 @@ msgstr "MRP एक मौजूदा आदेश को स्थानां�
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "एक ही समय में इस प्रक्रिया पर कई जॉब चल सकती हैं — उदाहरण के लिए, एक लेजर टेबल, फर्नेस, या प्लेटिंग बाथ"
 
+msgid "Must be at least {minValue} {unitLabel}"
+msgstr "कम से कम {minValue} {unitLabel} होना चाहिए"
+
+msgid "Must be at most {maxValue} {unitLabel}"
+msgstr "अधिकतम {maxValue} {unitLabel} होना चाहिए"
+
+msgid "Must be between {minValue} and {maxValue} {unitLabel}"
+msgstr "{minValue} और {maxValue} {unitLabel} के बीच होना चाहिए"
+
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
 
@@ -14342,6 +14413,9 @@ msgstr "नया मुद्दा"
 
 msgid "New Item Group"
 msgstr "नया आइटम समूह"
+
+msgid "New jobs use version {activeVersion}"
+msgstr "नए जॉब संस्करण {activeVersion} का उपयोग करते हैं"
 
 msgid "New Kanban"
 msgstr "नया कानबन"
@@ -14655,6 +14729,9 @@ msgstr "कोई कौशल जोड़ा नहीं गया"
 msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
 
+msgid "No accounts are mapped yet"
+msgstr "अभी तक कोई खाता मैप नहीं किया गया है"
+
 msgid "No accounts match your search"
 msgstr "कोई खाता आपकी खोज से मेल नहीं खाता"
 
@@ -14748,6 +14825,14 @@ msgstr "अभी तक कोई परिवर्तन नहीं।"
 
 msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 msgstr "अभी कोई परिवर्तन नहीं है। एक बार लीज सक्रिय हो जाए, तो संशोधन शीर्षलेख में है और समाप्त तथा खरीद प्रत्येक संपत्ति पृष्ठ पर हैं।"
+
+#. placeholder {0}: lotEntities.length
+msgid "No characteristic has failed, so say why the lot is rejected. All {0} entities will be marked Rejected."
+msgstr "कोई विशेषता विफल नहीं हुई है, इसलिए बताएं कि लॉट क्यों अस्वीकार किया जा रहा है। सभी {0} इकाइयाँ अस्वीकृत चिह्नित की जाएंगी।"
+
+#. placeholder {0}: inspection.lotSize
+msgid "No characteristic has failed, so say why the lot is rejected. The entire lot of {0} will be rejected."
+msgstr "कोई विशेषता विफल नहीं हुई है, इसलिए बताएं कि लॉट क्यों अस्वीकार किया जा रहा है। {0} का पूरा लॉट अस्वीकार किया जाएगा।"
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "कोई शुल्क नहीं। माइलेज, क्षति, डिलीवरी या सफाई शुल्क अगले चालान में शामिल होंगे।"
@@ -15122,6 +15207,9 @@ msgstr "कोई भाग ID नहीं"
 msgid "No parts"
 msgstr "कोई पार्ट्स नहीं"
 
+msgid "No parts changed."
+msgstr ""
+
 msgid "No passkeys registered yet."
 msgstr "अभी तक कोई पासकी पंजीकृत नहीं है।"
 
@@ -15370,6 +15458,9 @@ msgstr "कोई चर उपलब्ध नहीं"
 
 msgid "No versions available"
 msgstr "कोई संस्करण उपलब्ध नहीं है"
+
+msgid "No video added"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — गणना के समाधान तक हाथ पर नकारात्मक हो जाएगा।"
@@ -15924,8 +16015,14 @@ msgstr "खुले रखरखाव कार्य"
 msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
 
+msgid "Open in change notice {ids}. Release it to change the active version."
+msgstr "परिवर्तन सूचना {ids} में खुला है। सक्रिय संस्करण बदलने के लिए इसे जारी करें।"
+
 msgid "Open in change notice {ids}. Release it to create new versions or revisions."
 msgstr "परिवर्तन सूचना {ids} में खुला है। नए संस्करण या रिवीजन बनाने के लिए इसे जारी करें।"
+
+msgid "Open in change notices {ids}. Release them to change the active version."
+msgstr "परिवर्तन सूचनाओं {ids} में खुले हैं। सक्रिय संस्करण बदलने के लिए उन्हें जारी करें।"
 
 msgid "Open in change notices {ids}. Release them to create new versions or revisions."
 msgstr "परिवर्तन सूचनाओं {ids} में खुले हैं। नए संस्करण या रिवीजन बनाने के लिए उन्हें जारी करें।"
@@ -16010,6 +16107,9 @@ msgstr "Ramp एकीकरण खोलें और कॉन्फ़िग�
 
 msgid "Open the Setup Map"
 msgstr "सेटअप मैप खोलें"
+
+msgid "Open this link in the browser where you asked to sign in, or enter the 6-digit code from the email there."
+msgstr ""
 
 msgid "Open transactions"
 msgstr "खुले लेनदेन"
@@ -16614,6 +16714,9 @@ msgstr "अतिदेय"
 msgid "Past end date"
 msgstr "समाप्ति तारीख के बाद"
 
+msgid "Paste a YouTube video link"
+msgstr ""
+
 msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
 msgstr "मेटाडेटा XML को पेस्ट करें यदि आपका आइडेंटिटी प्रदाता मेटाडेटा URL प्रकाशित नहीं करता है"
 
@@ -16984,6 +17087,9 @@ msgstr "{0} को पिन करें"
 
 msgid "Pin or unpin"
 msgstr "पिन करें या अनपिन करें"
+
+msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+msgstr "ज़ूम करने के लिए पिंच या स्क्रॉल करें · खिसकाने के लिए खींचें · रीसेट करने के लिए दो बार टैप करें"
 
 msgid "Pinned"
 msgstr "पिन किया गया"
@@ -18301,6 +18407,9 @@ msgstr "वास्तविक विनिमय हानि"
 msgid "Reason"
 msgstr "कारण"
 
+msgid "Reason (optional)"
+msgstr "कारण (वैकल्पिक)"
+
 msgid "Reason Account"
 msgstr "कारण खाता"
 
@@ -18584,6 +18693,9 @@ msgstr "शिथिल"
 
 msgid "Reference"
 msgstr "संदर्भ"
+
+msgid "Reference image"
+msgstr "संदर्भ छवि"
 
 msgid "Refresh"
 msgstr "ताज़ा करें"
@@ -18897,6 +19009,9 @@ msgstr "दो-कारक प्रमाणीकरण निकालें
 msgid "Remove Unit"
 msgstr "इकाई निकालें"
 
+msgid "Remove Video"
+msgstr ""
+
 msgid "Removed"
 msgstr "हटाया गया"
 
@@ -19189,6 +19304,12 @@ msgstr "कार्रवाई आवश्यक है"
 
 msgid "Requires Adjustment"
 msgstr "समायोजन आवश्यक है"
+
+msgid "Requires inspection"
+msgstr "निरीक्षण आवश्यक है"
+
+msgid "Requires inspection. A lot opens when the receipt posts."
+msgstr "निरीक्षण आवश्यक है। रसीद पोस्ट होने पर एक लॉट खुलता है।"
 
 msgid "Requires Repair"
 msgstr "मरम्मत की आवश्यकता है"
@@ -21339,11 +21460,17 @@ msgstr "जब यह नियम विफल हो तब उपयोगक
 msgid "Shuffle"
 msgstr "शफ़ल करें"
 
+msgid "Sign in here instead"
+msgstr ""
+
 msgid "Sign in to Carbon"
 msgstr "Carbon में साइन इन करें"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स के साथ साइन इन करें। पासकीज़ Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित हैं।"
+
+msgid "Sign in with code"
+msgstr ""
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
@@ -21362,6 +21489,9 @@ msgstr "साइन आउट"
 
 msgid "Sign out instead"
 msgstr "बजाय इसके साइन आउट करें"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Sign-off review before moving to the next step"
 msgstr "अगले चरण में जाने से पहले साइन-ऑफ समीक्षा"
@@ -22423,8 +22553,14 @@ msgstr "मॉड्यूल स्विच करें"
 msgid "Switch to pan mode"
 msgstr "पैन मोड में स्विच करें"
 
+msgid "Switch to PDF"
+msgstr ""
+
 msgid "Switch to select mode"
 msgstr "चयन मोड में स्विच करें"
+
+msgid "Switch to Video"
+msgstr ""
 
 msgid "Switch to Written Content"
 msgstr "लिखित सामग्री पर स्विच करें"
@@ -24206,8 +24342,11 @@ msgstr "इस त्रैमासिक"
 msgid "This receipt has no lines. Choose a source document to add them."
 msgstr "इस प्राप्ति में कोई पंक्तियाँ नहीं हैं। स्रोत दस्तावेज़ चुनकर पंक्तियाँ जोड़ें।"
 
-msgid "This removes the PDF. Employees will see the written content instead."
-msgstr "यह PDF को हटाता है। कर्मचारी इसके बजाय लिखित सामग्री देखेंगे।"
+msgid "This removes the PDF. Employees will see the new content instead."
+msgstr ""
+
+msgid "This removes the video. Employees will see the new content instead."
+msgstr ""
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
@@ -24823,6 +24962,9 @@ msgstr "प्रशिक्षण योजना"
 msgid "Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate."
 msgstr "Carbon के बाहर लिया गया प्रशिक्षण, जैसे विक्रेता पाठ्यक्रम। असाइनमेंट के पास केवल एक नाम है। एक प्रशासक प्रत्येक कर्मचारी को पूर्ण करता है और उनके प्रमाण पत्र को संलग्न कर सकता है।"
 
+msgid "Training video"
+msgstr ""
+
 msgid "Training your team via the Academy and in-app guides"
 msgstr "Academy और इन-ऐप गाइड के माध्यम से अपनी टीम को प्रशिक्षण दें"
 
@@ -25178,6 +25320,9 @@ msgstr "अनलॉक करें"
 
 msgid "Unlock with passkey"
 msgstr "पासकी के साथ अनलॉक करें"
+
+msgid "Unmapped"
+msgstr "मैप नहीं किए गए"
 
 msgid "Unmapped dimension values"
 msgstr "अनमैप्ड आयाम मान"
@@ -25800,6 +25945,9 @@ msgstr "ग्राहकों को देखें"
 msgid "View Employees"
 msgstr "कर्मचारियों को देखें"
 
+msgid "View full size"
+msgstr "पूरे आकार में देखें"
+
 msgid "View History"
 msgstr "इतिहास देखें"
 
@@ -26063,14 +26211,14 @@ msgstr "हमने प्रत्येक कॉलम को स्वच�
 msgid "We triage and fix issues fast while your team settles in"
 msgstr "हम तेजी से समस्याओं को प्राथमिकता देते हैं और ठीक करते हैं जबकि आपकी टीम सिस्टम में स्थिर होती है"
 
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
+
 msgid "We've sent a verification code to {email}"
 msgstr "हमने {email} को एक सत्यापन कोड भेजा है"
 
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "हमने {signupEmail} को एक सत्यापन कोड भेजा है"
-
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
 
 msgid "Webhook"
 msgstr "वेबहुक"
@@ -26203,8 +26351,8 @@ msgstr "प्रत्येक संपत्ति का मूल्य �
 msgid "What each period's payment is for this asset in the first year"
 msgstr "पहले वर्ष में इस संपत्ति के लिए प्रत्येक अवधि का भुगतान क्या है"
 
-msgid "What employees read before the questions"
-msgstr "कर्मचारी प्रश्नों से पहले क्या पढ़ते हैं"
+msgid "What employees read or watch before the questions"
+msgstr ""
 
 msgid "What happens to an invoice once it is created"
 msgstr "एक चालान बनाए जाने के बाद क्या होता है"
@@ -26772,6 +26920,9 @@ msgstr "निरीक्षण अस्वीकृतियों और NCR
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "किसी संपत्ति के मूल्य को उसके जीवन काल में कम करना — एक मासिक बैच जो आप बनाते हैं, ड्राफ्ट के रूप में समीक्षा करते हैं, फिर पोस्ट करते हैं।"
 
+msgid "Written with a warning"
+msgstr ""
+
 msgid "Wrote the missing journal of 1 document"
 msgstr ""
 
@@ -26802,6 +26953,9 @@ msgstr "हाँ, आईडी अपडेट करें"
 
 msgid "You"
 msgstr "आप"
+
+msgid "You are editing draft version {draftVersion}. Its changes reach new jobs once it is the Active version."
+msgstr "आप ड्राफ्ट संस्करण {draftVersion} संपादित कर रहे हैं। इसके बदलाव नए जॉब तक तभी पहुँचते हैं जब यह सक्रिय संस्करण हो।"
 
 msgid "You belong to more than one company. Pick where to work."
 msgstr "आप एक से अधिक कंपनी से संबंधित हैं। चुनें कि कहां काम करना है।"
@@ -26991,6 +27145,12 @@ msgstr "आपकी विक्रेता सूची"
 
 msgid "yourself"
 msgstr "अपने आप"
+
+msgid "YouTube link"
+msgstr ""
+
+msgid "YouTube Video"
+msgstr ""
 
 msgid "Z1.4 inspection level (I / II / III); higher levels mean larger sample sizes for the same lot."
 msgstr "Z1.4 निरीक्षण स्तर (I / II / III); उच्च स्तर का मतलब एक ही लॉट के लिए बड़े नमूने आकार।"

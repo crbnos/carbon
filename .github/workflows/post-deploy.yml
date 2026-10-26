@@ -1,0 +1,56 @@
+name: Post Deploy Sync
+
+# What each workspace's freshly deployed ERP tells the services around it:
+# Inngest its list of jobs, and a hosted Supabase project its Auth emails.
+# The one place for that, whatever hosts the ERP: every host's deploy ends
+# here.
+on:
+  # AWS: called by deploy.yml after a successful deploy.
+  workflow_call:
+  # Vercel, and any host that reports its deploys to GitHub: a production
+  # ERP deploy that succeeded (the job's `if`).
+  deployment_status:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Post Deploy Sync
+    # The ERP's Vercel projects are carbon, carbon-us and carbon-eu; MES,
+    # docs and academy deploys, and previews, have nothing to sync.
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment_status.state == 'success' &&
+      startsWith(github.event.deployment.environment, 'Production – carbon'))
+    # One sync at a time: every run syncs every workspace, and two at once
+    # collide (Inngest answers the second PUT with a 400). On the job, not
+    # the workflow, so a skipped run (an MES or docs deploy) never takes
+    # the slot. A newer run replaces a waiting one; it syncs everything
+    # the waiting one would have, later.
+    concurrency:
+      group: post-deploy-sync
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync Inngest functions and Auth emails
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: pnpm --filter ci ci:post-deploy

@@ -25,6 +25,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  optionalPlainTextDoc,
   optionalTiptapDoc,
   standardFactorType,
   taxExemptionReasons
@@ -583,53 +584,55 @@ export const quoteMaterialValidator = z
     }
   );
 
-export const quoteOperationValidator = z
-  .object({
-    id: z.string().min(1, { message: "Operation ID is required" }),
-    quoteMakeMethodId: z
-      .string()
-      .min(1, { message: "Quote Make Method is required" }),
-    order: zfd.numeric(z.number().min(0)),
-    operationOrder: z.enum(methodOperationOrders, {
-      error: "Operation order is required"
-    }),
-    operationType: z.enum(operationTypes, {
-      error: "Operation type is required"
-    }),
-    processId: z.string().min(1, { message: "Process is required" }),
-    procedureId: zfd.text(z.string().optional()),
-    assemblyInstructionId: zfd.text(z.string().optional()),
-    inspectionDocumentId: zfd.text(z.string().optional()),
-    workCenterId: zfd.text(z.string().optional()),
-    description: zfd.text(
-      z.string().min(0, { message: "Description is required" })
-    ),
-    setupUnit: z
-      .enum(standardFactorType, {
-        error: "Setup unit is required"
-      })
-      .optional(),
-    setupTime: zfd.numeric(z.number().min(0).optional()),
-    laborUnit: z
-      .enum(standardFactorType, {
-        error: "Labor unit is required"
-      })
-      .optional(),
-    laborTime: zfd.numeric(z.number().min(0).optional()),
-    machineUnit: z
-      .enum(standardFactorType, {
-        error: "Machine unit is required"
-      })
-      .optional(),
-    machineTime: zfd.numeric(z.number().min(0).optional()),
-    machineRate: zfd.numeric(z.number().min(0).optional()),
-    overheadRate: zfd.numeric(z.number().min(0).optional()),
-    laborRate: zfd.numeric(z.number().min(0).optional()),
-    operationSupplierProcessId: zfd.text(z.string().optional()),
-    operationMinimumCost: zfd.numeric(z.number().min(0).optional()),
-    operationUnitCost: zfd.numeric(z.number().min(0).optional()),
-    operationLeadTime: zfd.numeric(z.number().min(0).optional())
-  })
+/** The quote operation's fields, without the bill of process form's checks. */
+export const baseQuoteOperationValidator = z.object({
+  id: z.string().min(1, { message: "Operation ID is required" }),
+  quoteMakeMethodId: z
+    .string()
+    .min(1, { message: "Quote Make Method is required" }),
+  order: zfd.numeric(z.number().min(0)),
+  operationOrder: z.enum(methodOperationOrders, {
+    error: "Operation order is required"
+  }),
+  operationType: z.enum(operationTypes, {
+    error: "Operation type is required"
+  }),
+  processId: z.string().min(1, { message: "Process is required" }),
+  procedureId: zfd.text(z.string().optional()),
+  assemblyInstructionId: zfd.text(z.string().optional()),
+  inspectionDocumentId: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional()),
+  description: zfd.text(
+    z.string().min(0, { message: "Description is required" })
+  ),
+  setupUnit: z
+    .enum(standardFactorType, {
+      error: "Setup unit is required"
+    })
+    .optional(),
+  setupTime: zfd.numeric(z.number().min(0).optional()),
+  laborUnit: z
+    .enum(standardFactorType, {
+      error: "Labor unit is required"
+    })
+    .optional(),
+  laborTime: zfd.numeric(z.number().min(0).optional()),
+  machineUnit: z
+    .enum(standardFactorType, {
+      error: "Machine unit is required"
+    })
+    .optional(),
+  machineTime: zfd.numeric(z.number().min(0).optional()),
+  machineRate: zfd.numeric(z.number().min(0).optional()),
+  overheadRate: zfd.numeric(z.number().min(0).optional()),
+  laborRate: zfd.numeric(z.number().min(0).optional()),
+  operationSupplierProcessId: zfd.text(z.string().optional()),
+  operationMinimumCost: zfd.numeric(z.number().min(0).optional()),
+  operationUnitCost: zfd.numeric(z.number().min(0).optional()),
+  operationLeadTime: zfd.numeric(z.number().min(0).optional())
+});
+
+export const quoteOperationValidator = baseQuoteOperationValidator
   .refine(
     (data) => {
       if (data.operationType === "Outside Processing") {
@@ -1110,8 +1113,8 @@ export const salesRfqValidator = z.object({
   customerId: z.string().min(1, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
-  externalNotes: zfd.text(z.string().optional()),
-  internalNotes: zfd.text(z.string().optional()),
+  externalNotes: optionalTiptapDoc,
+  internalNotes: optionalTiptapDoc,
   locationId: zfd.text(z.string().optional()),
   rfqDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesRFQStatusType).optional(),
@@ -1845,7 +1848,7 @@ export const customerContractValidator = z
     paymentTermId: zfd.text(z.string().optional()),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().optional()),
-    notes: optionalTiptapDoc
+    notes: optionalPlainTextDoc
   })
   .refine((data) => (data.duration === "custom" ? !!data.endDate : true), {
     message: "End date is required",

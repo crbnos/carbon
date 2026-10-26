@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Email } from "./config";
 
@@ -13,6 +14,10 @@ const logger = getLogger("ee", "email");
  * Validates the stored credentials for the company's chosen delivery
  * provider without actually sending a message:
  *
+ * - `server`: healthy when this server has mail settings. The company's From
+ *   cannot make it undeliverable: it is only ever the Reply-To beside the
+ *   server's own From (see `documentSender`), so the relay only ever sees its
+ *   own sender.
  * - `resend`: hits `GET https://api.resend.com/domains` with the API key.
  *   A 2xx means the key is valid and has read access; a 401
  *   `restricted_api_key` means a valid "Sending access" key, also healthy.
@@ -41,6 +46,7 @@ export async function emailHealthcheck(
   if (!parsed.success) return false;
 
   const data = parsed.data;
+  if (data.provider === "server") return SERVER_MAIL_CONFIGURED;
 
   try {
     if (data.provider === "resend") {

@@ -225,7 +225,12 @@ import { decodeCursor, toPage } from "~/utils/cursor";
 import { listErrorPage } from "~/utils/list-registry/list-error";
 import { PAGE_SIZE } from "~/utils/pagination";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
-import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
+import {
+  LIST_COUNT,
+  listCount,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
   allocateJournalLineIds,
@@ -295,10 +300,14 @@ import {
   depreciationFloor,
   depreciationRunLinesMatch,
   diffJournalLines,
+  fiscalYearPeriodDates,
   hasAccountingCutover,
+  hidesSupersededJournals,
   isFutureRunPeriod,
   LOCK_PERIOD_TASK_NAME,
   monthEndOf,
+  periodDeletionRefusal,
+  periodPostingRefusal,
   runPostingTargets,
   usageKey
 } from "./accounting.utils";
@@ -312,6 +321,7 @@ import {
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
+  GeneralLedgerLine,
   PeriodCell,
   Transaction,
   TranslatedBalance
@@ -507,6 +517,70 @@ export async function getAccountLedgerLines(
     ACCOUNT_LEDGER_PAGING
   );
   return result as unknown as AccountLedgerResult;
+}
+
+// The general ledger report reads the lines of Posted and Reversed journals
+// only — the lines the trial balance sums. The `journalLines` view filters the
+// same statuses; the report states them so it holds if the view changes.
+const GENERAL_LEDGER_LINE_COLUMNS =
+  "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, account(number, name, class)";
+
+type GeneralLedgerArgs = Pick<GenericQueryFilters, "sorts" | "filters"> & {
+  search: string | null;
+  startDate: string;
+  endDate: string;
+};
+
+export const GENERAL_LEDGER_PAGING: Paging = {
+  defaultSorts: [
+    { column: "postingDate", ascending: true },
+    { column: "journalEntryId", ascending: true }
+  ]
+};
+
+function generalLedgerLinesQuery(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs &
+    Partial<Pick<GenericQueryFilters, "limit" | "cursor">>,
+  count: ReturnType<typeof listCount>
+) {
+  let query = client
+    .from("journalLines")
+    .select(GENERAL_LEDGER_LINE_COLUMNS, count ? { count } : undefined)
+    .eq("companyId", companyId)
+    .in("status", [...GL_JOURNAL_STATUSES])
+    .gte("postingDate", args.startDate)
+    .lte("postingDate", args.endDate);
+
+  query = setSearchFilter(query, args.search, [
+    "journalEntryId",
+    "description",
+    "journalDescription"
+  ]);
+
+  // The id breaks ties, so pages (and the CSV's batches) are stable
+  return setGenericQueryFilters(query, args, GENERAL_LEDGER_PAGING);
+}
+
+/** One cursor page of the report (`limit + 1` rows for `toPage`). */
+export async function getGeneralLedgerLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs & Pick<GenericQueryFilters, "limit" | "cursor">
+) {
+  return generalLedgerLinesQuery(client, companyId, args, listCount(args));
+}
+
+/** Every line of the report, past PostgREST's row cap — for the CSV export. */
+export async function getAllGeneralLedgerLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GeneralLedgerArgs
+) {
+  return fetchAll<GeneralLedgerLine>(() =>
+    generalLedgerLinesQuery(client, companyId, args, undefined)
+  );
 }
 
 export async function getAccountLedgerSummary(
@@ -880,6 +954,24 @@ export async function applyCtaToReportPeriodSeries(
       }
     };
   }
+  return applyReportCta({ ...args, companyGroupId, ctaAccountId: accountId });
+}
+
+/** Add each bucket's report CTA to the configured Equity account, fill the
+ *  synthetic net income from the translated income statement when the
+ *  translation left it empty, then roll the translated values up. Returns a
+ *  new chart; the input is never mutated. */
+export function applyReportCta(args: {
+  accounts: ChartPeriodSeries[];
+  bucketKeys: string[];
+  ctaByBucket: Record<string, number>;
+  companyGroupId: string;
+  ctaAccountId: string;
+}): {
+  data: ChartPeriodSeries[] | null;
+  error: { message: string } | null;
+} {
+  const { companyGroupId, ctaAccountId: accountId } = args;
   const ctaAccount = args.accounts.find((account) => account.id === accountId);
   if (!ctaAccount) {
     return {
@@ -2683,24 +2775,8 @@ export async function getOrCreateAccountingPeriod(
       (existing.data as unknown as AccountingPeriodCloseColumns).closeStatus ??
       (existing.data.closedAt ? "Closed" : "Open");
 
-    if (closeStatus === "Closed") {
-      return {
-        data: null,
-        error: {
-          message: "Accounting period is closed. Reopen it before posting."
-        }
-      };
-    }
-
-    if (closeStatus === "Locked" && source === "operational") {
-      return {
-        data: null,
-        error: {
-          message:
-            "Accounting period is locked. Post as an accounting adjustment or unlock the period first."
-        }
-      };
-    }
+    const refusal = periodPostingRefusal(closeStatus, source);
+    if (refusal) return { data: null, error: { message: refusal } };
 
     if (existing.data.status === "Inactive" && (await isCurrentMonth())) {
       await client
@@ -2847,14 +2923,7 @@ export async function getAccountingPeriodDeletability(
 
   const journalCount = (journals.count as number | null) ?? 0;
   const closeStatus = period.data.closeStatus;
-  const reason =
-    closeStatus !== "Open"
-      ? `Only open periods can be deleted — this period is ${closeStatus}.`
-      : journalCount > 0
-        ? `This period has ${journalCount} journal ${
-            journalCount === 1 ? "entry" : "entries"
-          } posted to it and cannot be deleted.`
-        : null;
+  const reason = periodDeletionRefusal(closeStatus, journalCount);
 
   return {
     data: {
@@ -3257,10 +3326,6 @@ export async function createFiscalYearPeriods(
     ? (MONTH_NUMBER[settings.data.startMonth] ?? 1)
     : 1;
 
-  // FY is named by its ending calendar year; a non-January start begins in the
-  // prior calendar year.
-  const firstYear = startMonth === 1 ? args.fiscalYear : args.fiscalYear - 1;
-
   const existing = await (client.from("accountingPeriod") as any)
     .select("periodNumber")
     .eq("companyId", args.companyId)
@@ -3272,24 +3337,20 @@ export async function createFiscalYearPeriods(
     )
   );
 
-  const rows = [];
-  for (let p = 1; p <= 12; p++) {
-    if (existingNumbers.has(p)) continue;
-    const monthIndex = (startMonth - 1 + (p - 1)) % 12; // 0-indexed
-    const year = firstYear + Math.floor((startMonth - 1 + (p - 1)) / 12);
-    const startDate = new Date(Date.UTC(year, monthIndex, 1));
-    const endDate = new Date(Date.UTC(year, monthIndex + 1, 0));
-    rows.push({
-      companyId: args.companyId,
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
-      status: "Inactive",
-      closeStatus: "Open",
-      fiscalYear: args.fiscalYear,
-      periodNumber: p,
-      createdBy: args.userId
-    });
-  }
+  const rows = fiscalYearPeriodDates(
+    args.fiscalYear,
+    startMonth,
+    existingNumbers
+  ).map((period) => ({
+    companyId: args.companyId,
+    startDate: period.startDate,
+    endDate: period.endDate,
+    status: "Inactive",
+    closeStatus: "Open",
+    fiscalYear: args.fiscalYear,
+    periodNumber: period.periodNumber,
+    createdBy: args.userId
+  }));
 
   if (rows.length === 0) {
     return { data: [], error: null };
@@ -3602,6 +3663,114 @@ function runPreviewer(
  * revenue recognition and depreciation runs for `endDate` would hold
  * (`getPeriodRunPreview`).
  */
+/** The three run checks on the close checklist. Each counts what a new run
+ *  would claim for the period plus what its Draft runs already hold, and
+ *  fails when either is non-zero or the preview could not run. A failed read
+ *  of the Draft runs counts as one, so the check fails closed. */
+export function periodRunChecks(args: {
+  runPreview: PeriodRunPreview;
+  heldRunRows: {
+    data:
+      | {
+          amount: number;
+          run: { id: string; runId: string; periodEnd: string; type: RunType };
+        }[]
+      | null;
+    error: unknown;
+  };
+  draftDepreciationRuns: {
+    data:
+      | {
+          id: string;
+          depreciationRunId: string;
+          periodEnd: string;
+          depreciationRunLine: { amount: number }[];
+        }[]
+      | null;
+    error: unknown;
+  };
+}): PeriodReadinessCheck[] {
+  const { runPreview, heldRunRows, draftDepreciationRuns } = args;
+
+  const heldByType = (type: RunType) => {
+    const draftRuns = new Map<
+      string,
+      { id: string; readableId: string; periodEnd: string }
+    >();
+    let amount = 0;
+    let count = 0;
+    for (const line of heldRunRows.data ?? []) {
+      if (line.run.type !== type) continue;
+      draftRuns.set(line.run.id, {
+        id: line.run.id,
+        readableId: line.run.runId,
+        periodEnd: line.run.periodEnd
+      });
+      amount += Number(line.amount);
+      count += 1;
+    }
+    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
+  };
+  const heldRevenue = heldByType("Revenue Recognition");
+  const revenueCount = runPreview.revenue.count + heldRevenue.count;
+  const heldLease = heldByType("Lease");
+  const leaseCount = runPreview.lease.count + heldLease.count;
+
+  const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
+  const draftDepreciationAmount = depreciationDraftRuns.reduce(
+    (sum, run) =>
+      sum +
+      run.depreciationRunLine.reduce(
+        (lineSum, line) => lineSum + Number(line.amount),
+        0
+      ),
+    0
+  );
+  const depreciationCount =
+    runPreview.depreciation.count +
+    (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
+
+  return [
+    {
+      autoCheckKey: "draft-depreciation",
+      severity: "Warning",
+      label:
+        "Assets a depreciation run would depreciate for this period, and Draft depreciation runs ending in it",
+      failing: depreciationCount > 0 || runPreview.depreciation.error !== null,
+      count: depreciationCount,
+      amount: round(runPreview.depreciation.amount + draftDepreciationAmount),
+      due: runPreview.depreciation,
+      draftRuns: depreciationDraftRuns.map((run) => ({
+        id: run.id,
+        readableId: run.depreciationRunId,
+        periodEnd: run.periodEnd
+      }))
+    },
+    {
+      autoCheckKey: "unposted-revenue-schedules",
+      severity: "Warning",
+      label:
+        "Revenue a recognition run would recognize by this period end, and revenue Draft runs hold",
+      failing: revenueCount > 0 || runPreview.revenue.error !== null,
+      count: revenueCount,
+      amount: round(runPreview.revenue.amount + heldRevenue.amount),
+      due: runPreview.revenue,
+      draftRuns: [...heldRevenue.draftRuns.values()]
+    },
+    {
+      autoCheckKey: "unposted-lease-schedules",
+      severity: "Warning",
+      label:
+        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
+      failing: leaseCount > 0 || runPreview.lease.error !== null,
+      count: leaseCount,
+      amount: round(runPreview.lease.amount + heldLease.amount),
+      due: runPreview.lease,
+      draftRuns: [...heldLease.draftRuns.values()]
+    }
+  ];
+}
+
 export async function computePeriodReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3753,48 +3922,11 @@ export async function computePeriodReadiness(
         .order("id")
   );
 
-  // Each run type: what a new run would claim, plus what its Draft runs hold.
-  const heldByType = (type: RunType) => {
-    const draftRuns = new Map<
-      string,
-      { id: string; readableId: string; periodEnd: string }
-    >();
-    let amount = 0;
-    let count = 0;
-    for (const line of heldRunRows.data ?? []) {
-      if (line.run.type !== type) continue;
-      draftRuns.set(line.run.id, {
-        id: line.run.id,
-        readableId: line.run.runId,
-        periodEnd: line.run.periodEnd
-      });
-      amount += Number(line.amount);
-      count += 1;
-    }
-    // A failed read fails both checks closed.
-    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
-  };
-  const heldRevenue = heldByType("Revenue Recognition");
-  const revenueDraftRuns = heldRevenue.draftRuns;
-  const heldRevenueAmount = heldRevenue.amount;
-  const revenueCount = runPreview.revenue.count + heldRevenue.count;
-  const heldLease = heldByType("Lease");
-  const leaseCount = runPreview.lease.count + heldLease.count;
-
-  // Depreciation: the assets a new run would depreciate, plus Draft runs.
-  const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
-  const draftDepreciationAmount = depreciationDraftRuns.reduce(
-    (sum, run) =>
-      sum +
-      run.depreciationRunLine.reduce(
-        (lineSum, line) => lineSum + Number(line.amount),
-        0
-      ),
-    0
-  );
-  const depreciationCount =
-    runPreview.depreciation.count +
-    (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
+  const runChecks = periodRunChecks({
+    runPreview,
+    heldRunRows,
+    draftDepreciationRuns
+  });
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -3903,43 +4035,7 @@ export async function computePeriodReadiness(
       failing: externalGlSync.failing,
       count: externalGlSync.count
     },
-    {
-      autoCheckKey: "draft-depreciation",
-      severity: "Warning",
-      label:
-        "Assets a depreciation run would depreciate for this period, and Draft depreciation runs ending in it",
-      failing: depreciationCount > 0 || runPreview.depreciation.error !== null,
-      count: depreciationCount,
-      amount: round(runPreview.depreciation.amount + draftDepreciationAmount),
-      due: runPreview.depreciation,
-      draftRuns: depreciationDraftRuns.map((run) => ({
-        id: run.id,
-        readableId: run.depreciationRunId,
-        periodEnd: run.periodEnd
-      }))
-    },
-    {
-      autoCheckKey: "unposted-revenue-schedules",
-      severity: "Warning",
-      label:
-        "Revenue a recognition run would recognize by this period end, and revenue Draft runs hold",
-      failing: revenueCount > 0 || runPreview.revenue.error !== null,
-      count: revenueCount,
-      amount: round(runPreview.revenue.amount + heldRevenueAmount),
-      due: runPreview.revenue,
-      draftRuns: [...revenueDraftRuns.values()]
-    },
-    {
-      autoCheckKey: "unposted-lease-schedules",
-      severity: "Warning",
-      label:
-        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
-      failing: leaseCount > 0 || runPreview.lease.error !== null,
-      count: leaseCount,
-      amount: round(runPreview.lease.amount + heldLease.amount),
-      due: runPreview.lease,
-      draftRuns: [...heldLease.draftRuns.values()]
-    },
+    ...runChecks,
     {
       autoCheckKey: "unmatched-ic",
       severity: "Warning",
@@ -5977,14 +6073,7 @@ export async function getJournalEntries(
     );
   }
 
-  // A Superseded journal is a Provisional one the opening journal replaced at
-  // the cutover. It stays out of the list unless a status filter asks for it.
-  const filtersOnStatus =
-    Boolean(args.status) ||
-    (args.filters ?? []).some(
-      (filter) => filter.column === "status" && Boolean(filter.value)
-    );
-  if (!filtersOnStatus) {
+  if (hidesSupersededJournals(args)) {
     query = query.neq("status", "Superseded");
   }
 

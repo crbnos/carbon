@@ -36,9 +36,9 @@ import {
 } from "@carbon/stripe/send-sales-invoice.server";
 import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
-import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
+import { render } from "react-email";
 
 const logger = getLogger("jobs", "invoice-automation");
 
@@ -809,8 +809,8 @@ export async function emailPostedInvoice(args: {
         lastName: ""
       }
     });
-    const html = await renderAsync(template);
-    const text = await renderAsync(template, { plainText: true });
+    const html = await render(template);
+    const text = await render(template, { plainText: true });
 
     const sent = await sendEmail({
       from: companyFromAddress(company.data.name, DEFAULT_FROM),

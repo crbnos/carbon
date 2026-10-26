@@ -4,7 +4,7 @@
 
 import { auditConfig } from "@carbon/database/audit.config";
 import type { AuditDiff } from "@carbon/database/audit.types";
-import { tiptapToText } from "@carbon/utils";
+import { TiptapText } from "@carbon/files/markdown";
 
 // Pure diff computation for the audit handler. Kept free of Inngest / auth
 // imports (which require env vars at import time) so it can be unit-tested
@@ -50,7 +50,7 @@ function richTextToText(value: unknown): string {
     // Malformed doc JSON must degrade to "", not throw — an unhandled throw
     // here poisons the event batch and Inngest retries it forever.
     try {
-      return tiptapToText(value as Parameters<typeof tiptapToText>[0]);
+      return TiptapText(value).toString();
     } catch {
       return "";
     }

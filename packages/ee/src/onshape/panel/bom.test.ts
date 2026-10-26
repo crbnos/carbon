@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  describeBomPayload,
   firstOwnAssemblyPart,
   flattenBomTree,
   missingBomColumnsMessage,
@@ -240,6 +241,80 @@ describe("parseBomTree", () => {
       parseBomTree({ headers: H, rows: [row("1", "A-1", 1)] }).missingColumns
     ).toEqual([]);
   });
+
+  it("reads a template that relabels its columns, by Onshape's property name", () => {
+    const { lines, missingColumns } = parseBomTree({
+      headers: [
+        { id: "h-item", name: "Pos.", propertyName: "item" },
+        { id: "h-qty", name: "Qty", propertyName: "quantity" },
+        { id: "h-pn", name: "PART NUMBER", propertyName: "partNumber" },
+        { id: "h-rev", name: "REVISION", propertyName: "revision" },
+        { id: "h-name", name: "Benennung", propertyName: "name" },
+        { id: "h-pl", name: "Purchasing Level", propertyName: "h-pl" }
+      ],
+      rows: [row("1", "A-1", 2), row("1.1", "B-1", 3)]
+    });
+    expect(missingColumns).toEqual([]);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatchObject({
+      partNumber: "A-1",
+      revision: "A",
+      name: "Name 1",
+      quantity: 2
+    });
+    expect(lines[0]!.children[0]).toMatchObject({
+      partNumber: "B-1",
+      quantity: 3
+    });
+  });
+
+  it("matches a label ignoring case when Onshape sends no property name", () => {
+    const { lines, missingColumns } = parseBomTree({
+      headers: H.map((header) => ({
+        ...header,
+        name: header.name.toUpperCase()
+      })),
+      rows: [row("1", "A-1", 4)]
+    });
+    expect(missingColumns).toEqual([]);
+    expect(lines[0]).toMatchObject({ partNumber: "A-1", quantity: 4 });
+  });
+
+  it("prefers an exact label over one that differs only in case", () => {
+    const { lines } = parseBomTree({
+      headers: [...H, { id: "h-custom", name: "PART NUMBER" }],
+      rows: [
+        {
+          ...row("1", "A-1", 1),
+          headerIdToValue: {
+            ...row("1", "A-1", 1).headerIdToValue,
+            "h-custom": "LEGACY-1"
+          }
+        }
+      ]
+    });
+    expect(lines[0]!.partNumber).toBe("A-1");
+  });
+
+  it("prefers Onshape's part number over a custom column with the same label", () => {
+    const { lines } = parseBomTree({
+      headers: [
+        ...H.filter((header) => header.id !== "h-pn"),
+        { id: "h-custom", name: "Part number", propertyName: "h-custom" },
+        { id: "h-pn", name: "PART NUMBER", propertyName: "partNumber" }
+      ],
+      rows: [
+        {
+          ...row("1", "A-1", 1),
+          headerIdToValue: {
+            ...row("1", "A-1", 1).headerIdToValue,
+            "h-custom": "LEGACY-1"
+          }
+        }
+      ]
+    });
+    expect(lines[0]!.partNumber).toBe("A-1");
+  });
 });
 
 describe("parseBomTree Subassembly BOM behavior", () => {
@@ -316,5 +391,60 @@ describe("firstOwnAssemblyPart", () => {
     ).toBeNull();
     expect(firstOwnAssemblyPart({})).toBeNull();
     expect(firstOwnAssemblyPart(null)).toBeNull();
+  });
+});
+
+describe("describeBomPayload", () => {
+  it("reports the headers Onshape sent, with their property names", () => {
+    const report = describeBomPayload({
+      formatVersion: "1.0",
+      templateId: "tpl-1",
+      headers: [
+        { id: "h-item", name: "Pos.", propertyName: "item" },
+        { id: "h-qty", name: "Qty", propertyName: "quantity" }
+      ],
+      rows: [row("1", "A-1", 1), row("2", "B-1", 2)],
+      topLevelAssemblyRow: {}
+    });
+    expect(report).toEqual({
+      payloadKeys: [
+        "formatVersion",
+        "templateId",
+        "headers",
+        "rows",
+        "topLevelAssemblyRow"
+      ],
+      headersType: "array",
+      headerCount: 2,
+      headers: [
+        { id: "h-item", name: "Pos.", propertyName: "item" },
+        { id: "h-qty", name: "Qty", propertyName: "quantity" }
+      ],
+      rowCount: 2,
+      formatVersion: "1.0",
+      templateId: "tpl-1",
+      topLevelAssemblyRow: true
+    });
+  });
+
+  it("says when the headers are missing or not a list", () => {
+    expect(describeBomPayload({ rows: [row("1", "A-1", 1)] })).toMatchObject({
+      headersType: "missing",
+      headerCount: 0,
+      rowCount: 1
+    });
+    expect(describeBomPayload({ headers: {}, rows: [] }).headersType).toBe(
+      "object"
+    );
+    expect(describeBomPayload("<html>").payloadKeys).toEqual([]);
+    expect(describeBomPayload(null).headersType).toBe("missing");
+  });
+
+  it("never copies a cell value", () => {
+    const report = describeBomPayload({
+      headers: H,
+      rows: [row("1", "SECRET-PART", 1)]
+    });
+    expect(JSON.stringify(report)).not.toContain("SECRET-PART");
   });
 });

@@ -7,6 +7,7 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   hasPermission,
   ITAR_RIDER_SHA256,
@@ -41,12 +42,18 @@ import { batchTrigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import type { NotificationPreferenceChannel } from "@carbon/notifications";
-import { chunkArray, datetime, getClientIp } from "@carbon/utils";
+import {
+  isNotificationTopic,
+  type NotificationPreferenceChannel,
+  type NotificationTopic,
+  notificationPreferenceCompanyId
+} from "@carbon/notifications";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import { chunkArray, datetime, Edition, getClientIp } from "@carbon/utils";
 import { now, parseAbsolute } from "@internationalized/date";
-import { render } from "@react-email/components";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import type { z } from "zod";
 import { getAttribute } from "~/modules/people/people.service";
 import { getSupplierContact } from "~/modules/purchasing/purchasing.service";
@@ -740,11 +747,17 @@ export async function refuseEmailOutsideSso(
   return refusal ? ctx.error("rule", refusal) : null;
 }
 
+/**
+ * Accepts an invite and records it: an audit entry (with the request's IP and
+ * user agent when `request` is given) and, on Cloud, the seat count. The invite
+ * page and /callback both accept through here.
+ */
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   code: string,
-  email?: string
+  email?: string,
+  request?: Request
 ) {
   const invite = await serviceRole
     .from("invite")
@@ -955,6 +968,42 @@ export async function acceptInvite(
         "Failed to invalidate permission cache after invite accept",
         { error: err, userId }
       );
+    }
+
+    // Best-effort audit of the acceptance, with request metadata.
+    try {
+      await insertAuditLogEntries(serviceRole, companyId, [
+        {
+          tableName: "invite",
+          entityType: "invite",
+          entityId: acceptedInvite.id,
+          recordId: acceptedInvite.id,
+          operation: "UPDATE",
+          actorId: null,
+          diff: { acceptedAt: { old: null, new: acceptedInvite.acceptedAt } },
+          metadata: {
+            ipAddress: request
+              ? (getClientIp(request) ?? undefined)
+              : undefined,
+            userAgent: request?.headers.get("user-agent") ?? undefined
+          }
+        }
+      ]);
+    } catch (err) {
+      logger.warn("[invite] audit write skipped for accept", { error: err });
+    }
+
+    // The invite is accepted by now: a billing failure must not report it as
+    // not accepted.
+    if (CarbonEdition === Edition.Cloud) {
+      try {
+        await updateSubscriptionQuantityForCompany(companyId);
+      } catch (err) {
+        logger.error("Failed to update seats after invite accept", {
+          error: err,
+          companyId
+        });
+      }
     }
 
     return { data: acceptedInvite, error: null };
@@ -1325,10 +1374,7 @@ export async function createEmployeeAccount(
         return null;
       }
     );
-    if (
-      !hasPermission(claims?.permissions, "users", "update", companyId) ||
-      !hasPermission(claims?.permissions, "people", "create", companyId)
-    ) {
+    if (!canReAddDeactivatedEmployee(claims?.permissions, companyId)) {
       logger.error("Re-adding a deactivated employee was refused", {
         companyId,
         userId,
@@ -2125,7 +2171,21 @@ export async function convertConsoleOperatorToUser(
   return { success: true };
 }
 
-function makePermissionsFromEmployeeType({
+/** Re-adding a deactivated employee writes outside RLS, so the inviter needs
+ *  what a first-time add's RLS inserts need: users update and people create. */
+export function canReAddDeactivatedEmployee(
+  permissions: Parameters<typeof hasPermission>[0],
+  companyId: string
+): boolean {
+  return (
+    hasPermission(permissions, "users", "update", companyId) &&
+    hasPermission(permissions, "people", "create", companyId)
+  );
+}
+
+/** An employee type's permission rows as invite permissions, keyed
+ *  `module_action`. */
+export function makePermissionsFromEmployeeType({
   data
 }: {
   data: {
@@ -2438,11 +2498,25 @@ export async function getNotificationPreferences(
   userId: string,
   companyId: string
 ) {
-  return client
+  // This company's rows plus the user's account-level rows (companyId NULL).
+  const rows = await client
     .from("notificationPreference")
-    .select("topic, channel, enabled")
+    .select("companyId, topic, channel, enabled")
     .eq("userId", userId)
-    .eq("companyId", companyId);
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+  if (rows.error) return rows;
+  return {
+    ...rows,
+    data: rows.data
+      .filter(
+        (row) =>
+          row.companyId ===
+          (isNotificationTopic(row.topic)
+            ? notificationPreferenceCompanyId(row.topic, companyId)
+            : companyId)
+      )
+      .map(({ topic, channel, enabled }) => ({ topic, channel, enabled }))
+  };
 }
 
 export async function upsertNotificationPreference(
@@ -2450,7 +2524,7 @@ export async function upsertNotificationPreference(
   preference: {
     userId: string;
     companyId: string;
-    topic: string;
+    topic: NotificationTopic;
     channel: NotificationPreferenceChannel;
     enabled: boolean;
   }
@@ -2458,6 +2532,10 @@ export async function upsertNotificationPreference(
   return client.from("notificationPreference").upsert(
     {
       ...preference,
+      companyId: notificationPreferenceCompanyId(
+        preference.topic,
+        preference.companyId
+      ),
       updatedAt: new Date().toISOString()
     },
     { onConflict: "userId,companyId,channel,topic" }

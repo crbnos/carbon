@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { LuMenu, LuPlus, LuSearch, LuX } from "react-icons/lu";
 import { useLocation } from "react-router";
 import { useUser } from "~/hooks";
+import { useAppBadge } from "~/hooks/useAppBadge";
 import { useNotifications } from "~/hooks/useNotifications";
 import { useRestoreBrowserNotifications } from "~/hooks/usePushSubscription";
 import { useUIStore } from "~/stores/ui";
@@ -47,6 +48,7 @@ export function MobileDock() {
     publicKey: usePushPublicKey(),
     userId: user.id
   });
+  useAppBadge({ userId: user.id });
   const unread = notifications.notifications.filter((n) => !n.read).length;
   const canCreate = useCreate().length > 0;
 

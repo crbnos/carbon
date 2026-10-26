@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -953,10 +954,11 @@ export const copyMethod = defineServiceFn({
  *
  * @remarks
  * The new version takes `copyFromId`'s header and, through get-method, its
- * whole bill of materials and process. `activeVersionId` is made Active first
- * (the item's only version, when its successor is drafted). With strict
- * backflush on, that activation is refused while a pulled line has no Pull
- * From storage unit, as `methodVersionToActive` refuses it.
+ * whole bill of materials and process. `activeVersionId` must be `copyFromId`:
+ * a Draft source is made Active first (the item's only version, when its
+ * successor is drafted). With strict backflush on, that activation is refused
+ * while a pulled line has no Pull From storage unit, as `methodVersionToActive`
+ * refuses it. A failed copy leaves no new version behind.
  *
  * @mcp
  */
@@ -965,59 +967,52 @@ export const createMethodVersion = defineServiceFn({
   permission: { create: "parts" },
 
   async run(ctx, input) {
-    const companyId = ctx.company.id;
-    const userId = ctx.auditUserId;
-
-    if (input.activeVersionId) {
+    const { copyFromId, activeVersionId, version } = input;
+    // Any other id could be another item's version, set Active beside its own.
+    if (activeVersionId && activeVersionId !== copyFromId) {
+      return ctx.error(
+        "rule",
+        "Only the version being copied can be set Active"
+      );
+    }
+    if (activeVersionId) {
       const db = ctx.asSystem.pg;
-      const { strict } = await getStrictBackflushSettings(db, companyId);
+      const { strict } = await getStrictBackflushSettings(db, ctx.company.id);
       if (strict) {
         const parts = await getMethodPartsMissingPullFrom(db, {
-          makeMethodId: input.activeVersionId,
-          companyId
+          makeMethodId: activeVersionId,
+          companyId: ctx.company.id
         });
         if (parts.length > 0) {
           return ctx.error("rule", activationRefusalMessage(parts));
         }
       }
     }
-    const insert = await service.upsertMakeMethodVersion(
-      ctx.asCaller.supabase,
-      {
-        ...input,
-        companyId,
-        createdBy: userId
-      }
-    );
-    const version = insert.data;
-    if (insert.error || !version?.id || !version.type || !version.itemId) {
-      return ctx.error(
-        "internal",
-        "Failed to insert new version",
-        insert.error
-      );
-    }
 
-    const copy = await service.copyMakeMethod(
-      ctx.asSystem.supabase,
+    const result = await service.createMakeMethodVersion(
+      ctx.asCaller.supabase,
       ctx.asSystem.pg,
       {
-        sourceId: input.copyFromId,
-        targetId: version.id,
-        billOfMaterial: true,
-        billOfProcess: true,
-        parameters: true,
-        tools: true,
-        steps: true,
-        workInstructions: true,
-        companyId,
-        userId
+        copyFromId,
+        version,
+        activate: Boolean(activeVersionId),
+        companyId: ctx.company.id,
+        createdBy: ctx.auditUserId
       }
     );
-    if (copy.error) {
-      return ctx.error("internal", "Failed to copy make method", copy.error);
+    // The copy runs as the system, so its refusal is ours, as `copyMethod` reads it.
+    if (result.error instanceof ServerFnError) {
+      return ctx.error(
+        "internal",
+        "Failed to create new version",
+        result.error
+      );
     }
-    return { id: version.id, itemId: version.itemId, type: version.type };
+    // `data` is set whenever `error` is not; the null is the union's, not a case.
+    return (
+      unwrap(ctx, result) ??
+      ctx.error("internal", "Failed to create new version")
+    );
   }
 });
 
@@ -4856,8 +4851,8 @@ export const updateMethodOperation = defineServiceFn({
  * release lock applies, as in the bill of process editor.
  *
  * @param id - The method operation's id.
- * @param text - The work instruction as plain text: each line is a paragraph,
- *   `**text**` is bold. Empty text clears it.
+ * @param text - The work instruction as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code. Empty text clears it.
  *
  * @mcp
  */

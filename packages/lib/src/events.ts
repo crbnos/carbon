@@ -83,6 +83,10 @@ export type Events = {
         | { filename: string; path: string }
       >;
       companyId: string;
+      // A quote, order, invoice, purchase order or RFQ to a customer or
+      // supplier: only these follow the company's Email settings (its From
+      // address). Everything else always goes from the server's address.
+      document?: true;
       // Recurring notification emails only: after the provider accepts the
       // send, the send-email function bumps the delivery counters for these.
       tracking?: {
@@ -789,6 +793,15 @@ export type Events = {
       documentId: string;
       foreignId: string;
       stagedPath: string;
+    };
+  };
+
+  // Onshape's translation.complete webhook, forwarded: wakes an element sync
+  // waiting on the translation (matched on companyId + translationId)
+  "carbon/onshape-translation-complete": {
+    data: {
+      companyId: string;
+      translationId: string;
     };
   };
 

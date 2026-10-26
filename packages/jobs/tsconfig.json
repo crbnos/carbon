@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
-    "sourceMap": false,
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strictNullChecks": true

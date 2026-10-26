@@ -24,7 +24,7 @@ import {
   isApprovalRequired,
   rejectRequest
 } from "@carbon/ee/approvals.server";
-import { storage } from "@carbon/files";
+import { storage, storedDocumentPdfName } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -67,7 +67,6 @@ import {
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import { ERP_URL, path } from "~/utils/path";
-import { stripSpecialCharacters } from "~/utils/string";
 import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
@@ -477,6 +476,7 @@ export const finalizePurchasingRfqAndNotify = defineServiceFn({
           const body = `Hey ${email.firstName},\n\nPlease provide pricing and lead time(s) for the linked quote:`;
           const signature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
           await trigger("send-email", {
+            document: true,
             to: [user.data.email, email.to],
             from: user.data.email,
             subject: `Supplier Quote ${email.quoteReadableId} from ${company.data.name}`,
@@ -743,7 +743,12 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     const interactionId = quote.data.supplierInteractionId;
     const attachments = [
       ...(interactionId
-        ? await service.interactionAttachments(client, companyId, interactionId)
+        ? await service.interactionAttachments(
+            client,
+            companyId,
+            interactionId,
+            { withoutPurchaseOrderPdfs: true }
+          )
         : []),
       ...(await service.getSupplierInteractionLineAttachments(
         client,
@@ -759,6 +764,7 @@ export const sendSupplierQuoteToSupplier = defineServiceFn({
     const signature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
     try {
       await trigger("send-email", {
+        document: true,
         to: [user.data.email, contact.data.contact.email].filter(
           Boolean
         ) as string[],
@@ -2470,11 +2476,15 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
             ]
           });
           const attachments = [
+            ...(await service.signedAttachments(system, companyId, [
+              { filename: pdf.fileName, path: pdf.path }
+            ])),
             ...(interactionId
               ? await service.interactionAttachments(
                   system,
                   companyId,
-                  interactionId
+                  interactionId,
+                  { withoutPurchaseOrderPdfs: true }
                 )
               : []),
             ...(await service.signedAttachments(
@@ -2493,6 +2503,7 @@ export const finalizePurchaseOrderAndNotify = defineServiceFn({
             );
           }
           await trigger("send-email", {
+            document: true,
             to: email.to,
             cc: cc?.length ? cc : undefined,
             from: email.from,
@@ -2694,10 +2705,9 @@ export const confirmReturnOrder = defineServiceFn({
         purchaseReturnOrderId,
         locale: locale ?? "en-US"
       });
-      const fileName = stripSpecialCharacters(
-        `${order.data.purchaseReturnOrderId ?? ""} - ${datetime
-          .timestamp()
-          .slice(0, -5)}.pdf`
+      const fileName = storedDocumentPdfName(
+        order.data.purchaseReturnOrderId ?? "",
+        datetime.timestamp()
       );
       const path = `${companyId}/purchase-return-order/${purchaseReturnOrderId}/${fileName}`;
       const upload = await storage(system)
@@ -5394,10 +5404,10 @@ export const updatePurchaseOrderLine = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.upsertPurchaseOrderLine(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.upsertPurchaseOrderLine(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });

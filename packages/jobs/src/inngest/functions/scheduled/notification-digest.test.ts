@@ -4,12 +4,9 @@
 
 import { describe, expect, it, vi } from "vitest";
 
+// @carbon/auth builds its Supabase client at import time.
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
-}));
-vi.mock("../../../db", () => ({ getJobDatabaseClient: vi.fn() }));
-vi.mock("../../client", () => ({
-  inngest: { createFunction: vi.fn(() => ({})) }
 }));
 
 import { NotificationTopic } from "@carbon/notifications";

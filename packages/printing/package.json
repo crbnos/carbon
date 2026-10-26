@@ -31,7 +31,7 @@
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup --watch",
     "lint": "biome lint --write ",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0"

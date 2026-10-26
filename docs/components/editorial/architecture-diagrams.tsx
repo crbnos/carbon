@@ -308,7 +308,7 @@ function Runs() {
     { label: "check.yml", sub: "lint, types, tests" },
     { label: "deploy.yml", sub: "build and push images" },
     { label: "supabase.yml", sub: "migrations, edge fns" },
-    { label: "inngest.yml", sub: "register jobs" },
+    { label: "post-deploy.yml", sub: "jobs, Auth emails" },
   ];
   const ww = 164;
   return (

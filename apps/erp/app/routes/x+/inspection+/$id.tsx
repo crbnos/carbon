@@ -16,6 +16,7 @@ import {
   getInspection,
   getInspectionDocument,
   getInspectionGauges,
+  getInspectionIssues,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
@@ -25,6 +26,7 @@ import {
 } from "~/modules/quality/quality.service";
 import type {
   InspectionGauge,
+  InspectionIssue,
   InspectionMeasurement,
   InspectionRow,
   InspectionSample,
@@ -102,7 +104,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lotEntities,
     document,
     balloons,
-    receipt
+    receipt,
+    issues
   ] = await Promise.all([
     getInspectionSamplingPlans(client, id, companyId),
     getInspectionMeasurements(client, id, companyId),
@@ -132,7 +135,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("createdBy, status")
           .eq("id", insp.sourceDocumentId)
           .maybeSingle()
-      : Promise.resolve({ data: null, error: null })
+      : Promise.resolve({ data: null, error: null }),
+    getInspectionIssues(client, id, companyId)
   ]);
 
   const doc = document.data as {
@@ -168,6 +172,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pdfUrl: doc?.content?.pdfUrl ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
     issueTypes: (issueTypes.data ?? []) as IssueTypeListItem[],
+    issues: (issues.data ?? [])
+      .map((link) => link.nonConformance)
+      .filter((issue): issue is InspectionIssue => Boolean(issue)),
     enforceFourEyes:
       ((settings.data as any)?.enforceInspectionFourEyes as boolean) ?? false,
     currentUserId: userId
@@ -196,6 +203,7 @@ export default function InspectionExecutionRoute() {
       pdfUrl={loaderData.pdfUrl}
       lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}
       issueTypes={loaderData.issueTypes as IssueTypeListItem[]}
+      issues={loaderData.issues}
       currentUserId={loaderData.currentUserId}
       enforceFourEyes={loaderData.enforceFourEyes}
     />

@@ -2,36 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
-
-// The models' module graph can reach @carbon/content/glossary and Lingui `msg`
-// macros at module load, which plain vitest does not transform. The helpers
-// under test need neither (same stubs as production.service.test.ts).
-vi.mock("@carbon/content/glossary", () => ({
-  terms: {},
-  getEntry: vi.fn(),
-  lookupEntry: vi.fn(),
-  hasEntry: vi.fn(),
-  termSlug: vi.fn(),
-  glossaryEntries: () => []
-}));
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
-    Array.isArray(strings)
-      ? strings.reduce(
-          (acc, s, i) => acc + s + (i < values.length ? String(values[i]) : ""),
-          ""
-        )
-      : String(strings)
-}));
-
-const {
+import { describe, expect, it } from "vitest";
+import {
+  assemblyInstructionStepValidator,
   isBatchDissolvable,
   isBatchReleasable,
   isJobBulkDeletable,
   isJobBulkReleasable,
   jobStatus
-} = await import("./production.models");
+} from "./production.models";
 
 describe("isJobBulkDeletable", () => {
   it("accepts Draft, Planned and the 2 deprecated due statuses only", () => {
@@ -56,5 +35,53 @@ describe("batch status gates", () => {
 
   it("dissolves a Planned or Active batch only", () => {
     expect(statuses.filter(isBatchDissolvable)).toEqual(["Planned", "Active"]);
+  });
+});
+
+// An assembly instruction List step needs at least one option, like the bill of
+// process steps (shared.models.test.ts). Blank rows are dropped first, so the
+// empty row "Add option" leaves behind never blocks a save and is never stored.
+describe("assemblyInstructionStepValidator list options", () => {
+  const listStep = (listValues?: string[]) => ({
+    assemblyInstructionId: "ai1",
+    title: "Pick a finish",
+    type: "List" as const,
+    listValues
+  });
+
+  const listValuesError = (listValues?: string[]) => {
+    const result = assemblyInstructionStepValidator.safeParse(
+      listStep(listValues)
+    );
+    if (result.success) return undefined;
+    return result.error.issues.find(
+      (issue) => issue.path.join(".") === "listValues"
+    )?.message;
+  };
+
+  it("requires at least one option", () => {
+    expect(listValuesError(undefined)).toBe("List options are required");
+    expect(listValuesError([])).toBe("List options are required");
+  });
+
+  it("treats a list of blank rows as no options", () => {
+    expect(listValuesError(["", "  "])).toBe("List options are required");
+  });
+
+  it("drops a trailing empty row instead of refusing the save", () => {
+    const result = assemblyInstructionStepValidator.safeParse(
+      listStep(["Matte", "Gloss", ""])
+    );
+    expect(result.success).toBe(true);
+    expect(result.data?.listValues).toEqual(["Matte", "Gloss"]);
+  });
+
+  it("does not require options on other step types", () => {
+    expect(
+      assemblyInstructionStepValidator.safeParse({
+        ...listStep(),
+        type: "Task"
+      }).success
+    ).toBe(true);
   });
 });

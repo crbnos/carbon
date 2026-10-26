@@ -30,6 +30,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  ImageZoomViewer,
   Label,
   Loading,
   MENU_ITEM_SHORTCUTS,
@@ -110,6 +111,7 @@ import Procedure from "~/components/Form/Procedure";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
+import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   SlidePinOverlay,
@@ -2346,7 +2348,11 @@ function AttributesForm({
                 </div>
               )}
               {type === "List" && (
-                <ArrayInput name="listValues" label={t`List Options`} />
+                <ArrayInput
+                  name="listValues"
+                  label={t`List Options`}
+                  isRequired
+                />
               )}
 
               <SlidesEditor
@@ -2759,7 +2765,11 @@ function AttributesListItem({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
             <StepSlides step={attribute} isDisabled={isDisabled} />
             <StepParts
@@ -2823,27 +2833,15 @@ function AttributesListItem({
                 </HStack>
                 {attribute.type === "Measurement" && (
                   <span className="text-xs text-muted-foreground">
-                    {attribute.minValue !== null && attribute.maxValue !== null
-                      ? `Must be between ${attribute.minValue} and ${
-                          attribute.maxValue
-                        } ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : attribute.minValue !== null
-                        ? `Must be > ${attribute.minValue} ${
-                            unitOfMeasures.find(
-                              (u) => u.value === unitOfMeasureCode
-                            )?.label
-                          }`
-                        : attribute.maxValue !== null
-                          ? `Must be < ${attribute.maxValue} ${
-                              unitOfMeasures.find(
-                                (u) => u.value === unitOfMeasureCode
-                              )?.label
-                            }`
-                          : null}
+                    <MeasurementLimits
+                      minValue={attribute.minValue}
+                      maxValue={attribute.maxValue}
+                      unit={
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }
+                    />
                   </span>
                 )}
               </VStack>
@@ -3562,6 +3560,7 @@ function OperationPreview({
   const allTools = useTools();
   const [current, setCurrent] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
+  const [isViewingSlide, setIsViewingSlide] = useState(false);
 
   // Move to a step and reset to its first slide.
   const goToStep = (next: number) => {
@@ -3713,11 +3712,19 @@ function OperationPreview({
           </>
         ) : slideImage ? (
           <div className="relative inline-block">
-            <img
-              src={slideImage}
-              alt={slide.caption ?? ""}
-              className="block max-h-[520px] w-auto max-w-full rounded-md"
-            />
+            <button
+              type="button"
+              aria-label={t`View full size`}
+              title={t`View full size`}
+              className="block cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => setIsViewingSlide(true)}
+            >
+              <img
+                src={slideImage}
+                alt={slide.caption ?? ""}
+                className="block max-h-[520px] w-auto max-w-full rounded-md"
+              />
+            </button>
             <SlidePinOverlay pins={slide.annotations ?? []} />
           </div>
         ) : (
@@ -3730,6 +3737,19 @@ function OperationPreview({
       {slide?.caption ? (
         <p className="text-xs text-muted-foreground">{slide.caption}</p>
       ) : null}
+
+      <ImageZoomViewer
+        open={isViewingSlide && !!slideImage && !slide?.modelUploadId}
+        src={slideImage}
+        caption={slide?.caption}
+        annotations={slide?.annotations ?? []}
+        toolNameById={
+          isViewingSlide
+            ? new Map(allTools.map((tool) => [tool.id, tool.name]))
+            : undefined
+        }
+        onClose={() => setIsViewingSlide(false)}
+      />
 
       {pinLegend.length > 0 && (
         <div className="flex flex-col gap-1">

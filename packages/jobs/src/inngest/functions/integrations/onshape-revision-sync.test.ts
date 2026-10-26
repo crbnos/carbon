@@ -14,10 +14,9 @@ import {
 
 const mocks = vi.hoisted(() => ({
   getRevisions: vi.fn(),
-  getCompanyRevisions: vi.fn(),
-  sync: vi.fn(),
-  drawing: vi.fn()
+  getCompanyRevisions: vi.fn()
 }));
+// The Onshape API is the network boundary; @carbon/auth connects at import time.
 vi.mock("@carbon/ee/onshape", () => ({
   getOnshapeClient: vi.fn(async () => ({ client: mocks })),
   OnshapeAssetTooLargeError: class extends Error {},
@@ -26,16 +25,6 @@ vi.mock("@carbon/ee/onshape", () => ({
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn()
 }));
-vi.mock("../../client", () => ({
-  inngest: { createFunction: (...args: unknown[]) => args }
-}));
-vi.mock("./onshape-sync-element", () => ({
-  ONSHAPE_CHECKPOINTING: {},
-  runOnshapeElementSync: mocks.sync,
-  runOnshapeDrawingSync: mocks.drawing
-}));
-vi.mock("./onshape-element-sync", () => ({ onshapeElementSyncFunction: {} }));
-vi.mock("../tasks/assembler-client", () => ({ ASSEMBLER_CONCURRENCY: [] }));
 
 const input: OnshapeRevisionSyncInput = {
   companyId: "carbon-company",
@@ -95,10 +84,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getRevisions.mockResolvedValue({ items: [released] });
   mocks.getCompanyRevisions.mockResolvedValue({ items: [released] });
-  mocks.sync.mockResolvedValue({
-    modelUploadId: "selected-model",
-    thumbnailAttached: false
-  });
 });
 
 describe("release identity", () => {
@@ -170,7 +155,7 @@ describe("release identity", () => {
 });
 
 describe("released drawings", () => {
-  it("resolves a drawing to the model item sharing its number, exporting nothing yet", async () => {
+  it("resolves a drawing to the model item sharing its number", async () => {
     mocks.getRevisions.mockResolvedValue({
       items: [{ ...released, partNumber: "DRW-SADDLE", elementType: 2 }]
     });
@@ -192,7 +177,6 @@ describe("released drawings", () => {
         assetBaseName: "PRT-SADDLE.A"
       }
     });
-    expect(mocks.drawing).not.toHaveBeenCalled();
   });
 });
 

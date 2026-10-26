@@ -31,6 +31,8 @@ import {
   Td,
   Th,
   Thead,
+  ToggleGroup,
+  ToggleGroupItem,
   Tr,
   toast
 } from "@carbon/react";
@@ -116,6 +118,8 @@ const ACCOUNT_CLASS_ORDER = [
 ];
 const OTHER_CLASS = "Other";
 
+type MappingFilter = "all" | "unmapped" | "mapped";
+
 /**
  * Small status pill for an account row — a Vercel-style dot + label. Neutral
  * (monochrome) marks a required posting-default account; warning (amber) marks
@@ -167,6 +171,7 @@ export function AccountMapping({
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<MappingFilter>("all");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   // The provider account the user picked for each Carbon account this
   // session, saved together by the footer's Save.
@@ -201,8 +206,14 @@ export function AccountMapping({
     () => new Set(blocking.map((account) => account.id)),
     [blocking]
   );
+  // A mapping row with no provider account maps nothing
   const mappedById = useMemo(
-    () => new Map(mappings.map((mapping) => [mapping.accountId, mapping])),
+    () =>
+      new Map(
+        mappings
+          .filter((mapping) => mapping.externalId)
+          .map((mapping) => [mapping.accountId, mapping])
+      ),
     [mappings]
   );
 
@@ -256,15 +267,25 @@ export function AccountMapping({
     return [...byId.values()];
   }, [allAccounts, blocking]);
 
+  // Mapped means a saved mapping, not a pick made this session — a row stays
+  // in the Unmapped view while its provider account is being chosen.
+  const mappedCount = useMemo(
+    () =>
+      displayAccounts.filter((account) => mappedById.has(account.id)).length,
+    [displayAccounts, mappedById]
+  );
+
   const grouped = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const filtered = term
-      ? displayAccounts.filter(
-          (account) =>
-            (account.number ?? "").toLowerCase().includes(term) ||
-            account.name.toLowerCase().includes(term)
-        )
-      : displayAccounts;
+    const filtered = displayAccounts.filter((account) => {
+      if (filter === "mapped" && !mappedById.has(account.id)) return false;
+      if (filter === "unmapped" && mappedById.has(account.id)) return false;
+      return (
+        !term ||
+        (account.number ?? "").toLowerCase().includes(term) ||
+        account.name.toLowerCase().includes(term)
+      );
+    });
     const groups = new Map<string, AllAccountRow[]>();
     for (const account of filtered) {
       const key =
@@ -278,7 +299,7 @@ export function AccountMapping({
     return [...ACCOUNT_CLASS_ORDER, OTHER_CLASS]
       .filter((key) => groups.has(key))
       .map((key) => ({ class: key, accounts: groups.get(key) ?? [] }));
-  }, [displayAccounts, search]);
+  }, [displayAccounts, mappedById, filter, search]);
 
   // Unmapped required accounts (posting defaults + expense) — the AI-suggest
   // input and the gate for the Suggest button.
@@ -314,6 +335,8 @@ export function AccountMapping({
   const focusKey = (focusAccountIds ?? []).join(",");
   useEffect(() => {
     if (!focusKey) return;
+    // The focused account may be hidden by the Mapped / Unmapped filter
+    setFilter("all");
     setHighlightedId(focusKey.split(",")[0] ?? null);
     const timer = setTimeout(() => setHighlightedId(null), 2500);
     return () => clearTimeout(timer);
@@ -373,22 +396,61 @@ export function AccountMapping({
           )}
         </div>
 
-        <div className="w-full max-w-[280px]">
-          <InputGroup size="sm">
-            <InputLeftElement>
-              <LuSearch className="size-4 text-muted-foreground" />
-            </InputLeftElement>
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t`Search accounts`}
-            />
-          </InputGroup>
+        <div className="flex w-full flex-wrap items-center gap-2">
+          <div className="w-full max-w-[280px]">
+            <InputGroup size="sm">
+              <InputLeftElement>
+                <LuSearch className="size-4 text-muted-foreground" />
+              </InputLeftElement>
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={t`Search accounts`}
+              />
+            </InputGroup>
+          </div>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={filter}
+            // Radix fires "" when the active item is clicked again; keep it set
+            onValueChange={(next) => {
+              if (next) setFilter(next as MappingFilter);
+            }}
+          >
+            <ToggleGroupItem value="all">
+              <Trans>All</Trans>
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {displayAccounts.length}
+              </span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="unmapped">
+              <Trans>Unmapped</Trans>
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {displayAccounts.length - mappedCount}
+              </span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="mapped">
+              <Trans>Mapped</Trans>
+              <span className="ml-1.5 tabular-nums text-muted-foreground">
+                {mappedCount}
+              </span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
 
         {grouped.length === 0 ? (
           <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground max-md:border-0 max-md:rounded-none">
-            <Trans>No accounts match your search</Trans>
+            {search.trim() ? (
+              <Trans>No accounts match your search</Trans>
+            ) : filter === "unmapped" ? (
+              <Trans>Every account is mapped</Trans>
+            ) : filter === "mapped" ? (
+              <Trans>No accounts are mapped yet</Trans>
+            ) : (
+              <Trans>No accounts match your search</Trans>
+            )}
           </div>
         ) : (
           grouped.map((group) => (

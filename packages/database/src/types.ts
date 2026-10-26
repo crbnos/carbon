@@ -41512,7 +41512,7 @@ export type Database = {
       notificationPreference: {
         Row: {
           channel: string
-          companyId: string
+          companyId: string | null
           enabled: boolean
           id: string
           topic: string
@@ -41521,7 +41521,7 @@ export type Database = {
         }
         Insert: {
           channel: string
-          companyId: string
+          companyId?: string | null
           enabled?: boolean
           id?: string
           topic: string
@@ -41530,7 +41530,7 @@ export type Database = {
         }
         Update: {
           channel?: string
-          companyId?: string
+          companyId?: string | null
           enabled?: boolean
           id?: string
           topic?: string
@@ -69371,6 +69371,7 @@ export type Database = {
           updatedAt: string | null
           updatedBy: string | null
           version: number
+          videoUrl: string | null
         }
         Insert: {
           assignee?: string | null
@@ -69392,6 +69393,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           version?: number
+          videoUrl?: string | null
         }
         Update: {
           assignee?: string | null
@@ -69413,6 +69415,7 @@ export type Database = {
           updatedAt?: string | null
           updatedBy?: string | null
           version?: number
+          videoUrl?: string | null
         }
         Relationships: [
           {
