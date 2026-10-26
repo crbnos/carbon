@@ -13,6 +13,7 @@ import {
   classifyLatePlacement,
   composeBatchPredecessorConflict,
   composeLateConflict,
+  composeNoFreeOperator,
   composePlacementNote
 } from "./conflict-messages.ts";
 import {
@@ -681,6 +682,15 @@ export class WorkCenterSelector {
                   employeeId: m.employeeId,
                   windows: intersectWindows(m.windows, capacity.windows)
                 }));
+              if (relayMembers.length === 0) {
+                if (!firstConflict) {
+                  firstConflict = composeNoFreeOperator(
+                    requirement.abilityName,
+                    members?.length ?? 0
+                  );
+                }
+                continue;
+              }
               const pass2 = allocateAttendedOperation({
                 attendedHours,
                 totalHours: durationHours,

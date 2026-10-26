@@ -19,6 +19,13 @@ msgstr " A supplier is a business or person who sells you parts or services."
 msgid "— last checked {0}"
 msgstr "— last checked {0}"
 
+msgid "— not on the manning board"
+msgstr "— not on the manning board"
+
+#. placeholder {0}: person.stations.join(", ")
+msgid "— on the manning board at {0}"
+msgstr "— on the manning board at {0}"
+
 msgid ", {residual}% residual"
 msgstr ", {residual}% residual"
 
@@ -60,6 +67,10 @@ msgstr "(mapped to more than one Carbon account)"
 msgid "(not an Equity posting account)"
 msgstr "(not an Equity posting account)"
 
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
+msgstr "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# blocking record} other {# blocking records}}"
@@ -92,6 +103,10 @@ msgstr "{0, plural, one {# day short} other {# days short}}"
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
 msgstr "{0, plural, one {# job} other {# jobs}}"
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
+msgstr "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -462,6 +477,10 @@ msgstr "{0}d"
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
 msgstr "{0}d early"
+
+#. placeholder {0}: item.daysElsewhere
+msgid "{0}d elsewhere"
+msgstr "{0}d elsewhere"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
@@ -3730,6 +3749,9 @@ msgstr "Assigned {changed} planning actions"
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Assigned {employeeName} to {targetName} for the week"
 
+msgid "Assigned {employeeName} to {targetName} for the week; days already assigned in other departments were kept"
+msgstr "Assigned {employeeName} to {targetName} for the week; days already assigned in other departments were kept"
+
 msgid "Assigned 1 planning action"
 msgstr "Assigned 1 planning action"
 
@@ -3765,6 +3787,9 @@ msgstr "Assumptions"
 
 msgid "At {locationName}"
 msgstr "At {locationName}"
+
+msgid "At a station outside this department"
+msgstr "At a station outside this department"
 
 msgid "At Commencement"
 msgstr "At Commencement"
@@ -15445,6 +15470,13 @@ msgstr "No work centers exist"
 msgid "No work centers in {departmentLabel}"
 msgstr "No work centers in {departmentLabel}"
 
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr "Nobody is qualified for {0}"
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr "Nobody is qualified. Add someone to the process's ability."
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -18039,6 +18071,12 @@ msgstr "Qualified"
 
 msgid "Qualified Employees"
 msgstr "Qualified Employees"
+
+msgid "Qualified people are committed elsewhere"
+msgstr "Qualified people are committed elsewhere"
+
+msgid "Qualified to run it"
+msgstr "Qualified to run it"
 
 msgid "quality"
 msgstr "quality"

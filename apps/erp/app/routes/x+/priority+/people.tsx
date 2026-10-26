@@ -800,6 +800,14 @@ export default function SchedulePeopleRoute() {
               employees={employeesForMatrix}
               workCenters={displayedWorkCenters}
               assignments={matrixAssignments}
+              assignmentsElsewhere={
+                departmentId
+                  ? weekAssignments.filter(
+                      (assignment) =>
+                        !displayedWorkCenterIds.has(assignment.workCenterId)
+                    )
+                  : undefined
+              }
               absences={weekAbsences}
               employeeShiftId={employeeShiftId}
               employeeAbilityNames={employeeAbilityNames}
@@ -813,6 +821,15 @@ export default function SchedulePeopleRoute() {
               employees={employeesForBoard}
               workCenters={displayedWorkCenters}
               assignments={boardAssignments}
+              assignmentsElsewhere={
+                departmentId
+                  ? assignments.filter(
+                      (assignment) =>
+                        !displayedWorkCenterIds.has(assignment.workCenterId)
+                    )
+                  : undefined
+              }
+              allWorkCenters={workCenters}
               absences={absences}
               requiredAbilities={requiredAbilities}
               requiredHoursByWorkCenter={requiredHoursByWorkCenter}
@@ -838,7 +855,8 @@ export default function SchedulePeopleRoute() {
             departmentId={departmentId}
             employeeDepartments={employeeDepartments}
             workCenters={displayedWorkCenters}
-            assignments={matrixAssignments}
+            allWorkCenters={workCenters}
+            assignments={weekAssignments}
             absences={weekAbsences}
             attendedByWorkCenter={attendedByWorkCenter}
             shiftId={shiftId}

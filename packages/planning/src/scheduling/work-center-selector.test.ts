@@ -661,9 +661,10 @@ it("a person on the board is not pulled to another station by the fallback", asy
     makeMannedElsewhereContext("wc2")
   );
 
-  assert(
+  // The reason names the cause: the one welder is committed elsewhere.
+  assertEquals(
     selection?.conflict,
-    "the op surfaces a conflict rather than a placement"
+    "No free operator for Weld: the 1 person qualified is assigned to other stations on the manning board"
   );
   assertEquals(selection?.placedStart, undefined);
   const bradBookings = selector

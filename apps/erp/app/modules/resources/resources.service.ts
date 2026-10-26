@@ -290,6 +290,43 @@ export async function getAbilitiesList(
     .order("name");
 }
 
+/**
+ * Whether an ability's process gates scheduling on it, and how many
+ * operations of that process the scheduler could not place.
+ */
+export async function getAbilityScheduleImpact(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  processId: string
+) {
+  const [process, unplaced] = await Promise.all([
+    client
+      .from("process")
+      .select("requiresAbility")
+      .eq("id", processId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("capacityReservation")
+      .select("id, jobOperation!inner(processId)", {
+        count: "exact",
+        head: true
+      })
+      .eq("companyId", companyId)
+      .eq("resourceKind", "WorkCenter")
+      .eq("isPlaceholder", true)
+      .is("scenarioId", null)
+      .eq("jobOperation.processId", processId)
+  ]);
+  return {
+    data: {
+      requiresAbility: process.data?.requiresAbility ?? false,
+      unschedulable: unplaced.count ?? 0
+    },
+    error: process.error ?? unplaced.error
+  };
+}
+
 export async function getAbility(
   client: SupabaseClient<Database>,
   abilityId: string

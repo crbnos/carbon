@@ -19,6 +19,13 @@ msgstr "Dostawca to firma lub osoba, która sprzedaje Ci części lub usługi."
 msgid "— last checked {0}"
 msgstr "— ostatnia weryfikacja {0}"
 
+msgid "— not on the manning board"
+msgstr ""
+
+#. placeholder {0}: person.stations.join(", ")
+msgid "— on the manning board at {0}"
+msgstr ""
+
 msgid ", {residual}% residual"
 msgstr ", {residual}% pozostałe"
 
@@ -60,6 +67,10 @@ msgstr "(zmapowane na więcej niż jedno konto Carbon)"
 msgid "(not an Equity posting account)"
 msgstr "(nie jest kontem Kapitału własnego do księgowania)"
 
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
+msgstr ""
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
 msgstr "{0, plural, one {# rekord blokujący} other {# rekordy blokujące}}"
@@ -91,6 +102,10 @@ msgstr "{0, plural, one {# dzień za krótko} few {# dni za krótko} many {# dni
 
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
+msgstr ""
+
+#. placeholder {0}: impact.unschedulable
+msgid "{0, plural, one {# operation can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.} other {# operations can't be scheduled: everyone qualified is assigned to other stations on the manning board. Assign one of them to a station that runs it, or qualify someone else.}}"
 msgstr ""
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
@@ -462,6 +477,10 @@ msgstr "{0}d"
 #. placeholder {0}: slack.absDays
 msgid "{0}d early"
 msgstr "{0}d wcześniej"
+
+#. placeholder {0}: item.daysElsewhere
+msgid "{0}d elsewhere"
+msgstr ""
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
@@ -3730,6 +3749,9 @@ msgstr ""
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Przydzielono {employeeName} do {targetName} na tydzień"
 
+msgid "Assigned {employeeName} to {targetName} for the week; days already assigned in other departments were kept"
+msgstr ""
+
 msgid "Assigned 1 planning action"
 msgstr ""
 
@@ -3765,6 +3787,9 @@ msgstr "Założenia"
 
 msgid "At {locationName}"
 msgstr "W {locationName}"
+
+msgid "At a station outside this department"
+msgstr ""
 
 msgid "At Commencement"
 msgstr "W momencie rozpoczęcia"
@@ -15445,6 +15470,13 @@ msgstr "Nie istnieją stanowiska robocze"
 msgid "No work centers in {departmentLabel}"
 msgstr ""
 
+#. placeholder {0}: ability.name
+msgid "Nobody is qualified for {0}"
+msgstr ""
+
+msgid "Nobody is qualified. Add someone to the process's ability."
+msgstr ""
+
 msgid "Nom"
 msgstr "Nom"
 
@@ -18039,6 +18071,12 @@ msgstr "Wykwalifikowany"
 
 msgid "Qualified Employees"
 msgstr "Wykwalifikowani Pracownicy"
+
+msgid "Qualified people are committed elsewhere"
+msgstr ""
+
+msgid "Qualified to run it"
+msgstr ""
 
 msgid "quality"
 msgstr "jakość"

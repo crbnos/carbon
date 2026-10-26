@@ -22,7 +22,7 @@ import {
   today as calendarToday,
   getLocalTimeZone
 } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuInfo } from "react-icons/lu";
 import { DateTime, EmployeeAvatar } from "~/components";
@@ -78,7 +78,11 @@ type PeopleMatrixProps = {
   departmentId: string | null;
   /** employeeId → their department, for the department-first ordering */
   employeeDepartments: Record<string, string | null>;
+  /** The stations shown: the department filter's, else all. */
   workCenters: MatrixWorkCenter[];
+  /** Every station at the location: names a day spent elsewhere. */
+  allWorkCenters: MatrixWorkCenter[];
+  /** Every assignment of the week, at any station. */
   assignments: MatrixAssignment[];
   absences: { id: string; employeeId: string; date: string }[];
   /** work center → date → hands-on hours the schedule books there */
@@ -105,6 +109,7 @@ export function PeopleMatrix({
   departmentId,
   employeeDepartments,
   workCenters,
+  allWorkCenters,
   assignments,
   absences,
   attendedByWorkCenter,
@@ -121,6 +126,7 @@ export function PeopleMatrix({
   defaultShiftStart,
   defaultShiftEnd
 }: PeopleMatrixProps) {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const canEdit = permissions.can("update", "production");
   const [tab, setTab] = useState<"assignments" | "coverage">("assignments");
@@ -128,7 +134,13 @@ export function PeopleMatrix({
   const today = calendarToday(getLocalTimeZone()).toString();
 
   const workCenterById = useMemo(
-    () => new Map(workCenters.map((wc) => [wc.id, wc])),
+    () => new Map(allWorkCenters.map((wc) => [wc.id, wc])),
+    [allWorkCenters]
+  );
+  // A day at a station the department filter hides still shows, greyed: the
+  // person is committed there.
+  const shownWorkCenterIds = useMemo(
+    () => new Set(workCenters.map((wc) => wc.id)),
     [workCenters]
   );
   const chipClassByWorkCenter = useMemo(
@@ -344,12 +356,24 @@ export function PeopleMatrix({
                         const workCenter = workCenterById.get(
                           assignment.workCenterId
                         );
+                        const elsewhere = !shownWorkCenterIds.has(
+                          assignment.workCenterId
+                        );
                         return (
                           <PeopleChip
                             key={assignment.id}
-                            className={chipClassByWorkCenter.get(
-                              assignment.workCenterId
-                            )}
+                            tooltip={
+                              elsewhere
+                                ? t`At a station outside this department`
+                                : undefined
+                            }
+                            className={
+                              elsewhere
+                                ? "border border-dashed border-border bg-transparent text-muted-foreground"
+                                : chipClassByWorkCenter.get(
+                                    assignment.workCenterId
+                                  )
+                            }
                           >
                             {workCenter?.name ?? assignment.workCenterId}
                             {assignment.hours != null && (
@@ -396,7 +420,7 @@ export function PeopleMatrix({
                           shiftId={employeeShiftId[employee.id] ?? null}
                           locationId={locationId}
                           locationTimeZone={locationTimeZone}
-                          workCenters={workCenters}
+                          workCenters={allWorkCenters}
                           rows={dayAssignments.map((assignment) => ({
                             workCenterId: assignment.workCenterId,
                             hours: assignment.hours

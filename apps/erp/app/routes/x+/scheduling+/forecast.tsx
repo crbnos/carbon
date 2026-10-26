@@ -44,6 +44,7 @@ import {
   getForecastNonWorkingIntervals,
   getHolidayDates,
   getMaintenanceDowntimeForResources,
+  getQualifiedPeopleByProcess,
   getWorkCenterNonWorkingIntervals
 } from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
@@ -485,6 +486,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // Who could run the work the scheduler could not place, and where the board
+  // has them — the people to move.
+  const unschedulableProcessIds = [
+    ...new Set(
+      rows.flatMap((r) =>
+        r.isPlaceholder && r.jobOperation?.processId
+          ? [r.jobOperation.processId]
+          : []
+      )
+    )
+  ];
+  const qualifiedPeople = await getQualifiedPeopleByProcess(client, companyId, {
+    processIds: unschedulableProcessIds,
+    locationId,
+    fromDate: toCalendarDate(now(timeZone)).toString()
+  });
+  if (qualifiedPeople.error) {
+    throw redirect(
+      path.to.production,
+      await flash(
+        request,
+        error(qualifiedPeople.error, "Failed to load qualified people")
+      )
+    );
+  }
+
   const workCenterNames = new Map(
     (workCenters.data ?? []).map((w) => [w.id, w.name])
   );
@@ -530,7 +557,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       unschedulable: r.isPlaceholder ?? false,
       scheduleNote: r.scheduleNote,
       workHours: r.workHours,
-      inProgress: r.jobOperation?.status === "In Progress"
+      inProgress: r.jobOperation?.status === "In Progress",
+      qualifiedPeople:
+        r.isPlaceholder && r.jobOperation?.processId
+          ? qualifiedPeople.data.get(r.jobOperation.processId)
+          : undefined
     })),
     // Only outages on the work centers actually shown (respects the department
     // filter, and avoids conjuring a lane for a hidden station).

@@ -416,6 +416,11 @@ only; its output is read by nothing in the placement path (spec
   nights/weekends a per-date clip would leave open (the bug an earlier per-date version
   caused — the op landed on a future Saturday and fell out of the current-week view).
   Blank board => every qualified person is a floater => fallback unchanged.
+  When people ARE qualified but every one is on the board elsewhere, the reason says so
+  (`composeNoFreeOperator`: "No free operator for X: … assigned to other stations on
+  the manning board"), the Forecast detail lists who is qualified and the stations
+  the board has them at (`getQualifiedPeopleByProcess`), and the ability page warns
+  how many operations of its process can't be scheduled (`getAbilityScheduleImpact`).
 - **Require-staffing policy** (`location.requiresStaffing`, `20260820151847_location-requires-staffing.sql`;
   per-location, default false; edited on the Production settings page): when ON, the finite scheduler
   places work ONLY where an operator is manned. `buildFiniteContext` reads it

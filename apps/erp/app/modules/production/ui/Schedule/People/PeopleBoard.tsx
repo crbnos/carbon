@@ -61,6 +61,13 @@ type PeopleBoardProps = {
   employees: PeopleEmployee[];
   workCenters: { id: string; name: string }[];
   assignments: PeopleAssignment[];
+  /**
+   * The day's rows at stations the department filter hides. Not drawn, but
+   * the day editor saves a person's whole day, so it must see them.
+   */
+  assignmentsElsewhere?: PeopleAssignment[];
+  /** Every station at the location, for the day editor's rows. */
+  allWorkCenters?: { id: string; name: string }[];
   absences: PeopleAbsence[];
   requiredAbilities: {
     workCenterId: string;
@@ -118,6 +125,8 @@ const PeopleBoard = ({
   employees,
   workCenters,
   assignments,
+  assignmentsElsewhere = [],
+  allWorkCenters,
   absences,
   requiredAbilities,
   requiredHoursByWorkCenter,
@@ -258,13 +267,18 @@ const PeopleBoard = ({
     for (const employee of employees) {
       const absence = absenceByEmployee.get(employee.id) ?? null;
       const rows = assignmentsByEmployee.get(employee.id) ?? [];
-      const dayRows = dayRowsFor(rows);
-      const overtimeForDay = dayOvertime(rows);
+      // The editor saves the whole day, so it gets the hidden stations too.
+      const wholeDay = [
+        ...rows,
+        ...assignmentsElsewhere.filter((row) => row.employeeId === employee.id)
+      ];
+      const dayRows = dayRowsFor(wholeDay);
+      const overtimeForDay = dayOvertime(wholeDay);
       const baseHours = baseShiftHoursFor(employee.id);
-      const dayStartTime = dayStartFor(employee.id, rows);
-      const dayEndTime = dayEndFor(employee.id, rows);
+      const dayStartTime = dayStartFor(employee.id, wholeDay);
+      const dayEndTime = dayEndFor(employee.id, wholeDay);
       // day-scoped note (setPeopleDay writes it to every row)
-      const note = rows.find((row) => row.note)?.note ?? null;
+      const note = wholeDay.find((row) => row.note)?.note ?? null;
       const abilities = employeeAbilityNames[employee.id] ?? [];
 
       // Absent people always sit (grayed) at the bottom of Unassigned — their
@@ -360,6 +374,7 @@ const PeopleBoard = ({
     employees,
     workCenters,
     assignmentsByEmployee,
+    assignmentsElsewhere,
     absenceByEmployee,
     requiredByWorkCenter,
     qualifiedAbilitiesByEmployee,
@@ -551,7 +566,7 @@ const PeopleBoard = ({
           shiftId={shiftForEmployee(editorItem.employee.id)}
           locationId={locationId}
           locationTimeZone={locationTimeZone}
-          workCenters={workCenters}
+          workCenters={allWorkCenters ?? workCenters}
           rows={editorItem.dayRows}
           note={editorItem.note}
           overtimeHours={editorItem.overtimeHours}

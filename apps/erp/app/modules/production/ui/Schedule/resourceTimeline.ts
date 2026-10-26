@@ -74,6 +74,8 @@ export type ResourceTimelineReservation = {
   workHours?: number | null;
   /** The operation is In Progress: what the board's In Process switch shows. */
   inProgress?: boolean;
+  /** `TimelineNodeDetail.qualifiedPeople` */
+  qualifiedPeople?: { name: string; stations: string[] }[];
 };
 
 export type ResourceTimeline = {
@@ -421,6 +423,7 @@ export function buildResourceTimeline(input: {
       employeeName: r.resourceKind === "Employee" ? r.resourceName : null,
       conflictReason: r.hasConflict ? r.conflictReason : null,
       unschedulable: r.unschedulable,
+      qualifiedPeople: r.qualifiedPeople,
       scheduleNote: r.scheduleNote ?? null,
       workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
       jobId: r.jobId,

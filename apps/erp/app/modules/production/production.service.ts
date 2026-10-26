@@ -1337,7 +1337,7 @@ export async function getCapacityReservationsForResources(
     .select(
       `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, status, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
+       jobOperation(description, status, processId, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
        jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
@@ -5659,6 +5659,92 @@ export async function getWorkCenterRequiredAbilities(
     }
   );
   return { data: rows, error: null };
+}
+
+/**
+ * For operations the scheduler could not place: per process that requires an
+ * ability, the people qualified for it on `fromDate` and the stations the
+ * manning board has each of them at from then on. The board is a commitment,
+ * so a person on it is never pulled to another station — this is who to move.
+ */
+export async function getQualifiedPeopleByProcess(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { processIds: string[]; locationId: string; fromDate: string }
+): Promise<{
+  data: Map<string, { name: string; stations: string[] }[]>;
+  error: PostgrestError | null;
+}> {
+  const empty = new Map<string, { name: string; stations: string[] }[]>();
+  if (args.processIds.length === 0) return { data: empty, error: null };
+
+  const abilities = await client
+    .from("ability")
+    .select("id, processId, process!inner(requiresAbility)")
+    .eq("companyId", companyId)
+    .eq("process.requiresAbility", true)
+    .in("processId", args.processIds);
+  if (abilities.error) return { data: empty, error: abilities.error };
+  const processByAbility = new Map(
+    abilities.data.flatMap((ability) =>
+      ability.processId ? [[ability.id, ability.processId] as const] : []
+    )
+  );
+  if (processByAbility.size === 0) return { data: empty, error: null };
+
+  const qualified = await client
+    .from("employeeAbility")
+    .select("employeeId, abilityId, expiresAt")
+    .eq("companyId", companyId)
+    .in("abilityId", [...processByAbility.keys()]);
+  if (qualified.error) return { data: empty, error: qualified.error };
+  // Expiring on the day is not qualified that day, as in the scheduler.
+  const current = qualified.data.filter(
+    (row) => !row.expiresAt || row.expiresAt.slice(0, 10) > args.fromDate
+  );
+  const employeeIds = [...new Set(current.map((row) => row.employeeId))];
+
+  // Every process that needs an ability gets an entry, so "nobody" shows.
+  const result = new Map<string, { name: string; stations: string[] }[]>(
+    [...new Set(processByAbility.values())].map((processId) => [processId, []])
+  );
+  if (employeeIds.length === 0) return { data: result, error: null };
+  const [users, assignments] = await Promise.all([
+    client.from("user").select("id, fullName").in("id", employeeIds),
+    client
+      .from("peopleAssignment")
+      .select("employeeId, workCenter(name)")
+      .eq("companyId", companyId)
+      .eq("locationId", args.locationId)
+      .gte("date", args.fromDate)
+      .in("employeeId", employeeIds)
+  ]);
+  if (users.error) return { data: empty, error: users.error };
+  if (assignments.error) return { data: empty, error: assignments.error };
+  const nameById = new Map(users.data.map((user) => [user.id, user.fullName]));
+  const stationsByEmployee = new Map<string, Set<string>>();
+  for (const row of assignments.data) {
+    const name = row.workCenter?.name;
+    if (!name) continue;
+    const stations = stationsByEmployee.get(row.employeeId) ?? new Set();
+    stations.add(name);
+    stationsByEmployee.set(row.employeeId, stations);
+  }
+
+  for (const row of current) {
+    const processId = processByAbility.get(row.abilityId);
+    if (!processId) continue;
+    const people = result.get(processId) ?? [];
+    people.push({
+      name: nameById.get(row.employeeId) ?? "",
+      stations: [...(stationsByEmployee.get(row.employeeId) ?? [])].sort()
+    });
+    result.set(processId, people);
+  }
+  for (const people of result.values()) {
+    people.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return { data: result, error: null };
 }
 
 export async function getActiveEmployeeAbilities(
