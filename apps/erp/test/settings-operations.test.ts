@@ -10,6 +10,7 @@ const {
   consoleSetting,
   requireMfaSetting,
   batchTrigger,
+  trigger,
   unmappedRequiredAccounts
 } = vi.hoisted(() => ({
   stripeAccount: vi.fn(),
@@ -17,6 +18,8 @@ const {
   requireMfaSetting: vi.fn(),
   // Inngest: the two-factor announcement is sent through it.
   batchTrigger: vi.fn(),
+  // Inngest: scheduler notices are sent through it.
+  trigger: vi.fn(),
   unmappedRequiredAccounts: vi.fn()
 }));
 vi.mock("@carbon/ee/accounting", async (importOriginal) => ({
@@ -38,7 +41,7 @@ vi.mock("@carbon/ee/two-factor.server", () => ({
 vi.mock("@carbon/printing/printing.server", () => ({
   invalidatePrinterCache: vi.fn()
 }));
-vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger: vi.fn() }));
+vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger }));
 
 import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
@@ -52,6 +55,7 @@ import {
   updatePeopleSettings,
   updatePlanningSettings,
   updatePostingSync,
+  updateProductionSettings,
   updateSecuritySettings,
   updateSubsidiaryDetails
 } from "../app/modules/settings/settings.server";
@@ -477,5 +481,47 @@ describe("retrying or skipping sync operations", () => {
     ]);
     expect(sent.map((request) => request.method)).toEqual(["PATCH", "GET"]);
     expect(sent[1]?.url.searchParams.get("id")).toBe("in.(op-2,op-3)");
+  });
+});
+
+describe("a location's staffing requirement", () => {
+  const scheduleNotices = () =>
+    trigger.mock.calls.filter(([event]) => event === "schedule-inputs-changed");
+
+  // While it is on, the scheduler places work only where someone is manned.
+  it("re-plans the location when the requirement changes", async () => {
+    const { ctx, writes } = contextWith({
+      location: { requiresStaffing: false }
+    });
+
+    const result = await updateProductionSettings(ctx, {
+      locationStaffing: { locationId: "loc-1", requiresStaffing: true }
+    });
+
+    expect(result.error).toBeNull();
+    expect(writes).toContainEqual({
+      table: "location",
+      method: "update",
+      values: { requiresStaffing: true }
+    });
+    expect(scheduleNotices()).toEqual([
+      [
+        "schedule-inputs-changed",
+        expect.objectContaining({ kind: "location", entityId: "loc-1" })
+      ]
+    ]);
+  });
+
+  it("writes nothing and tells no scheduler when the requirement is unchanged", async () => {
+    const { ctx, writes } = contextWith({
+      location: { requiresStaffing: true }
+    });
+
+    await updateProductionSettings(ctx, {
+      locationStaffing: { locationId: "loc-1", requiresStaffing: true }
+    });
+
+    expect(writes.filter((w) => w.table === "location")).toEqual([]);
+    expect(scheduleNotices()).toEqual([]);
   });
 });

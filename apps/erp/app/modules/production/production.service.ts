@@ -650,13 +650,6 @@ const DEADLINE_TYPE_PRIORITY: Record<DeadlineType, number> = {
 };
 
 /**
- * The priority of a job placed among `siblings` — the jobs that share its due
- * date (or lack of one) at its location, in priority order. Fractional
- * indexing: before the first job whose deadline type ranks lower than this
- * one's, else at the end. Pure, so a batch can place several jobs on one date
- * in turn by appending each result to the siblings it passes for the next.
- */
-/**
  * The deadline type a job carries once planning gives it a due date. The job
  * form hides the due-date field for "No Deadline" (`deadlineRequiresDueDate`),
  * so a date written under that type is one the planner can neither see nor
@@ -669,6 +662,29 @@ export function deadlineTypeForPlanningDate(
   return deadlineType === "No Deadline" ? "Soft Deadline" : deadlineType;
 }
 
+/**
+ * The type a job carries once its due date is set or cleared outside the job
+ * form. A dated job leaves "No Deadline" (`deadlineTypeForPlanningDate`); an
+ * undated Hard or Soft Deadline job becomes "No Deadline", since those two
+ * require a date. ASAP ignores the date either way.
+ */
+export function deadlineTypeForDueDate(
+  deadlineType: DeadlineType,
+  dueDate: string | null
+): DeadlineType {
+  if (dueDate !== null) return deadlineTypeForPlanningDate(deadlineType);
+  return deadlineType === "Hard Deadline" || deadlineType === "Soft Deadline"
+    ? "No Deadline"
+    : deadlineType;
+}
+
+/**
+ * The priority of a job placed among `siblings` — the jobs that share its due
+ * date (or lack of one) at its location, in priority order. Fractional
+ * indexing: before the first job whose deadline type ranks lower than this
+ * one's, else at the end. Pure, so a batch can place several jobs on one date
+ * in turn by appending each result to the siblings it passes for the next.
+ */
 export function nextJobPriority(
   siblings: { priority: number | null; deadlineType: DeadlineType }[],
   deadlineType: DeadlineType

@@ -74,7 +74,9 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   sequence and work center only — does not reschedule. Change dates on the Dates board."*)
   and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` → `api.production.moveScheduleJob`, which writes `job.dueDate` +
-  `priority`, **then calls `notifyScheduleInputsChanged(…, "reorder", …)`** — which only stamps the
+  `priority` and, in the same UPDATE, the deadline type the date implies
+  (`deadlineTypeForDueDate`: a dated No Deadline job becomes Soft Deadline, an undated
+  Hard / Soft Deadline job becomes No Deadline), **then calls `notifyScheduleInputsChanged(…, "reorder", …)`** — which only stamps the
   jobs schedule-outdated; the debounced wave regenerates the whole location. There
   is no immediate single-job path). `people.tsx` is the People
   page with a segmented view switcher (`?view=`): the People **board** (manning
@@ -218,7 +220,10 @@ Two Inngest functions listen on that event
   count), or on a process those stations run (`processesOfWorkCenters`: an unstarted op
   can move onto them). An unknown shift id stamps company-wide. `createShift`,
   `updateShift` and `deleteShift` send the id; an update that moves the shift to
-  another location sends kind `location` instead, so the stations it left re-plan too. Recomputes nothing.
+  another location sends kind `location` instead, so the stations it left re-plan too.
+  Changing a location's staffing requirement (`updateProductionSettings`) or its
+  timezone (`updateLocation`, shifts are local times) also sends kind `location`,
+  only when the value actually changed. Recomputes nothing.
 - **WAVE** (`scheduleReplanWaveFunction`, **debounce 30s / timeout 10m**,
   concurrency 1 per company): loads the company's stale jobs, groups them by
   **LOCATION**, and calls `runLocationSchedule({ db: getJobDatabaseClient(),

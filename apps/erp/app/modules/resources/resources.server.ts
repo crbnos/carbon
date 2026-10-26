@@ -255,7 +255,8 @@ export const createLocation = defineServiceFn({
  * Update a location.
  *
  * @remarks
- * The location's timezone may change, so its cached timezone is dropped.
+ * The location's timezone may change, so its cached timezone is dropped, and
+ * a new timezone re-plans the schedule: shifts are local times.
  *
  * @mcp
  */
@@ -268,6 +269,19 @@ export const updateLocation = defineServiceFn({
   permission: { create: "resources", update: "resources" },
 
   async run(ctx, { id, ...location }) {
+    const previous = await ctx.asCaller.supabase
+      .from("location")
+      .select("timezone")
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (previous.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update location.",
+        previous.error
+      );
+    }
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
       id,
       ...location,
@@ -278,6 +292,17 @@ export const updateLocation = defineServiceFn({
     }
 
     await invalidateLocationTimeZone(id, ctx.company.id);
+    if (
+      previous.data !== null &&
+      previous.data.timezone !== location.timezone
+    ) {
+      await notifyScheduleInputsChanged(
+        ctx.company.id,
+        "location",
+        "Location timezone changed",
+        id
+      );
+    }
     return { id };
   }
 });

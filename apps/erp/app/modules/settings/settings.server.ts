@@ -70,6 +70,7 @@ import { parseTime } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import {
   invalidateCompanyTimeZone,
   invokePosting,
@@ -373,7 +374,7 @@ export const updateItemsSettings = defineServiceFn({
  * location requires an assigned operator before the scheduler places work
  * there. The staffing rule lives on the location row and is written for the
  * company's own location only, so a settings admin without the resources
- * permission can still set it.
+ * permission can still set it. Changing it re-plans the location.
  *
  * @mcp
  */
@@ -406,20 +407,47 @@ export const updateProductionSettings = defineServiceFn({
     if (saved) return saved;
 
     if (locationStaffing) {
-      const { data, error } = await ctx.asSystem.supabase
+      const { locationId, requiresStaffing } = locationStaffing;
+      const current = await ctx.asSystem.supabase
         .from("location")
-        .update({ requiresStaffing: locationStaffing.requiresStaffing })
-        .eq("id", locationStaffing.locationId)
+        .select("requiresStaffing")
+        .eq("id", locationId)
         .eq("companyId", ctx.company.id)
-        .select("id");
-      if (error) {
+        .maybeSingle();
+      if (current.error) {
         return ctx.error(
           "internal",
           "Failed to update the staffing requirement",
-          error
+          current.error
         );
       }
-      if (data.length === 0) return ctx.error("notFound", "Location not found");
+      if (current.data === null) {
+        return ctx.error("notFound", "Location not found");
+      }
+      if (current.data.requiresStaffing !== requiresStaffing) {
+        const { error } = await ctx.asSystem.supabase
+          .from("location")
+          .update({ requiresStaffing })
+          .eq("id", locationId)
+          .eq("companyId", ctx.company.id);
+        if (error) {
+          return ctx.error(
+            "internal",
+            "Failed to update the staffing requirement",
+            error
+          );
+        }
+        // The scheduler places work only where an operator is manned while
+        // this is on, so the location's plan changes either way.
+        await notifyScheduleInputsChanged(
+          ctx.company.id,
+          "location",
+          requiresStaffing
+            ? "Staffing requirement enabled"
+            : "Staffing requirement disabled",
+          locationId
+        );
+      }
     }
     return input;
   }

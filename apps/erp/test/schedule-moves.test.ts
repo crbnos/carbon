@@ -15,6 +15,7 @@ import {
   moveScheduleJob,
   reorderScheduleOperations
 } from "../app/modules/production/production.server";
+import { deadlineTypeForDueDate } from "../app/modules/production/production.service";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 
 type Answer = { data: unknown; error: { message: string } | null };
@@ -22,16 +23,19 @@ type Answer = { data: unknown; error: { message: string } | null };
 /** The user client: one answer per table, whatever the query. */
 function callerWith(answers: Record<string, Answer>) {
   const writes: string[] = [];
+  const updates: unknown[] = [];
   return {
     writes,
+    updates,
     client: {
       from: (table: string) => {
         const chain: Record<string, unknown> = {};
         for (const method of ["select", "eq", "in", "not"]) {
           chain[method] = () => chain;
         }
-        chain.update = () => {
+        chain.update = (payload: unknown) => {
           writes.push(table);
+          updates.push(payload);
           return chain;
         };
         const answer = () => answers[table] ?? { data: null, error: null };
@@ -172,7 +176,7 @@ describe("moveScheduleJob", () => {
     });
 
   it("writes the date, then tells the scheduler", async () => {
-    const caller = callerWith({ job: { data: { id: "j1" }, error: null } });
+    const caller = callerWith({ job: { data: { id: "j1", deadlineType: "Soft Deadline" }, error: null } });
     const result = await move(caller);
     expect(result.error).toBeNull();
     expect(caller.writes).toEqual(["job"]);
@@ -199,7 +203,64 @@ describe("moveScheduleJob", () => {
 
   it("keeps the move when the scheduler cannot be told", async () => {
     trigger.mockRejectedValueOnce(new Error("event bus down"));
-    const result = await move(callerWith({ job: { data: { id: "j1" }, error: null } }));
+    const result = await move(callerWith({ job: { data: { id: "j1", deadlineType: "Soft Deadline" }, error: null } }));
     expect(result.error).toBeNull();
+  });
+});
+
+describe("deadlineTypeForDueDate", () => {
+  it.each([
+    ["No Deadline", "2026-10-30", "Soft Deadline"],
+    ["Soft Deadline", "2026-10-30", "Soft Deadline"],
+    ["Hard Deadline", "2026-10-30", "Hard Deadline"],
+    ["ASAP", "2026-10-30", "ASAP"],
+    ["Soft Deadline", null, "No Deadline"],
+    ["Hard Deadline", null, "No Deadline"],
+    ["ASAP", null, "ASAP"],
+    ["No Deadline", null, "No Deadline"]
+  ] as const)("a %s job given due date %s is %s", (type, dueDate, expected) => {
+    expect(deadlineTypeForDueDate(type, dueDate)).toBe(expected);
+  });
+});
+
+describe("moveScheduleJob keeps the deadline type in step with the date", () => {
+  const move = (deadlineType: string, columnId: string) => {
+    const caller = callerWith({
+      job: { data: { id: "j1", deadlineType }, error: null }
+    });
+    return moveScheduleJob(contextWith(caller.client), {
+      id: "j1",
+      locationId: "loc1",
+      columnId,
+      priority: -2
+    }).then((result) => ({ result, caller }));
+  };
+
+  // The job form hides the date of a "No Deadline" job.
+  it("makes a No Deadline job dropped on a date a Soft Deadline", async () => {
+    const { result, caller } = await move("No Deadline", "2026-10-30");
+    expect(result.error).toBeNull();
+    expect(caller.updates).toEqual([
+      expect.objectContaining({
+        dueDate: "2026-10-30",
+        priority: -2,
+        deadlineType: "Soft Deadline"
+      })
+    ]);
+  });
+
+  // A Hard or Soft Deadline requires a date the board just cleared.
+  it("makes a Soft Deadline job dropped on an undated column No Deadline", async () => {
+    const { caller } = await move("Soft Deadline", "unscheduled");
+    expect(caller.updates).toEqual([
+      expect.objectContaining({ dueDate: null, deadlineType: "No Deadline" })
+    ]);
+  });
+
+  it("leaves an ASAP job's type alone", async () => {
+    const { caller } = await move("ASAP", "2026-10-30");
+    expect(caller.updates).toEqual([
+      expect.objectContaining({ deadlineType: "ASAP" })
+    ]);
   });
 });

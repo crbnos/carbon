@@ -1296,6 +1296,8 @@ export const reorderScheduleOperations = defineServiceFn({
  * `columnId` is a date (`YYYY-MM-DD`) or one of the board's undated columns,
  * which clears the due date. Writes the due date and priority of a job at
  * `locationId` that is not locked; a job elsewhere or locked is a `conflict`.
+ * The deadline type follows the date: a dated "No Deadline" job becomes "Soft
+ * Deadline", and an undated Hard or Soft Deadline job becomes "No Deadline".
  * Then the scheduler is told; the debounced wave regenerates the location in
  * due date, then priority, order. A failed notice is logged and not returned.
  *
@@ -1312,17 +1314,37 @@ export const moveScheduleJob = defineServiceFn({
       return ctx.error("validation", "Invalid form data");
     }
 
+    const current = await ctx.asCaller.supabase
+      .from("job")
+      .select("deadlineType")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
+      .maybeSingle();
+    if (current.error) {
+      return ctx.error("internal", current.error.message, current.error);
+    }
+    if (current.data === null) {
+      return ctx.error("conflict", "Job unavailable or locked");
+    }
+
     const { data, error } = await ctx.asCaller.supabase
       .from("job")
       .update({
         dueDate,
         priority,
+        deadlineType: service.deadlineTypeForDueDate(
+          current.data.deadlineType,
+          dueDate
+        ),
         updatedBy: ctx.auditUserId,
         updatedAt: datetime.timestamp()
       })
       .eq("id", id)
       .eq("companyId", companyId)
       .eq("locationId", locationId)
+      .eq("deadlineType", current.data.deadlineType)
       .not("status", "in", `(${JOB_LOCKED_STATUSES.join(",")})`)
       .select("id")
       .maybeSingle();

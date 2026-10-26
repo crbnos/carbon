@@ -75,7 +75,7 @@ A settings page has ONE update operation, `update<Page>Settings` (`updateAccount
 |---|---|---|
 | `updateAccountingSettings` / `writeMissingJournals` | `x+/settings+/accounting.tsx` | The deferred tax accounts go to `accountDefault`; the repair runs `journal-legacy-documents` under the operation's own gate and needs `update: accounting` too, so it is not published (the API gate takes one module) |
 | `updateInvoicingSettings`, `updatePurchasingSettings` | `invoicing.tsx`, `purchasing.tsx` | The centralized billing address (a null field clears it); Stripe must be connected for "Post and Send via Stripe" |
-| `updateProductionSettings` | `production.tsx` | A location's staffing rule is written as the system, for the company's own location only |
+| `updateProductionSettings` | `production.tsx` | A location's staffing rule is written as the system, for the company's own location only; a change re-plans the location (kind `location`) |
 | `updatePeopleSettings` | `people.tsx` | Console mode through `@carbon/ee/console.server` (the plan lock); returns a generated PIN once, never to a key caller. Not published |
 | `updateSecuritySettings` | `security.tsx` | Requiring two-factor through `@carbon/ee/two-factor.server`; emails the company on off → on, never in a controlled environment |
 | `updatePlanningSettings` | `planning.tsx` | Every employee named must be the company's; a location hidden by RLS is refused |
