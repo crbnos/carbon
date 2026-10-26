@@ -69,6 +69,7 @@ msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
 #. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 msgstr ""
 
@@ -194,6 +195,10 @@ msgstr "{0}件の減価償却対象資産 · {amount}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
+#. placeholder {0}: members.length
+msgid "{0} can't be scheduled: {names}"
 msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
@@ -546,7 +551,7 @@ msgstr "{days}日"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}がこれをあなたの台帳に転記するため、Carbonはそれをプッシュしません。変更があった場合に備えて、保存された選択肢は保持されます。"
 
-msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
 msgstr ""
 
 msgid "{discount} off"
@@ -592,6 +597,9 @@ msgstr "{inserted} 件が挿入されました、{updated} 件が更新されま
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {#個のオープン製造指図に保管ユニットがない材料があります} other {#個のオープン製造指図に保管ユニットがない材料があります}}"
+
+msgid "{label} — click to open the next"
+msgstr ""
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} はドキュメント、仕訳、またはデフォルトアカウントで使用されているため、削除できません。"
@@ -14674,7 +14682,7 @@ msgstr "{0}の同期操作はありません。"
 msgid "No {0} yet"
 msgstr "まだ{0}がありません"
 
-msgid "No {departmentName} work is scheduled at this location."
+msgid "No {departmentLabel} work is scheduled at this location."
 msgstr ""
 
 msgid "No {title} yet"
@@ -15434,7 +15442,7 @@ msgstr "この拠点には作業区がありません"
 msgid "No work centers exist"
 msgstr "作業区がありません"
 
-msgid "No work centers in {departmentName}"
+msgid "No work centers in {departmentLabel}"
 msgstr ""
 
 msgid "Nom"
@@ -15606,7 +15614,7 @@ msgstr "同期を有効にするまで、何も同期されません。"
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "同期をオンにするまで、何も同期されません。必要なすべてのアカウントがマップされています。"
 
-msgid "Nothing matches the search and filters"
+msgid "Nothing matches the search or filter"
 msgstr ""
 
 msgid "Nothing scheduled — add a station below."
@@ -23470,7 +23478,7 @@ msgstr "転記およびクローズする月次期間"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "リクエスターが疑う最も可能性の高い故障モード。技術者はクローズ時にこれを確認または置き換え、疑われたものと実際のものの違いが信頼性レポートに表示されます。"
 
-msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
 msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
@@ -23491,7 +23499,7 @@ msgstr "メソッドの新しいバージョン番号"
 msgid "The new version number of the procedure"
 msgstr "手順書の新しいバージョン番号"
 
-msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
 msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
@@ -24143,6 +24151,9 @@ msgstr "この得意先タイプのレート"
 
 msgid "This customer's rate"
 msgstr "この得意先のレート"
+
+msgid "this department"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"

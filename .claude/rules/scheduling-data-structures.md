@@ -384,7 +384,11 @@ only; its output is read by nothing in the placement path (spec
   removes them from the location calendar, and `buildFiniteContext` adds each holiday as
   an absence for every person (`withHolidays`, `people-utils.ts`). The ERP reads the same
   dates (`getHolidayDates`, `production.service.ts`): the Forecast shades a holiday as
-  closed, and the Capacity view shows 0 Available on it. `createHoliday`,
+  closed, and the Capacity view shows 0 Available on it. Each Forecast lane is shaded and
+  its bars split on its OWN station's hours (`getWorkCenterNonWorkingIntervals` →
+  the Gantt's `nonWorkingIntervalsByRow`; rows under a lane inherit it, the location
+  rollup is not split, operator-pool lanes keep the plant calendar,
+  `getForecastNonWorkingIntervals`), so a lights-out station is never shaded. `createHoliday`,
   `updateHoliday` and `deleteHoliday` (`people.server.ts`) notify kind `location`.
 - **A qualification ends at its expiry.** `isEligibleOperator` tests an operator at the
   op's earliest start only. `clipToQualification` (`operator-eligibility.ts`) then cuts
@@ -514,7 +518,9 @@ so `job.projectedCompletionAt` extends to it and successors chain after it
 the next regen. The Forecast surfaces it with a red "can't be scheduled" alert
 (`LuBan`) in the TREE status column — via `GanttEvent.data.isUnschedulable`, set
 on BOTH the work-center lane (any unplaceable child) and the operation row, so it
-reports at the work-center level AND per operation; clicking either row opens the
+reports at the work-center level AND per operation (in a Compact lane the
+placeholders get their own bottom strip, overlapping ones merged into one
+"N can't be scheduled" chip, `groupOverlaps`); clicking either row opens the
 detail sidebar ("Unschedulable" chip + reason + "where it would run"
 explanation). Plus a separate "{n} can't be scheduled" header count. (Placed-but
 -LATE ops keep a real reservation, show the generic `isError` triangle, and are

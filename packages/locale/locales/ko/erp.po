@@ -69,6 +69,7 @@ msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
 #. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 msgstr ""
 
@@ -194,6 +195,10 @@ msgstr "{0}개의 감가상각 자산 · {amount}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
+#. placeholder {0}: members.length
+msgid "{0} can't be scheduled: {names}"
 msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
@@ -546,7 +551,7 @@ msgstr "{days}일"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}가(이) 이를 귀사의 원장에 게시하므로 Carbon은 이를 푸시하지 않습니다. 변경되는 경우에 대비하여 저장된 선택 사항이 유지됩니다."
 
-msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
 msgstr ""
 
 msgid "{discount} off"
@@ -592,6 +597,9 @@ msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다} other {# 개의 미결 작업 지시에 보관 단위가 없는 자재가 있습니다}}"
+
+msgid "{label} — click to open the next"
+msgstr ""
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label}은(는) 문서, 전표 또는 기본 계정에서 사용 중이므로 삭제할 수 없습니다."
@@ -14674,7 +14682,7 @@ msgstr "{0} 동기화 작업 없음"
 msgid "No {0} yet"
 msgstr "아직 {0}이(가) 없습니다"
 
-msgid "No {departmentName} work is scheduled at this location."
+msgid "No {departmentLabel} work is scheduled at this location."
 msgstr ""
 
 msgid "No {title} yet"
@@ -15434,7 +15442,7 @@ msgstr "이 사업장에 작업장이 없습니다"
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
-msgid "No work centers in {departmentName}"
+msgid "No work centers in {departmentLabel}"
 msgstr ""
 
 msgid "Nom"
@@ -15606,7 +15614,7 @@ msgstr "동기화를 활성화할 때까지 아무것도 동기화되지 않습�
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "동기화를 켜야 동기화됩니다. 필요한 모든 계정이 매핑되었습니다."
 
-msgid "Nothing matches the search and filters"
+msgid "Nothing matches the search or filter"
 msgstr ""
 
 msgid "Nothing scheduled — add a station below."
@@ -23470,7 +23478,7 @@ msgstr "게시하고 종료하는 월별 기간"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "요청자가 의심하는 가장 유력한 고장 모드입니다. 기술자는 마감 시 이를 확인하거나 다른 것으로 교체하며, 예상과 실제의 차이는 신뢰성 보고서에 반영됩니다."
 
-msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
 msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
@@ -23491,7 +23499,7 @@ msgstr "방법의 새 버전 번호"
 msgid "The new version number of the procedure"
 msgstr "절차서의 새로운 버전 번호"
 
-msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
 msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
@@ -24143,6 +24151,9 @@ msgstr "이 고객 유형의 요금"
 
 msgid "This customer's rate"
 msgstr "이 고객의 요금"
+
+msgid "this department"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."

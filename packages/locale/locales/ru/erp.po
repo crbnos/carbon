@@ -69,6 +69,7 @@ msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
 #. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 msgstr ""
 
@@ -194,6 +195,10 @@ msgstr "{0} активов к амортизации · {amount}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
+#. placeholder {0}: members.length
+msgid "{0} can't be scheduled: {names}"
 msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
@@ -546,7 +551,7 @@ msgstr "{days}д"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} отправляет это в вашу бухгалтерскую книгу, поэтому Carbon не отправляет это. Ваш сохраненный выбор сохраняется на случай, если это изменится."
 
-msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
 msgstr ""
 
 msgid "{discount} off"
@@ -592,6 +597,9 @@ msgstr "{inserted} вставлено, {updated} обновлено, {0} тре�
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# открытый производственный заказ имеет материалы без единицы хранения} other {# открытых производственных заказов имеют материалы без единиц хранения}}"
+
+msgid "{label} — click to open the next"
+msgstr ""
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} используется документами, операциями или учетными записями по умолчанию, поэтому не может быть удалена."
@@ -14674,7 +14682,7 @@ msgstr "Нет операций синхронизации {0}"
 msgid "No {0} yet"
 msgstr "Пока нет {0}"
 
-msgid "No {departmentName} work is scheduled at this location."
+msgid "No {departmentLabel} work is scheduled at this location."
 msgstr ""
 
 msgid "No {title} yet"
@@ -15434,7 +15442,7 @@ msgstr "На этой площадке нет рабочих центров"
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
 
-msgid "No work centers in {departmentName}"
+msgid "No work centers in {departmentLabel}"
 msgstr ""
 
 msgid "Nom"
@@ -15606,7 +15614,7 @@ msgstr "Ничего не синхронизируется, пока вы не �
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Ничего не синхронизируется, пока вы не включите синхронизацию. Каждый требуемый счет распределен."
 
-msgid "Nothing matches the search and filters"
+msgid "Nothing matches the search or filter"
 msgstr ""
 
 msgid "Nothing scheduled — add a station below."
@@ -23470,7 +23478,7 @@ msgstr "Ежемесячные периоды, в которые вы разме
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "Наиболее вероятный режим отказа, который подозревает запросчик; техник подтверждает или заменяет это при закрытии, и разница между подозреваемым и фактическим питает отчеты надежности."
 
-msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
 msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
@@ -23491,7 +23499,7 @@ msgstr "Номер новой версии метода"
 msgid "The new version number of the procedure"
 msgstr "Новый номер версии процедуры"
 
-msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
 msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
@@ -24143,6 +24151,9 @@ msgstr "Ставка этого типа покупателя"
 
 msgid "This customer's rate"
 msgstr "Ставка этого покупателя"
+
+msgid "this department"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была повреждена."

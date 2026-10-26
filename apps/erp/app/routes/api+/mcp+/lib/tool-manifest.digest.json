@@ -728,7 +728,7 @@
     {"name":"production_getBatchableOperations","classification":"READ","schema":"45d95a2d3af4","response":"1c2a1e7a3a05","permission":"production:view","paginates":false},
     {"name":"production_getBatchableProcesses","classification":"READ","schema":"31b84d65b2ac","response":"b0ab8957f96e","permission":"production:view","paginates":false},
     {"name":"production_getBatchOutputLots","classification":"READ","schema":"1a62d6c430a5","response":"7783e113d7a1","permission":"production:view","paginates":false},
-    {"name":"production_getCapacityReservationsForResources","classification":"READ","schema":"be3a7444e5b1","response":"a491299c2657","permission":"production:view","paginates":false},
+    {"name":"production_getCapacityReservationsForResources","classification":"READ","schema":"be3a7444e5b1","response":"922ba2e168ae","permission":"production:view","paginates":false},
     {"name":"production_getCompletionJobs","classification":"READ","schema":"a7b47bee6c23","response":"7bef4749f130","permission":"production:view","paginates":false},
     {"name":"production_getDemandProjections","classification":"READ","schema":"1f5f7428664d","response":"f963e0e91868","permission":"production:view","paginates":false},
     {"name":"production_getFailureMode","classification":"READ","schema":"2557649b1a5e","response":"412854326fc3","permission":"production:view","paginates":false},

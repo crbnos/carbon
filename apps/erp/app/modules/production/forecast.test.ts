@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { getForecastNonWorkingIntervals } from "./production.service";
+import {
+  getForecastNonWorkingIntervals,
+  getWorkCenterNonWorkingIntervals
+} from "./production.service";
 
 const iso = (s: string) => Date.parse(s);
 
@@ -101,5 +104,66 @@ describe("getForecastNonWorkingIntervals", () => {
     });
 
     expect(result).toEqual([{ start, end }]);
+  });
+});
+
+describe("getWorkCenterNonWorkingIntervals", () => {
+  // Monday 17 Aug 2026 in America/New_York (UTC-4).
+  const monday = {
+    timeZone: "America/New_York",
+    holidayDates: new Set<string>(),
+    rangeStart: iso("2026-08-17T04:00:00Z"),
+    rangeEnd: iso("2026-08-18T04:00:00Z")
+  };
+
+  it("shades each station on its own hours, and a lights-out station not at all", () => {
+    const result = getWorkCenterNonWorkingIntervals({
+      ...monday,
+      workCenters: [
+        { id: "mill", alwaysOn: false },
+        { id: "evening", alwaysOn: false },
+        { id: "oven", alwaysOn: true }
+      ],
+      workCenterShifts: [{ workCenterId: "evening", shiftId: "swing" }],
+      shifts: [
+        { id: "day", ...shift({ monday: true }) },
+        {
+          id: "swing",
+          ...shift({ startTime: "14:00:00", endTime: "22:00:00", monday: true })
+        }
+      ] as never
+    });
+
+    expect(result).toEqual(
+      new Map([
+        [
+          "mill",
+          [
+            {
+              start: iso("2026-08-17T04:00:00Z"),
+              end: iso("2026-08-17T10:00:00Z")
+            },
+            {
+              start: iso("2026-08-18T02:00:00Z"),
+              end: iso("2026-08-18T04:00:00Z")
+            }
+          ]
+        ],
+        [
+          "evening",
+          [
+            {
+              start: iso("2026-08-17T04:00:00Z"),
+              end: iso("2026-08-17T18:00:00Z")
+            },
+            {
+              start: iso("2026-08-18T02:00:00Z"),
+              end: iso("2026-08-18T04:00:00Z")
+            }
+          ]
+        ],
+        ["oven", []]
+      ])
+    );
   });
 });

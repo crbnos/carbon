@@ -1307,7 +1307,7 @@ export async function getCapacityReservationsForResources(
     .select(
       `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
+       jobOperation(description, status, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
        jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
@@ -11472,12 +11472,11 @@ const WEEKDAY_FLAGS = [
 
 /**
  * Non-working intervals inside [windowStartMs, windowEndMs) for the forecast
- * board's shading — the complement of the plant's operating hours. Uses the
- * SAME availability ladder the scheduler uses (the location's shifts if any,
- * else the stock Mon–Fri 08:00–16:00 week in the plant timezone), so the bars
- * and the shaded background can never disagree. Location-level, not
- * per-work-center: one plant calendar behind every lane. Per-WC shifts /
- * `alwaysOn` are a deliberate follow-up (see #3b).
+ * board's rows that are not a station (the location, operator pools) — the
+ * complement of the plant's operating hours, on the scheduler's ladder (the
+ * location's shifts if any, else the stock Mon–Fri 08:00–16:00 week in the
+ * plant timezone). A station's lane uses its own hours,
+ * `getWorkCenterNonWorkingIntervals`.
  */
 export function getForecastNonWorkingIntervals(args: {
   timeZone: string;
@@ -11574,6 +11573,23 @@ export function getWorkCenterWorkingWindows(args: {
     workCenters: ladderWorkCenters,
     holidayDates: args.holidayDates
   });
+}
+
+/**
+ * Each work center's non-working time inside [rangeStart, rangeEnd): the
+ * complement of its working windows (`getWorkCenterWorkingWindows`), so the
+ * forecast board shades and splits every lane on its own hours.
+ */
+export function getWorkCenterNonWorkingIntervals(
+  args: Parameters<typeof getWorkCenterWorkingWindows>[0]
+): Map<string, CalendarWindow[]> {
+  const range = [{ start: args.rangeStart, end: args.rangeEnd }];
+  return new Map(
+    [...getWorkCenterWorkingWindows(args)].map(([workCenterId, windows]) => [
+      workCenterId,
+      subtractIntervals(range, windows)
+    ])
+  );
 }
 
 /** The company's holiday dates ("YYYY-MM-DD") between two dates, inclusive. */

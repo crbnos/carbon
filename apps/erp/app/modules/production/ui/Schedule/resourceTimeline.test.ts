@@ -4,7 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 import type { ResourceTimelineReservation } from "./resourceTimeline";
-import { buildResourceTimeline, collapseToLanes } from "./resourceTimeline";
+import {
+  buildResourceTimeline,
+  collapseToLanes,
+  forecastCounts
+} from "./resourceTimeline";
 
 const HOUR = 3_600_000;
 
@@ -486,5 +490,91 @@ describe("collapseToLanes", () => {
     ]);
     expect(allIds).not.toContain("res-emp");
     expect(JSON.stringify(events)).toBe(snapshot);
+  });
+});
+
+describe("forecastCounts", () => {
+  const timeline = buildResourceTimeline({
+    locationName: "Austin Plant",
+    workCenters: [
+      { id: "wc-1", name: "CNC Router" },
+      { id: "wc-2", name: "Lathe" }
+    ],
+    reservations: [
+      reservation({ id: "res-1", operationId: "op-1" }),
+      reservation({
+        id: "res-1-op",
+        operationId: "op-1",
+        resourceKind: "Employee",
+        resourceId: "emp-1",
+        resourceName: "Ana Ruiz"
+      }),
+      reservation({
+        id: "res-2",
+        jobId: "job-2",
+        jobReadableId: "J000009",
+        hasConflict: true
+      }),
+      reservation({
+        id: "res-3",
+        jobId: "job-3",
+        jobReadableId: "J000012",
+        resourceId: "wc-2",
+        resourceName: "Lathe",
+        hasConflict: true,
+        unschedulable: true
+      })
+    ]
+  });
+  const all = (events: typeof timeline.events) => ({
+    rows: new Set(events.map((event) => event.id)),
+    bars: new Set(
+      events.flatMap((event) => (event.data.items ?? []).map((i) => i.id))
+    )
+  });
+
+  it("counts every station, booking, operator, job and problem in the detailed tree", () => {
+    expect(
+      forecastCounts(
+        timeline.events,
+        timeline.detailsById,
+        all(timeline.events)
+      )
+    ).toEqual({
+      resources: 3,
+      reservations: 4,
+      jobs: 3,
+      conflicts: 1,
+      unschedulable: 1
+    });
+  });
+
+  it("counts what the compact board draws, where operators have no row", () => {
+    const compact = collapseToLanes(timeline.events);
+    expect(forecastCounts(compact, timeline.detailsById, all(compact))).toEqual(
+      {
+        resources: 2,
+        reservations: 3,
+        jobs: 3,
+        conflicts: 1,
+        unschedulable: 1
+      }
+    );
+  });
+
+  it("counts only the rows and bars the filter leaves", () => {
+    const compact = collapseToLanes(timeline.events);
+    expect(
+      forecastCounts(compact, timeline.detailsById, {
+        rows: new Set(["resources-root", "lane:WorkCenter:wc-2"]),
+        bars: new Set(["res-3"])
+      })
+    ).toEqual({
+      resources: 1,
+      reservations: 1,
+      jobs: 1,
+      conflicts: 0,
+      unschedulable: 1
+    });
   });
 });

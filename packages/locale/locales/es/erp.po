@@ -69,6 +69,7 @@ msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
 #. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 msgstr ""
 
@@ -194,6 +195,10 @@ msgstr "{0} activos para depreciar · {amount}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
+#. placeholder {0}: members.length
+msgid "{0} can't be scheduled: {names}"
 msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
@@ -546,7 +551,7 @@ msgstr "{days}d"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} publica esto en tu libro mayor, por lo que Carbon no lo envía. Tu opción guardada se mantiene en caso de que eso cambie."
 
-msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
 msgstr ""
 
 msgid "{discount} off"
@@ -592,6 +597,9 @@ msgstr "{inserted} insertados, {updated} actualizados, {0} necesitan corrección
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# orden de trabajo abierta tiene materiales sin unidad de almacenamiento} other {# órdenes de trabajo abiertas tienen materiales sin unidad de almacenamiento}}"
+
+msgid "{label} — click to open the next"
+msgstr ""
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} se utiliza en documentos, asientos o cuentas predeterminadas, por lo que no se puede eliminar."
@@ -14674,7 +14682,7 @@ msgstr "Sin operaciones de sincronización de {0}"
 msgid "No {0} yet"
 msgstr "Sin {0} aún"
 
-msgid "No {departmentName} work is scheduled at this location."
+msgid "No {departmentLabel} work is scheduled at this location."
 msgstr ""
 
 msgid "No {title} yet"
@@ -15434,7 +15442,7 @@ msgstr "No hay centros de trabajo en esta ubicación"
 msgid "No work centers exist"
 msgstr "No existen centros de trabajo"
 
-msgid "No work centers in {departmentName}"
+msgid "No work centers in {departmentLabel}"
 msgstr ""
 
 msgid "Nom"
@@ -15606,7 +15614,7 @@ msgstr "Nada se sincroniza hasta que active la sincronización."
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Nada se sincroniza hasta que actives la sincronización. Cada cuenta requerida está mapeada."
 
-msgid "Nothing matches the search and filters"
+msgid "Nothing matches the search or filter"
 msgstr ""
 
 msgid "Nothing scheduled — add a station below."
@@ -23470,7 +23478,7 @@ msgstr "Los períodos mensuales en los que registra y cierra"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "El modo de falla más probable que el solicitante sospecha; el técnico confirma o reemplaza esto al cerrar, y la diferencia entre sospechado y real alimenta informes de confiabilidad."
 
-msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
 msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
@@ -23491,7 +23499,7 @@ msgstr "El nuevo número de versión del método"
 msgid "The new version number of the procedure"
 msgstr "El nuevo número de versión del procedimiento"
 
-msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
 msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
@@ -24143,6 +24151,9 @@ msgstr "La tarifa de este tipo de cliente"
 
 msgid "This customer's rate"
 msgstr "La tarifa de este cliente"
+
+msgid "this department"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Este enlace de descarga es inválido o ha sido alterado."

@@ -6,34 +6,48 @@ import { useOptimisticLocation } from "@carbon/react";
 import { useCallback, useState } from "react";
 import type { Location } from "react-router";
 
+/**
+ * Change the URL's search params without a navigation (no loader runs). The
+ * router does not see a `history.replaceState`, so the replaced location is
+ * kept until the router moves to another location. Each change starts from
+ * the address bar as it is when the change runs, so two quick changes (a
+ * debounced one among them) never drop each other's params.
+ */
 export function useReplaceLocation() {
   const optimisticLocation = useOptimisticLocation();
-  const [location, setLocation] = useState(optimisticLocation);
+  const [replaced, setReplaced] = useState<{
+    key: string;
+    location: Location<any>;
+  } | null>(null);
+  const location =
+    replaced?.key === optimisticLocation.key
+      ? replaced.location
+      : optimisticLocation;
 
-  const replaceLocation = useCallback((location: Location<any>) => {
-    const fullPath = location.pathname + location.search + location.hash;
-    //replace the URL in the browser
-    history.replaceState(null, "", fullPath);
-    //update the state (new object in case the same location ref was modified)
-    const newLocation = { ...location };
-    setLocation(newLocation);
-  }, []);
+  const replaceLocation = useCallback(
+    (next: Location<any>) => {
+      // Keep the router's own history entry state ({ usr, key, idx }).
+      history.replaceState(
+        history.state,
+        "",
+        next.pathname + next.search + next.hash
+      );
+      setReplaced({ key: optimisticLocation.key, location: { ...next } });
+    },
+    [optimisticLocation.key]
+  );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const replaceSearchParam = useCallback(
     (key: string, value?: string) => {
-      const searchParams = new URLSearchParams(location.search);
+      const searchParams = new URLSearchParams(window.location.search);
       if (value) {
         searchParams.set(key, value);
       } else {
         searchParams.delete(key);
       }
-      replaceLocation({
-        ...optimisticLocation,
-        search: "?" + searchParams.toString()
-      });
+      replaceLocation({ ...location, search: "?" + searchParams.toString() });
     },
-    [optimisticLocation, replaceLocation]
+    [location, replaceLocation]
   );
 
   return { location, replaceLocation, replaceSearchParam };

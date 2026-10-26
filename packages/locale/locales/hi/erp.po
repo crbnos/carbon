@@ -69,6 +69,7 @@ msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
 #. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 msgstr ""
 
@@ -194,6 +195,10 @@ msgstr "{0} संपत्तियों का मूल्यह्रास
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
+#. placeholder {0}: members.length
+msgid "{0} can't be scheduled: {names}"
 msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
@@ -546,7 +551,7 @@ msgstr "{days}d"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} यह आपके लेजर में पोस्ट करता है, इसलिए Carbon इसे पुश नहीं करता है। आपकी सहेजी गई पसंद को इस बात के मामले में रखा जाता है कि यह बदल जाए।"
 
-msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
 msgstr ""
 
 msgid "{discount} off"
@@ -592,6 +597,9 @@ msgstr "{inserted} सम्मिलित किया गया, {updated} �
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# खुले जॉब में भंडारण इकाई के बिना सामग्री है} other {# खुले जॉब में भंडारण इकाई के बिना सामग्री हैं}}"
+
+msgid "{label} — click to open the next"
+msgstr ""
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} को दस्तावेज़, जर्नल या डिफ़ॉल्ट खातों द्वारा उपयोग किया जाता है, इसलिए इसे हटाया नहीं जा सकता।"
@@ -14674,7 +14682,7 @@ msgstr "कोई {0} सिंक ऑपरेशन नहीं"
 msgid "No {0} yet"
 msgstr "अभी कोई {0} नहीं"
 
-msgid "No {departmentName} work is scheduled at this location."
+msgid "No {departmentLabel} work is scheduled at this location."
 msgstr ""
 
 msgid "No {title} yet"
@@ -15434,7 +15442,7 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
 
-msgid "No work centers in {departmentName}"
+msgid "No work centers in {departmentLabel}"
 msgstr ""
 
 msgid "Nom"
@@ -15606,7 +15614,7 @@ msgstr "जब तक आप सिंक को चालू नहीं क�
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "जब तक आप सिंक चालू नहीं करते, कुछ भी सिंक नहीं होता है। हर आवश्यक खाता मैप किया गया है।"
 
-msgid "Nothing matches the search and filters"
+msgid "Nothing matches the search or filter"
 msgstr ""
 
 msgid "Nothing scheduled — add a station below."
@@ -23470,7 +23478,7 @@ msgstr "मासिक अवधियाँ जिनमें आप पो�
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "सबसे संभावित विफलता मोड जिसे अनुरोधकर्ता संदेह करता है; तकनीशियन इसे बंद करते समय की पुष्टि या प्रतिस्थापन करता है, और संदेह और वास्तविक के बीच अंतर विश्वसनीयता रिपोर्ट करता है।"
 
-msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
 msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
@@ -23491,7 +23499,7 @@ msgstr "विधि का नया संस्करण संख्या"
 msgid "The new version number of the procedure"
 msgstr "कार्यविधि की नई संस्करण संख्या"
 
-msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
 msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
@@ -24143,6 +24151,9 @@ msgstr "इस ग्राहक प्रकार की दर"
 
 msgid "This customer's rate"
 msgstr "इस ग्राहक की दर"
+
+msgid "this department"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"

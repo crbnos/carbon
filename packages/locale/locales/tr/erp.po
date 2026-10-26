@@ -69,6 +69,7 @@ msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr ""
 
 #. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 msgstr ""
 
@@ -194,6 +195,10 @@ msgstr "{0} amortisman yapılacak kıymet · {amount}"
 
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
+msgstr ""
+
+#. placeholder {0}: members.length
+msgid "{0} can't be scheduled: {names}"
 msgstr ""
 
 #. placeholder {0}: unitOfMeasure.name
@@ -546,7 +551,7 @@ msgstr "{days}g"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} bunu muhasebe defterinize gönderir, bu nedenle Carbon onu göndermez. Kaydedilen seçiminiz değişmesi durumunda korunur."
 
-msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
 msgstr ""
 
 msgid "{discount} off"
@@ -592,6 +597,9 @@ msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} a
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# açık iş emirinin depolama birimi olmayan malzemeleri var} other {# açık iş emirlerinin depolama birimi olmayan malzemeleri var}}"
+
+msgid "{label} — click to open the next"
+msgstr ""
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} belgeler, muhasebe fişleri veya varsayılan hesaplar tarafından kullanıldığından silinemez."
@@ -14674,7 +14682,7 @@ msgstr "{0} senkronizasyon işlemi yok"
 msgid "No {0} yet"
 msgstr "Henüz {0} yok"
 
-msgid "No {departmentName} work is scheduled at this location."
+msgid "No {departmentLabel} work is scheduled at this location."
 msgstr ""
 
 msgid "No {title} yet"
@@ -15434,7 +15442,7 @@ msgstr "Bu lokasyonda İş merkezi yok"
 msgid "No work centers exist"
 msgstr "İş merkezi bulunmamaktadır"
 
-msgid "No work centers in {departmentName}"
+msgid "No work centers in {departmentLabel}"
 msgstr ""
 
 msgid "Nom"
@@ -15606,7 +15614,7 @@ msgstr "Eşitlemeyi açana kadar hiçbir şey eşitlenmez."
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Senkronizasyonu açana kadar hiçbir şey senkronize edilmez. Tüm gerekli hesaplar eşleştirilmiştir."
 
-msgid "Nothing matches the search and filters"
+msgid "Nothing matches the search or filter"
 msgstr ""
 
 msgid "Nothing scheduled — add a station below."
@@ -23470,7 +23478,7 @@ msgstr "Nakliye yaptığınız ve kapattığınız aylık dönemler"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "İstekçinin şüphelendiği en olası hata modu; teknisyen bunu kapatırken doğrular veya değiştirir ve şüphelenilen ile gerçek arasındaki fark güvenilirlik raporlarını besler."
 
-msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
 msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
@@ -23491,7 +23499,7 @@ msgstr "metodun yeni sürüm numarası"
 msgid "The new version number of the procedure"
 msgstr "Prosedürün yeni sürüm numarası"
 
-msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
 msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
@@ -24143,6 +24151,9 @@ msgstr "Bu müşteri türü'nün oranı"
 
 msgid "This customer's rate"
 msgstr "Bu müşteri'nin oranı"
+
+msgid "this department"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Bu indirme bağlantısı geçersiz veya değiştirilmiş."

@@ -47,6 +47,9 @@ export type TimelineNodeDetail = {
    */
   jobId?: string;
   jobReadableId?: string;
+  /** The operation and resource a reservation holds — for the board's counts. */
+  operationId?: string;
+  resourceId?: string;
   /** The operation's own description — shown as a secondary "Operation" row. */
   operationDescription?: string | null;
   /**

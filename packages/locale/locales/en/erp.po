@@ -69,6 +69,7 @@ msgid "{0, plural, one {# BOM line} other {# BOM lines}}"
 msgstr "{0, plural, one {# BOM line} other {# BOM lines}}"
 
 #. placeholder {0}: counts.unschedulable
+#. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 msgstr "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
 
@@ -195,6 +196,10 @@ msgstr "{0} assets to depreciate · {amount}"
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr "{0} BOM lines unmatched: {names}"
+
+#. placeholder {0}: members.length
+msgid "{0} can't be scheduled: {names}"
+msgstr "{0} can't be scheduled: {names}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -546,8 +551,8 @@ msgstr "{days}d"
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 
-msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
-msgstr "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
+msgstr "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
 
 msgid "{discount} off"
 msgstr "{discount} off"
@@ -592,6 +597,9 @@ msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 
 msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
 msgstr "{jobsMissingStorageUnit, plural, one {# open job has materials with no storage unit} other {# open jobs have materials with no storage unit}}"
+
+msgid "{label} — click to open the next"
+msgstr "{label} — click to open the next"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} is used by documents, journals or default accounts, so it cannot be deleted."
@@ -14674,8 +14682,8 @@ msgstr "No {0} sync operations"
 msgid "No {0} yet"
 msgstr "No {0} yet"
 
-msgid "No {departmentName} work is scheduled at this location."
-msgstr "No {departmentName} work is scheduled at this location."
+msgid "No {departmentLabel} work is scheduled at this location."
+msgstr "No {departmentLabel} work is scheduled at this location."
 
 msgid "No {title} yet"
 msgstr "No {title} yet"
@@ -15434,8 +15442,8 @@ msgstr "No work centers at this location"
 msgid "No work centers exist"
 msgstr "No work centers exist"
 
-msgid "No work centers in {departmentName}"
-msgstr "No work centers in {departmentName}"
+msgid "No work centers in {departmentLabel}"
+msgstr "No work centers in {departmentLabel}"
 
 msgid "Nom"
 msgstr "Nom"
@@ -15606,8 +15614,8 @@ msgstr "Nothing is synced until you turn sync on."
 msgid "Nothing is synced until you turn sync on. Every required account is mapped."
 msgstr "Nothing is synced until you turn sync on. Every required account is mapped."
 
-msgid "Nothing matches the search and filters"
-msgstr "Nothing matches the search and filters"
+msgid "Nothing matches the search or filter"
+msgstr "Nothing matches the search or filter"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nothing scheduled — add a station below."
@@ -23470,8 +23478,8 @@ msgstr "The monthly periods you post into and close"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 
-msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
-msgstr "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
+msgstr "The most recent {departmentLabel} work at this location was {nextWorkDate}."
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
 msgstr "The most recent scheduled work at this location was {nextWorkDate}."
@@ -23491,8 +23499,8 @@ msgstr "The new version number of the method"
 msgid "The new version number of the procedure"
 msgstr "The new version number of the procedure"
 
-msgid "The next {departmentName} work at this location starts {nextWorkDate}."
-msgstr "The next {departmentName} work at this location starts {nextWorkDate}."
+msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
+msgstr "The next {departmentLabel} work at this location starts {nextWorkDate}."
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
 msgstr "The next scheduled work at this location starts {nextWorkDate}."
@@ -24143,6 +24151,9 @@ msgstr "This customer type's rate"
 
 msgid "This customer's rate"
 msgstr "This customer's rate"
+
+msgid "this department"
+msgstr "this department"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
