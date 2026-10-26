@@ -29809,6 +29809,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -29919,6 +29922,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -29981,6 +29987,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.batchRules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
           },
           {
             $ref: "#/parameters/body.process"
@@ -78590,6 +78599,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.processes.batchRules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.abilityPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.processes.workCenters"
@@ -132138,7 +132150,8 @@ export default {
         "active",
         "requiresAbility",
         "batchable",
-        "batchType"
+        "batchType",
+        "abilityPolicy"
       ],
       properties: {
         id: {
@@ -132241,6 +132254,12 @@ export default {
           description:
             "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
           format: "jsonb"
+        },
+        abilityPolicy: {
+          default: "Warn",
+          enum: ["Warn", "Block"],
+          format: 'public."processAbilityPolicy"',
+          type: "string"
         }
       },
       type: "object"
@@ -155254,6 +155273,11 @@ export default {
         },
         batchRules: {
           format: "jsonb"
+        },
+        abilityPolicy: {
+          enum: ["Warn", "Block"],
+          format: 'public."processAbilityPolicy"',
+          type: "string"
         },
         workCenters: {
           format: "text[]",
@@ -183858,6 +183882,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.process.abilityPolicy": {
+      name: "abilityPolicy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierShipping": {
       name: "supplierShipping",
       description: "supplierShipping",
@@ -209451,6 +209481,12 @@ export default {
     },
     "rowFilter.processes.batchRules": {
       name: "batchRules",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.abilityPolicy": {
+      name: "abilityPolicy",
       required: false,
       in: "query",
       type: "string"

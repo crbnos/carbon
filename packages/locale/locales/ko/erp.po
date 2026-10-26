@@ -4252,6 +4252,9 @@ msgstr "맹검"
 msgid "Blind Count"
 msgstr "블라인드 실사"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "오류로 차단"
 
@@ -8162,6 +8165,9 @@ msgstr "달러 활용률"
 msgid "Don't Cancel"
 msgstr "취소하지 않음"
 
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
+
 msgid "Don't see a serial number?"
 msgstr "시리얼 번호가 보이지 않으세요?"
 
@@ -11377,6 +11383,9 @@ msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
 
 msgid "If"
 msgstr "만약"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "감가상각이 이미 실행된 경우, 다음 실행 시 정액법 자산이 이전 원가로 소요한 개월 수의 감가상각을 보정합니다."
@@ -15840,6 +15849,9 @@ msgstr "초안 절차서만 편집 가능합니다. 활성 또는 보관됨 절�
 
 msgid "Only employees can post receipts."
 msgstr "직원만 입고를 전기할 수 있습니다."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
@@ -21292,6 +21304,9 @@ msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID �
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 공급업체 ID 열을 표시합니다. 어느 쪽이든 공급업체는 내부적으로 동일하게 식별됩니다."
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
 
 msgid "Show All"
 msgstr "모두 표시"

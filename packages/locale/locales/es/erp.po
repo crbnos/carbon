@@ -4252,6 +4252,9 @@ msgstr "Ciego"
 msgid "Blind Count"
 msgstr "Conteo Ciego"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Bloquear con un error"
 
@@ -8162,6 +8165,9 @@ msgstr "Utilización en dólares"
 msgid "Don't Cancel"
 msgstr "No Cancelar"
 
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
+
 msgid "Don't see a serial number?"
 msgstr "¿No ve un número de serie?"
 
@@ -11377,6 +11383,9 @@ msgstr "Los IDs y descripciones se generan para materias primas."
 
 msgid "If"
 msgstr "Si"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Si la depreciación ya se ha ejecutado, la próxima ejecución compensa los meses que un activo de Línea recta registró con el costo anterior."
@@ -15840,6 +15849,9 @@ msgstr "Solo se pueden editar los procedimientos en Borrador. Crear una nueva ve
 
 msgid "Only employees can post receipts."
 msgstr "Solo los empleados pueden contabilizar recepciones."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Solo se pueden eliminar los períodos vacíos y abiertos."
@@ -21292,6 +21304,9 @@ msgstr "Mostrar una columna de ID de cliente legible en la lista de clientes, fo
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Mostrar una columna de ID de Proveedor legible en la lista de proveedores, formularios de proveedores y menús desplegables. Los proveedores se identifican internamente de cualquier forma."
+
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
 
 msgid "Show All"
 msgstr "Mostrar todo"
