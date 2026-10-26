@@ -102,12 +102,12 @@ export interface AllowlistEntry {
    * default that is WRONG for us — the generic rules in `visibility.ts` handle
    * merely-uninteresting fields with no per-action data. */
   props?: Record<string, Record<string, AllowlistPropOverride>>;
-  /** Per-action: sort the projected list's items by this projected field,
-   * ascending, before the size cap. For a vendor that returns results in no
-   * useful order (Google's events.list groups a recurring series' instances
-   * together), the cap would otherwise cut whole event types instead of the
-   * far future. */
-  sortItemsBy?: Record<string, string>;
+  /** Per-action: sort the list's items earliest first, before the size cap, by
+   * the moment at these paths in the vendor's own element (first present wins).
+   * For a vendor that returns results in no useful order (Google's events.list
+   * groups a recurring series' instances together), the cap would otherwise
+   * cut whole event types instead of the far future. */
+  sortItemsBy?: Record<string, readonly string[]>;
 }
 
 /**
@@ -119,7 +119,7 @@ export interface AllowlistEntry {
  *     `integration` row FAILS the consent callback on its "installed" write — after
  *     the token is already in the vault. Every piece needs the one-row migration
  *     (the `INSERT INTO "integration"` at the end of
- *     `20261021123100_workflow-integration-connections.sql`). Gmail, 2026-09-01.
+ *     `20261026151302_workflow-integration-connections.sql`). Gmail, 2026-09-01.
  *  2. Google canonicalises scopes: request `email` and the token response's `scope`
  *     says `https://www.googleapis.com/auth/userinfo.email` (plus an unrequested
  *     `openid`). `missingScopes(granted, required)` then never matches, and the
@@ -209,7 +209,10 @@ export const PIECE_ALLOWLIST: Record<ActivepiecesPiece, AllowlistEntry> = {
     metadata: { scopes: "scope" },
     // events.list without `orderBy` groups a series' expanded instances into one
     // block; chronological is the only order a calendar question means.
-    sortItemsBy: { google_calendar_get_events: "startDateTime" },
+    // An all-day event has `start.date` and no `start.dateTime`.
+    sortItemsBy: {
+      google_calendar_get_events: ["start.dateTime", "start.date"]
+    },
     props: {
       google_calendar_get_events: {
         // "Expand Recurring Event?" defaults to FALSE upstream, and an unexpanded

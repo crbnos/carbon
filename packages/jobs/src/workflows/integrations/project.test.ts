@@ -250,7 +250,7 @@ describe("projectOutputs", () => {
       { summary: "No start", start: {} }
     ];
     const outputs = projectOutputs(GET_EVENTS, response(many), {
-      sortItemsBy: "startDateTime"
+      sortItemsBy: ["start.dateTime", "start.date"]
     });
     const rows = items(outputs);
     expect(
@@ -270,6 +270,29 @@ describe("projectOutputs", () => {
     ]);
     // The row with no start sinks to the end rather than leading the list.
     expect(starts[3]).toBeNull();
+  });
+
+  it("sorts by the moment, and keeps all-day events ahead of the cap", () => {
+    const many = [
+      // 08:00 in Los Angeles is 15:00 UTC.
+      { summary: "West", start: { dateTime: "2026-09-04T08:00:00-07:00" } },
+      // 09:00 in India is 03:30 UTC, so it comes first despite reading later.
+      { summary: "East", start: { dateTime: "2026-09-04T09:00:00+05:30" } },
+      ...Array.from({ length: MAX_LIST_ITEMS }, () => ({
+        summary: "Later",
+        start: { dateTime: "2026-12-01T09:00:00Z" }
+      })),
+      { summary: "Holiday", start: { date: "2026-09-05" } }
+    ];
+    const outputs = projectOutputs(GET_EVENTS, response(many), {
+      sortItemsBy: ["start.dateTime", "start.date"]
+    });
+    const titles = items(outputs).map(
+      (row) =>
+        (row as { fields: Record<string, { value: unknown }> }).fields.summary
+          ?.value
+    );
+    expect(titles.slice(0, 4)).toEqual(["East", "West", "Holiday", "Later"]);
   });
 
   it("counts the biggest declared list, not whichever came first in the schema", () => {

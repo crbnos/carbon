@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getPath } from "@carbon/ee/integrations/secrets";
 import { fromJson, type RuntimeValue } from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
 import { describeOutputs, readField } from "./outputs";
@@ -20,10 +21,11 @@ export function projectOutputs(
   schema: PieceOutputSchema | undefined,
   response: unknown,
   options: {
-    /** Sort each projected list's rows by this field, ascending, BEFORE the
-     * size cap — so the cap cuts the tail of the ordering, never a whole
-     * category the vendor happened to return last. */
-    sortItemsBy?: string;
+    /** Sort each list's rows, earliest first, BEFORE the size cap — so the cap
+     * cuts the tail of the ordering, never a whole category the vendor happened
+     * to return last. Paths into the vendor's own element, first present wins
+     * (Google: `start.dateTime`, else an all-day event's `start.date`). */
+    sortItemsBy?: readonly string[];
   } = {}
 ): Record<string, RuntimeValue> {
   if (schema === undefined) return { count: countOf(undefined) };
@@ -46,8 +48,13 @@ export function projectOutputs(
         // reported zero purely because of key order.
         if (listed === undefined || items.length > listed.length)
           listed = items;
-        // `fromJson` caps the list, after the sort.
-        outputs[name] = fromJson(type, sortRows(items, options.sortItemsBy));
+        // `fromJson` caps the list, after the sort. The sort reads the vendor's
+        // elements, which line up one to one with the projected rows.
+        const raw = getPath(response, field.value ?? field.key);
+        outputs[name] = fromJson(
+          type,
+          sortRows(items, Array.isArray(raw) ? raw : [], options.sortItemsBy)
+        );
         continue;
       }
 
@@ -67,24 +74,35 @@ export function projectOutputs(
   }
 }
 
-/** Ascending by one projected field; rows without it sink to the end. ISO
- * datetimes compare correctly as strings, which is what the field holds for
- * every sort the allowlist declares. Copied then sorted, so equal keys keep
- * vendor order only as far as the engine's sort is stable (V8's is). */
-function sortRows(rows: unknown[], by: string | undefined): unknown[] {
-  if (by === undefined) return rows;
-  const keyOf = (row: unknown) =>
-    row !== null && typeof row === "object"
-      ? (row as Record<string, unknown>)[by]
-      : undefined;
-  return [...rows].sort((a, b) => {
-    const left = keyOf(a);
-    const right = keyOf(b);
-    if (left === right) return 0;
-    if (left === undefined || left === null) return 1;
-    if (right === undefined || right === null) return -1;
-    return String(left) < String(right) ? -1 : 1;
-  });
+/** Earliest first by the moment each vendor element names at `paths`; rows with
+ * none sink to the end. Compared as instants, not as text: `09:00+05:30` is
+ * before `08:00-07:00`, and an all-day `2026-09-05` reads as that day's start.
+ * Equal keys keep vendor order (the sort is stable). */
+function sortRows(
+  rows: unknown[],
+  raw: unknown[],
+  paths: readonly string[] | undefined
+): unknown[] {
+  if (paths === undefined || paths.length === 0) return rows;
+  const momentOf = (index: number) => {
+    for (const path of paths) {
+      const value = getPath(raw[index], path);
+      if (typeof value !== "string" || value === "") continue;
+      const moment = Date.parse(value);
+      if (!Number.isNaN(moment)) return moment;
+    }
+    return null;
+  };
+  const moments = rows.map((_, index) => momentOf(index));
+  return rows
+    .map((row, index) => ({ row, moment: moments[index] ?? null }))
+    .sort((a, b) => {
+      if (a.moment === b.moment) return 0;
+      if (a.moment === null) return 1;
+      if (b.moment === null) return -1;
+      return a.moment - b.moment;
+    })
+    .map(({ row }) => row);
 }
 
 /** How many items came back: a list's length, else 1 for a single response. */
