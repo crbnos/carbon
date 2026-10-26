@@ -1411,9 +1411,10 @@ export const viewPrintJobContent = defineServiceFn({
  * Writes the company's template for one document type: its blocks, theme,
  * settings and the header and footer sections it uses. The logo and header
  * layout (`headerConfig`) is edited with the template but lives on the
- * company-wide header section, so it is saved onto that section first, with
- * the section's name and content kept, and applies wherever the header is
- * used. A built-in header section is forked into the company's own copy.
+ * company-wide header section, so it is saved onto that section in the same
+ * transaction as the template, with the section's name and content kept, and
+ * applies wherever the header is used. A built-in header section is forked
+ * into the company's own copy.
  *
  * @mcp
  */
@@ -1429,52 +1430,45 @@ export const saveDocumentTemplate = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, template) {
-    const client = ctx.asCaller.supabase;
     const { headerConfig, headerSectionId } = template;
 
+    let header: Parameters<typeof service.upsertDocumentTemplate>[2];
     if (headerConfig && headerSectionId) {
-      const resolved = await service.resolveSections(client, ctx.company.id, [
-        headerSectionId
-      ]);
-      const header = resolved[headerSectionId];
-      const section = await service.upsertDocumentSection(client, {
+      const resolved = await service.resolveSections(
+        ctx.asCaller.supabase,
+        ctx.company.id,
+        [headerSectionId]
+      );
+      const section = resolved[headerSectionId];
+      header = {
         id: headerSectionId,
-        companyId: ctx.company.id,
-        name: header?.name ?? "Default Header",
-        placement: "header",
-        content: (header?.content ?? {
+        name: section?.name ?? "Default Header",
+        content: (section?.content ?? {
           type: "doc",
           content: []
         }) as JSONContent,
-        config: headerConfig as Record<string, unknown>,
-        // A company's own header section already exists: update it. Sending
-        // createdBy for it made upsertDocumentSection insert the id again.
-        ...(header && !header.builtIn
-          ? { updatedBy: ctx.auditUserId }
-          : { createdBy: ctx.auditUserId })
-      });
-      if (section.error) {
-        return ctx.error("internal", "Failed to save header", section.error);
-      }
+        config: headerConfig as Record<string, unknown>
+      };
     }
 
-    const upsert = await service.upsertDocumentTemplate(client, {
-      companyId: ctx.company.id,
-      documentType: template.documentType,
-      blocks: template.blocks as DocumentBlock[],
-      theme: template.theme as DocumentTheme,
-      settings: template.settings as DocumentSettings,
-      headerSectionId: headerSectionId || null,
-      footerSectionId: template.footerSectionId || null,
-      createdBy: ctx.auditUserId,
-      updatedBy: ctx.auditUserId
-    });
-    if (upsert.error) {
-      return ctx.error(
-        "internal",
-        "Failed to save document layout",
-        upsert.error
+    // The header layout and the template land together or not at all.
+    try {
+      await service.upsertDocumentTemplate(
+        ctx.asSystem.pg,
+        {
+          companyId: ctx.company.id,
+          documentType: template.documentType,
+          blocks: template.blocks as DocumentBlock[],
+          theme: template.theme as DocumentTheme,
+          settings: template.settings as DocumentSettings,
+          headerSectionId: headerSectionId || null,
+          footerSectionId: template.footerSectionId || null,
+          userId: ctx.auditUserId
+        },
+        header
       );
+    } catch (err) {
+      return ctx.error("internal", "Failed to save document layout", err);
     }
     return { documentType: template.documentType };
   }
