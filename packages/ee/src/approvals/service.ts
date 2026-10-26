@@ -736,6 +736,50 @@ export async function getLatestApprovalRequestForDocument(
   };
 }
 
+/**
+ * Who approved a document and when, for printing on it. Reads the latest
+ * request that was not cancelled, so a later Pending or Rejected request
+ * clears an earlier approval. Takes the service role: approvalRequest has no
+ * RLS policies.
+ */
+export async function getDocumentApproval(
+  serviceRole: SupabaseClient<Database>,
+  documentType: (typeof approvalDocumentType)[number],
+  documentId: string,
+  companyId: string
+): Promise<{ approvedBy: string | null; approvedAt: string } | null> {
+  const latest = await serviceRole
+    .from("approvalRequest")
+    .select(
+      "status, decisionAt, decider:user!approvalRequest_decisionBy_fkey(fullName)"
+    )
+    .eq("documentType", documentType)
+    .eq("documentId", documentId)
+    .eq("companyId", companyId)
+    .neq("status", "Cancelled")
+    .order("requestedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latest.error) {
+    logger.error("Failed to read the document approval", {
+      documentType,
+      documentId,
+      error: latest.error
+    });
+    return null;
+  }
+
+  if (latest.data?.status !== "Approved" || !latest.data.decisionAt) {
+    return null;
+  }
+
+  return {
+    approvedBy: latest.data.decider?.fullName ?? null,
+    approvedAt: latest.data.decisionAt
+  };
+}
+
 export async function getPendingApprovalsForApprover(
   client: SupabaseClient<Database>,
   userId: string,

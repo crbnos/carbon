@@ -133,6 +133,8 @@ const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
     group: "Order"
   },
   { token: "order.currency", label: "Currency", group: "Order" },
+  { token: "order.approvedBy", label: "Approved By", group: "Order" },
+  { token: "order.approvedDate", label: "Approval Date", group: "Order" },
   { token: "supplier.name", label: "Supplier Name", group: "Supplier" },
   { token: "supplier.addressLine1", label: "Address", group: "Supplier" },
   { token: "supplier.city", label: "City", group: "Supplier" },
