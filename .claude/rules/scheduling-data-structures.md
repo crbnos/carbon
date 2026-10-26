@@ -94,7 +94,8 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   only; ops overdue up to 28 days land in a Past-due column); Scheduled =
   `capacityReservation.workHours` split across the days of the booking by
   the work center's WORKING time in each day (`getWorkCenterWorkingWindows`,
-  the same ladder and holidays the engine uses), so a booking from Monday
+  the same ladder and holidays the engine uses; a station's linked shifts at
+  another location are loaded too, `getShiftsWithTimesByIds`), so a booking from Monday
   noon to Tuesday 11:30 puts its hours in shift time and none on the night
   or a weekend; a booking with no working time falls back to the clock-time
   share; Available = people headcount × real shift hours resolved through
@@ -148,7 +149,9 @@ never abandons the location run.
   other batches' rows. It drops this location's own batch rows, and every
   non-batch row of a job the run re-plans (`orderedJobIds`): the run replaces
   those bookings, so they must not push the batch later. Before this, the
-  batch drifted later on every regen.
+  batch drifted later on every regen. A job that throws during the run is left
+  out of the write, so `persistLocationWrites` clears its stored bookings too
+  (`failedJobIds`): otherwise the batch could sit on top of one.
 - **One reservation per Released (`Active`/`Completing`) batch**, tagged
   `capacityReservation.jobOperationBatchId`; `operationId`/`jobId` stay NOT
   NULL by anchoring on the min member op id. Placeholder semantics mirror
@@ -212,8 +215,10 @@ Two Inngest functions listen on that event
   stamps every job with an open op on a work center whose hours come from that shift
   (`workCentersOnShift`, `shift-work-centers.ts`: the stations linked to it, plus the
   stations at its location with no link to an active shift; lights-out stations never
-  count). An unknown shift id stamps company-wide. `createShift`, `updateShift` and
-  `deleteShift` send the id. Recomputes nothing.
+  count), or on a process those stations run (`processesOfWorkCenters`: an unstarted op
+  can move onto them). An unknown shift id stamps company-wide. `createShift`,
+  `updateShift` and `deleteShift` send the id; an update that moves the shift to
+  another location sends kind `location` instead, so the stations it left re-plan too. Recomputes nothing.
 - **WAVE** (`scheduleReplanWaveFunction`, **debounce 30s / timeout 10m**,
   concurrency 1 per company): loads the company's stale jobs, groups them by
   **LOCATION**, and calls `runLocationSchedule({ db: getJobDatabaseClient(),

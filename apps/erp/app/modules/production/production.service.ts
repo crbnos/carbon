@@ -11506,13 +11506,17 @@ export function getWorkCenterWorkingWindows(args: {
   workCenterShifts: { workCenterId: string; shiftId: string }[];
   /** The location's active shifts. */
   shifts: (ShiftRow & { id: string })[];
+  /** Shifts a work center is linked to at another location. */
+  linkedShifts?: (ShiftRow & { id: string })[];
   timeZone: string;
   holidayDates: Set<string>;
   rangeStart: number;
   rangeEnd: number;
 }): Map<string, CalendarWindow[]> {
   const { workCenters, workCenterShifts, shifts, timeZone } = args;
-  const shiftById = new Map(shifts.map((shift) => [shift.id, shift]));
+  const shiftById = new Map(
+    [...shifts, ...(args.linkedShifts ?? [])].map((shift) => [shift.id, shift])
+  );
   const ladderWorkCenters = workCenters.map((wc) => ({
     id: wc.id,
     alwaysOn: wc.alwaysOn,
@@ -11549,7 +11553,7 @@ export async function getHolidayDates(
   client: SupabaseClient<Database>,
   companyId: string,
   args: { from: string; to: string }
-): Promise<Set<string>> {
+): Promise<{ data: Set<string>; error: PostgrestError | null }> {
   const { data, error } = await client
     .from("holiday")
     .select("date")
@@ -11558,9 +11562,12 @@ export async function getHolidayDates(
     .lte("date", args.to);
   if (error) {
     logger.error("Failed to load holidays", { companyId, error });
-    return new Set();
+    return { data: new Set(), error };
   }
-  return new Set((data ?? []).map((row) => row.date.slice(0, 10)));
+  return {
+    data: new Set((data ?? []).map((row) => row.date.slice(0, 10))),
+    error: null
+  };
 }
 type CapacityOperation = {
   workCenterId: string | null;
@@ -11614,6 +11621,8 @@ export function getWorkCenterCalendarHoursByDay(args: {
   workCenters: { id: string; alwaysOn: boolean }[];
   workCenterShifts: { workCenterId: string; shiftId: string }[];
   locationShifts: CapacityShift[];
+  /** Shifts a work center is linked to at another location. */
+  linkedShifts?: CapacityShift[];
   weekDates: string[];
   /** Company holidays: 0 hours, except on a lights-out station. */
   holidayDates?: Set<string>;
@@ -11621,7 +11630,12 @@ export function getWorkCenterCalendarHoursByDay(args: {
   const { workCenters, workCenterShifts, locationShifts, weekDates } = args;
   const holidayDates = args.holidayDates ?? new Set<string>();
 
-  const shiftById = new Map(locationShifts.map((shift) => [shift.id, shift]));
+  const shiftById = new Map(
+    [...locationShifts, ...(args.linkedShifts ?? [])].map((shift) => [
+      shift.id,
+      shift
+    ])
+  );
   const shiftIdsByWorkCenter = new Map<string, string[]>();
   for (const link of workCenterShifts) {
     const list = shiftIdsByWorkCenter.get(link.workCenterId);

@@ -23,7 +23,8 @@ import { useLoaderData } from "react-router";
 import {
   getEmployeeDepartments,
   getEmployeeShifts,
-  getShiftsWithTimes
+  getShiftsWithTimes,
+  getShiftsWithTimesByIds
 } from "~/modules/people/people.service";
 import {
   buildPeopleCapacityBuckets,
@@ -367,10 +368,40 @@ export async function loader({ request }: LoaderFunctionArgs) {
         spanStartMs = Math.min(spanStartMs, Date.parse(reservation.startAt));
         spanEndMs = Math.max(spanEndMs, Date.parse(reservation.endAt));
       }
-      const holidayDates = await getHolidayDates(client, companyId, {
+      const holidays = await getHolidayDates(client, companyId, {
         from: toCalendarDate(fromAbsolute(spanStartMs, timezone)).toString(),
         to: toCalendarDate(fromAbsolute(spanEndMs, timezone)).toString()
       });
+      if (holidays.error) {
+        throw redirect(
+          path.to.production,
+          await flash(request, error(holidays.error, "Failed to load holidays"))
+        );
+      }
+      const holidayDates = holidays.data;
+      // A station can be linked to a shift of another location.
+      const locationShiftIds = new Set(shiftRows.map((shift) => shift.id));
+      const otherShiftIds = [
+        ...new Set(
+          wcShiftLinks
+            .map((link) => link.shiftId)
+            .filter((id) => !locationShiftIds.has(id))
+        )
+      ];
+      const otherShifts =
+        otherShiftIds.length > 0
+          ? await getShiftsWithTimesByIds(client, companyId, otherShiftIds)
+          : { data: [], error: null };
+      if (otherShifts.error) {
+        throw redirect(
+          path.to.production,
+          await flash(
+            request,
+            error(otherShifts.error, "Failed to load shifts")
+          )
+        );
+      }
+      const linkedShiftRows = otherShifts.data ?? [];
       capacityHolidayDates = [...holidayDates];
       const ladderWorkCenters = (workCenters.data ?? []).flatMap(
         (workCenter) =>
@@ -400,6 +431,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
         workCenters: ladderWorkCenters,
         workCenterShifts: wcShiftLinks,
         locationShifts: locationLadderShifts,
+        linkedShifts: linkedShiftRows.map((shift) => ({
+          id: shift.id,
+          hours:
+            shiftDurationHours(shift.startTime, shift.endTime) ??
+            defaultShiftHours,
+          runsOn: [
+            shift.sunday,
+            shift.monday,
+            shift.tuesday,
+            shift.wednesday,
+            shift.thursday,
+            shift.friday,
+            shift.saturday
+          ]
+        })),
         weekDates,
         holidayDates
       });
@@ -407,6 +453,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         workCenters: ladderWorkCenters,
         workCenterShifts: wcShiftLinks,
         shifts: shiftRows,
+        linkedShifts: linkedShiftRows,
         timeZone: timezone,
         holidayDates,
         rangeStart: spanStartMs,

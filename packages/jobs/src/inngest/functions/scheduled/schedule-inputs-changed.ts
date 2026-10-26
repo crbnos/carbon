@@ -11,7 +11,10 @@ import { NonRetriableError } from "inngest";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
-import { workCentersOnShift } from "./shift-work-centers";
+import {
+  processesOfWorkCenters,
+  workCentersOnShift
+} from "./shift-work-centers";
 
 const log = getLogger("jobs", "schedule-replan");
 
@@ -66,53 +69,78 @@ const scheduleInputsChangedData = z.object({
 });
 
 /**
- * The work centers whose hours come from this shift (`workCentersOnShift`),
- * or null when the shift is not the company's.
+ * The work centers whose hours come from this shift (`workCentersOnShift`) and
+ * the processes they run, or null when the shift is not the company's.
  */
-async function loadShiftWorkCenterIds(
+async function loadShiftScope(
   serviceRole: ReturnType<typeof getCarbonServiceRole>,
   companyId: string,
   shiftId: string
-): Promise<string[] | null> {
-  const [shift, workCenters, links, activeShifts] = await Promise.all([
-    serviceRole
-      .from("shift")
-      .select("id, locationId")
-      .eq("id", shiftId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    fetchAllFromTable<{
-      id: string;
-      locationId: string | null;
-      alwaysOn: boolean;
-    }>(serviceRole, "workCenter", "id, locationId, alwaysOn", (query) =>
-      query.eq("companyId", companyId).eq("active", true).order("id")
-    ),
-    fetchAllFromTable<{ workCenterId: string; shiftId: string }>(
-      serviceRole,
-      "workCenterShift",
-      "workCenterId, shiftId",
-      (query) =>
-        query.eq("companyId", companyId).order("workCenterId").order("shiftId")
-    ),
-    fetchAllFromTable<{ id: string }>(serviceRole, "shift", "id", (query) =>
-      query.eq("companyId", companyId).eq("active", true).order("id")
-    )
-  ]);
+): Promise<{ workCenterIds: string[]; processIds: string[] } | null> {
+  const [shift, workCenters, links, activeShifts, processes] =
+    await Promise.all([
+      serviceRole
+        .from("shift")
+        .select("id, locationId")
+        .eq("id", shiftId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      fetchAllFromTable<{
+        id: string;
+        locationId: string | null;
+        alwaysOn: boolean;
+      }>(serviceRole, "workCenter", "id, locationId, alwaysOn", (query) =>
+        query.eq("companyId", companyId).eq("active", true).order("id")
+      ),
+      fetchAllFromTable<{ workCenterId: string; shiftId: string }>(
+        serviceRole,
+        "workCenterShift",
+        "workCenterId, shiftId",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .order("workCenterId")
+            .order("shiftId")
+      ),
+      fetchAllFromTable<{ id: string }>(serviceRole, "shift", "id", (query) =>
+        query.eq("companyId", companyId).eq("active", true).order("id")
+      ),
+      fetchAllFromTable<{ workCenterId: string; processId: string }>(
+        serviceRole,
+        "workCenterProcess",
+        "workCenterId, processId",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .order("workCenterId")
+            .order("processId")
+      )
+    ]);
   const failed =
-    shift.error ?? workCenters.error ?? links.error ?? activeShifts.error;
+    shift.error ??
+    workCenters.error ??
+    links.error ??
+    activeShifts.error ??
+    processes.error;
   if (failed) {
     throw new Error(
       `Failed to load the shift's work centers: ${failed.message}`
     );
   }
   if (!shift.data) return null;
-  return workCentersOnShift({
+  const workCenterIds = workCentersOnShift({
     shift: { id: shift.data.id, locationId: shift.data.locationId },
     workCenters: workCenters.data ?? [],
     workCenterShifts: links.data ?? [],
     activeShiftIds: new Set((activeShifts.data ?? []).map((row) => row.id))
   });
+  return {
+    workCenterIds,
+    processIds: processesOfWorkCenters({
+      workCenterIds,
+      workCenterProcesses: processes.data ?? []
+    })
+  };
 }
 
 /**
@@ -169,7 +197,7 @@ export const markScheduleStaleFunction = inngest.createFunction(
     //   ability-gated process (people-availability changes only matter to gated work;
     //   a company with zero gated ops is untouched)
     // - shift (with id)        -> the gated jobs above PLUS jobs with unfinished ops
-    //   on the work centers that run the shift (machine hours)
+    //   on the work centers that run the shift, or on the processes they run
     // - work-center (with id)  -> jobs with unfinished ops assigned to that work center
     // - people (with id)         -> same as work-center (entityId = the assigned workCenterId)
     // - people (no id)           -> absence of an unassigned person; only gated ops care
@@ -198,17 +226,16 @@ export const markScheduleStaleFunction = inngest.createFunction(
         processIds = (gated.data ?? []).map((p) => p.id);
       }
 
-      // A shift is also machine hours: the work centers that run it re-plan
-      // too, gated or not.
+      // A shift is also machine hours: the ops on the work centers that run
+      // it re-plan too, gated or not, and so do the ops of the processes those
+      // work centers run (an unstarted op can move onto one of them).
       let shiftWorkCenterIds: string[] = [];
+      let shiftProcessIds: string[] = [];
       if (kind === "shift" && entityId) {
-        const scope = await loadShiftWorkCenterIds(
-          serviceRole,
-          companyId,
-          entityId
-        );
+        const scope = await loadShiftScope(serviceRole, companyId, entityId);
         if (scope === null) return null; // unknown shift: re-plan everything
-        shiftWorkCenterIds = scope;
+        shiftWorkCenterIds = scope.workCenterIds;
+        shiftProcessIds = scope.processIds;
       }
 
       if (
@@ -221,7 +248,10 @@ export const markScheduleStaleFunction = inngest.createFunction(
         }[] =
           processIds !== null
             ? [
-                { column: "processId", values: processIds },
+                {
+                  column: "processId",
+                  values: [...new Set([...processIds, ...shiftProcessIds])]
+                },
                 { column: "workCenterId", values: shiftWorkCenterIds }
               ]
             : [{ column: "workCenterId", values: [entityId as string] }];

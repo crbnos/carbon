@@ -39,3 +39,22 @@ export function workCentersOnShift(args: {
     )
     .map((wc) => wc.id);
 }
+
+/**
+ * The processes the given work centers run. An op that has not started is
+ * balanced across every work center of its process, so a shift change on one
+ * of them can move ops stored on another.
+ */
+export function processesOfWorkCenters(args: {
+  workCenterIds: string[];
+  workCenterProcesses: { workCenterId: string; processId: string }[];
+}): string[] {
+  const workCenterIds = new Set(args.workCenterIds);
+  return [
+    ...new Set(
+      args.workCenterProcesses
+        .filter((link) => workCenterIds.has(link.workCenterId))
+        .map((link) => link.processId)
+    )
+  ];
+}

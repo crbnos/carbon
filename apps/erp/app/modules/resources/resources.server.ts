@@ -2995,7 +2995,12 @@ export const createContractor = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     hoursPerWeek: z.number().optional(),
-    abilities: z.array(z.string()),
+    abilities: z
+      .array(z.string())
+      .optional()
+      .describe(
+        "Replaces the contractor's abilities when sent; left out, they are kept."
+      ),
     customFields: z.unknown().optional()
   }),
   permission: { create: "resources" },
@@ -3026,7 +3031,12 @@ export const updateContractor = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     hoursPerWeek: z.number().optional(),
-    abilities: z.array(z.string()),
+    abilities: z
+      .array(z.string())
+      .optional()
+      .describe(
+        "Replaces the contractor's abilities when sent; left out, they are kept."
+      ),
     customFields: z.unknown().optional()
   }),
   permission: { update: "resources" },

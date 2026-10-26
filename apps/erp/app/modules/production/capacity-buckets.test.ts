@@ -117,3 +117,44 @@ describe("available hours", () => {
     expect(hours.get("tvac")?.get("2026-10-27")).toBe(24);
   });
 });
+
+describe("a station linked to a shift of another location", () => {
+  const windows = (args: {
+    shifts: (typeof dayShift)[];
+    linkedShifts?: (typeof dayShift)[];
+  }) =>
+    getWorkCenterWorkingWindows({
+      workCenters: [{ id: "potting", alwaysOn: false }],
+      workCenterShifts: [{ workCenterId: "potting", shiftId: "day" }],
+      timeZone: TZ,
+      holidayDates: new Set(),
+      rangeStart: at("2026-10-26T05:00:00Z"),
+      rangeEnd: at("2026-10-27T05:00:00Z"),
+      ...args
+    }).get("potting");
+
+  it("works that shift's hours, not the location's", () => {
+    // Monday 06:00-14:30 Chicago, from the linked shift alone.
+    expect(windows({ shifts: [], linkedShifts: [dayShift] })).toEqual([
+      { start: at("2026-10-26T11:00:00Z"), end: at("2026-10-26T19:30:00Z") }
+    ]);
+  });
+
+  it("has that shift's hours available", () => {
+    const hours = getWorkCenterCalendarHoursByDay({
+      workCenters: [{ id: "potting", alwaysOn: false }],
+      workCenterShifts: [{ workCenterId: "potting", shiftId: "day" }],
+      locationShifts: [],
+      linkedShifts: [
+        {
+          id: "day",
+          hours: 8.5,
+          runsOn: [false, true, true, true, true, true, false]
+        }
+      ],
+      weekDates: WEEK
+    });
+
+    expect(hours.get("potting")?.get("2026-10-26")).toBe(8.5);
+  });
+});

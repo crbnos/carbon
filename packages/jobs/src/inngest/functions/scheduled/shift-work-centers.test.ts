@@ -3,7 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { workCentersOnShift } from "./shift-work-centers";
+import {
+  processesOfWorkCenters,
+  workCentersOnShift
+} from "./shift-work-centers";
 
 // The plant: Day (active) and Weekend (the shift being changed, active).
 const base = (
@@ -47,5 +50,21 @@ describe("workCentersOnShift", () => {
         ]
       })
     ).toEqual(["pcb-lab", "cnc-mill", "tig"]);
+  });
+});
+
+describe("processesOfWorkCenters", () => {
+  it("is every process the affected stations run, once each", () => {
+    expect(
+      processesOfWorkCenters({
+        workCenterIds: ["tig", "pcb-lab"],
+        workCenterProcesses: [
+          { workCenterId: "tig", processId: "welding" },
+          { workCenterId: "pcb-lab", processId: "smt" },
+          { workCenterId: "pcb-lab", processId: "welding" },
+          { workCenterId: "cnc-mill", processId: "machining" }
+        ]
+      })
+    ).toEqual(["welding", "smt"]);
   });
 });

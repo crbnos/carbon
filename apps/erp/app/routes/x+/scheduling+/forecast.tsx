@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
-import { datetime, formatDate } from "@carbon/utils";
+import { datetime, formatDate, redirect } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import {
   CalendarDateTime,
@@ -210,7 +212,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // from the SAME availability ladder the scheduler uses — so the shaded
   // background can't disagree with the bars. Shades the axis so a reservation
   // spanning several days no longer reads as 24h/day.
-  const [reservations, maintenanceResult, holidayDates] = await Promise.all([
+  const [reservations, maintenanceResult, holidays] = await Promise.all([
     getCapacityReservationsForResources(client, companyId, locationId, {
       from: new Date(windowStartMs).toISOString(),
       to: new Date(windowEndMs).toISOString()
@@ -221,12 +223,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       to: toCalendarDate(fromAbsolute(windowEndMs, timeZone)).toString()
     })
   ]);
+  if (holidays.error) {
+    throw redirect(
+      path.to.production,
+      await flash(request, error(holidays.error, "Failed to load holidays"))
+    );
+  }
   const nonWorkingIntervals = getForecastNonWorkingIntervals({
     timeZone,
     shifts,
     windowStartMs,
     windowEndMs,
-    holidayDates
+    holidayDates: holidays.data
   });
 
   // Open outages that take a work center offline, as [start, end) windows for

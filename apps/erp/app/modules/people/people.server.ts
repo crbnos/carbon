@@ -78,6 +78,15 @@ export const updateShift = defineServiceFn({
   // The route gated on create; the write runs under the update policy.
   permission: { create: "people", update: "people" },
   async run(ctx, shift) {
+    const previous = await ctx.asCaller.supabase
+      .from("shift")
+      .select("locationId")
+      .eq("id", shift.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (previous.error) {
+      return ctx.error("internal", "Failed to update shift", previous.error);
+    }
     const updated = await service.upsertShift(ctx.asCaller.supabase, {
       ...shift,
       companyId: ctx.company.id,
@@ -87,11 +96,15 @@ export const updateShift = defineServiceFn({
       return ctx.error("internal", "Failed to update shift", updated.error);
     }
     if (!updated.data) return ctx.error("notFound", "Shift not found");
+    // A shift moved to another location also changes the hours of the
+    // stations it leaves behind, which the shift-scoped notice cannot see.
+    const moved =
+      previous.data !== null && previous.data.locationId !== shift.locationId;
     await notifyScheduleInputsChanged(
       ctx.company.id,
-      "shift",
-      "Shift hours changed",
-      shift.id
+      moved ? "location" : "shift",
+      moved ? "Shift moved to another location" : "Shift hours changed",
+      moved ? undefined : shift.id
     );
     return { id: shift.id };
   }

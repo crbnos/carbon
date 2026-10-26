@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -17,7 +16,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatarGroup, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useCompanyToday, usePermissions, useUrlParams } from "~/hooks";
 import type { Abilities } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -35,6 +34,8 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
   const [params] = useUrlParams();
   const permissions = usePermissions();
   const [people] = usePeople();
+  // The company's day, not the viewer's: the list spans every location.
+  const todayDate = useCompanyToday();
 
   const employeeOptions = useMemo(
     () => people.map((person) => ({ value: person.id, label: person.name })),
@@ -76,7 +77,6 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         cell: ({ row }) => {
           // Qualified = has an ability row ∧ not expired. Presence of the row
           // is the qualification — there is no separate training gate.
-          const todayDate = today(getLocalTimeZone()).toString();
           const employeeIds = (row.original.employeeAbility ?? [])
             .filter(
               (ea) => !ea.expiresAt || ea.expiresAt.slice(0, 10) > todayDate
@@ -98,7 +98,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         }
       }
     ];
-  }, [t, employeeOptions]);
+  }, [t, employeeOptions, todayDate]);
 
   const renderContextMenu = useCallback<(row: Ability) => JSX.Element>(
     (row) => (
