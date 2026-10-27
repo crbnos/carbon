@@ -3630,6 +3630,9 @@ export async function getDefaultAttachmentsForPO(
  * current one. Run it before the delivery row changes, in the same
  * transaction. The delivery date (when goods arrived) goes only to lines that
  * received something; received-complete lines keep the other two.
+ *
+ * It locks the delivery rows first, so a concurrent save of the same order
+ * waits and then compares against the date this one commits.
  */
 export async function cascadePurchaseOrderDateToLines(
   db: Kysely<KyselyDatabase>,
@@ -3644,6 +3647,15 @@ export async function cascadePurchaseOrderDateToLines(
   const { companyId, userId, purchaseOrderIds, field, value } = args;
   if (!value || purchaseOrderIds.length === 0) return;
   const lineField = purchaseOrderLineDateOfOrderDate[field];
+
+  await db
+    .selectFrom("purchaseOrderDelivery")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("id", "in", purchaseOrderIds)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
 
   let update = db
     .updateTable("purchaseOrderLine")
