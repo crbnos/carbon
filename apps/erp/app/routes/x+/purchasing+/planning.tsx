@@ -21,7 +21,11 @@ import {
   resolvePlanningActionScope
 } from "~/modules/production/production.models";
 import { getPlanningActions } from "~/modules/production/production.service";
-import { getPurchasingPlanning } from "~/modules/purchasing/purchasing.service";
+import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
+import {
+  getPurchasingPlanning,
+  PURCHASING_PLANNING_PAGING
+} from "~/modules/purchasing/purchasing.service";
 import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
 import {
@@ -30,7 +34,9 @@ import {
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/list-error";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -54,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const locationId = await resolveLocationId(client, request, {
@@ -86,13 +92,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // A link to a row's order drawer (`?item=`) opens it even when the row is
   // not on this page — the plan has changed since the link was made, or it
   // came from another page. That row is read on its own, alongside the page.
-  const drawerItemId = searchParams.get(PLANNING_DRAWER_PARAM);
+  // A later page (`?after=`) is read for its rows and their actions only.
+  const drawerItemId = cursor ? null : searchParams.get(PLANNING_DRAWER_PARAM);
 
   const [items, drawerItemRead] = await Promise.all([
     getPurchasingPlanning(client, locationId, companyId, periodIds, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters: gridFilters,
       asOf,
@@ -103,7 +110,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? getPurchasingPlanning(client, locationId, companyId, periodIds, {
           search: null,
           limit: 1,
-          offset: 0,
+          cursor: null,
           sorts: [],
           filters: [{ column: "id", operator: "eq", value: drawerItemId }],
           asOf
@@ -112,7 +119,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (items.error) {
-    redirect(
+    logger.error("Failed to load the planning items", {
+      companyId,
+      locationId,
+      laterPage: Boolean(cursor),
+      error: items.error
+    });
+    if (cursor) return listErrorPage("items");
+    throw redirect(
       path.to.purchasing,
       await flash(request, error(items.error, "Failed to fetch planning items"))
     );
@@ -128,7 +142,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: drawerItemRead.error
     });
   }
-  const pageItems = (items.data ?? []) as PurchasingPlanningItem[];
+  const page = toPage(
+    (items.data ?? []) as PurchasingPlanningItem[],
+    { limit, sorts },
+    PURCHASING_PLANNING_PAGING
+  );
+  const pageItems = page.rows;
   const linkedItem = (drawerItemRead?.data?.[0] ??
     null) as PurchasingPlanningItem | null;
   const drawerItem =
@@ -157,15 +176,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       locationId,
       error: planningActions.error
     });
+    if (cursor) return listErrorPage("items");
     throw new Response("Failed to load planning actions", { status: 500 });
   }
 
+  // Each row carries its own actions, so a later page brings its rows' actions.
+  const actions = planningActions.data ?? [];
   return {
-    items: pageItems,
+    items: withPlanningActions(pageItems, actions),
     // The row a `?item=` link opens the drawer on, when it is not in `items`.
-    drawerItem,
+    drawerItem: drawerItem
+      ? (withPlanningActions([drawerItem], actions)[0] ?? null)
+      : null,
     count: items.count ?? 0,
-    planningActions: planningActions.data ?? [],
+    nextCursor: page.nextCursor,
     // The Actions-column filter the rows were matched on: each row shows only
     // its actions of these types.
     actionTypes: actionTypes ?? null,
@@ -182,9 +206,9 @@ export default function PurchasingPlanningRoute() {
     items,
     drawerItem,
     count,
+    nextCursor,
     locationId,
     periods,
-    planningActions,
     actionTypes,
     locationToday
   } = useLoaderData<typeof loader>();
@@ -202,9 +226,9 @@ export default function PurchasingPlanningRoute() {
             data={items}
             drawerItem={drawerItem}
             count={count}
+            nextCursor={nextCursor}
             locationId={locationId}
             periods={periods}
-            planningActions={planningActions}
             actionTypes={actionTypes}
             locationToday={locationToday}
           />

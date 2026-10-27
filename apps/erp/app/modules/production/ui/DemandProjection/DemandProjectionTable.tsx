@@ -40,6 +40,8 @@ import type { DemandProjection } from "../../types";
 type DemandProjectionsTableProps = {
   data: DemandProjection[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
 };
@@ -50,7 +52,13 @@ const defaultColumnPinning = {
 };
 
 const DemandProjectionsTable = memo(
-  ({ data, count, locationId, periods }: DemandProjectionsTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    locationId,
+    periods
+  }: DemandProjectionsTableProps) => {
     const numberFormatter = useNumberFormatter();
     const dateFormatter = useDateFormatter({
       month: "short",
@@ -209,6 +217,8 @@ const DemandProjectionsTable = memo(
           data={data}
           columns={columns}
           count={count}
+          // Location-scoped: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "projections", nextCursor }}
           defaultColumnPinning={defaultColumnPinning}
           title={t`Demand Forecasts`}
           table="demand-projection"

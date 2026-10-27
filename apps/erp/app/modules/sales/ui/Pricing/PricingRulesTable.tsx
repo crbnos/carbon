@@ -34,6 +34,7 @@ import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   useDateFormatter,
@@ -50,6 +51,7 @@ import type { PricingRule } from "../../types";
 type PricingRulesTableProps = {
   data: PricingRule[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -59,7 +61,8 @@ const defaultColumnVisibility = {
   itemPostingGroupId: false
 };
 
-const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
+const PricingRulesTable = memo((props: PricingRulesTableProps) => {
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -475,6 +478,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       defaultColumnVisibility={defaultColumnVisibility}
       primaryAction={
         canCreate && (

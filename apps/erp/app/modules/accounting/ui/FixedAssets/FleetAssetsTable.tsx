@@ -24,6 +24,7 @@ import {
 import { useFetcher, useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
@@ -38,6 +39,7 @@ export type FleetAssetRow = NonNullable<
 type FleetAssetsTableProps = {
   data: FleetAssetRow[];
   count: number;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
@@ -47,7 +49,7 @@ const isOnBooks = (row: FleetAssetRow) =>
   row.status === "Active" || row.status === "Fully Depreciated";
 
 const FleetAssetsTable = memo(
-  ({ data, count, primaryAction }: FleetAssetsTableProps) => {
+  ({ data, count, primaryAction, infinite }: FleetAssetsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const fetcher = useFetcher();
@@ -229,6 +231,7 @@ const FleetAssetsTable = memo(
 
     return (
       <Table<FleetAssetRow>
+        infinite={infinite}
         data={data}
         columns={columns}
         count={count}

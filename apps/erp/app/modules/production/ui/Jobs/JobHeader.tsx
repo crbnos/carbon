@@ -94,7 +94,7 @@ import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
-import { isJobLocked, jobCompleteValidator } from "../../production.models";
+import { isJobDeletable, jobCompleteValidator } from "../../production.models";
 import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
@@ -290,7 +290,7 @@ const JobHeader = () => {
         disabled={
           !permissions.can("delete", "production") ||
           !permissions.is("employee") ||
-          isJobLocked(routeData?.job?.status)
+          !isJobDeletable(routeData?.job?.status)
         }
         destructive
         onClick={deleteJobModal.onOpen}

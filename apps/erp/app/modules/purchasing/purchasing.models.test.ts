@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canCreatePurchaseOrderRevision,
+  isPurchaseOrderBulkDeletable,
   isPurchaseOrderLocked,
   leaseDetailsValidator,
   leaseDurationOf,
@@ -437,6 +438,18 @@ describe("lease action validators", () => {
     ]
   ])("refuses %s", (_, result) => {
     expect(result.success).toBe(false);
+  });
+});
+
+describe("isPurchaseOrderBulkDeletable", () => {
+  it("accepts Draft and Planned only", () => {
+    expect(isPurchaseOrderBulkDeletable("Draft")).toBe(true);
+    expect(isPurchaseOrderBulkDeletable("Planned")).toBe(true);
+    for (const status of purchaseOrderStatusType) {
+      if (status === "Draft" || status === "Planned") continue;
+      expect(isPurchaseOrderBulkDeletable(status)).toBe(false);
+    }
+    expect(isPurchaseOrderBulkDeletable(null)).toBe(false);
   });
 });
 

@@ -32,6 +32,8 @@ import JournalEntryStatus from "../JournalEntries/JournalEntryStatus";
 type GeneralLedgerTableProps = {
   data: GeneralLedgerRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   accounts: { id: string; number: string | null; name: string | null }[];
   currencyCode: string;
 };
@@ -61,7 +63,13 @@ function creditOf(line: GeneralLedgerRow) {
 }
 
 const GeneralLedgerTable = memo(
-  ({ data, count, accounts, currencyCode }: GeneralLedgerTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    accounts,
+    currencyCode
+  }: GeneralLedgerTableProps) => {
     const { t } = useLingui();
     const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
 
@@ -102,10 +110,12 @@ const GeneralLedgerTable = memo(
           accessorKey: "accountId",
           header: t`Account`,
           cell: ({ row }) => accountLabel(row.original) || "—",
+          // The journal line view has no account number to sort by, and
+          // sorting by accountId would order by the id, not the number
+          enableSorting: false,
           meta: {
             mobile: "P3",
             icon: <LuLandmark />,
-            sortBy: "account.number",
             exportValue: accountLabel,
             filter: {
               type: "static",
@@ -227,6 +237,7 @@ const GeneralLedgerTable = memo(
         data={data}
         columns={columns}
         count={count}
+        infinite={{ dataKey: "lines", nextCursor }}
         defaultColumnVisibility={defaultColumnVisibility}
         title={t`General Ledger`}
         // The page's Download exports every line of the period, not one page

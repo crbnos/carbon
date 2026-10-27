@@ -10,6 +10,7 @@ import { LuBookMarked, LuCode, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -19,10 +20,11 @@ import type { UnitOfMeasure } from "../../types";
 type UnitOfMeasuresTableProps = {
   data: UnitOfMeasure[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const UnitOfMeasuresTable = memo(
-  ({ data, count }: UnitOfMeasuresTableProps) => {
+  ({ data, count, infinite }: UnitOfMeasuresTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -95,6 +97,7 @@ const UnitOfMeasuresTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         importCSV={[

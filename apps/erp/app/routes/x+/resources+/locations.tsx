@@ -2,19 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getLocations } from "~/modules/resources/resources.service";
 import { LocationsTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { locationsList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Locations`,
@@ -22,45 +18,22 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee",
-    bypassRls: true
+  return loadListPage(request, locationsList, {
+    dataKey: "locations",
+    bypassRls: true,
+    onError: {
+      redirectTo: path.to.resources,
+      message: "Failed to load locations"
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const locations = await getLocations(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  if (locations.error) {
-    throw redirect(
-      path.to.resources,
-      await flash(request, error(locations.error, "Failed to load locations"))
-    );
-  }
-
-  return {
-    locations: locations.data ?? [],
-    count: locations.count ?? 0
-  };
 }
 
 export default function LocationsRoute() {
-  const { locations, count } = useLoaderData<typeof loader>();
+  const { locations, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <LocationsTable data={locations} count={count} />
+      <LocationsTable data={locations} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

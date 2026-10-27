@@ -7,6 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { operationTypes } from "~/modules/shared/shared.models";
 import { useParts, useTools } from "~/stores";
 import type { MethodOperation } from "../../types";
@@ -15,10 +16,11 @@ import { getPathToMakeMethod } from "./utils";
 type MethodOperationsTableProps = {
   data: MethodOperation[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const MethodOperationsTable = memo(
-  ({ data, count }: MethodOperationsTableProps) => {
+  ({ data, count, infinite }: MethodOperationsTableProps) => {
     const { t } = useLingui();
     const parts = useParts();
     const tools = useTools();
@@ -109,6 +111,7 @@ const MethodOperationsTable = memo(
         count={count}
         columns={columns}
         data={data}
+        infinite={infinite}
         title={t`Method Operations`}
       />
     );

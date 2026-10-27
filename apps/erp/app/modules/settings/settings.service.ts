@@ -284,8 +284,8 @@ import * as sharedService from "~/modules/shared/shared.service";
 import { getPermissionCacheKey } from "~/modules/users/users.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
@@ -335,6 +335,26 @@ export async function deleteSubsidiary(
   return client.from("company").delete().eq("id", companyId);
 }
 
+// The key hash never leaves the server.
+export async function getApiKey(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("apiKey")
+    .select(
+      "id, name, expiresAt, scopes, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const API_KEYS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
 export async function getApiKeys(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -342,7 +362,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -350,9 +370,7 @@ export async function getApiKeys(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, API_KEYS_PAGING);
   }
 
   return query;
@@ -550,6 +568,12 @@ export async function getCustomFields(
     .single();
 }
 
+// The `customFieldTables` view has no `id`; one row is one table.
+export const CUSTOM_FIELD_TABLES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }],
+  idColumn: "table"
+};
+
 export async function getCustomFieldsTables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -560,7 +584,7 @@ export async function getCustomFieldsTables(
   let query = client
     .from("customFieldTables")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -568,9 +592,7 @@ export async function getCustomFieldsTables(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CUSTOM_FIELD_TABLES_PAGING);
   return query;
 }
 
@@ -680,6 +702,10 @@ export async function getSequence(
     .single();
 }
 
+export const SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -690,7 +716,7 @@ export async function getSequences(
   let query = client
     .from("sequence")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -698,9 +724,7 @@ export async function getSequences(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SEQUENCES_PAGING);
   return query;
 }
 
@@ -717,6 +741,10 @@ export async function getSequencesList(
     .order("table");
 }
 
+export const ITEM_SERIAL_SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "itemReadableId", ascending: true }]
+};
+
 export async function getItemSerialSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -727,7 +755,7 @@ export async function getItemSerialSequences(
   let query = client
     .from("itemSerialSequences")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -735,9 +763,7 @@ export async function getItemSerialSequences(
     query = query.or(searchFilter(["itemReadableId", "itemName"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "itemReadableId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, ITEM_SERIAL_SEQUENCES_PAGING);
   return query;
 }
 
@@ -1090,6 +1116,10 @@ export async function getWebhook(client: SupabaseClient<Database>, id: string) {
   return client.from("webhook").select("*").eq("id", id).single();
 }
 
+export const WEBHOOKS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
 export async function getWebhooks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1098,7 +1128,7 @@ export async function getWebhooks(
   let query = client
     .from("webhook")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1107,9 +1137,7 @@ export async function getWebhooks(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, WEBHOOKS_PAGING);
   }
 
   return query;
@@ -3083,6 +3111,28 @@ export async function getSyncOperationReadableIds(
   );
 
   return Object.fromEntries(results.flat());
+}
+
+/**
+ * Each operation with its `reference` (`getSyncOperationReadableIds`), or
+ * null when it has none. Every page of the Sync Activity tab carries its own.
+ */
+export async function withSyncOperationReferences<
+  T extends SyncOperationReference
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operations: T[]
+): Promise<(T & { reference: { label: string; recordId: string } | null })[]> {
+  const readableIds = await getSyncOperationReadableIds(
+    client,
+    companyId,
+    operations
+  );
+  return operations.map((operation) => ({
+    ...operation,
+    reference: readableIds[syncOperationReadableIdKey(operation)] ?? null
+  }));
 }
 
 /** One provider analytics target with its selectable option values. */

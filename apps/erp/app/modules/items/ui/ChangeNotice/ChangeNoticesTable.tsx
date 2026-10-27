@@ -29,6 +29,7 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useRealtime } from "~/hooks/useRealtime";
@@ -50,6 +51,7 @@ type ChangeNoticesTableProps = {
   data: ChangeNoticeListItem[];
   types: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 // One entry of the changeOrders view's `affectedItems` jsonb rollup — enough to
@@ -63,7 +65,7 @@ type AffectedItemSummary = {
 };
 
 const ChangeNoticesTable = memo(
-  ({ data, types, count }: ChangeNoticesTableProps) => {
+  ({ data, types, count, infinite }: ChangeNoticesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -321,6 +323,7 @@ const ChangeNoticesTable = memo(
       <>
         <Table<ChangeNoticeListItem>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={

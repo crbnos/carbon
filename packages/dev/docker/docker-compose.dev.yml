@@ -407,7 +407,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_INNGEST:-256m}
+          memory: ${MEM_INNGEST:-1g}
           cpus: ${CPU_INNGEST:-0.5}
     ports:
       - "${PORT_INNGEST}:8288"

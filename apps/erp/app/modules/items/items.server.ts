@@ -20,7 +20,12 @@ import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime, isUniqueViolation, pluckUnique } from "@carbon/utils";
+import {
+  chunkArray,
+  datetime,
+  isUniqueViolation,
+  pluckUnique
+} from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
 import { replanAfterItemChange } from "~/modules/production/production.server";
@@ -49,6 +54,7 @@ import {
   changeNoticeValidator,
   deriveItemMethodUpdate,
   getMethodValidator,
+  itemBulkUpdateValidator,
   itemManufacturingValidator,
   itemPlanningValidator,
   itemReplenishmentSystems,
@@ -332,6 +338,69 @@ export const setItemPostingGroup = defineServiceFn({
       }
     }
     return { ids };
+  }
+});
+
+/**
+ * Set one field on many items.
+ *
+ * @remarks
+ * The items tables' Update and its background job. 100 items at a time, each
+ * through the field's own operation (`setItemTrackingType`, `setItemSourcing`,
+ * `setItemPostingGroup`), so the value is checked and the cascades run as for
+ * one item. Ids that are not the company's items are skipped. A chunk commits
+ * on its own: when one fails, the chunks before it stay applied.
+ *
+ * @returns `done` (items updated) and `skipped` (ids that are not the company's items).
+ */
+export const updateItems = defineServiceFn({
+  input: z.object({ ids: itemIdsInput, change: itemBulkUpdateValidator }),
+  permission: { update: "parts" },
+
+  async run(ctx, { ids, change }) {
+    const unique = [...new Set(ids)];
+    let done = 0;
+    for (const chunk of chunkArray(unique, 100)) {
+      // The item group write inserts a cost row for each id, so keep only the
+      // company's own items.
+      const items = await ctx.asCaller.supabase
+        .from("item")
+        .select("id")
+        .in("id", chunk)
+        .eq("companyId", ctx.company.id);
+      if (items.error) {
+        return ctx.error("internal", "Failed to read the items", items.error);
+      }
+      const owned = items.data.map((item) => item.id);
+      if (owned.length === 0) continue;
+
+      const update =
+        change.field === "itemTrackingType"
+          ? await setItemTrackingType(ctx, {
+              ids: owned,
+              itemTrackingType: change.value
+            })
+          : change.field === "itemPostingGroupId"
+            ? await setItemPostingGroup(ctx, {
+                ids: owned,
+                itemPostingGroupId: change.value || null
+              })
+            : await setItemSourcing(ctx, {
+                ids: owned,
+                [change.field]: change.value
+              });
+      if (update.error) {
+        return done > 0
+          ? ctx.error(
+              "internal",
+              `Updated ${done} items, then the update failed: ${update.error.message}`,
+              update.error
+            )
+          : update.error;
+      }
+      done += owned.length;
+    }
+    return { done, skipped: unique.length - done };
   }
 });
 

@@ -91,7 +91,7 @@ row type (`AccountLedgerLine` in `types.ts`) — remove both once types regenera
   the existing `charts.$accountId` edit route). The three report parents gained `<Outlet />`.
 - Path helpers: `trialBalanceLedger`, `balanceSheetLedger`, `incomeStatementLedger`,
   `chartOfAccountsLedger`.
-- All four parents export `shouldRevalidate = revalidateIgnoringOffset`
+- All four parents export `shouldRevalidate = revalidateOnSearchChange`
   (`~/utils/revalidate.ts`): opening/closing the drawer and paging skip the expensive balance
   RPCs; period/company changes and mutations revalidate normally.
 

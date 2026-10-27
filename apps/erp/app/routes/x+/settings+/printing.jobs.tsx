@@ -5,6 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   getPrintJobs,
   type PrintJob,
@@ -23,8 +24,13 @@ import { useLoaderData, useNavigate } from "react-router";
 import { z } from "zod";
 import { useRealtime } from "~/hooks";
 import { PrintJobsTable } from "~/modules/settings/ui";
+import { decodeOffsetToken, encodeOffsetToken } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/load.server";
+import { PAGE_SIZE } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "printing-jobs");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -34,7 +40,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, filters } = getGenericQueryFilters(searchParams);
+  const { filters } = getGenericQueryFilters(searchParams);
+  // `getPrintJobs` pages by offset, so the `after` token holds the next offset.
+  const offset = decodeOffsetToken(searchParams.get("after"));
 
   const status = filters?.find((f) => f.column === "status")?.value;
   const origin = filters?.find((f) => f.column === "origin")?.value;
@@ -49,13 +57,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     sourceDocument,
     contentType,
     search,
-    limit,
+    // One extra row tells whether a next page exists.
+    limit: PAGE_SIZE + 1,
     offset
   });
 
+  if (result.error) {
+    logger.error("Failed to load print jobs", {
+      companyId,
+      offset,
+      error: result.error
+    });
+    if (offset > 0) return listErrorPage("jobs");
+  }
+
+  const jobs = (result.data ?? []) as PrintJob[];
   return {
-    jobs: (result.data ?? []) as PrintJob[],
-    count: result.count ?? 0
+    jobs: jobs.slice(0, PAGE_SIZE),
+    count: result.count ?? 0,
+    nextCursor:
+      jobs.length > PAGE_SIZE ? encodeOffsetToken(offset + PAGE_SIZE) : null
   };
 }
 
@@ -87,7 +108,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function PrintJobsRoute() {
-  const { jobs, count } = useLoaderData<typeof loader>();
+  const { jobs, count, nextCursor } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   useRealtime("printJob");
@@ -108,7 +129,7 @@ export default function PrintJobsRoute() {
           </DrawerTitle>
         </DrawerHeader>
         <DrawerBody className="p-0 max-md:p-0">
-          <PrintJobsTable jobs={jobs} count={count} />
+          <PrintJobsTable jobs={jobs} count={count} nextCursor={nextCursor} />
         </DrawerBody>
       </DrawerContent>
     </Drawer>

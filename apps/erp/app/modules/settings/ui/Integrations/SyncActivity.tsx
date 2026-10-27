@@ -35,8 +35,6 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuArrowDownLeft,
   LuArrowUpRight,
-  LuChevronLeft,
-  LuChevronRight,
   LuCircleSlash,
   LuDownload,
   LuRefreshCw,
@@ -46,7 +44,11 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { InfiniteStatus } from "~/components/Table/components/InfiniteStatus";
+import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
+import { useInfiniteScroll } from "~/components/Table/useInfiniteScroll";
 import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import type { KeysetSort } from "~/utils/cursor";
 import { path } from "~/utils/path";
 
 /**
@@ -89,6 +91,13 @@ export type SyncActivityOperation = {
   createdAt: string;
   updatedBy: string | null;
   updatedAt: string | null;
+  /**
+   * The document number a human reads (`PO000001`) plus the CARBON row id
+   * to link to, resolved in the loader. Null on purpose for a pulled record
+   * that never landed a Carbon row: it has only the PROVIDER's remote id,
+   * and the row falls back to it.
+   */
+  reference: SyncOperationReference | null;
 };
 
 /**
@@ -122,17 +131,10 @@ type SyncActivityProps = {
   /** The integration whose activity this is — scopes the CSV export. */
   integrationId: string;
   operations: SyncActivityOperation[];
-  /**
-   * `entityType:entityId` -> the document number a human reads
-   * (`PO000001`) plus the CARBON row id to link to, resolved in the loader.
-   * Sparse on purpose: a pulled record that never landed a Carbon row has
-   * only the PROVIDER's remote id, and those rows fall back to it.
-   */
-  readableIds?: Record<string, SyncOperationReference>;
   count: number;
   status: SyncOperationStatus | null;
-  page: number;
-  pageSize: number;
+  /** The loader's cursor after the first page; null when it holds every row. */
+  nextCursor: string | null;
   /**
    * Latest reconciliation report from the integration's metadata
    * (settings.postingSync.lastReconciliation). Rendered as a warning
@@ -151,6 +153,14 @@ type SyncActivityProps = {
     cellCount: number;
   } | null;
 };
+
+/**
+ * The order the tab pages in: newest first, `id` ascending on ties. The
+ * cursor (`toPage`) follows it; `getSyncOperations` orders the same way.
+ */
+export const SYNC_ACTIVITY_SORTS: KeysetSort[] = [
+  { column: "createdAt", ascending: false }
+];
 
 const STATUS_FILTERS: SyncOperationStatus[] = [
   "Pending",
@@ -230,18 +240,18 @@ type SyncOperationReference = { label: string; recordId: string };
  * number and the Carbon row when the loader resolved one, else the raw id
  * it stored.
  */
-function getEntityReference(
-  operation: SyncActivityOperation,
-  readableIds: Record<string, SyncOperationReference> | undefined
-): { label: string; isReadable: boolean; path: string | null } {
-  const resolved =
-    readableIds?.[`${operation.entityType}:${operation.entityId}`];
+function getEntityReference(operation: SyncActivityOperation): {
+  label: string;
+  isReadable: boolean;
+  path: string | null;
+} {
+  const resolved = operation.reference;
   const pathFn = ENTITY_PATHS[operation.entityType];
   const recordId = resolved?.recordId ?? operation.entityId;
 
   return {
     label: resolved?.label ?? operation.entityId,
-    isReadable: resolved !== undefined,
+    isReadable: resolved !== null,
     path: pathFn ? pathFn(recordId) : null
   };
 }
@@ -274,11 +284,9 @@ export function SyncActivity({
   tabs,
   integrationId,
   operations,
-  readableIds,
   count,
   status,
-  page,
-  pageSize,
+  nextCursor,
   lastReconciliation,
   tieOut
 }: SyncActivityProps) {
@@ -331,45 +339,43 @@ export function SyncActivity({
 
   const setStatusFilter = useCallback(
     (nextStatus: SyncOperationStatus | null) => {
-      setParams({
-        syncStatus: nextStatus ?? undefined,
-        syncPage: undefined
-      });
+      setParams({ syncStatus: nextStatus ?? undefined });
     },
     [setParams]
   );
 
-  const setPage = useCallback(
-    (nextPage: number) => {
-      setParams({
-        syncPage: nextPage > 1 ? String(nextPage) : undefined
-      });
-    },
-    [setParams]
-  );
+  // The first page comes from the loader; later pages load from the API
+  // route as the drawer body scrolls to the end of the table.
+  const syncRows = useInfiniteRows({
+    initialRows: operations,
+    infinite: {
+      dataKey: "operations",
+      nextCursor,
+      pageUrl: path.to.api.integrationSyncActivity(integrationId, status),
+      ignoreParams: ["tab"]
+    }
+  });
+  const { rows, hasMore, loadError, retry } = syncRows;
+  const endRef = useInfiniteScroll(syncRows, { root: "auto" });
 
   // Keep the detail drawer in sync with revalidated data: after a
   // transition the row's status updates (or the row leaves the current
   // filter, closing the drawer).
   const selectedOperation = useMemo(
-    () => operations.find((operation) => operation.id === selectedId) ?? null,
-    [operations, selectedId]
+    () => rows.find((operation) => operation.id === selectedId) ?? null,
+    [rows, selectedId]
   );
 
   const retryableIds = useMemo(
     () =>
-      operations
+      rows
         .filter(
           (operation) =>
             operation.status === "Failed" || operation.status === "Warning"
         )
         .map((operation) => operation.id),
-    [operations]
+    [rows]
   );
-
-  const totalPages = Math.max(1, Math.ceil(count / pageSize));
-  const from = count === 0 ? 0 : (page - 1) * pageSize + 1;
-  const to = Math.min(count, (page - 1) * pageSize + operations.length);
 
   return (
     <>
@@ -452,7 +458,7 @@ export function SyncActivity({
         </div>
 
         <div className="w-full rounded-lg border border-border">
-          {operations.length === 0 ? (
+          {rows.length === 0 ? (
             <div className="flex w-full items-center justify-center py-16 text-sm text-muted-foreground">
               {status ? (
                 <Trans>No {status.toLowerCase()} sync operations</Trans>
@@ -489,12 +495,9 @@ export function SyncActivity({
                 </Tr>
               </Thead>
               <Tbody>
-                {operations.map((operation) => {
+                {rows.map((operation) => {
                   const transitions = getAvailableTransitions(operation.status);
-                  const entityReference = getEntityReference(
-                    operation,
-                    readableIds
-                  );
+                  const entityReference = getEntityReference(operation);
                   return (
                     <Tr
                       key={operation.id}
@@ -644,40 +647,31 @@ export function SyncActivity({
           )}
         </div>
 
-        <div className="flex w-full items-center justify-between">
+        <div
+          ref={endRef}
+          className="flex w-full items-center justify-between gap-3"
+        >
+          <div>
+            <InfiniteStatus
+              isLoading={hasMore}
+              loadError={loadError}
+              onRetry={retry}
+            />
+          </div>
           <p className="text-xs text-muted-foreground tabular-nums">
             {count === 0 ? (
               <Trans>0 operations</Trans>
             ) : (
               <Trans>
-                {from}–{to} of {count} operations
+                {rows.length} of {count} operations
               </Trans>
             )}
           </p>
-          <div className="flex items-center gap-1">
-            <IconButton
-              aria-label={t`Previous page`}
-              variant="ghost"
-              size="sm"
-              icon={<LuChevronLeft />}
-              isDisabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-            />
-            <IconButton
-              aria-label={t`Next page`}
-              variant="ghost"
-              size="sm"
-              icon={<LuChevronRight />}
-              isDisabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
-            />
-          </div>
         </div>
       </DrawerBody>
 
       <SyncOperationDetailDrawer
         operation={selectedOperation}
-        readableIds={readableIds}
         canUpdate={canUpdate}
         isTransitioning={isTransitioning}
         onTransition={submitTransition}
@@ -884,14 +878,12 @@ function Detail({
 
 function SyncOperationDetailDrawer({
   operation,
-  readableIds,
   canUpdate,
   isTransitioning,
   onTransition,
   onClose
 }: {
   operation: SyncActivityOperation | null;
-  readableIds?: Record<string, SyncOperationReference>;
   canUpdate: boolean;
   isTransitioning: boolean;
   onTransition: (ids: string[], to: "Pending" | "Skipped") => void;
@@ -903,7 +895,7 @@ function SyncOperationDetailDrawer({
   if (!operation) return null;
 
   const transitions = getAvailableTransitions(operation.status);
-  const entityReference = getEntityReference(operation, readableIds);
+  const entityReference = getEntityReference(operation);
   const hasMetadata =
     operation.metadata && Object.keys(operation.metadata).length > 0;
 
