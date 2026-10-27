@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Spinner } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { CarbonPulse } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 /**
  * Shown from the moment a scan is accepted until its page or action finishes.
@@ -11,15 +11,12 @@ import { Trans } from "@lingui/react/macro";
  * screen does not change for seconds: operators scanned it again.
  */
 export function ScanPendingOverlay() {
+  const { t } = useLingui();
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-8 py-6 shadow-lg">
-        <Spinner size={32} />
-        <p className="text-lg font-medium">
+        <CarbonPulse label={t`Scan received`} />
+        <p className="text-lg font-medium" aria-hidden>
           <Trans>Scan received</Trans>
         </p>
         <p className="text-sm text-muted-foreground">
