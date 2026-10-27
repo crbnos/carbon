@@ -33,6 +33,13 @@ const emptyWeb = (): WebRefs => ({ spokes: null, rings: null, torn: null });
 // child of the card, the MES's header a child of the page inside it.
 const BAR_SEARCH_DEPTH = 3;
 
+const EVERYWHERE: Obstacle = {
+  left: Number.NEGATIVE_INFINITY,
+  top: Number.NEGATIVE_INFINITY,
+  right: Number.POSITIVE_INFINITY,
+  bottom: Number.POSITIVE_INFINITY
+};
+
 /**
  * The top bar is the element in the layer's card, nearest the card, that
  * starts where the layer does and is as tall. Everything on it you can see
@@ -151,7 +158,9 @@ export function BarSpider({
       if (!layer) return;
       s?.layout(layer.getBoundingClientRect());
       const found = measureBar(layer);
-      s?.setObstacles(found?.obstacles ?? []);
+      // No bar found means nothing known to stay clear of: block the whole
+      // layer, or the spider would take clicks meant for whatever is under it.
+      s?.setObstacles(found?.obstacles ?? [EVERYWHERE]);
       if (!found || found.bar === watched) return;
       barResized.disconnect();
       barChanged.disconnect();

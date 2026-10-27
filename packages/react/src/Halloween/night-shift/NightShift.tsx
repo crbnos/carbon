@@ -202,13 +202,16 @@ export default function NightShift() {
 
     const tick = (now: number) => {
       if (disposed) return;
-      frameId = window.requestAnimationFrame(tick);
       const delta = now - last;
-      if (delta < 1000 / FPS - 2) return;
-      last = now;
-      // A hidden tab gets no frames; pick the story up where it was.
-      clock += Math.min(delta, 250) / 1000;
-      draw();
+      if (delta >= 1000 / FPS - 2) {
+        last = now;
+        // A hidden tab gets no frames; pick the story up where it was.
+        clock += Math.min(delta, 250) / 1000;
+        draw();
+      }
+      // Asked for after the draw: a frame that throws ends the loop instead
+      // of throwing again on every frame.
+      frameId = window.requestAnimationFrame(tick);
     };
 
     const redraw = () => {

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getLogger } from "@carbon/logger";
 import { AnimatePresence } from "motion/react";
 import { lazy, Suspense, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
@@ -13,11 +14,15 @@ import { BatFlyby, SuccessBats } from "./Visitors";
 // The app shell's decorations. Its own chunk, loaded by `HalloweenLayer` only
 // while the theme is on, so the rest of the year no shell downloads it.
 
+const log = getLogger("react", "halloween");
+
 const loadReveal = () => import("./HalloweenReveal");
 const HalloweenReveal = lazy(loadReveal);
 
 function preloadReveal() {
-  void loadReveal();
+  loadReveal().catch((error) => {
+    log.error("Halloween reveal failed to preload", { error });
+  });
 }
 
 export default function Decorations() {
