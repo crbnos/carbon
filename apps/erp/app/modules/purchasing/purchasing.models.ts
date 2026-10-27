@@ -1280,7 +1280,7 @@ function isOnOrAfter(later: string, earlier: string): boolean {
 
 /** A real calendar date written `YYYY-MM-DD` — what a DATE column takes and
  *  what the lease's month arithmetic parses. */
-function isIsoDate(value: string): boolean {
+export function isIsoDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   try {
     return parseDate(value).toString() === value;

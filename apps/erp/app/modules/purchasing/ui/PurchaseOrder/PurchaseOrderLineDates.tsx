@@ -41,18 +41,24 @@ type LineDates = {
 
 type OrderStatus = Pick<PurchaseOrder, "status">;
 
-/** Saves one line date; a refusal is toasted. */
+/**
+ * Saves one line date; a refusal is toasted. `failures` counts refused saves:
+ * a control keys on it, so it drops the date it was showing and shows the
+ * saved one again.
+ */
 export function useSavePurchaseOrderLineDate(line: {
   id: string;
   purchaseOrderId: string;
 }) {
+  const [failures, setFailures] = useState(0);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       if (data?.error) toast.error(data.error.message);
+      setFailures((count) => count + 1);
     }
   });
 
-  return (field: PurchaseOrderLineDateField, value: string | null) => {
+  const save = (field: PurchaseOrderLineDateField, value: string | null) => {
     const formData = new FormData();
     formData.append("field", field);
     formData.append("value", value ?? "");
@@ -61,6 +67,8 @@ export function useSavePurchaseOrderLineDate(line: {
       action: path.to.purchaseOrderLineDate(line.purchaseOrderId, line.id)
     });
   };
+
+  return { save, failures };
 }
 
 /** The line's promised date on the order summary, editable in place. */
@@ -74,7 +82,7 @@ export function PurchaseOrderLinePromisedDate({
   order: OrderStatus | undefined;
 }) {
   const permissions = usePermissions();
-  const save = useSavePurchaseOrderLineDate(line);
+  const { save, failures } = useSavePurchaseOrderLineDate(line);
   const value = line.promisedDate;
   const isDisabled =
     !permissions.can("update", "purchasing") ||
@@ -94,7 +102,7 @@ export function PurchaseOrderLinePromisedDate({
         <Trans>Promised</Trans>
       </span>
       <DatePill
-        key={value ?? ""}
+        key={`${value ?? ""}:${failures}`}
         value={value}
         isDisabled={isDisabled}
         onChange={(date) => {
@@ -184,7 +192,7 @@ export function PurchaseOrderLineDateFields({
   const { t } = useLingui();
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "purchasing");
-  const save = useSavePurchaseOrderLineDate(line);
+  const { save, failures } = useSavePurchaseOrderLineDate(line);
   const fields: {
     field: PurchaseOrderLineDateField;
     label: string;
@@ -209,7 +217,7 @@ export function PurchaseOrderLineDateFields({
         });
         return (
           <LineDateField
-            key={`${field}:${value ?? ""}`}
+            key={`${field}:${value ?? ""}:${failures}`}
             label={label}
             termId={termId}
             value={value}

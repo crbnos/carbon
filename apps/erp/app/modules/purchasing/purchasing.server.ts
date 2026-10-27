@@ -79,6 +79,7 @@ import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
   findPlanningPurchaseOrder,
+  isIsoDate,
   isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
@@ -1983,10 +1984,7 @@ export const updatePurchaseOrderLineDate = defineServiceFn({
   input: z.object({
     lineId: z.string().min(1),
     field: z.enum(purchaseOrderLineDateFields),
-    value: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
-      .nullable()
+    value: z.string().refine(isIsoDate, "Use a YYYY-MM-DD date").nullable()
   }),
   permission: { update: "purchasing" },
 
