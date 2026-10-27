@@ -12169,7 +12169,7 @@ type RevaluationRate = { rate: number; rateSource: RevaluationRateSource };
 
 /** The four account defaults a revaluation run posts to. Refuses with the
  *  names of the missing ones. */
-async function readRevaluationDefaults(
+export async function readRevaluationDefaults(
   db: Kysely<KyselyDatabase>,
   companyId: string
 ): Promise<{
@@ -12289,6 +12289,34 @@ function revaluationLineKey(line: {
     line.accountId,
     line.currencyCode
   ].join("|");
+}
+
+type RevaluationLineValues = {
+  exposureType: string;
+  documentId: string | null;
+  accountId: string;
+  currencyCode: string;
+  openAmount: number | null;
+  bookedBaseAmount: number;
+  differenceAmount: number | null;
+};
+
+/** One string for a set of lines: equal when every line has the same key,
+ *  open amount, booked amount and difference. Order does not matter. */
+function revaluationLinesSignature(lines: RevaluationLineValues[]): string {
+  return lines
+    .map((line) =>
+      [
+        revaluationLineKey(line),
+        line.openAmount === null ? "" : round(Number(line.openAmount)),
+        round(Number(line.bookedBaseAmount)),
+        line.differenceAmount === null
+          ? ""
+          : round(Number(line.differenceAmount))
+      ].join("|")
+    )
+    .sort()
+    .join("\n");
 }
 
 /**
@@ -12464,26 +12492,8 @@ export async function recalculateCurrencyRevaluationRun(
       .where("runId", "=", runId)
       .where("companyId", "=", companyId)
       .execute();
-    const signature = (line: {
-      exposureType: string;
-      documentId: string | null;
-      accountId: string;
-      currencyCode: string;
-      openAmount: number | null;
-      bookedBaseAmount: number;
-      differenceAmount: number | null;
-    }) =>
-      [
-        revaluationLineKey(line),
-        line.openAmount === null ? "" : round(Number(line.openAmount)),
-        round(Number(line.bookedBaseAmount)),
-        line.differenceAmount === null
-          ? ""
-          : round(Number(line.differenceAmount))
-      ].join("|");
-    const before = previous.map(signature).sort().join("\n");
-    const after = lines.map(signature).sort().join("\n");
-    const changed = before !== after;
+    const changed =
+      revaluationLinesSignature(previous) !== revaluationLinesSignature(lines);
 
     if (changed) {
       await trx
@@ -12824,6 +12834,170 @@ export async function reverseCurrencyRevaluationRun(
       .execute();
     return { readableId: run.currencyRevaluationRunId };
   });
+}
+
+/**
+ * Whether a run's stored lines still match the exposures open at its period
+ * end, revalued at its stored rates. Entered statement balances (Account
+ * Balance lines) count as stored. Post and the close checklist both ask.
+ */
+export async function isCurrencyRevaluationRunCurrent(
+  db: Kysely<KyselyDatabase>,
+  args: { runId: string; companyId: string }
+): Promise<boolean> {
+  const { runId, companyId } = args;
+  const run = await db
+    .selectFrom("currencyRevaluationRun")
+    .select(sql<string>`"periodEnd"::text`.as("periodEnd"))
+    .where("id", "=", runId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const [defaults, storedRates, stored] = await Promise.all([
+    readRevaluationDefaults(db, companyId),
+    db
+      .selectFrom("currencyRevaluationRate")
+      .select(["currencyCode", "rate", "rateSource"])
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("currencyRevaluationLine")
+      .select([
+        "exposureType",
+        "documentId",
+        "accountId",
+        "currencyCode",
+        "openAmount",
+        "bookedBaseAmount",
+        "differenceAmount"
+      ])
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+  const { exposures } = await readRevaluationExposures(db, {
+    companyId,
+    periodEnd: run.periodEnd,
+    defaults
+  });
+  const rates = new Map<string, RevaluationRate>(
+    storedRates.map((row) => [
+      row.currencyCode,
+      {
+        rate: Number(row.rate),
+        rateSource: row.rateSource as RevaluationRateSource
+      }
+    ])
+  );
+  if (exposures.some((exposure) => !rates.has(exposure.currencyCode))) {
+    return false;
+  }
+  return (
+    revaluationLinesSignature(stored) ===
+    revaluationLinesSignature(revalueAll(exposures, rates))
+  );
+}
+
+/** The periods a revaluation run posts into: its period end, and the day
+ *  after for the reversal. Resolved before the posting transaction. */
+export async function resolveRevaluationPeriods(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  periodEnd: string
+): Promise<
+  | {
+      data: {
+        valuationPeriod: { accountingPeriodId: string; postingDate: string };
+        reversalPeriod: { accountingPeriodId: string; postingDate: string };
+      };
+      error: null;
+    }
+  | { data: null; error: { message: string } }
+> {
+  const reversalDate = parseDate(periodEnd).add({ days: 1 }).toString();
+  const [valuation, reversal] = await Promise.all([
+    getOrCreateAccountingPeriod(client, companyId, periodEnd, "accounting"),
+    getOrCreateAccountingPeriod(client, companyId, reversalDate, "accounting")
+  ]);
+  if (valuation.error || !valuation.data) {
+    return {
+      data: null,
+      error: valuation.error ?? {
+        message: `No accounting period for ${periodEnd}`
+      }
+    };
+  }
+  if (reversal.error || !reversal.data) {
+    return {
+      data: null,
+      error: reversal.error ?? {
+        message: `No accounting period for ${reversalDate}`
+      }
+    };
+  }
+  return {
+    data: {
+      valuationPeriod: {
+        accountingPeriodId: valuation.data,
+        postingDate: periodEnd
+      },
+      reversalPeriod: {
+        accountingPeriodId: reversal.data,
+        postingDate: reversalDate
+      }
+    },
+    error: null
+  };
+}
+
+/** A Draft revaluation run for `periodEnd`, unless the month has not started
+ *  or the period already has a run. Shared by New Run and the period close. */
+export async function createCurrencyRevaluationRunAt(
+  ctx: ServiceContext,
+  periodEnd: string
+) {
+  const client = ctx.asCaller.supabase;
+  const futureError = await futureRunPeriodError(
+    client,
+    ctx.company.id,
+    periodEnd
+  );
+  if (futureError) return ctx.error("rule", futureError);
+
+  // One run per period end: Undo returns a posted run to Draft.
+  const existing = await client
+    .from("currencyRevaluationRun")
+    .select("id, currencyRevaluationRunId, status")
+    .eq("periodEnd", periodEnd)
+    .eq("companyId", ctx.company.id)
+    .limit(1)
+    .maybeSingle();
+  if (existing.error) {
+    return ctx.error(
+      "internal",
+      "Failed to load revaluation runs",
+      existing.error
+    );
+  }
+  if (existing.data) {
+    return ctx.error(
+      "conflict",
+      existing.data.status === "Draft"
+        ? `${existing.data.currencyRevaluationRunId} is already a draft for this period. Recalculate it instead.`
+        : `${existing.data.currencyRevaluationRunId} is already posted for this period. Undo it to change it.`,
+      { draftRunId: existing.data.id }
+    );
+  }
+
+  try {
+    return await createCurrencyRevaluationRun(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      periodEnd,
+      userId: ctx.auditUserId
+    });
+  } catch (err) {
+    return refusal(ctx, err, "Failed to create currency revaluation run");
+  }
 }
 
 /** Delete a Draft run; its rates and lines cascade. */
