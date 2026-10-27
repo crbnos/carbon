@@ -93,6 +93,12 @@ export default function useAccountingSubmodules() {
             icon: <LuClock />
           },
           {
+            name: t`Currency Revaluation`,
+            to: path.to.currencyRevaluationRuns,
+            role: "employee",
+            icon: <LuArrowLeftRight />
+          },
+          {
             name: t`Leases`,
             to: path.to.leaseRuns,
             role: "employee",

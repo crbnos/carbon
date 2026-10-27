@@ -11,6 +11,7 @@ import type {
   getCostCenters,
   getCostCentersTree,
   getCurrencies,
+  getCurrencyRevaluationRuns,
   getDimension,
   getDimensionPivot,
   getDimensionPivotLines,
@@ -557,6 +558,10 @@ export type DepreciationRun = NonNullable<
 
 export type DepreciationRunListItem = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getDepreciationRuns>>>["data"]
+>[number];
+
+export type CurrencyRevaluationRunListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getCurrencyRevaluationRuns>>>["data"]
 >[number];
 
 export type DepreciationRunLineItem = NonNullable<

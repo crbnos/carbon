@@ -6324,7 +6324,8 @@ export type JournalSourceDocument = {
     | "memo"
     | "depreciationRun"
     | "revenueRecognitionRun"
-    | "leaseRun";
+    | "leaseRun"
+    | "currencyRevaluationRun";
   id: string;
   readableId: string;
 };
@@ -6731,6 +6732,22 @@ export async function getJournalEntryRelatedItems(
               readableId: runId
             }));
           })
+      : none,
+    // A revaluation run stores both journals it posts: the valuation at the
+    // period end and its next-day reversal.
+    journal.sourceType === "Currency Revaluation"
+      ? client
+          .from("currencyRevaluationRun")
+          .select("id, currencyRevaluationRunId")
+          .or(`journalId.eq.${journal.id},reversalJournalId.eq.${journal.id}`)
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "currencyRevaluationRun" as const,
+              id: r.id,
+              readableId: r.currencyRevaluationRunId
+            }))
+          )
       : none
   ];
 
@@ -12072,30 +12089,11 @@ export async function readRevaluationExposures(
   ];
 
   // The readers drop a memo with a legacy settlement entirely; list it.
-  const notRevalued = await db
-    .selectFrom("memo")
-    .select(["id", "memoId", "direction"])
-    .where("companyId", "=", companyId)
-    .where("status", "=", "Posted")
-    .where("currencyCode", "<>", base)
-    .where("postingDate", "<=", periodEnd)
-    .where((eb) =>
-      eb.exists(
-        eb
-          .selectFrom("invoiceSettlement as s")
-          .select("s.id")
-          .where("s.companyId", "=", companyId)
-          .where("s.sourceAmount", "is", null)
-          .where((inner) =>
-            inner.or([
-              inner("s.memoId", "=", eb.ref("memo.id")),
-              inner("s.targetMemoId", "=", eb.ref("memo.id"))
-            ])
-          )
-      )
-    )
-    .orderBy("memoId")
-    .execute();
+  const notRevalued = await listRevaluationNotRevalued(db, {
+    companyId,
+    periodEnd,
+    baseCurrencyCode: base
+  });
 
   // Unapplied cash: customer receipts (not deposits) and supplier
   // disbursements in a foreign currency.
@@ -12215,14 +12213,57 @@ export async function readRevaluationExposures(
     }
   }
 
-  return {
-    exposures,
-    notRevalued: notRevalued.map((memo) => ({
-      documentType: `${memo.direction} Memo`,
-      documentId: memo.id,
-      documentNumber: memo.memoId
-    }))
-  };
+  return { exposures, notRevalued };
+}
+
+/**
+ * The Posted foreign-currency memos dated on or before `periodEnd` that have a
+ * settlement with no `sourceAmount`. The subledger readers drop them, so the
+ * revaluation run cannot revalue them; its page lists them instead.
+ */
+export async function listRevaluationNotRevalued(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodEnd: string; baseCurrencyCode?: string }
+): Promise<NotRevaluedDocument[]> {
+  const { companyId, periodEnd } = args;
+  const base =
+    args.baseCurrencyCode ??
+    (
+      await db
+        .selectFrom("company")
+        .select("baseCurrencyCode")
+        .where("id", "=", companyId)
+        .executeTakeFirstOrThrow()
+    ).baseCurrencyCode;
+  const memos = await db
+    .selectFrom("memo")
+    .select(["id", "memoId", "direction"])
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Posted")
+    .where("currencyCode", "<>", base)
+    .where("postingDate", "<=", periodEnd)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("invoiceSettlement as s")
+          .select("s.id")
+          .where("s.companyId", "=", companyId)
+          .where("s.sourceAmount", "is", null)
+          .where((inner) =>
+            inner.or([
+              inner("s.memoId", "=", eb.ref("memo.id")),
+              inner("s.targetMemoId", "=", eb.ref("memo.id"))
+            ])
+          )
+      )
+    )
+    .orderBy("memoId")
+    .execute();
+  return memos.map((memo) => ({
+    documentType: `${memo.direction} Memo`,
+    documentId: memo.id,
+    documentNumber: memo.memoId
+  }));
 }
 
 export type RevaluationRateSource = "Market" | "Override" | "Manual";
