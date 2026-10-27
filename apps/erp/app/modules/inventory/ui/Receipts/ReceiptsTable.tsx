@@ -36,6 +36,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import {
@@ -75,12 +76,11 @@ function NewReceipt() {
 type ReceiptsTableProps = {
   data: Receipt[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ReceiptsTable = memo((props: ReceiptsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   // The route's `handle.realtime` follows every receipt of the company, so
   // the rows of a later page refresh too.
 
@@ -396,7 +396,7 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
     <>
       <Table<(typeof data)[number]>
         data={data}
-        infinite={{ dataKey: "receipts", nextCursor, listKey: "receipts" }}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnPinning={{

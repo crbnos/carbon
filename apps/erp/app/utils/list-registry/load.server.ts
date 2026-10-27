@@ -7,7 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
-import type { InfiniteListError } from "~/components/Table/types";
+import type {
+  InfiniteListError,
+  InfiniteOptions
+} from "~/components/Table/types";
 import type { ListDefinition } from "./index.server";
 import { fetchListPage } from "./index.server";
 import { listErrorPage } from "./list-error";
@@ -26,13 +29,29 @@ export type ListLoaderContext = Awaited<
 };
 
 /** The loader data of a list page: the rows under `dataKey`, the count and
- *  the cursor, plus `listError` on a failed later page. */
+ *  the cursor, plus `listError` on a failed later page. Page 1 also carries
+ *  the Table's `infinite` prop, so a table never restates the list's keys. */
 export type ListLoaderData<TKey extends string, TRow> = {
   [K in TKey]: TRow[];
 } & {
   count: number;
   nextCursor: string | null;
+  infinite: InfiniteOptions;
 } & Partial<InfiniteListError>;
+
+/** The Table's `infinite` prop for a page of a registered list. */
+export function listInfinite(
+  list: Pick<ListDefinition, "key" | "idColumn">,
+  dataKey: string,
+  nextCursor: string | null
+): InfiniteOptions {
+  return {
+    dataKey,
+    nextCursor,
+    listKey: list.key,
+    ...(list.idColumn ? { idColumn: list.idColumn } : {})
+  };
+}
 
 export type LoadListPageOptions<
   TKey extends string,
@@ -62,9 +81,10 @@ export type LoadListPageOptions<
    */
   firstPage?: (context: ListLoaderContext) => Promise<TExtra> | TExtra;
   /**
-   * Adds per-row values the list's view does not have (a lookup in another
-   * table) to the rows of every page, so each page carries its own and the
-   * table needs no merge state. Runs after a page loads without an error.
+   * Adds per-row values only the screen needs (a download token) to the rows
+   * of every page, after the list's own `rows` lookup. A value a column
+   * exports belongs in the list's `rows`, which the background export runs
+   * too. Runs after a page loads without an error.
    */
   mapRows?: (rows: TRow[], context: ListLoaderContext) => Promise<TOut[]>;
   /**
@@ -81,8 +101,8 @@ export type LoadListPageOptions<
  * 1. `requirePermissions` with the list's permission (and `bypassRls`).
  * 2. `guard`, then `fetchListPage` for the URL's page (or `params`), with
  *    the user's company group.
- * 3. `firstPage` extras on page 1 only, in parallel with the page;
- *    `mapRows` on every page, after it.
+ * 3. `firstPage` extras on page 1 only, in parallel with the page; the
+ *    list's `rows` lookup, then `mapRows`, on every page after it.
  * 4. On an error: a later page returns `{ [dataKey]: [], nextCursor: null,
  *    listError }`; page 1 redirects with `onError`, or shows no rows.
  *
@@ -110,11 +130,12 @@ export async function loadListPage<
   TRow extends Record<string, unknown>,
   TKey extends string,
   TExtra extends Record<string, unknown> = Record<never, never>,
-  TOut = TRow
+  TListRow extends Record<string, unknown> = TRow,
+  TOut = TListRow
 >(
   request: Request,
-  list: ListDefinition<TRow>,
-  options: LoadListPageOptions<TKey, TExtra, TRow, TOut>
+  list: ListDefinition<TRow, TListRow>,
+  options: LoadListPageOptions<TKey, TExtra, TListRow, TOut>
 ): Promise<ListLoaderData<TKey, TOut> & TExtra> {
   const auth = await requirePermissions(
     request,
@@ -176,16 +197,24 @@ export async function loadListPage<
       } as unknown as ListLoaderData<TKey, TOut> & TExtra;
     }
 
+    const listRows =
+      list.rows && !page.error
+        ? await list.rows(page.rows, {
+            client: auth.client,
+            companyId: auth.companyId
+          })
+        : (page.rows as unknown as TListRow[]);
     const rows =
       options.mapRows && !page.error
-        ? await options.mapRows(page.rows, context)
-        : page.rows;
+        ? await options.mapRows(listRows, context)
+        : listRows;
 
     return {
       ...extra,
       [options.dataKey]: rows,
       count: page.count,
-      nextCursor: page.nextCursor
+      nextCursor: page.nextCursor,
+      infinite: listInfinite(list, options.dataKey, page.nextCursor)
     } as ListLoaderData<TKey, TOut> & TExtra;
   };
 

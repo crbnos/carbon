@@ -33,6 +33,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -44,12 +45,11 @@ type PaymentRow = Database["public"]["Tables"]["payment"]["Row"];
 type PaymentsTableProps = {
   data: PaymentRow[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const PaymentsTable = memo((props: PaymentsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -214,11 +214,7 @@ const PaymentsTable = memo((props: PaymentsTableProps) => {
   return (
     <>
       <Table<PaymentRow>
-        infinite={{
-          dataKey: "payments",
-          nextCursor,
-          listKey: "payments"
-        }}
+        infinite={infinite}
         count={count}
         columns={columns}
         data={data}

@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MaterialSubstancesRoute() {
-  const { materialSubstances, count, nextCursor } =
+  const { materialSubstances, count, infinite } =
     useLoaderData<typeof loader>();
 
   return (
@@ -36,7 +36,7 @@ export default function MaterialSubstancesRoute() {
       <MaterialSubstancesTable
         data={materialSubstances}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function IntercompanyRoute() {
   const { t } = useLingui();
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
   const permissions = usePermissions();
   const matchFetcher = useFetcher();
@@ -40,7 +40,7 @@ export default function IntercompanyRoute() {
       <IntercompanyTransactionTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "accounting") && (
             <div className="flex items-center gap-2">

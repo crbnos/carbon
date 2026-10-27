@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShape } from "~/components/Form/Shape";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { MaterialDimension } from "../../types";
@@ -31,11 +32,11 @@ import type { MaterialDimension } from "../../types";
 type MaterialDimensionsTableProps = {
   data: MaterialDimension[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const MaterialDimensionsTable = memo(
-  ({ data, count, nextCursor }: MaterialDimensionsTableProps) => {
+  ({ data, count, infinite }: MaterialDimensionsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -161,11 +162,7 @@ const MaterialDimensionsTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
-        infinite={{
-          dataKey: "materialDimensions",
-          nextCursor,
-          listKey: "material-dimensions"
-        }}
+        infinite={infinite}
         columns={columns}
         count={count}
         importCSV={[

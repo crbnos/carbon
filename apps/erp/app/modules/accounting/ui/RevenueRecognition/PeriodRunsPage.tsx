@@ -21,6 +21,7 @@ import { useState } from "react";
 import { LuCirclePlus } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Confirm } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import RevenueRecognitionRunsTable, {
   type RevenueRecognitionRunListItem
@@ -32,8 +33,7 @@ type PeriodRunsPageProps = {
   type: RunType;
   data: RevenueRecognitionRunListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   nextPeriodEnd: string;
   hasDraftBlocking: boolean;
 };
@@ -43,7 +43,7 @@ export default function PeriodRunsPage({
   type,
   data,
   count,
-  nextCursor,
+  infinite,
   nextPeriodEnd,
   hasDraftBlocking
 }: PeriodRunsPageProps) {
@@ -69,7 +69,7 @@ export default function PeriodRunsPage({
         type={type}
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "accounting") && (
             <TooltipProvider>

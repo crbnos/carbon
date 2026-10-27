@@ -82,6 +82,27 @@ export function isItemBulkUpdateField(
   return itemBulkUpdateFields.some((allowed) => allowed === field);
 }
 
+/** One field set on many items (the items tables' Update): the field and a
+ *  value it takes. Any item group id, or none, is a value. */
+export const itemBulkUpdateValidator = z.discriminatedUnion("field", [
+  z.object({
+    field: z.literal("itemTrackingType"),
+    value: z.enum(itemTrackingTypes)
+  }),
+  z.object({
+    field: z.literal("replenishmentSystem"),
+    value: z.enum(itemReplenishmentSystems)
+  }),
+  z.object({
+    field: z.literal("defaultMethodType"),
+    value: z.enum(methodType)
+  }),
+  z.object({ field: z.literal("sourcingType"), value: z.enum(sourcingType) }),
+  z.object({ field: z.literal("itemPostingGroupId"), value: z.string() })
+]);
+
+export type ItemBulkUpdate = z.infer<typeof itemBulkUpdateValidator>;
+
 // Maps an edit of ONE of the three interlocked item-level fields
 // (replenishmentSystem, defaultMethodType, sourcingType) to the columns that must
 // change together on the item, plus the values to mirror down to method materials.

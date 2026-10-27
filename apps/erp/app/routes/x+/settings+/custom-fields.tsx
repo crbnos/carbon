@@ -57,11 +57,11 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function CustomFieldsRoute() {
-  const { count, tables, nextCursor } = useLoaderData<typeof loader>();
+  const { count, tables, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <CustomFieldsTable data={tables} count={count} nextCursor={nextCursor} />
+      <CustomFieldsTable data={tables} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

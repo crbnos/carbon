@@ -11,10 +11,7 @@ import { getLocationsList } from "~/modules/resources/resources.service";
 import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
-import {
-  jobsList,
-  withJobListExtras
-} from "~/utils/list-registry/production.server";
+import { jobsList } from "~/utils/list-registry/production.server";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -34,22 +31,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ]);
       return { locations: locations.data ?? [], tags: tags.data ?? [] };
     },
-    mapRows: withJobListExtras,
     onError: { redirectTo: path.to.production, message: "Failed to fetch jobs" }
   });
 }
 
 export default function JobsRoute() {
-  const { count, tags, jobs, nextCursor } = useLoaderData<typeof loader>();
+  const { count, tags, jobs, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <JobsTable
-        data={jobs}
-        count={count}
-        nextCursor={nextCursor}
-        tags={tags}
-      />
+      <JobsTable data={jobs} count={count} infinite={infinite} tags={tags} />
       <RecordOutlet />
     </VStack>
   );

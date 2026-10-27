@@ -34,14 +34,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MaterialsSearchRoute() {
-  const { count, materials, nextCursor, tags } = useLoaderData<typeof loader>();
+  const { count, materials, infinite, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <MaterialsTable
         data={materials}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         tags={tags}
       />
       <RecordOutlet />

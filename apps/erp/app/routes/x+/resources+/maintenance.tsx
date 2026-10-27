@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MaintenanceRoute() {
-  const { dispatches, count, nextCursor, failureModes, locations, locationId } =
+  const { dispatches, count, infinite, failureModes, locations, locationId } =
     useLoaderData<typeof loader>();
 
   return (
@@ -50,7 +50,7 @@ export default function MaintenanceRoute() {
         // @ts-expect-error TS2322 - TODO: fix type
         data={dispatches ?? []}
         count={count ?? 0}
-        nextCursor={nextCursor}
+        infinite={infinite}
         failureModes={failureModes ?? []}
         locations={locations}
         locationId={locationId}

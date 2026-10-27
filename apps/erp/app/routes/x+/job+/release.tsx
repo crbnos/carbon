@@ -3,15 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { releaseJobs } from "~/modules/production/production.server";
-import { bulkStartFormResponse, fitsOneRequest } from "~/utils/table-jobs";
-import {
-  startAllMatchingBulkAction,
-  startSelectedBulkAction
-} from "~/utils/table-jobs.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 // The jobs table's Release Jobs: no dialog, so a job with a choice to make is
 // refused and named rather than released with a guess.
@@ -27,35 +22,24 @@ export async function action(args: ActionFunctionArgs) {
     .json()
     .catch(() => null);
   if (json?.allMatching) {
-    const { companyId, userId } = await requirePermissions(args.request, {
-      update: "production"
-    });
-    const started = await startAllMatchingBulkAction(json.allMatching, {
-      companyId,
-      userId,
-      actionKey: "jobs.release",
-      params: {}
-    });
-    if (started) return bulkStartFormResponse(started);
+    const started = await startBackgroundBulkAction(
+      args.request,
+      "jobs.release",
+      { allMatching: json.allMatching },
+      {}
+    );
+    if (started) return started;
   }
 
   const input = await validator(selection).request(args);
   if ("invalid" in input) return input.invalid;
-  if (!fitsOneRequest("jobs.release", input.data.jobIds.length)) {
-    const { companyId, userId } = await requirePermissions(args.request, {
-      update: "production"
-    });
-    return bulkStartFormResponse(
-      await startSelectedBulkAction({
-        companyId,
-        userId,
-        actionKey: "jobs.release",
-        params: {},
-        listKey: "jobs",
-        ids: input.data.jobIds
-      })
-    );
-  }
+  const started = await startBackgroundBulkAction(
+    args.request,
+    "jobs.release",
+    { ids: input.data.jobIds },
+    {}
+  );
+  if (started) return started;
   const api = await carbon(args.request);
   return api.production.releaseJobs(input.data);
 }

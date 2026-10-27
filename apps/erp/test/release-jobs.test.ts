@@ -305,6 +305,7 @@ describe("releaseJobs", () => {
     input: {
       jobIds: string[];
       purchaseOrdersBySupplierId?: Record<string, string>;
+      carriedPurchaseOrders?: Record<string, string>;
       supplierProcessByOperationId?: Record<string, string>;
     }
   ) => releaseJobs(contextFor(database({ job: jobs }).client), input);
@@ -323,7 +324,8 @@ describe("releaseJobs", () => {
       warnings: [],
       failed: [],
       skipped: [{ jobId: "j3", readableId: "J3", status: "In Progress" }],
-      scheduled: true
+      scheduled: true,
+      purchaseOrdersBySupplierId: {}
     });
   });
 
@@ -391,6 +393,32 @@ describe("releaseJobs", () => {
       purchaseOrdersBySupplierId: {}
     });
     expect(sent).toEqual([{ "supplier-a": "new" }, { "supplier-a": "po-new" }]);
+  });
+
+  it("keeps a supplier on the PO an earlier call created, and returns it for the next call", async () => {
+    // A background release runs in slices: slice 1 made po-1, which slice 2
+    // reads as a Draft of the supplier and must not ask to choose among.
+    readiness(
+      [ready("j1", { supplierIds: ["supplier-a"] })],
+      [
+        {
+          supplierId: "supplier-a",
+          draftPurchaseOrders: [{ id: "po-1", purchaseOrderId: "PO000001" }]
+        }
+      ]
+    );
+    const { data } = await run([job("j1")], {
+      jobIds: ["j1"],
+      carriedPurchaseOrders: { "supplier-a": "po-1", "supplier-b": "po-2" }
+    });
+    expect(data?.released).toHaveLength(1);
+    expect(invoke.mock.calls.find(([name]) => name === "create")?.[1]).toMatchObject({
+      purchaseOrdersBySupplierId: { "supplier-a": "po-1" }
+    });
+    expect(data?.purchaseOrdersBySupplierId).toEqual({
+      "supplier-a": "po-1",
+      "supplier-b": "po-2"
+    });
   });
 
   it("reports a job that left Draft or Planned during the release, and schedules each location once", async () => {

@@ -24,6 +24,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { SuggestionListItem } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
@@ -33,13 +34,13 @@ type SuggestionsTableProps = {
   data: SuggestionListItem[];
   tags: { name: string }[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {};
 
 const SuggestionsTable = memo(
-  ({ data, tags, count, nextCursor }: SuggestionsTableProps) => {
+  ({ data, tags, count, infinite }: SuggestionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -170,11 +171,7 @@ const SuggestionsTable = memo(
     return (
       <Table<SuggestionListItem>
         data={data}
-        infinite={{
-          dataKey: "suggestions",
-          nextCursor,
-          listKey: "suggestions"
-        }}
+        infinite={infinite}
         count={count}
         columns={columns}
         defaultColumnVisibility={defaultColumnVisibility}

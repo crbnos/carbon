@@ -29,15 +29,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function SalesReturnOrdersSearchRoute() {
-  const { count, salesReturnOrders, nextCursor } =
-    useLoaderData<typeof loader>();
+  const { count, salesReturnOrders, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <SalesReturnOrdersTable
         data={salesReturnOrders}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

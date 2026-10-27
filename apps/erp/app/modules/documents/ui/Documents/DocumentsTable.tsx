@@ -48,6 +48,7 @@ import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   applyRowEdits,
   type RowEdits,
@@ -68,22 +69,14 @@ const documentId = (row: Document) => row.id ?? "";
 type DocumentsTableProps = {
   data: Document[];
   count: number;
-  nextCursor: string | null;
-  // "documents", or "recent-documents" for the Recent view.
-  listKey: string;
+  // Its list is "documents", or "recent-documents" for the Recent view.
+  infinite: InfiniteOptions;
   labels: DocumentLabel[];
   extensions: (string | null)[];
 };
 
 const DocumentsTable = memo(
-  ({
-    data,
-    count,
-    nextCursor,
-    listKey,
-    labels,
-    extensions
-  }: DocumentsTableProps) => {
+  ({ data, count, infinite, labels, extensions }: DocumentsTableProps) => {
     const { t } = useLingui();
     const { isPhone } = useViewport();
     const permissions = usePermissions();
@@ -93,7 +86,7 @@ const DocumentsTable = memo(
 
     const infiniteRows = useInfiniteRows<Document>({
       initialRows: data,
-      infinite: { dataKey: "documents", nextCursor, listKey }
+      infinite
     });
     // The user's star and label changes by document id, laid over the loaded
     // rows until a load that started after the write (`rowEdits.ts`).

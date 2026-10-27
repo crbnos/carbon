@@ -29,11 +29,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ProcessesRoute() {
-  const { processes, count, nextCursor } = useLoaderData<typeof loader>();
+  const { processes, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ProcessesTable data={processes} count={count} nextCursor={nextCursor} />
+      <ProcessesTable data={processes} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

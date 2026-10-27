@@ -24,14 +24,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ChangeNoticeActionsRoute() {
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ChangeNoticeRequiredActionsTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

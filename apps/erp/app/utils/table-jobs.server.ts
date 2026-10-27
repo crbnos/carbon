@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CarbonError } from "@carbon/api/service-fn.server";
 import { getClaims, makePermissionsFromClaims } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
@@ -22,9 +24,16 @@ import {
 } from "@carbon/jobs/inngest";
 import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
-import { isItemBulkUpdateField } from "~/modules/items/items.models";
-import { bulkDeleteJobs } from "~/modules/production/production.service";
-import { bulkDeletePurchaseOrders } from "~/modules/purchasing/purchasing.service";
+import { z } from "zod";
+import { itemBulkUpdateValidator } from "~/modules/items/items.models";
+import { updateItems } from "~/modules/items/items.server";
+import {
+  deleteJobs,
+  dissolveBatches,
+  releaseBatches,
+  releaseJobs
+} from "~/modules/production/production.server";
+import { deletePurchaseOrders } from "~/modules/purchasing/purchasing.server";
 import { systemContext } from "~/modules/service-context.server";
 import { userPermissionsValidator } from "~/modules/users/users.models";
 import {
@@ -35,27 +44,22 @@ import {
 } from "~/modules/users/users.service";
 import { decodeCursor } from "./cursor";
 import {
-  bulkUpdateItems,
-  isItemBulkUpdateValue
-} from "./item-bulk-actions.server";
-import { fetchListPage, getListDefinition } from "./list-registry/index.server";
+  exportListRows,
+  fetchListPage,
+  getListDefinition
+} from "./list-registry/index.server";
 import {
-  bulkDissolveBatches,
-  bulkReleaseBatches,
-  bulkReleaseJobs
-} from "./production-bulk-actions.server";
-import {
-  type AllMatchingRequest,
+  ALL_MATCHING_RELEASE_LIMIT,
+  type BulkActionMeta,
   type BulkActionStart,
-  bulkActionServesList,
-  getBulkActionMeta,
+  bulkStartFormResponse,
   hasListPermission,
   parseAllMatching,
   refreshingClientFactory,
   rowLimitRefusal,
   TABLE_JOBS_FULL_MESSAGE,
-  type TableBulkActionKey,
   type TableJobClaims,
+  type TableJobRefusal,
   tableJobBusyMessage,
   tableJobBusyRefusal
 } from "./table-jobs";
@@ -125,7 +129,7 @@ async function fetchPage(
     limit: page.limit,
     cursor: decodeCursor(page.cursor)
   });
-  if (result.error || !page.forExport || !definition.exportRows) {
+  if (result.error || !page.forExport) {
     return {
       rows: result.rows,
       nextCursor: result.nextCursor,
@@ -136,7 +140,10 @@ async function fetchPage(
   // match the table's. A failed lookup fails the page, not a blank column.
   try {
     return {
-      rows: await definition.exportRows(result.rows, { client, companyId }),
+      rows: await exportListRows(definition, result.rows, {
+        client,
+        companyId
+      }),
       nextCursor: result.nextCursor
     };
   } catch (error) {
@@ -155,15 +162,28 @@ type BulkActionRunContext = TableJobContext & {
   getClient: ReturnType<typeof userClientFactory>;
 };
 
-/** What a bulk action does to one chunk of ids (at most 100); throws only
- *  when nothing ran. Its metadata is `BULK_ACTIONS` in `./table-jobs`.
- *  `carry` is what the previous chunk of the same run returned. */
-type BulkActionRun = (
-  ids: string[],
-  params: Record<string, unknown>,
-  context: BulkActionRunContext,
-  carry?: TableBulkActionCarry
-) => Promise<TableBulkActionResult>;
+/**
+ * A bulk action with a background path (spec "Which bulk actions get the
+ * background path"): who may run it on which lists, the params its route
+ * sends (checked when the job starts and again when it runs), and what it
+ * does to one chunk of ids (at most 100). `run` throws only when nothing ran;
+ * `carry` is what the previous chunk of the same run returned.
+ */
+type BulkActionDefinition<TParams> = BulkActionMeta & {
+  params: z.ZodType<TParams>;
+  run(
+    ids: string[],
+    params: TParams,
+    context: BulkActionRunContext,
+    carry?: TableBulkActionCarry
+  ): Promise<TableBulkActionResult>;
+};
+
+function defineBulkAction<TParams>(definition: BulkActionDefinition<TParams>) {
+  return definition;
+}
+
+const noParams = z.object({});
 
 /** The supplier → PO map a Jobs or Batches Release chunk carries to the
  *  next one. */
@@ -197,163 +217,246 @@ function problemLines(
   };
 }
 
+/** A Delete chunk's counts. The delete is refused only when it could delete
+ *  none of the ids (another status, another company), so a refusal other
+ *  than a failure skips the chunk. */
+function deleteCounts<T>(
+  ids: string[],
+  result: { data: T | null; error: CarbonError | null },
+  deleted: (data: T) => number
+): TableBulkActionResult {
+  if (result.error || !result.data) {
+    return result.error?.category === "internal"
+      ? {
+          done: 0,
+          skipped: 0,
+          failed: ids.length,
+          problems: [result.error.message],
+          problemCount: 1
+        }
+      : { done: 0, skipped: ids.length, failed: 0 };
+  }
+  const done = deleted(result.data);
+  return { done, skipped: ids.length - done, failed: 0 };
+}
+
 function userClientFactory(userId: string) {
   return refreshingClientFactory(() => getUserScopedClient(userId));
 }
 
 /**
- * Each bulk action with a background path runs the same service functions as
- * its action route, so the per-row checks are the same on both paths.
+ * Each bulk action runs the same service functions as its action route, so
+ * the per-row checks are the same on both paths.
  */
-const BULK_ACTION_RUNS: Record<TableBulkActionKey, BulkActionRun> = {
-  "items.update": async (ids, { field, value }, context) => {
-    if (
-      !isItemBulkUpdateField(field) ||
-      typeof value !== "string" ||
-      !isItemBulkUpdateValue(field, value)
-    ) {
-      throw new Error("The item update is not valid");
-    }
-    const result = await bulkUpdateItems(await jobServiceContext(context), {
-      itemIds: ids,
-      field,
-      value
-    });
-    return {
-      done: result.done,
-      skipped: result.skipped,
-      failed: result.failed
-    };
-  },
-  "jobs.release": async (ids, _params, context, carry) => {
-    const result = await bulkReleaseJobs(await jobServiceContext(context), {
-      jobIds: ids,
-      // A PO an earlier chunk created is this run's own, not a Draft to
-      // choose from: the jobs after it go on the same PO.
-      purchaseOrdersBySupplierId: carriedPurchaseOrders(carry)
-    });
-    if (!result.success) throw new Error(result.message);
-    return {
-      done: result.released,
-      skipped: result.skipped,
-      failed: result.failed.length,
-      // Released jobs with something left to fix (a PO that failed) are named
-      // too: the in-request release shows them, and so must the notification.
-      ...problemLines(result.failed, result.warnings),
-      carry: { purchaseOrdersBySupplierId: result.purchaseOrdersBySupplierId }
-    };
-  },
-  "jobs.delete": async (ids, _params, context) => {
-    const result = await bulkDeleteJobs({
-      client: await context.getClient(),
-      jobIds: ids,
-      companyId: context.companyId
-    });
-    return {
-      done: result.deleted,
-      skipped: result.skipped,
-      failed: result.failed
-    };
-  },
-  "purchase-orders.delete": async (ids, _params, context) => {
-    const result = await bulkDeletePurchaseOrders(await context.getClient(), {
-      purchaseOrderIds: ids,
-      companyId: context.companyId
-    });
-    return {
-      done: result.deleted,
-      skipped: result.skipped,
-      failed: result.failed
-    };
-  },
-  "batches.release": async (ids, _params, context, carry) => {
-    const result = await bulkReleaseBatches(await jobServiceContext(context), {
-      batchIds: ids,
-      purchaseOrdersBySupplierId: carriedPurchaseOrders(carry)
-    });
-    if (!result.success) throw new Error(result.message);
-    return {
-      done: result.done,
-      skipped: result.skipped,
-      failed: result.failed.length,
-      ...problemLines(result.failed),
-      carry: { purchaseOrdersBySupplierId: result.purchaseOrdersBySupplierId }
-    };
-  },
-  "batches.dissolve": async (ids, _params, context) => {
-    const result = await bulkDissolveBatches(await jobServiceContext(context), {
-      batchIds: ids
-    });
-    if (!result.success) throw new Error(result.message);
-    return {
-      done: result.done,
-      skipped: result.skipped,
-      failed: result.failed.length,
-      ...problemLines(result.failed)
-    };
-  },
-  "users.deactivate": async (ids, { ip }, { companyId, userId }) => {
-    const { allowed, skipped } = await selectUsersForBulkAction({
-      action: "deactivate",
-      userIds: ids,
-      companyId,
-      actorId: userId
-    });
-    if (allowed.length > 0) {
-      await queueUserDeactivations({
-        userIds: allowed,
-        companyId,
-        actorId: userId,
-        ip: typeof ip === "string" ? ip : undefined
+const BULK_ACTIONS = {
+  "items.update": defineBulkAction({
+    label: "Update items",
+    lists: ["parts", "materials", "tools", "consumables", "services"],
+    permission: { update: "parts" },
+    params: itemBulkUpdateValidator,
+    run: async (ids, change, context) => {
+      const result = await updateItems(await jobServiceContext(context), {
+        ids,
+        change
       });
+      if (result.error) throw new Error(result.error.message);
+      return { ...result.data, failed: 0 };
     }
-    // Done = queued: the user-admin job deactivates each user.
-    return { done: allowed.length, skipped, failed: 0 };
-  },
-  "users.invite": async (ids, { location, ip }, { companyId, userId }) => {
-    const { allowed, skipped } = await selectUsersForBulkAction({
-      action: "invite",
-      userIds: ids,
-      companyId,
-      actorId: userId
-    });
-    if (allowed.length > 0) {
-      await queueInviteResends({
-        userIds: allowed,
-        companyId,
-        location: typeof location === "string" ? location : "Unknown",
-        ip: typeof ip === "string" ? ip : "127.0.0.1"
+  }),
+  "jobs.release": defineBulkAction({
+    label: "Release jobs",
+    lists: ["jobs"],
+    permission: { update: "production" },
+    maxRows: ALL_MATCHING_RELEASE_LIMIT,
+    // Each job runs the requirements recalculation and MRP.
+    idsPerStep: 25,
+    params: noParams,
+    run: async (ids, _params, context, carry) => {
+      const result = await releaseJobs(await jobServiceContext(context), {
+        jobIds: ids,
+        // A PO an earlier chunk created is this run's own, not a Draft to
+        // choose from: the jobs after it go on the same PO.
+        carriedPurchaseOrders: carriedPurchaseOrders(carry)
       });
+      if (result.error) throw new Error(result.error.message);
+      const { released, warnings, failed, skipped } = result.data;
+      return {
+        done: released.length,
+        skipped: skipped.length,
+        failed: failed.length,
+        // Released jobs with something left to fix (a PO that failed) are
+        // named too: the in-request release shows them, and so must the
+        // notification.
+        ...problemLines(failed, warnings),
+        carry: {
+          purchaseOrdersBySupplierId: result.data.purchaseOrdersBySupplierId
+        }
+      };
     }
-    return { done: allowed.length, skipped, failed: 0 };
-  },
-  "users.permissions": async (
-    ids,
-    { permissions, addOnly, ip },
-    { companyId, userId }
-  ) => {
-    if (!isModulePermissions(permissions) || typeof addOnly !== "boolean") {
-      throw new Error("The permission update is not valid");
-    }
-    const { allowed, skipped } = await selectUsersForBulkAction({
-      action: "permissions",
-      userIds: ids,
-      companyId,
-      actorId: userId
-    });
-    if (allowed.length > 0) {
-      await queuePermissionUpdates({
-        userIds: allowed,
-        companyId,
-        actorId: userId,
-        permissions,
-        addOnly,
-        ip: typeof ip === "string" ? ip : undefined
+  }),
+  "jobs.delete": defineBulkAction({
+    label: "Delete jobs",
+    lists: ["jobs"],
+    permission: { update: "production", delete: "production" },
+    params: noParams,
+    run: async (ids, _params, context) =>
+      deleteCounts(
+        ids,
+        await deleteJobs(await jobServiceContext(context), { ids }),
+        (data) => data.ids.length
+      )
+  }),
+  "purchase-orders.delete": defineBulkAction({
+    label: "Delete purchase orders",
+    lists: ["purchase-orders"],
+    permission: { update: "purchasing", delete: "purchasing" },
+    params: noParams,
+    run: async (ids, _params, context) =>
+      deleteCounts(
+        ids,
+        await deletePurchaseOrders(await jobServiceContext(context), {
+          purchaseOrderIds: ids
+        }),
+        (data) => data.purchaseOrderIds.length
+      )
+  }),
+  "batches.release": defineBulkAction({
+    label: "Release batches",
+    lists: ["operation-batches"],
+    permission: { update: "production" },
+    maxRows: ALL_MATCHING_RELEASE_LIMIT,
+    // Each batch releases its member jobs, each with its own MRP run.
+    idsPerStep: 10,
+    params: noParams,
+    run: async (ids, _params, context, carry) => {
+      const result = await releaseBatches(await jobServiceContext(context), {
+        batchIds: ids,
+        carriedPurchaseOrders: carriedPurchaseOrders(carry)
       });
+      if (result.error) throw new Error(result.error.message);
+      const { released, failed, skipped } = result.data;
+      return {
+        done: released.length,
+        skipped: skipped.length,
+        failed: failed.length,
+        ...problemLines(failed),
+        carry: {
+          purchaseOrdersBySupplierId: result.data.purchaseOrdersBySupplierId
+        }
+      };
     }
-    return { done: allowed.length, skipped, failed: 0 };
-  }
+  }),
+  "batches.dissolve": defineBulkAction({
+    label: "Dissolve batches",
+    lists: ["operation-batches"],
+    permission: { update: "production" },
+    idsPerStep: 100,
+    params: noParams,
+    run: async (ids, _params, context) => {
+      const result = await dissolveBatches(await jobServiceContext(context), {
+        batchIds: ids
+      });
+      if (result.error) throw new Error(result.error.message);
+      const { dissolved, failed, skipped } = result.data;
+      return {
+        done: dissolved,
+        skipped,
+        failed: failed.length,
+        ...problemLines(failed)
+      };
+    }
+  }),
+  "users.deactivate": defineBulkAction({
+    label: "Deactivate users",
+    lists: ["employee-accounts"],
+    permission: { delete: "users" },
+    params: z.object({ ip: z.string().optional() }),
+    run: async (ids, { ip }, { companyId, userId }) => {
+      const { allowed, skipped } = await selectUsersForBulkAction({
+        action: "deactivate",
+        userIds: ids,
+        companyId,
+        actorId: userId
+      });
+      if (allowed.length > 0) {
+        await queueUserDeactivations({
+          userIds: allowed,
+          companyId,
+          actorId: userId,
+          ip
+        });
+      }
+      // Done = queued: the user-admin job deactivates each user.
+      return { done: allowed.length, skipped, failed: 0 };
+    }
+  }),
+  "users.invite": defineBulkAction({
+    label: "Send invites",
+    lists: ["employee-accounts"],
+    permission: { create: "users" },
+    params: z.object({ location: z.string(), ip: z.string() }),
+    run: async (ids, { location, ip }, { companyId, userId }) => {
+      const { allowed, skipped } = await selectUsersForBulkAction({
+        action: "invite",
+        userIds: ids,
+        companyId,
+        actorId: userId
+      });
+      if (allowed.length > 0) {
+        await queueInviteResends({
+          userIds: allowed,
+          companyId,
+          location,
+          ip
+        });
+      }
+      return { done: allowed.length, skipped, failed: 0 };
+    }
+  }),
+  "users.permissions": defineBulkAction({
+    label: "Edit permissions",
+    lists: ["employee-accounts"],
+    permission: { update: "users" },
+    // The route requires it with `requireFeature`; the job checks it again,
+    // in case the plan changed while the run waited.
+    feature: "PERMISSIONS",
+    params: z.object({
+      permissions: z.record(z.string(), userPermissionsValidator),
+      addOnly: z.boolean(),
+      ip: z.string().optional()
+    }),
+    run: async (ids, { permissions, addOnly, ip }, { companyId, userId }) => {
+      const { allowed, skipped } = await selectUsersForBulkAction({
+        action: "permissions",
+        userIds: ids,
+        companyId,
+        actorId: userId
+      });
+      if (allowed.length > 0) {
+        await queuePermissionUpdates({
+          userIds: allowed,
+          companyId,
+          actorId: userId,
+          permissions,
+          addOnly,
+          ip
+        });
+      }
+      return { done: allowed.length, skipped, failed: 0 };
+    }
+  })
 };
+
+export type TableBulkActionKey = keyof typeof BULK_ACTIONS;
+
+type BulkActionParams<K extends TableBulkActionKey> = z.input<
+  (typeof BULK_ACTIONS)[K]["params"]
+>;
+
+function getBulkAction(key: string): BulkActionDefinition<unknown> | undefined {
+  const actions: Record<string, BulkActionDefinition<unknown>> = BULK_ACTIONS;
+  return Object.hasOwn(actions, key) ? actions[key] : undefined;
+}
 
 /**
  * The context the production service functions run in for a bulk-action job:
@@ -381,23 +484,6 @@ async function jobServiceContext({ companyId, userId }: TableJobContext) {
   });
 }
 
-/** The `permissions` param of `users.permissions`, checked again in the job:
- *  a module name to its four switches, as the route validated it. */
-function isModulePermissions(
-  value: unknown
-): value is Record<
-  string,
-  { view: boolean; create: boolean; update: boolean; delete: boolean }
-> {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    Object.values(value).every(
-      (permission) => userPermissionsValidator.safeParse(permission).success
-    )
-  );
-}
-
 /** Whether the user may still run the action on the list: an employee with
  *  the list's view permission and the action's own permission, in a company
  *  whose plan has the action's feature. */
@@ -406,9 +492,9 @@ async function canRunBulkAction(
   action: TableBulkAction,
   context: TableJobContext
 ): Promise<boolean> {
-  const bulkAction = getBulkActionMeta(action.key);
+  const bulkAction = getBulkAction(action.key);
   const list = getListDefinition(listKey);
-  if (!bulkAction || !list || !bulkActionServesList(action.key, listKey)) {
+  if (!bulkAction || !list || !bulkAction.lists.includes(listKey)) {
     return false;
   }
   const claims = await readClaims(context);
@@ -432,13 +518,17 @@ async function runBulkAction(
   context: TableJobContext,
   carry?: TableBulkActionCarry
 ): Promise<TableBulkActionResult> {
-  const run = getBulkActionMeta(action.key)
-    ? BULK_ACTION_RUNS[action.key as TableBulkActionKey]
-    : undefined;
-  if (!run) throw new Error(`Unknown bulk action "${action.key}"`);
-  return run(
+  const bulkAction = getBulkAction(action.key);
+  if (!bulkAction) throw new Error(`Unknown bulk action "${action.key}"`);
+  const params = bulkAction.params.safeParse(action.params);
+  if (!params.success) {
+    throw new Error(
+      `The params of the bulk action "${action.key}" are not valid`
+    );
+  }
+  return bulkAction.run(
     ids,
-    action.params,
+    params.data,
     {
       ...context,
       getClient: userClientFactory(context.userId)
@@ -472,7 +562,9 @@ async function countMatchingRows(
     await getUserScopedClient(userId),
     companyId,
     params,
-    { limit: 1, cursor: null }
+    // Above 1,000 rows a list reads the planner's estimate; the row limit
+    // needs the real count.
+    { limit: 1, cursor: null, exactCount: true }
   );
   if (result.error) {
     logger.error("Failed to count the rows of a bulk action", {
@@ -485,45 +577,117 @@ async function countMatchingRows(
   return result.count;
 }
 
-/**
- * Starts the background bulk action on every row of the list that matches its
- * URL search: the action routes call it when the request holds `allMatching`
- * in place of ids. The route has already checked the action's permission; this
- * checks the list's too, the action's row limit, takes the company's bulk lock
- * and sends the event.
- */
-export function startTableBulkAction({
-  allMatching,
-  ...args
-}: BulkRunArgs & {
-  allMatching: AllMatchingRequest;
-}): Promise<BulkActionStart> {
-  return startBulkRun({
-    ...args,
-    listKey: allMatching.listKey,
-    search: allMatching.search
-  });
-}
-
-/**
- * Starts the background bulk action on rows the user selected, when there are
- * too many for one request (`fitsOneRequest`). The job acts on these ids and
- * reads no list pages; the per-row checks are the same as on the route.
- */
-export function startSelectedBulkAction({
-  listKey,
-  ids,
-  ...args
-}: BulkRunArgs & { listKey: string; ids: string[] }): Promise<BulkActionStart> {
-  return startBulkRun({ ...args, listKey, search: "", ids });
-}
-
-type BulkRunArgs = {
-  companyId: string;
-  userId: string;
-  actionKey: TableBulkActionKey;
-  params: Record<string, unknown>;
+/** Why a table job did not start, with the HTTP status the export route
+ *  answers it with. */
+export type TableJobStartRefusal = {
+  status: 409 | 500 | 503;
+  message: string;
+  refusal: TableJobRefusal;
 };
+
+/**
+ * The one start path of the table jobs (an export, a bulk action): takes the
+ * company's lock for the job's kind, then sends its event. Another job of the
+ * kind holding the lock refuses (409), so do all slots taken (503): a queue
+ * many companies fill would make every user wait. With Redis down the job
+ * starts anyway: Inngest's per-company concurrency still runs one at a time.
+ * A failed send gives the lock back (500). Null when the job started.
+ */
+export async function startTableJob(
+  kind: "export" | "bulk",
+  {
+    companyId,
+    jobId,
+    log
+  }: { companyId: string; jobId: string; log: Record<string, unknown> },
+  send: () => Promise<unknown>
+): Promise<TableJobStartRefusal | null> {
+  const lock = await takeTableJobLock(kind, companyId, jobId);
+  if (lock.status === "busy") {
+    return {
+      status: 409,
+      message: tableJobBusyMessage(kind, lock.retryAfterSeconds),
+      refusal: tableJobBusyRefusal(kind, lock.retryAfterSeconds)
+    };
+  }
+  if (lock.status === "full") {
+    logger.warn("Refused a table job: every table-job slot is taken", {
+      kind,
+      companyId,
+      ...log
+    });
+    return {
+      status: 503,
+      message: TABLE_JOBS_FULL_MESSAGE,
+      refusal: { code: "full" }
+    };
+  }
+  if (lock.status === "unavailable") {
+    logger.warn("Starting a table job without the Redis lock", {
+      kind,
+      companyId,
+      ...log
+    });
+  }
+  try {
+    await send();
+  } catch (error) {
+    logger.error("Failed to start a table job", {
+      kind,
+      companyId,
+      ...log,
+      error
+    });
+    await releaseTableJobLock(kind, companyId, jobId);
+    return {
+      status: 500,
+      message:
+        kind === "export"
+          ? "The export could not start"
+          : "The bulk action could not start",
+      refusal: { code: "not-started" }
+    };
+  }
+  return null;
+}
+
+/**
+ * The background path of a bulk action route. When the request names every
+ * matching row (`allMatching`, a form field or a JSON body value), or more
+ * selected `ids` than one request may act on (the action's `idsPerStep`, so a
+ * request ends before the load balancer's 600 s), it checks the action's own
+ * permission, starts the job and answers what the route returns. Null when
+ * the route acts on the selection itself.
+ */
+export async function startBackgroundBulkAction<K extends TableBulkActionKey>(
+  request: Request,
+  actionKey: K,
+  selection: { allMatching?: unknown; ids?: string[] },
+  params: BulkActionParams<K>
+) {
+  const action: BulkActionDefinition<unknown> = BULK_ACTIONS[actionKey];
+  const allMatching = parseAllMatching(selection.allMatching);
+  const ids = selection.ids ?? [];
+  const tooManyIds =
+    action.idsPerStep !== undefined && ids.length > action.idsPerStep;
+  if (!allMatching && !tooManyIds) return null;
+
+  const { companyId, userId } = await requirePermissions(
+    request,
+    action.permission
+  );
+  return bulkStartFormResponse(
+    await startBulkRun({
+      companyId,
+      userId,
+      actionKey,
+      params,
+      // Selected rows come from the action's one list; the job reads no
+      // list pages for them.
+      ...(allMatching ?? { listKey: action.lists[0]!, search: "", ids })
+    })
+  );
+}
 
 async function startBulkRun({
   companyId,
@@ -533,17 +697,17 @@ async function startBulkRun({
   listKey,
   search,
   ids
-}: BulkRunArgs & {
+}: {
+  companyId: string;
+  userId: string;
+  actionKey: TableBulkActionKey;
+  params: unknown;
   listKey: string;
   search: string;
   ids?: string[];
 }): Promise<BulkActionStart> {
-  const bulkAction = getBulkActionMeta(actionKey);
-  if (
-    !bulkAction ||
-    !bulkActionServesList(actionKey, listKey) ||
-    !getListDefinition(listKey)
-  ) {
+  const bulkAction: BulkActionDefinition<unknown> = BULK_ACTIONS[actionKey];
+  if (!bulkAction.lists.includes(listKey) || !getListDefinition(listKey)) {
     logger.error("A bulk action was requested for a list it does not serve", {
       companyId,
       actionKey,
@@ -556,12 +720,28 @@ async function startBulkRun({
     };
   }
 
+  const parsedParams = bulkAction.params.safeParse(params);
+  if (!parsedParams.success) {
+    logger.error("A bulk action was requested with invalid params", {
+      companyId,
+      actionKey
+    });
+    return {
+      success: false,
+      message: "The bulk action is not valid",
+      refusal: { code: "not-started" }
+    };
+  }
+
   const context = { companyId, userId };
   let allowed: boolean;
   try {
     allowed = await canRunBulkAction(
       listKey,
-      { key: actionKey, params },
+      {
+        key: actionKey,
+        params: parsedParams.data as TableBulkAction["params"]
+      },
       context
     );
   } catch {
@@ -602,84 +782,34 @@ async function startBulkRun({
   }
 
   const bulkActionId = nanoid();
-  const lock = await takeTableJobLock("bulk", companyId, bulkActionId);
-  if (lock.status === "busy") {
+  const refused = await startTableJob(
+    "bulk",
+    { companyId, jobId: bulkActionId, log: { actionKey } },
+    () =>
+      trigger("table-bulk-action", {
+        companyId,
+        userId,
+        bulkActionId,
+        actionKey,
+        actionLabel: bulkAction.label,
+        params: parsedParams.data as TableBulkAction["params"],
+        listKey,
+        search,
+        ...(bulkAction.maxRows !== undefined
+          ? { maxRows: bulkAction.maxRows }
+          : {}),
+        ...(bulkAction.idsPerStep !== undefined
+          ? { idsPerStep: bulkAction.idsPerStep }
+          : {}),
+        ...(ids ? { ids } : {})
+      })
+  );
+  if (refused) {
     return {
       success: false,
-      message: tableJobBusyMessage("bulk", lock.retryAfterSeconds),
-      refusal: tableJobBusyRefusal("bulk", lock.retryAfterSeconds)
-    };
-  }
-  if (lock.status === "full") {
-    logger.warn("Refused a table bulk action: every table-job slot is taken", {
-      companyId,
-      actionKey
-    });
-    return {
-      success: false,
-      message: TABLE_JOBS_FULL_MESSAGE,
-      refusal: { code: "full" }
-    };
-  }
-  if (lock.status === "unavailable") {
-    // Fail-open: Inngest's per-company concurrency still runs one at a time.
-    logger.warn("Starting a table bulk action without the Redis lock", {
-      companyId,
-      actionKey
-    });
-  }
-
-  try {
-    await trigger("table-bulk-action", {
-      companyId,
-      userId,
-      bulkActionId,
-      actionKey,
-      actionLabel: bulkAction.label,
-      params,
-      listKey,
-      search,
-      ...(bulkAction.maxRows !== undefined
-        ? { maxRows: bulkAction.maxRows }
-        : {}),
-      ...(bulkAction.idsPerStep !== undefined
-        ? { idsPerStep: bulkAction.idsPerStep }
-        : {}),
-      ...(ids ? { ids } : {})
-    });
-  } catch (error) {
-    logger.error("Failed to start a table bulk action", {
-      companyId,
-      actionKey,
-      error
-    });
-    await releaseTableJobLock("bulk", companyId, bulkActionId);
-    return {
-      success: false,
-      message: "The bulk action could not start",
-      refusal: { code: "not-started" }
+      message: refused.message,
+      refusal: refused.refusal
     };
   }
   return { success: true, background: true };
-}
-
-/**
- * The `allMatching` branch every bulk action route shares: when the request
- * names every matching row (`allMatching` in a form field or a JSON body), it
- * starts the background job and answers what the route returns. Null when the
- * request names ids instead, so the route goes on with its own path.
- */
-export async function startAllMatchingBulkAction(
-  allMatching: unknown,
-  args: {
-    companyId: string;
-    userId: string;
-    actionKey: TableBulkActionKey;
-    params: Record<string, unknown>;
-  }
-): Promise<BulkActionStart | null> {
-  const request = parseAllMatching(allMatching);
-  return request
-    ? startTableBulkAction({ ...args, allMatching: request })
-    : null;
 }

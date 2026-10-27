@@ -29,8 +29,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PaymentsRoute() {
-  const { count, payments, nextCursor } = useLoaderData<typeof loader>();
-  return (
-    <PaymentsTable data={payments} count={count} nextCursor={nextCursor} />
-  );
+  const { count, payments, infinite } = useLoaderData<typeof loader>();
+  return <PaymentsTable data={payments} count={count} infinite={infinite} />;
 }

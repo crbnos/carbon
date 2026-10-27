@@ -49,7 +49,7 @@ function NewJournalEntry() {
 }
 
 export default function JournalEntriesRoute() {
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
 
   return (
@@ -57,7 +57,7 @@ export default function JournalEntriesRoute() {
       <JournalEntriesTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "accounting") && <NewJournalEntry />
         }

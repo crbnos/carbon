@@ -15,6 +15,7 @@ import {
   LuStar
 } from "react-icons/lu";
 import { DateTime, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyDecimalsLookup } from "~/hooks";
 import { intercompanyTransactionStatuses } from "../../accounting.models";
 import IntercompanyTransactionStatus from "./IntercompanyTransactionStatus";
@@ -36,8 +37,7 @@ type IntercompanyTransaction = {
 type IntercompanyTransactionTableProps = {
   data: IntercompanyTransaction[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
@@ -46,7 +46,7 @@ const IntercompanyTransactionTable = memo(
     data,
     count,
     primaryAction,
-    nextCursor
+    infinite
   }: IntercompanyTransactionTableProps) => {
     const { t } = useLingui();
     // Currency varies per row, so the formatter is built per cell from the
@@ -143,11 +143,7 @@ const IntercompanyTransactionTable = memo(
 
     return (
       <Table<IntercompanyTransaction>
-        infinite={{
-          dataKey: "data",
-          nextCursor,
-          listKey: "intercompany-transactions"
-        }}
+        infinite={infinite}
         data={data}
         columns={columns}
         count={count}

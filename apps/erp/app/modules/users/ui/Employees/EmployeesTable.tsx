@@ -34,7 +34,11 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import type { AllMatchingSelection, BulkActionScope } from "~/components/Table";
+import type {
+  AllMatchingSelection,
+  BulkActionScope,
+  InfiniteOptions
+} from "~/components/Table";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import type { Employee } from "~/modules/users/types";
@@ -52,7 +56,7 @@ import { useBulkUserActionFetcher } from "../components/AllMatchingUsers";
 type EmployeesTableProps = {
   data: Employee[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   employeeTypes: ListItem[];
   unrevokedInviteEmails: string[];
   mfaEnrolledUserIds: string[];
@@ -67,7 +71,7 @@ const EmployeesTable = memo(
   ({
     data,
     count,
-    nextCursor,
+    infinite,
     employeeTypes,
     unrevokedInviteEmails,
     mfaEnrolledUserIds
@@ -465,11 +469,7 @@ const EmployeesTable = memo(
           count={count}
           columns={columns}
           data={data}
-          infinite={{
-            dataKey: "employees",
-            nextCursor,
-            listKey: "employee-accounts"
-          }}
+          infinite={infinite}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             permissions.can("create", "users") && (

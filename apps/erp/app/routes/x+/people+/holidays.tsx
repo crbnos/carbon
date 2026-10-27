@@ -34,14 +34,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Route() {
-  const { holidays, years, count, nextCursor } = useLoaderData<typeof loader>();
+  const { holidays, years, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <HolidaysTable
         data={holidays}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         years={years}
       />
       <RecordOutlet />

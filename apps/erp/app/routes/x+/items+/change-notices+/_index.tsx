@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ChangeNoticesIndexRoute() {
-  const { changeNotices, count, nextCursor, types } =
+  const { changeNotices, count, infinite, types } =
     useLoaderData<typeof loader>();
 
   return (
@@ -33,7 +33,7 @@ export default function ChangeNoticesIndexRoute() {
       <ChangeNoticesTable
         data={changeNotices}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         types={types}
       />
       <RecordOutlet />

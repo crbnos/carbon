@@ -50,7 +50,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import type { BulkActionScope } from "~/components/Table";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -67,12 +67,11 @@ import { usePurchaseOrder } from "./usePurchaseOrder";
 type PurchaseOrdersTableProps = {
   data: PurchaseOrderListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const PurchaseOrdersTable = memo(
-  ({ data, count, nextCursor }: PurchaseOrdersTableProps) => {
+  ({ data, count, infinite }: PurchaseOrdersTableProps) => {
     useRealtime("purchaseOrder");
 
     const { t } = useLingui();
@@ -527,11 +526,7 @@ const PurchaseOrdersTable = memo(
           count={count}
           columns={columns}
           data={data}
-          infinite={{
-            dataKey: "purchasOrders",
-            nextCursor,
-            listKey: "purchase-orders"
-          }}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["purchaseOrderId"]
           }}

@@ -39,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function SalesCustomersRoute() {
-  const { count, customers, nextCursor, customerStatuses, tags } =
+  const { count, customers, infinite, customerStatuses, tags } =
     useLoaderData<typeof loader>();
 
   return (
@@ -47,7 +47,7 @@ export default function SalesCustomersRoute() {
       <CustomersTable
         data={customers}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         customerStatuses={customerStatuses}
         tags={tags}
       />

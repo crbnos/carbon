@@ -36,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function GaugesRoute() {
-  const { gaugeCalibrationRecords, count, nextCursor, gaugeTypes } =
+  const { gaugeCalibrationRecords, count, infinite, gaugeTypes } =
     useLoaderData<typeof loader>();
 
   return (
@@ -44,7 +44,7 @@ export default function GaugesRoute() {
       <GaugeCalibrationRecordsTable
         data={gaugeCalibrationRecords}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         types={gaugeTypes}
       />
       <RecordOutlet />

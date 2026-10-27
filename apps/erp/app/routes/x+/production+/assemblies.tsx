@@ -24,14 +24,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AssemblyInstructionsRoute() {
-  const { instructions, count, nextCursor } = useLoaderData<typeof loader>();
+  const { instructions, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <AssemblyInstructionsTable
         data={instructions}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

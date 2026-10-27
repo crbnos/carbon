@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function EmployeeTypesRoute() {
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "PERMISSIONS" });
 
   if (isGated) {
@@ -38,7 +38,7 @@ export default function EmployeeTypesRoute() {
       <EmployeeTypesTable
         data={data ?? []}
         count={count ?? 0}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

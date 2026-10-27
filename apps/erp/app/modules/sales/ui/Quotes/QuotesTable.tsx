@@ -38,6 +38,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -49,11 +50,10 @@ import QuoteStatus from "./QuoteStatus";
 type QuotesTableProps = {
   data: QuotationListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
-const QuotesTable = memo(({ data, count, nextCursor }: QuotesTableProps) => {
+const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -353,11 +353,7 @@ const QuotesTable = memo(({ data, count, nextCursor }: QuotesTableProps) => {
     <>
       <Table<QuotationListItem>
         count={count}
-        infinite={{
-          dataKey: "quotes",
-          nextCursor,
-          listKey: "quotes"
-        }}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{

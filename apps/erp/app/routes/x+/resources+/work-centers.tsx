@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function WorkCentersRoute() {
-  const { count, departments, locations, workCenters, nextCursor } =
+  const { count, departments, locations, workCenters, infinite } =
     useLoaderData<typeof loader>();
 
   return (
@@ -49,7 +49,7 @@ export default function WorkCentersRoute() {
       <WorkCentersTable
         data={workCenters}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         departments={departments}
         locations={locations}
       />

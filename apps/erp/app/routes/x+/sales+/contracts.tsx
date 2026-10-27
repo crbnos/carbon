@@ -28,11 +28,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ContractsRoute() {
-  const { count, contracts, nextCursor } = useLoaderData<typeof loader>();
+  const { count, contracts, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ContractsTable data={contracts} count={count} nextCursor={nextCursor} />
+      <ContractsTable data={contracts} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

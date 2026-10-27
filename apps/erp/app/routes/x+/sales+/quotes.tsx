@@ -30,11 +30,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function QuotesRoute() {
-  const { count, quotes, nextCursor } = useLoaderData<typeof loader>();
+  const { count, quotes, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <QuotesTable data={quotes} count={count} nextCursor={nextCursor} />
+      <QuotesTable data={quotes} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

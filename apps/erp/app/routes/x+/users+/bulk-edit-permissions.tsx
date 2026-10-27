@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -14,8 +13,7 @@ import {
 } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
 import { getParams, path } from "~/utils/path";
-import { parseAllMatching } from "~/utils/table-jobs";
-import { startTableBulkAction } from "~/utils/table-jobs.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 const modulePermissions = z.record(z.string(), userPermissionsValidator);
 
@@ -23,13 +21,10 @@ export async function action(args: ActionFunctionArgs) {
   // Every matching user of the Employees list: the background job picks the
   // active users and queues their permission update. The job checks the
   // PERMISSIONS feature (`canRunBulkAction`).
-  const allMatching = parseAllMatching(
-    (await args.request.clone().formData()).get("allMatching")
+  const allMatching = (await args.request.clone().formData()).get(
+    "allMatching"
   );
   if (allMatching) {
-    const { companyId, userId } = await requirePermissions(args.request, {
-      update: "users"
-    });
     const input = await validator(bulkPermissionsAllMatchingValidator).request(
       args
     );
@@ -45,17 +40,17 @@ export async function action(args: ActionFunctionArgs) {
       return { success: false, message: "Failed to parse permissions" };
     }
     const { ip } = originOf(args.request);
-    return startTableBulkAction({
-      companyId,
-      userId,
-      actionKey: "users.permissions",
-      params: {
+    const started = await startBackgroundBulkAction(
+      args.request,
+      "users.permissions",
+      { allMatching },
+      {
         permissions: permissions.data,
         addOnly: input.data.editType === "add",
         ...(ip ? { ip } : {})
-      },
-      allMatching
-    });
+      }
+    );
+    if (started) return started;
   }
 
   const input = await validator(bulkPermissionsValidator).request(args);

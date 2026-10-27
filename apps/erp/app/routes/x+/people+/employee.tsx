@@ -69,7 +69,7 @@ export default function ResourcesPeopleRoute() {
     employeeTypes,
     people,
     shifts,
-    nextCursor
+    infinite
   } = useLoaderData<typeof loader>();
 
   return (
@@ -78,7 +78,7 @@ export default function ResourcesPeopleRoute() {
         attributeCategories={attributeCategories}
         data={people ?? []}
         count={count ?? 0}
-        nextCursor={nextCursor}
+        infinite={infinite}
         employeeTypes={employeeTypes}
         shifts={shifts}
       />

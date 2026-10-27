@@ -11,6 +11,7 @@ import type { Filter, Sort } from "../query";
 import { getGenericQueryFilters } from "../query";
 import { accountingLists } from "./accounting.server";
 import { documentsLists } from "./documents.server";
+import { type ListExportValues, withExportValues } from "./export-values";
 import { inventoryLists } from "./inventory.server";
 import { invoicingLists } from "./invoicing.server";
 import { itemsLists } from "./items.server";
@@ -78,7 +79,8 @@ export type ListRowsContext = {
 };
 
 export type ListDefinition<
-  TRow extends Record<string, unknown> = Record<string, unknown>
+  TRow extends Record<string, unknown> = Record<string, unknown>,
+  TOut extends Record<string, unknown> = TRow
 > = Paging & {
   /** The list's key, for example "sales-orders". */
   key: string;
@@ -91,15 +93,19 @@ export type ListDefinition<
     context: ListQueryContext
   ) => PromiseLike<ListQueryResult<TRow>>;
   /**
-   * The rows of one page as the background CSV export writes them, for a list
-   * whose loader adds per-row values (`mapRows`) that columns export: the same
-   * lookup, then each such column's export value under its column key. The
-   * export job reads `row[key]` and runs no column code.
+   * Adds the per-row values the list's view does not have (a lookup in
+   * another table) to the rows of one page. `loadListPage` runs it on every
+   * page and the background CSV export on every part, so the table and the
+   * file show the same values. A failed lookup throws: a blank column would
+   * read as "none".
    */
-  exportRows?(
-    rows: TRow[],
-    context: ListRowsContext
-  ): Promise<Record<string, unknown>[]>;
+  rows?(rows: TRow[], context: ListRowsContext): Promise<TOut[]>;
+  /**
+   * The export values (`meta.exportValue`) of the columns that show a value
+   * computed from the row, by column key. The background export runs no
+   * column code, so it writes these under their keys.
+   */
+  exportValues?: ListExportValues<TOut>;
 };
 
 export type ListPage<TRow> = {
@@ -140,8 +146,11 @@ export function getListDefinition(key: string): ListDefinition | undefined {
  * or the exact count for `?count=exact`.
  * `options.companyGroupId` saves a group lookup for group-scoped lists.
  */
-export async function fetchListPage<TRow extends Record<string, unknown>>(
-  definition: ListDefinition<TRow>,
+export async function fetchListPage<
+  TRow extends Record<string, unknown>,
+  TOut extends Record<string, unknown> = TRow
+>(
+  definition: ListDefinition<TRow, TOut>,
   client: SupabaseClient<Database>,
   companyId: string,
   params: URLSearchParams,
@@ -174,6 +183,26 @@ export async function fetchListPage<TRow extends Record<string, unknown>>(
     ...(!paging && exactCount ? { exactCount: true as const } : {}),
     error: result.error
   };
+}
+
+/**
+ * One page's rows as the background CSV export writes them: the list's own
+ * `rows` lookup, then its columns' `exportValues` under their keys.
+ */
+export async function exportListRows<
+  TRow extends Record<string, unknown>,
+  TOut extends Record<string, unknown>
+>(
+  definition: ListDefinition<TRow, TOut>,
+  rows: TRow[],
+  context: ListRowsContext
+): Promise<Record<string, unknown>[]> {
+  const withRows = definition.rows
+    ? await definition.rows(rows, context)
+    : (rows as unknown as TOut[]);
+  return definition.exportValues
+    ? withExportValues(withRows, definition.exportValues)
+    : withRows;
 }
 
 /**
@@ -221,13 +250,18 @@ type ParamReader = string | ((params: URLSearchParams) => unknown);
  * A list with another service shape (a group id, a positional arg, two
  * services) writes its own `query`.
  */
-export function searchList<TRow extends Record<string, unknown>, TArgs>({
+export function searchList<
+  TRow extends Record<string, unknown>,
+  TArgs,
+  TOut extends Record<string, unknown> = TRow
+>({
   key,
   permission,
   paging,
   service,
   params: readers = {},
-  exportRows
+  rows,
+  exportValues
 }: {
   key: string;
   permission: ListPermission;
@@ -238,13 +272,15 @@ export function searchList<TRow extends Record<string, unknown>, TArgs>({
     args: TArgs
   ) => PromiseLike<ListQueryResult<TRow>>;
   params?: Record<string, ParamReader>;
-  exportRows?: ListDefinition<TRow>["exportRows"];
-}): ListDefinition<TRow> {
+  rows?: (rows: TRow[], context: ListRowsContext) => Promise<TOut[]>;
+  exportValues?: Record<string, (row: TOut) => unknown>;
+}): ListDefinition<TRow, TOut> {
   return {
     key,
     permission,
     ...paging,
-    ...(exportRows ? { exportRows } : {}),
+    ...(rows ? { rows } : {}),
+    ...(exportValues ? { exportValues } : {}),
     query: (
       client,
       companyId,

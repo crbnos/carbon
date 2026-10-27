@@ -3,19 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   isItemBulkUpdateField,
-  type itemTrackingTypes
+  itemBulkUpdateValidator
 } from "~/modules/items/items.models";
-import type { methodType, sourcingType } from "~/modules/shared/shared.models";
-import { isItemBulkUpdateValue } from "~/utils/item-bulk-actions.server";
-import { bulkStartFormResponse } from "~/utils/table-jobs";
-import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 // The items tables' bulk actions and the item properties panels: one field of
 // one or more items per post. The tables' Update posts `allMatching` in
@@ -63,52 +59,31 @@ export async function action(args: ActionFunctionArgs) {
   if ("invalid" in input) return input.invalid;
   const { items: ids, field, value, allMatching } = input.data;
 
-  // Every matching row: the background job updates them 100 at a time
-  // (bulkUpdateItems).
-  if (allMatching && isItemBulkUpdateField(field)) {
-    if (!isItemBulkUpdateValue(field, value)) {
-      return invalid(`${value} is not a valid ${field}`);
-    }
-    const { companyId, userId } = await requirePermissions(args.request, {
-      update: "parts"
-    });
-    const started = await startAllMatchingBulkAction(allMatching, {
-      companyId,
-      userId,
-      actionKey: "items.update",
-      params: { field, value }
-    });
-    if (started) return bulkStartFormResponse(started);
+  // The fields the tables' Update sets on many items: one operation for
+  // both paths (`updateItems`). Every matching row goes to the background
+  // job, which runs the same operation 100 items at a time.
+  if (isItemBulkUpdateField(field)) {
+    const change = itemBulkUpdateValidator.safeParse({ field, value });
+    if (!change.success) return invalid(`${value} is not a valid ${field}`);
+    const started = await startBackgroundBulkAction(
+      args.request,
+      "items.update",
+      { allMatching },
+      change.data
+    );
+    if (started) return started;
+    const api = await carbon(args.request);
+    return api.items.updateItems({ ids, change: change.data });
   }
 
   const api = (await carbon(args.request)).items;
 
   switch (field) {
-    case "itemTrackingType":
-      return api.setItemTrackingType({
-        ids,
-        itemTrackingType: value as (typeof itemTrackingTypes)[number]
-      });
     case "name":
     case "description":
     case "mpn":
     case "unitOfMeasureCode":
       return api.setItemFields({ ids, [field]: value });
-    case "replenishmentSystem":
-      return api.setItemSourcing({
-        ids,
-        replenishmentSystem: value as "Buy" | "Make" | "Buy and Make"
-      });
-    case "defaultMethodType":
-      return api.setItemSourcing({
-        ids,
-        defaultMethodType: value as (typeof methodType)[number]
-      });
-    case "sourcingType":
-      return api.setItemSourcing({
-        ids,
-        sourcingType: value as (typeof sourcingType)[number]
-      });
     case "gradeId":
     case "dimensionId":
     case "finishId":
@@ -118,11 +93,6 @@ export async function action(args: ActionFunctionArgs) {
       return api.setMaterialProperties({ ids, [field]: value || null });
     case "active":
       return api.setItemActive({ ids, active: value === "on" });
-    case "itemPostingGroupId":
-      return api.setItemPostingGroup({
-        ids,
-        itemPostingGroupId: value || null
-      });
     case "partId":
     case "consumableId":
     case "materialId":

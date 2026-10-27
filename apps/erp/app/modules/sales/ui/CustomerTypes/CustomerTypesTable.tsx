@@ -11,6 +11,7 @@ import { LuPencil, LuShapes, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -19,12 +20,11 @@ import type { CustomerType } from "../../types";
 type CustomerTypesTableProps = {
   data: CustomerType[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -99,11 +99,7 @@ const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
-      infinite={{
-        dataKey: "data",
-        nextCursor,
-        listKey: "customer-types"
-      }}
+      infinite={infinite}
       primaryAction={
         permissions.can("create", "sales") && (
           <New

@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ApiKeysRoute() {
-  const { apiKeys, count, nextCursor } = useLoaderData<typeof loader>();
+  const { apiKeys, count, infinite } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "API_KEYS" });
 
   if (isGated) {
@@ -39,7 +39,7 @@ export default function ApiKeysRoute() {
   }
   return (
     <>
-      <ApiKeysTable count={count} data={apiKeys} nextCursor={nextCursor} />
+      <ApiKeysTable count={count} data={apiKeys} infinite={infinite} />
       <RecordOutlet />
     </>
   );

@@ -35,18 +35,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PartsSearchRoute() {
-  const { count, parts, nextCursor, tags } = useLoaderData<typeof loader>();
+  const { count, parts, infinite, tags } = useLoaderData<typeof loader>();
 
   useRealtime("part");
 
   return (
     <VStack spacing={0} className="h-full">
-      <PartsTable
-        data={parts}
-        count={count}
-        nextCursor={nextCursor}
-        tags={tags}
-      />
+      <PartsTable data={parts} count={count} infinite={infinite} tags={tags} />
       <RecordOutlet />
     </VStack>
   );

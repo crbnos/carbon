@@ -19,6 +19,7 @@ import {
 } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyDecimalsLookup } from "~/hooks";
 import { path } from "~/utils/path";
 import { chargeStatus, chargeType } from "../../invoicing.models";
@@ -29,12 +30,11 @@ type ChargeRow = Database["public"]["Tables"]["charge"]["Row"];
 type ChargesTableProps = {
   data: ChargeRow[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ChargesTable = memo((props: ChargesTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   // Each transaction carries its own currencyCode (a company can hold cards in
@@ -140,11 +140,7 @@ const ChargesTable = memo((props: ChargesTableProps) => {
 
   return (
     <Table<ChargeRow>
-      infinite={{
-        dataKey: "data",
-        nextCursor,
-        listKey: "charges"
-      }}
+      infinite={infinite}
       count={count}
       columns={columns}
       data={data}

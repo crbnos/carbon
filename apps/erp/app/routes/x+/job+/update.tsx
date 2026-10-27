@@ -4,14 +4,12 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { CarbonError, toResult } from "@carbon/api/service-fn.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import type { deadlineTypes } from "~/modules/production/production.models";
-import { bulkStartFormResponse } from "~/utils/table-jobs";
-import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 // The jobs table's bulk actions and the job properties panel: one field of
 // one or more jobs per post. The table's Delete posts `allMatching` in place
@@ -47,19 +45,15 @@ export async function action(args: ActionFunctionArgs) {
   const { ids, field, value, allMatching } = input.data;
 
   // Every matching row: the background job deletes the Draft, Planned, Due
-  // Today and Overdue jobs (bulkDeleteJobs) and skips the rest.
-  if (field === "delete" && allMatching) {
-    const { companyId, userId } = await requirePermissions(args.request, {
-      update: "production",
-      delete: "production"
-    });
-    const started = await startAllMatchingBulkAction(allMatching, {
-      companyId,
-      userId,
-      actionKey: "jobs.delete",
-      params: {}
-    });
-    if (started) return bulkStartFormResponse(started);
+  // Today and Overdue jobs (deleteJobs, as for a selection) and skips the rest.
+  if (field === "delete") {
+    const started = await startBackgroundBulkAction(
+      args.request,
+      "jobs.delete",
+      { allMatching },
+      {}
+    );
+    if (started) return started;
   }
 
   const job = (await carbon(args.request)).production;

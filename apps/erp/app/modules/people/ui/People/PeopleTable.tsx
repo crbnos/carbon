@@ -35,6 +35,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { DataType } from "~/modules/shared/types";
 import type { EmployeeType } from "~/modules/users/types";
@@ -45,7 +46,7 @@ type PeopleTableProps = {
   attributeCategories: AttributeCategory[];
   data: Person[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   employeeTypes: Partial<EmployeeType>[];
   shifts: { id: string; name: string }[];
 };
@@ -55,7 +56,7 @@ const PeopleTable = memo(
     attributeCategories,
     data,
     count,
-    nextCursor,
+    infinite,
     employeeTypes,
     shifts
   }: PeopleTableProps) => {
@@ -310,7 +311,7 @@ const PeopleTable = memo(
           count={count}
           columns={columns}
           data={data}
-          infinite={{ dataKey: "people", nextCursor, listKey: "people" }}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["Select", "User"]
           }}

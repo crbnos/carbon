@@ -22,6 +22,7 @@ import {
   Hyperlink,
   Table
 } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { useUrlParams } from "~/hooks";
 import {
   inspectionSourceDocuments,
@@ -35,7 +36,7 @@ import { getInspectionStatusVariant } from "./InspectionStatus";
 type InspectionsTableProps = {
   data: Inspection[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 function computeProgress(row: Inspection): {
@@ -51,7 +52,7 @@ function computeProgress(row: Inspection): {
 }
 
 const InspectionsTable = memo((props: InspectionsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const [items] = useItems();
@@ -204,11 +205,7 @@ const InspectionsTable = memo((props: InspectionsTableProps) => {
   return (
     <Table<Inspection>
       data={data}
-      infinite={{
-        dataKey: "inspections",
-        nextCursor,
-        listKey: "inspections"
-      }}
+      infinite={infinite}
       columns={columns}
       count={count ?? 0}
       title={t`Inspections`}

@@ -42,15 +42,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ItemPostingGroupsRoute() {
-  const { itemPostingGroups, count, nextCursor } =
-    useLoaderData<typeof loader>();
+  const { itemPostingGroups, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ItemPostingGroupsTable
         data={itemPostingGroups}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

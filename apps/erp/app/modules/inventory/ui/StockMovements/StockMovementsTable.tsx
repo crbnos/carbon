@@ -39,6 +39,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -54,12 +55,11 @@ import StockMovementCorrectionModal from "./StockMovementCorrectionModal";
 type StockMovementsTableProps = {
   data: StockMovement[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const StockMovementsTable = memo(
-  ({ data, count, nextCursor }: StockMovementsTableProps) => {
+  ({ data, count, infinite }: StockMovementsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const [correctionTarget, setCorrectionTarget] =
@@ -303,11 +303,7 @@ const StockMovementsTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
-          infinite={{
-            dataKey: "movements",
-            nextCursor,
-            listKey: "stock-movements"
-          }}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnPinning={{

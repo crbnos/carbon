@@ -34,14 +34,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ServicesSearchRoute() {
-  const { count, services, nextCursor, tags } = useLoaderData<typeof loader>();
+  const { count, services, infinite, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ServicesTable
         data={services}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         tags={tags}
       />
       <RecordOutlet />

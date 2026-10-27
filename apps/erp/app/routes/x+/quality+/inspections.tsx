@@ -29,15 +29,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function InspectionsRoute() {
-  const { inspections, count, nextCursor } = useLoaderData<typeof loader>();
+  const { inspections, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <InspectionsTable
-        data={inspections}
-        count={count}
-        nextCursor={nextCursor}
-      />
+      <InspectionsTable data={inspections} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

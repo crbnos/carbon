@@ -18,6 +18,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { EmployeeAvatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { getConsoleOperators } from "~/modules/users/users.service";
 import { getEmployeeTypes } from "~/modules/users/users.service";
@@ -55,12 +56,12 @@ const OperatorsTable = memo(
   ({
     data,
     count,
-    nextCursor,
+    infinite,
     employeeTypes
   }: {
     data: Operator[];
     count: number;
-    nextCursor: string | null;
+    infinite: InfiniteOptions;
     employeeTypes: ListItem[];
   }) => {
     const { t } = useLingui();
@@ -173,11 +174,7 @@ const OperatorsTable = memo(
         count={count}
         columns={columns}
         data={data}
-        infinite={{
-          dataKey: "operators",
-          nextCursor,
-          listKey: "console-operators"
-        }}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "users") && (
             <New label={t`Operator`} to={`new?${params.toString()}`} />
@@ -193,7 +190,7 @@ const OperatorsTable = memo(
 OperatorsTable.displayName = "OperatorsTable";
 
 export default function ConsoleOperatorsRoute() {
-  const { count, operators, nextCursor, employeeTypes } =
+  const { count, operators, infinite, employeeTypes } =
     useLoaderData<typeof loader>();
 
   return (
@@ -201,7 +198,7 @@ export default function ConsoleOperatorsRoute() {
       <OperatorsTable
         data={operators}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         employeeTypes={employeeTypes}
       />
       <RecordOutlet />

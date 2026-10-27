@@ -47,11 +47,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Route() {
-  const { entries, count, nextCursor } = useLoaderData<typeof loader>();
+  const { entries, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <TimecardsTable data={entries} count={count} nextCursor={nextCursor} />
+      <TimecardsTable data={entries} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

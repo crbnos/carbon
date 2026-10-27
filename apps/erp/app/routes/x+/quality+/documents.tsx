@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function QualityDocumentsRoute() {
-  const { qualityDocuments, count, nextCursor, tags } =
+  const { qualityDocuments, count, infinite, tags } =
     useLoaderData<typeof loader>();
 
   return (
@@ -36,7 +36,7 @@ export default function QualityDocumentsRoute() {
       <QualityDocumentsTable
         data={qualityDocuments}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         tags={tags}
       />
       <RecordOutlet />

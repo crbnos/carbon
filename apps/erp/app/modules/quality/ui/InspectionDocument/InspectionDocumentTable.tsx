@@ -24,6 +24,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
@@ -32,7 +33,7 @@ import type { InspectionDocument } from "../../types";
 type InspectionDocumentTableProps = {
   data: InspectionDocument[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -42,7 +43,7 @@ const defaultColumnVisibility = {
 };
 
 const InspectionDocumentTable = memo(
-  ({ data, count, nextCursor }: InspectionDocumentTableProps) => {
+  ({ data, count, infinite }: InspectionDocumentTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -173,11 +174,7 @@ const InspectionDocumentTable = memo(
       <>
         <Table<InspectionDocument>
           data={data}
-          infinite={{
-            dataKey: "diagrams",
-            nextCursor,
-            listKey: "inspection-plans"
-          }}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}

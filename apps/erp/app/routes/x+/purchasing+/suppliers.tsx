@@ -10,10 +10,7 @@ import { SuppliersTable } from "~/modules/purchasing/ui/Supplier";
 import { getTagsList } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { loadListPage } from "~/utils/list-registry/load.server";
-import {
-  suppliersList,
-  withSupplierReportContacts
-} from "~/utils/list-registry/purchasing.server";
+import { suppliersList } from "~/utils/list-registry/purchasing.server";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -29,8 +26,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     firstPage: async ({ client, companyId }) => ({
       tags: (await getTagsList(client, companyId, "supplier")).data ?? []
     }),
-    // The report contacts of each page's suppliers, for the CSV export.
-    mapRows: withSupplierReportContacts,
     onError: {
       redirectTo: path.to.purchasing,
       message: "Failed to fetch suppliers"
@@ -39,14 +34,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PurchasingSuppliersRoute() {
-  const { count, suppliers, nextCursor, tags } = useLoaderData<typeof loader>();
+  const { count, suppliers, infinite, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <SuppliersTable
         data={suppliers}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         tags={tags}
       />
       <RecordOutlet />

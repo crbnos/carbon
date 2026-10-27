@@ -76,7 +76,7 @@ export default function UsersEmployeesRoute() {
   const {
     count,
     employees,
-    nextCursor,
+    infinite,
     employeeTypes,
     unrevokedInviteEmails,
     mfaEnrolledUserIds
@@ -87,7 +87,7 @@ export default function UsersEmployeesRoute() {
       <EmployeesTable
         data={employees}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         employeeTypes={employeeTypes}
         unrevokedInviteEmails={unrevokedInviteEmails}
         mfaEnrolledUserIds={mfaEnrolledUserIds}

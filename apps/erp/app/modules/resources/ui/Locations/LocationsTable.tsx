@@ -20,6 +20,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { ShiftLocation } from "~/modules/resources/types";
@@ -29,11 +30,11 @@ import { path } from "~/utils/path";
 type LocationsTableProps = {
   data: ShiftLocation[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const LocationsTable = memo((props: LocationsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -176,7 +177,7 @@ const LocationsTable = memo((props: LocationsTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
-      infinite={{ dataKey: "locations", nextCursor, listKey: "locations" }}
+      infinite={infinite}
       count={count}
       columns={columns}
       primaryAction={

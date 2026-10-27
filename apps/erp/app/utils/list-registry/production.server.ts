@@ -7,6 +7,8 @@ import {
   ASSEMBLY_INSTRUCTIONS_PAGING,
   getAssemblyInstructionsPage,
   getJobOperationBatches,
+  getJobOperationBatchMemberStats,
+  getJobOperationBatchMembers,
   getJobs,
   getProcedures,
   getScrapReasons,
@@ -15,16 +17,13 @@ import {
   PROCEDURES_PAGING,
   SCRAP_REASONS_PAGING
 } from "~/modules/production/production.service";
+import { BATCH_LIST_EXPORT_VALUES } from "~/modules/production/ui/Batches/batch-list-export";
 import { JOB_LIST_EXPORT_VALUES } from "~/modules/production/ui/Jobs/job-list-export";
-import { withExportValues } from "./export-values";
 import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
-/**
- * The live batches and the tracked entity of each job: the jobs view has
- * neither. The loader adds them to every page (`mapRows`); the background
- * export adds them through `exportRows`.
- */
+/** The live batches and the tracked entity of each job: the jobs view has
+ *  neither. */
 export async function withJobListExtras<
   T extends { id: string | null; jobMakeMethodId: string | null }
 >(jobs: T[], { client, companyId }: ListRowsContext) {
@@ -97,11 +96,8 @@ export const jobsList = searchList({
   permission: { view: "production", role: "employee" },
   paging: JOBS_PAGING,
   service: getJobs,
-  exportRows: async (rows, context) =>
-    withExportValues(
-      await withJobListExtras(rows, context),
-      JOB_LIST_EXPORT_VALUES
-    )
+  rows: withJobListExtras,
+  exportValues: JOB_LIST_EXPORT_VALUES
 });
 
 export const assemblyInstructionsList = {
@@ -124,11 +120,40 @@ export const assemblyInstructionsList = {
     })
 } satisfies ListDefinition;
 
+/**
+ * Each batch's member count, summed quantity, work center and member rows
+ * (for the expandable sub-list): the batches view has none of them.
+ */
+async function withBatchListExtras<
+  T extends { id: string; workCenter: { name: string | null } | null }
+>(batches: T[], { client, companyId }: ListRowsContext) {
+  const batchIds = batches.map((batch) => batch.id);
+  const [stats, members] = await Promise.all([
+    getJobOperationBatchMemberStats(client, companyId, batchIds),
+    getJobOperationBatchMembers(client, companyId, batchIds)
+  ]);
+  if (stats.error) throw stats.error;
+  if (members.error) throw members.error;
+  return batches.map((batch) => ({
+    ...batch,
+    memberCount: stats.data[batch.id]?.memberCount ?? 0,
+    totalQuantity: stats.data[batch.id]?.totalQuantity ?? 0,
+    // The header work center when assigned, else the members' shared one
+    // (the board's own fallback): a board-created batch has no header work
+    // center until its card is dragged.
+    workCenterName:
+      batch.workCenter?.name ?? stats.data[batch.id]?.workCenterName ?? null,
+    members: members.data[batch.id] ?? []
+  }));
+}
+
 export const operationBatchesList = searchList({
   key: "operation-batches",
   permission: { view: "production", role: "employee" },
   paging: JOB_OPERATION_BATCHES_PAGING,
-  service: getJobOperationBatches
+  service: getJobOperationBatches,
+  rows: withBatchListExtras,
+  exportValues: BATCH_LIST_EXPORT_VALUES
 });
 
 export const proceduresList = searchList({

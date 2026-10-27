@@ -19,6 +19,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { ItemSerialSequence } from "~/modules/settings/types";
 import { useItems } from "~/stores/items";
@@ -27,11 +28,11 @@ import { path } from "~/utils/path";
 type ItemSerialSequencesTableProps = {
   data: ItemSerialSequence[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ItemSerialSequencesTable = memo(
-  ({ data, count, nextCursor }: ItemSerialSequencesTableProps) => {
+  ({ data, count, infinite }: ItemSerialSequencesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -150,7 +151,7 @@ const ItemSerialSequencesTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
-        infinite={{ dataKey: "data", nextCursor, listKey: "serial-numbers" }}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

@@ -63,7 +63,7 @@ export default function DepreciationRunsRoute() {
   const {
     data,
     count,
-    nextCursor,
+    infinite,
     lastPeriodEnd,
     nextPeriodEnd,
     hasDraftBlocking
@@ -87,7 +87,7 @@ export default function DepreciationRunsRoute() {
       <DepreciationRunTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "accounting") && (
             <TooltipProvider>

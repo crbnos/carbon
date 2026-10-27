@@ -15,6 +15,7 @@ import { LuListChecks, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ChangeNoticeRequiredAction } from "../../types";
@@ -22,11 +23,11 @@ import type { ChangeNoticeRequiredAction } from "../../types";
 type ChangeNoticeRequiredActionsTableProps = {
   data: ChangeNoticeRequiredAction[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ChangeNoticeRequiredActionsTable = memo(
-  ({ data, count, nextCursor }: ChangeNoticeRequiredActionsTableProps) => {
+  ({ data, count, infinite }: ChangeNoticeRequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -97,11 +98,7 @@ const ChangeNoticeRequiredActionsTable = memo(
     return (
       <Table<ChangeNoticeRequiredAction>
         data={data}
-        infinite={{
-          dataKey: "data",
-          nextCursor,
-          listKey: "change-notice-actions"
-        }}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

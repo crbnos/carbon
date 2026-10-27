@@ -61,7 +61,7 @@ export default function CustomerPortalsUpgradeOverlay() {
           appUrl="https://app.carbon.ms"
           data={mockPortals}
           count={mockPortals.length}
-          nextCursor={null}
+          infinite={{ dataKey: "data", nextCursor: null }}
         />
       </UpgradeOverlayPreview>
       <UpgradeOverlayCard>

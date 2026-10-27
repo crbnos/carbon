@@ -29,11 +29,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function LocationsRoute() {
-  const { locations, count, nextCursor } = useLoaderData<typeof loader>();
+  const { locations, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <LocationsTable data={locations} count={count} nextCursor={nextCursor} />
+      <LocationsTable data={locations} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

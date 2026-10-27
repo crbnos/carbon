@@ -43,6 +43,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { supplierStatusType } from "~/modules/purchasing/purchasing.models";
@@ -61,15 +62,14 @@ type SupplierRow = Supplier & { reportContacts: SupplierReportContacts };
 type SuppliersTableProps = {
   data: SupplierRow[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   tags: { name: string }[];
 };
 
 const SuppliersTable = memo(function SuppliersTable({
   data,
   count,
-  nextCursor,
+  infinite,
   tags
 }: SuppliersTableProps) {
   const { t } = useLingui();
@@ -84,11 +84,6 @@ const SuppliersTable = memo(function SuppliersTable({
   const companySettings = useCompanySettings();
   const showSupplierReadableId =
     companySettings?.showSupplierReadableId ?? false;
-
-  const infinite = useMemo(
-    () => ({ dataKey: "suppliers", nextCursor, listKey: "suppliers" }),
-    [nextCursor]
-  );
 
   const customColumns = useCustomColumns<SupplierRow>("supplier");
   const columns = useMemo<ColumnDef<SupplierRow>[]>(() => {

@@ -30,15 +30,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function SupplierQuotesRoute() {
-  const { count, quotes, nextCursor } = useLoaderData<typeof loader>();
+  const { count, quotes, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <SupplierQuotesTable
-        data={quotes}
-        count={count}
-        nextCursor={nextCursor}
-      />
+      <SupplierQuotesTable data={quotes} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MethodOperationsRoute() {
-  const { count, operations, nextCursor } = useLoaderData<typeof loader>();
+  const { count, operations, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack
@@ -38,7 +38,7 @@ export default function MethodOperationsRoute() {
       <MethodOperationsTable
         data={operations}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
     </VStack>
   );

@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FixedAssetsRoute() {
-  const { data, count, nextCursor, assetClasses } =
+  const { data, count, infinite, assetClasses } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -44,7 +44,7 @@ export default function FixedAssetsRoute() {
       <FixedAssetsTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         assetClasses={assetClasses}
         primaryAction={
           permissions.can("create", "accounting") && (

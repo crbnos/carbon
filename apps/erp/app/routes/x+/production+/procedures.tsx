@@ -28,8 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ProceduresRoute() {
-  const { procedures, tags, count, nextCursor } =
-    useLoaderData<typeof loader>();
+  const { procedures, tags, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -37,7 +36,7 @@ export default function ProceduresRoute() {
         data={procedures}
         tags={tags}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

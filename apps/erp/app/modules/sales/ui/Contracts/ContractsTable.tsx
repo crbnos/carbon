@@ -21,6 +21,7 @@ import {
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   useDateFormatter,
@@ -40,12 +41,11 @@ import type { ContractListItem } from "./types";
 type ContractsTableProps = {
   data: ContractListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ContractsTable = memo((props: ContractsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -245,11 +245,7 @@ const ContractsTable = memo((props: ContractsTableProps) => {
     <>
       <Table<ContractListItem>
         count={count}
-        infinite={{
-          dataKey: "contracts",
-          nextCursor,
-          listKey: "contracts"
-        }}
+        infinite={infinite}
         columns={columns}
         data={data}
         defaultColumnPinning={{

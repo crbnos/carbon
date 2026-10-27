@@ -33,6 +33,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useItems } from "~/stores/items";
@@ -52,11 +53,11 @@ type IssuesTableProps = {
   data: Issue[];
   types: ListItem[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const IssuesTable = memo((props: IssuesTableProps) => {
-  const { data, types, count, nextCursor } = props;
+  const { data, types, count, infinite } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -360,11 +361,7 @@ const IssuesTable = memo((props: IssuesTableProps) => {
     <>
       <Table<Issue>
         data={data}
-        infinite={{
-          dataKey: "issues",
-          nextCursor,
-          listKey: "issues"
-        }}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

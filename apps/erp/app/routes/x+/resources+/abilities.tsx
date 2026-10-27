@@ -28,11 +28,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AbilitiesRoute() {
-  const { count, abilities, nextCursor } = useLoaderData<typeof loader>();
+  const { count, abilities, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <AbilitiesTable data={abilities} count={count} nextCursor={nextCursor} />
+      <AbilitiesTable data={abilities} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

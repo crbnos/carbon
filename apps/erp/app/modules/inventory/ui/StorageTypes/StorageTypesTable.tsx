@@ -11,6 +11,7 @@ import { LuPencil, LuTag, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -25,12 +26,11 @@ type StorageType = {
 type StorageTypesTableProps = {
   data: StorageType[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const StorageTypesTable = memo((props: StorageTypesTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -93,11 +93,7 @@ const StorageTypesTable = memo((props: StorageTypesTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
-      infinite={{
-        dataKey: "storageTypes",
-        nextCursor,
-        listKey: "storage-types"
-      }}
+      infinite={infinite}
       columns={columns}
       count={count}
       importCSV={[

@@ -15,7 +15,7 @@ import type { MaintenanceSchedule } from "~/modules/resources/types";
 import MaintenanceSchedulesTable from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceSchedulesTable";
 import type { Handle } from "~/utils/handle";
 import { fetchListPage } from "~/utils/list-registry/index.server";
-import { listErrorPage } from "~/utils/list-registry/load.server";
+import { listErrorPage, listInfinite } from "~/utils/list-registry/load.server";
 import { maintenanceSchedulesList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
 
@@ -46,6 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       data: [],
       count: 0,
       nextCursor: null,
+      infinite: listInfinite(maintenanceSchedulesList, "data", null),
       locations: locationsList,
       locationId: null
     };
@@ -74,6 +75,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         data: [] as MaintenanceSchedule[],
         count: 0,
         nextCursor: null,
+        infinite: listInfinite(maintenanceSchedulesList, "data", null),
         locations: locationsList,
         locationId: selectedLocationId
       },
@@ -89,13 +91,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: schedules.count,
     exactCount: schedules.exactCount,
     nextCursor: schedules.nextCursor,
+    infinite: listInfinite(
+      maintenanceSchedulesList,
+      "data",
+      schedules.nextCursor
+    ),
     locations: locationsList,
     locationId: selectedLocationId
   };
 }
 
 export default function MaintenanceSchedulesRoute() {
-  const { data, count, nextCursor, locations, locationId } =
+  const { data, count, infinite, locations, locationId } =
     useLoaderData<typeof loader>();
 
   return (
@@ -103,7 +110,7 @@ export default function MaintenanceSchedulesRoute() {
       <MaintenanceSchedulesTable
         data={data ?? []}
         count={count ?? 0}
-        nextCursor={nextCursor}
+        infinite={infinite}
         locations={locations}
         locationId={locationId}
       />

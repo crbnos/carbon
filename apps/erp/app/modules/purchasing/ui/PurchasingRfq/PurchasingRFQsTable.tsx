@@ -26,6 +26,7 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
@@ -37,12 +38,11 @@ import { PurchasingRFQStatus } from ".";
 type PurchasingRFQsTableProps = {
   data: PurchasingRFQ[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const PurchasingRFQsTable = memo(
-  ({ data, count, nextCursor }: PurchasingRFQsTableProps) => {
+  ({ data, count, infinite }: PurchasingRFQsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -282,11 +282,7 @@ const PurchasingRFQsTable = memo(
           count={count}
           columns={columns}
           data={data}
-          infinite={{
-            dataKey: "rfqs",
-            nextCursor,
-            listKey: "purchasing-rfqs"
-          }}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["rfqId"]
           }}

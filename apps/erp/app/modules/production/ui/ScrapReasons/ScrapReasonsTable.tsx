@@ -10,6 +10,7 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -18,12 +19,11 @@ import type { ScrapReason } from "../../types";
 type ScrapReasonsTableProps = {
   data: ScrapReason[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ScrapReasonsTable = memo((props: ScrapReasonsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -86,11 +86,7 @@ const ScrapReasonsTable = memo((props: ScrapReasonsTableProps) => {
       data={data}
       columns={columns}
       count={count}
-      infinite={{
-        dataKey: "data",
-        nextCursor,
-        listKey: "scrap-reasons"
-      }}
+      infinite={infinite}
       importCSV={[
         {
           table: "scrapReason" as const,

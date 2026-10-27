@@ -33,8 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function SuggestionsRoute() {
-  const { suggestions, tags, count, nextCursor } =
-    useLoaderData<typeof loader>();
+  const { suggestions, tags, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -42,7 +41,7 @@ export default function SuggestionsRoute() {
         data={suggestions}
         tags={tags}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

@@ -66,7 +66,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import type { BulkActionScope } from "~/components/Table";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -83,11 +83,11 @@ type ToolsTableProps = {
   data: ToolListItem[];
   tags: { name: string }[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ToolsTable = memo((props: ToolsTableProps) => {
-  const { data, tags, count, nextCursor } = props;
+  const { data, tags, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -661,7 +661,7 @@ const ToolsTable = memo((props: ToolsTableProps) => {
         count={count}
         columns={columns}
         data={data}
-        infinite={{ dataKey: "tools", nextCursor, listKey: "tools" }}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["id"]
         }}

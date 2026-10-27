@@ -23,6 +23,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { FixedAssetClassListItem } from "../../types";
@@ -30,8 +31,7 @@ import type { FixedAssetClassListItem } from "../../types";
 type AssetClassesTableProps = {
   data: FixedAssetClassListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   taxDepreciationEnabled: boolean;
   primaryAction?: ReactNode;
 };
@@ -42,7 +42,7 @@ const AssetClassesTable = memo(
     count,
     taxDepreciationEnabled,
     primaryAction,
-    nextCursor
+    infinite
   }: AssetClassesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -153,11 +153,7 @@ const AssetClassesTable = memo(
     return (
       <>
         <Table<FixedAssetClassListItem>
-          infinite={{
-            dataKey: "data",
-            nextCursor,
-            listKey: "asset-classes"
-          }}
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

@@ -48,7 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PriceListRoute() {
-  const { data, count, nextCursor, scopeOptions, hasScope } =
+  const { data, count, infinite, scopeOptions, hasScope } =
     useLoaderData<typeof loader>();
 
   return (
@@ -56,7 +56,7 @@ export default function PriceListRoute() {
       <PriceListTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         scopeOptions={scopeOptions}
         hasScope={hasScope}
       />

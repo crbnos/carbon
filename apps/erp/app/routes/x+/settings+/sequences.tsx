@@ -22,14 +22,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function SequencesRoute() {
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <SequencesTable
         data={data ?? []}
         count={count ?? 0}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

@@ -30,12 +30,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function SupplierCreditsRoute() {
-  const { count, memos, nextCursor } = useLoaderData<typeof loader>();
+  const { count, memos, infinite } = useLoaderData<typeof loader>();
   return (
     <MemosTable
       data={memos}
       count={count}
-      nextCursor={nextCursor}
+      infinite={infinite}
       party="supplier"
     />
   );

@@ -3,15 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { releaseBatches } from "~/modules/production/production.server";
-import { bulkStartFormResponse, fitsOneRequest } from "~/utils/table-jobs";
-import {
-  startAllMatchingBulkAction,
-  startSelectedBulkAction
-} from "~/utils/table-jobs.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 // The batches table's bulk Release: no dialog, so a batch with a purchase
 // order choice to make is refused and named.
@@ -27,35 +22,24 @@ export async function action(args: ActionFunctionArgs) {
     .json()
     .catch(() => null);
   if (json?.allMatching) {
-    const { companyId, userId } = await requirePermissions(args.request, {
-      update: "production"
-    });
-    const started = await startAllMatchingBulkAction(json.allMatching, {
-      companyId,
-      userId,
-      actionKey: "batches.release",
-      params: {}
-    });
-    if (started) return bulkStartFormResponse(started);
+    const started = await startBackgroundBulkAction(
+      args.request,
+      "batches.release",
+      { allMatching: json.allMatching },
+      {}
+    );
+    if (started) return started;
   }
 
   const input = await validator(selection).request(args);
   if ("invalid" in input) return input.invalid;
-  if (!fitsOneRequest("batches.release", input.data.batchIds.length)) {
-    const { companyId, userId } = await requirePermissions(args.request, {
-      update: "production"
-    });
-    return bulkStartFormResponse(
-      await startSelectedBulkAction({
-        companyId,
-        userId,
-        actionKey: "batches.release",
-        params: {},
-        listKey: "operation-batches",
-        ids: input.data.batchIds
-      })
-    );
-  }
+  const started = await startBackgroundBulkAction(
+    args.request,
+    "batches.release",
+    { ids: input.data.batchIds },
+    {}
+  );
+  if (started) return started;
   const api = await carbon(args.request);
   return api.production.releaseBatches(input.data);
 }

@@ -41,6 +41,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores";
@@ -50,20 +51,13 @@ import type { Customer, CustomerStatus } from "../../types";
 type CustomersTableProps = {
   data: Customer[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   customerStatuses: CustomerStatus[];
   tags: { name: string }[];
 };
 
 const CustomersTable = memo(
-  ({
-    data,
-    count,
-    nextCursor,
-    customerStatuses,
-    tags
-  }: CustomersTableProps) => {
+  ({ data, count, infinite, customerStatuses, tags }: CustomersTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -319,11 +313,7 @@ const CustomersTable = memo(
       <>
         <Table<Customer>
           count={count}
-          infinite={{
-            dataKey: "customers",
-            nextCursor,
-            listKey: "customers"
-          }}
+          infinite={infinite}
           columns={columns}
           data={data}
           defaultColumnPinning={{

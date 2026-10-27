@@ -145,8 +145,10 @@ list and re-read every loaded page. The steps:
    It runs `requirePermissions` with the list's permission and `role: "employee"`.
 2. It makes the export id, `{listKey}.{random}` (`newTableExportId`,
    `utils/table-jobs.ts`).
-3. It takes the company's export lock (`takeTableJobLock`,
-   `packages/jobs/src/table-jobs/lock.ts`). The value is the export id.
+3. `startTableJob("export", …)` (`utils/table-jobs.server.ts`, the bulk
+   actions' start path too) takes the company's export lock
+   (`takeTableJobLock`, `packages/jobs/src/table-jobs/lock.ts`). The value is
+   the export id.
    - If another export holds it, the route answers 409 with
      `tableJobBusyMessage`: "An export is already running for your company.
      Try again when it ends, at the latest in N minutes." N comes from the
@@ -244,14 +246,14 @@ Just render `<Table>` — the button comes for free. No `enableExport`-style pro
 - A list without a `listKey` (a loader that calls `toPage` itself, with no
   registry entry) never reaches the background path. Its export stops at
   1,000 rows.
-- A column that only the loader adds per page (`loadListPage`'s `mapRows`,
-  not a column of the registry query) needs the list's `exportRows`, or it is
-  blank in a background export. The job asks for export rows
-  (`fetchListPage` with `forExport`), and the ERP handler runs `exportRows`:
-  the loader's lookup, then the table's shared export values under the
-  column keys. Jobs (Batches, Tracking), Suppliers (contacts, addresses) and
-  Workflows (Last Run) have one. Any other `meta.exportValue` is not run:
-  the background file holds the raw value.
+- A column whose value comes from a lookup the list's view lacks is the
+  registry entry's `rows`, which the loader and the export both run
+  (`exportListRows`, `utils/list-registry/index.server.ts`). A column whose
+  `meta.exportValue` computes from the row needs the same function in the
+  entry's `exportValues`. Jobs (Batches, Tracking), Batches (Jobs, Quantity,
+  Process, Work Center), Suppliers (contacts, addresses), Workflows (Last
+  Run) and Workflow Runs (Workflow, Record) have them. Any other
+  `meta.exportValue` is not run: the background file holds the raw value.
 - The `name` substitution is keyed on the literal accessor strings `itemId` /
   `supplierId` / `employeeId` / `customerId` **and only runs when the column has no
   `meta.exportValue`**; a column holding one of those ids under a different

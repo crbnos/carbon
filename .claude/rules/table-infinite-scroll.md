@@ -63,7 +63,7 @@ The header shows the number of matching rows ("2,345 rows"), exact at any size.
    cursor). `listCount(args)` then asks for `exact`, and
    `setGenericQueryFilters` reads one row (`.limit(1)`).
 4. `loadListPage` answers that request with the count only: no `firstPage`,
-   no `mapRows`, `{ [dataKey]: [], count, exactCount: true }`. A loader that
+   no `rows` lookup, `{ [dataKey]: [], count, exactCount: true }`. A loader that
    calls `fetchListPage` itself returns `exactCount: page.exactCount`.
 5. Until the answer comes, the copy says "about" (header, phone footer,
    select-all bar). A failed request keeps the estimate.
@@ -91,10 +91,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 `loadListPage` (`utils/list-registry/load.server.ts`) runs `requirePermissions`
 with the list's permission, `guard` (every page), `fetchListPage` with the
-user's company group, `firstPage` (page 1 only, in parallel) and `mapRows`
-(every page, after it). It returns
-`{ [dataKey]: rows, count, nextCursor, ...extras }`. `params` replaces the URL
-search the query reads. On an error:
+user's company group, `firstPage` (page 1 only, in parallel), then the
+list's own `rows` lookup and `mapRows` (every page, after it). It returns
+`{ [dataKey]: rows, count, nextCursor, infinite, ...extras }`. `params`
+replaces the URL search the query reads. On an error:
 
 - A later page logs it and returns `{ [dataKey]: [], nextCursor: null, listError }`
   (`InfiniteListError`). The Table shows "Couldn't load more rows" with Retry.
@@ -105,16 +105,26 @@ search the query reads. On an error:
   rows without `onError`.
 
 A loader that does more (an early return, a flash without a redirect) calls
-`fetchListPage` itself and returns `listErrorPage(dataKey)` for a failed later page
-(`utils/list-registry/list-error.ts`: no imports, so a service module can use it
-without loading the registry).
+`fetchListPage` itself, returns `infinite: listInfinite(list, dataKey,
+nextCursor)` with page 1, and returns `listErrorPage(dataKey)` for a failed
+later page (`utils/list-registry/list-error.ts`: no imports, so a service
+module can use it without loading the registry).
 
-The table passes `infinite` (`InfiniteOptions`, `components/Table/types.ts`)
-to `<Table>`:
+The table takes `infinite` (`InfiniteOptions`, `components/Table/types.ts`)
+as a prop from the loader data and passes it to `<Table>` as is. A table
+never types its list's `dataKey`, `listKey` or `idColumn`: `listInfinite`
+builds them from the registry entry, so they cannot drift from the server.
 
 ```tsx
-infinite={{ dataKey: "customers", nextCursor, listKey: "customers" }}
+// route
+const { customers, count, infinite } = useLoaderData<typeof loader>();
+<CustomersTable data={customers} count={count} infinite={infinite} />
+// table
+<Table data={data} count={count} infinite={infinite} columns={columns} />
 ```
+
+A table whose rows do not come from a registered list (an `api+` loader, a
+job page's tab) builds the object itself, without `listKey`.
 
 | Option | Meaning |
 |---|---|
@@ -125,15 +135,17 @@ infinite={{ dataKey: "customers", nextCursor, listKey: "customers" }}
 | `idColumn` | The unique id column when it is not `id`. It de-duplicates and keys the rows. |
 | `pageUrl` | The URL that serves the later pages, when it is an `api+` loader (Sync Activity: `path.to.api.integrationSyncActivity`). Same response shape. |
 
-- Values from another table (a lookup the list's view lacks) go on each row
-  in the loader, with `loadListPage`'s `mapRows`, so every page carries its
-  own and the table keeps no merge state (Jobs, Suppliers, Workflows).
-  - Put the lookup in the list's registry file (`withJobListExtras`) and pass
-    it as `mapRows`.
-  - If a column exports one of those values, give the registry entry an
-    `exportRows`: the same lookup, then `withExportValues` with the table's
-    shared export map (`JOB_LIST_EXPORT_VALUES`). The background CSV export
-    runs no column code, so without it the column is blank past 1,000 rows.
+- Values from another table (a lookup the list's view lacks) are the
+  registry entry's `rows` (`withJobListExtras`, `withBatchListExtras`,
+  `withSupplierReportContacts`, `withWorkflowListExtras`,
+  `withWorkflowRunRecordNames`). `loadListPage` runs it on every page and the
+  background export on every part, so each page carries its own values, the
+  table keeps no merge state, and the export never has a blank column.
+  - A column whose `meta.exportValue` computes from the row gets the same
+    function in the entry's `exportValues` (`JOB_LIST_EXPORT_VALUES`, shared
+    with the column). The background export runs no column code.
+  - `mapRows` is for what only the screen needs (a download token per row,
+    Documents).
 - 🛑 Pass the loader's `data` array to `<Table infinite>`, or a memoized one.
   `useInfiniteRows` reads a new array as a revalidation and re-reads every
   loaded page. A copy built in the render body (`data.map(…)`) re-reads them
@@ -287,22 +299,28 @@ CSV export follows the same split: see `table-csv-export.md`.
 
 ## The background bulk action
 
-A bulk route that gets `allMatching` in place of ids calls
-`startAllMatchingBulkAction` (`utils/table-jobs.server.ts`). It answers
-`{ success: true, background: true }` or `{ success: false, message }`
-(`BulkActionStart`). The steps:
+Each bulk action is one entry of `BULK_ACTIONS` (`defineBulkAction`,
+`utils/table-jobs.server.ts`): its label, lists, permission, plan `feature`,
+`maxRows`, `idsPerStep`, the zod schema of the params its route sends, and
+`run`, which calls the route's own service function. Every bulk route calls
+`startBackgroundBulkAction(request, actionKey, { allMatching, ids }, params)`
+first: null means the route acts on the selection itself; otherwise it
+answers `bulkStartFormResponse(BulkActionStart)`. The steps:
 
-1. `startTableBulkAction` checks that the action serves the list
-   (`BULK_ACTIONS`, `utils/table-jobs.ts`) and the user's permission
-   (`canRunBulkAction`, also the plan `feature` of the action).
+1. It checks the action's own permission (`requirePermissions` with the
+   entry's `permission`), that the action serves the list, the params
+   (the entry's schema; the job parses them again before `run`), and the
+   user's permission on the list (`canRunBulkAction`, also the plan
+   `feature` of the action).
 2. If the action has `maxRows`, it counts the matching rows and refuses past
    the limit (`rowLimitRefusal`). Jobs Release and Batches Release have a
    limit of 2,000. The menu item shows "Filter the list to 2,000 rows or fewer"
    (`useAllMatchingLimitLabel`).
-3. It takes the company's bulk lock (`takeTableJobLock("bulk", …)`, the same
-   Lua lock as the export). A busy lock answers the remaining time. With all
-   `MAX_RUNNING_TABLE_JOBS` (4) slots across companies taken it refuses
-   (`refusal: { code: "full" }`, see `table-csv-export.md`).
+3. `startTableJob("bulk", …)` takes the company's bulk lock (the export's
+   start path too, with kind `export`). A busy lock answers the remaining
+   time. With all `MAX_RUNNING_TABLE_JOBS` (4) slots across companies taken
+   it refuses (`refusal: { code: "full" }`, see `table-csv-export.md`). A
+   failed send gives the lock back.
 4. It triggers `table-bulk-action`
    (`packages/jobs/src/inngest/functions/tasks/table-bulk-action.ts`,
    `retries: 0`, one run per company at a time).
@@ -316,13 +334,19 @@ A bulk route that gets `allMatching` in place of ids calls
    per call (`BULK_CHUNK_SIZE`). Each call gets the `carry` the call before
    it returned and returns the next one. Jobs Release and Batches Release
    carry the PO each supplier went on, so a later slice adds to the PO an
-   earlier slice made (`bulkReleaseStartingPurchaseOrders`) instead of
-   refusing the job or batch. Inside one call, `releaseBatches` passes the
-   same map from batch to batch (`carriedPurchaseOrders`).
+   earlier slice made (`carriedPurchaseOrders` on `releaseJobs` and
+   `releaseBatches`, read by `startingPurchaseOrders`) instead of refusing
+   the job or batch. Inside one call, `releaseBatches` passes the same map
+   from batch to batch. Every slice calls the action route's own service
+   function (`releaseJobs`, `deleteJobs`, `deletePurchaseOrders`,
+   `releaseBatches`, `dissolveBatches`), so both paths apply one rule.
 7. Step `notify` sends `NotificationEvent.TableBulkAction` with the counts
    in the title: done, skipped, failed. Its event id
    (`table-bulk-action:{id}:done`) stops a second send on a retry.
-8. Steps `remove-ids` and `release-lock` delete the id files and the lock.
+8. Steps `remove-ids` and `release-lock` delete the id folder
+   (`removeTableJobFolder`) and the lock. A failed run does the same in
+   `onFailure` (`failTableJob`, `table-jobs/failure.ts`, shared with the
+   export).
 
 A step returns counts, cursors and the small `carry` only. The function adds
 them up outside the steps. The browser side uses `appendBulkSelection` / `bulkSelectionBody`
@@ -331,10 +355,9 @@ them up outside the steps. The browser side uses `appendBulkSelection` / `bulkSe
 
 **Selected rows that do not fit one request.** Jobs Release and Batches
 Release act on every selected row in the request itself only up to the
-action's `idsPerStep` (25 jobs, 10 batches; `fitsOneRequest`). A bigger
-selection goes to the same background job with its ids
-(`startSelectedBulkAction`), because each release runs MRP and the load
-balancer cuts a request at 600 s.
+action's `idsPerStep` (25 jobs, 10 batches). A bigger selection goes to the
+same background job with its ids (`startBackgroundBulkAction` with `ids`),
+because each release runs MRP and the load balancer cuts a request at 600 s.
 
 ## Known limits
 

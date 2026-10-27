@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function InventoryCountRoute() {
-  const { inventoryCounts, count, nextCursor, locations } =
+  const { inventoryCounts, count, infinite, locations } =
     useLoaderData<typeof loader>();
 
   return (
@@ -42,7 +42,7 @@ export default function InventoryCountRoute() {
       <InventoryCountsTable
         data={inventoryCounts}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         locations={locations}
       />
       <RecordOutlet />

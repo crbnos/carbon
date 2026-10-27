@@ -22,11 +22,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ScrapReasonsRoute() {
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ScrapReasonsTable data={data} count={count} nextCursor={nextCursor} />
+      <ScrapReasonsTable data={data} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

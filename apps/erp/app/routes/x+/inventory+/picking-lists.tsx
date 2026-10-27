@@ -30,14 +30,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PickingListsRoute() {
-  const { pickingLists, count, nextCursor } = useLoaderData<typeof loader>();
+  const { pickingLists, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <PickingListsTable
         data={pickingLists as PickingList[]}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

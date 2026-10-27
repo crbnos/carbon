@@ -61,6 +61,7 @@ import { useLocations } from "~/components/Form/Location";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { jobStatus } from "~/modules/production/production.models";
@@ -75,8 +76,7 @@ import { useSalesOrder } from "./useSalesOrder";
 type SalesOrdersTableProps = {
   data: SalesOrderListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const IconWithTooltip = ({
@@ -99,7 +99,7 @@ const IconWithTooltip = ({
 );
 
 const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
@@ -586,11 +586,7 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
         count={count}
         columns={columns}
         data={data}
-        infinite={{
-          dataKey: "salesOrders",
-          nextCursor,
-          listKey: "sales-orders"
-        }}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["salesOrderId"]
         }}

@@ -26,6 +26,7 @@ import { Link, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import { pickingListStatusType } from "../../inventory.models";
@@ -52,12 +53,11 @@ export type PickingList = {
 type PickingListsTableProps = {
   data: PickingList[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const PickingListsTable = memo((props: PickingListsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -220,11 +220,7 @@ const PickingListsTable = memo((props: PickingListsTableProps) => {
     <>
       <Table<PickingList>
         data={data}
-        infinite={{
-          dataKey: "pickingLists",
-          nextCursor,
-          listKey: "picking-lists"
-        }}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnPinning={{

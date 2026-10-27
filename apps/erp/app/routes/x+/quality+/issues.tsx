@@ -33,14 +33,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function IssuesRoute() {
-  const { issues, count, nextCursor, types } = useLoaderData<typeof loader>();
+  const { issues, count, infinite, types } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <IssuesTable
         data={issues}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         types={types}
       />
       <RecordOutlet />

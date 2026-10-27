@@ -28,14 +28,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function StorageTypesRoute() {
-  const { storageTypes, count, nextCursor } = useLoaderData<typeof loader>();
+  const { storageTypes, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <StorageTypesTable
         data={storageTypes}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

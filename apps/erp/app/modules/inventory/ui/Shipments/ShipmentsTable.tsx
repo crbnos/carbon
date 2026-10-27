@@ -36,6 +36,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -75,12 +76,11 @@ function NewShipment() {
 type ShipmentsTableProps = {
   data: Shipment[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ShipmentsTable = memo((props: ShipmentsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   // The route's `handle.realtime` follows every shipment of the company, so
   // the rows of a later page refresh too.
 
@@ -411,7 +411,7 @@ const ShipmentsTable = memo((props: ShipmentsTableProps) => {
     <>
       <Table<(typeof data)[number]>
         data={data}
-        infinite={{ dataKey: "shipments", nextCursor, listKey: "shipments" }}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnPinning={{

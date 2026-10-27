@@ -35,6 +35,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { Confirm } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import {
   riskRegisterType,
@@ -51,7 +52,7 @@ import RiskType from "./RiskType";
 type RiskRegistersTableProps = {
   data: Risk[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -62,7 +63,7 @@ const defaultColumnVisibility = {
 };
 
 const RiskRegistersTable = memo((props: RiskRegistersTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const workCenters = useWorkCenters({});
@@ -286,11 +287,7 @@ const RiskRegistersTable = memo((props: RiskRegistersTableProps) => {
     <>
       <Table<Risk>
         data={data}
-        infinite={{
-          dataKey: "risks",
-          nextCursor,
-          listKey: "risks"
-        }}
+        infinite={infinite}
         defaultColumnVisibility={defaultColumnVisibility}
         columns={columns}
         count={count ?? 0}

@@ -29,12 +29,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ReimbursementsRoute() {
-  const { count, data, nextCursor } = useLoaderData<typeof loader>();
+  const { count, data, infinite } = useLoaderData<typeof loader>();
   // No <Outlet /> — unlike charges, the reimbursement detail is a full page of
   // its own rather than a Drawer child of this list.
   return (
     <VStack spacing={0} className="h-full">
-      <ReimbursementsTable data={data} count={count} nextCursor={nextCursor} />
+      <ReimbursementsTable data={data} count={count} infinite={infinite} />
     </VStack>
   );
 }

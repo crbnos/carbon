@@ -32,6 +32,7 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -43,12 +44,11 @@ import type { SalesReturnOrderListItem } from "./types";
 type SalesReturnOrdersTableProps = {
   data: SalesReturnOrderListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const SalesReturnOrdersTable = memo(
-  ({ data, count, nextCursor }: SalesReturnOrdersTableProps) => {
+  ({ data, count, infinite }: SalesReturnOrdersTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -230,11 +230,7 @@ const SalesReturnOrdersTable = memo(
       <>
         <Table<SalesReturnOrderListItem>
           count={count}
-          infinite={{
-            dataKey: "salesReturnOrders",
-            nextCursor,
-            listKey: "sales-return-orders"
-          }}
+          infinite={infinite}
           columns={columns}
           data={data}
           defaultColumnPinning={{

@@ -5,19 +5,13 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { trigger } from "@carbon/jobs";
-import { releaseTableJobLock, takeTableJobLock } from "@carbon/jobs/inngest";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { getListDefinition } from "~/utils/list-registry/index.server";
-import {
-  newTableExportId,
-  TABLE_JOBS_FULL_MESSAGE,
-  type TableJobRefusal,
-  tableJobBusyMessage,
-  tableJobBusyRefusal
-} from "~/utils/table-jobs";
+import { newTableExportId, type TableJobRefusal } from "~/utils/table-jobs";
+import { startTableJob } from "~/utils/table-jobs.server";
 
 const logger = getLogger("erp", "table-export");
 
@@ -77,59 +71,23 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const exportId = newTableExportId(listKey);
-  const lock = await takeTableJobLock("export", companyId, exportId);
-  if (lock.status === "busy") {
+  const refused = await startTableJob(
+    "export",
+    { companyId, jobId: exportId, log: { listKey } },
+    () =>
+      trigger("table-export", {
+        companyId,
+        userId,
+        exportId,
+        listKey,
+        search,
+        columns
+      })
+  );
+  if (refused) {
     return data(
-      {
-        error: tableJobBusyMessage("export", lock.retryAfterSeconds),
-        refusal: tableJobBusyRefusal("export", lock.retryAfterSeconds)
-      },
-      { status: 409 }
-    );
-  }
-  if (lock.status === "full") {
-    logger.warn("Refused a table export: every table-job slot is taken", {
-      companyId,
-      listKey
-    });
-    return data(
-      {
-        error: TABLE_JOBS_FULL_MESSAGE,
-        refusal: { code: "full" } satisfies TableJobRefusal
-      },
-      { status: 503 }
-    );
-  }
-  if (lock.status === "unavailable") {
-    // Fail-open: Inngest's per-company concurrency still runs one at a time.
-    logger.warn("Starting a table export without the Redis lock", {
-      companyId,
-      listKey
-    });
-  }
-
-  try {
-    await trigger("table-export", {
-      companyId,
-      userId,
-      exportId,
-      listKey,
-      search,
-      columns
-    });
-  } catch (error) {
-    logger.error("Failed to start a table export", {
-      companyId,
-      listKey,
-      error
-    });
-    await releaseTableJobLock("export", companyId, exportId);
-    return data(
-      {
-        error: "The export could not start",
-        refusal: { code: "not-started" } satisfies TableJobRefusal
-      },
-      { status: 500 }
+      { error: refused.message, refusal: refused.refusal },
+      { status: refused.status }
     );
   }
 

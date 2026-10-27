@@ -4,11 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  BULK_ACTIONS,
-  bulkActionServesList,
   bulkStartFormResponse,
-  fitsOneRequest,
-  getBulkActionMeta,
   hasListPermission,
   newTableExportId,
   parseAllMatching,
@@ -176,31 +172,16 @@ describe("parseAllMatching", () => {
 });
 
 describe("the bulk actions' background path", () => {
-  it("runs an action only on the lists it names", () => {
-    expect(bulkActionServesList("jobs.release", "jobs")).toBe(true);
-    expect(bulkActionServesList("jobs.release", "parts")).toBe(false);
-    expect(bulkActionServesList("items.update", "services")).toBe(true);
-    expect(bulkActionServesList("unknown", "jobs")).toBe(false);
-    expect(getBulkActionMeta("toString")).toBeUndefined();
-  });
-
-  it("refuses Jobs Release and Batches Release past 2,000 rows", () => {
-    expect(rowLimitRefusal(BULK_ACTIONS["jobs.release"], 2_000)).toBeNull();
-    expect(rowLimitRefusal(BULK_ACTIONS["jobs.release"], 2_001)).toBe(
+  it("refuses an action with a row limit past it", () => {
+    const release = { label: "Release jobs", maxRows: 2_000 };
+    expect(rowLimitRefusal(release, 2_000)).toBeNull();
+    expect(rowLimitRefusal(release, 2_001)).toBe(
       "Release jobs runs on at most 2,000 rows. Filter the list to 2,000 rows or fewer."
     );
-    expect(rowLimitRefusal(BULK_ACTIONS["batches.release"], 5_000)).toContain(
-      "Release batches runs on at most 2,000 rows"
-    );
   });
 
-  it("puts no row limit on the other actions", () => {
-    expect(rowLimitRefusal(BULK_ACTIONS["items.update"], 90_000)).toBeNull();
-    expect(rowLimitRefusal(BULK_ACTIONS["jobs.delete"], 90_000)).toBeNull();
-  });
-
-  it("re-checks the plan feature of Edit Permissions in the job", () => {
-    expect(getBulkActionMeta("users.permissions")?.feature).toBe("PERMISSIONS");
+  it("puts no row limit on an action without one", () => {
+    expect(rowLimitRefusal({ label: "Delete jobs" }, 90_000)).toBeNull();
   });
 
   it("answers a form route's start with an error field on both outcomes", () => {
@@ -235,18 +216,5 @@ describe("tableJobBusyRefusal", () => {
       kind: "bulk",
       minutes: 0
     });
-  });
-});
-
-describe("fitsOneRequest", () => {
-  it("keeps a selection inside one background step in the request", () => {
-    expect(fitsOneRequest("jobs.release", 25)).toBe(true);
-    expect(fitsOneRequest("jobs.release", 26)).toBe(false);
-    expect(fitsOneRequest("batches.release", 10)).toBe(true);
-    expect(fitsOneRequest("batches.release", 11)).toBe(false);
-  });
-
-  it("runs any selection in the request for an action with no step size", () => {
-    expect(fitsOneRequest("jobs.delete", 1_000)).toBe(true);
   });
 });

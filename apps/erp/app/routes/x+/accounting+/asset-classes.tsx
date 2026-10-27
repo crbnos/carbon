@@ -36,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AssetClassesRoute() {
-  const { data, count, nextCursor, taxDepreciationEnabled } =
+  const { data, count, infinite, taxDepreciationEnabled } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -47,7 +47,7 @@ export default function AssetClassesRoute() {
       <AssetClassesTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
           permissions.can("create", "accounting") && (

@@ -10,6 +10,7 @@ import { LuBookMarked, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -18,12 +19,11 @@ import type { NoQuoteReason } from "../../types";
 type NoQuoteReasonsTableProps = {
   data: NoQuoteReason[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const NoQuoteReasonsTable = memo(
-  ({ data, count, nextCursor }: NoQuoteReasonsTableProps) => {
+  ({ data, count, infinite }: NoQuoteReasonsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -88,11 +88,7 @@ const NoQuoteReasonsTable = memo(
         data={data}
         columns={columns}
         count={count}
-        infinite={{
-          dataKey: "data",
-          nextCursor,
-          listKey: "no-quote-reasons"
-        }}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "sales") && (
             <New

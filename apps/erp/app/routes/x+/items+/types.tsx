@@ -28,14 +28,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MaterialTypesRoute() {
-  const { materialTypes, count, nextCursor } = useLoaderData<typeof loader>();
+  const { materialTypes, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <MaterialTypesTable
         data={materialTypes}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

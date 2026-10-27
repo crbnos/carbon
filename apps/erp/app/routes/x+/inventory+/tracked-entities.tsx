@@ -71,7 +71,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function TraceabilityRoute() {
-  const { trackedEntities, count, nextCursor, nearExpiryWarningDays } =
+  const { trackedEntities, count, infinite, nearExpiryWarningDays } =
     useLoaderData<typeof loader>();
 
   return (
@@ -79,7 +79,7 @@ export default function TraceabilityRoute() {
       <TrackedEntitiesTable
         data={trackedEntities}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         nearExpiryWarningDays={nearExpiryWarningDays ?? null}
       />
     </VStack>

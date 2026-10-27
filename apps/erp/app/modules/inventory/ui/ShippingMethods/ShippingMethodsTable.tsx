@@ -17,6 +17,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { shippingCarrierType } from "~/modules/inventory/inventory.models";
@@ -26,12 +27,11 @@ import { path } from "~/utils/path";
 type ShippingMethodsTableProps = {
   data: ShippingMethod[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ShippingMethodsTable = memo(
-  ({ data, count, nextCursor }: ShippingMethodsTableProps) => {
+  ({ data, count, infinite }: ShippingMethodsTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -143,11 +143,7 @@ const ShippingMethodsTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
-        infinite={{
-          dataKey: "shippingMethods",
-          nextCursor,
-          listKey: "shipping-methods"
-        }}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

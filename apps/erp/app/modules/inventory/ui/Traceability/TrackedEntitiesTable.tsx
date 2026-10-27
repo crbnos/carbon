@@ -23,6 +23,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { trackedEntityStatus } from "~/modules/inventory/inventory.models";
 import type { TrackedEntity } from "~/modules/inventory/types";
@@ -50,8 +51,7 @@ type TrackedEntityRow = TrackedEntity & {
 type TrackedEntitiesTableProps = {
   data: TrackedEntityRow[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   nearExpiryWarningDays: number | null;
 };
 
@@ -59,7 +59,7 @@ const TrackedEntitiesTable = memo(
   ({
     data,
     count,
-    nextCursor,
+    infinite,
     nearExpiryWarningDays
   }: TrackedEntitiesTableProps) => {
     const navigate = useNavigate();
@@ -74,14 +74,6 @@ const TrackedEntitiesTable = memo(
     // action can open it.
     const [unscrapping, setUnscrapping] = useState<TrackedEntity | null>(null);
 
-    const infinite = useMemo(
-      () => ({
-        dataKey: "trackedEntities",
-        nextCursor,
-        listKey: "tracked-entities"
-      }),
-      [nextCursor]
-    );
     const [editingExpiry, setEditingExpiry] = useState<TrackedEntity | null>(
       null
     );

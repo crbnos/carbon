@@ -60,7 +60,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ConfirmDelete } from "~/components/Modals";
-import type { BulkActionScope } from "~/components/Table";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -74,11 +74,11 @@ type ConsumablesTableProps = {
   data: ConsumableListItem[];
   tags: { name: string }[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ConsumablesTable = memo(
-  ({ data, count, tags, nextCursor }: ConsumablesTableProps) => {
+  ({ data, count, tags, infinite }: ConsumablesTableProps) => {
     const { t } = useLingui();
     const translateMethodType = useCallback(
       (v: string) =>
@@ -594,11 +594,7 @@ const ConsumablesTable = memo(
           count={count}
           columns={columns}
           data={data}
-          infinite={{
-            dataKey: "consumables",
-            nextCursor,
-            listKey: "consumables"
-          }}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["id"]
           }}

@@ -38,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ActionsRoute() {
-  const { actions, count, nextCursor, issueTypes, requiredActions } =
+  const { actions, count, infinite, issueTypes, requiredActions } =
     useLoaderData<typeof loader>();
 
   return (
@@ -46,7 +46,7 @@ export default function ActionsRoute() {
       <ActionsTable
         data={actions}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         issueTypes={issueTypes}
         requiredActions={requiredActions}
       />

@@ -23,6 +23,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -31,11 +32,11 @@ import type { Form } from "../../types";
 type MaterialShapesTableProps = {
   data: Form[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const MaterialShapesTable = memo(
-  ({ data, count, nextCursor }: MaterialShapesTableProps) => {
+  ({ data, count, infinite }: MaterialShapesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -152,11 +153,7 @@ const MaterialShapesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
-        infinite={{
-          dataKey: "materialForms",
-          nextCursor,
-          listKey: "material-forms"
-        }}
+        infinite={infinite}
         columns={columns}
         count={count}
         importCSV={[

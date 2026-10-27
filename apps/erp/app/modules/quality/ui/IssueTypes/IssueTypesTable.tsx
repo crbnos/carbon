@@ -10,6 +10,7 @@ import { LuOctagonX, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -18,11 +19,11 @@ import type { IssueType } from "../../types";
 type IssueTypesTableProps = {
   data: IssueType[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const IssueTypesTable = memo((props: IssueTypesTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -84,11 +85,7 @@ const IssueTypesTable = memo((props: IssueTypesTableProps) => {
   return (
     <Table<IssueType>
       data={data}
-      infinite={{
-        dataKey: "data",
-        nextCursor,
-        listKey: "issue-types"
-      }}
+      infinite={infinite}
       columns={columns}
       count={count}
       primaryAction={

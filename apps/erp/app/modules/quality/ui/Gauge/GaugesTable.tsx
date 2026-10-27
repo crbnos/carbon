@@ -41,6 +41,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores/people";
@@ -59,7 +60,7 @@ type GaugesTableProps = {
   data: Gauge[];
   types: ListItem[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -69,7 +70,7 @@ const defaultColumnVisibility = {
 };
 
 const GaugesTable = memo((props: GaugesTableProps) => {
-  const { data, types, count, nextCursor } = props;
+  const { data, types, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -398,11 +399,7 @@ const GaugesTable = memo((props: GaugesTableProps) => {
     <>
       <Table<Gauge>
         data={data}
-        infinite={{
-          dataKey: "gauges",
-          nextCursor,
-          listKey: "gauges"
-        }}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}

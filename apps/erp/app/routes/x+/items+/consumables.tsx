@@ -34,8 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ConsumablesSearchRoute() {
-  const { count, consumables, nextCursor, tags } =
-    useLoaderData<typeof loader>();
+  const { count, consumables, infinite, tags } = useLoaderData<typeof loader>();
   useLoaderData<typeof loader>();
 
   return (
@@ -43,7 +42,7 @@ export default function ConsumablesSearchRoute() {
       <ConsumablesTable
         data={consumables}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         tags={tags}
       />
       <RecordOutlet />

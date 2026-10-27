@@ -28,6 +28,7 @@ import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { path } from "~/utils/path";
@@ -41,8 +42,7 @@ import FixedAssetStatus from "./FixedAssetStatus";
 type FixedAssetsTableProps = {
   data: FixedAssetListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   assetClasses: { id: string; name: string }[];
   primaryAction?: ReactNode;
 };
@@ -53,7 +53,7 @@ const FixedAssetsTable = memo(
     count,
     assetClasses,
     primaryAction,
-    nextCursor
+    infinite
   }: FixedAssetsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -226,11 +226,7 @@ const FixedAssetsTable = memo(
     return (
       <>
         <Table<FixedAssetListItem>
-          infinite={{
-            dataKey: "data",
-            nextCursor,
-            listKey: "fixed-assets"
-          }}
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

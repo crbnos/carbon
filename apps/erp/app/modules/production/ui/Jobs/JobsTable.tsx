@@ -61,7 +61,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import type { BulkActionScope } from "~/components/Table";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import {
   useAllMatchingLimitLabel,
@@ -101,8 +101,7 @@ type JobRow = Job & {
 type JobsTableProps = {
   data: JobRow[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   tags: { name: string }[];
 };
 
@@ -155,7 +154,7 @@ function renderQuantity(job: Job, unit?: string | null) {
 }
 
 const JobsTable = memo((props: JobsTableProps) => {
-  const { data, count, nextCursor, tags } = props;
+  const { data, count, infinite, tags } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const releasedJobsMessage = useReleasedJobsMessage();
@@ -184,11 +183,6 @@ const JobsTable = memo((props: JobsTableProps) => {
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-
-  const infinite = useMemo(
-    () => ({ dataKey: "jobs", nextCursor, listKey: "jobs" }),
-    [nextCursor]
-  );
 
   const onDelete = (data: Job) => {
     setSelectedJob(data);
@@ -714,7 +708,8 @@ const JobsTable = memo((props: JobsTableProps) => {
       }
     },
     onError: (result) => {
-      showBulkStart(result);
+      if (showBulkStart(result)) return;
+      if (result.error?.message) toast.error(result.error.message);
     }
   });
 

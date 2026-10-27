@@ -47,6 +47,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
 import type { PriceListRow } from "~/modules/sales/types";
 import { path } from "~/utils/path";
@@ -58,8 +59,7 @@ import { type ScopeOption, ScopePicker } from "./ScopePicker";
 type PriceListTableProps = {
   data: PriceListRow[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   scopeOptions: ScopeOption[];
   hasScope: boolean;
 };
@@ -76,13 +76,7 @@ const sourceVariant: Record<
 };
 
 const PriceListTable = memo(
-  ({
-    data,
-    count,
-    nextCursor,
-    scopeOptions,
-    hasScope
-  }: PriceListTableProps) => {
+  ({ data, count, infinite, scopeOptions, hasScope }: PriceListTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
@@ -386,11 +380,7 @@ const PriceListTable = memo(
           data={data}
           columns={columns}
           count={count}
-          infinite={{
-            dataKey: "data",
-            nextCursor,
-            listKey: "price-list"
-          }}
+          infinite={infinite}
           primaryAction={
             <div className="flex items-center gap-2">
               <ScopePicker

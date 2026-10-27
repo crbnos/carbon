@@ -2,25 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { WORKFLOW_RUN_LIST_EXPORT_VALUES } from "~/modules/workflows/ui/Runs/workflow-run-list-export";
 import { WORKFLOW_LIST_EXPORT_VALUES } from "~/modules/workflows/ui/workflow-list-export";
 import type { WorkflowLastRun } from "~/modules/workflows/workflows.service";
 import {
   getWorkflowLastRuns,
+  getWorkflowRunRecordNames,
   getWorkflowRuns,
   getWorkflows,
   getWorkflowVersionNumbers,
   WORKFLOW_RUNS_PAGING,
   WORKFLOWS_PAGING
 } from "~/modules/workflows/workflows.service";
-import { withExportValues } from "./export-values";
 import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
-/**
- * The published version number and the last run of each workflow. The loader
- * adds them to every page (`mapRows`); the background export adds them
- * through `exportRows`.
- */
+/** The published version number and the last run of each workflow. */
 export async function withWorkflowListExtras<
   T extends { id: string; publishedVersionId: string | null }
 >(rows: T[], { client, companyId }: ListRowsContext) {
@@ -63,18 +60,36 @@ export const workflowsList = searchList({
   permission: { view: "workflows", role: "employee" },
   paging: WORKFLOWS_PAGING,
   service: getWorkflows,
-  exportRows: async (rows, context) =>
-    withExportValues(
-      await withWorkflowListExtras(rows, context),
-      WORKFLOW_LIST_EXPORT_VALUES
-    )
+  rows: withWorkflowListExtras,
+  exportValues: WORKFLOW_LIST_EXPORT_VALUES
 });
+
+/** The name of the record each run was triggered by. */
+async function withWorkflowRunRecordNames<
+  T extends { triggerTable: string | null; triggerRecordId: string | null }
+>(runs: T[], { client, companyId }: ListRowsContext) {
+  const names = await getWorkflowRunRecordNames(
+    client,
+    companyId,
+    runs.flatMap((run) =>
+      run.triggerTable && run.triggerRecordId
+        ? [{ table: run.triggerTable, id: run.triggerRecordId }]
+        : []
+    )
+  );
+  return runs.map((run) => ({
+    ...run,
+    recordName: names[`${run.triggerTable}:${run.triggerRecordId}`]
+  }));
+}
 
 export const workflowRunsList = searchList({
   key: "workflow-runs",
   permission: { view: "workflows", role: "employee" },
   paging: WORKFLOW_RUNS_PAGING,
-  service: getWorkflowRuns
+  service: getWorkflowRuns,
+  rows: withWorkflowRunRecordNames,
+  exportValues: WORKFLOW_RUN_LIST_EXPORT_VALUES
 });
 
 // The workflows lists. Each entry follows `sales.server.ts`.

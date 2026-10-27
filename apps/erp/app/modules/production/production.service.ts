@@ -171,10 +171,6 @@ import {
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
-import {
-  type BulkDeleteResult,
-  bulkDeleteByStatus
-} from "~/utils/bulk-delete.server";
 import type { Cursor } from "~/utils/cursor";
 import { makeDurations } from "~/utils/duration";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
@@ -233,7 +229,6 @@ import {
   getAssemblyModelState,
   isJobLocked,
   isJobOrderStatusHidden,
-  JOB_BULK_DELETABLE_STATUSES,
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
@@ -25197,36 +25192,4 @@ export async function batchOperation(
   }
 
   return { success: true, ...result };
-}
-
-export type BulkDeleteJobsResult = BulkDeleteResult;
-
-/**
- * Deletes the jobs the table's bulk Delete may delete: Draft, Planned, Due
- * Today and Overdue. The status filter is part of the DELETE, so a job that
- * moved on since it was selected stays. The caller checks the
- * `delete: production` permission.
- */
-export function bulkDeleteJobs({
-  client,
-  jobIds,
-  companyId
-}: {
-  client: SupabaseClient<Database>;
-  jobIds: string[];
-  companyId: string;
-}): Promise<BulkDeleteJobsResult> {
-  return bulkDeleteByStatus({
-    ids: jobIds,
-    companyId,
-    label: "jobs",
-    deleteChunk: (ids) =>
-      client
-        .from("job")
-        .delete()
-        .in("id", ids)
-        .eq("companyId", companyId)
-        .in("status", [...JOB_BULK_DELETABLE_STATUSES])
-        .select("id")
-  });
 }

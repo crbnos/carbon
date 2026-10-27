@@ -9,21 +9,14 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import WorkflowsTable from "~/modules/workflows/ui/WorkflowsTable";
 import WorkflowsUpgradeOverlay from "~/modules/workflows/ui/WorkflowsUpgradeOverlay";
 import { loadListPage } from "~/utils/list-registry/load.server";
-import {
-  withWorkflowListExtras,
-  workflowsList
-} from "~/utils/list-registry/workflows.server";
+import { workflowsList } from "~/utils/list-registry/workflows.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return loadListPage(request, workflowsList, {
-    dataKey: "data",
-    // The published version number and the last run of each page's rows.
-    mapRows: withWorkflowListExtras
-  });
+  return loadListPage(request, workflowsList, { dataKey: "data" });
 }
 
 export default function WorkflowsIndexRoute() {
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "WORKFLOWS" });
 
   if (isGated) {
@@ -32,7 +25,7 @@ export default function WorkflowsIndexRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
-      <WorkflowsTable data={data} count={count} nextCursor={nextCursor} />
+      <WorkflowsTable data={data} count={count} infinite={infinite} />
     </VStack>
   );
 }

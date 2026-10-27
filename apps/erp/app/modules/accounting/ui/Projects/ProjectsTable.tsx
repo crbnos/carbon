@@ -14,6 +14,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Project } from "../../types";
@@ -21,12 +22,11 @@ import type { Project } from "../../types";
 type ProjectsTableProps = {
   data: Project[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const ProjectsTable = memo((props: ProjectsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -91,11 +91,7 @@ const ProjectsTable = memo((props: ProjectsTableProps) => {
 
   return (
     <Table<Project>
-      infinite={{
-        dataKey: "data",
-        nextCursor,
-        listKey: "projects"
-      }}
+      infinite={infinite}
       data={data}
       columns={columns}
       count={count}

@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function WarehouseTransfersRoute() {
-  const { warehouseTransfers, count, nextCursor } =
+  const { warehouseTransfers, count, infinite } =
     useLoaderData<typeof loader>();
 
   return (
@@ -37,7 +37,7 @@ export default function WarehouseTransfersRoute() {
       <WarehouseTransfersTable
         data={warehouseTransfers}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

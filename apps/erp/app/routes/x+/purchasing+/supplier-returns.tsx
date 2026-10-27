@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PurchaseReturnOrdersSearchRoute() {
-  const { count, purchaseReturnOrders, nextCursor } =
+  const { count, purchaseReturnOrders, infinite } =
     useLoaderData<typeof loader>();
 
   return (
@@ -37,7 +37,7 @@ export default function PurchaseReturnOrdersSearchRoute() {
       <PurchaseReturnOrdersTable
         data={purchaseReturnOrders}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

@@ -34,16 +34,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ToolsSearchRoute() {
-  const { count, tools, nextCursor, tags } = useLoaderData<typeof loader>();
+  const { count, tools, infinite, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ToolsTable
-        data={tools}
-        count={count}
-        nextCursor={nextCursor}
-        tags={tags}
-      />
+      <ToolsTable data={tools} count={count} infinite={infinite} tags={tags} />
       <RecordOutlet />
     </VStack>
   );

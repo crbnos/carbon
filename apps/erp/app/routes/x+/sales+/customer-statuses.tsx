@@ -22,15 +22,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function CustomerStatusesRoute() {
-  const { data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <CustomerStatusesTable
-        data={data}
-        count={count}
-        nextCursor={nextCursor}
-      />
+      <CustomerStatusesTable data={data} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

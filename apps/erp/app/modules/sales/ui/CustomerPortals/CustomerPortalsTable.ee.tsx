@@ -15,6 +15,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -24,12 +25,11 @@ type CustomerPortalsTableProps = {
   appUrl: string;
   data: CustomerPortal[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const CustomerPortalsTable = memo(
-  ({ appUrl, data, count, nextCursor }: CustomerPortalsTableProps) => {
+  ({ appUrl, data, count, infinite }: CustomerPortalsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -127,11 +127,7 @@ const CustomerPortalsTable = memo(
         data={data}
         columns={columns}
         count={count}
-        infinite={{
-          dataKey: "data",
-          nextCursor,
-          listKey: "customer-portals"
-        }}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "sales") && (
             <New

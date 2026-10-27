@@ -25,11 +25,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function RisksRoute() {
-  const { count, risks, nextCursor } = useLoaderData<typeof loader>();
+  const { count, risks, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <RiskRegistersTable data={risks} count={count} nextCursor={nextCursor} />
+      <RiskRegistersTable data={risks} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

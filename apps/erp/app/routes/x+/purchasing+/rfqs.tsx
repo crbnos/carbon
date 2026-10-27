@@ -30,11 +30,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PurchasingRFQsRoute() {
-  const { count, rfqs, nextCursor } = useLoaderData<typeof loader>();
+  const { count, rfqs, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PurchasingRFQsTable data={rfqs} count={count} nextCursor={nextCursor} />
+      <PurchasingRFQsTable data={rfqs} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import Money from "~/components/Money";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSuppliers } from "~/stores";
@@ -36,11 +37,10 @@ import type { Lease } from "./types";
 type LeasesTableProps = {
   data: Lease[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
-const LeasesTable = memo(({ data, count, nextCursor }: LeasesTableProps) => {
+const LeasesTable = memo(({ data, count, infinite }: LeasesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -247,11 +247,7 @@ const LeasesTable = memo(({ data, count, nextCursor }: LeasesTableProps) => {
         count={count}
         columns={columns}
         data={data}
-        infinite={{
-          dataKey: "leases",
-          nextCursor,
-          listKey: "leases"
-        }}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["leaseId"]
         }}

@@ -30,15 +30,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ShiftsRoute() {
-  const { shifts, locations, count, nextCursor } =
-    useLoaderData<typeof loader>();
+  const { shifts, locations, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ShiftsTable
         data={shifts}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         locations={locations}
       />
       <RecordOutlet />

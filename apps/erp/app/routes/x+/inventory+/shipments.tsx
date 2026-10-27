@@ -29,11 +29,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ShipmentsRoute() {
-  const { shipments, count, nextCursor } = useLoaderData<typeof loader>();
+  const { shipments, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ShipmentsTable data={shipments} count={count} nextCursor={nextCursor} />
+      <ShipmentsTable data={shipments} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

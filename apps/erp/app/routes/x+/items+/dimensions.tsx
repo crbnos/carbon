@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function MaterialDimensionsRoute() {
-  const { materialDimensions, count, nextCursor } =
+  const { materialDimensions, count, infinite } =
     useLoaderData<typeof loader>();
 
   return (
@@ -36,7 +36,7 @@ export default function MaterialDimensionsRoute() {
       <MaterialDimensionsTable
         data={materialDimensions}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

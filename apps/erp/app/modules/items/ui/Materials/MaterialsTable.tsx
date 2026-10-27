@@ -72,7 +72,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
-import type { BulkActionScope } from "~/components/Table";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions } from "~/hooks";
 import { useBulkFormAction } from "~/hooks/useBulkAction";
@@ -87,11 +87,11 @@ type MaterialsTableProps = {
   data: MaterialListItem[];
   tags: { name: string }[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const MaterialsTable = memo((props: MaterialsTableProps) => {
-  const { data, tags, count, nextCursor } = props;
+  const { data, tags, count, infinite } = props;
   const { t } = useLingui();
   const translateMethodType = useCallback(
     (v: string) =>
@@ -747,7 +747,7 @@ const MaterialsTable = memo((props: MaterialsTableProps) => {
         count={count}
         columns={columns}
         data={data}
-        infinite={{ dataKey: "materials", nextCursor, listKey: "materials" }}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["id"]
         }}

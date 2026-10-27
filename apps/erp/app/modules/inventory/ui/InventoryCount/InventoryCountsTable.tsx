@@ -25,6 +25,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { InventoryCount } from "~/modules/inventory/types";
 import { InventoryCountStatus } from "~/modules/inventory/ui";
@@ -34,15 +35,14 @@ import { path } from "~/utils/path";
 type InventoryCountsTableProps = {
   data: InventoryCount[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   locations: { id: string; name: string }[];
 };
 
 // The route's `handle.realtime` follows every inventory count of the company,
 // so the rows of a later page refresh too.
 const InventoryCountsTable = memo(
-  ({ data, count, nextCursor, locations }: InventoryCountsTableProps) => {
+  ({ data, count, infinite, locations }: InventoryCountsTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -197,11 +197,7 @@ const InventoryCountsTable = memo(
       <>
         <Table<InventoryCount>
           data={data}
-          infinite={{
-            dataKey: "inventoryCounts",
-            nextCursor,
-            listKey: "inventory-counts"
-          }}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnPinning={{ left: ["inventoryCountId"] }}

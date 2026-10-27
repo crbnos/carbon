@@ -49,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FleetRoute() {
-  const { data, count, nextCursor, buildForFleetClassId } =
+  const { data, count, infinite, buildForFleetClassId } =
     useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -59,7 +59,7 @@ export default function FleetRoute() {
       <FleetAssetsTable
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "production") && (
             <Button

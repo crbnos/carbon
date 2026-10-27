@@ -44,6 +44,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Process } from "~/modules/resources/types";
@@ -58,7 +59,7 @@ import { path } from "~/utils/path";
 type ProcessesTableProps = {
   data: Process[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -69,7 +70,7 @@ const defaultColumnVisibility = {
 };
 
 const ProcessesTable = memo((props: ProcessesTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -393,7 +394,7 @@ const ProcessesTable = memo((props: ProcessesTableProps) => {
   return (
     <Table<Process>
       data={data}
-      infinite={{ dataKey: "processes", nextCursor, listKey: "processes" }}
+      infinite={infinite}
       count={count}
       columns={columns}
       defaultColumnVisibility={defaultColumnVisibility}

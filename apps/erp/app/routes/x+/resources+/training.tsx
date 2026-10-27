@@ -42,14 +42,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function TrainingsRoute() {
-  const { trainings, count, nextCursor, tags } = useLoaderData<typeof loader>();
+  const { trainings, count, infinite, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <TrainingsTable
         data={trainings}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         tags={tags}
       />
       <RecordOutlet />

@@ -29,11 +29,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ReceiptsRoute() {
-  const { receipts, count, nextCursor } = useLoaderData<typeof loader>();
+  const { receipts, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ReceiptsTable data={receipts} count={count} nextCursor={nextCursor} />
+      <ReceiptsTable data={receipts} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

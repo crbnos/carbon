@@ -32,14 +32,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function UserAttributesRoute() {
-  const { count, categories, nextCursor } = useLoaderData<typeof loader>();
+  const { count, categories, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <AttributeCategoriesTable
         data={categories}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

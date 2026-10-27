@@ -35,7 +35,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return loadListPage(request, list, {
     dataKey: "documents",
     firstPage: async ({ client, companyId, userId }) => ({
-      listKey: list.key,
       labels: (await getDocumentLabels(client, userId)).data ?? [],
       // Only the file-type filter needs this, so it streams rather than
       // holding the page.
@@ -69,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function DocumentsAllRoute() {
-  const { count, documents, nextCursor, listKey, labels, ...data } =
+  const { count, documents, infinite, labels, ...data } =
     useLoaderData<typeof loader>();
   const extensions = useResolved(data.extensions, []);
 
@@ -80,8 +79,7 @@ export default function DocumentsAllRoute() {
           <DocumentsTable
             data={documents}
             count={count}
-            nextCursor={nextCursor}
-            listKey={listKey}
+            infinite={infinite}
             labels={labels}
             extensions={extensions}
           />

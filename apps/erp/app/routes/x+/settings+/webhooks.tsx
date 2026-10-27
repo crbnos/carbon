@@ -52,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function WebhooksRoute() {
-  const { webhooks, count, nextCursor } = useLoaderData<typeof loader>();
+  const { webhooks, count, infinite } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "WEBHOOKS" });
 
   if (isGated) {
@@ -60,7 +60,7 @@ export default function WebhooksRoute() {
   }
   return (
     <>
-      <WebhooksTable count={count} data={webhooks} nextCursor={nextCursor} />
+      <WebhooksTable count={count} data={webhooks} infinite={infinite} />
       <RecordOutlet />
     </>
   );

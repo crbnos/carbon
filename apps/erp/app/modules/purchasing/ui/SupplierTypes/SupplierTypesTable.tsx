@@ -11,6 +11,7 @@ import { LuPencil, LuShapes, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SupplierType } from "~/modules/purchasing/types";
@@ -19,12 +20,11 @@ import { path } from "~/utils/path";
 type SupplierTypesTableProps = {
   data: SupplierType[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -99,11 +99,7 @@ const SupplierTypesTable = memo((props: SupplierTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
-      infinite={{
-        dataKey: "data",
-        nextCursor,
-        listKey: "supplier-types"
-      }}
+      infinite={infinite}
       primaryAction={
         permissions.can("create", "purchasing") && (
           <New

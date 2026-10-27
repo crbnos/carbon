@@ -30,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function CustomerPortalsRoute() {
-  const { appUrl, data, count, nextCursor } = useLoaderData<typeof loader>();
+  const { appUrl, data, count, infinite } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "CUSTOMER_PORTALS" });
 
   if (isGated) {
@@ -43,7 +43,7 @@ export default function CustomerPortalsRoute() {
         appUrl={appUrl}
         data={data}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

@@ -155,11 +155,6 @@ export function splitIdsByStatus<TStatus>(
 export type AllMatchingRequest = { listKey: string; search: string };
 
 /**
- * What a bulk action route answers for an "every matching row" request: the
- * background job started, or why it did not. Every route answers the same
- * shape, so one client helper (`useBulkActionResult`) reads them all.
- */
-/**
  * Why a table job (an export or a bulk action) did not start. The browser
  * words it in the user's language (`useTableJobRefusalMessage`); `message`
  * next to it is the English text for logs and older callers.
@@ -188,6 +183,11 @@ export function tableJobBusyRefusal(
   };
 }
 
+/**
+ * What a bulk action route answers for an "every matching row" request: the
+ * background job started, or why it did not. Every route answers the same
+ * shape, so one client helper (`useBulkStartToast`) reads them all.
+ */
 export type BulkActionStart =
   | { success: true; background: true }
   | { success: false; message: string; refusal: TableJobRefusal };
@@ -226,95 +226,6 @@ export type BulkActionMeta = {
   idsPerStep?: number;
 };
 
-/**
- * The bulk actions with a background path (spec "Which bulk actions get the
- * background path"): what they may act on and how the job runs them. What
- * each one does is in `table-jobs.server.ts`, under the same key.
- */
-export const BULK_ACTIONS = {
-  "items.update": {
-    label: "Update items",
-    lists: ["parts", "materials", "tools", "consumables", "services"],
-    permission: { update: "parts" }
-  },
-  "jobs.release": {
-    label: "Release jobs",
-    lists: ["jobs"],
-    permission: { update: "production" },
-    maxRows: ALL_MATCHING_RELEASE_LIMIT,
-    // Each job runs the requirements recalculation and MRP.
-    idsPerStep: 25
-  },
-  "jobs.delete": {
-    label: "Delete jobs",
-    lists: ["jobs"],
-    permission: { update: "production", delete: "production" }
-  },
-  "purchase-orders.delete": {
-    label: "Delete purchase orders",
-    lists: ["purchase-orders"],
-    permission: { update: "purchasing", delete: "purchasing" }
-  },
-  "batches.release": {
-    label: "Release batches",
-    lists: ["operation-batches"],
-    permission: { update: "production" },
-    maxRows: ALL_MATCHING_RELEASE_LIMIT,
-    // Each batch releases its member jobs, each with its own MRP run.
-    idsPerStep: 10
-  },
-  "batches.dissolve": {
-    label: "Dissolve batches",
-    lists: ["operation-batches"],
-    permission: { update: "production" },
-    idsPerStep: 100
-  },
-  "users.deactivate": {
-    label: "Deactivate users",
-    lists: ["employee-accounts"],
-    permission: { delete: "users" }
-  },
-  "users.invite": {
-    label: "Send invites",
-    lists: ["employee-accounts"],
-    permission: { create: "users" }
-  },
-  "users.permissions": {
-    label: "Edit permissions",
-    lists: ["employee-accounts"],
-    permission: { update: "users" },
-    // The route requires it with `requireFeature`; the job checks it again,
-    // in case the plan changed while the run waited.
-    feature: "PERMISSIONS"
-  }
-} as const satisfies Record<string, BulkActionMeta>;
-
-export type TableBulkActionKey = keyof typeof BULK_ACTIONS;
-
-/**
- * Whether an action route can act on `count` selected rows in the request
- * itself: no more than one background step takes (`idsPerStep`). A bigger
- * selection goes to the background job, or the load balancer cuts the request
- * at 600 s.
- */
-export function fitsOneRequest(
-  actionKey: TableBulkActionKey,
-  count: number
-): boolean {
-  const meta: BulkActionMeta = BULK_ACTIONS[actionKey];
-  return meta.idsPerStep === undefined || count <= meta.idsPerStep;
-}
-
-export function getBulkActionMeta(key: string): BulkActionMeta | undefined {
-  const actions: Record<string, BulkActionMeta> = BULK_ACTIONS;
-  return Object.hasOwn(actions, key) ? actions[key] : undefined;
-}
-
-/** Whether the action runs on the list: a known action, named for it. */
-export function bulkActionServesList(actionKey: string, listKey: string) {
-  return getBulkActionMeta(actionKey)?.lists.includes(listKey) ?? false;
-}
-
 const rowCount = new Intl.NumberFormat("en-US");
 
 /**
@@ -323,7 +234,7 @@ const rowCount = new Intl.NumberFormat("en-US");
  * at the limit, so an estimate that was low still runs on the first rows only.
  */
 export function rowLimitRefusal(
-  action: BulkActionMeta,
+  action: Pick<BulkActionMeta, "label" | "maxRows">,
   matchingRows: number
 ): string | null {
   if (action.maxRows === undefined || matchingRows <= action.maxRows) {

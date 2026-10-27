@@ -12,6 +12,7 @@ import { LuCalendar, LuEye, LuHash, LuStar, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import type { getRevenueRecognitionRuns } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
@@ -27,8 +28,7 @@ type RevenueRecognitionRunsTableProps = {
   type: RunType;
   data: RevenueRecognitionRunListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
@@ -38,7 +38,7 @@ const RevenueRecognitionRunsTable = memo(
     data,
     count,
     primaryAction,
-    nextCursor
+    infinite
   }: RevenueRecognitionRunsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -129,12 +129,7 @@ const RevenueRecognitionRunsTable = memo(
     return (
       <>
         <Table<RevenueRecognitionRunListItem>
-          infinite={{
-            dataKey: "data",
-            nextCursor,
-            listKey:
-              type === "Lease" ? "lease-runs" : "revenue-recognition-runs"
-          }}
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

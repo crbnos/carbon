@@ -3,12 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon } from "@carbon/api/carbon.server";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { resendInviteValidator } from "~/modules/users/users.models";
 import { originOf } from "~/modules/users/users.service";
-import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
 export async function action(args: ActionFunctionArgs) {
   const { ip, city } = originOf(args.request);
@@ -18,18 +17,13 @@ export async function action(args: ActionFunctionArgs) {
   const allMatching = (await args.request.clone().formData()).get(
     "allMatching"
   );
-  if (allMatching) {
-    const { companyId, userId } = await requirePermissions(args.request, {
-      create: "users"
-    });
-    const started = await startAllMatchingBulkAction(allMatching, {
-      companyId,
-      userId,
-      actionKey: "users.invite",
-      params: { location: city ?? "Unknown", ip: ip ?? "127.0.0.1" }
-    });
-    if (started) return started;
-  }
+  const started = await startBackgroundBulkAction(
+    args.request,
+    "users.invite",
+    { allMatching },
+    { location: city ?? "Unknown", ip: ip ?? "127.0.0.1" }
+  );
+  if (started) return started;
 
   const input = await validator(resendInviteValidator).request(args);
   if ("invalid" in input) return input.invalid;

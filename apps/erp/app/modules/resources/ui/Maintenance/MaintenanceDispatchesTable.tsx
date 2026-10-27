@@ -28,6 +28,7 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenters";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
@@ -47,7 +48,7 @@ import MaintenanceStatus from "./MaintenanceStatus";
 type MaintenanceDispatchesTableProps = {
   data: MaintenanceDispatch[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   failureModes: ListItem[];
   locations: { id: string; name: string }[];
   locationId: string | null;
@@ -57,7 +58,7 @@ const MaintenanceDispatchesTable = memo(
   ({
     data,
     count,
-    nextCursor,
+    infinite,
     failureModes,
     locations,
     locationId
@@ -380,11 +381,7 @@ const MaintenanceDispatchesTable = memo(
     return (
       <Table<MaintenanceDispatch>
         data={data}
-        infinite={{
-          dataKey: "dispatches",
-          nextCursor,
-          listKey: "maintenance-dispatches"
-        }}
+        infinite={infinite}
         columns={columns}
         defaultColumnPinning={{
           left: ["maintenanceDispatchId"]

@@ -33,6 +33,7 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
@@ -47,12 +48,11 @@ import {
 type SupplierQuotesTableProps = {
   data: SupplierQuote[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const SupplierQuotesTable = memo(
-  ({ data, count, nextCursor }: SupplierQuotesTableProps) => {
+  ({ data, count, infinite }: SupplierQuotesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -274,11 +274,7 @@ const SupplierQuotesTable = memo(
           count={count}
           columns={columns}
           data={data}
-          infinite={{
-            dataKey: "quotes",
-            nextCursor,
-            listKey: "supplier-quotes"
-          }}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["supplierQuoteId"]
           }}

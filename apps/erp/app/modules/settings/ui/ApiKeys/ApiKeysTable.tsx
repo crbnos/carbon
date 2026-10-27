@@ -26,6 +26,7 @@ import {
 } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { ApiKey } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
@@ -37,7 +38,7 @@ type ApiKeyRow = Omit<ApiKey, "keyHash">;
 type ApiKeysTableProps = {
   data: ApiKeyRow[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 // `apiKey.scopes` is a `Json` column; narrow it to the scope map shape once so
@@ -64,7 +65,7 @@ function formatRateLimit(limit: number, window: string): string {
 }
 
 const ApiKeysTable = memo((props: ApiKeysTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -231,7 +232,7 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
     <>
       <Table<ApiKeyRow>
         data={data}
-        infinite={{ dataKey: "apiKeys", nextCursor, listKey: "api-keys" }}
+        infinite={infinite}
         columns={columns}
         count={count ?? 0}
         primaryAction={

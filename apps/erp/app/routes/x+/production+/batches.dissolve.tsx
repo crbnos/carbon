@@ -5,32 +5,31 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
+import { dissolveBatches } from "~/modules/production/production.server";
 import { serviceContext } from "~/modules/service-context.server";
-import { bulkDissolveBatches } from "~/utils/production-bulk-actions.server";
-import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
+import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 
-// Bulk dissolve — one server-fn dissolve per selected Planned or Active batch.
-// Each is independent: a batch that has recorded production is refused (the
-// server fn's own guard) and reported in `failed` while the rest still
-// dissolve; a Completing or Completed batch is skipped. `{ allMatching }` in
+// Bulk dissolve (`dissolveBatches`): one dissolve per selected Planned or
+// Active batch. Each is independent: a batch that has recorded production is
+// refused and reported in `failed` while the rest still dissolve; a
+// Completing or Completed batch is skipped. `{ allMatching }` in
 // place of `batchIds` dissolves every matching batch in the background job
 // instead. Fetcher-driven; the table toasts the summary and the loader
 // revalidates.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const auth = await requirePermissions(request, { update: "production" });
-  const { companyId, userId } = auth;
 
   const json = (await request.json().catch(() => null)) as {
     batchIds?: string[];
     allMatching?: unknown;
   } | null;
-  const started = await startAllMatchingBulkAction(json?.allMatching, {
-    companyId,
-    userId,
-    actionKey: "batches.dissolve",
-    params: {}
-  });
+  const started = await startBackgroundBulkAction(
+    request,
+    "batches.dissolve",
+    { allMatching: json?.allMatching },
+    {}
+  );
   if (started) return started;
 
   const ids = [
@@ -44,14 +43,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, message: "No batches selected" };
   }
 
-  const result = await bulkDissolveBatches(serviceContext(auth), {
+  const result = await dissolveBatches(serviceContext(auth), {
     batchIds: ids
   });
-  if (!result.success) return result;
-  return {
-    success: true,
-    dissolved: result.done,
-    failed: result.failed,
-    skipped: result.skipped
-  };
+  if (result.error) return { success: false, message: result.error.message };
+  return { success: true, ...result.data };
 }

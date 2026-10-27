@@ -35,7 +35,7 @@ import {
 import { Link, useFetcher, useNavigate } from "react-router";
 import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import type { BulkActionScope } from "~/components/Table";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import {
   useAllMatchingLimitLabel,
@@ -52,13 +52,13 @@ import { ALL_MATCHING_RELEASE_LIMIT } from "~/utils/table-jobs";
 import { isBatchDissolvable, isBatchReleasable } from "../../production.models";
 import type { JobOperationBatch } from "../../types";
 import { BatchReleaseModal } from "./BatchReleaseModal";
+import { BATCH_LIST_EXPORT_VALUES } from "./batch-list-export";
 import { useBatchRelease } from "./useBatchRelease";
 
 type BatchesTableProps = {
   data: JobOperationBatch[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const BATCH_STATUSES = [
@@ -110,7 +110,7 @@ function useBatchCountMessages() {
   );
 }
 
-const BatchesTable = memo(({ data, count, nextCursor }: BatchesTableProps) => {
+const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
   const { t } = useLingui();
   const countMessages = useBatchCountMessages();
   const showBulkStart = useBulkStartToast();
@@ -241,7 +241,8 @@ const BatchesTable = memo(({ data, count, nextCursor }: BatchesTableProps) => {
       }
     },
     onError: (result) => {
-      showBulkStart(result);
+      if (showBulkStart(result)) return;
+      if (result.error?.message) toast.error(result.error.message);
     }
   });
 
@@ -379,7 +380,7 @@ const BatchesTable = memo(({ data, count, nextCursor }: BatchesTableProps) => {
         meta: {
           icon: <LuLayers />,
           filterHeader: t`Process`,
-          exportValue: (row: JobOperationBatch) => row.process?.name ?? null
+          exportValue: BATCH_LIST_EXPORT_VALUES.process
         }
       },
       {
@@ -392,7 +393,7 @@ const BatchesTable = memo(({ data, count, nextCursor }: BatchesTableProps) => {
           mobile: "P3",
           icon: <LuFactory />,
           filterHeader: t`Work Center`,
-          exportValue: (row: JobOperationBatch) => row.workCenterName ?? null
+          exportValue: BATCH_LIST_EXPORT_VALUES.workCenter
         }
       },
       {
@@ -516,11 +517,7 @@ const BatchesTable = memo(({ data, count, nextCursor }: BatchesTableProps) => {
         data={data}
         columns={columns}
         count={count}
-        infinite={{
-          dataKey: "batches",
-          nextCursor,
-          listKey: "operation-batches"
-        }}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "production") && (
             <New label={t`Batch`} to={path.to.newOperationBatch} />

@@ -20,6 +20,7 @@ import {
 import { useNavigate } from "react-router";
 import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers } from "~/stores";
@@ -32,12 +33,11 @@ import type { RentalAgreementListItem } from "./types";
 type RentalAgreementsTableProps = {
   data: RentalAgreementListItem[];
   count: number;
-  // The loader's cursor for the next page (infinite scroll).
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const RentalAgreementsTable = memo(
-  ({ data, count, nextCursor }: RentalAgreementsTableProps) => {
+  ({ data, count, infinite }: RentalAgreementsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -198,11 +198,7 @@ const RentalAgreementsTable = memo(
       <>
         <Table<RentalAgreementListItem>
           count={count}
-          infinite={{
-            dataKey: "rentalAgreements",
-            nextCursor,
-            listKey: "rental-agreements"
-          }}
+          infinite={infinite}
           columns={columns}
           data={data}
           defaultColumnPinning={{

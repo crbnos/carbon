@@ -35,6 +35,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -53,11 +54,11 @@ type WorkflowRow = Workflow & {
 type WorkflowsTableProps = {
   data: WorkflowRow[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const WorkflowsTable = memo(
-  ({ data, count, nextCursor }: WorkflowsTableProps) => {
+  ({ data, count, infinite }: WorkflowsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -68,11 +69,6 @@ const WorkflowsTable = memo(
     const unpublishDisclosure = useDisclosure();
     const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(
       null
-    );
-
-    const infinite = useMemo(
-      () => ({ dataKey: "data", nextCursor, listKey: "workflows" }),
-      [nextCursor]
     );
 
     const columns = useMemo<ColumnDef<WorkflowRow>[]>(

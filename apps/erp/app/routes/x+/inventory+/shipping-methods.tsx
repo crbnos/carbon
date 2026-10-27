@@ -28,14 +28,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ShippingMethodsRoute() {
-  const { shippingMethods, count, nextCursor } = useLoaderData<typeof loader>();
+  const { shippingMethods, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <ShippingMethodsTable
         data={shippingMethods}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

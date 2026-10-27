@@ -22,14 +22,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function InspectionDocumentsRoute() {
-  const { diagrams, count, nextCursor } = useLoaderData<typeof loader>();
+  const { diagrams, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <InspectionDocumentTable
         data={diagrams}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
       />
       <RecordOutlet />
     </VStack>

@@ -49,6 +49,7 @@ import {
 } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type { Webhook } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
@@ -58,11 +59,11 @@ import { useWebhookTables } from "./WebhookForm";
 type WebhooksTableProps = {
   data: Webhook[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
 };
 
 const WebhooksTable = memo((props: WebhooksTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -210,7 +211,7 @@ const WebhooksTable = memo((props: WebhooksTableProps) => {
     <>
       <Table<Webhook>
         data={data}
-        infinite={{ dataKey: "webhooks", nextCursor, listKey: "webhooks" }}
+        infinite={infinite}
         columns={columns}
         count={count ?? 0}
         defaultColumnVisibility={{

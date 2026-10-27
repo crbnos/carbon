@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Route() {
-  const { contractors, abilities, count, nextCursor } =
+  const { contractors, abilities, count, infinite } =
     useLoaderData<typeof loader>();
 
   return (
@@ -41,7 +41,7 @@ export default function Route() {
       <ContractorsTable
         data={contractors}
         count={count}
-        nextCursor={nextCursor}
+        infinite={infinite}
         // @ts-expect-error TS2322 - TODO: fix type
         abilities={abilities}
       />

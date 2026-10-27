@@ -29,15 +29,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function StockMovementsRoute() {
-  const { movements, count, nextCursor } = useLoaderData<typeof loader>();
+  const { movements, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <StockMovementsTable
-        data={movements}
-        count={count}
-        nextCursor={nextCursor}
-      />
+      <StockMovementsTable data={movements} count={count} infinite={infinite} />
     </VStack>
   );
 }

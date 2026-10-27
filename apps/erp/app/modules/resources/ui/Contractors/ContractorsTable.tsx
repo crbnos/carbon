@@ -15,6 +15,7 @@ import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Contractor } from "~/modules/resources/types";
@@ -24,12 +25,12 @@ import { path } from "~/utils/path";
 type ContractorsTableProps = {
   data: Contractor[];
   count: number;
-  nextCursor: string | null;
+  infinite: InfiniteOptions;
   // abilities: Partial<Ability>[];
 };
 
 const ContractorsTable = memo((props: ContractorsTableProps) => {
-  const { data, count, nextCursor } = props;
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -164,11 +165,7 @@ const ContractorsTable = memo((props: ContractorsTableProps) => {
       data={data}
       count={count}
       columns={columns}
-      infinite={{
-        dataKey: "contractors",
-        nextCursor,
-        listKey: "contractors"
-      }}
+      infinite={infinite}
       getRowId={(row) => String(row.supplierContactId)}
       primaryAction={
         permissions.can("create", "resources") && (

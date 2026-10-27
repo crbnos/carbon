@@ -22,7 +22,6 @@ import {
 } from "~/modules/purchasing/purchasing.service";
 import type { SupplierReportContacts } from "~/modules/purchasing/types";
 import { SUPPLIER_CONTACT_VALUES } from "~/modules/purchasing/ui/Supplier/supplier-list-export";
-import { withExportValues } from "./export-values";
 import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
@@ -75,11 +74,8 @@ export const supplierTypesList = {
     })
 } satisfies ListDefinition;
 
-/**
- * The report contacts (purchasing, invoice, shipping) of each supplier: the
- * suppliers view has none. The loader adds them to every page (`mapRows`);
- * the background export adds them through `exportRows`.
- */
+/** The report contacts (purchasing, invoice, shipping) of each supplier: the
+ *  suppliers view has none. */
 export async function withSupplierReportContacts<
   T extends { id: string | null }
 >(suppliers: T[], { client, companyId }: ListRowsContext) {
@@ -116,11 +112,8 @@ export const suppliersList = searchList({
   paging: SUPPLIERS_PAGING,
   service: getSuppliers,
   params: { type: "type", status: "status" },
-  exportRows: async (rows, context) =>
-    withExportValues(
-      await withSupplierReportContacts(rows, context),
-      SUPPLIER_CONTACT_VALUES
-    )
+  rows: withSupplierReportContacts,
+  exportValues: SUPPLIER_CONTACT_VALUES
 });
 
 export const leasesList = searchList({
