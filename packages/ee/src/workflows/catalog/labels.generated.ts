@@ -497,6 +497,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.user.isConsoleOperator": msg`Is console operator`,
   "entity.user.lastName": msg`Last name`,
   "entity.user.phone": msg`Phone`,
+  "entity.user.signaturePath": msg`Signature path`,
   "inventory.receiptPosted": msg`A receipt is posted`,
   "inventory.shipmentPosted": msg`A shipment is posted`,
   "invoicing.purchaseInvoicePosted": msg`A purchase invoice is posted`,

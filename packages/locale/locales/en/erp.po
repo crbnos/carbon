@@ -21696,6 +21696,9 @@ msgstr "Signature"
 msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 
+msgid "Signature path"
+msgstr "Signature path"
+
 msgid "Signed in as {name}"
 msgstr "Signed in as {name}"
 
