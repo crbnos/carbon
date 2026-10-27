@@ -98,6 +98,7 @@ const StorageTypeForm = ({
                   name="nonNettable"
                   label={t`Non-nettable`}
                   termId="non-nettable"
+                  bordered
                   description={t`Every storage unit of this type is non-nettable: MRP and picking ignore the stock in it.`}
                 />
                 <CustomFormFields table="storageType" />

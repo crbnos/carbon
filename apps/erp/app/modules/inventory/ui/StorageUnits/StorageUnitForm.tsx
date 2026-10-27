@@ -191,6 +191,7 @@ const StorageUnitForm = ({
                   name="nonNettable"
                   label={t`Non-nettable`}
                   termId="non-nettable"
+                  bordered
                   description={
                     inheritsNonNettable
                       ? t`Already non-nettable through its parent or a storage type`
