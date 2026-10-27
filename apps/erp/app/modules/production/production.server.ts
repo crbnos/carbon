@@ -949,7 +949,8 @@ export const completeJob = defineServiceFn({
  * batches passes `carriedPurchaseOrders`, the PO each supplier went on in an
  * earlier batch of the same release: that supplier stays on it instead of
  * being refused (`bulkReleaseStartingPurchaseOrders`). The PO map is
- * returned for the next batch.
+ * returned for the next batch, also beside `failure` when a job failed after
+ * the checks (the jobs before it are released).
  */
 export const releaseBatchMemberJobs = defineServiceFn({
   input: z.object({
@@ -985,7 +986,8 @@ export const releaseBatchMemberJobs = defineServiceFn({
     if (toRelease.length === 0) {
       return {
         releasedJobIds: [] as string[],
-        purchaseOrdersBySupplierId: {} as Record<string, string>
+        purchaseOrdersBySupplierId: {} as Record<string, string>,
+        failure: null
       };
     }
 
@@ -1046,11 +1048,9 @@ export const releaseBatchMemberJobs = defineServiceFn({
       purchaseOrdersBySupplierId: purchaseOrders
     });
     if (released.error) return released.error;
-    if (released.data.failure) return released.data.failure;
-    return {
-      releasedJobIds: released.data.releasedJobIds,
-      purchaseOrdersBySupplierId: released.data.purchaseOrdersBySupplierId
-    };
+    // A failure is returned with the PO map: the jobs released before it
+    // may have made a PO, and the next batch for that supplier must use it.
+    return released.data;
   }
 });
 
@@ -1161,6 +1161,10 @@ export const releaseBatches = defineServiceFn({
         continue;
       }
       Object.assign(purchaseOrders, jobs.data.purchaseOrdersBySupplierId);
+      if (jobs.data.failure) {
+        failed.push({ ...ref, message: jobs.data.failure.message });
+        continue;
+      }
 
       const result = await service.releaseJobOperationBatch(
         client,
@@ -3366,6 +3370,7 @@ export const createBatch = defineServiceFn({
         }
         return jobs.error;
       }
+      if (jobs.data.failure) return jobs.data.failure;
 
       const flipped = await service.releaseJobOperationBatch(
         client,
