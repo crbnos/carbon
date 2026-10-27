@@ -9901,16 +9901,33 @@ export async function getAccountLedgerPage(
   }
 ) {
   const cursor = decodeCursor(args.after);
+  const emptySummary = { opening: 0, netChange: 0, closing: 0 };
   let readClient = client;
   let companyIds: string[] | undefined;
   if (args.consolidated) {
     readClient = getCarbonServiceRole();
-    const { data: groupCompanies } = await readClient
+    const { data: groupCompanies, error: groupError } = await readClient
       .from("company")
       .select("id")
       .eq("companyGroupId", args.companyGroupId)
       .eq("active", true);
     companyIds = (groupCompanies ?? []).map((c) => c.id);
+    // The service role reads every tenant: with no companies to scope to, the
+    // ledger query would have no company filter at all, so read nothing.
+    if (groupError || companyIds.length === 0) {
+      logger.error("Failed to load the company group for an account ledger", {
+        accountId: args.accountId,
+        companyGroupId: args.companyGroupId,
+        error: groupError
+      });
+      if (cursor) return listErrorPage("lines");
+      return {
+        lines: [],
+        count: 0,
+        nextCursor: null,
+        summary: emptySummary
+      };
+    }
   }
   const companyId = args.consolidated ? null : args.companyId;
   const { accountId, startDate, endDate } = args;
@@ -9934,7 +9951,6 @@ export async function getAccountLedgerPage(
         })
   ]);
 
-  const emptySummary = { opening: 0, netChange: 0, closing: 0 };
   if (ledger.error) {
     logger.error("Failed to load an account ledger page", {
       accountId,
