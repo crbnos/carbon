@@ -71,6 +71,8 @@ export async function assertPostingStatusUnchanged(
 /** The nullable account defaults a posting may find empty. */
 export const OPTIONAL_DEFAULT_ROLES = [
   "accumulatedRightOfUseAmortizationAccount",
+  "apRevaluationAccount",
+  "arRevaluationAccount",
   "contractAssetAccount",
   "deferredRevenueAccount",
   "deferredTaxExpenseAccountId",
@@ -92,6 +94,8 @@ export const OPTIONAL_DEFAULT_ROLES = [
   "salesReturnsAccount",
   "salesShippingRevenueAccount",
   "scrapAccount",
+  "unrealizedExchangeGainAccount",
+  "unrealizedExchangeLossAccount",
   "variableLeaseExpenseAccount",
   "migrationClearingAccount"
 ] as const;
@@ -146,6 +150,10 @@ export const OPTIONAL_DEFAULT_LABELS: Record<OptionalDefaultRole, string> = {
   variableLeaseExpenseAccount: "Variable Lease Expense",
   rightOfUseAmortizationExpenseAccount: "Amortization – Right-of-Use Assets",
   leaseInterestExpenseAccount: "Interest Expense – Leases",
+  unrealizedExchangeGainAccount: "Unrealized Exchange Gain",
+  unrealizedExchangeLossAccount: "Unrealized Exchange Loss",
+  arRevaluationAccount: "AR Revaluation Adjustment",
+  apRevaluationAccount: "AP Revaluation Adjustment",
   migrationClearingAccount: "Migration Clearing"
 };
 

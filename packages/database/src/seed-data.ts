@@ -606,6 +606,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "currencyRevaluationRun",
+    name: "Currency Revaluation Run",
+    prefix: "FXR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "customerContract",
     name: "Contract",
     prefix: "CON",
@@ -891,6 +900,18 @@ export const accounts = [
     key: "1160",
     number: "1160",
     name: "Net Investment in Leases",
+    isGroup: false,
+    parentKey: "receivables",
+    accountType: "Other Current Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "1170",
+    number: "1170",
+    name: "AR Revaluation Adjustment",
     isGroup: false,
     parentKey: "receivables",
     accountType: "Other Current Asset",
@@ -1216,6 +1237,18 @@ export const accounts = [
     isGroup: false,
     parentKey: "payables",
     accountType: "Accounts Payable",
+    incomeBalance: "Balance Sheet",
+    class: "Liability",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "2030",
+    number: "2030",
+    name: "AP Revaluation Adjustment",
+    isGroup: false,
+    parentKey: "payables",
+    accountType: "Other Current Liability",
     incomeBalance: "Balance Sheet",
     class: "Liability",
     consolidatedRate: "Current",
@@ -1664,6 +1697,18 @@ export const accounts = [
     key: "4120",
     number: "4120",
     name: "Foreign Exchange Gains",
+    isGroup: false,
+    parentKey: "other-income",
+    accountType: "Other Income",
+    incomeBalance: "Income Statement",
+    class: "Revenue",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "4160",
+    number: "4160",
+    name: "Unrealized Exchange Gains",
     isGroup: false,
     parentKey: "other-income",
     accountType: "Other Income",
@@ -2165,6 +2210,18 @@ export const accounts = [
     createdBy: "system"
   },
   {
+    key: "7030",
+    number: "7030",
+    name: "Unrealized Exchange Losses",
+    isGroup: false,
+    parentKey: "other-expenses",
+    accountType: "Other Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
     key: "7040",
     number: "7040",
     name: "Service Charge Account",
@@ -2306,7 +2363,11 @@ export const accountDefaults = {
   operatingLeaseExpenseAccount: "6140",
   variableLeaseExpenseAccount: "6130",
   rightOfUseAmortizationExpenseAccount: "6330",
-  leaseInterestExpenseAccount: "7020"
+  leaseInterestExpenseAccount: "7020",
+  unrealizedExchangeGainAccount: "4160",
+  unrealizedExchangeLossAccount: "7030",
+  arRevaluationAccount: "1170",
+  apRevaluationAccount: "2030"
 } as const;
 
 export const fixedAssetClasses = [
@@ -2433,6 +2494,16 @@ export const periodCloseTaskDefinitions = [
     name: "Post depreciation runs covering the period",
     taskType: "Auto",
     autoCheckKey: "draft-depreciation",
+    sortOrder: 4,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Revalue foreign currency balances",
+    taskType: "Auto",
+    autoCheckKey: "fx-revaluation",
     sortOrder: 4,
     required: true,
     severity: "Warning",
