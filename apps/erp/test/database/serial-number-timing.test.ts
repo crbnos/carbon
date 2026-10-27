@@ -772,6 +772,51 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
+  it("receives no more than an item with no serial sequence holds, and grows its seed to a raised job quantity", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      await seed(f, async (trx) => {
+        await trx
+          .deleteFrom("itemSerialSequence")
+          .where("itemId", "=", f.assemblyId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const job = await untouchedSerialJob(f, "7e", 3);
+      // The job quantity is raised after its seed of three was made.
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("job")
+          .set({ quantity: 4 })
+          .where("id", "=", job.jobId)
+          .execute();
+      });
+
+      const beyond = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 5
+      });
+      expect(beyond.error?.category).toBe("rule");
+      expect(await receivedUnits(f, job.jobId)).toEqual([]);
+
+      const result = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 4
+      });
+      expect(result.error).toBeNull();
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: null, quantity: 4 }
+      ]);
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ quantity: 4, status: "Available" })
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
   it("refuses to scrap a unit already received to stock", async () => {
     const f = await alwaysPostFixture();
     try {

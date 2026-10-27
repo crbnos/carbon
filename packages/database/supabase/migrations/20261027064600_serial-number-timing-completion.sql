@@ -17,7 +17,7 @@
 -- (number_serial_units_for_receipt) and receives them. One query picks the units,
 -- so numbering and receipt cannot take different ones. An item with no serial
 -- sequence is never split: its single units are received, then the rest against
--- its seed. Every caller (the ERP's
+-- its seed, up to the units it holds and the job still owes. Every caller (the ERP's
 -- completeJob, and the sync_finish_job_operation interceptor when the last
 -- operation is marked Done) gets it by calling complete_job_to_inventory.
 --
@@ -374,6 +374,8 @@ DECLARE
   v_serial_unit_ids TEXT[];
   v_issued_units_received NUMERIC := 0;
   v_units_taken INTEGER;
+  v_seed_units_left NUMERIC := 0;
+  v_units_without_row NUMERIC := 0;
   v_company_today DATE := company_today(p_company_id);
   v_job_asset_class_id TEXT;
   v_job_asset_id TEXT;
@@ -862,12 +864,42 @@ BEGIN
       LIMIT 1
       FOR UPDATE;
 
+      -- The seed gives the units this job has not received from it, and the
+      -- units no row holds yet (the job quantity was raised after the seed was
+      -- made), as the sequence path creates them; a scrapped unit does not
+      -- count: the job still owes it.
+      IF v_tracked_entity.id IS NOT NULL THEN
+        SELECT v_tracked_entity.quantity - COALESCE(SUM(il.quantity), 0)
+        INTO v_seed_units_left
+        FROM "itemLedger" il
+        WHERE il."trackedEntityId" = v_tracked_entity.id
+          AND il."companyId" = p_company_id
+          AND il."documentType" = 'Job Receipt'
+          AND il."documentId" = p_job_id;
+
+        SELECT GREATEST(
+          (SELECT j.quantity FROM "job" j WHERE j.id = p_job_id AND j."companyId" = p_company_id)
+            - COALESCE(SUM(te.quantity), 0),
+          0
+        )
+        INTO v_units_without_row
+        FROM "trackedEntity" te
+        WHERE te.attributes->>'Job Make Method' = v_job_make_method.id
+          AND te."companyId" = p_company_id
+          AND te.status <> 'Scrapped';
+      END IF;
+
       -- Genuinely short of units (some scrapped, some already received) rather
       -- than un-numbered: receiving fewer than completed would leave the job's
       -- received quantity ahead of the ledger.
-      IF v_tracked_entity.id IS NULL THEN
+      IF v_tracked_entity.id IS NULL
+        OR GREATEST(v_seed_units_left, 0) + v_units_without_row
+          < v_quantity_received_to_inventory - v_units_taken THEN
         RAISE EXCEPTION 'Job % has % serial unit(s) left to receive, fewer than the % being completed',
-          v_job_id_readable, COALESCE(array_length(v_serial_unit_ids, 1), 0), v_quantity_received_to_inventory;
+          v_job_id_readable,
+          COALESCE(array_length(v_serial_unit_ids, 1), 0)
+            + GREATEST(v_seed_units_left, 0) + v_units_without_row,
+          v_quantity_received_to_inventory;
       END IF;
     END IF;
 
@@ -928,8 +960,14 @@ BEGIN
         v_tracked_entity.id, p_user_id
       );
 
+      -- The seed grows by the units no row held, so it holds what it received.
       UPDATE "trackedEntity"
-      SET status = 'Available'
+      SET status = 'Available',
+          quantity = quantity + GREATEST(
+            v_quantity_received_to_inventory - v_units_taken
+              - GREATEST(v_seed_units_left, 0),
+            0
+          )
       WHERE id = v_tracked_entity.id;
     END IF;
 
