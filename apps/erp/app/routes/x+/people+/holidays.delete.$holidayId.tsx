@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
@@ -10,7 +11,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteHoliday, getHoliday } from "~/modules/people/people.service";
+import { getHoliday } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -36,33 +37,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "people"
-  });
-
   const { holidayId } = params;
-  if (!holidayId) {
-    throw redirect(
-      path.to.holidays,
-      await flash(request, error(params, "Failed to get holiday id"))
-    );
-  }
-
-  const { error: deleteHolidayError } = await deleteHoliday(client, holidayId);
-  if (deleteHolidayError) {
-    throw redirect(
-      path.to.holidays,
-      await flash(
-        request,
-        error(deleteHolidayError, "Failed to delete holiday")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.holidays,
-    await flash(request, success("Successfully deleted holiday"))
-  );
+  if (!holidayId) throw notFound("Holiday ID was not found");
+  const api = await carbon(request);
+  const result = await api.people.deleteHoliday({ holidayId });
+  return respond(request, result).redirect(path.to.holidays, {
+    message: "Successfully deleted holiday"
+  });
 }
 
 export default function DeleteHolidayRoute() {

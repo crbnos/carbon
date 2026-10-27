@@ -1,6 +1,6 @@
 ---
 name: fix
-description: End-to-end bug-fix pipeline that diagnoses, implements, and proves the fix. It orchestrates /root-cause, /debugging-difficult-bugs, /test, and /check-and-commit, and performs the fix itself — the minimal code change from the proven cause plus a mandatory red→green regression test and scoped validation gates. At start it picks an autonomy mode (approval-before-each-phase vs fully autonomous) and a phase set (root-cause + fix are mandatory; runtime instrumentation is conditional on confidence, test is optional, commit runs only on explicit ask), auto-detected from the request and confirmed with the user when unclear. Keeps a structured run record at .ai/runs/{date}-{slug}.md. Use when fixing a bug, test failure, or unexpected behavior ("fix this bug", "why does X fail"). Do not use for building new features (use /feature). For a single watched item with explicit acceptance criteria, prefer /conductor.
+description: End-to-end bug-fix pipeline that diagnoses, implements, and proves the fix. It orchestrates /root-cause, /debugging-difficult-bugs, /test, and /check-and-commit, and performs the fix itself — the minimal code change from the proven cause plus a mandatory red→green proof (committed as a regression test only when it pins logic at a seam) and scoped validation gates. At start it picks an autonomy mode (approval-before-each-phase vs fully autonomous) and a phase set (root-cause + fix are mandatory; runtime instrumentation is conditional on confidence, test is optional, commit runs only on explicit ask), auto-detected from the request and confirmed with the user when unclear. Keeps a structured run record at .ai/runs/{date}-{slug}.md. Use when fixing a bug, test failure, or unexpected behavior ("fix this bug", "why does X fail"). Do not use for building new features (use /feature). For a single watched item with explicit acceptance criteria, prefer /conductor.
 ---
 <!-- Workflow pattern inspired by Open Mercato (MIT License)
      https://github.com/open-mercato/open-mercato
@@ -9,7 +9,7 @@ description: End-to-end bug-fix pipeline that diagnoses, implements, and proves 
 # fix — end-to-end bug-fix pipeline
 
 Runs the bug-fix lifecycle: diagnose → (instrument) → implement the minimal fix
-with a red→green regression test → (verify) → (commit). This skill orchestrates
+with a red→green proof → (verify) → (commit). This skill orchestrates
 the surrounding phases **and performs the fix itself**. The diagnosis and
 verification phases delegate to their own skills; the fix implementation
 (Phase 3) is done inline here — that is the core of this skill.
@@ -23,7 +23,7 @@ verification phases delegate to their own skills; the fix implementation
 | --- | ------------------ | --------------------------- | ---------------------------------------- | ------------------------ | ------------------------------------------------- |
 | 1   | Root cause         | `/root-cause`               | root-cause brief                         | **always**               | 🛑 three-strikes architectural → surface to human |
 | 2   | Runtime instrument | `/debugging-difficult-bugs` | log-backed cause                         | conditional              | none                                              |
-| 3   | Fix                | **this skill (inline)**     | ready change + red→green regression test | **always**               | 🛑 BLOCKED (2 failed fix attempts) → surface      |
+| 3   | Fix                | **this skill (inline)**     | ready change + red→green proof | **always**               | 🛑 BLOCKED (2 failed fix attempts) → surface      |
 | 4   | Browser verify     | `/test`                     | pass/fail + playbook                     | optional                 | user-facing flow must pass                        |
 | 5   | Commit             | `/check-and-commit`         | conventional commit                      | **only on explicit ask** | gates must be green                               |
 
@@ -60,8 +60,8 @@ _after_ root-cause, not upfront:
   proves the cause.
 - **Test (`/test`)** — include when the fix is user-facing or the proof is
   inherently visual (layout, spacing, animation). Skip for a pure-logic fix
-  already covered by the Phase 3 red→green regression test — log the skip
-  ("browser test skipped — regression test covers it").
+  already covered by the Phase 3 red→green proof — log the skip
+  ("browser test skipped — red→green proof covers it").
 - **Commit (`/check-and-commit`)** — runs **only if the user explicitly asked to
   commit** (e.g. "fix and commit"). Otherwise the pipeline ends at fix (+ test)
   with a READY summary and stops; offer to commit, don't do it unprompted.
@@ -114,7 +114,7 @@ the Confidence line and branch per 0b before continuing.
 ## Phase 3 in detail — implementing the fix
 
 This is the mandatory core. Input: the proven root-cause brief. Output: the
-smallest correct fix plus a regression test, all gates green. Execute the brief,
+smallest correct fix plus a red→green proof, all gates green. Execute the brief,
 prove it, and stop.
 
 ### 3.1 Prerequisites
@@ -135,18 +135,25 @@ with the human.
 
 ### 3.3 Write the failing test FIRST
 
-Mandatory for every fix. Write a regression test that reproduces the bug, then
-run it and **watch it fail** before changing any production code:
+Mandatory for every fix: a check that reproduces the bug, run and **seen to
+fail** before changing any production code:
 
 ```bash
 pnpm --filter <pkg> exec vitest run <path/to/test>
 # Expected: FAIL, for the reason the brief describes (not a typo/import error)
 ```
 
-A test that passes immediately proves nothing — it isn't testing the bug. Test
-locations: `apps/erp/app/modules/{module}/__tests__/` or
-`packages/{pkg}/src/__tests__/` (or next to the source, matching siblings). Copy
-setup patterns from a sibling test file.
+A check that passes immediately proves nothing — it isn't testing the bug.
+
+Whether that check is **committed** is a separate decision. Commit it only if
+it passes the three questions in `.claude/rules/testing.md` (which bug turns
+it red, what seam, where the expected values come from). A bug in a decision
+or calculation gets a committed test at that seam, in the existing file's
+fixture builder or `it.each` table. A wiring bug (wrong argument between two
+of our modules, a missing `await`, a call that no longer happens) usually has
+no honest committed test: keep the proof in scratch, quote it in the run
+record, and say how it was proven in the commit message. Never mock our own
+modules or regex a migration to manufacture a committable test.
 
 If the bug is only provable in the browser (layout, visual state), the failing
 proof is a `/test` run + BEFORE screenshot instead — say so explicitly, and make
@@ -203,7 +210,7 @@ to the human even in autonomous mode).
 **Status:** READY | BLOCKED <if BLOCKED: what and why>
 **Root-cause brief:** <path/link>
 **Files changed:** <path — what>
-**Regression test:** <path — failed before fix (output), passes after (output)>
+**Proof:** <committed test path, or scratch proof quoted here — failed before fix (output), passes after (output)>
 **Gates:** generate:types PASS|SKIP · biome PASS · typecheck(<pkgs>) PASS · test(<pkgs>) PASS
 **BC assessment:** NONE | <surfaces and how they comply>
 **Summary:** <2–3 sentences>

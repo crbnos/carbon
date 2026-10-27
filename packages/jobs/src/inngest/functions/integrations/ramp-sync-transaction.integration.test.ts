@@ -8,9 +8,18 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
 import { stageRampPaymentDraft } from "./ramp-sync-payment";
 
-const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+const hasLocalDatabase = (() => {
+  try {
+    return LOCAL_HOSTS.includes(
+      new URL(process.env.SUPABASE_DB_URL ?? "").hostname
+    );
+  } catch {
+    return false;
+  }
+})();
 
-describe.skipIf(!runDatabaseTests)(
+describe.skipIf(!hasLocalDatabase)(
   "Ramp transactional staging (Postgres)",
   () => {
     let db: Kysely<KyselyDatabase>;

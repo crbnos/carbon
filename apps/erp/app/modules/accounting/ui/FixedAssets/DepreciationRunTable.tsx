@@ -16,6 +16,7 @@ import { LuCalendar, LuEye, LuHash, LuStar, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { DepreciationRunListItem } from "../../types";
@@ -24,11 +25,12 @@ import DepreciationRunStatus from "./DepreciationRunStatus";
 type DepreciationRunTableProps = {
   data: DepreciationRunListItem[];
   count: number;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
 const DepreciationRunTable = memo(
-  ({ data, count, primaryAction }: DepreciationRunTableProps) => {
+  ({ data, count, primaryAction, infinite }: DepreciationRunTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -126,6 +128,7 @@ const DepreciationRunTable = memo(
     return (
       <>
         <Table<DepreciationRunListItem>
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}

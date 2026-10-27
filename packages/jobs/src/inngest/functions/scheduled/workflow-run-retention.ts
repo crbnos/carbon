@@ -15,7 +15,7 @@ import { inngest } from "../../client";
 // Compact runs BEFORE deleting their steps so compactedAt is always set first.
 // These ages are repeated in `util.workflow_run_retention_has_work` (the
 // migration that defines it). Change both;
-// `scheduled-sql-thresholds.test.ts` fails when the two disagree.
+// the `scheduled-sql-constants` check (@carbon/checks) fails when they disagree.
 export const STALE_RUN_HOURS = 24;
 export const FULL_DETAIL_DAYS = 7;
 export const COMPACT_DETAIL_DAYS = 30;
@@ -51,7 +51,7 @@ function groupByCompany(
  * night. `stage` narrows to the runs a pass can still make progress on: without
  * it a pass that deletes nothing re-picks the same rows forever.
  */
-export function terminalRunsQuery(
+function terminalRunsQuery(
   db: JobDatabase,
   cutoff: string,
   limit: number,

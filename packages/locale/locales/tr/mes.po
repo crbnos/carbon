@@ -238,6 +238,9 @@ msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Bu işlemi tamamlandı olarak işaretlemek istediğinizden emin misiniz? Bu, bu işlem için tüm aktif üretim olaylarını sonlandıracaktır."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Montaj adımları"
 
@@ -465,6 +468,9 @@ msgstr "Partiyi Tamamla"
 
 msgid "Complete passed"
 msgstr "Tamamlanan geçti"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "Tamamlandı"
@@ -2288,8 +2294,20 @@ msgstr "Bir not yazın…"
 msgid "Yes"
 msgstr "Evet"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."

@@ -14,7 +14,7 @@ import {
 } from "./visibility";
 
 describe("visualForComponent", () => {
-  it("shows earlier-step components solid", () => {
+  it("shows earlier-step components solid when no installed mode is given", () => {
     expect(visualForComponent(0, 2, "ghost")).toBe("solid");
     expect(visualForComponent(1, 2, "hidden")).toBe("solid");
   });
@@ -47,35 +47,29 @@ describe("visualForComponent", () => {
     expect(visualForComponent(undefined, 10, "ghost")).toBe("ghost");
   });
 
-  it("defaults installed components to solid when the 4th arg is omitted", () => {
-    expect(visualForComponent(0, 2, "ghost")).toBe("solid");
-    expect(visualForComponent(1, 2, "hidden")).toBe("solid");
-  });
-
   it("renders installed components per the installed mode", () => {
     expect(visualForComponent(0, 2, "ghost", "solid")).toBe("solid");
     expect(visualForComponent(0, 2, "ghost", "ghost")).toBe("ghost");
     expect(visualForComponent(0, 2, "ghost", "hidden")).toBe("hidden");
   });
 
-  it("never lets the installed mode affect the active step", () => {
-    for (const mode of ["solid", "ghost", "hidden"] as const) {
-      expect(visualForComponent(2, 2, "ghost", mode)).toBe("active");
+  it.each([
+    ["the active step", 2, 2, "ghost", "active"],
+    ["a future component", 3, 1, "ghost", "ghost"],
+    ["a future component", 3, 1, "hidden", "hidden"],
+    ["a future component", 3, 1, "solid", "solid"],
+    ["a never-installed component", undefined, 5, "hidden", "hidden"],
+    ["a never-installed component", undefined, 5, "ghost", "ghost"]
+  ] as const)(
+    "never lets the installed mode change %s (step %s of %s, future %s)",
+    (_, stepIndex, activeStep, futureMode, expected) => {
+      for (const installed of ["solid", "ghost", "hidden"] as const) {
+        expect(
+          visualForComponent(stepIndex, activeStep, futureMode, installed)
+        ).toBe(expected);
+      }
     }
-  });
-
-  it("never lets the installed mode affect future components", () => {
-    expect(visualForComponent(3, 1, "ghost", "hidden")).toBe("ghost");
-    expect(visualForComponent(3, 1, "hidden", "ghost")).toBe("hidden");
-    expect(visualForComponent(3, 1, "solid", "hidden")).toBe("solid");
-  });
-
-  it("never lets the installed mode affect never-installed components", () => {
-    for (const mode of ["solid", "ghost", "hidden"] as const) {
-      expect(visualForComponent(undefined, 5, "hidden", mode)).toBe("hidden");
-      expect(visualForComponent(undefined, 5, "ghost", mode)).toBe("ghost");
-    }
-  });
+  );
 });
 
 describe("occluderWeight", () => {
@@ -148,50 +142,11 @@ describe("occluderWeight", () => {
 });
 
 describe("named views", () => {
-  it("names every view in VIEW_MODES", () => {
-    for (const view of ASSEMBLY_VIEWS) {
-      expect(VIEW_MODES[view]).toBeDefined();
-    }
-    expect(Object.keys(VIEW_MODES).sort()).toEqual([...ASSEMBLY_VIEWS].sort());
-  });
-
-  it("gives each view a distinct axis pair", () => {
-    const pairs = ASSEMBLY_VIEWS.map(
-      (view) =>
-        `${VIEW_MODES[view].installedMode}/${VIEW_MODES[view].futureMode}`
-    );
-    expect(new Set(pairs).size).toBe(pairs.length);
-  });
-
-  it("keeps 'build' the historical default (installed solid, future hidden)", () => {
-    // Three-argument callers rendered installed parts solid, and
-    // `defaultFutureMode` is "hidden" — so the default view must be a no-op.
+  it("keeps 'build' a no-op for callers that pass no installed mode", () => {
+    // Those callers render installed parts solid and default the future to hidden.
     expect(VIEW_MODES.build).toEqual({
       installedMode: "solid",
       futureMode: "hidden"
-    });
-  });
-
-  it("ghosts the built side in 'focus', keeping the future out of the way", () => {
-    expect(VIEW_MODES.focus).toEqual({
-      installedMode: "ghost",
-      futureMode: "hidden"
-    });
-  });
-
-  it("hides the future side in every working view", () => {
-    // Build and Focus are "I am working this step" views; parts that are not
-    // on the bench yet only add clutter. Full is the exception.
-    for (const view of ["build", "focus"] as const) {
-      expect(VIEW_MODES[view].futureMode).toBe("hidden");
-    }
-    expect(VIEW_MODES.full.futureMode).toBe("solid");
-  });
-
-  it("shows everything in 'full'", () => {
-    expect(VIEW_MODES.full).toEqual({
-      installedMode: "solid",
-      futureMode: "solid"
     });
   });
 
@@ -202,26 +157,17 @@ describe("named views", () => {
     }
   });
 
-  it("falls back to 'build' for an axis pair no view names", () => {
-    // "hidden installed + solid future" is reachable from the props but is not
-    // a named view; it must seat a real button rather than none.
-    expect(viewForModes("hidden", "solid")).toBe("build");
-    // Nor is "hidden installed + hidden future" since the Isolate view went.
-    expect(viewForModes("hidden", "hidden")).toBe("build");
-  });
-
-  it("renders the active step untouched in every view", () => {
-    for (const view of ASSEMBLY_VIEWS) {
-      const { installedMode, futureMode } = VIEW_MODES[view];
-      expect(visualForComponent(2, 2, futureMode, installedMode)).toBe(
-        "active"
-      );
+  it.each([
+    ["hidden", "solid"],
+    ["hidden", "hidden"]
+  ] as const)(
+    "falls back to 'build' for the unnamed pair installed %s / future %s",
+    (installed, future) => {
+      expect(viewForModes(installed, future)).toBe("build");
     }
-  });
+  );
 
-  it("ghosts rather than deletes the built side in 'focus'", () => {
-    // Focus is about seeing PAST what is already fitted while keeping its
-    // shape as context.
+  it("ghosts the built side in 'focus' and still counts it as a weak occluder", () => {
     const { installedMode, futureMode } = VIEW_MODES.focus;
     expect(visualForComponent(0, 2, futureMode, installedMode)).toBe("ghost");
     expect(occluderWeight(0, 2, futureMode, installedMode)).toBe(

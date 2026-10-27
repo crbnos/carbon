@@ -198,9 +198,6 @@ catalogs:
     '@types/node':
       specifier: '24'
       version: 24.12.2
-    '@typescript/native-preview':
-      specifier: 7.0.0-dev.20260703.1
-      version: 7.0.0-dev.20260703.1
     '@vercel/analytics':
       specifier: 1.6.1
       version: 1.6.1
@@ -325,8 +322,8 @@ catalogs:
       specifier: 4.21.0
       version: 4.21.0
     typescript:
-      specifier: 5.8.3
-      version: 5.8.3
+      specifier: 7.1.0-beta
+      version: 7.1.0-beta
     vite:
       specifier: 8.3.3
       version: 8.3.3
@@ -413,92 +410,88 @@ patchedDependencies:
 importers:
 
   .:
-    dependencies:
-      '@carbon/api':
-        specifier: workspace:*
-        version: link:packages/api
-      '@opentelemetry/semantic-conventions':
-        specifier: 1.40.0
-        version: 1.40.0
-      '@react-router/remix-routes-option-adapter':
-        specifier: 'catalog:'
-        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
-      fast-uri:
-        specifier: 3.1.8
-        version: 3.1.8
-      fdir:
-        specifier: 6.5.0
-        version: 6.5.0(picomatch@4.0.7)
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
-      react-pdf:
-        specifier: 'catalog:'
-        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      remix-flat-routes:
-        specifier: 'catalog:'
-        version: 0.8.5
-      sst:
-        specifier: 'catalog:'
-        version: 4.6.9
-      tsup:
-        specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.5.15
         version: 2.5.15
+      '@carbon/api':
+        specifier: workspace:*
+        version: link:packages/api
       '@lingui/cli':
         specifier: 'catalog:'
         version: 6.9.0(babel-plugin-macros@3.1.0)(esbuild@0.28.2)(rolldown@1.2.12)
+      '@opentelemetry/semantic-conventions':
+        specifier: 1.40.0
+        version: 1.40.0
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
+      '@react-router/remix-routes-option-adapter':
+        specifier: 'catalog:'
+        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)
       '@types/aws-lambda':
         specifier: 8.10.164
         version: 8.10.164
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.2
-      '@typescript/native-preview':
-        specifier: 'catalog:'
-        version: 7.0.0-dev.20260703.1
       cli-table3:
         specifier: ^0.6.5
         version: 0.6.5
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
       csv-parse:
         specifier: 5.6.0
         version: 5.6.0
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
       execa:
         specifier: ^8.0.1
         version: 8.0.1
+      fast-uri:
+        specifier: 3.1.8
+        version: 3.1.8
+      fdir:
+        specifier: 6.5.0
+        version: 6.5.0(picomatch@4.0.7)
       linguito:
         specifier: ^0.5.2
-        version: 0.5.2(@types/react@18.3.28)(react-native-uuid@2.0.4)(tiny-invariant@1.3.3)(typescript@5.8.3)
+        version: 0.5.2(@types/react@18.3.28)(react-native-uuid@2.0.4)(tiny-invariant@1.3.3)(typescript@7.1.0-beta)
       lint-staged:
         specifier: 16.4.0
         version: 16.4.0
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       npm-run-all:
         specifier: 'catalog:'
         version: 4.1.5
+      react-pdf:
+        specifier: 'catalog:'
+        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      remix-flat-routes:
+        specifier: 'catalog:'
+        version: 0.8.5
       rimraf:
         specifier: 'catalog:'
         version: 5.0.10
       simple-git-hooks:
         specifier: 2.14.0
         version: 2.14.0
+      sst:
+        specifier: 'catalog:'
+        version: 4.6.9
       supabase:
         specifier: 'catalog:'
         version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       ts-morph:
         specifier: 28.0.0
         version: 28.0.0
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
@@ -507,7 +500,7 @@ importers:
         version: 2.11.7
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@24.12.2)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -559,10 +552,10 @@ importers:
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)
+        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)
       '@supabase/functions-js':
         specifier: 'catalog:'
         version: 2.117.2
@@ -580,7 +573,7 @@ importers:
         version: 1.6.1(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
@@ -662,7 +655,7 @@ importers:
         version: 4.3.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -687,6 +680,13 @@ importers:
       '@ai-sdk/react':
         specifier: 'catalog:'
         version: 4.0.119(react@18.3.1)(zod@4.5.4)
+      '@carbon/serve':
+        specifier: workspace:*
+        version: link:../../packages/serve
+      ai:
+        specifier: 'catalog:'
+        version: 7.0.116(zod@4.5.4)
+    devDependencies:
       '@base-ui-components/react':
         specifier: 1.0.0-rc.0
         version: 1.0.0-rc.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -699,12 +699,18 @@ importers:
       '@carbon/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@carbon/content':
         specifier: workspace:*
         version: link:../../docs/content
       '@carbon/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@carbon/dev':
+        specifier: workspace:*
+        version: link:../../packages/dev
       '@carbon/documents':
         specifier: workspace:*
         version: link:../../packages/documents
@@ -753,9 +759,6 @@ importers:
       '@carbon/react':
         specifier: workspace:*
         version: link:../../packages/react
-      '@carbon/serve':
-        specifier: workspace:*
-        version: link:../../packages/serve
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../../packages/stripe
@@ -789,12 +792,18 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
+      '@lingui/conf':
+        specifier: 'catalog:'
+        version: 6.9.0
       '@lingui/core':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)
       '@lingui/react':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)(react@18.3.1)
+      '@lingui/vite-plugin':
+        specifier: 'catalog:'
+        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.27.7)(rolldown@1.2.12)(vite@8.3.3)
       '@monaco-editor/react':
         specifier: 4.7.0
         version: 4.7.0(monaco-editor@0.44.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -810,12 +819,18 @@ importers:
       '@react-aria/i18n':
         specifier: 'catalog:'
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@react-aria/optimize-locales-plugin':
+        specifier: 'catalog:'
+        version: 2.0.2
       '@react-pdf/renderer':
         specifier: 'catalog:'
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
+      '@react-router/dev':
+        specifier: 'catalog:'
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)
+        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)
       '@react-types/datepicker':
         specifier: 3.13.5
         version: 3.13.5(react@18.3.1)
@@ -837,9 +852,18 @@ importers:
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.117.2(@opentelemetry/api@1.9.0)
+      '@tailwindcss/typography':
+        specifier: 'catalog:'
+        version: 0.5.19(tailwindcss@4.3.0)
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.0(vite@8.3.3)
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.104.0(react@18.3.1)
+      '@tanstack/react-query-devtools':
+        specifier: 'catalog:'
+        version: 5.104.0(@tanstack/react-query@5.104.0(react@18.3.1))(@types/react@18.3.28)(csstype@3.2.3)(react@18.3.1)
       '@tanstack/react-table':
         specifier: 8.21.3
         version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -849,6 +873,39 @@ importers:
       '@tiptap/react':
         specifier: 'catalog:'
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/d3':
+        specifier: 7.4.3
+        version: 7.4.3
+      '@types/d3-force':
+        specifier: 3.0.10
+        version: 3.0.10
+      '@types/lodash':
+        specifier: 4.17.26
+        version: 4.17.26
+      '@types/lodash.template':
+        specifier: 4.5.3
+        version: 4.5.3
+      '@types/nprogress':
+        specifier: 0.2.3
+        version: 0.2.3
+      '@types/papaparse':
+        specifier: 5.5.2
+        version: 5.5.2
+      '@types/pg':
+        specifier: 8.15.6
+        version: 8.15.6
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      '@types/react-csv':
+        specifier: 1.1.10
+        version: 1.1.10
+      '@types/react-dom':
+        specifier: 18.3.7
+        version: 18.3.7(@types/react@18.3.28)
+      '@types/tar-stream':
+        specifier: ^3.1.4
+        version: 3.1.4
       '@upstash/ratelimit':
         specifier: 2.0.8
         version: 2.0.8(@upstash/redis@1.37.0)
@@ -860,16 +917,19 @@ importers:
         version: 3.9.9(@aws-sdk/credential-provider-web-identity@3.972.38)(ws@8.21.0)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@visx/responsive':
         specifier: 2.17.0
         version: 2.17.0(react@18.3.1)
+      '@vitejs/devtools':
+        specifier: 'catalog:'
+        version: 0.7.6(@devframes/json-render@1.1.0(@devframes/hub@1.1.0(@devframes/agentic@1.1.0)(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0))(devframe@1.1.0))(@vitejs/devtools-rolldown@0.7.6)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
+      '@vitejs/devtools-rolldown':
+        specifier: 'catalog:'
+        version: 0.7.6(@devframes/agentic@1.1.0)(cac@7.0.0)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
       '@xyflow/react':
         specifier: 12.10.2
         version: 12.10.2(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      ai:
-        specifier: 'catalog:'
-        version: 7.0.116(zod@4.5.4)
       assert-never:
         specifier: 1.4.0
         version: 1.4.0
@@ -885,6 +945,9 @@ importers:
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
+      cross-env:
+        specifier: 'catalog:'
+        version: 7.0.3
       d3:
         specifier: 7.9.0
         version: 7.9.0
@@ -902,7 +965,7 @@ importers:
         version: 5.6.0
       inngest:
         specifier: ^3.54.2
-        version: 3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4)
+        version: 3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)(zod@4.5.4)
       intl-parse-accept-language:
         specifier: 'catalog:'
         version: 1.0.0
@@ -942,9 +1005,15 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
+      nodemon:
+        specifier: 'catalog:'
+        version: 3.1.14
       non.geist:
         specifier: 'catalog:'
         version: 1.0.4
+      npm-run-all:
+        specifier: 'catalog:'
+        version: 4.1.5
       papaparse:
         specifier: 5.3.2
         version: 5.3.2
@@ -957,6 +1026,9 @@ importers:
       performant-array-to-tree:
         specifier: 1.11.0
         version: 1.11.0
+      pg:
+        specifier: 8.20.0
+        version: 8.20.0
       posthog-js:
         specifier: 'catalog:'
         version: 1.438.9(@types/react@18.3.28)(react@18.3.1)
@@ -1038,9 +1110,24 @@ importers:
       sst:
         specifier: 'catalog:'
         version: 4.6.9
+      supabase:
+        specifier: 'catalog:'
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.3.0
+      tailwind-scrollbar:
+        specifier: 'catalog:'
+        version: 4.0.2(react@18.3.1)(tailwindcss@4.3.0)
+      tailwind-scrollbar-hide:
+        specifier: 'catalog:'
+        version: 4.0.0(tailwindcss@4.3.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.0
+      tailwindcss-animate:
+        specifier: 'catalog:'
+        version: 1.0.7(tailwindcss@4.3.0)
       tar-stream:
         specifier: ^3.2.0
         version: 3.2.0
@@ -1049,10 +1136,16 @@ importers:
         version: 1.3.3
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       tus-js-client:
         specifier: 4.3.1
         version: 4.3.1
+      typescript:
+        specifier: 'catalog:'
+        version: 7.1.0-beta
+      typescript5:
+        specifier: npm:typescript@5.8.3
+        version: typescript@5.8.3
       unified:
         specifier: 11.0.5
         version: 11.0.5
@@ -1062,6 +1155,12 @@ importers:
       use-stick-to-bottom:
         specifier: 1.1.3
         version: 1.1.3(react@18.3.1)
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
       zbsearch:
         specifier: 'catalog:'
         version: 4.0.0
@@ -1076,113 +1175,14 @@ importers:
         version: 3.25.2(zod@4.5.4)
       zustand:
         specifier: 'catalog:'
-        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
-    devDependencies:
-      '@carbon/config':
-        specifier: workspace:*
-        version: link:../../packages/config
-      '@carbon/dev':
-        specifier: workspace:*
-        version: link:../../packages/dev
-      '@lingui/conf':
-        specifier: 'catalog:'
-        version: 6.9.0
-      '@lingui/vite-plugin':
-        specifier: 'catalog:'
-        version: 6.9.0(@babel/core@7.29.6)(@lingui/babel-plugin-lingui-macro@6.9.0(@babel/core@7.29.6))(babel-plugin-macros@3.1.0)(esbuild@0.27.7)(rolldown@1.2.12)(vite@8.3.3)
-      '@react-aria/optimize-locales-plugin':
-        specifier: 'catalog:'
-        version: 2.0.2
-      '@react-router/dev':
-        specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
-      '@tailwindcss/typography':
-        specifier: 'catalog:'
-        version: 0.5.19(tailwindcss@4.3.0)
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.3.0(vite@8.3.3)
-      '@tanstack/react-query-devtools':
-        specifier: 'catalog:'
-        version: 5.104.0(@tanstack/react-query@5.104.0(react@18.3.1))(@types/react@18.3.28)(csstype@3.2.3)(react@18.3.1)
-      '@types/d3':
-        specifier: 7.4.3
-        version: 7.4.3
-      '@types/d3-force':
-        specifier: 3.0.10
-        version: 3.0.10
-      '@types/lodash':
-        specifier: 4.17.26
-        version: 4.17.26
-      '@types/lodash.template':
-        specifier: 4.5.3
-        version: 4.5.3
-      '@types/nprogress':
-        specifier: 0.2.3
-        version: 0.2.3
-      '@types/papaparse':
-        specifier: 5.5.2
-        version: 5.5.2
-      '@types/pg':
-        specifier: 8.15.6
-        version: 8.15.6
-      '@types/react':
-        specifier: 18.3.28
-        version: 18.3.28
-      '@types/react-csv':
-        specifier: 1.1.10
-        version: 1.1.10
-      '@types/react-dom':
-        specifier: 18.3.7
-        version: 18.3.7(@types/react@18.3.28)
-      '@types/tar-stream':
-        specifier: ^3.1.4
-        version: 3.1.4
-      '@vitejs/devtools':
-        specifier: 'catalog:'
-        version: 0.7.6(@devframes/json-render@1.1.0(@devframes/hub@1.1.0(@devframes/agentic@1.1.0)(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0))(devframe@1.1.0))(@vitejs/devtools-rolldown@0.7.6)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
-      '@vitejs/devtools-rolldown':
-        specifier: 'catalog:'
-        version: 0.7.6(@devframes/agentic@1.1.0)(cac@7.0.0)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
-      cross-env:
-        specifier: 'catalog:'
-        version: 7.0.3
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.14
-      npm-run-all:
-        specifier: 'catalog:'
-        version: 4.1.5
-      pg:
-        specifier: 8.20.0
-        version: 8.20.0
-      supabase:
-        specifier: 'catalog:'
-        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
-      tailwind-scrollbar:
-        specifier: 'catalog:'
-        version: 4.0.2(react@18.3.1)(tailwindcss@4.3.0)
-      tailwind-scrollbar-hide:
-        specifier: 'catalog:'
-        version: 4.0.0(tailwindcss@4.3.0)
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.0
-      tailwindcss-animate:
-        specifier: 'catalog:'
-        version: 1.0.7(tailwindcss@4.3.0)
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.3
-      vite:
-        specifier: 'catalog:'
-        version: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
+        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
 
   apps/mes:
     dependencies:
+      '@carbon/serve':
+        specifier: workspace:*
+        version: link:../../packages/serve
+    devDependencies:
       '@carbon/account':
         specifier: workspace:*
         version: link:../../packages/account
@@ -1192,9 +1192,15 @@ importers:
       '@carbon/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@carbon/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@carbon/dev':
+        specifier: workspace:*
+        version: link:../../packages/dev
       '@carbon/documents':
         specifier: workspace:*
         version: link:../../packages/documents
@@ -1234,9 +1240,6 @@ importers:
       '@carbon/react':
         specifier: workspace:*
         version: link:../../packages/react
-      '@carbon/serve':
-        specifier: workspace:*
-        version: link:../../packages/serve
       '@carbon/stripe':
         specifier: workspace:*
         version: link:../../packages/stripe
@@ -1267,6 +1270,9 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
+      '@lingui/conf':
+        specifier: 'catalog:'
+        version: 6.9.0
       '@lingui/core':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)
@@ -1279,15 +1285,18 @@ importers:
       '@react-aria/i18n':
         specifier: 'catalog:'
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@react-aria/optimize-locales-plugin':
+        specifier: 'catalog:'
+        version: 2.0.2
       '@react-pdf/renderer':
         specifier: 'catalog:'
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)
+        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)
       '@simplewebauthn/browser':
         specifier: ^13.3.0
         version: 13.3.0
@@ -1309,6 +1318,9 @@ importers:
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.104.0(react@18.3.1)
+      '@tanstack/react-query-devtools':
+        specifier: 'catalog:'
+        version: 5.104.0(@tanstack/react-query@5.104.0(react@18.3.1))(@types/react@18.3.28)(csstype@3.2.3)(react@18.3.1)
       '@tiptap/core':
         specifier: 'catalog:'
         version: 2.27.2(@tiptap/pm@2.27.2)
@@ -1345,6 +1357,12 @@ importers:
       '@tiptap/starter-kit':
         specifier: 'catalog:'
         version: 2.27.2
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: 18.3.7
+        version: 18.3.7(@types/react@18.3.28)
       '@vercel/analytics':
         specifier: 'catalog:'
         version: 1.6.1(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
@@ -1353,7 +1371,13 @@ importers:
         version: 3.9.9(@aws-sdk/credential-provider-web-identity@3.972.38)(ws@8.21.0)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@vitejs/devtools':
+        specifier: 'catalog:'
+        version: 0.7.6(@devframes/json-render@1.1.0(@devframes/hub@1.1.0(@devframes/agentic@1.1.0)(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0))(devframe@1.1.0))(@vitejs/devtools-rolldown@0.7.6)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
+      '@vitejs/devtools-rolldown':
+        specifier: 'catalog:'
+        version: 0.7.6(@devframes/agentic@1.1.0)(cac@7.0.0)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
       '@xyflow/react':
         specifier: 12.10.2
         version: 12.10.2(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1363,6 +1387,9 @@ importers:
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
+      cross-env:
+        specifier: 'catalog:'
+        version: 7.0.3
       dompurify:
         specifier: 'catalog:'
         version: 3.4.17
@@ -1384,9 +1411,15 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
+      nodemon:
+        specifier: 'catalog:'
+        version: 3.1.14
       non.geist:
         specifier: 'catalog:'
         version: 1.0.4
+      npm-run-all:
+        specifier: 'catalog:'
+        version: 4.1.5
       pdfjs-dist:
         specifier: 5.4.296
         version: 5.4.296
@@ -1435,55 +1468,6 @@ importers:
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.3.0
-      tailwindcss-animate:
-        specifier: 'catalog:'
-        version: 1.0.7(tailwindcss@4.3.0)
-      tsup:
-        specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
-      zod:
-        specifier: 'catalog:'
-        version: 4.5.4
-      zod-form-data:
-        specifier: 'catalog:'
-        version: 3.0.3(zod@4.5.4)
-    devDependencies:
-      '@carbon/config':
-        specifier: workspace:*
-        version: link:../../packages/config
-      '@carbon/dev':
-        specifier: workspace:*
-        version: link:../../packages/dev
-      '@lingui/conf':
-        specifier: 'catalog:'
-        version: 6.9.0
-      '@react-aria/optimize-locales-plugin':
-        specifier: 'catalog:'
-        version: 2.0.2
-      '@tanstack/react-query-devtools':
-        specifier: 'catalog:'
-        version: 5.104.0(@tanstack/react-query@5.104.0(react@18.3.1))(@types/react@18.3.28)(csstype@3.2.3)(react@18.3.1)
-      '@types/react':
-        specifier: 18.3.28
-        version: 18.3.28
-      '@types/react-dom':
-        specifier: 18.3.7
-        version: 18.3.7(@types/react@18.3.28)
-      '@vitejs/devtools':
-        specifier: 'catalog:'
-        version: 0.7.6(@devframes/json-render@1.1.0(@devframes/hub@1.1.0(@devframes/agentic@1.1.0)(crossws@0.4.12(srvx@1.0.5))(devframe@1.1.0))(devframe@1.1.0))(@vitejs/devtools-rolldown@0.7.6)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
-      '@vitejs/devtools-rolldown':
-        specifier: 'catalog:'
-        version: 0.7.6(@devframes/agentic@1.1.0)(cac@7.0.0)(crossws@0.4.12(srvx@1.0.5))(srvx@1.0.5)(vite@8.3.3)
-      cross-env:
-        specifier: 'catalog:'
-        version: 7.0.3
-      nodemon:
-        specifier: 'catalog:'
-        version: 3.1.14
-      npm-run-all:
-        specifier: 'catalog:'
-        version: 4.1.5
       tailwind-scrollbar:
         specifier: 'catalog:'
         version: 4.0.2(react@18.3.1)(tailwindcss@4.3.0)
@@ -1493,9 +1477,15 @@ importers:
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.0
+      tailwindcss-animate:
+        specifier: 'catalog:'
+        version: 1.0.7(tailwindcss@4.3.0)
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -1505,6 +1495,12 @@ importers:
       wait-on:
         specifier: 'catalog:'
         version: 7.2.0
+      zod:
+        specifier: 'catalog:'
+        version: 4.5.4
+      zod-form-data:
+        specifier: 'catalog:'
+        version: 3.0.3(zod@4.5.4)
 
   apps/starter:
     dependencies:
@@ -1555,10 +1551,10 @@ importers:
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       '@react-router/remix-routes-option-adapter':
         specifier: 'catalog:'
-        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)
+        version: 7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)
       '@supabase/functions-js':
         specifier: 'catalog:'
         version: 2.117.2
@@ -1579,7 +1575,7 @@ importers:
         version: 1.6.1(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
@@ -1664,7 +1660,7 @@ importers:
         version: 4.3.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -1707,10 +1703,10 @@ importers:
         version: link:../../../../packages/utils
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       '@react-router/fs-routes':
         specifier: 7.14.0
-        version: 7.14.0(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)
+        version: 7.14.0(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)
       '@supabase/functions-js':
         specifier: 'catalog:'
         version: 2.117.2
@@ -1719,7 +1715,7 @@ importers:
         version: 2.117.2(@opentelemetry/api@1.9.0)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       non.geist:
         specifier: 'catalog:'
         version: 1.0.4
@@ -1768,7 +1764,7 @@ importers:
         version: 4.3.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -1786,10 +1782,10 @@ importers:
         version: link:../../../../packages/utils
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       '@react-router/fs-routes':
         specifier: 7.14.0
-        version: 7.14.0(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)
+        version: 7.14.0(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)
       '@supabase/functions-js':
         specifier: 'catalog:'
         version: 2.117.2
@@ -1798,7 +1794,7 @@ importers:
         version: 2.117.2(@opentelemetry/api@1.9.0)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
@@ -1844,7 +1840,7 @@ importers:
         version: 4.3.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -1941,7 +1937,7 @@ importers:
         version: 1.0.7(tailwindcss@4.3.0)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
 
   docs/content:
     dependencies:
@@ -1966,7 +1962,7 @@ importers:
         version: 5.0.10
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vite:
         specifier: 'catalog:'
         version: 8.3.3(@types/node@24.12.2)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -1979,9 +1975,6 @@ importers:
       '@carbon/auth':
         specifier: workspace:*
         version: link:../auth
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
       '@carbon/files':
         specifier: workspace:*
         version: link:../files
@@ -2003,9 +1996,6 @@ importers:
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
-      '@lingui/core':
-        specifier: 'catalog:'
-        version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)
       '@lingui/react':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)(react@18.3.1)
@@ -2029,11 +2019,17 @@ importers:
         version: 3.0.3(zod@4.5.4)
       zustand:
         specifier: 'catalog:'
-        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
+        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@lingui/core':
+        specifier: 'catalog:'
+        version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
@@ -2042,37 +2038,19 @@ importers:
         version: 5.0.10
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
 
   packages/api:
     dependencies:
       '@carbon/auth':
         specifier: workspace:*
         version: link:../auth
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
-      '@carbon/kv':
-        specifier: workspace:*
-        version: link:../kv
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
-      '@orpc/client':
-        specifier: 'catalog:'
-        version: 1.15.0(@opentelemetry/api@1.9.0)
-      '@orpc/contract':
-        specifier: 'catalog:'
-        version: 1.15.0(@opentelemetry/api@1.9.0)
-      '@orpc/openapi-client':
-        specifier: 'catalog:'
-        version: 1.15.0(@opentelemetry/api@1.9.0)
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
       zod:
         specifier: 'catalog:'
         version: 4.5.4
@@ -2080,15 +2058,33 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/kv':
+        specifier: workspace:*
+        version: link:../kv
+      '@orpc/client':
+        specifier: 'catalog:'
+        version: 1.15.0(@opentelemetry/api@1.9.0)
+      '@orpc/contract':
+        specifier: 'catalog:'
+        version: 1.15.0(@opentelemetry/api@1.9.0)
       '@orpc/openapi':
         specifier: 'catalog:'
         version: 1.15.0(@opentelemetry/api@1.9.0)(crossws@0.4.12(srvx@1.0.5))(fastify@5.12.5)(ws@8.21.0)
+      '@orpc/openapi-client':
+        specifier: 'catalog:'
+        version: 1.15.0(@opentelemetry/api@1.9.0)
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -2118,7 +2114,7 @@ importers:
         version: link:../react
       '@react-router/dev':
         specifier: 'catalog:'
-        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+        version: 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       '@simplewebauthn/server':
         specifier: ^13.3.2
         version: 13.3.3
@@ -2133,22 +2129,16 @@ importers:
         version: 1.6.1(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       '@vercel/react-router':
         specifier: 'catalog:'
-        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       botid:
         specifier: 'catalog:'
         version: 1.5.11(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
       jose:
         specifier: 'catalog:'
         version: 6.0.11
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -2164,9 +2154,6 @@ importers:
       zod-form-data:
         specifier: 'catalog:'
         version: 3.0.3(zod@4.5.4)
-      zustand:
-        specifier: 'catalog:'
-        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -2180,18 +2167,27 @@ importers:
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       sst:
         specifier: 'catalog:'
         version: 4.6.9
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
+      zustand:
+        specifier: 'catalog:'
+        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
 
   packages/checks:
     devDependencies:
@@ -2201,6 +2197,9 @@ importers:
       '@carbon/ee':
         specifier: workspace:*
         version: link:../ee
+      '@carbon/env':
+        specifier: workspace:*
+        version: link:../env
       '@types/node':
         specifier: ^22
         version: 22.19.7
@@ -2218,7 +2217,10 @@ importers:
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
+      typescript5:
+        specifier: npm:typescript@5.8.3
+        version: typescript@5.8.3
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@22.19.7)(jsdom@26.1.0)(vite@8.3.3)
@@ -2268,21 +2270,18 @@ importers:
       '@jitl/quickjs-singlefile-browser-release-sync':
         specifier: 0.32.0
         version: 0.32.0
-      '@supabase/postgrest-js':
+      '@supabase/supabase-js':
         specifier: 'catalog:'
-        version: 2.117.2
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
+        version: 2.117.2(@opentelemetry/api@1.9.0)
+      dotenv:
+        specifier: 16.3.1
+        version: 16.3.1
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
-      kysely-supabase:
-        specifier: 0.2.1
-        version: 0.2.1(kysely@0.28.17)(supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c))
+      libpg-query:
+        specifier: 18.1.5
+        version: 18.1.5
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
@@ -2292,12 +2291,6 @@ importers:
       quickjs-emscripten-core:
         specifier: 0.32.0
         version: 0.32.0
-      react-pdf:
-        specifier: 'catalog:'
-        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      sst:
-        specifier: 'catalog:'
-        version: 4.6.9
       sucrase:
         specifier: 3.35.1
         version: 3.35.1
@@ -2308,9 +2301,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
-      '@supabase/supabase-js':
+      '@supabase/postgrest-js':
         specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
+        version: 2.117.2
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
@@ -2320,30 +2313,39 @@ importers:
       '@types/uuid':
         specifier: 8.3.4
         version: 8.3.4
-      dotenv:
-        specifier: 16.3.1
-        version: 16.3.1
-      libpg-query:
-        specifier: 18.1.5
-        version: 18.1.5
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
+      kysely-supabase:
+        specifier: 0.2.1
+        version: 0.2.1(kysely@0.28.17)(supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c))
       npm-run-all:
         specifier: 'catalog:'
         version: 4.1.5
+      react-pdf:
+        specifier: 'catalog:'
+        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rimraf:
         specifier: 'catalog:'
         version: 5.0.10
+      sst:
+        specifier: 'catalog:'
+        version: 4.6.9
       supabase:
         specifier: 'catalog:'
         version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       uuid:
         specifier: 9.0.0
         version: 9.0.0
@@ -2432,39 +2434,24 @@ importers:
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
-      '@carbon/react':
-        specifier: workspace:*
-        version: link:../react
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
-      '@hookform/resolvers':
-        specifier: 3.10.0
-        version: 3.10.0(react-hook-form@7.75.0(react@18.3.1))
+      '@internationalized/date':
+        specifier: 'catalog:'
+        version: 3.12.0
       '@react-pdf/renderer':
         specifier: 'catalog:'
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
       react-email:
         specifier: 'catalog:'
         version: 6.11.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-icons:
-        specifier: 'catalog:'
-        version: 5.6.0(react@18.3.1)
       react-pdf-tailwind:
         specifier: 2.3.0
         version: 2.3.0(encoding@0.1.13)(react@18.3.1)(tsx@4.21.0)(yaml@2.9.1)
-      sst:
-        specifier: 'catalog:'
-        version: 4.6.9
       zod:
         specifier: 'catalog:'
         version: 4.5.4
@@ -2475,6 +2462,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/react':
+        specifier: workspace:*
+        version: link:../react
       '@fontsource/inter':
         specifier: ^5.0.0
         version: 5.2.8
@@ -2499,9 +2489,9 @@ importers:
       '@fontsource/roboto':
         specifier: ^5.0.0
         version: 5.2.10
-      '@internationalized/date':
-        specifier: 'catalog:'
-        version: 3.12.0
+      '@hookform/resolvers':
+        specifier: 3.10.0
+        version: 3.10.0(react-hook-form@7.75.0(react@18.3.1))
       '@react-email/ui':
         specifier: 6.11.3
         version: 6.11.3(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2514,18 +2504,30 @@ importers:
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       postcss:
         specifier: 8.5.29
         version: 8.5.29
-      react:
-        specifier: 18.3.1
-        version: 18.3.1
+      react-icons:
+        specifier: 'catalog:'
+        version: 5.6.0(react@18.3.1)
+      sst:
+        specifier: 'catalog:'
+        version: 4.6.9
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -2541,6 +2543,9 @@ importers:
       '@carbon/auth':
         specifier: workspace:*
         version: link:../auth
+      '@carbon/content':
+        specifier: workspace:*
+        version: link:../../docs/content
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
@@ -2586,27 +2591,15 @@ importers:
       '@slack/oauth':
         specifier: 3.0.5
         version: 3.0.5
-      '@slack/types':
-        specifier: 2.20.1
-        version: 2.20.1
       '@slack/web-api':
         specifier: 'catalog:'
         version: 7.10.0
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
       ai:
         specifier: 'catalog:'
         version: 7.0.116(zod@4.5.4)
       axios:
         specifier: 1.20.0
         version: 1.20.0
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
       jose:
         specifier: 'catalog:'
         version: 6.0.11
@@ -2625,21 +2618,9 @@ importers:
       react-icons:
         specifier: 'catalog:'
         version: 5.6.0(react@18.3.1)
-      react-pdf:
-        specifier: 'catalog:'
-        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router:
         specifier: 'catalog:'
         version: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      sst:
-        specifier: 'catalog:'
-        version: 4.6.9
-      supabase:
-        specifier: 'catalog:'
-        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
-      tsup:
-        specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
       zbsearch:
         specifier: 'catalog:'
         version: 4.0.0
@@ -2653,9 +2634,6 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
-      '@carbon/content':
-        specifier: workspace:*
-        version: link:../../docs/content
       '@logtape/logtape':
         specifier: 'catalog:'
         version: 2.2.3
@@ -2665,15 +2643,39 @@ importers:
       '@modelcontextprotocol/client':
         specifier: 2.3.1
         version: 2.3.1
+      '@slack/types':
+        specifier: 2.20.1
+        version: 2.20.1
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/nodemailer':
         specifier: 6.4.21
         version: 6.4.21
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
+      react-pdf:
+        specifier: 'catalog:'
+        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      sst:
+        specifier: 'catalog:'
+        version: 4.6.9
+      supabase:
+        specifier: 'catalog:'
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -2683,9 +2685,6 @@ importers:
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
-      '@types/node':
-        specifier: 20.19.39
-        version: 20.19.39
       zod:
         specifier: 'catalog:'
         version: 4.5.4
@@ -2693,9 +2692,12 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@types/node':
+        specifier: 20.19.39
+        version: 20.19.39
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(jsdom@26.1.0)(vite@8.3.3)
@@ -2723,9 +2725,6 @@ importers:
       '@supabase/storage-js':
         specifier: 'catalog:'
         version: 2.117.2
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@tiptap/pm':
         specifier: 'catalog:'
         version: 2.27.2
@@ -2748,21 +2747,21 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/papaparse':
         specifier: 5.5.2
         version: 5.5.2
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
 
   packages/form:
     dependencies:
-      '@carbon/content':
-        specifier: workspace:*
-        version: link:../../docs/content
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
@@ -2772,21 +2771,12 @@ importers:
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
-      '@internationalized/date':
-        specifier: 'catalog:'
-        version: 3.12.0
       '@react-aria/i18n':
         specifier: 'catalog:'
         version: 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@remix-run/server-runtime':
         specifier: 2.17.5
-        version: 2.17.5(typescript@5.8.3)
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
-      immer:
-        specifier: 9.0.21
-        version: 9.0.21
+        version: 2.17.5(typescript@7.1.0-beta)
       lodash.get:
         specifier: 4.4.2
         version: 4.4.2
@@ -2805,9 +2795,6 @@ importers:
       remeda:
         specifier: 1.61.0
         version: 1.61.0
-      sst:
-        specifier: 'catalog:'
-        version: 4.6.9
       tiny-invariant:
         specifier: 1.3.3
         version: 1.3.3
@@ -2816,11 +2803,17 @@ importers:
         version: 4.5.4
       zustand:
         specifier: 'catalog:'
-        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
+        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/content':
+        specifier: workspace:*
+        version: link:../../docs/content
+      '@internationalized/date':
+        specifier: 'catalog:'
+        version: 3.12.0
       '@lingui/react':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)(react@18.3.1)
@@ -2833,15 +2826,24 @@ importers:
       '@types/react-dom':
         specifier: 18.3.7
         version: 18.3.7(@types/react@18.3.28)
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
       fetch-blob:
         specifier: 3.2.0
         version: 3.2.0
+      immer:
+        specifier: 9.0.21
+        version: 9.0.21
       react:
         specifier: 18.3.1
         version: 18.3.1
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      sst:
+        specifier: 'catalog:'
+        version: 4.6.9
       ts-toolbelt:
         specifier: 9.6.0
         version: 9.6.0
@@ -2850,7 +2852,7 @@ importers:
         version: 7.0.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -2874,7 +2876,7 @@ importers:
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@22.19.7)(jsdom@26.1.0)(vite@8.3.3)
@@ -2941,12 +2943,6 @@ importers:
       '@slack/web-api':
         specifier: 'catalog:'
         version: 7.10.0
-      '@supabase/functions-js':
-        specifier: 'catalog:'
-        version: 2.117.2
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
       ai:
         specifier: 'catalog:'
         version: 7.0.116(zod@4.5.4)
@@ -2955,34 +2951,16 @@ importers:
         version: 1.20.0
       inngest:
         specifier: ^3.54.2
-        version: 3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4)
+        version: 3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)(zod@4.5.4)
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
-      react:
-        specifier: 18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: 18.3.1
-        version: 18.3.1(react@18.3.1)
       react-email:
         specifier: 'catalog:'
         version: 6.11.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      react-pdf:
-        specifier: 'catalog:'
-        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      sst:
-        specifier: 'catalog:'
-        version: 4.6.9
-      supabase:
-        specifier: 'catalog:'
-        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
-      tsup:
-        specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
       undici:
         specifier: ^8.10.2
         version: 8.11.2
@@ -2996,6 +2974,12 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@supabase/functions-js':
+        specifier: 'catalog:'
+        version: 2.117.2
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/pg':
         specifier: 8.15.6
         version: 8.15.6
@@ -3008,12 +2992,30 @@ importers:
       pg:
         specifier: 8.20.0
         version: 8.20.0
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-pdf:
+        specifier: 'catalog:'
+        version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      sst:
+        specifier: 'catalog:'
+        version: 4.6.9
+      supabase:
+        specifier: 'catalog:'
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -3026,18 +3028,9 @@ importers:
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
       ioredis:
         specifier: 5.10.1
         version: 5.10.1
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -3048,12 +3041,21 @@ importers:
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
       dotenv:
         specifier: 16.3.1
         version: 16.3.1
       ioredis-mock:
         specifier: 8.13.1
         version: 8.13.1(@types/ioredis-mock@8.2.8(ioredis@5.10.1))(ioredis@5.10.1)
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       rimraf:
         specifier: 'catalog:'
         version: 5.0.10
@@ -3062,22 +3064,19 @@ importers:
         version: 4.6.9
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(jsdom@26.1.0)(vite@8.3.3)
 
   packages/lib:
     dependencies:
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
       '@carbon/documents':
         specifier: workspace:*
         version: link:../documents
@@ -3093,27 +3092,18 @@ importers:
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
-      '@carbon/notifications':
-        specifier: workspace:*
-        version: link:../notifications
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
-      '@carbon/workflows-core':
-        specifier: workspace:*
-        version: link:../workflows-core
       '@react-pdf/renderer':
         specifier: 'catalog:'
         version: 3.4.5(encoding@0.1.13)(react@18.3.1)
       '@slack/web-api':
         specifier: 'catalog:'
         version: 7.10.0
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
       inngest:
         specifier: 3.54.2
-        version: 3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4)
+        version: 3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)(zod@4.5.4)
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
@@ -3123,12 +3113,6 @@ importers:
       resend:
         specifier: 3.5.0
         version: 3.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      sst:
-        specifier: 'catalog:'
-        version: 4.6.9
-      supabase:
-        specifier: 'catalog:'
-        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       zod:
         specifier: 'catalog:'
         version: 4.5.4
@@ -3136,6 +3120,18 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/notifications':
+        specifier: workspace:*
+        version: link:../notifications
+      '@carbon/workflows-core':
+        specifier: workspace:*
+        version: link:../workflows-core
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
@@ -3148,15 +3144,21 @@ importers:
       rimraf:
         specifier: 'catalog:'
         version: 5.0.10
+      sst:
+        specifier: 'catalog:'
+        version: 4.6.9
+      supabase:
+        specifier: 'catalog:'
+        version: 2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c)
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(jsdom@26.1.0)(vite@8.3.3)
@@ -3184,10 +3186,10 @@ importers:
         version: 18.3.1
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -3242,7 +3244,7 @@ importers:
         version: 5.0.10
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(jsdom@26.1.0)(vite@8.3.3)
@@ -3260,25 +3262,16 @@ importers:
         version: 4.6.9
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(jsdom@26.1.0)(vite@8.3.3)
 
   packages/onboarding:
     dependencies:
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
-      '@carbon/form':
-        specifier: workspace:*
-        version: link:../form
       '@carbon/react':
         specifier: workspace:*
         version: link:../react
-      '@carbon/utils':
-        specifier: workspace:*
-        version: link:../utils
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -3288,9 +3281,6 @@ importers:
       '@lingui/react':
         specifier: 'catalog:'
         version: 6.9.0(@babel/core@7.29.6)(babel-plugin-macros@3.1.0)(react@18.3.1)
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -3302,11 +3292,23 @@ importers:
         version: 4.5.4
       zustand:
         specifier: 'catalog:'
-        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
+        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/form':
+        specifier: workspace:*
+        version: link:../form
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
@@ -3315,10 +3317,10 @@ importers:
         version: 5.0.10
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -3337,9 +3339,6 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
@@ -3350,9 +3349,12 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -3404,13 +3406,10 @@ importers:
         version: 18.3.28
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
 
   packages/query:
     dependencies:
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
@@ -3433,6 +3432,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
@@ -3444,7 +3446,7 @@ importers:
         version: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -3457,12 +3459,6 @@ importers:
       '@carbon/content':
         specifier: workspace:*
         version: link:../../docs/content
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
-      '@carbon/env':
-        specifier: workspace:*
-        version: link:../env
       '@carbon/files':
         specifier: workspace:*
         version: link:../files
@@ -3493,9 +3489,6 @@ importers:
       '@radix-ui/react-accordion':
         specifier: 1.2.12
         version: 1.2.12(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@radix-ui/react-avatar':
-        specifier: 1.1.11
-        version: 1.1.11(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-checkbox':
         specifier: 1.3.3
         version: 1.3.3(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3571,33 +3564,9 @@ importers:
       '@react-stately/datepicker':
         specifier: 3.16.1
         version: 3.16.1(react@18.3.1)
-      '@react-types/button':
-        specifier: 3.15.1
-        version: 3.15.1(react@18.3.1)
-      '@react-types/calendar':
-        specifier: 3.8.3
-        version: 3.8.3(react@18.3.1)
-      '@react-types/datepicker':
-        specifier: 3.13.5
-        version: 3.13.5(react@18.3.1)
       '@shikijs/langs':
         specifier: 'catalog:'
         version: 4.2.0
-      '@shikijs/themes':
-        specifier: 'catalog:'
-        version: 4.2.0
-      '@shikijs/types':
-        specifier: 'catalog:'
-        version: 4.2.0
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
-      '@tailwindcss/typography':
-        specifier: 'catalog:'
-        version: 0.5.19(tailwindcss@4.3.0)
-      '@tanstack/react-table':
-        specifier: 8.21.3
-        version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tanstack/react-virtual':
         specifier: 3.13.23
         version: 3.13.23(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3626,9 +3595,6 @@ importers:
         specifier: 'catalog:'
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@tiptap/extension-underline':
-        specifier: 'catalog:'
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
-      '@tiptap/extension-youtube':
         specifier: 'catalog:'
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@tiptap/pm':
@@ -3667,9 +3633,6 @@ importers:
       cmdk:
         specifier: 0.2.0
         version: 0.2.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
       dompurify:
         specifier: 'catalog:'
         version: 3.4.17
@@ -3679,21 +3642,12 @@ importers:
       input-otp:
         specifier: 1.4.2
         version: 1.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      intl-parse-accept-language:
-        specifier: 'catalog:'
-        version: 1.0.0
-      is-hotkey:
-        specifier: 0.2.0
-        version: 0.2.0
       match-sorter:
         specifier: 'catalog:'
         version: 8.1.0
       motion:
         specifier: 'catalog:'
         version: 12.38.0(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
       nprogress:
         specifier: 0.2.0
         version: 0.2.0
@@ -3712,15 +3666,15 @@ importers:
       react-icons:
         specifier: 'catalog:'
         version: 5.6.0(react@18.3.1)
-      react-resizable-panels:
-        specifier: 'catalog:'
-        version: 2.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-router:
         specifier: 'catalog:'
         version: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-shiki:
         specifier: 0.9.2
         version: 0.9.2(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-spring-bottom-sheet:
+        specifier: 3.4.1
+        version: 3.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       recharts:
         specifier: 2.15.4
         version: 2.15.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3730,19 +3684,49 @@ importers:
       tailwind-merge:
         specifier: 'catalog:'
         version: 3.3.0
-      tailwindcss-animate:
-        specifier: 'catalog:'
-        version: 1.0.7(tailwindcss@4.3.0)
-      zustand:
-        specifier: 'catalog:'
-        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@carbon/env':
+        specifier: workspace:*
+        version: link:../env
+      '@radix-ui/react-avatar':
+        specifier: 1.1.11
+        version: 1.1.11(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@react-types/button':
+        specifier: 3.15.1
+        version: 3.15.1(react@18.3.1)
+      '@react-types/calendar':
+        specifier: 3.8.3
+        version: 3.8.3(react@18.3.1)
+      '@react-types/datepicker':
+        specifier: 3.13.5
+        version: 3.13.5(react@18.3.1)
+      '@shikijs/themes':
+        specifier: 'catalog:'
+        version: 4.2.0
+      '@shikijs/types':
+        specifier: 'catalog:'
+        version: 4.2.0
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
+      '@tailwindcss/typography':
+        specifier: 'catalog:'
+        version: 0.5.19(tailwindcss@4.3.0)
+      '@tanstack/react-table':
+        specifier: 8.21.3
+        version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@testing-library/dom':
         specifier: 8.20.1
         version: 8.20.1
+      '@tiptap/extension-youtube':
+        specifier: 'catalog:'
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@types/dompurify':
         specifier: 2.4.0
         version: 2.4.0
@@ -3761,27 +3745,48 @@ importers:
       '@types/react-window':
         specifier: 1.8.8
         version: 1.8.8
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
+      intl-parse-accept-language:
+        specifier: 'catalog:'
+        version: 1.0.0
+      is-hotkey:
+        specifier: 0.2.0
+        version: 0.2.0
       jsdom:
         specifier: 26.1.0
         version: 26.1.0
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       react:
         specifier: 18.3.1
         version: 18.3.1
+      react-resizable-panels:
+        specifier: 'catalog:'
+        version: 2.1.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       sst:
         specifier: 'catalog:'
         version: 4.6.9
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.0
+      tailwindcss-animate:
+        specifier: 'catalog:'
+        version: 1.0.7(tailwindcss@4.3.0)
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
+      zustand:
+        specifier: 'catalog:'
+        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
 
   packages/serve:
     dependencies:
@@ -3818,7 +3823,7 @@ importers:
         version: 20.19.39
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(jsdom@26.1.0)(vite@8.3.3)
@@ -3852,22 +3857,25 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
+      dotenv:
+        specifier: 16.3.1
+        version: 16.3.1
       stripe:
         specifier: 22.4.0
         version: 22.4.0(@types/node@20.19.39)
+      zod:
+        specifier: 'catalog:'
+        version: 4.5.4
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
       '@types/node':
         specifier: 20.19.39
         version: 20.19.39
-      dotenv:
-        specifier: 16.3.1
-        version: 16.3.1
       rimraf:
         specifier: 'catalog:'
         version: 5.0.10
@@ -3876,16 +3884,13 @@ importers:
         version: 4.6.9
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       tsx:
         specifier: 'catalog:'
         version: 4.21.0
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
-      zod:
-        specifier: 'catalog:'
-        version: 4.5.4
+        version: 7.1.0-beta
 
   packages/tiptap:
     dependencies:
@@ -3922,9 +3927,6 @@ importers:
       '@tiptap/extension-link':
         specifier: 2.27.2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
-      '@tiptap/extension-mention':
-        specifier: 2.27.2
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(@tiptap/suggestion@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2))
       '@tiptap/extension-placeholder':
         specifier: 2.27.2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
@@ -3955,24 +3957,9 @@ importers:
       '@tiptap/suggestion':
         specifier: 2.27.2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
-      '@types/node':
-        specifier: 22.19.7
-        version: 22.19.7
       cmdk:
         specifier: 0.2.0
         version: 0.2.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      cookie:
-        specifier: 'catalog:'
-        version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
-      linkifyjs:
-        specifier: 4.3.2
-        version: 4.3.2
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
       react-icons:
         specifier: 'catalog:'
         version: 5.6.0(react@18.3.1)
@@ -3993,7 +3980,7 @@ importers:
         version: 0.1.2(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)
       zustand:
         specifier: 'catalog:'
-        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
+        version: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -4004,12 +3991,18 @@ importers:
       '@testing-library/dom':
         specifier: 8.20.1
         version: 8.20.1
+      '@tiptap/extension-mention':
+        specifier: 2.27.2
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(@tiptap/suggestion@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2))
       '@types/dompurify':
         specifier: 2.4.0
         version: 2.4.0
       '@types/forge-viewer':
         specifier: 7.99.3
         version: 7.99.3
+      '@types/node':
+        specifier: 22.19.7
+        version: 22.19.7
       '@types/react':
         specifier: 18.3.28
         version: 18.3.28
@@ -4019,6 +4012,18 @@ importers:
       '@types/react-window':
         specifier: 1.8.8
         version: 1.8.8
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
+      linkifyjs:
+        specifier: 4.3.2
+        version: 4.3.2
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -4027,10 +4032,10 @@ importers:
         version: 4.6.9
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@22.19.7)(jsdom@26.1.0)(vite@8.3.3)
@@ -4043,27 +4048,18 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
-      '@supabase/supabase-js':
-        specifier: 'catalog:'
-        version: 2.117.2(@opentelemetry/api@1.9.0)
-      '@tiptap/react':
-        specifier: 'catalog:'
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       cookie:
         specifier: 'catalog:'
         version: 1.1.1
-      dompurify:
-        specifier: 'catalog:'
-        version: 3.4.17
+      humanize-duration:
+        specifier: 3.35.0
+        version: 3.35.0
       intl-parse-accept-language:
         specifier: 'catalog:'
         version: 1.0.0
       lodash.template:
         specifier: 4.18.1
         version: 4.18.1
-      nanoid:
-        specifier: 'catalog:'
-        version: 5.1.16
       zod:
         specifier: 'catalog:'
         version: 4.5.4
@@ -4071,6 +4067,12 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.117.2(@opentelemetry/api@1.9.0)
+      '@tiptap/react':
+        specifier: 'catalog:'
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/lodash.template':
         specifier: 4.5.3
         version: 4.5.3
@@ -4080,9 +4082,12 @@ importers:
       '@types/react-dom':
         specifier: 18.3.7
         version: 18.3.7(@types/react@18.3.28)
-      humanize-duration:
-        specifier: 3.35.0
-        version: 3.35.0
+      dompurify:
+        specifier: 'catalog:'
+        version: 3.4.17
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -4091,10 +4096,10 @@ importers:
         version: 4.6.9
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1)
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -4112,7 +4117,7 @@ importers:
         version: link:../utils
       '@react-three/drei':
         specifier: 9.122.0
-        version: 9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0))(@types/react@18.3.28)(@types/three@0.163.0)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0)(use-sync-external-store@1.6.0(react@18.3.1))
+        version: 9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0))(@types/react@18.3.28)(@types/three@0.163.0)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0)(use-sync-external-store@1.7.0(react@18.3.1))
       '@react-three/fiber':
         specifier: 8.18.0
         version: 8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0)
@@ -4158,7 +4163,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -4174,7 +4179,7 @@ importers:
         version: link:../config
       typescript:
         specifier: 'catalog:'
-        version: 5.8.3
+        version: 7.1.0-beta
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(jsdom@26.1.0)(vite@8.3.3)
@@ -7952,6 +7957,18 @@ packages:
   '@radix-ui/rect@1.1.3':
     resolution: {integrity: sha512-JtyZR+mqgBibTo8xea3B6ZRmzZiM/YeVBtUkas6zMuXjAlfIFIW2FgqeM9eLyvEaYX66vr6DJMK+4U6LV0KhNw==}
 
+  '@reach/portal@0.13.2':
+    resolution: {integrity: sha512-g74BnCdtuTGthzzHn2cWW+bcyIYb0iIE/yRsm89i8oNzNgpopbkh9UY8TPbhNlys52h7U60s4kpRTmcq+JqsTA==}
+    peerDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1
+
+  '@reach/utils@0.13.2':
+    resolution: {integrity: sha512-3ir6cN60zvUrwjOJu7C6jec/samqAeyAB12ZADK+qjnmQPdzSYldrFWwDVV5H0WkhbYXR3uh+eImu13hCetNPQ==}
+    peerDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1
+
   '@react-aria/breadcrumbs@3.5.32':
     resolution: {integrity: sha512-S61vh5DJ2PXiXUwD7gk+pvS/b4VPrc3ZJOUZ0yVRLHkVESr5LhIZH+SAVgZkm1lzKyMRG+BH+fiRH/DZRSs7SA==}
     peerDependencies:
@@ -10267,6 +10284,9 @@ packages:
   '@types/uuid@8.3.4':
     resolution: {integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==}
 
+  '@types/warning@3.0.4':
+    resolution: {integrity: sha512-CqN8MnISMwQbLJXO3doBAV4Yw9hx9/Pyr2rZ78+NfaCnhyRA/nKrpyk6E7mKw17ZOaQdLpK9GiUjrqLzBlN3sg==}
+
   '@types/web-push@3.6.4':
     resolution: {integrity: sha512-GnJmSr40H3RAnj0s34FNTcJi1hmWFV5KXugE0mYWnYhgTAHLJ/dJKAwDmvPJYMke0RplY2XE9LnM4hqSqKIjhQ==}
 
@@ -10282,52 +10302,131 @@ packages:
   '@types/yargs@17.0.35':
     resolution: {integrity: sha512-qUHkeCyQFxMXg79wQfTtfndEC+N9ZZg76HJftDJp+qH2tV7Gj4OJi7l+PiWwJ+pWtW8GwSmqsDj/oymhrTWXjg==}
 
-  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-EwJEd6hfaHrrbSLat6+xX8fZiAvG+/Ae1gqvJEayTNdDbkrZxmeLS23YdjUmDMIOKI2wa7zXQDid8WtrvDfMTQ==}
+  '@typescript/typescript-aix-ppc64@7.1.0-beta':
+    resolution: {integrity: sha512-DXDG+jIWxBHGdoO70tcHON33rCnSzsEZj9P13oyf/r/KEGIo6awsdSNVNjAw0uMwEpqRu75IrgCcW58YcVkZHg==}
+    engines: {node: '>=16.20.0'}
+    cpu: [ppc64]
+    os: [aix]
+
+  '@typescript/typescript-android-arm64@7.1.0-beta':
+    resolution: {integrity: sha512-UZx6PxoQavuvaVTrSf3aw0Oy/J/uJpRylipA0kzc038jMvZXh0UtE8vnQp20FqtdgD5bhXZ0aJrRJyoTSUO58Q==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [android]
+
+  '@typescript/typescript-darwin-arm64@7.1.0-beta':
+    resolution: {integrity: sha512-q7mxblcyX0E7hXsY4k+Q6KWKK5mGmfVq+BDesdTgRVgjodk27aIxER77Zyj9+TgSTlCje8F7+JM6f6hl2BuNdw==}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [darwin]
 
-  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-tcS3gpivMq+BAiaupFqM5vuERykogJlfD4CjoxkSCksmmsKgWV96S2U/LjrKgll8R6/OEkg2VL2ycRG9+tIuHw==}
+  '@typescript/typescript-darwin-x64@7.1.0-beta':
+    resolution: {integrity: sha512-D5EYqG5Wm/guw9+0j8+Mn1Jbr/gfS/VtFTuoH8PJtFbcqeDaQGMulc7SW8q51QG6Y3wGOGX3nbsTOw6fIKWWAA==}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [darwin]
 
-  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-m8IJTOneLXRtq6prLz8uuhp463kEt+AHV5Ceqp7G0o3eAvbKP059OwzK6WXCS5J0B3ZxX+BwBf9wDXSNidWJCw==}
+  '@typescript/typescript-freebsd-arm64@7.1.0-beta':
+    resolution: {integrity: sha512-9A0XX0tcnH9qPdolSKKzSjTb93dlB0UEcAJbHYEsrFX2fkFNSum9+dvkQQJ9vLc+7vxHetDPujq9Qe6wx+Xhow==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [freebsd]
+
+  '@typescript/typescript-freebsd-x64@7.1.0-beta':
+    resolution: {integrity: sha512-EDf/dBHfY0TxX3NmUTek0hbffeyZlh3+ls6WQW3ICB8vYxwYLFnzg7wkgEUvl9eRlpiJ/nmc2S8arPMzINJ7rg==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@typescript/typescript-linux-arm64@7.1.0-beta':
+    resolution: {integrity: sha512-hNqQBgQ5b5oGqN76QqbAU6CwYhJZ6iOcWc2kPTUs2OentgpxZktETziH6KIyRFJPaiBncognwn2ZLu3DNhHiWw==}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [linux]
 
-  '@typescript/native-preview-linux-arm@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-nluwnKcdGo6laWWYtWF3zFUDfi7nNrcD5S/T5382fVmtKmNqIdzFm9ANgSSGAavuzfdu9YJLaVWpx72Oe40AEQ==}
+  '@typescript/typescript-linux-arm@7.1.0-beta':
+    resolution: {integrity: sha512-AvN9HmzOQh46G4312ooSgMHhbB7DtnLwg8D9mo324X49B7weMwtJrBG1MxT9IyI8kzDd7YRtW+1hWGun7WG7Qw==}
     engines: {node: '>=16.20.0'}
     cpu: [arm]
     os: [linux]
 
-  '@typescript/native-preview-linux-x64@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-5ga94rso68kaxJUzaufDVhka1zPaSbPgNXaemQO8faPW0crvRIkbv0g8bpG4pdWMV0tTylmluDles4ZcAzOprg==}
+  '@typescript/typescript-linux-loong64@7.1.0-beta':
+    resolution: {integrity: sha512-xbUustlBrFflt2pNEyG5ye+d4WGPc/rfr2xK29MXeobPSw297JqwuKRrvbKM5o3fE/eUM/c+urVm6jQ3IaMVTw==}
+    engines: {node: '>=16.20.0'}
+    cpu: [loong64]
+    os: [linux]
+
+  '@typescript/typescript-linux-mips64el@7.1.0-beta':
+    resolution: {integrity: sha512-fS4/G7/0bXZ3NSq3nBMAXyg65I3tO4S7j08VNQ2g1aNC/qq79gE7Qne1BNjVsjMFfHBVBFjQYoTQCjmVU2iFlg==}
+    engines: {node: '>=16.20.0'}
+    cpu: [mips64el]
+    os: [linux]
+
+  '@typescript/typescript-linux-ppc64@7.1.0-beta':
+    resolution: {integrity: sha512-0upCCxYPX8X6gOwkvfv+Ee7/ufyy7k97mTrGE0e5BxLlnUEa+w+rtgnv2dsKcxFdwdeZYVlZKCqgN/xCBV08+A==}
+    engines: {node: '>=16.20.0'}
+    cpu: [ppc64]
+    os: [linux]
+
+  '@typescript/typescript-linux-riscv64@7.1.0-beta':
+    resolution: {integrity: sha512-0jKU9YRgOPRgiy5V/UWv37kB53PaTpIbwGCbbOMUPPAkrjVRNOIAJaz7Wa7s3H7mdDebX1LopUEPEJR+7Xa7zg==}
+    engines: {node: '>=16.20.0'}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@typescript/typescript-linux-s390x@7.1.0-beta':
+    resolution: {integrity: sha512-j+d04s2kxaPQh6DLPb01sknAQfzsrdSZy15jBRHyLEZoaaQ19dVjbFRlkNVvYwUG7ZdP8+y5b/7RmPxdtHUKdQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [s390x]
+    os: [linux]
+
+  '@typescript/typescript-linux-x64@7.1.0-beta':
+    resolution: {integrity: sha512-kcD51ihf+pnI5KT4uQQYG04OpwznaZYBlIQhDhl8fflFd27NktxXsUeguxZyvUMyWfum7IF2bBS6Jv7ox0AgFQ==}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [linux]
 
-  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-YeRqOUuSyhbtryBSUE073OLpReIQXWJVyjP45gPLJ+0KAGvkd1VFz2FY1JEo++LyHoqXsGD2+qvdPpnTfSAIJg==}
+  '@typescript/typescript-netbsd-arm64@7.1.0-beta':
+    resolution: {integrity: sha512-8W85YyoGK+rgGoSU9jJQUpELbrKcZcbdJk2jPNQ6UKDKI7ryPlPFTrV2jCE5RQuv4Tt96hMDTc33s4YfRrLFBA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [netbsd]
+
+  '@typescript/typescript-netbsd-x64@7.1.0-beta':
+    resolution: {integrity: sha512-iGsTE0ve2PG0AcyZinwAR0LnGEZhu/y4dceS0hZsYCaKdYETvQtvtlNWlmYKempsBr6C7Il7dMXHVk+VFm9u0g==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [netbsd]
+
+  '@typescript/typescript-openbsd-arm64@7.1.0-beta':
+    resolution: {integrity: sha512-Z2FERdHB9fAKI+KGqdWn04O7uNlnB+VYiEm6INE1aZuzzLNd3KBqQ6IpKUJF2ny4GigGU6nVu75XD9tAUODPng==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [openbsd]
+
+  '@typescript/typescript-openbsd-x64@7.1.0-beta':
+    resolution: {integrity: sha512-NVG3qeyCq/rJEOhaRjR3LsWgjrjo5vJW25omVLeHAVnpKIG4pE4cenwwKGR06DiJ1s0QTOymcJeKXMEpsiNBVg==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [openbsd]
+
+  '@typescript/typescript-sunos-x64@7.1.0-beta':
+    resolution: {integrity: sha512-ovAdoWXEn2B5/fyWG69pLU3FWmQwPWOjQV5TFbcxtpnOv+R3g8ySGHl1NYRq7Lb/GYdFDvaGcZ+SiU7iKuiMsA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [sunos]
+
+  '@typescript/typescript-win32-arm64@7.1.0-beta':
+    resolution: {integrity: sha512-lJbo71IEOfL7ZZIZnArRaOLqjn9BAfoSzyUQn0aSjfSpDZL4ru0afUsdBfo6PQEjD6ssdmi0n/RwaPADX6bsvQ==}
     engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [win32]
 
-  '@typescript/native-preview-win32-x64@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-WYNcbTaxCPgiDLrL2aPJ3BJA05nJU8DK0fUFGkGAER0oM+KcJcQUBeUkXg/7A4HBTNYcj7zIxqNgkJU1TRa/Kw==}
+  '@typescript/typescript-win32-x64@7.1.0-beta':
+    resolution: {integrity: sha512-UKcHvbybY2tDTvFW2b1vwiAvDlIRooo69lh8CXWVhOQejcvpM5+IgbiFW9EIwR5Wi5X/v+BdN7gdWbigBuJ3rw==}
     engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
-
-  '@typescript/native-preview@7.0.0-dev.20260703.1':
-    resolution: {integrity: sha512-qyEHkEeRWCSGLa6a8oArnMPdn3Vcl1AZj8YHLO7lK0VjEEF/YJfz1FvxmpEeuhy0ZDfvJ7GtgXbvbjcU3zpPjQ==}
-    engines: {node: '>=16.20.0'}
-    hasBin: true
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
@@ -10513,6 +10612,18 @@ packages:
 
   '@workflow/serde@4.1.0':
     resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
+
+  '@xstate/react@1.6.3':
+    resolution: {integrity: sha512-NCUReRHPGvvCvj2yLZUTfR0qVp6+apc8G83oXSjN4rl89ZjyujiKrTff55bze/HrsvCsP/sUJASf2n0nzMF1KQ==}
+    peerDependencies:
+      '@xstate/fsm': ^1.0.0
+      react: 18.3.1
+      xstate: ^4.11.0
+    peerDependenciesMeta:
+      '@xstate/fsm':
+        optional: true
+      xstate:
+        optional: true
 
   '@xyflow/react@12.10.2':
     resolution: {integrity: sha512-CgIi6HwlcHXwlkTpr0fxLv/0sRVNZ8IdwKLzzeCscaYBwpvfcH1QFOCeaTCuEn1FQEs/B8CjnTSjhs8udgmBgQ==}
@@ -10931,6 +11042,9 @@ packages:
   body-parser@2.3.0:
     resolution: {integrity: sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw==}
     engines: {node: '>=18'}
+
+  body-scroll-lock@3.1.5:
+    resolution: {integrity: sha512-Yi1Xaml0EvNA0OYWxXiYNqY24AfWkbA6w5vxE7GWxtKfzIbZM+Qw+aSmkgsbWzbHiy/RCSkUZBplVxTA+E4jJg==}
 
   botid@1.5.11:
     resolution: {integrity: sha512-KOO1A3+/vFVJk5aFoG3sNwiogKFPVR+x4aw4gQ1b2e0XoE+i5xp48/EZn+WqR07jRHeDGwHWQUOtV5WVm7xiww==}
@@ -12120,6 +12234,9 @@ packages:
 
   fix-dts-default-cjs-exports@1.0.1:
     resolution: {integrity: sha512-pVIECanWFC61Hzl2+oOCtoJ3F17kglZC/6N94eRWycFgBH35hHx0Li604ZIzhseh97mf2p0cv7vVrOZGoqhlEg==}
+
+  focus-trap@6.9.4:
+    resolution: {integrity: sha512-v2NTsZe2FF59Y+sDykKY+XjqZ0cPfhq/hikWVL88BqLivnNiEffAsac6rP6H45ff9wG9LL5ToiDqrLEP9GX9mw==}
 
   follow-redirects@1.16.1:
     resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
@@ -15018,6 +15135,17 @@ packages:
       react: 18.3.1
       react-dom: 18.3.1
 
+  react-spring-bottom-sheet@3.4.1:
+    resolution: {integrity: sha512-yDFqiPMm/fjefjnOe6Q9zxccbCl6HMUKsK5bWgfGHJIj4zmXVKio5d4icQvmOLuwpuCA2pwv4J6nGWS6fUZidQ==}
+    peerDependencies:
+      react: 18.3.1
+
+  react-spring@8.0.27:
+    resolution: {integrity: sha512-nDpWBe3ZVezukNRandTeLSPcwwTMjNVu1IDq9qA/AMiUqHuRN4BeSWvKr3eIxxg1vtiYiOLy4FqdfCP5IoP77g==}
+    peerDependencies:
+      react: 18.3.1
+      react-dom: 18.3.1
+
   react-stately@3.45.0:
     resolution: {integrity: sha512-G3bYr0BIiookpt4H05VeZUuVS/FslQAj2TeT8vDfCiL314Y+LtPXIPe/a3eamCA0wljy7z1EDYKV50Qbz7pcJg==}
     peerDependencies:
@@ -15038,6 +15166,12 @@ packages:
     peerDependencies:
       react: 18.3.1
       react-dom: 18.3.1
+
+  react-use-gesture@8.0.1:
+    resolution: {integrity: sha512-CXzUNkulUdgouaAlvAsC5ZVo0fi9KGSBSk81WrE4kOIcJccpANe9zZkAYr5YZZhqpicIFxitsrGVS4wmoMun9A==}
+    deprecated: This package is no longer maintained. Please use @use-gesture/react instead
+    peerDependencies:
+      react: 18.3.1
 
   react-use-measure@2.1.7:
     resolution: {integrity: sha512-KrvcAo13I/60HpwGO5jpW7E9DfusKyLPLvuHlUyP5zqnmAPhNc6qTRjUQrdTADl0lpPpDVU2/Gg51UlOGHXbdg==}
@@ -15855,6 +15989,9 @@ packages:
     os: [darwin, linux, win32, freebsd, openbsd, netbsd, sunos, android]
     hasBin: true
 
+  tabbable@5.3.3:
+    resolution: {integrity: sha512-QD9qKY3StfbZqWOPLp0++pOrAVb/HbUi5xCc8cUo4XjP19808oaMiDzn0leBY5mCespIBM0CIZePzZjgzR83kA==}
+
   tabbable@6.5.0:
     resolution: {integrity: sha512-wieBHXygIm7OyQOu5hQlkk62/WyCFYGlWg7L6/ZCUZwx0o398Zkn4pVmMyfYhfMG8kGrj/Krt8eIk6UKC6VzwA==}
 
@@ -16182,6 +16319,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@7.1.0-beta:
+    resolution: {integrity: sha512-cjWjZAJDsmZzsNC5GwHNlW0YPM65jZa5oR0KyQcYX3KSVIfTvtBq//vewISyatKk4OLi5grZjHhIVE9fdrw1UQ==}
+    engines: {node: '>=16.20.0'}
+    hasBin: true
+
   uc.micro@2.1.0:
     resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
 
@@ -16296,6 +16438,15 @@ packages:
       '@types/react':
         optional: true
 
+  use-isomorphic-layout-effect@1.2.1:
+    resolution: {integrity: sha512-tpZZ+EX0gaghDAiFR37hj5MgY6ZN55kLiPkJsKxBMZ6GZdOSPJXiOzPM984oPYZ5AnehYx5WQp1+ME8I/P/pRA==}
+    peerDependencies:
+      '@types/react': '*'
+      react: 18.3.1
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   use-sidecar@1.1.3:
     resolution: {integrity: sha512-Fedw0aZvkhynoPYlA5WXrMCAMm+nSWdZt6lzJQ7Ok8S6Q+VsHmHpRWndVRJ8Be0ZbkfPc5LRYH+5XrzXcEeLRQ==}
     engines: {node: '>=10'}
@@ -16311,8 +16462,18 @@ packages:
     peerDependencies:
       react: 18.3.1
 
+  use-subscription@1.13.0:
+    resolution: {integrity: sha512-Jb2vVrY4SuzlCjlT7m20o92iDMpUDwWMlaSFBxD7/DdrSLF1oZKXp2SqokWDYUi8EKmx4qlK612aGN743ejQtQ==}
+    peerDependencies:
+      react: 18.3.1
+
   use-sync-external-store@1.6.0:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
+    peerDependencies:
+      react: 18.3.1
+
+  use-sync-external-store@1.7.0:
+    resolution: {integrity: sha512-6L+EeigHMQhdaIPNIFUKwfWJSwWFQ8gJbJ2DLOs5sDIegTwR9fRxvnM3uciHKjIZhFz+KAv2emhWMRvDmMcY8A==}
     peerDependencies:
       react: 18.3.1
 
@@ -16662,6 +16823,9 @@ packages:
 
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
+
+  xstate@4.38.3:
+    resolution: {integrity: sha512-SH7nAaaPQx57dx6qvfcIgqKRXIh4L0A1iYEqim4s1u7c9VoCgzZc+63FY90AKU4ZzOC2cfJzTnpO4zK7fCUzzw==}
 
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
@@ -17465,8 +17629,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/runtime@7.29.10':
-    optional: true
+  '@babel/runtime@7.29.10': {}
 
   '@babel/runtime@7.29.2': {}
 
@@ -18460,10 +18623,10 @@ snapshots:
       - babel-plugin-macros
       - supports-color
 
-  '@lingui/conf@5.9.4(typescript@5.8.3)':
+  '@lingui/conf@5.9.4(typescript@7.1.0-beta)':
     dependencies:
       '@babel/runtime': 7.29.2
-      cosmiconfig: 8.3.6(typescript@5.8.3)
+      cosmiconfig: 8.3.6(typescript@7.1.0-beta)
       jest-validate: 29.7.0
       jiti: 2.7.0
       picocolors: 1.1.1
@@ -21024,6 +21187,21 @@ snapshots:
 
   '@radix-ui/rect@1.1.3': {}
 
+  '@reach/portal@0.13.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@reach/utils': 0.13.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      tslib: 2.8.1
+
+  '@reach/utils@0.13.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@types/warning': 3.0.4
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      tslib: 2.8.1
+      warning: 4.0.3
+
   '@react-aria/breadcrumbs@3.5.32(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@react-aria/i18n': 3.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -21814,7 +21992,7 @@ snapshots:
       '@react-pdf/primitives': 4.2.0
       '@react-pdf/stylesheet': 6.1.4
 
-  '@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)':
+  '@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)':
     dependencies:
       '@babel/core': 7.29.6
       '@babel/generator': 7.29.1
@@ -21823,7 +22001,7 @@ snapshots:
       '@babel/preset-typescript': 7.28.5(@babel/core@7.29.6)
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
-      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
       '@remix-run/node-fetch-server': 0.13.1
       arg: 5.0.2
       babel-dead-code-elimination: 1.0.12
@@ -21843,12 +22021,12 @@ snapshots:
       react-router: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       semver: 7.7.4
       tinyglobby: 0.2.17
-      valibot: 1.4.2(typescript@5.8.3)
+      valibot: 1.4.2(typescript@7.1.0-beta)
       vite: 8.3.3(@types/node@24.12.2)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
       vite-node: 3.2.4(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
     optionalDependencies:
-      '@react-router/serve': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
-      typescript: 5.8.3
+      '@react-router/serve': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
+      typescript: 7.1.0-beta
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -21864,7 +22042,7 @@ snapshots:
       - tsx
       - yaml
 
-  '@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)':
+  '@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)':
     dependencies:
       '@babel/core': 7.29.6
       '@babel/generator': 7.29.1
@@ -21873,7 +22051,7 @@ snapshots:
       '@babel/preset-typescript': 7.28.5(@babel/core@7.29.6)
       '@babel/traverse': 7.29.0
       '@babel/types': 7.29.0
-      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
       '@remix-run/node-fetch-server': 0.13.1
       arg: 5.0.2
       babel-dead-code-elimination: 1.0.12
@@ -21893,12 +22071,12 @@ snapshots:
       react-router: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       semver: 7.7.4
       tinyglobby: 0.2.17
-      valibot: 1.4.2(typescript@5.8.3)
+      valibot: 1.4.2(typescript@7.1.0-beta)
       vite: 8.3.3(@types/node@26.6.5)(@vitejs/devtools@0.7.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
       vite-node: 3.2.4(@types/node@26.6.5)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.1)
     optionalDependencies:
-      '@react-router/serve': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
-      typescript: 5.8.3
+      '@react-router/serve': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
+      typescript: 7.1.0-beta
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -21914,46 +22092,46 @@ snapshots:
       - tsx
       - yaml
 
-  '@react-router/express@7.18.4(express@4.22.3)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)':
+  '@react-router/express@7.18.4(express@4.22.3)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)':
     dependencies:
-      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
       express: 4.22.3
       react-router: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
     optional: true
 
-  '@react-router/fs-routes@7.14.0(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)':
+  '@react-router/fs-routes@7.14.0(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)':
     dependencies:
-      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
       minimatch: 9.0.9
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
 
-  '@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)':
+  '@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)':
     dependencies:
       '@mjackson/node-fetch-server': 0.2.0
       react-router: 7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
 
-  '@react-router/remix-routes-option-adapter@7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)':
+  '@react-router/remix-routes-option-adapter@7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)':
     dependencies:
-      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@24.12.2)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
 
-  '@react-router/remix-routes-option-adapter@7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(typescript@5.8.3)':
+  '@react-router/remix-routes-option-adapter@7.18.4(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(typescript@7.1.0-beta)':
     dependencies:
-      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
+      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
 
-  '@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)':
+  '@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)':
     dependencies:
       '@mjackson/node-fetch-server': 0.2.0
-      '@react-router/express': 7.18.4(express@4.22.3)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
-      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      '@react-router/express': 7.18.4(express@4.22.3)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
+      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
       compression: 1.8.2
       express: 4.22.3
       get-port: 5.1.1
@@ -22231,7 +22409,7 @@ snapshots:
       '@swc/helpers': 0.5.23
       react: 18.3.1
 
-  '@react-three/drei@9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0))(@types/react@18.3.28)(@types/three@0.163.0)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0)(use-sync-external-store@1.6.0(react@18.3.1))':
+  '@react-three/drei@9.122.0(@react-three/fiber@8.18.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0))(@types/react@18.3.28)(@types/three@0.163.0)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(three@0.163.0)(use-sync-external-store@1.7.0(react@18.3.1))':
     dependencies:
       '@babel/runtime': 7.29.2
       '@mediapipe/tasks-vision': 0.10.17
@@ -22257,7 +22435,7 @@ snapshots:
       troika-three-text: 0.52.4(three@0.163.0)
       tunnel-rat: 0.1.2(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)
       utility-types: 3.11.0
-      zustand: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1))
+      zustand: 5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1))
     optionalDependencies:
       react-dom: 18.3.1(react@18.3.1)
     transitivePeerDependencies:
@@ -22437,7 +22615,7 @@ snapshots:
 
   '@remix-run/router@1.23.3': {}
 
-  '@remix-run/server-runtime@2.17.5(typescript@5.8.3)':
+  '@remix-run/server-runtime@2.17.5(typescript@7.1.0-beta)':
     dependencies:
       '@remix-run/router': 1.23.3
       '@types/cookie': 0.6.0
@@ -22447,7 +22625,7 @@ snapshots:
       source-map: 0.7.6
       turbo-stream: 3.0.0
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
 
   '@rolldown/binding-android-arm-eabi@1.2.12':
     optional: true
@@ -24075,6 +24253,8 @@ snapshots:
 
   '@types/uuid@8.3.4': {}
 
+  '@types/warning@3.0.4': {}
+
   '@types/web-push@3.6.4':
     dependencies:
       '@types/node': 22.19.7
@@ -24091,36 +24271,68 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
-  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260703.1':
+  '@typescript/typescript-aix-ppc64@7.1.0-beta':
     optional: true
 
-  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260703.1':
+  '@typescript/typescript-android-arm64@7.1.0-beta':
     optional: true
 
-  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260703.1':
+  '@typescript/typescript-darwin-arm64@7.1.0-beta':
     optional: true
 
-  '@typescript/native-preview-linux-arm@7.0.0-dev.20260703.1':
+  '@typescript/typescript-darwin-x64@7.1.0-beta':
     optional: true
 
-  '@typescript/native-preview-linux-x64@7.0.0-dev.20260703.1':
+  '@typescript/typescript-freebsd-arm64@7.1.0-beta':
     optional: true
 
-  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260703.1':
+  '@typescript/typescript-freebsd-x64@7.1.0-beta':
     optional: true
 
-  '@typescript/native-preview-win32-x64@7.0.0-dev.20260703.1':
+  '@typescript/typescript-linux-arm64@7.1.0-beta':
     optional: true
 
-  '@typescript/native-preview@7.0.0-dev.20260703.1':
-    optionalDependencies:
-      '@typescript/native-preview-darwin-arm64': 7.0.0-dev.20260703.1
-      '@typescript/native-preview-darwin-x64': 7.0.0-dev.20260703.1
-      '@typescript/native-preview-linux-arm': 7.0.0-dev.20260703.1
-      '@typescript/native-preview-linux-arm64': 7.0.0-dev.20260703.1
-      '@typescript/native-preview-linux-x64': 7.0.0-dev.20260703.1
-      '@typescript/native-preview-win32-arm64': 7.0.0-dev.20260703.1
-      '@typescript/native-preview-win32-x64': 7.0.0-dev.20260703.1
+  '@typescript/typescript-linux-arm@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-linux-loong64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-linux-mips64el@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-linux-ppc64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-linux-riscv64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-linux-s390x@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-linux-x64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-netbsd-arm64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-netbsd-x64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-openbsd-arm64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-openbsd-x64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-sunos-x64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-win32-arm64@7.1.0-beta':
+    optional: true
+
+  '@typescript/typescript-win32-x64@7.1.0-beta':
+    optional: true
 
   '@ungap/structured-clone@1.3.0': {}
 
@@ -24173,10 +24385,10 @@ snapshots:
       '@vercel/cli-exec': 1.0.1
       jose: 5.10.0
 
-  '@vercel/react-router@1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@vercel/react-router@1.2.6(patch_hash=fdc988df95f5639f888c552079014d0e615cb4c762f8c25a16d43e4498e21a6a)(@react-router/dev@7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1))(@react-router/node@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(isbot@5.1.37)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@5.8.3)(vite@8.3.3)(yaml@2.9.1)
-      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)
+      '@react-router/dev': 7.18.4(patch_hash=26f651e284eca5bd3bc5389f089a09f3ae8d2dbb58b8b3bee0321aebb2960a03)(@react-router/serve@7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta))(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(terser@5.48.0)(tsx@4.21.0)(typescript@7.1.0-beta)(vite@8.3.3)(yaml@2.9.1)
+      '@react-router/node': 7.18.4(react-router@7.18.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)
       '@vercel/static-config': 3.2.0
       isbot: 5.1.37
       react: 18.3.1
@@ -24374,6 +24586,16 @@ snapshots:
   '@web3-storage/multipart-parser@1.0.0': {}
 
   '@workflow/serde@4.1.0': {}
+
+  '@xstate/react@1.6.3(@types/react@18.3.28)(react@18.3.1)(xstate@4.38.3)':
+    dependencies:
+      react: 18.3.1
+      use-isomorphic-layout-effect: 1.2.1(@types/react@18.3.28)(react@18.3.1)
+      use-subscription: 1.13.0(react@18.3.1)
+    optionalDependencies:
+      xstate: 4.38.3
+    transitivePeerDependencies:
+      - '@types/react'
 
   '@xyflow/react@12.10.2(@types/react@18.3.28)(immer@9.0.21)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -24761,6 +24983,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  body-scroll-lock@3.1.5: {}
+
   botid@1.5.11(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
     optionalDependencies:
       next: 15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -25143,14 +25367,14 @@ snapshots:
       yaml: 1.10.3
     optional: true
 
-  cosmiconfig@8.3.6(typescript@5.8.3):
+  cosmiconfig@8.3.6(typescript@7.1.0-beta):
     dependencies:
       import-fresh: 3.3.1
       js-yaml: 4.3.2
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
 
   country-flag-icons@1.6.15: {}
 
@@ -26179,6 +26403,10 @@ snapshots:
       mlly: 1.8.2
       rollup: 4.60.1
 
+  focus-trap@6.9.4:
+    dependencies:
+      tabbable: 5.3.3
+
   follow-redirects@1.16.1: {}
 
   fontkit@2.0.4:
@@ -26845,7 +27073,7 @@ snapshots:
 
   inline-style-parser@0.2.7: {}
 
-  inngest@3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4):
+  inngest@3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)(zod@4.5.4):
     dependencies:
       '@bufbuild/protobuf': 2.11.0
       '@inngest/ai': 0.1.7
@@ -26878,13 +27106,13 @@ snapshots:
       fastify: 5.12.5
       hono: 4.13.7
       next: 15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@20.19.39)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
     transitivePeerDependencies:
       - '@opentelemetry/core'
       - encoding
       - supports-color
 
-  inngest@3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@5.8.3)(zod@4.5.4):
+  inngest@3.54.2(@opentelemetry/core@2.12.0(@opentelemetry/api@1.9.0))(encoding@0.1.13)(express@5.2.1)(fastify@5.12.5)(hono@4.13.7)(next@15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(typescript@7.1.0-beta)(zod@4.5.4):
     dependencies:
       '@bufbuild/protobuf': 2.11.0
       '@inngest/ai': 0.1.7
@@ -26917,7 +27145,7 @@ snapshots:
       fastify: 5.12.5
       hono: 4.13.7
       next: 15.5.28(@babel/core@7.29.6)(@opentelemetry/api@1.9.0)(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
     transitivePeerDependencies:
       - '@opentelemetry/core'
       - encoding
@@ -27488,13 +27716,13 @@ snapshots:
 
   lines-and-columns@1.2.4: {}
 
-  linguito@0.5.2(@types/react@18.3.28)(react-native-uuid@2.0.4)(tiny-invariant@1.3.3)(typescript@5.8.3):
+  linguito@0.5.2(@types/react@18.3.28)(react-native-uuid@2.0.4)(tiny-invariant@1.3.3)(typescript@7.1.0-beta):
     dependencies:
       '@ai-sdk/anthropic': 1.2.12(zod@3.25.76)
       '@ai-sdk/openai': 1.3.24(zod@3.25.76)
       '@ai-sdk/openai-compatible': 0.2.16(zod@3.25.76)
       '@inkjs/ui': 2.0.0(ink@5.2.1(@types/react@18.3.28)(react@18.3.1))
-      '@lingui/conf': 5.9.4(typescript@5.8.3)
+      '@lingui/conf': 5.9.4(typescript@7.1.0-beta)
       '@madeja-studio/cepillo': 0.7.1(react-native-uuid@2.0.4)(tiny-invariant@1.3.3)
       '@oclif/core': 4.11.7
       '@oclif/plugin-help': 6.2.50
@@ -29523,6 +29751,29 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-transition-group: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
+  react-spring-bottom-sheet@3.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@juggle/resize-observer': 3.4.0
+      '@reach/portal': 0.13.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@xstate/react': 1.6.3(@types/react@18.3.28)(react@18.3.1)(xstate@4.38.3)
+      body-scroll-lock: 3.1.5
+      focus-trap: 6.9.4
+      react: 18.3.1
+      react-spring: 8.0.27(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react-use-gesture: 8.0.1(react@18.3.1)
+      xstate: 4.38.3
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@xstate/fsm'
+      - react-dom
+
+  react-spring@8.0.27(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@babel/runtime': 7.29.10
+      prop-types: 15.8.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   react-stately@3.45.0(react@18.3.1):
     dependencies:
       '@react-stately/calendar': 3.9.3(react@18.3.1)
@@ -29569,6 +29820,10 @@ snapshots:
       prop-types: 15.8.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  react-use-gesture@8.0.1(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   react-use-measure@2.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -30672,6 +30927,8 @@ snapshots:
 
   systeminformation@5.33.15: {}
 
+  tabbable@5.3.3: {}
+
   tabbable@6.5.0: {}
 
   tagged-tag@1.0.0: {}
@@ -30925,7 +31182,7 @@ snapshots:
 
   tsscmp@1.0.6: {}
 
-  tsup@8.5.1(jiti@1.21.7)(postcss@8.5.29)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.9.1):
+  tsup@8.5.1(jiti@1.21.7)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.27.7)
       cac: 6.7.14
@@ -30946,7 +31203,7 @@ snapshots:
       tree-kill: 1.2.2
     optionalDependencies:
       postcss: 8.5.29
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -30975,6 +31232,34 @@ snapshots:
     optionalDependencies:
       postcss: 8.5.29
       typescript: 5.8.3
+    transitivePeerDependencies:
+      - jiti
+      - supports-color
+      - tsx
+      - yaml
+
+  tsup@8.5.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(typescript@7.1.0-beta)(yaml@2.9.1):
+    dependencies:
+      bundle-require: 5.1.0(esbuild@0.27.7)
+      cac: 6.7.14
+      chokidar: 4.0.3
+      consola: 3.4.2
+      debug: 4.4.3(supports-color@8.1.1)
+      esbuild: 0.27.7
+      fix-dts-default-cjs-exports: 1.0.1
+      joycon: 3.1.1
+      picocolors: 1.1.1
+      postcss-load-config: 6.0.1(jiti@2.7.0)(postcss@8.5.29)(tsx@4.21.0)(yaml@2.9.1)
+      resolve-from: 5.0.0
+      rollup: 4.60.1
+      source-map: 0.7.6
+      sucrase: 3.35.1
+      tinyexec: 0.3.2
+      tinyglobby: 0.2.17
+      tree-kill: 1.2.2
+    optionalDependencies:
+      postcss: 8.5.29
+      typescript: 7.1.0-beta
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -31083,6 +31368,30 @@ snapshots:
       reflect.getprototypeof: 1.0.10
 
   typescript@5.8.3: {}
+
+  typescript@7.1.0-beta:
+    optionalDependencies:
+      '@typescript/typescript-aix-ppc64': 7.1.0-beta
+      '@typescript/typescript-android-arm64': 7.1.0-beta
+      '@typescript/typescript-darwin-arm64': 7.1.0-beta
+      '@typescript/typescript-darwin-x64': 7.1.0-beta
+      '@typescript/typescript-freebsd-arm64': 7.1.0-beta
+      '@typescript/typescript-freebsd-x64': 7.1.0-beta
+      '@typescript/typescript-linux-arm': 7.1.0-beta
+      '@typescript/typescript-linux-arm64': 7.1.0-beta
+      '@typescript/typescript-linux-loong64': 7.1.0-beta
+      '@typescript/typescript-linux-mips64el': 7.1.0-beta
+      '@typescript/typescript-linux-ppc64': 7.1.0-beta
+      '@typescript/typescript-linux-riscv64': 7.1.0-beta
+      '@typescript/typescript-linux-s390x': 7.1.0-beta
+      '@typescript/typescript-linux-x64': 7.1.0-beta
+      '@typescript/typescript-netbsd-arm64': 7.1.0-beta
+      '@typescript/typescript-netbsd-x64': 7.1.0-beta
+      '@typescript/typescript-openbsd-arm64': 7.1.0-beta
+      '@typescript/typescript-openbsd-x64': 7.1.0-beta
+      '@typescript/typescript-sunos-x64': 7.1.0-beta
+      '@typescript/typescript-win32-arm64': 7.1.0-beta
+      '@typescript/typescript-win32-x64': 7.1.0-beta
 
   uc.micro@2.1.0: {}
 
@@ -31203,6 +31512,12 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.28
 
+  use-isomorphic-layout-effect@1.2.1(@types/react@18.3.28)(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+    optionalDependencies:
+      '@types/react': 18.3.28
+
   use-sidecar@1.1.3(@types/react@18.3.28)(react@18.3.1):
     dependencies:
       detect-node-es: 1.1.0
@@ -31215,7 +31530,16 @@ snapshots:
     dependencies:
       react: 18.3.1
 
+  use-subscription@1.13.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      use-sync-external-store: 1.7.0(react@18.3.1)
+
   use-sync-external-store@1.6.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+
+  use-sync-external-store@1.7.0(react@18.3.1):
     dependencies:
       react: 18.3.1
 
@@ -31228,9 +31552,9 @@ snapshots:
 
   uuid@9.0.0: {}
 
-  valibot@1.4.2(typescript@5.8.3):
+  valibot@1.4.2(typescript@7.1.0-beta):
     optionalDependencies:
-      typescript: 5.8.3
+      typescript: 7.1.0-beta
 
   validate-npm-package-license@3.0.4:
     dependencies:
@@ -31734,6 +32058,8 @@ snapshots:
 
   xmlchars@2.2.0: {}
 
+  xstate@4.38.3: {}
+
   xtend@4.0.2: {}
 
   y18n@5.0.8: {}
@@ -31832,11 +32158,11 @@ snapshots:
       immer: 9.0.21
       react: 18.3.1
 
-  zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.6.0(react@18.3.1)):
+  zustand@5.0.12(@types/react@18.3.28)(immer@9.0.21)(react@18.3.1)(use-sync-external-store@1.7.0(react@18.3.1)):
     optionalDependencies:
       '@types/react': 18.3.28
       immer: 9.0.21
       react: 18.3.1
-      use-sync-external-store: 1.6.0(react@18.3.1)
+      use-sync-external-store: 1.7.0(react@18.3.1)
 
   zwitch@2.0.4: {}

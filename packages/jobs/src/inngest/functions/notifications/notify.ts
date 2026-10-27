@@ -234,7 +234,16 @@ const defaultDestinations: Partial<
   // email per sweep cycle would be noise. Browser push still follows in-app,
   // so the integration's last editor gets a push every sweep (30 min) until
   // the failures clear — deliberate: push mirrors the bell exactly.
-  [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]
+  [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp],
+  // One per export the user asked for; the email link downloads the file. The
+  // job sends a failure in-app only, since there is no file to link to.
+  [NotificationEvent.TableExport]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
+  ],
+  // In-app only: the counts are the whole message, and there is no file or
+  // record for an email to link to.
+  [NotificationEvent.TableBulkAction]: [NotificationDestination.InApp]
 };
 
 export const notifyFunction = inngest.createFunction(

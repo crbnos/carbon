@@ -4,7 +4,12 @@
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
-import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
+import {
+  type Database,
+  fetchAllByIds,
+  getCompanyTimeZone,
+  type Json
+} from "@carbon/database";
 import {
   convertUnitPrice,
   supplierPartCurrency
@@ -37,6 +42,7 @@ import {
   datetime,
   deriveRate,
   escapeHTMLChars,
+  groupBy,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   SCALE,
   taxableBase,
@@ -96,6 +102,7 @@ import {
 } from "./purchasing.models";
 import { renderPurchaseReturnOrderPdf } from "./purchasing.pdf";
 import * as service from "./purchasing.service";
+import type { PurchaseOrderStatus } from "./types";
 
 // ── Operations ──────────────────────────────────────────────────────────────
 // `defineServiceFn` operations: what the routes, the API and MCP call, so each
@@ -1933,10 +1940,12 @@ export const updatePurchaseOrders = defineServiceFn({
  * Delete purchase orders.
  *
  * @remarks
- * Only Draft, Planned or Needs Approval orders. An order that needs approval
- * can be deleted only by the person who requested it (an approver rejects
- * instead), and its pending approval requests are cancelled first. Every
- * order is checked before anything is deleted.
+ * Deletes the Draft and Planned orders, and the Needs Approval orders the
+ * caller requested (their pending approval requests are cancelled first),
+ * and skips the rest: an approver rejects an order instead of deleting it.
+ * Refused, with the first order's reason, when none could be deleted.
+ *
+ * @returns `purchaseOrderIds`, the orders deleted, and `skipped`, how many were not.
  *
  * @mcp destructive
  */
@@ -1950,31 +1959,38 @@ export const deletePurchaseOrders = defineServiceFn({
     const userId = ctx.auditUserId;
     const ids = [...new Set(purchaseOrderIds)];
 
-    const orders = await system
-      .from("purchaseOrder")
-      .select("id, status")
-      .in("id", ids)
-      .eq("companyId", companyId);
+    const orders = await fetchAllByIds(ids, (batch) =>
+      system
+        .from("purchaseOrder")
+        .select("id, status")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    );
     if (orders.error) {
-      return ctx.error("internal", "Purchase order not found", orders.error);
-    }
-    if (orders.data.length !== ids.length) {
-      return ctx.error("notFound", "Purchase order not found");
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase orders",
+        orders.error
+      );
     }
 
-    const needsApproval = orders.data
+    const inApproval = orders.data
       .filter((order) => order.status === "Needs Approval")
       .map((order) => order.id);
     const pending =
-      needsApproval.length > 0
-        ? await system
-            .from("approvalRequest")
-            .select("documentId, requestedBy, amount, requestedAt")
-            .eq("documentType", "purchaseOrder")
-            .in("documentId", needsApproval)
-            .eq("companyId", companyId)
-            .eq("status", "Pending")
-            .order("requestedAt", { ascending: false })
+      inApproval.length > 0
+        ? await fetchAllByIds(inApproval, (batch) =>
+            system
+              .from("approvalRequest")
+              .select("id, documentId, requestedBy, amount, requestedAt")
+              .eq("documentType", "purchaseOrder")
+              .in("documentId", batch)
+              .eq("companyId", companyId)
+              .eq("status", "Pending")
+              .order("requestedAt", { ascending: false })
+              .order("id")
+          )
         : null;
     if (pending?.error) {
       return ctx.error(
@@ -1984,6 +2000,12 @@ export const deletePurchaseOrders = defineServiceFn({
       );
     }
 
+    const deletable: string[] = [];
+    let refused: {
+      status: string | null;
+      refusal: "status" | "notRequester";
+      amount: number | null;
+    } | null = null;
     for (const order of orders.data) {
       const latest = pending?.data.find((r) => r.documentId === order.id);
       const refusal = purchaseOrderDeleteRefusal({
@@ -1991,51 +2013,86 @@ export const deletePurchaseOrders = defineServiceFn({
         requestedBy: latest?.requestedBy,
         userId
       });
-      if (refusal === "status") {
-        return ctx.error(
-          "rule",
-          `Cannot delete purchase order with status "${order.status ?? "unknown"}". Only Draft, Planned, or Needs Approval (if you're the requester) purchase orders can be deleted.`
-        );
-      }
-      if (refusal === "notRequester") {
-        const isApprover = await canApproveRequest(
-          system,
-          {
-            amount: latest?.amount ?? null,
-            documentType: "purchaseOrder",
-            companyId
-          },
-          userId
-        );
-        return ctx.error(
-          "forbidden",
-          isApprover
-            ? "Please reject the approval request instead of deleting"
-            : "You do not have permission to delete this purchase order"
-        );
+      if (refusal) {
+        refused ??= {
+          status: order.status,
+          refusal,
+          amount: latest?.amount ?? null
+        };
+      } else {
+        deletable.push(order.id);
       }
     }
 
+    if (deletable.length === 0) {
+      if (!refused) return ctx.error("notFound", "Purchase order not found");
+      if (refused.refusal === "status") {
+        return ctx.error(
+          "rule",
+          `Cannot delete purchase order with status "${refused.status ?? "unknown"}". Only Draft, Planned, or Needs Approval (if you're the requester) purchase orders can be deleted.`
+        );
+      }
+      const isApprover = await canApproveRequest(
+        system,
+        {
+          amount: refused.amount,
+          documentType: "purchaseOrder",
+          companyId
+        },
+        userId
+      );
+      return ctx.error(
+        "forbidden",
+        isApprover
+          ? "Please reject the approval request instead of deleting"
+          : "You do not have permission to delete this purchase order"
+      );
+    }
+
+    // Each order is deleted only in the status it was checked in: one sent
+    // for approval since it was read as a Draft stays, with its request.
+    const deletableByStatus = groupBy(
+      orders.data.filter((order) => deletable.includes(order.id)),
+      (order) => order.status!
+    );
     // One transaction: a delete that fails (an invoice line still names the
     // order) must leave its approval requests pending.
     const removed = await ctx
       .transaction(async (tx) => {
+        const rows = await tx.asSystem.pg
+          .deleteFrom("purchaseOrder")
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or(
+              Object.entries(deletableByStatus).map(([status, group]) =>
+                eb.and([
+                  eb(
+                    "id",
+                    "in",
+                    group.map((order) => order.id)
+                  ),
+                  eb("status", "=", status as PurchaseOrderStatus)
+                ])
+              )
+            )
+          )
+          .returning(["id", "status"])
+          .execute();
         await service.cancelPendingApprovals(tx.asSystem.pg, {
           companyId,
           userId,
-          purchaseOrderIds: needsApproval
+          purchaseOrderIds: rows
+            .filter((row) => row.status === "Needs Approval")
+            .map((row) => row.id)
         });
-        await tx.asSystem.pg
-          .deleteFrom("purchaseOrder")
-          .where("id", "in", ids)
-          .where("companyId", "=", companyId)
-          .execute();
+        return rows;
       })
       .catch((err) =>
         ctx.error("internal", "Failed to delete purchase orders", err)
       );
     if (removed instanceof CarbonError) return removed;
-    return { purchaseOrderIds: ids };
+    const deleted = (removed.data ?? []).map((order) => order.id);
+    return { purchaseOrderIds: deleted, skipped: ids.length - deleted.length };
   }
 });
 
@@ -4114,6 +4171,61 @@ export const getPurchaseOrder = defineServiceFn({
         input.purchaseOrderId as never
       )
     );
+  }
+});
+
+/**
+ * Get who approved a purchase order and when.
+ *
+ * @remarks
+ * Reads the order's latest approval request that was not cancelled. When it
+ * is Approved, answers the approver (`approvedBy` is the name, `approvedById`
+ * the user id) and `approvedDate`, the business day of the decision in the
+ * company's timezone. All three are null when the order was never approved,
+ * is waiting on a decision, or its latest request was rejected.
+ *
+ * @param purchaseOrderId - The purchase order's id (`po_…`), not its number.
+ * @mcp read
+ */
+export const getPurchaseOrderApproval = defineServiceFn({
+  input: z.object({ purchaseOrderId: z.string().min(1) }),
+  permission: { view: "purchasing" },
+  async run(ctx, { purchaseOrderId }) {
+    // approvalRequest has no RLS policies: prove the caller can see the order.
+    const order = await ctx.asCaller.supabase
+      .from("purchaseOrder")
+      .select("id")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (order.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load purchase order",
+        order.error
+      );
+    }
+    if (!order.data) {
+      return ctx.error("notFound", "Purchase order not found");
+    }
+
+    const approval = await service.getPurchaseOrderApproval(
+      ctx.asSystem.supabase,
+      {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        timezone: await getCompanyTimeZone(
+          ctx.asSystem.supabase,
+          ctx.company.id
+        )
+      }
+    );
+    return {
+      purchaseOrderId,
+      approvedBy: approval?.approvedBy ?? null,
+      approvedById: approval?.approvedById ?? null,
+      approvedDate: approval?.approvedDate ?? null
+    };
   }
 });
 

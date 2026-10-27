@@ -46,8 +46,7 @@ no Biome, no typecheck, no bundling. Check them with `node --check`.
 
 Same navigate/offline behaviour, plus `ASSET_CACHE`: `/assets/*` (content-hashed
 build files) cache-first, trimmed to 400 entries; icons, logos and the manifest
-stale-while-revalidate. Same-origin only, so a CDN asset base (`ASSETS_URL`) is
-untouched. It never caches a page, loader data or a private file, so nothing
+stale-while-revalidate. Same-origin only. It never caches a page, loader data or a private file, so nothing
 outlives a sign-out. `SHELL_CACHE` (the offline page) and `ASSET_CACHE` have their
 own versions.
 

@@ -87,6 +87,8 @@ type PeopleCapacityProps = {
   defaultShiftHours: number;
   /** per-work-center calendar hours (the availability ladder) — the Available series. */
   calendarHoursByWorkCenter: Record<string, Record<string, number>>;
+  /** Company holidays: the plant is closed, so nobody counts as staffed. */
+  holidayDates: string[];
   /** which ladder rung each work center resolved via (1 explicit, 2 location, 3 stock). */
   capacityRungByWorkCenter: Record<string, number>;
 };
@@ -148,10 +150,12 @@ export function PeopleCapacity({
   employeeShiftHours,
   defaultShiftHours,
   calendarHoursByWorkCenter,
-  capacityRungByWorkCenter
+  capacityRungByWorkCenter,
+  holidayDates
 }: PeopleCapacityProps) {
   const [tab, setTab] = useState<CapacityTab>("load");
   const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
+  const holidaySet = useMemo(() => new Set(holidayDates), [holidayDates]);
 
   // present people labor hours per work center per date (all shifts, minus
   // absent), using each assignment's real shift duration — shown as a secondary
@@ -163,7 +167,10 @@ export function PeopleCapacity({
     // scheduler, which extends the last window of the day.
     const lastRowByPersonDate = new Map<string, (typeof assignments)[number]>();
     for (const assignment of assignments) {
-      if (absentSet.has(`${assignment.employeeId}:${assignment.date}`)) {
+      if (
+        absentSet.has(`${assignment.employeeId}:${assignment.date}`) ||
+        holidaySet.has(assignment.date)
+      ) {
         continue;
       }
       const hours = assignmentHours(assignment, {
@@ -188,6 +195,7 @@ export function PeopleCapacity({
   }, [
     assignments,
     absentSet,
+    holidaySet,
     shiftHoursById,
     employeeShiftHours,
     defaultShiftHours

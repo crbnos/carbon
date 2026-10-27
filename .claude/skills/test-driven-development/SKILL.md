@@ -1,94 +1,88 @@
 ---
 name: test-driven-development
-description: Red→green→refactor discipline for Carbon (vitest) — write the failing test first, watch it fail for the right reason, write minimal code to pass. Use when implementing any feature or bug fix, before writing implementation code. Exceptions (throwaway prototypes, generated code, config) require the user's explicit OK. For browser-only proofs use /test instead.
+description: Carbon's red→green loop with vitest — prove a change with a failing test first, then decide whether that test earns a place in the repo or stays a scratch proof. Use when implementing a feature or bug fix test-first, or when about to add or change a committed test. The house style it enforces is `.claude/rules/testing.md`; `tdd` holds the general theory (seams, anti-patterns). For browser-only proofs use /test.
 ---
 
-# test-driven-development — red, green, refactor
+# test-driven-development — prove first, commit only what earns it
 
-The rule: **no production code without a failing test first.** A test written
-after the code passes immediately — and a test you never saw fail proves
-nothing: it may test the wrong thing, test the implementation instead of the
-behavior, or miss the exact case you got wrong.
+Two separate things happen in this loop, and confusing them is how the repo
+filled up with tests that only confirmed their own change:
 
-Already wrote code before the test? Stash or delete it, write the test, watch
-it fail, then re-implement. Don't keep it open "as reference" — that is
-writing tests after, with extra steps.
+1. **Proof.** Before you trust a change, see a check fail without it and pass
+   with it. Always.
+2. **Regression guard.** A test committed to the repo, run on every change
+   forever. Only when it passes the three questions in
+   `.claude/rules/testing.md` (which bug turns it red, what seam, where the
+   expected values come from).
 
-## The cycle
+Every guard is a proof. Most proofs are not guards. A proof that is not a
+guard lives in your scratchpad or the run log, never in the repo.
 
-### 1. RED — write one failing test
+Read `.claude/rules/testing.md` before writing a test that will be committed:
+it is the house style (pure cores tested by value, fixture builders with
+overrides, `it.each` tables, behaviour-sentence names, mocks only at the
+network / clock / filesystem).
 
-One behavior per test, named for the behavior
-(`"rejects a receipt line with zero quantity"`, not `"test1"`). Test real code;
-mock only what you cannot run (network, clock). Copy setup from a sibling test
-file in the same package.
+## The loop
 
-Where tests live: `packages/{pkg}/src/**/*.test.ts` or
-`apps/erp/app/modules/{module}/__tests__/` (match the neighbors). Runner is
-vitest via the `@carbon/config` preset.
+### 1. RED — one failing check
 
-### 2. Verify RED — watch it fail (mandatory, never skip)
+One behaviour, named as a sentence (`"rejects a receipt line with zero
+quantity"`). Decide the home first (rule → "Where a check lives"): pure core,
+database test, conformance check, browser playbook, or scratch.
 
 ```bash
 pnpm --filter <pkg> exec vitest run <path/to/file.test.ts>
-# Expected: FAIL — assertion failure for the missing behavior
+# Expected: FAIL — an assertion about the missing behaviour
 ```
 
-- Fails with an assertion about the missing behavior → proceed.
-- **Passes** → it tests existing behavior; rewrite the test.
-- **Errors** (import/type/syntax) → fix the error, re-run until it *fails
-  correctly*.
-- Carbon gotcha: vitest runs with `passWithNoTests: true` — a green run that
-  collected **0 tests** proves nothing. Check the test count in the output.
+- Fails on the assertion → go on.
+- **Passes** → it tests behaviour that already exists. Rewrite it.
+- **Errors** (import, type, syntax) → fix until it fails for the right reason.
+- vitest runs with `passWithNoTests: true`: a green run that collected **0
+  tests** proves nothing. Read the count.
 
-### 3. GREEN — minimal code to pass
+If the logic you need to prove is buried in glue (load → decide → write),
+extract the decision into a pure function first and prove that. Don't mock
+our own modules to reach it.
 
-Write the simplest code that makes the test pass. No extra options, no
-speculative parameters, no refactoring of neighboring code, nothing the test
-doesn't demand.
+### 2. GREEN — the least code that passes
+
+No extra options, no speculative parameters, nothing the check doesn't
+demand. Then run the package:
 
 ```bash
-pnpm --filter <pkg> exec vitest run <path/to/file.test.ts>   # your test passes
-pnpm --filter <pkg> test                                     # the package still passes
+pnpm --filter <pkg> exec vitest run <path/to/file.test.ts>
+pnpm --filter <pkg> test
 ```
 
-Test fails → fix the code, not the test. Other tests fail → fix now, not later.
+Check fails → fix the code, not the check. Another test fails → fix it now.
 
-### 4. REFACTOR — only while green
+### 3. KEEP OR SCRATCH
 
-Remove duplication, improve names, extract helpers. No new behavior. Re-run the
-package tests after. Then loop to the next failing test.
+Ask the three questions. Then:
 
-After editing tests, also typecheck the package —
-`pnpm exec turbo run typecheck --filter=<pkg>` (never whole-repo). The repo uses
-`noUncheckedIndexedAccess`: indexed access in assertions needs optional chaining
-(`rows[0]?.id`), and that only surfaces in typecheck, not in the test run.
+- **Keep**: tidy it to the house style. Fold it into the existing file's
+  fixture builder or `it.each` table rather than appending a near-duplicate.
+- **Scratch**: move it out of the repo (scratchpad, or quote it in the run
+  log), and say in the commit message how the change was proven.
 
-## Bug fixes
+Typical scratch proofs: a wiring fix between two of our modules, "this
+function is now called with X", a regex showing a migration contains a
+clause, a test that the new constant has the new value.
 
-A bug fix is TDD with the test written from the bug report: the failing test
-reproduces the bug, the fix turns it green, and the test stays as the
-regression guard. Never fix a bug without one (see `/fix`, which enforces this).
+### 4. Typecheck
 
-## Rationalizations — all of them mean "write the test first"
+```bash
+pnpm exec turbo run typecheck --filter=<pkg>
+```
 
-| Excuse | Reality |
-|--------|---------|
-| "Too simple to test" | Simple code breaks; the test costs 30 seconds |
-| "I'll test after" | Passing-immediately proves nothing |
-| "I manually tested it" | Not repeatable, no record, gone on the next change |
-| "Deleting X hours of work is wasteful" | Sunk cost; unverified code is the actual debt |
-| "Just this once / this is different" | The exception becomes the habit |
-| "Test is hard to write" | Hard to test = hard to use; simplify the interface |
+The repo uses `noUncheckedIndexedAccess`: indexed access in assertions needs
+`rows[0]?.id`, which only typecheck surfaces.
 
 ## Done when
 
-- [ ] Every new behavior has a test you watched fail, for the right reason
-- [ ] `pnpm --filter <pkg> test` green, with a non-zero collected-test count
+- [ ] Each new behaviour was proven by a check you watched fail, for the right reason
+- [ ] Every committed test passes the three questions; the rest are scratch
+- [ ] `pnpm --filter <pkg> test` green with a non-zero test count
 - [ ] `pnpm exec turbo run typecheck --filter=<pkg>` green
-- [ ] Output pristine — no stray warnings/errors you introduced
-
-When adding mocks or test utilities, read
-[testing-anti-patterns.md](testing-anti-patterns.md) first — it covers testing
-mock behavior instead of real behavior, test-only methods on production
-classes, and mocking without understanding the dependency.

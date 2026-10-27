@@ -8,14 +8,15 @@ import { formatDate } from "@carbon/utils";
 import { Body, Column, Img, Preview, Row, Section, Text } from "react-email";
 import type { CompanySettings, Email } from "../types";
 import { getQuoteDisplayId } from "../utils/quote";
-import { DocumentCard } from "./components/DocumentCard";
+import { DocumentCard, documentCardStyles } from "./components/DocumentCard";
 import { detailText, labelText } from "./components/documentStyles";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   Button,
   EmailThemeProvider,
   getEmailInlineStyles,
-  getEmailThemeClasses
+  getEmailThemeClasses,
+  HeadStyle
 } from "./components/Theme";
 
 interface QuoteEmailProps extends Email {
@@ -43,7 +44,10 @@ const QuoteEmail = ({
   const lightStyles = getEmailInlineStyles("light");
 
   return (
-    <EmailThemeProvider preview={preview}>
+    <EmailThemeProvider
+      preview={preview}
+      additionalHeadContent={<HeadStyle css={documentCardStyles} />}
+    >
       <Body
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}

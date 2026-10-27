@@ -238,6 +238,9 @@ msgstr "このページを離れてもよろしいですか？"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "この工程を完了としてマークしてもよろしいですか？これにより、この工程のすべてのアクティブな生産イベントが終了します。"
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "組立ステップ"
 
@@ -465,6 +468,9 @@ msgstr "バッチを完了"
 
 msgid "Complete passed"
 msgstr "合格を完了する"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "完了済み"
@@ -2288,8 +2294,20 @@ msgstr "メモを書く…"
 msgid "Yes"
 msgstr "はい"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "作業開始から{hoursElapsed}時間が経過しています。作業終了を忘れていませんか？"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "あなたのアカウントはまだ会社に属していません。継続するには、Carbon ERP でオンボーディングを完了してください。"

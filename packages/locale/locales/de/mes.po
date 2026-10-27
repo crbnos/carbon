@@ -238,6 +238,9 @@ msgstr "Möchten Sie diese Seite wirklich verlassen?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Möchten Sie diesen Arbeitsgang wirklich als erledigt markieren? Dies beendet alle aktiven Produktionsereignisse für diesen Arbeitsgang."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Montageschritte"
 
@@ -465,6 +468,9 @@ msgstr "Charge abschließen"
 
 msgid "Complete passed"
 msgstr "Bestandene abgeschlossen"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "Abgeschlossen"
@@ -2288,8 +2294,20 @@ msgstr "Notiz schreiben…"
 msgid "Yes"
 msgstr "Ja"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie das Ausstempeln vergessen?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ihr Konto ist noch nicht Teil eines Unternehmens. Schließen Sie das Onboarding in Carbon ERP ab, um fortzufahren."

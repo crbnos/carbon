@@ -2,13 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
-import { datetime, formatDate } from "@carbon/utils";
+import { datetime, formatDate, redirect } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import {
   CalendarDateTime,
   DateFormatter,
+  fromAbsolute,
   getDayOfWeek,
   now,
   parseAbsolute,
@@ -34,6 +37,7 @@ import {
 import {
   getCapacityReservationsForResources,
   getForecastNonWorkingIntervals,
+  getHolidayDates,
   getMaintenanceDowntimeForResources
 } from "~/modules/production/production.service";
 import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
@@ -208,20 +212,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // from the SAME availability ladder the scheduler uses — so the shaded
   // background can't disagree with the bars. Shades the axis so a reservation
   // spanning several days no longer reads as 24h/day.
-  const nonWorkingIntervals = getForecastNonWorkingIntervals({
-    timeZone,
-    shifts,
-    windowStartMs,
-    windowEndMs
-  });
-
-  const [reservations, maintenanceResult] = await Promise.all([
+  const [reservations, maintenanceResult, holidays] = await Promise.all([
     getCapacityReservationsForResources(client, companyId, locationId, {
       from: new Date(windowStartMs).toISOString(),
       to: new Date(windowEndMs).toISOString()
     }),
-    getMaintenanceDowntimeForResources(client, companyId, locationId)
+    getMaintenanceDowntimeForResources(client, companyId, locationId),
+    getHolidayDates(client, companyId, {
+      from: toCalendarDate(fromAbsolute(windowStartMs, timeZone)).toString(),
+      to: toCalendarDate(fromAbsolute(windowEndMs, timeZone)).toString()
+    })
   ]);
+  if (holidays.error) {
+    throw redirect(
+      path.to.production,
+      await flash(request, error(holidays.error, "Failed to load holidays"))
+    );
+  }
+  const nonWorkingIntervals = getForecastNonWorkingIntervals({
+    timeZone,
+    shifts,
+    windowStartMs,
+    windowEndMs,
+    holidayDates: holidays.data
+  });
 
   // Open outages that take a work center offline, as [start, end) windows for
   // the resource lanes. Prefer actual times once work has started; fall back to

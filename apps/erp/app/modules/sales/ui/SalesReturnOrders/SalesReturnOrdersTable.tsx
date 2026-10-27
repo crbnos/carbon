@@ -32,6 +32,7 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
@@ -43,10 +44,11 @@ import type { SalesReturnOrderListItem } from "./types";
 type SalesReturnOrdersTableProps = {
   data: SalesReturnOrderListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const SalesReturnOrdersTable = memo(
-  ({ data, count }: SalesReturnOrdersTableProps) => {
+  ({ data, count, infinite }: SalesReturnOrdersTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -228,6 +230,7 @@ const SalesReturnOrdersTable = memo(
       <>
         <Table<SalesReturnOrderListItem>
           count={count}
+          infinite={infinite}
           columns={columns}
           data={data}
           defaultColumnPinning={{

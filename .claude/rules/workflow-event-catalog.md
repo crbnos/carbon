@@ -214,7 +214,7 @@ tenancy checks, webhook signing and the SSRF guard — is in
 2. **Every raise site names a declared moment** (the type system covers this too).
 3. **Every registry table, watched column and writable column still exists.** Also a compile
    error, via type-only `TableName` / `ColumnOf<T>` from `@carbon/database/audit.config` — a
-   migration renaming a column fails `tsgo` at the registry line, naming the column. The
+   migration renaming a column fails `tsc` at the registry line, naming the column. The
    script repeats it in plain English and catches skew between the two generated schema
    artifacts. A writable column that is identity or audit (`id`, `companyId`, `createdBy`,
    `createdAt`, `updatedBy`, `updatedAt`) is refused outright.

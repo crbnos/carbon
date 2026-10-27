@@ -170,7 +170,7 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-  // Supabase, analytics, and a CDN asset base (ASSETS_URL) go straight out.
+  // Supabase and analytics go straight out.
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {

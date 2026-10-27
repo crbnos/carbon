@@ -7,6 +7,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import { Hyperlink, MethodIcon, MethodItemTypeIcon, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { methodItemType, methodType } from "~/modules/shared/shared.models";
 import { useParts, useTools } from "~/stores";
 import type { MethodMaterial } from "../../types";
@@ -15,10 +16,11 @@ import { getPathToMakeMethod } from "./utils";
 type MethodMaterialsTableProps = {
   data: MethodMaterial[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const MethodMaterialsTable = memo(
-  ({ data, count }: MethodMaterialsTableProps) => {
+  ({ data, count, infinite }: MethodMaterialsTableProps) => {
     const { t } = useLingui();
     const parts = useParts();
     const tools = useTools();
@@ -144,6 +146,7 @@ const MethodMaterialsTable = memo(
         count={count}
         columns={columns}
         data={data}
+        infinite={infinite}
         title={t`Method Materials`}
       />
     );

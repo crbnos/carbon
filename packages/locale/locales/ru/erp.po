@@ -116,6 +116,10 @@ msgstr ""
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# неделя} few {# недели} many {# недель} other {# недели}}"
 
+#. placeholder {0}: allMatching.count
+msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
+msgstr "{0, plural, one {Выбраны все подходящие строки (примерно #)} other {Выбраны все подходящие строки (примерно #)}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Завершить или отменить # производственный заказ, по которому были затраты до того, как Carbon начал их записывать.} other {Завершить или отменить # производственные заказы, по которым были затраты до того, как Carbon начал их записывать.}}"
@@ -139,6 +143,10 @@ msgstr "{0, plural, one {Планировщик рассматривает эт�
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Эта номенклатура находится в 1 открытом извещении об изменении} other {Эта номенклатура находится в # открытых извещениях об изменении}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Total of # loaded row} other {Total of # loaded rows}}"
+msgstr "{0, plural, one {Всего загружена # строка} few {Всего загружено # строки} many {Всего загружено # строк} other {Всего загружено # строки}}"
 
 #. placeholder {0}: file.name
 msgid "{0} · {count, plural, one {# row} other {# rows}}"
@@ -295,6 +303,10 @@ msgstr "{0} из {1}"
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} из {1} счетов проведения отображено"
+
+#. placeholder {0}: rows.length
+msgid "{0} of {count} operations"
+msgstr "Операции: {0} из {count}"
 
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
@@ -499,6 +511,15 @@ msgstr "{count, plural, one {# курс} other {# курсов}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# еще после {fenceLabel}} few {# еще после {fenceLabel}} many {# еще после {fenceLabel}} other {# еще после {fenceLabel}}}"
 
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# строка} few {# строки} many {# строк} other {# строки}}"
+
+msgid "{count, plural, one {about # row} other {about # rows}}"
+msgstr "{count, plural, one {около # строки} few {около # строк} many {около # строк} other {около # строк}}"
+
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {Выбрана # подходящая строка} few {Выбраны все # подходящие строки} many {Выбраны все # подходящих строк} other {Выбраны все # подходящей строки}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Расформировать # серию} few {Расформировать # серии} many {Расформировать # серий} other {Расформировать # серий}}"
 
@@ -513,6 +534,12 @@ msgstr "{count, plural, one {Запущена # серия} few {Запущен�
 
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Запущен # производственный заказ} few {Запущено # производственных заказа} many {Запущено # производственных заказов} other {Запущено # производственных заказов}}"
+
+msgid "{count, plural, one {Select all # matching row} other {Select all # matching rows}}"
+msgstr "{count, plural, one {Выбрать все # подходящую строку} few {Выбрать все # подходящие строки} many {Выбрать все # подходящих строк} other {Выбрать все # подходящие строки}}"
+
+msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
+msgstr "{count, plural, one {Выбрать все подходящие строки (примерно #)} other {Выбрать все подходящие строки (примерно #)}}"
 
 msgid "{count} of {total} units"
 msgstr "{count} из {total} единиц"
@@ -550,12 +577,6 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# строка исключена} other {# строк исключено}}"
 
-msgid "{from}–{to} of {count}"
-msgstr "{from}–{to} из {count}"
-
-msgid "{from}–{to} of {count} operations"
-msgstr "{from}–{to} из {count} операций"
-
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {Еще # запись.} other {Еще # записей.}}"
 
@@ -587,6 +608,12 @@ msgstr "{linesCount, plural, one {# строка} other {# строк}}"
 
 msgid "{load} in queue"
 msgstr "{load} в очереди"
+
+msgid "{loadedLabel} of {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} из {total, plural, one {# строки} few {# строк} many {# строк} other {# строк}}"
+
+msgid "{loadedLabel} of about {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} из примерно {total, plural, one {# строки} few {# строк} many {# строк} other {# строк}}"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (площадка аренды)"
@@ -698,6 +725,9 @@ msgstr "{scopeCount} прав доступа"
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} строк"
 
+msgid "{selectedCount, plural, one {# selected} other {# selected}}"
+msgstr "{selectedCount, plural, one {Выбрано: #} other {Выбрано: #}}"
+
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
 
@@ -721,6 +751,9 @@ msgstr "{total} этапов до запуска"
 
 msgid "{totalCount} results"
 msgstr "{totalCount} результатов"
+
+msgid "{totalLoaded} of {count}"
+msgstr "{totalLoaded} из {count}"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# единица} other {# единиц}}"
@@ -969,6 +1002,12 @@ msgstr "4-значный PIN создается при создании опер
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Серия должна содержать по крайней мере одну операцию. Чтобы разделить всю серию, используйте вместо этого «Растворить»."
+
+msgid "A bulk action is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "A bulk action is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Миграция данных, управляемая Carbon — вы загружаете свои собственные данные"
@@ -2478,6 +2517,9 @@ msgstr "Все местоположения"
 msgid "all make {0}"
 msgstr "все производят {0}"
 
+msgid "All matching rows selected"
+msgstr "Выбраны все подходящие строки"
+
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
 
@@ -2534,6 +2576,9 @@ msgstr "также на {otherStationNames}"
 
 msgid "Also notify"
 msgstr "Также уведомить"
+
+msgid "Also open on {links}"
+msgstr "Также открыто на {links}"
 
 msgid "Always"
 msgstr "Всегда"
@@ -2626,6 +2671,12 @@ msgstr "Конструкторское изменение: затронутая 
 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "Метод входа в Enterprise, при котором все сотрудники организации в зарегистрированных доменах электронной почты аутентифицируются через собственного поставщика удостоверений SAML организации вместо магической ссылки, позволяя IT централизованно предоставлять и отзывать доступ."
+
+msgid "An export is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "An export is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "HTTPS-запрос, который Carbon отправляет в вашу систему, когда рабочий процесс достигает этого шага, с любыми заголовками и телом, которые вы настроили."
@@ -4255,6 +4306,9 @@ msgstr "Слепой"
 msgid "Blind Count"
 msgstr "Слепой подсчет"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Заблокировать с ошибкой"
 
@@ -5159,9 +5213,6 @@ msgstr "Дата закрытия"
 msgid "Close Date"
 msgstr "Дата закрытия"
 
-msgid "Close menu"
-msgstr "Закрыть меню"
-
 msgid "Close Period"
 msgstr "Закрыть период"
 
@@ -6027,6 +6078,9 @@ msgstr "Скопировать уникальный идентификатор �
 msgid "Copy purchase invoice unique identifier"
 msgstr "Скопировать уникальный идентификатор счета-фактуры полученного"
 
+msgid "Copy purchase order number"
+msgstr "Копировать номер заказа поставщику"
+
 msgid "Copy purchase order unique identifier"
 msgstr "Скопировать уникальный идентификатор заказа поставщику"
 
@@ -6244,6 +6298,9 @@ msgstr "Не удалось завершить подключение Onshape Go
 
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
+
+msgid "Couldn't load more rows"
+msgstr "Не удалось загрузить больше строк"
 
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Не удалось загрузить связанные документы. Обновите страницу перед созданием нового, чтобы избежать дублирования."
@@ -6760,6 +6817,9 @@ msgstr "покупатель"
 
 msgid "Customer"
 msgstr "Покупатель"
+
+msgid "Customer / Supplier"
+msgstr "Покупатель / Поставщик"
 
 msgid "Customer Accounts"
 msgstr "Счета покупателя"
@@ -8110,6 +8170,9 @@ msgstr "Разбить партию"
 msgid "Dissolve Batch"
 msgstr "Распустить партию"
 
+msgid "Dissolve batches"
+msgstr "Расформировать серии"
+
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Распускание {0} возвращает его {memberCount} операций в расписание невыполненными и удаляет партию. Партию с записанным производством необходимо вместо этого завершить."
@@ -8164,6 +8227,9 @@ msgstr "Использование в долларах"
 
 msgid "Don't Cancel"
 msgstr "Не отменять"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "Не видите серийный номер?"
@@ -9501,6 +9567,9 @@ msgstr "Каждая строка была успешно импортирова
 msgid "Every unit has a rate."
 msgstr "Каждая единица имеет ставку."
 
+msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
+msgstr "Каждый пользователь, подходящий под фильтры списка. Пользователи, к которым это действие не применяется, пропускаются."
+
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Все должны установить приложение-аутентификатор перед открытием этой организации."
 
@@ -9744,6 +9813,9 @@ msgstr "Экспортировать строки в CSV"
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Экспортируйте план счетов из текущей системы в CSV, по одной строке на счёт, с номером, названием, классом, типом и группой, или начните с шаблона текущего плана счетов. Carbon сохранит только счета из этого файла."
+
+msgid "Exported the first {exportedCount} rows."
+msgstr "Экспортированы первые {exportedCount} строк."
 
 msgid "Extended Price"
 msgstr "Расширенная цена"
@@ -10299,6 +10371,12 @@ msgstr "Фильтр и сортировка"
 
 msgid "Filter by…"
 msgstr "Фильтровать по…"
+
+msgid "Filter the list to {limit} rows or fewer"
+msgstr "Отфильтруйте список до {limit} строк или меньше"
+
+msgid "Filter the list to {rows} rows or fewer"
+msgstr "Отфильтруйте список до {rows} строк или меньше"
 
 msgid "Filters"
 msgstr "Фильтры"
@@ -11384,6 +11462,9 @@ msgstr "Идентификаторы и описания генерируютс�
 msgid "If"
 msgstr "Если"
 
+msgid "If an operator isn't qualified"
+msgstr ""
+
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Если амортизация уже была рассчитана, следующий расчет выровняет периоды, в течение которых актив с линейным методом амортизации учитывался по старой себестоимости."
 
@@ -12171,6 +12252,9 @@ msgstr "Дата выпуска"
 
 msgid "Issues"
 msgstr "Проблемы"
+
+msgid "It could not start. Try again."
+msgstr ""
 
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "Скоро она станет доступна. Свяжитесь с Carbon, чтобы её настроили для вашей компании."
@@ -12990,9 +13074,6 @@ msgstr "Живая перезагрузка"
 msgid "Load"
 msgstr "Нагрузка"
 
-msgid "Load more"
-msgstr "Загрузить ещё"
-
 msgid "Load newer"
 msgstr "Загрузить новые"
 
@@ -13016,6 +13097,9 @@ msgstr "Загрузка текущего количества…"
 
 msgid "Loading item details..."
 msgstr "Загрузка деталей товара..."
+
+msgid "Loading more rows"
+msgstr "Загружаем больше строк"
 
 msgid "Loading returnable lines..."
 msgstr "Загрузка возвратных строк..."
@@ -15095,6 +15179,9 @@ msgstr "Нет открытых операций"
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "Нет открытых строк заказа поставщику, соответствующих вашему поиску. Каждое слово должно совпадать; пробелы и пунктуация игнорируются."
+
 msgid "No open reimbursements"
 msgstr "Нет открытых возмещений"
 
@@ -15209,6 +15296,9 @@ msgstr "Для этой операции еще не записано ни од�
 
 msgid "No production recorded yet."
 msgstr "Производство еще не записано."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "Нет заказов поставщику, ожидающих приемки."
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
@@ -15855,6 +15945,9 @@ msgstr "Редактировать можно только процедуры в
 
 msgid "Only employees can post receipts."
 msgstr "Только сотрудники могут провести поступление."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
@@ -18257,6 +18350,9 @@ msgstr "Частота ставки"
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
 
+msgid "Rate updated {relative}"
+msgstr ""
+
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Курс, используемый для пересчета счетов собственного капитала при консолидации (IAS 21). Оставьте пустым, чтобы использовать текущий валютный курс."
 
@@ -18765,6 +18861,9 @@ msgstr "Запустить серию в работу"
 #. placeholder {0}: releaseTarget.readableId
 msgid "Release batch {0}"
 msgstr "Запустить в работу серию {0}"
+
+msgid "Release batches"
+msgstr "Запустить серии в работу"
 
 msgid "Release change notice"
 msgstr "Запустить в работу извещение об изменении"
@@ -19397,9 +19496,6 @@ msgstr "Результат"
 msgid "Results"
 msgstr "Результаты"
 
-msgid "Results per page"
-msgstr "Результатов на странице"
-
 msgid "Resume"
 msgstr "Возобновить"
 
@@ -19813,9 +19909,6 @@ msgstr "Маршрут операций"
 msgid "Routing Number (ABA)"
 msgstr "Маршрутный номер (ABA)"
 
-msgid "rows"
-msgstr "строк"
-
 msgid "Rows left out of this backup"
 msgstr "Строки, не включенные в эту резервную копию"
 
@@ -19890,6 +19983,9 @@ msgstr "Запустить этот рабочий процесс сейчас?"
 
 msgid "Running"
 msgstr "Выполняется"
+
+msgid "Running in the background. We'll notify you when it's done."
+msgstr "Выполняется в фоновом режиме. Мы уведомим вас, когда процесс завершится."
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Текущие запасы после еженедельного обеспечения и потребности — строка."
@@ -20714,6 +20810,9 @@ msgstr "Выберите тип поставщика"
 msgid "Select surfaces"
 msgstr "Выберите поверхности"
 
+msgid "Select the first {limit} rows"
+msgstr "Выбрать первые {limit} строк"
+
 msgid "Select the groups that should complete this training"
 msgstr "Выберите группы, которые должны пройти это обучение"
 
@@ -21317,6 +21416,9 @@ msgstr "Показывать столбец с читаемым ID Покупа�
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
+
 msgid "Show All"
 msgstr "Показать все"
 
@@ -21388,11 +21490,11 @@ msgstr "Показано {0} из {totalCount} — уточните поиск"
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Показано {0} из {totalFiltered} — уточните поиск"
 
-msgid "Showing {firstShown}–{lastShown} of {total}"
-msgstr "Показаны {firstShown}–{lastShown} из {total}"
-
 msgid "Showing in {parentCurrency}"
 msgstr "Отображение в {parentCurrency}"
+
+msgid "Showing the first {limit} rows. Search or filter to see the rest."
+msgstr "Показаны первые {limit} строк. Используйте поиск или фильтр, чтобы увидеть остальные."
 
 msgid "Showing the first 500 lines"
 msgstr "Показано первые 500 строк"
@@ -23021,8 +23123,8 @@ msgstr "Контракт завершается в дату окончания �
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Счета-фактуры договора будут выставляться покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, измените их в панели управления Stripe."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "Ожидаемая еженедельная доступность подрядчика; планирование использует это как верхний предел при назначении подрядчика операциям в течение недели."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "Ожидаемая еженедельная доступность подрядчика, для справки. Планировщик не назначает подрядчиков на операции."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Исправленная дата истечения для этой партии/серийного номера; существующие запасы переоцениваются в соответствии с политикой полезной жизни после изменения."
@@ -23180,6 +23282,9 @@ msgstr "Ожидаемый процент выпуска этой номенкл
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Счет расходов, на который относится эта строка косвенных расходов; требуется, так как косвенные строки не имеют записи в книге товаров, из которой можно вывести счет."
+
+msgid "The export could not start. Try again."
+msgstr "Не удалось начать экспорт. Попробуйте еще раз."
 
 msgid "The file could not be read"
 msgstr "Файл не удалось прочитать"
@@ -23374,6 +23479,9 @@ msgstr "Состояние жизненного цикла этого покуп
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "Состояние жизненного цикла этого поставщика — Активный, Неактивный, В ожидании утверждения и т. д.; только активные поставщики появляются в селекторах заказов поставщикам и коммерческих предложений."
+
+msgid "The list changed while the export loaded. Try again."
+msgstr "Список изменился во время подготовки экспорта. Попробуйте еще раз."
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Местный часовой пояс, в котором это местоположение сообщает время; расписания, табели учета рабочего времени и часы смены в этом месте интерпретируются в этом часовом поясе независимо от локали браузера пользователя."
@@ -24064,6 +24172,12 @@ msgstr "Их нет в вашем плане счетов, но документ
 msgid "this ability"
 msgstr "этот навык"
 
+msgid "This action cannot run on this list."
+msgstr ""
+
+msgid "This action runs on at most {rows} rows. Filter the list to {rows} rows or fewer."
+msgstr ""
+
 #. placeholder {0}: jobIds.length
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
@@ -24669,6 +24783,9 @@ msgstr "Допуск (дней)"
 
 msgid "Tomorrow"
 msgstr "Завтра"
+
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "Сейчас выполняется слишком много экспортов и массовых действий. Повторите попытку через несколько минут."
 
 msgid "tool"
 msgstr "Инструмент"
@@ -25436,6 +25553,9 @@ msgstr "Обновить количества возвратного заказ�
 
 msgid "Updated"
 msgstr "Обновлено"
+
+msgid "Updated {done}. Could not update {failed}: {message}"
+msgstr "Обновлено: {done}. Не удалось обновить {failed}: {message}"
 
 msgid "Updated account"
 msgstr "Счет обновлен"
@@ -26911,6 +27031,9 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "Вы завершили {leftoverQuantity} больше {0}, чем заказанное количество {1}. Что вы хотите сделать с дополнительными деталями?"
 
+msgid "You do not have permission to do this on every matching row."
+msgstr ""
+
 msgid "You do not have permission to edit workflows"
 msgstr "У вас нет права доступа для изменения рабочих процессов"
 
@@ -27004,6 +27127,9 @@ msgstr "Ваш поставщик DNS может автоматически до
 
 msgid "Your Email"
 msgstr "Ваша электронная почта"
+
+msgid "Your export is being prepared. We'll notify you when it's ready."
+msgstr "Экспорт готовится. Мы уведомим вас, когда файл будет готов."
 
 msgid "Your GL accounts"
 msgstr "Ваши счета ГЛ"

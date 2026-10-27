@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="steelV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="faceMirror" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.3" stop-color="#eef1f3"/>
+      <stop offset="0.62" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#7d848a"/>
+    </linearGradient>
+    <linearGradient id="flatTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#969da3"/>
+    </linearGradient>
+    <linearGradient id="flatMid" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#c3c9cd"/>
+      <stop offset="0.5" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#6e747a"/>
+    </linearGradient>
+    <linearGradient id="flatLow" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8b9298"/>
+      <stop offset="0.5" stop-color="#6e747a"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="480" cy="728" rx="348" ry="77" fill="url(#shadow)"/>
+
+  <g transform="translate(250 585) rotate(-23.2)">
+    <!-- shank with full rolled thread -->
+    <path d="M130 -88 L600 -88 Q638 -60 638 0 Q638 60 600 88 L130 88 Z" fill="url(#steelV)" stroke="#4c5257" stroke-width="2.5"/>
+    <g stroke="#5f666c" stroke-width="4.5" opacity="0.8" fill="none">
+      <path d="M160 -88 L146 88"/><path d="M190 -88 L176 88"/>
+      <path d="M220 -88 L206 88"/><path d="M250 -88 L236 88"/>
+      <path d="M280 -88 L266 88"/><path d="M310 -88 L296 88"/>
+      <path d="M340 -88 L326 88"/><path d="M370 -88 L356 88"/>
+      <path d="M400 -88 L386 88"/><path d="M430 -88 L416 88"/>
+      <path d="M460 -88 L446 88"/><path d="M490 -88 L476 88"/>
+      <path d="M520 -88 L506 88"/><path d="M550 -88 L536 88"/>
+      <path d="M580 -88 L566 88"/>
+    </g>
+    <g stroke="#f4f7f8" stroke-width="2.5" opacity="0.55" fill="none">
+      <path d="M170 -88 L156 88"/><path d="M200 -88 L186 88"/>
+      <path d="M230 -88 L216 88"/><path d="M260 -88 L246 88"/>
+      <path d="M290 -88 L276 88"/><path d="M320 -88 L306 88"/>
+      <path d="M350 -88 L336 88"/><path d="M380 -88 L366 88"/>
+      <path d="M410 -88 L396 88"/><path d="M440 -88 L426 88"/>
+      <path d="M470 -88 L456 88"/><path d="M500 -88 L486 88"/>
+      <path d="M530 -88 L516 88"/><path d="M560 -88 L546 88"/>
+      <path d="M590 -88 L576 88"/>
+    </g>
+    <!-- rolled point / chamfered thread end -->
+    <path d="M600 -88 Q638 -60 638 0 Q638 60 600 88" fill="none" stroke="#4c5257" stroke-width="3"/>
+    <ellipse cx="604" cy="0" rx="34" ry="80" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="3"/>
+
+    <!-- hex nut, threaded partway down the shank -->
+    <path d="M372 -150 L492 -150 L555 -75 L435 -75 Z" fill="url(#flatTop)" stroke="#41474c" stroke-width="2.5"/>
+    <path d="M435 -75 L555 -75 L555 75 L435 75 Z" fill="url(#flatMid)" stroke="#41474c" stroke-width="2.5"/>
+    <path d="M435 75 L555 75 L492 150 L372 150 Z" fill="url(#flatLow)" stroke="#41474c" stroke-width="2.5"/>
+    <polygon points="372,-150 435,-75 435,75 372,150 309,75 309,-75" fill="url(#faceMirror)" stroke="#41474c" stroke-width="2.5"/>
+    <ellipse cx="372" cy="0" rx="56" ry="132" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3"/>
+    <ellipse cx="372" cy="0" rx="42" ry="98" fill="none" stroke="#7d848a" stroke-opacity="0.6" stroke-width="3"/>
+    <path d="M372 -88 Q334 -60 334 0 Q334 60 372 88" fill="#4e5459" opacity="0.55"/>
+    <!-- chamfer breaks on the nut corners -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="2.5">
+      <path d="M380 -142 L486 -142"/>
+      <path d="M380 142 L486 142"/>
+      <path d="M446 -70 L446 70"/>
+    </g>
+
+    <!-- hex head: three receding flats, then the mirror face -->
+    <path d="M0 -170 L130 -170 L191.7 -85 L61.7 -85 Z" fill="url(#flatTop)" stroke="#41474c" stroke-width="2.5"/>
+    <path d="M61.7 -85 L191.7 -85 L191.7 85 L61.7 85 Z" fill="url(#flatMid)" stroke="#41474c" stroke-width="2.5"/>
+    <path d="M61.7 85 L191.7 85 L130 170 L0 170 Z" fill="url(#flatLow)" stroke="#41474c" stroke-width="2.5"/>
+    <polygon points="0,-170 61.7,-85 61.7,85 0,170 -61.7,85 -61.7,-85" fill="url(#faceMirror)" stroke="#41474c" stroke-width="3"/>
+    <!-- washer-face and chamfer on the head face -->
+    <ellipse cx="0" cy="0" rx="55" ry="150" fill="none" stroke="#8f979d" stroke-opacity="0.75" stroke-width="3"/>
+    <ellipse cx="0" cy="0" rx="42" ry="116" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="3"/>
+    <ellipse cx="0" cy="0" rx="26" ry="70" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5"/>
+    <!-- specular streak across the polished face -->
+    <path d="M-30 -120 L18 -60 L18 40 L-30 -20 Z" fill="#ffffff" opacity="0.22"/>
+    <!-- flat-to-flat break lines on the head barrel -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2.5">
+      <path d="M10 -162 L124 -162"/>
+      <path d="M10 162 L124 162"/>
+      <path d="M72 -78 L72 78"/>
+    </g>
+  </g>
+</svg>

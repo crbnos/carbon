@@ -85,6 +85,7 @@ export const SAMPLE_PURCHASE_ORDER = {
     companyCountryName: "United States"
   },
   paymentTerms: [{ id: "net30", name: "Net 30" }],
+  approval: { approvedBy: "Jordan Lee", approvedDate: "2026-06-02" },
   terms: {
     type: "doc",
     content: [

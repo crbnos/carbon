@@ -5,7 +5,7 @@
     "build": {
       "dependsOn": ["^build", "//#lingui:compile"],
       "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
-      "env": ["ASSETS_URL", "VERCEL"],
+      "env": ["VERCEL"],
       "outputs": [
         "dist/**",
         "build/**",

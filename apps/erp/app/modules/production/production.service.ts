@@ -114,8 +114,12 @@ import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import {
+  type CalendarWindow,
+  closeHolidays,
   type LadderShiftRow,
   resolveLocationWindows,
+  resolveWorkCenterWindows,
+  subtractDates,
   subtractIntervals
 } from "@carbon/planning";
 import type { JSONContent } from "@carbon/react";
@@ -180,11 +184,13 @@ import {
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
+import type { Cursor } from "~/utils/cursor";
 import { makeDurations } from "~/utils/duration";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   getGenericFilter,
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -907,9 +913,9 @@ export async function getActiveProductionEvents(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  // TS2589 — supabase select-string instantiation depth sits on tsgo's limit;
-  // the cliff shifts as unrelated modules join the program. ts-ignore, not
-  // ts-expect-error, so it satisfies both tsc and tsgo.
+  // TS2589 — supabase select-string instantiation depth sits on TypeScript's
+  // limit; the cliff shifts as unrelated modules join the program. ts-ignore,
+  // not ts-expect-error, since the error comes and goes.
   // @ts-ignore TS2589
   return client
     .from("productionEvent")
@@ -1359,6 +1365,10 @@ export async function getProductionEventsByJob(
     .eq("jobOperation.jobId", jobId);
 }
 
+export const JOBS_PAGING: Paging = {
+  defaultSorts: [{ column: "jobId", ascending: false }]
+};
+
 export async function getJobs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1366,8 +1376,9 @@ export async function getJobs(
 ) {
   let query = client
     .from("jobs")
+    // Later pages (`cursor`) skip the count: the first page already has it.
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1376,9 +1387,7 @@ export async function getJobs(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "jobId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOBS_PAGING);
   }
 
   return query;
@@ -1976,6 +1985,14 @@ export async function getJobOperation(
     .single();
 }
 
+export const JOB_OPERATIONS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "description", ascending: true },
+    { column: "order", ascending: true },
+    { column: "createdAt", ascending: false }
+  ]
+};
+
 export async function getJobOperations(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1986,7 +2003,8 @@ export async function getJobOperations(
     .select(
       "*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
     .eq("jobId", jobId);
@@ -1996,11 +2014,7 @@ export async function getJobOperations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "description", ascending: true },
-      { column: "order", ascending: true },
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOB_OPERATIONS_PAGING);
   }
 
   return query;
@@ -2036,12 +2050,24 @@ export async function getJobOperationAttachments(
 ): Promise<Record<string, string[]>> {
   if (jobOperationIds.length === 0) return {};
 
-  const { data: operationAttributes } = await client
-    .from("jobOperationStep")
-    .select("*, jobOperationStepRecord(*)")
-    .in("operationId", jobOperationIds);
-
-  if (!operationAttributes) return {};
+  // 100 ids per request (a long `.in()` list overflows the request URL),
+  // 8 requests at a time.
+  const results = await async.map(
+    chunkArray(jobOperationIds, 100),
+    async (ids) =>
+      await client
+        .from("jobOperationStep")
+        .select("*, jobOperationStepRecord(*)")
+        .in("operationId", ids)
+  );
+  const failed = results.find((result) => result.error);
+  if (failed) {
+    // The attachments are extras on the page: it shows without them.
+    logger.error("Failed to load job operation attachments", {
+      error: failed.error
+    });
+  }
+  const operationAttributes = results.flatMap((result) => result.data ?? []);
 
   const attachmentsByOperation: Record<string, string[]> = {};
   operationAttributes.forEach((attr) => {
@@ -2092,6 +2118,10 @@ export async function getJobOperationsByMethodId(
     .order("order", { ascending: true });
 }
 
+export const JOB_OPERATION_STEP_RECORDS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 /** `getJobOperationsByMethodId` for several make methods of one company. */
 export async function getJobOperationsByMethodIds(
   client: SupabaseClient<Database>,
@@ -2125,9 +2155,11 @@ export async function getJobOperationStepRecords(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(
+    query,
+    args,
+    JOB_OPERATION_STEP_RECORDS_PAGING
+  );
 
   return query;
 }
@@ -2190,6 +2222,10 @@ export async function getProcedureVersions(
     .order("version", { ascending: false });
 }
 
+export const PROCEDURES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getProcedures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2198,7 +2234,8 @@ export async function getProcedures(
   let query = client
     .from("procedures")
     .select("*", {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2207,9 +2244,7 @@ export async function getProcedures(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, PROCEDURES_PAGING);
   }
 
   return query;
@@ -2244,6 +2279,15 @@ export async function getProductionEvent(
     .single();
 }
 
+// The start time was a fixed order ahead of every sort. The cursor must follow
+// each column the list orders by, so it is the first default sort instead.
+export const PRODUCTION_EVENTS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "startTime", ascending: true },
+    { column: "createdAt", ascending: false }
+  ]
+};
+
 export async function getProductionEvents(
   client: SupabaseClient<Database>,
   jobOperationIds: string[],
@@ -2254,21 +2298,17 @@ export async function getProductionEvents(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
-    .in("jobOperationId", jobOperationIds)
-    .order("startTime", { ascending: true });
+    .in("jobOperationId", jobOperationIds);
 
   if (args?.search) {
     query = query.or(searchFilter(["jobOperation.description"], args.search));
   }
 
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
-  }
+  query = setGenericQueryFilters(query, args ?? {}, PRODUCTION_EVENTS_PAGING);
 
   return query;
 }
@@ -2285,6 +2325,16 @@ export async function getProductionEventsByOperations(
     .in("jobOperationId", jobOperationIds)
     .order("startTime", { ascending: true });
 }
+
+// What the row's Order / Make button offers (the grid RPC's orderQuantity,
+// from MRP's open new-supply actions), then the part number so a page is
+// stable when many rows have nothing to order.
+export const PRODUCTION_PLANNING_PAGING: Paging = {
+  defaultSorts: [
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true }
+  ]
+};
 
 export async function getProductionPlanning(
   client: SupabaseClient<Database>,
@@ -2320,7 +2370,8 @@ export async function getProductionPlanning(
       action_assignees: args.actionAssignees
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -2330,16 +2381,14 @@ export async function getProductionPlanning(
     );
   }
 
-  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
-  // from MRP's open new-supply actions), then the part number so a page is
-  // stable when many rows have nothing to order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PRODUCTION_PLANNING_PAGING);
 
   return query;
 }
+
+export const PRODUCTION_PROJECTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
 
 export async function getProductionProjections(
   client: SupabaseClient<Database>,
@@ -2358,7 +2407,8 @@ export async function getProductionProjections(
       periods
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -2368,9 +2418,7 @@ export async function getProductionProjections(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PRODUCTION_PROJECTIONS_PAGING);
 
   return query;
 }
@@ -2386,6 +2434,10 @@ export async function getProductionQuantity(
     .single();
 }
 
+export const PRODUCTION_QUANTITIES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getProductionQuantities(
   client: SupabaseClient<Database>,
   jobOperationIds: string[],
@@ -2396,7 +2448,8 @@ export async function getProductionQuantities(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
     .in("jobOperationId", jobOperationIds);
@@ -2406,9 +2459,7 @@ export async function getProductionQuantities(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, PRODUCTION_QUANTITIES_PAGING);
   }
 
   return query;
@@ -2466,6 +2517,10 @@ export async function getScrapReason(
     .single();
 }
 
+export const SCRAP_REASONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getScrapReasons(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2473,7 +2528,10 @@ export async function getScrapReasons(
 ) {
   let query = client
     .from("scrapReason")
-    .select("id, name, customFields", { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select("id, name, customFields", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2481,9 +2539,7 @@ export async function getScrapReasons(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, SCRAP_REASONS_PAGING);
   }
 
   return query;
@@ -6763,6 +6819,10 @@ export async function getUnbatchedBatchableOperationCount(
     .not("job.status", "in", "(Completed,Closed,Cancelled)");
 }
 
+export const JOB_OPERATION_BATCHES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getJobOperationBatches(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6770,7 +6830,10 @@ export async function getJobOperationBatches(
 ) {
   let query = client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name)", { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select("*, process(name), workCenter(name)", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6778,9 +6841,7 @@ export async function getJobOperationBatches(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOB_OPERATION_BATCHES_PAGING);
   }
 
   return query;
@@ -6826,6 +6887,13 @@ export function applyMachineTimeListFilters<
   return filtered;
 }
 
+export const UNATTRIBUTED_MACHINE_TIMES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "startTime", ascending: false },
+    { column: "id", ascending: false }
+  ]
+};
+
 // Machine run time the OEE sync could not attribute to a loaded operation,
 // newest start first, then `id`: the review queue walks the same order.
 export async function getUnattributedMachineTimes(
@@ -6834,7 +6902,7 @@ export async function getUnattributedMachineTimes(
   args: {
     filters: MachineTimeListFilters;
     limit: number;
-    offset: number;
+    cursor?: Cursor | null;
   }
 ) {
   let query = applyMachineTimeListFilters(
@@ -6843,7 +6911,7 @@ export async function getUnattributedMachineTimes(
       .select(
         "*, workCenter!inner(name, locationId, location(name, timezone))",
         {
-          count: LIST_COUNT
+          count: listCount(args)
         }
       )
       .eq("companyId", companyId),
@@ -6854,11 +6922,9 @@ export async function getUnattributedMachineTimes(
   // and the list allows no column sort.
   query = setGenericQueryFilters(
     query,
-    { limit: args.limit, offset: args.offset },
-    [
-      { column: "startTime", ascending: false },
-      { column: "id", ascending: false }
-    ]
+    // Always cursor mode: `limit + 1` rows, even for the first page.
+    { limit: args.limit, cursor: args.cursor ?? null },
+    UNATTRIBUTED_MACHINE_TIMES_PAGING
   );
 
   // A view types every column nullable; these come from the table's own
@@ -7173,7 +7239,7 @@ export async function getJobOperationBatchMembers(
   const result = await client
     .from("jobOperation")
     .select(
-      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, modelUpload(thumbnailPath)))"
     )
     .in("jobOperationBatchId", batchIds)
     .eq("companyId", companyId);
@@ -7187,7 +7253,10 @@ export async function getJobOperationBatchMembers(
       jobReadableId: op.job?.jobId ?? null,
       itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
       itemName: op.jobMakeMethod?.item?.name ?? null,
-      thumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+      thumbnailPath:
+        op.jobMakeMethod?.item?.thumbnailPath ??
+        op.jobMakeMethod?.item?.modelUpload?.thumbnailPath ??
+        null,
       operationQuantity: op.operationQuantity ?? 0,
       quantityComplete: op.quantityComplete ?? 0,
       quantityScrapped: op.quantityScrapped ?? 0
@@ -7255,7 +7324,7 @@ export async function getJobOperationBatchWithMembers(
   const members = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId, status), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId, status), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, modelUpload(thumbnailPath)))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
@@ -7446,16 +7515,23 @@ export async function getAssemblyInstruction(
     .single();
 }
 
-export async function getAssemblyInstructions(
+// Newest first. Not `updatedAt`: it is null until the first edit, and the
+// cursor follows Postgres' order, which puts those nulls first.
+export const ASSEMBLY_INSTRUCTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+type AssemblyInstructionsScope = {
+  companyId: string;
+  search?: string;
+  status?: (typeof assemblyInstructionStatuses)[number];
+  itemId?: string;
+};
+
+function assemblyInstructionsQuery(
   client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    search?: string;
-    status?: (typeof assemblyInstructionStatuses)[number];
-    itemId?: string;
-    limit?: number;
-    offset?: number;
-  }
+  args: AssemblyInstructionsScope,
+  count: ReturnType<typeof listCount>
 ) {
   let query = client
     // "assemblyInstructions" (plural) is the version-collapsing view: one row
@@ -7464,7 +7540,7 @@ export async function getAssemblyInstructions(
     // 20260730153412_assembly-instructions-view migration.
     .from("assemblyInstructions")
     .select("*, modelUpload(id, name, componentCount, processingStatus)", {
-      count: "exact"
+      count
     })
     .eq("companyId", args.companyId);
 
@@ -7477,14 +7553,42 @@ export async function getAssemblyInstructions(
   if (args.itemId) {
     query = query.eq("itemId", args.itemId);
   }
-  if (args.limit) {
-    query = query.limit(args.limit);
-  }
-  if (args.offset) {
-    query = query.range(args.offset, args.offset + (args.limit ?? 25) - 1);
-  }
+  return query;
+}
 
-  return query.order("updatedAt", { ascending: false, nullsFirst: false });
+export async function getAssemblyInstructions(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    search?: string;
+    status?: (typeof assemblyInstructionStatuses)[number];
+    itemId?: string;
+    limit?: number;
+    offset?: number;
+  }
+) {
+  let query = assemblyInstructionsQuery(client, args, LIST_COUNT);
+  // With only `limit`, the read starts at offset 0.
+  query = setGenericQueryFilters(
+    query,
+    { limit: args.limit, offset: args.offset ?? 0 },
+    ASSEMBLY_INSTRUCTIONS_PAGING
+  );
+  return query;
+}
+
+/**
+ * One cursor page of the assembly instructions list (`limit + 1` rows for
+ * `toPage`). Not an MCP tool: MCP pages by offset through
+ * `getAssemblyInstructions`. Only the first page counts.
+ */
+export async function getAssemblyInstructionsPage(
+  client: SupabaseClient<Database>,
+  args: AssemblyInstructionsScope & Partial<GenericQueryFilters>
+) {
+  let query = assemblyInstructionsQuery(client, args, listCount(args));
+  query = setGenericQueryFilters(query, args, ASSEMBLY_INSTRUCTIONS_PAGING);
+  return query;
 }
 
 export async function getAssemblyInstructionsForItem(
@@ -11316,6 +11420,66 @@ export type ProductionPlanningDateApplyResult = {
 };
 
 /**
+ * The due date, deadline type and priority each moved job is written with.
+ * A job is ranked among the jobs already on its new date at its location
+ * (`siblings`, in priority order); several jobs moved to one date are placed
+ * one after the other, each seeing the ones placed before it. An action whose
+ * job was not found is left out: it is refused, since no row changes.
+ */
+export function planJobDateMoves(
+  moves: { jobId: string; suggestedDate: string }[],
+  jobs: { id: string; locationId: string | null; deadlineType: DeadlineType }[],
+  siblings: {
+    locationId: string | null;
+    dueDate: string | null;
+    priority: number | null;
+    deadlineType: DeadlineType;
+  }[]
+): {
+  jobId: string;
+  dueDate: string;
+  deadlineType: DeadlineType;
+  priority: number;
+}[] {
+  const jobById = new Map(jobs.map((job) => [job.id, job]));
+  const siblingsByKey = new Map<
+    string,
+    { priority: number | null; deadlineType: DeadlineType }[]
+  >();
+  for (const row of siblings) {
+    const key = `${row.locationId}\u001f${row.dueDate}`;
+    const list = siblingsByKey.get(key) ?? [];
+    list.push({ priority: row.priority, deadlineType: row.deadlineType });
+    siblingsByKey.set(key, list);
+  }
+
+  const values: {
+    jobId: string;
+    dueDate: string;
+    deadlineType: DeadlineType;
+    priority: number;
+  }[] = [];
+  for (const move of moves) {
+    const job = jobById.get(move.jobId);
+    if (!job) continue;
+    const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
+    const key = `${job.locationId}\u001f${move.suggestedDate}`;
+    const placed = siblingsByKey.get(key) ?? [];
+    const priority = nextJobPriority(placed, deadlineType);
+    placed.push({ priority, deadlineType });
+    placed.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    siblingsByKey.set(key, placed);
+    values.push({
+      jobId: move.jobId,
+      dueDate: move.suggestedDate,
+      deadlineType,
+      priority
+    });
+  }
+  return values;
+}
+
+/**
  * Apply a batch of Expedite / Defer actions to their jobs in ONE transaction,
  * set-based: the claim, two reads (the jobs, and the jobs that share their
  * new due dates) and one UPDATE for every date and priority. It used to be a
@@ -11377,7 +11541,6 @@ export async function applyProductionPlanningDateActions(
       .where("id", "in", jobIds)
       .where("companyId", "=", companyId)
       .execute();
-    const jobById = new Map(jobs.map((job) => [job.id, job]));
 
     // The jobs already on each target date, per location — the siblings a
     // moved job is ranked among. One read for every date in the batch.
@@ -11390,40 +11553,7 @@ export async function applyProductionPlanningDateActions(
       .where("id", "not in", jobIds)
       .orderBy("priority", "asc")
       .execute();
-    const siblingsByKey = new Map<
-      string,
-      { priority: number | null; deadlineType: DeadlineType }[]
-    >();
-    for (const row of siblingRows) {
-      const key = `${row.locationId}\u001f${row.dueDate}`;
-      const list = siblingsByKey.get(key) ?? [];
-      list.push({ priority: row.priority, deadlineType: row.deadlineType });
-      siblingsByKey.set(key, list);
-    }
-
-    const values: {
-      jobId: string;
-      dueDate: string;
-      deadlineType: DeadlineType;
-      priority: number;
-    }[] = [];
-    for (const action of held) {
-      const job = jobById.get(action.jobId);
-      if (!job) continue; // refused below: no row changed
-      const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
-      const key = `${job.locationId}\u001f${action.suggestedDate}`;
-      const siblings = siblingsByKey.get(key) ?? [];
-      const priority = nextJobPriority(siblings, deadlineType);
-      siblings.push({ priority, deadlineType });
-      siblings.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
-      siblingsByKey.set(key, siblings);
-      values.push({
-        jobId: action.jobId,
-        dueDate: action.suggestedDate,
-        deadlineType,
-        priority
-      });
-    }
+    const values = planJobDateMoves(held, jobs, siblingRows);
 
     const changedJobs = new Set<string>();
     if (values.length > 0) {
@@ -11546,16 +11676,37 @@ export function getForecastNonWorkingIntervals(args: {
   shifts: ShiftRow[];
   windowStartMs: number;
   windowEndMs: number;
+  /** Company holidays ("YYYY-MM-DD"): shaded as closed all day. */
+  holidayDates?: Set<string>;
 }): { start: number; end: number }[] {
   const { timeZone, shifts, windowStartMs, windowEndMs } = args;
 
-  const locationShiftRows: LadderShiftRow[] = [];
+  const working = subtractDates(
+    resolveLocationWindows({
+      timezone: timeZone,
+      locationShiftRows: expandShiftRows(shifts, timeZone),
+      rangeStart: windowStartMs,
+      rangeEnd: windowEndMs
+    }),
+    args.holidayDates ?? new Set(),
+    timeZone
+  );
+
+  return subtractIntervals(
+    [{ start: windowStartMs, end: windowEndMs }],
+    working
+  ).map((w) => ({ start: w.start, end: w.end }));
+}
+
+/** A shift's weekday windows in the ladder's row shape (0 = Sunday). */
+function expandShiftRows(shifts: ShiftRow[], timeZone: string) {
+  const rows: LadderShiftRow[] = [];
   for (const shift of shifts) {
     if (!shift.startTime || !shift.endTime) continue;
     for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
       const flag = WEEKDAY_FLAGS[dayOfWeek];
       if (!flag || !shift[flag]) continue;
-      locationShiftRows.push({
+      rows.push({
         dayOfWeek,
         startTime: String(shift.startTime),
         endTime: String(shift.endTime),
@@ -11563,18 +11714,80 @@ export function getForecastNonWorkingIntervals(args: {
       });
     }
   }
+  return rows;
+}
 
-  const working = resolveLocationWindows({
-    timezone: timeZone,
-    locationShiftRows,
-    rangeStart: windowStartMs,
-    rangeEnd: windowEndMs
+/**
+ * Each work center's working windows: the scheduler's availability ladder
+ * (`resolveWorkCenterWindows`) minus the company's holidays.
+ */
+export function getWorkCenterWorkingWindows(args: {
+  workCenters: { id: string; alwaysOn: boolean }[];
+  workCenterShifts: { workCenterId: string; shiftId: string }[];
+  /** The location's active shifts. */
+  shifts: (ShiftRow & { id: string })[];
+  /** Shifts a work center is linked to at another location. */
+  linkedShifts?: (ShiftRow & { id: string })[];
+  timeZone: string;
+  holidayDates: Set<string>;
+  rangeStart: number;
+  rangeEnd: number;
+}): Map<string, CalendarWindow[]> {
+  const { workCenters, workCenterShifts, shifts, timeZone } = args;
+  const shiftById = new Map(
+    [...shifts, ...(args.linkedShifts ?? [])].map((shift) => [shift.id, shift])
+  );
+  const ladderWorkCenters = workCenters.map((wc) => ({
+    id: wc.id,
+    alwaysOn: wc.alwaysOn,
+    locationId: "location",
+    timezone: timeZone
+  }));
+  const windows = resolveWorkCenterWindows({
+    workCenters: ladderWorkCenters,
+    workCenterShiftRows: workCenterShifts.flatMap((link) => {
+      const shift = shiftById.get(link.shiftId);
+      return shift
+        ? expandShiftRows([shift], timeZone).map((row) => ({
+            ...row,
+            workCenterId: link.workCenterId
+          }))
+        : [];
+    }),
+    locationShiftRows: expandShiftRows(shifts, timeZone).map((row) => ({
+      ...row,
+      locationId: "location"
+    })),
+    rangeStart: args.rangeStart,
+    rangeEnd: args.rangeEnd
   });
+  return closeHolidays({
+    windowsByWorkCenter: windows,
+    workCenters: ladderWorkCenters,
+    holidayDates: args.holidayDates
+  });
+}
 
-  return subtractIntervals(
-    [{ start: windowStartMs, end: windowEndMs }],
-    working
-  ).map((w) => ({ start: w.start, end: w.end }));
+/** The company's holiday dates ("YYYY-MM-DD") between two dates, inclusive. */
+export async function getHolidayDates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { from: string; to: string }
+): Promise<{ data: Set<string>; error: PostgrestError | null }> {
+  const { data, error } = await client
+    .from("holiday")
+    .select("date")
+    .eq("companyId", companyId)
+    .gte("date", args.from)
+    .lte("date", args.to);
+  if (error) {
+    logger.error("Failed to load holidays", { companyId, error });
+    return { data: new Set(), error };
+  }
+  return {
+    data: new Set((data ?? []).map((row) => row.date.slice(0, 10))),
+    error: null
+  };
 }
 type CapacityOperation = {
   workCenterId: string | null;
@@ -11628,11 +11841,21 @@ export function getWorkCenterCalendarHoursByDay(args: {
   workCenters: { id: string; alwaysOn: boolean }[];
   workCenterShifts: { workCenterId: string; shiftId: string }[];
   locationShifts: CapacityShift[];
+  /** Shifts a work center is linked to at another location. */
+  linkedShifts?: CapacityShift[];
   weekDates: string[];
+  /** Company holidays: 0 hours, except on a lights-out station. */
+  holidayDates?: Set<string>;
 }): Map<string, Map<string, number>> {
   const { workCenters, workCenterShifts, locationShifts, weekDates } = args;
+  const holidayDates = args.holidayDates ?? new Set<string>();
 
-  const shiftById = new Map(locationShifts.map((shift) => [shift.id, shift]));
+  const shiftById = new Map(
+    [...locationShifts, ...(args.linkedShifts ?? [])].map((shift) => [
+      shift.id,
+      shift
+    ])
+  );
   const shiftIdsByWorkCenter = new Map<string, string[]>();
   for (const link of workCenterShifts) {
     const list = shiftIdsByWorkCenter.get(link.workCenterId);
@@ -11664,6 +11887,8 @@ export function getWorkCenterCalendarHoursByDay(args: {
       let hours: number;
       if (workCenter.alwaysOn) {
         hours = 24;
+      } else if (holidayDates.has(day)) {
+        hours = 0;
       } else if (wcShifts.length > 0) {
         hours = sumShiftHours(wcShifts, dow);
       } else if (locationShifts.length > 0) {
@@ -11676,6 +11901,20 @@ export function getWorkCenterCalendarHoursByDay(args: {
     result.set(workCenter.id, byDate);
   }
   return result;
+}
+
+/** Milliseconds of `windows` inside [from, to). */
+function workingOverlapMs(
+  windows: CalendarWindow[],
+  from: number,
+  to: number
+): number {
+  let total = 0;
+  for (const window of windows) {
+    const overlap = Math.min(to, window.end) - Math.max(from, window.start);
+    if (overlap > 0) total += overlap;
+  }
+  return total;
 }
 
 /**
@@ -11696,6 +11935,13 @@ export function buildPeopleCapacityBuckets(args: {
   reservations: CapacityReservation[];
   /** per-work-center calendar hours (the ladder above) — clamps null-workHours reservations. */
   calendarHoursByWorkCenter: Map<string, Map<string, number>>;
+  /**
+   * Each work center's working windows (`getWorkCenterWorkingWindows`). A
+   * booking's hours are divided over the working time inside each day, not
+   * its wall-clock span: an 8h booking from Monday 12:00 to Tuesday 11:30 on
+   * a 06:00–14:30 shift is 2.5h Monday and 5.5h Tuesday, never hours at night.
+   */
+  workingWindowsByWorkCenter?: Map<string, CalendarWindow[]>;
 }): {
   demandByWorkCenter: Record<
     string,
@@ -11708,7 +11954,8 @@ export function buildPeopleCapacityBuckets(args: {
     timezone,
     operations,
     reservations,
-    calendarHoursByWorkCenter
+    calendarHoursByWorkCenter,
+    workingWindowsByWorkCenter
   } = args;
   const weekStartDate = weekDates[0];
 
@@ -11774,14 +12021,22 @@ export function buildPeopleCapacityBuckets(args: {
       workMs = Math.min(spanMs, calendarMsWithinSpan);
     }
 
+    // A booking with no working time (a station with no windows) falls back to
+    // the wall-clock share.
+    const windows =
+      workingWindowsByWorkCenter?.get(reservation.resourceId) ?? [];
+    const workingSpanMs = workingOverlapMs(windows, startMs, endMs);
     for (const { day, startMs: dayStartMs, endMs: dayEndMs } of dayBounds) {
-      const overlapMs =
-        Math.min(endMs, dayEndMs) - Math.max(startMs, dayStartMs);
-      if (overlapMs > 0) {
-        const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
-        byDay[day] =
-          (byDay[day] ?? 0) + (overlapMs / spanMs) * (workMs / HOUR_MS);
-      }
+      const from = Math.max(startMs, dayStartMs);
+      const to = Math.min(endMs, dayEndMs);
+      if (to <= from) continue;
+      const share =
+        workingSpanMs > 0
+          ? workingOverlapMs(windows, from, to) / workingSpanMs
+          : (to - from) / spanMs;
+      if (share <= 0) continue;
+      const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
+      byDay[day] = (byDay[day] ?? 0) + share * (workMs / HOUR_MS);
     }
   }
 

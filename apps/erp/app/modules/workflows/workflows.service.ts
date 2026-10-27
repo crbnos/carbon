@@ -4,6 +4,7 @@
 
 import type { ServiceContext } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
+import { fetchAllByIds } from "@carbon/database";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
@@ -22,10 +23,14 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
-import type { Filter, GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { Filter, GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
 import { MAX_RUN_STEPS } from "./workflows.utils";
+
+export const WORKFLOWS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
 
 export async function getWorkflows(
   client: SupabaseClient<Database>,
@@ -36,7 +41,7 @@ export async function getWorkflows(
     .from("workflow")
     .select(
       "id, name, description, ownerId, publishedVersionId, createdAt, updatedAt",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -63,9 +68,11 @@ export async function getWorkflows(
       }
     }
 
-    query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      { ...args, filters: columnFilters },
+      WORKFLOWS_PAGING
+    );
   }
 
   return query;
@@ -108,11 +115,14 @@ export async function getWorkflowVersionNumbers(
   versionIds: string[],
   companyId: string
 ) {
-  return client
-    .from("workflowVersion")
-    .select("id, versionNumber")
-    .in("id", versionIds)
-    .eq("companyId", companyId);
+  return fetchAllByIds(versionIds, (batch) =>
+    client
+      .from("workflowVersion")
+      .select("id, versionNumber")
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
 }
 
 export async function getWorkflowVersion(
@@ -303,6 +313,10 @@ export async function deleteWorkflow(
     .eq("companyId", companyId);
 }
 
+export const WORKFLOW_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getWorkflowRuns(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -314,14 +328,12 @@ export async function getWorkflowRuns(
       "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, isTest, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
       // Estimated, not exact: this table grows with event volume, and `exact` is a
       // COUNT(*) over the company's whole retained history on every page load.
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, WORKFLOW_RUNS_PAGING);
   }
 
   return query;
@@ -381,12 +393,14 @@ export async function getWorkflowLastRuns(
   workflowIds: string[],
   companyId: string
 ) {
-  if (workflowIds.length === 0) return { data: [], error: null };
-  return client
-    .from("workflowLastRun")
-    .select("workflowId, runId, status, createdAt, completedAt, durationMs")
-    .in("workflowId", workflowIds)
-    .eq("companyId", companyId);
+  return fetchAllByIds(workflowIds, (batch) =>
+    client
+      .from("workflowLastRun")
+      .select("workflowId, runId, status, createdAt, completedAt, durationMs")
+      .in("workflowId", batch)
+      .eq("companyId", companyId)
+      .order("workflowId", { ascending: true })
+  );
 }
 
 /** Tables in `fkDisplayRegistry` that have no `companyId` column; the resolver

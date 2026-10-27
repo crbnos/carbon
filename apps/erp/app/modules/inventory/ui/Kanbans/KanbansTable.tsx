@@ -81,13 +81,17 @@ import { path } from "~/utils/path";
 import type { Kanban } from "../../types";
 
 type KanbansTableProps = {
-  data: Kanban[];
+  data: KanbanRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   kanbanOutput: (typeof kanbanOutputTypes)[number];
-  /** Kanban id → projected quantity at its To storage unit (armed Transfer kanbans only). */
-  projectedQuantities: Record<string, number>;
 };
+
+/** A list row: the kanban plus the projected quantity at its To storage unit
+ *  (armed Transfer kanbans only; null otherwise). */
+type KanbanRow = Kanban & { projectedQuantity: number | null };
 
 const defaultColumnVisibility = {
   createdBy: false,
@@ -167,9 +171,9 @@ const KanbansTable = memo(
   ({
     data,
     count,
+    nextCursor,
     locationId,
-    kanbanOutput,
-    projectedQuantities
+    kanbanOutput
   }: KanbansTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
@@ -183,7 +187,7 @@ const KanbansTable = memo(
     const locations = useLocations();
     const { isPhone } = useViewport();
 
-    const columns = useMemo<ColumnDef<Kanban>[]>(
+    const columns = useMemo<ColumnDef<KanbanRow>[]>(
       () => [
         {
           accessorKey: "itemId",
@@ -222,7 +226,7 @@ const KanbansTable = memo(
             exportValue: (row) => row.readableIdWithRevision ?? null
           }
         },
-        exportOnlyColumn<Kanban>({
+        exportOnlyColumn<KanbanRow>({
           id: "itemName",
           header: t`Item Name`,
           value: (row) => row.name ?? null
@@ -436,10 +440,8 @@ const KanbansTable = memo(
           id: "projectedQuantity",
           header: t`Projected (To)`,
           cell: ({ row }) => {
-            const projected = row.original.id
-              ? projectedQuantities[row.original.id]
-              : undefined;
-            if (projected === undefined) return null;
+            const projected = row.original.projectedQuantity;
+            if (projected === null) return null;
             const level = row.original.replenishmentLevel;
             const isBelowLevel =
               level !== null && level !== undefined && projected < level;
@@ -606,20 +608,11 @@ const KanbansTable = memo(
           }
         }
       ],
-      [
-        formatQuantity,
-        items,
-        kanbanOutput,
-        params,
-        people,
-        projectedQuantities,
-        suppliers,
-        t
-      ]
+      [formatQuantity, items, kanbanOutput, params, people, suppliers, t]
     );
 
     const renderContextMenu = useCallback(
-      (row: Kanban) => {
+      (row: KanbanRow) => {
         const canUpdate = permissions.can("update", "inventory");
         const canDelete = permissions.can("delete", "inventory");
         const canViewItems = permissions.can("view", "inventory");
@@ -749,10 +742,12 @@ const KanbansTable = memo(
 
     return (
       <OpenQrCodeContext.Provider value={openQrCode}>
-        <Table<Kanban>
+        <Table<KanbanRow>
           count={count}
           columns={columns}
           data={data}
+          // Location-scoped: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "kanbans", nextCursor }}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             <div className="flex items-center gap-2">

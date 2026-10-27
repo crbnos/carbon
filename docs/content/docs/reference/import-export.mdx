@@ -3,22 +3,31 @@ title: Import and export
 description: Bring records into Carbon from a CSV, and download any table's current view as a CSV.
 ---
 
-Carbon supports CSV export for every shared data table and CSV import for selected entities. Export runs in the browser against the current table result set. Import uses a guided mapping workflow and a privileged background function that inserts or updates records in a transaction.
+Carbon supports CSV export for every shared data table and CSV import for selected entities. Export writes every row that matches the table's current filters and search: up to 1,000 rows in the browser, more as a background job. Import uses a guided mapping workflow and a privileged background function that inserts or updates records in a transaction.
 
 ## Exporting a table to CSV
 
 Use **Download CSV** in a data table's header. Every table built on Carbon's shared data grid includes this action.
 
-The download reflects **what you are currently looking at**, not a full server dump:
+The download reflects **what you are currently looking at**:
 
-- Only the **rows on the current page / result set** are written. Filter or search first to widen or narrow what lands in the file, then export.
+- Only the **rows that match the current filters and search** are written, not only the rows loaded on screen. Filter or search first to narrow what lands in the file, then export.
 - Only the **columns visible in your current saved view** are included, in the order you've arranged them. Hidden columns are left out; the synthetic select, expand, and actions columns never export.
 - The CSV headers are the same human labels shown in the grid.
 
 For id-bearing columns like item, supplier, employee, and customer, the export substitutes the readable **name** for the raw id so the file is legible. A few columns are marked export-only: they stay hidden in the grid but are always written to the CSV.
 
-<Callout type="note" title="The file is always named data.csv">
-Export builds the file entirely in your browser and downloads it as `data.csv` with no server round-trip. Rename it after downloading if you're exporting several tables.
+## Exports over 1,000 rows
+
+When more than 1,000 rows match, Carbon builds the file in the background. You can keep working, and a notification with a download link arrives when the file is ready. The link works for 7 days.
+
+- A background export holds the stored values, not the on-screen formatting: dates as `2026-10-13`, numbers without currency symbols.
+- One export runs at a time per company. If another is running, Carbon tells you how long to wait.
+- An export stops at 100,000 rows. The notification says so when it stopped early.
+- A few lists cannot export in the background. They export the first 1,000 rows and say so.
+
+<Callout type="note" title="Smaller exports are named data.csv">
+An export of 1,000 rows or fewer is built in your browser and downloads at once as `data.csv`. Rename it after downloading if you're exporting several tables.
 </Callout>
 
 <Screenshot src="/screens/reference-parts-csv.png" label="Parts list with the Download CSV icon in the table header" caption="Every Carbon data table exports its current view. Filter and arrange columns first, since the export mirrors exactly what's on screen." />

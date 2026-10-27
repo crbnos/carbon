@@ -86,6 +86,33 @@ redirects kinds it does not serve (no loops).
   can't call postings, so this is orchestrated in TS. See
   `.ai/specs/2026-08-04-picked-material-return-timing.md`.
 
+## Ability gate
+
+When the operation's process has `requiresAbility` on and the operator has no
+current `employeeAbility` row, `getAbilityShortfall` (`operations.service.ts`)
+returns what is missing: the process's `abilityPolicy`, the process name, the
+expiry date and an Active training whose `grantsAbilityId` is the ability. It
+fails open on any read error. The operation, assembly and inspection loaders
+pass it to the view as `abilityWarning`, which `AbilityWarning` renders as a
+banner.
+
+- `Warn`: banner only.
+- `Block`: the view disables production work (start, complete, scrap, rework,
+  finish, step records, material issue, inspection verdicts) and skips timer
+  auto-start; pausing a running timer stays enabled. Every write route calls
+  `abilityBlockRefusal` before it writes: `event` (Start only), `start.$operationId`,
+  `end.$operationId` (the kanban complete scan), `batch.$batchId.complete`,
+  `batch.$batchId.record` (one member checked: every member runs the batch's one
+  process), `complete`, `finish`, `scrap`, `rework`, `record`, `record.$id.delete`, `issue`,
+  `issue-tracked-entity` (single operation), `unconsume`, `entity+/…scrap`, and the
+  inspection `sample`, `measurement`, `disposition` and `complete-passed` routes.
+  Not gated: `steps.complete-all` (a manager override), `steps.inspection` (an
+  automatic sync) and a batch pick.
+
+`event.tsx` also redirects a full-page POST (`Sec-Fetch-Mode: navigate`, a press
+before the page hydrates) back to the referrer with the flash, so the operator never
+lands on the bare resource route.
+
 ## Batch mode (operation batching)
 
 **Floor gate (membership handoff), enforced server-side.** An operation is

@@ -26,6 +26,7 @@ import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
@@ -40,10 +41,17 @@ type ActionsTableProps = {
   issueTypes: ListItem[];
   requiredActions: ListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ActionsTable = memo(
-  ({ data, issueTypes, requiredActions, count }: ActionsTableProps) => {
+  ({
+    data,
+    issueTypes,
+    requiredActions,
+    count,
+    infinite
+  }: ActionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -257,6 +265,7 @@ const ActionsTable = memo(
     return (
       <Table<QualityAction>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         renderContextMenu={renderContextMenu}

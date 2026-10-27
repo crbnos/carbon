@@ -672,6 +672,59 @@ export type Events = {
     };
   };
 
+  // A table's CSV export past the browser's 1,000-row limit. The ERP route
+  // (api+/table.export.ts) takes the per-company lock and sends it; the job
+  // pages the list's registry query as the user and notifies them with the file.
+  "carbon/table-export": {
+    data: {
+      companyId: string;
+      userId: string;
+      // The file's id, `{listKey}.{random}`: the file is
+      // `{companyId}/exports/{userId}/{exportId}.csv` in temp-staging, served
+      // to this user only by the ERP's export download route.
+      exportId: string;
+      // A key of the ERP's list registry (`utils/list-registry`).
+      listKey: string;
+      // The list's URL search (filters, sorts, search), with or without "?".
+      search: string;
+      // The visible columns in display order, with their translated headers.
+      columns: Array<{ key: string; label: string }>;
+    };
+  };
+
+  // A table's bulk action on every row that matches the list's URL search,
+  // past the browser's 1,000-row limit. The ERP action route takes the
+  // per-company lock and sends it; the job pages the list's ids as the user
+  // (10,000 rows per step, stored in temp-staging), runs the action one slice
+  // per step, 100 ids per call, and notifies the user with the counts.
+  "carbon/table-bulk-action": {
+    data: {
+      companyId: string;
+      userId: string;
+      // The run's id; also the value of the per-company Redis lock.
+      bulkActionId: string;
+      // A key of the ERP's bulk actions (`utils/table-jobs.server.ts`).
+      actionKey: string;
+      // The action's English name for the notification ("Release jobs").
+      actionLabel: string;
+      // The action's own values, for example `{ field, value }`.
+      params: Record<string, unknown>;
+      // A key of the ERP's list registry (`utils/list-registry`).
+      listKey: string;
+      // The list's URL search (filters, sorts, search), with or without "?".
+      search: string;
+      // The most rows the run acts on (default 100,000). Jobs Release and
+      // Batches Release stop at 2,000.
+      maxRows?: number;
+      // Ids per apply step (default 1,000); an action that does more per
+      // row sets fewer, so one step stays well below 600 s.
+      idsPerStep?: number;
+      // The rows the user selected, when there are too many for one request.
+      // The run acts on these ids and reads no list pages; `search` is "".
+      ids?: string[];
+    };
+  };
+
   // Panel push: export one element's assets onto the item the push linked.
   "carbon/onshape-panel-sync": {
     data: {

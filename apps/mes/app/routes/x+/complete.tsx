@@ -7,89 +7,23 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   finishJobOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 const log = getLogger("mes");
-
-/**
- * Triggers an auto-print of the entity's label when this is its first
- * operation (i.e. the entity was just minted) and the work center's
- * printer assignment has auto-print enabled.
- */
-async function autoPrintFirstOperationLabel({
-  serviceRole,
-  trackedEntityId,
-  workCenterId,
-  companyId,
-  userId
-}: {
-  serviceRole: ReturnType<typeof getCarbonServiceRole>;
-  trackedEntityId: string;
-  workCenterId: string | undefined;
-  companyId: string;
-  userId: string;
-}) {
-  try {
-    const { data: entity } = await serviceRole
-      .from("trackedEntity")
-      .select("attributes")
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    // Service-role read: an entity outside the caller's company prints nothing.
-    if (!entity) return;
-
-    const attributes = (entity?.attributes ?? {}) as Record<string, unknown>;
-    const operationCount = Object.keys(attributes).filter((k) =>
-      k.startsWith("Operation ")
-    ).length;
-    if (operationCount > 1) return;
-
-    if (!workCenterId) return;
-    const { data: workCenter } = await serviceRole
-      .from("workCenter")
-      .select("locationId")
-      .eq("id", workCenterId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    const locationId = workCenter?.locationId ?? undefined;
-    if (!locationId) return;
-
-    const config = await getCachedPrinterConfig(
-      serviceRole,
-      companyId,
-      locationId,
-      "workCenter",
-      workCenterId
-    );
-    if (config?.autoPrint ?? true) {
-      await trigger("print-job", {
-        sourceDocument: "Job",
-        sourceDocumentId: trackedEntityId,
-        companyId,
-        userId,
-        locationId,
-        workCenterId
-      });
-    }
-  } catch (e) {
-    log.error("Auto-print failed", { error: e });
-  }
-}
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -128,6 +62,18 @@ export async function action({ request }: ActionFunctionArgs) {
         ...error(jobOperation.error, "Failed to fetch job operation"),
         flash: "error"
       })
+    );
+  }
+
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: jobOperation.data.id,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data(
+      {},
+      await flash(request, { ...error(null, refusal), flash: "error" })
     );
   }
 

@@ -1397,6 +1397,25 @@ async function buildEventContent(
       };
     }
 
+    // Payload-carried like IntegrationSync: the table-export job writes the
+    // outcome as `title` and the row count as `body`; documentId is the export
+    // id, not a record, so there is nothing to look up.
+    case NotificationEvent.TableExport: {
+      return {
+        description: opts?.title ?? "Your export is ready",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like TableExport: the bulk-action job writes the outcome
+    // and the counts as `title`; documentId is the run id, not a record.
+    case NotificationEvent.TableBulkAction: {
+      return {
+        description: opts?.title ?? "Your bulk action is done",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
     // The recurring-billing job says which date is coming up in `body`
     // ("notice must be given by Jun 30, 2027"); the lease names the rest.
     case NotificationEvent.LeaseCriticalDate: {

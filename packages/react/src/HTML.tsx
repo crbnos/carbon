@@ -12,6 +12,7 @@ import StarterKit from "@tiptap/starter-kit";
 import pkg from "dompurify";
 import type { ReactNode } from "react";
 import { defaultExtensions } from "./Editor/extensions";
+import { useHydrated } from "./hooks";
 import { cn } from "./utils/cn";
 
 const { sanitize } = pkg;
@@ -105,6 +106,10 @@ const RichTextView = ({
   empty: ReactNode;
   className?: string;
 }) => {
+  // The server sends the body empty (`generateHTML` needs the DOM), and
+  // hydration keeps a server `dangerouslySetInnerHTML` as it is, so the HTML
+  // is set only once the page has hydrated.
+  const hydrated = useHydrated();
   if (isRichTextEmpty(content)) {
     return (
       <p className="hidden text-sm text-muted-foreground max-md:block">
@@ -116,7 +121,7 @@ const RichTextView = ({
     <div
       className={cn("prose dark:prose-invert", className)}
       dangerouslySetInnerHTML={{
-        __html: generateHTML(content as JSONContent)
+        __html: hydrated ? generateHTML(content as JSONContent) : ""
       }}
     />
   );

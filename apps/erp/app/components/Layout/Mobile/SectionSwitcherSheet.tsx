@@ -2,13 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  BottomSheet,
-  BottomSheetBody,
-  BottomSheetContent,
-  BottomSheetHeader,
-  BottomSheetTitle
-} from "@carbon/react";
+import { NavSheet } from "@carbon/react";
 import type { ComponentType, ReactNode } from "react";
 import { SidebarPresentationProvider } from "../Navigation/SidebarPresentation";
 
@@ -29,17 +23,20 @@ export function SectionSwitcherSheet({
   Sidebar: ComponentType;
 }) {
   return (
-    <BottomSheet open={open} onOpenChange={onOpenChange}>
-      <BottomSheetContent>
-        <BottomSheetHeader>
-          <BottomSheetTitle>{title}</BottomSheetTitle>
-        </BottomSheetHeader>
-        <BottomSheetBody className="px-2">
-          <SidebarPresentationProvider value="sheet">
-            <Sidebar />
-          </SidebarPresentationProvider>
-        </BottomSheetBody>
-      </BottomSheetContent>
-    </BottomSheet>
+    <NavSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      header={
+        <h2 className="truncate text-[17px] font-semibold text-foreground">
+          {title}
+        </h2>
+      }
+    >
+      <div className="px-2 pb-4">
+        <SidebarPresentationProvider value="sheet">
+          <Sidebar />
+        </SidebarPresentationProvider>
+      </div>
+    </NavSheet>
   );
 }

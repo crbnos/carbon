@@ -18,7 +18,8 @@
 
 Single source of truth: `packages/utils/src/status-colors.ts` (`*_STATUS_COLOR_MAP` per
 entity + registry). Rendered by `<Status color>` (`packages/react/src/Status.tsx`): uppercase
-12px tinted pill + a **fixed icon per color** + tooltip. Color is never the only signal.
+12px tinted pill + a **fixed icon per color**, with a tooltip only when it adds
+something (`tooltip`) or the label is hidden (`iconOnly`) — a pill never repeats its own label on hover. Color is never the only signal.
 
 **Choose the color by lifecycle position, not by the word:**
 

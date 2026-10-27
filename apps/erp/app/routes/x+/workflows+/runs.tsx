@@ -2,69 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import WorkflowRunsTable from "~/modules/workflows/ui/Runs/WorkflowRunsTable";
-import {
-  getWorkflowRunRecordNames,
-  getWorkflowRuns
-} from "~/modules/workflows/workflows.service";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { workflowRunsList } from "~/utils/list-registry/workflows.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "workflows",
-    role: "employee"
+  return loadListPage(request, workflowRunsList, {
+    dataKey: "data",
+    guard: ({ client, companyId }) =>
+      requireFeature({
+        request,
+        client,
+        companyId,
+        feature: "WORKFLOWS",
+        redirectTo: path.to.workflows
+      })
   });
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    feature: "WORKFLOWS",
-    redirectTo: path.to.workflows
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const runs = await getWorkflowRuns(client, companyId, {
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  const data = runs.data ?? [];
-  const recordNames = await getWorkflowRunRecordNames(
-    client,
-    companyId,
-    data.flatMap((run) =>
-      run.triggerTable && run.triggerRecordId
-        ? [{ table: run.triggerTable, id: run.triggerRecordId }]
-        : []
-    )
-  );
-
-  return {
-    data: data.map((run) => ({
-      ...run,
-      recordName: recordNames[`${run.triggerTable}:${run.triggerRecordId}`]
-    })),
-    count: runs.count ?? 0
-  };
 }
 
 export default function WorkflowRunsRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
   return (
     <VStack spacing={0} className="h-full">
-      <WorkflowRunsTable data={data} count={count} />
+      <WorkflowRunsTable data={data} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

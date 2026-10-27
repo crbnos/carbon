@@ -33,6 +33,7 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useProcesses } from "~/components/Form/Process";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Procedures } from "../../types";
@@ -42,9 +43,11 @@ type ProceduresTableProps = {
   data: Procedures[];
   tags: { name: string }[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
+const ProceduresTable = memo((props: ProceduresTableProps) => {
+  const { data, tags, count, infinite } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -231,6 +234,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         data={data}
         columns={columns}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "production") && (
             <New label={t`Procedure`} to={path.to.newProcedure} />

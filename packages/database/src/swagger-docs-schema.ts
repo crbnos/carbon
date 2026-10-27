@@ -29809,6 +29809,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -29919,6 +29922,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -29981,6 +29987,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.batchRules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.abilityPolicy"
           },
           {
             $ref: "#/parameters/body.process"
@@ -46816,6 +46825,135 @@ export default {
           }
         },
         tags: ["scriptRun"]
+      }
+    },
+    "/purchaseOrderLinesToReceive": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.purchaseOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.revisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.purchaseOrderType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.orderDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.supplierName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.supplierReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.trackingNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.purchaseOrderLineType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.itemReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.itemName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.itemType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.thumbnailPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.supplierPartId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.purchaseQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.quantityReceived"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.quantityToReceive"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.purchaseUnitOfMeasureCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.receivedComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.promisedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLinesToReceive.searchText"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseOrderLinesToReceive"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["purchaseOrderLinesToReceive"]
       }
     },
     "/currencies": {
@@ -70645,6 +70783,9 @@ export default {
             $ref: "#/parameters/rowFilter.modelUpload.originalPath"
           },
           {
+            $ref: "#/parameters/rowFilter.modelUpload.pmiPath"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -70776,6 +70917,9 @@ export default {
             $ref: "#/parameters/rowFilter.modelUpload.originalPath"
           },
           {
+            $ref: "#/parameters/rowFilter.modelUpload.pmiPath"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -70859,6 +71003,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.modelUpload.originalPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.modelUpload.pmiPath"
           },
           {
             $ref: "#/parameters/body.modelUpload"
@@ -78710,6 +78857,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.processes.batchRules"
+          },
+          {
+            $ref: "#/parameters/rowFilter.processes.abilityPolicy"
           },
           {
             $ref: "#/parameters/rowFilter.processes.workCenters"
@@ -132507,7 +132657,8 @@ export default {
         "active",
         "requiresAbility",
         "batchable",
-        "batchType"
+        "batchType",
+        "abilityPolicy"
       ],
       properties: {
         id: {
@@ -132610,6 +132761,12 @@ export default {
           description:
             "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
           format: "jsonb"
+        },
+        abilityPolicy: {
+          default: "Warn",
+          enum: ["Warn", "Block"],
+          format: 'public."processAbilityPolicy"',
+          type: "string"
         }
       },
       type: "object"
@@ -140492,6 +140649,163 @@ export default {
         },
         result: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    purchaseOrderLinesToReceive: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderReadableId: {
+          format: "text",
+          type: "string"
+        },
+        revisionId: {
+          format: "integer",
+          type: "integer"
+        },
+        status: {
+          enum: [
+            "Draft",
+            "To Review",
+            "Rejected",
+            "To Receive",
+            "To Receive and Invoice",
+            "To Invoice",
+            "Completed",
+            "Closed",
+            "Planned",
+            "Needs Approval"
+          ],
+          format: 'public."purchaseOrderStatus"',
+          type: "string"
+        },
+        purchaseOrderType: {
+          enum: ["Purchase", "Return", "Outside Processing"],
+          format: 'public."purchaseOrderType"',
+          type: "string"
+        },
+        orderDate: {
+          format: "date",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        supplierName: {
+          format: "text",
+          type: "string"
+        },
+        supplierReference: {
+          format: "text",
+          type: "string"
+        },
+        trackingNumber: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderLineType: {
+          enum: [
+            "Comment",
+            "G/L Account",
+            "Fixed Asset",
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture"
+          ],
+          format: 'public."purchaseOrderLineType"',
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string"
+        },
+        itemName: {
+          format: "text",
+          type: "string"
+        },
+        itemType: {
+          enum: [
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture"
+          ],
+          format: 'public."itemType"',
+          type: "string"
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        supplierPartId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseQuantity: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityReceived: {
+          format: "numeric",
+          type: "number"
+        },
+        quantityToReceive: {
+          format: "numeric",
+          type: "number"
+        },
+        purchaseUnitOfMeasureCode: {
+          format: "text",
+          type: "string"
+        },
+        receivedComplete: {
+          format: "boolean",
+          type: "boolean"
+        },
+        promisedDate: {
+          format: "date",
+          type: "string"
+        },
+        sortOrder: {
+          format: "double precision",
+          type: "number"
+        },
+        searchText: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -151839,6 +152153,10 @@ export default {
         originalPath: {
           format: "text",
           type: "string"
+        },
+        pmiPath: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -155758,6 +156076,11 @@ export default {
         },
         batchRules: {
           format: "jsonb"
+        },
+        abilityPolicy: {
+          enum: ["Warn", "Block"],
+          format: 'public."processAbilityPolicy"',
+          type: "string"
         },
         workCenters: {
           format: "text[]",
@@ -184471,6 +184794,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.process.abilityPolicy": {
+      name: "abilityPolicy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierShipping": {
       name: "supplierShipping",
       description: "supplierShipping",
@@ -193209,6 +193538,189 @@ export default {
     },
     "rowFilter.scriptRun.result": {
       name: "result",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.purchaseOrderLinesToReceive": {
+      name: "purchaseOrderLinesToReceive",
+      description: "purchaseOrderLinesToReceive",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/purchaseOrderLinesToReceive"
+      }
+    },
+    "rowFilter.purchaseOrderLinesToReceive.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.purchaseOrderId": {
+      name: "purchaseOrderId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.purchaseOrderReadableId": {
+      name: "purchaseOrderReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.revisionId": {
+      name: "revisionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.purchaseOrderType": {
+      name: "purchaseOrderType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.orderDate": {
+      name: "orderDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.supplierName": {
+      name: "supplierName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.supplierReference": {
+      name: "supplierReference",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.trackingNumber": {
+      name: "trackingNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.purchaseOrderLineType": {
+      name: "purchaseOrderLineType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.itemName": {
+      name: "itemName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.itemType": {
+      name: "itemType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.supplierPartId": {
+      name: "supplierPartId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.purchaseQuantity": {
+      name: "purchaseQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.quantityReceived": {
+      name: "quantityReceived",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.quantityToReceive": {
+      name: "quantityToReceive",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.purchaseUnitOfMeasureCode": {
+      name: "purchaseUnitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.receivedComplete": {
+      name: "receivedComplete",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.promisedDate": {
+      name: "promisedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLinesToReceive.searchText": {
+      name: "searchText",
       required: false,
       in: "query",
       type: "string"
@@ -206000,6 +206512,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.modelUpload.pmiPath": {
+      name: "pmiPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.costLedger": {
       name: "costLedger",
       description: "costLedger",
@@ -210229,6 +210747,12 @@ export default {
     },
     "rowFilter.processes.batchRules": {
       name: "batchRules",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.processes.abilityPolicy": {
+      name: "abilityPolicy",
       required: false,
       in: "query",
       type: "string"
