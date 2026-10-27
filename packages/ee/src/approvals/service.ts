@@ -6,7 +6,11 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus, sanitize } from "@carbon/utils";
+import {
+  getPurchaseOrderStatus,
+  isOwnSignaturePath,
+  sanitize
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "../entitlements.server";
 import { companyHasFeature } from "../plan.server";
@@ -60,6 +64,34 @@ export async function approveRequest(
   const { documentType, documentId, companyId } = approvalRequest;
   const now = new Date().toISOString();
 
+  // The approver's signature on file now is the one the document prints from
+  // here on, whatever they change it to later.
+  const approver = await db
+    .selectFrom("user")
+    .select("signaturePath")
+    .where("id", "=", userId)
+    .executeTakeFirst();
+  const onFile = approver?.signaturePath;
+  const signaturePath = isOwnSignaturePath(userId, onFile) ? onFile : null;
+
+  if (documentType === "purchaseOrder" && !signaturePath) {
+    const settings = await db
+      .selectFrom("companySettings")
+      .select("requirePurchaseOrderApprovalSignature")
+      .where("id", "=", companyId)
+      .executeTakeFirst();
+    if (settings?.requirePurchaseOrderApprovalSignature) {
+      return {
+        error: {
+          code: "signature-required" as const,
+          message:
+            "Add your signature in Account → Profile before you approve purchase orders"
+        },
+        data: null
+      };
+    }
+  }
+
   try {
     const result = await db.transaction().execute(async (trx) => {
       // 1. Update approval request to "Approved"
@@ -70,6 +102,7 @@ export async function approveRequest(
           decisionBy: userId,
           decisionAt: now,
           decisionNotes: notes || null,
+          decisionSignaturePath: signaturePath,
           updatedBy: userId,
           updatedAt: now
         })
@@ -751,11 +784,13 @@ export async function getDocumentApproval(
   approvedBy: string | null;
   approvedById: string | null;
   approvedAt: string;
+  /** The approver's signature file in the `signatures` bucket, if any. */
+  signaturePath: string | null;
 } | null> {
   const latest = await serviceRole
     .from("approvalRequest")
     .select(
-      "status, decisionAt, decisionBy, decider:user!approvalRequest_decisionBy_fkey(fullName)"
+      "status, decisionAt, decisionBy, decisionSignaturePath, decider:user!approvalRequest_decisionBy_fkey(fullName)"
     )
     .eq("documentType", documentType)
     .eq("documentId", documentId)
@@ -781,7 +816,13 @@ export async function getDocumentApproval(
   return {
     approvedBy: latest.data.decider?.fullName ?? null,
     approvedById: latest.data.decisionBy,
-    approvedAt: latest.data.decisionAt
+    approvedAt: latest.data.decisionAt,
+    signaturePath: isOwnSignaturePath(
+      latest.data.decisionBy,
+      latest.data.decisionSignaturePath
+    )
+      ? latest.data.decisionSignaturePath
+      : null
   };
 }
 

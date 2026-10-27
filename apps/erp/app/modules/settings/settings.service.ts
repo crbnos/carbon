@@ -1908,7 +1908,8 @@ export async function buildPreviewProps(
           getPurchaseOrderApproval(getCarbonServiceRole(), {
             companyId,
             purchaseOrderId: id,
-            timezone: company.data.timezone
+            timezone: company.data.timezone,
+            withSignature: true
           })
         ]);
       if (!order.data) return null;

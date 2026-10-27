@@ -432,7 +432,8 @@ export const updateProductionSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether documents print the
  * centralized payables billing address, that address itself (a null field
  * clears it), whether a supplier needs a contact with an email before its
- * documents issue, when a purchase updates the item's price (on invoice post
+ * documents issue, whether approving a purchase order needs the approver's
+ * signature on file, when a purchase updates the item's price (on invoice post
  * or on order finalize), whether a receipt updates the supplier lead time,
  * whether supplier readable ids show, who is notified about supplier quotes,
  * and the default CC on supplier emails.
@@ -444,6 +445,7 @@ export const updatePurchasingSettings = defineServiceFn({
     accountsPayableAddress: z.boolean().optional(),
     accountsPayableBillingAddress: billingAddressInput.optional(),
     requireSupplierContactAndLocation: z.boolean().optional(),
+    requirePurchaseOrderApprovalSignature: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
       .optional(),

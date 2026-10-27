@@ -1573,6 +1573,12 @@ msgstr "단기 자산은 활성화 시 전표를 전기하지 않습니다. 각 
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "단기 리스는 일정이 없습니다. 각 송장은 비용으로 처리됩니다."
 
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "단계에 이름이 필요합니다."
 
@@ -2275,6 +2281,9 @@ msgstr "출하 추가"
 msgid "Add Shipping"
 msgstr "배송비 추가"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "슬라이드 추가"
 
@@ -2341,6 +2350,9 @@ msgstr "단위 추가"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "첫 {0}을(를) 추가하세요"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "애드온"
@@ -2653,6 +2665,12 @@ msgstr "누군가의 주의가 필요함을 알리는 경보로서, carbon/notif
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "부적합에 대한 승인 요구사항으로, 미리 설정된 설계 및 품질 검토자가 부적합을 마감하기 전에 서명해야 함"
+
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
 
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "다음 중 하나라도 참이면 자산은 금융 리스이고, 하나도 참이 아니면 운영 리스입니다."
@@ -3037,6 +3055,12 @@ msgstr "승인 요구사항"
 
 msgid "Approval Rules"
 msgstr "승인 규칙"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "승인"
@@ -3985,21 +4009,11 @@ msgstr "가용 시간"
 msgid "Available on the Business plan"
 msgstr "Business 플랜에서 사용 가능"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "아바타 옵션 {0}"
-
 msgid "Avatar style"
 msgstr "아바타 스타일"
 
 msgid "Avatar url"
 msgstr "아바타 URL"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "아바타 출처: {1}의 <0>{0}</0>, <1>{2}</1> 라이선스."
 
 msgid "Average"
 msgstr "평균"
@@ -4484,6 +4498,11 @@ msgstr "구매 담당자, 계획 담당자"
 
 msgid "by {byUser}"
 msgstr "{byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "초대를 수락하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
@@ -5065,6 +5084,9 @@ msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정�
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
 
@@ -5179,6 +5201,9 @@ msgstr "다시 클릭하여 연결 해제"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "뷰어에서 구성품을 클릭하여 추가합니다. Shift 클릭으로 여러 개를 추가합니다."
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "클릭하여 이름 바꾸기"
@@ -6797,6 +6822,9 @@ msgstr "사용자 정의 {label}"
 msgid "Custom attributes you track against your people"
 msgstr "인원에 대해 추적하는 사용자 정의 속성"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Custom development beyond what's listed"
 msgstr "나열된 항목 외의 맞춤 개발"
 
@@ -8355,6 +8383,12 @@ msgstr "도면 및 특성의 크기를 조정하려면 드래그하세요"
 msgid "Drag to zoom"
 msgstr "드래그하여 확대/축소"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "도면"
 
@@ -8363,6 +8397,9 @@ msgstr "도면 번호"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "도면이 교체되었습니다. 풍선 배치가 제거되었으며 특성 행은 변경되지 않았습니다."
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "직배송"
@@ -9127,6 +9164,9 @@ msgstr "항목 ID에 소문자 사용을 허용하려면 활성화하세요."
 msgid "Enable to allow shared workstation mode."
 msgstr "공유 워크스테이션 모드를 허용하려면 활성화하세요."
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "담당자 또는 사업장이 없는 고객의 경우 발급 또는 전기를 차단하려면 활성화합니다."
 
@@ -9874,6 +9914,13 @@ msgstr "요청과 함께 전송되는 추가 정보(예: 인증 키); 실행 이
 msgid "Extra tags for slicing your GL reporting"
 msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "불합격"
 
@@ -10133,6 +10180,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to plan job"
 msgstr "작업 지시 계획 실패"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "계측기 기록에 실패했습니다"
 
@@ -10273,6 +10323,9 @@ msgstr "모델을 업로드하지 못했습니다"
 
 msgid "Failed to upload PDF"
 msgstr "PDF를 업로드하지 못했습니다"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "썸네일을 업로드하지 못했습니다"
@@ -17076,8 +17129,8 @@ msgstr "레코드 유형 선택…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "목록에서 단계를 선택하여 세부 사항, 구성 요소 및 자재를 편집하세요."
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "스타일과 아바타를 선택하거나 섞어서 새 아바타를 보세요."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "비교할 목표 날짜를 선택하세요."
@@ -17316,6 +17369,9 @@ msgstr "품목을 선택하세요"
 
 msgid "Please upload a CSV file of your data"
 msgstr "데이터의 CSV 파일을 업로드하세요"
+
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
 
 msgid "PO"
 msgstr "PO"
@@ -17608,6 +17664,12 @@ msgstr "라벨 인쇄"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "인쇄 출력({0})"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer route created"
 msgstr ""
@@ -19123,6 +19185,9 @@ msgstr "제거됨"
 msgid "Removed line"
 msgstr "제거된 라인"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "이 경로를 제거하면 {count}개 연결도 끊어집니다{0}. 계속하시겠습니까?"
@@ -19337,6 +19402,9 @@ msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 
 msgid "Require a Customer Contact and Location"
 msgstr "고객 담당자 및 사업장 필수"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "공급업체 담당자 및 사업장 필수"
@@ -20317,6 +20385,9 @@ msgstr "초안 저장"
 msgid "Save Method"
 msgstr "저장 방법"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
 
@@ -20349,6 +20420,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21574,6 +21648,9 @@ msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 msgid "Shuffle"
 msgstr "섞기"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21612,6 +21689,12 @@ msgstr "다음 단계로 넘어가기 전 서명 검토"
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "이 이슈를 종료하기 전에 기록해야 하는 서명으로, 워크플로에서 요구하는 서명과는 별도입니다."
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "{name}(으)로 로그인됨"
@@ -22224,6 +22307,9 @@ msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기
 
 msgid "Structure"
 msgstr "구조"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "스타일 기본값"
@@ -25702,6 +25788,9 @@ msgstr "PDF 업로드"
 msgid "Uploaded model"
 msgstr "업로드된 모델"
 
+msgid "Uploaded signature"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -27167,6 +27256,9 @@ msgstr "귀사의 장부와 자금 흐름."
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "변경사항이 이 변경 통지로 릴리스된 새로운 초안 버전으로 이동합니다."
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "콘솔 PIN"
 
@@ -27247,6 +27339,9 @@ msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습�
 
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성으로 인해 잠겼습니다."
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "원본 데이터에 접근 가능하고 어느 정도 정리되어 있음"

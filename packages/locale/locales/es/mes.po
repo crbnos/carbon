@@ -168,6 +168,9 @@ msgstr "Agregar muestra"
 msgid "Add Spare Part"
 msgstr "Agregar repuesto"
 
+msgid "Add your signature"
+msgstr ""
+
 msgid "Added"
 msgstr "Agregado"
 
@@ -256,18 +259,8 @@ msgstr "disponible"
 msgid "Available"
 msgstr "Disponible"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Opción de avatar {0}"
-
 msgid "Avatar style"
 msgstr "Estilo de avatar"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatares de <0>{0}</0> de {1}, licenciados bajo <1>{2}</1>."
 
 msgid "Back"
 msgstr "Atrás"
@@ -322,6 +315,11 @@ msgstr "Vista de tablero"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Pero no te preocupes. Puedes usar el flujo de contraseña olvidada para solicitar un nuevo enlace mágico."
 
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Al iniciar sesión, acepta los <0>Términos de servicio</0> y la <1>Política de privacidad.</1>"
 
@@ -361,6 +359,9 @@ msgstr "Revise su correo electrónico"
 msgid "Choose a job"
 msgstr "Elegir una orden de trabajo"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "Elegir una opción"
 
@@ -384,6 +385,9 @@ msgstr "Limpiar Búsqueda"
 
 msgid "Clear station default"
 msgstr "Borrar estación predeterminada"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Fichar entrada"
@@ -510,6 +514,9 @@ msgstr "Crear retrabajo"
 msgid "Current work"
 msgstr "Trabajo actual"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Customer"
 msgstr "Cliente"
 
@@ -601,6 +608,15 @@ msgstr "Arrastra para redimensionar el dibujo y características"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Se canceló el arrastre de {0}."
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "Vencimiento"
@@ -707,6 +723,13 @@ msgstr "Expira <0/>"
 msgid "Expiring first"
 msgstr "Vencimiento próximo"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "Fallido"
 
@@ -731,6 +754,9 @@ msgstr "Error al obtener unidades de almacenamiento"
 msgid "Failed to get options"
 msgstr "Error al obtener opciones"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Error al registrar el instrumento de medición"
 
@@ -753,6 +779,9 @@ msgstr "Error al subir el archivo: {0}"
 
 msgid "Failed to upload image"
 msgstr "Error al subir la imagen"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "El tamaño del archivo excede el límite de 10MB"
@@ -1452,8 +1481,8 @@ msgstr "Recoger"
 msgid "Pick {0}"
 msgstr "Picking {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Selecciona un estilo y un avatar, o mezcla para obtener nuevos."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "Seleccionar artículo rastreado"
@@ -1503,6 +1532,9 @@ msgstr "Por favor seleccione un artículo"
 msgid "PM schedule lapsed"
 msgstr "Cronograma de PM caducado"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
 msgid "Poke the spider… if you dare"
 msgstr "Toca la araña… si te atreves"
 
@@ -1526,6 +1558,12 @@ msgstr "Imprimir"
 
 msgid "Print batch list"
 msgstr "Imprimir lista de lotes de producción"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Configuración de impresora"
@@ -1640,6 +1678,9 @@ msgstr "Quitar pieza"
 msgid "Remove two-factor authentication"
 msgstr "Quitar la autenticación de dos factores"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "Renombrar"
 
@@ -1651,9 +1692,6 @@ msgstr "Requiere un código de 6 dígitos de una aplicación autenticadora al in
 
 msgid "Required"
 msgstr "Requerido"
-
-msgid "Reset"
-msgstr "Restablecer"
 
 msgid "Result"
 msgstr "Resultado"
@@ -1685,8 +1723,14 @@ msgstr "Lo mismo para cada orden de trabajo"
 msgid "Save"
 msgstr "Guardar"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Guardar el formulario que estás editando"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "Escanear"
@@ -1886,6 +1930,9 @@ msgstr "Mostrar atajos de teclado"
 msgid "Shuffle"
 msgstr "Mezclar"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Inicia sesión con biometría en lugar de un enlace mágico. Las llaves de acceso están protegidas por Face ID, Touch ID o tu PIN del dispositivo."
 
@@ -1911,6 +1958,12 @@ msgid "Sign out instead"
 msgstr "Cerrar sesión en su lugar"
 
 msgid "Sign-in code"
+msgstr ""
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr ""
 
 msgid "Signed in as {stationName}"
@@ -1974,6 +2027,9 @@ msgstr "Faltan pasos"
 
 msgid "Storage Unit"
 msgstr "Unidad de Almacenamiento"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "Estilo predeterminado"
@@ -2175,6 +2231,9 @@ msgstr "Escriba un mensaje..."
 msgid "Unable to unlock"
 msgstr "No se puede desbloquear"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "Materiales de serie/lote no emitidos"
 
@@ -2231,6 +2290,9 @@ msgstr "Subir"
 
 msgid "Upload completed but no file path returned"
 msgstr "Carga completada pero no se devolvió ninguna ruta de archivo"
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2320,6 +2382,9 @@ msgstr "Tu perfil no se pudo cargar."
 
 msgid "Your session was locked after inactivity."
 msgstr "Su sesión fue bloqueada después de la inactividad."
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

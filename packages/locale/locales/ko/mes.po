@@ -168,6 +168,9 @@ msgstr "샘플 추가"
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
 
+msgid "Add your signature"
+msgstr ""
+
 msgid "Added"
 msgstr "추가됨"
 
@@ -256,18 +259,8 @@ msgstr "가용"
 msgid "Available"
 msgstr "가용"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "아바타 옵션 {0}"
-
 msgid "Avatar style"
 msgstr "아바타 스타일"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "<0>{0}</0>의 아바타는 {1}이 만들었으며 <1>{2}</1> 라이선스로 제공됩니다."
 
 msgid "Back"
 msgstr "뒤로"
@@ -322,6 +315,11 @@ msgstr "보드 보기"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "걱정하지 마세요. 비밀번호 찾기를 통해 새 매직 링크를 요청할 수 있습니다."
 
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
@@ -361,6 +359,9 @@ msgstr "이메일을 확인하세요"
 msgid "Choose a job"
 msgstr "작업 지시 선택"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose an option"
 msgstr "옵션을 선택하세요"
 
@@ -384,6 +385,9 @@ msgstr "검색 지우기"
 
 msgid "Clear station default"
 msgstr "스테이션 기본값 초기화"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Clock In"
 msgstr "작업 시작"
@@ -510,6 +514,9 @@ msgstr "재작업 생성"
 msgid "Current work"
 msgstr "현재 작업"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Customer"
 msgstr "고객"
 
@@ -601,6 +608,15 @@ msgstr "드래그하여 도면 및 특성 크기 조정"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "{0} 드래그 취소됨."
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Due"
 msgstr "기한"
@@ -707,6 +723,13 @@ msgstr "만료 <0/>"
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Failed"
 msgstr "실패"
 
@@ -731,6 +754,9 @@ msgstr "저장 단위를 불러오지 못했습니다"
 msgid "Failed to get options"
 msgstr "옵션을 불러올 수 없습니다."
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "계측기 기록 실패"
 
@@ -753,6 +779,9 @@ msgstr "파일을 업로드하지 못했습니다: {0}"
 
 msgid "Failed to upload image"
 msgstr "이미지를 업로드하지 못했습니다"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
@@ -1452,8 +1481,8 @@ msgstr "피킹"
 msgid "Pick {0}"
 msgstr "피킹 {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "스타일과 아바타를 선택하거나 새로운 것으로 섞으세요."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
@@ -1503,6 +1532,9 @@ msgstr "품목을 선택하세요"
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
+
 msgid "Poke the spider… if you dare"
 msgstr "거미를 찔러 보세요… 용기가 있다면"
 
@@ -1526,6 +1558,12 @@ msgstr "인쇄"
 
 msgid "Print batch list"
 msgstr "배치 목록 인쇄"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "프린터 설정"
@@ -1640,6 +1678,9 @@ msgstr "품목 제거"
 msgid "Remove two-factor authentication"
 msgstr "2단계 인증 제거"
 
+msgid "Removed signature"
+msgstr ""
+
 msgid "Rename"
 msgstr "이름 바꾸기"
 
@@ -1651,9 +1692,6 @@ msgstr "로그인할 때 인증 앱에서 6자리 코드를 요구합니다."
 
 msgid "Required"
 msgstr "필수"
-
-msgid "Reset"
-msgstr "재설정"
 
 msgid "Result"
 msgstr "결과"
@@ -1685,8 +1723,14 @@ msgstr "모든 작업 지시에 동일"
 msgid "Save"
 msgstr "저장"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "편집 중인 양식 저장"
+
+msgid "Saved signature"
+msgstr ""
 
 msgid "Scan"
 msgstr "스캔"
@@ -1886,6 +1930,9 @@ msgstr "키보드 바로가기 표시"
 msgid "Shuffle"
 msgstr "섞기"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "매직 링크 대신 생체 인식으로 로그인하십시오. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
 
@@ -1911,6 +1958,12 @@ msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
 msgid "Sign-in code"
+msgstr ""
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 msgstr ""
 
 msgid "Signed in as {stationName}"
@@ -1974,6 +2027,9 @@ msgstr "단계가 누락되었습니다"
 
 msgid "Storage Unit"
 msgstr "보관 단위"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "기본 스타일"
@@ -2175,6 +2231,9 @@ msgstr "메시지를 입력하세요..."
 msgid "Unable to unlock"
 msgstr "잠금을 해제할 수 없음"
 
+msgid "Undo"
+msgstr ""
+
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"
 
@@ -2231,6 +2290,9 @@ msgstr "업로드"
 
 msgid "Upload completed but no file path returned"
 msgstr "업로드가 완료되었지만 파일 경로가 반환되지 않았습니다."
+
+msgid "Uploaded signature"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2320,6 +2382,9 @@ msgstr "프로필을 로드할 수 없었습니다."
 
 msgid "Your session was locked after inactivity."
 msgstr "비활성 후 세션이 잠겼습니다."
+
+msgid "Your signature"
+msgstr ""
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

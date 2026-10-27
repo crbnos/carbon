@@ -60,6 +60,7 @@ import { getDocumentApproval } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
+  getContentType,
   getFileExtension,
   isStoredDocumentPdf,
   storage,
@@ -105,6 +106,7 @@ import {
   paymentMonthIndex,
   remeasureLease,
   round,
+  SIGNATURES_BUCKET,
   searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -618,14 +620,22 @@ export async function getPurchaseOrderLocations(
  * Who approved a purchase order and on which day in the company's timezone:
  * the PDF's `order.approved*` merge fields, the order's properties panel and
  * `purchasing.getPurchaseOrderApproval`. Null when it was not approved.
+ * `withSignature` also reads the approver's signature recorded at approval,
+ * as a data URL for the PDF; a missing file prints the name and date only.
  */
 export async function getPurchaseOrderApproval(
   serviceRole: SupabaseClient<Database>,
   {
     companyId,
     purchaseOrderId,
-    timezone
-  }: { companyId: string; purchaseOrderId: string; timezone: string }
+    timezone,
+    withSignature = false
+  }: {
+    companyId: string;
+    purchaseOrderId: string;
+    timezone: string;
+    withSignature?: boolean;
+  }
 ): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
   const approval = await getDocumentApproval(
     serviceRole,
@@ -637,8 +647,29 @@ export async function getPurchaseOrderApproval(
   return {
     approvedBy: approval.approvedBy,
     approvedById: approval.approvedById,
-    approvedDate: datetime.businessDay(approval.approvedAt, timezone).toString()
+    approvedDate: datetime
+      .businessDay(approval.approvedAt, timezone)
+      .toString(),
+    signature:
+      withSignature && approval.signaturePath
+        ? await getSignatureDataUrl(serviceRole, approval.signaturePath)
+        : null
   };
+}
+
+async function getSignatureDataUrl(
+  serviceRole: SupabaseClient<Database>,
+  path: string
+) {
+  const { data, error } = await serviceRole.storage
+    .from(SIGNATURES_BUCKET)
+    .download(path);
+  if (!data) {
+    logger.warn("Failed to read an approval signature", { path, error });
+    return null;
+  }
+  const bytes = Buffer.from(await data.arrayBuffer()).toString("base64");
+  return `data:${getContentType(getFileExtension(path))};base64,${bytes}`;
 }
 
 export async function getPurchaseOrderPayment(

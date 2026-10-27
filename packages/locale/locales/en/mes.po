@@ -168,6 +168,9 @@ msgstr "Add Sample"
 msgid "Add Spare Part"
 msgstr "Add Spare Part"
 
+msgid "Add your signature"
+msgstr "Add your signature"
+
 msgid "Added"
 msgstr "Added"
 
@@ -256,18 +259,8 @@ msgstr "available"
 msgid "Available"
 msgstr "Available"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Avatar option {0}"
-
 msgid "Avatar style"
 msgstr "Avatar style"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 
 msgid "Back"
 msgstr "Back"
@@ -322,6 +315,11 @@ msgstr "Board view"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "But don't worry. You can use the forgot password flow to request a new magic link."
 
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr "By <0>{0}</0>, <1>{1}</1>"
+
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 
@@ -361,6 +359,9 @@ msgstr "Check your email"
 msgid "Choose a job"
 msgstr "Choose a job"
 
+msgid "Choose a PNG or JPG image"
+msgstr "Choose a PNG or JPG image"
+
 msgid "Choose an option"
 msgstr "Choose an option"
 
@@ -384,6 +385,9 @@ msgstr "Clear Search"
 
 msgid "Clear station default"
 msgstr "Clear station default"
+
+msgid "Click or drop to replace"
+msgstr "Click or drop to replace"
 
 msgid "Clock In"
 msgstr "Clock In"
@@ -510,6 +514,9 @@ msgstr "Create Rework"
 msgid "Current work"
 msgstr "Current work"
 
+msgid "Custom color"
+msgstr "Custom color"
+
 msgid "Customer"
 msgstr "Customer"
 
@@ -601,6 +608,15 @@ msgstr "Drag to resize drawing and characteristics"
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
 msgstr "Dragging {0} cancelled."
+
+msgid "Draw"
+msgstr "Draw"
+
+msgid "Draw it, or upload an image of it."
+msgstr "Draw it, or upload an image of it."
+
+msgid "Drop an image of your signature"
+msgstr "Drop an image of your signature"
 
 msgid "Due"
 msgstr "Due"
@@ -707,6 +723,13 @@ msgstr "Expires <0/>"
 msgid "Expiring first"
 msgstr "Expiring first"
 
+msgid "Face"
+msgstr "Face"
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr "Face {0}"
+
 msgid "Failed"
 msgstr "Failed"
 
@@ -731,6 +754,9 @@ msgstr "Failed to fetch storageUnits"
 msgid "Failed to get options"
 msgstr "Failed to get options"
 
+msgid "Failed to process image"
+msgstr "Failed to process image"
+
 msgid "Failed to record gauge"
 msgstr "Failed to record gauge"
 
@@ -753,6 +779,9 @@ msgstr "Failed to upload file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Failed to upload image"
+
+msgid "Failed to upload signature"
+msgstr "Failed to upload signature"
 
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
@@ -1452,8 +1481,8 @@ msgstr "Pick"
 msgid "Pick {0}"
 msgstr "Pick {0}"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Pick a style and an avatar, or shuffle for new ones."
+msgid "Pick a style, a color and a face."
+msgstr "Pick a style, a color and a face."
 
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
@@ -1503,6 +1532,9 @@ msgstr "Please select an item"
 msgid "PM schedule lapsed"
 msgstr "PM schedule lapsed"
 
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr "PNG or JPG, dark ink on a plain background"
+
 msgid "Poke the spider… if you dare"
 msgstr "Poke the spider… if you dare"
 
@@ -1526,6 +1558,12 @@ msgstr "Print"
 
 msgid "Print batch list"
 msgstr "Print batch list"
+
+msgid "Printed on the purchase orders you approve."
+msgstr "Printed on the purchase orders you approve."
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr "Printed on the purchase orders you approve. Only you can see it here."
 
 msgid "Printer Settings"
 msgstr "Printer Settings"
@@ -1640,6 +1678,9 @@ msgstr "Remove part"
 msgid "Remove two-factor authentication"
 msgstr "Remove two-factor authentication"
 
+msgid "Removed signature"
+msgstr "Removed signature"
+
 msgid "Rename"
 msgstr "Rename"
 
@@ -1651,9 +1692,6 @@ msgstr "Require a 6-digit code from an authenticator app when signing in."
 
 msgid "Required"
 msgstr "Required"
-
-msgid "Reset"
-msgstr "Reset"
 
 msgid "Result"
 msgstr "Result"
@@ -1685,8 +1723,14 @@ msgstr "Same for every job"
 msgid "Save"
 msgstr "Save"
 
+msgid "Save signature"
+msgstr "Save signature"
+
 msgid "Save the form you're editing"
 msgstr "Save the form you're editing"
+
+msgid "Saved signature"
+msgstr "Saved signature"
 
 msgid "Scan"
 msgstr "Scan"
@@ -1886,6 +1930,9 @@ msgstr "Show keyboard shortcuts"
 msgid "Shuffle"
 msgstr "Shuffle"
 
+msgid "Sign here"
+msgstr "Sign here"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
@@ -1912,6 +1959,12 @@ msgstr "Sign out instead"
 
 msgid "Sign-in code"
 msgstr "Sign-in code"
+
+msgid "Signature"
+msgstr "Signature"
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
 
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
@@ -1974,6 +2027,9 @@ msgstr "Steps are missing"
 
 msgid "Storage Unit"
 msgstr "Storage Unit"
+
+msgid "Style"
+msgstr "Style"
 
 msgid "Style default"
 msgstr "Style default"
@@ -2175,6 +2231,9 @@ msgstr "Type a message..."
 msgid "Unable to unlock"
 msgstr "Unable to unlock"
 
+msgid "Undo"
+msgstr "Undo"
+
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"
 
@@ -2231,6 +2290,9 @@ msgstr "Upload"
 
 msgid "Upload completed but no file path returned"
 msgstr "Upload completed but no file path returned"
+
+msgid "Uploaded signature"
+msgstr "Uploaded signature"
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -2320,6 +2382,9 @@ msgstr "Your profile could not be loaded."
 
 msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."
+
+msgid "Your signature"
+msgstr "Your signature"
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
