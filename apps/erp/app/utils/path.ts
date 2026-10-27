@@ -2644,6 +2644,8 @@ export const path = {
       generatePath(`${x}/resources/work-centers/${id}`),
     workCenterActivate: (id: string) =>
       generatePath(`${x}/resources/work-centers/activate/${id}`),
+    workCenterDeactivate: (id: string) =>
+      generatePath(`${x}/resources/work-centers/deactivate/${id}`),
     workCenters: `${x}/resources/work-centers`,
     workflow: (id: string) => generatePath(`${x}/workflow/${id}`),
     workflowCanvas: (id: string) => generatePath(`${x}/workflow/${id}/canvas`),

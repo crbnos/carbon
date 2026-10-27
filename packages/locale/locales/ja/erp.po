@@ -642,6 +642,9 @@ msgstr "プロバイダーに {missingCount} 件の仕訳が不足していま�
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} 件の不足している仕訳と {mismatchCount} ヶ月のミスマッチ"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
@@ -3513,8 +3516,14 @@ msgstr "このチェックポイントをパスしてもよろしいですか？
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "{0}を完全に削除してもよろしいですか？"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "仕入先工法を完全に削除してもよろしいですか？"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "この銀行口座を完全に削除してもよろしいですか？"
@@ -5837,6 +5846,9 @@ msgstr "短縮"
 msgid "Contractor"
 msgstr "外部作業者"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "外部作業者"
 
@@ -7797,6 +7809,9 @@ msgstr "倉庫移動を削除"
 
 msgid "Delete Webhook"
 msgstr "Webhookを削除"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "ワークフローを削除"
@@ -10522,6 +10537,9 @@ msgstr "固定資産クラス"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "固定資産"
 
@@ -12208,6 +12226,9 @@ msgstr "問題"
 msgid "Issue (material)"
 msgstr "発行（材料）"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "クレジット発行"
 
@@ -12343,6 +12364,9 @@ msgstr "品目ページ"
 msgid "Item Scope"
 msgstr "アイテムスコープ"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "品目タイプ"
 
@@ -12426,6 +12450,9 @@ msgstr "指図工程"
 
 msgid "Job operation batch"
 msgstr "指図工程バッチ"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "指図工程"
@@ -13261,6 +13288,9 @@ msgstr "機械"
 msgid "Machine Costs"
 msgstr "機械費"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "機械時間"
 
@@ -13275,6 +13305,9 @@ msgstr "機械レート"
 
 msgid "Machine Rate (Hourly)"
 msgstr "機械レート（時間単位）"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "機械時間"
@@ -13327,8 +13360,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "保全指示通知"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "保全指示"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "保全費用"
@@ -13338,6 +13380,9 @@ msgstr "保全費用（デフォルト）"
 
 msgid "Maintenance parts"
 msgstr "保全部品"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "保全スケジュール"
@@ -13843,6 +13888,9 @@ msgstr "メソッドID"
 
 msgid "Method Materials"
 msgstr "方法材料"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "製法工程"
@@ -16213,6 +16261,9 @@ msgstr "操作"
 msgid "Operation batch"
 msgstr "工程バッチ"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16710,6 +16761,9 @@ msgstr "部分認識済"
 
 msgid "Partner"
 msgstr "パートナー"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "パートナー"
@@ -17654,6 +17708,9 @@ msgstr "生産イベント"
 msgid "Production Event"
 msgstr "生産イベント"
 
+msgid "production events"
+msgstr ""
+
 msgid "Production events"
 msgstr "生産イベント"
 
@@ -18111,6 +18168,9 @@ msgstr "資格は教育訓練後、この日数で失効します。空白=な�
 msgid "Qualified"
 msgstr "適格"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "適格従業員"
 
@@ -18283,6 +18343,9 @@ msgstr "見積もりが見つかりません"
 
 msgid "Quote Number"
 msgstr "見積番号"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "見積から現金へ"
@@ -19225,6 +19288,9 @@ msgstr "で置き換える"
 
 msgid "Replacement Order"
 msgstr "交換注文"
+
+msgid "replacement parts"
+msgstr ""
 
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDFを置き換えると、このドキュメント上のすべてのバルーン配置が削除されます。特性行とその値は保持されます。新しい図面でバルーンを再度配置できます。"
@@ -25025,6 +25091,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "アカデミーとアプリ内ガイドを使用してチームを教育訓練します。"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "教育訓練"
 
@@ -25217,6 +25286,9 @@ msgstr "ルールの割り当てを解除"
 
 msgid "Unassigned"
 msgstr "未割り当て"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "未割り当て時間"
@@ -26910,6 +26982,9 @@ msgstr "作業区"
 
 msgid "Work Centers"
 msgstr "作業区"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "仕掛品(WIP)"

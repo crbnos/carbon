@@ -572,7 +572,7 @@ export const deactivateWorkCenter = defineServiceFn({
   permission: { delete: "resources" },
 
   async run(ctx, { id }) {
-    const deactivated = await service.deleteWorkCenter(
+    const deactivated = await service.deactivateWorkCenter(
       ctx.asCaller.supabase,
       id
     );
@@ -591,6 +591,63 @@ export const deactivateWorkCenter = defineServiceFn({
       id
     );
     return { id };
+  }
+});
+
+/**
+ * Delete a work center.
+ *
+ * @remarks
+ * Refused while anything references it: operations on a method, quote or
+ * job, production events, maintenance, lineside storage units, fixed assets
+ * or machine devices. Deactivate it instead. Its process links, shifts and
+ * rule assignments go with it, and the scheduler is told.
+ *
+ * @mcp destructive
+ */
+export const deleteWorkCenter = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { delete: "resources" },
+
+  async run(ctx, { id }) {
+    const result = await ctx.transaction(async (tx) => {
+      const deleted = await service.deleteWorkCenter(tx.asSystem.pg, {
+        id,
+        companyId: ctx.company.id
+      });
+      if (!deleted.found) return ctx.error("notFound", "Work center not found");
+      if (!deleted.deleted) {
+        return ctx.error(
+          "conflict",
+          service.referencedRefusal("work center", deleted.references)
+        );
+      }
+      return { id };
+    });
+    if (result.error) return result.error;
+
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "work-center",
+      "Work center deleted",
+      id
+    );
+    return { id };
+  }
+});
+
+/**
+ * What references a work center: the rows that block deleting it.
+ */
+export const getWorkCenterReferences = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { view: "resources" },
+
+  async run(ctx, { id }) {
+    return service.getWorkCenterReferences(ctx.asSystem.pg, {
+      id,
+      companyId: ctx.company.id
+    });
   }
 });
 
@@ -1875,19 +1932,48 @@ export const processDeactivate = defineServiceFn({
 /**
  * Delete process
  *
+ * @remarks
+ * Refused while anything references it: operations on a method, quote or
+ * job, procedures, trainings, issue actions, supplier processes, shelf life
+ * rules, or employees, contractors, partners and work centers holding its
+ * ability. Deactivate it instead. Its work center links go with it.
+ *
  * @mcp destructive
  */
 export const deleteProcess = defineServiceFn({
-  input: z.looseObject({ processId: z.string() }),
+  input: z.object({ processId: z.string() }),
   permission: { delete: "resources" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteProcess(
-        ctx.asCaller.supabase,
-        input.processId as never
-      )
-    );
+  async run(ctx, { processId }) {
+    const result = await ctx.transaction(async (tx) => {
+      const deleted = await service.deleteProcess(tx.asSystem.pg, {
+        id: processId,
+        companyId: ctx.company.id
+      });
+      if (!deleted.found) return ctx.error("notFound", "Process not found");
+      if (!deleted.deleted) {
+        return ctx.error(
+          "conflict",
+          service.referencedRefusal("process", deleted.references)
+        );
+      }
+      return { processId };
+    });
+    if (result.error) return result.error;
+    return { processId };
+  }
+});
+
+/**
+ * What references a process: the rows that block deleting it.
+ */
+export const getProcessReferences = defineServiceFn({
+  input: z.object({ processId: z.string() }),
+  permission: { view: "resources" },
+  async run(ctx, { processId }) {
+    return service.getProcessReferences(ctx.asSystem.pg, {
+      id: processId,
+      companyId: ctx.company.id
+    });
   }
 });
 
