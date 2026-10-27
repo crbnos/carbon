@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { isUniqueViolation, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useNavigate, useParams } from "react-router";
 import { customerContactValidator } from "~/modules/sales/sales.models";
@@ -23,7 +23,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "sales"
   });
 
-  // RLS doesn't work for selecting a contact with no customer
   const client = getCarbonServiceRole();
 
   const { customerId } = params;
@@ -63,44 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
   if (createCustomerContact.error) {
-    let errorMessage = "Failed to create customer contact";
-    if (isUniqueViolation(createCustomerContact.error)) {
-      const contact = await client
-        .from("contact")
-        .select("id")
-        .eq("email", validation.data.email)
-        .eq("companyId", companyId)
-        .single();
-      if (contact.data) {
-        const customerContact = await client
-          .from("customerContact")
-          .select("customerId")
-          .eq("contactId", contact.data.id)
-          .single();
-        if (customerContact.data) {
-          const customer = await client
-            .from("customer")
-            .select("name")
-            .eq("id", customerContact.data.customerId)
-            .single();
-          errorMessage = `Contact ${validation.data.email} already exists for ${customer.data?.name}`;
-        } else {
-          const supplierContact = await client
-            .from("supplierContact")
-            .select("supplierId")
-            .eq("contactId", contact.data.id)
-            .single();
-          if (supplierContact.data) {
-            const supplier = await client
-              .from("supplier")
-              .select("name")
-              .eq("id", supplierContact.data.supplierId)
-              .single();
-            errorMessage = `Contact ${validation.data.email} already exists for ${supplier.data?.name}`;
-          }
-        }
-      }
-    }
+    const errorMessage = "Failed to create customer contact";
 
     return modal
       ? data(error(createCustomerContact.error, errorMessage), {

@@ -42,7 +42,8 @@ Key columns (both, unless noted):
 `id` (default `xid()`), `firstName`, `lastName`, `fullName` (GENERATED `firstName || ' ' || lastName` STORED), `email` (**nullable** since `20251224160904`), `title`, `mobilePhone`, `homePhone`, `workPhone`, `fax`, `notes`, `isCustomer` BOOLEAN NOT NULL DEFAULT TRUE, `companyId`.
 - `isCustomer` distinguishes a contact as customer-side (`true`) vs supplier-side (`false`); set at insert time.
 - Contact has **no address fields** — `addressLine1/city/state/postalCode/countryCode/birthday` were dropped (`20240813152858`). Addresses live in the `address` table.
-- Email is **not** uniquely constrained anymore (the partial unique index was dropped in `20260112120041`).
+- Email is **not** uniquely constrained. `20260112120041` meant to drop the partial unique index but named it unquoted, so Postgres lower-cased the name and `IF EXISTS` dropped nothing; `20261027162653` drops it for real.
+- A contact belongs to exactly one `customerContact` or `supplierContact` row. Deleting that link (directly, or by cascade when its customer or supplier is deleted) deletes the contact too: the `sync_delete_unlinked_contact` after-interceptor on both link tables. Before it, a deleted customer left its contacts behind, invisible in the app.
 
 ### `customerContact` / `supplierContact` (join: entity ↔ contact)
 `id` (default `xid()`), `customerId`/`supplierId` → entity (ON DELETE CASCADE), `contactId` → `contact` (CASCADE), `customerLocationId`/`supplierLocationId` → location (nullable, SET NULL), `userId` → `user` (nullable), `tags`, `customFields`.
