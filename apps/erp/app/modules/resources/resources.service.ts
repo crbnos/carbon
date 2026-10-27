@@ -412,8 +412,10 @@ export async function getProcessReferences(
 /**
  * Lock the row, then delete it only when nothing references it. The lock
  * conflicts with the key-share lock every referencing insert takes, so no
- * reference can land between the count and the delete. Run it inside a
- * transaction.
+ * reference can land between the count and the delete. A process's ability
+ * rows are locked too: a qualification, contractor, partner or required
+ * ability locks the ability, not the process, and deleting the process
+ * cascades through it. Run it inside a transaction.
  */
 async function deleteIfUnreferenced<C extends ReferenceCheck>(
   db: Kysely<KyselyDatabase>,
@@ -432,6 +434,16 @@ async function deleteIfUnreferenced<C extends ReferenceCheck>(
     .forUpdate()
     .executeTakeFirst();
   if (!locked) return { found: false };
+
+  if (table === "process") {
+    await db
+      .selectFrom("ability")
+      .select("id")
+      .where("processId", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .execute();
+  }
 
   const references = await countReferences(db, checks, args);
   if (references.length > 0) {
