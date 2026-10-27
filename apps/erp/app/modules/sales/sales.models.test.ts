@@ -20,6 +20,8 @@ vi.mock("@lingui/core/macro", () => ({
 
 const {
   contractTermFromServicePeriods,
+  priceOverrideValidator,
+  priceTraceStepValidator,
   quoteLineValidator,
   quoteValidator,
   rentalAgreementChargeValidator,
@@ -260,5 +262,43 @@ describe("contractTermFromServicePeriods", () => {
       duration: "custom",
       endDate: "2027-03-15"
     });
+  });
+});
+
+describe("priceOverrideValidator scope", () => {
+  const form = { itemId: "item_1", active: "on", applyRulesOnTop: "on" };
+  const scopeError = (values: Record<string, string>) =>
+    priceOverrideValidator.safeParse({ ...form, ...values }).error?.issues[0];
+
+  it("refuses an override with no scope", () => {
+    expect(scopeError({ customerId: "", customerTypeId: "" })).toMatchObject({
+      message: "Choose a customer, a customer type, or All Customers",
+      path: ["customerId"]
+    });
+  });
+
+  it("accepts All Customers, a customer, or a type", () => {
+    expect(scopeError({ allCustomers: "on" })).toBeUndefined();
+    expect(scopeError({ customerId: "cust_1" })).toBeUndefined();
+    expect(scopeError({ customerTypeId: "type_1" })).toBeUndefined();
+  });
+
+  it("refuses All Customers with a customer", () => {
+    expect(
+      scopeError({ allCustomers: "on", customerId: "cust_1" })?.message
+    ).toBe("All Customers cannot also name a customer or type");
+  });
+});
+
+describe("priceTraceStepValidator", () => {
+  it("keeps the override a step applied", () => {
+    expect(
+      priceTraceStepValidator.parse({
+        step: "All Override",
+        source: "All Customers Override",
+        amount: 6679,
+        overrideId: "ovr_1"
+      }).overrideId
+    ).toBe("ovr_1");
   });
 });

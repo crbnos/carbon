@@ -16537,6 +16537,9 @@ msgstr "Override price for a single customer"
 msgid "Override price for all customers of a type"
 msgstr "Override price for all customers of a type"
 
+msgid "Override price for every customer"
+msgstr "Override price for every customer"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Override reason: {0}"
@@ -17004,8 +17007,8 @@ msgstr "Pick a Carbon dimension and the provider target it posts to. Auto-create
 msgid "Pick a column to sort by"
 msgstr "Pick a column to sort by"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Pick a customer or customer type to view their pricing."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Pick a customer, a customer type, or All Customers to view their pricing."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Pick a date or leave blank to clear it."

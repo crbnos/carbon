@@ -236,6 +236,8 @@ import {
   decideRecalcPricing,
   getDefaultRentalRates,
   getEffectiveDefaultMarkups,
+  priceListOverrideScopes,
+  priceOverrideScopeError,
   QUOTE_BASE_PRICE_SOURCES,
   resolvePreservedQuoteLinePriceFields,
   toMatchedRule,
@@ -2344,7 +2346,8 @@ export async function resolvePrice(
           ? `Customer Price Override: ${override.notes}`
           : "Customer Price Override",
         amount: override.overridePrice,
-        adjustment: override.overridePrice - basePrice
+        adjustment: override.overridePrice - basePrice,
+        overrideId: override.id
       });
     }
   }
@@ -2369,7 +2372,8 @@ export async function resolvePrice(
           ? `Customer Type Override: ${typeOverride.notes}`
           : "Customer Type Override",
         amount: typeOverride.overridePrice,
-        adjustment: typeOverride.overridePrice - basePrice
+        adjustment: typeOverride.overridePrice - basePrice,
+        overrideId: typeOverride.id
       });
     }
   }
@@ -2393,7 +2397,8 @@ export async function resolvePrice(
           ? `All Customers Override: ${allOverride.notes}`
           : "All Customers Override",
         amount: allOverride.overridePrice,
-        adjustment: allOverride.overridePrice - basePrice
+        adjustment: allOverride.overridePrice - basePrice,
+        overrideId: allOverride.id
       });
     }
   }
@@ -2516,6 +2521,7 @@ export async function resolvePriceList(
   args: GenericQueryFilters & {
     customerId?: string;
     customerTypeId?: string;
+    allCustomers?: boolean;
     search?: string;
     quantity?: number;
   }
@@ -2525,23 +2531,42 @@ export async function resolvePriceList(
     .toString();
   const previewQuantity = Math.max(args.quantity ?? 1, 0);
 
-  let scopeQuery = client
-    .from("customerItemPriceOverride")
-    .select("itemId")
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  if (args.customerId) {
-    scopeQuery = scopeQuery.eq("customerId", args.customerId);
-  } else if (args.customerTypeId) {
-    scopeQuery = scopeQuery.eq("customerTypeId", args.customerTypeId);
-  } else {
-    return { data: [], count: 0, error: null };
+  let resolvedCustomerTypeId = args.customerTypeId ?? null;
+  if (args.customerId && !resolvedCustomerTypeId) {
+    const { data: cust, error: customerError } = await client
+      .from("customer")
+      .select("customerTypeId")
+      .eq("id", args.customerId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (customerError) return { data: [], count: 0, error: customerError };
+    resolvedCustomerTypeId = cust?.customerTypeId ?? null;
   }
 
-  const { data: scopedOverrides, error: scopeError } = await scopeQuery;
+  // A scope lists the items its own overrides price and the ones it inherits
+  // (its type's, every customer's): each of those prices is what it pays.
+  const scopes = priceListOverrideScopes(args, resolvedCustomerTypeId);
+  if (scopes.length === 0) return { data: [], count: 0, error: null };
+
+  const scopeResults = await Promise.all(
+    scopes.map((scope) => {
+      const query = client
+        .from("customerItemPriceOverride")
+        .select("itemId")
+        .eq("companyId", companyId)
+        .eq("active", true);
+      if (scope.customerId) return query.eq("customerId", scope.customerId);
+      if (scope.customerTypeId) {
+        return query.eq("customerTypeId", scope.customerTypeId);
+      }
+      return query.is("customerId", null).is("customerTypeId", null);
+    })
+  );
+  const scopeError = scopeResults.find((r) => r.error)?.error;
   if (scopeError) return { data: [], count: 0, error: scopeError };
-  const overriddenItemIds = (scopedOverrides ?? []).map((r) => r.itemId);
+  const overriddenItemIds = [
+    ...new Set(scopeResults.flatMap((r) => (r.data ?? []).map((o) => o.itemId)))
+  ];
   if (overriddenItemIds.length === 0) {
     return { data: [], count: 0, error: null };
   }
@@ -2587,17 +2612,6 @@ export async function resolvePriceList(
   }
 
   const itemIds = items.map((i) => i.id);
-
-  let resolvedCustomerTypeId = args.customerTypeId ?? null;
-  if (args.customerId && !resolvedCustomerTypeId) {
-    const { data: cust, error: customerError } = await client
-      .from("customer")
-      .select("customerTypeId")
-      .eq("id", args.customerId)
-      .maybeSingle();
-    if (customerError) return { data: [], count: 0, error: customerError };
-    resolvedCustomerTypeId = cust?.customerTypeId ?? null;
-  }
 
   const overrideSelect =
     "id, itemId, notes, validFrom, validTo, applyRulesOnTop, breaks:customerItemPriceOverrideBreak(id, quantity, overridePrice, active)";
@@ -2725,7 +2739,8 @@ export async function resolvePriceList(
             ? `Customer Price Override: ${override.notes}`
             : "Customer Price Override",
           amount: override.overridePrice,
-          adjustment: override.overridePrice - basePrice
+          adjustment: override.overridePrice - basePrice,
+          overrideId: override.id
         });
       } else if (typeOverride) {
         overrideSource = "Type Override";
@@ -2735,7 +2750,8 @@ export async function resolvePriceList(
             ? `Customer Type Override: ${typeOverride.notes}`
             : "Customer Type Override",
           amount: typeOverride.overridePrice,
-          adjustment: typeOverride.overridePrice - basePrice
+          adjustment: typeOverride.overridePrice - basePrice,
+          overrideId: typeOverride.id
         });
       } else if (allOverride) {
         overrideSource = "All Override";
@@ -2745,7 +2761,8 @@ export async function resolvePriceList(
             ? `All Customers Override: ${allOverride.notes}`
             : "All Customers Override",
           amount: allOverride.overridePrice,
-          adjustment: allOverride.overridePrice - basePrice
+          adjustment: allOverride.overridePrice - basePrice,
+          overrideId: allOverride.id
         });
       }
     }
@@ -2954,6 +2971,7 @@ export async function upsertCustomerItemPriceOverride(
     id?: string;
     customerId?: string;
     customerTypeId?: string;
+    allCustomers?: boolean;
     itemId: string;
     breaks: PriceOverrideBreak[];
     active: boolean;
@@ -2963,11 +2981,9 @@ export async function upsertCustomerItemPriceOverride(
     validTo?: string;
   }
 ) {
-  if (data.customerId && data.customerTypeId) {
-    return {
-      data: null,
-      error: { message: "Cannot set both customerId and customerTypeId" }
-    };
+  const scopeError = priceOverrideScopeError(data);
+  if (scopeError) {
+    return { data: null, error: { message: scopeError } };
   }
 
   // Kysely bypasses RLS and the dispatcher reaches this with caller-supplied

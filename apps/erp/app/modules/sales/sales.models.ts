@@ -30,7 +30,10 @@ import {
   standardFactorType,
   taxExemptionReasons
 } from "../shared/shared.models";
-import { pricingRuleConfigurationPriceValidator } from "./sales.utils";
+import {
+  priceOverrideScopeError,
+  pricingRuleConfigurationPriceValidator
+} from "./sales.utils";
 
 export const KPIs = [
   {
@@ -311,15 +314,17 @@ export const priceOverrideValidator = z
     itemId: z.string().min(1),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: zfd.checkbox(),
     active: zfd.checkbox(),
     applyRulesOnTop: zfd.checkbox(),
     validFrom: zfd.text(z.string().optional()),
     validTo: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional())
   })
-  .refine((d) => !(d.customerId && d.customerTypeId), {
-    message: "Cannot set both Customer and Customer Type",
-    path: ["customerId"]
+  .superRefine((d, ctx) => {
+    const message = priceOverrideScopeError(d);
+    if (message)
+      ctx.addIssue({ code: "custom", message, path: ["customerId"] });
   })
   .refine((d) => !d.validFrom || !d.validTo || d.validFrom <= d.validTo, {
     message: "Valid From must be on or before Valid To",
@@ -368,6 +373,7 @@ export const priceTraceStepValidator = z.object({
   amount: z.number(),
   adjustment: z.number().optional(),
   ruleId: z.string().optional(),
+  overrideId: z.string().optional(),
   label: z.string().optional()
 });
 

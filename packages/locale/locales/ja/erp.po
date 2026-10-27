@@ -16537,6 +16537,9 @@ msgstr "単一の得意先の価格を上書きする"
 msgid "Override price for all customers of a type"
 msgstr "得意先タイプのすべての得意先の価格を上書きする"
 
+msgid "Override price for every customer"
+msgstr "すべての得意先の価格を上書きする"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "上書き理由: {0}"
@@ -17004,8 +17007,8 @@ msgstr "Carbonディメンションと、それを投稿するプロバイダー
 msgid "Pick a column to sort by"
 msgstr "ソート対象の列を選択"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "得意先または得意先タイプを選択して価格設定を表示。"
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "得意先、得意先タイプ、または「すべての得意先」を選択して、その価格を表示します。"
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "日付を選択するか、空白のままにしてクリアしてください。"

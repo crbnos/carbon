@@ -16537,6 +16537,9 @@ msgstr "Preis für einen einzelnen Kunden übersteuern"
 msgid "Override price for all customers of a type"
 msgstr "Preis für alle Kunden eines Typs übersteuern"
 
+msgid "Override price for every customer"
+msgstr "Preis für jeden Kunden übersteuern"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Übersteuerungsgrund: {0}"
@@ -17004,8 +17007,8 @@ msgstr "Wählen Sie eine Carbon-Dimension und das Provider-Ziel aus, an das sie 
 msgid "Pick a column to sort by"
 msgstr "Wählen Sie eine Spalte zum Sortieren"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Wählen Sie einen Kunden oder Kundentyp aus, um deren Preisfindung anzuzeigen."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Wählen Sie einen Kunden, einen Kundentyp oder Alle Kunden aus, um deren Preise anzuzeigen."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Wählen Sie ein Datum oder lassen Sie es leer, um es zu löschen."

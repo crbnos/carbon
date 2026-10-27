@@ -16537,6 +16537,9 @@ msgstr "एक एकल ग्राहक के लिए मूल्य ओ
 msgid "Override price for all customers of a type"
 msgstr "सभी प्रकार के ग्राहकों के लिए मूल्य ओवरराइड करें"
 
+msgid "Override price for every customer"
+msgstr "सभी ग्राहकों के लिए मूल्य ओवरराइड करें"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "ओवरराइड कारण: {0}"
@@ -17004,8 +17007,8 @@ msgstr "एक Carbon आयाम चुनें और वह प्रदा
 msgid "Pick a column to sort by"
 msgstr "सॉर्ट करने के लिए एक कॉलम चुनें"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "उनकी मूल्य निर्धारण देखने के लिए एक ग्राहक या ग्राहक प्रकार चुनें।"
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "कोई ग्राहक, ग्राहक प्रकार, या सभी ग्राहक चुनें, उनके मूल्य देखने के लिए।"
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "एक तारीख चुनें या इसे साफ करने के लिए खाली छोड़ें।"

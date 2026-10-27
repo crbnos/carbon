@@ -16537,6 +16537,9 @@ msgstr "Forzatura prezzo per un singolo cliente"
 msgid "Override price for all customers of a type"
 msgstr "Forzatura prezzo per tutti i clienti di un tipo"
 
+msgid "Override price for every customer"
+msgstr "Sovrascrivi il prezzo per tutti i clienti"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Motivo della forzatura: {0}"
@@ -17004,8 +17007,8 @@ msgstr "Scegli una dimensione Carbon e il target provider su cui viene contabili
 msgid "Pick a column to sort by"
 msgstr "Scegli una colonna per ordinare"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Seleziona un cliente o un tipo di cliente per visualizzare i loro prezzi."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Scegli un cliente, un tipo di cliente o Tutti i clienti per visualizzare i loro prezzi."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Scegli una data o lascia vuoto per cancellarla."
