@@ -81,6 +81,9 @@ import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
+const ModelUploadPreview = lazy(
+  () => import("@carbon/viewer/model-upload-preview")
+);
 
 // Vertical-stack sizing, mirrored from the ERP quality InspectionView: the PDF
 // pane keeps a pinned height while the features table is expanded; a draggable
@@ -139,6 +142,8 @@ type InspectionViewProps = {
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   pdfUrl: string | null;
+  /** A plan made from a model's PMI: the drawing pane shows the model. */
+  model: { modelUploadId: string; modelPath: string | null } | null;
   issueTypes: IssueTypeListItem[];
   trackedEntities: TrackedEntity[];
   requiresSerialTracking: boolean;
@@ -171,6 +176,7 @@ export function InspectionView({
   balloons,
   documentName,
   pdfUrl,
+  model,
   issueTypes,
   trackedEntities,
   requiresSerialTracking,
@@ -198,7 +204,7 @@ export function InspectionView({
     [features]
   );
   const hasFeatures = liveFeatures.length > 0;
-  const showDrawing = pdfUrl != null;
+  const showDrawing = pdfUrl != null || model != null;
 
   const scannerDisclosure = useDisclosure();
   const rejectDisclosure = useDisclosure();
@@ -554,6 +560,14 @@ export function InspectionView({
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
 
+  const pmiLinks = useMemo(
+    () =>
+      liveFeatures.map((f) => ({
+        id: f.inspectionFeatureId,
+        pmiItemId: f.inspectionFeature!.pmiItemId ?? null
+      })),
+    [liveFeatures]
+  );
   const drawingBalloons = useMemo(() => {
     const labelByFeatureId = new Map(
       liveFeatures.map((f) => [
@@ -841,12 +855,24 @@ export function InspectionView({
                         </div>
                       }
                     >
-                      <InspectionDrawingPane
-                        pdfUrl={pdfUrl!}
-                        balloons={drawingBalloons}
-                        activeFeatureId={activeFeatureId}
-                        onBalloonClick={setActiveFeatureId}
-                      />
+                      {model ? (
+                        <ModelUploadPreview
+                          modelUploadId={model.modelUploadId}
+                          modelPath={model.modelPath}
+                          companyId={user.company.id}
+                          pmiLinks={pmiLinks}
+                          selectedLinkId={activeFeatureId}
+                          onLinkSelect={setActiveFeatureId}
+                          className="h-full rounded-none"
+                        />
+                      ) : (
+                        <InspectionDrawingPane
+                          pdfUrl={pdfUrl!}
+                          balloons={drawingBalloons}
+                          activeFeatureId={activeFeatureId}
+                          onBalloonClick={setActiveFeatureId}
+                        />
+                      )}
                     </Suspense>
                   )}
                 </ClientOnly>

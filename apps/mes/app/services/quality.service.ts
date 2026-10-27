@@ -32,7 +32,7 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
@@ -96,8 +96,8 @@ export async function getIssueTypesList(
     .order("name");
 }
 
-// The drawing pane needs the document's display name, its PDF preview URL, and
-// the balloon coordinates. This is a simplified read of what the ERP
+// The drawing pane needs the document's display name, its PDF preview URL (or
+// the model of a plan made from PMI), and the balloon coordinates. This is a simplified read of what the ERP
 // quality module assembles via mapInspectionDocument/mapBalloon.
 export async function getInspectionDocumentWithBalloons(
   client: SupabaseClient<Database>,
@@ -106,7 +106,9 @@ export async function getInspectionDocumentWithBalloons(
   const [document, balloons] = await Promise.all([
     client
       .from("inspectionDocument")
-      .select("id, drawingNumber, fileName, storagePath")
+      .select(
+        "id, drawingNumber, fileName, storagePath, modelUploadId, modelUpload(modelPath)"
+      )
       .eq("id", inspectionDocumentId)
       .single(),
     client
@@ -133,7 +135,14 @@ export async function getInspectionDocumentWithBalloons(
           ? storagePath
           : `/file/preview/private/${storagePath}`
         : null,
-      balloons: balloons.data ?? []
+      balloons: balloons.data ?? [],
+      // A plan made from a model's PMI holds the model instead of a PDF.
+      model: document.data?.modelUploadId
+        ? {
+            modelUploadId: document.data.modelUploadId,
+            modelPath: document.data.modelUpload?.modelPath ?? null
+          }
+        : null
     },
     error: null
   };

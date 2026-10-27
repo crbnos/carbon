@@ -124,7 +124,11 @@ export const attachments = {
       "sync_propagate_item_readable_id_to_tracked_entity"
     ],
     events: true,
-    statement: ["broadcast_table_changes", "log_table_changes"]
+    statement: [
+      "broadcast_table_changes",
+      "log_table_changes",
+      "queue_pmi_inspection_plans"
+    ]
   },
   itemCost: { events: true },
   itemLedger: {

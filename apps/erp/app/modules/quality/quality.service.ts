@@ -2318,7 +2318,7 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
@@ -2469,6 +2469,17 @@ function mapInspectionDocument(row: Record<string, unknown>) {
       annotations: [],
       features: []
     },
+    // A plan made from a model's PMI holds the model instead of a PDF.
+    // `modelPath` comes from the `modelUpload(modelPath)` embed when the read
+    // asked for it.
+    model: row.modelUploadId
+      ? {
+          modelUploadId: String(row.modelUploadId),
+          modelPath:
+            ((row.modelUpload as { modelPath?: string | null } | null)
+              ?.modelPath as string | null) ?? null
+        }
+      : null,
     // The document's default sampling rule (feature rule -> document default
     // -> All). NUMERIC columns arrive as strings from PostgREST — coerce.
     sampling: {
@@ -2541,7 +2552,7 @@ export async function getInspectionDocument(
 ) {
   const result = await client
     .from("inspectionDocument")
-    .select("*")
+    .select("*, modelUpload(modelPath)")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
@@ -2789,6 +2800,7 @@ function mapInspectionFeature(row: Record<string, unknown>) {
       (row.samplingInspectionLevel as string | null) ?? null,
     samplingSeverity: (row.samplingSeverity as string | null) ?? null,
     gaugeTypeId: (row.gaugeTypeId as string | null) ?? null,
+    pmiItemId: (row.pmiItemId as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
         ? balloonIdRaw
