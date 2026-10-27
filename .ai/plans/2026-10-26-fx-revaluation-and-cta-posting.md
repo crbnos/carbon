@@ -37,31 +37,31 @@ Phase 1 — Currency Revaluation run
 - [x] Task 2: Create the Phase 1 schema migration
 - [x] Task 3: Add the RLS manifest rules, apply, and generate types
 - [x] Task 4: Add the account defaults to the seed and the lists
-- [ ] Task 5: Wire the two source types into the ledger code
-- [ ] Task 6: Add the four accounts to the account defaults form
-- [ ] Task 7: Write the pure revaluation math with tests
-- [ ] Task 8: Write the exposure reader
-- [ ] Task 9: Write the run create, recalculate, rate and delete building blocks
-- [ ] Task 10: Write the post and Undo building blocks
-- [ ] Task 11: Add the service functions
-- [ ] Task 12: Add the `fx-revaluation` close check
-- [ ] Task 13: Add the paths and routes
-- [ ] Task 14: Build the run UI
-- [ ] Task 15: Add the Create Run button to the period close page
+- [x] Task 5: Wire the two source types into the ledger code
+- [x] Task 6: Add the four accounts to the account defaults form
+- [x] Task 7: Write the pure revaluation math with tests
+- [x] Task 8: Write the exposure reader
+- [x] Task 9: Write the run create, recalculate, rate and delete building blocks
+- [x] Task 10: Write the post and Undo building blocks
+- [x] Task 11: Add the service functions
+- [x] Task 12: Add the `fx-revaluation` close check
+- [x] Task 13: Add the paths and routes
+- [x] Task 14: Build the run UI
+- [x] Task 15: Add the Create Run button to the period close page
 
 Phase 2 — Foreign-currency balance accounts
-- [ ] Task 16: Add `account.currencyCode` and recreate the `accounts` view
-- [ ] Task 17: Add Account Currency and fix `consolidatedRate` in the account form
-- [ ] Task 18: Add Account Balance lines to the run
+- [x] Task 16: Add `account.currencyCode` and recreate the `accounts` view
+- [x] Task 17: Add Account Currency and fix `consolidatedRate` in the account form
+- [x] Task 18: Add Account Balance lines to the run
 
 Phase 3 — Posted CTA
-- [ ] Task 19: Create the offset account default
-- [ ] Task 20: Change `applyReportCta` for a posted CTA
-- [ ] Task 21: Write the CTA preview and post
-- [ ] Task 22: Add the `cta-posted` check and the CTA modal
+- [x] Task 19: Create the offset account default
+- [x] Task 20: Change `applyReportCta` for a posted CTA
+- [x] Task 21: Write the CTA preview and post
+- [x] Task 22: Add the `cta-posted` check and the CTA modal
 
 Finish
-- [ ] Task 23: Update docs, AGENTS.md and rules
+- [x] Task 23: Update docs, AGENTS.md and rules
 - [ ] Task 24: Run the full verification sweep
 - [ ] Task 25: Extract and translate the new strings
 - [ ] Task 26: Verify in the browser

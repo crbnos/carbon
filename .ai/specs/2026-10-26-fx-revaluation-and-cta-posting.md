@@ -1,6 +1,6 @@
 # Period-End FX Revaluation and Posted CTA
 
-> Status: draft
+> Status: in-progress
 > Author: Claude, for brad@carbonos.dev
 > Date: 2026-10-26
 > Research: `.ai/research/2026-10-26-fx-revaluation-and-cta-posting.md`
@@ -520,5 +520,10 @@ Phase 3:
 
 ## Changelog
 
+- 2026-10-27: Implemented on branch `consolidation-exchange-rates` (plan Tasks 1–22). Four deviations from the plan:
+  - The statement balances are a separate editable grid, not a cell in the lines table.
+  - The CTA preview lists the foreign-currency subsidiaries with no Posted revaluation run. One query does this. It does not evaluate each subsidiary's `fx-revaluation` check.
+  - The run counter is exempt in the `document-sequence-synced` check (plan decision P5).
+  - The CTA modal is a nested route under the close page (`periods.$periodId.close.cta.tsx`).
 - 2026-10-26: Planning corrections from code: the defaults stay nullable (#22). The offset account is not `isSystem`. One run per period end. The as-of rule for unapplied cash and two legacy fallbacks. The CTA gate, period and residual row. See `.ai/plans/2026-10-26-fx-revaluation-and-cta-posting.md`.
 - 2026-10-26: Created. Q1 and Q2 answered by the user. Q3–Q6 resolved by the user's acceptance of all recommendations. The `consolidatedRate` form fix added as a Phase 3 prerequisite. Supersedes §1–§3 of `2026-07-04-fx-consolidation-completeness.md`.

@@ -36,6 +36,8 @@ Each <Term id="posting">posting</Term> creates a **<Term>journal</Term>** with b
 | Job Close | Sweeping a job's residual work-in-process to variance. |
 | Asset Depreciation / Asset Disposal | Depreciation runs and asset write-offs. |
 | Revenue Recognition / Lease Run | [Revenue recognition and lease runs](#revenue-recognition-and-lease-runs). |
+| Currency Revaluation | A currency revaluation run: open foreign-currency balances restated at the period-end rate, with the unrealized exchange gain or loss, and the reversal of that entry on the first day of the next period. |
+| Currency Translation | Posting the consolidated currency translation adjustment (CTA) to equity on the group's elimination company, from the root company's period close. It never syncs to an accounting provider. |
 | Lease | A [lease](/docs/reference/leases) you pay: its commencement or opening balance, a modification, a termination, or a purchase. Also a rental unit treated as a sale: its commencement and its return. |
 | Opening Balance | Setting up accounting: the balances at the end of the day before the cutover. It never syncs to an accounting provider. |
 
@@ -53,6 +55,9 @@ Carbon resolves posting accounts from one set of company defaults. It does not u
 | Shipping revenue | Shipping charged to the customer — its own revenue leaf, never the sales account. |
 | Goods received, not invoiced | The accrual between receiving goods and being billed for them. |
 | Variance | Differences swept at job close or from purchase price. |
+| Unrealized exchange gain / loss | The period-end revaluation of open foreign-currency balances. Realized gains and losses at payment use their own two accounts. |
+| AR / AP revaluation adjustment | The balance-sheet side of that revaluation, so the receivables and payables accounts still tie to their open invoices. |
+| Currency translation offset | Balances the posted CTA on the elimination company. Consolidated reports hide it. |
 
 A sales invoice line separates shipping, tax, and merchandise. Line shipping and its share of header-level shipping credit **shipping revenue**; tax credits **sales tax payable**; merchandise and add-ons credit **sales**. The sales and shipping-revenue defaults must reference different accounts. Posting fails if both resolve to the sales account. New companies receive account **4040 "Shipping Revenue"** under Revenue; companies joining an existing group inherit the group's shipping default.
 
