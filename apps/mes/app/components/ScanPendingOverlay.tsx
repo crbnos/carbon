@@ -13,16 +13,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 export function ScanPendingOverlay() {
   const { t } = useLingui();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-3 rounded-lg border bg-card px-8 py-6 shadow-lg">
-        <CarbonPulse label={t`Scan received`} />
-        <p className="text-lg font-medium" aria-hidden>
-          <Trans>Scan received</Trans>
-        </p>
-        <p className="text-sm text-muted-foreground">
-          <Trans>Loading. There's no need to scan again.</Trans>
-        </p>
-      </div>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-card">
+      <CarbonPulse label={t`Scan received`} />
+      <p className="text-lg font-medium" aria-hidden>
+        <Trans>Scan received</Trans>
+      </p>
+      <p className="text-sm text-muted-foreground">
+        <Trans>Loading. There's no need to scan again.</Trans>
+      </p>
     </div>
   );
 }
