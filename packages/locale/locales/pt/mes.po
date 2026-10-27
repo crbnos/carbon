@@ -2014,6 +2014,10 @@ msgstr "A cor de destaque usada em todo o Carbon."
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "A quantidade concluída para esta operação é menor que a quantidade requerida de {targetQuantity}."
 
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
+
 msgid "The jobs and parts that make up this run."
 msgstr "As ordens de produção e peças que compõem esta execução."
 

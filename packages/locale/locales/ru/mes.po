@@ -2014,6 +2014,10 @@ msgstr "Цвет акцента, используемый во всём Carbon."
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
 
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
+
 msgid "The jobs and parts that make up this run."
 msgstr "Производственные заказы и детали, которые составляют этот запуск."
 

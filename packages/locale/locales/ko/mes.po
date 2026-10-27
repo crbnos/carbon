@@ -2014,6 +2014,10 @@ msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
+
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."
 
