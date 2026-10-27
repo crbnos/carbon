@@ -37,6 +37,7 @@ export * from "./errors";
 export * from "./field-registry";
 export * from "./format";
 export * from "./geo";
+export * from "./halloween-theme";
 export * from "./hash";
 export * from "./headers";
 export * from "./intercompany-capture";

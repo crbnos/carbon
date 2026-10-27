@@ -110,6 +110,9 @@ msgstr "🚨 Dikkat: {0} tarihinde hesabınız erp.try.carbon.ms adresine taşı
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları devam ettirir — miktarlar çifte sayılmaz."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Bugün herkes için mevsimlik bir tema açık. Sona erdiğinde kendi temanızı yeniden seçebilirsiniz."
+
 msgid "About"
 msgstr "Hakkında"
 
@@ -339,6 +342,9 @@ msgstr "Carbon Logosu"
 
 msgid "Cards"
 msgstr "Kartlar"
+
+msgid "Carve"
+msgstr "Oyma"
 
 msgid "Change"
 msgstr "Değiştir"
@@ -809,6 +815,12 @@ msgstr "İşleme geri dön"
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
 
+msgid "Halloween surprise"
+msgstr "Cadılar Bayramı sürprizi"
+
+msgid "Happy Halloween"
+msgstr "Mutlu Cadılar Bayramı"
+
 msgid "Heading {level}"
 msgstr "Başlık {level}"
 
@@ -915,6 +927,9 @@ msgstr "Ürün Ana Veri"
 msgid "Items"
 msgstr "Stok kartları"
 
+msgid "Jack-o'-lantern"
+msgstr "Bal kabağı feneri"
+
 msgid "Job"
 msgstr "İş Emri"
 
@@ -968,6 +983,9 @@ msgstr "Bir şeyler inşa edelim"
 
 msgid "Light"
 msgstr "Açık"
+
+msgid "Light up"
+msgstr "Yakma"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Açık, koyu veya sistem ayarınızı takip edin."
@@ -1491,6 +1509,9 @@ msgstr "Lütfen bir ürün seçin"
 msgid "PM schedule lapsed"
 msgstr "PM zamanlaması süresi doldu"
 
+msgid "Poke the spider… if you dare"
+msgstr "Örümceği dürt… cesaretin varsa"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Herhangi bir sayfada bu listeyi açmak için ? tuşuna basın. Bir alan içinde yazarken kısayollar yoksayılır."
 
@@ -1541,6 +1562,12 @@ msgstr "İlerleme"
 
 msgid "Purchasing"
 msgstr "Satın alma"
+
+msgid "QC"
+msgstr "KK"
+
+msgid "QC passed"
+msgstr "KK geçti"
 
 msgid "Quality"
 msgstr "Kalite"
@@ -1603,6 +1630,9 @@ msgstr "Reddet"
 
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
+
+msgid "Rejected"
+msgstr "Reddedilmiş"
 
 msgid "Released"
 msgstr "Serbest bırakıldı"
@@ -2244,6 +2274,9 @@ msgstr "Bakım emrini Görüntüle"
 
 msgid "View or open"
 msgstr "Görüntüle veya aç"
+
+msgid "Wash"
+msgstr "Yıkama"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr ""

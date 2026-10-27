@@ -23,10 +23,12 @@ import {
   DropdownMenuTrigger,
   getSystemMode,
   ItarDisclosure,
+  SeasonalThemeNotice,
   useDisclosure,
   useEdition,
   useMode,
-  useModePreference
+  useModePreference,
+  useSeasonalTheme
 } from "@carbon/react";
 import type { ModePreference } from "@carbon/utils";
 import { Edition, modeValidator, themes } from "@carbon/utils";
@@ -92,6 +94,7 @@ export function useAccountMenu() {
   const mode = useMode();
   const modePreference = useModePreference();
   const serverTheme = useTheme();
+  const seasonalTheme = useSeasonalTheme();
 
   const fetcher = useFetcher<typeof action>();
 
@@ -125,6 +128,7 @@ export function useAccountMenu() {
   );
 
   const onThemeChange = (t: string) => {
+    if (seasonalTheme) return;
     const newTheme = themes.find((theme) => theme.name === t);
     if (!newTheme) return;
     const variables =
@@ -261,6 +265,7 @@ export function useAccountMenu() {
     onModeChange,
     optimisticTheme,
     onThemeChange,
+    seasonalTheme,
     languageOptions,
     resolvedLocale,
     localeFetcher,
@@ -281,6 +286,7 @@ const AvatarMenu = () => {
     onModeChange,
     optimisticTheme,
     onThemeChange,
+    seasonalTheme,
     languageOptions,
     resolvedLocale,
     localeFetcher,
@@ -359,6 +365,7 @@ const AvatarMenu = () => {
               {item.label}
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
+              <SeasonalThemeNotice className="max-w-56 px-2 py-1.5" />
               <DropdownMenuRadioGroup
                 value={optimisticTheme}
                 onValueChange={onThemeChange}
@@ -367,6 +374,7 @@ const AvatarMenu = () => {
                   <DropdownMenuRadioItem
                     key={t.name}
                     value={t.name}
+                    disabled={seasonalTheme}
                     onSelect={(e) => e.preventDefault()}
                     style={
                       {
@@ -469,7 +477,10 @@ const AvatarMenu = () => {
   return (
     <>
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger className="outline-none focus-visible:outline-none">
+        <DropdownMenuTrigger
+          data-user-menu
+          className="outline-none focus-visible:outline-none"
+        >
           <Avatar path={user.avatarUrl} name={name} />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">

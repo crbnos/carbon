@@ -1504,6 +1504,9 @@ msgstr "Ein Verkaufs-Anfrage (ein Kunde bittet Sie um ein Angebot) oder eine Ein
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Ein bereichsbegrenztes Geheimnis, das im carbon-key-Anfrage-Header gesendet wird und programmgesteuerte Aufrufe an Carbon authentifiziert, mit eigenen Berechtigungen und Ratenlimit statt einer Benutzersitzung."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Heute gilt für alle ein saisonales Design. Sobald es endet, können Sie wieder Ihr eigenes wählen."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Ein separater Plan für die Steuermeldung, wenn Steuerregeln eine Methode erfordern, die sich von der buchhalterischen Abschreibung unterscheidet."
 
@@ -4819,6 +4822,9 @@ msgstr "Spediteur"
 
 msgid "Carrier Account"
 msgstr "Spediteurkonto"
+
+msgid "Carve"
+msgstr "Schnitzen"
 
 msgid "Cash & Banking"
 msgstr "Kasse & Banken"
@@ -11081,6 +11087,9 @@ msgstr "Geführt"
 msgid "Guided implementation"
 msgstr "Geführte Umsetzung"
 
+msgid "Halloween surprise"
+msgstr "Halloween-Überraschung"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Wiederkehrende und stornierte Buchungssätze verwalten"
 
@@ -11092,6 +11101,9 @@ msgstr "Praktisch"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Praktische, schnelle Unterstützung für die ersten 3–4 Wochen"
+
+msgid "Happy Halloween"
+msgstr "Fröhliches Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Schwer zu sehen, was die wahren Kosten oder die Marge bei einem Auftrag sind"
@@ -12364,6 +12376,9 @@ msgstr "Sein Design kann sich ändern, bevor die Änderungsmitteilung freigegebe
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Ihre Umsatzerlöse gehen zurück zu dem, was jede Position noch nicht verbucht hat."
 
+msgid "Jack-o'-lantern"
+msgstr "Kürbislaterne"
+
 msgid "Job"
 msgstr "Job"
 
@@ -12892,6 +12907,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Hell"
+
+msgid "Light up"
+msgstr "Anzünden"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Hell, dunkel oder Systemeinstellung folgen."
@@ -17260,6 +17278,9 @@ msgstr "Bestellnummer"
 msgid "PO PDF"
 msgstr "PO PDF"
 
+msgid "Poke the spider… if you dare"
+msgstr "Stupsen Sie die Spinne an… wenn Sie sich trauen"
+
 msgid "Policy"
 msgstr "Richtlinie"
 
@@ -18043,6 +18064,12 @@ msgstr "GW der Zahlungen"
 
 msgid "PV of Residual"
 msgstr "GW des Restwerts"
+
+msgid "QC"
+msgstr "QS"
+
+msgid "QC passed"
+msgstr "QS bestanden"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR-Code zum Abschließen des aktuellen Arbeitsgangs für diesen Kanban"
@@ -26228,6 +26255,9 @@ msgstr "Warnen Sie, wenn die Person, die einen eingegangenen Artikel prüft, die
 
 msgid "Warning"
 msgstr "Warnung"
+
+msgid "Wash"
+msgstr "Waschen"
 
 msgid "Watch"
 msgstr "Ansehen"

@@ -15,8 +15,10 @@ import {
   PrefetchLink,
   RadioGroup,
   RadioGroupButton,
+  SeasonalThemeNotice,
   useMode,
   useModePreference,
+  useSeasonalTheme,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
@@ -38,7 +40,7 @@ import { useOnboarding } from "~/hooks";
 import type { Theme as ThemeValue } from "~/modules/settings/settings.models";
 import { themeValidator } from "~/modules/settings/settings.models";
 import type { action as modeAction } from "~/root";
-import { getTheme, setTheme } from "~/services/theme.server";
+import { getStoredTheme, setTheme } from "~/services/theme.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -49,10 +51,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const theme = getTheme(request);
-
   return {
-    theme: theme ?? "zinc"
+    theme: getStoredTheme(request)
   };
 }
 
@@ -82,11 +82,13 @@ export default function OnboardingTheme() {
   const modePreference = useModePreference();
   const modeFetcher = useFetcher<typeof modeAction>();
 
-  const [theme, setTheme] = useState<ThemeValue>(initialTheme as "zinc");
+  const [picked, setPicked] = useState<ThemeValue | null>(null);
+  const theme = picked ?? initialTheme;
+  const seasonalTheme = useSeasonalTheme();
 
-  const onThemeChange = (t: Theme) => {
-    setTheme(t.name);
-
+  const applyThemeColors = (t: Theme) => {
+    // In season the page shows the seasonal theme, whatever is picked.
+    if (seasonalTheme) return;
     const variables = mode === "dark" ? t.cssVars.dark : t.cssVars.light;
 
     Object.entries(variables).forEach(([key, value]) => {
@@ -98,11 +100,17 @@ export default function OnboardingTheme() {
     );
   };
 
+  const onThemeChange = (t: Theme) => {
+    if (seasonalTheme) return;
+    setPicked(t.name);
+    applyThemeColors(t);
+  };
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     const t = themes.find((t) => t.name === theme);
     if (t) {
-      onThemeChange(t);
+      applyThemeColors(t);
     }
   }, [mode]);
 
@@ -182,8 +190,10 @@ export default function OnboardingTheme() {
               <Trans>System</Trans>
             </RadioGroupButton>
           </RadioGroup>
+          <SeasonalThemeNotice />
           <RadioGroup
             value={theme}
+            disabled={seasonalTheme}
             onValueChange={(name) => {
               const selected = themes.find((entry) => entry.name === name);
               if (selected) onThemeChange(selected);

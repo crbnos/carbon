@@ -8,7 +8,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { themeValidator } from "~/modules/settings/settings.models";
-import { getTheme, setTheme } from "~/services/theme.server";
+import { getStoredTheme, setTheme } from "~/services/theme.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -18,10 +18,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const theme = getTheme(request);
-
   return {
-    theme: theme ?? "zinc"
+    theme: getStoredTheme(request)
   };
 }
 

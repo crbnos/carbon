@@ -583,7 +583,6 @@
   "no-state-copy-of-loader-data::apps/erp/app/modules/quality/ui/Documents/QualityDocumentEditor.tsx::const [documentName, setDocumentName] = useState(",
   "no-state-copy-of-loader-data::apps/erp/app/modules/resources/ui/Maintenance/MaintenanceDispatchProperties.tsx::const [currentOeeImpact, setCurrentOeeImpact] = useState<string>(",
   "no-state-copy-of-loader-data::apps/erp/app/routes/onboarding+/industry.tsx::const [selectedIndustryId, setSelectedIndustryId] = useState<string>(",
-  "no-state-copy-of-loader-data::apps/erp/app/routes/onboarding+/theme.tsx::const [theme, setTheme] = useState<ThemeValue>(initialTheme as \"zinc\");",
   "no-state-copy-of-loader-data::apps/erp/app/routes/share+/quote.$id.tsx::const [openItems, setOpenItems] = useState<string[]>(() => {",
   "no-state-copy-of-loader-data::apps/erp/app/routes/share+/supplier-quote.$id.tsx::const [openItems, setOpenItems] = useState<string[]>(() =>",
   "no-state-copy-of-loader-data::apps/erp/app/routes/x+/accounting+/periods.generate.tsx::const [year, setYear] = useState(defaultFiscalYear);",

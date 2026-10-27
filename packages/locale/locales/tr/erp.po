@@ -1504,6 +1504,9 @@ msgstr "Bir satış RFQ (müşteri sizi alıntı yapmak için ister) veya satın
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığında gönderilen kapsamlı bir gizli anahtar; bir kullanıcı oturumunun yerine kendi izinleri ve hız sınırını taşır."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Bugün herkes için mevsimlik bir tema açık. Sona erdiğinde kendi temanızı yeniden seçebilirsiniz."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdiğinde vergi raporlaması için ayrı bir zaman çizelgesi."
 
@@ -4819,6 +4822,9 @@ msgstr "Nakliyeci"
 
 msgid "Carrier Account"
 msgstr "Nakliyeci Hesabı"
+
+msgid "Carve"
+msgstr "Oyma"
 
 msgid "Cash & Banking"
 msgstr "Nakit ve Bankacılık"
@@ -11081,6 +11087,9 @@ msgstr "Rehberli"
 msgid "Guided implementation"
 msgstr "Rehberli uygulama"
 
+msgid "Halloween surprise"
+msgstr "Cadılar Bayramı sürprizi"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Tekrarlanan ve tersine çevirme muhasebe fişi girişlerini yönetin."
 
@@ -11092,6 +11101,9 @@ msgstr "Uygulamalı"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "İlk 3–4 hafta boyunca uygulamalı, hızlı yanıt veren destek"
+
+msgid "Happy Halloween"
+msgstr "Mutlu Cadılar Bayramı"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Bir işte gerçek maliyeti veya marjı görmek zor"
@@ -12364,6 +12376,9 @@ msgstr "Tasarımı, değişiklik bildirisi yayınlanmadan önce değişebilir."
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Hasılat, her satırın tanıması gereken kalanına geri döner."
 
+msgid "Jack-o'-lantern"
+msgstr "Bal kabağı feneri"
+
 msgid "Job"
 msgstr "İş"
 
@@ -12892,6 +12907,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Aydınlık"
+
+msgid "Light up"
+msgstr "Yakma"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Açık, Koyu veya sistem ayarınız."
@@ -17260,6 +17278,9 @@ msgstr "PO Numarası"
 msgid "PO PDF"
 msgstr "PO PDF"
 
+msgid "Poke the spider… if you dare"
+msgstr "Örümceği dürt… cesaretin varsa"
+
 msgid "Policy"
 msgstr "Politika"
 
@@ -18043,6 +18064,12 @@ msgstr "Ödemelerin BDH"
 
 msgid "PV of Residual"
 msgstr "Kalıntıların BDH"
+
+msgid "QC"
+msgstr "KK"
+
+msgid "QC passed"
+msgstr "KK geçti"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "Bu kanban için geçerli operasyonu tamamlamak için QR Kodu"
@@ -26228,6 +26255,9 @@ msgstr "Gelen bir ürünü kontrol eden kişinin, onu alan kişiyle aynı olmas�
 
 msgid "Warning"
 msgstr "Uyarı"
+
+msgid "Wash"
+msgstr "Yıkama"
 
 msgid "Watch"
 msgstr "İzle"

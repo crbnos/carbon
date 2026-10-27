@@ -5,11 +5,13 @@
 import {
   cn,
   getSystemMode,
+  SeasonalThemeNotice,
   ToggleGroup,
   ToggleGroupItem,
   useMode,
   useModePreference,
-  useRouteData
+  useRouteData,
+  useSeasonalTheme
 } from "@carbon/react";
 import { modeValidator, themeColorValidator, themes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -58,6 +60,7 @@ export default function AppearanceSettings() {
   const themeFetcher = useFetcher();
   const routeData = useRouteData<{ theme?: string }>(ROOT_ACTION);
   const previewedVariables = useRef<string[]>([]);
+  const seasonalTheme = useSeasonalTheme();
 
   // The preview lives on <body> and outranks the theme the root document puts
   // on <html>. Once the save settles, the root loader has revalidated: drop
@@ -101,7 +104,7 @@ export default function AppearanceSettings() {
 
   const onThemeChange = (value: string) => {
     const next = themes.find((candidate) => candidate.name === value);
-    if (!next || next.name === theme) return;
+    if (seasonalTheme || !next || next.name === theme) return;
     // Preview at once, until the root loader applies it from the cookie.
     const variables = mode === "dark" ? next.cssVars.dark : next.cssVars.light;
     Object.entries(variables).forEach(([key, color]) => {
@@ -159,10 +162,12 @@ export default function AppearanceSettings() {
         title={<Trans>Theme color</Trans>}
         description={<Trans>The accent color used across Carbon.</Trans>}
       >
+        <SeasonalThemeNotice className="mb-2" />
         <ToggleGroup
           type="single"
           size="sm"
           value={theme}
+          disabled={seasonalTheme}
           onValueChange={onThemeChange}
           aria-label={t`Theme color`}
           className="grid grid-cols-2 gap-2 sm:grid-cols-4"

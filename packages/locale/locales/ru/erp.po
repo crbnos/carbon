@@ -1504,6 +1504,9 @@ msgstr "Запрос цен от продаж (покупатель просит
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Секретный ключ, отправляемый в заголовке запроса carbon-key, который аутентифицирует программные вызовы к Carbon, несущий свои собственные права доступа и лимит количества запросов вместо сессии пользователя."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Сегодня у всех сезонная тема. Когда она закончится, вы снова сможете выбрать свою."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Отдельный график для налоговой отчетности, когда налоговые правила требуют метода, отличного от бухгалтерской амортизации."
 
@@ -4819,6 +4822,9 @@ msgstr "Перевозчик"
 
 msgid "Carrier Account"
 msgstr "Счет перевозчика"
+
+msgid "Carve"
+msgstr "Резьба"
 
 msgid "Cash & Banking"
 msgstr "Денежные средства и Банк"
@@ -11081,6 +11087,9 @@ msgstr "Управляемый"
 msgid "Guided implementation"
 msgstr "Управляемое внедрение"
 
+msgid "Halloween surprise"
+msgstr "Сюрприз на Хэллоуин"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Обработка повторяющихся и сторнирующих операций"
 
@@ -11092,6 +11101,9 @@ msgstr "Практический"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Практическая поддержка с быстрым ответом в течение первых 3–4 недель"
+
+msgid "Happy Halloween"
+msgstr "Счастливого Хэллоуина"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Сложно увидеть истинную себестоимость или маржу производственного заказа"
@@ -12364,6 +12376,9 @@ msgstr "Его конструкция может измениться до вы�
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Её выручка распределяется на оставшиеся к признанию суммы по каждой строке."
 
+msgid "Jack-o'-lantern"
+msgstr "Светильник Джека"
+
 msgid "Job"
 msgstr "Задание"
 
@@ -12892,6 +12907,9 @@ msgstr "ЛИФО"
 
 msgid "Light"
 msgstr "Светлая"
+
+msgid "Light up"
+msgstr "Зажечь"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Светлая, тёмная или следовать системным параметрам."
@@ -17260,6 +17278,9 @@ msgstr "Номер ПО"
 msgid "PO PDF"
 msgstr "ПО PDF"
 
+msgid "Poke the spider… if you dare"
+msgstr "Ткните паука… если осмелитесь"
+
 msgid "Policy"
 msgstr "Политика"
 
@@ -18043,6 +18064,12 @@ msgstr "ТС платежей"
 
 msgid "PV of Residual"
 msgstr "ТС остатка"
+
+msgid "QC"
+msgstr "ОТК"
+
+msgid "QC passed"
+msgstr "ОТК пройден"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR-код для завершения текущей операции для этого канбана"
@@ -26228,6 +26255,9 @@ msgstr "Предупреждать, когда лицо, проверяющее 
 
 msgid "Warning"
 msgstr "Предупреждение"
+
+msgid "Wash"
+msgstr "Мойка"
 
 msgid "Watch"
 msgstr "Смотреть"

@@ -1504,6 +1504,9 @@ msgstr "एक बिक्रय RFQ (एक ग्राहक आपको �
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "कार्बन-कुंजी अनुरोध हेडर पर भेजा गया एक स्कोप्ड गोपनीय जो कार्बन के लिए प्रोग्रामेटिक कॉल को प्रमाणित करता है, उपयोगकर्ता सत्र की बजाय अपनी स्वयं की अनुमतियां और दर सीमा ले जाता है।"
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "आज सभी के लिए एक मौसमी थीम लागू है। इसके समाप्त होने पर आप फिर से अपनी थीम चुन सकते हैं।"
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
 
@@ -4819,6 +4822,9 @@ msgstr "वाहक"
 
 msgid "Carrier Account"
 msgstr "वाहक खाता"
+
+msgid "Carve"
+msgstr "नक्काशी"
 
 msgid "Cash & Banking"
 msgstr "नकद और बैंकिंग"
@@ -11081,6 +11087,9 @@ msgstr "निर्देशित"
 msgid "Guided implementation"
 msgstr "निर्देशित कार्यान्वयन"
 
+msgid "Halloween surprise"
+msgstr "हैलोवीन सरप्राइज़"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "आवर्ती और उलट जर्नल प्रविष्टियों को संभालें"
 
@@ -11092,6 +11101,9 @@ msgstr "हैंड्स-ऑन"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "पहले 3–4 हफ्तों के लिए व्यावहारिक, तेज़ प्रतिक्रिया समर्थन"
+
+msgid "Happy Halloween"
+msgstr "हैप्पी हैलोवीन"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "किसी काम पर सच्ची लागत या मार्जिन देखना मुश्किल है"
@@ -12364,6 +12376,9 @@ msgstr "इसकी डिजाइन परिवर्तन सूचना
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "इसका राजस्व उस पर वापस जाता है जो प्रत्येक पंक्ति को मान्यता देने के लिए बाकी है।"
 
+msgid "Jack-o'-lantern"
+msgstr "जैक-ओ-लैंटर्न"
+
 msgid "Job"
 msgstr "Job"
 
@@ -12892,6 +12907,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "हल्का"
+
+msgid "Light up"
+msgstr "जलाएँ"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "हल्का, गहरा, या अपनी सिस्टम सेटिंग का पालन करें।"
@@ -17260,6 +17278,9 @@ msgstr "PO संख्या"
 msgid "PO PDF"
 msgstr "पीओ पीडीएफ"
 
+msgid "Poke the spider… if you dare"
+msgstr "मकड़ी को छुएँ… अगर हिम्मत है"
+
 msgid "Policy"
 msgstr "नीति"
 
@@ -18043,6 +18064,12 @@ msgstr "भुगतान का PV"
 
 msgid "PV of Residual"
 msgstr "अवशिष्ट का PV"
+
+msgid "QC"
+msgstr "QC"
+
+msgid "QC passed"
+msgstr "QC पास"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "इस कानबान के लिए वर्तमान ऑपरेशन पूर्ण करने के लिए QR कोड"
@@ -26228,6 +26255,9 @@ msgstr "चेतावनी दें जब आने वाली वस्�
 
 msgid "Warning"
 msgstr "चेतावनी"
+
+msgid "Wash"
+msgstr "धुलाई"
 
 msgid "Watch"
 msgstr "देखें"
