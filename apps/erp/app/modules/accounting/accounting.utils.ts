@@ -20,6 +20,27 @@ import {
 } from "@internationalized/date";
 
 /**
+ * The translation rate an account takes in a consolidation by default
+ * (current-rate method, IAS 21.39 / ASC 830-30-45-3): balance-sheet items
+ * other than equity at the closing rate, equity at the historical rate, and
+ * income and expense at the average rate.
+ */
+export function defaultConsolidatedRate(
+  accountClass: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense"
+): "Current" | "Historical" | "Average" {
+  switch (accountClass) {
+    case "Asset":
+    case "Liability":
+      return "Current";
+    case "Equity":
+      return "Historical";
+    case "Revenue":
+    case "Expense":
+      return "Average";
+  }
+}
+
+/**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
  * (NBV = acquisition cost − accumulated depreciation). GAAP requires this net
  * gain/loss to land on a distinct non-operating P&L line rather than being

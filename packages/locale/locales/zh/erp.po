@@ -1658,8 +1658,14 @@ msgstr "账户 {accountNumber} 不是启用的过账账户。"
 msgid "Account & Details"
 msgstr "账户和详细信息"
 
+msgid "Account Balance"
+msgstr ""
+
 msgid "Account balances with debits and credits"
 msgstr "账户余额包含借方和贷方"
+
+msgid "Account Currency"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "收到商品或服务前支付的预付款的计账。"
@@ -4332,6 +4338,9 @@ msgstr "与 Carbon 预约通话"
 msgid "Book Depreciation"
 msgstr "账面折旧"
 
+msgid "Booked"
+msgstr ""
+
 msgid "Books lock date (manual)"
 msgstr "账册锁定日期（手动）"
 
@@ -5656,6 +5665,9 @@ msgstr "控制台操作员"
 
 msgid "Console Operator Created"
 msgstr "控制台操作员已创建"
+
+msgid "Consolidation Rate"
+msgstr ""
 
 msgid "Construction in Progress"
 msgstr "在建工程"
@@ -9763,6 +9775,9 @@ msgstr "导出行到 CSV"
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "从您的现有系统导出科目表为 CSV，每行一个账户，包括编号、名称、类别、类型和组，或从当前科目表的模板开始。Carbon 仅保留此文件中的账户。"
 
+msgid "Exposure"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "扩展价格"
 
@@ -10659,6 +10674,9 @@ msgstr "租赁终止利得"
 
 msgid "Gain/Loss"
 msgstr "收益/损失"
+
+msgid "Gains"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的获利"
@@ -12401,6 +12419,12 @@ msgstr "分录"
 msgid "Journal Entry · {asset}"
 msgstr "分录 · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr ""
+
+msgid "Journal Entry · Valuation"
+msgstr ""
+
 msgid "Journal lines"
 msgstr "日记账行"
 
@@ -13141,6 +13165,9 @@ msgstr "处置亏损账户"
 msgid "Loss on Lease Termination"
 msgstr "租赁终止损失"
 
+msgid "Losses"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的亏损"
 
@@ -13475,6 +13502,9 @@ msgstr "标记删除"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
+msgstr ""
+
+msgid "Market"
 msgstr ""
 
 msgid "Market rate"
@@ -15537,6 +15567,9 @@ msgstr "不需要"
 msgid "Not restorable"
 msgstr "无法恢复"
 
+msgid "Not revalued"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "未计划"
 
@@ -15615,6 +15648,9 @@ msgstr "此期间无内容待过账。"
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
+
+msgid "Nothing to revalue for this period."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -15951,6 +15987,9 @@ msgstr "打开账户映射"
 
 msgid "Open Actions"
 msgstr "未结操作"
+
+msgid "Open Amount"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "打开 NCR 进行 MRB 处置"
@@ -16701,6 +16740,9 @@ msgstr "支付"
 
 msgid "Pay expense"
 msgstr "支付费用"
+
+msgid "Payable"
+msgstr ""
 
 msgid "Payables"
 msgstr "应付款项"
@@ -18446,6 +18488,9 @@ msgstr "收据"
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "还处于草稿或待处理状态的收货、发货、销售发票、采购发票、付款以及借方/贷方备忘录必须过账或作废——包括本期日期的文件和未日期但过账时会获得本期日期的文件。在它们过账之前，它们的金额不在总账中，因此本期将被低估。"
 
+msgid "Receivable"
+msgstr ""
+
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "在销售型租赁开始时确认的应收款，每次租赁支付时扣减"
 
@@ -19522,6 +19567,12 @@ msgstr "修订版 {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "修订 {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalued"
+msgstr ""
 
 msgid "Reveal"
 msgstr "显示"
@@ -24330,6 +24381,9 @@ msgstr "这个修订版已下达（生产）。更改应该通常通过变更通
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "此修订版已下达（生产）。打开变更通知以修改它。"
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr ""
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "此运行的步骤比我们此处显示的要多。仅列出前 {MAX_RUN_STEPS} 个。"
 
@@ -24448,6 +24502,11 @@ msgstr "这将从其当前排程重建{0}：在{1}当日或之前到期、没有
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "这将从固定资产现有状态重建 {0}：每个未被另一运行覆盖、截至 {1} 期间的活跃资产。"
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr ""
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "这将根据启用的制造方法的物料清单和工艺使用生产批次重新计算单位成本。当前成本将被覆盖。您想继续吗？"
 
@@ -24470,6 +24529,7 @@ msgstr "这将用此修订版替换其他修订版的所有方法原材料。"
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "这将用此尺寸替换其他尺寸的所有方法原材料。"
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "这将冲销{0}的凭证，并将其返回至草稿状态。之后您可以重新计算、过账或删除。"
@@ -24759,6 +24819,9 @@ msgstr "总预计成本"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个单位分摊。"
 
+msgid "Total gains"
+msgstr ""
+
 msgid "Total Hours"
 msgstr "总计小时"
 
@@ -24767,6 +24830,9 @@ msgstr "总间接成本"
 
 msgid "Total lease cost"
 msgstr "租赁总成本"
+
+msgid "Total losses"
+msgstr ""
 
 msgid "Total Material Cost"
 msgstr "总原材料成本"
@@ -25111,6 +25177,12 @@ msgstr "未应用"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "未应用的现金作为本文件的客户预付款而不是账户信用存储。"
 
+msgid "Unapplied Disbursement"
+msgstr ""
+
+msgid "Unapplied Receipt"
+msgstr ""
+
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
 
@@ -25161,6 +25233,13 @@ msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余
 
 msgid "Undo"
 msgstr "撤销"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Undo Run"
+msgstr ""
 
 msgid "Ungroup"
 msgstr "取消分组"

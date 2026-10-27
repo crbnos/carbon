@@ -1658,8 +1658,14 @@ msgstr "Счет {accountNumber} не является активным счет
 msgid "Account & Details"
 msgstr "Счет и детали"
 
+msgid "Account Balance"
+msgstr ""
+
 msgid "Account balances with debits and credits"
 msgstr "Остатки счетов с дебетами и кредитами"
+
+msgid "Account Currency"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Учет авансовых платежей, произведенных до получения товаров или услуг."
@@ -4332,6 +4338,9 @@ msgstr "Забронировать звонок с Carbon"
 msgid "Book Depreciation"
 msgstr "Амортизация по книге"
 
+msgid "Booked"
+msgstr ""
+
 msgid "Books lock date (manual)"
 msgstr "Дата блокировки книг (вручную)"
 
@@ -5656,6 +5665,9 @@ msgstr "Оператор консоли"
 
 msgid "Console Operator Created"
 msgstr "Оператор консоли создан"
+
+msgid "Consolidation Rate"
+msgstr ""
 
 msgid "Construction in Progress"
 msgstr "Активы в процессе строительства"
@@ -9763,6 +9775,9 @@ msgstr "Экспортировать строки в CSV"
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Экспортируйте план счетов из текущей системы в CSV, по одной строке на счёт, с номером, названием, классом, типом и группой, или начните с шаблона текущего плана счетов. Carbon сохранит только счета из этого файла."
 
+msgid "Exposure"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "Расширенная цена"
 
@@ -10659,6 +10674,9 @@ msgstr "Прибыль от прекращения аренды"
 
 msgid "Gain/Loss"
 msgstr "Прибыль/Убыток"
+
+msgid "Gains"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Прибыль, признаваемая при выбытии основных средств"
@@ -12401,6 +12419,12 @@ msgstr "Проводка"
 msgid "Journal Entry · {asset}"
 msgstr "Проводка · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr ""
+
+msgid "Journal Entry · Valuation"
+msgstr ""
+
 msgid "Journal lines"
 msgstr "Строки операции"
 
@@ -13141,6 +13165,9 @@ msgstr "Счёт убытков от выбытия"
 msgid "Loss on Lease Termination"
 msgstr "Убыток при расторжении аренды"
 
+msgid "Losses"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Убытки, признаваемые при выбытии основных средств"
 
@@ -13475,6 +13502,9 @@ msgstr "Отметить к удалению"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
+msgstr ""
+
+msgid "Market"
 msgstr ""
 
 msgid "Market rate"
@@ -15537,6 +15567,9 @@ msgstr "Не требуется"
 msgid "Not restorable"
 msgstr "Восстановление невозможно"
 
+msgid "Not revalued"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "Не запланировано"
 
@@ -15615,6 +15648,9 @@ msgstr "Нечего проводить за этот период."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Нечего признавать. Выручка следует за тем, что выставляют счетом счета."
+
+msgid "Nothing to revalue for this period."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -15951,6 +15987,9 @@ msgstr "Открыть распределение счетов"
 
 msgid "Open Actions"
 msgstr "Открытые действия"
+
+msgid "Open Amount"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения о браке"
@@ -16701,6 +16740,9 @@ msgstr "Оплатить"
 
 msgid "Pay expense"
 msgstr "Оплатить расход"
+
+msgid "Payable"
+msgstr ""
 
 msgid "Payables"
 msgstr "Кредиторская задолженность (по умолчанию)"
@@ -18446,6 +18488,9 @@ msgstr "Квитанции"
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Поступления, отгрузки, счета-фактуры выданные, счета-фактуры полученные, платежи и кредит-ноты/дебет-ноты, которые по-прежнему находятся в статусе «Черновик» или «В ожидании», должны быть проведены или аннулированы — как документы, датированные в этом периоде, так и документы без даты, которые получат дату при проведении. До их проведения их суммы не находятся в главной книге, поэтому период будет отражен с недостатком."
 
+msgid "Receivable"
+msgstr ""
+
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Дебиторская задолженность, признанная при начале лизинга продажного типа, уменьшаемая каждым платежом по аренде"
 
@@ -19522,6 +19567,12 @@ msgstr "Ред. {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Ревизия {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalued"
+msgstr ""
 
 msgid "Reveal"
 msgstr "Показать"
@@ -24330,6 +24381,9 @@ msgstr "Эта ревизия запущена (Производство). Из�
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Эта ревизия запущена (Производство). Откройте извещение об изменении для его изменения."
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr ""
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Этот прогон имеет больше шагов, чем мы показываем здесь. Показаны только первые {MAX_RUN_STEPS}."
 
@@ -24448,6 +24502,11 @@ msgstr "Это пересчитает {0} в соответствии с его 
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Это пересчитает {0} на основе основных средств в их текущем состоянии: каждое активное средство, не охватываемое другим расчетом, за период, заканчивающийся {1}."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr ""
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Это пересчитает себестоимость единицы продукции на основе активного метода производства, спецификации материалов и процессов с использованием размера партии. Текущая себестоимость будет перезаписана. Вы хотите продолжить?"
 
@@ -24470,6 +24529,7 @@ msgstr "Это заменит все материалы метода други�
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Это заменит все материалы методов других размеров на этот размер."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Это обратит операции {0} и вернет его в Черновик. Затем вы сможете пересчитать, провести или удалить его."
@@ -24759,6 +24819,9 @@ msgstr "Итоговая ожидаемая себестоимость"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Общее ожидаемое количество единиц производства для амортизации по единицам продукции; себестоимость распределяется на единицу произведенной продукции."
 
+msgid "Total gains"
+msgstr ""
+
 msgid "Total Hours"
 msgstr "Всего часов"
 
@@ -24767,6 +24830,9 @@ msgstr "Общие косвенные затраты"
 
 msgid "Total lease cost"
 msgstr "Итого себестоимость лизинга"
+
+msgid "Total losses"
+msgstr ""
 
 msgid "Total Material Cost"
 msgstr "Итоговая себестоимость материалов"
@@ -25111,6 +25177,12 @@ msgstr "Неприменённые"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Неприменные денежные средства удерживаются в качестве предоплаты покупателя за этот документ вместо кредита в счет на счета."
 
+msgid "Unapplied Disbursement"
+msgstr ""
+
+msgid "Unapplied Receipt"
+msgstr ""
+
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
 
@@ -25161,6 +25233,13 @@ msgstr "Недисконтированные платежи, которые ещ
 
 msgid "Undo"
 msgstr "Отменить"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Undo Run"
+msgstr ""
 
 msgid "Ungroup"
 msgstr "Разгруппировать"

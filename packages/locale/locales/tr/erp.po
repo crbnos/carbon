@@ -1658,8 +1658,14 @@ msgstr "{accountNumber} hesabı aktif bir muhasebeleştirme hesabı değildir."
 msgid "Account & Details"
 msgstr "Hesap ve ayrıntılar"
 
+msgid "Account Balance"
+msgstr ""
+
 msgid "Account balances with debits and credits"
 msgstr "Borç ve alacak bakiyeleri"
+
+msgid "Account Currency"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Mal veya hizmet alınmadan önce yapılan peşin ödemeleri hesaplayın."
@@ -4332,6 +4338,9 @@ msgstr "Carbon ile bir çağrı ayarlayın"
 msgid "Book Depreciation"
 msgstr "Defter Amortismanı"
 
+msgid "Booked"
+msgstr ""
+
 msgid "Books lock date (manual)"
 msgstr "Defterlerin kilitlenme tarihi (manuel)"
 
@@ -5656,6 +5665,9 @@ msgstr "Konsol Operatörü"
 
 msgid "Console Operator Created"
 msgstr "Konsol operatörü oluşturuldu"
+
+msgid "Consolidation Rate"
+msgstr ""
 
 msgid "Construction in Progress"
 msgstr "İnşaat Halinde"
@@ -9763,6 +9775,9 @@ msgstr "Satırları CSV'ye Dışa Aktar"
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; her hesap için numarası, adı, sınıfı, türü ve grubuyla bir satır olsun ya da mevcut hesap planının şablonuyla başlayın. Carbon yalnızca bu dosyadaki hesapları tutar."
 
+msgid "Exposure"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "Genelletilmiş Fiyat"
 
@@ -10659,6 +10674,9 @@ msgstr "Kiralama Sonlandırılmasında Kazanç"
 
 msgid "Gain/Loss"
 msgstr "Kar/Zarar"
+
+msgid "Gains"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Sabit kıymetlerin elden çıkarılmasında muhasebeleştirilen kazançlar"
@@ -12401,6 +12419,12 @@ msgstr "Yevmiye kaydı"
 msgid "Journal Entry · {asset}"
 msgstr "Yevmiye kaydı · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr ""
+
+msgid "Journal Entry · Valuation"
+msgstr ""
+
 msgid "Journal lines"
 msgstr "Muhasebe Fişi Satırları"
 
@@ -13141,6 +13165,9 @@ msgstr "Elden Çıkarmada Zarar Hesabı"
 msgid "Loss on Lease Termination"
 msgstr "Kira Sonlandırma Kaybı"
 
+msgid "Losses"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Sabit kıymetlerin elden çıkarılmasında tanınan zararlar"
 
@@ -13475,6 +13502,9 @@ msgstr "Silmek için işaretle"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
+msgstr ""
+
+msgid "Market"
 msgstr ""
 
 msgid "Market rate"
@@ -15537,6 +15567,9 @@ msgstr "Gerekli Değil"
 msgid "Not restorable"
 msgstr "Geri yüklenemez"
 
+msgid "Not revalued"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "Planlanmadı"
 
@@ -15615,6 +15648,9 @@ msgstr "Bu dönem için muhasebeleştirecek bir şey yok."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Henüz tanınması gereken bir şey yok. Hasılat, faturaların faturalandırdığını takip eder."
+
+msgid "Nothing to revalue for this period."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -15951,6 +15987,9 @@ msgstr "Hesap Eşleştirmesini Aç"
 
 msgid "Open Actions"
 msgstr "Açık Aksiyonlar"
+
+msgid "Open Amount"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için bir NCR aç"
@@ -16701,6 +16740,9 @@ msgstr "Öde"
 
 msgid "Pay expense"
 msgstr "Gider Öde"
+
+msgid "Payable"
+msgstr ""
 
 msgid "Payables"
 msgstr "Borçlar"
@@ -18446,6 +18488,9 @@ msgstr "Makbuzlar"
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Hala Taslak veya Beklemede olan mal kabuller, sevkiyatlar, satış faturaları, alış faturaları, ödemeler ve alacak/borç muhasebe fişleri muhasebeleştirilmeli veya hükümsüz kılınmalıdır — hem bu dönemde tarihli belgeler hem de muhasebeleştirildiğinde bu dönemde tarih alacak tarihi olmayan belgeler. Muhasebeleştirilene kadar, tutarları büyük defterde yoktur, bu nedenle dönem eksik gösterilecektir."
 
+msgid "Receivable"
+msgstr ""
+
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Satış türü kiralamanın başlangıcında muhasebeleştirilen alacak, her kira ödemesi ile azaltılan"
 
@@ -19522,6 +19567,12 @@ msgstr "Sürüm {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalued"
+msgstr ""
 
 msgid "Reveal"
 msgstr "Göster"
@@ -24330,6 +24381,9 @@ msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir d
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Bunu değiştirmek için bir değişiklik bildirisi açın."
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr ""
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Bu çalıştırmada burada gösterdiklerimizden daha fazla adım var. Yalnızca ilk {MAX_RUN_STEPS} listelenir."
 
@@ -24448,6 +24502,11 @@ msgstr "Bu, {0}'ı çizelgesinden yeniden oluşturacaktır: {1} tarihinde veya d
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Bu, {0}'ı sabit kıymetlerden olduğu gibi yeniden oluşturacak: {1} ile biten dönem için başka bir çalıştırma tarafından karşılanmayan her aktif kıymet."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr ""
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Bu, geçerli üretim yönteminin ürün ağacından ve işlemlerinden parti boyutunu kullanarak birim maliyeti yeniden hesaplayacaktır. Mevcut maliyet üzerine yazılacaktır. Devam etmek istiyor musunuz?"
 
@@ -24470,6 +24529,7 @@ msgstr "Bu, diğer revizyonlardaki tüm yöntem malzemelerini bu revizyonla değ
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Bu, diğer boyutlardaki tüm yöntem malzemelerini bu boyutuyla değiştirecektir."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Bu işlem {0}'un muhasebe fişlerini tersine çevirecek ve Taslak durumuna döndürecektir. Daha sonra yeniden hesaplayabilir, muhasebeleştirebilir veya silebilirsiniz."
@@ -24759,6 +24819,9 @@ msgstr "Toplam Tahmini Maliyet"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
 
+msgid "Total gains"
+msgstr ""
+
 msgid "Total Hours"
 msgstr "Toplam Saat"
 
@@ -24767,6 +24830,9 @@ msgstr "Toplam Dolaylı Maliyet"
 
 msgid "Total lease cost"
 msgstr "Toplam kiralama maliyeti"
+
+msgid "Total losses"
+msgstr ""
 
 msgid "Total Material Cost"
 msgstr "Toplam Malzeme Maliyeti"
@@ -25111,6 +25177,12 @@ msgstr "Uygulanmamış"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Uygulanmamış nakit, bu belge için müşteri avansı olarak tutuluyor, hesapta alacak yerine."
 
+msgid "Unapplied Disbursement"
+msgstr ""
+
+msgid "Unapplied Receipt"
+msgstr ""
+
 msgid "Unapproved Supplier"
 msgstr "Onaylanmamış Tedarikçi"
 
@@ -25161,6 +25233,13 @@ msgstr "Mali yılına göre henüz gelecek iskonto uygulanmamış ödemeler, kal
 
 msgid "Undo"
 msgstr "Geri Al"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Undo Run"
+msgstr ""
 
 msgid "Ungroup"
 msgstr "Grubu Ayır"

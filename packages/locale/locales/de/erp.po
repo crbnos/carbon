@@ -1658,8 +1658,14 @@ msgstr "Konto {accountNumber} ist kein aktives Buchungskonto."
 msgid "Account & Details"
 msgstr "Konto & Details"
 
+msgid "Account Balance"
+msgstr ""
+
 msgid "Account balances with debits and credits"
 msgstr "Kontosalden mit Soll und Haben"
+
+msgid "Account Currency"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Konten Sie für Vorschusszahlungen, die vor Lieferung von Waren oder Dienstleistungen getätigt werden."
@@ -4332,6 +4338,9 @@ msgstr "Buchen Sie einen Anruf mit Carbon"
 msgid "Book Depreciation"
 msgstr "Abschreibung buchen"
 
+msgid "Booked"
+msgstr ""
+
 msgid "Books lock date (manual)"
 msgstr "Büchersperrungsdatum (manuell)"
 
@@ -5656,6 +5665,9 @@ msgstr "Konsolenbediener"
 
 msgid "Console Operator Created"
 msgstr "Konsolenbediener erstellt"
+
+msgid "Consolidation Rate"
+msgstr ""
 
 msgid "Construction in Progress"
 msgstr "Anlagen im Bau"
@@ -9763,6 +9775,9 @@ msgstr "Zeilen als CSV exportieren"
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Exportieren Sie Ihren Kontenplan aus Ihrem aktuellen System als CSV, eine Zeile pro Konto mit Nummer, Name, Klasse, Typ und Gruppe, oder beginnen Sie mit der Vorlage des aktuellen Kontenplans. Carbon behält nur die Konten in dieser Datei."
 
+msgid "Exposure"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "Erweiterte Preis"
 
@@ -10659,6 +10674,9 @@ msgstr "Gewinn aus Mietvertragskündigung"
 
 msgid "Gain/Loss"
 msgstr "Gewinn/Verlust"
+
+msgid "Gains"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gewinne aus dem Abgang von Anlagevermögen"
@@ -12401,6 +12419,12 @@ msgstr "Buchungszeile"
 msgid "Journal Entry · {asset}"
 msgstr "Buchungszeile · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr ""
+
+msgid "Journal Entry · Valuation"
+msgstr ""
+
 msgid "Journal lines"
 msgstr "Buchungssatzpositionen"
 
@@ -13141,6 +13165,9 @@ msgstr "Konto für Verlust bei Abgang"
 msgid "Loss on Lease Termination"
 msgstr "Verlust bei Leasingbeendigung"
 
+msgid "Losses"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Beim Abgang von Anlagegütern erfasste Verluste"
 
@@ -13475,6 +13502,9 @@ msgstr "Zum Löschen markieren"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
+msgstr ""
+
+msgid "Market"
 msgstr ""
 
 msgid "Market rate"
@@ -15537,6 +15567,9 @@ msgstr "Nicht erforderlich"
 msgid "Not restorable"
 msgstr "Nicht wiederherstellbar"
 
+msgid "Not revalued"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "Nicht geplant"
 
@@ -15615,6 +15648,9 @@ msgstr "Nichts zum Buchen in diesem Zeitraum."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Noch nichts zum Erfassen. Die Umsatzerlöse folgen dem, was die Rechnungen abrechnen."
+
+msgid "Nothing to revalue for this period."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Noch nichts. Ein Schritt bietet Werte erst nach der Konfiguration an."
@@ -15951,6 +15987,9 @@ msgstr "Kontenzuordnung öffnen"
 
 msgid "Open Actions"
 msgstr "Offene Maßnahmen"
+
+msgid "Open Amount"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie ein NCR für MRB-Verwendungsentscheid"
@@ -16701,6 +16740,9 @@ msgstr "Zahlen"
 
 msgid "Pay expense"
 msgstr "Aufwand bezahlen"
+
+msgid "Payable"
+msgstr ""
 
 msgid "Payables"
 msgstr "Verbindlichkeiten"
@@ -18446,6 +18488,9 @@ msgstr "Quittungen"
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Wareneingang, Lieferung, Ausgangsrechnung, Eingangsrechnung, Zahlung und Gut-/Lastschrift, die sich noch in Entwurf oder Ausstehend befinden, müssen gebucht oder storniert werden – sowohl Dokumente, die in diesem Zeitraum datiert sind, als auch undatierte Dokumente, die bei der Buchung in diesem Zeitraum ein Datum erhalten würden. Solange sie nicht gebucht sind, sind ihre Beträge nicht im Hauptbuch enthalten, daher wäre der Zeitraum untererfasst."
 
+msgid "Receivable"
+msgstr ""
+
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "In der Anfangsphase eines Finanzierungsleasingverhältnisses erfasste Forderung, vermindert um jede Leasingzahlung"
 
@@ -19522,6 +19567,12 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Änderung {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalued"
+msgstr ""
 
 msgid "Reveal"
 msgstr "Anzeigen"
@@ -24330,6 +24381,9 @@ msgstr "Diese Revision ist freigegeben (Produktion). Änderungen sollten normale
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "Diese Revision ist freigegeben (Produktion). Erstellen Sie eine Änderungsmitteilung, um diese zu ändern."
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr ""
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "Diese Ausführung hat mehr Schritte, als wir hier anzeigen. Nur die ersten {MAX_RUN_STEPS} werden aufgelistet."
 
@@ -24448,6 +24502,11 @@ msgstr "Dies wird {0} aus seinem Terminplan wie er jetzt ist neu erstellen: jede
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "Dies wird {0} aus den Anlagegütern neu aufbauen, wie sie jetzt sind: jedes aktive Anlagegut, das nicht von einem anderen Lauf für den Zeitraum mit Ende {1} abgedeckt ist."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr ""
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "Dies berechnet die Stückkosten aus der Stückliste und den Arbeitsgängen der aktiven Fertigungsmethode neu, wobei die Chargengröße verwendet wird. Die aktuellen Kosten werden überschrieben. Möchten Sie fortfahren?"
 
@@ -24470,6 +24529,7 @@ msgstr "Dies ersetzt alle Methodenmaterialien anderer Revisionen durch diese Rev
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "Dies ersetzt alle Methodenmaterialien anderer Größen durch diese Größe."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "Dies wird die Buchungssätze von {0} stornieren und es auf Entwurf zurücksetzen. Sie können es dann neu berechnen, buchen oder löschen."
@@ -24759,6 +24819,9 @@ msgstr "Geschätzte Gesamtkosten"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Gesamterwartete Produktionseinheiten für Produktionseinheiten-Abschreibung; Kosten werden pro hergestellter Einheit verteilt."
 
+msgid "Total gains"
+msgstr ""
+
 msgid "Total Hours"
 msgstr "Gesamtstunden"
 
@@ -24767,6 +24830,9 @@ msgstr "Indirekte Gesamtkosten"
 
 msgid "Total lease cost"
 msgstr "Gesamtleasingkosten"
+
+msgid "Total losses"
+msgstr ""
 
 msgid "Total Material Cost"
 msgstr "Gesamte Materialkosten"
@@ -25111,6 +25177,12 @@ msgstr "Nicht angewendet"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Nicht angewendetes Bargeld wird als Kundenanzahlung für dieses Dokument statt als Kundenguthaben gehalten."
 
+msgid "Unapplied Disbursement"
+msgstr ""
+
+msgid "Unapplied Receipt"
+msgstr ""
+
 msgid "Unapproved Supplier"
 msgstr "Nicht genehmigter Lieferant"
 
@@ -25161,6 +25233,13 @@ msgstr "Noch ausstehende Zahlungen ohne Diskontierung, nach Geschäftsjahr, abz�
 
 msgid "Undo"
 msgstr "Rückgängig machen"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Undo Run"
+msgstr ""
 
 msgid "Ungroup"
 msgstr "Gruppierung aufheben"

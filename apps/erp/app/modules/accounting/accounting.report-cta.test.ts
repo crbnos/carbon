@@ -30,6 +30,7 @@ function account(
     incomeBalance: "Balance Sheet",
     accountType: "Equity - No Close",
     consolidatedRate: "Current",
+    currencyCode: null,
     createdAt: "2026-01-01T00:00:00Z",
     createdBy: "user",
     updatedAt: null,

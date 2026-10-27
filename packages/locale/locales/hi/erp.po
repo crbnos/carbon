@@ -1658,8 +1658,14 @@ msgstr "खाता {accountNumber} एक सक्रिय पोस्ट�
 msgid "Account & Details"
 msgstr "खाता और विवरण"
 
+msgid "Account Balance"
+msgstr ""
+
 msgid "Account balances with debits and credits"
 msgstr "नामे और जमा के साथ खाता शेष राशि"
+
+msgid "Account Currency"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "माल या सेवाएं प्राप्त होने से पहले किए गए अग्रिम भुगतान के लिए खाता।"
@@ -4332,6 +4338,9 @@ msgstr "Carbon के साथ कॉल बुक करें"
 msgid "Book Depreciation"
 msgstr "पुस्तक मूल्यह्रास"
 
+msgid "Booked"
+msgstr ""
+
 msgid "Books lock date (manual)"
 msgstr "पुस्तकें लॉक तारीख (मैनुअल)"
 
@@ -5656,6 +5665,9 @@ msgstr "कंसोल ऑपरेटर"
 
 msgid "Console Operator Created"
 msgstr "कंसोल ऑपरेटर बनाया गया"
+
+msgid "Consolidation Rate"
+msgstr ""
 
 msgid "Construction in Progress"
 msgstr "निर्माण प्रगति में"
@@ -9763,6 +9775,9 @@ msgstr "CSV में लाइनें निर्यात करें"
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "अपने मौजूदा सिस्टम से अपना खाता चार्ट CSV के रूप में निर्यात करें, प्रति खाता एक पंक्ति, उसकी संख्या, नाम, वर्ग, प्रकार और समूह के साथ, या मौजूदा चार्ट के टेम्पलेट से शुरू करें। Carbon केवल इस फ़ाइल के खाते रखता है।"
 
+msgid "Exposure"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "विस्तारित मूल्य"
 
@@ -10659,6 +10674,9 @@ msgstr "लीज समाप्ति पर लाभ"
 
 msgid "Gain/Loss"
 msgstr "लाभ/हानि"
+
+msgid "Gains"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "अचल संपत्तियों के निपटान पर स्वीकृत लाभ"
@@ -12401,6 +12419,12 @@ msgstr "जर्नल प्रविष्टि"
 msgid "Journal Entry · {asset}"
 msgstr "जर्नल प्रविष्टि · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr ""
+
+msgid "Journal Entry · Valuation"
+msgstr ""
+
 msgid "Journal lines"
 msgstr "जर्नल पंक्तियाँ"
 
@@ -13141,6 +13165,9 @@ msgstr "निपटान पर हानि खाता"
 msgid "Loss on Lease Termination"
 msgstr "पट्टा समाप्ति पर हानि"
 
+msgid "Losses"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "अचल संपत्ति के निपटान पर मान्यता प्राप्त हानियाँ"
 
@@ -13475,6 +13502,9 @@ msgstr "हटाने के लिए चिह्नित करें"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
+msgstr ""
+
+msgid "Market"
 msgstr ""
 
 msgid "Market rate"
@@ -15537,6 +15567,9 @@ msgstr "आवश्यक नहीं"
 msgid "Not restorable"
 msgstr "पुनर्स्थापना योग्य नहीं"
 
+msgid "Not revalued"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "अनुसूचित नहीं"
 
@@ -15615,6 +15648,9 @@ msgstr "इस अवधि के लिए कोई पोस्ट नही
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "अभी मान्यता देने के लिए कुछ नहीं। राजस्व उसके अनुसार है जो चालान बिल करते हैं।"
+
+msgid "Nothing to revalue for this period."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक चरण केवल तभी मान प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
@@ -15951,6 +15987,9 @@ msgstr "खाता मैपिंग खोलें"
 
 msgid "Open Actions"
 msgstr "खुली कार्रवाइयाँ"
+
+msgid "Open Amount"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
@@ -16701,6 +16740,9 @@ msgstr "भुगतान करें"
 
 msgid "Pay expense"
 msgstr "व्यय का भुगतान करें"
+
+msgid "Payable"
+msgstr ""
 
 msgid "Payables"
 msgstr "देय राशि"
@@ -18446,6 +18488,9 @@ msgstr "रसीदें"
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "प्राप्ति, शिपमेंट, विक्रय चालान, क्रय चालान, भुगतान, और जमा/नामे ज्ञापन जो अभी भी ड्राफ्ट या लंबित हैं, उन्हें पोस्ट किया जाना चाहिए या अमान्य किया जाना चाहिए — दोनों दस्तावेज़ इस अवधि में दिनांकित और बिना दिनांक के दस्तावेज़ जो पोस्ट होने पर इसमें एक तिथि प्राप्त करेंगे। जब तक वे पोस्ट नहीं होते, उनकी राशियाँ सामान्य खाता बही में नहीं हैं, इसलिए अवधि को कम दिखाया जाएगा।"
 
+msgid "Receivable"
+msgstr ""
+
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "बिक्रय-प्रकार पट्टे की शुरुआत में मान्य प्राप्य, प्रत्येक किराये की भुगतान द्वारा कम"
 
@@ -19522,6 +19567,12 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "संस्करण {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalued"
+msgstr ""
 
 msgid "Reveal"
 msgstr "प्रकट करें"
@@ -24330,6 +24381,9 @@ msgstr "यह रिवीजन जारी है (उत्पादन)।
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "यह रिवीजन जारी है (उत्पादन)। इसे संशोधित करने के लिए एक परिवर्तन सूचना खोलें।"
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr ""
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "यह रन हमारे यहां दिखाए गए की तुलना में अधिक चरण हैं। केवल पहले {MAX_RUN_STEPS} सूचीबद्ध हैं।"
 
@@ -24448,6 +24502,11 @@ msgstr "यह {0} को अपने शेड्यूल से अभी �
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "यह {0} को अचल संपत्तियों से फिर से बनाएगा जैसा कि वे अब हैं: अवधि {1} पर समाप्त होने वाले किसी अन्य चलन द्वारा कवर न की गई हर सक्रिय संपत्ति।"
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr ""
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "यह बैच आकार का उपयोग करके सक्रिय निर्माण विधि की सामग्री सूची और प्रक्रियाओं से इकाई लागत की पुनः गणना करेगा। वर्तमान लागत अधिलेखित की जाएगी। क्या आप जारी रखना चाहते हैं?"
 
@@ -24470,6 +24529,7 @@ msgstr "यह अन्य रिवीजन की सभी विधि स
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "यह अन्य आकारों की सभी विधि सामग्रियों को इस आकार से बदल देगा।"
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "यह {0} के जर्नल को उलटेगा और इसे ड्राफ्ट में वापस करेगा। आप फिर इसे पुनर्गणना कर सकते हैं, पोस्ट कर सकते हैं या हटा सकते हैं।"
@@ -24759,6 +24819,9 @@ msgstr "कुल अनुमानित लागत"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "उत्पादन-इकाई मूल्यह्रास के लिए कुल अपेक्षित उत्पादन इकाइयां; लागत उत्पादित प्रति यूनिट फैली हुई है।"
 
+msgid "Total gains"
+msgstr ""
+
 msgid "Total Hours"
 msgstr "कुल घंटे"
 
@@ -24767,6 +24830,9 @@ msgstr "कुल अप्रत्यक्ष लागत"
 
 msgid "Total lease cost"
 msgstr "पट्टा की कुल लागत"
+
+msgid "Total losses"
+msgstr ""
 
 msgid "Total Material Cost"
 msgstr "कुल सामग्री लागत"
@@ -25111,6 +25177,12 @@ msgstr "अप्रयुक्त"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "अप्रयुक्त नकद इस दस्तावेज़ के लिए ग्राहक अग्रिम भुगतान के रूप में रखा जाता है न कि खाते पर जमा क्रेडिट के रूप में।"
 
+msgid "Unapplied Disbursement"
+msgstr ""
+
+msgid "Unapplied Receipt"
+msgstr ""
+
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
 
@@ -25161,6 +25233,13 @@ msgstr "अभी भी आने वाले बिना छूट के �
 
 msgid "Undo"
 msgstr "पूर्ववत करें"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Undo Run"
+msgstr ""
 
 msgid "Ungroup"
 msgstr "समूह हटाएं"

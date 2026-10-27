@@ -344,8 +344,16 @@ export const accountValidator = z
     class: z.enum(accountClassTypes, {
       error: "Class is required"
     }),
-    consolidatedRate: z.enum(consolidatedRateTypes)
+    consolidatedRate: z.enum(consolidatedRateTypes),
+    currencyCode: zfd.text(z.string().optional())
   })
+  .refine(
+    (data) => !data.currencyCode || ["Asset", "Liability"].includes(data.class),
+    {
+      message: "Only an asset or liability account holds a currency",
+      path: ["currencyCode"]
+    }
+  )
   .refine(
     (data) => {
       if (["Asset", "Liability", "Equity"].includes(data.class)) {

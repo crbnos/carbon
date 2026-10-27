@@ -1658,8 +1658,14 @@ msgstr "계정 {accountNumber}은(는) 활성 전기 계정이 아닙니다."
 msgid "Account & Details"
 msgstr "계정 및 세부정보"
 
+msgid "Account Balance"
+msgstr ""
+
 msgid "Account balances with debits and credits"
 msgstr "차변과 대변이 포함된 계정 잔액"
+
+msgid "Account Currency"
+msgstr ""
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "재화 또는 서비스가 수령되기 전에 지불된 선급금을 계정화함"
@@ -4332,6 +4338,9 @@ msgstr "Carbon과 상담 예약"
 msgid "Book Depreciation"
 msgstr "장부 감가상각"
 
+msgid "Booked"
+msgstr ""
+
 msgid "Books lock date (manual)"
 msgstr "장부 잠금 날짜(수동)"
 
@@ -5656,6 +5665,9 @@ msgstr "콘솔 작업자"
 
 msgid "Console Operator Created"
 msgstr "콘솔 작업자가 생성되었습니다"
+
+msgid "Consolidation Rate"
+msgstr ""
 
 msgid "Construction in Progress"
 msgstr "진행 중인 건설"
@@ -9763,6 +9775,9 @@ msgstr "라인을 CSV로 내보내기"
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "현재 시스템에서 계정과목표를 CSV로 내보내세요. 계정마다 한 행에 번호, 이름, 분류, 유형, 그룹을 담거나, 현재 계정과목표의 템플릿에서 시작하세요. Carbon은 이 파일에 있는 계정만 유지합니다."
 
+msgid "Exposure"
+msgstr ""
+
 msgid "Extended Price"
 msgstr "확장 가격"
 
@@ -10659,6 +10674,9 @@ msgstr "리스 종료로 인한 이익"
 
 msgid "Gain/Loss"
 msgstr "이득/손실"
+
+msgid "Gains"
+msgstr ""
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 이익"
@@ -12401,6 +12419,12 @@ msgstr "분개"
 msgid "Journal Entry · {asset}"
 msgstr "분개 · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr ""
+
+msgid "Journal Entry · Valuation"
+msgstr ""
+
 msgid "Journal lines"
 msgstr "전표 라인"
 
@@ -13141,6 +13165,9 @@ msgstr "처분 손실 계정"
 msgid "Loss on Lease Termination"
 msgstr "리스 종료 손실"
 
+msgid "Losses"
+msgstr ""
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "고정자산 처분 시 인식된 손실"
 
@@ -13475,6 +13502,9 @@ msgstr "삭제 대상으로 표시"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
+msgstr ""
+
+msgid "Market"
 msgstr ""
 
 msgid "Market rate"
@@ -15537,6 +15567,9 @@ msgstr "필수 아님"
 msgid "Not restorable"
 msgstr "복원 불가"
 
+msgid "Not revalued"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "예약되지 않음"
 
@@ -15615,6 +15648,9 @@ msgstr "이 기간에 전기할 것이 없습니다."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "아직 인식할 것이 없습니다. 매출은 송장이 청구하는 대로 따릅니다."
+
+msgid "Nothing to revalue for this period."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
@@ -15951,6 +15987,9 @@ msgstr "계정 매핑 열기"
 
 msgid "Open Actions"
 msgstr "미결 조치"
+
+msgid "Open Amount"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR 열기"
@@ -16701,6 +16740,9 @@ msgstr "지불"
 
 msgid "Pay expense"
 msgstr "비용 지불"
+
+msgid "Payable"
+msgstr ""
 
 msgid "Payables"
 msgstr "매입채무"
@@ -18446,6 +18488,9 @@ msgstr "입고"
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "초안 또는 대기 중 상태인 입고, 출하, 매출 송장, 매입 송장, 지불, 신용증/회신증을 전기하거나 무효 처리해야 합니다 — 이 기간에 날짜가 지정된 문서와 전기될 때 이 기간의 날짜를 받을 미정 문서 모두 포함됩니다. 전기될 때까지 그 금액은 총계정원장에 포함되지 않으므로 해당 기간은 과소계산됩니다."
 
+msgid "Receivable"
+msgstr ""
+
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "판매형 리스 개시 시 인식된 채권으로, 각 렌탈료 지급 시마다 감소됨"
 
@@ -19522,6 +19567,12 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "개정 {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalued"
+msgstr ""
 
 msgid "Reveal"
 msgstr "표시"
@@ -24330,6 +24381,9 @@ msgstr "이 리비전은 릴리스되었습니다 (생산). 변경 사항은 정
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "이 리비전은 릴리스되었습니다 (생산). 수정하려면 변경 통지를 열으세요."
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr ""
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "이 실행은 여기에 표시된 것보다 더 많은 단계가 있습니다. 처음 {MAX_RUN_STEPS}개만 나열됩니다."
 
@@ -24448,6 +24502,11 @@ msgstr "이것은 {0}을 현재 상태의 일정에서 다시 빌드합니다: {
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "이것은 {0}을(를) 현재 상태의 고정자산에서 재구축합니다: {1}에 끝나는 기간에 대해 다른 실행으로 적용되지 않은 모든 활성 자산입니다."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr ""
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "이것은 배치 크기를 사용하여 활성 생산 방법의 자재 명세서 및 공법에서 단위 원가를 재계산합니다. 현재 원가가 덮어써집니다. 계속하시겠습니까?"
 
@@ -24470,6 +24529,7 @@ msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체�
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "다른 사이즈의 모든 방법 자재가 이 사이즈로 교체됩니다."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "이것은 {0}의 전표를 역전하고 초안으로 돌려놓습니다. 그 후 재계산하거나 전기하거나 삭제할 수 있습니다."
@@ -24759,6 +24819,9 @@ msgstr "총 예상 원가"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로, 원가가 생산된 단위당 배분됩니다."
 
+msgid "Total gains"
+msgstr ""
+
 msgid "Total Hours"
 msgstr "총 시간"
 
@@ -24767,6 +24830,9 @@ msgstr "간접 원가 합계"
 
 msgid "Total lease cost"
 msgstr "총 임차 원가"
+
+msgid "Total losses"
+msgstr ""
 
 msgid "Total Material Cost"
 msgstr "총 자재 원가"
@@ -25111,6 +25177,12 @@ msgstr "미적용"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "미적용 현금은 계정 대변 대신 이 문서에 대한 고객 선급금으로 유지됩니다."
 
+msgid "Unapplied Disbursement"
+msgstr ""
+
+msgid "Unapplied Receipt"
+msgstr ""
+
 msgid "Unapproved Supplier"
 msgstr "미승인 공급업체"
 
@@ -25161,6 +25233,13 @@ msgstr "남은 개월이 부과할 이자를 제외한, 아직 올 할인되지 
 
 msgid "Undo"
 msgstr "실행 취소"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr ""
+
+msgid "Undo Run"
+msgstr ""
 
 msgid "Ungroup"
 msgstr "그룹 해제"

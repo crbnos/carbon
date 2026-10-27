@@ -14,6 +14,7 @@ import {
   calculateMacrsDepreciation,
   calculateTaxDepreciation,
   computeDisposalGainLoss,
+  defaultConsolidatedRate,
   depreciationFloor,
   depreciationRunLineDisplay,
   depreciationRunLinesMatch,
@@ -1459,4 +1460,19 @@ describe("generalLedgerCounterparty", () => {
       supplierInvoiceNumber: null
     });
   });
+});
+
+describe("defaultConsolidatedRate", () => {
+  it.each([
+    ["Asset", "Current"],
+    ["Liability", "Current"],
+    ["Equity", "Historical"],
+    ["Revenue", "Average"],
+    ["Expense", "Average"]
+  ] as const)(
+    "translates a new %s account at the %s rate",
+    (accountClass, rate) => {
+      expect(defaultConsolidatedRate(accountClass)).toBe(rate);
+    }
+  );
 });

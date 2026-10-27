@@ -1658,8 +1658,14 @@ msgstr "Account {accountNumber} is not an active posting account."
 msgid "Account & Details"
 msgstr "Account & Details"
 
+msgid "Account Balance"
+msgstr "Account Balance"
+
 msgid "Account balances with debits and credits"
 msgstr "Account balances with debits and credits"
+
+msgid "Account Currency"
+msgstr "Account Currency"
 
 msgid "Account for advance payments made before goods or services are received"
 msgstr "Account for advance payments made before goods or services are received"
@@ -4332,6 +4338,9 @@ msgstr "Book a call with Carbon"
 msgid "Book Depreciation"
 msgstr "Book Depreciation"
 
+msgid "Booked"
+msgstr "Booked"
+
 msgid "Books lock date (manual)"
 msgstr "Books lock date (manual)"
 
@@ -5656,6 +5665,9 @@ msgstr "Console Operator"
 
 msgid "Console Operator Created"
 msgstr "Console Operator Created"
+
+msgid "Consolidation Rate"
+msgstr "Consolidation Rate"
 
 msgid "Construction in Progress"
 msgstr "Construction in Progress"
@@ -9763,6 +9775,9 @@ msgstr "Export Lines to CSV"
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 
+msgid "Exposure"
+msgstr "Exposure"
+
 msgid "Extended Price"
 msgstr "Extended Price"
 
@@ -10659,6 +10674,9 @@ msgstr "Gain on Lease Termination"
 
 msgid "Gain/Loss"
 msgstr "Gain/Loss"
+
+msgid "Gains"
+msgstr "Gains"
 
 msgid "Gains recognized on disposal of fixed assets"
 msgstr "Gains recognized on disposal of fixed assets"
@@ -12401,6 +12419,12 @@ msgstr "Journal Entry"
 msgid "Journal Entry · {asset}"
 msgstr "Journal Entry · {asset}"
 
+msgid "Journal Entry · Reversal"
+msgstr "Journal Entry · Reversal"
+
+msgid "Journal Entry · Valuation"
+msgstr "Journal Entry · Valuation"
+
 msgid "Journal lines"
 msgstr "Journal lines"
 
@@ -13141,6 +13165,9 @@ msgstr "Loss on Disposal Account"
 msgid "Loss on Lease Termination"
 msgstr "Loss on Lease Termination"
 
+msgid "Losses"
+msgstr "Losses"
+
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "Losses recognized on disposal of fixed assets"
 
@@ -13476,6 +13503,9 @@ msgstr "Mark to delete"
 #. placeholder {0}: counts.created ?? 0
 msgid "Marked absent for {0} day(s)"
 msgstr "Marked absent for {0} day(s)"
+
+msgid "Market"
+msgstr "Market"
 
 msgid "Market rate"
 msgstr "Market rate"
@@ -15537,6 +15567,9 @@ msgstr "Not Required"
 msgid "Not restorable"
 msgstr "Not restorable"
 
+msgid "Not revalued"
+msgstr "Not revalued"
+
 msgid "Not scheduled"
 msgstr "Not scheduled"
 
@@ -15615,6 +15648,9 @@ msgstr "Nothing to post for this period."
 
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "Nothing to recognize yet. Revenue follows what the invoices bill."
+
+msgid "Nothing to revalue for this period."
+msgstr "Nothing to revalue for this period."
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -15951,6 +15987,9 @@ msgstr "Open Account Mapping"
 
 msgid "Open Actions"
 msgstr "Open Actions"
+
+msgid "Open Amount"
+msgstr "Open Amount"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
@@ -16701,6 +16740,9 @@ msgstr "Pay"
 
 msgid "Pay expense"
 msgstr "Pay expense"
+
+msgid "Payable"
+msgstr "Payable"
 
 msgid "Payables"
 msgstr "Payables"
@@ -18446,6 +18488,9 @@ msgstr "Receipts"
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 
+msgid "Receivable"
+msgstr "Receivable"
+
 msgid "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 msgstr "Receivable recognized at commencement of a sales-type lease, reduced by each rental payment"
 
@@ -19522,6 +19567,12 @@ msgstr "Rev {revision}"
 
 msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
+
+msgid "Revaluation Lines"
+msgstr "Revaluation Lines"
+
+msgid "Revalued"
+msgstr "Revalued"
 
 msgid "Reveal"
 msgstr "Reveal"
@@ -24330,6 +24381,9 @@ msgstr "This revision is released (Production). Changes should normally flow thr
 msgid "This revision is released (Production). Open a change notice to modify it."
 msgstr "This revision is released (Production). Open a change notice to modify it."
 
+msgid "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+msgstr "This run does not revalue these memos: a settlement against them does not record the amount in the memo's currency."
+
 msgid "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 msgstr "This run has more steps than we show here. Only the first {MAX_RUN_STEPS} are listed."
 
@@ -24448,6 +24502,11 @@ msgstr "This will rebuild {0} from its schedule as it is now: every schedule row
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 
+#. placeholder {0}: run.currencyRevaluationRunId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+msgstr "This will rebuild {0} from the foreign-currency items open at {1}. The rates on the run are kept."
+
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 
@@ -24470,6 +24529,7 @@ msgstr "This will replace all method materials of other revisions with this revi
 msgid "This will replace all method materials of other sizes with this size."
 msgstr "This will replace all method materials of other sizes with this size."
 
+#. placeholder {0}: run.currencyRevaluationRunId
 #. placeholder {0}: run.runId
 msgid "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
 msgstr "This will reverse the journals of {0} and return it to Draft. You can then recalculate, post or delete it."
@@ -24759,6 +24819,9 @@ msgstr "Total Estimated Cost"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 
+msgid "Total gains"
+msgstr "Total gains"
+
 msgid "Total Hours"
 msgstr "Total Hours"
 
@@ -24767,6 +24830,9 @@ msgstr "Total Indirect Cost"
 
 msgid "Total lease cost"
 msgstr "Total lease cost"
+
+msgid "Total losses"
+msgstr "Total losses"
 
 msgid "Total Material Cost"
 msgstr "Total Material Cost"
@@ -25111,6 +25177,12 @@ msgstr "Unapplied"
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 
+msgid "Unapplied Disbursement"
+msgstr "Unapplied Disbursement"
+
+msgid "Unapplied Receipt"
+msgstr "Unapplied Receipt"
+
 msgid "Unapproved Supplier"
 msgstr "Unapproved Supplier"
 
@@ -25161,6 +25233,13 @@ msgstr "Undiscounted payments still to come, by fiscal year, less the interest t
 
 msgid "Undo"
 msgstr "Undo"
+
+#. placeholder {0}: run.currencyRevaluationRunId
+msgid "Undo {0}"
+msgstr "Undo {0}"
+
+msgid "Undo Run"
+msgstr "Undo Run"
 
 msgid "Ungroup"
 msgstr "Ungroup"
