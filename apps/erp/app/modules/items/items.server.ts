@@ -30,7 +30,7 @@ import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
-  booleanText,
+  booleanField,
   methodType,
   sourcingType
 } from "~/modules/shared/shared.models";
@@ -4608,7 +4608,7 @@ export const createMethodMaterial = defineServiceFn({
     makeMethodId: z.string().min(1),
     order: z.number().min(0),
     itemType: z.enum(["Part", "Material", "Consumable"]),
-    kit: booleanText().optional(),
+    kit: booleanField().optional(),
     methodType: z.enum([
       "Purchase to Order",
       "Pull from Inventory",
@@ -4662,7 +4662,7 @@ export const updateMethodMaterial = defineServiceFn({
       makeMethodId: z.string().min(1),
       order: z.number().min(0),
       itemType: z.enum(["Part", "Material", "Consumable"]),
-      kit: booleanText().optional(),
+      kit: booleanField().optional(),
       methodType: z.enum([
         "Purchase to Order",
         "Pull from Inventory",

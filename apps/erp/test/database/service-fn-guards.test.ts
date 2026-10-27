@@ -366,8 +366,8 @@ describeLocal("published operations hold their routes' checks", () => {
       stockTransferId: ids.releasedStockTransfer,
       itemId: ids.serial,
       quantity: 1,
-      requiresBatchTracking: "false",
-      requiresSerialTracking: "true"
+      requiresBatchTracking: false,
+      requiresSerialTracking: true
     });
 
     expect(result.error?.category).toBe("rule");
@@ -387,8 +387,8 @@ describeLocal("published operations hold their routes' checks", () => {
       itemId: ids.serial,
       quantity: 1,
       pickedQuantity: 1,
-      requiresBatchTracking: "false",
-      requiresSerialTracking: "true"
+      requiresBatchTracking: false,
+      requiresSerialTracking: true
     } as never);
 
     expect(result.error).toBeNull();

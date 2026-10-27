@@ -158,14 +158,15 @@ export type OperationType = (typeof operationTypes)[number];
 // and a work center left over from an in-house type put the operation on the
 // MES Work Centers board.
 /**
- * A yes/no field that came from a form as `"true"` / `"false"`. An API caller
- * sends a JSON boolean, so both are accepted; the value stays the string the
- * form sent, which is what the code reading it compares against.
+ * A yes/no field. An API caller sends a JSON boolean and a form posts
+ * `"true"` / `"false"`; both parse to a boolean. Typed as taking a boolean, so
+ * the published API schema says `boolean`: the form's strings are its own.
  */
-export const booleanText = () =>
-  z
-    .union([z.boolean(), z.enum(["true", "false"])])
-    .transform((value) => String(value) as "true" | "false");
+export const booleanField = () =>
+  z.preprocess(
+    (value) => (value === "true" ? true : value === "false" ? false : value),
+    z.boolean()
+  ) as unknown as z.ZodType<boolean, boolean>;
 
 export function normalizeOperationSourceIds<
   T extends {
