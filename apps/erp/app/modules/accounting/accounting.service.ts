@@ -82,6 +82,7 @@ import {
   replayReliefs
 } from "@carbon/database/cost-relief";
 import {
+  buildCurrencyRevaluationJournals,
   type ExposureType,
   type RevaluationExposure,
   type RevaluedLine,
@@ -12640,6 +12641,188 @@ export async function updateCurrencyRevaluationRate(
       currencyCode,
       rate
     });
+  });
+}
+
+/**
+ * Post a Draft revaluation run: the valuation journal at the period end and
+ * its reversal on the next day, both Posted. The run links them through its
+ * own columns, never `journal.reversedById` — that would mark the valuation
+ * Reversed, and Undo (`reverseRunJournals`) refuses a Reversed journal.
+ * Periods are resolved by the caller, before the transaction.
+ */
+export async function postCurrencyRevaluationRun(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    valuationPeriod: { accountingPeriodId: string; postingDate: string };
+    reversalPeriod: { accountingPeriodId: string; postingDate: string };
+    expectedLineIds: string[];
+    gainAccountId: string;
+    lossAccountId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ journalId: string; reversalJournalId: string }> {
+  const { runId, companyId, userId } = args;
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    throw new Error(ACCOUNTING_NOT_STARTED);
+  }
+  const now = datetime.timestamp();
+
+  return withTransaction(db, async (trx) => {
+    const run = await lockDraftRevaluationRun(trx, { runId, companyId });
+    const stored = await trx
+      .selectFrom("currencyRevaluationLine as l")
+      .innerJoin("account as a", "a.id", "l.accountId")
+      .select([
+        "l.id",
+        "l.exposureType",
+        "l.documentType",
+        "l.documentId",
+        "l.documentNumber",
+        "l.accountId",
+        "a.class",
+        "l.currencyCode",
+        "l.openAmount",
+        "l.bookedBaseAmount",
+        "l.revaluedBaseAmount",
+        "l.differenceAmount"
+      ])
+      .where("l.runId", "=", runId)
+      .where("l.companyId", "=", companyId)
+      .execute();
+
+    const expected = new Set(args.expectedLineIds);
+    if (
+      stored.length !== expected.size ||
+      stored.some((line) => !expected.has(line.id))
+    ) {
+      throw new RunOutOfDateError(
+        `Currency revaluation run ${run.currencyRevaluationRunId} changed while it was being posted; review it and post again`
+      );
+    }
+    if (
+      stored.some(
+        (line) =>
+          line.exposureType === "Account Balance" && line.openAmount === null
+      )
+    ) {
+      throw new RunOutOfDateError(
+        "Enter the statement balance for every account before posting"
+      );
+    }
+
+    const { valuation, reversal } = buildCurrencyRevaluationJournals({
+      readableId: run.currencyRevaluationRunId,
+      gainAccountId: args.gainAccountId,
+      lossAccountId: args.lossAccountId,
+      lines: stored.map((line) => ({
+        exposureType: line.exposureType as ExposureType,
+        documentType: line.documentType as RevaluationExposure["documentType"],
+        documentId: line.documentId,
+        documentNumber: line.documentNumber,
+        accountId: line.accountId,
+        accountClass: line.class === "Liability" ? "Liability" : "Asset",
+        currencyCode: line.currencyCode,
+        openAmount: line.openAmount === null ? null : Number(line.openAmount),
+        bookedBaseAmount: Number(line.bookedBaseAmount),
+        revaluedBaseAmount:
+          line.revaluedBaseAmount === null
+            ? null
+            : Number(line.revaluedBaseAmount),
+        differenceAmount:
+          line.differenceAmount === null ? null : Number(line.differenceAmount)
+      }))
+    });
+
+    const journal = await insertPostedRunJournal(trx, valuation, {
+      ...args.valuationPeriod,
+      dimensionIds: {},
+      companyId,
+      userId,
+      now
+    });
+    const reversalJournal = await insertPostedRunJournal(trx, reversal, {
+      ...args.reversalPeriod,
+      dimensionIds: {},
+      companyId,
+      userId,
+      now
+    });
+
+    await trx
+      .updateTable("currencyRevaluationRun")
+      .set({
+        status: "Posted",
+        journalId: journal.id,
+        reversalJournalId: reversalJournal.id,
+        postedAt: now,
+        postedBy: userId,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { journalId: journal.id, reversalJournalId: reversalJournal.id };
+  });
+}
+
+/**
+ * Undo a posted revaluation run: reverse both of its journals (each dated
+ * by `periods`, keyed by the original's posting date) and return the run to
+ * Draft.
+ */
+export async function reverseCurrencyRevaluationRun(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    periods: RunPostingPeriods;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ readableId: string }> {
+  const { runId, periods, companyId, userId } = args;
+
+  return withTransaction(db, async (trx) => {
+    const run = await trx
+      .selectFrom("currencyRevaluationRun")
+      .select([
+        "currencyRevaluationRunId",
+        "status",
+        "journalId",
+        "reversalJournalId"
+      ])
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Posted") {
+      throw new RunReversalError(
+        `Currency revaluation run ${run.currencyRevaluationRunId} is ${run.status}; only a posted run can be reversed`
+      );
+    }
+    const journalIds = [run.journalId, run.reversalJournalId].filter(
+      (id): id is string => id !== null
+    );
+    await reverseRunJournals(trx, { journalIds, periods, companyId, userId });
+    await trx
+      .updateTable("currencyRevaluationRun")
+      .set({
+        status: "Draft",
+        journalId: null,
+        reversalJournalId: null,
+        postedAt: null,
+        postedBy: null,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { readableId: run.currencyRevaluationRunId };
   });
 }
 
