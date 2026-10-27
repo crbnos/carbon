@@ -14,16 +14,15 @@ import type { InfiniteOptions } from "./types";
 /**
  * The list's row count, exact at any size: from 1,000 rows up it asks for
  * `?count=exact` after page 1 shows, keeping the estimate until it arrives.
- * See `.claude/rules/table-infinite-scroll.md` ("The row count").
+ * A revalidation counts again without a new request from here: the router
+ * reloads the fetcher's last URL itself. See
+ * `.claude/rules/table-infinite-scroll.md` ("The row count").
  */
 export function useExactCount({
   count,
-  data,
   infinite
 }: {
   count: number;
-  /** The loader's page 1. A new array is a new page 1. */
-  data: unknown;
   infinite?: InfiniteOptions;
 }): { count: number; isExact: boolean } {
   const fetcher = useFetcher<{ count?: number; exactCount?: boolean }>();
@@ -42,12 +41,11 @@ export function useExactCount({
   const load = useRef(fetcher.load);
   load.current = fetcher.load;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new page 1 (`data`) counts again
   useEffect(() => {
     if (!wanted) return;
     requestedKey.current = resetKey;
     load.current(getCountUrl(pageUrl));
-  }, [wanted, resetKey, pageUrl, data]);
+  }, [wanted, resetKey, pageUrl]);
 
   useEffect(() => {
     const result = fetcher.data;

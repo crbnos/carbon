@@ -55,9 +55,10 @@ The header shows the number of matching rows ("2,345 rows"), exact at any size.
    1,000 rows. From 1,000 rows up it gives the planner's estimate, because an
    exact count (`COUNT(*) OVER ()`) reads every matching row.
 2. From 1,000 up, `useExactCount` (`components/Table/useExactCount.ts`) loads
-   the list route with `count=exact` in place of `after` (`getCountUrl`),
-   after page 1 shows and again after each revalidation. The rows never wait
-   for the count.
+   the list route with `count=exact` in place of `after` (`getCountUrl`)
+   after page 1 shows. A revalidation counts again because the router reloads
+   a mounted fetcher's last URL; the hook sends no second request for it.
+   The rows never wait for the count.
 3. `getGenericQueryFilters` reads `count=exact` as `exactCount: true` (and no
    cursor). `listCount(args)` then asks for `exact`, and
    `setGenericQueryFilters` reads one row (`.limit(1)`).

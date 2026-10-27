@@ -412,7 +412,6 @@ const Table = <T extends object>({
   const listKey = infiniteOptions?.listKey;
   const { count, isExact: countIsExact } = useExactCount({
     count: loaderCount,
-    data,
     infinite: infiniteOptions
   });
 
