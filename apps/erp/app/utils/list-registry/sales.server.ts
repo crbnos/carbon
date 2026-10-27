@@ -129,7 +129,7 @@ export const priceListList = {
             filters
           });
 
-    return { ...result, error: null };
+    return result;
   }
 } satisfies ListDefinition;
 
