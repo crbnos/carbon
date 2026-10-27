@@ -3627,10 +3627,13 @@ export async function getDefaultAttachmentsForPO(
 }
 
 /**
- * Copies a new order date to the lines whose date is empty or still the
+ * Copies a changed order date to the lines whose date is empty or still the
  * order's current one, so run it before the delivery row changes, in the same
- * transaction. Lines received complete keep their requested and promised
- * dates. A cleared order date (null) leaves the lines alone.
+ * transaction. An order whose date is not changing moves no line, so saving
+ * the Shipping card does not fill lines left empty. Lines received complete
+ * keep their requested and promised dates; the delivery date (when the goods
+ * arrived) goes only to lines that have received something. A cleared order
+ * date (null) leaves the lines alone.
  */
 export async function cascadePurchaseOrderDateToLines(
   db: Kysely<KyselyDatabase>,
@@ -3656,30 +3659,37 @@ export async function cascadePurchaseOrderDateToLines(
     .where("purchaseOrderLine.companyId", "=", companyId)
     .where("purchaseOrderLine.purchaseOrderId", "in", purchaseOrderIds)
     .where((eb) =>
-      eb.or([
-        eb(`purchaseOrderLine.${lineField}`, "is", null),
-        eb(
-          `purchaseOrderLine.${lineField}`,
-          "=",
-          eb
-            .selectFrom("purchaseOrderDelivery")
-            .select(`purchaseOrderDelivery.${field}`)
-            .whereRef(
-              "purchaseOrderDelivery.id",
-              "=",
-              "purchaseOrderLine.purchaseOrderId"
-            )
-            .whereRef(
-              "purchaseOrderDelivery.companyId",
-              "=",
-              "purchaseOrderLine.companyId"
-            )
-        )
-      ])
+      eb.exists(
+        eb
+          .selectFrom("purchaseOrderDelivery")
+          .select(sql.lit(1).as("one"))
+          .whereRef(
+            "purchaseOrderDelivery.id",
+            "=",
+            "purchaseOrderLine.purchaseOrderId"
+          )
+          .whereRef(
+            "purchaseOrderDelivery.companyId",
+            "=",
+            "purchaseOrderLine.companyId"
+          )
+          .where(`purchaseOrderDelivery.${field}`, "is distinct from", value)
+          .where((delivery) =>
+            delivery.or([
+              delivery(`purchaseOrderLine.${lineField}`, "is", null),
+              delivery(
+                `purchaseOrderLine.${lineField}`,
+                "=",
+                delivery.ref(`purchaseOrderDelivery.${field}`)
+              )
+            ])
+          )
+      )
     );
-  if (field !== "deliveryDate") {
-    update = update.where("purchaseOrderLine.receivedComplete", "=", false);
-  }
+  update =
+    field === "deliveryDate"
+      ? update.where("purchaseOrderLine.quantityReceived", ">", 0)
+      : update.where("purchaseOrderLine.receivedComplete", "=", false);
   await update.execute();
 }
 

@@ -42,23 +42,33 @@ type LineDates = {
 type OrderStatus = Pick<PurchaseOrder, "status">;
 
 /**
- * Saves one line date; a refusal is toasted. `failures` counts refused saves:
- * a control keys on it, so it drops the date it was showing and shows the
- * saved one again.
+ * Saves one line date; a refusal is toasted. `failures(field)` counts that
+ * field's refused saves: its control keys on it, so it drops the date it was
+ * showing and shows the saved one again, and the other dates keep theirs.
  */
 export function useSavePurchaseOrderLineDate(line: {
   id: string;
   purchaseOrderId: string;
 }) {
-  const [failures, setFailures] = useState(0);
+  const [refused, setRefused] = useState<
+    Partial<Record<PurchaseOrderLineDateField, number>>
+  >({});
+  const saving = useRef<PurchaseOrderLineDateField | null>(null);
   const fetcher = useAction<typeof action>({
     onError: (data) => {
       if (data?.error) toast.error(data.error.message);
-      setFailures((count) => count + 1);
+      const field = saving.current;
+      if (field) {
+        setRefused((counts) => ({
+          ...counts,
+          [field]: (counts[field] ?? 0) + 1
+        }));
+      }
     }
   });
 
   const save = (field: PurchaseOrderLineDateField, value: string | null) => {
+    saving.current = field;
     const formData = new FormData();
     formData.append("field", field);
     formData.append("value", value ?? "");
@@ -67,6 +77,8 @@ export function useSavePurchaseOrderLineDate(line: {
       action: path.to.purchaseOrderLineDate(line.purchaseOrderId, line.id)
     });
   };
+
+  const failures = (field: PurchaseOrderLineDateField) => refused[field] ?? 0;
 
   return { save, failures };
 }
@@ -102,7 +114,7 @@ export function PurchaseOrderLinePromisedDate({
         <Trans>Promised</Trans>
       </span>
       <DatePill
-        key={`${value ?? ""}:${failures}`}
+        key={`${value ?? ""}:${failures("promisedDate")}`}
         value={value}
         isDisabled={isDisabled}
         onChange={(date) => {
@@ -217,7 +229,7 @@ export function PurchaseOrderLineDateFields({
         });
         return (
           <LineDateField
-            key={`${field}:${value ?? ""}:${failures}`}
+            key={`${field}:${value ?? ""}:${failures(field)}`}
             label={label}
             termId={termId}
             value={value}

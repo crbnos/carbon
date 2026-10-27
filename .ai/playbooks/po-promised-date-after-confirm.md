@@ -4,7 +4,7 @@ Last tested: 2026-10-26
 Route: /x/purchase-order/<purchaseOrder.id>/details (properties panel, right side)
 
 ## Prerequisites
-- Seeded dev company (test@carbon.ms) has POs in every status: Draft, To Receive,
+- A seeded dev company (`pnpm db:seed:dev`) has POs in every status: Draft, To Receive,
   To Receive and Invoice, To Invoice, Completed, Closed. Find them with
   `select po.id, po."purchaseOrderId", po.status from "purchaseOrder" po` scoped to
   the test user's company.

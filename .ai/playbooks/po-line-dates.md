@@ -5,9 +5,10 @@ Routes: /x/purchase-order/<id>/details (summary + Shipping card),
 /x/purchase-order/<id>/<lineId>/details (line form)
 
 ## Prerequisites
-- Seeded dev company (test@carbon.ms). Draft PO000003 (1 line) and To Receive
-  PO000001 (2 lines) have no header or line dates. Find ids with
-  `select po.id, po."purchaseOrderId", po.status from "purchaseOrder" po`.
+- A dev company with a Draft PO and a To Receive PO, each with a line and no
+  header or line dates. Find them with
+  `select po.id, po."purchaseOrderId", po.status from "purchaseOrder" po` scoped
+  to your company; PO numbers differ between databases.
 - `SUPABASE_DB_URL` in `.env.local` for psql checks.
 
 ## Steps
@@ -16,7 +17,9 @@ On a Draft PO's details page, in the Shipping card, click the "day" spinbutton o
 Requested Date and type `DDMMYYYY` with `agent-browser keyboard type`, same for
 Promised Date, then requestSubmit the card's form (find it via
 `input[name=receiptPromisedDate]`). Lines with an empty date (or the old order
-date) take the new ones; a line with its own date keeps it.
+date) take the new ones; a line with its own date keeps it. Saving the card
+again without changing a date moves no line, so a line left empty stays empty.
+A Delivery Date reaches only lines that have received something.
 
 ### 2. Summary pill
 Each non-indirect line shows "Promised" plus a pill under the price badges:
