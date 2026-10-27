@@ -1196,11 +1196,11 @@ export async function getItemPlanning(
 }
 
 /**
- * The part of an item's on-hand at a location that sits in non-nettable
- * storage units: stock MRP and the planning screens do not count as supply.
- * get_inventory_quantities includes it in quantityOnHand.
+ * An item's on-hand at a location from the aggregate MRP reads, with the part
+ * that sits in non-nettable storage units: MRP and the planning screens count
+ * `quantityOnHand - quantityNonNettable` as supply.
  */
-export async function getItemNonNettableQuantity(
+export async function getItemNettableQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string,
@@ -1208,7 +1208,7 @@ export async function getItemNonNettableQuantity(
 ) {
   return client
     .from("itemStockQuantities")
-    .select("quantityNonNettable")
+    .select("quantityOnHand, quantityNonNettable")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .eq("locationId", locationId)

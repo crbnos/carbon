@@ -2884,12 +2884,17 @@ export async function upsertReceipt(
 /**
  * The form asks "Non-nettable?"; the column stores `nettable`. An omitted
  * `nonNettable` leaves the column alone, so an update that does not mention it
- * never makes a unit nettable again.
+ * never makes a unit nettable again. `effectiveNettable` is derived by the
+ * database and is never written from here: the operations' inputs are loose
+ * objects, so an API caller could otherwise send it.
  */
-function toNettableColumn<T extends { nonNettable?: boolean }>({
+function toNettableColumn<
+  T extends { nonNettable?: boolean; effectiveNettable?: unknown }
+>({
   nonNettable,
+  effectiveNettable: _derived,
   ...rest
-}: T): Omit<T, "nonNettable"> & { nettable?: boolean } {
+}: T): Omit<T, "nonNettable" | "effectiveNettable"> & { nettable?: boolean } {
   return nonNettable === undefined ? rest : { ...rest, nettable: !nonNettable };
 }
 

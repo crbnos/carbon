@@ -173,19 +173,24 @@ not supply (migration `20261027181718_non-nettable-storage.sql`). The form field
   cannot opt back in. Stock in no unit (NULL `storageUnitId`) is nettable.
 - **Stored, not walked.** `storageUnit.effectiveNettable` holds the result, written only by
   `refresh_storage_unit_nettable(locationIds)`, which recomputes a location's units top-down
-  from the roots. The after-interceptors `sync_storage_unit_nettable` (on `nettable`,
-  `parentId`, `storageTypeIds`, `locationId` changes, and INSERT) and
-  `sync_storage_type_nettable` (on `nettable` change and DELETE) call it. Lineside is the
-  opposite pattern (`get_effective_work_center_id`, walked per row); don't copy that for
+  from the roots. The after-interceptors `sync_storage_unit_nettable` (on a change to
+  `nettable`, `parentId`, `storageTypeIds`, `locationId` or `effectiveNettable` itself, and on
+  an INSERT that is not a plain root unit) and `sync_storage_type_nettable` (on `nettable`
+  change and DELETE) call it. The refresh marks its own writes with the transaction GUC
+  `app.storage_unit_nettable_refresh`, so they do not refresh again; any other write of
+  `effectiveNettable` is recomputed back. `upsertStorageUnit` never writes it. Lineside is
+  the opposite pattern (`get_effective_work_center_id`, walked per row); don't copy that for
   planning reads.
 - **The aggregate.** `itemStockQuantities.quantityNonNettable` is the part of `quantityOnHand`
-  in non-nettable units, maintained by `apply_item_stock_quantities` (joins `storageUnit`) and
-  moved by `refresh_storage_unit_nettable` when a unit flips. It is the NON-nettable part, so
-  a backup taken before the column existed restores as "nothing quarantined". Deleting a
-  non-nettable unit releases its stock first (`storage_unit_release_non_nettable_stock`, a
-  BEFORE interceptor), because the FK sets the ledger rows' unit to NULL and the ledger
-  handler can no longer tell. A ledger write racing a flip can land on the wrong side; the
-  nightly reconcile corrects it.
+  in non-nettable units, maintained by `apply_item_stock_quantities` (joins `storageUnit`).
+  When a unit flips, `refresh_storage_unit_nettable` RECOMPUTES it from the ledger for every
+  item with stock in a flipped unit, rather than adjusting it, so an earlier drift is
+  repaired too. It is the NON-nettable part, so a backup taken before the column existed
+  restores as "nothing quarantined". Deleting a non-nettable unit releases its stock first
+  (`storage_unit_release_non_nettable_stock`, a BEFORE interceptor), because the FK sets the
+  ledger rows' unit to NULL and the ledger handler can no longer tell. A ledger write racing
+  a flip can leave `quantityNonNettable` stale; the next flip or the nightly reconcile
+  corrects it.
 - **Who reads nettable stock** (`quantityOnHand - quantityNonNettable`): `runMrp`,
   `generatePlanningActions`, `get_purchasing_planning` / `get_production_planning` (which
   also stopped counting Rejected lots), job-creation Consume First (`loadSupersessionRedirect`,

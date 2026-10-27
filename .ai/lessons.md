@@ -4264,3 +4264,23 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** A create input leaves the new row's `id` optional when the table has a default (`mcp-create-inputs.test.ts` fails otherwise). A database refusal the caller can fix is reported as itself: `defineServiceFn` maps an `internal` error whose cause is one (`databaseRefusal`), so don't swallow the cause. A yes/no field is a real boolean that also parses the form's `"true"` / `"false"` (`booleanField`, `shared.models.ts`), so the API publishes `boolean`. A rich-text (JSON) column takes `optionalTiptapDoc` / `requiredTiptapDoc`, never `z.string()` or `z.unknown()`: a raw string is stored as a JSON scalar the editor cannot read. A JSON value a form posts as text takes `jsonInput(schema)`. Never `z.preprocess` / `z.coerce` / `z.any()` bare in an operation's input: the manifest publishes those as "anything".
 
 **Applies to:** every `defineServiceFn` in `apps/erp/app/modules/*/*.server.ts`, and any validator reused as an operation's input.
+
+## A global pnpm virtual store breaks this repo's peer dependencies
+
+**Context:** A worktree installed while `enable-global-virtual-store=true` was set in the
+user's global pnpm config (`~/Library/Preferences/pnpm/rc`).
+
+**Problem:** Packages are linked from `~/Library/pnpm/store/v10/links/…`, where a package
+cannot resolve its peers. The ERP dev server failed every page with `Cannot find package
+'@tiptap/core'`, the database tests could not load, and the scoped typechecks reported about
+7,000 React type errors in files nobody had changed, identical on `main`. It reads as a
+broken branch, not a broken install.
+
+**Rule:** When `readlink apps/erp/node_modules/react-icons` points into
+`Library/pnpm/store/…/links`, reinstall the worktree with the global store off:
+`pnpm install --frozen-lockfile --config.enable-global-virtual-store=false
+--config.confirmModulesPurge=false`. Before blaming a change for mass type errors, compare
+the error set against an untouched checkout of `main`.
+
+**Applies to:** Any worktree; typecheck, vitest and `crbn up` runs.
+

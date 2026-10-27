@@ -53,10 +53,16 @@ CREATE INDEX IF NOT EXISTS "itemLedger_storageUnitId_idx"
 -- parent's result reaches all of its children in one pass. A location holds
 -- at most a few thousand units, and the flags change rarely.
 --
--- For each unit whose result changed, the stock in it moves between the
--- nettable and the non-nettable part of itemStockQuantities. A ledger write
--- that commits while this runs can be counted on the wrong side; the nightly
--- reconcile_item_stock_quantities corrects it.
+-- For the items with stock in a unit whose result changed, quantityNonNettable
+-- is then recomputed from the ledger, not adjusted by a delta: whatever the
+-- stored value was (a ledger write that raced an earlier flip, an
+-- effectiveNettable written directly, a restore), it is right afterwards.
+-- quantityOnHand is not touched, so a concurrent ledger write can at worst
+-- leave quantityNonNettable stale until the nightly
+-- reconcile_item_stock_quantities.
+--
+-- The function's own writes to storageUnit set app.storage_unit_nettable_refresh,
+-- which tells sync_storage_unit_nettable not to refresh again for them.
 --
 -- SECURITY INVOKER: the interceptors run it as the owner. Called through the
 -- API it runs under the caller's RLS, and itemStockQuantities has no write
@@ -69,10 +75,14 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 SET search_path = public, pg_temp
 AS $$
+DECLARE
+  v_flipped TEXT[];
 BEGIN
   IF p_location_ids IS NULL OR cardinality(p_location_ids) = 0 THEN
     RETURN;
   END IF;
+
+  PERFORM set_config('app.storage_unit_nettable_refresh', 'on', true);
 
   WITH RECURSIVE resolved AS (
     SELECT
@@ -104,29 +114,38 @@ BEGIN
     FROM resolved r
     WHERE su."id" = r."id"
       AND su."effectiveNettable" IS DISTINCT FROM r."nettable"
-    RETURNING su."id", su."effectiveNettable"
+    RETURNING su."id"
   )
-  INSERT INTO "itemStockQuantities" AS isq
-    ("itemId", "companyId", "locationId", "quantityOnHand", "quantityNonNettable")
-  SELECT
-    il."itemId",
-    il."companyId",
-    COALESCE(il."locationId", ''),
-    0,
-    SUM(
-      CASE WHEN f."effectiveNettable" THEN -1 ELSE 1 END
-      * item_ledger_on_hand_contribution(il."quantity", il."trackedEntityStatus")
+  SELECT array_agg("id") INTO v_flipped FROM flipped;
+
+  PERFORM set_config('app.storage_unit_nettable_refresh', '', true);
+
+  IF v_flipped IS NULL THEN
+    RETURN;
+  END IF;
+
+  UPDATE "itemStockQuantities" isq
+  SET "quantityNonNettable" = t."quantityNonNettable"
+  FROM (
+    SELECT
+      il."itemId",
+      il."companyId",
+      COALESCE(il."locationId", '') AS "locationId",
+      COALESCE(SUM(item_ledger_on_hand_contribution(il."quantity", il."trackedEntityStatus"))
+        FILTER (WHERE su."effectiveNettable" = false), 0) AS "quantityNonNettable"
+    FROM "itemLedger" il
+    LEFT JOIN "storageUnit" su ON su."id" = il."storageUnitId"
+    WHERE (il."itemId", COALESCE(il."locationId", '')) IN (
+      SELECT DISTINCT moved."itemId", COALESCE(moved."locationId", '')
+      FROM "itemLedger" moved
+      WHERE moved."storageUnitId" = ANY (v_flipped)
     )
-  FROM "itemLedger" il
-  JOIN flipped f ON f."id" = il."storageUnitId"
-  GROUP BY il."itemId", il."companyId", COALESCE(il."locationId", '')
-  HAVING SUM(
-    CASE WHEN f."effectiveNettable" THEN -1 ELSE 1 END
-    * item_ledger_on_hand_contribution(il."quantity", il."trackedEntityStatus")
-  ) <> 0
-  ORDER BY 1, 2, 3
-  ON CONFLICT ("itemId", "companyId", "locationId")
-  DO UPDATE SET "quantityNonNettable" = isq."quantityNonNettable" + EXCLUDED."quantityNonNettable";
+    GROUP BY il."itemId", il."companyId", COALESCE(il."locationId", '')
+  ) t
+  WHERE isq."itemId" = t."itemId"
+    AND isq."companyId" = t."companyId"
+    AND isq."locationId" = t."locationId"
+    AND isq."quantityNonNettable" IS DISTINCT FROM t."quantityNonNettable";
 END;
 $$;
 
