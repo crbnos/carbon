@@ -334,6 +334,20 @@ describe("createBarSpider", { timeout: 30_000 }, () => {
     expect(slept).toBe(true);
   });
 
+  it("stays asleep after the snap while the pointer sweeps the broken webs", () => {
+    const { sim } = setup();
+    sim.appear();
+    live(5);
+    sim.snap();
+    live(1);
+    sim.sleep();
+    for (const hub of sim.state().hubs) {
+      for (let dx = -60; dx <= 60; dx += 6) moveTo(hub.x + dx, hub.y);
+    }
+    live(5);
+    expect(frames.size).toBe(0);
+  });
+
   it("with reduced motion it simply stays in its web", () => {
     const { sim } = setup({ reducedMotion: true });
     sim.appear();

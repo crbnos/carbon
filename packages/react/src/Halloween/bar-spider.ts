@@ -684,7 +684,9 @@ export function createBarSpider() {
     pointer.x = p.x;
     pointer.y = p.y;
     pointer.time = now;
-    if (options.reducedMotion) return;
+    // A fallen spider never counts as resting, so a wake here would run
+    // frames until `appear`.
+    if (options.reducedMotion || spider.mode === "fall") return;
 
     const near = Math.hypot(p.x - spider.body.x, p.y - spider.body.y);
     const wasNear = pointerWasNear;
