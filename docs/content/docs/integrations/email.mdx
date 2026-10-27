@@ -1,28 +1,32 @@
 ---
 title: Email
-description: Send outbound email through Carbon-managed Resend or your own SMTP server.
+description: Send outbound email through this server's mail settings, Resend, or your own SMTP server.
 ---
 
 ## Email
 
-Carbon uses email for transactional messages such as order confirmations and notifications. Email is available on **every plan** and supports Resend or SMTP delivery.
+Carbon uses email for transactional messages such as order confirmations and notifications. Email is available on **every plan** and supports server mail, Resend, or SMTP delivery.
+
+On a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings, every company can email quotes, orders, invoices and RFQs without installing this integration: they go out through the server's mail settings, from the server's address under the company's name. Install the integration to have replies go to your own address, or to use your own Resend or SMTP account. On Carbon Cloud, or a server without mail settings, install the integration with Resend or SMTP.
+
+These settings apply to document emails only. Sign-in, security and notification emails always go out from the server's sender address.
 
 <Steps>
   <Step>
   ### Choose a provider
 
-  Select **Resend** or **SMTP**. The configuration fields change for the selected provider.
+  Select **Server mail**, **Resend** or **SMTP**. Server mail is offered only on a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings (`SMTP_HOST`), and is the default there. Carbon Cloud does not offer it: pick Resend or SMTP. The configuration fields change for the selected provider.
   </Step>
   <Step>
   ### Fill in the provider fields
 
-  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. Configure the **from address** for either provider.
+  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. Server mail needs no credentials. Configure the **from address** for any provider. With server mail, documents are sent from the server's address under your company's name, and replies go to the address you enter; leave it empty to have replies go only to the person who sent the document.
   </Step>
 </Steps>
 
 <FieldTable>
-  <Field name="Provider">**Resend** (Carbon-managed) or **SMTP** (your own server).</Field>
-  <Field name="From address">The address outbound mail is sent from.</Field>
+  <Field name="Provider">**Server mail** (this server's mail settings), **Resend** (Carbon-managed) or **SMTP** (your own server).</Field>
+  <Field name="From address">The address document emails are sent from. Optional with server mail, where documents are sent from the server's address under your company's name and replies go to this address.</Field>
   <Field name="API key">*(Resend)* Your Resend API key.</Field>
   <Field name="Host / Port">*(SMTP)* Your mail server and port (default `587`).</Field>
   <Field name="Username / Password">*(SMTP)* Credentials for the SMTP server.</Field>

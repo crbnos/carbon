@@ -3,13 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Redis } from "ioredis";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import RedisMock from "ioredis-mock";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AccountLockout,
   DEFAULT_BASE_LOCK_SECONDS,
+  DEFAULT_MAX_ATTEMPTS,
   DEFAULT_MAX_LOCK_SECONDS,
   evaluateLockFromPttl,
   lockDurationSeconds,
+  maxAttemptsForRateLimit,
   normalizeLoginIdentifier
 } from "./lockout";
 
@@ -269,5 +272,53 @@ describe("AccountLockout", () => {
       locked: false,
       retryAfterSeconds: 0
     });
+  });
+});
+
+describe("maxAttemptsForRateLimit", () => {
+  it("is a quarter of the hourly RATE_LIMIT, never below the default", () => {
+    expect(maxAttemptsForRateLimit(5)).toBe(DEFAULT_MAX_ATTEMPTS);
+    expect(maxAttemptsForRateLimit(1000)).toBe(250);
+    expect(maxAttemptsForRateLimit(30)).toBe(8);
+    expect(maxAttemptsForRateLimit(Number.NaN)).toBe(DEFAULT_MAX_ATTEMPTS);
+  });
+});
+
+// The real window scripts (ioredis-mock runs them), as in ratelimit.test.ts.
+describe("AccountLockout.refund against the real window scripts", () => {
+  beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2024-01-01T00:07:00.000Z"));
+    await new RedisMock().flushall();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("gives back a counted attempt, so it never adds up to a lock", async () => {
+    const lockout = new AccountLockout({
+      redis: new RedisMock() as unknown as Redis,
+      maxAttempts: 2
+    });
+    await lockout.recordFailure("user@x.com");
+    await lockout.recordFailure("user@x.com");
+    await lockout.refund("User@X.com");
+    expect((await lockout.recordFailure("user@x.com")).locked).toBe(false);
+    expect((await lockout.recordFailure("user@x.com")).locked).toBe(true);
+  });
+
+  it("keeps each prefix's attempts apart", async () => {
+    const redis = new RedisMock() as unknown as Redis;
+    const code = new AccountLockout({
+      redis,
+      maxAttempts: 1,
+      prefix: "@carbon/lockout-code"
+    });
+    await code.recordFailure("user@x.com");
+    expect((await code.recordFailure("user@x.com")).locked).toBe(true);
+    expect(
+      (await new AccountLockout({ redis }).status("user@x.com")).locked
+    ).toBe(false);
   });
 });

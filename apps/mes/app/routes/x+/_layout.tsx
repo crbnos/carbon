@@ -69,8 +69,7 @@ import {
   Form,
   Outlet,
   useLoaderData,
-  useLocation,
-  useNavigate
+  useLocation
 } from "react-router";
 import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
@@ -361,7 +360,6 @@ export default function AuthenticatedRoute() {
     shellLoadedAt = Date.now();
   }, [loaderData]);
 
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const showTabBar = isTabBarPath(pathname);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -396,15 +394,7 @@ export default function AuthenticatedRoute() {
   useKeyboardWedge({
     test: (input) =>
       (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
-      !input.includes("/kanban/complete/"), // we handle this more gracefully in JobOperation
-    callback: (input) => {
-      try {
-        const url = new URL(input);
-        navigate(url.pathname + url.search);
-      } catch {
-        navigate(input);
-      }
-    }
+      !input.includes("/kanban/complete/") // we handle this more gracefully in JobOperation
   });
 
   const userId = user?.id;

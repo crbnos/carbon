@@ -75,3 +75,24 @@ export function actionsOfTypes<
   if (!types || types.length === 0) return [...actions];
   return actions.filter((action) => types.includes(action.type));
 }
+
+/**
+ * Each row with its own planning actions (by `itemId`). A grid page carries
+ * the actions of its rows, so the grid reads every loaded row's actions from
+ * the rows themselves, with no merge of later pages.
+ */
+export function withPlanningActions<
+  R extends { id: string },
+  A extends { itemId: string }
+>(rows: readonly R[], actions: readonly A[]): (R & { planningActions: A[] })[] {
+  const byItemId = new Map<string, A[]>();
+  for (const action of actions) {
+    const list = byItemId.get(action.itemId);
+    if (list) list.push(action);
+    else byItemId.set(action.itemId, [action]);
+  }
+  return rows.map((row) => ({
+    ...row,
+    planningActions: byItemId.get(row.id) ?? []
+  }));
+}

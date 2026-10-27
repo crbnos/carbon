@@ -10,8 +10,10 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import {
   integrations as availableIntegrations,
+  emailSettingsForm,
   getIntegrationConfigById,
   type IntegrationID,
+  picksServerMail,
   resolveIntegrationTopology
 } from "@carbon/ee";
 import {
@@ -67,6 +69,7 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
 import {
@@ -109,10 +112,10 @@ import {
   getIntegration,
   getOeeDevicesTabData,
   getProviderDimensionTargets,
-  getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
   isIntegrationInstallWithheld,
-  upsertCompanyIntegration
+  upsertCompanyIntegration,
+  withSyncOperationReferences
 } from "~/modules/settings/settings.service";
 import { IntegrationForm, SyncActivity } from "~/modules/settings/ui";
 import { AccountingSyncControl } from "~/modules/settings/ui/Integrations/AccountingSyncControl";
@@ -122,8 +125,13 @@ import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/Inte
 import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
 import { OeeDevices } from "~/modules/settings/ui/Integrations/OeeDevices.ee";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
-import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
+import {
+  SYNC_ACTIVITY_SORTS,
+  type SyncReconciliationReport
+} from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
+import { toPage } from "~/utils/cursor";
+import { PAGE_SIZE } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "integrations-id");
@@ -517,6 +525,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions.reimbursementBankAccountId = assetOptions;
   }
 
+  // Server mail is offered only where the server has mail settings.
+  const emailForm = emailSettingsForm(integrationId, SERVER_MAIL_CONFIGURED);
+  if (emailForm?.providerOptions) {
+    dynamicOptions.provider = emailForm.providerOptions;
+  }
+
   const integrationData = await getIntegration(
     client,
     integrationId,
@@ -526,7 +540,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (integrationData.error || !integrationData.data) {
     return {
       installed: false,
-      metadata: {},
+      // A fresh Email install starts on server mail where the server has it.
+      metadata: emailForm?.initialMetadata ?? {},
       dynamicOptions,
       syncActivity: null,
       accountMapping: null,
@@ -563,21 +578,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     integrationData.data.active;
 
   // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
-  // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
-  // clashing with other search params.
+  // client is enough). The status param is prefixed (syncStatus) to avoid
+  // clashing with other search params. Later pages come from
+  // `api+/integrations.$id.sync-activity` as the tab scrolls.
   let syncActivity: {
-    operations: SyncOperation[];
     /**
-     * `entityType:entityId` -> the document number a human reads
-     * (`PO000001`) plus the Carbon row id to link to. Sparse: a pulled
-     * record that never landed a Carbon row is keyed by the provider's
-     * remote id, and the table falls back to it.
+     * Each with its `reference`: the document number a human reads
+     * (`PO000001`) plus the Carbon row id to link to. Null for a pulled
+     * record that never landed a Carbon row: the table falls back to the
+     * provider's remote id.
      */
-    readableIds: Record<string, { label: string; recordId: string }>;
+    operations: (SyncOperation & {
+      reference: { label: string; recordId: string } | null;
+    })[];
     count: number;
     status: SyncOperationStatus | null;
-    page: number;
-    pageSize: number;
+    nextCursor: string | null;
     lastReconciliation: SyncReconciliationReport | null;
     /** Failed + Warning operations — the tab-label badge. */
     failingCount: number;
@@ -599,19 +615,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const statusFilter = SyncOperationStatusSchema.safeParse(
       url.searchParams.get("syncStatus")
     );
-    const page = Math.max(
-      1,
-      Number.parseInt(url.searchParams.get("syncPage") ?? "1", 10) || 1
-    );
-    const pageSize = 25;
 
     const [operations, failingOps, tieOutRows] = await Promise.all([
       getSyncOperations(client, {
         companyId,
         integration: integrationId,
         status: statusFilter.success ? statusFilter.data : undefined,
-        limit: pageSize,
-        offset: (page - 1) * pageSize
+        // One extra row tells whether a next page exists.
+        limit: PAGE_SIZE + 1
       }),
       // Failed + Warning count for the tab badge — only the exact count is
       // used, so fetch a single row.
@@ -681,17 +692,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? (storedReconciliation as SyncReconciliationReport)
         : null;
 
+    const firstPage = toPage(operations.data, {
+      limit: PAGE_SIZE,
+      sorts: SYNC_ACTIVITY_SORTS
+    });
+
     syncActivity = {
-      operations: operations.data,
-      readableIds: await getSyncOperationReadableIds(
+      operations: await withSyncOperationReferences(
         client,
         companyId,
-        operations.data
+        firstPage.rows
       ),
       count: operations.count ?? 0,
       status: statusFilter.success ? statusFilter.data : null,
-      page,
-      pageSize,
+      nextCursor: firstPage.nextCursor,
       lastReconciliation,
       failingCount: failingOps.error ? 0 : (failingOps.count ?? 0),
       tieOut
@@ -1276,6 +1290,19 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // integration active but non-functional, so require one here. Scoped to
   // form-entered secrets — OAuth providers get their credentials via the
   // callback, so they are never blocked here.
+  const usesServerMail = picksServerMail(integrationId, metadata);
+  if (usesServerMail && !SERVER_MAIL_CONFIGURED) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(
+          null,
+          "This server has no mail settings. Ask your administrator to set them up, or pick Resend or Custom SMTP."
+        )
+      )
+    );
+  }
   const FORM_SECRET_INTEGRATIONS = new Set([
     "linear",
     "mount",
@@ -1286,7 +1313,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     "sense"
   ]);
   if (
-    FORM_SECRET_INTEGRATIONS.has(integrationId) ||
+    (FORM_SECRET_INTEGRATIONS.has(integrationId) && !usesServerMail) ||
     integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
   ) {
     const alreadyVaulted = existing.data?.secretRef != null;
@@ -1622,9 +1649,7 @@ export default function IntegrationRoute() {
           operations={syncActivity.operations}
           count={syncActivity.count}
           status={syncActivity.status}
-          page={syncActivity.page}
-          pageSize={syncActivity.pageSize}
-          readableIds={syncActivity.readableIds}
+          nextCursor={syncActivity.nextCursor}
           lastReconciliation={syncActivity.lastReconciliation}
           tieOut={syncActivity.tieOut}
         />

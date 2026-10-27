@@ -4,8 +4,41 @@
 
 // @vitest-environment jsdom
 
+import { act } from "react";
+import type { Root } from "react-dom/client";
+import { hydrateRoot } from "react-dom/client";
 import { describe, expect, it } from "vitest";
-import { generateHTML, isRichTextEmpty } from "./HTML";
+import { generateHTML, isRichTextEmpty, RichTextView } from "./HTML";
+
+describe("RichTextView", () => {
+  it("fills in the text when it hydrates the server's empty markup", () => {
+    (
+      globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    const doc = {
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "Net 30" }] }
+      ]
+    };
+    // generateHTML needs the DOM, so the server sends the element empty.
+    const container = document.createElement("div");
+    container.innerHTML = '<div class="prose dark:prose-invert"></div>';
+    document.body.appendChild(container);
+
+    let root: Root | undefined;
+    act(() => {
+      root = hydrateRoot(
+        container,
+        <RichTextView content={doc} empty={null} />
+      );
+    });
+
+    expect(container.textContent).toBe("Net 30");
+    act(() => root?.unmount());
+    container.remove();
+  });
+});
 
 // A work instruction stored as a JSON string scalar crashed the MES operation
 // page: `"type" in "<text>"` throws. Strings are now read as documents.

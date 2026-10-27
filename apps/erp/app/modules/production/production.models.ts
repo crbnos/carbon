@@ -14,6 +14,7 @@ import {
   operationTypes,
   procedureStepType,
   standardFactorType,
+  stepListValues,
   toTiptapDoc
 } from "../shared/shared.models";
 import type {
@@ -90,7 +91,8 @@ export {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  resolvePlanningActionScope,
+  withPlanningActions
 } from "./ui/Planning/planning-action-scope";
 
 /**
@@ -108,6 +110,38 @@ export function isJobEditableFromPlanning(
 
 // The one definition lives in @carbon/utils, shared with the OEE sync.
 export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
+
+/** The statuses a job can be deleted in (`deleteJobs`, and every Delete
+ *  menu). "Due Today" and "Overdue" are deprecated statuses that old jobs
+ *  can still hold. */
+export const JOB_DELETABLE_STATUSES = [
+  "Draft",
+  "Planned",
+  "Due Today",
+  "Overdue"
+] as const;
+
+export function isJobDeletable(status: string | null | undefined): boolean {
+  return JOB_DELETABLE_STATUSES.some((allowed) => allowed === status);
+}
+
+/** The statuses the jobs table's bulk Release acts on. */
+export function isJobBulkReleasable(
+  status: string | null | undefined
+): boolean {
+  return status === "Draft" || status === "Planned";
+}
+
+/** Release is the Planned → Active flip of an operation batch. */
+export function isBatchReleasable(status: string | null | undefined): boolean {
+  return status === "Planned";
+}
+
+/** A started batch must be completed, not dissolved; a completed one is
+ *  history. */
+export function isBatchDissolvable(status: string | null | undefined): boolean {
+  return status === "Planned" || status === "Active";
+}
 
 export const JOB_LOCKED_MESSAGE =
   "Cannot modify a locked job. Reopen it first.";
@@ -197,6 +231,16 @@ export function isAssemblyPlanRunning(
     return age < ASSEMBLY_PLAN_PROCESSING_STALE_MS;
   }
   return job.status === "Queued" && age < ASSEMBLY_PLAN_QUEUED_STALE_MS;
+}
+
+/** Start a motion plan unless the model is still converting or a plan is live. */
+export function shouldStartAssemblyPlan(
+  processingStatus: string | null | undefined,
+  planJob: { status: string; createdAt: string } | null | undefined
+): boolean {
+  const isConverting =
+    processingStatus === "Queued" || processingStatus === "Processing";
+  return !isConverting && !isAssemblyPlanRunning(planJob);
 }
 
 export const jobOperationStatus = [
@@ -987,7 +1031,7 @@ export const procedureStepValidator = z
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
     maxValue: zfd.numeric(z.number().min(0).optional()),
-    listValues: z.array(z.string()).optional(),
+    listValues: stepListValues,
     sortOrder: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
@@ -1005,17 +1049,13 @@ export const procedureStepValidator = z
   .refine(
     (data) => {
       if (data.type === "List") {
-        return (
-          !!data.listValues &&
-          data.listValues.length > 0 &&
-          data.listValues.every((option) => option.trim() !== "")
-        );
+        return !!data.listValues && data.listValues.length > 0;
       }
       return true;
     },
     {
       message: "List options are required",
-      path: ["listOptions"]
+      path: ["listValues"]
     }
   )
   .refine(
@@ -1567,7 +1607,7 @@ const assemblyInstructionStepFields = z.object({
   unitOfMeasureCode: zfd.text(z.string().optional()),
   minValue: zfd.numeric(z.number().min(0).optional()),
   maxValue: zfd.numeric(z.number().min(0).optional()),
-  listValues: z.array(z.string()).optional(),
+  listValues: stepListValues,
   componentNodeIds: jsonField(z.array(z.string()).optional()),
   motion: jsonField(motionSchema.optional()),
   camera: jsonField(cameraSchema.nullable().optional()),
@@ -1588,11 +1628,7 @@ function refineAssemblyInstructionStep(
   }
   if (
     data.type === "List" &&
-    !(
-      Array.isArray(data.listValues) &&
-      data.listValues.length > 0 &&
-      data.listValues.every((option) => option.trim() !== "")
-    )
+    !(Array.isArray(data.listValues) && data.listValues.length > 0)
   ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

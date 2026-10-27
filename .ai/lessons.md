@@ -694,7 +694,7 @@ refuse to save over a row it could not read.
 
 **Problem:** Five switches each had a `default:` or simply returned `undefined`
 for unhandled members, so adding a seventh node type produced **zero** compile
-errors — verified with `tsgo --noEmit`. The new node type got default handles and
+errors — verified with `tsc --noEmit`. The new node type got default handles and
 no validation at all, and would activate.
 
 **Rule:** For behaviour that must exist for every member of a union, prefer one
@@ -759,7 +759,7 @@ and the plan specified FNV-1a via `BigInt`.
 **Problem:** `apps/erp/tsconfig.json` sets `"target": "ES2019"` and compiles
 workspace package **source**, not built output. A `0xcbf29ce484222325n` literal
 in `packages/workflows` fails the erp typecheck with TS2737 even though the
-package's own `tsgo --noEmit` passes — the package config targets `esnext`.
+package's own `tsc --noEmit` passes — the package config targets `esnext`.
 
 **Rule:** Anything in a package `apps/erp` imports must be ES2019-safe. Reach for
 `Math.imul` and two 32-bit passes rather than one 64-bit BigInt pass. Always run
@@ -1045,7 +1045,7 @@ canvas hosting Radix popovers/selects.
 
 **Context:** `upsertQuoteLinePrices` was converted from supabase-js to a Kysely transaction so its delete + reinsert would roll back as a unit. The conversion typechecked, and the shipped result silently stopped preserving `shippingCost`, `discountPercent` and `leadTime` on every markup change.
 
-**Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsgo` cannot see it — the mismatch exists only at runtime.
+**Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsc` cannot see it — the mismatch exists only at runtime.
 
 **Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
 
@@ -2658,7 +2658,7 @@ gate executes it.
 ## Never `git checkout` a generated file to undo a local patch — the user may have regenerated it
 
 **Context:** Typechecking a new-column change in a worktree with no local database, the
-generated `packages/database/src/types.ts` was patched by hand as a throwaway so `tsgo`
+generated `packages/database/src/types.ts` was patched by hand as a throwaway so `tsc`
 could see the columns, then "restored" with `git checkout -- …/types.ts`. Meanwhile the
 user had run `pnpm db:migrate`, which regenerated that file with the real columns.
 
@@ -2869,8 +2869,8 @@ them away. Nothing was wrong in any single place; the waste was the sum.
 type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
 UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` is not queued for AUDIT,
 SEARCH or EMBEDDING (`20261001195204`). When forking `dispatch_event_batch()` into a new
-migration, fork the NEWEST definition; `packages/database/src/event-dispatch.test.ts` fails
-if the filter is lost.
+migration, fork the NEWEST definition; the `event-ignored-columns` check (`@carbon/checks`)
+fails if the filter is lost.
 
 **Applies to:** `packages/planning/src/scheduling/`, any job or route that rewrites many rows
 of a table with event subscriptions, and every migration that redefines
@@ -3356,7 +3356,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Rule:** Never pass a reused `tag` to `showNotification` when the user must see the repeat. Close the older notifications yourself (`registration.getNotifications()`, match on `notification.data.tag`), then show the new one with no `tag`, so it gets a fresh identifier. To debug a push that "does not arrive", read the send's status code first, then the OS notification log, before changing code.
 
-**Applies to:** `apps/erp/public/push-worker.js`; any future service worker or Notification API caller.
+**Applies to:** `apps/erp/public/service-worker.js` (was `push-worker.js`); any future service worker or Notification API caller.
 
 ## A new key in an Inngest step's return breaks runs in flight at deploy
 
@@ -3377,7 +3377,7 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Rule:** Call `matchAll({ type: "window" })` without `includeUncontrolled` when you will call `navigate()`. Focus first, because the click allows focus for a short time only. Wrap the focus and the navigation in `try`, and call `clients.openWindow()` when either fails or no tab exists.
 
-**Applies to:** `apps/erp/public/push-worker.js`; any service worker that navigates a client.
+**Applies to:** `apps/erp/public/service-worker.js` (was `push-worker.js`); any service worker that navigates a client.
 
 ## A push service's 401 or 403 does not mean the subscription is dead
 
@@ -3640,6 +3640,15 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
 
+## A constant between `/** @mcp read */` and its function drops the MCP tool
+
+**Context:** Cursor paging (2026-10-13) gave each paged list service an exported `*_DEFAULT_SORTS` constant. The list registry and the loaders read it, so it sits next to the service function.
+
+**Problem:** Twice during that work, the constant went between the doc block and the function. TypeScript attaches a doc comment to the declaration directly under it, so the `@mcp read` tag then belonged to the constant. The generator reads the doc block of exported functions only (`getJsDocs()` in `scripts/lib/service-ast.ts`); it skips a constant that is not a function. The function silently stopped being a tool and left `tool-manifest.digest.json`. Typecheck, tests and the build all passed.
+
+**Rule:** Put a new constant ABOVE the doc block of a service function, never between the block and the function. After you edit a `*.service.ts` file, run `pnpm run generate:mcp`. Then diff the tool names in `tool-manifest.digest.json`. A tool name that disappears is a displaced tag until you prove otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 
 ## A cookie that was only ever written is not a stored preference
 
@@ -3799,7 +3808,7 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Problem:** `vi.mock` replaces a module's exports for importers in other files. A call from one function to another inside the same file goes to the real function, so tests that mocked the callee started calling the database, or passed while testing nothing.
 
-**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing-no-mock-theater.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
+**Rule:** Stub only a real boundary (the Supabase client, `fetch`, the clock), as `.claude/rules/testing.md` says. A test that only checks which internal functions were called gets deleted, not repointed.
 
 **Applies to:** tests under `apps/erp/test/` and `apps/erp/app/modules/**`.
 
@@ -4040,6 +4049,16 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** `postReceipt` / `postShipment` and every posting in `inventory.service.ts` that builds update maps before its write loop.
 
+## A header and the get-method copy into it share one transaction
+
+**Context:** New Version on a make method inserted the `makeMethod` header through supabase-js, set the source version Active, then ran get-method's `makeMethodToMakeMethod` copy, which opened its own Kysely transaction. A version change notice and the Onshape panel's Draft did the same in their own code.
+
+**Problem:** When the copy failed it rolled back only its own rows. The empty Draft stayed, numbered above a source that was now Active and read-only. A first fix deleted them again after the failure; that cleanup could fail too, and it needed a delete the caller may not be allowed to make.
+
+**Rule:** Put the header insert, any status change and the copy in ONE Kysely transaction and pass the transaction to `copyMakeMethod` as `db`. A function that may be handed a transaction opens its own through `withTransaction` (`@carbon/database/client`), never `db.transaction()`: Kysely refuses `transaction()` on a `Transaction`. Every get-method body, and `createMakeMethodVersion` itself, joins that way, so a caller can add its own writes to the same commit (the change notice writes its `changeOrderId` in the insert; the Onshape Draft adds its line ownership and marker) instead of a second write after the commit that can fail alone. Kysely bypasses RLS, so check the policy's permission through the caller's client first (`requireCompanyPermission`), as `createRevision` does.
+
+**Applies to:** `createMakeMethodVersion` (`items.service.ts`) and its callers (`createMethodVersion`, `createChangeNoticeDraftMethod`, `ensureDraftMakeMethod`); any other header insert followed by a get-method copy (quote and job duplication, revisions).
+
 ## An import wizard enum Default fills every blank cell before the server sees it
 
 **Context:** The method import (#1977) was made to fill a blank BOM Unit of Measure with the material's own unit and a blank Operation Type with the process's type, as the BOM and BOP editors do.
@@ -4069,3 +4088,84 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 **Rule:** Keep "what to render" (`getTheme` → `resolveTheme`) and "what the user chose" (`getStoredTheme` → `storedTheme`) as two reads, and decide the season once, in the root loader (`Document` renders the name with `themeByName`). A picker that cannot take effect is disabled and says why (`useSeasonalTheme`, `SeasonalThemeNotice`).
 
 **Applies to:** `packages/utils/src/themes.ts`, every app's `services/theme.server.ts` and `root.tsx`, every theme picker.
+
+## Registering on `load` from entry.client never registers in dev
+
+**Context:** The ERP and MES service workers were registered from `entry.client.tsx` with `window.addEventListener("load", register)`, the pattern most guides show (2026-10-22).
+
+**Problem:** On the dev server React Router imports `entry.client` late: by the time the module runs, the page has already fired `load` (`document.readyState === "complete"`), so the listener never ran and no worker was registered. The offline page never appeared and nothing logged an error.
+
+**Rule:** Register immediately when `document.readyState === "complete"`, and on `load` otherwise. Check `navigator.serviceWorker.getRegistrations()` in the browser after any change to how a worker is registered.
+
+**Applies to:** `apps/erp/app/entry.client.tsx`, `apps/mes/app/entry.client.tsx`; any code in an entry module that waits for `load`.
+
+## A service worker's install-time cache can come out empty and stay empty
+
+**Context:** The ERP worker saves `offline.html` when it installs, and installs anyway when the save fails, so push never depends on it (2026-10-22).
+
+**Problem:** A user toggled offline while an updated worker was installing. The save failed, the new worker activated and deleted the previous cache, and every later offline page load got the browser's "This site can't be reached": the worker had nothing to answer with, and it only reinstalls when its own file changes.
+
+**Rule:** Never trust that install filled a cache. Re-check it from the fetch handler after a page load that reached the network (`ensureOfflinePage`), and give the worker a built-in last-resort response (`fallbackOfflinePage`) so a cache miss never surfaces as the browser's error.
+
+**Applies to:** `apps/{erp,mes}/public/service-worker.js`; any worker that precaches on install.
+
+## Changing a precached file without bumping the cache name changes nothing
+
+**Context:** `offline.html` was edited several times (the game, the text wrapping), and each time existing browsers kept showing the old page (2026-10-22).
+
+**Problem:** A worker saves the file only when it installs, and it reinstalls only when `service-worker.js` itself changes. Editing `offline.html` alone leaves every browser that already has the worker on the old copy, and the self-heal only fills a missing entry, it never replaces one.
+
+**Rule:** Every change to `offline.html` bumps the offline cache in both workers (ERP `OFFLINE_CACHE`, MES `SHELL_CACHE`). `offline-page.test.ts` in each app pins the page's hash to the cache name, so a change that skips the bump fails.
+
+**Applies to:** `apps/{erp,mes}/public/offline.html` and `service-worker.js`.
+
+## Chrome on macOS drops an installed app's Dock badge when its window closes
+
+**Context:** The app icon badge is set by the open tab and by each push (`setAppBadge` in the worker), so it should keep counting while the installed app is closed (2026-10-22).
+
+**Problem:** In Chrome on macOS the badge shows while the app's window is open and disappears when it closes; a push that arrives later, and `setAppBadge` run from the worker's own console, both resolve and draw nothing. Chrome's installed app is a helper process that quits with its window, and the badge belongs to it. The badge also needs macOS notification permission with "Badge app icon" on (System Settings → Notifications → the app).
+
+**Rule:** Do not promise a closed-app badge on macOS Chrome. Test the badge with the app hidden (⌘H), not closed, and test the closed case on a platform meant to keep it (an iPhone Home Screen app) before calling it broken.
+
+**Applies to:** `apps/erp/app/hooks/useAppBadge.ts`, `apps/erp/public/service-worker.js`, the `send-push` badge count.
+
+## A scheduler decision is only stored when every write-back guard agrees
+
+**Context:** The scheduler balances an operation that has not started onto any work center of its process (F10, 2026-10-26).
+
+**Problem:** Two separate "never overwrite a stored work center" guards sat between the decision and the database: one in `applyWorkCenterSelections`, one in the engine's `buildWrites`. Fixing the first one alone changed nothing in the database. The `capacityReservation` row named the chosen station while `jobOperation.workCenterId` kept the old one, and every unit test still passed.
+
+**Rule:** When you change what the scheduler decides, trace the value to the write (`placementWrites`, `run-overlay.ts`). Test the decision and the write together, then remove the write fix and confirm a test goes red.
+
+**Applies to:** `packages/planning/src/scheduling/` — `apply-work-center-selections.ts`, `run-overlay.ts`, `scheduling-engine.ts`.
+
+## An SQL test that inserts an employee needs the company's root group first
+
+**Context:** Seeding employees in a `supabase/tests/*.test.sql` file (`rpc-privileges.test.sql`, 2026-10-26).
+
+**Problem:** The `employee` insert fires the employee-type group interceptor, which needs the company's "All Employees" root group. A test company made by hand has no root group, so the insert fails. `SET session_replication_role` is not permitted there.
+
+**Rule:** Insert the root group first, with the id `getGroupId` builds: `'00000000-0000-' || substr(c,1,4) || '-' || substr(c,5,4) || '-' || substr(c,9,12)` for company id `c`. Then insert the employee type and the employee.
+
+**Applies to:** SQL tests under `packages/database/supabase/tests/` that create employees.
+
+## `setGenericQueryFilters` erases a query's row type
+
+**Context:** Inventory → Receiving read a view through `setGenericQueryFilters` and its route annotated the rows with a hand-written type (2026-10-26).
+
+**Problem:** The helper's signature is typed loosely (it carries `@ts-expect-error`), so whatever it returns awaits to rows of type `any`. An annotation on those rows is an unchecked cast: renaming a column in the select string, or dropping it from the view, compiles clean and renders blank. Types in `types.ts` derived through `ReturnType<typeof getX>` are `any` the same way.
+
+**Rule:** Keep the typed builder. Assign the helper's result back to the query variable (`query = setGenericQueryFilters(query, { filters })`), which keeps the variable's declared type, then apply the sort and `.range()` on it directly. Derive the row type from that function in `types.ts`, and narrow a view's never-null keys once at the loader boundary rather than guarding them in components.
+
+**Applies to:** list reads in `apps/erp/app/modules/*/*.service.ts` that call `setGenericQueryFilters`, and the `types.ts` row types derived from them.
+
+
+## OCCT keeps every document it opened by path, and refuses to open it again
+
+**Context:** The optimize ingest gained a PMI pass (`read_pmi`, `crates/occt-bridge/src/pmi.cc`) that reads the same `.xbf` the optimiser had just tessellated with `read_xbf` (2026-10-26).
+
+**Problem:** `TDocStd_Application::Open(path, doc)` registers the document with the application until `Close(doc)`. `read_xbf` never closes it, so the second open of the same path failed with `PCDM_RS_AlreadyRetrieved` ("could not open XBF document"). The hermetic converter test passed, because it opened the `.xbf` only once; only the assembler's ingest test, which runs both passes, showed it.
+
+**Rule:** A second reader of an `.xbf` opens it from a stream (`Open(std::istream&, doc)`), which skips the path check, and calls `xcaf_app()->Close(doc)` when done. Test any new pass over the ingest's xbf through `run_ingest`, not only through the converter.
+
+**Applies to:** `crates/occt-bridge/src/*.cc` (any function that opens a BinXCAF document), `apps/assembler/src/actions/optimize.rs` (`run_ingest`).

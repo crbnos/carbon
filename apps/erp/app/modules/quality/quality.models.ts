@@ -219,6 +219,7 @@ export const issueValidator = z.object({
   items: z.array(z.string()).optional(),
   jobOperationId: z.string().optional(),
   customerId: z.string().optional(),
+  supplierId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
   operationSupplierProcessId: z.string().optional()
 });

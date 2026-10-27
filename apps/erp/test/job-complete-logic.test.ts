@@ -3,8 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-// Import the logic module directly — the ERP barrels drag lingui macros vitest
-// does not transform (see batching-migration-guards.test.ts).
 import {
   getDefaultSerialCompleteQuantity,
   getFinishedUnreceivedQuantity,

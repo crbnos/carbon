@@ -11,6 +11,117 @@ export function clampDepth(n: number): number {
   return Math.min(Math.max(1, n), 5);
 }
 
+type TrackedEntityStatus = Database["public"]["Enums"]["trackedEntityStatus"];
+
+/**
+ * The tracked-entity statuses a shipment of this source may ship. A return to
+ * a customer ships returned stock, On Hold until it leaves. A return to a
+ * supplier ships good stock or the units an inspection or issue rejected —
+ * sending rejects back is the point of the return. Everything else ships
+ * Available stock only. `assignShipmentLineEntity`, `ShipmentLines` and
+ * `ShipmentPostModal` all read this, so tracking and posting never disagree.
+ */
+export function shippableEntityStatuses(
+  sourceDocument: string | null | undefined
+): TrackedEntityStatus[] {
+  if (sourceDocument === "Sales Return Order") return ["On Hold"];
+  if (sourceDocument === "Purchase Return Order") {
+    return ["Available", "Rejected"];
+  }
+  return ["Available"];
+}
+
+/**
+ * How many units a supplier return shipment line puts back before shipping
+ * them: the line's units an inspection reject already wrote off, less what
+ * the line's earlier shipments already put back. The written-off units are
+ * the first the line ships.
+ */
+export function writeOffRestoreQuantity({
+  shipped,
+  writtenOff,
+  shippedBefore
+}: {
+  shipped: number;
+  writtenOff: number;
+  shippedBefore: number;
+}): number {
+  return Math.max(0, Math.min(shipped, writtenOff - shippedBefore));
+}
+
+export function isShippableEntityStatus(
+  sourceDocument: string | null | undefined,
+  status: string | null | undefined
+): boolean {
+  return (shippableEntityStatuses(sourceDocument) as string[]).includes(
+    status ?? ""
+  );
+}
+
+const NOT_ALPHANUMERIC = /[^\p{L}\p{N}]+/gu;
+
+/**
+ * The words of a Receiving search, as `purchaseOrderLinesToReceive.searchText`
+ * stores its values: lower-cased, with everything but letters and digits
+ * removed. A packing slip prints RAB-514 where Carbon holds RAB514, and both
+ * read rab514. Every word must match.
+ */
+export function receivingSearchTerms(
+  search: string | null | undefined
+): string[] {
+  if (!search) return [];
+  return search
+    .split(/\s+/)
+    .map((word) => word.toLowerCase().replace(NOT_ALPHANUMERIC, ""))
+    .filter(Boolean);
+}
+
+/**
+ * Where the search terms occur in `text`, matched the way the search matches
+ * (case, spaces and punctuation ignored): sorted, merged `[start, end)` ranges
+ * of `text`, so a highlight covers RAB-514 for the term rab514.
+ */
+export function receivingSearchMatches(
+  text: string,
+  terms: string[]
+): [number, number][] {
+  if (!text || terms.length === 0) return [];
+
+  // The normalized text, and for each of its characters the index in `text`
+  // it came from.
+  let normalized = "";
+  const source: number[] = [];
+  for (let i = 0; i < text.length; i++) {
+    const lower = text[i]!.toLowerCase().replace(NOT_ALPHANUMERIC, "");
+    for (const char of lower) {
+      normalized += char;
+      source.push(i);
+    }
+  }
+
+  const ranges: [number, number][] = [];
+  for (const term of terms) {
+    let from = normalized.indexOf(term);
+    while (from !== -1) {
+      const end = from + term.length;
+      ranges.push([source[from]!, source[end - 1]! + 1]);
+      from = normalized.indexOf(term, end);
+    }
+  }
+
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const range of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && range[0] <= last[1]) {
+      last[1] = Math.max(last[1], range[1]);
+    } else {
+      merged.push([...range]);
+    }
+  }
+  return merged;
+}
+
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,

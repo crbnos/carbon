@@ -1960,7 +1960,7 @@ export const terms = {
   // ── Resources: Contractors (ContractorForm) ─────────────────────────────
   "contractor-hours-per-week": {
     term: msg`Hours per Week`,
-    definition: msg`The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week.`
+    definition: msg`The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations.`
   },
 
   // ── Resources: Processes (ProcessForm) ──────────────────────────────────

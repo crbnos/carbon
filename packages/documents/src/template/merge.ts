@@ -29,24 +29,52 @@ export function interpolateString(
 }
 
 /**
+ * True when a node holds text directly (a paragraph or heading), its text has
+ * at least one merge field, and every merge field in it resolves empty.
+ */
+function isEmptiedByMergeFields(
+  node: JSONContent,
+  vars: Record<string, string>
+): boolean {
+  const children = node.content ?? [];
+  if (!children.some((child) => typeof child.text === "string")) return false;
+  let fields = 0;
+  for (const child of children) {
+    for (const [, token] of (child.text ?? "").matchAll(TOKEN_RE)) {
+      fields++;
+      if (token && vars[token]?.trim()) return false;
+    }
+  }
+  return fields > 0;
+}
+
+/**
  * Deep-clone a tiptap document, replacing `{token}` inside every text node.
+ * A paragraph whose merge fields all resolve empty is left out, so
+ * "Approved by {order.approvedBy}" prints nothing on an unapproved order
+ * rather than "Approved by". A list or other container left with nothing in
+ * it is left out too; the document itself is always returned.
  * Pure — never mutates the input (block state stays as the user authored it).
  */
 export function interpolateContent(
   content: JSONContent,
   vars: Record<string, string>
 ): JSONContent {
-  const walk = (node: JSONContent): JSONContent => {
+  const walk = (node: JSONContent): JSONContent | null => {
     const next: JSONContent = { ...node };
     if (typeof next.text === "string") {
       next.text = interpolateString(next.text, vars);
     }
-    if (Array.isArray(next.content)) {
-      next.content = next.content.map(walk);
+    if (Array.isArray(node.content)) {
+      if (isEmptiedByMergeFields(node, vars)) return null;
+      next.content = node.content
+        .map(walk)
+        .filter((child): child is JSONContent => child !== null);
+      if (node.content.length > 0 && next.content.length === 0) return null;
     }
     return next;
   };
-  return walk(content);
+  return walk(content) ?? { ...content, content: [] };
 }
 
 /** Wrap a token for insertion into authored content. */
@@ -133,6 +161,8 @@ const PURCHASE_ORDER_MERGE_FIELDS: MergeField[] = [
     group: "Order"
   },
   { token: "order.currency", label: "Currency", group: "Order" },
+  { token: "order.approvedBy", label: "Approved By", group: "Order" },
+  { token: "order.approvedDate", label: "Approval Date", group: "Order" },
   { token: "supplier.name", label: "Supplier Name", group: "Supplier" },
   { token: "supplier.addressLine1", label: "Address", group: "Supplier" },
   { token: "supplier.city", label: "City", group: "Supplier" },

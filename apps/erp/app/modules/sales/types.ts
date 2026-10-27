@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { PostgrestError } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { jobStatus } from "../production/production.models";
 import type { QuantityEffect } from "../shared/types";
@@ -95,6 +96,8 @@ export type PriceListRow = {
 export type PriceListResult = {
   data: PriceListRow[];
   count: number;
+  /** A failed read; the rows are then incomplete and must not be shown as the list. */
+  error: PostgrestError | null;
 };
 
 export type PriceResolutionInput = {

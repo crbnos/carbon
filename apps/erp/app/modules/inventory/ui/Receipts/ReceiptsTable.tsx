@@ -36,7 +36,8 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
-import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import {
   receiptSourceDocumentType,
@@ -75,10 +76,13 @@ function NewReceipt() {
 type ReceiptsTableProps = {
   data: Receipt[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
-  useRealtime("receipt", `id=in.(${data.map((d) => d.id).join(",")})`);
+const ReceiptsTable = memo((props: ReceiptsTableProps) => {
+  const { data, count, infinite } = props;
+  // The route's `handle.realtime` follows every receipt of the company, so
+  // the rows of a later page refresh too.
 
   const [params] = useUrlParams();
   const { t } = useLingui();
@@ -392,6 +396,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
     <>
       <Table<(typeof data)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnPinning={{

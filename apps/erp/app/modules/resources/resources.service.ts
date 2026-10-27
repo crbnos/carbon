@@ -41,8 +41,8 @@ import {
   resolveAccountingPeriod,
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { invokePosting } from "../shared/shared.service";
 import type {
@@ -205,6 +205,10 @@ export async function deleteWorkCenter(
   return client.from("workCenter").update({ active: false }).eq("id", id);
 }
 
+export const ABILITIES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getAbilities(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -222,7 +226,7 @@ export async function getAbilities(
   // rather than embedded, so the read never depends on a view→table embed.
   let query = client
     .from("abilities")
-    .select(`*`, { count: LIST_COUNT })
+    .select(`*`, { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -244,9 +248,7 @@ export async function getAbilities(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, { ...args, filters }, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, { ...args, filters }, ABILITIES_PAGING);
 
   const result = await query;
   if (result.error || !result.data) return result;
@@ -334,6 +336,12 @@ export async function getContractor(
     .single();
 }
 
+// The `contractors` view has no `id`; a contractor is one supplier contact.
+export const CONTRACTORS_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }],
+  idColumn: "supplierContactId"
+};
+
 export async function getContractors(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -341,7 +349,7 @@ export async function getContractors(
 ) {
   let query = client
     .from("contractors")
-    .select("*")
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -350,9 +358,7 @@ export async function getContractors(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "lastName", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CONTRACTORS_PAGING);
   }
 
   return query;
@@ -392,6 +398,10 @@ export async function getFailureMode(
     .single();
 }
 
+export const FAILURE_MODES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getFailureModes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -399,7 +409,7 @@ export async function getFailureModes(
 ) {
   let query = client
     .from("maintenanceFailureMode")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -407,9 +417,7 @@ export async function getFailureModes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, FAILURE_MODES_PAGING);
   }
 
   return query;
@@ -433,6 +441,10 @@ export async function getLocation(
   return client.from("location").select("*").eq("id", locationId).single();
 }
 
+export const LOCATIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getLocations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -440,7 +452,7 @@ export async function getLocations(
 ) {
   let query = client
     .from("location")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -448,9 +460,7 @@ export async function getLocations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, LOCATIONS_PAGING);
   }
 
   return query;
@@ -565,6 +575,10 @@ export async function getMaintenanceDispatches(
   return query;
 }
 
+export const MAINTENANCE_DISPATCHES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getMaintenanceDispatchesByLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -577,7 +591,7 @@ export async function getMaintenanceDispatchesByLocation(
       p_company_id: companyId,
       p_location_id: locationId
     },
-    { count: LIST_COUNT }
+    { count: listCount(args) }
   );
 
   if (args?.search) {
@@ -585,9 +599,7 @@ export async function getMaintenanceDispatchesByLocation(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, MAINTENANCE_DISPATCHES_PAGING);
   }
 
   return query;
@@ -660,6 +672,10 @@ export async function getMaintenanceSchedules(
   return query;
 }
 
+export const MAINTENANCE_SCHEDULES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaintenanceSchedulesByLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -672,7 +688,7 @@ export async function getMaintenanceSchedulesByLocation(
       p_company_id: companyId,
       p_location_id: locationId
     },
-    { count: LIST_COUNT }
+    { count: listCount(args) }
   );
 
   if (args?.search) {
@@ -684,9 +700,7 @@ export async function getMaintenanceSchedulesByLocation(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MAINTENANCE_SCHEDULES_PAGING);
   }
 
   return query;
@@ -807,6 +821,10 @@ export async function getProcess(
   return client.from("processes").select("*").eq("id", processId).single();
 }
 
+export const PROCESSES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getProcesses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -814,7 +832,7 @@ export async function getProcesses(
 ) {
   let query = client
     .from("processes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -822,9 +840,7 @@ export async function getProcesses(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, PROCESSES_PAGING);
   }
 
   return query;
@@ -849,6 +865,10 @@ export async function getSuggestion(
   return client.from("suggestions").select("*").eq("id", suggestionId).single();
 }
 
+export const SUGGESTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getSuggestions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -856,7 +876,7 @@ export async function getSuggestions(
 ) {
   let query = client
     .from("suggestions")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -864,9 +884,7 @@ export async function getSuggestions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, SUGGESTIONS_PAGING);
   }
 
   return query;
@@ -987,7 +1005,7 @@ export async function getTrainingAssignmentStatus(
     return 0;
   });
 
-  // Apply pagination
+  // The RPC returns every row, so `limit` + `offset` cut the list in memory.
   const count = filteredData.length;
   if (args?.limit) {
     const offset = args.offset ?? 0;
@@ -1017,6 +1035,10 @@ export async function getTrainingQuestions(
     .order("sortOrder", { ascending: true });
 }
 
+export const TRAININGS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getTrainings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1025,7 +1047,7 @@ export async function getTrainings(
   let query = client
     .from("trainings")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1034,9 +1056,7 @@ export async function getTrainings(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, TRAININGS_PAGING);
   }
 
   return query;
@@ -1087,6 +1107,10 @@ export async function getWorkCenter(
   };
 }
 
+export const WORK_CENTERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getWorkCenters(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1095,7 +1119,7 @@ export async function getWorkCenters(
   let query = client
     .from("workCenters")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1104,9 +1128,7 @@ export async function getWorkCenters(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, WORK_CENTERS_PAGING);
   }
 
   return query;
@@ -1410,13 +1432,17 @@ export async function updateTrainingQuestionOrder(
   return Promise.all(updatePromises);
 }
 
+/**
+ * `abilities` replaces the contractor's abilities when sent; left out, they are
+ * kept (the contractor form has no abilities field).
+ */
 export async function upsertContractor(
   client: SupabaseClient<Database>,
   contractorWithAbilities:
     | {
         id: string;
         hoursPerWeek?: number;
-        abilities: string[];
+        abilities?: string[];
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -1424,7 +1450,7 @@ export async function upsertContractor(
     | {
         id: string;
         hoursPerWeek?: number;
-        abilities: string[];
+        abilities?: string[];
         companyId: string;
         updatedBy: string;
         customFields?: Json;
@@ -1439,6 +1465,7 @@ export async function upsertContractor(
     if (updateContractor.error) {
       return updateContractor;
     }
+    if (abilities === undefined) return updateContractor;
     const deleteContractorAbilities = await client
       .from("contractorAbility")
       .delete()
@@ -1453,9 +1480,10 @@ export async function upsertContractor(
     if (createContractor.error) {
       return createContractor;
     }
+    if (abilities === undefined) return createContractor;
   }
 
-  const contractorAbilities = abilities.map((ability) => {
+  const contractorAbilities = (abilities ?? []).map((ability) => {
     return {
       contractorId: contractor.id,
       abilityId: ability,

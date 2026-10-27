@@ -9,6 +9,8 @@ on:
 
 jobs:
   labeler:
+    # Fork PRs get a read-only token and cannot set labels.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/labeler@v7

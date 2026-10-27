@@ -101,7 +101,11 @@ export default function WebhooksUpgradeOverlay() {
   return (
     <UpgradeOverlay>
       <UpgradeOverlayPreview>
-        <WebhooksTable data={mockWebhooks} count={mockWebhooks.length} />
+        <WebhooksTable
+          data={mockWebhooks}
+          count={mockWebhooks.length}
+          infinite={{ dataKey: "data", nextCursor: null }}
+        />
       </UpgradeOverlayPreview>
       <UpgradeOverlayCard>
         <UpgradeOverlayIcon>

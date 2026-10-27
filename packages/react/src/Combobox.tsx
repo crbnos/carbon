@@ -207,7 +207,6 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
                 itemHeight={itemHeight}
                 getItemValue={getComboboxItemValue}
                 isChecked={(_, itemValue) => itemValue === value}
-                isHelperPadded={(_, itemValue) => itemValue === value}
                 emptyMessage={t`No option found.`}
                 onSelect={(item, { setSearch }) => {
                   onChange?.(item.value);

@@ -201,7 +201,8 @@ const PeopleBoard = ({
     const map = new Map<string, Set<string>>();
     const today = date;
     for (const row of employeeAbilities) {
-      if (row.expiresAt && row.expiresAt.slice(0, 10) < today) continue;
+      // Expiring today = not qualified today, as in the scheduler and MES.
+      if (row.expiresAt && row.expiresAt.slice(0, 10) <= today) continue;
       const set = map.get(row.employeeId) ?? new Set<string>();
       set.add(row.abilityId);
       map.set(row.employeeId, set);

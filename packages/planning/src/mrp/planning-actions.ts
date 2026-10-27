@@ -1028,6 +1028,44 @@ const PATCH_COLUMN_TYPES: Record<string, string> = {
 };
 
 /**
+ * The diff's updates grouped by the columns they change, one group per
+ * statement, each row as its `VALUES` tuple (`id`, then the group's columns).
+ * Throws on a column with no known type before anything is written.
+ */
+export function groupPatchUpdates(
+  updates: PlanningActionDiff["updates"]
+): { columns: string[]; rows: unknown[][] }[] {
+  const groups = new Map<string, PlanningActionDiff["updates"]>();
+  for (const update of updates) {
+    const shape = Object.keys(update.patch).sort().join(",");
+    const group = groups.get(shape);
+    if (group) group.push(update);
+    else groups.set(shape, [update]);
+  }
+
+  return [...groups].map(([shape, group]) => {
+    const columns = shape.split(",");
+    for (const column of columns) {
+      if (!PATCH_COLUMN_TYPES[column]) {
+        throw new Error(`No column type for planning action patch "${column}"`);
+      }
+    }
+    return {
+      columns,
+      rows: group.map((row) => [
+        row.id,
+        ...columns.map((column) => {
+          const value = row.patch[column] ?? null;
+          return column === "triggerValues" && value !== null
+            ? JSON.stringify(value)
+            : value;
+        })
+      ])
+    };
+  });
+}
+
+/**
  * Writes one run's diff inside the caller's transaction.
  *
  * The run read the actions before it computed this diff, so a row a planner
@@ -1063,21 +1101,7 @@ export async function writePlanningActionDiff(
       .execute();
   }
 
-  const groups = new Map<string, PlanningActionDiff["updates"]>();
-  for (const update of diff.updates) {
-    const shape = Object.keys(update.patch).sort().join(",");
-    const group = groups.get(shape);
-    if (group) group.push(update);
-    else groups.set(shape, [update]);
-  }
-
-  for (const [shape, rows] of groups) {
-    const columns = shape.split(",");
-    for (const column of columns) {
-      if (!PATCH_COLUMN_TYPES[column]) {
-        throw new Error(`No column type for planning action patch "${column}"`);
-      }
-    }
+  for (const { columns, rows } of groupPatchUpdates(diff.updates)) {
     // The diff skipped an overridden assignee when it READ the row, but a
     // planner can assign between that read and this write (Assign does not
     // take the run's lock), so the statement re-checks the flag on the row.
@@ -1094,18 +1118,7 @@ export async function writePlanningActionDiff(
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const values = sql.join(
-        rows.slice(i, i + BATCH_SIZE).map(
-          (row) =>
-            sql`(${sql.join([
-              row.id,
-              ...columns.map((column) => {
-                const value = row.patch[column] ?? null;
-                return column === "triggerValues" && value !== null
-                  ? JSON.stringify(value)
-                  : value;
-              })
-            ])})`
-        )
+        rows.slice(i, i + BATCH_SIZE).map((row) => sql`(${sql.join(row)})`)
       );
       await sql`
         UPDATE "planningAction" AS t

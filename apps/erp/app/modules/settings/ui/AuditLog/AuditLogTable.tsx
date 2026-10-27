@@ -23,6 +23,7 @@ import { path } from "~/utils/path";
 type AuditLogTableProps = {
   entries: AuditLogEntry[];
   count: number;
+  nextCursor: string | null;
 };
 
 const operationConfig: Record<
@@ -121,7 +122,8 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
 });
 ExpandedRowContent.displayName = "ExpandedRowContent";
 
-const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
+const AuditLogTable = memo((props: AuditLogTableProps) => {
+  const { entries, count, nextCursor } = props;
   const { t } = useLingui();
   const columns = useMemo<ColumnDef<AuditLogEntry>[]>(
     () => [
@@ -255,6 +257,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
       table="auditLog"
       withSearch
       withPagination
+      infinite={{ dataKey: "entries", nextCursor }}
       renderExpandedRow={renderExpandedRow}
     />
   );

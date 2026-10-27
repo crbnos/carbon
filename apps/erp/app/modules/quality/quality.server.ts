@@ -78,7 +78,7 @@ const customFieldValues = z.record(
  *
  * @remarks
  * Every record the issue names (location, type, workflow, required actions,
- * items, customer, `trackedEntityIds`) must be the company's, or nothing is
+ * items, customer, supplier, `trackedEntityIds`) must be the company's, or nothing is
  * created. The issue is inserted, the tracked entities are linked to it, and
  * an issue filed against a job operation links the lot that operation's make
  * method produced onto the item's disposition row. Its action and approval
@@ -122,6 +122,7 @@ export const createIssue = defineServiceFn({
       ],
       ["item", [...new Set(input.items ?? [])]],
       ["customer", input.customerId ? [input.customerId] : []],
+      ["supplier", input.supplierId ? [input.supplierId] : []],
       ["trackedEntity", trackedEntityIds]
     ];
     const owned = await Promise.all(
@@ -161,6 +162,7 @@ export const createIssue = defineServiceFn({
       items: input.items,
       jobOperationId: input.jobOperationId,
       customerId: input.customerId,
+      supplierId: input.supplierId,
       salesOrderLineId: input.salesOrderLineId,
       operationSupplierProcessId: input.operationSupplierProcessId,
       companyId,
@@ -1290,8 +1292,13 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * first issue type, at the caller's default location: its item's disposition
  * row takes the lot quantity and Scrap, the lot's entities and receipt line
  * are linked to it, and its tasks are created. The failed features, with
- * their measured values against spec, go in its description. A failure after
- * the issue was inserted deletes it again; the lot stays rejected.
+ * their measured values against spec, and the `reason` go in its description.
+ * A failure after the issue was inserted deletes it again; the lot stays
+ * rejected.
+ *
+ * @param reason - Why the lot is rejected. Required when no characteristic
+ * reached its rejection number and no sample failed (a suspected counterfeit,
+ * the wrong part, transit damage); stored as the lot's notes.
  *
  * @mcp
  */
@@ -1299,11 +1306,12 @@ export const rejectInspection = defineServiceFn({
   input: z.object({
     id: z.string(),
     nonConformanceTypeId: z.string().nullish(),
-    createNcr: z.boolean().default(true)
+    createNcr: z.boolean().default(true),
+    reason: z.string().trim().max(2000).nullish()
   }),
   permission: { update: "quality" },
 
-  async run(ctx, { id, nonConformanceTypeId, createNcr }) {
+  async run(ctx, { id, nonConformanceTypeId, createNcr, reason }) {
     const client = ctx.asCaller.supabase;
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
@@ -1312,6 +1320,7 @@ export const rejectInspection = defineServiceFn({
     const rejected = await engine.dispositionInspection(ctx.asSystem.pg, {
       id,
       decision: "Reject",
+      reason: reason || undefined,
       companyId,
       dispositionedBy: userId,
       // The ERP reject does receipt-specific NCR / write-off work.
@@ -1400,7 +1409,7 @@ export const rejectInspection = defineServiceFn({
 
     const created = await service.insertIssue(serviceRole, {
       name: issueTitle,
-      description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${failedFeaturesBlock}`,
+      description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
       priority: "Medium",
       source: "Internal",
       locationId,
@@ -1410,6 +1419,9 @@ export const rejectInspection = defineServiceFn({
         .toString(),
       quantity: Number(insp.lotSize ?? 0),
       items: insp.itemId ? [insp.itemId] : [],
+      // The lot's supplier, stamped from the PO at receipt: it drives the
+      // SCAR report, the action-task supplier picker and the explorer.
+      supplierId: insp.supplierId ?? undefined,
       companyId,
       createdBy: userId
     });

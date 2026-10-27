@@ -6,6 +6,7 @@ import { parseAbsolute } from "@internationalized/date";
 import { it } from "vitest";
 import { toIsoDate } from "./date-utils.ts";
 import {
+  clipToQualification,
   isEligibleOperator,
   type QualifiedEmployee
 } from "./operator-eligibility.ts";
@@ -67,4 +68,26 @@ it("expiry boundary respects the factory time zone", () => {
   const start = utc("2026-07-20T20:00:00.000Z");
   assert(isEligibleOperator(employee, start, "UTC"));
   assert(!isEligibleOperator(employee, start, "Asia/Kolkata"));
+});
+
+// America/Chicago is UTC-5 in late October 2026.
+it("a qualification ends at the start of its expiry day in the factory zone", () => {
+  const windows = [
+    // Mon 26 Oct 06:00-14:30 local: before expiry, kept whole
+    { start: utc("2026-10-26T11:00:00Z"), end: utc("2026-10-26T19:30:00Z") },
+    // a night shift Mon 22:00 -> Tue 06:00 local: cut at Tue 00:00 local
+    { start: utc("2026-10-27T03:00:00Z"), end: utc("2026-10-27T11:00:00Z") },
+    // Thu 29 Oct 06:00-14:30 local: after expiry, dropped
+    { start: utc("2026-10-29T11:00:00Z"), end: utc("2026-10-29T19:30:00Z") }
+  ];
+
+  assertEquals(clipToQualification(windows, "2026-10-27", "America/Chicago"), [
+    { start: utc("2026-10-26T11:00:00Z"), end: utc("2026-10-26T19:30:00Z") },
+    { start: utc("2026-10-27T03:00:00Z"), end: utc("2026-10-27T05:00:00Z") }
+  ]);
+});
+
+it("a qualification with no expiry keeps every window", () => {
+  const windows = [{ start: opStart, end: opStart + 3_600_000 }];
+  assertEquals(clipToQualification(windows, null, "America/Chicago"), windows);
 });

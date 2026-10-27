@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import { isUniqueViolation } from "@carbon/utils";
+import { isUniqueViolation, quoteFilterValue } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SYNC_OPERATION_ALLOWED_TRANSITIONS } from "./models";
 import type {
@@ -790,11 +790,25 @@ export async function transitionOperation(
 }
 
 /**
+ * The rows after a cursor of the sync operation lists: newest first, `id`
+ * ascending breaking `createdAt` ties, matching the index. Quoted: a
+ * timestamp carries `.`, `:` and `+`, all reserved in an or-filter, and the
+ * cursor comes from the URL.
+ */
+function afterSyncOperation(after: { createdAt: string; id: string }) {
+  const createdAt = quoteFilterValue(after.createdAt);
+  const id = quoteFilterValue(after.id);
+  return `createdAt.lt.${createdAt},and(createdAt.eq.${createdAt},id.gt.${id})`;
+}
+
+/**
  * List sync operations for the activity/error-inbox UI, newest first, with
  * an optional status filter and offset pagination. `count` is the total for
  * the current filter. `entityType` narrows to one entity type — the
  * consolidation and reconciliation crons page journalEntry operations
- * without wading through every other entity's history.
+ * without wading through every other entity's history. `after` reads the
+ * rows after a previous page's last row instead (keyset on createdAt DESC,
+ * id), like `getSyncOperationsExportPage`.
  */
 export async function getSyncOperations(
   client: SupabaseClient<Database>,
@@ -805,6 +819,7 @@ export async function getSyncOperations(
     entityType?: string;
     limit?: number;
     offset?: number;
+    after?: SyncOperationCursor;
   }
 ): Promise<{
   data: SyncOperation[];
@@ -815,7 +830,11 @@ export async function getSyncOperations(
   const offset = args.offset ?? 0;
 
   let query = syncOperationTable(client)
-    .select("*", { count: "exact" })
+    // Only the first page counts: a later page (`after`, or an offset) does
+    // not need the total again.
+    .select("*", {
+      count: args.after || offset > 0 ? undefined : "exact"
+    })
     .eq("companyId", args.companyId)
     .eq("integration", args.integration);
 
@@ -829,8 +848,12 @@ export async function getSyncOperations(
     query = query.eq("entityType", args.entityType);
   }
 
+  if (args.after) query = query.or(afterSyncOperation(args.after));
+
+  // `id` ascending breaks createdAt ties, so every row has one place.
   const result = await query
     .order("createdAt", { ascending: false })
+    .order("id", { ascending: true })
     .range(offset, offset + limit - 1);
 
   if (result.error) {
@@ -899,14 +922,7 @@ export async function getSyncOperationsExportPage(
       : query.eq("status", args.status);
   }
 
-  if (args.after) {
-    // Quoted: a timestamp carries `.`, `:` and `+`, all reserved in an
-    // or-filter. `id` ascending breaks createdAt ties, matching the index.
-    const { createdAt, id } = args.after;
-    query = query.or(
-      `createdAt.lt."${createdAt}",and(createdAt.eq."${createdAt}",id.gt."${id}")`
-    );
-  }
+  if (args.after) query = query.or(afterSyncOperation(args.after));
 
   const result = await query
     .order("createdAt", { ascending: false })

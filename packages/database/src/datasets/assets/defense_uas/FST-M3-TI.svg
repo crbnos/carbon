@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ti" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="tiFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#9aa0a4"/>
+      <stop offset="0.45" stop-color="#787d81"/>
+      <stop offset="1" stop-color="#4b4f52"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="0.15" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#8f7ba8" stop-opacity="0.34"/>
+      <stop offset="0.45" stop-color="#6e5a86" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#4a3f5c" stop-opacity="0.30"/>
+    </linearGradient>
+    <linearGradient id="socket" x1="0.3" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#5e646a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="headClip">
+      <path d="M280 250 L280 362 Q430 419 580 362 L580 250 Z"/>
+    </clipPath>
+    <clipPath id="shankClip">
+      <path d="M348 362 L348 745 Q430 776 512 745 L512 362 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="596" cy="776" rx="372" ry="82" fill="url(#shadow)"/>
+
+  <!-- loose matching washer lying flat -->
+  <g>
+    <path d="M596 706 L596 724 Q596 787 761 787 Q926 787 926 724 L926 706 Z" fill="url(#ti)" stroke="#33373a" stroke-width="2.5"/>
+    <ellipse cx="761" cy="706" rx="165" ry="63" fill="url(#tiFace)" stroke="#33373a" stroke-width="2.5"/>
+    <ellipse cx="761" cy="706" rx="152" ry="58" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+    <ellipse cx="761" cy="706" rx="112" ry="43" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2"/>
+    <ellipse cx="761" cy="708" rx="64" ry="25" fill="#2f3438" stroke="#22262a" stroke-width="2"/>
+    <ellipse cx="761" cy="702" rx="64" ry="25" fill="url(#ti)" opacity="0.85"/>
+    <ellipse cx="761" cy="700" rx="56" ry="21" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+    <path d="M596 724 Q596 787 761 787" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="3"/>
+  </g>
+
+  <!-- the screw, standing upright and slightly tilted -->
+  <g transform="rotate(-7 430 760)">
+    <!-- shank: plain collar then a short thread -->
+    <path d="M348 362 L348 745 Q430 776 512 745 L512 362 Z" fill="url(#ti)" stroke="#33373a" stroke-width="2.5"/>
+    <g clip-path="url(#shankClip)">
+      <g stroke="#3f4448" stroke-width="4" opacity="0.85" fill="none">
+        <path d="M340 496 L520 467"/><path d="M340 530 L520 501"/>
+        <path d="M340 564 L520 535"/><path d="M340 598 L520 569"/>
+        <path d="M340 632 L520 603"/><path d="M340 666 L520 637"/>
+        <path d="M340 700 L520 671"/><path d="M340 734 L520 705"/>
+      </g>
+      <g stroke="#c6ccd0" stroke-width="2.5" opacity="0.45" fill="none">
+        <path d="M340 508 L520 479"/><path d="M340 542 L520 513"/>
+        <path d="M340 576 L520 547"/><path d="M340 610 L520 581"/>
+        <path d="M340 644 L520 615"/><path d="M340 678 L520 649"/>
+        <path d="M340 712 L520 683"/><path d="M340 746 L520 717"/>
+      </g>
+      <!-- unthreaded collar highlight under the head -->
+      <path d="M348 366 L512 366 L512 470 L348 470 Z" fill="#ffffff" opacity="0.05"/>
+      <path d="M340 470 L520 470" stroke="#33373a" stroke-width="3" fill="none" opacity="0.6"/>
+    </g>
+
+    <!-- head barrel with a knurled rim -->
+    <path d="M280 250 L280 362 Q430 419 580 362 L580 250 Z" fill="url(#ti)" stroke="#33373a" stroke-width="2.5"/>
+    <path d="M280 250 L280 362 Q430 419 580 362 L580 250 Z" fill="url(#violet)"/>
+    <g clip-path="url(#headClip)" stroke="#2b2f32" stroke-opacity="0.55" stroke-width="3">
+      <path d="M296 244 L296 420"/><path d="M320 244 L320 420"/>
+      <path d="M344 244 L344 420"/><path d="M368 244 L368 420"/>
+      <path d="M392 244 L392 420"/><path d="M416 244 L416 420"/>
+      <path d="M440 244 L440 420"/><path d="M464 244 L464 420"/>
+      <path d="M488 244 L488 420"/><path d="M512 244 L512 420"/>
+      <path d="M536 244 L536 420"/><path d="M560 244 L560 420"/>
+    </g>
+    <g clip-path="url(#headClip)" stroke="#e2e7ea" stroke-opacity="0.30" stroke-width="2">
+      <path d="M304 244 L304 420"/><path d="M328 244 L328 420"/>
+      <path d="M352 244 L352 420"/><path d="M376 244 L376 420"/>
+      <path d="M400 244 L400 420"/><path d="M424 244 L424 420"/>
+      <path d="M448 244 L448 420"/><path d="M472 244 L472 420"/>
+      <path d="M496 244 L496 420"/><path d="M520 244 L520 420"/>
+      <path d="M544 244 L544 420"/><path d="M568 244 L568 420"/>
+    </g>
+
+    <!-- head top face -->
+    <ellipse cx="430" cy="250" rx="150" ry="57" fill="url(#tiFace)" stroke="#33373a" stroke-width="2.5"/>
+    <ellipse cx="430" cy="250" rx="150" ry="57" fill="url(#violet)"/>
+    <!-- chamfer break -->
+    <ellipse cx="430" cy="250" rx="138" ry="52" fill="none" stroke="#a7adb2" stroke-opacity="0.55" stroke-width="2.5"/>
+    <ellipse cx="430" cy="250" rx="120" ry="45" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+
+    <!-- deep hexagonal drive recess -->
+    <g transform="translate(430 254) scale(1 0.39)">
+      <polygon points="0,-90 78,-45 78,45 0,90 -78,45 -78,-45" fill="url(#socket)" stroke="#2b2f32" stroke-width="4"/>
+      <polygon points="0,-74 64,-37 64,37 0,74 -64,37 -64,-37" fill="#262b2f"/>
+      <polygon points="0,-58 50,-29 50,29 0,58 -50,29 -50,-29" fill="#14171a" opacity="0.85"/>
+    </g>
+  </g>
+</svg>

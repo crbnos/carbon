@@ -4,7 +4,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, matchesGlob, relative, resolve } from "node:path";
-import ts from "typescript";
+import ts from "typescript5";
 import { describe, expect, it } from "vitest";
 
 // The tool manifest is CACHED by turbo (`//#generate:mcp` in the root

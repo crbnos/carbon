@@ -149,7 +149,6 @@ import {
   startOfMonth,
   startOfWeek
 } from "@internationalized/date";
-import { render, renderAsync } from "@react-email/components";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -158,6 +157,7 @@ import type {
 import type { Selectable } from "kysely";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { createCookieSessionStorage, data } from "react-router";
 import { z } from "zod";
 import {
@@ -185,9 +185,11 @@ import {
 import { getCompany, withLogoUrls } from "~/modules/settings/settings.service";
 import { getUser, getUserDefaults } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
+import type { Paging } from "~/utils/query";
 import {
   type GenericQueryFilters,
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import type { CustomFieldsTableType } from "../settings/types";
@@ -464,6 +466,10 @@ export async function upsertExternalLink(
     .single();
 }
 
+export const CUSTOMER_PORTALS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getCustomerPortals(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -473,7 +479,7 @@ export async function getCustomerPortals(
   // has its customer (the form requires one), so the inner join drops none.
   let query = client
     .from("externalLink")
-    .select("*, customer!inner(id)", { count: LIST_COUNT })
+    .select("*, customer!inner(id)", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
@@ -482,9 +488,7 @@ export async function getCustomerPortals(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_PORTALS_PAGING);
   }
 
   return query;
@@ -1235,13 +1239,14 @@ export async function sendSalesOrderEmail(args: {
     paymentTerms: paymentTerms.data
   });
 
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
+  const html = await render(emailTemplate);
+  const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
     .createSignedUrl(documentFilePath, 3600);
 
   await trigger("send-email", {
+    document: true,
     to: [seller.data.email, customer.data.contact.email!],
     cc: ccSelections?.length ? ccSelections : undefined,
     from: seller.data.email,
@@ -11647,6 +11652,8 @@ export async function createDocument(
             many(db, "purchaseOrderLine", {
               companyId,
               purchaseOrderId,
+              // The `purchaseOrderLinesToReceive` view (Inventory →
+              // Receiving) lists the same types: change both together.
               purchaseOrderLineType: [
                 "Part",
                 "Material",
@@ -13218,15 +13225,18 @@ export async function createDocument(
         // Stamp each return line's picked entities onto its shipment line, so
         // the batch/serial flows through to posting. post-shipment splits a
         // batch when the shipped quantity is less than the entity's quantity.
+        // The index puts each serial in its own box on the shipment page,
+        // which shows a serial only at the index it was assigned to.
         for (const shipmentLine of insertedLines) {
           const entities = shipmentLine.lineId
             ? entitiesByReturnLine.get(shipmentLine.lineId)
             : undefined;
-          for (const entity of entities ?? []) {
+          for (const [index, entity] of (entities ?? []).entries()) {
             const attrs = {
               ...(entity.attributes ?? {}),
               Shipment: id,
-              "Shipment Line": shipmentLine.id
+              "Shipment Line": shipmentLine.id,
+              "Shipment Line Index": index
             };
             await trx
               .updateTable("trackedEntity")
@@ -16040,6 +16050,120 @@ export function computeCurrentUnitCost(
     default:
       return Number(itemCost.unitCost ?? 0);
   }
+}
+
+/**
+ * An Average item's unit cost after `quantity` units worth `value` come in
+ * (or go out, both negative) at a cost of their own: a receipt, a voided
+ * receipt, an invoice's write-up (`quantity` 0). The same moving average
+ * complete_job_to_inventory keeps, so on-hand × unit cost stays what the
+ * journals booked. With nothing left on hand the cost stays as it was.
+ * Negative on-hand (shipped before it was received) blends in as zero: those
+ * units hold no stock to average with, so a receipt into them takes its own
+ * cost rather than a skewed, possibly negative, one.
+ */
+export function movingAverageUnitCost({
+  onHand,
+  unitCost,
+  quantity,
+  value
+}: {
+  onHand: number;
+  unitCost: number;
+  quantity: number;
+  value: number;
+}): number {
+  const held = Math.max(onHand, 0);
+  const after = held + quantity;
+  if (after <= EPSILON) return unitCost;
+  return (held * unitCost + value) / after;
+}
+
+/** Units and value a posting moves at their own cost, per item. */
+export type AverageCostChange = {
+  itemId: string;
+  quantity: number;
+  value: number;
+};
+
+/**
+ * Folds `changes` into the unit cost of every Average item among them
+ * (`movingAverageUnitCost`); other costing methods are left alone. Call it
+ * BEFORE the posting inserts its own item ledger rows: on-hand is read as it
+ * stood before them. Locks the cost rows, so two postings of one item
+ * average in turn.
+ */
+export async function applyAverageCostChanges(
+  trx: Transaction<DB>,
+  { companyId, changes }: { companyId: string; changes: AverageCostChange[] }
+): Promise<void> {
+  const byItem = new Map<string, { quantity: number; value: number }>();
+  for (const change of changes) {
+    const total = byItem.get(change.itemId) ?? { quantity: 0, value: 0 };
+    total.quantity += change.quantity;
+    total.value += change.value;
+    byItem.set(change.itemId, total);
+  }
+  if (byItem.size === 0) return;
+
+  const averageCosts = await trx
+    .selectFrom("itemCost")
+    .select(["itemId", "unitCost"])
+    .where("companyId", "=", companyId)
+    .where("itemId", "in", [...byItem.keys()])
+    .where("costingMethod", "=", "Average")
+    .orderBy("itemId")
+    .forUpdate()
+    .execute();
+  if (averageCosts.length === 0) return;
+
+  const onHand = await trx
+    .selectFrom("itemLedger")
+    .select((eb) => ["itemId", eb.fn.sum<number>("quantity").as("quantity")])
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      averageCosts.map((row) => row.itemId)
+    )
+    .groupBy("itemId")
+    .execute();
+  const onHandByItem = new Map(
+    onHand.map((row) => [row.itemId, Number(row.quantity ?? 0)])
+  );
+
+  const updates = averageCosts.flatMap((row) => {
+    const unitCost = Number(row.unitCost ?? 0);
+    const change = byItem.get(row.itemId)!;
+    const next = round(
+      movingAverageUnitCost({
+        onHand: onHandByItem.get(row.itemId) ?? 0,
+        unitCost,
+        quantity: change.quantity,
+        value: change.value
+      })
+    );
+    return equals(next, unitCost) ? [] : [{ itemId: row.itemId, next }];
+  });
+  if (updates.length === 0) return;
+
+  await trx
+    .updateTable("itemCost")
+    .set({
+      unitCost: sql<number>`CASE "itemId" ${sql.join(
+        updates.map(
+          ({ itemId, next }) => sql`WHEN ${itemId} THEN ${next}::numeric`
+        ),
+        sql` `
+      )} END`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "itemId",
+      "in",
+      updates.map((update) => update.itemId)
+    )
+    .execute();
 }
 export interface BookAdjustmentArgs {
   ledger: {

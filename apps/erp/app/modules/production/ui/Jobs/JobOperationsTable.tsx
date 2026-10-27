@@ -32,9 +32,12 @@ import { JobOperationStatus } from "./JobOperationStatus";
 type JobOperationsTableProps = {
   data: JobOperation[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
+const JobOperationsTable = memo((props: JobOperationsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { jobId } = useParams();
   const { t } = useLingui();
   if (!jobId) throw new Error("Job ID is required");
@@ -175,8 +178,14 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
   }, [onCellEdit]);
 
   const pendingItems = usePendingItems();
+  // The Table reads a new `data` array as a revalidation and re-reads every
+  // loaded page, so the overlay keeps `data` itself while nothing is pending
+  // and changes only with the pending statuses.
+  const pendingKey = pendingItems
+    .map((pendingItem) => `${pendingItem.id}:${pendingItem.status}`)
+    .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pendingKey stands in for pendingItems
   const optimisticData = useMemo<typeof data>(() => {
     if (pendingItems.length === 0) return data;
     return data.map((item) => {
@@ -191,13 +200,15 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
       }
       return item;
     });
-  }, [pendingItems.length]);
+  }, [data, pendingKey]);
 
   return (
     <Table<JobOperation>
       mobileLayout="table"
       compact
       count={count}
+      // Scoped to one job: no list registry entry, so no `listKey`.
+      infinite={{ dataKey: "operations", nextCursor }}
       columns={columns}
       data={optimisticData}
       primaryAction={

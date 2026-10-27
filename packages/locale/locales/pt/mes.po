@@ -229,6 +229,9 @@ msgstr "Tem certeza que deseja sair desta página?"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "Tem a certeza de que deseja marcar esta operação como concluída? Isto terminará todos os eventos de produção ativos para esta operação."
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "Etapas de montagem"
 
@@ -289,6 +292,9 @@ msgstr "Detalhes do lote de produção"
 
 msgid "Batch is not available"
 msgstr "Lote não disponível"
+
+msgid "Batch notes"
+msgstr "Observações do lote de produção"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -456,6 +462,9 @@ msgstr "Completar Lote"
 
 msgid "Complete passed"
 msgstr "Completar aprovados"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "Concluído"
@@ -1892,6 +1901,9 @@ msgstr "Embaralhar"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Faça login com dados biométricos em vez de um link mágico. Chaves de acesso são protegidas por Face ID, Touch ID ou seu PIN do dispositivo."
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Entrar com Google"
 
@@ -1909,6 +1921,9 @@ msgstr "Sair"
 
 msgid "Sign out instead"
 msgstr "Sair da sessão em vez disso"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "Conectado como {stationName}"
@@ -2263,8 +2278,8 @@ msgstr "Visualizar ou abrir"
 msgid "Wash"
 msgstr "Lavagem"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "Enviamos um link mágico para você entrar na sua conta."
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "O que é {translatedTerm}?"
@@ -2290,8 +2305,20 @@ msgstr "Escrever uma observação…"
 msgid "Yes"
 msgstr "Sim"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Você está apontando há {hoursElapsed} horas. Você esqueceu de apontar fim?"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Sua conta ainda não faz parte de uma empresa. Conclua o onboarding no Carbon ERP para continuar."

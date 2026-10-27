@@ -6,6 +6,7 @@
 // writes them so `@carbon/workflows` can import it and assert every definition still passes
 // `validateDefinition` — the cycle blocks that check from running on this side.
 
+import { buildDefenseWorkflows } from "../data/defense/workflows.ts";
 import { buildMotorWorkflows } from "../data/motor/workflows.ts";
 import { buildPrecisionWorkflows } from "../data/precision/workflows.ts";
 import { buildRoboticsWorkflows } from "../data/robotics/workflows.ts";
@@ -14,12 +15,13 @@ import { buildSeedWorkflows } from "../data/satellite/workflows.ts";
 // Re-exported here so `@carbon/database/seed-workflows` stays the one import for that check.
 export { buildSeedWorkflows };
 
-/** Every dataset's builder, so the validation test covers all four and not just satellite. */
+/** Every dataset's builder, so the validation test covers all five and not just satellite. */
 export const SEED_WORKFLOW_BUILDERS = {
   satellite: buildSeedWorkflows,
   robotics: buildRoboticsWorkflows,
   precision: buildPrecisionWorkflows,
-  motor: buildMotorWorkflows
+  motor: buildMotorWorkflows,
+  defense: buildDefenseWorkflows
 };
 
 export const FORMAT_VERSION = 4;

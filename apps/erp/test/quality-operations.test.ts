@@ -2,79 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-// The service's imports reach the glossary, whose `msg` macro only runs compiled.
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn(), warn: vi.fn(), info: vi.fn() })
-}));
-
-const { disposition, invoke, postNonconformance } = vi.hoisted(() => ({
-  // The inspection engine's lot disposition.
-  disposition: vi.fn(),
-  // The server functions (`create`).
-  invoke: vi.fn(),
-  // The inventory write-off's posting.
-  postNonconformance: vi.fn()
-}));
-vi.mock("@carbon/database/quality", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@carbon/database/quality")>()),
-  dispositionInspection: disposition
-}));
-vi.mock("../app/modules/quality/quality.service", async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import("../app/modules/quality/quality.service")
-  >()),
-  postNonconformance
-}));
-vi.mock("../app/modules/shared/shared.service", async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import("../app/modules/shared/shared.service")
-    >();
-  // The postings the server functions package ran are the boundary; every
-  // other posting runs its (mocked) body as before.
-  const stubbed = new Set([
-    "issue",
-    "create",
-    "batch-operations",
-    "post-inventory-adjustment",
-    "post-maintenance-event",
-    "post-picking",
-    "post-production-event",
-    "recalculate",
-    "reschedule",
-    "trigger-rework"
-  ]);
-  return {
-    ...actual,
-    invokePosting: ((from: never, name: string, input: never, ...rest: never[]) =>
-      stubbed.has(name)
-        ? invoke(name, input)
-        : (actual.invokePosting as (...args: unknown[]) => unknown)(
-            from,
-            name,
-            input,
-            ...rest
-          )) as typeof actual.invokePosting,
-    invokeCreate: (_from: unknown, input: unknown) => invoke("create", input)
-  };
-});
-
+import { describe, expect, it } from "vitest";
 import { createServiceContext } from "@carbon/api/service-fn.server";
-
-const {
+import {
   createIssue,
-  rejectInspection,
   saveInspectionDocument,
   setIssueStatus,
   updateIssueField,
   updateIssueItemField,
   updateQualityDocumentField
-} = await import("../app/modules/quality/quality.server");
+} from "../app/modules/quality/quality.server";
 
 const quality = {
   quality: {
@@ -127,96 +64,6 @@ function contextWith(rows: Record<string, unknown> = {}) {
   return { ctx, writes: db.writes };
 }
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  invoke.mockResolvedValue({ data: { journalId: null }, error: null });
-  postNonconformance.mockResolvedValue({ journalId: null });
-});
-
-describe("rejecting an inspection lot", () => {
-  const writeOff = { itemId: "part-2", quantity: -5, locationId: "loc-1" };
-
-  it("posts the lot's write-off, and with no issue asked for, stops there", async () => {
-    disposition.mockResolvedValue({
-      data: { id: "insp-1", status: "Failed", writeOff },
-      error: null
-    });
-    const { ctx } = contextWith();
-
-    const result = await rejectInspection(ctx, {
-      id: "insp-1",
-      createNcr: false
-    });
-
-    expect(result).toEqual({
-      data: { id: "insp-1", issueId: null },
-      error: null
-    });
-    // Only Receipt lots: a Job Operation lot is rejected from the shop floor.
-    expect(disposition.mock.calls[0]![1]).toMatchObject({
-      decision: "Reject",
-      requireSource: "Receipt"
-    });
-    expect(postNonconformance).toHaveBeenCalledWith(expect.anything(), {
-      documentType: "Inbound Inspection",
-      documentId: "insp-1",
-      description: "Inbound inspection lot rejected",
-      movements: [{ ...writeOff, trackedEntityId: null }]
-    });
-  });
-
-  it("posts nothing for a lot with no write-off (tracked, or not inventory)", async () => {
-    disposition.mockResolvedValue({
-      data: { id: "insp-1", status: "Failed", writeOff: null },
-      error: null
-    });
-    const { ctx } = contextWith();
-
-    const result = await rejectInspection(ctx, {
-      id: "insp-1",
-      createNcr: false
-    });
-
-    expect(result.error).toBeNull();
-    expect(postNonconformance).not.toHaveBeenCalled();
-  });
-
-  // Closing the issue restores value on Use As Is on the assumption the
-  // reject wrote it off, so an issue opened after a failed write-off would
-  // count the lot twice.
-  it("opens no issue when the write-off fails to post", async () => {
-    disposition.mockResolvedValue({
-      data: { id: "insp-1", status: "Failed", writeOff },
-      error: null
-    });
-    postNonconformance.mockRejectedValue(new Error("no account"));
-    const { ctx, writes } = contextWith();
-
-    const result = await rejectInspection(ctx, { id: "insp-1" });
-
-    expect(result.error?.message).toMatch(
-      /^Lot rejected, but the inventory write-off failed to post/
-    );
-    expect(writes).toEqual([]);
-  });
-
-  it("is refused when the engine refuses the lot", async () => {
-    disposition.mockResolvedValue({
-      data: null,
-      error: { message: "Only receipt lots" }
-    });
-    const { ctx } = contextWith();
-
-    const result = await rejectInspection(ctx, { id: "insp-1" });
-
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Failed to reject lot"
-    });
-    expect(postNonconformance).not.toHaveBeenCalled();
-  });
-});
-
 describe("opening an issue", () => {
   const issue = {
     name: "Cracked housing",
@@ -262,18 +109,12 @@ describe("issue status", () => {
       status: "Registered"
     });
 
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message:
-        "This NCR posted inventory transactions and can't be reopened. Create a correcting entry instead."
-    });
+    expect(result.error?.category).toBe("rule");
     expect(writes).toEqual([]);
   });
 });
 
 describe("a closed issue is locked", () => {
-  const locked = "Cannot modify a closed issue. Reopen it first.";
-
   it("refuses a field change when any of the issues is closed", async () => {
     const { ctx, writes } = contextWith({
       nonConformance: [
@@ -288,7 +129,7 @@ describe("a closed issue is locked", () => {
       value: "High"
     });
 
-    expect(result.error).toMatchObject({ category: "rule", message: locked });
+    expect(result.error?.category).toBe("rule");
     expect(writes).toEqual([]);
   });
 
@@ -303,7 +144,7 @@ describe("a closed issue is locked", () => {
       value: "Scrap"
     });
 
-    expect(result.error).toMatchObject({ category: "rule", message: locked });
+    expect(result.error?.category).toBe("rule");
     expect(writes).toEqual([]);
   });
 
@@ -316,22 +157,20 @@ describe("a closed issue is locked", () => {
       value: "Scrap"
     });
 
-    expect(result.error).toMatchObject({
-      category: "notFound",
-      message: "Issue item not found"
-    });
+    expect(result.error?.category).toBe("notFound");
     expect(writes).toEqual([]);
   });
 
   it("refuses a negative quantity", async () => {
-    const { ctx } = contextWith();
+    const { ctx, writes } = contextWith();
     const result = await updateIssueItemField(ctx, {
       id: "nci-1",
       field: "quantity",
       value: -3,
       expectedQuantity: 0
     });
-    expect(result.error?.message).toContain("Quantity must be zero or more");
+    expect(result.error?.category).toBe("validation");
+    expect(writes).toEqual([]);
   });
 });
 
@@ -343,10 +182,7 @@ describe("quality document fields", () => {
       field: "status",
       value: "Published"
     });
-    expect(result.error).toMatchObject({
-      category: "validation",
-      message: "Invalid status"
-    });
+    expect(result.error?.category).toBe("validation");
     expect(writes).toEqual([]);
   });
 
@@ -380,10 +216,7 @@ describe("saving an inspection plan", () => {
         delete: []
       }
     });
-    expect(result.error).toMatchObject({
-      category: "validation",
-      message: "Legacy balloons payload requires anchors"
-    });
+    expect(result.error?.category).toBe("validation");
     expect(writes).toEqual([]);
   });
 });

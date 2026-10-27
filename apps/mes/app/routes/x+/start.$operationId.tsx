@@ -15,8 +15,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
+  abilityBlockRefusal,
   getNextIncompleteSerialEntity,
-  getOperationEligibility,
   getTrackedEntitiesByMakeMethodId,
   postEndedProductionEvents,
   startMachineProductionEvent,
@@ -162,20 +162,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  // Check if the operator is qualified for the operation's required abilities
-  const eligibility = await getOperationEligibility(serviceRole, {
+  // Refuse when the process requires an ability the operator lacks and its
+  // policy is Block
+  const abilityRefusal = await abilityBlockRefusal(serviceRole, {
     operationId,
     employeeId: userId,
     companyId
   });
-
-  if (!eligibility.eligible) {
+  if (abilityRefusal) {
     throw redirect(
       path.to.operation(operationId),
-      await flash(
-        request,
-        error(null, eligibility.reason ?? "Not qualified to start operation")
-      )
+      await flash(request, error(null, abilityRefusal))
     );
   }
 

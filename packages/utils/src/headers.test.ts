@@ -30,6 +30,31 @@ describe("getClientIp", () => {
     expect(getClientIp(req({}))).toBeNull();
     expect(getClientIp(req({ "x-forwarded-for": " , " }))).toBeNull();
   });
+
+  it("skips our own proxies when there are several (TRUSTED_PROXIES)", () => {
+    const before = process.env.TRUSTED_PROXIES;
+    try {
+      process.env.TRUSTED_PROXIES = "2";
+      // Behind an ALB and then Traefik: a forged entry, the client the ALB
+      // saw, then the ALB itself.
+      expect(
+        getClientIp(
+          req({ "x-forwarded-for": "6.6.6.6, 203.0.113.9, 10.0.50.136" })
+        )
+      ).toBe("203.0.113.9");
+      // Fewer entries than proxies: the first is the client.
+      expect(getClientIp(req({ "x-forwarded-for": "203.0.113.9" }))).toBe(
+        "203.0.113.9"
+      );
+      process.env.TRUSTED_PROXIES = "nonsense";
+      expect(
+        getClientIp(req({ "x-forwarded-for": "203.0.113.9, 10.0.50.136" }))
+      ).toBe("10.0.50.136");
+    } finally {
+      if (before === undefined) delete process.env.TRUSTED_PROXIES;
+      else process.env.TRUSTED_PROXIES = before;
+    }
+  });
 });
 
 describe("getRequestProtocol", () => {
