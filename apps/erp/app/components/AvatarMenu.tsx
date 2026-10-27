@@ -26,7 +26,8 @@ import {
   useDisclosure,
   useEdition,
   useMode,
-  useModePreference
+  useModePreference,
+  useThemePreview
 } from "@carbon/react";
 import type { ModePreference } from "@carbon/utils";
 import { Edition, modeValidator, pickableThemes } from "@carbon/utils";
@@ -95,6 +96,7 @@ export function useAccountMenu() {
   const themeOptions = pickableThemes();
 
   const fetcher = useFetcher<typeof action>();
+  const previewTheme = useThemePreview(fetcher.state === "idle");
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -128,18 +130,14 @@ export function useAccountMenu() {
   const onThemeChange = (t: string) => {
     const newTheme = themeOptions.find((theme) => theme.name === t);
     if (!newTheme) return;
-    const variables =
-      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light;
-
     setSelectedTheme(t);
 
     const formData = new FormData();
     formData.append("theme", t);
     fetcher.submit(formData, { method: "post", action: path.to.theme });
-
-    Object.entries(variables).forEach(([key, value]) => {
-      document.body.style.setProperty(`--${key}`, value);
-    });
+    previewTheme(
+      mode === "dark" ? newTheme.cssVars.dark : newTheme.cssVars.light
+    );
   };
 
   const optimisticTheme = selectedTheme ?? serverTheme;

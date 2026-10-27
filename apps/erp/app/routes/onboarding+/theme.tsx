@@ -17,6 +17,7 @@ import {
   RadioGroupButton,
   useMode,
   useModePreference,
+  useThemePreview,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
@@ -83,12 +84,11 @@ export default function OnboardingTheme() {
   const [picked, setPicked] = useState<ThemeValue | null>(null);
   const theme = picked ?? initialTheme;
 
-  const applyThemeColors = (t: Theme) => {
-    const variables = mode === "dark" ? t.cssVars.dark : t.cssVars.light;
+  // Kept until the step is left: the pick is saved only on Continue.
+  const previewTheme = useThemePreview(false);
 
-    Object.entries(variables).forEach(([key, value]) => {
-      document.body.style.setProperty(`--${key}`, value);
-    });
+  const applyThemeColors = (t: Theme) => {
+    previewTheme(mode === "dark" ? t.cssVars.dark : t.cssVars.light);
 
     window.dispatchEvent(
       new CustomEvent("onboarding-theme-change", { detail: t.name })

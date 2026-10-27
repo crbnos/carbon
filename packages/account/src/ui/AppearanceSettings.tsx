@@ -9,7 +9,8 @@ import {
   ToggleGroupItem,
   useMode,
   useModePreference,
-  useRouteData
+  useRouteData,
+  useThemePreview
 } from "@carbon/react";
 import {
   modeValidator,
@@ -18,7 +19,6 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { CSSProperties } from "react";
-import { useEffect, useRef } from "react";
 import { LuCheck, LuLaptop, LuMoon, LuSun } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -61,19 +61,10 @@ export default function AppearanceSettings() {
   const modeFetcher = useFetcher();
   const themeFetcher = useFetcher();
   const routeData = useRouteData<{ theme?: string }>(ROOT_ACTION);
-  const previewedVariables = useRef<string[]>([]);
   const themeOptions = pickableThemes();
-
-  // The preview lives on <body> and outranks the theme the root document puts
-  // on <html>. Once the save settles, the root loader has revalidated: drop
-  // the preview so <html> shows the saved theme — or the old one if it failed.
-  useEffect(() => {
-    if (themeFetcher.state !== "idle") return;
-    for (const key of previewedVariables.current) {
-      document.body.style.removeProperty(`--${key}`);
-    }
-    previewedVariables.current = [];
-  }, [themeFetcher.state]);
+  // Dropped once the save settles, so <html> shows the saved theme, or the
+  // old one if it failed.
+  const previewTheme = useThemePreview(themeFetcher.state === "idle");
 
   // The in-flight choice wins until the root loader revalidates with it.
   const pendingTheme = themeColorValidator.safeParse({
@@ -108,11 +99,7 @@ export default function AppearanceSettings() {
     const next = themeOptions.find((candidate) => candidate.name === value);
     if (!next || next.name === theme) return;
     // Preview at once, until the root loader applies it from the cookie.
-    const variables = mode === "dark" ? next.cssVars.dark : next.cssVars.light;
-    Object.entries(variables).forEach(([key, color]) => {
-      document.body.style.setProperty(`--${key}`, color);
-    });
-    previewedVariables.current = Object.keys(variables);
+    previewTheme(mode === "dark" ? next.cssVars.dark : next.cssVars.light);
     themeFetcher.submit(
       { theme: next.name },
       { method: "post", action: ROOT_ACTION }
