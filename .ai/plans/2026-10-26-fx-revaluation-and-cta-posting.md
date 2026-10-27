@@ -62,9 +62,9 @@ Phase 3 — Posted CTA
 
 Finish
 - [x] Task 23: Update docs, AGENTS.md and rules
-- [ ] Task 24: Run the full verification sweep
-- [ ] Task 25: Extract and translate the new strings
-- [ ] Task 26: Verify in the browser
+- [x] Task 24: Run the full verification sweep
+- [x] Task 25: Extract and translate the new strings
+- [x] Task 26: Verify in the browser
 
 ## Dependencies
 
