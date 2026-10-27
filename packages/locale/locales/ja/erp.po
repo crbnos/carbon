@@ -26630,8 +26630,8 @@ msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポ
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "購買担当者が商品をリクエストした日付。仕入先は回答納期に異なる日付を約束し、納期に再び別の日付を記録することができます。"
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "購買担当者がこの明細の商品をドックに必要とする日付。計画はこの日付を在庫可用性と外注加工スケジュール用に使用します。"
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "購買担当者がこの明細の品物を受入ドックに必要とする日です。新しい明細は、オーダーの希望納期が初期値になります。計画では、この日付を在庫可否および外注工程のスケジュール設定に使用します。"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "契約の実行期間と完了時のアクション。"

@@ -26630,8 +26630,8 @@ msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다.
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "구매 담당자가 물품을 요청한 시점; 공급업체는 약속일에 다른 것을 약속할 수 있으며 납기일에 다시 다른 것을 전기할 수 있습니다."
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "구매 담당자가 이 라인의 물품을 도크에서 필요로 할 때; 계획은 이 날짜를 재고 가용성 및 외주 처리 스케줄링에 사용합니다."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "구매 담당자가 이 라인의 품목을 하역장(도크)에서 받기를 원하는 날짜입니다. 새 라인은 주문의 요청일로 시작하며, 계획에서는 이 날짜를 재고 가용성 및 외주 공정 일정 산정에 사용합니다."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "계약이 실행되는 시간과 완료되면 어떻게 되는가"

@@ -191,8 +191,10 @@ import {
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
+  type PurchaseOrderDateField,
   planningLineCurrencyCode,
   planningQuantityChange,
+  purchaseOrderLineDateOfOrderDate,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -2260,10 +2262,19 @@ export async function upsertPurchaseOrderLine(
     return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
   }
 
-  const existing = await client
-    .from("purchaseOrderLine")
-    .select("sortOrder")
-    .eq("purchaseOrderId", normalized.purchaseOrderId);
+  const [existing, delivery] = await Promise.all([
+    client
+      .from("purchaseOrderLine")
+      .select("sortOrder")
+      .eq("purchaseOrderId", normalized.purchaseOrderId),
+    client
+      .from("purchaseOrderDelivery")
+      .select("receiptRequestedDate, receiptPromisedDate")
+      .eq("id", normalized.purchaseOrderId)
+      .eq("companyId", normalized.companyId)
+      .maybeSingle()
+  ]);
+  if (delivery.error) return { data: null, error: delivery.error };
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -2272,7 +2283,20 @@ export async function upsertPurchaseOrderLine(
 
   return client
     .from("purchaseOrderLine")
-    .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
+    .insert([
+      {
+        ...normalized,
+        requiredDate:
+          normalized.requiredDate ??
+          delivery.data?.receiptRequestedDate ??
+          undefined,
+        promisedDate:
+          normalized.promisedDate ??
+          delivery.data?.receiptPromisedDate ??
+          undefined,
+        sortOrder: maxSortOrder + 1
+      }
+    ])
     .select("id")
     .single();
 }
@@ -3599,6 +3623,82 @@ export async function getDefaultAttachmentsForPO(
       path: `${prefix}/${f.name}`
     }));
   });
+}
+
+/**
+ * Copies a changed order date to the lines that have no date or the order's
+ * current one. Run it before the delivery row changes, in the same
+ * transaction. The delivery date (when goods arrived) goes only to lines that
+ * received something; received-complete lines keep the other two.
+ *
+ * It locks the delivery rows first, so a concurrent save of the same order
+ * waits and then compares against the date this one commits.
+ */
+export async function cascadePurchaseOrderDateToLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    purchaseOrderIds: string[];
+    field: PurchaseOrderDateField;
+    value: string | null;
+  }
+) {
+  const { companyId, userId, purchaseOrderIds, field, value } = args;
+  if (!value || purchaseOrderIds.length === 0) return;
+  const lineField = purchaseOrderLineDateOfOrderDate[field];
+
+  await db
+    .selectFrom("purchaseOrderDelivery")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("id", "in", purchaseOrderIds)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+
+  let update = db
+    .updateTable("purchaseOrderLine")
+    .set({
+      [lineField]: value,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("purchaseOrderLine.companyId", "=", companyId)
+    .where("purchaseOrderLine.purchaseOrderId", "in", purchaseOrderIds)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("purchaseOrderDelivery")
+          .select(sql.lit(1).as("one"))
+          .whereRef(
+            "purchaseOrderDelivery.id",
+            "=",
+            "purchaseOrderLine.purchaseOrderId"
+          )
+          .whereRef(
+            "purchaseOrderDelivery.companyId",
+            "=",
+            "purchaseOrderLine.companyId"
+          )
+          .where(`purchaseOrderDelivery.${field}`, "is distinct from", value)
+          .where((delivery) =>
+            delivery.or([
+              delivery(`purchaseOrderLine.${lineField}`, "is", null),
+              delivery(
+                `purchaseOrderLine.${lineField}`,
+                "=",
+                delivery.ref(`purchaseOrderDelivery.${field}`)
+              )
+            ])
+          )
+      )
+    );
+  update =
+    field === "deliveryDate"
+      ? update.where("purchaseOrderLine.quantityReceived", ">", 0)
+      : update.where("purchaseOrderLine.receivedComplete", "=", false);
+  await update.execute();
 }
 
 /**
