@@ -9,6 +9,7 @@ import { createPortal } from "react-dom";
 import { BarSpider } from "./BarSpider";
 import { BooGhost } from "./Ghost";
 import { HalloweenStyles } from "./HalloweenStyles";
+import { Optional } from "./Optional";
 import { BatFlyby, SuccessBats } from "./Visitors";
 
 // The app shell's decorations. Its own chunk, loaded by `HalloweenLayer` only
@@ -47,9 +48,12 @@ export default function Decorations() {
       <BooGhost />
       <AnimatePresence>
         {revealOpen && (
-          <Suspense key="halloween-reveal" fallback={null}>
-            <HalloweenReveal onClose={close} />
-          </Suspense>
+          // Its own net: a failed reveal closes, and the rest keep running.
+          <Optional key="halloween-reveal" onError={close}>
+            <Suspense fallback={null}>
+              <HalloweenReveal onClose={close} />
+            </Suspense>
+          </Optional>
         )}
       </AnimatePresence>
     </>

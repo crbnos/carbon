@@ -9,7 +9,7 @@
 // browser session, so the hill keeps the lanterns it has earned.
 
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onToast } from "../toasts";
 import type { Buffers } from "./frame";
 import { makeBuffers, renderFrame } from "./frame";
@@ -117,6 +117,10 @@ export default function NightShift() {
   // Read by every frame, so a language change shows on the next one.
   const labels = useRef(words);
   labels.current = words;
+  // Frame callbacks and observers are out of the error boundary's reach, so a
+  // draw that throws is rethrown here, during render.
+  const [crash, setCrash] = useState<{ error: unknown } | null>(null);
+  if (crash) throw crash.error;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -177,27 +181,32 @@ export default function NightShift() {
     };
 
     const draw = () => {
-      if (!layout || !buffers || !metrics) return;
-      const moment = still
-        ? stillMoment(saved.shift)
-        : momentAt(clock, saved.shift);
-      if (moment.shift !== lastShift) {
-        lastShift = moment.shift;
-        writeSaved({ seed: saved.seed, shift: moment.shift + 1 });
+      if (disposed || !layout || !buffers || !metrics) return;
+      try {
+        const moment = still
+          ? stillMoment(saved.shift)
+          : momentAt(clock, saved.shift);
+        if (moment.shift !== lastShift) {
+          lastShift = moment.shift;
+          writeSaved({ seed: saved.seed, shift: moment.shift + 1 });
+        }
+        readFocus(watcher);
+        watcher.flare = fade(clock - flareAt, 1.4);
+        watcher.alarm = fade(clock - alarmAt, 2.4);
+        const frame = renderFrame(
+          buffers,
+          layout,
+          planFor(moment.shift),
+          moment,
+          clock,
+          watcher,
+          labels.current
+        );
+        paint(ctx, buffers.main, frame, metrics);
+      } catch (error) {
+        disposed = true;
+        setCrash({ error });
       }
-      readFocus(watcher);
-      watcher.flare = fade(clock - flareAt, 1.4);
-      watcher.alarm = fade(clock - alarmAt, 2.4);
-      const frame = renderFrame(
-        buffers,
-        layout,
-        planFor(moment.shift),
-        moment,
-        clock,
-        watcher,
-        labels.current
-      );
-      paint(ctx, buffers.main, frame, metrics);
     };
 
     const tick = (now: number) => {
@@ -209,8 +218,6 @@ export default function NightShift() {
         clock += Math.min(delta, 250) / 1000;
         draw();
       }
-      // Asked for after the draw: a frame that throws ends the loop instead
-      // of throwing again on every frame.
       frameId = window.requestAnimationFrame(tick);
     };
 

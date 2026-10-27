@@ -2,12 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getLogger } from "@carbon/logger";
-import type { ReactNode } from "react";
-import { Component, lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Optional } from "./Optional";
 import { useHalloween } from "./season";
-
-const log = getLogger("react", "halloween");
 
 // Seasonal decoration, shared by the ERP and the MES (`@carbon/react/Halloween`).
 // Everything renders only on Halloween, when the theme is on for everyone
@@ -100,24 +97,4 @@ function LoginArt() {
       <div className="absolute inset-x-0 bottom-0 z-10 h-64 bg-gradient-to-t from-black/75 via-black/40 to-transparent" />
     </div>
   );
-}
-
-/**
- * Renders nothing once a decoration throws or its chunk fails to load, so a
- * broken decoration never takes the app shell or the sign-in page down.
- */
-class Optional extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  componentDidCatch(error: unknown) {
-    log.error("Halloween decoration failed", { error });
-  }
-
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
 }
