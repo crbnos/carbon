@@ -110,6 +110,9 @@ msgstr "🚨 ध्यान दें: {0} को आपका खाता erp
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "आज सभी के लिए एक मौसमी थीम लागू है। इसके समाप्त होने पर आप फिर से अपनी थीम चुन सकते हैं।"
+
 msgid "About"
 msgstr "के बारे में"
 
@@ -333,6 +336,9 @@ msgstr "कार्बन लोगो"
 
 msgid "Cards"
 msgstr "कार्ड"
+
+msgid "Carve"
+msgstr "नक्काशी"
 
 msgid "Change"
 msgstr "बदलें"
@@ -912,6 +918,9 @@ msgstr "आइटम मास्टर"
 msgid "Items"
 msgstr "आइटम"
 
+msgid "Jack-o'-lantern"
+msgstr "जैक-ओ-लैंटर्न"
+
 msgid "Job"
 msgstr "नौकरी"
 
@@ -965,6 +974,9 @@ msgstr "चलिए कुछ बनाते हैं"
 
 msgid "Light"
 msgstr "हल्का"
+
+msgid "Light up"
+msgstr "जलाएँ"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "हल्का, गहरा, या अपनी सिस्टम सेटिंग का पालन करें।"
@@ -1542,6 +1554,12 @@ msgstr "प्रगति"
 msgid "Purchasing"
 msgstr "क्रय"
 
+msgid "QC"
+msgstr "QC"
+
+msgid "QC passed"
+msgstr "QC पास"
+
 msgid "Quality"
 msgstr "गुणवत्ता"
 
@@ -1603,6 +1621,9 @@ msgstr "अस्वीकार करें"
 
 msgid "Reject Lot"
 msgstr "लॉट अस्वीकार करें"
+
+msgid "Rejected"
+msgstr "अस्वीकृत"
 
 msgid "Released"
 msgstr "जारी"
@@ -2238,6 +2259,9 @@ msgstr "रखरखाव कार्य देखें"
 
 msgid "View or open"
 msgstr "देखें या खोलें"
+
+msgid "Wash"
+msgstr "धुलाई"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"

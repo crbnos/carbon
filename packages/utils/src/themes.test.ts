@@ -10,11 +10,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_THEME_NAME,
   isInSeason,
+  isSeasonalTheme,
   resolveTheme,
   type SeasonalTheme,
-  seasonalMeshColors,
   seasonalThemes,
+  storedTheme,
   type ThemeWindow,
+  themeByName,
   themes
 } from "./themes";
 import { themeColorValidator } from "./types";
@@ -77,6 +79,9 @@ describe("resolveTheme on an ordinary day", () => {
 
   it("returns the stored theme", () => {
     expect(resolveTheme("violet", ordinaryDay).name).toBe("violet");
+    expect(storedTheme("violet").name).toBe("violet");
+    expect(themeByName("violet").name).toBe("violet");
+    expect(isSeasonalTheme("violet")).toBe(false);
   });
 
   it("falls back to the default for a removed or missing theme", () => {
@@ -114,8 +119,10 @@ for (const theme of seasonal) {
       expect(resolveTheme(theme.name, dayAfter).name).toBe(DEFAULT_THEME_NAME);
     });
 
-    it("brings its own mesh colors", () => {
-      expect(seasonalMeshColors(theme.name)).toEqual(theme.mesh);
+    it("is never a stored pick, but renders by name", () => {
+      expect(isSeasonalTheme(theme.name)).toBe(true);
+      expect(storedTheme(theme.name).name).toBe(DEFAULT_THEME_NAME);
+      expect(themeByName(theme.name).name).toBe(theme.name);
     });
   });
 }

@@ -14,6 +14,7 @@ import {
   cn,
   ItarDisclosure,
   PrefetchLink,
+  SeasonalThemeNotice,
   SheetSectionLabel,
   sheetRowClassName,
   useMode
@@ -199,23 +200,29 @@ export function ProfileSheet({
 
   const renderSubmenu = (item: AccountMenuItem): ReactNode => {
     if (item.id === "theme") {
-      return themes.map((theme) => (
-        <SheetRowButton
-          key={theme.name}
-          onClick={() => menu.onThemeChange(theme.name)}
-        >
-          <span
-            className="size-5 shrink-0 rounded-full"
-            style={{
-              background: `hsl(${theme.activeColor[mode === "dark" ? "dark" : "light"]})`
-            }}
-          />
-          <SheetRowContent
-            label={theme.label}
-            trailing={menu.optimisticTheme === theme.name ? "check" : null}
-          />
-        </SheetRowButton>
-      ));
+      return (
+        <>
+          <SeasonalThemeNotice className="px-4 py-2" />
+          {themes.map((theme) => (
+            <SheetRowButton
+              key={theme.name}
+              disabled={menu.seasonalTheme}
+              onClick={() => menu.onThemeChange(theme.name)}
+            >
+              <span
+                className="size-5 shrink-0 rounded-full"
+                style={{
+                  background: `hsl(${theme.activeColor[mode === "dark" ? "dark" : "light"]})`
+                }}
+              />
+              <SheetRowContent
+                label={theme.label}
+                trailing={menu.optimisticTheme === theme.name ? "check" : null}
+              />
+            </SheetRowButton>
+          ))}
+        </>
+      );
     }
     if (item.id === "language") {
       return (

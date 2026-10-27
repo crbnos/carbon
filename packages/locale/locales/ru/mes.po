@@ -110,6 +110,9 @@ msgstr "🚨 Внимание: {0} ваша учётная запись буде
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Предыдущее выполнение не завершилось. Повторное выполнение возобновляет оставшиеся шаги — количество не учитывается дважды."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Сегодня у всех сезонная тема. Когда она закончится, вы снова сможете выбрать свою."
+
 msgid "About"
 msgstr "О системе"
 
@@ -333,6 +336,9 @@ msgstr "Логотип Carbon"
 
 msgid "Cards"
 msgstr "Карточки"
+
+msgid "Carve"
+msgstr "Резьба"
 
 msgid "Change"
 msgstr "Изменить"
@@ -912,6 +918,9 @@ msgstr "Карточка номенклатуры"
 msgid "Items"
 msgstr "Номенклатура"
 
+msgid "Jack-o'-lantern"
+msgstr "Светильник Джека"
+
 msgid "Job"
 msgstr "Задание"
 
@@ -965,6 +974,9 @@ msgstr "Давайте создадим что-то"
 
 msgid "Light"
 msgstr "Светлый"
+
+msgid "Light up"
+msgstr "Зажечь"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Светлая, тёмная или согласно параметрам системы."
@@ -1542,6 +1554,12 @@ msgstr "Прогресс"
 msgid "Purchasing"
 msgstr "Закупки"
 
+msgid "QC"
+msgstr "ОТК"
+
+msgid "QC passed"
+msgstr "ОТК пройден"
+
 msgid "Quality"
 msgstr "Качество"
 
@@ -1603,6 +1621,9 @@ msgstr "Отклонить"
 
 msgid "Reject Lot"
 msgstr "Отклонить партию"
+
+msgid "Rejected"
+msgstr "Отклонено"
 
 msgid "Released"
 msgstr "Запущено"
@@ -2238,6 +2259,9 @@ msgstr "Просмотреть заявку на техобслуживание"
 
 msgid "View or open"
 msgstr "Просмотр или открытие"
+
+msgid "Wash"
+msgstr "Мойка"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Мы отправили вам ссылку для входа в ваш аккаунт."

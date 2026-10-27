@@ -1465,6 +1465,9 @@ msgstr "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 
@@ -4765,6 +4768,9 @@ msgstr "Carrier"
 
 msgid "Carrier Account"
 msgstr "Carrier Account"
+
+msgid "Carve"
+msgstr "Carve"
 
 msgid "Cash & Banking"
 msgstr "Cash & Banking"
@@ -12271,6 +12277,9 @@ msgstr "Its design may change before the change notice is released."
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Its revenue goes back to what each line has left to recognize."
 
+msgid "Jack-o'-lantern"
+msgstr "Jack-o'-lantern"
+
 msgid "Job"
 msgstr "Job"
 
@@ -12799,6 +12808,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Light"
+
+msgid "Light up"
+msgstr "Light up"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Light, dark, or follow your system setting."
@@ -17924,6 +17936,12 @@ msgstr "PV of Payments"
 
 msgid "PV of Residual"
 msgstr "PV of Residual"
+
+msgid "QC"
+msgstr "QC"
+
+msgid "QC passed"
+msgstr "QC passed"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code to complete the current operation for this kanban"
@@ -26064,6 +26082,9 @@ msgstr "Warn when the person inspecting an inbound item is the same person who r
 
 msgid "Warning"
 msgstr "Warning"
+
+msgid "Wash"
+msgstr "Wash"
 
 msgid "Watch"
 msgstr "Watch"

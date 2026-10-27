@@ -110,6 +110,9 @@ msgstr "🚨 提醒：您的账户将于 {0} 迁移至 erp.try.carbon.ms"
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "今天所有人都在使用季节主题。主题结束后，你可以重新选择自己的主题。"
+
 msgid "About"
 msgstr "关于"
 
@@ -333,6 +336,9 @@ msgstr "Carbon 标志"
 
 msgid "Cards"
 msgstr "卡片"
+
+msgid "Carve"
+msgstr "雕刻"
 
 msgid "Change"
 msgstr "更改"
@@ -912,6 +918,9 @@ msgstr "物料主数据"
 msgid "Items"
 msgstr "物料"
 
+msgid "Jack-o'-lantern"
+msgstr "南瓜灯"
+
 msgid "Job"
 msgstr "工单"
 
@@ -965,6 +974,9 @@ msgstr "让我们开始构建"
 
 msgid "Light"
 msgstr "浅色"
+
+msgid "Light up"
+msgstr "点亮"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "浅色、深色或跟随系统设置。"
@@ -1542,6 +1554,12 @@ msgstr "进度"
 msgid "Purchasing"
 msgstr "采购"
 
+msgid "QC"
+msgstr "质检"
+
+msgid "QC passed"
+msgstr "质检通过"
+
 msgid "Quality"
 msgstr "质量"
 
@@ -1603,6 +1621,9 @@ msgstr "拒绝"
 
 msgid "Reject Lot"
 msgstr "拒绝批次"
+
+msgid "Rejected"
+msgstr "已拒绝"
 
 msgid "Released"
 msgstr "已下达"
@@ -2238,6 +2259,9 @@ msgstr "查看维护工单"
 
 msgid "View or open"
 msgstr "查看或打开"
+
+msgid "Wash"
+msgstr "清洗"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "我们已向您发送了登录链接，请查收。"

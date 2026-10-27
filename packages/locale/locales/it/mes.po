@@ -110,6 +110,9 @@ msgstr "🚨 Attenzione: il {0} il tuo account verrà trasferito su erp.try.carb
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Un completamento precedente non è terminato. Riprovare riprende i passaggi rimanenti — le quantità non vengono conteggiate due volte."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Oggi è attivo un tema stagionale per tutti. Al termine potrai scegliere di nuovo il tuo."
+
 msgid "About"
 msgstr "Informazioni"
 
@@ -333,6 +336,9 @@ msgstr "Logo Carbon"
 
 msgid "Cards"
 msgstr "Schede"
+
+msgid "Carve"
+msgstr "Intaglio"
 
 msgid "Change"
 msgstr "Cambia"
@@ -912,6 +918,9 @@ msgstr "Anagrafica Articolo"
 msgid "Items"
 msgstr "Articoli"
 
+msgid "Jack-o'-lantern"
+msgstr "Zucca di Halloween"
+
 msgid "Job"
 msgstr "Commessa"
 
@@ -965,6 +974,9 @@ msgstr "Costruiamo qualcosa"
 
 msgid "Light"
 msgstr "Chiaro"
+
+msgid "Light up"
+msgstr "Accensione"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Chiaro, scuro, o segui le impostazioni di sistema."
@@ -1542,6 +1554,12 @@ msgstr "Avanzamento"
 msgid "Purchasing"
 msgstr "Acquisti"
 
+msgid "QC"
+msgstr "CQ"
+
+msgid "QC passed"
+msgstr "CQ superato"
+
 msgid "Quality"
 msgstr "Qualità"
 
@@ -1603,6 +1621,9 @@ msgstr "Rifiuta"
 
 msgid "Reject Lot"
 msgstr "Rifiuta Lotto"
+
+msgid "Rejected"
+msgstr "Rifiutato"
 
 msgid "Released"
 msgstr "Rilasciato"
@@ -2238,6 +2259,9 @@ msgstr "Visualizza intervento di manutenzione"
 
 msgid "View or open"
 msgstr "Visualizza o apri"
+
+msgid "Wash"
+msgstr "Lavaggio"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Ti abbiamo inviato un link di accesso al tuo account."

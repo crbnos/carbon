@@ -4,7 +4,7 @@
 
 import { DOMAIN, getCookieDomain } from "@carbon/auth";
 import type { ThemeName } from "@carbon/utils";
-import { resolveTheme } from "@carbon/utils";
+import { resolveTheme, storedTheme } from "@carbon/utils";
 import * as cookie from "cookie";
 
 const cookieName = "theme";
@@ -14,9 +14,20 @@ const cookieName = "theme";
  * otherwise the cookie's, or the default (`resolveTheme`).
  */
 export function getTheme(request: Request): ThemeName {
+  return resolveTheme(readCookie(request)).name;
+}
+
+/**
+ * The everyday theme the user picked, whatever is in season: what a picker
+ * shows as chosen and posts back (`storedTheme`).
+ */
+export function getStoredTheme(request: Request): ThemeName {
+  return storedTheme(readCookie(request)).name;
+}
+
+function readCookie(request: Request) {
   const cookieHeader = request.headers.get("cookie");
-  const stored = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : null;
-  return resolveTheme(stored).name;
+  return cookieHeader ? cookie.parse(cookieHeader)[cookieName] : null;
 }
 
 export function setTheme(theme: string) {

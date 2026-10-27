@@ -110,6 +110,9 @@ msgstr "🚨 お知らせ：{0}にアカウントが erp.try.carbon.ms に移行
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "前回の完了は終了しませんでした。再試行により残りのステップが再開されます。数量は二重計算されません。"
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "本日は全員に季節限定のテーマが適用されています。終了後に、もう一度ご自分のテーマを選べます。"
+
 msgid "About"
 msgstr "バージョン情報"
 
@@ -333,6 +336,9 @@ msgstr "Carbonロゴ"
 
 msgid "Cards"
 msgstr "カード"
+
+msgid "Carve"
+msgstr "彫刻"
 
 msgid "Change"
 msgstr "変更"
@@ -912,6 +918,9 @@ msgstr "品目マスター"
 msgid "Items"
 msgstr "品目"
 
+msgid "Jack-o'-lantern"
+msgstr "ジャック・オー・ランタン"
+
 msgid "Job"
 msgstr "ジョブ"
 
@@ -965,6 +974,9 @@ msgstr "さあ、何かを作りましょう"
 
 msgid "Light"
 msgstr "ライト"
+
+msgid "Light up"
+msgstr "点灯"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "ライト、ダーク、またはシステム設定に従う。"
@@ -1542,6 +1554,12 @@ msgstr "進捗"
 msgid "Purchasing"
 msgstr "購買"
 
+msgid "QC"
+msgstr "品質検査"
+
+msgid "QC passed"
+msgstr "検査合格"
+
 msgid "Quality"
 msgstr "品質"
 
@@ -1603,6 +1621,9 @@ msgstr "却下"
 
 msgid "Reject Lot"
 msgstr "ロットを却下"
+
+msgid "Rejected"
+msgstr "却下"
 
 msgid "Released"
 msgstr "リリース済"
@@ -2238,6 +2259,9 @@ msgstr "保全指示を表示"
 
 msgid "View or open"
 msgstr "表示または開く"
+
+msgid "Wash"
+msgstr "洗浄"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "アカウントにサインインするためのマジックリンクをお送りしました。"

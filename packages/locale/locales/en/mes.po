@@ -110,6 +110,9 @@ msgstr "🚨 Heads up: on {0} your account will be moved to erp.try.carbon.ms"
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+
 msgid "About"
 msgstr "About"
 
@@ -333,6 +336,9 @@ msgstr "Carbon Logo"
 
 msgid "Cards"
 msgstr "Cards"
+
+msgid "Carve"
+msgstr "Carve"
 
 msgid "Change"
 msgstr "Change"
@@ -912,6 +918,9 @@ msgstr "Item Master"
 msgid "Items"
 msgstr "Items"
 
+msgid "Jack-o'-lantern"
+msgstr "Jack-o'-lantern"
+
 msgid "Job"
 msgstr "Job"
 
@@ -965,6 +974,9 @@ msgstr "Let's build something"
 
 msgid "Light"
 msgstr "Light"
+
+msgid "Light up"
+msgstr "Light up"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Light, dark, or follow your system setting."
@@ -1542,6 +1554,12 @@ msgstr "Progress"
 msgid "Purchasing"
 msgstr "Purchasing"
 
+msgid "QC"
+msgstr "QC"
+
+msgid "QC passed"
+msgstr "QC passed"
+
 msgid "Quality"
 msgstr "Quality"
 
@@ -1603,6 +1621,9 @@ msgstr "Reject"
 
 msgid "Reject Lot"
 msgstr "Reject Lot"
+
+msgid "Rejected"
+msgstr "Rejected"
 
 msgid "Released"
 msgstr "Released"
@@ -2238,6 +2259,9 @@ msgstr "View maintenance dispatch"
 
 msgid "View or open"
 msgstr "View or open"
+
+msgid "Wash"
+msgstr "Wash"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "We've sent you a magic link to sign in to your account."

@@ -110,6 +110,9 @@ msgstr "🚨 Dikkat: {0} tarihinde hesabınız erp.try.carbon.ms adresine taşı
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları devam ettirir — miktarlar çifte sayılmaz."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Bugün herkes için mevsimlik bir tema açık. Sona erdiğinde kendi temanızı yeniden seçebilirsiniz."
+
 msgid "About"
 msgstr "Hakkında"
 
@@ -333,6 +336,9 @@ msgstr "Carbon Logosu"
 
 msgid "Cards"
 msgstr "Kartlar"
+
+msgid "Carve"
+msgstr "Oyma"
 
 msgid "Change"
 msgstr "Değiştir"
@@ -912,6 +918,9 @@ msgstr "Ürün Ana Veri"
 msgid "Items"
 msgstr "Stok kartları"
 
+msgid "Jack-o'-lantern"
+msgstr "Bal kabağı feneri"
+
 msgid "Job"
 msgstr "İş Emri"
 
@@ -965,6 +974,9 @@ msgstr "Bir şeyler inşa edelim"
 
 msgid "Light"
 msgstr "Açık"
+
+msgid "Light up"
+msgstr "Yakma"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Açık, koyu veya sistem ayarınızı takip edin."
@@ -1542,6 +1554,12 @@ msgstr "İlerleme"
 msgid "Purchasing"
 msgstr "Satın alma"
 
+msgid "QC"
+msgstr "KK"
+
+msgid "QC passed"
+msgstr "KK geçti"
+
 msgid "Quality"
 msgstr "Kalite"
 
@@ -1603,6 +1621,9 @@ msgstr "Reddet"
 
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
+
+msgid "Rejected"
+msgstr "Reddedilmiş"
 
 msgid "Released"
 msgstr "Serbest bırakıldı"
@@ -2238,6 +2259,9 @@ msgstr "Bakım emrini Görüntüle"
 
 msgid "View or open"
 msgstr "Görüntüle veya aç"
+
+msgid "Wash"
+msgstr "Yıkama"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."

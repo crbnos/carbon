@@ -1465,6 +1465,9 @@ msgstr "销售RFQ（客户要求您报价）或采购RFQ（您要求供应商）
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对 Carbon 的编程调用，携带自己的权限和速率限制，而不是用户会话的。"
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "今天所有人都在使用季节主题。主题结束后，你可以重新选择自己的主题。"
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报告的单独税收折旧方案。"
 
@@ -4765,6 +4768,9 @@ msgstr "承运商"
 
 msgid "Carrier Account"
 msgstr "承运商账户"
+
+msgid "Carve"
+msgstr "雕刻"
 
 msgid "Cash & Banking"
 msgstr "现金和银行"
@@ -12271,6 +12277,9 @@ msgstr "在变更通知下达前，其设计可能会改变。"
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "其收入返还到每一行剩余待确认的部分。"
 
+msgid "Jack-o'-lantern"
+msgstr "南瓜灯"
+
 msgid "Job"
 msgstr "工作"
 
@@ -12799,6 +12808,9 @@ msgstr "后进先出"
 
 msgid "Light"
 msgstr "浅色"
+
+msgid "Light up"
+msgstr "点亮"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "浅色、深色或跟随系统设置"
@@ -17924,6 +17936,12 @@ msgstr "付款现值"
 
 msgid "PV of Residual"
 msgstr "残值现值"
+
+msgid "QC"
+msgstr "质检"
+
+msgid "QC passed"
+msgstr "质检通过"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "为此看板完成当前工序的QR代码"
@@ -26064,6 +26082,9 @@ msgstr "当检验入库物料的人与收货人相同时发出警告。"
 
 msgid "Warning"
 msgstr "警告"
+
+msgid "Wash"
+msgstr "清洗"
 
 msgid "Watch"
 msgstr "观看"

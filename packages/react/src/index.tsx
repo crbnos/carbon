@@ -315,6 +315,7 @@ import {
   ResizablePanelGroup
 } from "./Resizable";
 import { ScrollArea, ScrollBar } from "./ScrollArea";
+import { SeasonalThemeNotice, useSeasonalTheme } from "./SeasonalTheme";
 import {
   Select,
   SelectContent,
@@ -699,6 +700,7 @@ export {
   reactNodeToString,
   ScrollArea,
   ScrollBar,
+  SeasonalThemeNotice,
   Select,
   SelectContent,
   SelectGroup,
@@ -782,6 +784,7 @@ export {
   useModalDrawerType,
   useOperatingSystem,
   usePickOrderOptions,
+  useSeasonalTheme,
   useShortcutKeyMap,
   useSidebar,
   useViewport,

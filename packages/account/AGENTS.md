@@ -29,7 +29,8 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   `themeColorValidator` from `@carbon/utils`). `useOptimisticMode` only counts a `/`
   submission carrying `mode`, so the two never read each other's in-flight value.
   The theme grid lists the everyday `themes`. A seasonal theme is never offered; while one is
-  in season it renders for everyone, whatever is picked here.
+  in season it renders for everyone, so the grid is disabled and shows `SeasonalThemeNotice`
+  (`useSeasonalTheme`, `@carbon/react`).
 - Panes read with `useLoaderQuery` (`@carbon/query`), so the host app needs a
   `QueryClientProvider`, `window.clientCache` and `createInvalidationMiddleware` in its root.
   Strings use Lingui macros, so it also needs a `LocaleProvider`; the package is in the erp

@@ -29,7 +29,7 @@ import {
   getPreferenceHeaders,
   modeValidator,
   prefetchCacheMiddleware,
-  resolveTheme,
+  themeByName,
   themeColorValidator
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
@@ -193,25 +193,18 @@ function Document({
   lang?: string;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
-  const selectedTheme = resolveTheme(theme);
+  const selectedTheme = themeByName(theme);
 
   // Create style objects for both light and dark modes
   const lightVars: Record<string, string> = {};
   const darkVars: Record<string, string> = {};
 
-  if (selectedTheme) {
-    // Set light mode variables
-    Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      lightVars[cssKey] = `${value}`;
-    });
-
-    // Set dark mode variables
-    Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      darkVars[cssKey] = `${value}`;
-    });
-  }
+  Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
+    lightVars[`--${key}`] = `${value}`;
+  });
+  Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
+    darkVars[`--${key}`] = `${value}`;
+  });
 
   // Combine the styles with proper selectors
   const themeStyle = {

@@ -12,6 +12,10 @@ export const themes = [
   {
     name: "zinc",
     label: "Modern",
+    mesh: {
+      light: ["#edecef", "#f4f4f6", "#fafafb", "#f0eff2"],
+      dark: ["#18181b", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "220 5.9% 2%",
       dark: "220 5.2% 33.9%"
@@ -73,6 +77,10 @@ export const themes = [
   {
     name: "neutral",
     label: "Brutal",
+    mesh: {
+      light: ["#eeece9", "#f4f3f1", "#faf9f8", "#f1efed"],
+      dark: ["#1c1917", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "0 0% 45.1%",
       dark: "0 0% 32.2%"
@@ -133,6 +141,10 @@ export const themes = [
   {
     name: "red",
     label: "Cherry",
+    mesh: {
+      light: ["#fdf0f1", "#fdf6f6", "#fffafa", "#fdf3f3"],
+      dark: ["#2d0a0a", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "0 72.2% 50.6%",
       dark: "0 72.2% 50.6%"
@@ -193,6 +205,10 @@ export const themes = [
   {
     name: "orange",
     label: "Apricot",
+    mesh: {
+      light: ["#fdf4e9", "#fdf8f1", "#fffbf6", "#fdf6ed"],
+      dark: ["#2d1a0a", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "17 96% 57%",
       dark: "17 96% 57%"
@@ -253,6 +269,10 @@ export const themes = [
   {
     name: "yellow",
     label: "Lemon",
+    mesh: {
+      light: ["#fdf8e2", "#fdfaec", "#fffdf4", "#fdf9e7"],
+      dark: ["#2d2a0a", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "65 95.8% 53.1%",
       dark: "65 100% 50%"
@@ -315,6 +335,10 @@ export const themes = [
   {
     name: "green",
     label: "Mint",
+    mesh: {
+      light: ["#e9fbf2", "#f0fcf6", "#f6fdf9", "#edfcf4"],
+      dark: ["#023225", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "171 62% 41%",
       dark: "171 98% 59%"
@@ -375,6 +399,10 @@ export const themes = [
   {
     name: "blue",
     label: "Blueberry",
+    mesh: {
+      light: ["#eef3fd", "#f5f8fe", "#fcfdfe", "#f1f5fd"],
+      dark: ["#0a1a2d", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "237 57% 30%",
       dark: "216 98% 52%"
@@ -435,6 +463,10 @@ export const themes = [
   {
     name: "violet",
     label: "Lavender",
+    mesh: {
+      light: ["#f3f0fe", "#f7f5fe", "#fbfaff", "#f5f2fe"],
+      dark: ["#1e0a2d", "#000000", "#0D0D0D", "#050505"]
+    },
     activeColor: {
       light: "238 57% 50%",
       dark: "253.4 70% 40.4%"
@@ -520,29 +552,23 @@ export type SeasonalTheme = {
   label: string;
   /** When it is on. The only switch: no flag, no deploy on the day. */
   available: ThemeWindow;
-  /** Its mesh-gradient colors (`seasonalMeshColors`). */
-  mesh?: MeshColors;
+  mesh: MeshColors;
   activeColor: { light: string; dark: string };
   cssVars: { light: Record<string, string>; dark: Record<string, string> };
 };
 
-export const seasonalThemes = [halloweenTheme] as const;
-
-// The same list, typed by what a seasonal theme may declare; still compiles
-// when the list is empty.
-const seasonal: readonly SeasonalTheme[] = seasonalThemes;
+export const seasonalThemes = [
+  halloweenTheme
+] as const satisfies readonly SeasonalTheme[];
 
 const allThemes = [...themes, ...seasonalThemes] as const;
 
 export type Theme = (typeof allThemes)[number];
 export type ThemeName = Theme["name"];
 
-export const DEFAULT_THEME_NAME = "zinc" satisfies ThemeName;
-
-// Fails to compile if the first theme stops being the default.
-const defaultTheme: Theme = themes[0] satisfies {
-  name: typeof DEFAULT_THEME_NAME;
-};
+/** The first everyday theme is the default. */
+const defaultTheme: Theme = themes[0];
+export const DEFAULT_THEME_NAME = themes[0].name;
 
 function dayOfYear({ month, day }: MonthDay) {
   return month * 100 + day;
@@ -580,28 +606,47 @@ export function isInSeason(
 
 /** The seasonal theme on now, if any. */
 function seasonalThemeNow(date?: CalendarDate): Theme | undefined {
-  const now = seasonal.find((theme) => isInSeason(theme, date));
-  return now && allThemes.find((theme) => theme.name === now.name);
+  return seasonalThemes.find((theme) => isInSeason(theme, date));
+}
+
+/**
+ * The everyday theme a stored name picks, whatever is in season: what a
+ * picker shows as chosen and saves. An unknown name (a theme since removed,
+ * or a seasonal one) falls back to the default, so removing a theme never
+ * breaks a browser that still holds its cookie.
+ */
+export function storedTheme(name: string | null | undefined): Theme {
+  return themes.find((candidate) => candidate.name === name) ?? defaultTheme;
 }
 
 /**
  * The theme to render for a stored name: a seasonal theme in season, for
- * everyone; otherwise the stored everyday theme. An unknown name (a theme
- * since removed, or a seasonal one) falls back to the default, so removing a
- * theme never breaks a browser that still holds its cookie.
+ * everyone; otherwise the stored everyday theme (`storedTheme`).
  */
 export function resolveTheme(
   name: string | null | undefined,
   date?: CalendarDate
 ): Theme {
-  const season = seasonalThemeNow(date);
-  if (season) return season;
-  return themes.find((candidate) => candidate.name === name) ?? defaultTheme;
+  return seasonalThemeNow(date) ?? storedTheme(name);
 }
 
-/** A seasonal theme's mesh-gradient colors, if it declares them. */
-export function seasonalMeshColors(name: string): MeshColors | undefined {
-  return seasonal.find((theme) => theme.name === name)?.mesh;
+/**
+ * Any theme by name, seasonal ones included, else the default: the root
+ * `Document` renders the name its loader already resolved, without deciding
+ * the season again.
+ */
+export function themeByName(name: string | null | undefined): Theme {
+  return allThemes.find((theme) => theme.name === name) ?? defaultTheme;
+}
+
+/**
+ * Whether a name is a seasonal theme. While the root loader's theme is one,
+ * the pickers are disabled: whatever they saved would not show until the
+ * season ends.
+ */
+export function isSeasonalTheme(name: string | null | undefined) {
+  // Typed, so it still compiles once the list is empty.
+  return seasonalThemes.some((theme: SeasonalTheme) => theme.name === name);
 }
 
 export const BASE_THEME_WITH_VARIABLES = `

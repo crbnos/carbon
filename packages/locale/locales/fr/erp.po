@@ -1465,6 +1465,9 @@ msgstr "Un RFQ de vente (un client vous demande de citer) ou un RFQ d'achat (vou
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Un secret limité en portée envoyé sur l'en-tête de requête carbon-key qui authentifie les appels programmatiques à Carbon, possédant ses propres autorisations et limite de débit plutôt que ceux d'une session utilisateur."
 
+msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
+msgstr "Un thème de saison s'applique à tous aujourd'hui. Vous pourrez choisir à nouveau le vôtre lorsqu'il prendra fin."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Un calendrier d'amortissement distinct pour la déclaration fiscale quand les règles fiscales exigent une méthode différente de l'amortissement comptable."
 
@@ -4765,6 +4768,9 @@ msgstr "Transporteur"
 
 msgid "Carrier Account"
 msgstr "Compte de transporteur"
+
+msgid "Carve"
+msgstr "Sculpter"
 
 msgid "Cash & Banking"
 msgstr "Trésorerie et Banque"
@@ -12271,6 +12277,9 @@ msgstr "Sa conception peut changer avant la publication de l'avis de modificatio
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Ses revenus reviennent à ce que chaque ligne a à reconnaître."
 
+msgid "Jack-o'-lantern"
+msgstr "Citrouille d'Halloween"
+
 msgid "Job"
 msgstr "Tâche"
 
@@ -12799,6 +12808,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Clair"
+
+msgid "Light up"
+msgstr "Allumer"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Clair, sombre, ou suivre le paramètre de votre système."
@@ -17924,6 +17936,12 @@ msgstr "VA des paiements"
 
 msgid "PV of Residual"
 msgstr "VA de la valeur résiduelle"
+
+msgid "QC"
+msgstr "CQ"
+
+msgid "QC passed"
+msgstr "CQ validé"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "QR Code pour terminer l'opération en cours pour ce kanban"
@@ -26064,6 +26082,9 @@ msgstr "Avertir lorsque la personne inspectant un article entrant est la même p
 
 msgid "Warning"
 msgstr "Avertissement"
+
+msgid "Wash"
+msgstr "Laver"
 
 msgid "Watch"
 msgstr "Regarder"
