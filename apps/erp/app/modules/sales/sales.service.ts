@@ -2199,6 +2199,11 @@ export async function insertCustomerContact(
       ? { data: null, error: ruleError(id) }
       : { data: id, error: null };
   } catch (error) {
+    logger.error("Failed to create customer contact", {
+      companyId,
+      customerId,
+      error
+    });
     return { data: null, error: error as Error };
   }
 }

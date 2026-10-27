@@ -1373,6 +1373,11 @@ export async function insertSupplierContact(
       ? { data: null, error: ruleError(id) }
       : { data: id, error: null };
   } catch (error) {
+    logger.error("Failed to create supplier contact", {
+      companyId,
+      supplierId,
+      error
+    });
     return { data: null, error: error as Error };
   }
 }
