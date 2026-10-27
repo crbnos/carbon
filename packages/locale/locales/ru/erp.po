@@ -550,6 +550,9 @@ msgstr "{count} единиц"
 msgid "{created} created, {updated} updated."
 msgstr "{created} создано, {updated} обновлено."
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}д"
 
@@ -4046,6 +4049,9 @@ msgstr "Остаток"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Остаток для {0}"
+
+msgid "Balance Remaining:"
+msgstr "Остаток:"
 
 msgid "Balance Sheet"
 msgstr "Бухгалтерский баланс"
@@ -16654,8 +16660,8 @@ msgstr "Страница"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Страница {pdfViewPage} из {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Оплаченная сумма:"
+msgid "Paid"
+msgstr "Оплачено"
 
 msgid "Paid Date"
 msgstr "Дата оплаты"
@@ -16665,6 +16671,9 @@ msgstr "Оплачено вне Carbon"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Оплачено авансом; запишите это как платеж после получения"
+
+msgid "Paid:"
+msgstr "Оплачено:"
 
 msgid "Parameters"
 msgstr "Параметры"

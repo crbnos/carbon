@@ -232,6 +232,30 @@ export async function deletePurchaseOrder(
   return client.from("purchaseOrder").delete().eq("id", purchaseOrderId);
 }
 
+export async function getPurchaseOrderInvoiceLines(
+  client: SupabaseClient<Database>,
+  purchaseOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("purchaseInvoiceLine")
+    .select("invoiceId")
+    .eq("purchaseOrderId", purchaseOrderId)
+    .eq("companyId", companyId);
+}
+
+export async function getPurchaseOrderInvoicesByIds(
+  client: SupabaseClient<Database>,
+  invoiceIds: string[],
+  companyId: string
+) {
+  return client
+    .from("purchaseInvoices")
+    .select("id, orderTotal, balance, status, currencyCode")
+    .eq("companyId", companyId)
+    .in("id", invoiceIds);
+}
+
 /**
  * A purchase order raised by the planning pages skips the approval rule
  * (`purchaseOrder.createdFromPlanning`, with the company's

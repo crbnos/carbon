@@ -14,6 +14,7 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import {
   getCompanyHasOpenCredits,
+  getInvoicePaidAmounts,
   getPurchaseInvoice,
   getPurchaseInvoiceDelivery,
   getPurchaseInvoiceLines
@@ -106,8 +107,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .maybeSingle()
     ]);
 
+  const invoicePayments = await getInvoicePaidAmounts(
+    client,
+    companyId,
+    "purchase",
+    [invoiceId]
+  );
+  if (invoicePayments.error) {
+    throw redirect(
+      path.to.invoicingPurchasing,
+      await flash(
+        request,
+        error(invoicePayments.error, "Failed to load invoice payments")
+      )
+    );
+  }
+
   return {
     purchaseInvoice: purchaseInvoice.data,
+    invoicePaidAmount: invoicePayments.data?.[invoiceId] ?? 0,
     currency: currency?.data ?? null,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
     purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,

@@ -550,6 +550,9 @@ msgstr "{count} 個"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 件作成、{updated} 件更新されました。"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -4046,6 +4049,9 @@ msgstr "残高"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "{0}の残高"
+
+msgid "Balance Remaining:"
+msgstr "残額:"
 
 msgid "Balance Sheet"
 msgstr "貸借対照表"
@@ -16654,8 +16660,8 @@ msgstr "ページ"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "ページ {pdfViewPage} / {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "支払済み金額:"
+msgid "Paid"
+msgstr "支払済"
 
 msgid "Paid Date"
 msgstr "支払日"
@@ -16665,6 +16671,9 @@ msgstr "Carbonの外で支払済み"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "前払いされ、受け取ったら支払として記録してください。"
+
+msgid "Paid:"
+msgstr "支払済:"
 
 msgid "Parameters"
 msgstr "パラメータ"

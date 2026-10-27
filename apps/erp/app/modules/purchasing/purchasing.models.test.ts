@@ -25,6 +25,7 @@ import {
   purchaseOrderValidator,
   resolveLeaseDates,
   splitRfqModelAttachments,
+  summarizePurchaseOrderInvoices,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -548,5 +549,82 @@ describe("splitRfqModelAttachments", () => {
     const { attach, link } = splitRfqModelAttachments([model("a", 1)], -5);
     expect(attach).toEqual([]);
     expect(link.map((m) => m.id)).toEqual(["a"]);
+  });
+});
+
+describe("summarizePurchaseOrderInvoices", () => {
+  const invoice = (
+    overrides: Partial<
+      Parameters<typeof summarizePurchaseOrderInvoices>[1][number]
+    >
+  ) => ({
+    id: "inv-1",
+    orderTotal: 100,
+    balance: 25,
+    status: "Open",
+    currencyCode: "USD",
+    ...overrides
+  });
+
+  it("rolls up posted base invoice totals, cash paid, and remaining balance", () => {
+    expect(
+      summarizePurchaseOrderInvoices("USD", [invoice({})], { "inv-1": 75 })
+    ).toEqual({
+      invoicedAmount: 100,
+      paidAmount: 75,
+      balanceRemaining: 25,
+      currencyMismatchCount: 0
+    });
+  });
+
+  it("keeps credit relief out of Paid on a purchase order", () => {
+    expect(
+      summarizePurchaseOrderInvoices(
+        "USD",
+        [invoice({ balance: 0, status: "Paid" })],
+        {}
+      )
+    ).toEqual({
+      invoicedAmount: 100,
+      paidAmount: 0,
+      balanceRemaining: 0,
+      currencyMismatchCount: 0
+    });
+  });
+
+  it.each(["Draft", "Pending", "Voided", "Return"])(
+    "ignores a %s purchase invoice and its payments",
+    (status) => {
+      expect(
+        summarizePurchaseOrderInvoices(
+          "USD",
+          [invoice({ balance: 90 }), invoice({ id: "inv-2", status })],
+          { "inv-1": 10, "inv-2": 100 }
+        )
+      ).toEqual({
+        invoicedAmount: 100,
+        paidAmount: 10,
+        balanceRemaining: 90,
+        currencyMismatchCount: 0
+      });
+    }
+  );
+
+  it("counts an invoice in another currency instead of mixing it in", () => {
+    expect(
+      summarizePurchaseOrderInvoices(
+        "USD",
+        [
+          invoice({ balance: 100 }),
+          invoice({ id: "inv-2", currencyCode: "EUR" })
+        ],
+        { "inv-2": 100 }
+      )
+    ).toEqual({
+      invoicedAmount: 100,
+      paidAmount: 0,
+      balanceRemaining: 100,
+      currencyMismatchCount: 1
+    });
   });
 });

@@ -85,7 +85,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getSalesOrder(client, orderId),
     getSalesOrderLines(client, orderId),
     getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
+    getSalesOrderInvoiceLines(client, orderId, companyId)
   ]);
 
   if (salesOrder.error) {
@@ -111,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? getCustomer(client, salesOrder.data.customerId)
       : null,
     invoiceIds.length > 0
-      ? getSalesOrderInvoicesByIds(client, invoiceIds)
+      ? getSalesOrderInvoicesByIds(client, invoiceIds, companyId)
       : null,
     invoiceIds.length > 0
       ? getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
@@ -140,7 +140,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (invoiceLines.error) {
     throw redirect(
-      path.to.salesOrder(orderId),
+      path.to.salesOrders,
       await flash(
         request,
         error(invoiceLines.error, "Failed to load linked sales invoices")
@@ -155,13 +155,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let invoiceSummary: SalesOrderInvoiceSummary = {
     invoicedAmount: 0,
     paidAmount: 0,
+    balanceRemaining: 0,
     currencyMismatchCount: 0
   };
 
   if (invoices && payments) {
     if (invoices.error) {
       throw redirect(
-        path.to.salesOrder(orderId),
+        path.to.salesOrders,
         await flash(
           request,
           error(invoices.error, "Failed to load sales invoice totals")

@@ -23,12 +23,18 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
+import {
+  type PurchaseOrderInvoiceSummary,
+  purchaseOrderApprovalValidator,
+  summarizePurchaseOrderInvoices
+} from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderApproval,
   getPurchaseOrderDelivery,
+  getPurchaseOrderInvoiceLines,
+  getPurchaseOrderInvoicesByIds,
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteraction,
@@ -45,6 +51,8 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "purchase-order");
+
+import { getInvoicePaidAmounts } from "~/modules/invoicing/invoicing.service";
 
 export const handle: Handle = {
   appBarSubtitle: msg`Purchase Order`,
@@ -272,6 +280,67 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     : null;
 
+  const invoiceLines = await getPurchaseOrderInvoiceLines(
+    client,
+    orderId,
+    companyId
+  );
+
+  if (invoiceLines.error) {
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(
+        request,
+        error(invoiceLines.error, "Failed to load linked purchase invoices")
+      )
+    );
+  }
+
+  const invoiceIds = Array.from(
+    new Set(
+      (invoiceLines.data ?? []).map((line) => line.invoiceId).filter(Boolean)
+    )
+  ) as string[];
+
+  let invoiceSummary: PurchaseOrderInvoiceSummary = {
+    invoicedAmount: 0,
+    paidAmount: 0,
+    balanceRemaining: 0,
+    currencyMismatchCount: 0
+  };
+
+  if (invoiceIds.length > 0) {
+    const [invoices, invoicePayments] = await Promise.all([
+      getPurchaseOrderInvoicesByIds(client, invoiceIds, companyId),
+      getInvoicePaidAmounts(client, companyId, "purchase", invoiceIds)
+    ]);
+    if (invoicePayments.error) {
+      throw redirect(
+        path.to.purchaseOrders,
+        await flash(
+          request,
+          error(invoicePayments.error, "Failed to load invoice payments")
+        )
+      );
+    }
+
+    if (invoices.error) {
+      throw redirect(
+        path.to.purchaseOrders,
+        await flash(
+          request,
+          error(invoices.error, "Failed to load purchase invoice totals")
+        )
+      );
+    }
+
+    invoiceSummary = summarizePurchaseOrderInvoices(
+      purchaseOrder.data?.currencyCode,
+      invoices.data ?? [],
+      invoicePayments.data
+    );
+  }
+
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
@@ -286,7 +355,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     canReopen,
     canDelete,
     defaultCc,
-    resolvedAttachments
+    resolvedAttachments,
+    invoiceSummary
   };
 }
 

@@ -550,6 +550,9 @@ msgstr "{count} unidades"
 msgid "{created} created, {updated} updated."
 msgstr "{created} creados, {updated} actualizados."
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr "{currencyMismatchCount, plural, one {Excluye # factura en una moneda diferente.} other {Excluye # facturas en una moneda diferente.}}"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -4046,6 +4049,9 @@ msgstr "Saldo"
 #. placeholder {0}: account.name
 msgid "Balance for {0}"
 msgstr "Saldo de {0}"
+
+msgid "Balance Remaining:"
+msgstr "Saldo restante:"
 
 msgid "Balance Sheet"
 msgstr "Balance General"
@@ -16654,8 +16660,8 @@ msgstr "Página"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Página {pdfViewPage} de {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Monto Pagado:"
+msgid "Paid"
+msgstr "Pagado"
 
 msgid "Paid Date"
 msgstr "Fecha de Pago"
@@ -16665,6 +16671,9 @@ msgstr "Pagado fuera de Carbon"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "Pagado por adelantado; regístralo como un pago una vez recibido"
+
+msgid "Paid:"
+msgstr "Pagado:"
 
 msgid "Parameters"
 msgstr "Parámetros"

@@ -27,6 +27,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
+import { invoiceSettlementDisplayAmounts } from "../invoicing/invoicing.models";
 import {
   incoterms,
   itemType,
@@ -1628,4 +1629,75 @@ export function splitRfqModelAttachments<T extends { size: number }>(
     }
   }
   return { attach, link };
+}
+
+export type PurchaseOrderInvoiceSummary = {
+  invoicedAmount: number;
+  paidAmount: number;
+  balanceRemaining: number;
+  currencyMismatchCount: number;
+};
+
+// Draft/Pending are unposted; Voided/Return are non-spend. Match the
+// invoice-view statuses that keep their stored (non-derived) values.
+const NON_POSTED_PURCHASE_INVOICE_STATUSES = new Set([
+  "Draft",
+  "Pending",
+  "Voided",
+  "Return"
+]);
+
+/** Invoiced, paid, and remaining-balance totals for a purchase order in the
+ *  company's base currency. `orderTotal`, `balance`, and applied payments are
+ *  already company-base amounts, and the PO summary formats them with the
+ *  base-currency formatter. Unposted or voided invoices count for nothing, and
+ *  an invoice in another currency is counted as a mismatch rather than mixed in. */
+export function summarizePurchaseOrderInvoices(
+  orderCurrency: string | null | undefined,
+  invoices: {
+    id: string | null;
+    orderTotal: number | null;
+    balance?: number | null;
+    status: string | null;
+    currencyCode: string | null;
+  }[],
+  paidByInvoiceId: Record<string, number> | null | undefined
+): PurchaseOrderInvoiceSummary {
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let balanceRemaining = 0;
+  let currencyMismatchCount = 0;
+
+  for (const invoice of invoices) {
+    if (NON_POSTED_PURCHASE_INVOICE_STATUSES.has(invoice.status ?? "")) {
+      continue;
+    }
+
+    if (
+      orderCurrency &&
+      invoice.currencyCode &&
+      invoice.currencyCode !== orderCurrency
+    ) {
+      currencyMismatchCount += 1;
+      continue;
+    }
+
+    const display = invoiceSettlementDisplayAmounts({
+      total: invoice.orderTotal ?? 0,
+      balance: invoice.balance,
+      paidAmount: invoice.id ? (paidByInvoiceId?.[invoice.id] ?? 0) : 0,
+      convertToDocument: false
+    });
+
+    invoicedAmount += display.invoicedAmount;
+    paidAmount += display.paidAmount;
+    balanceRemaining += display.balanceRemaining;
+  }
+
+  return {
+    invoicedAmount,
+    paidAmount,
+    balanceRemaining,
+    currencyMismatchCount
+  };
 }
