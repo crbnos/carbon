@@ -29,7 +29,11 @@ import {
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
 import { replanAfterItemChange } from "~/modules/production/production.server";
-import { methodType, sourcingType } from "~/modules/shared/shared.models";
+import {
+  booleanText,
+  methodType,
+  sourcingType
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   isActiveCompanyEmployee,
@@ -4598,13 +4602,13 @@ export const createMethodMaterial = defineServiceFn({
   input: z.looseObject({
     id: z
       .string()
-      .describe(
-        "Updates the existing record with this key; creates one when there is none."
-      ),
+      .min(1)
+      .optional()
+      .describe("The new material's id; the table makes one when left out."),
     makeMethodId: z.string().min(1),
     order: z.number().min(0),
     itemType: z.enum(["Part", "Material", "Consumable"]),
-    kit: z.enum(["true", "false"]).optional(),
+    kit: booleanText().optional(),
     methodType: z.enum([
       "Purchase to Order",
       "Pull from Inventory",
@@ -4658,7 +4662,7 @@ export const updateMethodMaterial = defineServiceFn({
       makeMethodId: z.string().min(1),
       order: z.number().min(0),
       itemType: z.enum(["Part", "Material", "Consumable"]),
-      kit: z.enum(["true", "false"]).optional(),
+      kit: booleanText().optional(),
       methodType: z.enum([
         "Purchase to Order",
         "Pull from Inventory",

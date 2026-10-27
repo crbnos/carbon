@@ -4579,11 +4579,20 @@ async function resolveMethodMaterialStorageUnitIds(
   return current;
 }
 
+// A key present as `undefined` still names its column in the insert, and
+// PostgREST then writes NULL over the column default.
+function withoutMissingId<T extends { id?: string }>(row: T): T {
+  if (row.id !== undefined) return row;
+  const { id: _id, ...rest } = row;
+  return rest as T;
+}
+
 export async function upsertMethodMaterial(
   client: SupabaseClient<Database>,
 
   methodMaterial:
-    | (z.infer<typeof methodMaterialValidator> & {
+    | (Omit<z.infer<typeof methodMaterialValidator>, "id"> & {
+        id?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -4596,8 +4605,10 @@ export async function upsertMethodMaterial(
 ) {
   // The MCP/API path skips methodMaterialValidator, and the insert spreads the
   // id over the column default — so a blank id was stored as "" and the next
-  // blank create collided with it.
-  if (!methodMaterial.id?.trim()) {
+  // blank create collided with it. A create may leave the id out: the column
+  // default makes one.
+  const blankId = methodMaterial.id !== undefined && !methodMaterial.id.trim();
+  if (blankId || ("updatedBy" in methodMaterial && !methodMaterial.id)) {
     return {
       data: null,
       error: { message: "Material ID is required" }
@@ -4648,7 +4659,7 @@ export async function upsertMethodMaterial(
       .from("methodMaterial")
       .insert([
         {
-          ...methodMaterial,
+          ...withoutMissingId(methodMaterial),
           itemId: methodMaterial.itemId!,
           storageUnitIds: seededStorageUnitIds,
           materialMakeMethodId

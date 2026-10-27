@@ -51,6 +51,7 @@ import {
   getCompanySettings,
   getNextSequence
 } from "~/modules/settings/settings.service";
+import { booleanText } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -5983,8 +5984,8 @@ export const createStockTransferLine = defineServiceFn({
     fromStorageUnitId: z.string().optional(),
     toStorageUnitId: z.string().optional(),
     quantity: z.number().min(0),
-    requiresBatchTracking: z.enum(["true", "false"]),
-    requiresSerialTracking: z.enum(["true", "false"])
+    requiresBatchTracking: booleanText(),
+    requiresSerialTracking: booleanText()
   }),
   permission: { create: "inventory" },
   async run(ctx, input) {
@@ -6020,8 +6021,8 @@ export const updateStockTransferLine = defineServiceFn({
       fromStorageUnitId: z.string().optional(),
       toStorageUnitId: z.string().optional(),
       quantity: z.number().min(0),
-      requiresBatchTracking: z.enum(["true", "false"]),
-      requiresSerialTracking: z.enum(["true", "false"]),
+      requiresBatchTracking: booleanText(),
+      requiresSerialTracking: booleanText(),
       id: z.string().describe("The line to update.").optional()
     })
     .required({ id: true }),

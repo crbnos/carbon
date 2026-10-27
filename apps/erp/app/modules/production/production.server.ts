@@ -2326,8 +2326,9 @@ const jobMaterialInput = z.object({
  * @mcp
  */
 export const createJobMaterial = defineServiceFn({
-  // The caller chooses the row's id (the bill of material's new row keeps it).
-  input: jobMaterialInput.extend({ id: z.string() }),
+  // The bill of material sends its new row's id, so the row keeps its key;
+  // without one the table makes it.
+  input: jobMaterialInput.extend({ id: z.string().min(1).optional() }),
   permission: { create: "production" },
 
   async run(ctx, material) {
@@ -2556,12 +2557,16 @@ export const deleteJobMaterials = defineServiceFn({
 // The bill of process form requires times, units and rates; the API fills a
 // new operation's from its work center or process, and an update leaves out
 // what it was not sent.
-const jobOperationInput = baseJobOperationValidator
-  .extend({
-    workCenterId: zfd.text(z.string().optional()),
-    jobId: z.string(),
-    customFields: customFieldsInput
-  })
+const jobOperationFields = baseJobOperationValidator.extend({
+  workCenterId: zfd.text(z.string().optional()),
+  jobId: z.string(),
+  customFields: customFieldsInput
+});
+const jobOperationInput = jobOperationFields.refine(...inspectionPlanRequired);
+// A new operation's id is optional: the table makes one. The bill of process
+// sends its own, so the row it shows before the save keeps its key.
+const newJobOperationInput = jobOperationFields
+  .extend({ id: z.string().min(1).optional() })
   .refine(...inspectionPlanRequired);
 
 /**
@@ -2578,7 +2583,7 @@ const jobOperationInput = baseJobOperationValidator
  * @mcp
  */
 export const createJobOperation = defineServiceFn({
-  input: jobOperationInput,
+  input: newJobOperationInput,
   permission: { create: "production" },
 
   async run(ctx, input) {
@@ -2596,13 +2601,10 @@ export const createJobOperation = defineServiceFn({
       ctx.asSystem.pg,
       { ...operation, companyId: ctx.company.id, createdBy: ctx.auditUserId }
     );
-    if (insert.error || !insert.data?.id) {
-      return ctx.error(
-        "internal",
-        "Failed to insert job operation",
-        insert.error
-      );
-    }
+    const inserted = unwrap(ctx, insert);
+    if (inserted instanceof CarbonError) return inserted;
+    if (!inserted)
+      return ctx.error("internal", "Failed to insert job operation");
 
     const recalculated = await service.recalculateMaterialMethod(ctx, {
       jobId: operation.jobId,
@@ -2610,7 +2612,7 @@ export const createJobOperation = defineServiceFn({
       dependencies: true
     });
     if (recalculated) return recalculated;
-    return { id: insert.data.id };
+    return { id: inserted.id };
   }
 });
 
