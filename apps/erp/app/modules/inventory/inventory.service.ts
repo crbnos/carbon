@@ -23511,10 +23511,10 @@ export async function issueMaterial(
           throw new NotFoundError("Tracked entity not found");
         }
 
-        // First-touch numbering (serialNumberTiming = 'production'). A no-op
-        // for a unit already numbered, which is every unit under the default
-        // timing. A Consumed entity is not cut to one unit below, so it is
-        // numbered only when it already holds one.
+        // First-touch numbering: numbers a unit that has none yet, whatever
+        // the timing (under 'production' every unit; otherwise only a unit
+        // left unnumbered by a timing change). A Consumed entity is not cut to
+        // one unit below, so it is numbered only when it already holds one.
         await sequence.assignSerialNumberIfMissing(trx, {
           trackedEntityId,
           companyId,
@@ -23826,8 +23826,8 @@ export async function issueMaterial(
             entity.attributes as TrackedEntityAttributes;
 
           // A unit scrapped before it completed an operation never reached a
-          // completion hook, so number it here (serialNumberTiming =
-          // 'production'). It consumed real material and needs an identifier
+          // completion hook, so number it here if it has no number yet (it is
+          // cut to one unit below). It consumed real material and needs an identifier
           // on its scrap journal, NCR and lineage; its replacement must not
           // take the number this unit should have had.
           await sequence.assignSerialNumberIfMissing(trx, {
