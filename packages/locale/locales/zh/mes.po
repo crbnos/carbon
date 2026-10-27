@@ -993,6 +993,9 @@ msgstr "已加载: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "正在加载，无需再次扫码。"
+
 msgid "Loading..."
 msgstr "加载中..."
 
@@ -1288,6 +1291,9 @@ msgstr "无"
 
 msgid "Notes"
 msgstr "备注"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "此页面上没有使用该条码的内容"
 
 msgid "Nothing running"
 msgstr "没有运行"
@@ -1702,6 +1708,9 @@ msgstr "扫码或搜索序列号..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
+
+msgid "Scan received"
+msgstr "已收到扫码"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "使用身份验证应用（如 Google Authenticator 或 1Password）扫码此 QR 代码，然后输入它显示的6位数代码。"

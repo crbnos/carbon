@@ -12,7 +12,7 @@ import { useIdle } from "./useIdle";
 import useInitialDimensions from "./useInitialDimenions";
 import { useInterval } from "./useInterval";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
-import { useKeyboardWedge } from "./useKeyboardWedge";
+import { useKeyboardWedge, useScanPending } from "./useKeyboardWedge";
 import useLocalStorage from "./useLocalStorage";
 import {
   getSystemMode,
@@ -59,6 +59,7 @@ export {
   usePlan,
   useRevalidator,
   useRouteData,
+  useScanPending,
   useShortcutKeyMap,
   useShortcutKeys,
   useShortcutSequence,

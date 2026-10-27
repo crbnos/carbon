@@ -993,6 +993,9 @@ msgstr "Caricato: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "Caricamento in corso. Non è necessario scansionare di nuovo."
+
 msgid "Loading..."
 msgstr "Caricamento..."
 
@@ -1288,6 +1291,9 @@ msgstr "Nessuno"
 
 msgid "Notes"
 msgstr "Note"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Nessun elemento di questa pagina usa quel codice a barre"
 
 msgid "Nothing running"
 msgstr "Niente in esecuzione"
@@ -1702,6 +1708,9 @@ msgstr "Scansiona o cerca numero di serie..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scansiona o seleziona un'entità tracciata da questo lotto per aggiungerla come colonna campione, quindi registra il suo risultato nella griglia."
+
+msgid "Scan received"
+msgstr "Scansione ricevuta"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scansiona questo codice QR con la tua app autenticatore (ad esempio Google Authenticator o 1Password), quindi inserisci il codice a 6 cifre che mostra."

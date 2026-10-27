@@ -143,6 +143,7 @@ import type {
 } from "~/services/types";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import { isKanbanCompleteScan } from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
@@ -682,17 +683,9 @@ export const JobOperation = ({
 
   const completeFetcher = useFetcher<Result>();
   useKeyboardWedge({
-    test: (input) => {
-      if (kanban?.completedBarcodeOverride) {
-        return input === kanban.completedBarcodeOverride;
-      } else if (kanban?.id) {
-        return input === path.to.kanbanComplete(kanban.id);
-      }
-      return false;
-    },
-    callback: () => {
-      completeFetcher.load(path.to.endOperation(operation.id));
-    },
+    test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
+    callback: () => completeFetcher.load(path.to.endOperation(operation.id)),
+    inTextFields: true,
     // The wedge completes this single op via endOperation — never for a batched
     // member; the batch completes as a whole.
     active: !!kanban?.id && !isBatched && !abilityBlocked

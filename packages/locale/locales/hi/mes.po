@@ -993,6 +993,9 @@ msgstr "लोड किया गया: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "लोड हो रहा है। दोबारा स्कैन करने की ज़रूरत नहीं है।"
+
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
@@ -1288,6 +1291,9 @@ msgstr "कोई नहीं"
 
 msgid "Notes"
 msgstr "नोट्स"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "इस पेज पर कुछ भी उस बारकोड का उपयोग नहीं करता"
 
 msgid "Nothing running"
 msgstr "कुछ नहीं चल रहा"
@@ -1702,6 +1708,9 @@ msgstr "सीरियल नंबर स्कैन करें या ख�
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें, इसे नमूना कॉलम के रूप में जोड़ें, और फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
+
+msgid "Scan received"
+msgstr "स्कैन प्राप्त हुआ"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "इस QR कोड को अपने प्रमाणकर्ता ऐप्लिकेशन (जैसे Google Authenticator या 1Password) के साथ स्कैन करें, फिर इसके द्वारा दिया गया 6-अंकीय कोड दर्ज करें।"
