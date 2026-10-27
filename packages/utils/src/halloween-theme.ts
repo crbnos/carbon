@@ -4,17 +4,18 @@
 
 import type { SeasonalTheme } from "./themes";
 
-// Seasonal theme: on October 31 it replaces every theme, for everyone, and
-// the sign-in page's Night Shift and the app decorations come with it
-// (packages/react/src/Halloween/). Nobody can pick it. To change the day or
-// widen it to a few, edit `available`; nothing else is needed. The removal
-// checklist is at the top of packages/react/src/Halloween/HalloweenLayer.tsx.
+// Seasonal theme: from October 27 to 31 it replaces every theme inside the
+// signed-in app, for everyone who has not picked another one since, and the
+// app decorations come with it (packages/react/src/Halloween/). Sign-in,
+// shared links and onboarding keep the brand theme. To change the days, edit
+// `available`; nothing else is needed. The removal checklist is
+// at the top of packages/react/src/Halloween/HalloweenLayer.tsx.
 
 export const halloweenTheme = {
   name: "halloween",
   label: "Halloween",
   available: {
-    from: { month: 10, day: 31 },
+    from: { month: 10, day: 27 },
     to: { month: 10, day: 31 }
   },
   mesh: {

@@ -4,10 +4,11 @@
 
 import type { CalendarDate } from "@internationalized/date";
 import { today } from "@internationalized/date";
+import * as cookie from "cookie";
 import template from "lodash.template";
 import { halloweenTheme } from "./halloween-theme";
 
-/** The everyday themes: what every theme picker offers, and all it offers. */
+/** The everyday themes: what every theme picker offers all year. */
 export const themes = [
   {
     name: "zinc",
@@ -541,11 +542,11 @@ export type MeshColors = {
 };
 
 /**
- * A theme that takes over for a few days a year: while in season every
- * browser renders it, whatever theme was picked, and when the season ends
- * everyone is back on their own. No picker ever lists one. Everything about
- * it lives on the theme, so removing one is deleting its file and its
- * `seasonalThemes` entry.
+ * A theme that takes over the signed-in app for a few days a year: while in
+ * season it renders for everyone until they pick another theme, and when the
+ * season ends everyone is back on their own. Pickers list it only while it is in
+ * season. Everything about it lives on the theme, so removing one is deleting
+ * its file and its `seasonalThemes` entry.
  */
 export type SeasonalTheme = {
   name: string;
@@ -605,29 +606,101 @@ export function isInSeason(
 }
 
 /** The seasonal theme on now, if any. */
-function seasonalThemeNow(date?: CalendarDate): Theme | undefined {
+export function seasonalThemeNow(date?: CalendarDate): Theme | undefined {
   return seasonalThemes.find((theme) => isInSeason(theme, date));
 }
 
 /**
- * The everyday theme a stored name picks, whatever is in season: what a
- * picker shows as chosen and saves. An unknown name (a theme since removed,
- * or a seasonal one) falls back to the default, so removing a theme never
- * breaks a browser that still holds its cookie.
+ * The everyday theme a stored name picks, whatever is in season. An unknown
+ * name (a theme since removed, or a seasonal one) falls back to the default,
+ * so removing a theme never breaks a browser that still holds its cookie.
  */
 export function storedTheme(name: string | null | undefined): Theme {
   return themes.find((candidate) => candidate.name === name) ?? defaultTheme;
 }
 
 /**
- * The theme to render for a stored name: a seasonal theme in season, for
- * everyone; otherwise the stored everyday theme (`storedTheme`).
+ * The theme to render for a stored name: a seasonal theme in season, unless
+ * this browser switched it off (`seasonalOff`, the name of the seasonal theme
+ * it picked away from); otherwise the stored everyday theme (`storedTheme`).
  */
 export function resolveTheme(
   name: string | null | undefined,
-  date?: CalendarDate
+  {
+    date,
+    seasonalOff
+  }: { date?: CalendarDate; seasonalOff?: string | null } = {}
 ): Theme {
-  return seasonalThemeNow(date) ?? storedTheme(name);
+  const seasonal = seasonalThemeNow(date);
+  return seasonal && seasonal.name !== seasonalOff
+    ? seasonal
+    : storedTheme(name);
+}
+
+/** The everyday theme a browser picked. */
+export const THEME_COOKIE = "theme";
+
+/** The seasonal theme a browser picked away from while it was in season. */
+export const SEASONAL_OFF_COOKIE = "seasonal-theme-off";
+
+const THEME_MAX_AGE = 60 * 60 * 24 * 365;
+// Long enough to outlast a season, short enough to be gone by the next one.
+const SEASONAL_OFF_MAX_AGE = 60 * 60 * 24 * 30;
+
+/**
+ * Whether a page is inside the signed-in app (`/x`), the only place a
+ * seasonal theme shows: sign-in, shared links and onboarding keep the brand.
+ */
+export function isAppPath(pathname: string) {
+  return pathname === "/x" || pathname.startsWith("/x/");
+}
+
+export function themeForRequest(
+  cookieHeader: string | null,
+  pathname: string
+): Theme {
+  const cookies = cookieHeader ? cookie.parse(cookieHeader) : {};
+  if (!isAppPath(pathname)) return storedTheme(cookies[THEME_COOKIE]);
+  return resolveTheme(cookies[THEME_COOKIE], {
+    seasonalOff: cookies[SEASONAL_OFF_COOKIE]
+  });
+}
+
+/** A cookie a theme pick writes; `maxAge: 0` deletes it. */
+export type ThemeCookieWrite = { name: string; value: string; maxAge: number };
+
+/**
+ * The cookies a theme pick writes. A seasonal theme turns itself back on and
+ * keeps the stored theme. An everyday theme is stored and, when picked inside
+ * the app while a seasonal theme is on, switches that one off for this
+ * browser; a pick made elsewhere (onboarding) never saw it, so leaves it on.
+ */
+export function themeCookieWrites(
+  theme: string,
+  { inApp, date }: { inApp: boolean; date?: CalendarDate }
+): ThemeCookieWrite[] {
+  if (isSeasonalTheme(theme)) {
+    return [{ name: SEASONAL_OFF_COOKIE, value: "", maxAge: 0 }];
+  }
+  const writes = [{ name: THEME_COOKIE, value: theme, maxAge: THEME_MAX_AGE }];
+  const seasonal = inApp ? seasonalThemeNow(date) : undefined;
+  if (seasonal) {
+    writes.push({
+      name: SEASONAL_OFF_COOKIE,
+      value: seasonal.name,
+      maxAge: SEASONAL_OFF_MAX_AGE
+    });
+  }
+  return writes;
+}
+
+/**
+ * The themes a picker lists: the seasonal theme first while it is in season,
+ * then every everyday theme.
+ */
+export function pickableThemes(date?: CalendarDate): readonly Theme[] {
+  const seasonal = seasonalThemeNow(date);
+  return seasonal ? [seasonal, ...themes] : themes;
 }
 
 /**
@@ -640,9 +713,8 @@ export function themeByName(name: string | null | undefined): Theme {
 }
 
 /**
- * Whether a name is a seasonal theme. While the root loader's theme is one,
- * the pickers are disabled: whatever they saved would not show until the
- * season ends.
+ * Whether a name is a seasonal theme. Picking one saves no everyday theme: it
+ * only turns the seasonal theme back on for this browser.
  */
 export function isSeasonalTheme(name: string | null | undefined) {
   // Typed, so it still compiles once the list is empty.

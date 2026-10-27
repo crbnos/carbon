@@ -188,7 +188,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       {},
       {
-        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+        headers: setTheme(themeValidation.data.theme, { inApp: true })
       }
     );
   }

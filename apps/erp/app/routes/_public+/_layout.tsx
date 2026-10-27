@@ -4,7 +4,6 @@
 
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { cn, Heading, TooltipProvider } from "@carbon/react";
-import { HalloweenLoginArt } from "@carbon/react/Halloween";
 import { Trans } from "@lingui/react/macro";
 import { Outlet } from "react-router";
 
@@ -13,13 +12,11 @@ export default function PublicRoute() {
     <TooltipProvider>
       <div className="container relative h-full flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0 bg-card">
         <div className="relative hidden h-full flex-col bg-muted p-10 lg:flex dark:border-r dark:bg-zinc-900 bg-zinc-100">
-          {/* Seasonal: shows only with the Halloween theme. */}
-          <HalloweenLoginArt />
           <img
             src="/carbon-word-light.svg"
             alt="Carbon Logo"
             className={cn(
-              "relative max-w-[200px] mb-3 dark:hidden z-50",
+              "max-w-[200px] mb-3 dark:hidden z-50",
               CONTROLLED_ENVIRONMENT && "grayscale"
             )}
           />
@@ -27,7 +24,7 @@ export default function PublicRoute() {
             src="/carbon-word-dark.svg"
             alt="Carbon Logo"
             className={cn(
-              "relative max-w-[200px] mb-3 dark:block hidden z-50",
+              "max-w-[200px] mb-3 dark:block hidden z-50",
               CONTROLLED_ENVIRONMENT && "grayscale"
             )}
           />

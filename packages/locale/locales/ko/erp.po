@@ -1504,9 +1504,6 @@ msgstr "영업 견적 요청(고객이 견적을 요청) 또는 구매 견적 �
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key 요청 헤더에서 전송되는 범위 제한 암호로서, Carbon에 대한 프로그래밍 방식 호출을 인증하며 사용자 세션의 권한이 아닌 자체 권한 및 속도 제한을 전달합니다."
 
-msgid "A seasonal theme is on for everyone today. You can pick yours again once it ends."
-msgstr "오늘은 모든 사용자에게 시즌 테마가 적용됩니다. 시즌이 끝나면 다시 원하는 테마를 선택할 수 있습니다."
-
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "세금 규칙이 장부 감가상각과 다른 방법을 요구할 때 세금 보고를 위한 별도의 일정입니다."
 
@@ -4822,9 +4819,6 @@ msgstr "운송업체"
 
 msgid "Carrier Account"
 msgstr "운송업체 계정"
-
-msgid "Carve"
-msgstr "조각"
 
 msgid "Cash & Banking"
 msgstr "현금 및 은행"
@@ -12376,9 +12370,6 @@ msgstr "변경 통지가 발행되기 전에 설계가 변경될 수 있습니�
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "그 매출은 각 라인이 인식해야 할 남은 부분으로 돌아갑니다."
 
-msgid "Jack-o'-lantern"
-msgstr "잭오랜턴"
-
 msgid "Job"
 msgstr "작업"
 
@@ -12907,9 +12898,6 @@ msgstr "후입선출"
 
 msgid "Light"
 msgstr "라이트"
-
-msgid "Light up"
-msgstr "점등"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "밝음, 어두움 또는 시스템 설정 따르기"
@@ -18064,12 +18052,6 @@ msgstr "지불의 현재가치"
 
 msgid "PV of Residual"
 msgstr "잔존가치의 현재가치"
-
-msgid "QC"
-msgstr "품질 검사"
-
-msgid "QC passed"
-msgstr "검사 통과"
 
 msgid "QR Code to complete the current operation for this kanban"
 msgstr "이 칸반의 현재 공정을 완료 처리하기 위한 QR 코드"
@@ -26255,9 +26237,6 @@ msgstr "입고 품목을 검사하는 사람이 해당 품목을 입고 처리�
 
 msgid "Warning"
 msgstr "경고"
-
-msgid "Wash"
-msgstr "세척"
 
 msgid "Watch"
 msgstr "시청"

@@ -11,12 +11,15 @@ import {
   DEFAULT_THEME_NAME,
   isInSeason,
   isSeasonalTheme,
+  pickableThemes,
   resolveTheme,
   type SeasonalTheme,
   seasonalThemes,
   storedTheme,
   type ThemeWindow,
   themeByName,
+  themeCookieWrites,
+  themeForRequest,
   themes
 } from "./themes";
 import { themeColorValidator } from "./types";
@@ -145,18 +148,22 @@ describe("resolveTheme on an ordinary day", () => {
   });
 
   it("returns the stored theme", () => {
-    expect(resolveTheme("violet", ordinaryDay).name).toBe("violet");
+    expect(resolveTheme("violet", { date: ordinaryDay }).name).toBe("violet");
     expect(storedTheme("violet").name).toBe("violet");
     expect(themeByName("violet").name).toBe("violet");
     expect(isSeasonalTheme("violet")).toBe(false);
   });
 
   it("falls back to the default for a removed or missing theme", () => {
-    expect(resolveTheme("pumpkin-spice", ordinaryDay).name).toBe(
+    expect(resolveTheme("pumpkin-spice", { date: ordinaryDay }).name).toBe(
       DEFAULT_THEME_NAME
     );
-    expect(resolveTheme(undefined, ordinaryDay).name).toBe(DEFAULT_THEME_NAME);
-    expect(resolveTheme(null, ordinaryDay).name).toBe(DEFAULT_THEME_NAME);
+    expect(resolveTheme(undefined, { date: ordinaryDay }).name).toBe(
+      DEFAULT_THEME_NAME
+    );
+    expect(resolveTheme(null, { date: ordinaryDay }).name).toBe(
+      DEFAULT_THEME_NAME
+    );
   });
 });
 
@@ -167,23 +174,75 @@ for (const theme of seasonal) {
   const dayAfter = lastDay.add({ days: 1 });
 
   describe(`seasonal theme "${theme.name}"`, () => {
-    it("is in no picker", () => {
-      expect(themes.map((t) => t.name)).not.toContain(theme.name);
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("is listed first in the pickers only while in season", () => {
+      expect(pickableThemes(firstDay).map((t) => t.name)).toEqual([
+        theme.name,
+        ...themes.map((t) => t.name)
+      ]);
+      expect(pickableThemes(dayAfter)).toEqual(themes);
       expect(themeColorValidator.safeParse({ theme: theme.name }).success).toBe(
-        false
+        true
       );
     });
 
-    it("replaces every theme for everyone while in season", () => {
+    it("replaces every theme while in season, unless the browser switched it off", () => {
       for (const day of [firstDay, lastDay]) {
-        expect(resolveTheme("violet", day).name).toBe(theme.name);
-        expect(resolveTheme(undefined, day).name).toBe(theme.name);
+        expect(resolveTheme("violet", { date: day }).name).toBe(theme.name);
+        expect(resolveTheme(undefined, { date: day }).name).toBe(theme.name);
+        expect(
+          resolveTheme("violet", { date: day, seasonalOff: theme.name }).name
+        ).toBe("violet");
       }
     });
 
+    it("shows only inside the signed-in app", () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(`${firstDay.toString()}T12:00:00Z`);
+      const picked = "theme=violet";
+      const switchedOff = `theme=violet; seasonal-theme-off=${theme.name}`;
+      expect(themeForRequest(picked, "/x").name).toBe(theme.name);
+      expect(themeForRequest(picked, "/x/sales").name).toBe(theme.name);
+      expect(themeForRequest(picked, "/login").name).toBe("violet");
+      expect(themeForRequest(picked, "/share/quote/1").name).toBe("violet");
+      expect(themeForRequest(picked, "/xylophone").name).toBe("violet");
+      expect(themeForRequest(null, "/login").name).toBe(DEFAULT_THEME_NAME);
+      expect(themeForRequest(switchedOff, "/x").name).toBe("violet");
+    });
+
+    it("is switched off by an everyday pick made inside the app", () => {
+      expect(
+        themeCookieWrites("violet", { inApp: true, date: firstDay })
+      ).toEqual([
+        { name: "theme", value: "violet", maxAge: 31536000 },
+        { name: "seasonal-theme-off", value: theme.name, maxAge: 2592000 }
+      ]);
+    });
+
+    it("stays on after a pick made outside the app or out of season", () => {
+      const storesOnly = [{ name: "theme", value: "violet", maxAge: 31536000 }];
+      expect(
+        themeCookieWrites("violet", { inApp: false, date: firstDay })
+      ).toEqual(storesOnly);
+      expect(
+        themeCookieWrites("violet", { inApp: true, date: dayAfter })
+      ).toEqual(storesOnly);
+    });
+
+    it("turns back on when picked, keeping the stored theme", () => {
+      expect(
+        themeCookieWrites(theme.name, { inApp: true, date: firstDay })
+      ).toEqual([{ name: "seasonal-theme-off", value: "", maxAge: 0 }]);
+    });
+
     it("hands everyone back their own theme after its season", () => {
-      expect(resolveTheme("violet", dayAfter).name).toBe("violet");
-      expect(resolveTheme(theme.name, dayAfter).name).toBe(DEFAULT_THEME_NAME);
+      expect(resolveTheme("violet", { date: dayAfter }).name).toBe("violet");
+      expect(resolveTheme(theme.name, { date: dayAfter }).name).toBe(
+        DEFAULT_THEME_NAME
+      );
     });
 
     it("is never a stored pick, but renders by name", () => {

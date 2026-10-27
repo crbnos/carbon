@@ -8,7 +8,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { themeValidator } from "~/modules/settings/settings.models";
-import { getStoredTheme, setTheme } from "~/services/theme.server";
+import { getTheme, setTheme } from "~/services/theme.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -19,7 +19,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   return {
-    theme: getStoredTheme(request)
+    theme: getTheme(request)
   };
 }
 
@@ -36,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
   return data(
     {},
     {
-      headers: { "Set-Cookie": setTheme(validation.data.theme) }
+      headers: setTheme(validation.data.theme, { inApp: true })
     }
   );
 }

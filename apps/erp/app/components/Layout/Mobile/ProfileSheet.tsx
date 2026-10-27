@@ -14,12 +14,10 @@ import {
   cn,
   ItarDisclosure,
   PrefetchLink,
-  SeasonalThemeNotice,
   SheetSectionLabel,
   sheetRowClassName,
   useMode
 } from "@carbon/react";
-import { themes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Fragment, useEffect, useState } from "react";
@@ -202,11 +200,9 @@ export function ProfileSheet({
     if (item.id === "theme") {
       return (
         <>
-          <SeasonalThemeNotice className="px-4 py-2" />
-          {themes.map((theme) => (
+          {menu.themeOptions.map((theme) => (
             <SheetRowButton
               key={theme.name}
-              disabled={menu.seasonalTheme}
               onClick={() => menu.onThemeChange(theme.name)}
             >
               <span

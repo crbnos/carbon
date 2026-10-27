@@ -226,25 +226,30 @@ colors per mode (the ERP's onboarding backdrop). Theme names: `zinc`
 
 The choice is a `theme` cookie per browser, never a database column. Each app's
 `getTheme` (`services/theme.server.ts`) is the theme to RENDER: it resolves
-through `resolveTheme`, which returns the default for a name no longer in
-`themes`, so removing a theme needs no migration and breaks no browser that
-still holds it. A route that shows or posts back the user's own pick (the
-ERP's onboarding theme step and `x+/account+/theme.tsx`) reads
-`getStoredTheme` (`storedTheme`) instead: in season `getTheme` returns the
-seasonal theme, which `themeColorValidator` refuses. The root `Document`
-renders the loader's name with `themeByName`, so the season is decided once,
-on the server.
+through `themeForRequest` and `resolveTheme`, which return the default for a
+name no longer in `themes`, so removing a theme needs no migration and breaks
+no browser that still holds it. The pickers show `getTheme` as chosen. The
+root `Document` renders the loader's name with `themeByName`, so the season is
+decided once, on the server.
 
-A seasonal theme (`seasonalThemes`, never in `themes`) is not a choice: while
-it is in season it replaces every theme for everyone, and when the season
-ends everyone is back on their own cookie. No picker lists it and
-`themeColorValidator` refuses it. While one is on, every picker (the ERP
-avatar menu and mobile profile sheet, the onboarding theme step, Account →
-Appearance) is disabled and shows `SeasonalThemeNotice`; both it and
-`useSeasonalTheme` (`@carbon/react`) read the root loader's theme through
-`isSeasonalTheme`, so they survive the theme's removal. Its season is the `available` window on the
+A seasonal theme (`seasonalThemes`, never in `themes`) shows only inside the
+signed-in app (`isAppPath`, `/x`): every other page (sign-in, shared links,
+onboarding) gets the stored everyday theme, so public pages always show the
+brand, and the onboarding theme step lists only `themes`. Inside the app it is
+on by default while in season: it replaces every theme for everyone who has not
+picked another one, and when the season ends everyone is back on their own
+cookie. While in season every picker inside the app (the ERP avatar menu and
+mobile profile sheet, Account → Appearance) lists it first (`pickableThemes`),
+and `themeColorValidator` accepts it. What a pick writes is
+`themeCookieWrites` (`@carbon/utils`, as data; each app's `setTheme`
+serializes it with its cookie domain): an everyday theme is stored, and when
+picked inside the app (`inApp`) while a seasonal theme is on, a second cookie,
+`SEASONAL_OFF_COOKIE`, holds the seasonal theme's name for 30 days, which
+`themeForRequest` passes to `resolveTheme` as `seasonalOff`. Onboarding's pick
+(`inApp: false`) only stores the theme. Picking the seasonal theme clears that
+cookie and keeps the stored one. Its season is the `available` window on the
 theme (`ThemeWindow`, month and day inside one calendar year; Halloween is
-October 31 only), and that window is the only switch: no flag, no deploy on
+October 27 to 31), and that window is the only switch: no flag, no deploy on
 the day. The server has no time zone for the user, so `isInSeason` is true
 while it is the season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has
 not left `to`); a fixed UTC check turned it on hours late east of UTC. To
@@ -272,24 +277,5 @@ stylesheet hangs off `data-user-menu` (ERP avatar trigger), `data-date`
 nothing on their own and may stay when the folder is deleted. **The removal
 checklist** (theme plus decorations) is the header of
 `packages/react/src/Halloween/HalloweenLayer.tsx`: the folder and its
-export, three mounts, the theme file with its two registrations, the doc
+export, two mounts, the theme file with its two registrations, the doc
 lines that name them, then `lingui:extract`.
-
-The sign-in page's left panel (`_public+/_layout.tsx`) shows the Night Shift
-while in season: `<HalloweenLoginArt />`, an ASCII story on a canvas
-(`packages/react/src/Halloween/night-shift/`), lazy-loaded behind
-`useHalloween` and only while the panel is shown (it is hidden below `lg`).
-It brings its own headline scrim and forces the panel it
-fills `dark` from an effect, so the layout holds one line. A haunted plant works one
-90-second shift (`ACTS` in `story.ts`) making a jack-o'-lantern; each shift
-is seeded (`planShift`: face, weather, visitor, moon phase, a rare event),
-shipped lanterns stay on the hill, and thirteen rise as the Carbon mark. The
-shift index lives in sessionStorage (`carbon:night-shift`) so a revisit
-continues the story. Everything a frame shows is a pure function of the
-moment (`renderFrame`), pinned by `frame.test.ts` across panel sizes; the
-cast reacts to the form (focus, secret fields, submit, error toasts) through
-DOM events only, and with reduced motion it draws one still frame and
-listens to nothing. The words it shows (stations, the ticket's status, the
-QC stamp) are Lingui strings passed in as `Labels`; the grid draws them as
-`Label`s, whole strings over reserved cells cut to fit, because a
-translation does not keep to one character per cell.
