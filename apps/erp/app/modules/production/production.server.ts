@@ -73,7 +73,7 @@ import {
   isJobBulkReleasable,
   isJobEditableFromPlanning,
   isJobLocked,
-  JOB_BULK_DELETABLE_STATUSES,
+  JOB_DELETABLE_STATUSES,
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   jobOperationStatus,
@@ -1505,7 +1505,7 @@ export const deleteJobs = defineServiceFn({
         .delete()
         .in("id", chunk)
         .eq("companyId", ctx.company.id)
-        .in("status", [...JOB_BULK_DELETABLE_STATUSES])
+        .in("status", [...JOB_DELETABLE_STATUSES])
         .select("id");
       if (result.error) {
         return ctx.error("internal", "Failed to delete the jobs", result.error);

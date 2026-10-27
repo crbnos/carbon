@@ -111,17 +111,18 @@ export function isJobEditableFromPlanning(
 // The one definition lives in @carbon/utils, shared with the OEE sync.
 export { isJobLocked, JOB_LOCKED_STATUSES } from "@carbon/utils";
 
-/** The statuses the jobs table's bulk Delete acts on. "Due Today" and
- *  "Overdue" are deprecated statuses that old jobs can still hold. */
-export const JOB_BULK_DELETABLE_STATUSES = [
+/** The statuses a job can be deleted in (`deleteJobs`, and every Delete
+ *  menu). "Due Today" and "Overdue" are deprecated statuses that old jobs
+ *  can still hold. */
+export const JOB_DELETABLE_STATUSES = [
   "Draft",
   "Planned",
   "Due Today",
   "Overdue"
 ] as const;
 
-export function isJobBulkDeletable(status: string | null | undefined): boolean {
-  return JOB_BULK_DELETABLE_STATUSES.some((allowed) => allowed === status);
+export function isJobDeletable(status: string | null | undefined): boolean {
+  return JOB_DELETABLE_STATUSES.some((allowed) => allowed === status);
 }
 
 /** The statuses the jobs table's bulk Release acts on. */

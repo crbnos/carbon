@@ -7,16 +7,16 @@ import {
   assemblyInstructionStepValidator,
   isBatchDissolvable,
   isBatchReleasable,
-  isJobBulkDeletable,
   isJobBulkReleasable,
+  isJobDeletable,
   jobStatus
 } from "./production.models";
 
-describe("isJobBulkDeletable", () => {
+describe("isJobDeletable", () => {
   it("accepts Draft, Planned and the 2 deprecated due statuses only", () => {
-    const deletable = jobStatus.filter(isJobBulkDeletable);
+    const deletable = jobStatus.filter(isJobDeletable);
     expect(deletable).toEqual(["Draft", "Planned", "Overdue", "Due Today"]);
-    expect(isJobBulkDeletable(null)).toBe(false);
+    expect(isJobDeletable(null)).toBe(false);
   });
 });
 

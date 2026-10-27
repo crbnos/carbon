@@ -79,8 +79,8 @@ import { path } from "~/utils/path";
 import { ALL_MATCHING_RELEASE_LIMIT } from "~/utils/table-jobs";
 import {
   deadlineTypes,
-  isJobBulkDeletable,
   isJobBulkReleasable,
+  isJobDeletable,
   jobStatus
 } from "../../production.models";
 import type { Job } from "../../types";
@@ -768,7 +768,7 @@ const JobsTable = memo((props: JobsTableProps) => {
               disabled={
                 !permissions.can("delete", "production") ||
                 (!allMatching &&
-                  selectedRows.some((row) => !isJobBulkDeletable(row.status)))
+                  selectedRows.some((row) => !isJobDeletable(row.status)))
               }
               destructive
               onClick={() =>
@@ -801,7 +801,10 @@ const JobsTable = memo((props: JobsTableProps) => {
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "production")}
+          disabled={
+            !permissions.can("delete", "production") ||
+            !isJobDeletable(row.status)
+          }
           onClick={() => onDelete(row)}
         >
           <MenuIcon icon={<LuTrash />} />
