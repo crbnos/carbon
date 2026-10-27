@@ -111,13 +111,15 @@ export function useInfiniteScroll(
     element.scrollTop = clampScrollTop(restoredScrollTop, element);
   }, [root, sentinel, hasRows, restoredScrollTop]);
 
-  // A new list starts at the top.
+  // A new list starts at the top. A table that is not infinite keeps its
+  // scroll: its reset key follows every search param, not only its own.
   const resetKey = rows?.resetKey;
   const resetKeyRef = useRef(resetKey);
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the list changes only
   useEffect(() => {
     if (resetKeyRef.current === resetKey) return;
     resetKeyRef.current = resetKey;
+    if (!isOn) return;
     resolveRoot(root, sentinel)?.scrollTo({ top: 0 });
   }, [resetKey]);
 
