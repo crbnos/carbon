@@ -22,9 +22,8 @@ msgstr "— ultimo controllo {0}"
 msgid "— not on the manning board"
 msgstr "— non assegnato al programma di staffing"
 
-#. placeholder {0}: person.stations.join(", ")
-msgid "— on the manning board at {0}"
-msgstr "— assegnato al programma di staffing presso {0}"
+msgid "— on the manning board at {stations}"
+msgstr ""
 
 msgid ", {residual}% residual"
 msgstr ", {residual}% residuo"
@@ -66,6 +65,9 @@ msgstr "(associato a più di un account Carbon)"
 
 msgid "(not an Equity posting account)"
 msgstr "(non un account di registrazione Patrimonio netto)"
+
+msgid "(outside this department)"
+msgstr ""
 
 #. placeholder {0}: impact.unschedulable
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
@@ -172,10 +174,6 @@ msgstr "{0, plural, one {per # cespite} other {per # cespiti}}"
 msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
 msgstr "{0, plural, one {Contrassegnato assente per # giorno} other {Contrassegnato assente per # giorni}}"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "{0, plural, one {Overtime set for # assignment} other {Overtime set for # assignments}}"
-msgstr "{0, plural, one {Straordinario impostato per # assegnazione} other {Straordinario impostato per # assegnazioni}}"
-
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Registra o elimina il # documento datato prima della transizione contabile.} other {Registra o elimina i # documenti datati prima della transizione contabile.}}"
@@ -231,10 +229,6 @@ msgstr "{0} immobilizzazioni da ammortizzare · {amount}"
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
-
-#. placeholder {0}: members.length
-msgid "{0} can't be scheduled: {names}"
-msgstr "{0} non può essere programmato: {names}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -546,6 +540,12 @@ msgstr "{asset}: il pagamento scaduto {dueDate} è Saltato (pagato al di fuori d
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Cespiti"
 
+msgid "{assigned, plural, one {Assigned for # working day} other {Assigned for # working days}}"
+msgstr ""
+
+msgid "{assigned, plural, one {Assigned for # working day} other {Assigned for # working days}}; {skipped, plural, one {# day already booked or off was kept} other {# days already booked or off were kept}}"
+msgstr ""
+
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {Ritardato rispetto al target di # giorno} other {Ritardato rispetto al target di # giorni}}"
 
@@ -560,6 +560,9 @@ msgstr "{componentCount, plural, one {# componente} other {# componenti}}"
 
 msgid "{count, plural, one {# asset} other {# assets}}"
 msgstr "{count, plural, one {# cespite} other {# cespiti}}"
+
+msgid "{count, plural, one {# can't be scheduled: {names}} other {# can't be scheduled: {names}}}"
+msgstr ""
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
@@ -581,6 +584,12 @@ msgstr "{count, plural, one {Sciogli # lotto di produzione} other {Sciogli # lot
 
 msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
 msgstr "{count, plural, one {Sciolto # lotto di produzione} other {Sciolti # lotti di produzione}}"
+
+msgid "{count, plural, one {Overtime set for # person} other {Overtime set for # people}}"
+msgstr ""
+
+msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on # person-days}}"
+msgstr ""
 
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {Rilascia # lotto di produzione} other {Rilascia # lotti di produzione}}"
@@ -615,8 +624,11 @@ msgstr "{daysBehindTarget, plural, one {Ritardato rispetto al target di # giorno
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} pubblica questo nel tuo libro mastro, quindi Carbon non lo invia. La tua scelta salvata viene mantenuta nel caso in cui ciò cambi."
 
-msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
-msgstr "{departmentLabel} non ha centri di lavoro presso {locationName}. Scegli un altro reparto o un'altra ubicazione."
+msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgstr ""
+
+msgid "{departmentName} has no work centers at this location. Pick another department or location."
+msgstr ""
 
 msgid "{discount} off"
 msgstr "{discount} di sconto"
@@ -3821,12 +3833,6 @@ msgstr "Assegnato"
 
 msgid "Assigned {changed} planning actions"
 msgstr ""
-
-msgid "Assigned {employeeName} to {targetName} for the week"
-msgstr "Assegnato {employeeName} a {targetName} per la settimana"
-
-msgid "Assigned {employeeName} to {targetName} for the week; days already assigned in other departments were kept"
-msgstr "Assegnato {employeeName} a {targetName} per la settimana; i giorni già assegnati ad altri reparti sono stati conservati"
 
 msgid "Assigned 1 planning action"
 msgstr ""
@@ -14799,8 +14805,8 @@ msgstr "Nessuna operazione di sincronizzazione {0}"
 msgid "No {0} yet"
 msgstr "Nessun {0} ancora"
 
-msgid "No {departmentLabel} work is scheduled at this location."
-msgstr "Nessun lavoro di {departmentLabel} è programmato presso questa ubicazione."
+msgid "No {departmentName} work is scheduled at this location."
+msgstr ""
 
 msgid "No {title} yet"
 msgstr "Nessun {title} ancora"
@@ -15559,8 +15565,14 @@ msgstr "Nessun centro di lavoro in questa ubicazione"
 msgid "No work centers exist"
 msgstr "Non esistono centri di lavoro"
 
-msgid "No work centers in {departmentLabel}"
-msgstr "Nessun centro di lavoro in {departmentLabel}"
+msgid "No work centers in {departmentName}"
+msgstr ""
+
+msgid "No work centers in this department"
+msgstr ""
+
+msgid "No work for this department is scheduled at this location."
+msgstr ""
 
 #. placeholder {0}: ability.name
 msgid "Nobody is qualified for {0}"
@@ -15706,6 +15718,9 @@ msgstr "Note (opzionale)"
 
 msgid "Nothing"
 msgstr "Niente"
+
+msgid "Nothing assigned: every working day this week is already booked or off"
+msgstr ""
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
@@ -23630,11 +23645,14 @@ msgstr "I periodi mensili in cui registri e chiudi"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "La modalità di guasto più probabile che il richiedente sospetta; il tecnico conferma o sostituisce questo alla chiusura, e la differenza tra sospetto e effettivo alimenta i report di affidabilità."
 
-msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
-msgstr "Il lavoro più recente di {departmentLabel} presso questa ubicazione era {nextWorkDate}."
+msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
 msgstr "Il lavoro programmato più recente presso questa ubicazione era {nextWorkDate}."
+
+msgid "The most recent work for this department at this location was {nextWorkDate}."
+msgstr ""
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Il prezzo negoziato per unità su questa riga; l'icona di traccia in linea mostra quale regola di prezzo o forzatura l'ha prodotto."
@@ -23651,11 +23669,14 @@ msgstr "Il nuovo numero di versione del metodo"
 msgid "The new version number of the procedure"
 msgstr "Il nuovo numero di versione della procedura"
 
-msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
-msgstr "Il lavoro successivo di {departmentLabel} presso questa ubicazione inizia {nextWorkDate}."
+msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
 msgstr "Il lavoro programmato successivo presso questa ubicazione inizia {nextWorkDate}."
+
+msgid "The next work for this department at this location starts {nextWorkDate}."
+msgstr ""
 
 msgid "The night shift suits you, {name}."
 msgstr "Il turno di notte ti si addice, {name}."
@@ -24310,8 +24331,11 @@ msgstr "La tariffa di questo tipo di cliente"
 msgid "This customer's rate"
 msgstr "La tariffa di questo cliente"
 
-msgid "this department"
-msgstr "questo reparto"
+msgid "This department has no work centers at {locationName}. Pick another department or location."
+msgstr ""
+
+msgid "This department has no work centers at this location. Pick another department or location."
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Questo link di scaricamento non è valido o è stato manomesso."
@@ -27013,6 +27037,9 @@ msgstr "Esecuzione del flusso di lavoro"
 
 msgid "Workflows"
 msgstr "Flussi di lavoro"
+
+msgid "working at {elsewhereStationNames}"
+msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "Sessioni di lavoro su configurazione e dati"

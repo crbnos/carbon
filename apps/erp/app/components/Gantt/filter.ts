@@ -10,7 +10,10 @@ export type GanttFilterValue = { text: string; wipOnly: boolean };
 /** What the board shows under a filter: the tree rows and the lit bars. */
 export type GanttVisibility = {
   active: boolean;
-  /** Row (tree node) ids on screen. */
+  /**
+   * Row (tree node) ids the filter keeps. Collapse is not applied, so a kept
+   * row under a collapsed parent is in the set but not on screen.
+   */
   rows: Set<string>;
   /** Inline bars (`data.items`) on a shown row that the filter keeps lit. */
   bars: Set<string>;

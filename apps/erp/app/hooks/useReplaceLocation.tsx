@@ -3,31 +3,24 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useOptimisticLocation } from "@carbon/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import type { Location } from "react-router";
 
 /**
  * Change the URL's search params without a navigation (no loader runs). The
  * router does not see a `history.replaceState`, so the replaced location is
- * kept until the router moves to another location. Each change starts from
- * the address bar and the router's location as they are when the change
- * runs, so two quick changes (a debounced one among them) never drop each
- * other's params, and a debounced change that fires after a navigation is
- * recorded against the new location, not the one it was scheduled on.
+ * kept, keyed by the router's history entry, until the router moves to
+ * another entry. Each change starts from the address bar and the history
+ * entry as they are when it runs, so two quick changes (a debounced one among
+ * them) never drop each other's params, and a debounced change that fires
+ * after a navigation is recorded against the new entry, not the one it was
+ * scheduled on.
  */
 export function useReplaceLocation() {
   const optimisticLocation = useOptimisticLocation();
-  const [replaced, setReplaced] = useState<{
-    key: string;
-    location: Location<any>;
-  } | null>(null);
+  const [replaced, setReplaced] = useState<Location<any> | null>(null);
   const location =
-    replaced?.key === optimisticLocation.key
-      ? replaced.location
-      : optimisticLocation;
-
-  const current = useRef({ key: optimisticLocation.key, location });
-  current.current = { key: optimisticLocation.key, location };
+    replaced?.key === optimisticLocation.key ? replaced : optimisticLocation;
 
   const replaceLocation = useCallback((next: Location<any>) => {
     // Keep the router's own history entry state ({ usr, key, idx }).
@@ -36,7 +29,8 @@ export function useReplaceLocation() {
       "",
       next.pathname + next.search + next.hash
     );
-    setReplaced({ key: current.current.key, location: { ...next } });
+    // The router names a location by its history entry's key.
+    setReplaced({ ...next, key: history.state?.key ?? "default" });
   }, []);
 
   const replaceSearchParam = useCallback(
@@ -48,8 +42,11 @@ export function useReplaceLocation() {
         searchParams.delete(key);
       }
       replaceLocation({
-        ...current.current.location,
-        search: "?" + searchParams.toString()
+        pathname: window.location.pathname,
+        search: "?" + searchParams.toString(),
+        hash: window.location.hash,
+        state: history.state?.usr ?? null,
+        key: history.state?.key ?? "default"
       });
     },
     [replaceLocation]

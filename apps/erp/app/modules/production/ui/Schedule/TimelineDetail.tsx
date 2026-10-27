@@ -325,20 +325,21 @@ export function TimelineDetail({
               </p>
             ) : (
               <ul className="space-y-1 text-sm">
-                {detail.qualifiedPeople.map((person, index) => (
-                  <li key={`${index}:${person.name}`} className="text-pretty">
-                    <span className="font-medium">{person.name}</span>{" "}
-                    <span className="text-muted-foreground">
-                      {person.stations.length > 0 ? (
-                        <Trans>
-                          — on the manning board at {person.stations.join(", ")}
-                        </Trans>
-                      ) : (
-                        <Trans>— not on the manning board</Trans>
-                      )}
-                    </span>
-                  </li>
-                ))}
+                {detail.qualifiedPeople.map((person, index) => {
+                  const stations = person.stations.join(", ");
+                  return (
+                    <li key={`${index}:${person.name}`} className="text-pretty">
+                      <span className="font-medium">{person.name}</span>{" "}
+                      <span className="text-muted-foreground">
+                        {person.stations.length > 0 ? (
+                          <Trans>— on the manning board at {stations}</Trans>
+                        ) : (
+                          <Trans>— not on the manning board</Trans>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

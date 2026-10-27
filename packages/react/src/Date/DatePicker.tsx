@@ -7,7 +7,7 @@ import { useDatePicker } from "@react-aria/datepicker";
 import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
 import type { ReactNode } from "react";
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
 import { cn } from "..";
 import { Button } from "../Button";
@@ -57,13 +57,17 @@ const DatePicker = (
       ref
     );
   // The inline variants render no group, so the button's labelledby (and the
-  // dialog's, which points at the button) would name it only "Calendar".
+  // dialog's, which points at the button) would name it only "Calendar". Name
+  // it "Calendar <field>" as react-aria does when the group is drawn.
   const inlineButtonLabel = fieldName
     ? {
-        "aria-label": fieldName,
+        "aria-label": `${buttonProps["aria-label"]} ${fieldName}`,
         "aria-labelledby": undefined
       }
     : {};
+  // The preview button also reads out the date it shows: its own label, then
+  // the visible value.
+  const previewValueId = useId();
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
@@ -81,8 +85,11 @@ const DatePicker = (
                     isDisabled={props.isDisabled}
                     {...buttonProps}
                     {...inlineButtonLabel}
+                    aria-labelledby={`${buttonProps.id} ${previewValueId}`}
                   >
-                    {props.inline}
+                    <span id={previewValueId} className="contents">
+                      {props.inline}
+                    </span>
                     <LuCalendarClock />
                   </Button>
                 </PopoverTrigger>

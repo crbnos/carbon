@@ -34,6 +34,7 @@ import {
   assignmentMatchesShift,
   buildAbsentSet,
   dayOvertime,
+  editorDayRows,
   ladderShiftHours,
   ladderShiftTime,
   STICKY_FIRST_COL,
@@ -182,6 +183,19 @@ export function PeopleMatrix({
     }
     return map;
   }, [visibleAssignments]);
+
+  // every shift's rows by person and day — the day editor saves the person's
+  // own shift, which the page's shift filter may hide
+  const allAssignmentsByKey = useMemo(() => {
+    const map = new Map<string, MatrixAssignment[]>();
+    for (const assignment of assignments) {
+      const key = `${assignment.employeeId}:${assignment.date}`;
+      const list = map.get(key);
+      if (list) list.push(assignment);
+      else map.set(key, [assignment]);
+    }
+    return map;
+  }, [assignments]);
 
   const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
   const absenceIdByKey = useMemo(
@@ -339,9 +353,17 @@ export function PeopleMatrix({
               {rows.map((employee) => {
                 const byDate = assignmentsByEmployeeDate.get(employee.id);
                 let assignedHours = 0;
+                const editorShiftId = employeeShiftId[employee.id] ?? null;
                 const cells = weekDates.map((date) => {
                   const absent = absentSet.has(`${employee.id}:${date}`);
                   const dayAssignments = byDate?.get(date) ?? [];
+                  const editorRows = editorDayRows(
+                    allAssignmentsByKey.get(`${employee.id}:${date}`) ?? [],
+                    employee.id,
+                    date,
+                    editorShiftId,
+                    employeeShiftId
+                  );
                   if (!absent) {
                     for (const assignment of dayAssignments) {
                       assignedHours += hoursFor(assignment);
@@ -378,6 +400,13 @@ export function PeopleMatrix({
                             }
                           >
                             {workCenter?.name ?? assignment.workCenterId}
+                            {/* the tooltip is hover-only; the cell's button
+                                reads this */}
+                            {elsewhere && (
+                              <span className="sr-only">
+                                {t`(outside this department)`}
+                              </span>
+                            )}
                             {assignment.hours != null && (
                               <span className="ml-1 tabular-nums opacity-80">
                                 {assignment.hours}h
@@ -419,25 +448,23 @@ export function PeopleMatrix({
                           employeeId={employee.id}
                           employeeName={employee.name}
                           date={date}
-                          shiftId={employeeShiftId[employee.id] ?? null}
+                          shiftId={editorShiftId}
                           locationId={locationId}
                           locationTimeZone={locationTimeZone}
                           workCenters={allWorkCenters}
-                          rows={dayAssignments.map((assignment) => ({
+                          rows={editorRows.map((assignment) => ({
                             workCenterId: assignment.workCenterId,
                             hours: assignment.hours
                           }))}
-                          note={
-                            dayAssignments.find((a) => a.note)?.note ?? null
-                          }
-                          overtimeHours={dayOvertime(dayAssignments)}
+                          note={editorRows.find((a) => a.note)?.note ?? null}
+                          overtimeHours={dayOvertime(editorRows)}
                           baseHours={ladderShiftHours(
-                            shiftId,
+                            editorShiftId,
                             employee.id,
                             hoursLadder
                           )}
                           dayStartTime={ladderShiftTime(
-                            dayAssignments[0]?.shiftId,
+                            editorRows[0]?.shiftId,
                             employee.id,
                             {
                               byShift: shiftStartById,
@@ -446,7 +473,7 @@ export function PeopleMatrix({
                             }
                           )}
                           dayEndTime={ladderShiftTime(
-                            dayAssignments[0]?.shiftId,
+                            editorRows[0]?.shiftId,
                             employee.id,
                             {
                               byShift: shiftEndById,

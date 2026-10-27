@@ -354,3 +354,49 @@ describe("coverage hours in one shift", () => {
     expect(getShiftWorkingWindows({ ...ladder, shiftId: "night" })).toBeNull();
   });
 });
+
+describe("coverage hours in a night shift", () => {
+  // Night runs 22:00-06:00, Monday to Friday nights.
+  const nightShift = {
+    ...dayShift,
+    id: "night",
+    startTime: "22:00:00",
+    endTime: "06:00:00"
+  };
+  const ladder = {
+    shifts: [nightShift],
+    timeZone: TZ,
+    holidayDates: new Set<string>(),
+    rangeStart: at("2026-10-26T05:00:00Z"),
+    rangeEnd: at("2026-11-02T06:00:00Z")
+  };
+
+  // The roster puts Friday's night shift on Friday, so its hours past
+  // midnight are needed on Friday, not on a Saturday nobody is rostered.
+  it("count a shift's hours on the day it starts", () => {
+    expect(
+      attendedHoursByDay({
+        weekDates: WEEK,
+        timezone: TZ,
+        // Friday 22:00 to Saturday 06:00, plant time
+        reservations: [
+          {
+            resourceId: "weld",
+            operationId: "op",
+            startAt: "2026-10-31T03:00:00Z",
+            endAt: "2026-10-31T11:00:00Z",
+            workHours: 8
+          }
+        ],
+        attendedShareByOperation: new Map([["op", { share: 1, gated: false }]]),
+        windowsByWorkCenter: getWorkCenterWorkingWindows({
+          ...ladder,
+          workCenters: [{ id: "weld", alwaysOn: false }],
+          workCenterShifts: [{ workCenterId: "weld", shiftId: "night" }]
+        }),
+        lightsOut: new Set(),
+        within: getShiftWorkingWindows({ ...ladder, shiftId: "night" }) ?? []
+      }).weld
+    ).toEqual({ "2026-10-30": 8 });
+  });
+});

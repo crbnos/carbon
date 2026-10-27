@@ -6437,7 +6437,9 @@ export async function setPeopleOvertimeBulk(
           .where("departmentId", "=", departmentId)
       );
     }
-    return query.returning(["id", "workCenterId"]).execute();
+    return query
+      .returning(["id", "workCenterId", "employeeId", "date"])
+      .execute();
   });
 }
 
@@ -6609,7 +6611,7 @@ export async function assignPeopleWeek(
       activeWeekdays = WEEKDAYS_MONDAY_FIRST.filter((day) => shift?.[day]);
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
-    const [existing, absences] = await Promise.all([
+    const [existing, absences, ownShift] = await Promise.all([
       // Company-wide (NOT location-scoped): the unique index is
       // peopleAssignment_person_day_key (companyId, employeeId, date,
       // COALESCE(shiftId,'')) — a person already booked for this day+shift at
@@ -6630,23 +6632,47 @@ export async function assignPeopleWeek(
         .where("employeeId", "=", args.employeeId)
         .where("date", ">=", args.weekStart)
         .where("date", "<=", weekEnd)
-        .execute()
+        .execute(),
+      trx
+        .selectFrom("employeeShift")
+        .select(["shiftId"])
+        .where("employeeId", "=", args.employeeId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
     ]);
-    // Key on date + shift to mirror the unique index exactly.
+    // A day is taken by a row in the same slot of the unique index, or by a
+    // row in the same EFFECTIVE shift (a shift-less row counts as the
+    // person's own), which the boards would show as a double booking.
     const slotKey = (date: string, shiftId: string | null) =>
       `${date}:${shiftId ?? ""}`;
+    const personShiftId = ownShift?.shiftId ?? null;
+    const newEffectiveShiftId = args.shiftId ?? personShiftId;
     const takenSlots = new Set(
-      existing.map((row) => slotKey(toIsoDate(row.date), row.shiftId))
+      existing.flatMap((row) => {
+        const date = toIsoDate(row.date);
+        const effective = row.shiftId ?? personShiftId;
+        return [
+          slotKey(date, row.shiftId),
+          ...(effective ? [`${date}:effective:${effective}`] : [])
+        ];
+      })
     );
+    const isTaken = (date: string) =>
+      takenSlots.has(slotKey(date, args.shiftId)) ||
+      (newEffectiveShiftId !== null &&
+        takenSlots.has(`${date}:effective:${newEffectiveShiftId}`));
     const absentDays = new Set(absences.map((row) => toIsoDate(row.date)));
 
     const rows = [];
+    let skipped = 0;
     for (let offset = 0; offset < 7; offset++) {
       const date = addIsoDays(args.weekStart, offset);
       // weekStart is a Monday, so offset maps 1:1 onto WEEKDAYS_MONDAY_FIRST
       if (!activeWeekdays.includes(WEEKDAYS_MONDAY_FIRST[offset])) continue;
-      if (absentDays.has(date)) continue;
-      if (takenSlots.has(slotKey(date, args.shiftId))) continue;
+      if (absentDays.has(date) || isTaken(date)) {
+        skipped++;
+        continue;
+      }
       rows.push({
         companyId: args.companyId,
         locationId: args.locationId,
@@ -6660,10 +6686,8 @@ export async function assignPeopleWeek(
     if (rows.length > 0) {
       await trx.insertInto("peopleAssignment").values(rows).execute();
     }
-    return {
-      assigned: rows.length,
-      skipped: takenSlots.size + absentDays.size
-    };
+    // working days left as they were: already booked, or off
+    return { assigned: rows.length, skipped };
   });
 }
 
@@ -12160,7 +12184,9 @@ export async function getOperationAttendedShares(
  * station's working time from the booking's start. A lights-out station runs
  * work alone unless its process needs a qualified operator (`gated`). With
  * `within` (the shift the Matrix is filtered by, `getShiftWorkingWindows`),
- * only the hours inside those windows count.
+ * only the hours inside those windows count, each on the day its shift
+ * starts: the roster puts Friday's night shift on Friday, so its hours past
+ * midnight are Friday's too.
  */
 export function attendedHoursByDay(args: {
   weekDates: string[];
@@ -12197,14 +12223,35 @@ export function attendedHoursByDay(args: {
       const to = Math.min(endMs, window.end, from + attendedMs);
       if (to <= from) continue;
       attendedMs -= to - from;
-      const pieces = args.within
-        ? args.within.flatMap((shift) => {
-            const start = Math.max(from, shift.start);
-            const end = Math.min(to, shift.end);
-            return end > start ? [{ start, end }] : [];
-          })
-        : [{ start: from, end: to }];
+      const pieces: { start: number; end: number; shiftStart?: number }[] =
+        args.within
+          ? args.within.flatMap((shift) => {
+              const start = Math.max(from, shift.start);
+              const end = Math.min(to, shift.end);
+              // A run longer than a day is back-to-back shifts merged into
+              // one window: no single start day, so split it by the clock.
+              const shiftStart =
+                shift.end - shift.start <= 24 * HOUR_MS
+                  ? shift.start
+                  : undefined;
+              return end > start ? [{ start, end, shiftStart }] : [];
+            })
+          : [{ start: from, end: to }];
       for (const piece of pieces) {
+        if (piece.shiftStart !== undefined) {
+          const shiftStart = piece.shiftStart;
+          // a shift that started before the week belongs to no day shown
+          const shiftDay = days.find(
+            ({ startMs: dayStart, endMs: dayEnd }) =>
+              shiftStart >= dayStart && shiftStart < dayEnd
+          );
+          if (shiftDay) {
+            const byDay = (result[reservation.resourceId] ??= {});
+            byDay[shiftDay.day] =
+              (byDay[shiftDay.day] ?? 0) + (piece.end - piece.start) / HOUR_MS;
+          }
+          continue;
+        }
         for (const { day, startMs: dayStart, endMs: dayEnd } of days) {
           const overlap =
             Math.min(piece.end, dayEnd) - Math.max(piece.start, dayStart);

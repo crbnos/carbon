@@ -1893,11 +1893,21 @@ export async function findProcessNamed(
 ) {
   let query = client
     .from("process")
-    .select("id")
+    .select("id, active")
     .eq("companyId", companyId)
     .eq("name", name);
   if (exceptId) query = query.neq("id", exceptId);
   return query.limit(1).maybeSingle();
+}
+
+/**
+ * The name is unique across every process, deactivated ones included, so
+ * say which: a deactivated one is not in the process list.
+ */
+export function processNameTakenMessage(name: string, active = true) {
+  return active
+    ? `A process named ${name} already exists`
+    : `A deactivated process named ${name} already exists. Reactivate it, or choose another name`;
 }
 
 /**
@@ -1913,7 +1923,7 @@ export async function updateProcess(
     updatedBy: string;
     customFields?: Json;
   }
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; code?: string }> {
   const { batchRules, rest: withoutRules } = extractBatchRules(process);
   const { workCenters, id, companyId, ...update } = withoutRules;
   try {
@@ -1959,7 +1969,9 @@ export async function updateProcess(
     return { error: null };
   } catch (err) {
     return {
-      error: err instanceof Error ? err.message : "Failed to update process"
+      error: err instanceof Error ? err.message : "Failed to update process",
+      // the database's code, so a caller can tell a duplicate name (23505)
+      code: (err as { code?: string }).code
     };
   }
 }

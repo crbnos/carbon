@@ -12,8 +12,16 @@ const { trigger } = vi.hoisted(() => ({ trigger: vi.fn() }));
 vi.mock("@carbon/jobs", () => ({ trigger }));
 
 import {
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler
+} from "kysely";
+import {
   moveScheduleJob,
-  reorderScheduleOperations
+  reorderScheduleOperations,
+  setJobDeadline
 } from "../app/modules/production/production.server";
 import {
   deadlineTypeForDueDate,
@@ -315,5 +323,64 @@ describe("moveScheduleJob keeps the deadline type in step with the date", () => 
     expect(caller.updates).toEqual([
       expect.objectContaining({ dueDate: null, deadlineType: "ASAP" })
     ]);
+  });
+});
+
+describe("setJobDeadline", () => {
+  // The writes go over the system connection; a driver that answers no rows
+  // is enough, since what is under test is whether the scheduler is told.
+  const pg = new Kysely({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => new DummyDriver(),
+      createIntrospector: (db) => new PostgresIntrospector(db),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    }
+  });
+  const setDeadline = (statuses: string[]) => {
+    const caller = callerWith({
+      job: {
+        data: statuses.map((status, index) => ({
+          id: `j${index}`,
+          status,
+          locationId: "loc1",
+          dueDate: null,
+          deadlineType: "No Deadline"
+        })),
+        error: null
+      }
+    });
+    return setJobDeadline(
+      createServiceContext({
+        actor: {
+          type: "user",
+          userId: "u1",
+          permissions: {
+            production: { view: [], create: [], update: ["c1"], delete: [] }
+          }
+        },
+        company: { id: "c1", groupId: "g1" },
+        caller: caller.client as never,
+        system: () => ({}) as never,
+        pg: () => pg as never,
+        kv: () => ({}) as never
+      }),
+      { ids: statuses.map((_, index) => `j${index}`), dueDate: "2026-11-02" }
+    );
+  };
+  const scheduleNotices = () =>
+    trigger.mock.calls.filter(([event]) => event === "schedule-inputs-changed");
+
+  // Draft and Planned jobs are not on the schedule yet.
+  it("does not wake the scheduler for jobs it does not place", async () => {
+    const result = await setDeadline(["Draft", "Planned"]);
+    expect(result.error).toBeNull();
+    expect(scheduleNotices()).toEqual([]);
+  });
+
+  it("wakes the scheduler when a released job moves", async () => {
+    const result = await setDeadline(["Draft", "Ready"]);
+    expect(result.error).toBeNull();
+    expect(scheduleNotices()).toHaveLength(1);
   });
 });

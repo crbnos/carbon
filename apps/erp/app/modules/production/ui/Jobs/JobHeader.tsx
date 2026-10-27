@@ -318,7 +318,7 @@ const JobHeader = () => {
           {jobDueDate && isSameDay(parseDate(jobDueDate), todaysDate) && (
             <JobStatus status="Due Today" />
           )}
-          {jobDueDate && parseDate(jobDueDate) < todaysDate && (
+          {jobDueDate && parseDate(jobDueDate).compare(todaysDate) < 0 && (
             <JobStatus status="Overdue" />
           )}
           {slack && (

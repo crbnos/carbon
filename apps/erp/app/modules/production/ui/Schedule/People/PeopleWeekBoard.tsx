@@ -509,12 +509,8 @@ const PeopleWeekBoard = ({
       weekStart,
       ...(weekShiftId ? { shiftId: weekShiftId } : {})
     });
-    // Days the person already works elsewhere are kept, not overwritten.
-    toast.success(
-      item.daysElsewhere > 0
-        ? t`Assigned ${employeeName} to ${targetName} for the week; days already assigned in other departments were kept`
-        : t`Assigned ${employeeName} to ${targetName} for the week`
-    );
+    // the toast comes from the answer (usePeopleBoardFeedback): only the
+    // server knows which days it left as they were
   }
 
   const columnTargets: MoveTarget[] = [

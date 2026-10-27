@@ -95,6 +95,7 @@ import {
   productionEventValidator,
   productionOrderValidator,
   productionQuantityValidator,
+  SCHEDULED_JOB_STATUSES,
   salesOrderToJobValidator,
   scheduleJobUpdateValidator,
   scheduleOperationReorderValidator,
@@ -1736,11 +1737,14 @@ export const setJobDeadline = defineServiceFn({
         AND j."status" NOT IN (${sql.join(JOB_LOCKED_STATUSES.map((status) => sql`${status}`))})
     `.execute(ctx.asSystem.pg);
 
-    await service.notifyScheduleInputsChanged(
-      companyId,
-      "reorder",
-      "Job deadline changed"
-    );
+    // A Draft or Planned job is not on the schedule yet.
+    if (jobs.some((job) => SCHEDULED_JOB_STATUSES.includes(job.status))) {
+      await service.notifyScheduleInputsChanged(
+        companyId,
+        "reorder",
+        "Job deadline changed"
+      );
+    }
     return { ids };
   }
 });
@@ -3838,7 +3842,8 @@ export const setPersonHours = defineServiceFn({
  * @remarks
  * Optionally only a department's work centers or one shift. One UPDATE, so it
  * applies to all or none. Every work center touched is rescheduled. Returns
- * how many assignments were updated.
+ * how many assignments were updated (`updated`), and on how many person-days
+ * (`personDays`: a person split across stations is one).
  *
  * @mcp
  */
@@ -3873,7 +3878,11 @@ export const setPeopleOvertime = defineServiceFn({
       "People overtime changed",
       rows.map((row) => row.workCenterId)
     );
-    return { updated: rows.length };
+    return {
+      updated: rows.length,
+      personDays: new Set(rows.map((row) => `${row.employeeId}:${row.date}`))
+        .size
+    };
   }
 });
 
@@ -3922,7 +3931,11 @@ export const copyPeopleDay = defineServiceFn({
  *
  * @remarks
  * One assignment per working day of their shift (Monday to Friday when it has
- * none) from `weekStart`. Then the work center is rescheduled.
+ * none) from `weekStart`, leaving a day they are off or already booked in that
+ * shift as it is. Then the work center is rescheduled.
+ *
+ * @returns `assigned`, the days written, and `skipped`, the working days left
+ * as they were.
  *
  * @mcp
  */
@@ -3953,7 +3966,11 @@ export const assignPersonWeek = defineServiceFn({
     await service.notifyPeopleChange(ctx, "People week assignment", [
       week.workCenterId
     ]);
-    return { employeeId: week.employeeId };
+    return {
+      employeeId: week.employeeId,
+      assigned: written.assigned,
+      skipped: written.skipped
+    };
   }
 });
 

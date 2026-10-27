@@ -112,7 +112,12 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   station-day, where attended hours are the setup + labor share of each booking
   laid on the station's working time from the booking's start
   (`attendedHoursByDay`, `getOperationAttendedShares`); machine time and
-  lights-out stations need nobody. Load renders as hours
+  lights-out stations need nobody. On a shift tab only the hours inside that
+  shift count (`within`, `getShiftWorkingWindows`), each on the day the shift
+  STARTS: the roster puts Friday's night shift on Friday, so its hours past
+  midnight are Friday's (a run longer than a day, back-to-back shifts merged
+  into one window, is split by the clock). A shift id from the URL that is not
+  one of the location's shifts reads as All shifts. Load renders as hours
   over/free (+Xh / Xh free), not %. Shift + location filters live in header
   popovers; the shift filter's "All shifts" option (`shiftId` null on
   drag) creates shift-less assignments that resolve hours via the ladder.

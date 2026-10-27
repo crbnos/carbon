@@ -30,6 +30,7 @@ import {
   useViewport
 } from "@carbon/react";
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
+import { plural } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -435,16 +436,18 @@ const Gantt = ({
         </div>
       </div>
       <div ref={panelGroupRef} className="relative h-full w-full min-h-0">
-        {nothingMatches && (
-          <div
-            role="status"
-            className="pointer-events-none absolute inset-x-0 top-12 z-10 flex justify-center"
-          >
+        {/* The live region stays mounted so a screen reader hears the text
+            appear; one mounted with its text already inside says nothing. */}
+        <div
+          role="status"
+          className="pointer-events-none absolute inset-x-0 top-12 z-10 flex justify-center"
+        >
+          {nothingMatches && (
             <span className="rounded-md border border-border bg-background px-3 py-1.5 text-sm text-muted-foreground shadow-sm">
               <Trans>Nothing matches the search or filter</Trans>
             </span>
-          </div>
-        )}
+          )}
+        </div>
         {/* Phones: a fixed tree column beside the timeline, which keeps its
             own sideways scroll. */}
         {isPhone && (
@@ -568,6 +571,8 @@ type GanttTimelineProps = Pick<
 
 const TICK_COUNT = 5;
 const LABEL_MIN_PX = 40;
+/** The axis runs 5% past the last span, so a bar never ends at the edge. */
+const AXIS_PADDING = 1.05;
 
 /**
  * Split a bar's [offset, offset+duration] into its WORKING pieces by removing
@@ -621,13 +626,21 @@ function splitOrUndefined(
     : undefined;
 }
 
-/** One row's non-working time, shaded behind its bars. */
+/**
+ * One row's non-working time, shaded behind its bars, with the grid lines
+ * (`children`) drawn over the shading.
+ */
 function RowShading({
   offsets,
-  duration
+  duration,
+  selected,
+  children
 }: {
   offsets: { start: number; end: number }[] | null;
   duration: number;
+  /** A selected row is already `bg-muted`, so its shading takes a darker tone. */
+  selected: boolean;
+  children: React.ReactNode;
 }) {
   return (
     <div className="pointer-events-none absolute inset-0">
@@ -640,10 +653,14 @@ function RowShading({
             key={`nonworking-${interval.start}`}
             startMs={startMs}
             durationMs={endMs - startMs}
-            className="h-full bg-muted/50"
+            className={cn(
+              "h-full",
+              selected ? "bg-muted-foreground/15" : "bg-muted/50"
+            )}
           />
         );
       })}
+      {children}
     </div>
   );
 }
@@ -760,12 +777,63 @@ const GanttTimeline = ({
       ])
     );
   }, [events, nonWorkingIntervalsByRow, nonWorkingIntervals, anchorMs]);
-  // A row in the map keeps its entry even when that is none (the location
-  // rollup); only a row missing from it takes the plant's hours.
+  // Every row has an entry, even when that is none (the location rollup);
+  // `rowNonWorkingIntervals` already gave the plant's hours to the rest.
   const offsetsFor = (eventId: string) =>
-    rowOffsets?.has(eventId)
-      ? (rowOffsets.get(eventId) ?? null)
-      : nonWorkingOffsets;
+    rowOffsets ? (rowOffsets.get(eventId) ?? null) : nonWorkingOffsets;
+
+  // The tick lines and the "now" (or end-of-span) line. Drawn behind the
+  // rows, and again inside a row that shades its own non-working time, so the
+  // shading never covers them.
+  const gridLines = (
+    <>
+      {/* The vertical tick lines */}
+      {absoluteTicks ? (
+        absoluteTicks.map((tickMs, index) =>
+          index === 0 ? null : (
+            <Timeline.Point
+              key={tickMs}
+              ms={tickMs}
+              className="h-full border-r border-muted"
+            />
+          )
+        )
+      ) : (
+        <Timeline.EquallyDistribute count={TICK_COUNT}>
+          {(ms: number, index: number) => {
+            if (index === 0) return null;
+            return (
+              <Timeline.Point
+                ms={ms}
+                className={"h-full border-r border-muted"}
+              />
+            );
+          }}
+        </Timeline.EquallyDistribute>
+      )}
+      {/* Absolute mode: the green line is "now", drawn only while now is
+          inside the window. Duration mode keeps the completed/failed
+          end-of-span line. */}
+      {isAbsolute
+        ? showNow && (
+            <Timeline.Point
+              ms={nowOffsetMs as number}
+              className="h-full border-r border-emerald-500/90"
+            />
+          )
+        : rootSpanStatus !== "inprogress" && (
+            <Timeline.Point
+              ms={duration}
+              className={cn(
+                "h-full border-r",
+                rootSpanStatus === "completed"
+                  ? "border-emerald-500/90"
+                  : "border-destructive/30"
+              )}
+            />
+          )}
+    </>
+  );
 
   return (
     <div
@@ -773,7 +841,7 @@ const GanttTimeline = ({
       ref={timelineContainerRef}
     >
       <Timeline.Root
-        durationMs={duration * 1.05}
+        durationMs={duration * AXIS_PADDING}
         scale={scale}
         className="h-full overflow-hidden"
         minWidth={minTimelineWidth}
@@ -929,51 +997,7 @@ const GanttTimeline = ({
                   />
                 );
               })}
-            {/* The vertical tick lines */}
-            {absoluteTicks ? (
-              absoluteTicks.map((tickMs, index) =>
-                index === 0 ? null : (
-                  <Timeline.Point
-                    key={tickMs}
-                    ms={tickMs}
-                    className="h-full border-r border-muted"
-                  />
-                )
-              )
-            ) : (
-              <Timeline.EquallyDistribute count={TICK_COUNT}>
-                {(ms: number, index: number) => {
-                  if (index === 0) return null;
-                  return (
-                    <Timeline.Point
-                      ms={ms}
-                      className={"h-full border-r border-muted"}
-                    />
-                  );
-                }}
-              </Timeline.EquallyDistribute>
-            )}
-            {/* Absolute mode: the green line is "now", drawn only while now is
-                inside the window. Duration mode keeps the completed/failed
-                end-of-span line. */}
-            {isAbsolute
-              ? showNow && (
-                  <Timeline.Point
-                    ms={nowOffsetMs as number}
-                    className="h-full border-r border-emerald-500/90"
-                  />
-                )
-              : rootSpanStatus !== "inprogress" && (
-                  <Timeline.Point
-                    ms={duration}
-                    className={cn(
-                      "h-full border-r",
-                      rootSpanStatus === "completed"
-                        ? "border-emerald-500/90"
-                        : "border-destructive/30"
-                    )}
-                  />
-                )}
+            {gridLines}
             <TreeView
               scrollRef={timelineScrollRef}
               virtualizer={virtualizer}
@@ -1007,7 +1031,10 @@ const GanttTimeline = ({
                       <RowShading
                         offsets={offsetsFor(node.id)}
                         duration={duration}
-                      />
+                        selected={state.selected}
+                      >
+                        {gridLines}
+                      </RowShading>
                     )}
                     {node.data.items ? (
                       <LaneItems
@@ -1022,7 +1049,7 @@ const GanttTimeline = ({
                           (LABEL_MIN_PX /
                             lerp(minTimelineWidth, maxTimelineWidth, scale)) *
                           duration *
-                          1.05
+                          AXIS_PADDING
                         }
                       />
                     ) : node.data.level === "TRACE" ? (
@@ -1486,8 +1513,12 @@ function LaneItems({
         }
         const selected =
           members.find((member) => member.id === selectedItemId) ?? null;
+        const count = members.length;
         const names = members.map((member) => member.data.message).join(", ");
-        const label = t`${members.length} can't be scheduled: ${names}`;
+        const label = t`${plural(count, {
+          one: `# can't be scheduled: ${names}`,
+          other: `# can't be scheduled: ${names}`
+        })}`;
         return (
           <div
             key={first.id}
@@ -1506,7 +1537,7 @@ function LaneItems({
                 type="button"
                 title={t`${label} — click to open the next`}
                 aria-label={label}
-                aria-current={selected !== null ? "true" : undefined}
+                aria-pressed={selected !== null}
                 onClick={(e) => {
                   e.stopPropagation();
                   // Each click opens the next of the merged operations.

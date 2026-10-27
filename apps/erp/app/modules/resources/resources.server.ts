@@ -344,7 +344,7 @@ export const createProcess = defineServiceFn({
     if (taken.data) {
       return ctx.error(
         "conflict",
-        `A process named ${process.name} already exists`
+        service.processNameTakenMessage(process.name, taken.data.active)
       );
     }
     const insert = await service.insertProcess(client, {
@@ -356,7 +356,7 @@ export const createProcess = defineServiceFn({
     if (insert.error?.code === "23505") {
       return ctx.error(
         "conflict",
-        `A process named ${process.name} already exists`
+        service.processNameTakenMessage(process.name)
       );
     }
     if (insert.error || !insert.data?.id) {
@@ -433,7 +433,7 @@ export const updateProcess = defineServiceFn({
     if (taken.data) {
       return ctx.error(
         "conflict",
-        `A process named ${process.name} already exists`
+        service.processNameTakenMessage(process.name, taken.data.active)
       );
     }
 
@@ -443,6 +443,13 @@ export const updateProcess = defineServiceFn({
       companyId,
       updatedBy: ctx.auditUserId
     });
+    // 23505: another request took the name since the check above.
+    if (update.code === "23505") {
+      return ctx.error(
+        "conflict",
+        service.processNameTakenMessage(process.name)
+      );
+    }
     if (update.error) {
       return ctx.error("internal", "Failed to update process.", update.error);
     }

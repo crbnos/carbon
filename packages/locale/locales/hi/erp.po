@@ -22,9 +22,8 @@ msgstr "— अंतिम जांच {0}"
 msgid "— not on the manning board"
 msgstr "— मैनिंग बोर्ड पर नहीं"
 
-#. placeholder {0}: person.stations.join(", ")
-msgid "— on the manning board at {0}"
-msgstr "— मैनिंग बोर्ड पर {0} पर"
+msgid "— on the manning board at {stations}"
+msgstr ""
 
 msgid ", {residual}% residual"
 msgstr ", {residual}% अवशेष"
@@ -66,6 +65,9 @@ msgstr "(एक से अधिक Carbon खातों में मैप �
 
 msgid "(not an Equity posting account)"
 msgstr "(इक्विटी पोस्टिंग खाता नहीं है)"
+
+msgid "(outside this department)"
+msgstr ""
 
 #. placeholder {0}: impact.unschedulable
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
@@ -172,10 +174,6 @@ msgstr "{0, plural, one {# संपत्ति के लिए} other {# स�
 msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
 msgstr "{0, plural, one {# दिन के लिए अनुपस्थित चिह्नित} other {# दिनों के लिए अनुपस्थित चिह्नित}}"
 
-#. placeholder {0}: counts.updated ?? 0
-msgid "{0, plural, one {Overtime set for # assignment} other {Overtime set for # assignments}}"
-msgstr "{0, plural, one {# असाइनमेंट के लिए ओवरटाइम सेट} other {# असाइनमेंट के लिए ओवरटाइम सेट}}"
-
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {# दस्तावेज़ को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित है।} other {# दस्तावेज़ों को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित हैं।}}"
@@ -231,10 +229,6 @@ msgstr "{0} संपत्तियों का मूल्यह्रास
 #. placeholder {0}: unmatched.length
 msgid "{0} BOM lines unmatched: {names}"
 msgstr ""
-
-#. placeholder {0}: members.length
-msgid "{0} can't be scheduled: {names}"
-msgstr "{0} शेड्यूल नहीं किया जा सकता: {names}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -546,6 +540,12 @@ msgstr "{asset}: {dueDate} को देय भुगतान छोड़ा �
 msgid "{assetCount} Assets"
 msgstr "{assetCount} अचल संपत्तियाँ"
 
+msgid "{assigned, plural, one {Assigned for # working day} other {Assigned for # working days}}"
+msgstr ""
+
+msgid "{assigned, plural, one {Assigned for # working day} other {Assigned for # working days}}; {skipped, plural, one {# day already booked or off was kept} other {# days already booked or off were kept}}"
+msgstr ""
+
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
 msgstr "{behindDays, plural, one {लक्ष्य से # दिन पीछे} other {लक्ष्य से # दिन पीछे}}"
 
@@ -560,6 +560,9 @@ msgstr "{componentCount, plural, one {# घटक} other {# घटक}}"
 
 msgid "{count, plural, one {# asset} other {# assets}}"
 msgstr "{count, plural, one {# संपत्ति} other {# संपत्तियाँ}}"
+
+msgid "{count, plural, one {# can't be scheduled: {names}} other {# can't be scheduled: {names}}}"
+msgstr ""
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
@@ -581,6 +584,12 @@ msgstr "{count, plural, one {# बैच विघटित करें} other 
 
 msgid "{count, plural, one {Dissolved # batch} other {Dissolved # batches}}"
 msgstr "{count, plural, one {# बैच विघटित} other {# बैच विघटित}}"
+
+msgid "{count, plural, one {Overtime set for # person} other {Overtime set for # people}}"
+msgstr ""
+
+msgid "{count, plural, one {Overtime set on # person-day} other {Overtime set on # person-days}}"
+msgstr ""
 
 msgid "{count, plural, one {Release # batch} other {Release # batches}}"
 msgstr "{count, plural, one {# बैच जारी करें} other {# बैच जारी करें}}"
@@ -615,8 +624,11 @@ msgstr "{daysBehindTarget, plural, one {लक्ष्य से # दिन �
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo} यह आपके लेजर में पोस्ट करता है, इसलिए Carbon इसे पुश नहीं करता है। आपकी सहेजी गई पसंद को इस बात के मामले में रखा जाता है कि यह बदल जाए।"
 
-msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
-msgstr "{departmentLabel} के पास {locationName} पर कोई वर्क सेंटर नहीं है। कोई अन्य विभाग या स्थान चुनें।"
+msgid "{departmentName} has no work centers at {locationName}. Pick another department or location."
+msgstr ""
+
+msgid "{departmentName} has no work centers at this location. Pick another department or location."
+msgstr ""
 
 msgid "{discount} off"
 msgstr "{discount} छूट"
@@ -3821,12 +3833,6 @@ msgstr "नियुक्त"
 
 msgid "Assigned {changed} planning actions"
 msgstr ""
-
-msgid "Assigned {employeeName} to {targetName} for the week"
-msgstr "{employeeName} को सप्ताह के लिए {targetName} पर असाइन किया"
-
-msgid "Assigned {employeeName} to {targetName} for the week; days already assigned in other departments were kept"
-msgstr "{employeeName} को {targetName} को सप्ताह के लिए असाइन किया गया; अन्य विभागों में पहले से असाइन किए गए दिनों को रखा गया था"
 
 msgid "Assigned 1 planning action"
 msgstr ""
@@ -14799,8 +14805,8 @@ msgstr "कोई {0} सिंक ऑपरेशन नहीं"
 msgid "No {0} yet"
 msgstr "अभी कोई {0} नहीं"
 
-msgid "No {departmentLabel} work is scheduled at this location."
-msgstr "इस स्थान पर कोई {departmentLabel} कार्य शेड्यूल नहीं है।"
+msgid "No {departmentName} work is scheduled at this location."
+msgstr ""
 
 msgid "No {title} yet"
 msgstr "अभी {title} नहीं है"
@@ -15559,8 +15565,14 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
 
-msgid "No work centers in {departmentLabel}"
-msgstr "{departmentLabel} में कोई वर्क सेंटर नहीं"
+msgid "No work centers in {departmentName}"
+msgstr ""
+
+msgid "No work centers in this department"
+msgstr ""
+
+msgid "No work for this department is scheduled at this location."
+msgstr ""
 
 #. placeholder {0}: ability.name
 msgid "Nobody is qualified for {0}"
@@ -15706,6 +15718,9 @@ msgstr "नोट्स (वैकल्पिक)"
 
 msgid "Nothing"
 msgstr "कुछ नहीं"
+
+msgid "Nothing assigned: every working day this week is already booked or off"
+msgstr ""
 
 #. placeholder {0}: search.trim()
 msgid "Nothing at this location matches \"{0}\"."
@@ -23630,11 +23645,14 @@ msgstr "मासिक अवधियाँ जिनमें आप पो�
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "सबसे संभावित विफलता मोड जिसे अनुरोधकर्ता संदेह करता है; तकनीशियन इसे बंद करते समय की पुष्टि या प्रतिस्थापन करता है, और संदेह और वास्तविक के बीच अंतर विश्वसनीयता रिपोर्ट करता है।"
 
-msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
-msgstr "इस स्थान पर सबसे हाल का {departmentLabel} काम {nextWorkDate} था।"
+msgid "The most recent {departmentName} work at this location was {nextWorkDate}."
+msgstr ""
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
 msgstr "इस स्थान पर सबसे हाल का शेड्यूल किया गया काम {nextWorkDate} था।"
+
+msgid "The most recent work for this department at this location was {nextWorkDate}."
+msgstr ""
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "इस लाइन पर प्रति यूनिट मूल्य; इनलाइन ट्रेस आइकन दिखाता है कि कौन सा मूल्य नियम या ओवरराइड इसे उत्पादित किया।"
@@ -23651,11 +23669,14 @@ msgstr "विधि का नया संस्करण संख्या"
 msgid "The new version number of the procedure"
 msgstr "कार्यविधि की नई संस्करण संख्या"
 
-msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
-msgstr "इस स्थान पर अगला {departmentLabel} काम {nextWorkDate} से शुरू होता है।"
+msgid "The next {departmentName} work at this location starts {nextWorkDate}."
+msgstr ""
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
 msgstr "इस स्थान पर अगला शेड्यूल किया गया काम {nextWorkDate} से शुरू होता है।"
+
+msgid "The next work for this department at this location starts {nextWorkDate}."
+msgstr ""
 
 msgid "The night shift suits you, {name}."
 msgstr "रात की शिफ्ट आपको सूट करती है, {name}।"
@@ -24310,8 +24331,11 @@ msgstr "इस ग्राहक प्रकार की दर"
 msgid "This customer's rate"
 msgstr "इस ग्राहक की दर"
 
-msgid "this department"
-msgstr "यह विभाग"
+msgid "This department has no work centers at {locationName}. Pick another department or location."
+msgstr ""
+
+msgid "This department has no work centers at this location. Pick another department or location."
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
@@ -27013,6 +27037,9 @@ msgstr "वर्कफ़्लो रन"
 
 msgid "Workflows"
 msgstr "वर्कफ़्लो"
+
+msgid "working at {elsewhereStationNames}"
+msgstr ""
 
 msgid "Working sessions on configuration and data"
 msgstr "कॉन्फ़िगरेशन और डेटा पर कार्य सत्र"

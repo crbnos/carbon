@@ -20,7 +20,7 @@ import {
   toCalendarDate
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { LuBan, LuTriangleAlert } from "react-icons/lu";
@@ -441,29 +441,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     else abilityIds.add(r.resourceId);
   }
 
-  const [workCenters, abilities, operators] = await Promise.all([
-    workCenterIds.size > 0
-      ? client
-          .from("workCenter")
-          .select("id, name")
-          .in("id", Array.from(workCenterIds))
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    abilityIds.size > 0
-      ? client
-          .from("abilities")
-          .select("id, name")
-          .in("id", Array.from(abilityIds))
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-    employeeIds.size > 0
-      ? client
-          .from("user")
-          .select("id, fullName")
-          .in("id", Array.from(employeeIds))
-      : Promise.resolve({
-          data: [] as { id: string; fullName: string | null }[]
-        })
-  ]);
-
   // A batch-tagged reservation is ONE coalesced hold for N member jobs — it
   // must read as the BATCH (BAT… · N jobs), not as its anchor member. Member
   // counts come from one grouped read over the visible batches.
@@ -474,23 +451,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .filter((id): id is string => Boolean(id))
     )
   ];
-  const batchMemberRows =
-    visibleBatchIds.length > 0
-      ? await client
-          .from("jobOperation")
-          .select("jobOperationBatchId")
-          .in("jobOperationBatchId", visibleBatchIds)
-          .eq("companyId", companyId)
-      : { data: [] as { jobOperationBatchId: string | null }[] };
-  const batchMemberCounts = new Map<string, number>();
-  for (const row of batchMemberRows.data ?? []) {
-    if (!row.jobOperationBatchId) continue;
-    batchMemberCounts.set(
-      row.jobOperationBatchId,
-      (batchMemberCounts.get(row.jobOperationBatchId) ?? 0) + 1
-    );
-  }
-
   // Who could run the work the scheduler could not place, and where the board
   // has them — the people to move.
   const unschedulableProcessIds = [
@@ -502,22 +462,60 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     )
   ];
-  // Qualifications are readable with resources view only; without it the list
-  // would read as "nobody is qualified", so it is left out.
-  const qualifiedPeople = hasPermission(
-    permissions,
-    "resources",
-    "view",
-    companyId
-  )
-    ? await getQualifiedPeopleByProcess(client, companyId, {
-        processIds: unschedulableProcessIds,
-        fromDate: toCalendarDate(now(timeZone)).toString()
-      })
-    : {
-        data: new Map<string, { name: string; stations: string[] }[]>(),
-        error: null
-      };
+
+  const [workCenters, abilities, operators, batchMemberRows, qualifiedPeople] =
+    await Promise.all([
+      workCenterIds.size > 0
+        ? client
+            .from("workCenter")
+            .select("id, name")
+            .in("id", Array.from(workCenterIds))
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      abilityIds.size > 0
+        ? client
+            .from("abilities")
+            .select("id, name")
+            .in("id", Array.from(abilityIds))
+        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      employeeIds.size > 0
+        ? client
+            .from("user")
+            .select("id, fullName")
+            .in("id", Array.from(employeeIds))
+        : Promise.resolve({
+            data: [] as { id: string; fullName: string | null }[]
+          }),
+      visibleBatchIds.length > 0
+        ? client
+            .from("jobOperation")
+            .select("jobOperationBatchId")
+            .in("jobOperationBatchId", visibleBatchIds)
+            .eq("companyId", companyId)
+        : Promise.resolve({
+            data: [] as { jobOperationBatchId: string | null }[]
+          }),
+      // Qualifications are readable with resources view only; without it the
+      // list would read as "nobody is qualified", so it is left out.
+      hasPermission(permissions, "resources", "view", companyId)
+        ? getQualifiedPeopleByProcess(client, companyId, {
+            processIds: unschedulableProcessIds,
+            fromDate: toCalendarDate(now(timeZone)).toString()
+          })
+        : Promise.resolve({
+            data: new Map<string, { name: string; stations: string[] }[]>(),
+            error: null
+          })
+    ]);
+
+  const batchMemberCounts = new Map<string, number>();
+  for (const row of batchMemberRows.data ?? []) {
+    if (!row.jobOperationBatchId) continue;
+    batchMemberCounts.set(
+      row.jobOperationBatchId,
+      (batchMemberCounts.get(row.jobOperationBatchId) ?? 0) + 1
+    );
+  }
+
   if (qualifiedPeople.error) {
     throw redirect(
       path.to.production,
@@ -700,9 +698,6 @@ export default function ResourceGanttView() {
   } = useLoaderData<typeof loader>();
 
   const { isGated } = usePlanGate({ feature: "FORECAST" });
-  const { t } = useLingui();
-  // A department id from an old link may no longer name one.
-  const departmentLabel = departmentName ?? t`this department`;
 
   const { locale } = useLocale();
   const navigate = useNavigate();
@@ -789,16 +784,30 @@ export default function ResourceGanttView() {
         locale
       )
     : null;
+  // A department id from an old link may no longer name one: then each hint
+  // below says "this department" in a sentence of its own.
   const nextWorkHint = nextWorkDate ? (
     departmentId ? (
       nextScheduledDirection === "future" ? (
+        departmentName ? (
+          <Trans>
+            The next {departmentName} work at this location starts{" "}
+            {nextWorkDate}.
+          </Trans>
+        ) : (
+          <Trans>
+            The next work for this department at this location starts{" "}
+            {nextWorkDate}.
+          </Trans>
+        )
+      ) : departmentName ? (
         <Trans>
-          The next {departmentLabel} work at this location starts {nextWorkDate}
-          .
+          The most recent {departmentName} work at this location was{" "}
+          {nextWorkDate}.
         </Trans>
       ) : (
         <Trans>
-          The most recent {departmentLabel} work at this location was{" "}
+          The most recent work for this department at this location was{" "}
           {nextWorkDate}.
         </Trans>
       )
@@ -812,7 +821,11 @@ export default function ResourceGanttView() {
       </Trans>
     )
   ) : departmentId ? (
-    <Trans>No {departmentLabel} work is scheduled at this location.</Trans>
+    departmentName ? (
+      <Trans>No {departmentName} work is scheduled at this location.</Trans>
+    ) : (
+      <Trans>No work for this department is scheduled at this location.</Trans>
+    )
   ) : (
     <Trans>
       No jobs are scheduled at this location yet — release a job to see
@@ -882,12 +895,35 @@ export default function ResourceGanttView() {
         <div className="flex flex-1 items-center justify-center">
           {departmentId && !departmentHasWorkCenters ? (
             <Empty
-              title={<Trans>No work centers in {departmentLabel}</Trans>}
+              title={
+                departmentName ? (
+                  <Trans>No work centers in {departmentName}</Trans>
+                ) : (
+                  <Trans>No work centers in this department</Trans>
+                )
+              }
               description={
-                <Trans>
-                  {departmentLabel} has no work centers at {locationName}. Pick
-                  another department or location.
-                </Trans>
+                departmentName && locationName ? (
+                  <Trans>
+                    {departmentName} has no work centers at {locationName}. Pick
+                    another department or location.
+                  </Trans>
+                ) : departmentName ? (
+                  <Trans>
+                    {departmentName} has no work centers at this location. Pick
+                    another department or location.
+                  </Trans>
+                ) : locationName ? (
+                  <Trans>
+                    This department has no work centers at {locationName}. Pick
+                    another department or location.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    This department has no work centers at this location. Pick
+                    another department or location.
+                  </Trans>
+                )
               }
             />
           ) : (

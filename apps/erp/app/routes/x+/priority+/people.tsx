@@ -116,7 +116,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const dateParam = searchParams.get("date");
-  const shiftId = searchParams.get("shift") || null;
+  const requestedShiftId = searchParams.get("shift") || null;
 
   // department scope: URL param wins, cookie remembers the last choice
   const departmentParam = searchParams.get("department");
@@ -201,6 +201,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const shiftRows = shifts.data ?? [];
+  // An inactive, deleted or other-location shift from an old link reads as
+  // All shifts, like the department: every view would otherwise count it
+  // differently (Coverage as the whole day, the board as nobody).
+  const shiftId =
+    requestedShiftId && shiftRows.some((shift) => shift.id === requestedShiftId)
+      ? requestedShiftId
+      : null;
   const shiftHoursById: Record<string, number> = {};
   const shiftStartById: Record<string, string> = {};
   const shiftEndById: Record<string, string> = {};
@@ -269,13 +276,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
   }
-
-  // shift scope resolves through the ladder (the row's stamped shift, else the
-  // person's own shift) — an exact match on the stamped shift alone would hide
-  // every assignment created before the person's shift was set
-  const dayAssignments = (assignments.data ?? []).filter((assignment) =>
-    assignmentMatchesShift(assignment, shiftId, employeeShiftId)
-  );
 
   // week-scoped data for the matrix and capacity views
   let weekAssignments: {
@@ -357,6 +357,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : Promise.resolve({ data: [], error: null })
     ]);
 
+    for (const [read, message] of [
+      [rangeAssignments, "Failed to load people assignments"],
+      [rangeAbsences, "Failed to load absences"],
+      [capacityOperations, "Failed to load operations"],
+      [reservations, "Failed to load the schedule"],
+      [workCenterShiftRows, "Failed to load work center shifts"]
+    ] as const) {
+      if (read.error) {
+        throw redirect(
+          path.to.production,
+          await flash(request, error(read.error, message))
+        );
+      }
+    }
     weekAssignments = rangeAssignments.data ?? [];
     weekAbsences = rangeAbsences.data ?? [];
 
@@ -527,6 +541,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       startDate: date,
       endDate: date
     });
+    if (dayOperations.error) {
+      throw redirect(
+        path.to.production,
+        await flash(
+          request,
+          error(dayOperations.error, "Failed to load operations")
+        )
+      );
+    }
     const { demandByWorkCenter: dayDemand } = buildPeopleCapacityBuckets({
       weekDates: [date],
       timezone,
@@ -584,7 +607,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     scheduledByWorkCenter,
     requiredHoursByWorkCenter,
     employeeShiftHours,
-    assignments: dayAssignments,
+    // every shift: the board filters by shift, and its day editor needs the
+    // person's own shift whatever the page shows
+    assignments: assignments.data ?? [],
     absences: absences.data ?? [],
     employees: (employees.data ?? []).flatMap((employee) =>
       employee.id
@@ -690,14 +715,23 @@ export default function SchedulePeopleRoute() {
     [displayedWorkCenters]
   );
 
+  // shift scope resolves through the ladder (the row's stamped shift, else the
+  // person's own shift) — an exact match on the stamped shift alone would hide
+  // every assignment created before the person's shift was set
   const boardAssignments = useMemo(
     () =>
-      departmentId
-        ? assignments.filter((assignment) =>
-            displayedWorkCenterIds.has(assignment.workCenterId)
-          )
-        : assignments,
-    [assignments, departmentId, displayedWorkCenterIds]
+      assignments.filter(
+        (assignment) =>
+          assignmentMatchesShift(assignment, shiftId, employeeShiftId) &&
+          (!departmentId || displayedWorkCenterIds.has(assignment.workCenterId))
+      ),
+    [
+      assignments,
+      shiftId,
+      employeeShiftId,
+      departmentId,
+      displayedWorkCenterIds
+    ]
   );
   const matrixAssignments = useMemo(
     () =>
@@ -740,14 +774,46 @@ export default function SchedulePeopleRoute() {
         : list,
     [shiftId, employeeShiftId]
   );
-  const employeesForBoard = useMemo(() => {
-    const assigned = new Set(boardAssignments.map((a) => a.employeeId));
-    return orderDepartmentFirst(filterByShift(employees, assigned));
-  }, [employees, boardAssignments, filterByShift, orderDepartmentFirst]);
-  const employeesForMatrix = useMemo(() => {
-    const assigned = new Set(matrixAssignments.map((a) => a.employeeId));
-    return orderDepartmentFirst(filterByShift(employees, assigned));
-  }, [employees, matrixAssignments, filterByShift, orderDepartmentFirst]);
+  // Assigned in the shift at ANY station: someone booked only at stations the
+  // department hides still shows (the board's "working at" card, the
+  // Matrix's greyed chip).
+  const assignedInShift = useCallback(
+    (rows: { employeeId: string; shiftId: string | null }[]) =>
+      new Set(
+        rows
+          .filter((row) =>
+            assignmentMatchesShift(row, shiftId, employeeShiftId)
+          )
+          .map((row) => row.employeeId)
+      ),
+    [shiftId, employeeShiftId]
+  );
+  const employeesForBoard = useMemo(
+    () =>
+      orderDepartmentFirst(
+        filterByShift(employees, assignedInShift(assignments))
+      ),
+    [
+      employees,
+      assignments,
+      assignedInShift,
+      filterByShift,
+      orderDepartmentFirst
+    ]
+  );
+  const employeesForMatrix = useMemo(
+    () =>
+      orderDepartmentFirst(
+        filterByShift(employees, assignedInShift(weekAssignments))
+      ),
+    [
+      employees,
+      weekAssignments,
+      assignedInShift,
+      filterByShift,
+      orderDepartmentFirst
+    ]
+  );
 
   const shortDate = (value: string) =>
     formatDate(value, { month: "short", day: "numeric" }, locale);
@@ -835,14 +901,7 @@ export default function SchedulePeopleRoute() {
               employees={employeesForBoard}
               workCenters={displayedWorkCenters}
               assignments={boardAssignments}
-              assignmentsElsewhere={
-                departmentId
-                  ? assignments.filter(
-                      (assignment) =>
-                        !displayedWorkCenterIds.has(assignment.workCenterId)
-                    )
-                  : undefined
-              }
+              dayAssignments={assignments}
               allWorkCenters={workCenters}
               absences={absences}
               requiredAbilities={requiredAbilities}

@@ -318,6 +318,22 @@ describe("process names", () => {
     expect(result.error?.category).toBe("conflict");
     expect(writes).toEqual([]);
   });
+
+  // Another request saved the same name between the check and the insert.
+  it("refuses a name the database rejects as a duplicate", async () => {
+    const { ctx } = contextWith({
+      "process:read": null,
+      process: { data: null, error: { code: "23505", message: "duplicate" } }
+    });
+
+    const result = await createProcess(ctx, {
+      name: "Welding",
+      processType: "Process",
+      requiresAbility: false
+    });
+
+    expect(result.error?.category).toBe("conflict");
+  });
 });
 
 describe("training assignments", () => {
