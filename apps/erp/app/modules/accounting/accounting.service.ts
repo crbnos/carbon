@@ -3706,6 +3706,7 @@ export type PeriodRunPreview = {
   revenue: RunPreview;
   lease: RunPreview;
   depreciation: RunPreview;
+  currencyRevaluation: RunPreview;
 };
 
 export type PeriodRunPreviewer = (
@@ -3768,40 +3769,56 @@ export async function getPeriodRunPreview(
           error: previewError(error, fallback)
         })
       );
-  const [revenue, lease, depreciation] = await Promise.all([
-    previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
-    previewRun("Lease", "Failed to preview the lease run"),
-    buildDepreciationRunLines(client, { companyId, companyGroupId, periodEnd })
-      .then((result): RunPreview => {
-        if (!result.data) {
+  const [revenue, lease, depreciation, currencyRevaluation] = await Promise.all(
+    [
+      previewRun(
+        "Revenue Recognition",
+        "Failed to preview revenue recognition"
+      ),
+      previewRun("Lease", "Failed to preview the lease run"),
+      buildDepreciationRunLines(client, {
+        companyId,
+        companyGroupId,
+        periodEnd
+      })
+        .then((result): RunPreview => {
+          if (!result.data) {
+            return {
+              count: 0,
+              amount: 0,
+              error: previewError(
+                result.error,
+                "Failed to calculate depreciation"
+              )
+            };
+          }
+          if (result.data.laterPostedRunId) {
+            return { count: 0, amount: 0, error: null };
+          }
+          const { lines } = result.data;
           return {
+            count: new Set(lines.map((line) => line.fixedAssetId)).size,
+            amount: round(lines.reduce((sum, line) => sum + line.amount, 0)),
+            error: null
+          };
+        })
+        .catch(
+          (error): RunPreview => ({
             count: 0,
             amount: 0,
-            error: previewError(
-              result.error,
-              "Failed to calculate depreciation"
-            )
-          };
-        }
-        if (result.data.laterPostedRunId) {
-          return { count: 0, amount: 0, error: null };
-        }
-        const { lines } = result.data;
-        return {
-          count: new Set(lines.map((line) => line.fixedAssetId)).size,
-          amount: round(lines.reduce((sum, line) => sum + line.amount, 0)),
-          error: null
-        };
-      })
-      .catch(
+            error: previewError(error, "Failed to calculate depreciation")
+          })
+        ),
+      previewCurrencyRevaluation(db, { companyId, periodEnd }).catch(
         (error): RunPreview => ({
           count: 0,
           amount: 0,
-          error: previewError(error, "Failed to calculate depreciation")
+          error: previewError(error, "Failed to preview currency revaluation")
         })
       )
-  ]);
-  return { revenue, lease, depreciation };
+    ]
+  );
+  return { revenue, lease, depreciation, currencyRevaluation };
 }
 
 /** The previewer the close checklist uses outside tests. */
@@ -3844,8 +3861,19 @@ export function periodRunChecks(args: {
       | null;
     error: unknown;
   };
+  draftCurrencyRevaluationRuns: {
+    data:
+      | { id: string; currencyRevaluationRunId: string; periodEnd: string }[]
+      | null;
+    error: unknown;
+  };
 }): PeriodReadinessCheck[] {
-  const { runPreview, heldRunRows, draftDepreciationRuns } = args;
+  const {
+    runPreview,
+    heldRunRows,
+    draftDepreciationRuns,
+    draftCurrencyRevaluationRuns
+  } = args;
 
   const heldByType = (type: RunType) => {
     const draftRuns = new Map<
@@ -3885,6 +3913,11 @@ export function periodRunChecks(args: {
     runPreview.depreciation.count +
     (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
 
+  const revaluationDraftRuns = draftCurrencyRevaluationRuns.data ?? [];
+  const revaluationCount =
+    runPreview.currencyRevaluation.count +
+    (draftCurrencyRevaluationRuns.error ? 1 : revaluationDraftRuns.length);
+
   return [
     {
       autoCheckKey: "draft-depreciation",
@@ -3898,6 +3931,22 @@ export function periodRunChecks(args: {
       draftRuns: depreciationDraftRuns.map((run) => ({
         id: run.id,
         readableId: run.depreciationRunId,
+        periodEnd: run.periodEnd
+      }))
+    },
+    {
+      autoCheckKey: "fx-revaluation",
+      severity: "Warning",
+      label:
+        "Open foreign-currency balances a revaluation run would revalue at this period end, and Draft revaluation runs ending in it",
+      failing:
+        revaluationCount > 0 || runPreview.currencyRevaluation.error !== null,
+      count: revaluationCount,
+      amount: runPreview.currencyRevaluation.amount,
+      due: runPreview.currencyRevaluation,
+      draftRuns: revaluationDraftRuns.map((run) => ({
+        id: run.id,
+        readableId: run.currencyRevaluationRunId,
         periodEnd: run.periodEnd
       }))
     },
@@ -3954,6 +4003,7 @@ export async function computePeriodReadiness(
     draftJournals,
     journalsInPeriod,
     draftDepreciationRuns,
+    draftCurrencyRevaluationRuns,
     unmatchedIC,
     pendingReceipts,
     pendingShipments,
@@ -3989,6 +4039,16 @@ export async function computePeriodReadiness(
       .gte("periodEnd", startDate)
       .lte("periodEnd", endDate)
       .order("depreciationRunId"),
+    // A Draft revaluation run ending in the period: its preview counts zero
+    // while the Draft waits, so the Draft itself fails the check.
+    client
+      .from("currencyRevaluationRun")
+      .select("id, currencyRevaluationRunId, periodEnd")
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .gte("periodEnd", startDate)
+      .lte("periodEnd", endDate)
+      .order("currencyRevaluationRunId"),
     client
       .from("intercompanyTransaction")
       .select("id", { count: "exact", head: true })
@@ -4080,7 +4140,8 @@ export async function computePeriodReadiness(
   const runChecks = periodRunChecks({
     runPreview,
     heldRunRows,
-    draftDepreciationRuns
+    draftDepreciationRuns,
+    draftCurrencyRevaluationRuns
   });
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
@@ -12998,6 +13059,63 @@ export async function createCurrencyRevaluationRunAt(
   } catch (err) {
     return refusal(ctx, err, "Failed to create currency revaluation run");
   }
+}
+
+/**
+ * What a new revaluation run for `periodEnd` would revalue, for the close
+ * checklist. Zero when nothing is open in a foreign currency, while a Draft
+ * run for the period waits (the Draft fails the check itself), or when the
+ * Posted run still matches what is open. Otherwise every open exposure, and
+ * the total size of the differences at the default rates.
+ */
+export async function previewCurrencyRevaluation(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; periodEnd: string }
+): Promise<RunPreview> {
+  const { companyId, periodEnd } = args;
+  const nothing: RunPreview = { count: 0, amount: 0, error: null };
+  const defaults = await db
+    .selectFrom("accountDefault")
+    .select(["arRevaluationAccount", "apRevaluationAccount"])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const { exposures } = await readRevaluationExposures(db, {
+    companyId,
+    periodEnd,
+    defaults: {
+      arRevaluationAccount: defaults?.arRevaluationAccount ?? "",
+      apRevaluationAccount: defaults?.apRevaluationAccount ?? ""
+    }
+  });
+  if (exposures.length === 0) return nothing;
+
+  const run = await db
+    .selectFrom("currencyRevaluationRun")
+    .select(["id", "status"])
+    .where("companyId", "=", companyId)
+    .where("periodEnd", "=", periodEnd)
+    .executeTakeFirst();
+  if (run?.status === "Draft") return nothing;
+  if (
+    run?.status === "Posted" &&
+    (await isCurrencyRevaluationRunCurrent(db, { runId: run.id, companyId }))
+  ) {
+    return nothing;
+  }
+
+  const rates = await resolveRevaluationRates(db, {
+    companyId,
+    periodEnd,
+    currencyCodes: exposures.map((exposure) => exposure.currencyCode)
+  });
+  const lines = revalueAll(exposures, rates);
+  return {
+    count: exposures.length,
+    amount: round(
+      lines.reduce((sum, line) => sum + Math.abs(line.differenceAmount ?? 0), 0)
+    ),
+    error: null
+  };
 }
 
 /** Delete a Draft run; its rates and lines cascade. */

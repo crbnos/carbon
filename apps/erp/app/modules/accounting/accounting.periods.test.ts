@@ -221,7 +221,8 @@ describe("periodRunChecks", () => {
   const nothingDue: PeriodRunPreview = {
     revenue: { count: 0, amount: 0, error: null },
     lease: { count: 0, amount: 0, error: null },
-    depreciation: { count: 0, amount: 0, error: null }
+    depreciation: { count: 0, amount: 0, error: null },
+    currencyRevaluation: { count: 0, amount: 0, error: null }
   };
 
   function base(
@@ -231,6 +232,7 @@ describe("periodRunChecks", () => {
       runPreview: nothingDue,
       heldRunRows: { data: [], error: null },
       draftDepreciationRuns: { data: [], error: null },
+      draftCurrencyRevaluationRuns: { data: [], error: null },
       ...overrides
     };
   }
@@ -254,6 +256,7 @@ describe("periodRunChecks", () => {
       periodRunChecks(base()).map((c) => [c.autoCheckKey, c.failing, c.count])
     ).toEqual([
       ["draft-depreciation", false, 0],
+      ["fx-revaluation", false, 0],
       ["unposted-revenue-schedules", false, 0],
       ["unposted-lease-schedules", false, 0]
     ]);
@@ -371,5 +374,56 @@ describe("periodRunChecks", () => {
         { id: "D1", readableId: "DEP-000001", periodEnd: "2026-10-31" }
       ]
     });
+  });
+  it("fails the revaluation check with the exposures a new run would revalue", () => {
+    // Two open EUR invoices, differences of 65.36 and 20 → 2 / 85.36.
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            currencyRevaluation: { count: 2, amount: 85.36, error: null }
+          }
+        }),
+        "fx-revaluation"
+      )
+    ).toMatchObject({ failing: true, count: 2, amount: 85.36, draftRuns: [] });
+  });
+
+  it("fails the revaluation check while a Draft revaluation run waits", () => {
+    expect(
+      check(
+        base({
+          draftCurrencyRevaluationRuns: {
+            data: [
+              {
+                id: "F1",
+                currencyRevaluationRunId: "FXR000001",
+                periodEnd: "2026-10-31"
+              }
+            ],
+            error: null
+          }
+        }),
+        "fx-revaluation"
+      )
+    ).toMatchObject({
+      failing: true,
+      count: 1,
+      draftRuns: [
+        { id: "F1", readableId: "FXR000001", periodEnd: "2026-10-31" }
+      ]
+    });
+  });
+
+  it("fails the revaluation check closed when its Draft runs cannot be read", () => {
+    expect(
+      check(
+        base({
+          draftCurrencyRevaluationRuns: { data: null, error: { message: "x" } }
+        }),
+        "fx-revaluation"
+      )?.failing
+    ).toBe(true);
   });
 });
