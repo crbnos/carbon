@@ -24,7 +24,8 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -35,15 +36,13 @@ import WarehouseTransferStatus from "./WarehouseTransferStatus";
 type WarehouseTransfersTableProps = {
   data: WarehouseTransfer[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
+// The route's `handle.realtime` follows every warehouse transfer of the
+// company, so the rows of a later page refresh too.
 const WarehouseTransfersTable = memo(
-  ({ data, count }: WarehouseTransfersTableProps) => {
-    useRealtime(
-      "warehouseTransfer",
-      `id=in.(${data.map((d) => d.id).join(",")})`
-    );
-
+  ({ data, count, infinite }: WarehouseTransfersTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -254,6 +253,7 @@ const WarehouseTransfersTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnPinning={{

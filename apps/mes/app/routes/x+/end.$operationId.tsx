@@ -20,6 +20,7 @@ import {
   insertProductionQuantity,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
 import { checkStrictBackflush } from "~/services/quality.server";
 import { path } from "~/utils/path";
 
@@ -226,7 +227,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           );
         }
 
-        const newTrackedEntityId = response.data?.newTrackedEntityId;
+        const newTrackedEntityId = response.data?.newTrackedEntityId as
+          | string
+          | undefined;
+
+        // Auto-print label on first operation only (entity was just minted).
+        // Print the unit just completed, not the new reserved one.
+        const printEntityId = trackedEntityId || newTrackedEntityId;
+        if (printEntityId) {
+          await autoPrintFirstOperationLabel({
+            serviceRole,
+            trackedEntityId: printEntityId,
+            workCenterId: jobOperation.data.workCenterId ?? undefined,
+            companyId,
+            userId
+          });
+        }
 
         if (newTrackedEntityId) {
           return redirect(
@@ -305,6 +321,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               flash: "error"
             })
           );
+        }
+
+        // Auto-print label on first operation only (batch entity was just minted)
+        if (trackedEntityId) {
+          await autoPrintFirstOperationLabel({
+            serviceRole,
+            trackedEntityId,
+            workCenterId: jobOperation.data.workCenterId ?? undefined,
+            companyId,
+            userId
+          });
         }
       }
     } else {

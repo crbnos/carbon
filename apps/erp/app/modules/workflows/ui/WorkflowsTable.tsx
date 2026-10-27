@@ -35,6 +35,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -42,16 +43,22 @@ import type { Workflow, WorkflowLastRun } from "../workflows.service";
 import { ConfirmUnpublishWorkflow } from "./ConfirmUnpublishWorkflow";
 import { RunStatus } from "./Runs/RunStatus";
 import WorkflowForm from "./WorkflowForm";
+import { WORKFLOW_LIST_EXPORT_VALUES } from "./workflow-list-export";
+
+// A row of the list, with the values the loader adds per page.
+type WorkflowRow = Workflow & {
+  publishedVersionNumber: number | null;
+  lastRun: WorkflowLastRun | null;
+};
 
 type WorkflowsTableProps = {
-  data: Workflow[];
+  data: WorkflowRow[];
   count: number;
-  versionNumbers: Record<string, number>;
-  lastRuns: Record<string, WorkflowLastRun>;
+  infinite: InfiniteOptions;
 };
 
 const WorkflowsTable = memo(
-  ({ data, count, versionNumbers, lastRuns }: WorkflowsTableProps) => {
+  ({ data, count, infinite }: WorkflowsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -64,7 +71,7 @@ const WorkflowsTable = memo(
       null
     );
 
-    const columns = useMemo<ColumnDef<Workflow>[]>(
+    const columns = useMemo<ColumnDef<WorkflowRow>[]>(
       () => [
         {
           accessorKey: "name",
@@ -118,7 +125,7 @@ const WorkflowsTable = memo(
                 { value: "Draft", label: t`Draft` }
               ]
             },
-            exportValue: (row: Workflow) =>
+            exportValue: (row: WorkflowRow) =>
               row.publishedVersionId ? "Published" : "Draft"
           }
         },
@@ -143,10 +150,7 @@ const WorkflowsTable = memo(
           accessorKey: "publishedVersionId",
           header: t`Published Version`,
           cell: ({ row }) => {
-            const versionId = row.original.publishedVersionId;
-            const versionNumber = versionId
-              ? versionNumbers[versionId]
-              : undefined;
+            const versionNumber = row.original.publishedVersionNumber;
             return versionNumber ? (
               <Badge variant="outline">v{versionNumber}</Badge>
             ) : (
@@ -159,7 +163,7 @@ const WorkflowsTable = memo(
           id: "lastRun",
           header: t`Last Run`,
           cell: ({ row }) => {
-            const lastRun = lastRuns[row.original.id];
+            const lastRun = row.original.lastRun;
             if (!lastRun?.runId || !lastRun.status) return "—";
             const ts = lastRun.completedAt ?? lastRun.createdAt;
             return (
@@ -179,7 +183,7 @@ const WorkflowsTable = memo(
           meta: {
             icon: <LuHistory />,
             filterHeader: t`Last Run`,
-            exportValue: (row: Workflow) => lastRuns[row.id]?.status ?? ""
+            exportValue: WORKFLOW_LIST_EXPORT_VALUES.lastRun
           }
         },
         {
@@ -192,11 +196,11 @@ const WorkflowsTable = memo(
           meta: { icon: <LuCalendar /> }
         }
       ],
-      [t, versionNumbers, lastRuns, people]
+      [t, people]
     );
 
     const renderContextMenu = useCallback(
-      (row: Workflow) => (
+      (row: WorkflowRow) => (
         <>
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.open}
@@ -254,8 +258,9 @@ const WorkflowsTable = memo(
 
     return (
       <>
-        <Table<Workflow>
+        <Table<WorkflowRow>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={

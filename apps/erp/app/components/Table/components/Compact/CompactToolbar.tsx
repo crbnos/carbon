@@ -217,7 +217,7 @@ export function CompactToolbar({
  * authenticated route" and the page answered 500.
  */
 function ExportCsvItem({ csvExport }: { csvExport: DownloadProps }) {
-  const exportCsv = useCsvDownload(csvExport);
+  const { onClick: exportCsv } = useCsvDownload(csvExport);
   return (
     <DropdownMenuItem onClick={exportCsv}>
       <DropdownMenuIcon icon={<LuDownload />} />

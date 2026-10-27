@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
 import {
   BarProgress,
   Checkbox,
@@ -15,7 +14,6 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
-  toast,
   useDisclosure
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -52,11 +50,15 @@ import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import { useBulkFormAction } from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { purchaseOrderStatusType } from "~/modules/purchasing/purchasing.models";
+import {
+  isPurchaseOrderBulkDeletable,
+  purchaseOrderStatusType
+} from "~/modules/purchasing/purchasing.models";
 import type { PurchaseOrderListItem } from "~/modules/purchasing/types";
-import type { action } from "~/routes/x+/purchase-order+/update";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import PurchasingStatus from "./PurchasingStatus";
@@ -65,10 +67,11 @@ import { usePurchaseOrder } from "./usePurchaseOrder";
 type PurchaseOrdersTableProps = {
   data: PurchaseOrderListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const PurchaseOrdersTable = memo(
-  ({ data, count }: PurchaseOrdersTableProps) => {
+  ({ data, count, infinite }: PurchaseOrdersTableProps) => {
     useRealtime("purchaseOrder");
 
     const { t } = useLingui();
@@ -408,33 +411,25 @@ const PurchaseOrdersTable = memo(
       t
     ]);
 
-    const fetcher = useAction<typeof action>({
-      onError: (data) => {
-        if (data?.error) {
-          toast.error(data.error.message);
-        }
-      }
-    });
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+    const { submit: submitBulk, fetcher } = useBulkFormAction();
     const onBulkUpdate = useCallback(
-      (selectedRows: typeof data, field: "delete", value?: string) => {
-        const formData = new FormData();
-        selectedRows.forEach((row) => {
-          if (row.id) formData.append("ids", row.id);
-        });
-        formData.append("field", field);
-        if (value) formData.append("value", value);
-        fetcher.submit(formData, {
-          method: "post",
-          action: path.to.bulkUpdatePurchaseOrder
-        });
+      (
+        selectedRows: typeof data,
+        field: "delete",
+        value?: string,
+        scope?: BulkActionScope
+      ) => {
+        submitBulk(
+          path.to.bulkUpdatePurchaseOrder,
+          { scope, idsField: "ids", ids: selectedRows.map((row) => row.id) },
+          { field, value }
+        );
       },
-
-      []
+      [submitBulk]
     );
 
     const renderActions = useCallback(
-      (selectedRows: typeof data) => {
+      (selectedRows: typeof data, scope?: BulkActionScope) => {
         return (
           <DropdownMenuContent align="end" className="min-w-[200px]">
             <DropdownMenuLabel>Update</DropdownMenuLabel>
@@ -443,12 +438,17 @@ const PurchaseOrdersTable = memo(
               <DropdownMenuItem
                 disabled={
                   !permissions.can("delete", "purchasing") ||
-                  selectedRows.some(
-                    (row) => !["Draft", "Planned"].includes(row.status ?? "")
-                  )
+                  // Every matching row: the server deletes the Draft and
+                  // Planned orders and skips the rest.
+                  (!scope?.allMatching &&
+                    selectedRows.some(
+                      (row) => !isPurchaseOrderBulkDeletable(row.status)
+                    ))
                 }
                 destructive
-                onClick={() => onBulkUpdate(selectedRows, "delete")}
+                onClick={() =>
+                  onBulkUpdate(selectedRows, "delete", undefined, scope)
+                }
               >
                 <MenuIcon icon={<LuTrash />} />
                 <Trans>Delete Purchase Orders</Trans>
@@ -526,6 +526,7 @@ const PurchaseOrdersTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["purchaseOrderId"]
           }}

@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 "use client";
-import type { ApprovalDocumentType } from "@carbon/ee/approvals";
-import {
-  NotificationEvent,
-  type RecurringInvoicingDocumentType,
-  renderInlineLinks
-} from "@carbon/notifications";
+import { NotificationEvent, renderInlineLinks } from "@carbon/notifications";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -37,6 +32,7 @@ import {
   LuCirclePlay,
   LuClipboardCheck,
   LuDollarSign,
+  LuFileSpreadsheet,
   LuGitPullRequestArrow,
   LuGraduationCap,
   LuHammer,
@@ -65,15 +61,12 @@ import { useAppBadge } from "~/hooks/useAppBadge";
 import { useRestoreBrowserNotifications } from "~/hooks/usePushSubscription";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
-import { getRecordPath } from "~/utils/entity";
+import {
+  type NotificationDocumentType,
+  notificationTarget
+} from "~/utils/notification-target";
 import { path } from "~/utils/path";
 import { EnableBrowserNotifications } from "./EnableBrowserNotifications";
-
-/** The approvable document of an Approval* event, or what a Recurring
- *  invoicing notification lists. */
-type NotificationDocumentType =
-  | ApprovalDocumentType
-  | RecurringInvoicingDocumentType;
 
 type OutstandingTraining = {
   trainingAssignmentId: string;
@@ -159,6 +152,7 @@ function TrainingItem({
 function Notification({
   icon,
   to,
+  reloadDocument,
   description,
   body,
   createdAt,
@@ -168,6 +162,9 @@ function Notification({
 }: {
   icon: React.ReactNode;
   to: string;
+  // A resource route (a file download) needs a full page request, not a
+  // client navigation.
+  reloadDocument?: boolean;
   description: string;
   body?: string;
   createdAt: string;
@@ -244,14 +241,16 @@ function Notification({
           className="flex items-between justify-between gap-x-4 cursor-pointer"
           onClick={() => {
             onClose();
-            navigate(to);
+            if (reloadDocument) window.location.assign(to);
+            else navigate(to);
           }}
           onKeyDown={(e) => {
             if (e.target !== e.currentTarget) return;
             if (e.key !== "Enter" && e.key !== " ") return;
             e.preventDefault();
             onClose();
-            navigate(to);
+            if (reloadDocument) window.location.assign(to);
+            else navigate(to);
           }}
         >
           {content}
@@ -261,6 +260,7 @@ function Notification({
           className="flex items-between justify-between gap-x-4 "
           onClick={() => onClose()}
           to={to}
+          reloadDocument={reloadDocument}
         >
           {content}
         </Link>
@@ -280,6 +280,52 @@ function Notification({
   );
 }
 
+/** The topbar icon of each event. An event without one has no row here
+ *  (Digest rows are `DigestNotification`). */
+const NOTIFICATION_ICONS: Partial<Record<NotificationEvent, React.ReactNode>> =
+  {
+    [NotificationEvent.ApprovalApproved]: <LuClipboardCheck />,
+    [NotificationEvent.ApprovalRejected]: <LuClipboardCheck />,
+    [NotificationEvent.ApprovalRequested]: <LuClipboardCheck />,
+    [NotificationEvent.ChangeNoticeStarted]: <LuGitPullRequestArrow />,
+    [NotificationEvent.ChangeNoticeImplementation]: <LuGitPullRequestArrow />,
+    [NotificationEvent.ChangeNoticeDone]: <LuGitPullRequestArrow />,
+    [NotificationEvent.DigitalQuoteResponse]: <LuDollarSign />,
+    [NotificationEvent.GaugeCalibrationExpired]: <LuCircleGauge />,
+    [NotificationEvent.SalesRuleViolation]: <LuShieldAlert />,
+    [NotificationEvent.IntegrationSync]: <LuRefreshCw />,
+    [NotificationEvent.TableExport]: <LuFileSpreadsheet />,
+    [NotificationEvent.TableBulkAction]: <LuListChecks />,
+    [NotificationEvent.RecurringInvoicing]: <LuDollarSign />,
+    [NotificationEvent.LeaseCriticalDate]: <LuCalendarClock />,
+    [NotificationEvent.JobCompleted]: <LuHammer />,
+    [NotificationEvent.JobAssignment]: <LuHammer />,
+    [NotificationEvent.JobOperationAssignment]: <LuCirclePlay />,
+    [NotificationEvent.JobOperationMessage]: <LuMessageSquare />,
+    [NotificationEvent.MaintenanceDispatchCreated]: <LuWrench />,
+    [NotificationEvent.MaintenanceDispatchAssignment]: <LuWrench />,
+    [NotificationEvent.NonConformanceAssignment]: <LuShieldX />,
+    [NotificationEvent.ProcedureAssignment]: <LuListChecks />,
+    [NotificationEvent.QuoteExpired]: <LuCalendarX />,
+    [NotificationEvent.PurchaseInvoiceAssignment]: <LuShoppingCart />,
+    [NotificationEvent.PurchasingRfqAssignment]: <LuPackageSearch />,
+    [NotificationEvent.PurchaseOrderAssignment]: <LuShoppingCart />,
+    [NotificationEvent.QuoteAssignment]: <RiProgress4Line />,
+    [NotificationEvent.RiskAssignment]: <LuShieldAlert />,
+    [NotificationEvent.SalesRfqReady]: <RiProgress2Line />,
+    [NotificationEvent.SalesRfqAssignment]: <RiProgress2Line />,
+    [NotificationEvent.SalesOrderAssignment]: <RiProgress8Line />,
+    [NotificationEvent.StockTransferAssignment]: <LuListChecks />,
+    [NotificationEvent.PickingListAssignment]: <LuListChecks />,
+    [NotificationEvent.SuggestionResponse]: <LuLightbulb />,
+    [NotificationEvent.SupplierQuoteAssignment]: <LuDollarSign />,
+    [NotificationEvent.SupplierQuoteResponse]: <LuMailCheck />,
+    [NotificationEvent.TrainingAssignment]: <LuListChecks />,
+    [NotificationEvent.TrainingReminder]: <LuListChecks />,
+    [NotificationEvent.ResourceTrainingAssignment]: <LuGraduationCap />,
+    [NotificationEvent.Workflow]: <LuGitPullRequestArrow />
+  };
+
 function GenericNotification({
   id,
   event,
@@ -296,290 +342,18 @@ function GenericNotification({
   markMessageAsRead?: () => void;
   onClose: () => void;
 }) {
-  switch (event) {
-    case NotificationEvent.ApprovalApproved:
-    case NotificationEvent.ApprovalRejected:
-    case NotificationEvent.ApprovalRequested:
-      return (
-        <Notification
-          icon={<LuClipboardCheck />}
-          to={
-            documentType === "qualityDocument"
-              ? path.to.qualityDocument(id)
-              : documentType === "supplier"
-                ? path.to.supplier(id)
-                : documentType === "changeOrder"
-                  ? path.to.changeNoticeDetails(id)
-                  : path.to.purchaseOrderDetails(id)
-          }
-          {...props}
-        />
-      );
-    case NotificationEvent.ChangeNoticeStarted:
-    case NotificationEvent.ChangeNoticeImplementation:
-    case NotificationEvent.ChangeNoticeDone:
-      return (
-        <Notification
-          icon={<LuGitPullRequestArrow />}
-          to={path.to.changeNoticeDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.DigitalQuoteResponse:
-      return (
-        <Notification
-          icon={<LuDollarSign />}
-          to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.GaugeCalibrationExpired:
-      return (
-        <Notification
-          icon={<LuCircleGauge />}
-          to={path.to.gauge(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SalesRuleViolation: {
-      // Compound documentId: "<quote|salesOrder|salesInvoice>:<documentId>:<outcome>"
-      const [docType, docId] = id.split(":");
-      return (
-        <Notification
-          icon={<LuShieldAlert />}
-          to={
-            docType === "salesInvoice"
-              ? path.to.salesInvoiceDetails(docId ?? "")
-              : docType === "salesOrder"
-                ? path.to.salesOrderDetails(docId ?? "")
-                : path.to.quoteDetails(docId ?? "")
-          }
-          {...props}
-        />
-      );
-    }
-    case NotificationEvent.IntegrationSync:
-      // id is the provider id ("rillet", "xero", ...) — link to that
-      // integration's settings page, where the Sync Activity tab lives.
-      return (
-        <Notification
-          icon={<LuRefreshCw />}
-          to={path.to.integration(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.RecurringInvoicing:
-      // The description carries the digest's counts; id is only the first
-      // invoice, so land on the list it is about: the lease drafts waiting
-      // for the buyer, else the sales invoices that need review (see
-      // api+/link).
-      return (
-        <Notification
-          icon={<LuDollarSign />}
-          to={
-            documentType === "purchaseInvoice"
-              ? `${path.to.invoicingPurchasing}?filter=status:eq:Draft`
-              : `${path.to.invoicingSales}?filter=needsReview:eq:true`
-          }
-          {...props}
-        />
-      );
-    case NotificationEvent.LeaseCriticalDate:
-      return (
-        <Notification
-          icon={<LuCalendarClock />}
-          to={path.to.leaseDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.JobCompleted:
-    case NotificationEvent.JobAssignment:
-      return (
-        <Notification
-          icon={<LuHammer />}
-          to={path.to.jobDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.JobOperationAssignment:
-    case NotificationEvent.JobOperationMessage:
-      const [jobId, operationId, makeMethodId, materialId] = id.split(":");
-      const link = materialId
-        ? path.to.jobMakeMethod(jobId, makeMethodId)
-        : path.to.jobMethod(jobId, makeMethodId);
-
-      return (
-        <Notification
-          icon={
-            event === NotificationEvent.JobOperationMessage ? (
-              <LuMessageSquare />
-            ) : (
-              <LuCirclePlay />
-            )
-          }
-          to={`${link}?selectedOperation=${operationId}`}
-          {...props}
-        />
-      );
-    case NotificationEvent.MaintenanceDispatchCreated:
-    case NotificationEvent.MaintenanceDispatchAssignment:
-      return (
-        <Notification
-          icon={<LuWrench />}
-          to={path.to.maintenanceDispatch(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.NonConformanceAssignment:
-      return (
-        <Notification icon={<LuShieldX />} to={path.to.issue(id)} {...props} />
-      );
-    case NotificationEvent.ProcedureAssignment:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.procedure(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.QuoteExpired:
-      return (
-        <Notification
-          icon={<LuCalendarX />}
-          to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PurchaseInvoiceAssignment:
-      return (
-        <Notification
-          icon={<LuShoppingCart />}
-          to={path.to.purchaseInvoiceDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PurchasingRfqAssignment:
-      return (
-        <Notification
-          icon={<LuPackageSearch />}
-          to={path.to.purchasingRfq(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PurchaseOrderAssignment:
-      return (
-        <Notification
-          icon={<LuShoppingCart />}
-          to={path.to.purchaseOrderDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.QuoteAssignment:
-      return (
-        <Notification
-          icon={<RiProgress4Line />}
-          to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.RiskAssignment:
-      return (
-        <Notification
-          icon={<LuShieldAlert />}
-          to={path.to.risk(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SalesRfqReady:
-    case NotificationEvent.SalesRfqAssignment:
-      return (
-        <Notification
-          icon={<RiProgress2Line />}
-          to={path.to.salesRfq(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SalesOrderAssignment:
-      return (
-        <Notification
-          icon={<RiProgress8Line />}
-          to={path.to.salesOrderDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.StockTransferAssignment:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.salesOrderDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.PickingListAssignment:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.pickingList(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SuggestionResponse:
-      return (
-        <Notification
-          icon={<LuLightbulb />}
-          to={path.to.suggestion(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SupplierQuoteAssignment:
-      return (
-        <Notification
-          icon={<LuDollarSign />}
-          to={path.to.supplierQuoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SupplierQuoteResponse:
-      return (
-        <Notification
-          icon={<LuMailCheck />}
-          to={path.to.supplierQuoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.TrainingAssignment:
-    case NotificationEvent.TrainingReminder:
-      return (
-        <Notification
-          icon={<LuListChecks />}
-          to={path.to.completeTrainingAssignment(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.ResourceTrainingAssignment:
-      return (
-        <Notification
-          icon={<LuGraduationCap />}
-          to={path.to.training(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.Workflow:
-      return (
-        <Notification
-          icon={<LuGitPullRequestArrow />}
-          to={getRecordPath(documentType, id) ?? path.to.authenticatedRoot}
-          {...props}
-        />
-      );
-    case NotificationEvent.Digest:
-      // Digest rows are rendered by DigestNotification (expandable). This
-      // branch is unreachable when GenericNotification is used from the
-      // topbar maps — kept as a defensive fallback.
-      return null;
-    default:
-      return null;
-  }
+  const icon = NOTIFICATION_ICONS[event];
+  if (!icon) return null;
+  // The same target as the email link (`api+/link.ts`).
+  const target = notificationTarget(event, id, documentType);
+  return (
+    <Notification
+      icon={icon}
+      to={target?.path ?? path.to.authenticatedRoot}
+      reloadDocument={target?.download}
+      {...props}
+    />
+  );
 }
 
 function DigestNotification({

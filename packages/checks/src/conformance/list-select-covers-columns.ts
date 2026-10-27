@@ -17,6 +17,11 @@ const UI = "apps/erp/app/modules";
  *
  * Each `*_LIST_COLUMNS` constant names the table that renders its rows.
  * Not covered: `meta.exportValue` / `exportOnlyColumn` read arbitrary fields.
+ *
+ * Every constant must also select the columns its cursor reads: `toPage`
+ * reads each sort column of the list's `X_PAGING` and its id from the last
+ * row of a page, so a column missing from the select ends the list after
+ * page 1.
  */
 export const LIST_TABLES: Record<string, string> = {
   PARTS_LIST_COLUMNS: `${UI}/items/ui/Parts/PartsTable.tsx`,
@@ -31,7 +36,28 @@ export const LIST_TABLES: Record<string, string> = {
   SALES_INVOICES_LIST_COLUMNS: `${UI}/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx`
 };
 
+// Lists checked for their cursor columns only: their tables read embedded
+// records (`location.name`), not flat accessors.
+export const SORT_ONLY_LISTS = new Set(["FIXED_ASSETS_LIST_COLUMNS"]);
+
 const LIST_CONSTANT = /const ([A-Z_]+_LIST_COLUMNS) =\s*"([^"]*)"/g;
+
+/** The list-order columns of an `X_PAGING` constant (embedded-table sorts
+ *  excluded) and its id column, or null when the service has no such constant. */
+function pagingColumns(contents: string, paging: string): string[] | null {
+  const match = contents.match(
+    new RegExp(`export const ${paging}: Paging = \\{([\\s\\S]*?)\\};`)
+  );
+  if (!match) return null;
+  const body = match[1] ?? "";
+  const sorts = [...body.matchAll(/\{([^{}]*)\}/g)]
+    .map((m) => m[1] ?? "")
+    .filter((sort) => !sort.includes("foreignTable"))
+    .map((sort) => sort.match(/column:\s*"([^"]+)"/)?.[1])
+    .filter((column): column is string => Boolean(column));
+  const idColumn = body.match(/idColumn:\s*"([^"]+)"/)?.[1] ?? "id";
+  return [...sorts, idColumn];
+}
 
 const lineAt = (contents: string, index = 0) =>
   contents.slice(0, index).split("\n").length;
@@ -49,6 +75,27 @@ export function findUnselectedListColumns(
     for (const match of service.contents.matchAll(LIST_CONSTANT)) {
       const [, constant = "", list = ""] = match;
       found.add(constant);
+      const selected = new Set(list.split(","));
+      const paging = `${constant.replace(/_LIST_COLUMNS$/, "")}_PAGING`;
+      const cursorColumns = pagingColumns(service.contents, paging);
+      if (!cursorColumns) {
+        out.push({
+          file: service.file,
+          line: lineAt(service.contents, match.index),
+          snippet: `${constant} has no ${paging}`,
+          message: `${paging} not found beside ${constant}, so its cursor columns cannot be checked`
+        });
+      }
+      for (const column of cursorColumns ?? []) {
+        if (selected.has(column)) continue;
+        out.push({
+          file: service.file,
+          line: lineAt(service.contents, match.index),
+          snippet: `${constant} lacks cursor column ${column}`,
+          message: `${paging} sorts or pages on "${column}" but ${constant} does not select it, so the list ends after page 1`
+        });
+      }
+      if (SORT_ONLY_LISTS.has(constant)) continue;
       const tablePath = LIST_TABLES[constant];
       const table = tablePath ? tableByFile.get(tablePath) : undefined;
       if (!table) {
@@ -62,7 +109,6 @@ export function findUnselectedListColumns(
         });
         continue;
       }
-      const selected = new Set(list.split(","));
       for (const key of table.contents.matchAll(/accessorKey:\s*"([^"]+)"/g)) {
         const column = key[1] ?? "";
         // Custom-field columns are keyed `customFields->>{id}`; the

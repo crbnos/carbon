@@ -2265,6 +2265,10 @@ export const JobOperation = ({
                 glbUrl={
                   artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
                 }
+                pmiUrl={
+                  // Unique per optimise run, so no cache-buster is needed.
+                  artifacts?.pmiPath ? getPrivateUrl(artifacts.pmiPath) : null
+                }
                 lodUrl={
                   artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
                 }

@@ -6946,11 +6946,14 @@ export const resolvePriceList = defineServiceFn({
   }),
   permission: { update: "sales" },
   async run(ctx, input) {
-    return await service.resolvePriceList(
+    const { error, ...result } = await service.resolvePriceList(
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input).build() as never
     );
+    if (error)
+      return ctx.error("internal", "Failed to load the price list", error);
+    return result;
   }
 });
 
@@ -6971,11 +6974,14 @@ export const getBaseCatalog = defineServiceFn({
   }),
   permission: { view: "sales" },
   async run(ctx, input) {
-    return await service.getBaseCatalog(
+    const { error, ...result } = await service.getBaseCatalog(
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input).build() as never
     );
+    if (error)
+      return ctx.error("internal", "Failed to load the catalog", error);
+    return result;
   }
 });
 

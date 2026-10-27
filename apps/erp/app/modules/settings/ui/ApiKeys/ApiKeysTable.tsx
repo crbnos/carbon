@@ -26,19 +26,24 @@ import {
 } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { ApiKey } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
+// The loader never sends the key hash to the browser.
+type ApiKeyRow = Omit<ApiKey, "keyHash">;
+
 type ApiKeysTableProps = {
-  data: ApiKey[];
+  data: ApiKeyRow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 // `apiKey.scopes` is a `Json` column; narrow it to the scope map shape once so
 // the cell and the CSV export read it the same way without an `as any` cast.
-function getScopes(apiKey: ApiKey): Record<string, string[]> | null {
+function getScopes(apiKey: ApiKeyRow): Record<string, string[]> | null {
   const { scopes } = apiKey;
   return scopes && typeof scopes === "object" && !Array.isArray(scopes)
     ? (scopes as Record<string, string[]>)
@@ -59,14 +64,15 @@ function formatRateLimit(limit: number, window: string): string {
   return `${limit}${windowLabels[window] ?? "/hr"}`;
 }
 
-const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
+const ApiKeysTable = memo((props: ApiKeysTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();
   const [people] = usePeople();
 
-  const columns = useMemo<ColumnDef<ApiKey>[]>(() => {
+  const columns = useMemo<ColumnDef<ApiKeyRow>[]>(() => {
     return [
       {
         accessorKey: "name",
@@ -224,8 +230,9 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
 
   return (
     <>
-      <Table<ApiKey>
+      <Table<ApiKeyRow>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count ?? 0}
         primaryAction={

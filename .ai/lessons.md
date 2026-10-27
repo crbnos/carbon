@@ -3640,6 +3640,15 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
 
+## A constant between `/** @mcp read */` and its function drops the MCP tool
+
+**Context:** Cursor paging (2026-10-13) gave each paged list service an exported `*_DEFAULT_SORTS` constant. The list registry and the loaders read it, so it sits next to the service function.
+
+**Problem:** Twice during that work, the constant went between the doc block and the function. TypeScript attaches a doc comment to the declaration directly under it, so the `@mcp read` tag then belonged to the constant. The generator reads the doc block of exported functions only (`getJsDocs()` in `scripts/lib/service-ast.ts`); it skips a constant that is not a function. The function silently stopped being a tool and left `tool-manifest.digest.json`. Typecheck, tests and the build all passed.
+
+**Rule:** Put a new constant ABOVE the doc block of a service function, never between the block and the function. After you edit a `*.service.ts` file, run `pnpm run generate:mcp`. Then diff the tool names in `tool-manifest.digest.json`. A tool name that disappears is a displaced tag until you prove otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`.
 
 ## A cookie that was only ever written is not a stored preference
 
@@ -4130,3 +4139,13 @@ The write was then removed (nothing reads it), so the rail always starts collaps
 
 **Applies to:** list reads in `apps/erp/app/modules/*/*.service.ts` that call `setGenericQueryFilters`, and the `types.ts` row types derived from them.
 
+
+## OCCT keeps every document it opened by path, and refuses to open it again
+
+**Context:** The optimize ingest gained a PMI pass (`read_pmi`, `crates/occt-bridge/src/pmi.cc`) that reads the same `.xbf` the optimiser had just tessellated with `read_xbf` (2026-10-26).
+
+**Problem:** `TDocStd_Application::Open(path, doc)` registers the document with the application until `Close(doc)`. `read_xbf` never closes it, so the second open of the same path failed with `PCDM_RS_AlreadyRetrieved` ("could not open XBF document"). The hermetic converter test passed, because it opened the `.xbf` only once; only the assembler's ingest test, which runs both passes, showed it.
+
+**Rule:** A second reader of an `.xbf` opens it from a stream (`Open(std::istream&, doc)`), which skips the path check, and calls `xcaf_app()->Close(doc)` when done. Test any new pass over the ingest's xbf through `run_ingest`, not only through the converter.
+
+**Applies to:** `crates/occt-bridge/src/*.cc` (any function that opens a BinXCAF document), `apps/assembler/src/actions/optimize.rs` (`run_ingest`).

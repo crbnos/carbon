@@ -96,7 +96,7 @@ import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import {
   deadlineRequiresDueDate,
-  isJobLocked,
+  isJobDeletable,
   jobCompleteValidator
 } from "../../production.models";
 import { getJobMethodTree } from "../../production.utils";
@@ -297,7 +297,7 @@ const JobHeader = () => {
         disabled={
           !permissions.can("delete", "production") ||
           !permissions.is("employee") ||
-          isJobLocked(routeData?.job?.status)
+          !isJobDeletable(routeData?.job?.status)
         }
         destructive
         onClick={deleteJobModal.onOpen}

@@ -177,10 +177,12 @@ import {
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { Cursor } from "~/utils/cursor";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   getGenericFilter,
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -1401,6 +1403,10 @@ export async function getProductionEventsByJob(
     .eq("jobOperation.jobId", jobId);
 }
 
+export const JOBS_PAGING: Paging = {
+  defaultSorts: [{ column: "jobId", ascending: false }]
+};
+
 export async function getJobs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1408,8 +1414,9 @@ export async function getJobs(
 ) {
   let query = client
     .from("jobs")
+    // Later pages (`cursor`) skip the count: the first page already has it.
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1418,9 +1425,7 @@ export async function getJobs(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "jobId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOBS_PAGING);
   }
 
   return query;
@@ -2018,6 +2023,14 @@ export async function getJobOperation(
     .single();
 }
 
+export const JOB_OPERATIONS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "description", ascending: true },
+    { column: "order", ascending: true },
+    { column: "createdAt", ascending: false }
+  ]
+};
+
 export async function getJobOperations(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -2028,7 +2041,8 @@ export async function getJobOperations(
     .select(
       "*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
     .eq("jobId", jobId);
@@ -2038,11 +2052,7 @@ export async function getJobOperations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "description", ascending: true },
-      { column: "order", ascending: true },
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOB_OPERATIONS_PAGING);
   }
 
   return query;
@@ -2078,12 +2088,24 @@ export async function getJobOperationAttachments(
 ): Promise<Record<string, string[]>> {
   if (jobOperationIds.length === 0) return {};
 
-  const { data: operationAttributes } = await client
-    .from("jobOperationStep")
-    .select("*, jobOperationStepRecord(*)")
-    .in("operationId", jobOperationIds);
-
-  if (!operationAttributes) return {};
+  // 100 ids per request (a long `.in()` list overflows the request URL),
+  // 8 requests at a time.
+  const results = await async.map(
+    chunkArray(jobOperationIds, 100),
+    async (ids) =>
+      await client
+        .from("jobOperationStep")
+        .select("*, jobOperationStepRecord(*)")
+        .in("operationId", ids)
+  );
+  const failed = results.find((result) => result.error);
+  if (failed) {
+    // The attachments are extras on the page: it shows without them.
+    logger.error("Failed to load job operation attachments", {
+      error: failed.error
+    });
+  }
+  const operationAttributes = results.flatMap((result) => result.data ?? []);
 
   const attachmentsByOperation: Record<string, string[]> = {};
   operationAttributes.forEach((attr) => {
@@ -2134,6 +2156,10 @@ export async function getJobOperationsByMethodId(
     .order("order", { ascending: true });
 }
 
+export const JOB_OPERATION_STEP_RECORDS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 /** `getJobOperationsByMethodId` for several make methods of one company. */
 export async function getJobOperationsByMethodIds(
   client: SupabaseClient<Database>,
@@ -2167,9 +2193,11 @@ export async function getJobOperationStepRecords(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(
+    query,
+    args,
+    JOB_OPERATION_STEP_RECORDS_PAGING
+  );
 
   return query;
 }
@@ -2232,6 +2260,10 @@ export async function getProcedureVersions(
     .order("version", { ascending: false });
 }
 
+export const PROCEDURES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getProcedures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2240,7 +2272,8 @@ export async function getProcedures(
   let query = client
     .from("procedures")
     .select("*", {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2249,9 +2282,7 @@ export async function getProcedures(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, PROCEDURES_PAGING);
   }
 
   return query;
@@ -2286,6 +2317,15 @@ export async function getProductionEvent(
     .single();
 }
 
+// The start time was a fixed order ahead of every sort. The cursor must follow
+// each column the list orders by, so it is the first default sort instead.
+export const PRODUCTION_EVENTS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "startTime", ascending: true },
+    { column: "createdAt", ascending: false }
+  ]
+};
+
 export async function getProductionEvents(
   client: SupabaseClient<Database>,
   jobOperationIds: string[],
@@ -2296,21 +2336,17 @@ export async function getProductionEvents(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
-    .in("jobOperationId", jobOperationIds)
-    .order("startTime", { ascending: true });
+    .in("jobOperationId", jobOperationIds);
 
   if (args?.search) {
     query = query.or(searchFilter(["jobOperation.description"], args.search));
   }
 
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
-  }
+  query = setGenericQueryFilters(query, args ?? {}, PRODUCTION_EVENTS_PAGING);
 
   return query;
 }
@@ -2327,6 +2363,16 @@ export async function getProductionEventsByOperations(
     .in("jobOperationId", jobOperationIds)
     .order("startTime", { ascending: true });
 }
+
+// What the row's Order / Make button offers (the grid RPC's orderQuantity,
+// from MRP's open new-supply actions), then the part number so a page is
+// stable when many rows have nothing to order.
+export const PRODUCTION_PLANNING_PAGING: Paging = {
+  defaultSorts: [
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true }
+  ]
+};
 
 export async function getProductionPlanning(
   client: SupabaseClient<Database>,
@@ -2362,7 +2408,8 @@ export async function getProductionPlanning(
       action_assignees: args.actionAssignees
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -2372,16 +2419,14 @@ export async function getProductionPlanning(
     );
   }
 
-  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
-  // from MRP's open new-supply actions), then the part number so a page is
-  // stable when many rows have nothing to order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PRODUCTION_PLANNING_PAGING);
 
   return query;
 }
+
+export const PRODUCTION_PROJECTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
 
 export async function getProductionProjections(
   client: SupabaseClient<Database>,
@@ -2400,7 +2445,8 @@ export async function getProductionProjections(
       periods
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
@@ -2410,9 +2456,7 @@ export async function getProductionProjections(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PRODUCTION_PROJECTIONS_PAGING);
 
   return query;
 }
@@ -2428,6 +2472,10 @@ export async function getProductionQuantity(
     .single();
 }
 
+export const PRODUCTION_QUANTITIES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getProductionQuantities(
   client: SupabaseClient<Database>,
   jobOperationIds: string[],
@@ -2438,7 +2486,8 @@ export async function getProductionQuantities(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
     .in("jobOperationId", jobOperationIds);
@@ -2448,9 +2497,7 @@ export async function getProductionQuantities(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, PRODUCTION_QUANTITIES_PAGING);
   }
 
   return query;
@@ -2508,6 +2555,10 @@ export async function getScrapReason(
     .single();
 }
 
+export const SCRAP_REASONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getScrapReasons(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2515,7 +2566,10 @@ export async function getScrapReasons(
 ) {
   let query = client
     .from("scrapReason")
-    .select("id, name, customFields", { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select("id, name, customFields", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2523,9 +2577,7 @@ export async function getScrapReasons(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, SCRAP_REASONS_PAGING);
   }
 
   return query;
@@ -6864,6 +6916,10 @@ export async function getUnbatchedBatchableOperationCount(
     .not("job.status", "in", "(Completed,Closed,Cancelled)");
 }
 
+export const JOB_OPERATION_BATCHES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getJobOperationBatches(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6871,7 +6927,10 @@ export async function getJobOperationBatches(
 ) {
   let query = client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name)", { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select("*, process(name), workCenter(name)", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6879,9 +6938,7 @@ export async function getJobOperationBatches(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOB_OPERATION_BATCHES_PAGING);
   }
 
   return query;
@@ -6927,6 +6984,13 @@ export function applyMachineTimeListFilters<
   return filtered;
 }
 
+export const UNATTRIBUTED_MACHINE_TIMES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "startTime", ascending: false },
+    { column: "id", ascending: false }
+  ]
+};
+
 // Machine run time the OEE sync could not attribute to a loaded operation,
 // newest start first, then `id`: the review queue walks the same order.
 export async function getUnattributedMachineTimes(
@@ -6935,7 +6999,7 @@ export async function getUnattributedMachineTimes(
   args: {
     filters: MachineTimeListFilters;
     limit: number;
-    offset: number;
+    cursor?: Cursor | null;
   }
 ) {
   let query = applyMachineTimeListFilters(
@@ -6944,7 +7008,7 @@ export async function getUnattributedMachineTimes(
       .select(
         "*, workCenter!inner(name, locationId, location(name, timezone))",
         {
-          count: LIST_COUNT
+          count: listCount(args)
         }
       )
       .eq("companyId", companyId),
@@ -6955,11 +7019,9 @@ export async function getUnattributedMachineTimes(
   // and the list allows no column sort.
   query = setGenericQueryFilters(
     query,
-    { limit: args.limit, offset: args.offset },
-    [
-      { column: "startTime", ascending: false },
-      { column: "id", ascending: false }
-    ]
+    // Always cursor mode: `limit + 1` rows, even for the first page.
+    { limit: args.limit, cursor: args.cursor ?? null },
+    UNATTRIBUTED_MACHINE_TIMES_PAGING
   );
 
   // A view types every column nullable; these come from the table's own
@@ -7550,16 +7612,23 @@ export async function getAssemblyInstruction(
     .single();
 }
 
-export async function getAssemblyInstructions(
+// Newest first. Not `updatedAt`: it is null until the first edit, and the
+// cursor follows Postgres' order, which puts those nulls first.
+export const ASSEMBLY_INSTRUCTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+type AssemblyInstructionsScope = {
+  companyId: string;
+  search?: string;
+  status?: (typeof assemblyInstructionStatuses)[number];
+  itemId?: string;
+};
+
+function assemblyInstructionsQuery(
   client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    search?: string;
-    status?: (typeof assemblyInstructionStatuses)[number];
-    itemId?: string;
-    limit?: number;
-    offset?: number;
-  }
+  args: AssemblyInstructionsScope,
+  count: ReturnType<typeof listCount>
 ) {
   let query = client
     // "assemblyInstructions" (plural) is the version-collapsing view: one row
@@ -7568,7 +7637,7 @@ export async function getAssemblyInstructions(
     // 20260730153412_assembly-instructions-view migration.
     .from("assemblyInstructions")
     .select("*, modelUpload(id, name, componentCount, processingStatus)", {
-      count: "exact"
+      count
     })
     .eq("companyId", args.companyId);
 
@@ -7581,14 +7650,42 @@ export async function getAssemblyInstructions(
   if (args.itemId) {
     query = query.eq("itemId", args.itemId);
   }
-  if (args.limit) {
-    query = query.limit(args.limit);
-  }
-  if (args.offset) {
-    query = query.range(args.offset, args.offset + (args.limit ?? 25) - 1);
-  }
+  return query;
+}
 
-  return query.order("updatedAt", { ascending: false, nullsFirst: false });
+export async function getAssemblyInstructions(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    search?: string;
+    status?: (typeof assemblyInstructionStatuses)[number];
+    itemId?: string;
+    limit?: number;
+    offset?: number;
+  }
+) {
+  let query = assemblyInstructionsQuery(client, args, LIST_COUNT);
+  // With only `limit`, the read starts at offset 0.
+  query = setGenericQueryFilters(
+    query,
+    { limit: args.limit, offset: args.offset ?? 0 },
+    ASSEMBLY_INSTRUCTIONS_PAGING
+  );
+  return query;
+}
+
+/**
+ * One cursor page of the assembly instructions list (`limit + 1` rows for
+ * `toPage`). Not an MCP tool: MCP pages by offset through
+ * `getAssemblyInstructions`. Only the first page counts.
+ */
+export async function getAssemblyInstructionsPage(
+  client: SupabaseClient<Database>,
+  args: AssemblyInstructionsScope & Partial<GenericQueryFilters>
+) {
+  let query = assemblyInstructionsQuery(client, args, listCount(args));
+  query = setGenericQueryFilters(query, args, ASSEMBLY_INSTRUCTIONS_PAGING);
+  return query;
 }
 
 export async function getAssemblyInstructionsForItem(

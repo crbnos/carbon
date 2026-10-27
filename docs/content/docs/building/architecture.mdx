@@ -263,8 +263,9 @@ such as reordering, inline edits, or deletion. Fetcher submissions still trigger
   menus, and layout primitives built on Radix UI [[19]](#g19) and Tailwind.
 - `apps/erp/app/components/`: app-level pieces. The big one is
   `components/Table/Table.tsx`, a generic TanStack Table implementation used by list screens. It handles sorting,
-  filtering, pagination, saved views, CSV import and export, column visibility, and inline editing. The server
-  performs pagination from URL search parameters.
+  filtering, infinite scroll, saved views, CSV import and export, column visibility, and inline editing. The
+  route loader returns the first 100 rows and a cursor. As the user scrolls, the table loads the next 100 rows
+  from the same loader with `?after=<cursor>` and renders only the visible rows.
 
 **Client state** is limited. Shared reference lists use nanostores [[13]](#g13) and are refreshed by
 `RealtimeDataProvider`. Ephemeral UI state uses zustand [[29]](#g29). User and permission data comes from route loaders.

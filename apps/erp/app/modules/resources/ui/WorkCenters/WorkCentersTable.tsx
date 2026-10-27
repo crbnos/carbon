@@ -48,6 +48,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useProcesses } from "~/components/Form/Process";
 import { Confirm } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   usePermissions,
@@ -65,6 +66,7 @@ const logger = getLogger("erp", "workcenterstable");
 type WorkCentersTableProps = {
   data: WorkCenter[];
   count: number;
+  infinite: InfiniteOptions;
   departments: ListItem[];
   locations: ListItem[];
 };
@@ -78,7 +80,13 @@ const defaultColumnVisibility = {
 };
 
 const WorkCentersTable = memo(
-  ({ data, count, departments, locations }: WorkCentersTableProps) => {
+  ({
+    data,
+    count,
+    infinite,
+    departments,
+    locations
+  }: WorkCentersTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -348,6 +356,7 @@ const WorkCentersTable = memo(
       <>
         <Table<WorkCenter>
           data={data}
+          infinite={infinite}
           defaultColumnVisibility={defaultColumnVisibility}
           columns={columns}
           count={count ?? 0}

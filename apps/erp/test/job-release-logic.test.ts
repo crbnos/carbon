@@ -9,6 +9,7 @@ vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 import {
+  startingPurchaseOrders,
   jobReleaseProblems,
   materialsWithoutStorageUnit,
   makeMethodsMissingOperations,
@@ -147,6 +148,48 @@ describe("jobReleaseProblems", () => {
       "Paint has no supplier",
       "set a Pull From storage unit on BOLT-10; NUT-10"
     ]);
+  });
+});
+
+describe("startingPurchaseOrders", () => {
+  it("starts every supplier on a new PO and asks for a choice when Drafts exist", () => {
+    const result = startingPurchaseOrders([
+      { supplierId: "s1", draftPurchaseOrders: [] },
+      { supplierId: "s2", draftPurchaseOrders: [{ id: "po-a" }] }
+    ]);
+    expect(result.purchaseOrders).toEqual({ s1: "new", s2: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s2"]);
+  });
+
+  it("keeps the PO an earlier slice created, with no choice to make", () => {
+    // Slice 1 created po-1 for s1; slice 2 now reads it as a Draft of s1.
+    const result = startingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-1" }] }],
+      { carried: { s1: "po-1" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "po-1" });
+    expect(result.suppliersToChoose.size).toBe(0);
+  });
+
+  it("ignores a carried PO that is no longer a Draft of the supplier", () => {
+    const result = startingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-other" }] }],
+      { carried: { s1: "po-1" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s1"]);
+  });
+
+  it("takes a chosen Draft, and asks nobody once a choice is sent", () => {
+    const result = startingPurchaseOrders(
+      [
+        { supplierId: "s1", draftPurchaseOrders: [{ id: "po-a" }] },
+        { supplierId: "s2", draftPurchaseOrders: [{ id: "po-b" }] }
+      ],
+      { chosen: { s1: "po-a", s2: "po-not-a-draft" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "po-a", s2: "new" });
+    expect(result.suppliersToChoose.size).toBe(0);
   });
 });
 

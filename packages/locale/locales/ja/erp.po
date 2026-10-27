@@ -152,6 +152,10 @@ msgstr ""
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#週}}"
 
+#. placeholder {0}: allMatching.count
+msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
+msgstr "{0, plural, one {一致する行を約#件選択しました} other {一致する行を約#件選択しました}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Carbon が原価を記録する前に原価が発生した # 製造指図を完了またはキャンセルしてください。} other {Carbon が原価を記録する前に原価が発生した # 製造指図を完了またはキャンセルしてください。}}"
@@ -187,6 +191,10 @@ msgstr "{0, plural, one {プランナーはこのコンポーネントを1つの
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Total of # loaded row} other {Total of # loaded rows}}"
+msgstr "{0, plural, one {読み込み済みの行 合計#件} other {読み込み済みの行 合計#件}}"
 
 #. placeholder {0}: file.name
 msgid "{0} · {count, plural, one {# row} other {# rows}}"
@@ -347,6 +355,10 @@ msgstr "{0}/{1}"
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} 件/{1} 件の転記勘定がマップされました"
+
+#. placeholder {0}: rows.length
+msgid "{0} of {count} operations"
+msgstr "{0} / {count} 工程"
 
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
@@ -555,6 +567,15 @@ msgstr "{count, plural, one {# コース} other {# コース}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, other {{fenceLabel}以降の追加 # 件}}"
 
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# 行} other {# 行}}"
+
+msgid "{count, plural, one {about # row} other {about # rows}}"
+msgstr "{count, plural, one {約# 行} other {約# 行}}"
+
+msgid "{count, plural, one {All # matching row selected} other {All # matching rows selected}}"
+msgstr "{count, plural, one {一致する#行をすべて選択しました} other {一致する#行をすべて選択しました}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {# バッチを解散} other {# バッチを解散}}"
 
@@ -569,6 +590,12 @@ msgstr "{count, plural, one {# バッチがリリース済} other {# バッチ�
 
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# 製造指図がリリース済} other {# 製造指図がリリース済}}"
+
+msgid "{count, plural, one {Select all # matching row} other {Select all # matching rows}}"
+msgstr "{count, plural, one {一致する# 行をすべて選択} other {一致する# 行をすべて選択}}"
+
+msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
+msgstr "{count, plural, one {一致する行をすべて選択（約#件）} other {一致する行をすべて選択（約#件）}}"
 
 msgid "{count} of {total} units"
 msgstr "{count} ／ {total} 個"
@@ -612,12 +639,6 @@ msgstr ""
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 
-msgid "{from}–{to} of {count}"
-msgstr "{from}–{to} / {count}"
-
-msgid "{from}–{to} of {count} operations"
-msgstr "{from}–{to} / {count} 件の工程"
-
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {他に # 件のレコード} other {他に # 件のレコード}}"
 
@@ -652,6 +673,12 @@ msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
 msgid "{load} in queue"
 msgstr "キューに{load}件"
+
+msgid "{loadedLabel} of {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} / {total, plural, one {# 行} other {# 行}}"
+
+msgid "{loadedLabel} of about {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} / 約 {total, plural, one {# 行} other {# 行}}"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName}（リースの拠点）"
@@ -766,6 +793,9 @@ msgstr "{scopeCount} 個の権限"
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} 明細"
 
+msgid "{selectedCount, plural, one {# selected} other {# selected}}"
+msgstr "{selectedCount, plural, one {# 件選択中} other {# 件選択中}}"
+
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 件が選択されています"
 
@@ -789,6 +819,9 @@ msgstr "{total}個のフェーズをライブにする"
 
 msgid "{totalCount} results"
 msgstr "{totalCount} 件の検索結果"
+
+msgid "{totalLoaded} of {count}"
+msgstr "{totalLoaded} / {count}"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 個} other {# 個}}"
@@ -1028,6 +1061,12 @@ msgstr "4 桁の PIN は、作業者が作成されるときに生成されま�
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "バッチには少なくとも 1 つの工程が必要です。バッチ全体を分割するには、代わりに [分割] を使用してください。"
+
+msgid "A bulk action is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "A bulk action is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon実行のデータ移行 — あなたが自分のデータをロードします"
@@ -2537,6 +2576,9 @@ msgstr "すべての場所"
 msgid "all make {0}"
 msgstr "すべて内製 {0}"
 
+msgid "All matching rows selected"
+msgstr "一致するすべての行を選択しました"
+
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
@@ -2688,6 +2730,12 @@ msgstr "設計変更。影響を受ける品目の製法が下書きで改訂さ
 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
 msgstr "エンタープライズ認証方式で、会社の登録済みメールドメイン上の全員が、マジックリンクの代わりに会社自身の SAML アイデンティティプロバイダーを通じて認証されるため、IT は中央でアクセスを付与および取り消します。"
+
+msgid "An export is already running for your company. Try again when it ends, at the latest in {minutes} min."
+msgstr ""
+
+msgid "An export is already running for your company. Try again when it ends."
+msgstr ""
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "ワークフローがそのステップに到達したときに、Carbonがあなたのシステムに送信するHTTPSリクエスト。設定したヘッダーと本文が含まれます。"
@@ -6307,6 +6355,9 @@ msgstr "Onshape Government接続を完了できませんでした"
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
+msgid "Couldn't load more rows"
+msgstr "これ以上の行を読み込めませんでした"
+
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "関連ドキュメントを読み込めませんでした。新しいものを作成する前に更新して、重複を回避してください。"
 
@@ -8175,6 +8226,9 @@ msgstr "バッチを解除"
 msgid "Dissolve Batch"
 msgstr "バッチを解散"
 
+msgid "Dissolve batches"
+msgstr "バッチを解消"
+
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "{0}を解除するとその{memberCount}個の工程がスケジュールに未実行で戻され、バッチが削除されます。記録された生産があるバッチは代わりに完了させる必要があります。"
@@ -9566,6 +9620,9 @@ msgstr "すべての行が正常にインポートされました。"
 msgid "Every unit has a rate."
 msgstr "すべての個にレートが設定されています。"
 
+msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
+msgstr "一覧の絞り込み条件に一致するすべてのユーザーが対象です。このアクションの対象外のユーザーはスキップされます。"
+
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "この会社を開く前に、誰もが認証器アプリをセットアップする必要があります。"
 
@@ -9809,6 +9866,9 @@ msgstr "CSVにラインをエクスポート"
 
 msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 msgstr "現在のシステムから勘定科目表を CSV でエクスポートしてください。1 行につき 1 つの勘定で、その番号、名前、クラス、タイプ、グループを含みます。または現在の勘定科目表のテンプレートから始めることもできます。Carbon はこのファイルにある勘定のみを保持します。"
+
+msgid "Exported the first {exportedCount} rows."
+msgstr "先頭の{exportedCount}行をエクスポートしました。"
 
 msgid "Extended Price"
 msgstr "拡張価格"
@@ -10364,6 +10424,12 @@ msgstr "絞り込みと並び替え"
 
 msgid "Filter by…"
 msgstr "絞り込み…"
+
+msgid "Filter the list to {limit} rows or fewer"
+msgstr "一覧を{limit}行以下に絞り込んでください"
+
+msgid "Filter the list to {rows} rows or fewer"
+msgstr "一覧を{rows}行以下に絞り込んでください"
 
 msgid "Filters"
 msgstr "絞り込み"
@@ -12246,6 +12312,9 @@ msgstr "発行日"
 msgid "Issues"
 msgstr "問題"
 
+msgid "It could not start. Try again."
+msgstr ""
+
 msgid "It is coming soon. Contact Carbon to have it set up for your company."
 msgstr "近日公開予定です。会社向けに設定するには Carbon にお問い合わせください。"
 
@@ -13064,9 +13133,6 @@ msgstr "ライブリロード中"
 msgid "Load"
 msgstr "負荷"
 
-msgid "Load more"
-msgstr "もっと読み込む"
-
 msgid "Load newer"
 msgstr "新しいものを読み込む"
 
@@ -13090,6 +13156,9 @@ msgstr "現在の数量を読み込み中…"
 
 msgid "Loading item details..."
 msgstr "アイテムの詳細を読み込み中..."
+
+msgid "Loading more rows"
+msgstr "さらに行を読み込み中"
 
 msgid "Loading returnable lines..."
 msgstr "返品対象行を読み込み中..."
@@ -18861,6 +18930,9 @@ msgstr "バッチをリリース"
 msgid "Release batch {0}"
 msgstr "バッチ {0} をリリース"
 
+msgid "Release batches"
+msgstr "バッチをリリース"
+
 msgid "Release change notice"
 msgstr "変更通知をリリース"
 
@@ -19493,9 +19565,6 @@ msgstr "結果"
 msgid "Results"
 msgstr "結果"
 
-msgid "Results per page"
-msgstr "ページあたりの結果数"
-
 msgid "Resume"
 msgstr "再開"
 
@@ -19909,9 +19978,6 @@ msgstr "工順"
 msgid "Routing Number (ABA)"
 msgstr "ルーティング番号（ABA）"
 
-msgid "rows"
-msgstr "行"
-
 msgid "Rows left out of this backup"
 msgstr "このバックアップから除外された行"
 
@@ -19986,6 +20052,9 @@ msgstr "このワークフローを今すぐ実行しますか？"
 
 msgid "Running"
 msgstr "実行中"
+
+msgid "Running in the background. We'll notify you when it's done."
+msgstr "バックグラウンドで実行中です。完了したら通知します。"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "毎週の供給と所要量の後に在庫管理を実行 — 明細"
@@ -20804,6 +20873,9 @@ msgstr "仕入先タイプを選択"
 msgid "Select surfaces"
 msgstr "サーフェスを選択"
 
+msgid "Select the first {limit} rows"
+msgstr "先頭の{limit}行を選択"
+
 msgid "Select the groups that should complete this training"
 msgstr "この教育訓練を完了すべきグループを選択してください"
 
@@ -21481,11 +21553,11 @@ msgstr "{0} / {totalCount} を表示中 — 検索を絞り込みます"
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "{totalFiltered}中{0}を表示中 — 検索を絞り込む"
 
-msgid "Showing {firstShown}–{lastShown} of {total}"
-msgstr "{firstShown}–{lastShown}件（全{total}件中）を表示中"
-
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}で表示"
+
+msgid "Showing the first {limit} rows. Search or filter to see the rest."
+msgstr "先頭の{limit}行を表示しています。残りを表示するには検索または絞り込みを行ってください。"
 
 msgid "Showing the first 500 lines"
 msgstr "最初の 500 行を表示中"
@@ -23280,6 +23352,9 @@ msgstr "生産中にこの品目の出力の失われると予想される割合
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "この間接支出明細が転記される費用勘定。間接明細には品目台帳エントリがないため、勘定を導出できないため必須です。"
 
+msgid "The export could not start. Try again."
+msgstr "エクスポートを開始できませんでした。もう一度お試しください。"
+
 msgid "The file could not be read"
 msgstr "ファイルが読み込めませんでした。"
 
@@ -23473,6 +23548,9 @@ msgstr "このお客様のライフサイクル状態—有効、見込客、無
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "この仕入先のライフサイクル状態 — 有効、無効、承認待機中など；有効な仕入先のみが発注書／見積セレクターに表示されます。"
+
+msgid "The list changed while the export loaded. Try again."
+msgstr "エクスポートの読み込み中に一覧が変更されました。もう一度お試しください。"
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "この場所が時刻を報告する現地タイムゾーン。この場所でのスケジュール、タイムカード、シフト時間は、ユーザーのブラウザロケールに関係なく、このゾーンで解釈されます。"
@@ -24167,6 +24245,12 @@ msgstr "これらは勘定科目表にありませんが、ドキュメントま
 msgid "this ability"
 msgstr "このスキル"
 
+msgid "This action cannot run on this list."
+msgstr ""
+
+msgid "This action runs on at most {rows} rows. Filter the list to {rows} rows or fewer."
+msgstr ""
+
 #. placeholder {0}: jobIds.length
 #. placeholder {1}: jobIds.join(", ")
 msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
@@ -24769,6 +24853,9 @@ msgstr "許容値(日)"
 
 msgid "Tomorrow"
 msgstr "明日"
+
+msgid "Too many exports and bulk actions are running right now. Try again in a few minutes."
+msgstr "現在、実行中のエクスポートと一括操作が多すぎます。数分後にもう一度お試しください。"
 
 msgid "tool"
 msgstr "ツール"
@@ -25536,6 +25623,9 @@ msgstr "返品注文の数量を更新する"
 
 msgid "Updated"
 msgstr "更新済み"
+
+msgid "Updated {done}. Could not update {failed}: {message}"
+msgstr "{done}件を更新しました。{failed}件は更新できませんでした: {message}"
 
 msgid "Updated account"
 msgstr "アカウントを更新しました"
@@ -27011,6 +27101,9 @@ msgid "You completed {leftoverQuantity} more \n"
 "                        to do with the extra parts?"
 msgstr "あなたは注文数量 {1} より {leftoverQuantity} 個多く {0} を完了しました。余った部品をどうしたいですか？"
 
+msgid "You do not have permission to do this on every matching row."
+msgstr ""
+
 msgid "You do not have permission to edit workflows"
 msgstr "ワークフローを編集する権限がありません"
 
@@ -27104,6 +27197,9 @@ msgstr "DNS プロバイダーはレコード名にドメインを自動的に�
 
 msgid "Your Email"
 msgstr "あなたのメールアドレス"
+
+msgid "Your export is being prepared. We'll notify you when it's ready."
+msgstr "エクスポートを準備しています。準備ができたら通知します。"
 
 msgid "Your GL accounts"
 msgstr "あなたのGL勘定"

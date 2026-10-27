@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatarGroup, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCompanyToday, usePermissions, useUrlParams } from "~/hooks";
 import type { Abilities } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
@@ -26,9 +27,11 @@ type Ability = Abilities[number];
 type AbilitiesTableProps = {
   data: Abilities;
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
+const AbilitiesTable = memo((props: AbilitiesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -130,6 +133,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
   return (
     <Table<Ability>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count ?? 0}
       primaryAction={

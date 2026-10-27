@@ -17,6 +17,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -26,9 +27,11 @@ import type { PaymentTerm } from "../../types";
 type PaymentTermsTableProps = {
   data: PaymentTerm[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
+const PaymentTermsTable = memo((props: PaymentTermsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -129,6 +132,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
 
   return (
     <Table<PaymentTerm>
+      infinite={infinite}
       data={data}
       columns={columns}
       count={count}

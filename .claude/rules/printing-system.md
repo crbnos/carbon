@@ -126,7 +126,12 @@ After a business event, code checks `getCachedPrinterConfig(...).autoPrint` (def
 wrapped in try/catch that never blocks the parent op, then `trigger("print-job", ...)`:
 - Receipt post `postReceipt` (receiving); Shipment post `postShipment` (shipping; also prints
   `Split` entities); Stock-transfer split, from the line pick operations (Split + Entity reprint) —
-  all in `apps/erp/app/modules/inventory/inventory.server.ts`; MES first-operation completion `apps/mes/app/routes/x+/complete.tsx` (workCenter).
+  all in `apps/erp/app/modules/inventory/inventory.server.ts`; MES first-operation completion of a serial or batch unit,
+  `autoPrintFirstOperationLabel` (`apps/mes/app/services/printing.server.ts`, workCenter), called by
+  every completion path: the Complete form (`x+/complete.tsx`), the QR / kanban Complete scan
+  (`x+/end.$operationId.tsx`), and inspection lots (`postSerialCompletions` / `postBulkCompletion`
+  in `services/quality.server.ts`). A new path that completes a tracked unit must call it too, or that
+  path mints serials with no label.
 
 ## Gotchas
 
