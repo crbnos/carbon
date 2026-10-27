@@ -5,7 +5,7 @@
 /**
  * The Workflows table columns whose values the loader adds to each page's
  * rows, by column id. The table exports them with these, and the background
- * CSV export writes the same values (`workflowsList.exportRows`).
+ * CSV export writes the same values (`workflowsList.exportValues`).
  */
 type Row = { lastRun?: { status?: string | null } | null };
 

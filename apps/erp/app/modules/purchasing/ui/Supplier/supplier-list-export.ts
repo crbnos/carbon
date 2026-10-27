@@ -9,7 +9,7 @@ import type { SupplierReportContacts } from "../../types";
  * The supplier contact and address columns, by column id. The loader adds
  * `reportContacts` to each page's rows; the Suppliers table shows and exports
  * these values, and the background CSV export writes the same ones
- * (`suppliersList.exportRows`).
+ * (`suppliersList.exportValues`).
  */
 type Row = { reportContacts?: SupplierReportContacts | null };
 

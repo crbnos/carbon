@@ -5,7 +5,7 @@
 /**
  * The Jobs table columns whose values the loader adds to each page's rows, by
  * column id. The table exports them with these, and the background CSV export
- * writes the same values (`jobsList.exportRows`).
+ * writes the same values (`jobsList.exportValues`).
  */
 type Row = {
   batchReadableIds?: string[] | null;
