@@ -11081,6 +11081,9 @@ msgstr "Rehberli"
 msgid "Guided implementation"
 msgstr "Rehberli uygulama"
 
+msgid "Halloween surprise"
+msgstr "Cadılar Bayramı sürprizi"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Tekrarlanan ve tersine çevirme muhasebe fişi girişlerini yönetin."
 
@@ -11092,6 +11095,9 @@ msgstr "Uygulamalı"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "İlk 3–4 hafta boyunca uygulamalı, hızlı yanıt veren destek"
+
+msgid "Happy Halloween"
+msgstr "Mutlu Cadılar Bayramı"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Bir işte gerçek maliyeti veya marjı görmek zor"
@@ -17259,6 +17265,9 @@ msgstr "PO Numarası"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "Örümceği dürt… cesaretin varsa"
 
 msgid "Policy"
 msgstr "Politika"

@@ -11081,6 +11081,9 @@ msgstr "Guidé"
 msgid "Guided implementation"
 msgstr "Mise en œuvre guidée"
 
+msgid "Halloween surprise"
+msgstr "Surprise d'Halloween"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gérer les écritures comptables récurrentes et contrepassées"
 
@@ -11092,6 +11095,9 @@ msgstr "Pratique"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Support pratique et réactif pendant les 3–4 premières semaines"
+
+msgid "Happy Halloween"
+msgstr "Joyeux Halloween"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Difficile de voir le vrai coût ou la marge sur un travail"
@@ -17259,6 +17265,9 @@ msgstr "Numéro de BC"
 
 msgid "PO PDF"
 msgstr "PDF BC"
+
+msgid "Poke the spider… if you dare"
+msgstr "Touchez l'araignée… si vous l'osez"
 
 msgid "Policy"
 msgstr "Politique"

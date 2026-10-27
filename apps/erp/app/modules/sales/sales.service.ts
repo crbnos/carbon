@@ -5395,7 +5395,8 @@ export async function upsertQuoteLineMethod(
 export async function upsertQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterial:
-    | (z.infer<typeof quoteMaterialValidator> & {
+    | (Omit<z.infer<typeof quoteMaterialValidator>, "id"> & {
+        id?: string;
         quoteId: string;
         quoteLineId: string;
         quoteOperationId?: string;

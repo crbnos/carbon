@@ -11081,6 +11081,9 @@ msgstr "Управляемый"
 msgid "Guided implementation"
 msgstr "Управляемое внедрение"
 
+msgid "Halloween surprise"
+msgstr "Сюрприз на Хэллоуин"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "Обработка повторяющихся и сторнирующих операций"
 
@@ -11092,6 +11095,9 @@ msgstr "Практический"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "Практическая поддержка с быстрым ответом в течение первых 3–4 недель"
+
+msgid "Happy Halloween"
+msgstr "Счастливого Хэллоуина"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "Сложно увидеть истинную себестоимость или маржу производственного заказа"
@@ -17259,6 +17265,9 @@ msgstr "Номер ПО"
 
 msgid "PO PDF"
 msgstr "ПО PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "Ткните паука… если осмелитесь"
 
 msgid "Policy"
 msgstr "Политика"

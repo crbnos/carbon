@@ -8,6 +8,7 @@
 // engine's throw into a refusal (`run`).
 
 import { failSpan, inSpan } from "@carbon/logger/span";
+import { databaseRefusal } from "./database-refusal";
 import { RAISED_EXCEPTION, ServerFnError, toServerFnError } from "./errors";
 import { SERVICE_RULE_ERROR_CODE } from "./rule-error";
 import {
@@ -159,17 +160,6 @@ export function payload<T>(ctx: ServiceContext, value: T) {
   return builder;
 }
 
-const DATABASE_REFUSALS: Record<string, [ErrorCategory, string]> = {
-  "23505": ["conflict", "A record with these values already exists."],
-  "23503": [
-    "conflict",
-    "The operation would violate a reference between records."
-  ],
-  "23502": ["validation", "A required field was missing."],
-  "42501": ["forbidden", "You do not have permission to do this"],
-  PGRST116: ["notFound", "No matching record was found."]
-};
-
 function serviceRefusal(ctx: ServiceContext, error: unknown): CarbonError {
   if (isRecord(error) && error.code === SERVICE_RULE_ERROR_CODE) {
     return ctx.error("rule", String(error.message));
@@ -183,10 +173,9 @@ function serviceRefusal(ctx: ServiceContext, error: unknown): CarbonError {
   ) {
     return ctx.error("rule", error.message, error);
   }
-  const code = isRecord(error) ? String(error.code ?? "") : "";
-  const known = DATABASE_REFUSALS[code];
+  const known = databaseRefusal(error);
   return known
-    ? ctx.error(known[0], known[1], error)
+    ? ctx.error(known.category, known.message, error)
     : ctx.error("internal", "The operation could not be completed.", error);
 }
 
