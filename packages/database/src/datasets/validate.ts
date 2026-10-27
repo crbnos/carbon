@@ -252,7 +252,9 @@ export const COVERAGE = {
   approvalRequestType: {
     values: enumValues("approvalDocumentType", {
       qualityDocument: "the seed requests approval for orders and suppliers",
-      changeOrder: "the seed does not create change notice approval requests"
+      changeOrder: "the seed does not create change notice approval requests",
+      scrap:
+        "a scrap approval is signed at the tablet and the seed posts no shop-floor scrap through it"
     }),
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
   },

@@ -10,12 +10,19 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
-import { scrapQuantityValidator } from "~/services/models";
+import {
+  scrapApproverValidator,
+  scrapQuantityValidator
+} from "~/services/models";
 import { abilityBlockRefusal } from "~/services/operations.service";
+import { postScrapWithApproval } from "~/services/scrap-approval.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    {}
+  );
 
   const formData = await request.formData();
   const validation = await validator(scrapQuantityValidator).validate(formData);
@@ -35,6 +42,8 @@ export async function action({ request }: ActionFunctionArgs) {
     laborProductionEventId,
     machineProductionEventId
   } = validation.data;
+  const scrapEntityId = trackingType === "Serial" ? trackedEntityId : undefined;
+  const approver = await validator(scrapApproverValidator).validate(formData);
 
   const serviceRole = await getCarbonServiceRole();
   const refusal = await abilityBlockRefusal(serviceRole, {
@@ -49,31 +58,52 @@ export async function action({ request }: ActionFunctionArgs) {
   // One transactional posting: Scrap productionQuantity row, BOM
   // backflush, tracked-entity terminal status + replacement serial spawn
   // (serial parents), Done-operation reopen / capacity top-up beyond the
-  // planned allowance, and the WIP→scrap journal.
-  const issued = await erpPosting(
-    "issue",
-    { companyId, userId },
-    {
-      type: "jobOperationScrap",
+  // planned allowance, and the WIP→scrap journal. A scrap approval rule puts
+  // an approver's PIN in front of it.
+  const outcome = await postScrapWithApproval({
+    request,
+    companyId,
+    userId,
+    sessionUserId,
+    subject: {
+      type: "operation",
       jobOperationId,
       quantity,
+      trackedEntityId: scrapEntityId,
       scrapReasonId,
-      notes,
-      setupProductionEventId,
-      laborProductionEventId,
-      machineProductionEventId,
-      trackedEntityId: trackingType === "Serial" ? trackedEntityId : undefined
-    }
-  );
+      notes
+    },
+    approver: approver.error ? {} : approver.data,
+    post: () =>
+      erpPosting(
+        "issue",
+        { companyId, userId },
+        {
+          type: "jobOperationScrap",
+          jobOperationId,
+          quantity,
+          scrapReasonId,
+          notes,
+          setupProductionEventId,
+          laborProductionEventId,
+          machineProductionEventId,
+          trackedEntityId: scrapEntityId
+        }
+      )
+  });
 
-  if (issued.error) {
+  if (outcome.status === "approval-required") {
+    return { scrapApproval: outcome.prompt };
+  }
+
+  if (outcome.status === "refused") {
     return data(
       {},
       await flash(
         request,
         error(
-          issued.error,
-          issued.error.message || "Failed to record scrap quantity"
+          outcome.error ?? null,
+          outcome.message || "Failed to record scrap quantity"
         )
       )
     );
@@ -82,7 +112,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // The client (useOperation / AssemblyView) advances to the spawned
   // replacement serial the same way the complete flow does.
   return data(
-    { scrapped: true, newTrackedEntityId: issued.data?.newTrackedEntityId },
+    { scrapped: true, newTrackedEntityId: outcome.data?.newTrackedEntityId },
     await flash(request, success("Scrap quantity recorded successfully"))
   );
 }

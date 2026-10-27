@@ -3048,6 +3048,9 @@ msgstr "Approva {changeOrderId}"
 msgid "Approve {displayName}"
 msgstr "Approva {displayName}"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Approvato da"
 
@@ -9468,6 +9471,9 @@ msgstr "Quantità di scarto stimata applicata a ogni lavoro nel lotto."
 msgid "Estimated time"
 msgstr "Tempo stimato"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "Stime vs Effettivo"
 
@@ -13898,6 +13904,9 @@ msgstr "Ordine Minimo:"
 msgid "Minimum Reserve Quantity"
 msgstr "Quantità Minima di Riserva"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "Minuti/100 Pezzi"
 
@@ -15561,6 +15570,9 @@ msgstr "Non configurato"
 msgid "Not Configured"
 msgstr "Non Configurato"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "Non consegnato"
 
@@ -15739,6 +15751,9 @@ msgstr "di"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "di {0}h"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "Spento"
@@ -18660,6 +18675,9 @@ msgstr "Registra il pagamento di {displayId} al dipendente. Paga meno del totale
 msgid "Record type"
 msgstr "Tipo di record"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Registrato su una taratura che lo strumento di misura necessita di riparazione prima che i suoi valori possano essere considerati affidabili."
 
@@ -19259,6 +19277,9 @@ msgstr "Richiedi un contatto cliente e un'ubicazione"
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Richiedi un contatto fornitore e un'ubicazione"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Richiedi un operatore assegnato prima che lo scheduler assegni il lavoro a un'ubicazione. Quando attivato, i centri di lavoro non staffati non ricevono lavoro e un'operazione senza copertura di manodopera appare come non programmabile. I centri di lavoro lights-out (24×7) sono esentati."
@@ -20385,6 +20406,9 @@ msgstr "Scarto {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Scarto / Costo della Qualità"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "Percentuale di Scarto"
 
@@ -20414,6 +20438,9 @@ msgstr "causali di scarto"
 
 msgid "Scrap Reasons"
 msgstr "Causali di scarto"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "Scartato"

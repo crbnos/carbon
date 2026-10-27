@@ -1435,6 +1435,13 @@ export const manifest = {
   }),
   salesRfqLine: company("sales", { read: "sales_view" }),
   scrapReason: company("production"),
+  // Written over the server's Kysely connection only, after the approver's PIN.
+  scrapRequest: company("production", {
+    read: "production_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   scriptRun: policies({ select: authenticated }),
   searchIndexRegistry: serviceOnly(),
   sequence: company("settings", { read: "settings_view" }),

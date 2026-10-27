@@ -96,6 +96,15 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import {
+  authorizeScrapApprover,
+  describeScrap,
+  discardScrapApproval,
+  getScrapApprovalRequirement,
+  hasScrapApprovalRules,
+  markScrapApprovalPosted,
+  recordScrapApproval
+} from "@carbon/ee/approvals/scrap.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
 import { TiptapText } from "@carbon/files/markdown";
@@ -3603,6 +3612,120 @@ export async function upsertProductionQuantity(
         .select("id")
         .single()
     );
+  }
+}
+
+/**
+ * Scrap typed in on a job's quantities, met against the scrap approval rules.
+ *
+ * @remarks
+ * There is no tablet and no second person at a desk, so an approver at the
+ * scrap's tier records it on their own authority and everyone else is
+ * refused; an API key is refused, since no person stands behind it. Returns
+ * the `scrapRequest` written for it (null when no rule applies). The caller
+ * writes the quantity, then calls `settleErpScrapApproval`.
+ */
+export async function approveErpScrap(
+  ctx: ServiceContext,
+  scrap: {
+    jobOperationId: string;
+    quantity: number;
+    scrapReasonId?: string | null;
+    notes?: string | null;
+  }
+): Promise<{ scrapRequestId: string | null } | CarbonError> {
+  const companyId = ctx.company.id;
+  const serviceRole = ctx.asSystem.supabase;
+  const db = ctx.asSystem.pg;
+  // The platform itself (a seed, a posting) records scrap as the system.
+  if (ctx.actor.type === "system" || scrap.quantity <= 0) {
+    return { scrapRequestId: null };
+  }
+
+  let description: Awaited<ReturnType<typeof describeScrap>>;
+  let estimatedValue: number;
+  try {
+    if (!(await hasScrapApprovalRules(serviceRole, companyId))) {
+      return { scrapRequestId: null };
+    }
+    description = await describeScrap(db, companyId, {
+      type: "operation",
+      ...scrap
+    });
+    const requirement = await getScrapApprovalRequirement(serviceRole, db, {
+      companyId,
+      recordedBy: ctx.auditUserId,
+      estimatedValue: description.estimatedValue
+    });
+    if (!requirement.required) return { scrapRequestId: null };
+    estimatedValue = requirement.estimatedValue;
+  } catch (error) {
+    return ctx.error(
+      "internal",
+      "Could not check whether this scrap needs approval",
+      error
+    );
+  }
+
+  if (ctx.actor.type !== "user") {
+    return ctx.error(
+      "forbidden",
+      "Scrap of this value needs an approver's sign-off, which an API key cannot give. Record it on the shop floor, where an approver enters their PIN."
+    );
+  }
+  // An approver of a lower tier is refused too, so the message speaks of the value.
+  const needsApprover =
+    "You cannot approve scrap of this value. Record it on the shop floor, where an approver enters their PIN, or ask an approver for this value to record it.";
+
+  const authority = await authorizeScrapApprover(serviceRole, {
+    companyId,
+    approverId: ctx.auditUserId,
+    recordedBy: ctx.auditUserId,
+    estimatedValue,
+    allowSelf: true
+  });
+  if (authority.error) return ctx.error("forbidden", needsApprover);
+
+  try {
+    const recorded = await recordScrapApproval(db, {
+      companyId,
+      scrap: description,
+      recordedBy: ctx.auditUserId,
+      approvedBy: ctx.auditUserId,
+      decisionNotes: "Recorded in the ERP by an approver"
+    });
+    return { scrapRequestId: recorded.scrapRequestId };
+  } catch (error) {
+    return ctx.error("internal", "Failed to record the scrap approval", error);
+  }
+}
+
+/**
+ * Closes the approval `approveErpScrap` recorded: marks it posted once the
+ * quantity is written, or removes it when the write failed.
+ */
+export async function settleErpScrapApproval(
+  ctx: ServiceContext,
+  scrapRequestId: string | null,
+  written: boolean
+): Promise<void> {
+  if (!scrapRequestId) return;
+  const args = { companyId: ctx.company.id, scrapRequestId };
+  try {
+    if (written) {
+      await markScrapApprovalPosted(ctx.asSystem.pg, {
+        ...args,
+        userId: ctx.auditUserId
+      });
+    } else {
+      await discardScrapApproval(ctx.asSystem.pg, args);
+    }
+  } catch (error) {
+    logger.error("Failed to settle a scrap approval", {
+      ...args,
+      written,
+      error
+    });
   }
 }
 

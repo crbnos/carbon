@@ -3048,6 +3048,9 @@ msgstr "Genehmigen {changeOrderId}"
 msgid "Approve {displayName}"
 msgstr "Genehmigen {displayName}"
 
+msgid "Approved At"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Genehmigt von"
 
@@ -9468,6 +9471,9 @@ msgstr "Geschätzte Ausschussmenge, die auf jeden Fertigungsauftrag in der Batch
 msgid "Estimated time"
 msgstr "Geschätzte Zeit"
 
+msgid "Estimated Value"
+msgstr ""
+
 msgid "Estimates vs Actual"
 msgstr "Schätzungen vs. Ist-Werte"
 
@@ -13898,6 +13904,9 @@ msgstr "Mindestbestellung:"
 msgid "Minimum Reserve Quantity"
 msgstr "Mindestbestandsmenge"
 
+msgid "Minimum Scrap Value"
+msgstr ""
+
 msgid "Minutes/100 Pieces"
 msgstr "Minuten/100 Stück"
 
@@ -15561,6 +15570,9 @@ msgstr "Nicht konfiguriert"
 msgid "Not Configured"
 msgstr "Nicht konfiguriert"
 
+msgid "Not confirmed"
+msgstr ""
+
 msgid "Not delivered"
 msgstr "Nicht geliefert"
 
@@ -15739,6 +15751,9 @@ msgstr "von"
 #. placeholder {0}: formatHours(baseHours)
 msgid "of {0}h"
 msgstr "von {0}h"
+
+msgid "of any value"
+msgstr ""
 
 msgid "Off"
 msgstr "Aus"
@@ -18660,6 +18675,9 @@ msgstr "Erfassen Sie die Auszahlung von {displayId} an den Mitarbeiter. Zahlen S
 msgid "Record type"
 msgstr "Datensatztyp"
 
+msgid "Recorded By"
+msgstr ""
+
 msgid "Recorded on a calibration that the gauge needs repair before its readings can be trusted."
 msgstr "Erfasst bei einer Kalibrierung, dass das Prüfmittel repariert werden muss, bevor seinen Messwerten vertraut werden kann."
 
@@ -19259,6 +19277,9 @@ msgstr "Kundenkontakt und Standort erforderlich"
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Lieferantenkontakt und Standort erforderlich"
+
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Erfordert einen zugewiesenen Werker, bevor der Planer Arbeiten an einem Standort platziert. Wenn aktiviert, erhalten unbesetzte Arbeitsplätze keine Arbeiten und ein Arbeitsgang ohne bemannte Abdeckung wird als nicht planbar angezeigt. Lichter-aus (24×7) Arbeitsplätze sind ausgenommen."
@@ -20385,6 +20406,9 @@ msgstr "Ausschuss {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Ausschuss / Qualitätskosten"
 
+msgid "Scrap Approvals"
+msgstr ""
+
 msgid "Scrap Percent"
 msgstr "Ausschussquote"
 
@@ -20414,6 +20438,9 @@ msgstr "Ausschussgründe"
 
 msgid "Scrap Reasons"
 msgstr "Ausschussgründe"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr ""
 
 msgid "Scrapped"
 msgstr "Verschrottet"

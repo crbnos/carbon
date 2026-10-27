@@ -104,15 +104,23 @@ const ApprovalRuleForm = ({
                 <Hidden name="documentType" value={effectiveDocumentType} />
               )}
 
-              {/* Purchase Order Specific Fields */}
+              {/* Amount-tiered types: purchase orders and scrap */}
               {effectiveDocumentType &&
                 approvalDocumentTypesWithAmounts.includes(
                   effectiveDocumentType
                 ) && (
                   <FormNumber
                     name="lowerBoundAmount"
-                    label={t`Minimum Amount`}
-                    helperText={t`Approval is required at or above this amount, up to the next rule's minimum`}
+                    label={
+                      effectiveDocumentType === "scrap"
+                        ? t`Minimum Scrap Value`
+                        : t`Minimum Amount`
+                    }
+                    helperText={
+                      effectiveDocumentType === "scrap"
+                        ? t`Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap.`
+                        : t`Approval is required at or above this amount, up to the next rule's minimum`
+                    }
                     formatOptions={INPUT_FORMAT.money(
                       baseCurrencyCode,
                       currencyDecimals
