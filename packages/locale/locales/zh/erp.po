@@ -20,11 +20,11 @@ msgid "— last checked {0}"
 msgstr "— 上次检查于 {0}"
 
 msgid "— not on the manning board"
-msgstr ""
+msgstr "— 未在人员排班表上"
 
 #. placeholder {0}: person.stations.join(", ")
 msgid "— on the manning board at {0}"
-msgstr ""
+msgstr "— 在 {0} 的人员排班表上"
 
 msgid ", {residual}% residual"
 msgstr ", {residual}% 残差"
@@ -69,7 +69,7 @@ msgstr "（非所有者权益过账账户）"
 
 #. placeholder {0}: impact.unschedulable
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
-msgstr ""
+msgstr "{0, plural, =0 {其工艺需要有资质的操作员，因此其工序无法排程，直到添加人员。} one {其工艺需要有资质的操作员：# 道工序无法排程，直到添加人员。} other {其工艺需要有资质的操作员：# 道工序无法排程，直到添加人员。}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
@@ -82,7 +82,7 @@ msgstr ""
 #. placeholder {0}: counts.unschedulable
 #. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
-msgstr ""
+msgstr "{0, plural, one {# 无法排程} other {# 无法排程}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -90,7 +90,7 @@ msgstr "{0, plural, one {此组中的 # 个组件} other {此组中的 # 个组�
 
 #. placeholder {0}: counts.conflicts
 msgid "{0, plural, one {# conflict} other {# conflicts}}"
-msgstr ""
+msgstr "{0, plural, one {# 个冲突} other {# 个冲突}}"
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -102,7 +102,7 @@ msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
 
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
-msgstr ""
+msgstr "{0, plural, one {# 个工单} other {# 个工单}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -110,7 +110,7 @@ msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时
 
 #. placeholder {0}: impact.unschedulable
 msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
-msgstr ""
+msgstr "{0, plural, one {该工艺的 # 道工序无法排程。预测显示原因和有资质的人员。} other {该工艺的 # 道工序无法排程。预测显示原因和有资质的人员。}}"
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -126,11 +126,11 @@ msgstr "{0, plural, one {# 条记录需要关注} other {# 条记录需要关注
 
 #. placeholder {0}: counts.reservations
 msgid "{0, plural, one {# reservation} other {# reservations}}"
-msgstr ""
+msgstr "{0, plural, one {# 个预留} other {# 个预留}}"
 
 #. placeholder {0}: counts.resources
 msgid "{0, plural, one {# resource} other {# resources}}"
-msgstr ""
+msgstr "{0, plural, one {# 个资源} other {# 个资源}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -162,7 +162,7 @@ msgstr "{0, plural, one {完成或取消在 Carbon 记录成本之前已产生�
 
 #. placeholder {0}: counts.copied ?? 0
 msgid "{0, plural, one {Copied # assignment} other {Copied # assignments}}"
-msgstr ""
+msgstr "{0, plural, one {已复制 # 个分配} other {已复制 # 个分配}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -170,11 +170,11 @@ msgstr "{0, plural, one {针对 # 项资产} other {针对 # 项资产}}"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
-msgstr ""
+msgstr "{0, plural, one {标记缺席 # 天} other {标记缺席 # 天}}"
 
 #. placeholder {0}: counts.updated ?? 0
 msgid "{0, plural, one {Overtime set for # assignment} other {Overtime set for # assignments}}"
-msgstr ""
+msgstr "{0, plural, one {为 # 个分配设置加班} other {为 # 个分配设置加班}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -234,7 +234,7 @@ msgstr ""
 
 #. placeholder {0}: members.length
 msgid "{0} can't be scheduled: {names}"
-msgstr ""
+msgstr "{0} 无法排程：{names}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -504,7 +504,7 @@ msgstr "{0}天提前"
 
 #. placeholder {0}: item.daysElsewhere
 msgid "{0}d elsewhere"
-msgstr ""
+msgstr "{0} 天在其他地方"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
@@ -547,7 +547,7 @@ msgid "{assetCount} Assets"
 msgstr "{assetCount} 个资产"
 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
-msgstr ""
+msgstr "{behindDays, plural, one {目标延后 # 天} other {目标延后 # 天}}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
@@ -610,13 +610,13 @@ msgid "{days}d"
 msgstr "{days}天"
 
 msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
-msgstr ""
+msgstr "{daysBehindTarget, plural, one {目标延后 # 天} other {目标延后 # 天}}"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "{delegatedTo}将其发布到您的分类账，因此Carbon不会推送它。您保存的选择将被保留，以防情况发生变化。"
 
 msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
-msgstr ""
+msgstr "{departmentLabel} 在 {locationName} 没有工作中心。选择另一个部门或地点。"
 
 msgid "{discount} off"
 msgstr "{discount} 折扣"
@@ -657,7 +657,7 @@ msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no st
 msgstr "{jobsMissingStorageUnit, plural, one {# 个未结工单的物料没有存储单元} other {# 个未结工单的物料没有存储单元}}"
 
 msgid "{label} — click to open the next"
-msgstr ""
+msgstr "{label} — 点击打开下一个"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} 被文档、凭证或默认账户使用，因此无法删除。"
@@ -770,10 +770,10 @@ msgid "{position} of {total}"
 msgstr "{position}/{total}"
 
 msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
-msgstr ""
+msgstr "{previewCount, plural, one {这将为 # 个人设置 +{hoursInput} 小时加班。} other {这将为 # 个人设置 +{hoursInput} 小时加班。}}"
 
 msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
-msgstr ""
+msgstr "{previewCount, plural, one {这将在 # 个人天设置 +{hoursInput} 小时加班。} other {这将在 # 个人天设置 +{hoursInput} 小时加班。}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
@@ -3233,7 +3233,7 @@ msgstr "您确定要停用 {0} 属性吗？"
 
 #. placeholder {0}: workCenter.name
 msgid "Are you sure you want to deactivate the {0} work center?"
-msgstr ""
+msgstr "确定要停用 {0} 工作中心吗？"
 
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "你确定要停用 {label} 配置规则吗？"
@@ -3826,7 +3826,7 @@ msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "将 {employeeName} 分配给 {targetName}，为期一周"
 
 msgid "Assigned {employeeName} to {targetName} for the week; days already assigned in other departments were kept"
-msgstr ""
+msgstr "已为本周分配 {employeeName} 到 {targetName}；保留了在其他部门已分配的日期"
 
 msgid "Assigned 1 planning action"
 msgstr ""
@@ -3865,7 +3865,7 @@ msgid "At {locationName}"
 msgstr "在 {locationName}"
 
 msgid "At a station outside this department"
-msgstr ""
+msgstr "在该部门外的工作站"
 
 msgid "At Commencement"
 msgstr "在开始时"
@@ -11709,10 +11709,10 @@ msgid "Include Inactive"
 msgstr "包括已停用"
 
 msgid "Include materials on the traveler"
-msgstr ""
+msgstr "在流转卡上包含原材料"
 
 msgid "Include operations on the traveler"
-msgstr ""
+msgstr "在流转卡上包含工序"
 
 msgid "Included"
 msgstr "已包含"
@@ -14176,7 +14176,7 @@ msgid "Move some of the quantity into a new disposition row so MRB can decide ea
 msgstr "将部分数量移动到新的处置行，以便MRB可以分别决定每一部分（例如报废部分、返工部分）。"
 
 msgid "Move these operations to another work center, or finish them, before you deactivate it."
-msgstr ""
+msgstr "在停用前，将这些工序移到另一个工作中心或完成它们。"
 
 msgid "Move to"
 msgstr "移动到"
@@ -14289,8 +14289,8 @@ msgstr "需要正确的列吗？"
 msgid "Need-by target"
 msgstr "需要日期"
 
-msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. Machine time and lights-out stations need nobody."
-msgstr ""
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "需要的是排程在该工作站该天安排的换型和人工小时数，除以 {personDayHours} 小时并向上舍入 — 您过滤的班次，或该地点最常见的班次长度。选择班次后，仅计算在该班次内安排的小时数。机器工时不需要人员，没有照明的工作站也不需要，除非其工艺需要有资质的操作员。"
 
 msgid "Needs a Business or Partner plan."
 msgstr "需要业务或合作伙伴计划。"
@@ -14800,7 +14800,7 @@ msgid "No {0} yet"
 msgstr "还没有{0}"
 
 msgid "No {departmentLabel} work is scheduled at this location."
-msgstr ""
+msgstr "该地点未排程 {departmentLabel} 工作。"
 
 msgid "No {title} yet"
 msgstr "暂无 {title}"
@@ -15560,14 +15560,14 @@ msgid "No work centers exist"
 msgstr "没有工作中心存在"
 
 msgid "No work centers in {departmentLabel}"
-msgstr ""
+msgstr "{departmentLabel} 中没有工作中心"
 
 #. placeholder {0}: ability.name
 msgid "Nobody is qualified for {0}"
-msgstr ""
+msgstr "没有人有资质执行 {0}"
 
 msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr ""
+msgstr "没有人有资质。向工艺的技能添加人员。"
 
 msgid "Nom"
 msgstr "标称值"
@@ -15739,7 +15739,7 @@ msgid "Nothing is synced until you turn sync on. Every required account is mappe
 msgstr "在您打开同步之前，没有任何内容被同步。每个必需的账户都已映射。"
 
 msgid "Nothing matches the search or filter"
-msgstr ""
+msgstr "没有匹配搜索或筛选的内容"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "未安排任何事项——在下方添加工位。"
@@ -15776,7 +15776,7 @@ msgstr "在此浏览器的网站设置中,Carbon 的通知被阻止。"
 
 #. placeholder {0}: unreadNotifications.length
 msgid "Notifications, {0} unread"
-msgstr ""
+msgstr "通知，{0} 未读"
 
 msgid "Notify"
 msgstr "通知"
@@ -16614,7 +16614,7 @@ msgid "Overtime"
 msgstr "加班"
 
 msgid "Overtime hours"
-msgstr ""
+msgstr "加班小时数"
 
 msgid "Overview"
 msgstr "概览"
@@ -17438,7 +17438,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当有效期为固定期间时，为新物料预填充。"
 
 msgid "Pre-select material"
-msgstr ""
+msgstr "预选原材料"
 
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "谓词驱动的规则在销售行触发。可以使用错误阻止或发出警告并需要确认继续。"
@@ -18171,7 +18171,7 @@ msgid "Qualified Employees"
 msgstr "合格员工"
 
 msgid "Qualified to run it"
-msgstr ""
+msgstr "有资质运行它"
 
 msgid "quality"
 msgstr "质量"
@@ -19372,7 +19372,7 @@ msgstr "需要 SAML SSO"
 
 #. placeholder {0}: location.name
 msgid "Require staffing at {0}"
-msgstr ""
+msgstr "在 {0} 需要人员配置"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "根据金额阈值和审批人组对采购订单、质量文档、供应商和变更通知进行分级审批。"
@@ -21732,7 +21732,7 @@ msgid "Some lines recognize more or less than they bill. Place what is left befo
 msgstr "某些行的确认金额比开票金额多或少。确认前放置剩余的。"
 
 msgid "Some of this process's work can't be scheduled"
-msgstr ""
+msgstr "该工艺的部分工作无法排程"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "某些记录不会回来。输入 <0>{CONFIRM_WORD}</0> 继续。"
@@ -21955,7 +21955,7 @@ msgid "Start Receipt Quantities at Zero"
 msgstr "收货数量从零开始"
 
 msgid "Start the timer automatically"
-msgstr ""
+msgstr "自动启动计时器"
 
 msgid "Start Time"
 msgstr "开始时间"
@@ -23482,7 +23482,7 @@ msgid "The item's rental rate"
 msgstr "该物料的租赁费率"
 
 msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "该工单在该天到期需要做的小时数（以截止日期为基础，不是工作运行的日期），逾期工作显示在“已逾期”中。"
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
@@ -23631,10 +23631,10 @@ msgid "The most likely failure mode the requester suspects; the technician confi
 msgstr "请求者怀疑的最可能的失败模式；技术人员在关闭时确认或替换此项，疑似与实际之间的差异会影响可靠性报告。"
 
 msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
-msgstr ""
+msgstr "该地点最近的 {departmentLabel} 工作是 {nextWorkDate}。"
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
-msgstr ""
+msgstr "该地点最近排程的工作是 {nextWorkDate}。"
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "此行协商的单价；内联跟踪图标显示哪个定价规则或覆盖生成了它。"
@@ -23652,10 +23652,10 @@ msgid "The new version number of the procedure"
 msgstr "程序文件的新版本号"
 
 msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
-msgstr ""
+msgstr "该地点的下一个 {departmentLabel} 工作开始于 {nextWorkDate}。"
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
-msgstr ""
+msgstr "该地点的下一个排程工作开始于 {nextWorkDate}。"
 
 msgid "The night shift suits you, {name}."
 msgstr "晚班适合你，{name}。"
@@ -23982,7 +23982,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "此组下所有帐户将使用的报表组。"
 
 msgid "the station's working hours from its shifts, less holidays and maintenance that takes it offline. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "该工作站从其班次的工作时间，减去使其脱机的假日和维护。配置的小时数（您分配的人员）显示在下方。"
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "步骤的设置 — 此运行早于记录其使用的值。"
@@ -24311,7 +24311,7 @@ msgid "This customer's rate"
 msgstr "此客户的费率"
 
 msgid "this department"
-msgstr ""
+msgstr "该部门"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"

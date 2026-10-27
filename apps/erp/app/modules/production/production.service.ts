@@ -667,15 +667,21 @@ export function deadlineTypeForPlanningDate(
 
 /**
  * The type a job carries once its due date is set or cleared outside the job
- * form. A dated job leaves "No Deadline" (`deadlineTypeForPlanningDate`); an
- * undated Hard or Soft Deadline job becomes "No Deadline", since those two
- * require a date. ASAP ignores the date either way.
+ * form. A dated job leaves "No Deadline" (`deadlineTypeForPlanningDate`) and
+ * "ASAP" for "Soft Deadline": the scheduler ignores an ASAP job's date while
+ * MRP takes it as the supply date (`jobCompletionDate`), and the job form
+ * hides it. An undated Hard or Soft Deadline job becomes "No Deadline", since
+ * those two require a date; an undated ASAP job stays ASAP.
  */
 export function deadlineTypeForDueDate(
   deadlineType: DeadlineType,
   dueDate: string | null
 ): DeadlineType {
-  if (dueDate !== null) return deadlineTypeForPlanningDate(deadlineType);
+  if (dueDate !== null) {
+    return deadlineType === "ASAP"
+      ? "Soft Deadline"
+      : deadlineTypeForPlanningDate(deadlineType);
+  }
   return deadlineType === "Hard Deadline" || deadlineType === "Soft Deadline"
     ? "No Deadline"
     : deadlineType;
@@ -5801,11 +5807,22 @@ export async function getQualifiedPeopleByProcess(
   );
   if (processByAbility.size === 0) return { data: empty, error: null };
 
-  const qualifications = await client
-    .from("employeeAbility")
-    .select("employeeId, abilityId, expiresAt")
-    .eq("companyId", companyId)
-    .in("abilityId", [...processByAbility.keys()]);
+  // Every qualified person company-wide: paged, and the people read in
+  // batches, so neither PostgREST's row cap nor the gateway's URL limit
+  // drops anyone.
+  const qualifications = await fetchAllByIds<{
+    id: string;
+    employeeId: string;
+    abilityId: string;
+    expiresAt: string | null;
+  }>([...processByAbility.keys()], (batch) =>
+    client
+      .from("employeeAbility")
+      .select("id, employeeId, abilityId, expiresAt")
+      .eq("companyId", companyId)
+      .in("abilityId", batch)
+      .order("id")
+  );
   if (qualifications.error) {
     return { data: empty, error: qualifications.error };
   }
@@ -5821,30 +5838,40 @@ export async function getQualifiedPeopleByProcess(
           { data: [], error: null }
         ]
       : await Promise.all([
-          client.from("user").select("id, fullName").in("id", employeeIds),
-          fetchAllRecords<{
+          fetchAllByIds<{ id: string; fullName: string | null }>(
+            employeeIds,
+            (batch) =>
+              client
+                .from("user")
+                .select("id, fullName")
+                .in("id", batch)
+                .order("id")
+          ),
+          fetchAllByIds<{
             employeeId: string;
             date: string;
             workCenter: { name: string } | null;
-          }>(() =>
+          }>(employeeIds, (batch) =>
             client
               .from("peopleAssignment")
               .select("id, employeeId, date, workCenter(name)")
               .eq("companyId", companyId)
               .gte("date", args.fromDate)
               .lte("date", toDate)
-              .in("employeeId", employeeIds)
+              .in("employeeId", batch)
               .order("id")
           ),
-          fetchAllRecords<{ employeeId: string; date: string }>(() =>
-            client
-              .from("peopleAbsence")
-              .select("id, employeeId, date")
-              .eq("companyId", companyId)
-              .gte("date", args.fromDate)
-              .lte("date", toDate)
-              .in("employeeId", employeeIds)
-              .order("id")
+          fetchAllByIds<{ employeeId: string; date: string }>(
+            employeeIds,
+            (batch) =>
+              client
+                .from("peopleAbsence")
+                .select("id, employeeId, date")
+                .eq("companyId", companyId)
+                .gte("date", args.fromDate)
+                .lte("date", toDate)
+                .in("employeeId", batch)
+                .order("id")
           )
         ]);
   const failed = users.error ?? assignments.error ?? absences.error;
@@ -11865,6 +11892,33 @@ export function getWorkCenterWorkingWindows(args: {
 }
 
 /**
+ * One shift's own working windows (holidays closed), read through the same
+ * ladder as a work center linked to only that shift. Null when the shift is
+ * not among `shifts` / `linkedShifts`: the ladder would fall back to the
+ * location's shifts, which is not that shift.
+ */
+export function getShiftWorkingWindows(
+  args: Omit<
+    Parameters<typeof getWorkCenterWorkingWindows>[0],
+    "workCenters" | "workCenterShifts"
+  > & { shiftId: string }
+): CalendarWindow[] | null {
+  const { shiftId, ...ladder } = args;
+  const known = [...ladder.shifts, ...(ladder.linkedShifts ?? [])].some(
+    (shift) => shift.id === shiftId
+  );
+  if (!known) return null;
+  const key = `shift:${shiftId}`;
+  return (
+    getWorkCenterWorkingWindows({
+      ...ladder,
+      workCenters: [{ id: key, alwaysOn: false }],
+      workCenterShifts: [{ workCenterId: key, shiftId }]
+    }).get(key) ?? []
+  );
+}
+
+/**
  * Each work center's non-working time inside [rangeStart, rangeEnd): the
  * complement of its working windows (`getWorkCenterWorkingWindows`), so the
  * forecast board shades and splits every lane on its own hours.
@@ -12104,7 +12158,9 @@ export async function getOperationAttendedShares(
  * labor at its START and lets the machine run the rest alone, so a booking's
  * attended hours (its work × the operation's `share`) are laid on the
  * station's working time from the booking's start. A lights-out station runs
- * work alone unless its process needs a qualified operator (`gated`).
+ * work alone unless its process needs a qualified operator (`gated`). With
+ * `within` (the shift the Matrix is filtered by, `getShiftWorkingWindows`),
+ * only the hours inside those windows count.
  */
 export function attendedHoursByDay(args: {
   weekDates: string[];
@@ -12114,6 +12170,7 @@ export function attendedHoursByDay(args: {
   attendedShareByOperation: Map<string, { share: number; gated: boolean }>;
   windowsByWorkCenter: Map<string, CalendarWindow[]>;
   lightsOut: Set<string>;
+  within?: CalendarWindow[];
 }): Record<string, Record<string, number>> {
   const days = plantDayBounds(args.weekDates, args.timezone);
   const result: Record<string, Record<string, number>> = {};
@@ -12140,11 +12197,21 @@ export function attendedHoursByDay(args: {
       const to = Math.min(endMs, window.end, from + attendedMs);
       if (to <= from) continue;
       attendedMs -= to - from;
-      for (const { day, startMs: dayStart, endMs: dayEnd } of days) {
-        const overlap = Math.min(to, dayEnd) - Math.max(from, dayStart);
-        if (overlap <= 0) continue;
-        const byDay = (result[reservation.resourceId] ??= {});
-        byDay[day] = (byDay[day] ?? 0) + overlap / HOUR_MS;
+      const pieces = args.within
+        ? args.within.flatMap((shift) => {
+            const start = Math.max(from, shift.start);
+            const end = Math.min(to, shift.end);
+            return end > start ? [{ start, end }] : [];
+          })
+        : [{ start: from, end: to }];
+      for (const piece of pieces) {
+        for (const { day, startMs: dayStart, endMs: dayEnd } of days) {
+          const overlap =
+            Math.min(piece.end, dayEnd) - Math.max(piece.start, dayStart);
+          if (overlap <= 0) continue;
+          const byDay = (result[reservation.resourceId] ??= {});
+          byDay[day] = (byDay[day] ?? 0) + overlap / HOUR_MS;
+        }
       }
     }
   }

@@ -352,6 +352,13 @@ export const createProcess = defineServiceFn({
       companyId,
       createdBy: ctx.auditUserId
     });
+    // 23505: another request created the same name since the check above.
+    if (insert.error?.code === "23505") {
+      return ctx.error(
+        "conflict",
+        `A process named ${process.name} already exists`
+      );
+    }
     if (insert.error || !insert.data?.id) {
       return ctx.error("internal", "Failed to create process.", insert.error);
     }

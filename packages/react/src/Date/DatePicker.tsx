@@ -47,18 +47,23 @@ const DatePicker = (
   const ref = useRef<HTMLDivElement>(null);
   // The label is drawn by the form field, not here, so name the group with it
   // directly; a label react-aria points at but nothing renders names nothing.
+  const fieldName =
+    props["aria-label"] ??
+    (typeof props.label === "string" ? props.label : undefined);
   const { groupProps, fieldProps, buttonProps, dialogProps, calendarProps } =
     useDatePicker(
-      {
-        ...props,
-        label: undefined,
-        "aria-label":
-          props["aria-label"] ??
-          (typeof props.label === "string" ? props.label : undefined)
-      },
+      { ...props, label: undefined, "aria-label": fieldName },
       state,
       ref
     );
+  // The inline variants render no group, so the button's labelledby (and the
+  // dialog's, which points at the button) would name it only "Calendar".
+  const inlineButtonLabel = fieldName
+    ? {
+        "aria-label": fieldName,
+        "aria-labelledby": undefined
+      }
+    : {};
 
   return (
     <Popover open={state.isOpen} onOpenChange={state.setOpen}>
@@ -75,6 +80,7 @@ const DatePicker = (
                     aria-label="Open date picker"
                     isDisabled={props.isDisabled}
                     {...buttonProps}
+                    {...inlineButtonLabel}
                   >
                     {props.inline}
                     <LuCalendarClock />
@@ -105,6 +111,7 @@ const DatePicker = (
                         aria-label="Open date picker"
                         isDisabled={props.isDisabled}
                         {...buttonProps}
+                        {...inlineButtonLabel}
                       />
                     </PopoverTrigger>
                   </HStack>

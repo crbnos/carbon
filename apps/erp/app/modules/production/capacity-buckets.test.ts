@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   attendedHoursByDay,
   buildPeopleCapacityBuckets,
+  getShiftWorkingWindows,
   getWorkCenterWorkingWindows,
   withoutOutages,
   workingHoursByDay
@@ -293,5 +294,63 @@ describe("coverage hours", () => {
         { alwaysOn: true }
       )
     ).toEqual({ "2026-10-26": 3 });
+  });
+});
+
+describe("coverage hours in one shift", () => {
+  // The station runs Day 06:00-14:30 and Swing 14:30-23:00.
+  const swingShift = {
+    ...dayShift,
+    id: "swing",
+    startTime: "14:30:00",
+    endTime: "23:00:00"
+  };
+  const ladder = {
+    shifts: [dayShift, swingShift],
+    timeZone: TZ,
+    holidayDates: new Set<string>(),
+    rangeStart: at("2026-10-26T05:00:00Z"),
+    rangeEnd: at("2026-11-02T06:00:00Z")
+  };
+  const coverageIn = (shiftId?: string) =>
+    attendedHoursByDay({
+      weekDates: WEEK,
+      timezone: TZ,
+      // 16h of labor from Monday 06:00: the Day shift, then the Swing shift.
+      reservations: [
+        {
+          resourceId: "weld",
+          operationId: "op",
+          startAt: "2026-10-26T11:00:00Z",
+          endAt: "2026-10-27T04:00:00Z",
+          workHours: 16
+        }
+      ],
+      attendedShareByOperation: new Map([["op", { share: 1, gated: false }]]),
+      windowsByWorkCenter: getWorkCenterWorkingWindows({
+        ...ladder,
+        workCenters: [{ id: "weld", alwaysOn: false }],
+        workCenterShifts: [
+          { workCenterId: "weld", shiftId: "day" },
+          { workCenterId: "weld", shiftId: "swing" }
+        ]
+      }),
+      lightsOut: new Set(),
+      within: shiftId
+        ? (getShiftWorkingWindows({ ...ladder, shiftId }) ?? undefined)
+        : undefined
+    }).weld;
+
+  it("count the whole day with no shift selected", () => {
+    expect(coverageIn()).toEqual({ "2026-10-26": 16 });
+  });
+
+  it("count only the hours booked inside the selected shift", () => {
+    expect(coverageIn("day")).toEqual({ "2026-10-26": 8.5 });
+    expect(coverageIn("swing")).toEqual({ "2026-10-26": 7.5 });
+  });
+
+  it("have no windows for a shift the location does not keep", () => {
+    expect(getShiftWorkingWindows({ ...ladder, shiftId: "night" })).toBeNull();
   });
 });

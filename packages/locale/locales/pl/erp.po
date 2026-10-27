@@ -20,11 +20,11 @@ msgid "— last checked {0}"
 msgstr "— ostatnia weryfikacja {0}"
 
 msgid "— not on the manning board"
-msgstr ""
+msgstr "— nie na harmonogramie obsady"
 
 #. placeholder {0}: person.stations.join(", ")
 msgid "— on the manning board at {0}"
-msgstr ""
+msgstr "— na harmonogramie obsady na {0}"
 
 msgid ", {residual}% residual"
 msgstr ", {residual}% pozostałe"
@@ -69,7 +69,7 @@ msgstr "(nie jest kontem Kapitału własnego do księgowania)"
 
 #. placeholder {0}: impact.unschedulable
 msgid "{0, plural, =0 {Its process needs a qualified operator, so its operations can't be scheduled until someone is added.} one {Its process needs a qualified operator: # operation can't be scheduled until someone is added.} other {Its process needs a qualified operator: # operations can't be scheduled until someone is added.}}"
-msgstr ""
+msgstr "{0, plural, =0 {Ten proces wymaga wykwalifikowanego operatora, więc jego operacje nie mogą być zaplanowane, dopóki ktoś nie zostanie dodany.} one {Ten proces wymaga wykwalifikowanego operatora: # operacja nie może być zaplanowana, dopóki ktoś nie zostanie dodany.} other {Ten proces wymaga wykwalifikowanego operatora: # operacje nie mogą być zaplanowane, dopóki ktoś nie zostanie dodany.}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {# blocking record} other {# blocking records}}"
@@ -82,7 +82,7 @@ msgstr ""
 #. placeholder {0}: counts.unschedulable
 #. placeholder {0}: members.length
 msgid "{0, plural, one {# can't be scheduled} other {# can't be scheduled}}"
-msgstr ""
+msgstr "{0, plural, one {# nie można zaplanować} other {# nie można zaplanować}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -90,7 +90,7 @@ msgstr "{0, plural, one {# składnik w tej grupie} other {# składników w tej g
 
 #. placeholder {0}: counts.conflicts
 msgid "{0, plural, one {# conflict} other {# conflicts}}"
-msgstr ""
+msgstr "{0, plural, one {# konflikt} other {# konflikty}}"
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
@@ -102,7 +102,7 @@ msgstr "{0, plural, one {# dzień za krótko} few {# dni za krótko} many {# dni
 
 #. placeholder {0}: counts.jobs
 msgid "{0, plural, one {# job} other {# jobs}}"
-msgstr ""
+msgstr "{0, plural, one {# zlecenie produkcyjne} other {# zlecenia produkcyjne}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
@@ -110,7 +110,7 @@ msgstr "{0, plural, one {# operacja nie ma standardów czasu} few {# operacje ni
 
 #. placeholder {0}: impact.unschedulable
 msgid "{0, plural, one {# operation of this process can't be scheduled. The Forecast shows why, and who is qualified.} other {# operations of this process can't be scheduled. The Forecast shows why, and who is qualified.}}"
-msgstr ""
+msgstr "{0, plural, one {# operacja tego procesu nie może być zaplanowana. Prognoza pokazuje dlaczego i kto jest wykwalifikowany.} other {# operacje tego procesu nie mogą być zaplanowane. Prognoza pokazuje dlaczego i kto jest wykwalifikowany.}}"
 
 #. placeholder {0}: added.operations
 msgid "{0, plural, one {# operation} other {# operations}}"
@@ -126,11 +126,11 @@ msgstr "{0, plural, one {# rekord wymaga uwagi} other {# rekordy wymagają uwagi
 
 #. placeholder {0}: counts.reservations
 msgid "{0, plural, one {# reservation} other {# reservations}}"
-msgstr ""
+msgstr "{0, plural, one {# rezerwacja} other {# rezerwacje}}"
 
 #. placeholder {0}: counts.resources
 msgid "{0, plural, one {# resource} other {# resources}}"
-msgstr ""
+msgstr "{0, plural, one {# zasób} other {# zasoby}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -162,7 +162,7 @@ msgstr "{0, plural, one {Ukończ lub anuluj # zlecenie produkcyjne, które ponio
 
 #. placeholder {0}: counts.copied ?? 0
 msgid "{0, plural, one {Copied # assignment} other {Copied # assignments}}"
-msgstr ""
+msgstr "{0, plural, one {Skopiowano # przypisanie} other {Skopiowano # przypisania}}"
 
 #. placeholder {0}: Number(lease.assetCount)
 msgid "{0, plural, one {for # asset} other {for # assets}}"
@@ -170,11 +170,11 @@ msgstr "{0, plural, one {dla # zasobu} other {dla # zasobów}}"
 
 #. placeholder {0}: counts.created ?? 0
 msgid "{0, plural, one {Marked absent for # day} other {Marked absent for # days}}"
-msgstr ""
+msgstr "{0, plural, one {Zaznaczono jako nieobecny na # dzień} other {Zaznaczono jako nieobecny na # dni}}"
 
 #. placeholder {0}: counts.updated ?? 0
 msgid "{0, plural, one {Overtime set for # assignment} other {Overtime set for # assignments}}"
-msgstr ""
+msgstr "{0, plural, one {Ustawiono godziny nadliczbowe dla # przypisania} other {Ustawiono godziny nadliczbowe dla # przypisań}}"
 
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
@@ -234,7 +234,7 @@ msgstr ""
 
 #. placeholder {0}: members.length
 msgid "{0} can't be scheduled: {names}"
-msgstr ""
+msgstr "{0} nie można zaplanować: {names}"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
@@ -504,7 +504,7 @@ msgstr "{0}d wcześniej"
 
 #. placeholder {0}: item.daysElsewhere
 msgid "{0}d elsewhere"
-msgstr ""
+msgstr "{0}d gdzie indziej"
 
 #. placeholder {0}: slack.absDays
 msgid "{0}d late"
@@ -547,7 +547,7 @@ msgid "{assetCount} Assets"
 msgstr "{assetCount} Aktywów"
 
 msgid "{behindDays, plural, one {Behind target by # day} other {Behind target by # days}}"
-msgstr ""
+msgstr "{behindDays, plural, one {Opóźniony o # dzień} other {Opóźniony o # dni}}"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostatecznego następcę."
@@ -610,13 +610,13 @@ msgid "{days}d"
 msgstr "{days}d"
 
 msgid "{daysBehindTarget, plural, one {Behind target by # day} other {Behind target by # days}}"
-msgstr ""
+msgstr "{daysBehindTarget, plural, one {Opóźniony o # dzień} other {Opóźniony o # dni}}"
 
 msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
 msgstr "${delegatedTo} wysyła to do Twojej księgi, więc Carbon tego nie wysyła. Twój zapisany wybór jest zachowywany na wypadek zmian."
 
 msgid "{departmentLabel} has no work centers at {locationName}. Pick another department or location."
-msgstr ""
+msgstr "{departmentLabel} nie ma stanowisk roboczych na {locationName}. Wybierz inny dział lub lokalizację."
 
 msgid "{discount} off"
 msgstr "{discount} rabatu"
@@ -657,7 +657,7 @@ msgid "{jobsMissingStorageUnit, plural, one {# open job has materials with no st
 msgstr "{jobsMissingStorageUnit, plural, one {# otwarte zlecenie produkcyjne ma materiały bez jednostki magazynowej} other {# otwarte zlecenia produkcyjne mają materiały bez jednostki magazynowej}}"
 
 msgid "{label} — click to open the next"
-msgstr ""
+msgstr "{label} — kliknij, aby otworzyć następny"
 
 msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 msgstr "{label} jest używany w dokumentach, dowodach księgowych lub domyślnych kontach, dlatego nie można go usunąć."
@@ -770,10 +770,10 @@ msgid "{position} of {total}"
 msgstr "{position} z {total}"
 
 msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime for # person.} other {This will set +{hoursInput}h of overtime for # people.}}"
-msgstr ""
+msgstr "{previewCount, plural, one {Spowoduje ustawienie +{hoursInput}h godzin nadliczbowych dla # osoby.} other {Spowoduje ustawienie +{hoursInput}h godzin nadliczbowych dla # osób.}}"
 
 msgid "{previewCount, plural, one {This will set +{hoursInput}h of overtime on # person-day.} other {This will set +{hoursInput}h of overtime on # person-days.}}"
-msgstr ""
+msgstr "{previewCount, plural, one {Spowoduje ustawienie +{hoursInput}h godzin nadliczbowych na # dzień pracy.} other {Spowoduje ustawienie +{hoursInput}h godzin nadliczbowych na # dni pracy.}}"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {Trwale usuń # wiersz?} other {Trwale usuń # wierszy?}}"
@@ -3233,7 +3233,7 @@ msgstr "Czy na pewno chcesz dezaktywować atrybut {0}?"
 
 #. placeholder {0}: workCenter.name
 msgid "Are you sure you want to deactivate the {0} work center?"
-msgstr ""
+msgstr "Czy na pewno chcesz dezaktywować stanowisko robocze {0}?"
 
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
 msgstr "Czy na pewno chcesz dezaktywować regułę konfiguracji {label}?"
@@ -3826,7 +3826,7 @@ msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Przydzielono {employeeName} do {targetName} na tydzień"
 
 msgid "Assigned {employeeName} to {targetName} for the week; days already assigned in other departments were kept"
-msgstr ""
+msgstr "Przypisano {employeeName} do {targetName} na tydzień; dni już przypisane w innych działach zostały zachowane"
 
 msgid "Assigned 1 planning action"
 msgstr ""
@@ -3865,7 +3865,7 @@ msgid "At {locationName}"
 msgstr "W {locationName}"
 
 msgid "At a station outside this department"
-msgstr ""
+msgstr "Na stanowisku poza tym działem"
 
 msgid "At Commencement"
 msgstr "W momencie rozpoczęcia"
@@ -11709,10 +11709,10 @@ msgid "Include Inactive"
 msgstr "Uwzględnij nieaktywne"
 
 msgid "Include materials on the traveler"
-msgstr ""
+msgstr "Uwzględnij materiały w przewodniku"
 
 msgid "Include operations on the traveler"
-msgstr ""
+msgstr "Uwzględnij operacje w przewodniku"
 
 msgid "Included"
 msgstr "Uwzględnione"
@@ -14176,7 +14176,7 @@ msgid "Move some of the quantity into a new disposition row so MRB can decide ea
 msgstr "Przenieś część ilości do nowego wiersza dyspozycji, aby komisja oceny materiałów mogła podjąć decyzję dla każdej części osobno (np. części na braki, części na poprawę)."
 
 msgid "Move these operations to another work center, or finish them, before you deactivate it."
-msgstr ""
+msgstr "Przenieś te operacje na inne stanowisko robocze lub je ukończ, zanim je dezaktywujesz."
 
 msgid "Move to"
 msgstr "Przenieś do"
@@ -14289,8 +14289,8 @@ msgstr "Potrzebujesz odpowiednich kolumn?"
 msgid "Need-by target"
 msgstr "Termin zapotrzebowania"
 
-msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. Machine time and lights-out stations need nobody."
-msgstr ""
+msgid "Needed is the setup and labor hours the schedule books at the station that day, divided by {personDayHours}h and rounded up — the shift you're filtering by, or the most common shift length at this location. With a shift selected, only the hours booked inside that shift count. Machine time needs nobody, and neither does a lights-out station unless its process needs a qualified operator."
+msgstr "Wymagane są godziny przezbrojenia i roboczej, które harmonogram rezerwuje na tym stanowisku tego dnia, podzielone przez {personDayHours}h i zaokrąglone w górę — zmianę, którą filtrujesz, lub najczęstszą długość zmiany na tej lokalizacji. Jeśli zmiana jest wybrana, tylko godziny zarezerwowane w tej zmianie liczą się. Czas maszynowy nikogo nie wymaga, podobnie jak stanowisko bez oświetlenia, chyba że jego proces wymaga wykwalifikowanego operatora."
 
 msgid "Needs a Business or Partner plan."
 msgstr "Wymaga planu Business lub Partner."
@@ -14800,7 +14800,7 @@ msgid "No {0} yet"
 msgstr "Jeszcze brak {0}"
 
 msgid "No {departmentLabel} work is scheduled at this location."
-msgstr ""
+msgstr "Na tej lokalizacji nie są zaplanowane żadne prace z {departmentLabel}."
 
 msgid "No {title} yet"
 msgstr "Brak {title} na razie"
@@ -15560,14 +15560,14 @@ msgid "No work centers exist"
 msgstr "Nie istnieją stanowiska robocze"
 
 msgid "No work centers in {departmentLabel}"
-msgstr ""
+msgstr "Brak stanowisk roboczych w {departmentLabel}"
 
 #. placeholder {0}: ability.name
 msgid "Nobody is qualified for {0}"
-msgstr ""
+msgstr "Nikt nie jest wykwalifikowany do {0}"
 
 msgid "Nobody is qualified. Add someone to the process's ability."
-msgstr ""
+msgstr "Nikt nie jest wykwalifikowany. Dodaj kogoś do umiejętności procesu."
 
 msgid "Nom"
 msgstr "Nom"
@@ -15739,7 +15739,7 @@ msgid "Nothing is synced until you turn sync on. Every required account is mappe
 msgstr "Nic nie jest synchronizowane, dopóki nie włączysz synchronizacji. Każde wymagane konto jest zmapowane."
 
 msgid "Nothing matches the search or filter"
-msgstr ""
+msgstr "Nic nie pasuje do wyszukiwania lub filtru"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nic nie zaplanowano — dodaj stanowisko poniżej."
@@ -15776,7 +15776,7 @@ msgstr "Powiadomienia są zablokowane dla Carbon w ustawieniach witryny tej prze
 
 #. placeholder {0}: unreadNotifications.length
 msgid "Notifications, {0} unread"
-msgstr ""
+msgstr "Powiadomienia, {0} nieprzeczytanych"
 
 msgid "Notify"
 msgstr "Powiadom"
@@ -16614,7 +16614,7 @@ msgid "Overtime"
 msgstr "Nadgodziny"
 
 msgid "Overtime hours"
-msgstr ""
+msgstr "Godziny nadliczbowe"
 
 msgid "Overview"
 msgstr "Przegląd"
@@ -17438,7 +17438,7 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Wstępnie wypełnione dla nowego artykułu, gdy termin ważności to Stały okres."
 
 msgid "Pre-select material"
-msgstr ""
+msgstr "Wstępnie wybierz materiał"
 
 msgid "Predicate-driven guards that fire on sales lines. Block with errors or warn with acknowledge-to-continue."
 msgstr "Strażniki sterowane orzeczeniami, które aktywują się na pozycjach sprzedaży. Blokuj błędami lub ostrzegaj z wymaganiem potwierdzenia."
@@ -18171,7 +18171,7 @@ msgid "Qualified Employees"
 msgstr "Wykwalifikowani Pracownicy"
 
 msgid "Qualified to run it"
-msgstr ""
+msgstr "Wykwalifikowany do jego uruchomienia"
 
 msgid "quality"
 msgstr "jakość"
@@ -19372,7 +19372,7 @@ msgstr "Wymagaj SAML SSO"
 
 #. placeholder {0}: location.name
 msgid "Require staffing at {0}"
-msgstr ""
+msgstr "Wymagaj obsady na {0}"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
 msgstr "Wymagaj wielopoziomowego zatwierdzenia zamówień zakupu, dokumentów jakości, dostawców i zawiadomień o zmianach na podstawie progów kwot i grup osób zatwierdzających."
@@ -21732,7 +21732,7 @@ msgid "Some lines recognize more or less than they bill. Place what is left befo
 msgstr "Niektóre pozycje rozpoznają więcej lub mniej niż rozliczają. Umieść pozostałą kwotę przed potwierdzeniem."
 
 msgid "Some of this process's work can't be scheduled"
-msgstr ""
+msgstr "Niektóre prace tego procesu nie mogą być zaplanowane"
 
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Niektóre rekordy nie wrócą. Wpisz <0>{CONFIRM_WORD}</0> aby kontynuować."
@@ -21955,7 +21955,7 @@ msgid "Start Receipt Quantities at Zero"
 msgstr "Rozpocznij ilości przyjęcia od zera"
 
 msgid "Start the timer automatically"
-msgstr ""
+msgstr "Uruchom czasomierz automatycznie"
 
 msgid "Start Time"
 msgstr "Czas rozpoczęcia"
@@ -23482,7 +23482,7 @@ msgid "The item's rental rate"
 msgstr "Stawka wynajmu artykułu"
 
 msgid "the job hours still to do that are due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
-msgstr ""
+msgstr "godziny zlecenia produkcyjnego, które jeszcze trzeba zrobić, które są wymagane tego dnia (na podstawie terminu, a nie dnia, w którym praca się odbywa), z pracą przeterminowaną w Przeterminowany."
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Zadanie, którego operacja pokrywa ta linia przetwarzania zewnętrznego; rachunek linii zamyka operację dla tego zadania."
@@ -23631,10 +23631,10 @@ msgid "The most likely failure mode the requester suspects; the technician confi
 msgstr "Najewidentnie tryb awarii, który podejrzewa żądający; technik potwierdza lub zastępuje to przy zamknięciu, a różnica między podejrzanym a rzeczywistym zaopatruje raporty niezawodności."
 
 msgid "The most recent {departmentLabel} work at this location was {nextWorkDate}."
-msgstr ""
+msgstr "Najnowszą pracę z {departmentLabel} na tej lokalizacji była {nextWorkDate}."
 
 msgid "The most recent scheduled work at this location was {nextWorkDate}."
-msgstr ""
+msgstr "Najnowszą zaplanowaną pracę na tej lokalizacji była {nextWorkDate}."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Wynegocjowana cena za sztukę na tej pozycji; ikona śledzenia wbudowana pokazuje, która reguła cenowa lub nadpisanie ją wygenerowało."
@@ -23652,10 +23652,10 @@ msgid "The new version number of the procedure"
 msgstr "Nowy numer wersji procedury"
 
 msgid "The next {departmentLabel} work at this location starts {nextWorkDate}."
-msgstr ""
+msgstr "Następna praca z {departmentLabel} na tej lokalizacji rozpoczyna się {nextWorkDate}."
 
 msgid "The next scheduled work at this location starts {nextWorkDate}."
-msgstr ""
+msgstr "Następna zaplanowana praca na tej lokalizacji rozpoczyna się {nextWorkDate}."
 
 msgid "The night shift suits you, {name}."
 msgstr "Zmiana nocna pasuje do ciebie, {name}."
@@ -23982,7 +23982,7 @@ msgid "The statement bucket all accounts under this group will use."
 msgstr "Grupa sprawozdań, którą będą używać wszystkie konta w tej grupie."
 
 msgid "the station's working hours from its shifts, less holidays and maintenance that takes it offline. Staffed hours (the people you've assigned) show beneath."
-msgstr ""
+msgstr "godziny pracy stanowiska z jego zmian, minus wakacje i utrzymanie ruchu, które je wyłączają z eksploatacji. Godziny obsady (przypisane osoby) są widoczne poniżej."
 
 msgid "The step's settings — this run predates recording the values it used."
 msgstr "Ustawienia kroku — to uruchomienie pochodzi sprzed rejestracji wartości, które zastosowało."
@@ -24311,7 +24311,7 @@ msgid "This customer's rate"
 msgstr "Stawka tego klienta"
 
 msgid "this department"
-msgstr ""
+msgstr "ten dział"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Ten link pobierania jest nieprawidłowy lub został zmieniony."

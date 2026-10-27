@@ -75,7 +75,8 @@ Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
   and `dates.tsx` (jobs-by-due-date Kanban; drag →
   `dates.update.tsx` → `api.production.moveScheduleJob`, which writes `job.dueDate` +
   `priority` and, in the same UPDATE, the deadline type the date implies
-  (`deadlineTypeForDueDate`: a dated No Deadline job becomes Soft Deadline, an undated
+  (`deadlineTypeForDueDate`: a dated No Deadline or ASAP job becomes Soft Deadline — the
+  scheduler ignores an ASAP date that MRP would plan supply to — and an undated
   Hard / Soft Deadline job becomes No Deadline), **then calls `notifyScheduleInputsChanged(…, "reorder", …)`** — which only stamps the
   jobs schedule-outdated; the debounced wave regenerates the whole location. There
   is no immediate single-job path). `people.tsx` is the People

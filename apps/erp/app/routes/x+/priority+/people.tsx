@@ -38,6 +38,7 @@ import {
   getPeopleAssignments,
   getPeopleAssignmentsRange,
   getPeopleCapacityOperations,
+  getShiftWorkingWindows,
   getWorkCenterOutages,
   getWorkCenterRequiredAbilities,
   getWorkCenterReservationsRange,
@@ -487,7 +488,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
           windowsByWorkCenter: windows,
           lightsOut: new Set(
             ladderWorkCenters.flatMap((wc) => (wc.alwaysOn ? [wc.id] : []))
-          )
+          ),
+          // A shift tab compares the shift's people with the work booked in
+          // that shift's own hours, not the whole day's.
+          within: shiftId
+            ? (getShiftWorkingWindows({
+                shiftId,
+                shifts: shiftRows,
+                linkedShifts: otherShifts.data ?? [],
+                timeZone: timezone,
+                holidayDates,
+                rangeStart: spanStartMs,
+                rangeEnd: spanEndMs
+              }) ?? undefined)
+            : undefined
         });
       }
     }

@@ -287,8 +287,10 @@ export function PeopleMatrix({
                     Needed is the setup and labor hours the schedule books at
                     the station that day, divided by {personDayHours}h and
                     rounded up — the shift you're filtering by, or the most
-                    common shift length at this location. Machine time and
-                    lights-out stations need nobody.
+                    common shift length at this location. With a shift selected,
+                    only the hours booked inside that shift count. Machine time
+                    needs nobody, and neither does a lights-out station unless
+                    its process needs a qualified operator.
                   </Trans>
                 </p>
                 <p>

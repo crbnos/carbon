@@ -216,7 +216,7 @@ describe("deadlineTypeForDueDate", () => {
     ["No Deadline", "2026-10-30", "Soft Deadline"],
     ["Soft Deadline", "2026-10-30", "Soft Deadline"],
     ["Hard Deadline", "2026-10-30", "Hard Deadline"],
-    ["ASAP", "2026-10-30", "ASAP"],
+    ["ASAP", "2026-10-30", "Soft Deadline"],
     ["Soft Deadline", null, "No Deadline"],
     ["Hard Deadline", null, "No Deadline"],
     ["ASAP", null, "ASAP"],
@@ -299,10 +299,21 @@ describe("moveScheduleJob keeps the deadline type in step with the date", () => 
     ]);
   });
 
-  it("leaves an ASAP job's type alone", async () => {
+  // The scheduler ignores an ASAP job's date; MRP would take it as the supply date.
+  it("makes an ASAP job dropped on a date a Soft Deadline", async () => {
     const { caller } = await move("ASAP", "2026-10-30");
     expect(caller.updates).toEqual([
-      expect.objectContaining({ deadlineType: "ASAP" })
+      expect.objectContaining({
+        dueDate: "2026-10-30",
+        deadlineType: "Soft Deadline"
+      })
+    ]);
+  });
+
+  it("leaves an ASAP job dropped on an undated column ASAP", async () => {
+    const { caller } = await move("ASAP", "unscheduled");
+    expect(caller.updates).toEqual([
+      expect.objectContaining({ dueDate: null, deadlineType: "ASAP" })
     ]);
   });
 });

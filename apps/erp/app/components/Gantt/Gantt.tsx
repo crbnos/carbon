@@ -760,9 +760,11 @@ const GanttTimeline = ({
       ])
     );
   }, [events, nonWorkingIntervalsByRow, nonWorkingIntervals, anchorMs]);
+  // A row in the map keeps its entry even when that is none (the location
+  // rollup); only a row missing from it takes the plant's hours.
   const offsetsFor = (eventId: string) =>
-    rowOffsets
-      ? (rowOffsets.get(eventId) ?? nonWorkingOffsets)
+    rowOffsets?.has(eventId)
+      ? (rowOffsets.get(eventId) ?? null)
       : nonWorkingOffsets;
 
   return (

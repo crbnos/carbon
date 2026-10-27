@@ -1342,8 +1342,9 @@ export const reorderScheduleOperations = defineServiceFn({
  * `columnId` is a date (`YYYY-MM-DD`) or one of the board's undated columns,
  * which clears the due date. Writes the due date and priority of a job at
  * `locationId` that is not locked; a job elsewhere or locked is a `conflict`.
- * The deadline type follows the date: a dated "No Deadline" job becomes "Soft
- * Deadline", and an undated Hard or Soft Deadline job becomes "No Deadline".
+ * The deadline type follows the date: a dated "No Deadline" or "ASAP" job
+ * becomes "Soft Deadline", and an undated Hard or Soft Deadline job becomes
+ * "No Deadline".
  * Then the scheduler is told; the debounced wave regenerates the location in
  * due date, then priority, order. A failed notice is logged and not returned.
  *
@@ -1656,7 +1657,8 @@ export const setJobItem = defineServiceFn({
  * and one write for every job. A field left out keeps the job's current
  * value; a `dueDate` of null clears it. The two stay in step
  * (`nextJobDeadline`): ASAP and No Deadline clear the date, and a date given
- * to a No Deadline job makes it a Soft Deadline.
+ * to a No Deadline or ASAP job makes it a Soft Deadline. Then the scheduler is
+ * told; a failed notice is logged and not returned.
  *
  * @mcp
  */
@@ -1733,6 +1735,12 @@ export const setJobDeadline = defineServiceFn({
         AND j."companyId" = ${companyId}
         AND j."status" NOT IN (${sql.join(JOB_LOCKED_STATUSES.map((status) => sql`${status}`))})
     `.execute(ctx.asSystem.pg);
+
+    await service.notifyScheduleInputsChanged(
+      companyId,
+      "reorder",
+      "Job deadline changed"
+    );
     return { ids };
   }
 });

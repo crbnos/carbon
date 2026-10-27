@@ -3,15 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useOptimisticLocation } from "@carbon/react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { Location } from "react-router";
 
 /**
  * Change the URL's search params without a navigation (no loader runs). The
  * router does not see a `history.replaceState`, so the replaced location is
  * kept until the router moves to another location. Each change starts from
- * the address bar as it is when the change runs, so two quick changes (a
- * debounced one among them) never drop each other's params.
+ * the address bar and the router's location as they are when the change
+ * runs, so two quick changes (a debounced one among them) never drop each
+ * other's params, and a debounced change that fires after a navigation is
+ * recorded against the new location, not the one it was scheduled on.
  */
 export function useReplaceLocation() {
   const optimisticLocation = useOptimisticLocation();
@@ -24,18 +26,18 @@ export function useReplaceLocation() {
       ? replaced.location
       : optimisticLocation;
 
-  const replaceLocation = useCallback(
-    (next: Location<any>) => {
-      // Keep the router's own history entry state ({ usr, key, idx }).
-      history.replaceState(
-        history.state,
-        "",
-        next.pathname + next.search + next.hash
-      );
-      setReplaced({ key: optimisticLocation.key, location: { ...next } });
-    },
-    [optimisticLocation.key]
-  );
+  const current = useRef({ key: optimisticLocation.key, location });
+  current.current = { key: optimisticLocation.key, location };
+
+  const replaceLocation = useCallback((next: Location<any>) => {
+    // Keep the router's own history entry state ({ usr, key, idx }).
+    history.replaceState(
+      history.state,
+      "",
+      next.pathname + next.search + next.hash
+    );
+    setReplaced({ key: current.current.key, location: { ...next } });
+  }, []);
 
   const replaceSearchParam = useCallback(
     (key: string, value?: string) => {
@@ -45,9 +47,12 @@ export function useReplaceLocation() {
       } else {
         searchParams.delete(key);
       }
-      replaceLocation({ ...location, search: "?" + searchParams.toString() });
+      replaceLocation({
+        ...current.current.location,
+        search: "?" + searchParams.toString()
+      });
     },
-    [location, replaceLocation]
+    [replaceLocation]
   );
 
   return { location, replaceLocation, replaceSearchParam };
