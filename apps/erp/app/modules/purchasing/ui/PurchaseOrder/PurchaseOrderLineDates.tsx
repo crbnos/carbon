@@ -42,9 +42,8 @@ type LineDates = {
 type OrderStatus = Pick<PurchaseOrder, "status">;
 
 /**
- * Saves one line date; a refusal is toasted. `failures(field)` counts that
- * field's refused saves: its control keys on it, so it drops the date it was
- * showing and shows the saved one again, and the other dates keep theirs.
+ * Saves one line date. A refused save is toasted and bumps that field's
+ * `failures`, which its control keys on to show the saved date again.
  */
 export function useSavePurchaseOrderLineDate(line: {
   id: string;
@@ -83,7 +82,6 @@ export function useSavePurchaseOrderLineDate(line: {
   return { save, failures };
 }
 
-/** The line's promised date on the order summary, editable in place. */
 export function PurchaseOrderLinePromisedDate({
   line,
   order
@@ -126,7 +124,6 @@ export function PurchaseOrderLinePromisedDate({
   );
 }
 
-/** The calendar icon alone until a date is set, then the date. */
 function DatePill({
   value,
   isDisabled,

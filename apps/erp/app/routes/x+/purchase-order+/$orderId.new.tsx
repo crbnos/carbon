@@ -130,7 +130,6 @@ export default function NewPurchaseOrderLineRoute() {
     purchaseOrderLineType: "Part" as MethodItemType,
     purchaseQuantity: 1,
     purchaseUnitOfMeasureCode: "",
-    // A new line starts on the order's dates.
     requiredDate: routeData?.purchaseOrder?.receiptRequestedDate ?? undefined,
     promisedDate: routeData?.purchaseOrder?.receiptPromisedDate ?? undefined,
     setupPrice: 0,

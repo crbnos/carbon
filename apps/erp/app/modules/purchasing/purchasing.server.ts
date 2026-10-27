@@ -1969,11 +1969,9 @@ export const updatePurchaseOrders = defineServiceFn({
  * Change one date of a purchase order line.
  *
  * @remarks
- * The line's requested (`requiredDate`), promised (`promisedDate`) or
- * delivery (`receivedDate`) date; `value` null clears it. A line with its own
- * date keeps it when the order's date changes. The requested date is refused
- * once the order is released, the promised date once the line or the order is
- * received; the delivery date can always be corrected.
+ * The requested date is refused once the order is released, the promised date
+ * once the line or the order is received; the delivery date can always be
+ * corrected.
  *
  * @param lineId - The purchase order line's id.
  * @param field - Which date: `requiredDate`, `promisedDate` or `receivedDate`.

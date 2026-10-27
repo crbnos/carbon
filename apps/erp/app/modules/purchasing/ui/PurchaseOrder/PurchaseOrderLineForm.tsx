@@ -102,7 +102,6 @@ type PurchaseOrderLineFormProps = {
     assetReadableId?: string;
     assetName?: string;
   };
-  /** A saved line's dates, for its Dates section. */
   lineDates?: {
     receivedComplete: boolean;
     requiredDate: string | null;
@@ -497,7 +496,6 @@ const PurchaseOrderLineForm = ({
             : (supplierPart?.data?.conversionFactor ??
               itemReplenishment?.conversionFactor ??
               1),
-          // The order's requested date, else today plus the lead time.
           requiredDate:
             routeData?.purchaseOrder?.receiptRequestedDate ??
             (leadTime === 0

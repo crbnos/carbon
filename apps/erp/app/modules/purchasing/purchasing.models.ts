@@ -763,11 +763,7 @@ export function isPurchaseOrderBulkDeletable(
   return status === "Draft" || status === "Planned";
 }
 
-/**
- * Purchase Order statuses reached once every line is received. Until then the
- * promised receipt date stays editable, even on a locked order, so it can
- * follow what the supplier says.
- */
+/** Statuses reached once every line is received; the promised date locks here. */
 export const PURCHASE_ORDER_RECEIVED_STATUSES = [
   "To Invoice",
   "Completed",
@@ -782,10 +778,7 @@ export function isPurchaseOrderPromisedDateEditable(
   );
 }
 
-/**
- * A purchase order line's own dates. `receivedDate` is its delivery date:
- * receipt posting sets it, and it can be corrected by hand.
- */
+/** A line's own dates. `receivedDate` is its delivery date. */
 export const purchaseOrderLineDateFields = [
   "requiredDate",
   "promisedDate",
@@ -811,11 +804,7 @@ export function isPurchaseOrderDateField(
   return field in purchaseOrderLineDateOfOrderDate;
 }
 
-/**
- * Why a line date cannot change, or null when it can. The requested date is
- * fixed once the order is released, the promised date once the line (or the
- * whole order) is received; the delivery date can always be corrected.
- */
+/** Why a line date cannot change, or null when it can. */
 export function purchaseOrderLineDateRefusal(
   field: PurchaseOrderLineDateField,
   line: {

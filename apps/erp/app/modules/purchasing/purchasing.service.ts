@@ -2281,7 +2281,6 @@ export async function upsertPurchaseOrderLine(
     0
   );
 
-  // A new line starts on the order's dates.
   return client
     .from("purchaseOrderLine")
     .insert([
@@ -3627,13 +3626,10 @@ export async function getDefaultAttachmentsForPO(
 }
 
 /**
- * Copies a changed order date to the lines whose date is empty or still the
- * order's current one, so run it before the delivery row changes, in the same
- * transaction. An order whose date is not changing moves no line, so saving
- * the Shipping card does not fill lines left empty. Lines received complete
- * keep their requested and promised dates; the delivery date (when the goods
- * arrived) goes only to lines that have received something. A cleared order
- * date (null) leaves the lines alone.
+ * Copies a changed order date to the lines that have no date or the order's
+ * current one. Run it before the delivery row changes, in the same
+ * transaction. The delivery date (when goods arrived) goes only to lines that
+ * received something; received-complete lines keep the other two.
  */
 export async function cascadePurchaseOrderDateToLines(
   db: Kysely<KyselyDatabase>,

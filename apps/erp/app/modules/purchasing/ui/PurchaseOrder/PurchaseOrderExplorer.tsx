@@ -82,7 +82,6 @@ export default function PurchaseOrderExplorer() {
     taxPercent: 0,
     supplierShippingCost: 0,
     exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1,
-    // A new line starts on the order's dates.
     requiredDate:
       purchaseOrderData?.purchaseOrder?.receiptRequestedDate ?? undefined,
     promisedDate:
