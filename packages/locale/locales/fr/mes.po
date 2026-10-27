@@ -993,6 +993,9 @@ msgstr "Chargée : {loadedLabel}"
 msgid "Loading item details..."
 msgstr "Chargement des détails de l'article..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "Chargement. Inutile de scanner à nouveau."
+
 msgid "Loading..."
 msgstr "Chargement..."
 
@@ -1288,6 +1291,9 @@ msgstr "Aucun"
 
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Rien sur cette page n'utilise ce code-barres"
 
 msgid "Nothing running"
 msgstr "Rien en cours"
@@ -1703,6 +1709,9 @@ msgstr "Scannez ou recherchez un numéro de série..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scannez ou sélectionnez une entité suivie de ce lot pour l'ajouter en tant que colonne d'échantillon, puis enregistrez son résultat dans la grille."
 
+msgid "Scan received"
+msgstr "Scan reçu"
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scanner ce code QR avec votre application d'authentification (p. ex. Google Authenticator ou 1Password), puis entrez le code à 6 chiffres qu'il affiche."
 
@@ -2013,6 +2022,10 @@ msgstr "Couleur d'accent utilisée dans Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantité produite pour cette opération est inférieure à la quantité requise de {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Les ordres de fabrication et les pièces qui composent cette série."

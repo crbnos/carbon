@@ -993,6 +993,9 @@ msgstr "ロード済み: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "読み込み中です。もう一度スキャンする必要はありません。"
+
 msgid "Loading..."
 msgstr "読み込み中..."
 
@@ -1288,6 +1291,9 @@ msgstr "なし"
 
 msgid "Notes"
 msgstr "メモ"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "このページにはそのバーコードを使うものがありません"
 
 msgid "Nothing running"
 msgstr "稼働中の作業はありません"
@@ -1703,6 +1709,9 @@ msgstr "シリアル番号をスキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象をスキャンまたは選択してサンプル列として追加し、グリッドに結果を記録します。"
 
+msgid "Scan received"
+msgstr "スキャンを受け付けました"
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "このQRコードをスキャンしてください（例：Google AuthenticatorまたはOnePassword）、その後に表示される6桁のコードを入力してください。"
 
@@ -2013,6 +2022,10 @@ msgstr "Carbon全体で使用されるアクセントカラー。"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "このランを構成する製造指図と部品"

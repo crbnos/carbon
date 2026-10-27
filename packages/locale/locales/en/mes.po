@@ -993,6 +993,9 @@ msgstr "Loaded: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "Loading item details..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "Loading. There's no need to scan again."
+
 msgid "Loading..."
 msgstr "Loading..."
 
@@ -1288,6 +1291,9 @@ msgstr "None"
 
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Nothing on this page uses that barcode"
 
 msgid "Nothing running"
 msgstr "Nothing running"
@@ -1703,6 +1709,9 @@ msgstr "Scan or search serial number..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 
+msgid "Scan received"
+msgstr "Scan received"
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 
@@ -2013,6 +2022,10 @@ msgstr "The accent color used across Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 
 msgid "The jobs and parts that make up this run."
 msgstr "The jobs and parts that make up this run."

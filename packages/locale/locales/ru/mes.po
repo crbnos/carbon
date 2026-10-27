@@ -993,6 +993,9 @@ msgstr "Загружена: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "Загрузка. Повторно сканировать не нужно."
+
 msgid "Loading..."
 msgstr "Загрузка..."
 
@@ -1288,6 +1291,9 @@ msgstr "Нет"
 
 msgid "Notes"
 msgstr "Примечания"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "На этой странице ничто не использует этот штрихкод"
 
 msgid "Nothing running"
 msgstr "Ничего не работает"
@@ -1703,6 +1709,9 @@ msgstr "Сканировать или найти серийный номер..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его как столбец образца, затем записать его результат в таблицу."
 
+msgid "Scan received"
+msgstr "Скан получен"
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Отсканируйте этот QR код с помощью приложения аутентификации (например, Google Authenticator или 1Password), затем введите 6-значный код, который оно покажет."
 
@@ -2013,6 +2022,10 @@ msgstr "Цвет акцента, используемый во всём Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Производственные заказы и детали, которые составляют этот запуск."

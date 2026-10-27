@@ -993,6 +993,9 @@ msgstr "Yüklendi: {loadedLabel}"
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
 
+msgid "Loading. There's no need to scan again."
+msgstr "Yükleniyor. Tekrar taramanıza gerek yok."
+
 msgid "Loading..."
 msgstr "Yükleniyor..."
 
@@ -1288,6 +1291,9 @@ msgstr "Hiçbiri"
 
 msgid "Notes"
 msgstr "Notlar"
+
+msgid "Nothing on this page uses that barcode"
+msgstr "Bu sayfada hiçbir şey bu barkodu kullanmıyor"
 
 msgid "Nothing running"
 msgstr "Hiçbir şey çalışmıyor"
@@ -1703,6 +1709,9 @@ msgstr "Seri numaras tarayın veya arayın..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek sütunu olarak ekleyin ve sonucunu ızgarada kaydedin."
 
+msgid "Scan received"
+msgstr "Tarama alındı"
+
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanızla tarayın (örn. Google Authenticator veya 1Password), ardından gösterdiği 6 haneli kodu girin."
 
@@ -2013,6 +2022,10 @@ msgstr "Carbon'da kullanılan vurgu rengi."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."
