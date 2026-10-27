@@ -15,7 +15,9 @@
 -- splits the rest off the unsplit seed (split_serial_units_for_completion) and
 -- picks again; then it numbers the unnumbered units it took
 -- (number_serial_units_for_receipt) and receives them. One query picks the units,
--- so numbering and receipt cannot take different ones. Every caller (the ERP's
+-- so numbering and receipt cannot take different ones. An item with no serial
+-- sequence is never split: its single units are received, then the rest against
+-- its seed. Every caller (the ERP's
 -- completeJob, and the sync_finish_job_operation interceptor when the last
 -- operation is marked Done) gets it by calling complete_job_to_inventory.
 --
@@ -371,6 +373,7 @@ DECLARE
   v_new_unit_cost NUMERIC;
   v_serial_unit_ids TEXT[];
   v_issued_units_received NUMERIC := 0;
+  v_units_taken INTEGER;
   v_company_today DATE := company_today(p_company_id);
   v_job_asset_class_id TEXT;
   v_job_asset_id TEXT;
@@ -837,57 +840,17 @@ BEGIN
       ) = 0;
     END LOOP;
 
-    IF COALESCE(array_length(v_serial_unit_ids, 1), 0) >= v_quantity_received_to_inventory THEN
-      PERFORM number_serial_units_for_receipt(
-        v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER],
-        v_item_id, p_company_id, v_job_location_id
-      );
-
-      -- An issued unit is received where it was booked out, so its own
-      -- movements net to nothing in that bin.
-      INSERT INTO "itemLedger" (
-        "entryType", "documentType", "documentId", "companyId",
-        "itemId", quantity, "locationId", "storageUnitId",
-        "trackedEntityId", "createdBy"
-      )
-      SELECT
-        'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-        v_item_id, 1,
-        CASE WHEN issued.id IS NULL THEN p_location_id ELSE issued."locationId" END,
-        CASE WHEN issued.id IS NULL THEN p_storage_unit_id ELSE issued."storageUnitId" END,
-        te.id, p_user_id
-      FROM unnest(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER]) AS unit_id
-      JOIN "trackedEntity" te ON te.id = unit_id
-      LEFT JOIN LATERAL (
-        SELECT il.id, il."locationId", il."storageUnitId"
-        FROM "itemLedger" il
-        WHERE il."trackedEntityId" = te.id
-          AND il."companyId" = p_company_id
-          AND il.quantity < 0
-          AND te.status = 'Consumed'
-        ORDER BY il."createdAt" DESC
-        LIMIT 1
-      ) issued ON true;
-
-      SELECT COUNT(*)
-      INTO v_issued_units_received
-      FROM "trackedEntity"
-      WHERE id = ANY(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER])
-        AND status = 'Consumed';
-
-      -- An issued unit stays Consumed: it is in the job it went to.
-      UPDATE "trackedEntity"
-      SET status = 'Available'
-      WHERE id = ANY(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER])
-        AND status <> 'Consumed';
-
-    ELSE
-      -- An item with no serial sequence is never numbered or split, so the job
-      -- still holds ONE seed entity covering every unit and there is nothing to
-      -- receive one at a time. Receive the delta against that seed,
-      -- the way the batch branch does. Raising here instead would abort the
-      -- jobOperation UPDATE itself: completion also runs inside
-      -- sync_finish_job_operation, a BEFORE trigger interceptor.
+    -- Short of single units: an item with no serial sequence is never split,
+    -- so the units the shop floor has not touched are still on its seed (one
+    -- entity holding several). The single units are received first, then the
+    -- rest against that seed, the way the batch branch receives. Raising
+    -- instead would abort the jobOperation UPDATE itself: completion also runs
+    -- inside sync_finish_job_operation, a BEFORE trigger interceptor.
+    v_units_taken := LEAST(
+      COALESCE(array_length(v_serial_unit_ids, 1), 0),
+      v_quantity_received_to_inventory::INTEGER
+    );
+    IF v_units_taken < v_quantity_received_to_inventory THEN
       SELECT *
       INTO v_tracked_entity
       FROM "trackedEntity" te
@@ -906,14 +869,62 @@ BEGIN
         RAISE EXCEPTION 'Job % has % serial unit(s) left to receive, fewer than the % being completed',
           v_job_id_readable, COALESCE(array_length(v_serial_unit_ids, 1), 0), v_quantity_received_to_inventory;
       END IF;
+    END IF;
 
+    IF v_units_taken > 0 THEN
+      PERFORM number_serial_units_for_receipt(
+        v_serial_unit_ids[1:v_units_taken],
+        v_item_id, p_company_id, v_job_location_id
+      );
+
+      -- An issued unit is received where it was booked out, so its own
+      -- movements net to nothing in that bin.
+      INSERT INTO "itemLedger" (
+        "entryType", "documentType", "documentId", "companyId",
+        "itemId", quantity, "locationId", "storageUnitId",
+        "trackedEntityId", "createdBy"
+      )
+      SELECT
+        'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
+        v_item_id, 1,
+        CASE WHEN issued.id IS NULL THEN p_location_id ELSE issued."locationId" END,
+        CASE WHEN issued.id IS NULL THEN p_storage_unit_id ELSE issued."storageUnitId" END,
+        te.id, p_user_id
+      FROM unnest(v_serial_unit_ids[1:v_units_taken]) AS unit_id
+      JOIN "trackedEntity" te ON te.id = unit_id
+      LEFT JOIN LATERAL (
+        SELECT il.id, il."locationId", il."storageUnitId"
+        FROM "itemLedger" il
+        WHERE il."trackedEntityId" = te.id
+          AND il."companyId" = p_company_id
+          AND il.quantity < 0
+          AND te.status = 'Consumed'
+        ORDER BY il."createdAt" DESC
+        LIMIT 1
+      ) issued ON true;
+
+      SELECT COUNT(*)
+      INTO v_issued_units_received
+      FROM "trackedEntity"
+      WHERE id = ANY(v_serial_unit_ids[1:v_units_taken])
+        AND status = 'Consumed';
+
+      -- An issued unit stays Consumed: it is in the job it went to.
+      UPDATE "trackedEntity"
+      SET status = 'Available'
+      WHERE id = ANY(v_serial_unit_ids[1:v_units_taken])
+        AND status <> 'Consumed';
+    END IF;
+
+    IF v_units_taken < v_quantity_received_to_inventory THEN
       INSERT INTO "itemLedger" (
         "entryType", "documentType", "documentId", "companyId",
         "itemId", quantity, "locationId", "storageUnitId",
         "trackedEntityId", "createdBy"
       ) VALUES (
         'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-        v_item_id, v_quantity_received_to_inventory, p_location_id, p_storage_unit_id,
+        v_item_id, v_quantity_received_to_inventory - v_units_taken,
+        p_location_id, p_storage_unit_id,
         v_tracked_entity.id, p_user_id
       );
 

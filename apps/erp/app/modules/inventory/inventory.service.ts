@@ -23579,10 +23579,22 @@ export async function issueMaterial(
             .execute();
         }
 
-        if (
-          trackedEntities.data.length <
-          (jobOperation.data.operationQuantity ?? 0)
-        ) {
+        // An unsplit seed is cut to one unit above; its other units go to the
+        // next unit, since the completion of an item with no serial sequence
+        // receives them against a seed. Otherwise the next unit is spawned
+        // while the units number fewer than the operation quantity.
+        const seedUnitsLeft =
+          trackedEntity.status !== "Consumed"
+            ? Math.max(Number(trackedEntity.quantity) - 1, 0)
+            : 0;
+        const nextUnits =
+          seedUnitsLeft > 0
+            ? seedUnitsLeft
+            : trackedEntities.data.length <
+                (jobOperation.data.operationQuantity ?? 0)
+              ? 1
+              : 0;
+        if (nextUnits > 0) {
           // Number this lazily-spawned unit from the item's serial sequence, if
           // one is configured. This unit wasn't part of the initial pre-split at
           // job creation (e.g. the job quantity was increased afterwards, or the
@@ -23590,15 +23602,16 @@ export async function issueMaterial(
           // a null readableId. Resolve the job's location for the %{location}
           // token; the reservation runs in this transaction, atomic with the spawn.
           // Under the item's serialNumberTiming = 'production' the spawned
-          // unit stays unnumbered until it is first touched.
-          const spawnReadableId = trackedEntity.itemId
-            ? await sequence.getSpawnSerialNumber(trx, {
-                itemId: trackedEntity.itemId,
-                companyId,
-                jobId: (trackedEntity.attributes as Record<string, unknown>)
-                  .Job as string | undefined
-              })
-            : null;
+          // unit stays unnumbered until it is first touched, and so does a seed.
+          const spawnReadableId =
+            nextUnits === 1 && trackedEntity.itemId
+              ? await sequence.getSpawnSerialNumber(trx, {
+                  itemId: trackedEntity.itemId,
+                  companyId,
+                  jobId: (trackedEntity.attributes as Record<string, unknown>)
+                    .Job as string | undefined
+                })
+              : null;
 
           // Create a new trackedEntity with the same attributes but status = Reserved
           const newTrackedEntityResult = await trx
@@ -23607,7 +23620,7 @@ export async function issueMaterial(
               sourceDocument: trackedEntity.sourceDocument,
               sourceDocumentId: trackedEntity.sourceDocumentId,
               sourceDocumentReadableId: trackedEntity.sourceDocumentReadableId,
-              quantity: 1,
+              quantity: nextUnits,
               status: "Reserved",
               attributes: trackedEntity.attributes,
               itemId: trackedEntity.itemId ?? null,
@@ -23840,10 +23853,24 @@ export async function issueMaterial(
             .selectAll()
             .where("id", "=", scrapEntityId)
             .where("companyId", "=", companyId)
+            .forUpdate()
             .executeTakeFirst();
           if (!entity) throw new NotFoundError("Tracked entity not found");
           if (entity.status === "Consumed" || entity.status === "Scrapped") {
             throw new Error("Tracked entity is not in progress");
+          }
+          // A unit already received holds stock, and this scrap writes no
+          // ledger row: the stock would stay on a Scrapped unit.
+          const onHand = await trx
+            .selectFrom("itemLedger")
+            .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
+            .where("trackedEntityId", "=", scrapEntityId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (Number(onHand?.quantity ?? 0) > 0) {
+            throw new InvalidInputError(
+              "The unit is already in stock. Scrap it from inventory instead."
+            );
           }
           scrappedEntityAttributes =
             entity.attributes as TrackedEntityAttributes;

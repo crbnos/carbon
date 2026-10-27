@@ -574,7 +574,7 @@ describe.skipIf(!client)("serial number timing", () => {
       const [seedUnit] = await units(f, job.makeMethodId);
 
       // The shop floor completes one unit: the seed keeps one unit and the
-      // next is spawned, so the rows hold two of the job's three units.
+      // next unit carries the other two.
       unwrap(
         await invokePosting(
           handlesOf(f.ctx),
@@ -590,21 +590,30 @@ describe.skipIf(!client)("serial number timing", () => {
       );
       expect(await units(f, job.makeMethodId)).toEqual([
         expect.objectContaining({ readableId: "SN-001", quantity: 1 }),
-        expect.objectContaining({ readableId: null, quantity: 1 })
+        expect.objectContaining({ readableId: null, quantity: 2 })
       ]);
+      // A fourth unit added to the job afterwards is held by no row.
+      await seed(f, async (trx) => {
+        await trx
+          .updateTable("job")
+          .set({ quantity: 4 })
+          .where("id", "=", job.jobId)
+          .execute();
+      });
 
       const result = await completeJob(contextFor(f), {
         jobId: job.jobId,
-        quantityComplete: 3
+        quantityComplete: 4
       });
       expect(result.error).toBeNull();
 
       expect(await receivedUnits(f, job.jobId)).toEqual([
         { readableId: "SN-001", quantity: 1 },
         { readableId: "SN-002", quantity: 1 },
-        { readableId: "SN-003", quantity: 1 }
+        { readableId: "SN-003", quantity: 1 },
+        { readableId: "SN-004", quantity: 1 }
       ]);
-      expect(await units(f, job.makeMethodId)).toHaveLength(3);
+      expect(await units(f, job.makeMethodId)).toHaveLength(4);
     } finally {
       await f.cleanup();
     }
@@ -712,6 +721,96 @@ describe.skipIf(!client)("serial number timing", () => {
       expect(await receivedUnits(f, job.jobId)).toEqual([
         { readableId: null, quantity: 3 }
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("receives a finished unit and the seed's other units for an item with no serial sequence", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      await seed(f, async (trx) => {
+        await trx
+          .deleteFrom("itemSerialSequence")
+          .where("itemId", "=", f.assemblyId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const job = await untouchedSerialJob(f, "7c", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationSerialComplete",
+            trackedEntityId: seedUnit!.id,
+            quantity: 1,
+            jobOperationId: job.operationId
+          },
+          issue
+        )
+      );
+
+      const result = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 3
+      });
+      expect(result.error).toBeNull();
+
+      // The finished unit on its own, the other two against the seed.
+      const received = await receivedUnits(f, job.jobId);
+      expect(received.sort((a, b) => a.quantity - b.quantity)).toEqual([
+        { readableId: null, quantity: 1 },
+        { readableId: null, quantity: 2 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("refuses to scrap a unit already received to stock", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "7d", 3);
+      const completed = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 1
+      });
+      expect(completed.error).toBeNull();
+      const received = (await units(f, job.makeMethodId)).find(
+        (unit) => unit.readableId === "SN-001"
+      );
+      const scrapReason = await f.db
+        .insertInto("scrapReason")
+        .values({ name: "Damaged", companyId: f.companyId, createdBy: USER })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "issue",
+        {
+          type: "jobOperationScrap",
+          jobOperationId: job.operationId,
+          quantity: 1,
+          scrapReasonId: scrapReason.id,
+          trackedEntityId: received!.id
+        },
+        issue
+      );
+
+      expect(result.error?.status).toBe(400);
+      expect(
+        (await units(f, job.makeMethodId)).find(
+          (unit) => unit.id === received!.id
+        )
+      ).toMatchObject({ quantity: 1, status: "Available" });
     } finally {
       await f.cleanup();
     }

@@ -76,7 +76,8 @@ and MES services — NOT a single `post-production`:
   is scrapped), then **spawns a replacement unit**, numbered by
   `getSpawnSerialNumber` like `jobOperationSerialComplete`'s next unit (left
   unnumbered under the `production` serial number timing; the replacement of
-  an unsplit seed carries the seed's other units and stays unnumbered), and reopens the make method's Done ops
+  an unsplit seed carries the seed's other units and stays unnumbered; a unit
+  already received to stock is refused), and reopens the make method's Done ops
   (`applyScrapReplacement`, `inventory.service.ts`) so the replacement runs the full routing. `issue`
   case `scrapTrackedEntity` scraps a subcomponent, branching on entity **state**:
   an `Available` part posts a `Scrap` (`Negative Adjmt.`) `itemLedger` at its
