@@ -211,6 +211,18 @@ BEGIN
     AND te."companyId" = p_company_id
   FOR UPDATE;
 
+  -- A completion this call waited on may have received units since the read
+  -- above: take the delta from what is received now.
+  SELECT COALESCE(j."quantityReceivedToInventory", 0)
+  INTO v_job."quantityReceivedToInventory"
+  FROM "job" j
+  WHERE j."id" = p_job_id
+    AND j."companyId" = p_company_id;
+  v_delta := p_quantity_complete - v_job."quantityReceivedToInventory";
+  IF v_delta IS NULL OR v_delta <= 0 OR v_delta <> trunc(v_delta) THEN
+    RETURN 0;
+  END IF;
+
   -- The units the completion takes, by the same filter and order as
   -- complete_job_to_inventory (20261015161847_job-receipt-takes-issued-serial-units).
   IF v_target = 'asset' THEN

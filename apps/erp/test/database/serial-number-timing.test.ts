@@ -24,6 +24,7 @@ import {
 } from "../../app/modules/production/production.server";
 import {
   assignJobSerialNumbers,
+  completeJobToInventory,
   numberSerialUnitsForCompletion
 } from "../../app/modules/production/production.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
@@ -37,6 +38,7 @@ import {
   USER,
   unwrap
 } from "./fixtures/always-post";
+import { connectLocalTestDatabase } from "./fixtures/local-database";
 import { handlesOf } from "./fixtures/handles";
 import { hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
@@ -417,6 +419,72 @@ describe.skipIf(!client)("serial number timing", () => {
         .executeTakeFirstOrThrow();
       expect(Number(sequence.next)).toBe(0);
     } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("numbers nothing for a completion another one received while it waited", async () => {
+    const f = await alwaysPostFixture();
+    const second = await connectLocalTestDatabase();
+    const watcher = await connectLocalTestDatabase();
+    let commit = () => {};
+    const committed = new Promise<void>((resolve) => {
+      commit = resolve;
+    });
+    let holding = () => {};
+    const held = new Promise<void>((resolve) => {
+      holding = resolve;
+    });
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "race", 4);
+      const args = {
+        jobId: job.jobId,
+        quantityComplete: 2,
+        companyId: f.companyId
+      };
+
+      // The first completion numbers and receives two units, and keeps its
+      // locks until it commits.
+      const first = f.db.transaction().execute(async (trx) => {
+        await numberSerialUnitsForCompletion(trx, args);
+        await completeJobToInventory(trx, { ...args, userId: USER });
+        holding();
+        await committed;
+      });
+      await held;
+
+      // The same completion again reads the job before the first commits,
+      // then waits for the units.
+      const repeat = numberSerialUnitsForCompletion(second, args);
+      for (let attempt = 0; ; attempt++) {
+        const { rows } = await sql<{ waiting: number }>`
+          SELECT count(*)::int AS waiting FROM pg_stat_activity
+          WHERE datname = current_database()
+            AND pid <> pg_backend_pid()
+            AND wait_event_type = 'Lock'
+            AND query ILIKE '%number_serial_units_for_completion%'`.execute(
+          watcher
+        );
+        if (rows[0]!.waiting > 0) break;
+        if (attempt === 200) throw new Error("The repeat never waited");
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      commit();
+      await first;
+
+      expect(await repeat).toEqual({ numbered: 0 });
+      const sequence = await f.db
+        .selectFrom("itemSerialSequence")
+        .select("next")
+        .where("itemId", "=", f.assemblyId)
+        .executeTakeFirstOrThrow();
+      expect(Number(sequence.next)).toBe(2);
+    } finally {
+      commit();
+      await second.destroy();
+      await watcher.destroy();
       await f.cleanup();
     }
   });
