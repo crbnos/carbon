@@ -2542,6 +2542,9 @@ msgstr "할당됨"
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
 
+msgid "Already posted"
+msgstr ""
+
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}에서도"
 
@@ -5676,6 +5679,9 @@ msgstr "콘솔 작업자"
 msgid "Console Operator Created"
 msgstr "콘솔 작업자가 생성되었습니다"
 
+msgid "Consolidated CTA"
+msgstr ""
+
 msgid "Consolidation Rate"
 msgstr ""
 
@@ -6731,6 +6737,9 @@ msgstr "통화 환산"
 
 msgid "Currency Translation (default)"
 msgstr "통화 환산(기본값)"
+
+msgid "Currency Translation Adjustment"
+msgstr ""
 
 msgid "Currency Translation Offset"
 msgstr ""
@@ -9510,6 +9519,9 @@ msgstr "활성 리스의 모든 변경 사항, 변경 전후의 금액 포함"
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "회계를 활성화하기 전에 모든 확인이 통과해야 합니다."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "모든 회사 범위의 레코드. 자격증명, 연동 토큰 및 웹훅은 포함되지 않습니다."
@@ -15834,6 +15846,9 @@ msgstr "수주에"
 msgid "On Storage Unit"
 msgstr "보관 단위에"
 
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr ""
+
 msgid "On this operation"
 msgstr "이 작업 시"
 
@@ -17297,6 +17312,9 @@ msgstr "Stripe를 통해 전기 및 전송"
 msgid "Post Comment"
 msgstr "댓글 게시"
 
+msgid "Post CTA"
+msgstr ""
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "초안 실행 {0} 전기"
@@ -17357,6 +17375,9 @@ msgstr "전기 날짜"
 
 msgid "Posting Date"
 msgstr "전기일"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr ""
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "송장을 전기하고 연결된 Stripe 계정을 통해 지불 링크와 함께 전송합니다. 연결된 Stripe 고객이 없는 고객의 송장은 전기되고 미발송으로 표시됩니다."
@@ -17426,6 +17447,9 @@ msgstr "설비 예방 유지보수 일정"
 
 msgid "Preview"
 msgstr "미리보기"
+
+msgid "Preview CTA"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "미리보기 실패: {error}"
@@ -19594,6 +19618,9 @@ msgid "Rev {revisionId}"
 msgstr "개정 {revisionId}"
 
 msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalue these companies first"
 msgstr ""
 
 msgid "Revalued"
@@ -24158,6 +24185,9 @@ msgstr "이 개들은 판매로 취급됩니다. 활성화하면 각각을 자�
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "이들은 귀사의 계정과목표에 없지만 문서 또는 전표에서 사용 중입니다. 각 항목을 대체할 귀사 계정과목표의 계정을 선택하세요."
 
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr ""
+
 msgid "this ability"
 msgstr "이 역량"
 
@@ -24701,6 +24731,9 @@ msgstr "다음 주까지"
 
 msgid "To pick"
 msgstr "피킹"
+
+msgid "To post"
+msgstr ""
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "다시 활성화하려면 행 메뉴를 사용하여 초대 보내기를 선택하세요. 직원이 수락하면 활성화됩니다."

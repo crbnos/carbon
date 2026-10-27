@@ -2542,6 +2542,9 @@ msgstr "Tahsis edildi"
 msgid "Allows acknowledge & continue"
 msgstr "Onaylayıp devam etmeye izin verir"
 
+msgid "Already posted"
+msgstr ""
+
 msgid "also at {otherStationNames}"
 msgstr "ayrıca {otherStationNames} adresinde"
 
@@ -5676,6 +5679,9 @@ msgstr "Konsol Operatörü"
 msgid "Console Operator Created"
 msgstr "Konsol operatörü oluşturuldu"
 
+msgid "Consolidated CTA"
+msgstr ""
+
 msgid "Consolidation Rate"
 msgstr ""
 
@@ -6731,6 +6737,9 @@ msgstr "Kur çevrimi"
 
 msgid "Currency Translation (default)"
 msgstr "Kur çevrimi (varsayılan)"
+
+msgid "Currency Translation Adjustment"
+msgstr ""
 
 msgid "Currency Translation Offset"
 msgstr ""
@@ -9510,6 +9519,9 @@ msgstr "Aktif kiralamada yapılan her değişiklik, önceki ve sonraki tutarlarl
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Muhasebeleştirme etkinleştirilmeden önce her kontrolün başarılı olması gerekir."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon belirteçleri ve webhook'lar asla dahil edilmez."
@@ -15834,6 +15846,9 @@ msgstr "Satış Siparişi'nde"
 msgid "On Storage Unit"
 msgstr "Depolama biriminde"
 
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr ""
+
 msgid "On this operation"
 msgstr "Bu operasyonda"
 
@@ -17297,6 +17312,9 @@ msgstr "Muhasebeleştir ve Stripe üzerinden gönder"
 msgid "Post Comment"
 msgstr "Yorum Yap"
 
+msgid "Post CTA"
+msgstr ""
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "{0} taslak çalışmasını muhasebeleştir"
@@ -17357,6 +17375,9 @@ msgstr "Muhasebeleştirme tarihi"
 
 msgid "Posting Date"
 msgstr "Muhasebeleştirme Tarihi"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr ""
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Faturayı muhasebeleştirir ve bağlı Stripe hesabınız üzerinden bir ödeme linki ile gönderir. Bağlı Stripe müşterisi olmayan bir müşteri için fatura muhasebeleştirilir ve gönderilmedi olarak işaretlenir."
@@ -17426,6 +17447,9 @@ msgstr "Ekipmanınız için önleyici bakım programları"
 
 msgid "Preview"
 msgstr "Önizle"
+
+msgid "Preview CTA"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "Önizleme başarısız oldu: {error}"
@@ -19594,6 +19618,9 @@ msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
 msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalue these companies first"
 msgstr ""
 
 msgid "Revalued"
@@ -24158,6 +24185,9 @@ msgstr "Bu birimler satış olarak ele alınır. Etkinleştirme her birini kayı
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "Bunlar sizin hesap planınızda değil, ancak belgeler veya muhasebe fişleri tarafından kullanılıyorlar. Her birini değiştirecek hesap planınızdaki hesabı seçin."
 
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr ""
+
 msgid "this ability"
 msgstr "bu yetkinlik"
 
@@ -24701,6 +24731,9 @@ msgstr "Gelecek haftaya"
 
 msgid "To pick"
 msgstr "Toplama"
+
+msgid "To post"
+msgstr ""
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Yeniden etkinleştirmek için, satır menüsünü kullanın ve Davet Gönder'i seçin. Çalışan bunu kabul ettiğinde etkin hale gelir."

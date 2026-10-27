@@ -2542,6 +2542,9 @@ msgstr "已分配"
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
 
+msgid "Already posted"
+msgstr ""
+
 msgid "also at {otherStationNames}"
 msgstr "也在 {otherStationNames}"
 
@@ -5676,6 +5679,9 @@ msgstr "控制台操作员"
 msgid "Console Operator Created"
 msgstr "控制台操作员已创建"
 
+msgid "Consolidated CTA"
+msgstr ""
+
 msgid "Consolidation Rate"
 msgstr ""
 
@@ -6731,6 +6737,9 @@ msgstr "货币折算"
 
 msgid "Currency Translation (default)"
 msgstr "货币折算（默认）"
+
+msgid "Currency Translation Adjustment"
+msgstr ""
 
 msgid "Currency Translation Offset"
 msgstr ""
@@ -9510,6 +9519,9 @@ msgstr "对启用租赁的每项更改，显示更改前后的金额。"
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "启用会计之前，每个检查都必须通过。"
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不包含在内。"
@@ -15834,6 +15846,9 @@ msgstr "在销售订单上"
 msgid "On Storage Unit"
 msgstr "在存储单元上"
 
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr ""
+
 msgid "On this operation"
 msgstr "在此工序上"
 
@@ -17297,6 +17312,9 @@ msgstr "过账并通过Stripe发送"
 msgid "Post Comment"
 msgstr "发布评论"
 
+msgid "Post CTA"
+msgstr ""
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "过账草稿运行 {0}"
@@ -17357,6 +17375,9 @@ msgstr "过账日期"
 
 msgid "Posting Date"
 msgstr "过账日期"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr ""
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "过账发票并通过您已连接的Stripe账户发送支付链接。没有关联Stripe客户的客户的发票将被过账并标记为未发送。"
@@ -17426,6 +17447,9 @@ msgstr "您的设备预防性维护排程"
 
 msgid "Preview"
 msgstr "预览"
+
+msgid "Preview CTA"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "预览失败：{error}"
@@ -19594,6 +19618,9 @@ msgid "Rev {revisionId}"
 msgstr "修订 {revisionId}"
 
 msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalue these companies first"
 msgstr ""
 
 msgid "Revalued"
@@ -24158,6 +24185,9 @@ msgstr "这些单位被视为销售。激活时注销每一个单位并过账其
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "这些账户不在你的会计科目表中，但文档或凭证使用了它们。从你的会计科目表中选择替代每一个的账户。"
 
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr ""
+
 msgid "this ability"
 msgstr "此能力"
 
@@ -24701,6 +24731,9 @@ msgstr "至下周"
 
 msgid "To pick"
 msgstr "拣货"
+
+msgid "To post"
+msgstr ""
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "要重新激活，请使用行菜单并选择发送邀请。员工接受后将变为启用。"

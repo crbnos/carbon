@@ -65,6 +65,8 @@ export const path = {
     accountingJournals: `${x}/accounting/journals`,
     accountingPeriodClose: (id: string) =>
       generatePath(`${x}/accounting/periods/${id}/close`),
+    accountingPeriodCloseCta: (id: string) =>
+      generatePath(`${x}/accounting/periods/${id}/close/cta`),
     accountingPeriodDelete: (id: string) =>
       generatePath(`${x}/accounting/periods/${id}/delete`),
     accountingPeriods: `${x}/accounting/periods`,

@@ -222,7 +222,8 @@ describe("periodRunChecks", () => {
     revenue: { count: 0, amount: 0, error: null },
     lease: { count: 0, amount: 0, error: null },
     depreciation: { count: 0, amount: 0, error: null },
-    currencyRevaluation: { count: 0, amount: 0, error: null }
+    currencyRevaluation: { count: 0, amount: 0, error: null },
+    currencyTranslation: { count: 0, amount: 0, error: null }
   };
 
   function base(
@@ -257,6 +258,7 @@ describe("periodRunChecks", () => {
     ).toEqual([
       ["draft-depreciation", false, 0],
       ["fx-revaluation", false, 0],
+      ["cta-posted", false, 0],
       ["unposted-revenue-schedules", false, 0],
       ["unposted-lease-schedules", false, 0]
     ]);
@@ -423,6 +425,46 @@ describe("periodRunChecks", () => {
           draftCurrencyRevaluationRuns: { data: null, error: { message: "x" } }
         }),
         "fx-revaluation"
+      )?.failing
+    ).toBe(true);
+  });
+
+  it("fails the CTA check while the root's posted CTA trails the consolidated CTA", () => {
+    // Consolidated CTA 41,000 against 38,400 posted: a movement of 2,600.
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            currencyTranslation: { count: 1, amount: 2600, error: null }
+          }
+        }),
+        "cta-posted"
+      )
+    ).toMatchObject({ failing: true, count: 1, amount: 2600, draftRuns: [] });
+  });
+
+  it("passes the CTA check when there is nothing to post (non-root or one currency)", () => {
+    expect(check(base(), "cta-posted")).toMatchObject({
+      failing: false,
+      count: 0
+    });
+  });
+
+  it("fails the CTA check closed when the preview fails", () => {
+    expect(
+      check(
+        base({
+          runPreview: {
+            ...nothingDue,
+            currencyTranslation: {
+              count: 0,
+              amount: 0,
+              error: "The group has no elimination entity"
+            }
+          }
+        }),
+        "cta-posted"
       )?.failing
     ).toBe(true);
   });

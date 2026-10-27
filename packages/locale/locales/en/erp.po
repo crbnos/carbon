@@ -2542,6 +2542,9 @@ msgstr "Allocated"
 msgid "Allows acknowledge & continue"
 msgstr "Allows acknowledge & continue"
 
+msgid "Already posted"
+msgstr "Already posted"
+
 msgid "also at {otherStationNames}"
 msgstr "also at {otherStationNames}"
 
@@ -5676,6 +5679,9 @@ msgstr "Console Operator"
 msgid "Console Operator Created"
 msgstr "Console Operator Created"
 
+msgid "Consolidated CTA"
+msgstr "Consolidated CTA"
+
 msgid "Consolidation Rate"
 msgstr "Consolidation Rate"
 
@@ -6731,6 +6737,9 @@ msgstr "Currency Translation"
 
 msgid "Currency Translation (default)"
 msgstr "Currency Translation (default)"
+
+msgid "Currency Translation Adjustment"
+msgstr "Currency Translation Adjustment"
 
 msgid "Currency Translation Offset"
 msgstr "Currency Translation Offset"
@@ -9510,6 +9519,9 @@ msgstr "Every change to an active lease, with the amounts before and after."
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Every check must pass before accounting can be enabled."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr "Every company in the group uses this company's currency, so there is no translation adjustment."
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
@@ -15834,6 +15846,9 @@ msgstr "On Sales Order"
 msgid "On Storage Unit"
 msgstr "On Storage Unit"
 
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+
 msgid "On this operation"
 msgstr "On this operation"
 
@@ -17297,6 +17312,9 @@ msgstr "Post and send via Stripe"
 msgid "Post Comment"
 msgstr "Post Comment"
 
+msgid "Post CTA"
+msgstr "Post CTA"
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "Post draft run {0}"
@@ -17357,6 +17375,9 @@ msgstr "Posting date"
 
 msgid "Posting Date"
 msgstr "Posting Date"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr "Posts the change in the consolidated CTA to equity on the elimination company."
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
@@ -17426,6 +17447,9 @@ msgstr "Preventive maintenance schedules for your equipment"
 
 msgid "Preview"
 msgstr "Preview"
+
+msgid "Preview CTA"
+msgstr "Preview CTA"
 
 msgid "Preview failed: {error}"
 msgstr "Preview failed: {error}"
@@ -19595,6 +19619,9 @@ msgstr "Rev {revisionId}"
 
 msgid "Revaluation Lines"
 msgstr "Revaluation Lines"
+
+msgid "Revalue these companies first"
+msgstr "Revalue these companies first"
 
 msgid "Revalued"
 msgstr "Revalued"
@@ -24158,6 +24185,9 @@ msgstr "These units are treated as sales. Activating derecognizes each one and p
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+
 msgid "this ability"
 msgstr "this ability"
 
@@ -24701,6 +24731,9 @@ msgstr "To next week"
 
 msgid "To pick"
 msgstr "To pick"
+
+msgid "To post"
+msgstr "To post"
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."

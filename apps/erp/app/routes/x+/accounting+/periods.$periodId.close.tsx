@@ -21,6 +21,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  RecordOutlet,
   Status,
   Table,
   Tbody,
@@ -48,7 +49,7 @@ import {
   LuX
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Link, useLoaderData, useNavigate } from "react-router";
+import { Link, useLoaderData, useNavigate, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { EmployeeAvatar } from "~/components";
@@ -202,81 +203,84 @@ export default function AccountingPeriodCloseRoute() {
         : "Period";
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) navigate(path.to.accountingPeriods);
-      }}
-    >
-      <ModalContent size="xxlarge">
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Close {periodLabel}</Trans>
-          </ModalTitle>
-          <ModalDescription>
-            <Trans>
-              Every required task must be Done or Skipped before the period can
-              be closed.
-            </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          {checklist.blockingReason && (
-            <Alert variant="destructive" className="mb-4">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Cannot close yet</Trans>
-              </AlertTitle>
-              <AlertDescription>{checklist.blockingReason}</AlertDescription>
-            </Alert>
-          )}
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>
-                  <Trans>Task</Trans>
-                </Th>
-                <Th>
-                  <Trans>Type</Trans>
-                </Th>
-                <Th>
-                  <Trans>Severity</Trans>
-                </Th>
-                <Th>
-                  <Trans>Status</Trans>
-                </Th>
-                <Th className="text-right">
-                  <Trans>Actions</Trans>
-                </Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {checklist.tasks.map((task) => (
-                <PeriodCloseTaskRow
-                  key={task.id}
-                  task={task}
-                  closeStatus={period?.closeStatus}
-                  periodEnd={period?.endDate}
-                />
-              ))}
-            </Tbody>
-          </Table>
-        </ModalBody>
-        <ModalFooter>
-          <closeFetcher.Form method="post">
-            <input type="hidden" name="intent" value="close" />
-            <Button
-              type="submit"
-              leftIcon={<LuLock />}
-              isDisabled={!checklist.canClose}
-              isLoading={closeFetcher.state !== "idle"}
-            >
-              <Trans>Close Period</Trans>
-            </Button>
-          </closeFetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <>
+      <Modal
+        open
+        onOpenChange={(open) => {
+          if (!open) navigate(path.to.accountingPeriods);
+        }}
+      >
+        <ModalContent size="xxlarge">
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Close {periodLabel}</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              <Trans>
+                Every required task must be Done or Skipped before the period
+                can be closed.
+              </Trans>
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            {checklist.blockingReason && (
+              <Alert variant="destructive" className="mb-4">
+                <LuTriangleAlert className="h-4 w-4" />
+                <AlertTitle>
+                  <Trans>Cannot close yet</Trans>
+                </AlertTitle>
+                <AlertDescription>{checklist.blockingReason}</AlertDescription>
+              </Alert>
+            )}
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>
+                    <Trans>Task</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>Type</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>Severity</Trans>
+                  </Th>
+                  <Th>
+                    <Trans>Status</Trans>
+                  </Th>
+                  <Th className="text-right">
+                    <Trans>Actions</Trans>
+                  </Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {checklist.tasks.map((task) => (
+                  <PeriodCloseTaskRow
+                    key={task.id}
+                    task={task}
+                    closeStatus={period?.closeStatus}
+                    periodEnd={period?.endDate}
+                  />
+                ))}
+              </Tbody>
+            </Table>
+          </ModalBody>
+          <ModalFooter>
+            <closeFetcher.Form method="post">
+              <input type="hidden" name="intent" value="close" />
+              <Button
+                type="submit"
+                leftIcon={<LuLock />}
+                isDisabled={!checklist.canClose}
+                isLoading={closeFetcher.state !== "idle"}
+              >
+                <Trans>Close Period</Trans>
+              </Button>
+            </closeFetcher.Form>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      <RecordOutlet />
+    </>
   );
 }
 
@@ -317,6 +321,8 @@ function PeriodCloseTaskRow({
         return t`Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period.`;
       case "fx-revaluation":
         return t`Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency.`;
+      case "cta-posted":
+        return t`On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically.`;
       case "unmatched-ic":
         return t`Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities.`;
       case "unposted-revenue-schedules":
@@ -362,6 +368,7 @@ function PeriodCloseTaskRow({
           : task.autoCheckKey === "fx-revaluation"
             ? "create-currency-revaluation-run"
             : null;
+  const { periodId } = useParams();
   const due = task.autoCheck?.due;
   const canCreateRun =
     createRunIntent !== null &&
@@ -540,6 +547,16 @@ function PeriodCloseTaskRow({
                 </Button>
               </fetcher.Form>
             )}
+            {task.autoCheckKey === "cta-posted" &&
+              status === "Open" &&
+              (due?.count ?? 0) > 0 &&
+              periodId && (
+                <Button asChild variant="primary" size="sm">
+                  <Link to={path.to.accountingPeriodCloseCta(periodId)}>
+                    <Trans>Preview CTA</Trans>
+                  </Link>
+                </Button>
+              )}
             {canCreateRun && createRunIntent && (
               <fetcher.Form method="post">
                 <input type="hidden" name="intent" value={createRunIntent} />

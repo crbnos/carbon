@@ -2542,6 +2542,9 @@ msgstr "配置済み"
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
 
+msgid "Already posted"
+msgstr ""
+
 msgid "also at {otherStationNames}"
 msgstr "{otherStationNames}でも実施中"
 
@@ -5676,6 +5679,9 @@ msgstr "コンソールオペレーター"
 msgid "Console Operator Created"
 msgstr "コンソールオペレーターが作成されました"
 
+msgid "Consolidated CTA"
+msgstr ""
+
 msgid "Consolidation Rate"
 msgstr ""
 
@@ -6731,6 +6737,9 @@ msgstr "通貨換算"
 
 msgid "Currency Translation (default)"
 msgstr "通貨換算（デフォルト）"
+
+msgid "Currency Translation Adjustment"
+msgstr ""
 
 msgid "Currency Translation Offset"
 msgstr ""
@@ -9510,6 +9519,9 @@ msgstr "有効リースのすべての変更。変更前後の金額付き。"
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "会計を有効にする前に、すべてのチェックに合格する必要があります。"
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "会社に属するすべてのレコード。認証情報、連携トークン、Webhookは含まれません。"
@@ -15834,6 +15846,9 @@ msgstr "受注に対して"
 msgid "On Storage Unit"
 msgstr "保管ユニット上"
 
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr ""
+
 msgid "On this operation"
 msgstr "この操作で"
 
@@ -17297,6 +17312,9 @@ msgstr "転記してStripeで送信"
 msgid "Post Comment"
 msgstr "コメントを投稿"
 
+msgid "Post CTA"
+msgstr ""
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "下書き実行{0}を転記"
@@ -17357,6 +17375,9 @@ msgstr "転記日付"
 
 msgid "Posting Date"
 msgstr "転記日付"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr ""
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "請求書を転記して、接続されたStripeアカウント経由で支払いリンク付きで送信します。Stripe得意先がリンクされていない得意先の請求書は転記され、未送信としてマークされます。"
@@ -17426,6 +17447,9 @@ msgstr "設備の予防保全スケジュール"
 
 msgid "Preview"
 msgstr "プレビュー"
+
+msgid "Preview CTA"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "プレビューに失敗しました: {error}"
@@ -19594,6 +19618,9 @@ msgid "Rev {revisionId}"
 msgstr "改版 {revisionId}"
 
 msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalue these companies first"
 msgstr ""
 
 msgid "Revalued"
@@ -24158,6 +24185,9 @@ msgstr "これらの単位は販売として扱われます。起動により各
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "これらは勘定科目表にありませんが、ドキュメントまたは仕訳で使用されています。各々を置き換える勘定科目表内のアカウントを選択してください。"
 
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr ""
+
 msgid "this ability"
 msgstr "このスキル"
 
@@ -24701,6 +24731,9 @@ msgstr "来週へ"
 
 msgid "To pick"
 msgstr "ピッキング"
+
+msgid "To post"
+msgstr ""
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "再度有効にするには、行メニューを使用して「招待を送信」を選択してください。従業員が承諾したら有効になります。"

@@ -2542,6 +2542,9 @@ msgstr "Alocado"
 msgid "Allows acknowledge & continue"
 msgstr "Permite reconhecer e continuar"
 
+msgid "Already posted"
+msgstr ""
+
 msgid "also at {otherStationNames}"
 msgstr "também em {otherStationNames}"
 
@@ -5676,6 +5679,9 @@ msgstr "Operador de Console"
 msgid "Console Operator Created"
 msgstr "Operador de console criado"
 
+msgid "Consolidated CTA"
+msgstr ""
+
 msgid "Consolidation Rate"
 msgstr ""
 
@@ -6731,6 +6737,9 @@ msgstr "Conversão de Moeda"
 
 msgid "Currency Translation (default)"
 msgstr "Conversão de Moeda (padrão)"
+
+msgid "Currency Translation Adjustment"
+msgstr ""
 
 msgid "Currency Translation Offset"
 msgstr ""
@@ -9510,6 +9519,9 @@ msgstr "Toda alteração em um aluguel ativo, com os valores antes e depois."
 
 msgid "Every check must pass before accounting can be enabled."
 msgstr "Cada verificação deve passar antes que a contabilidade possa ser ativada."
+
+msgid "Every company in the group uses this company's currency, so there is no translation adjustment."
+msgstr ""
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "Todos os registros da empresa. Credenciais, tokens de integração e webhooks nunca são incluídos."
@@ -15834,6 +15846,9 @@ msgstr "Em Pedido de Venda"
 msgid "On Storage Unit"
 msgstr "Na Unidade de Armazenamento"
 
+msgid "On the group's root company, compares the consolidated currency translation adjustment (CTA) for this period with the CTA already posted on the elimination company. Preview and post the difference so equity carries the CTA in the ledger. Revalue the subsidiaries first. Other companies pass automatically."
+msgstr ""
+
 msgid "On this operation"
 msgstr "Nesta operação"
 
@@ -17297,6 +17312,9 @@ msgstr "Contabilizar e enviar via Stripe"
 msgid "Post Comment"
 msgstr "Postar Comentário"
 
+msgid "Post CTA"
+msgstr ""
+
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"
 msgstr "Contabilizar rascunho do lançamento {0}"
@@ -17357,6 +17375,9 @@ msgstr "data de contabilização"
 
 msgid "Posting Date"
 msgstr "Data de contabilização"
+
+msgid "Posts the change in the consolidated CTA to equity on the elimination company."
+msgstr ""
 
 msgid "Posts the invoice and sends it through your connected Stripe account with a payment link. An invoice for a customer with no linked Stripe customer is posted and marked not sent."
 msgstr "Contabiliza a fatura e a envia através de sua conta Stripe conectada com um link de pagamento. Uma fatura para um cliente sem cliente Stripe vinculado é contabilizada e marcada como não enviada."
@@ -17426,6 +17447,9 @@ msgstr "Cronogramas de manutenção preventiva para seu equipamento"
 
 msgid "Preview"
 msgstr "Visualizar"
+
+msgid "Preview CTA"
+msgstr ""
 
 msgid "Preview failed: {error}"
 msgstr "Falha na visualização: {error}"
@@ -19594,6 +19618,9 @@ msgid "Rev {revisionId}"
 msgstr "Rev {revisionId}"
 
 msgid "Revaluation Lines"
+msgstr ""
+
+msgid "Revalue these companies first"
 msgstr ""
 
 msgid "Revalued"
@@ -24158,6 +24185,9 @@ msgstr "Essas unidades são tratadas como vendas. Ativar desreconhece cada uma e
 msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 msgstr "Elas não estão em seu plano de contas, mas documentos ou diários as usam. Escolha a conta em seu plano de contas que substitui cada uma."
 
+msgid "They have no posted currency revaluation run for this period, so their balances are not at the closing rate:"
+msgstr ""
+
 msgid "this ability"
 msgstr "esta habilidade"
 
@@ -24701,6 +24731,9 @@ msgstr "Para a próxima semana"
 
 msgid "To pick"
 msgstr "Separar"
+
+msgid "To post"
+msgstr ""
 
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "Para reativar, use o menu de linha e escolha Enviar Convite. O funcionário fica ativo assim que aceita."

@@ -3761,6 +3761,7 @@ export type PeriodRunPreview = {
   lease: RunPreview;
   depreciation: RunPreview;
   currencyRevaluation: RunPreview;
+  currencyTranslation: RunPreview;
 };
 
 export type PeriodRunPreviewer = (
@@ -3823,56 +3824,127 @@ export async function getPeriodRunPreview(
           error: previewError(error, fallback)
         })
       );
-  const [revenue, lease, depreciation, currencyRevaluation] = await Promise.all(
-    [
-      previewRun(
-        "Revenue Recognition",
-        "Failed to preview revenue recognition"
-      ),
-      previewRun("Lease", "Failed to preview the lease run"),
-      buildDepreciationRunLines(client, {
-        companyId,
-        companyGroupId,
-        periodEnd
-      })
-        .then((result): RunPreview => {
-          if (!result.data) {
-            return {
-              count: 0,
-              amount: 0,
-              error: previewError(
-                result.error,
-                "Failed to calculate depreciation"
-              )
-            };
-          }
-          if (result.data.laterPostedRunId) {
-            return { count: 0, amount: 0, error: null };
-          }
-          const { lines } = result.data;
+  const [
+    revenue,
+    lease,
+    depreciation,
+    currencyRevaluation,
+    currencyTranslation
+  ] = await Promise.all([
+    previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
+    previewRun("Lease", "Failed to preview the lease run"),
+    buildDepreciationRunLines(client, {
+      companyId,
+      companyGroupId,
+      periodEnd
+    })
+      .then((result): RunPreview => {
+        if (!result.data) {
           return {
-            count: new Set(lines.map((line) => line.fixedAssetId)).size,
-            amount: round(lines.reduce((sum, line) => sum + line.amount, 0)),
-            error: null
-          };
-        })
-        .catch(
-          (error): RunPreview => ({
             count: 0,
             amount: 0,
-            error: previewError(error, "Failed to calculate depreciation")
-          })
-        ),
-      previewCurrencyRevaluation(db, { companyId, periodEnd }).catch(
+            error: previewError(
+              result.error,
+              "Failed to calculate depreciation"
+            )
+          };
+        }
+        if (result.data.laterPostedRunId) {
+          return { count: 0, amount: 0, error: null };
+        }
+        const { lines } = result.data;
+        return {
+          count: new Set(lines.map((line) => line.fixedAssetId)).size,
+          amount: round(lines.reduce((sum, line) => sum + line.amount, 0)),
+          error: null
+        };
+      })
+      .catch(
         (error): RunPreview => ({
           count: 0,
           amount: 0,
-          error: previewError(error, "Failed to preview currency revaluation")
+          error: previewError(error, "Failed to calculate depreciation")
         })
-      )
-    ]
-  );
-  return { revenue, lease, depreciation, currencyRevaluation };
+      ),
+    previewCurrencyRevaluation(db, { companyId, periodEnd }).catch(
+      (error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(error, "Failed to preview currency revaluation")
+      })
+    ),
+    previewCurrencyTranslationMovement(client, db, {
+      companyId,
+      companyGroupId,
+      periodEnd
+    }).catch(
+      (error): RunPreview => ({
+        count: 0,
+        amount: 0,
+        error: previewError(
+          error,
+          "Failed to preview the currency translation adjustment"
+        )
+      })
+    )
+  ]);
+  return {
+    revenue,
+    lease,
+    depreciation,
+    currencyRevaluation,
+    currencyTranslation
+  };
+}
+
+/**
+ * The CTA movement a posting for `periodEnd` would write, for the close
+ * checklist: one item while the root company's posted CTA differs from the
+ * consolidated CTA. Nothing for a company that is not the group's root, or a
+ * group with one currency.
+ */
+async function previewCurrencyTranslationMovement(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; companyGroupId: string; periodEnd: string }
+): Promise<RunPreview> {
+  const { companyId, companyGroupId, periodEnd } = args;
+  const nothing: RunPreview = { count: 0, amount: 0, error: null };
+  const company = await db
+    .selectFrom("company")
+    .select("parentCompanyId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!company || company.parentCompanyId !== null) return nothing;
+
+  const period = await db
+    .selectFrom("accountingPeriod")
+    .select([sql<string>`"startDate"::text`.as("startDate"), "fiscalYear"])
+    .where("companyId", "=", companyId)
+    .where("endDate", "=", periodEnd)
+    .executeTakeFirst();
+  const preview = await computeCurrencyTranslationPreview({
+    client,
+    eliminationClient: getCarbonServiceRole(),
+    db,
+    companyId,
+    companyGroupId,
+    startDate:
+      period?.startDate ?? startOfMonth(parseDate(periodEnd)).toString(),
+    periodEnd,
+    fiscalYear: period?.fiscalYear ?? null
+  });
+  if (preview.error) {
+    return preview.error.category === "forbidden"
+      ? nothing
+      : { count: 0, amount: 0, error: preview.error.message };
+  }
+  if (!preview.data.applicable || preview.data.movement === 0) return nothing;
+  return {
+    count: 1,
+    amount: round(Math.abs(preview.data.movement)),
+    error: null
+  };
 }
 
 /** The previewer the close checklist uses outside tests. */
@@ -4003,6 +4075,19 @@ export function periodRunChecks(args: {
         readableId: run.currencyRevaluationRunId,
         periodEnd: run.periodEnd
       }))
+    },
+    {
+      autoCheckKey: "cta-posted",
+      severity: "Warning",
+      label:
+        "The consolidated currency translation adjustment not yet posted on the elimination entity for this period (root company only)",
+      failing:
+        runPreview.currencyTranslation.count > 0 ||
+        runPreview.currencyTranslation.error !== null,
+      count: runPreview.currencyTranslation.count,
+      amount: runPreview.currencyTranslation.amount,
+      due: runPreview.currencyTranslation,
+      draftRuns: []
     },
     {
       autoCheckKey: "unposted-revenue-schedules",
@@ -23418,52 +23503,56 @@ export type CurrencyTranslationPreview = {
   unrevaluedCompanies: { id: string; name: string }[];
 };
 
+type CurrencyTranslationRefusal = {
+  category: "rule" | "forbidden" | "internal";
+  message: string;
+  cause?: unknown;
+};
+
 /**
- * What a CTA posting for one of the root company's periods would post: the
- * consolidated balance sheet's CTA for the period (one bucket, the period
- * itself), the CTA already posted on the root's elimination entity (−1 × its
- * offset account balance), and the movement between them. Only the group's
- * root company may ask.
+ * What a CTA posting for `periodEnd` would post: the consolidated balance
+ * sheet's CTA for the period (one bucket from `startDate`), the CTA already
+ * posted on the root's elimination entity (−1 × its offset account balance),
+ * and the movement between them. Refuses (forbidden) any company other than
+ * the group's root. `eliminationClient` reads the elimination entity's ledger,
+ * as the consolidated report's does.
  */
-export async function previewCurrencyTranslationAt(
-  ctx: ServiceContext,
-  periodId: string
-): Promise<CurrencyTranslationPreview | CarbonError> {
-  const client = ctx.asCaller.supabase;
-  const db = ctx.asSystem.pg;
-  const companyId = ctx.company.id;
-  const companyGroupId = ctx.company.groupId;
+export async function computeCurrencyTranslationPreview(args: {
+  client: SupabaseClient<Database>;
+  eliminationClient: SupabaseClient<Database>;
+  db: Kysely<KyselyDatabase>;
+  companyId: string;
+  companyGroupId: string;
+  startDate: string;
+  periodEnd: string;
+  fiscalYear: number | null;
+}): Promise<
+  | { data: CurrencyTranslationPreview; error: null }
+  | { data: null; error: CurrencyTranslationRefusal }
+> {
+  const { client, db, companyId, companyGroupId, periodEnd } = args;
+  const refuse = (
+    category: CurrencyTranslationRefusal["category"],
+    message: string,
+    cause?: unknown
+  ) => ({ data: null, error: { category, message, cause } }) as const;
 
   // The elimination entity has no cutover of its own: the root's decides.
   if (!(await readAccountingCutoverDate(db, companyId))) {
-    return ctx.error("rule", ACCOUNTING_NOT_STARTED);
+    return refuse("rule", ACCOUNTING_NOT_STARTED);
   }
-
-  const [period, root] = await Promise.all([
-    client
-      .from("accountingPeriod")
-      .select("startDate, endDate, fiscalYear")
-      .eq("id", periodId)
-      .eq("companyId", companyId)
-      .maybeSingle(),
-    db
-      .selectFrom("company")
-      .select(["id", "parentCompanyId", "baseCurrencyCode"])
-      .where("id", "=", companyId)
-      .where("companyGroupId", "=", companyGroupId)
-      .executeTakeFirst()
-  ]);
-  if (period.error) {
-    return ctx.error("internal", "Failed to load the period", period.error);
-  }
-  if (!period.data) return ctx.error("notFound", "Period not found");
+  const root = await db
+    .selectFrom("company")
+    .select(["id", "parentCompanyId", "baseCurrencyCode"])
+    .where("id", "=", companyId)
+    .where("companyGroupId", "=", companyGroupId)
+    .executeTakeFirst();
   if (!root || root.parentCompanyId !== null) {
-    return ctx.error(
+    return refuse(
       "forbidden",
       "Only the group's root company posts the currency translation adjustment"
     );
   }
-  const periodEnd = period.data.endDate;
   const notApplicable: CurrencyTranslationPreview = {
     applicable: false,
     periodEnd,
@@ -23476,35 +23565,38 @@ export async function previewCurrencyTranslationAt(
 
   const companies = await getCompaniesInGroup(client, companyGroupId);
   if (companies.error) {
-    return ctx.error("internal", "Failed to load the group", companies.error);
+    return refuse("internal", "Failed to load the group", companies.error);
   }
   const operating = companies.data ?? [];
   const foreign = operating.filter(
     (company) => company.baseCurrencyCode !== root.baseCurrencyCode
   );
-  if (foreign.length === 0) return notApplicable;
+  if (foreign.length === 0) return { data: notApplicable, error: null };
 
-  const elimination = await db
-    .selectFrom("company")
-    .select("id")
-    .where("companyGroupId", "=", companyGroupId)
-    .where("parentCompanyId", "=", companyId)
-    .where("isEliminationEntity", "=", true)
-    .executeTakeFirst();
-  if (!elimination) {
-    return ctx.error("rule", "The group has no elimination entity");
-  }
-
-  const defaults = await db
-    .selectFrom("accountDefault")
-    .select(["currencyTranslationAccount", "currencyTranslationOffsetAccount"])
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
+  const [elimination, defaults] = await Promise.all([
+    db
+      .selectFrom("company")
+      .select("id")
+      .where("companyGroupId", "=", companyGroupId)
+      .where("parentCompanyId", "=", companyId)
+      .where("isEliminationEntity", "=", true)
+      .executeTakeFirst(),
+    db
+      .selectFrom("accountDefault")
+      .select([
+        "currencyTranslationAccount",
+        "currencyTranslationOffsetAccount"
+      ])
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+  ]);
+  if (!elimination)
+    return refuse("rule", "The group has no elimination entity");
   if (
     !defaults?.currencyTranslationAccount ||
     !defaults.currencyTranslationOffsetAccount
   ) {
-    return ctx.error(
+    return refuse(
       "rule",
       "Set the Currency Translation and Currency Translation Offset account defaults first"
     );
@@ -23519,19 +23611,17 @@ export async function previewCurrencyTranslationAt(
       buckets: [
         {
           key: "cta",
-          start: period.data.startDate,
+          start: args.startDate,
           end: periodEnd,
-          fiscalYear: period.data.fiscalYear ?? Number(periodEnd.slice(0, 4)),
+          fiscalYear: args.fiscalYear ?? Number(periodEnd.slice(0, 4)),
           isPartial: false
         }
       ],
       includeCurrentYearEarnings: true
     },
-    ctx.asSystem.supabase
+    args.eliminationClient
   );
-  if (consolidated.error) {
-    return ctx.error("rule", consolidated.error);
-  }
+  if (consolidated.error) return refuse("rule", consolidated.error);
 
   const [offset, posted, decimals] = await Promise.all([
     sql<{ balanceAtDate: number }>`
@@ -23568,16 +23658,56 @@ export async function previewCurrencyTranslationAt(
   const revalued = new Set(posted.map((row) => row.companyId));
 
   return {
-    applicable: true,
-    periodEnd,
-    liveCta: round(consolidated.ctaByBucket.cta ?? 0),
-    postedCta,
-    movement,
-    eliminationCompanyId: elimination.id,
-    unrevaluedCompanies: foreign
-      .filter((company) => !revalued.has(company.id))
-      .map((company) => ({ id: company.id, name: company.name }))
+    data: {
+      applicable: true,
+      periodEnd,
+      liveCta: round(consolidated.ctaByBucket.cta ?? 0),
+      postedCta,
+      movement,
+      eliminationCompanyId: elimination.id,
+      unrevaluedCompanies: foreign
+        .filter((company) => !revalued.has(company.id))
+        .map((company) => ({ id: company.id, name: company.name }))
+    },
+    error: null
   };
+}
+
+/** `computeCurrencyTranslationPreview` for one of the caller company's
+ *  periods, with the caller's clients. */
+export async function previewCurrencyTranslationAt(
+  ctx: ServiceContext,
+  periodId: string
+): Promise<CurrencyTranslationPreview | CarbonError> {
+  const period = await ctx.asCaller.supabase
+    .from("accountingPeriod")
+    .select("startDate, endDate, fiscalYear")
+    .eq("id", periodId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (period.error) {
+    return ctx.error("internal", "Failed to load the period", period.error);
+  }
+  if (!period.data) return ctx.error("notFound", "Period not found");
+
+  const preview = await computeCurrencyTranslationPreview({
+    client: ctx.asCaller.supabase,
+    eliminationClient: ctx.asSystem.supabase,
+    db: ctx.asSystem.pg,
+    companyId: ctx.company.id,
+    companyGroupId: ctx.company.groupId,
+    startDate: period.data.startDate,
+    periodEnd: period.data.endDate,
+    fiscalYear: period.data.fiscalYear
+  });
+  if (preview.error) {
+    return ctx.error(
+      preview.error.category,
+      preview.error.message,
+      preview.error.cause
+    );
+  }
+  return preview.data;
 }
 
 /**
