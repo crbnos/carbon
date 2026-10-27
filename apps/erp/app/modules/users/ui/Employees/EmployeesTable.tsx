@@ -294,7 +294,10 @@ const EmployeesTable = memo(
         // Every matching user: the background job applies the same rules
         // (`canBulkActOnUser`) to each matching row and skips the rest.
         const allMatching = scope?.allMatching ?? null;
-        const rules = { actorId: currentUserId };
+        const rules = {
+          actorId: currentUserId,
+          unrevokedInviteEmails: unrevokedInviteSet
+        };
         const usersFor = (action: "permissions" | "invite" | "deactivate") =>
           selectedRows
             .filter((row) => canBulkActOnUser(action, row, rules))
@@ -354,6 +357,7 @@ const EmployeesTable = memo(
         bulkEditDrawer,
         deactivateEmployeeModal,
         resendInviteModal,
+        unrevokedInviteSet,
         currentUserId
       ]
     );

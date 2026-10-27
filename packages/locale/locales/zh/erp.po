@@ -1234,6 +1234,9 @@ msgstr "需要名称才能保存查看"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "为特定物料约定的固定价格——按客户、客户类型或所有客户——完全替代基准价格，可选择数量阶梯。"
 
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "将发送新的邀请链接。之前发送的链接将失效。"
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "将为每个供应商创建一个新的采购订单。或者，您可以选择供应商的现有草稿采购订单以向其添加外协工序。"
 
@@ -19363,7 +19366,7 @@ msgid "Reschedule tolerance updated"
 msgstr ""
 
 msgid "Resend Invite"
-msgstr ""
+msgstr "重新发送邀请"
 
 msgid "Reserve floor"
 msgstr "储备下限"

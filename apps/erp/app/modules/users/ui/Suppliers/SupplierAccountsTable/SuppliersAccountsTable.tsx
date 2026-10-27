@@ -216,14 +216,20 @@ const SupplierAccountsTable = memo(
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
-                    .filter((row) => row.active === false)
+                    .filter(
+                      (row) =>
+                        row.active === false && !hasUnrevokedInviteForRow(row)
+                    )
                     .map((row) => row.user.id)
                 );
                 resendInviteModal.onOpen();
               }}
               disabled={
                 !permissions.can("create", "users") ||
-                !selectedRows.some((row) => row.active === false)
+                !selectedRows.some(
+                  (row) =>
+                    row.active === false && !hasUnrevokedInviteForRow(row)
+                )
               }
             >
               <LuMailCheck className="mr-2 h-4 w-4" />
@@ -253,7 +259,12 @@ const SupplierAccountsTable = memo(
           </DropdownMenuContent>
         );
       },
-      [permissions, deactivateSupplierModal, resendInviteModal]
+      [
+        permissions,
+        deactivateSupplierModal,
+        resendInviteModal,
+        hasUnrevokedInviteForRow
+      ]
     );
 
     const renderContextMenu = useCallback(

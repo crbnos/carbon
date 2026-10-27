@@ -14,6 +14,7 @@ import { customerContactValidator } from "~/modules/sales/sales.models";
 import { insertCustomerContact } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -54,23 +55,36 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : null
   ]);
 
-  const createCustomerContact = await insertCustomerContact(client, {
-    customerId,
-    companyId,
-    contact,
-    customerLocationId,
-    customFields: setCustomFields(formData)
-  });
+  const createCustomerContact = await insertCustomerContact(
+    getDatabaseClient(),
+    {
+      customerId,
+      companyId,
+      contact,
+      customerLocationId,
+      customFields: setCustomFields(formData)
+    }
+  );
   if (createCustomerContact.error) {
-    const errorMessage = "Failed to create customer contact";
-
     return modal
-      ? data(error(createCustomerContact.error, errorMessage), {
-          status: 400
-        })
+      ? data(
+          error(
+            createCustomerContact.error,
+            "Failed to create customer contact"
+          ),
+          {
+            status: 400
+          }
+        )
       : redirect(
           path.to.customerContacts(customerId),
-          await flash(request, error(createCustomerContact.error, errorMessage))
+          await flash(
+            request,
+            error(
+              createCustomerContact.error,
+              "Failed to create customer contact"
+            )
+          )
         );
   }
 

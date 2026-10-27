@@ -1234,6 +1234,9 @@ msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Belirli bir müşteri, müşteri türü veya tüm müşteriler için sabitlenmiş ve temel fiyatın yerini tamamıyla alan, isteğe bağlı olarak miktar kademesileri ile birlikte gelen müzakere edilmiş fiyat."
 
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "Yeni bir davet bağlantısı gönderilir. Daha önce gönderilen bağlantı artık çalışmaz."
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Her tedarikçi için yeni bir satın alma siparişi oluşturulacaktır. Alternatif olarak, tedarikçinin dış operasyonları eklemesi için mevcut taslak bir satın alma siparişi seçebilirsiniz."
 
@@ -19363,7 +19366,7 @@ msgid "Reschedule tolerance updated"
 msgstr ""
 
 msgid "Resend Invite"
-msgstr ""
+msgstr "Daveti Yeniden Gönder"
 
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"

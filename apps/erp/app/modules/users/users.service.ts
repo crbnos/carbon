@@ -2995,7 +2995,32 @@ export async function selectUsersForBulkAction(args: {
     rows.push(...employees.data);
   }
 
-  const context = { actorId: args.actorId };
+  let unrevokedInviteEmails = new Set<string>();
+  if (args.action === "invite") {
+    const emails = rows.flatMap((row) => (row.email ? [row.email] : []));
+    for (const chunk of chunkArray(emails, 100)) {
+      const invites = await serviceRole
+        .from("invite")
+        .select("email")
+        .in("email", chunk)
+        .eq("companyId", args.companyId)
+        .is("acceptedAt", null)
+        .is("revokedAt", null);
+      if (invites.error) {
+        logger.error("Failed to load the invites of a bulk action", {
+          companyId: args.companyId,
+          error: invites.error
+        });
+        throw new Error("Failed to load the invites of a bulk action");
+      }
+      unrevokedInviteEmails = new Set([
+        ...unrevokedInviteEmails,
+        ...invites.data.map((invite) => invite.email)
+      ]);
+    }
+  }
+
+  const context = { actorId: args.actorId, unrevokedInviteEmails };
   const allowed = rows
     .filter((row) => canBulkActOnUser(args.action, row, context))
     .flatMap((row) => (row.id ? [row.id] : []));

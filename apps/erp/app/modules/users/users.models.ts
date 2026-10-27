@@ -220,12 +220,13 @@ export type BulkUserAction = "deactivate" | "invite" | "permissions";
  * Whether a bulk action on the Employees table acts on this user: the rule
  * the table applies to its selection, and the background job to every
  * matching row. Edit Permissions takes active users, Deactivate active users
- * other than the actor, and Send Invite inactive users with an email.
+ * other than the actor, and Send Invite inactive users with an email and no
+ * unrevoked invite.
  */
 export function canBulkActOnUser(
   action: BulkUserAction,
   user: { id: string | null; active: boolean | null; email: string | null },
-  context: { actorId: string }
+  context: { actorId: string; unrevokedInviteEmails: ReadonlySet<string> }
 ): boolean {
   switch (action) {
     case "permissions":
@@ -233,8 +234,11 @@ export function canBulkActOnUser(
     case "deactivate":
       return user.active === true && user.id !== context.actorId;
     case "invite":
-      // A pending invite is sent again with a new code.
-      return user.active === false && !!user.email;
+      return (
+        user.active === false &&
+        !!user.email &&
+        !context.unrevokedInviteEmails.has(user.email)
+      );
   }
 }
 

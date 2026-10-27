@@ -14,6 +14,7 @@ import { supplierContactValidator } from "~/modules/purchasing/purchasing.models
 import { insertSupplierContact } from "~/modules/purchasing/purchasing.service";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -54,22 +55,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : null
   ]);
 
-  const createSupplierContact = await insertSupplierContact(client, {
-    supplierId,
-    companyId,
-    contact,
-    supplierLocationId,
-    customFields: setCustomFields(formData)
-  });
+  const createSupplierContact = await insertSupplierContact(
+    getDatabaseClient(),
+    {
+      supplierId,
+      companyId,
+      contact,
+      supplierLocationId,
+      customFields: setCustomFields(formData)
+    }
+  );
 
   if (createSupplierContact.error) {
-    const errorMessage = "Failed to create supplier contact";
-
     return modal
       ? createSupplierContact
       : redirect(
           path.to.supplierContacts(supplierId),
-          await flash(request, error(createSupplierContact.error, errorMessage))
+          await flash(
+            request,
+            error(
+              createSupplierContact.error,
+              "Failed to create supplier contact"
+            )
+          )
         );
   }
 

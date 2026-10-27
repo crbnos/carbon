@@ -6864,7 +6864,7 @@ export const insertCustomerContact = defineServiceFn({
     return unwrap(
       ctx,
       await service.insertCustomerContact(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );

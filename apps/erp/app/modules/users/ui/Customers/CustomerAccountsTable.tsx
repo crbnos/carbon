@@ -219,14 +219,20 @@ const CustomerAccountsTable = memo(
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
-                    .filter((row) => row.active === false)
+                    .filter(
+                      (row) =>
+                        row.active === false && !hasUnrevokedInviteForRow(row)
+                    )
                     .map((row) => row.user.id)
                 );
                 resendInviteModal.onOpen();
               }}
               disabled={
                 !permissions.can("create", "users") ||
-                !selectedRows.some((row) => row.active === false)
+                !selectedRows.some(
+                  (row) =>
+                    row.active === false && !hasUnrevokedInviteForRow(row)
+                )
               }
             >
               <LuMailCheck className="mr-2 h-4 w-4" />
@@ -256,7 +262,12 @@ const CustomerAccountsTable = memo(
           </DropdownMenuContent>
         );
       },
-      [permissions, deactivateCustomerModal, resendInviteModal]
+      [
+        permissions,
+        deactivateCustomerModal,
+        resendInviteModal,
+        hasUnrevokedInviteForRow
+      ]
     );
 
     const renderContextMenu = useCallback(

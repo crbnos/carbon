@@ -1234,6 +1234,9 @@ msgstr "Um nome é necessário para salvar uma visualização"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Um preço negociado fixado para um item específico — por cliente, tipo de cliente ou todos os clientes — que substitui completamente o preço base, opcionalmente com faixas de quantidade."
 
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "Um novo link de convite é enviado. Um link enviado antes deixa de funcionar."
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Uma nova ordem de compra será criada para cada fornecedor. Alternativamente, você pode escolher um pedido de compra em rascunho existente do fornecedor para adicionar as operações externas a ele."
 
@@ -19363,7 +19366,7 @@ msgid "Reschedule tolerance updated"
 msgstr ""
 
 msgid "Resend Invite"
-msgstr ""
+msgstr "Reenviar Convite"
 
 msgid "Reserve floor"
 msgstr "Piso de reserva"

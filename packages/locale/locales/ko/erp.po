@@ -1234,6 +1234,9 @@ msgstr "보기를 저장하려면 이름이 필요합니다"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "특정 품목에 대해 협상으로 고정된 가격으로 고객, 고객 유형 또는 모든 고객 기준으로 기본 가격을 완전히 대체하며 선택적으로 수량 구간을 포함합니다."
 
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "새 초대 링크가 전송됩니다. 이전에 보낸 링크는 더 이상 작동하지 않습니다."
+
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "각 공급업체마다 새로운 발주서가 생성됩니다. 또는 공급업체의 기존 초안 발주서를 선택하여 외주 공정을 추가할 수 있습니다."
 
@@ -19363,7 +19366,7 @@ msgid "Reschedule tolerance updated"
 msgstr ""
 
 msgid "Resend Invite"
-msgstr ""
+msgstr "초대 다시 보내기"
 
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
