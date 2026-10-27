@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime, round } from "@carbon/utils";
+import { datetime, equals, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { employeesWithPin } from "../console.server";
 import { companyHasFeature } from "../plan.server";
@@ -436,6 +436,14 @@ async function baseCurrency(
     .select("baseCurrencyCode, companyGroupId")
     .eq("id", companyId)
     .maybeSingle();
+  // Fail closed: the approver must not sign a value in the wrong currency.
+  if (company.error) {
+    logger.error("Failed to read the company base currency", {
+      companyId,
+      error: company.error
+    });
+    throw new Error("Failed to read the company base currency");
+  }
   const currencyCode = company.data?.baseCurrencyCode ?? "USD";
   const currency = company.data?.companyGroupId
     ? await serviceRole
@@ -445,6 +453,14 @@ async function baseCurrency(
         .eq("companyGroupId", company.data.companyGroupId)
         .maybeSingle()
     : null;
+  if (currency?.error) {
+    logger.error("Failed to read the base currency's decimal places", {
+      companyId,
+      currencyCode,
+      error: currency.error
+    });
+    throw new Error("Failed to read the base currency's decimal places");
+  }
   return { currencyCode, decimalPlaces: currency?.data?.decimalPlaces ?? 2 };
 }
 
@@ -582,20 +598,27 @@ export async function discardScrapApproval(
 /**
  * Whether a batch completion's scrap was already approved: phase 1 of the
  * completion committed it, so a resumed completion posts it without asking
- * again (its quantities must equal phase 1's).
+ * again. Only a batch past phase 1 qualifies, and only for the quantity that
+ * was approved: a record kept from a failed attempt on an Active batch never
+ * lets a different scrap through.
  */
 export async function hasBatchScrapApproval(
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; jobOperationBatchId: string }
+  args: { companyId: string; jobOperationBatchId: string; quantity: number }
 ): Promise<boolean> {
-  const row = await db
+  const rows = await db
     .selectFrom("scrapRequest")
-    .select("id")
-    .where("companyId", "=", args.companyId)
-    .where("jobOperationBatchId", "=", args.jobOperationBatchId)
-    .limit(1)
-    .executeTakeFirst();
-  return Boolean(row);
+    .innerJoin("jobOperationBatch", (join) =>
+      join
+        .onRef("jobOperationBatch.id", "=", "scrapRequest.jobOperationBatchId")
+        .onRef("jobOperationBatch.companyId", "=", "scrapRequest.companyId")
+    )
+    .select("scrapRequest.quantity")
+    .where("scrapRequest.companyId", "=", args.companyId)
+    .where("scrapRequest.jobOperationBatchId", "=", args.jobOperationBatchId)
+    .where("jobOperationBatch.status", "in", ["Completing", "Completed"])
+    .execute();
+  return rows.some((row) => equals(Number(row.quantity), args.quantity));
 }
 
 /**
@@ -608,6 +631,16 @@ export async function getScrapApprovals(
   companyId: string,
   args: { limit: number; offset: number; jobId?: string | null }
 ) {
+  // No rows without the feature: the page shows the upgrade overlay, so the
+  // loader must not throw, and the records stay behind the entitlement.
+  if (
+    !(await companyHasFeature(serviceRole, companyId, {
+      feature: "APPROVAL_RULES"
+    }))
+  ) {
+    return { data: [], count: 0, error: null };
+  }
+
   let query = serviceRole
     .from("scrapRequests")
     .select("*", { count: "exact" })

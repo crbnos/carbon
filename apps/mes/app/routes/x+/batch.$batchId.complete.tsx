@@ -201,7 +201,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       alreadyApproved: () =>
         hasBatchScrapApproval(getDatabaseClient(), {
           companyId,
-          jobOperationBatchId: batchId
+          jobOperationBatchId: batchId,
+          quantity: scrapped.reduce((sum, m) => sum + m.scrapQuantity, 0)
         }),
       postedDespiteError: async () => {
         const after = await getJobOperationBatch(

@@ -6,7 +6,7 @@
 ALTER TYPE "approvalDocumentType" ADD VALUE IF NOT EXISTS 'scrap';
 COMMIT;
 
-CREATE TABLE "scrapRequest" (
+CREATE TABLE IF NOT EXISTS "scrapRequest" (
   "id" TEXT NOT NULL DEFAULT id('scr'),
   "companyId" TEXT NOT NULL,
   -- A batch can span jobs, so its request names the batch and no job.
@@ -45,16 +45,16 @@ CREATE TABLE "scrapRequest" (
   CONSTRAINT "scrapRequest_quantity_check" CHECK ("quantity" > 0)
 );
 
-CREATE INDEX "scrapRequest_companyId_idx" ON "scrapRequest" ("companyId");
-CREATE INDEX "scrapRequest_jobId_idx" ON "scrapRequest" ("jobId");
-CREATE INDEX "scrapRequest_jobOperationId_idx" ON "scrapRequest" ("jobOperationId");
-CREATE INDEX "scrapRequest_jobOperationBatchId_idx" ON "scrapRequest" ("jobOperationBatchId");
-CREATE INDEX "scrapRequest_jobMaterialId_idx" ON "scrapRequest" ("jobMaterialId");
-CREATE INDEX "scrapRequest_trackedEntityId_idx" ON "scrapRequest" ("trackedEntityId");
-CREATE INDEX "scrapRequest_itemId_idx" ON "scrapRequest" ("itemId");
-CREATE INDEX "scrapRequest_scrapReasonId_idx" ON "scrapRequest" ("scrapReasonId");
-CREATE INDEX "scrapRequest_createdBy_idx" ON "scrapRequest" ("createdBy");
-CREATE INDEX "scrapRequest_updatedBy_idx" ON "scrapRequest" ("updatedBy");
+CREATE INDEX IF NOT EXISTS "scrapRequest_companyId_idx" ON "scrapRequest" ("companyId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_jobId_idx" ON "scrapRequest" ("jobId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_jobOperationId_idx" ON "scrapRequest" ("jobOperationId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_jobOperationBatchId_idx" ON "scrapRequest" ("jobOperationBatchId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_jobMaterialId_idx" ON "scrapRequest" ("jobMaterialId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_trackedEntityId_idx" ON "scrapRequest" ("trackedEntityId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_itemId_idx" ON "scrapRequest" ("itemId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_scrapReasonId_idx" ON "scrapRequest" ("scrapReasonId");
+CREATE INDEX IF NOT EXISTS "scrapRequest_createdBy_idx" ON "scrapRequest" ("createdBy");
+CREATE INDEX IF NOT EXISTS "scrapRequest_updatedBy_idx" ON "scrapRequest" ("updatedBy");
 
 ALTER TABLE "scrapRequest" ENABLE ROW LEVEL SECURITY;
 

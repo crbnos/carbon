@@ -340,6 +340,49 @@ describeLocal("scrap approval", () => {
     expect(request).toHaveLength(0);
   });
 
+  it("reuses a batch approval only past phase 1 and for the approved quantity", async () => {
+    const batch = await f.db
+      .insertInto("jobOperationBatch")
+      .values({
+        readableId: `${f.prefix}-B1`,
+        locationId: f.locationId,
+        processId: `${f.prefix}-process-1`,
+        status: "Active",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await scrapApproval.recordScrapApproval(f.db, {
+      companyId: f.companyId,
+      scrap: await scrapApproval.describeScrap(f.db, f.companyId, {
+        type: "batch",
+        jobOperationBatchId: batch.id,
+        members: [{ jobOperationId: job.operationId, scrapQuantity: 2 }]
+      }),
+      recordedBy: people.operator,
+      approvedBy: people.approver
+    });
+    const reused = (quantity: number) =>
+      scrapApproval.hasBatchScrapApproval(f.db, {
+        companyId: f.companyId,
+        jobOperationBatchId: batch.id,
+        quantity
+      });
+
+    // A record kept from a failed attempt while the batch is still Active.
+    expect(await reused(2)).toBe(false);
+
+    await f.db
+      .updateTable("jobOperationBatch")
+      .set({ status: "Completing" })
+      .where("id", "=", batch.id)
+      .where("companyId", "=", f.companyId)
+      .execute();
+    expect(await reused(2)).toBe(true);
+    expect(await reused(3)).toBe(false);
+  });
+
   it("lets only an approver record scrap on a job's quantities", async () => {
     await scrapRules(0);
     const reason = await f.db

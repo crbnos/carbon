@@ -16,8 +16,8 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import ScrapApprovalsTable from "~/modules/production/ui/ScrapApprovals/ScrapApprovalsTable.ee";
 import { ApprovalRulesUpgradeOverlay } from "~/modules/settings/ui";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Scrap Approvals`,
@@ -30,16 +30,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const url = new URL(request.url);
-  const { limit, offset } = getGenericQueryFilters(
-    new URLSearchParams(url.search)
-  );
-
   // The decision lives on `approvalRequest`, which has no API-role policy,
-  // so the list reads with the service role, scoped to the company.
+  // so the list reads with the service role, scoped to the company. A
+  // single load: the list has no registry entry to page by cursor.
   const approvals = await getScrapApprovals(getCarbonServiceRole(), companyId, {
-    limit,
-    offset
+    limit: SINGLE_LOAD_LIMIT,
+    offset: 0
   });
 
   if (approvals.error) {
