@@ -161,8 +161,9 @@ function SignatureDialog({
     if (!carbon) return;
     const file = source === "draw" ? await pad.current?.toPng() : uploaded;
     if (!file) return;
-    const extension =
-      file instanceof File ? (file.name.split(".").pop() ?? "png") : "png";
+    // From the type, not the name: a `.JPG` name would fail the server's
+    // lowercase path check after the upload succeeded.
+    const extension = file.type === "image/jpeg" ? "jpg" : "png";
     setIsUploading(true);
     try {
       const path = `${user.id}/${crypto.randomUUID()}.${extension}`;

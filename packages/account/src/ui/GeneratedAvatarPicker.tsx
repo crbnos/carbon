@@ -193,9 +193,12 @@ const GeneratedAvatarPicker = ({
     if (value === style) return;
     setStyle(value);
     const next = seedsFor(value);
-    setSeeds(
-      next.includes(selectedSeed) ? next : [selectedSeed, ...next.slice(1)]
-    );
+    // Keep the chosen face, without displacing the current avatar's seed,
+    // which `seedsFor` pins first in the current avatar's own style.
+    if (!next.includes(selectedSeed)) {
+      next.splice(currentParsed?.style === value ? 1 : 0, 1, selectedSeed);
+    }
+    setSeeds(next);
   };
 
   const shuffle = () => {

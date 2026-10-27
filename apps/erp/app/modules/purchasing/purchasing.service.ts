@@ -60,7 +60,6 @@ import { getDocumentApproval } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
-  getContentType,
   getFileExtension,
   isStoredDocumentPdf,
   storage,
@@ -668,8 +667,26 @@ async function getSignatureDataUrl(
     logger.warn("Failed to read an approval signature", { path, error });
     return null;
   }
-  const bytes = Buffer.from(await data.arrayBuffer()).toString("base64");
-  return `data:${getContentType(getFileExtension(path))};base64,${bytes}`;
+  // The owner can write any bytes under a PNG or JPEG name, and an image
+  // react-pdf cannot decode fails the whole PDF. Trust the bytes, not the name.
+  const bytes = Buffer.from(await data.arrayBuffer());
+  const type = imageTypeOf(bytes);
+  if (!type) {
+    logger.warn("An approval signature is not a PNG or JPEG", { path });
+    return null;
+  }
+  return `data:${type};base64,${bytes.toString("base64")}`;
+}
+
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
+]);
+const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff]);
+
+function imageTypeOf(bytes: Buffer): "image/png" | "image/jpeg" | null {
+  if (bytes.subarray(0, 8).equals(PNG_SIGNATURE)) return "image/png";
+  if (bytes.subarray(0, 3).equals(JPEG_SIGNATURE)) return "image/jpeg";
+  return null;
 }
 
 export async function getPurchaseOrderPayment(
