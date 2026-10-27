@@ -68383,6 +68383,9 @@ export default {
             $ref: "#/parameters/rowFilter.approvalRequest.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.approvalRequest.decisionSignaturePath"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -68487,6 +68490,9 @@ export default {
             $ref: "#/parameters/rowFilter.approvalRequest.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.approvalRequest.decisionSignaturePath"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -68543,6 +68549,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.approvalRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.approvalRequest.decisionSignaturePath"
           },
           {
             $ref: "#/parameters/body.approvalRequest"
@@ -81391,6 +81400,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.phone"
           },
           {
+            $ref: "#/parameters/rowFilter.user.signaturePath"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -81498,6 +81510,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.phone"
           },
           {
+            $ref: "#/parameters/rowFilter.user.signaturePath"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -81557,6 +81572,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.user.phone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.user.signaturePath"
           },
           {
             $ref: "#/parameters/body.user"
@@ -102610,6 +102628,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -102891,6 +102912,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -103124,6 +103148,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requirePurchaseOrderApprovalSignature"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -150475,6 +150502,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        decisionSignaturePath: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -157045,6 +157076,10 @@ export default {
           type: "boolean"
         },
         phone: {
+          format: "text",
+          type: "string"
+        },
+        signaturePath: {
           format: "text",
           type: "string"
         }
@@ -167247,7 +167282,8 @@ export default {
         "leaseReminderDays",
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
-        "receiptQuantitiesStartAtZero"
+        "receiptQuantitiesStartAtZero",
+        "requirePurchaseOrderApprovalSignature"
       ],
       properties: {
         id: {
@@ -167647,6 +167683,11 @@ export default {
           type: "boolean"
         },
         receiptQuantitiesStartAtZero: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requirePurchaseOrderApprovalSignature: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -204358,6 +204399,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.approvalRequest.decisionSignaturePath": {
+      name: "decisionSignaturePath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.workCenterShift": {
       name: "workCenterShift",
       description: "workCenterShift",
@@ -211724,6 +211771,12 @@ export default {
     },
     "rowFilter.user.phone": {
       name: "phone",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.user.signaturePath": {
+      name: "signaturePath",
       required: false,
       in: "query",
       type: "string"
@@ -223514,6 +223567,12 @@ export default {
     },
     "rowFilter.companySettings.receiptQuantitiesStartAtZero": {
       name: "receiptQuantitiesStartAtZero",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requirePurchaseOrderApprovalSignature": {
+      name: "requirePurchaseOrderApprovalSignature",
       required: false,
       in: "query",
       type: "string"

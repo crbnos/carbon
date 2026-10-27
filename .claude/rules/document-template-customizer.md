@@ -50,7 +50,9 @@ are regenerated; that's expected, not a bug.
 - **defaults.ts** — `BLOCK_META` (one entry **required** per block type),
   `DEFAULT_TEMPLATES` (one per doc type), `DOCUMENT_CATALOG` + `getDocumentLabel`,
   `resolveTemplate(type, stored)` (read-time normalizer: falls back to the default
-  and **appends missing built-in blocks hidden** so old rows survive new blocks),
+  and **appends missing built-in blocks hidden** so old rows survive new blocks —
+  except a block whose `BLOCK_META` sets `showWhenAppended`, appended visible
+  because it prints nothing until its data exists; today only `approval`),
   `BUILT_IN_SECTIONS`, `collectSectionIds`.
 - **merge.ts** — `{token}` merge-field catalog; `interpolateContent` fills
   header/footer/richText/shared/terms at render (keyValue/field use
@@ -97,6 +99,18 @@ the generic preview.
 
 **Adding a block type** to the union breaks every registry → add the key to all
 registries + a `BLOCK_META` entry + (if built-in) a `DEFAULT_TEMPLATES` entry.
+
+## Approval block (purchase orders)
+
+The built-in `approval` block (`pdf/blocks/purchaseOrder/ApprovalBlock.tsx`)
+prints the approver's signature (max 40 pt high), name and approval date, and
+nothing while the order is unapproved. It is last in the default PO layout and
+is appended visible to saved templates. Its data is `PurchaseOrderData.approval`
+from `getPurchaseOrderApproval(…, { withSignature: true })`
+(`purchasing.service.ts`), which reads the file recorded on the approval
+(`approvalRequest.decisionSignaturePath`, private `signatures` bucket) as a data
+URL. Every other registry renders it as `null`. Spec:
+`.ai/specs/2026-10-28-approval-signatures.md`.
 
 ## Tracking label specifics
 

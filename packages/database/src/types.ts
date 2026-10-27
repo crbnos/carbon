@@ -3133,6 +3133,7 @@ export type Database = {
           decisionAt: string | null
           decisionBy: string | null
           decisionNotes: string | null
+          decisionSignaturePath: string | null
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id: string
@@ -3150,6 +3151,7 @@ export type Database = {
           decisionAt?: string | null
           decisionBy?: string | null
           decisionNotes?: string | null
+          decisionSignaturePath?: string | null
           documentId: string
           documentType: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
@@ -3167,6 +3169,7 @@ export type Database = {
           decisionAt?: string | null
           decisionBy?: string | null
           decisionNotes?: string | null
+          decisionSignaturePath?: string | null
           documentId?: string
           documentType?: Database["public"]["Enums"]["approvalDocumentType"]
           id?: string
@@ -8373,6 +8376,7 @@ export type Database = {
           requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
           requireMfa: boolean
+          requirePurchaseOrderApprovalSignature: boolean
           requireSupplierContactAndLocation: boolean
           rescheduleToleranceDays: number
           returnPickedMaterialTiming: string
@@ -8449,6 +8453,7 @@ export type Database = {
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
+          requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
@@ -8525,6 +8530,7 @@ export type Database = {
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
+          requirePurchaseOrderApprovalSignature?: boolean
           requireSupplierContactAndLocation?: boolean
           rescheduleToleranceDays?: number
           returnPickedMaterialTiming?: string
@@ -70548,6 +70554,7 @@ export type Database = {
           isConsoleOperator: boolean
           lastName: string
           phone: string | null
+          signaturePath: string | null
           updatedAt: string | null
         }
         Insert: {
@@ -70566,6 +70573,7 @@ export type Database = {
           isConsoleOperator?: boolean
           lastName?: string
           phone?: string | null
+          signaturePath?: string | null
           updatedAt?: string | null
         }
         Update: {
@@ -70584,6 +70592,7 @@ export type Database = {
           isConsoleOperator?: boolean
           lastName?: string
           phone?: string | null
+          signaturePath?: string | null
           updatedAt?: string | null
         }
         Relationships: []

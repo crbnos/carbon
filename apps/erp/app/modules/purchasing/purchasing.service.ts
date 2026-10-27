@@ -105,6 +105,7 @@ import {
   paymentMonthIndex,
   remeasureLease,
   round,
+  SIGNATURES_BUCKET,
   searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -620,14 +621,22 @@ export async function getPurchaseOrderLocations(
  * Who approved a purchase order and on which day in the company's timezone:
  * the PDF's `order.approved*` merge fields, the order's properties panel and
  * `purchasing.getPurchaseOrderApproval`. Null when it was not approved.
+ * `withSignature` also reads the approver's signature recorded at approval,
+ * as a data URL for the PDF; a missing file prints the name and date only.
  */
 export async function getPurchaseOrderApproval(
   serviceRole: SupabaseClient<Database>,
   {
     companyId,
     purchaseOrderId,
-    timezone
-  }: { companyId: string; purchaseOrderId: string; timezone: string }
+    timezone,
+    withSignature = false
+  }: {
+    companyId: string;
+    purchaseOrderId: string;
+    timezone: string;
+    withSignature?: boolean;
+  }
 ): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
   const approval = await getDocumentApproval(
     serviceRole,
@@ -639,8 +648,47 @@ export async function getPurchaseOrderApproval(
   return {
     approvedBy: approval.approvedBy,
     approvedById: approval.approvedById,
-    approvedDate: datetime.businessDay(approval.approvedAt, timezone).toString()
+    approvedDate: datetime
+      .businessDay(approval.approvedAt, timezone)
+      .toString(),
+    signature:
+      withSignature && approval.signaturePath
+        ? await getSignatureDataUrl(serviceRole, approval.signaturePath)
+        : null
   };
+}
+
+async function getSignatureDataUrl(
+  serviceRole: SupabaseClient<Database>,
+  path: string
+) {
+  const { data, error } = await serviceRole.storage
+    .from(SIGNATURES_BUCKET)
+    .download(path);
+  if (!data) {
+    logger.warn("Failed to read an approval signature", { path, error });
+    return null;
+  }
+  // The owner can write any bytes under a PNG or JPEG name, and an image
+  // react-pdf cannot decode fails the whole PDF. Trust the bytes, not the name.
+  const bytes = Buffer.from(await data.arrayBuffer());
+  const type = imageTypeOf(bytes);
+  if (!type) {
+    logger.warn("An approval signature is not a PNG or JPEG", { path });
+    return null;
+  }
+  return `data:${type};base64,${bytes.toString("base64")}`;
+}
+
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
+]);
+const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff]);
+
+function imageTypeOf(bytes: Buffer): "image/png" | "image/jpeg" | null {
+  if (bytes.subarray(0, 8).equals(PNG_SIGNATURE)) return "image/png";
+  if (bytes.subarray(0, 3).equals(JPEG_SIGNATURE)) return "image/jpeg";
+  return null;
 }
 
 export async function getPurchaseOrderPayment(

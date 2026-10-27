@@ -2802,6 +2802,9 @@ export const decidePurchaseOrderApproval = defineServiceFn({
       decision === "Approved"
         ? await approveRequest(ctx.asSystem.pg, approvalRequestId, userId)
         : await rejectRequest(ctx.asSystem.pg, approvalRequestId, userId);
+    if (decided.error && "code" in decided.error) {
+      return ctx.error("validation", decided.error.message);
+    }
     if (decided.error) {
       return ctx.error(
         "internal",

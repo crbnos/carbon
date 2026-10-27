@@ -1573,6 +1573,12 @@ msgstr "Краткосрочный актив не проводит никаку
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "Краткосрочная аренда не имеет графика. Каждый счет-фактура учитывается как расход."
 
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "Шаг должен иметь имя."
 
@@ -2275,6 +2281,9 @@ msgstr "Добавить отгрузку"
 msgid "Add Shipping"
 msgstr "Добавить доставку"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "Добавить слайд"
 
@@ -2341,6 +2350,9 @@ msgstr "Добавить единицы"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "Добавьте свой первый {0}"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "Дополнительно"
@@ -2653,6 +2665,12 @@ msgstr "Оповещение о том, что что-то требует вни
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "Требование утверждения на несоответствии, которое должны утвердить рецензенты (предзагруженные Инженерия и Качество) перед закрытием проблемы."
+
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
 
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "Актив является финансовой арендой, если справедливо любое из этих условий, и операционной арендой, если ни одно не справедливо."
@@ -3037,6 +3055,12 @@ msgstr "Требования к утверждению"
 
 msgid "Approval Rules"
 msgstr "Правила утверждения"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "Утверждения"
@@ -3985,21 +4009,11 @@ msgstr "Доступные часы"
 msgid "Available on the Business plan"
 msgstr "Доступно в плане Business"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "Вариант аватара {0}"
-
 msgid "Avatar style"
 msgstr "Стиль аватара"
 
 msgid "Avatar url"
 msgstr "URL аватара"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "Аватары из <0>{0}</0> от {1}, лицензия <1>{2}</1>."
 
 msgid "Average"
 msgstr "Среднее"
@@ -4484,6 +4498,11 @@ msgstr "Закупщик, планировщик"
 
 msgid "by {byUser}"
 msgstr "от {byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "Принимая приглашение, вы соглашаетесь с <0>Условиями обслуживания</0> и <1>Политикой конфиденциальности</1>."
@@ -5065,6 +5084,9 @@ msgstr "Выберите пакетируемый процесс, чтобы у�
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Выберите строку слева, чтобы увидеть, откуда может поступить её запас."
 
@@ -5179,6 +5201,9 @@ msgstr "Нажмите еще раз, чтобы отключить"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "Щелкните на компоненты в средстве просмотра, чтобы добавить их. Shift+щелчок добавляет несколько."
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "Нажмите, чтобы переименовать"
@@ -6797,6 +6822,9 @@ msgstr "Пользовательский {label}"
 msgid "Custom attributes you track against your people"
 msgstr "Пользовательские атрибуты, которые вы отслеживаете для своих сотрудников"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Custom development beyond what's listed"
 msgstr "Пользовательская разработка сверх указанного"
 
@@ -8355,6 +8383,12 @@ msgstr "Перетащить для изменения размера черте
 msgid "Drag to zoom"
 msgstr "Перетащите для масштабирования"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "Снятие"
 
@@ -8363,6 +8397,9 @@ msgstr "Номер чертежа"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Чертеж заменен. Размещения выносок были удалены; строки характеристик остались без изменений."
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "Дропшиппинг"
@@ -9127,6 +9164,9 @@ msgstr "Включите, чтобы разрешить символы нижн�
 msgid "Enable to allow shared workstation mode."
 msgstr "Включите, чтобы разрешить режим общей рабочей станции."
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "Включите, чтобы заблокировать выпуск или проведение для покупателя без контактного лица или площадки."
 
@@ -9874,6 +9914,13 @@ msgstr "Дополнительная информация, отправляем�
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Дополнительные теги для разбора отчетности главной книги"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "Не годен"
 
@@ -10133,6 +10180,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to plan job"
 msgstr "Ошибка при планировании производственного заказа"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "Не удалось записать средство измерения"
 
@@ -10273,6 +10323,9 @@ msgstr "Ошибка загрузки модели"
 
 msgid "Failed to upload PDF"
 msgstr "Ошибка загрузки PDF"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "Не удалось загрузить миниатюру"
@@ -17076,8 +17129,8 @@ msgstr "Выберите тип записи…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "Выберите шаг из списка, чтобы изменить его детали, компоненты и материалы."
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "Выберите стиль и аватар или перемешайте, чтобы увидеть новые."
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "Выберите целевую дату для сравнения."
@@ -17316,6 +17369,9 @@ msgstr "Пожалуйста, выберите товар"
 
 msgid "Please upload a CSV file of your data"
 msgstr "Пожалуйста, загрузите CSV-файл ваших данных"
+
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
 
 msgid "PO"
 msgstr "ПО"
@@ -17608,6 +17664,12 @@ msgstr "Печать этикетки"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Вывод печати ({0})"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer route created"
 msgstr ""
@@ -19123,6 +19185,9 @@ msgstr "Удалено"
 msgid "Removed line"
 msgstr "Убранная строка"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "Удаление этого пути также отключит {count} соединени{0}. Продолжить?"
@@ -19337,6 +19402,9 @@ msgstr "Требовать 6-значный код из приложения-а�
 
 msgid "Require a Customer Contact and Location"
 msgstr "Требовать контактное лицо и площадку покупателя"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "Требовать контактное лицо и площадку поставщика"
@@ -20317,6 +20385,9 @@ msgstr "Сохранить черновик"
 msgid "Save Method"
 msgstr "Сохранить метод"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "Сохранить редактируемую форму"
 
@@ -20349,6 +20420,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21574,6 +21648,9 @@ msgstr "Показано пользователю при ошибке этого
 msgid "Shuffle"
 msgstr "Перемешать"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21612,6 +21689,15 @@ msgstr "Подтверждение рассмотрения перед пере�
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Утверждения, которые должны быть записаны перед закрытием этой проблемы; в дополнение к тем, которые требуются рабочим процессом."
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
+msgid "Signature path"
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "Вы вошли как {name}"
@@ -22224,6 +22310,9 @@ msgstr "Stripe еще не имеет покупателя для этого п�
 
 msgid "Structure"
 msgstr "Структура"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "По умолчанию для стиля"
@@ -25702,6 +25791,9 @@ msgstr "Загрузить PDF"
 msgid "Uploaded model"
 msgstr "Модель загружена"
 
+msgid "Uploaded signature"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -27167,6 +27259,9 @@ msgstr "Ваши книги и движение денежных средств.
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Ваши изменения переходят в новую версию черновика, которая будет выпущена с этим извещением об изменении."
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "Ваш PIN консоли"
 
@@ -27247,6 +27342,9 @@ msgstr "Ваши реальные данные загружены, вы пров
 
 msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован из-за неактивности."
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Ваши исходные данные доступны и находятся в приемлемом состоянии"

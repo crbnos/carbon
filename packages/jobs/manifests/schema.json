@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261026224620",
+  "schemaVersion": "20261028143517",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-26T22:56:32.405Z",
+  "exportedAt": "2026-10-27T22:55:12.218Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -306,7 +306,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "decisionSignaturePath"
       ]
     },
     {
@@ -484,7 +485,8 @@
         "leaseReminderDays",
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
-        "receiptQuantitiesStartAtZero"
+        "receiptQuantitiesStartAtZero",
+        "requirePurchaseOrderApprovalSignature"
       ]
     },
     {
@@ -2857,7 +2859,8 @@
         "samplingPercentage",
         "samplingAql",
         "samplingInspectionLevel",
-        "samplingSeverity"
+        "samplingSeverity",
+        "modelUploadId"
       ]
     },
     {
@@ -2885,7 +2888,8 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "gaugeTypeId"
+        "gaugeTypeId",
+        "pmiItemId"
       ]
     },
     {

@@ -1573,6 +1573,12 @@ msgstr "短期资产在激活时不过账任何凭证。每份发票在过账时
 msgid "A short-term lease has no schedule. Each invoice is expensed."
 msgstr "短期租赁无排程。每份发票作为费用处理。"
 
+msgid "A signature is optional to approve"
+msgstr ""
+
+msgid "A signature is required to approve"
+msgstr ""
+
 msgid "A step needs a name."
 msgstr "步骤需要一个名称。"
 
@@ -2275,6 +2281,9 @@ msgstr "添加发货"
 msgid "Add Shipping"
 msgstr "添加运费"
 
+msgid "Add Signature"
+msgstr ""
+
 msgid "Add Slide"
 msgstr "添加幻灯片"
 
@@ -2341,6 +2350,9 @@ msgstr "添加设备"
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
 msgstr "添加您的第一个{0}"
+
+msgid "Add your signature"
+msgstr ""
 
 msgid "Add-On"
 msgstr "附加费"
@@ -2653,6 +2665,12 @@ msgstr "一个提醒，表示某件事需要个人关注，从carbon/notify事�
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "不合格上的审批要求，其审核人（默认的工程和质量部门）必须签字才能关闭问题"
+
+msgid "An approver must have a signature in Account → Profile before they can approve a purchase order. The purchase order PDF prints the signature of the person who approved it."
+msgstr ""
+
+msgid "An approver with no signature on file is asked to add one before they approve."
+msgstr ""
 
 msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
 msgstr "当以下任一情况为真时，资产为融资租赁；当都不为真时，则为经营租赁。"
@@ -3037,6 +3055,12 @@ msgstr "审批要求"
 
 msgid "Approval Rules"
 msgstr "审批规则"
+
+msgid "Approval signature requirement disabled"
+msgstr ""
+
+msgid "Approval signature requirement enabled"
+msgstr ""
 
 msgid "Approvals"
 msgstr "审批"
@@ -3985,21 +4009,11 @@ msgstr "可用小时数"
 msgid "Available on the Business plan"
 msgstr "在商业计划中可用"
 
-#. placeholder {0}: index + 1
-msgid "Avatar option {0}"
-msgstr "头像选项 {0}"
-
 msgid "Avatar style"
 msgstr "头像风格"
 
 msgid "Avatar url"
 msgstr "头像网址"
-
-#. placeholder {0}: info.source.name
-#. placeholder {1}: info.creator
-#. placeholder {2}: info.license.name
-msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
-msgstr "头像来自 {1} 的 <0>{0}</0>，采用 <1>{2}</1> 许可。"
 
 msgid "Average"
 msgstr "平均"
@@ -4484,6 +4498,11 @@ msgstr "采购员、计划员"
 
 msgid "by {byUser}"
 msgstr "由 {byUser}"
+
+#. placeholder {0}: info.creator
+#. placeholder {1}: info.license.name
+msgid "By <0>{0}</0>, <1>{1}</1>"
+msgstr ""
 
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "通过接受邀请，您同意<0>服务条款</0>和<1>隐私政策</1>。"
@@ -5065,6 +5084,9 @@ msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
+msgid "Choose a PNG or JPG image"
+msgstr ""
+
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "选择左侧的行以查看其库存可能来自何处。"
 
@@ -5179,6 +5201,9 @@ msgstr "再次单击以断开连接"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
 msgstr "点击查看器中的组件以添加它们。Shift 点击可添加多个。"
+
+msgid "Click or drop to replace"
+msgstr ""
 
 msgid "Click to rename"
 msgstr "单击以重命名"
@@ -6797,6 +6822,9 @@ msgstr "自定义 {label}"
 msgid "Custom attributes you track against your people"
 msgstr "针对人员跟踪的自定义属性"
 
+msgid "Custom color"
+msgstr ""
+
 msgid "Custom development beyond what's listed"
 msgstr "超出列表范围的自定义开发"
 
@@ -8355,6 +8383,12 @@ msgstr "拖动以调整绘图和特性大小"
 msgid "Drag to zoom"
 msgstr "拖动以缩放"
 
+msgid "Draw"
+msgstr ""
+
+msgid "Draw it, or upload an image of it."
+msgstr ""
+
 msgid "Drawing"
 msgstr "提取"
 
@@ -8363,6 +8397,9 @@ msgstr "图号"
 
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "绘图已替换。气泡位置已移除；特性行保持不变。"
+
+msgid "Drop an image of your signature"
+msgstr ""
 
 msgid "Drop Ship"
 msgstr "代发货"
@@ -9127,6 +9164,9 @@ msgstr "启用以允许物料编号中的小写字符。"
 msgid "Enable to allow shared workstation mode."
 msgstr "启用以允许共享工作站模式。"
 
+msgid "Enable to block approval from anyone with no signature on file."
+msgstr ""
+
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "启用以阻止为没有联系人或地点的客户发出或过账。"
 
@@ -9874,6 +9914,13 @@ msgstr "与请求一起发送的额外信息，例如授权密钥；标头值在
 msgid "Extra tags for slicing your GL reporting"
 msgstr "用于切分总账报告的额外标签"
 
+msgid "Face"
+msgstr ""
+
+#. placeholder {0}: index + 1
+msgid "Face {0}"
+msgstr ""
+
 msgid "Fail"
 msgstr "不合格"
 
@@ -10133,6 +10180,9 @@ msgstr "加载跟踪实体失败"
 msgid "Failed to plan job"
 msgstr "规划工单失败"
 
+msgid "Failed to process image"
+msgstr ""
+
 msgid "Failed to record gauge"
 msgstr "未能记录量具"
 
@@ -10273,6 +10323,9 @@ msgstr "上传模型失败"
 
 msgid "Failed to upload PDF"
 msgstr "上传 PDF 失败"
+
+msgid "Failed to upload signature"
+msgstr ""
 
 msgid "Failed to upload thumbnail"
 msgstr "上传缩略图失败"
@@ -17076,8 +17129,8 @@ msgstr "选择记录类型…"
 msgid "Pick a step from the list to edit its details, components, and materials."
 msgstr "从列表中选择一个步骤以编辑其详细信息、组件和原材料。"
 
-msgid "Pick a style and an avatar, or shuffle for new ones."
-msgstr "选择一种风格和一个头像，或随机生成新的头像。"
+msgid "Pick a style, a color and a face."
+msgstr ""
 
 msgid "Pick a target date to compare."
 msgstr "选择一个目标日期进行比较。"
@@ -17316,6 +17369,9 @@ msgstr "请选择一个项目"
 
 msgid "Please upload a CSV file of your data"
 msgstr "请上传您的数据 CSV 文件"
+
+msgid "PNG or JPG, dark ink on a plain background"
+msgstr ""
 
 msgid "PO"
 msgstr "采购订单"
@@ -17608,6 +17664,12 @@ msgstr "打印标签"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "打印输出 ({0})"
+
+msgid "Printed on the purchase orders you approve."
+msgstr ""
+
+msgid "Printed on the purchase orders you approve. Only you can see it here."
+msgstr ""
 
 msgid "Printer route created"
 msgstr ""
@@ -19123,6 +19185,9 @@ msgstr "已移除"
 msgid "Removed line"
 msgstr "已移除的行"
 
+msgid "Removed signature"
+msgstr ""
+
 #. placeholder {0}: count > 1 ? "s" : ""
 msgid "Removing this path will also disconnect {count} connection{0}. Continue?"
 msgstr "删除此路径将同时断开 {count} 个连接{0}。是否继续？"
@@ -19337,6 +19402,9 @@ msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
 msgid "Require a Customer Contact and Location"
 msgstr "需要客户联系人和地点"
+
+msgid "Require a Signature to Approve Purchase Orders"
+msgstr ""
 
 msgid "Require a Supplier Contact and Location"
 msgstr "需要供应商联系人和地点"
@@ -20317,6 +20385,9 @@ msgstr "保存草稿"
 msgid "Save Method"
 msgstr "保存方法"
 
+msgid "Save signature"
+msgstr ""
+
 msgid "Save the form you're editing"
 msgstr "保存您正在编辑的表单"
 
@@ -20349,6 +20420,9 @@ msgid "Saved dimension value mapping"
 msgstr ""
 
 msgid "Saved document layout"
+msgstr ""
+
+msgid "Saved signature"
 msgstr ""
 
 msgid "Saved view"
@@ -21574,6 +21648,9 @@ msgstr "当此规则失败时向用户显示。"
 msgid "Shuffle"
 msgstr "随机"
 
+msgid "Sign here"
+msgstr ""
+
 msgid "Sign in here instead"
 msgstr ""
 
@@ -21612,6 +21689,15 @@ msgstr "在进入下一步骤前进行签署评审"
 
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "必须在此问题关闭前记录的签核；除工作流要求的外。"
+
+msgid "Signature"
+msgstr ""
+
+msgid "Signature pad. Draw your signature with a mouse, trackpad, stylus or finger."
+msgstr ""
+
+msgid "Signature path"
+msgstr ""
 
 msgid "Signed in as {name}"
 msgstr "以 {name} 身份登录"
@@ -22224,6 +22310,9 @@ msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接
 
 msgid "Structure"
 msgstr "结构"
+
+msgid "Style"
+msgstr ""
 
 msgid "Style default"
 msgstr "风格默认"
@@ -25702,6 +25791,9 @@ msgstr "上传 PDF"
 msgid "Uploaded model"
 msgstr "已上传模型"
 
+msgid "Uploaded signature"
+msgstr ""
+
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
@@ -27170,6 +27262,9 @@ msgstr "您的账簿和资金流向。"
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "您的更改进入与此变更通知一起发布的新草稿版本。"
 
+msgid "Your company requires a signature to approve purchase orders. Add one to your profile, then approve the order. It prints on the purchase order you approve."
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "您的控制台PIN"
 
@@ -27250,6 +27345,9 @@ msgstr "您的真实数据已加载，您已检查样本并批准了它。"
 
 msgid "Your session was locked after inactivity."
 msgstr "你的会话因不活动而被已锁定。"
+
+msgid "Your signature"
+msgstr ""
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "您的源数据可访问且相对干净"

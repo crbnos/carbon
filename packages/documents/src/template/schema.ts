@@ -129,6 +129,8 @@ const issueDetailsBlock = builtInBlock("issueDetails");
 const associationsBlock = builtInBlock("associations");
 const actionTasksBlock = builtInBlock("actionTasks");
 const reviewersBlock = builtInBlock("reviewers");
+/** Who approved the document: signature, name and date. Empty until approved. */
+const approvalBlock = builtInBlock("approval");
 /** Tracking-label fields (data-bound; one per label element). */
 const labelHeadingBlock = builtInBlock("labelHeading");
 /** A label field whose printed name (the prefix before the value) is editable. */
@@ -249,6 +251,7 @@ export const blockSchema = z.discriminatedUnion("type", [
   associationsBlock,
   actionTasksBlock,
   reviewersBlock,
+  approvalBlock,
   labelHeadingBlock,
   labelRevisionBlock,
   labelQuantityBlock,
