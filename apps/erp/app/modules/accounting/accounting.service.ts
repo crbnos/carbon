@@ -80,6 +80,7 @@ import {
   type ReliefEvent,
   replayReliefs
 } from "@carbon/database/cost-relief";
+import type { RevaluationExposure } from "@carbon/database/currency-revaluation";
 import { fetchAll } from "@carbon/database/fetch-all";
 import {
   type AutomaticJournalStatus,
@@ -177,12 +178,14 @@ import {
   MONTH_NUMBER,
   parseIsoDate,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
+  remainingFundingSources,
   round,
   type SalesPostingAccount,
   searchFilter,
   toBaseAmount,
   toDisplayCredit,
   toDisplayDebit,
+  toDocumentAmount,
   toStoredAmount,
   unchecked
 } from "@carbon/utils";
@@ -11849,6 +11852,309 @@ export async function reverseDepreciationRun(
 
     return { depreciationRunId: run.depreciationRunId };
   });
+}
+
+// -- Currency revaluation --------------------------------------------------
+// Spec: .ai/specs/2026-10-26-fx-revaluation-and-cta-posting.md
+
+/** A foreign-currency memo the subledger readers leave out because one of
+ *  its settlements predates `sourceAmount`. The run lists it, not revalues. */
+export type NotRevaluedDocument = {
+  documentType: string;
+  documentId: string;
+  documentNumber: string;
+};
+
+type OpenSubledgerRow = {
+  documentId: string;
+  documentNumber: string;
+  documentType: string;
+  currencyCode: string;
+  exchangeRate: number;
+  openInCurrency: number;
+  openInBase: number;
+};
+
+/**
+ * Every open foreign-currency monetary item of a company at `periodEnd`:
+ * open invoices and memos from the AR/AP subledger readers, and the
+ * unapplied remainder of customer receipts and supplier disbursements
+ * (deposits excluded — IFRIC 22). The as-of rule for cash matches
+ * `get_ar_tie_out`: a payment and an applying payment count when Posted on or
+ * before `periodEnd`.
+ */
+export async function readRevaluationExposures(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    periodEnd: string;
+    defaults: { arRevaluationAccount: string; apRevaluationAccount: string };
+  }
+): Promise<{
+  exposures: RevaluationExposure[];
+  notRevalued: NotRevaluedDocument[];
+}> {
+  const { companyId, periodEnd, defaults } = args;
+
+  const company = await db
+    .selectFrom("company")
+    .select(["baseCurrencyCode", "companyGroupId"])
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const base = company.baseCurrencyCode;
+
+  const [receivables, payables, currencies] = await Promise.all([
+    sql<OpenSubledgerRow>`
+      SELECT "documentId", "documentNumber", "documentType", "currencyCode",
+        "exchangeRate", "openInCurrency", "openInBase"
+      FROM get_ar_open_by_customer(${companyId}, ${periodEnd}::date)
+      WHERE "currencyCode" <> ${base}
+    `.execute(db),
+    sql<OpenSubledgerRow>`
+      SELECT "documentId", "documentNumber", "documentType", "currencyCode",
+        "exchangeRate", "openInCurrency", "openInBase"
+      FROM get_ap_open_by_supplier(${companyId}, ${periodEnd}::date)
+      WHERE "currencyCode" <> ${base}
+    `.execute(db),
+    db
+      .selectFrom("currency")
+      .select(["code", "decimalPlaces"])
+      .where("companyGroupId", "=", company.companyGroupId!)
+      .execute()
+  ]);
+  const decimals = new Map(
+    currencies.map((c) => [c.code, Number(c.decimalPlaces)])
+  );
+  const decimalsOf = (code: string) => {
+    const places = decimals.get(code);
+    if (places == null || !Number.isFinite(places)) {
+      throw new Error(`Currency ${code} requires configured decimal places`);
+    }
+    return places;
+  };
+
+  // The readers count a settlement with no sourceAmount as zero document
+  // principal, so openInCurrency is too high for an invoice that has one.
+  // Such an invoice's open document amount comes from its base balance.
+  const salesInvoiceIds = receivables.rows
+    .filter((row) => row.documentType === "Invoice")
+    .map((row) => row.documentId);
+  const purchaseInvoiceIds = payables.rows
+    .filter((row) => row.documentType === "Invoice")
+    .map((row) => row.documentId);
+  const [legacySales, legacyPurchases] = await Promise.all([
+    salesInvoiceIds.length === 0
+      ? []
+      : db
+          .selectFrom("invoiceSettlement")
+          .select("targetSalesInvoiceId as id")
+          .distinct()
+          .where("companyId", "=", companyId)
+          .where("sourceAmount", "is", null)
+          .where("targetSalesInvoiceId", "in", salesInvoiceIds)
+          .execute(),
+    purchaseInvoiceIds.length === 0
+      ? []
+      : db
+          .selectFrom("invoiceSettlement")
+          .select("targetPurchaseInvoiceId as id")
+          .distinct()
+          .where("companyId", "=", companyId)
+          .where("sourceAmount", "is", null)
+          .where("targetPurchaseInvoiceId", "in", purchaseInvoiceIds)
+          .execute()
+  ]);
+  const legacyInvoiceIds = new Set(
+    [...legacySales, ...legacyPurchases]
+      .map((row) => row.id)
+      .filter((id): id is string => id !== null)
+  );
+
+  const subledgerExposure =
+    (exposureType: "Receivable" | "Payable") =>
+    (row: OpenSubledgerRow): RevaluationExposure => {
+      const isInvoice = row.documentType === "Invoice";
+      const openAmount =
+        isInvoice && legacyInvoiceIds.has(row.documentId)
+          ? toDocumentAmount(
+              Number(row.openInBase),
+              Number(row.exchangeRate),
+              decimalsOf(row.currencyCode)
+            )
+          : Number(row.openInCurrency);
+      return {
+        exposureType,
+        documentType: isInvoice ? "Invoice" : "Memo",
+        documentId: row.documentId,
+        documentNumber: row.documentNumber,
+        accountId:
+          exposureType === "Receivable"
+            ? defaults.arRevaluationAccount
+            : defaults.apRevaluationAccount,
+        accountClass: exposureType === "Receivable" ? "Asset" : "Liability",
+        currencyCode: row.currencyCode,
+        openAmount,
+        bookedBaseAmount: Number(row.openInBase)
+      };
+    };
+
+  const exposures: RevaluationExposure[] = [
+    ...receivables.rows.map(subledgerExposure("Receivable")),
+    ...payables.rows.map(subledgerExposure("Payable"))
+  ];
+
+  // The readers drop a memo with a legacy settlement entirely; list it.
+  const notRevalued = await db
+    .selectFrom("memo")
+    .select(["id", "memoId", "direction"])
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Posted")
+    .where("currencyCode", "<>", base)
+    .where("postingDate", "<=", periodEnd)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("invoiceSettlement as s")
+          .select("s.id")
+          .where("s.companyId", "=", companyId)
+          .where("s.sourceAmount", "is", null)
+          .where((inner) =>
+            inner.or([
+              inner("s.memoId", "=", eb.ref("memo.id")),
+              inner("s.targetMemoId", "=", eb.ref("memo.id"))
+            ])
+          )
+      )
+    )
+    .orderBy("memoId")
+    .execute();
+
+  // Unapplied cash: customer receipts (not deposits) and supplier
+  // disbursements in a foreign currency.
+  const payments = await db
+    .selectFrom("payment")
+    .select([
+      "id",
+      "paymentId",
+      "paymentType",
+      "totalAmount",
+      "exchangeRate",
+      sql<string | null>`"postingDate"::text`.as("postingDate"),
+      sql<string>`"paymentDate"::text`.as("paymentDate"),
+      "currencyCode"
+    ])
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Posted")
+    .where("postingDate", "<=", periodEnd)
+    .where("currencyCode", "<>", base)
+    .where((eb) =>
+      eb.or([
+        eb.and([
+          eb("paymentType", "=", "Receipt"),
+          eb("customerId", "is not", null),
+          eb("salesOrderId", "is", null),
+          eb("rentalAgreementId", "is", null)
+        ]),
+        eb.and([
+          eb("paymentType", "=", "Disbursement"),
+          eb("supplierId", "is not", null)
+        ])
+      ])
+    )
+    .orderBy("id")
+    .execute();
+
+  if (payments.length > 0) {
+    const paymentIds = payments.map((payment) => payment.id);
+    const consumption = await db
+      .selectFrom("invoiceSettlement as s")
+      .innerJoin("payment as applying", (join) =>
+        join
+          .onRef("applying.id", "=", "s.paymentId")
+          .onRef("applying.companyId", "=", "s.companyId")
+      )
+      .select([
+        "s.paymentId",
+        "s.sourcePaymentId",
+        "s.sourceAmount",
+        "s.appliedAmount",
+        "s.fxGainLossAmount"
+      ])
+      .where("s.companyId", "=", companyId)
+      .where("applying.status", "=", "Posted")
+      .where("applying.postingDate", "<=", periodEnd)
+      .where(
+        sql<string>`COALESCE(s."sourcePaymentId", s."paymentId")`,
+        "in",
+        paymentIds
+      )
+      .execute();
+
+    const byType = (type: "Receipt" | "Disbursement") => {
+      const typed = payments.filter((payment) => payment.paymentType === type);
+      const ids = new Set(typed.map((payment) => payment.id));
+      return remainingFundingSources(
+        typed.map((payment) => ({
+          id: payment.id,
+          totalAmount: Number(payment.totalAmount),
+          exchangeRate: Number(payment.exchangeRate),
+          postingDate: payment.postingDate,
+          paymentDate: payment.paymentDate,
+          currencyCode: payment.currencyCode
+        })),
+        consumption
+          .filter((row) => ids.has(row.sourcePaymentId ?? row.paymentId ?? ""))
+          .map((row) => ({
+            paymentId: row.paymentId,
+            sourcePaymentId: row.sourcePaymentId,
+            sourceAmount:
+              row.sourceAmount === null ? null : Number(row.sourceAmount),
+            appliedAmount: Number(row.appliedAmount),
+            fxGainLossAmount:
+              row.fxGainLossAmount === null
+                ? null
+                : Number(row.fxGainLossAmount)
+          })),
+        decimals,
+        type === "Receipt"
+      );
+    };
+
+    const paymentById = new Map(
+      payments.map((payment) => [payment.id, payment])
+    );
+    for (const [type, exposureType] of [
+      ["Receipt", "Unapplied Receipt"],
+      ["Disbursement", "Unapplied Disbursement"]
+    ] as const) {
+      for (const source of byType(type)) {
+        const payment = paymentById.get(source.paymentId)!;
+        exposures.push({
+          exposureType,
+          documentType: "Payment",
+          documentId: payment.id,
+          documentNumber: payment.paymentId,
+          accountId:
+            type === "Receipt"
+              ? defaults.arRevaluationAccount
+              : defaults.apRevaluationAccount,
+          accountClass: type === "Receipt" ? "Asset" : "Liability",
+          currencyCode: payment.currencyCode,
+          openAmount: source.remainingDocument,
+          bookedBaseAmount: source.remainingBase
+        });
+      }
+    }
+  }
+
+  return {
+    exposures,
+    notRevalued: notRevalued.map((memo) => ({
+      documentType: `${memo.direction} Memo`,
+      documentId: memo.id,
+      documentNumber: memo.memoId
+    }))
+  };
 }
 
 /** Deletes a Draft run and releases its claimed schedule rows (`runLineId`
