@@ -6698,6 +6698,12 @@ msgstr "Código de moneda"
 msgid "Currency display updated"
 msgstr ""
 
+msgid "Currency Revaluation"
+msgstr ""
+
+msgid "Currency Revaluation Run"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "Conversión de Moneda"
 
@@ -24391,6 +24397,10 @@ msgstr "La definición de esta versión no se pudo leer."
 
 msgid "This week"
 msgstr "Esta semana"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr ""
 
 #. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."

@@ -198,6 +198,7 @@ export type Database = {
           consolidatedRate: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt: string
           createdBy: string
+          currencyCode: string | null
           customFields: Json | null
           id: string
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
@@ -218,6 +219,7 @@ export type Database = {
           consolidatedRate?: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt?: string
           createdBy: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"]
@@ -238,6 +240,7 @@ export type Database = {
           consolidatedRate?: Database["public"]["Enums"]["glConsolidatedRate"]
           createdAt?: string
           createdBy?: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"]
@@ -292,6 +295,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "account_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "account_parentId_fkey"
@@ -74332,6 +74342,7 @@ export type Database = {
             | null
           createdAt: string | null
           createdBy: string | null
+          currencyCode: string | null
           customFields: Json | null
           id: string | null
           incomeBalance: Database["public"]["Enums"]["glIncomeBalance"] | null
@@ -74354,6 +74365,7 @@ export type Database = {
             | null
           createdAt?: string | null
           createdBy?: string | null
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string | null
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"] | null
@@ -74376,6 +74388,7 @@ export type Database = {
             | null
           createdAt?: string | null
           createdBy?: string | null
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string | null
           incomeBalance?: Database["public"]["Enums"]["glIncomeBalance"] | null
@@ -74430,6 +74443,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "account_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "account_parentId_fkey"

@@ -49930,6 +49930,9 @@ export default {
             $ref: "#/parameters/rowFilter.account.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -50043,6 +50046,9 @@ export default {
             $ref: "#/parameters/rowFilter.account.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -50108,6 +50114,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.account.isSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.account.currencyCode"
           },
           {
             $ref: "#/parameters/body.account"
@@ -51601,6 +51610,9 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51714,6 +51726,9 @@ export default {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
           },
           {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -51779,6 +51794,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accounts.isSystem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accounts.currencyCode"
           },
           {
             $ref: "#/parameters/body.accounts"
@@ -142489,6 +142507,12 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143345,6 +143369,12 @@ export default {
         isSystem: {
           format: "boolean",
           type: "boolean"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -195393,6 +195423,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.account.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.leaseScheduleLine": {
       name: "leaseScheduleLine",
       description: "leaseScheduleLine",
@@ -196307,6 +196343,12 @@ export default {
     },
     "rowFilter.accounts.isSystem": {
       name: "isSystem",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accounts.currencyCode": {
+      name: "currencyCode",
       required: false,
       in: "query",
       type: "string"

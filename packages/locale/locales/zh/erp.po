@@ -6698,6 +6698,12 @@ msgstr "货币代码"
 msgid "Currency display updated"
 msgstr ""
 
+msgid "Currency Revaluation"
+msgstr ""
+
+msgid "Currency Revaluation Run"
+msgstr ""
+
 msgid "Currency Translation"
 msgstr "货币折算"
 
@@ -24391,6 +24397,10 @@ msgstr "无法读取此版本的定义。"
 
 msgid "This week"
 msgstr "本周"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft currency revaluation run for the period ending {0}. Every open foreign-currency item will be revalued at the exchange rate on that date."
+msgstr ""
 
 #. placeholder {0}: formatDate(periodEnd)
 msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
