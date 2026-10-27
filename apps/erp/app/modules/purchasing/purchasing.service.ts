@@ -185,8 +185,10 @@ import {
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
+  type PurchaseOrderDateField,
   planningLineCurrencyCode,
   planningQuantityChange,
+  purchaseOrderLineDateOfOrderDate,
   taxPairForQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
@@ -2225,19 +2227,42 @@ export async function upsertPurchaseOrderLine(
     return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
   }
 
-  const existing = await client
-    .from("purchaseOrderLine")
-    .select("sortOrder")
-    .eq("purchaseOrderId", normalized.purchaseOrderId);
+  const [existing, delivery] = await Promise.all([
+    client
+      .from("purchaseOrderLine")
+      .select("sortOrder")
+      .eq("purchaseOrderId", normalized.purchaseOrderId),
+    client
+      .from("purchaseOrderDelivery")
+      .select("receiptRequestedDate, receiptPromisedDate")
+      .eq("id", normalized.purchaseOrderId)
+      .eq("companyId", normalized.companyId)
+      .maybeSingle()
+  ]);
+  if (delivery.error) return { data: null, error: delivery.error };
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
     0
   );
 
+  // A new line starts on the order's dates.
   return client
     .from("purchaseOrderLine")
-    .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
+    .insert([
+      {
+        ...normalized,
+        requiredDate:
+          normalized.requiredDate ??
+          delivery.data?.receiptRequestedDate ??
+          undefined,
+        promisedDate:
+          normalized.promisedDate ??
+          delivery.data?.receiptPromisedDate ??
+          undefined,
+        sortOrder: maxSortOrder + 1
+      }
+    ])
     .select("id")
     .single();
 }
@@ -3564,6 +3589,63 @@ export async function getDefaultAttachmentsForPO(
       path: `${prefix}/${f.name}`
     }));
   });
+}
+
+/**
+ * Copies a new order date to the lines whose date is empty or still the
+ * order's current one, so run it before the delivery row changes, in the same
+ * transaction. Lines received complete keep their requested and promised
+ * dates. A cleared order date (null) leaves the lines alone.
+ */
+export async function cascadePurchaseOrderDateToLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    purchaseOrderIds: string[];
+    field: PurchaseOrderDateField;
+    value: string | null;
+  }
+) {
+  const { companyId, userId, purchaseOrderIds, field, value } = args;
+  if (!value || purchaseOrderIds.length === 0) return;
+  const lineField = purchaseOrderLineDateOfOrderDate[field];
+
+  let update = db
+    .updateTable("purchaseOrderLine")
+    .set({
+      [lineField]: value,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("purchaseOrderLine.companyId", "=", companyId)
+    .where("purchaseOrderLine.purchaseOrderId", "in", purchaseOrderIds)
+    .where((eb) =>
+      eb.or([
+        eb(`purchaseOrderLine.${lineField}`, "is", null),
+        eb(
+          `purchaseOrderLine.${lineField}`,
+          "=",
+          eb
+            .selectFrom("purchaseOrderDelivery")
+            .select(`purchaseOrderDelivery.${field}`)
+            .whereRef(
+              "purchaseOrderDelivery.id",
+              "=",
+              "purchaseOrderLine.purchaseOrderId"
+            )
+            .whereRef(
+              "purchaseOrderDelivery.companyId",
+              "=",
+              "purchaseOrderLine.companyId"
+            )
+        )
+      ])
+    );
+  if (field !== "deliveryDate") {
+    update = update.where("purchaseOrderLine.receivedComplete", "=", false);
+  }
+  await update.execute();
 }
 
 /**

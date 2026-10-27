@@ -81,7 +81,12 @@ export default function PurchaseOrderExplorer() {
     supplierTaxAmount: 0,
     taxPercent: 0,
     supplierShippingCost: 0,
-    exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1
+    exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1,
+    // A new line starts on the order's dates.
+    requiredDate:
+      purchaseOrderData?.purchaseOrder?.receiptRequestedDate ?? undefined,
+    promisedDate:
+      purchaseOrderData?.purchaseOrder?.receiptPromisedDate ?? undefined
   };
 
   const newPurchaseOrderLineDisclosure = useDisclosure();

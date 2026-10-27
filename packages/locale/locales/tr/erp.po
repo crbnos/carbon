@@ -26540,8 +26540,8 @@ msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "Satın almacının malları istediği zaman; tedarikçi Taahhüt tarihinde başka bir şey taahhüt edebilir ve Teslim tarihinde yine başka bir şey muhasebeleştirebilir."
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Satın almacının bu satırın mallarına rampa üzerinde ihtiyaç duyduğu zaman; planlama bu tarihi stok uygunluğu ve fason işlem planlaması için kullanır."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "Satın almacının bu satırdaki malları rıhtımda istediği tarih. Yeni bir satır, siparişin Talep edilen tarihinde başlar; planlama bu tarihi stok uygunluğu ve dış işlem çizelgelemesi için kullanır."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Sözleşme ne zaman çalıştırılır ve tamamlandığında ne olur."

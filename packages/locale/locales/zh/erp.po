@@ -26540,8 +26540,8 @@ msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carb
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "当采购员要求货物时；供应商可能在承诺日期承诺其他内容，在交货日期再过账其他内容。"
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "当采购员需要此行的货物在码头时；计划使用此日期进行库存可用性和委外加工调度。"
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "采购员需要本行物料到货的日期。新增行默认从订单的要求日期开始；计划根据此日期安排库存可用性和外协加工的排程。"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "当合同运行时以及完成时会发生什么。"

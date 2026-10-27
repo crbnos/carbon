@@ -26540,8 +26540,8 @@ msgstr "Quando se espera que os fornecedores respondam; os fornecedores veem est
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "Quando o comprador solicitou os bens; o fornecedor pode prometer algo diferente na Data Prometida e contabilizar algo diferente novamente na Data de Entrega."
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Quando o comprador precisa dos bens desta linha no cais; o planejamento usa esta data para disponibilidade de estoque e agendamento de processamento externo."
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "Quando o comprador precisa que as mercadorias desta linha estejam na doca de recebimento. Uma nova linha começa na Data solicitada do pedido; o Planejamento usa esta data para o agendamento de disponibilidade de estoque e de processamento externo."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Quando o contrato é executado e o que acontece quando é concluído."

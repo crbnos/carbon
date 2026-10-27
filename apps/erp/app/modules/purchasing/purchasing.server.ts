@@ -45,6 +45,7 @@ import {
   groupBy,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   SCALE,
+  sanitize,
   taxableBase,
   tiptapToHTML,
   unchecked
@@ -65,6 +66,7 @@ import {
   getCompany,
   getCompanySettings
 } from "~/modules/settings/settings.service";
+import { incoterms } from "~/modules/shared/shared.models";
 import {
   getLocationTimeZone,
   invokePosting,
@@ -77,6 +79,7 @@ import { fromServerFn } from "../shared/shared.service";
 import {
   canCreatePurchaseOrderRevision,
   findPlanningPurchaseOrder,
+  isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
   isPurchaseOrderLocked,
   isPurchaseOrderPromisedDateEditable,
@@ -92,6 +95,8 @@ import {
   plannedOrderValidator,
   planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
+  purchaseOrderLineDateFields,
+  purchaseOrderLineDateRefusal,
   purchaseOrderStatusType,
   purchaseReturnOrderLineValidator,
   purchasingRfqFinalizeValidator,
@@ -1842,12 +1847,11 @@ const purchaseOrderDeliveryFields = [
  * (an empty `supplierId` changes nothing). A new `supplierId` on one order
  * takes the supplier's currency and today's rate; a new `currencyCode` takes
  * today's rate (refused when there is none). `receiptRequestedDate`,
- * `locationId` and `deliveryDate` are the delivery's. A new
- * `receiptPromisedDate` also goes to every line not yet received complete
- * whose promised date is empty or still the order's previous one; a line with
- * its own date keeps it. Refused when any order is released, except for
- * `deliveryDate`, and for `receiptPromisedDate` until the order is fully
- * received (To Invoice, Completed or Closed).
+ * `receiptPromisedDate`, `locationId` and `deliveryDate` are the delivery's;
+ * a new date also moves the lines still on the order's previous one. Refused
+ * when any order is released, except for `deliveryDate`, and for
+ * `receiptPromisedDate` until the order is fully received (To Invoice,
+ * Completed or Closed).
  *
  * @mcp
  */
@@ -1893,46 +1897,22 @@ export const updatePurchaseOrders = defineServiceFn({
     const failed = (error: unknown) =>
       ctx.error("internal", "Failed to update the purchase order", error);
 
-    if (field === "receiptPromisedDate") {
+    if (isPurchaseOrderDateField(field)) {
       // One transaction: the lines compare against the order's previous date,
       // so they are written before the delivery row changes it.
       const saved = await ctx
         .transaction(async (tx) => {
           const db = tx.asSystem.pg;
-          if (value) {
-            await db
-              .updateTable("purchaseOrderLine")
-              .set({ promisedDate: value, ...stamp() })
-              .where("purchaseOrderLine.companyId", "=", companyId)
-              .where("purchaseOrderLine.purchaseOrderId", "in", ids)
-              .where("purchaseOrderLine.receivedComplete", "=", false)
-              .where((eb) =>
-                eb.or([
-                  eb("purchaseOrderLine.promisedDate", "is", null),
-                  eb(
-                    "purchaseOrderLine.promisedDate",
-                    "=",
-                    eb
-                      .selectFrom("purchaseOrderDelivery")
-                      .select("purchaseOrderDelivery.receiptPromisedDate")
-                      .whereRef(
-                        "purchaseOrderDelivery.id",
-                        "=",
-                        "purchaseOrderLine.purchaseOrderId"
-                      )
-                      .whereRef(
-                        "purchaseOrderDelivery.companyId",
-                        "=",
-                        "purchaseOrderLine.companyId"
-                      )
-                  )
-                ])
-              )
-              .execute();
-          }
+          await service.cascadePurchaseOrderDateToLines(db, {
+            companyId,
+            userId: ctx.auditUserId,
+            purchaseOrderIds: ids,
+            field,
+            value
+          });
           await db
             .updateTable("purchaseOrderDelivery")
-            .set({ receiptPromisedDate: value, ...stamp() })
+            .set({ [field]: value, ...stamp() })
             .where("id", "in", ids)
             .where("companyId", "=", companyId)
             .execute();
@@ -1981,6 +1961,141 @@ export const updatePurchaseOrders = defineServiceFn({
       .in("id", ids)
       .eq("companyId", companyId);
     return update.error ? failed(update.error) : { ids };
+  }
+});
+
+/**
+ * Change one date of a purchase order line.
+ *
+ * @remarks
+ * The line's requested (`requiredDate`), promised (`promisedDate`) or
+ * delivery (`receivedDate`) date; `value` null clears it. A line with its own
+ * date keeps it when the order's date changes. The requested date is refused
+ * once the order is released, the promised date once the line or the order is
+ * received; the delivery date can always be corrected.
+ *
+ * @param lineId - The purchase order line's id.
+ * @param field - Which date: `requiredDate`, `promisedDate` or `receivedDate`.
+ * @param value - The date, `YYYY-MM-DD`, or null to clear it.
+ * @mcp
+ */
+export const updatePurchaseOrderLineDate = defineServiceFn({
+  input: z.object({
+    lineId: z.string().min(1),
+    field: z.enum(purchaseOrderLineDateFields),
+    value: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD date")
+      .nullable()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { lineId, field, value }) {
+    const companyId = ctx.company.id;
+    const db = ctx.asSystem.pg;
+    const failed = (error: unknown) =>
+      ctx.error("internal", "Failed to update the purchase order line", error);
+
+    const line = await db
+      .selectFrom("purchaseOrderLine")
+      .innerJoin("purchaseOrder", (join) =>
+        join
+          .onRef("purchaseOrder.id", "=", "purchaseOrderLine.purchaseOrderId")
+          .onRef("purchaseOrder.companyId", "=", "purchaseOrderLine.companyId")
+      )
+      .select(["purchaseOrderLine.receivedComplete", "purchaseOrder.status"])
+      .where("purchaseOrderLine.id", "=", lineId)
+      .where("purchaseOrderLine.companyId", "=", companyId)
+      .executeTakeFirst()
+      .catch(failed);
+    if (line instanceof CarbonError) return line;
+    if (!line) return ctx.error("notFound", "Purchase order line not found");
+
+    const refusal = purchaseOrderLineDateRefusal(field, line);
+    if (refusal) return ctx.error("rule", refusal);
+
+    const updated = await db
+      .updateTable("purchaseOrderLine")
+      .set({
+        [field]: value,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute()
+      .catch(failed);
+    return updated instanceof CarbonError ? updated : { lineId };
+  }
+});
+
+/**
+ * Save a purchase order's Shipping card. Refused once the order is released.
+ * A new date also moves the lines still on the order's previous one.
+ */
+export const updatePurchaseOrderDelivery = defineServiceFn({
+  input: z.object({
+    id: z.string().min(1),
+    locationId: z.string().optional(),
+    shippingMethodId: z.string().optional(),
+    trackingNumber: z.string(),
+    deliveryDate: z.string().optional(),
+    receiptRequestedDate: z.string().optional(),
+    receiptPromisedDate: z.string().optional(),
+    dropShipment: z.boolean(),
+    customerId: z.string().optional(),
+    customerLocationId: z.string().optional(),
+    supplierShippingCost: z.number().optional(),
+    notes: z.string().optional(),
+    incoterm: z.enum(incoterms).optional(),
+    incotermLocation: z.string().optional(),
+    customFields: z.record(z.string(), z.unknown()).optional()
+  }),
+  permission: { update: "purchasing" },
+
+  async run(ctx, { id, customFields, ...delivery }) {
+    const companyId = ctx.company.id;
+    const statuses = await service.statusesOf(ctx, "purchaseOrder", [id]);
+    if (statuses instanceof CarbonError) return statuses;
+    if (statuses.length === 0) {
+      return ctx.error("notFound", "Purchase order not found");
+    }
+    if (statuses.some(isPurchaseOrderLocked)) {
+      return ctx.error("rule", "Cannot modify a confirmed purchase order.");
+    }
+
+    const saved = await ctx
+      .transaction(async (tx) => {
+        const db = tx.asSystem.pg;
+        for (const field of [
+          "receiptRequestedDate",
+          "receiptPromisedDate",
+          "deliveryDate"
+        ] as const) {
+          await service.cascadePurchaseOrderDateToLines(db, {
+            companyId,
+            userId: ctx.auditUserId,
+            purchaseOrderIds: [id],
+            field,
+            value: delivery[field] ?? null
+          });
+        }
+        await db
+          .updateTable("purchaseOrderDelivery")
+          .set({
+            ...sanitize(delivery),
+            customFields: (customFields ?? null) as Json,
+            updatedBy: ctx.auditUserId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", id)
+          .where("companyId", "=", companyId)
+          .execute();
+      })
+      .catch((error: unknown) =>
+        ctx.error("internal", "Failed to update purchase order delivery", error)
+      );
+    return saved instanceof CarbonError ? saved : { id };
   }
 });
 

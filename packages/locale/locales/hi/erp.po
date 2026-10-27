@@ -26540,8 +26540,8 @@ msgstr "जब आपूर्तिकर्ता प्रतिक्रि�
 msgid "When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date."
 msgstr "जब क्रेता ने माल के लिए अनुरोध किया; आपूर्तिकर्ता वादा की गई तिथि पर कुछ और वादा कर सकता है और डिलीवरी तिथि पर फिर से कुछ और पोस्ट कर सकता है।"
 
-msgid "When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "जब क्रेता को इस पंक्ति के माल की डॉक पर आवश्यकता हो; योजना स्टॉक-उपलब्धता और बाहरी प्रसंस्करण शेड्यूलिंग के लिए इस तिथि का उपयोग करती है।"
+msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
+msgstr "क्रेता को इस पंक्ति का माल डॉक पर कब चाहिए। नई पंक्ति ऑर्डर की अनुरोधित तिथि से शुरू होती है; योजना इस तिथि का उपयोग स्टॉक उपलब्धता और बाहरी प्रसंस्करण की शेड्यूलिंग के लिए करती है।"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "जब अनुबंध चलता है और जब वह पूर्ण होता है तो क्या होता है।"

@@ -22,6 +22,7 @@ import {
   lockedReturnLineField,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
+  purchaseOrderLineDateRefusal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
@@ -570,5 +571,49 @@ describe("isPurchaseOrderPromisedDateEditable", () => {
 
   it("is editable on an order with no status yet", () => {
     expect(isPurchaseOrderPromisedDateEditable(null)).toBe(true);
+  });
+});
+
+describe("purchaseOrderLineDateRefusal", () => {
+  const editable = (
+    field: Parameters<typeof purchaseOrderLineDateRefusal>[0],
+    receivedComplete = false
+  ) =>
+    purchaseOrderStatusType.filter(
+      (status) =>
+        purchaseOrderLineDateRefusal(field, { status, receivedComplete }) ===
+        null
+    );
+
+  it("fixes the required date once the order is released", () => {
+    expect(editable("requiredDate")).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "Rejected"
+    ]);
+  });
+
+  it("keeps an open line's promised date editable until the order is fully received", () => {
+    expect(editable("promisedDate")).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "Rejected"
+    ]);
+  });
+
+  it("fixes the promised date of a line received complete", () => {
+    expect(editable("promisedDate", true)).toEqual([]);
+  });
+
+  it("always lets the delivery date be corrected", () => {
+    expect(editable("receivedDate", true)).toEqual([
+      ...purchaseOrderStatusType
+    ]);
   });
 });
