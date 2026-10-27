@@ -46,6 +46,17 @@ Routes: /x/inventory/storage-types, /x/inventory/storage-units,
   `${MES_URL}/x/picking/<id>/tracked/<lineId>` (MES) return JSON `entities`; a lot
   in a non-nettable unit is absent.
 
+### 5. Release with a stock transfer
+- `/x/inventory/stock-transfers` → "Add Stock Transfer" (wizard). Search the
+  item in "Transfer To", Select the destination row (e.g. its Default bin).
+  "Transfer From" lists the non-nettable unit as a source ("2 available") —
+  click its Add, then "Create Transfer" (created Released).
+- On the transfer, click the line's "Pick" (native click) → picker modal →
+  "Select" tab: the lot in the non-nettable unit is offered. Click its Pick;
+  the transfer completes.
+- DB: the lot is at the destination and `quantityNonNettable` drops by it; the
+  picking-list tracked routes offer the lot again.
+
 ## Selector Notes
 - The switch: `document.querySelector('form button[role=switch]')`.
 - Storage unit list scrolls an inner container — use `?search=` instead.
