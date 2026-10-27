@@ -818,8 +818,10 @@ export function purchaseOrderLineDateRefusal(
         ? "Cannot change the requested date of a confirmed purchase order."
         : null;
     case "promisedDate":
-      return line.receivedComplete ||
-        !isPurchaseOrderPromisedDateEditable(line.status)
+      if (!isPurchaseOrderPromisedDateEditable(line.status)) {
+        return "Cannot change the promised date of a fully received purchase order.";
+      }
+      return line.receivedComplete
         ? "Cannot change the promised date of a received line."
         : null;
     case "receivedDate":
