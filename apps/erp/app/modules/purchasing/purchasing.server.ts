@@ -42,6 +42,7 @@ import {
   datetime,
   deriveRate,
   escapeHTMLChars,
+  groupBy,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   SCALE,
   taxableBase,
@@ -101,6 +102,7 @@ import {
 } from "./purchasing.models";
 import { renderPurchaseReturnOrderPdf } from "./purchasing.pdf";
 import * as service from "./purchasing.service";
+import type { PurchaseOrderStatus } from "./types";
 
 // ── Operations ──────────────────────────────────────────────────────────────
 // `defineServiceFn` operations: what the routes, the API and MCP call, so each
@@ -2047,23 +2049,43 @@ export const deletePurchaseOrders = defineServiceFn({
       );
     }
 
+    // Each order is deleted only in the status it was checked in: one sent
+    // for approval since it was read as a Draft stays, with its request.
+    const deletableByStatus = groupBy(
+      orders.data.filter((order) => deletable.includes(order.id)),
+      (order) => order.status!
+    );
     // One transaction: a delete that fails (an invoice line still names the
-    // order) must leave its approval requests pending. The status is part of
-    // the DELETE, so an order sent since it was read stays.
+    // order) must leave its approval requests pending.
     const removed = await ctx
       .transaction(async (tx) => {
+        const rows = await tx.asSystem.pg
+          .deleteFrom("purchaseOrder")
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or(
+              Object.entries(deletableByStatus).map(([status, group]) =>
+                eb.and([
+                  eb(
+                    "id",
+                    "in",
+                    group.map((order) => order.id)
+                  ),
+                  eb("status", "=", status as PurchaseOrderStatus)
+                ])
+              )
+            )
+          )
+          .returning(["id", "status"])
+          .execute();
         await service.cancelPendingApprovals(tx.asSystem.pg, {
           companyId,
           userId,
-          purchaseOrderIds: inApproval.filter((id) => deletable.includes(id))
+          purchaseOrderIds: rows
+            .filter((row) => row.status === "Needs Approval")
+            .map((row) => row.id)
         });
-        return tx.asSystem.pg
-          .deleteFrom("purchaseOrder")
-          .where("id", "in", deletable)
-          .where("companyId", "=", companyId)
-          .where("status", "in", ["Draft", "Planned", "Needs Approval"])
-          .returning("id")
-          .execute();
+        return rows;
       })
       .catch((err) =>
         ctx.error("internal", "Failed to delete purchase orders", err)
