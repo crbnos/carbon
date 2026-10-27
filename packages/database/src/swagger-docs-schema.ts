@@ -102574,9 +102574,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
@@ -102584,6 +102581,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
             $ref: "#/parameters/select"
@@ -102858,9 +102858,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
@@ -102868,6 +102865,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -103096,9 +103096,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.requireBackflushStorageUnit"
           },
           {
@@ -103106,6 +103103,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.receiptQuantitiesStartAtZero"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.serialNumberTiming"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -110460,49 +110460,6 @@ export default {
           }
         },
         tags: ["(rpc) prevent_posted_sales_invoice_deletion"]
-      }
-    },
-    "/rpc/number_serial_units_for_completion": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                p_company_id: {
-                  format: "text",
-                  type: "string"
-                },
-                p_job_id: {
-                  format: "text",
-                  type: "string"
-                },
-                p_quantity_complete: {
-                  format: "numeric",
-                  type: "number"
-                }
-              },
-              required: ["p_job_id", "p_quantity_complete", "p_company_id"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) number_serial_units_for_completion"]
       }
     },
     "/rpc/purchaseLineDimensionPivot": {
@@ -167427,10 +167384,10 @@ export default {
         "leaseIncrementalBorrowingRate",
         "leaseShortTermExpedient",
         "leaseReminderDays",
-        "serialNumberTiming",
         "requireBackflushStorageUnit",
         "preventNegativeBackflush",
-        "receiptQuantitiesStartAtZero"
+        "receiptQuantitiesStartAtZero",
+        "serialNumberTiming"
       ],
       properties: {
         id: {
@@ -167819,11 +167776,6 @@ export default {
           format: "integer",
           type: "integer"
         },
-        serialNumberTiming: {
-          default: "jobCreation",
-          format: "text",
-          type: "string"
-        },
         requireBackflushStorageUnit: {
           default: false,
           format: "boolean",
@@ -167838,6 +167790,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        serialNumberTiming: {
+          default: "jobCreation",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -223646,12 +223603,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.serialNumberTiming": {
-      name: "serialNumberTiming",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.requireBackflushStorageUnit": {
       name: "requireBackflushStorageUnit",
       required: false,
@@ -223666,6 +223617,12 @@ export default {
     },
     "rowFilter.companySettings.receiptQuantitiesStartAtZero": {
       name: "receiptQuantitiesStartAtZero",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.serialNumberTiming": {
+      name: "serialNumberTiming",
       required: false,
       in: "query",
       type: "string"
