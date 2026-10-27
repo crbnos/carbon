@@ -2,15 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { MAX_EXPORT_ROWS } from "../../../table-jobs/csv";
 import {
   composeExport,
   type ExportDeps,
   removeExportParts,
   writeExportPart
 } from "../../../table-jobs/export-run";
+import { failTableJob } from "../../../table-jobs/failure";
 import {
   requireTableJobHandlers,
   type TableJobContext
@@ -20,16 +19,13 @@ import {
   releaseTableJobLock
 } from "../../../table-jobs/lock";
 import { notifyTableJobUser } from "../../../table-jobs/notify";
-import { TABLE_JOB_ROWS_PER_STEP } from "../../../table-jobs/paging";
 import {
-  type TableJobStorage,
   tableExportPartKey,
+  tableExportPartsFolder,
   tableExportStorageKey,
   tempStagingStorage
 } from "../../../table-jobs/storage";
 import { inngest } from "../../client";
-
-const log = getLogger("jobs", "table-export");
 
 const rowCount = new Intl.NumberFormat("en-US");
 
@@ -38,28 +34,6 @@ function deps(): ExportDeps {
     handlers: requireTableJobHandlers("Table export"),
     storage: tempStagingStorage()
   };
-}
-
-/** Deletes the parts of a failed export; the nightly cleanup is the backstop.
- *  The parts are numbered from 0, one per step of `TABLE_JOB_ROWS_PER_STEP`. */
-async function removeParts(
-  storage: TableJobStorage,
-  args: { companyId: string; userId: string; exportId: string }
-) {
-  const keys = Array.from(
-    { length: MAX_EXPORT_ROWS / TABLE_JOB_ROWS_PER_STEP },
-    (_, part) =>
-      tableExportPartKey(args.companyId, args.userId, args.exportId, part)
-  );
-  try {
-    await storage.remove(keys);
-  } catch (error) {
-    log.error("Failed to delete the parts of a failed export", {
-      companyId: args.companyId,
-      exportId: args.exportId,
-      error
-    });
-  }
 }
 
 // TODO(scale): this job runs inside the ERP containers (api+/inngest.ts) and shares
@@ -72,16 +46,14 @@ export const tableExportFunction = inngest.createFunction(
     // key, and the notification carries an event id Inngest de-duplicates.
     retries: 1,
     concurrency: { key: "event.data.companyId", limit: 1 },
-    onFailure: async ({ event, error }) => {
+    onFailure: ({ event, error }) => {
       const { companyId, userId, exportId, listKey } = event.data.event.data;
-      log.error("Table export failed", {
+      return failTableJob({
+        kind: "export",
         companyId,
-        listKey,
-        exportId,
-        error: error.message
-      });
-      try {
-        await notifyTableJobUser({
+        jobId: exportId,
+        folder: tableExportPartsFolder(companyId, userId, exportId),
+        notification: {
           event: NotificationEvent.TableExport,
           companyId,
           userId,
@@ -90,15 +62,10 @@ export const tableExportFunction = inngest.createFunction(
           body: "Try again. If it fails again, filter the list to fewer rows.",
           inAppOnly: true,
           dedupeId: `table-export:${exportId}:failed`
-        });
-      } catch (notifyError) {
-        log.error("Failed to send the export failure notification", {
-          companyId,
-          error: notifyError
-        });
-      }
-      await removeParts(tempStagingStorage(), { companyId, userId, exportId });
-      await releaseTableJobLock("export", companyId, exportId);
+        },
+        error,
+        context: { listKey }
+      });
     }
   },
   { event: "carbon/table-export" },

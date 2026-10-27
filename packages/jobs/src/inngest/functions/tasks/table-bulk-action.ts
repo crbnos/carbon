@@ -20,6 +20,7 @@ import {
   collectIds,
   storeSelectedIds
 } from "../../../table-jobs/bulk-run";
+import { failTableJob } from "../../../table-jobs/failure";
 import {
   requireTableJobHandlers,
   type TableBulkAction,
@@ -31,8 +32,9 @@ import {
   releaseTableJobLock
 } from "../../../table-jobs/lock";
 import { notifyTableJobUser } from "../../../table-jobs/notify";
-import { TABLE_JOB_ROWS_PER_STEP } from "../../../table-jobs/paging";
 import {
+  removeTableJobFolder,
+  tableBulkIdsFolder,
   tableBulkIdsKey,
   tempStagingStorage
 } from "../../../table-jobs/storage";
@@ -47,22 +49,14 @@ function deps() {
   };
 }
 
-/** Deletes the id files of a run; the nightly cleanup is the backstop. The
- *  files are numbered from 0, one per collect step. */
-async function removeIdFiles(args: {
-  companyId: string;
-  bulkActionId: string;
-  files: number;
-}) {
-  const files = Array.from({ length: args.files }, (_, file) =>
-    tableBulkIdsKey(args.companyId, args.bulkActionId, file)
-  );
+/** Deletes the id files of a run; the nightly cleanup is the backstop. */
+async function removeIdFiles(companyId: string, bulkActionId: string) {
   try {
-    await tempStagingStorage().remove(files);
+    await removeTableJobFolder(tableBulkIdsFolder(companyId, bulkActionId));
   } catch (error) {
     log.error("Failed to delete the id files of a bulk action", {
-      companyId: args.companyId,
-      bulkActionId: args.bulkActionId,
+      companyId,
+      bulkActionId,
       error
     });
   }
@@ -79,17 +73,15 @@ export const tableBulkActionFunction = inngest.createFunction(
     // A failed chunk is counted as failed instead of failing the run.
     retries: 0,
     concurrency: { key: "event.data.companyId", limit: 1 },
-    onFailure: async ({ event, error }) => {
+    onFailure: ({ event, error }) => {
       const { companyId, userId, bulkActionId, actionKey, actionLabel } =
         event.data.event.data;
-      log.error("Table bulk action failed", {
+      return failTableJob({
+        kind: "bulk",
         companyId,
-        actionKey,
-        bulkActionId,
-        error: error.message
-      });
-      try {
-        await notifyTableJobUser({
+        jobId: bulkActionId,
+        folder: tableBulkIdsFolder(companyId, bulkActionId),
+        notification: {
           event: NotificationEvent.TableBulkAction,
           companyId,
           userId,
@@ -97,22 +89,10 @@ export const tableBulkActionFunction = inngest.createFunction(
           title: `${actionLabel} could not be completed`,
           body: "Some rows may have changed. Check the list, then try again.",
           dedupeId: `table-bulk-action:${bulkActionId}:failed`
-        });
-      } catch (notifyError) {
-        log.error("Failed to send the bulk action failure notification", {
-          companyId,
-          error: notifyError
-        });
-      }
-      // The run state is gone here: remove every file a run of this size
-      // could have written.
-      const maxRows = event.data.event.data.maxRows ?? MAX_BULK_ROWS;
-      await removeIdFiles({
-        companyId,
-        bulkActionId,
-        files: Math.ceil(maxRows / TABLE_JOB_ROWS_PER_STEP)
+        },
+        error,
+        context: { actionKey }
       });
-      await releaseTableJobLock("bulk", companyId, bulkActionId);
     }
   },
   { event: "carbon/table-bulk-action" },
@@ -246,9 +226,7 @@ export const tableBulkActionFunction = inngest.createFunction(
       })
     );
 
-    await step.run("remove-ids", () =>
-      removeIdFiles({ companyId, bulkActionId, files: idsPerFile.length })
-    );
+    await step.run("remove-ids", () => removeIdFiles(companyId, bulkActionId));
     await step.run("release-lock", () =>
       releaseTableJobLock("bulk", companyId, bulkActionId)
     );
