@@ -23446,6 +23446,7 @@ export async function issueMaterial(
       if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
         throw new NotFoundError("Job operation not found");
       }
+      const completedMakeMethodId = jobOperation.data.jobMakeMethodId;
 
       // UNIT-AXIS order, identical to the apps' getTrackedEntitiesByMakeMethodId:
       // position here is the `index` step records are stored under, so the
@@ -23515,10 +23516,13 @@ export async function issueMaterial(
         // the timing (under 'production' every unit; otherwise only a unit
         // left unnumbered by a timing change). A Consumed entity is not cut to
         // one unit below, so it is numbered only when it already holds one.
+        // The unit id comes from the request, so only a unit of this
+        // operation's make method draws a number.
         await sequence.assignSerialNumberIfMissing(trx, {
           trackedEntityId,
           companyId,
-          onlyIfSingleUnit: trackedEntity.status === "Consumed"
+          onlyIfSingleUnit: trackedEntity.status === "Consumed",
+          jobMakeMethodId: completedMakeMethodId
         });
 
         if (trackedEntity.status !== "Consumed") {
@@ -23763,6 +23767,20 @@ export async function issueMaterial(
       }
       if (isSerial && quantity !== 1) {
         throw new Error("Serial units are scrapped one at a time");
+      }
+      // The unit id comes from the request, and a scrap cuts an unsplit seed
+      // to one unit: another job's seed would lose the units it holds.
+      if (isSerial) {
+        if (trackedEntitiesRes.error) {
+          throw new Error("Failed to fetch the operation's units");
+        }
+        if (
+          !trackedEntitiesRes.data?.some((unit) => unit.id === scrapEntityId)
+        ) {
+          throw new InvalidInputError(
+            "The unit does not belong to this operation"
+          );
+        }
       }
 
       const todayScrapOp = datetime

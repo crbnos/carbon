@@ -666,6 +666,47 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
+  it("refuses to scrap another job's unit, and leaves that unit whole", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "8", 3);
+      const otherJob = await untouchedSerialJob(f, "9", 3);
+      const [otherSeed] = await units(f, otherJob.makeMethodId);
+      const scrapReason = await f.db
+        .insertInto("scrapReason")
+        .values({ name: "Damaged", companyId: f.companyId, createdBy: USER })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "issue",
+        {
+          type: "jobOperationScrap",
+          jobOperationId: job.operationId,
+          quantity: 1,
+          scrapReasonId: scrapReason.id,
+          trackedEntityId: otherSeed!.id
+        },
+        issue
+      );
+
+      expect(result.error?.status).toBe(400);
+      expect(await units(f, otherJob.makeMethodId)).toEqual([
+        expect.objectContaining({
+          readableId: null,
+          quantity: 3,
+          status: "Reserved"
+        })
+      ]);
+      expect(await drawn(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
   it("numbers and receives untouched units when the last operation is marked Done", async () => {
     const f = await alwaysPostFixture();
     try {
