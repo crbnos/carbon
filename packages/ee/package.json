@@ -94,7 +94,7 @@
     "jose": "catalog:",
     "kysely": "catalog:",
     "nanoid": "catalog:",
-    "nodemailer": "10.0.6",
+    "nodemailer": "10.1.4",
     "react": "catalog:",
     "react-icons": "catalog:",
     "react-router": "catalog:",
