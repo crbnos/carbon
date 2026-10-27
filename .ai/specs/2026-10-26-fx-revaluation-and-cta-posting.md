@@ -124,7 +124,7 @@ Worked example (USD company, rate = EUR per 1 USD):
 
 **Stale run.** Post re-reads the exposures and refuses with `RunOutOfDateError` when they differ from the Draft lines (the depreciation precedent). If a user posts a back-dated document into the period after the run posts, the close check fails. The user then runs Undo and posts again.
 
-**Undo.** Undo calls `reverseRunJournals` on both journals, with `resolveReversalPeriods`, then sets the run to Draft. If the period is now Closed, both reversals land on the company's today, and they net to zero.
+**Undo.** Undo calls `reverseRunJournals` on both journals, with `resolveReversalPeriods`, then sets the run to Draft. Undo refuses once the run's own period is Closed. Each reversal would move to the company's today on its own, so the two would land on different dates and leave a revaluation on the books between them. The Draft could also never post again into a Closed month.
 
 **Close checklist.** A new definition, seeded for every company:
 
@@ -146,13 +146,13 @@ The check reuses the run preview (`getPeriodRunPreview` pattern, `accounting.ser
 
 ### Phase 2 — Foreign-currency balance accounts (bank, cash, loans)
 
-**Account currency.** Add `account.currencyCode`, nullable. A user sets it on a posting account of class Asset or Liability (the account form shows it only then). It names the currency the account's balance is held in. Accounts are group-scoped. A company whose base currency equals the account currency skips the account.
+**Account currency.** Add `account.currencyCode`, nullable. A user sets it on a posting account of class Asset or Liability (the account form shows it only then). It names the currency the account's balance is held in. Accounts are group-scoped. So a company skips an account whose currency equals its base currency, and an account it has never posted to.
 
 **Run lines.** Recalculate adds one `Account Balance` line per such account:
 
 | Column | Value |
 |---|---|
-| `bookedBaseAmount` | the account's GL balance at `periodEnd` (`GL_JOURNAL_STATUSES`, natural sign) |
+| `bookedBaseAmount` | the account's GL balance at `periodEnd` (`GL_JOURNAL_STATUSES`, natural sign), less every Currency Revaluation journal dated on or before `periodEnd`. Without that, a posted run would look stale against its own valuation. |
 | `openAmount` | the balance in the account currency on the period-end statement. The accountant types it in on the Draft run. |
 | adjustment account | the account itself. It has no subledger to tie out to. |
 
@@ -520,6 +520,7 @@ Phase 3:
 
 ## Changelog
 
+- 2026-10-27: Self-review fixes. An `Account Balance` line is booked without Currency Revaluation journals, so a posted run is never stale against its own valuation. Only accounts the company has posted to are its exposures. The close check counts an out-of-date Posted run even when nothing is open. Undo refuses a run whose period is Closed. The CTA post re-reads the posted CTA under a lock.
 - 2026-10-27: Implemented on branch `consolidation-exchange-rates` (plan Tasks 1–22). Four deviations from the plan:
   - The statement balances are a separate editable grid, not a cell in the lines table.
   - The CTA preview lists the foreign-currency subsidiaries with no Posted revaluation run. One query does this. It does not evaluate each subsidiary's `fx-revaluation` check.

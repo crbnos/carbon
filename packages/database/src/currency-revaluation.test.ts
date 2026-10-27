@@ -82,11 +82,14 @@ describe("revalueExposure", () => {
 });
 
 describe("exposureSide", () => {
+  // Each exposure carries the class of the account it posts to: unapplied
+  // customer cash sits on the AR revaluation account (an asset) yet is a
+  // credit balance, and unapplied supplier cash the reverse.
   it.each<[ExposureType, "Asset" | "Liability", 1 | -1]>([
     ["Receivable", "Asset", 1],
-    ["Unapplied Disbursement", "Asset", 1],
+    ["Unapplied Disbursement", "Liability", 1],
     ["Payable", "Liability", -1],
-    ["Unapplied Receipt", "Liability", -1],
+    ["Unapplied Receipt", "Asset", -1],
     ["Account Balance", "Asset", 1],
     ["Account Balance", "Liability", -1]
   ])("treats a rise in a %s (%s) as %i", (exposureType, accountClass, side) => {

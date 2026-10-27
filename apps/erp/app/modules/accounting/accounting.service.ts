@@ -12354,7 +12354,9 @@ export async function readRevaluationExposures(
 
   // Balance accounts held in a foreign currency (bank, cash, loans). Their
   // foreign balance comes from the statement: the accountant enters it on
-  // the run, so openAmount starts empty.
+  // the run, so openAmount starts empty. The chart is shared by the group,
+  // so only the accounts THIS company has posted to count — a sibling's EUR
+  // bank account is not this company's exposure.
   const balanceAccounts = await db
     .selectFrom("account")
     .select(["id", "number", "name", "class", "currencyCode"])
@@ -12364,6 +12366,15 @@ export async function readRevaluationExposures(
     .where("currencyCode", "is not", null)
     .where("currencyCode", "<>", base)
     .where("class", "in", ["Asset", "Liability"])
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("journalLine as jl")
+          .select("jl.id")
+          .whereRef("jl.accountId", "=", "account.id")
+          .where("jl.companyId", "=", companyId)
+      )
+    )
     .orderBy("number")
     .execute();
   if (balanceAccounts.length > 0) {
@@ -12374,8 +12385,38 @@ export async function readRevaluationExposures(
       )
       WHERE "accountId" = ANY(${balanceAccounts.map((a) => a.id)}::text[])
     `.execute(db);
+    // The booked balance is what the ledger holds WITHOUT revaluation: a
+    // run's valuation is dated periodEnd and posts to the account itself, so
+    // counting it would make a posted run look stale against its own entry.
+    // Earlier runs' valuations and their next-day reversals both fall on or
+    // before periodEnd and net to zero either way.
+    const revaluations = await db
+      .selectFrom("journalLine as jl")
+      .innerJoin("journal as j", "j.id", "jl.journalId")
+      .select([
+        "jl.accountId",
+        sql<number>`COALESCE(SUM(jl."amount"), 0)`.as("amount")
+      ])
+      .where("jl.companyId", "=", companyId)
+      .where("j.companyId", "=", companyId)
+      .where("j.sourceType", "=", "Currency Revaluation")
+      .where("j.status", "in", [...GL_JOURNAL_STATUSES])
+      .where("j.postingDate", "<=", periodEnd)
+      .where(
+        "jl.accountId",
+        "in",
+        balanceAccounts.map((a) => a.id)
+      )
+      .groupBy("jl.accountId")
+      .execute();
+    const revaluedOf = new Map(
+      revaluations.map((row) => [row.accountId, Number(row.amount)])
+    );
     const balanceOf = new Map(
-      balances.rows.map((row) => [row.accountId, Number(row.balanceAtDate)])
+      balances.rows.map((row) => [
+        row.accountId,
+        round(Number(row.balanceAtDate) - (revaluedOf.get(row.accountId) ?? 0))
+      ])
     );
     for (const account of balanceAccounts) {
       exposures.push({
@@ -13118,7 +13159,10 @@ export async function postCurrencyRevaluationRun(
 /**
  * Undo a posted revaluation run: reverse both of its journals (each dated
  * by `periods`, keyed by the original's posting date) and return the run to
- * Draft.
+ * Draft. Refused once the run's own period is Closed: the valuation's
+ * reversal would move to today while the day-1 reversal's stays in the next
+ * period, leaving a revaluation on the books in between, and the Draft could
+ * never post again into a Closed month.
  */
 export async function reverseCurrencyRevaluationRun(
   db: Kysely<KyselyDatabase>,
@@ -13138,7 +13182,8 @@ export async function reverseCurrencyRevaluationRun(
         "currencyRevaluationRunId",
         "status",
         "journalId",
-        "reversalJournalId"
+        "reversalJournalId",
+        sql<string>`"periodEnd"::text`.as("periodEnd")
       ])
       .where("id", "=", runId)
       .where("companyId", "=", companyId)
@@ -13147,6 +13192,24 @@ export async function reverseCurrencyRevaluationRun(
     if (run.status !== "Posted") {
       throw new RunReversalError(
         `Currency revaluation run ${run.currencyRevaluationRunId} is ${run.status}; only a posted run can be reversed`
+      );
+    }
+    const closedPeriod = await trx
+      .selectFrom("accountingPeriod")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("startDate", "<=", run.periodEnd)
+      .where("endDate", ">=", run.periodEnd)
+      .where((eb) =>
+        eb.or([
+          eb("closeStatus", "=", "Closed"),
+          eb("closedAt", "is not", null)
+        ])
+      )
+      .executeTakeFirst();
+    if (closedPeriod) {
+      throw new RunReversalError(
+        `The period of currency revaluation run ${run.currencyRevaluationRunId} is closed, so the run can no longer be undone`
       );
     }
     const journalIds = [run.journalId, run.reversalJournalId].filter(
@@ -13339,10 +13402,12 @@ export async function createCurrencyRevaluationRunAt(
 
 /**
  * What a new revaluation run for `periodEnd` would revalue, for the close
- * checklist. Zero when nothing is open in a foreign currency, while a Draft
- * run for the period waits (the Draft fails the check itself), or when the
- * Posted run still matches what is open. Otherwise every open exposure, and
- * the total size of the differences at the default rates.
+ * checklist. Zero while a Draft run for the period waits (the Draft fails the
+ * check itself), and when the Posted run still matches what is open. A Posted
+ * run that no longer matches counts even when nothing is open now — a
+ * back-dated payment that cleared its only item leaves a posted unrealized
+ * gain on a paid invoice. Otherwise every open exposure, and the total size of
+ * the differences at the default rates.
  */
 export async function previewCurrencyRevaluation(
   db: Kysely<KyselyDatabase>,
@@ -13350,20 +13415,6 @@ export async function previewCurrencyRevaluation(
 ): Promise<RunPreview> {
   const { companyId, periodEnd } = args;
   const nothing: RunPreview = { count: 0, amount: 0, error: null };
-  const defaults = await db
-    .selectFrom("accountDefault")
-    .select(["arRevaluationAccount", "apRevaluationAccount"])
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  const { exposures } = await readRevaluationExposures(db, {
-    companyId,
-    periodEnd,
-    defaults: {
-      arRevaluationAccount: defaults?.arRevaluationAccount ?? "",
-      apRevaluationAccount: defaults?.apRevaluationAccount ?? ""
-    }
-  });
-  if (exposures.length === 0) return nothing;
 
   const run = await db
     .selectFrom("currencyRevaluationRun")
@@ -13377,6 +13428,24 @@ export async function previewCurrencyRevaluation(
     (await isCurrencyRevaluationRunCurrent(db, { runId: run.id, companyId }))
   ) {
     return nothing;
+  }
+
+  const defaults = await db
+    .selectFrom("accountDefault")
+    .select(["arRevaluationAccount", "apRevaluationAccount"])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const { exposures } = await readRevaluationExposures(db, {
+    companyId,
+    periodEnd,
+    defaults: {
+      arRevaluationAccount: defaults?.arRevaluationAccount ?? "",
+      apRevaluationAccount: defaults?.apRevaluationAccount ?? ""
+    }
+  });
+  if (exposures.length === 0) {
+    // Only reached with no run, or a Posted run that is out of date.
+    return run ? { count: 1, amount: 0, error: null } : nothing;
   }
 
   const rates = await resolveRevaluationRates(db, {
@@ -23715,36 +23784,73 @@ export async function previewCurrencyTranslationAt(
  * `sourceType` Currency Translation, no `eliminationKind` (so the
  * intercompany workbench's Regenerate never reverses it), crediting the CTA
  * account and debiting the offset account for a positive movement. The
- * period is found or created on the elimination entity; a Locked or Closed
- * period refuses.
+ * movement is `liveCta` less the CTA posted so far, re-read inside the
+ * transaction under a lock on the elimination entity — two posts at once
+ * would otherwise both post the same movement. Returns null when nothing is
+ * left to post. The period is found or created on the elimination entity; a
+ * Locked or Closed period refuses.
  */
 export async function insertCurrencyTranslationJournal(
   db: Kysely<KyselyDatabase>,
   args: {
+    companyGroupId: string;
     eliminationCompanyId: string;
     periodEnd: string;
-    movement: number;
+    liveCta: number;
     ctaAccountId: string;
     offsetAccountId: string;
     userId: string;
   }
-): Promise<{ journalId: string; journalEntryId: string }> {
+): Promise<{
+  journalId: string;
+  journalEntryId: string;
+  movement: number;
+} | null> {
   const {
+    companyGroupId,
     eliminationCompanyId,
     periodEnd,
-    movement,
+    liveCta,
     ctaAccountId,
     offsetAccountId,
     userId
   } = args;
   return withTransaction(db, async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(hashtext(${`currency-translation:${eliminationCompanyId}`}))`.execute(
+      trx
+    );
+    const [offset, decimals] = await Promise.all([
+      sql<{ balanceAtDate: number }>`
+        SELECT "balanceAtDate"
+        FROM "accountTreeBalancesByCompany"(
+          ${companyGroupId}, ${eliminationCompanyId}, ${periodEnd}::date, ${periodEnd}::date
+        )
+        WHERE "accountId" = ${offsetAccountId}
+      `.execute(trx),
+      trx
+        .selectFrom("currency")
+        .innerJoin("company", (join) =>
+          join
+            .onRef("company.baseCurrencyCode", "=", "currency.code")
+            .onRef("company.companyGroupId", "=", "currency.companyGroupId")
+        )
+        .select("currency.decimalPlaces")
+        .where("company.id", "=", eliminationCompanyId)
+        .executeTakeFirst()
+    ]);
+    const { movement } = ctaMovement({
+      liveCta,
+      offsetBalance: Number(offset.rows[0]?.balanceAtDate ?? 0),
+      decimalPlaces: Number(decimals?.decimalPlaces ?? 2)
+    });
+    if (movement === 0) return null;
+
     const period = await resolveAccountingPeriod(
       trx,
       eliminationCompanyId,
       periodEnd,
       "historical"
     );
-    const amount = round(movement);
     const journal: RunJournal = {
       description: `Currency translation adjustment ${periodEnd}`,
       sourceType: "Currency Translation",
@@ -23753,13 +23859,13 @@ export async function insertCurrencyTranslationJournal(
           accountId: ctaAccountId,
           description: "Currency translation adjustment",
           // Natural (credit-positive) sign: a positive movement credits CTA.
-          amount,
+          amount: movement,
           dimensions: {}
         },
         {
           accountId: offsetAccountId,
           description: "Currency translation offset",
-          amount: -amount,
+          amount: -movement,
           dimensions: {}
         }
       ]
@@ -23772,7 +23878,11 @@ export async function insertCurrencyTranslationJournal(
       userId,
       now: datetime.timestamp()
     });
-    return { journalId: inserted.id, journalEntryId: inserted.journalEntryId };
+    return {
+      journalId: inserted.id,
+      journalEntryId: inserted.journalEntryId,
+      movement
+    };
   });
 }
 
@@ -23817,14 +23927,16 @@ export async function postCurrencyTranslationAt(
   }
   try {
     const journal = await insertCurrencyTranslationJournal(ctx.asSystem.pg, {
+      companyGroupId: ctx.company.groupId,
       eliminationCompanyId: preview.eliminationCompanyId,
       periodEnd: preview.periodEnd,
-      movement: preview.movement,
+      liveCta: preview.liveCta,
       ctaAccountId: defaults.currencyTranslationAccount,
       offsetAccountId: defaults.currencyTranslationOffsetAccount,
       userId: ctx.auditUserId
     });
-    return { posted: true, movement: preview.movement, ...journal };
+    if (!journal) return { posted: false, movement: 0 };
+    return { posted: true, ...journal };
   } catch (err) {
     return refusal(
       ctx,
