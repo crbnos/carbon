@@ -184,6 +184,8 @@ import {
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
+  type AverageCostChange,
+  applyAverageCostChanges,
   assertNoMigrationClearing,
   assertPostable,
   calculateCOGS,
@@ -13872,10 +13874,36 @@ function allocate(
   };
 }
 
+/**
+ * An Average item's coverage: its receipt layers are never drawn down, so
+ * they cannot say what is still in stock. The item's on-hand does, and the
+ * layers only carry the write-up — capped, oldest first, at the on-hand the
+ * invoice's earlier lines of the item have not already taken.
+ */
+function averageCoverage(
+  coverage: Extract<VarianceCoverage, { receiptLayers: unknown }>,
+  onHand: number
+): Extract<VarianceCoverage, { receiptLayers: unknown }> {
+  let left = Math.max(0, onHand);
+  return {
+    receiptLayers: coverage.receiptLayers.map((layer) => {
+      const remainingQuantity = Math.min(
+        Math.max(layer.remainingQuantity, 0),
+        left
+      );
+      left -= remainingQuantity;
+      return { ...layer, remainingQuantity };
+    }),
+    onHandQuantity: Math.max(0, onHand)
+  };
+}
+
 export function buildPurchaseInvoicePostingLines(
   input: BuildPurchaseInvoicePostingLinesInput
 ): PurchaseInvoicePosting {
   const { invoice, accounts, payables, supplierTypeId } = input;
+  // An Average item's on-hand still free to take a write-up, per item.
+  const averageOnHandLeft = new Map<string, number>();
 
   const clearings = new Map<string, Clearing>();
   // The variance of the lines that share a stored write-up, per item.
@@ -14018,11 +14046,35 @@ export function buildPurchaseInvoicePostingLines(
         // Received units clear GR/IR at their receipt cost.
         const clearing = clearings.get(line.id);
         if (clearing) {
+          const { coverage } = purchaseOrderLine;
+          const averageItemId =
+            item.costingMethod === "Average" && "receiptLayers" in coverage
+              ? item.itemId
+              : null;
+          const onHandLeft =
+            averageItemId && "receiptLayers" in coverage
+              ? (averageOnHandLeft.get(averageItemId) ??
+                coverage.onHandQuantity)
+              : 0;
           const { allocation, selfHealQuantity } = allocate(
             clearing,
-            purchaseOrderLine.coverage,
+            averageItemId && "receiptLayers" in coverage
+              ? averageCoverage(coverage, onHandLeft)
+              : coverage,
             item.itemId ? (writeUpVarianceByItem.get(item.itemId) ?? 0) : 0
           );
+          if (averageItemId) {
+            const covered =
+              selfHealQuantity +
+              allocation.perLayer.reduce(
+                (sum, entry) => sum + entry.appliedQuantity,
+                0
+              );
+            averageOnHandLeft.set(
+              averageItemId,
+              Math.max(0, onHandLeft - covered)
+            );
+          }
           receivedVariances.set(line.id, {
             quantity: clearing.quantity,
             receiptCost: clearing.receiptCost,
@@ -14812,6 +14864,64 @@ export async function postPurchaseInvoice(
           !selfHealLayersVoid.includes(entry)
       );
 
+      // What the void takes back off an Average item: the units a direct
+      // line received and their cost, and the write-up each received PO line
+      // booked. The write-up is read from the journal, where it is that
+      // line's only debit to an inventory account: it is the posting's
+      // `inventoryShare` whether it went onto receipt layers, into a legacy
+      // self-heal layer (whose cost also holds the receipt's) or nowhere.
+      const accountDefaultsVoid = await getDefaultPostingGroup(db, companyId);
+      if (accountDefaultsVoid.error || !accountDefaultsVoid.data) {
+        throw new Error("Failed to fetch account defaults");
+      }
+      const inventoryAccountsVoid = new Set([
+        accountDefaultsVoid.data.rawMaterialsAccount,
+        accountDefaultsVoid.data.finishedGoodsAccount
+      ]);
+      const itemIdByLineReferenceVoid = new Map(
+        invoiceLinesVoid.data.flatMap((line) =>
+          line.purchaseOrderLineId && line.itemId
+            ? [
+                [
+                  journalReference.to.purchaseInvoice(line.purchaseOrderLineId),
+                  line.itemId
+                ] as const
+              ]
+            : []
+        )
+      );
+      const receivedItemIdsVoid = new Set(
+        originalItemLedger.data.map((entry) => entry.itemId)
+      );
+      const averageCostChangesVoid: AverageCostChange[] = [
+        ...originalItemLedger.data.map((entry) => ({
+          itemId: entry.itemId,
+          quantity: -Number(entry.quantity),
+          value: 0
+        })),
+        ...plainCostLedgerVoid.flatMap((entry) =>
+          entry.itemId && receivedItemIdsVoid.has(entry.itemId)
+            ? [
+                {
+                  itemId: entry.itemId,
+                  quantity: 0,
+                  value: -Number(entry.cost)
+                }
+              ]
+            : []
+        ),
+        ...originalJournalLines.flatMap((entry) => {
+          const itemId = entry.documentLineReference
+            ? itemIdByLineReferenceVoid.get(entry.documentLineReference)
+            : undefined;
+          return itemId &&
+            entry.accountId &&
+            inventoryAccountsVoid.has(entry.accountId)
+            ? [{ itemId, quantity: 0, value: -Number(entry.amount) }]
+            : [];
+        })
+      ];
+
       const reversingCostLedger: Database["public"]["Tables"]["costLedger"]["Insert"][] =
         plainCostLedgerVoid.map((entry) => ({
           itemLedgerType: entry.itemLedgerType,
@@ -14912,6 +15022,12 @@ export async function postPurchaseInvoice(
             )
             .execute();
         }
+
+        // Before the reversing item ledger rows: on-hand as it stood.
+        await applyAverageCostChanges(trx, {
+          companyId,
+          changes: averageCostChangesVoid
+        });
 
         if (reversingItemLedger.length > 0) {
           await trx
@@ -15236,6 +15352,8 @@ export async function postPurchaseInvoice(
 
     const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
       [];
+    // What the journal books to an Average item's inventory, per line.
+    const averageCostChanges: AverageCostChange[] = [];
 
     const purchaseInvoiceLinesByPurchaseOrderLine =
       purchaseInvoiceLines.data.reduce<
@@ -15469,22 +15587,28 @@ export async function postPurchaseInvoice(
         ];
       })
     );
-    const selfHealItemIds = [
+    // The on-hand of an item whose receipts wrote no layer, and of an
+    // Average item, whose layers are never drawn down.
+    const onHandItemIds = [
       ...new Set(
         layerLines
-          .filter((line) => layersByInvoiceLine.get(line.id)?.length === 0)
+          .filter(
+            (line) =>
+              layersByInvoiceLine.get(line.id)?.length === 0 ||
+              itemOf(line.itemId).costingMethod === "Average"
+          )
           .map((line) => line.itemId as string)
       )
     ];
     const onHand =
-      selfHealItemIds.length > 0
+      onHandItemIds.length > 0
         ? await db
             .selectFrom("itemLedger")
             .select((eb) => [
               "itemId",
               eb.fn.sum<number>("quantity").as("quantity")
             ])
-            .where("itemId", "in", selfHealItemIds)
+            .where("itemId", "in", onHandItemIds)
             .where("companyId", "=", companyId)
             .groupBy("itemId")
             .execute()
@@ -15763,6 +15887,11 @@ export async function postPurchaseInvoice(
           // Only create item ledger entries if the receipt is being posted
           // (not when skipReceiptPost is true, as entries will be created when the receipt is posted later)
           if (itemTrackingType === "Inventory" && !skipReceiptPost) {
+            averageCostChanges.push({
+              itemId: invoiceLine.itemId!,
+              quantity: invoiceLineQuantityInInventoryUnit,
+              value: totalLineCostWithWeightedShipping
+            });
             itemLedgerInserts.push({
               postingDate: today,
               itemId: invoiceLine.itemId!,
@@ -15806,6 +15935,18 @@ export async function postPurchaseInvoice(
         // The receipt is the sole creator of purchase cost layers; this
         // invoice adjusts the receipt's layers instead of creating its own.
         if (!received) continue;
+
+        // The on-hand share the journal writes up inventory with.
+        if (
+          invoiceLine.itemId &&
+          Math.abs(received.allocation.inventoryShare) > VARIANCE_THRESHOLD
+        ) {
+          averageCostChanges.push({
+            itemId: invoiceLine.itemId,
+            quantity: 0,
+            value: round(received.allocation.inventoryShare)
+          });
+        }
 
         // Subledger: adjustment child rows on the covered layers, consumed
         // alongside their parent by calculateCOGS.
@@ -16327,6 +16468,12 @@ export async function postPurchaseInvoice(
           )
           .execute();
       }
+
+      // Before the item ledger rows below: on-hand as it stood.
+      await applyAverageCostChanges(trx, {
+        companyId,
+        changes: averageCostChanges
+      });
 
       if (itemLedgerInserts.length > 0) {
         await trx

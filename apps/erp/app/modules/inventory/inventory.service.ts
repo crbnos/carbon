@@ -22,6 +22,7 @@ import {
 } from "@carbon/api/service-fn.server";
 import type { Database, Json } from "@carbon/database";
 import {
+  fetchAllByIds,
   fetchAllFromTable,
   getCompanyTimeZone,
   journalReference
@@ -138,6 +139,8 @@ import {
 import * as settingsService from "~/modules/settings/settings.service";
 import {
   type AdjustmentItemCost,
+  type AverageCostChange,
+  applyAverageCostChanges,
   assertCompanyRecords,
   assertPostable,
   attributesContain,
@@ -223,7 +226,11 @@ import {
   reconcileReceiptLineSerials,
   shippingCarrierType
 } from "./inventory.models";
-import { clampDepth, writeOffRestoreQuantity } from "./inventory.utils";
+import {
+  clampDepth,
+  receivingSearchTerms,
+  writeOffRestoreQuantity
+} from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
 import {
   effectiveSuccessorId,
@@ -864,6 +871,85 @@ export async function getReceipts(
 
   query = setGenericQueryFilters(query, args, RECEIPTS_PAGING);
   return query;
+}
+
+/**
+ * The purchase order lines Receiving searches: lines of orders waiting to be
+ * received and not fully received, oldest order first and in line order within
+ * it, so the list groups by order (its sort is fixed). Every search word must
+ * occur in one of the line's values, case, spaces and punctuation ignored
+ * (`receivingSearchTerms`).
+ */
+export async function getPurchaseOrderLinesToReceive(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: Omit<GenericQueryFilters, "sorts"> & { search: string | null }
+) {
+  let query = client
+    .from("purchaseOrderLinesToReceive")
+    .select(
+      "id, purchaseOrderId, purchaseOrderReadableId, revisionId, orderDate, supplierId, supplierName, supplierReference, trackingNumber, locationId, itemId, itemReadableId, itemName, itemType, thumbnailPath, description, supplierPartId, purchaseQuantity, quantityReceived, quantityToReceive, purchaseUnitOfMeasureCode, promisedDate",
+      { count: LIST_COUNT }
+    )
+    .eq("companyId", companyId)
+    .eq("receivedComplete", false);
+
+  for (const term of receivingSearchTerms(args.search)) {
+    query = query.ilike("searchText", `%${term}%`);
+  }
+  // Filters only: assigned back so the select keeps its row type.
+  query = setGenericQueryFilters(query, { filters: args.filters });
+
+  return query
+    .order("orderDate", { ascending: true })
+    .order("purchaseOrderReadableId", { ascending: true })
+    .order("sortOrder", { ascending: true })
+    .order("id", { ascending: true })
+    .range(args.offset ?? 0, (args.offset ?? 0) + args.limit - 1);
+}
+
+/**
+ * Every order still waiting on these items, so Receiving can say a part is
+ * also open on another order.
+ */
+export async function getOpenPurchaseOrdersForItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemIds: string[]
+) {
+  return fetchAllByIds(itemIds, (batch) =>
+    client
+      .from("purchaseOrderLinesToReceive")
+      .select(
+        "id, itemId, purchaseOrderId, purchaseOrderReadableId, revisionId"
+      )
+      .eq("companyId", companyId)
+      .eq("receivedComplete", false)
+      .in("itemId", batch)
+      .order("id")
+  );
+}
+
+/**
+ * The Draft receipts already started for these purchase orders, oldest first,
+ * so Receiving opens one instead of starting a second.
+ */
+export async function getDraftReceiptsForPurchaseOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[]
+) {
+  return fetchAllByIds(purchaseOrderIds, (batch) =>
+    client
+      .from("receipt")
+      .select("id, receiptId, sourceDocumentId")
+      .eq("companyId", companyId)
+      .eq("sourceDocument", "Purchase Order")
+      .eq("status", "Draft")
+      .in("sourceDocumentId", batch)
+      .order("createdAt", { ascending: true })
+      .order("id", { ascending: true })
+  );
 }
 
 export async function getReceipt(
@@ -10456,6 +10542,22 @@ export async function postReceipt(
             "Cannot void: stock received on this receipt was already consumed. Correct the remainder with an inventory adjustment instead."
           );
         }
+        // The receipt's units leave an Average item at the cost they came
+        // in at. Before the reversing item ledger rows: on-hand as it stood.
+        await applyAverageCostChanges(trx, {
+          companyId,
+          changes: receiptCostLedger.flatMap((row) =>
+            row.itemId
+              ? [
+                  {
+                    itemId: row.itemId,
+                    quantity: -Number(row.quantity),
+                    value: -Number(row.cost)
+                  }
+                ]
+              : []
+          )
+        });
         if (costLedgerPlan.layerIdsToClose.length > 0) {
           await trx
             .updateTable("costLedger")
@@ -10706,6 +10808,9 @@ export async function postReceipt(
           itemId: string;
           quantity: number;
         }[] = [];
+        // What each line books (a negative line at the cost it relieves),
+        // for an Average item's unit cost.
+        const averageCostChanges: AverageCostChange[] = [];
 
         const isOutsideProcessing =
           purchaseOrder.data.purchaseOrderType === "Outside Processing";
@@ -11181,6 +11286,11 @@ export async function postReceipt(
           // Cost layers: the receipt is the sole creator of purchase layers.
           // The invoice later adjusts them via appliesToCostLedgerId children.
           if (createsLayers && !isNegativeReceipt) {
+            averageCostChanges.push({
+              itemId: receiptLine.itemId!,
+              quantity: receivedQuantity,
+              value: receiptLineCosts[index]!.cost
+            });
             if (invoiceFirstQty > 0) {
               costLedgerInserts.push({
                 itemLedgerType: "Purchase",
@@ -11510,6 +11620,11 @@ export async function postReceipt(
                 ? cogsResult.totalCost
                 : receiptLineCosts[consumption.index]!.cost;
             relievedCostByLine.set(consumption.index, consumedCost);
+            averageCostChanges.push({
+              itemId: consumption.itemId,
+              quantity: -consumption.quantity,
+              value: -consumedCost
+            });
             costLedgerInserts.push({
               itemLedgerType: "Purchase",
               costLedgerType: "Direct Cost",
@@ -11646,6 +11761,11 @@ export async function postReceipt(
                 .execute();
             }
           }
+          // Before the item ledger rows below: on-hand as it stood.
+          await applyAverageCostChanges(trx, {
+            companyId,
+            changes: averageCostChanges
+          });
 
           for await (const [purchaseOrderLineId, update] of Object.entries(
             purchaseOrderLineUpdates

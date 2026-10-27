@@ -2577,6 +2577,9 @@ msgstr "也在 {otherStationNames}"
 msgid "Also notify"
 msgstr "同时通知"
 
+msgid "Also open on {links}"
+msgstr "其他未结采购订单：{links}"
+
 msgid "Always"
 msgstr "始终"
 
@@ -4300,6 +4303,9 @@ msgstr "盲法"
 msgid "Blind Count"
 msgstr "盲点库存"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "用错误阻止"
 
@@ -5204,9 +5210,6 @@ msgstr "关闭日期"
 msgid "Close Date"
 msgstr "关闭日期"
 
-msgid "Close menu"
-msgstr "关闭菜单"
-
 msgid "Close Period"
 msgstr "关闭期间"
 
@@ -6072,6 +6075,9 @@ msgstr "复制程序文件唯一标识符"
 msgid "Copy purchase invoice unique identifier"
 msgstr "复制采购发票唯一标识符"
 
+msgid "Copy purchase order number"
+msgstr "复制采购订单编号"
+
 msgid "Copy purchase order unique identifier"
 msgstr "复制采购订单唯一标识符"
 
@@ -6808,6 +6814,9 @@ msgstr "客户"
 
 msgid "Customer"
 msgstr "客户"
+
+msgid "Customer / Supplier"
+msgstr "客户 / 供应商"
 
 msgid "Customer Accounts"
 msgstr "客户账户"
@@ -8215,6 +8224,9 @@ msgstr "美元利用率"
 
 msgid "Don't Cancel"
 msgstr "不要取消"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "看不到序列号？"
@@ -11443,6 +11455,9 @@ msgstr "ID 和描述是为原材料生成的。"
 
 msgid "If"
 msgstr "如果"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "如果已执行过折旧，下次运行将补算直线法资产按原成本计提的折旧。"
@@ -15155,6 +15170,9 @@ msgstr "没有未结工序"
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "没有未结采购订单行符合您的搜索。每个词都必须完全匹配;空格和标点符号被忽略。"
+
 msgid "No open reimbursements"
 msgstr "没有未结报销单"
 
@@ -15269,6 +15287,9 @@ msgstr "此操作尚未记录任何生产事件"
 
 msgid "No production recorded yet."
 msgstr "还没有生产记录。"
+
+msgid "No purchase orders are waiting to be received."
+msgstr "没有采购订单等待接收。"
 
 msgid "No purchases in this period"
 msgstr "此期间无采购"
@@ -15909,6 +15930,9 @@ msgstr "仅草稿程序文件可编辑。创建新版本以更改启用或已归
 
 msgid "Only employees can post receipts."
 msgstr "只有员工才能过账收货。"
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空的、未结会计期间。"
@@ -18310,6 +18334,9 @@ msgstr "费率频率"
 
 msgid "Rate Limit"
 msgstr "速率限制"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空则使用当前汇率。"
@@ -21362,6 +21389,9 @@ msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID�
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
+
 msgid "Show All"
 msgstr "显示全部"
 
@@ -23066,8 +23096,8 @@ msgstr "合同在期末日期结束，不会续期。之后的已计划发票将
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "合同的发票将计费给已与此Carbon客户关联的Stripe客户。要更改其详细信息，请在Stripe仪表板中编辑。"
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "外协人员的预期每周可用性；排程在整周将此外协人员分配给工序时使用此作为上限。"
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "承包商的预计每周可用时间，仅供参考。排程不会将承包商分配到工序。"
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "此批次/序列号的修正有效期；更改后，现有库存会根据保质期政策重新评估。"

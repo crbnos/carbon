@@ -17,7 +17,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatarGroup, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import type { InfiniteOptions } from "~/components/Table";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useCompanyToday, usePermissions, useUrlParams } from "~/hooks";
 import type { Abilities } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -37,6 +37,8 @@ const AbilitiesTable = memo((props: AbilitiesTableProps) => {
   const [params] = useUrlParams();
   const permissions = usePermissions();
   const [people] = usePeople();
+  // The company's day, not the viewer's: the list spans every location.
+  const todayDate = useCompanyToday();
 
   const employeeOptions = useMemo(
     () => people.map((person) => ({ value: person.id, label: person.name })),
@@ -78,9 +80,10 @@ const AbilitiesTable = memo((props: AbilitiesTableProps) => {
         cell: ({ row }) => {
           // Qualified = has an ability row ∧ not expired. Presence of the row
           // is the qualification — there is no separate training gate.
-          const today = new Date().toISOString().slice(0, 10);
           const employeeIds = (row.original.employeeAbility ?? [])
-            .filter((ea) => !ea.expiresAt || ea.expiresAt >= today)
+            .filter(
+              (ea) => !ea.expiresAt || ea.expiresAt.slice(0, 10) > todayDate
+            )
             .map((ea) => ea.employeeId);
           return employeeIds.length > 0 ? (
             <EmployeeAvatarGroup employeeIds={employeeIds} />
@@ -98,7 +101,7 @@ const AbilitiesTable = memo((props: AbilitiesTableProps) => {
         }
       }
     ];
-  }, [t, employeeOptions]);
+  }, [t, employeeOptions, todayDate]);
 
   const renderContextMenu = useCallback<(row: Ability) => JSX.Element>(
     (row) => (

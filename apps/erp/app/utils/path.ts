@@ -2232,6 +2232,7 @@ export const path = {
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
+    receiving: `${x}/inventory/receiving`,
     refreshSession: "/refresh-session",
     // Reimbursements — employee expense payables imported from a spend tool.
     // The list lives under invoicing (it is an AP nav entry); the document is a

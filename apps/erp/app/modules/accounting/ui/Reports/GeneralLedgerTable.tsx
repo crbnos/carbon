@@ -11,8 +11,11 @@ import {
   LuBookmark,
   LuCalendar,
   LuCircleDollarSign,
+  LuContainer,
   LuFileText,
   LuLandmark,
+  LuQrCode,
+  LuReceipt,
   LuTag
 } from "react-icons/lu";
 import { DateTime, Hyperlink, Table } from "~/components";
@@ -23,11 +26,11 @@ import {
   journalEntrySourceTypes,
   journalLineDocumentType
 } from "../../accounting.models";
-import type { AccountClass, GeneralLedgerLine } from "../../types";
+import type { AccountClass, GeneralLedgerRow } from "../../types";
 import JournalEntryStatus from "../JournalEntries/JournalEntryStatus";
 
 type GeneralLedgerTableProps = {
-  data: GeneralLedgerLine[];
+  data: GeneralLedgerRow[];
   count: number;
   // The loader's cursor for the next page (infinite scroll).
   nextCursor: string | null;
@@ -36,23 +39,23 @@ type GeneralLedgerTableProps = {
 };
 
 const defaultColumnVisibility = {
-  documentType: false
+  supplierInvoiceNumber: false
 };
 
-function accountLabel(line: GeneralLedgerLine) {
+function accountLabel(line: GeneralLedgerRow) {
   return [line.account?.number, line.account?.name].filter(Boolean).join(" ");
 }
 
 // `amount` is signed by the account's natural balance, so debit and credit
 // depend on the account's class
-function debitOf(line: GeneralLedgerLine) {
+function debitOf(line: GeneralLedgerRow) {
   return toDisplayDebit(
     line.amount ?? 0,
     (line.account?.class ?? "Asset") as AccountClass
   );
 }
 
-function creditOf(line: GeneralLedgerLine) {
+function creditOf(line: GeneralLedgerRow) {
   return toDisplayCredit(
     line.amount ?? 0,
     (line.account?.class ?? "Asset") as AccountClass
@@ -70,7 +73,7 @@ const GeneralLedgerTable = memo(
     const { t } = useLingui();
     const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
 
-    const columns = useMemo<ColumnDef<GeneralLedgerLine>[]>(
+    const columns = useMemo<ColumnDef<GeneralLedgerRow>[]>(
       () => [
         {
           accessorKey: "postingDate",
@@ -141,6 +144,30 @@ const GeneralLedgerTable = memo(
           }
         },
         {
+          id: "debit",
+          header: t`Debit`,
+          cell: ({ row }) => {
+            const debit = debitOf(row.original);
+            return debit !== 0 ? currencyFormatter.format(debit) : "";
+          },
+          meta: {
+            icon: <LuCircleDollarSign />,
+            exportValue: debitOf
+          }
+        },
+        {
+          id: "credit",
+          header: t`Credit`,
+          cell: ({ row }) => {
+            const credit = creditOf(row.original);
+            return credit !== 0 ? currencyFormatter.format(credit) : "";
+          },
+          meta: {
+            icon: <LuCircleDollarSign />,
+            exportValue: creditOf
+          }
+        },
+        {
           accessorKey: "sourceType",
           header: t`Source`,
           cell: ({ row }) => <Enumerable value={row.original.sourceType} />,
@@ -172,28 +199,33 @@ const GeneralLedgerTable = memo(
             }
           }
         },
+        // Read from the line's document, not columns of the view, so they
+        // are neither sortable nor filterable
         {
-          id: "debit",
-          header: t`Debit`,
-          cell: ({ row }) => {
-            const debit = debitOf(row.original);
-            return debit !== 0 ? currencyFormatter.format(debit) : "";
-          },
+          id: "party",
+          header: t`Customer / Supplier`,
+          cell: ({ row }) => row.original.party ?? "",
           meta: {
-            icon: <LuCircleDollarSign />,
-            exportValue: debitOf
+            icon: <LuContainer />,
+            exportValue: (row) => row.party
           }
         },
         {
-          id: "credit",
-          header: t`Credit`,
-          cell: ({ row }) => {
-            const credit = creditOf(row.original);
-            return credit !== 0 ? currencyFormatter.format(credit) : "";
-          },
+          id: "invoiceNumber",
+          header: t`Invoice Number`,
+          cell: ({ row }) => row.original.invoiceNumber ?? "",
           meta: {
-            icon: <LuCircleDollarSign />,
-            exportValue: creditOf
+            icon: <LuReceipt />,
+            exportValue: (row) => row.invoiceNumber
+          }
+        },
+        {
+          id: "supplierInvoiceNumber",
+          header: t`Supplier Invoice Number`,
+          cell: ({ row }) => row.original.supplierInvoiceNumber ?? "",
+          meta: {
+            icon: <LuQrCode />,
+            exportValue: (row) => row.supplierInvoiceNumber
           }
         }
       ],
@@ -201,7 +233,7 @@ const GeneralLedgerTable = memo(
     );
 
     return (
-      <Table<GeneralLedgerLine>
+      <Table<GeneralLedgerRow>
         data={data}
         columns={columns}
         count={count}

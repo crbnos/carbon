@@ -19,13 +19,13 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import {
   LuCirclePlay,
   LuCopy,
   LuExternalLink,
-  LuInfo,
   LuKeySquare,
   LuLink,
   LuRefreshCcw
@@ -35,8 +35,8 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Assignee,
-  DateTime,
   EmployeeAvatar,
+  ExchangeRateUpdatedAt,
   Hyperlink,
   useOptimisticAssignment
 } from "~/components";
@@ -68,6 +68,10 @@ const PurchaseOrderProperties = () => {
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     supplierQuote: SupplierQuote;
+    approval: {
+      approvedById: string | null;
+      approvedDate: string;
+    } | null;
   }>(path.to.purchaseOrder(orderId));
 
   const fetcher = useAction<typeof action>({
@@ -458,13 +462,9 @@ const PurchaseOrderProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.purchaseOrder?.exchangeRateUpdatedAt && (
-                <DateTime
+                <ExchangeRateUpdatedAt
                   value={routeData?.purchaseOrder?.exchangeRateUpdatedAt}
-                  variant="absolute"
-                  side="bottom"
-                >
-                  <LuInfo className="h-4 w-4 text-muted-foreground" />
-                </DateTime>
+                />
               )}
             </HStack>
             <HStack className="w-full justify-between">
@@ -494,6 +494,18 @@ const PurchaseOrderProperties = () => {
           employeeId={routeData?.purchaseOrder?.createdBy ?? null}
         />
       </VStack>
+
+      {routeData?.approval && (
+        <VStack spacing={2}>
+          <span className="text-xs font-medium text-muted-foreground">
+            <Trans>Approved By</Trans>
+          </span>
+          <EmployeeAvatar employeeId={routeData.approval.approvedById} />
+          <span className="text-xs text-muted-foreground">
+            {formatDate(routeData.approval.approvedDate)}
+          </span>
+        </VStack>
+      )}
 
       <CustomFormInlineFields
         customFields={

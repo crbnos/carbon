@@ -8,7 +8,8 @@
 //! glTF to GLB via a streaming base64 decode), then runs the
 //! meshopt geometry passes + codec encode (via `crates/optimize`), walking a
 //! simplify ladder until the render-weight + output-size gates pass. Async job;
-//! uploads the single `glb` output to its submit-time URL. Fails loud with a typed error
+//! uploads the `glb` output (plus the ingest outputs it was asked for: `raw`,
+//! `thumbnail`, `pmi`) to their submit-time URLs. Fails loud with a typed error
 //! (`unsupported_format` / `ambiguous_format` / `tessellation_failed` /
 //! `cannot_fit_budget`) rather than storing an over-cap or wrong result.
 
@@ -31,6 +32,50 @@ pub struct OptimizeReq {
     /// Ingest: also render the preview thumbnail (output `thumbnail`) from the
     /// optimised GLB, still in memory.
     pub thumbnail: Option<ThumbnailOut>,
+    /// Ingest: also read the model's PMI (output `pmi`, `pmi.json`) when the
+    /// source is a STEP or BinXCAF. `Some(path)` records where it goes. A
+    /// model with no PMI writes no output; a failed read is a warning.
+    pub pmi: Option<Option<String>>,
+}
+
+/// The `pmi.json` an ingest read, with its counts for the result.
+struct PmiOut {
+    bytes: Vec<u8>,
+    items: usize,
+    views: usize,
+}
+
+/// Read the PMI of `load_path` (the BinXCAF the ingest made, or the source
+/// itself). `source_format` is what was uploaded. `Ok(None)`: the model has
+/// none, or is not a format that carries it (only STEP does; a BinXCAF is a
+/// STEP the ingest already read).
+fn read_ingest_pmi(
+    load_path: &str,
+    source_format: &str,
+    source_path: &str,
+) -> Result<Option<PmiOut>, String> {
+    if source_format != "step" && source_format != "xbf" {
+        return Ok(None);
+    }
+    // The STEP header names the unit the author drew in; a BinXCAF has none.
+    let source_unit = if source_format == "step" {
+        read_head_bytes(source_path, converter::graph::SOURCE_UNIT_SCAN_BYTES)
+            .ok()
+            .and_then(|head| {
+                converter::pmi::pmi_source_unit(&converter::graph::detect_source_unit_bytes(&head))
+            })
+    } else {
+        None
+    };
+    let Some(doc) = converter::pmi::extract_pmi(load_path, source_unit)? else {
+        return Ok(None);
+    };
+    let bytes = converter::pmi::to_json(&doc)?;
+    Ok(Some(PmiOut {
+        bytes,
+        items: doc.items.len(),
+        views: doc.views.len(),
+    }))
 }
 
 /// The thumbnail an ingest renders (see `thumbnail` for the camera).
@@ -103,6 +148,7 @@ fn prepare_ingest(path: &str, declared: &str, ext: Option<&str>) -> Result<Inges
 /// Optimise, with the ingest outputs when asked for: the optimised GLB, the
 /// compacted raw, and the thumbnail (or why it failed: a preview never fails
 /// the job).
+#[allow(clippy::type_complexity)]
 fn run_ingest(
     path: &str,
     declared: &str,
@@ -110,13 +156,32 @@ fn run_ingest(
     opts: &Opts,
     compact: bool,
     thumbnail: Option<(u32, [f32; 3])>,
-) -> Result<(Outcome, Option<Compacted>, Option<Result<Vec<u8>, String>>), ActionErr> {
+    pmi: bool,
+) -> Result<
+    (
+        Outcome,
+        Option<Compacted>,
+        Option<Result<Vec<u8>, String>>,
+        Option<PmiOut>,
+    ),
+    ActionErr,
+> {
     let ingest = if compact { Some(prepare_ingest(path, declared, ext)?) } else { None };
     let (load_path, load_declared) = match &ingest {
         Some(i) => (i.load_path.as_str(), i.declared.as_str()),
         None => (path, declared),
     };
     let outcome = run_optimize(load_path, load_declared, ext, opts);
+    // The PMI is read from the same BinXCAF, before it is deleted, and only
+    // once the optimise has succeeded. A failure is a warning: the preview
+    // matters more than its annotations.
+    let pmi_read = match (&outcome, pmi) {
+        (Ok(o), true) => {
+            let source_format = ingest.as_ref().map_or(o.detected_format, |i| i.source_format);
+            Some(read_ingest_pmi(load_path, source_format, path))
+        }
+        _ => None,
+    };
     // Compress the retained raw only once the optimise has succeeded, and
     // before the BinXCAF it may be made from is deleted.
     let compacted = match (&outcome, ingest.as_ref().and_then(|i| i.compact_from.as_ref())) {
@@ -142,10 +207,18 @@ fn run_ingest(
         }
         None => None,
     };
+    let pmi_out = match pmi_read {
+        Some(Ok(p)) => p,
+        Some(Err(e)) => {
+            outcome.warnings.push(format!("pmi: {e}"));
+            None
+        }
+        None => None,
+    };
     let png = thumbnail.map(|(size, direction)| {
         thumbnail::render_png(&outcome.glb, size, direction).map_err(|e| e.0)
     });
-    Ok((outcome, compacted, png))
+    Ok((outcome, compacted, png, pmi_out))
 }
 
 pub struct Opts {
@@ -230,6 +303,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
         let mut opts = req.opts;
         let compact = req.compact.is_some();
         let thumbnail = req.thumbnail.as_ref().map(|t| (t.size, t.direction));
+        let pmi = req.pmi.is_some();
 
         let res = {
             let grant = admission
@@ -249,13 +323,13 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
             );
             opts.deadline = opts.budget.map(|b| Instant::now() + b);
             compute::run(Some(grant), move || {
-                run_ingest(&tmp_str, &declared, ext.as_deref(), &opts, compact, thumbnail)
+                run_ingest(&tmp_str, &declared, ext.as_deref(), &opts, compact, thumbnail, pmi)
             })
             .await
         };
         drop(src);
 
-        let (mut outcome, compacted, png) = match res {
+        let (mut outcome, compacted, png, pmi_out) = match res {
             Ok(Ok(o)) => o,
             Ok(Err(e)) => {
                 eprintln!("[{job_id}] optimize failed ({}): {}", e.code, e.message);
@@ -310,6 +384,14 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 "bytes": png.len(),
             });
         }
+        if let Some(p) = &pmi_out {
+            result_outputs["pmi"] = json!({
+                "path": req.pmi.clone().flatten(),
+                "bytes": p.bytes.len(),
+                "items": p.items,
+                "views": p.views,
+            });
+        }
         let done = Done {
             result: json!({
                 "detected_format": outcome.detected_format,
@@ -327,6 +409,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 "optimise_ms": optimise_ms,
                 "compact_bytes": compacted.as_ref().map(|c| c.bytes.len()),
                 "thumbnail_bytes": png.as_ref().map(|p| p.len()),
+                "pmi_bytes": pmi_out.as_ref().map(|p| p.bytes.len()),
             }),
         };
         let mut outputs = vec![Output {
@@ -346,6 +429,13 @@ pub fn spawn(state: &AppState, job_id: &str, req: OptimizeReq) {
                 name: "thumbnail".into(),
                 content_type: "image/png".into(),
                 bytes: png.into(),
+            });
+        }
+        if let Some(p) = pmi_out {
+            outputs.push(Output {
+                name: "pmi".into(),
+                content_type: "application/json".into(),
+                bytes: p.bytes.into(),
             });
         }
         jobs.finish(&job_id, outputs, done, None).await;
@@ -799,13 +889,14 @@ mod tests {
         let opts = default_opts();
 
         let plain = run_optimize(&step, "step", Some("step"), &opts).expect("plain optimise");
-        let (outcome, compacted, png) = run_ingest(
+        let (outcome, compacted, png, pmi) = run_ingest(
             &step,
             "step",
             Some("step"),
             &opts,
             true,
             Some((64, thumbnail::DEFAULT_DIRECTION)),
+            true,
         )
         .expect("ingest");
 
@@ -822,6 +913,36 @@ mod tests {
         assert!(xbf.starts_with(b"BINFILE"), "the compact form is BinXCAF");
         let png = png.expect("thumbnail asked for").expect("thumbnail rendered");
         assert!(png.starts_with(b"\x89PNG"));
+        assert!(pmi.is_none(), "plain boxes carry no PMI");
+        assert!(
+            outcome.warnings.iter().all(|w| !w.starts_with("pmi:")),
+            "{:?}",
+            outcome.warnings
+        );
+    }
+
+    #[test]
+    fn ingest_of_an_ap242_step_writes_its_pmi() {
+        let dir = std::env::temp_dir().join("carbon-ingest-pmi");
+        std::fs::create_dir_all(&dir).unwrap();
+        let step = dir.join("fixture.step").to_string_lossy().to_string();
+        assert!(occt_bridge::write_test_pmi_step(&step), "write AP242 fixture");
+        let (outcome, _, _, pmi) =
+            run_ingest(&step, "step", Some("step"), &default_opts(), true, None, true)
+                .expect("ingest");
+        let pmi = pmi.expect("the fixture has PMI");
+        assert_eq!(pmi.items, 3);
+        let doc: serde_json::Value = serde_json::from_slice(&pmi.bytes).unwrap();
+        assert_eq!(doc["version"], 1);
+        assert_eq!(doc["sourceUnit"], "mm");
+        assert_eq!(doc["items"][0]["dimension"]["value"], 100.0);
+        assert!(outcome.warnings.is_empty(), "{:?}", outcome.warnings);
+
+        // Not asked for: not read.
+        let (_, _, _, none) =
+            run_ingest(&step, "step", Some("step"), &default_opts(), true, None, false)
+                .expect("ingest");
+        assert!(none.is_none());
     }
 
     #[test]
@@ -837,8 +958,11 @@ mod tests {
         std::fs::write(&glb_path, &glb).unwrap();
         let glb_str = glb_path.to_string_lossy().to_string();
 
-        let (_, compacted, png) =
-            run_ingest(&glb_str, "auto", Some("glb"), &opts, true, None).expect("ingest");
+        let (outcome, compacted, png, pmi) =
+            run_ingest(&glb_str, "auto", Some("glb"), &opts, true, None, true).expect("ingest");
+        // A mesh has no PMI to read, and asking is not a warning.
+        assert!(pmi.is_none());
+        assert!(outcome.warnings.iter().all(|w| !w.starts_with("pmi:")));
 
         let compacted = compacted.expect("compacted raw");
         assert_eq!(compacted.kind, "zstd");
@@ -849,8 +973,9 @@ mod tests {
     #[test]
     fn a_plain_optimise_writes_no_ingest_outputs() {
         let step = fixture_step("plain", 1);
-        let (_, compacted, png) =
-            run_ingest(&step, "step", Some("step"), &default_opts(), false, None).unwrap();
+        let (_, compacted, png, pmi) =
+            run_ingest(&step, "step", Some("step"), &default_opts(), false, None, false).unwrap();
+        assert!(pmi.is_none());
         assert!(compacted.is_none());
         assert!(png.is_none());
     }

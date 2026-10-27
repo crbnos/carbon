@@ -2577,6 +2577,9 @@ msgstr "{otherStationNames}에서도"
 msgid "Also notify"
 msgstr "또한 알림"
 
+msgid "Also open on {links}"
+msgstr "다른 미결 발주서: {links}"
+
 msgid "Always"
 msgstr "항상"
 
@@ -4300,6 +4303,9 @@ msgstr "맹검"
 msgid "Blind Count"
 msgstr "블라인드 실사"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "오류로 차단"
 
@@ -5204,9 +5210,6 @@ msgstr "마감일"
 msgid "Close Date"
 msgstr "마감일"
 
-msgid "Close menu"
-msgstr "메뉴 닫기"
-
 msgid "Close Period"
 msgstr "기간 종료"
 
@@ -6072,6 +6075,9 @@ msgstr "절차서 고유 식별자 복사"
 msgid "Copy purchase invoice unique identifier"
 msgstr "매입 송장 고유 식별자 복사"
 
+msgid "Copy purchase order number"
+msgstr "발주서 번호 복사"
+
 msgid "Copy purchase order unique identifier"
 msgstr "발주서 고유 식별자 복사"
 
@@ -6808,6 +6814,9 @@ msgstr "고객"
 
 msgid "Customer"
 msgstr "고객"
+
+msgid "Customer / Supplier"
+msgstr "고객 / 공급업체"
 
 msgid "Customer Accounts"
 msgstr "고객 계정"
@@ -8215,6 +8224,9 @@ msgstr "달러 활용률"
 
 msgid "Don't Cancel"
 msgstr "취소하지 않음"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "시리얼 번호가 보이지 않으세요?"
@@ -11443,6 +11455,9 @@ msgstr "원자재에 대한 ID와 설명이 자동으로 생성됩니다."
 
 msgid "If"
 msgstr "만약"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "감가상각이 이미 실행된 경우, 다음 실행 시 정액법 자산이 이전 원가로 소요한 개월 수의 감가상각을 보정합니다."
@@ -15155,6 +15170,9 @@ msgstr "미결 공정 없음"
 msgid "No open orders for this item are available to link."
 msgstr "이 품목에 연결할 수 있는 미결 발주서가 없습니다."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "검색과 일치하는 미결 발주서 라인이 없습니다. 모든 단어가 일치해야 하며 공백과 구두점은 무시됩니다."
+
 msgid "No open reimbursements"
 msgstr "미결 환급금 없음"
 
@@ -15269,6 +15287,9 @@ msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습�
 
 msgid "No production recorded yet."
 msgstr "아직 기록된 생산이 없습니다."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "수령 대기 중인 발주서가 없습니다."
 
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
@@ -15909,6 +15930,9 @@ msgstr "초안 절차서만 편집 가능합니다. 활성 또는 보관됨 절�
 
 msgid "Only employees can post receipts."
 msgstr "직원만 입고를 전기할 수 있습니다."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
@@ -18310,6 +18334,9 @@ msgstr "요금 주기"
 
 msgid "Rate Limit"
 msgstr "요청 제한"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "연결 시 자본 계정 환산에 사용되는 환율(IAS 21)입니다. 비워 두면 현재 환율이 사용됩니다."
@@ -21362,6 +21389,9 @@ msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID �
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 공급업체 ID 열을 표시합니다. 어느 쪽이든 공급업체는 내부적으로 동일하게 식별됩니다."
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
+
 msgid "Show All"
 msgstr "모두 표시"
 
@@ -23066,8 +23096,8 @@ msgstr "계약이 종료 날짜에 끝나고 갱신되지 않습니다. 그 이�
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "계약의 송장은 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집하세요."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "외주 인력의 예상 주간 가용성; 이 외주 인력을 주 동안의 공정에 할당할 때 스케줄링이 이를 상한선으로 사용합니다."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "계약자의 예상 주간 가용 시간(참고용)입니다. 스케줄러는 계약자를 작업에 배정하지 않습니다."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "이 로트/일련번호의 수정된 유효기한으로, 변경 후 기존 보유 재고가 유통기한 정책에 따라 재평가됩니다."

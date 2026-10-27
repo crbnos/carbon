@@ -2577,6 +2577,9 @@ msgstr "also at {otherStationNames}"
 msgid "Also notify"
 msgstr "Also notify"
 
+msgid "Also open on {links}"
+msgstr "Also open on {links}"
+
 msgid "Always"
 msgstr "Always"
 
@@ -4300,6 +4303,9 @@ msgstr "Blind"
 msgid "Blind Count"
 msgstr "Blind Count"
 
+msgid "Block"
+msgstr "Block"
+
 msgid "Block with an error"
 msgstr "Block with an error"
 
@@ -5204,9 +5210,6 @@ msgstr "Close date"
 msgid "Close Date"
 msgstr "Close Date"
 
-msgid "Close menu"
-msgstr "Close menu"
-
 msgid "Close Period"
 msgstr "Close Period"
 
@@ -6072,6 +6075,9 @@ msgstr "Copy procedure unique identifier"
 msgid "Copy purchase invoice unique identifier"
 msgstr "Copy purchase invoice unique identifier"
 
+msgid "Copy purchase order number"
+msgstr "Copy purchase order number"
+
 msgid "Copy purchase order unique identifier"
 msgstr "Copy purchase order unique identifier"
 
@@ -6808,6 +6814,9 @@ msgstr "customer"
 
 msgid "Customer"
 msgstr "Customer"
+
+msgid "Customer / Supplier"
+msgstr "Customer / Supplier"
 
 msgid "Customer Accounts"
 msgstr "Customer Accounts"
@@ -8215,6 +8224,9 @@ msgstr "Dollar Utilization"
 
 msgid "Don't Cancel"
 msgstr "Don't Cancel"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr "Don't let them work on this process until they have the ability."
 
 msgid "Don't see a serial number?"
 msgstr "Don't see a serial number?"
@@ -11443,6 +11455,9 @@ msgstr "IDs and descriptions are generated for raw materials."
 
 msgid "If"
 msgstr "If"
+
+msgid "If an operator isn't qualified"
+msgstr "If an operator isn't qualified"
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
@@ -15155,6 +15170,9 @@ msgstr "No open operations"
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+
 msgid "No open reimbursements"
 msgstr "No open reimbursements"
 
@@ -15269,6 +15287,9 @@ msgstr "No production events recorded for this operation yet"
 
 msgid "No production recorded yet."
 msgstr "No production recorded yet."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "No purchase orders are waiting to be received."
 
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
@@ -15909,6 +15930,9 @@ msgstr "Only Draft procedures are editable. Create a new version to change an Ac
 
 msgid "Only employees can post receipts."
 msgstr "Only employees can post receipts."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr "Only employees with the {processName} ability can be scheduled for and run this process"
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
@@ -18310,6 +18334,9 @@ msgstr "Rate Frequency"
 
 msgid "Rate Limit"
 msgstr "Rate Limit"
+
+msgid "Rate updated {relative}"
+msgstr "Rate updated {relative}"
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
@@ -21362,6 +21389,9 @@ msgstr "Show a readable Customer ID column on the customer list, customer forms,
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr "Show a warning on the shop floor, but let them work."
+
 msgid "Show All"
 msgstr "Show All"
 
@@ -23066,8 +23096,8 @@ msgstr "The contract ends on the end date and does not renew. Planned invoices a
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."

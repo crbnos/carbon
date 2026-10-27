@@ -2577,6 +2577,9 @@ msgstr "auch bei {otherStationNames}"
 msgid "Also notify"
 msgstr "Auch benachrichtigen"
 
+msgid "Also open on {links}"
+msgstr "Ebenfalls offen auf {links}"
+
 msgid "Always"
 msgstr "Immer"
 
@@ -4300,6 +4303,9 @@ msgstr "Blind"
 msgid "Blind Count"
 msgstr "Blinde Inventur"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Mit Fehler blockieren"
 
@@ -5204,9 +5210,6 @@ msgstr "Schließungsdatum"
 msgid "Close Date"
 msgstr "Schließungsdatum"
 
-msgid "Close menu"
-msgstr "Menü schließen"
-
 msgid "Close Period"
 msgstr "Zeitraum schließen"
 
@@ -6072,6 +6075,9 @@ msgstr "Eindeutige Kennung der Verfahrensanweisung kopieren"
 msgid "Copy purchase invoice unique identifier"
 msgstr "Eindeutige Kennung der Eingangsrechnung kopieren"
 
+msgid "Copy purchase order number"
+msgstr "Bestellnummer kopieren"
+
 msgid "Copy purchase order unique identifier"
 msgstr "Bestellnummer kopieren"
 
@@ -6808,6 +6814,9 @@ msgstr "Kunde"
 
 msgid "Customer"
 msgstr "Kunde"
+
+msgid "Customer / Supplier"
+msgstr "Kunde / Lieferant"
 
 msgid "Customer Accounts"
 msgstr "Kundenkonten"
@@ -8215,6 +8224,9 @@ msgstr "Dollarauslastung"
 
 msgid "Don't Cancel"
 msgstr "Nicht abbrechen"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "Keine Seriennummer vorhanden?"
@@ -11443,6 +11455,9 @@ msgstr "IDs und Beschreibungen werden für Rohstoffe generiert."
 
 msgid "If"
 msgstr "Wenn"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Wenn die Abschreibung bereits durchgelaufen ist, holt der nächste Durchlauf die Monate nach, in denen eine lineare Anlage zum alten Kostensatz abgeschrieben wurde."
@@ -15155,6 +15170,9 @@ msgstr "Keine offenen Arbeitsgänge"
 msgid "No open orders for this item are available to link."
 msgstr "Für diesen Artikel sind keine offenen Bestellungen zum Verknüpfen verfügbar."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "Keine offenen Bestellpositionen entsprechen Ihrer Suche. Jedes Wort muss übereinstimmen; Leerzeichen und Satzzeichen werden ignoriert."
+
 msgid "No open reimbursements"
 msgstr "Keine offenen Kostenerstattungen"
 
@@ -15269,6 +15287,9 @@ msgstr "Für diesen Vorgang wurden noch keine Produktionsereignisse aufgezeichne
 
 msgid "No production recorded yet."
 msgstr "Noch keine Produktion aufgezeichnet."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "Keine Bestellungen warten auf Wareneingang."
 
 msgid "No purchases in this period"
 msgstr "Keine Käufe in diesem Zeitraum"
@@ -15909,6 +15930,9 @@ msgstr "Nur Verfahrensanweisungen im Entwurf sind bearbeitbar. Erstellen Sie ein
 
 msgid "Only employees can post receipts."
 msgstr "Nur Mitarbeiter können Wareneingänge buchen."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Nur leere, offene Perioden können gelöscht werden."
@@ -18310,6 +18334,9 @@ msgstr "Satzfrequenz"
 
 msgid "Rate Limit"
 msgstr "Ratenlimit"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Kurs für die Umrechnung von Eigenkapitalkonten in der Konsolidierung (IAS 21). Leer lassen, um den aktuellen Wechselkurs zu verwenden."
@@ -21362,6 +21389,9 @@ msgstr "Zeigen Sie eine lesbare Kundennummern-Spalte in der Kundenliste, Kundenf
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Zeigen Sie eine lesbare Lieferanten-ID-Spalte in der Lieferantenliste, Lieferantenformularen und Dropdowns an. Lieferanten werden intern in jedem Fall identifiziert."
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
+
 msgid "Show All"
 msgstr "Alles zeigen"
 
@@ -23066,8 +23096,8 @@ msgstr "Der Vertrag endet am Enddatum und wird nicht erneuert. Geplante Rechnung
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Die Rechnungen des Vertrags werden dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie ihn im Stripe-Dashboard."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "Die erwartete wöchentliche Verfügbarkeit des externen Mitarbeiters; die Planung verwendet dies als Obergrenze, wenn dieser externe Mitarbeiter über die Woche hinweg Arbeitsgängen zugewiesen wird."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "Die erwartete wöchentliche Verfügbarkeit des externen Mitarbeiters, nur zur Information. Die Planung bucht externe Mitarbeiter nicht auf Arbeitsgänge."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Das korrigierte Ablaufdatum für dieses Los/diese Seriennummer; vorhandener Bestand wird nach der Änderung gegen die Haltbarkeitsrichtlinie neu bewertet."

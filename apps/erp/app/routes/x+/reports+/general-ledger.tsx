@@ -13,7 +13,8 @@ import { useLoaderData, useLocation } from "react-router";
 import {
   GENERAL_LEDGER_PAGING,
   getAccountsList,
-  getGeneralLedgerLines
+  getGeneralLedgerLines,
+  withGeneralLedgerCounterparties
 } from "~/modules/accounting/accounting.service";
 import {
   GeneralLedgerTable,
@@ -73,9 +74,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     { limit, sorts: query.sorts },
     GENERAL_LEDGER_PAGING
   );
+  const rows = await withGeneralLedgerCounterparties(
+    client,
+    selectedCompany.id,
+    page.rows
+  );
+  if (rows.error) {
+    logger.error("Failed to load the counterparties of the general ledger", {
+      companyId: selectedCompany.id,
+      error: rows.error
+    });
+    if (cursor) return listErrorPage("lines");
+    throw redirect(
+      path.to.reports,
+      await flash(request, error(rows.error, "Failed to load general ledger"))
+    );
+  }
 
   return {
-    lines: page.rows,
+    lines: rows.data,
     count: lines.count ?? 0,
     nextCursor: page.nextCursor,
     accounts: accounts.data ?? [],

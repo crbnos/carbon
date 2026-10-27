@@ -491,6 +491,25 @@ export async function getShiftsWithTimes(
     .order("name");
 }
 
+/**
+ * Active shifts by id, with their times. A work center can be linked to a
+ * shift of another location, which `getShiftsWithTimes` does not return.
+ */
+export async function getShiftsWithTimesByIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  shiftIds: string[]
+) {
+  return client
+    .from("shift")
+    .select(
+      "id, name, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday"
+    )
+    .eq("companyId", companyId)
+    .in("id", shiftIds)
+    .eq("active", true);
+}
+
 export async function insertAttribute(
   client: SupabaseClient<Database>,
   attribute: {

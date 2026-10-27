@@ -1432,13 +1432,17 @@ export async function updateTrainingQuestionOrder(
   return Promise.all(updatePromises);
 }
 
+/**
+ * `abilities` replaces the contractor's abilities when sent; left out, they are
+ * kept (the contractor form has no abilities field).
+ */
 export async function upsertContractor(
   client: SupabaseClient<Database>,
   contractorWithAbilities:
     | {
         id: string;
         hoursPerWeek?: number;
-        abilities: string[];
+        abilities?: string[];
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -1446,7 +1450,7 @@ export async function upsertContractor(
     | {
         id: string;
         hoursPerWeek?: number;
-        abilities: string[];
+        abilities?: string[];
         companyId: string;
         updatedBy: string;
         customFields?: Json;
@@ -1461,6 +1465,7 @@ export async function upsertContractor(
     if (updateContractor.error) {
       return updateContractor;
     }
+    if (abilities === undefined) return updateContractor;
     const deleteContractorAbilities = await client
       .from("contractorAbility")
       .delete()
@@ -1475,9 +1480,10 @@ export async function upsertContractor(
     if (createContractor.error) {
       return createContractor;
     }
+    if (abilities === undefined) return createContractor;
   }
 
-  const contractorAbilities = abilities.map((ability) => {
+  const contractorAbilities = (abilities ?? []).map((ability) => {
     return {
       contractorId: contractor.id,
       abilityId: ability,

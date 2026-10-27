@@ -2577,6 +2577,9 @@ msgstr "также на {otherStationNames}"
 msgid "Also notify"
 msgstr "Также уведомить"
 
+msgid "Also open on {links}"
+msgstr "Также открыто на {links}"
+
 msgid "Always"
 msgstr "Всегда"
 
@@ -4300,6 +4303,9 @@ msgstr "Слепой"
 msgid "Blind Count"
 msgstr "Слепой подсчет"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Заблокировать с ошибкой"
 
@@ -5204,9 +5210,6 @@ msgstr "Дата закрытия"
 msgid "Close Date"
 msgstr "Дата закрытия"
 
-msgid "Close menu"
-msgstr "Закрыть меню"
-
 msgid "Close Period"
 msgstr "Закрыть период"
 
@@ -6072,6 +6075,9 @@ msgstr "Скопировать уникальный идентификатор �
 msgid "Copy purchase invoice unique identifier"
 msgstr "Скопировать уникальный идентификатор счета-фактуры полученного"
 
+msgid "Copy purchase order number"
+msgstr "Копировать номер заказа поставщику"
+
 msgid "Copy purchase order unique identifier"
 msgstr "Скопировать уникальный идентификатор заказа поставщику"
 
@@ -6808,6 +6814,9 @@ msgstr "покупатель"
 
 msgid "Customer"
 msgstr "Покупатель"
+
+msgid "Customer / Supplier"
+msgstr "Покупатель / Поставщик"
 
 msgid "Customer Accounts"
 msgstr "Счета покупателя"
@@ -8215,6 +8224,9 @@ msgstr "Использование в долларах"
 
 msgid "Don't Cancel"
 msgstr "Не отменять"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "Не видите серийный номер?"
@@ -11443,6 +11455,9 @@ msgstr "Идентификаторы и описания генерируютс�
 
 msgid "If"
 msgstr "Если"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Если амортизация уже была рассчитана, следующий расчет выровняет периоды, в течение которых актив с линейным методом амортизации учитывался по старой себестоимости."
@@ -15155,6 +15170,9 @@ msgstr "Нет открытых операций"
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "Нет открытых строк заказа поставщику, соответствующих вашему поиску. Каждое слово должно совпадать; пробелы и пунктуация игнорируются."
+
 msgid "No open reimbursements"
 msgstr "Нет открытых возмещений"
 
@@ -15269,6 +15287,9 @@ msgstr "Для этой операции еще не записано ни од�
 
 msgid "No production recorded yet."
 msgstr "Производство еще не записано."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "Нет заказов поставщику, ожидающих приемки."
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
@@ -15909,6 +15930,9 @@ msgstr "Редактировать можно только процедуры в
 
 msgid "Only employees can post receipts."
 msgstr "Только сотрудники могут провести поступление."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
@@ -18310,6 +18334,9 @@ msgstr "Частота ставки"
 
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Курс, используемый для пересчета счетов собственного капитала при консолидации (IAS 21). Оставьте пустым, чтобы использовать текущий валютный курс."
@@ -21362,6 +21389,9 @@ msgstr "Показывать столбец с читаемым ID Покупа�
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
+
 msgid "Show All"
 msgstr "Показать все"
 
@@ -23066,8 +23096,8 @@ msgstr "Контракт завершается в дату окончания �
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Счета-фактуры договора будут выставляться покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, измените их в панели управления Stripe."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "Ожидаемая еженедельная доступность подрядчика; планирование использует это как верхний предел при назначении подрядчика операциям в течение недели."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "Ожидаемая еженедельная доступность подрядчика, для справки. Планировщик не назначает подрядчиков на операции."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Исправленная дата истечения для этой партии/серийного номера; существующие запасы переоцениваются в соответствии с политикой полезной жизни после изменения."

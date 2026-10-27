@@ -495,7 +495,8 @@ export async function stockPart(
 
 export async function receiveFromPurchaseOrder(
   f: Fixture,
-  key = "1"
+  key = "1",
+  unitPrice = 10
 ): Promise<string> {
   const purchaseOrderId = `${f.prefix}-po-${key}`;
   await seed(f, async (trx) => {
@@ -532,7 +533,7 @@ export async function receiveFromPurchaseOrder(
         purchaseOrderLineType: "Part",
         itemId: f.partId,
         purchaseQuantity: 10,
-        supplierUnitPrice: 10,
+        supplierUnitPrice: unitPrice,
         exchangeRate: 1,
         conversionFactor: 1,
         inventoryUnitOfMeasureCode: "EA",

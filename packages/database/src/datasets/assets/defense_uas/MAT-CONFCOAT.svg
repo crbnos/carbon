@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="whiteBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a9aeb1"/>
+      <stop offset="0.2" stop-color="#e4e8ea"/>
+      <stop offset="0.45" stop-color="#fbfcfc"/>
+      <stop offset="0.72" stop-color="#d2d6d9"/>
+      <stop offset="1" stop-color="#9fa4a8"/>
+    </linearGradient>
+    <linearGradient id="whiteFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#fbfcfc"/>
+      <stop offset="0.45" stop-color="#e6eaec"/>
+      <stop offset="0.78" stop-color="#c6cbce"/>
+      <stop offset="1" stop-color="#a3a8ac"/>
+    </linearGradient>
+    <linearGradient id="whiteBead" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8e9397"/>
+      <stop offset="0.18" stop-color="#dfe3e5"/>
+      <stop offset="0.42" stop-color="#ffffff"/>
+      <stop offset="0.72" stop-color="#c4c9cc"/>
+      <stop offset="1" stop-color="#8a8f93"/>
+    </linearGradient>
+    <linearGradient id="greyPlastic" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="greyFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8d9296"/>
+      <stop offset="0.4" stop-color="#787d81"/>
+      <stop offset="0.75" stop-color="#5b6064"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="cupSteel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="clearBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="0.16" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="0.45" stop-color="#dfe6ea" stop-opacity="0.22"/>
+      <stop offset="0.74" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.40"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="bodyClip">
+      <path d="M405 320 L405 790 A107 41 0 0 0 619 790 L619 320 Z"/>
+    </clipPath>
+  </defs>
+
+  <g transform="translate(-89 0)">
+  <ellipse cx="588" cy="825" rx="290" ry="64" fill="url(#shadow)"/>
+
+  <!-- domed shoulder -->
+  <path d="M405 308 C405 268 452 246 512 246 C572 246 619 268 619 308 Z" fill="url(#whiteBarrel)"/>
+  <path d="M405 308 C405 268 452 246 512 246 C572 246 619 268 619 308" fill="none" stroke="#8a8f93" stroke-width="2.5"/>
+  <path d="M432 292 C436 268 468 256 506 255" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="5"/>
+
+  <!-- crimped mounting cup -->
+  <path d="M444 232 L444 252 A68 26 0 0 0 580 252 L580 232 Z" fill="url(#cupSteel)"/>
+  <ellipse cx="512" cy="232" rx="68" ry="26" fill="url(#cupSteel)" stroke="#6a7075" stroke-width="2"/>
+  <ellipse cx="512" cy="232" rx="58" ry="22" fill="none" stroke="#7d848a" stroke-opacity="0.9" stroke-width="2"/>
+  <path d="M444 246 A68 26 0 0 0 580 246" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+
+  <!-- actuator cap, grey plastic -->
+  <path d="M450 176 L450 232 A62 24 0 0 0 574 232 L574 176 Z" fill="url(#greyPlastic)"/>
+  <ellipse cx="512" cy="176" rx="62" ry="24" fill="url(#greyFace)" stroke="#3a3e41" stroke-width="2"/>
+  <ellipse cx="512" cy="178" rx="48" ry="18" fill="#5c6165" stroke="#40454a" stroke-width="2"/>
+  <ellipse cx="512" cy="176" rx="38" ry="14" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M450 176 L450 232 A62 24 0 0 0 574 232 L574 176" fill="none" stroke="#33373a" stroke-width="2.5"/>
+  <!-- nozzle orifice on the front of the actuator -->
+  <ellipse cx="470" cy="216" rx="19" ry="15" fill="#6e747a" stroke="#3a3e41" stroke-width="2"/>
+  <ellipse cx="470" cy="216" rx="10" ry="8" fill="#22262a"/>
+  <ellipse cx="468" cy="213" rx="4" ry="3" fill="#aab1b7" opacity="0.6"/>
+  <path d="M458 196 L482 196" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2" fill="none"/>
+
+  <!-- crimped rolled rim at the shoulder -->
+  <path d="M400 300 L400 320 A112 43 0 0 0 624 320 L624 300 A112 43 0 0 1 400 300 Z" fill="url(#whiteBead)"/>
+  <path d="M400 300 A112 43 0 0 0 624 300" fill="none" stroke="#8a8f93" stroke-width="2.5"/>
+  <path d="M400 320 A112 43 0 0 0 624 320" fill="none" stroke="#82878b" stroke-width="2.5"/>
+  <path d="M406 313 A112 43 0 0 0 618 313" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="3"/>
+
+  <!-- can body -->
+  <path d="M405 320 L405 790 A107 41 0 0 0 619 790 L619 320 Z" fill="url(#whiteBarrel)"/>
+  <g clip-path="url(#bodyClip)">
+    <rect x="432" y="316" width="26" height="480" fill="#ffffff" opacity="0.5"/>
+    <rect x="424" y="316" width="10" height="480" fill="#ffffff" opacity="0.25"/>
+    <rect x="586" y="316" width="14" height="480" fill="#ffffff" opacity="0.12"/>
+    <path d="M405 330 A107 41 0 0 0 619 330" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3"/>
+    <path d="M405 776 A107 41 0 0 0 619 776" fill="none" stroke="#000000" stroke-opacity="0.08" stroke-width="10"/>
+  </g>
+  <path d="M405 320 L405 790 A107 41 0 0 0 619 790 L619 320" fill="none" stroke="#8a8f93" stroke-width="2.5"/>
+
+  <!-- crimped rolled rim at the base -->
+  <path d="M400 770 L400 800 A112 43 0 0 0 624 800 L624 770 A112 43 0 0 1 400 770 Z" fill="url(#whiteBead)"/>
+  <path d="M400 770 A112 43 0 0 0 624 770" fill="none" stroke="#8a8f93" stroke-width="2.5"/>
+  <path d="M400 800 A112 43 0 0 0 624 800" fill="none" stroke="#7b8084" stroke-width="3"/>
+  <path d="M404 788 A112 43 0 0 0 620 788" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+
+  <!-- clear plastic overcap, tilted against the base -->
+  <g transform="rotate(-16 672 838)" opacity="0.95">
+    <path d="M600 670 L600 825 A100 38 0 0 0 800 825 L800 670 Z" fill="url(#clearBarrel)"/>
+    <path d="M600 670 L600 825 A100 38 0 0 0 800 825 L800 670" fill="none" stroke="#f2f6f8" stroke-opacity="0.8" stroke-width="3"/>
+    <path d="M600 670 L600 825 A100 38 0 0 0 800 825 L800 670" fill="none" stroke="#7f868c" stroke-opacity="0.45" stroke-width="1.5"/>
+    <ellipse cx="700" cy="670" rx="100" ry="38" fill="#ffffff" fill-opacity="0.16" stroke="#eef3f5" stroke-opacity="0.85" stroke-width="3"/>
+    <ellipse cx="700" cy="670" rx="88" ry="33" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
+    <path d="M600 812 A100 38 0 0 0 800 812" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="3"/>
+    <rect x="620" y="676" width="16" height="150" fill="#ffffff" opacity="0.35"/>
+    <rect x="764" y="676" width="10" height="150" fill="#ffffff" opacity="0.22"/>
+  </g>
+  </g>
+</svg>

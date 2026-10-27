@@ -4,6 +4,7 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertInspectionSample } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
@@ -12,6 +13,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { inspectionSampleValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
 
 const logger = getLogger("mes", "inspection-lot-sample");
 
@@ -41,6 +43,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const db = getDatabaseClient();
+
+  // A job-operation lot carries its operation as sourceDocumentLineId;
+  // receipt lots have no operation to gate.
+  const lot = await db
+    .selectFrom("inspection")
+    .select(["sourceDocument", "sourceDocumentLineId"])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const refusal =
+    lot?.sourceDocument === "Job Operation" && lot.sourceDocumentLineId
+      ? await abilityBlockRefusal(await getCarbonServiceRole(), {
+          operationId: lot.sourceDocumentLineId,
+          employeeId: userId,
+          companyId
+        })
+      : null;
+  if (refusal) {
+    return data(
+      { error: { message: refusal } },
+      await flash(request, error(null, refusal))
+    );
+  }
 
   // The sample write runs as the superuser and links the tracked entity, so
   // the entity must belong to this company.

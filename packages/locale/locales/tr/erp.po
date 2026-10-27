@@ -2577,6 +2577,9 @@ msgstr "ayrıca {otherStationNames} adresinde"
 msgid "Also notify"
 msgstr "Ayrıca bildir"
 
+msgid "Also open on {links}"
+msgstr "{links} üzerinde de açık"
+
 msgid "Always"
 msgstr "Her zaman"
 
@@ -4300,6 +4303,9 @@ msgstr "Kör"
 msgid "Blind Count"
 msgstr "Kör Sayımı"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "Hata ile engelle"
 
@@ -5204,9 +5210,6 @@ msgstr "Kapanış tarihi"
 msgid "Close Date"
 msgstr "Kapatma Tarihi"
 
-msgid "Close menu"
-msgstr "Menüyü kapat"
-
 msgid "Close Period"
 msgstr "Dönemi Kapat"
 
@@ -6072,6 +6075,9 @@ msgstr "Prosedürün benzersiz tanımlayıcısını kopyala"
 msgid "Copy purchase invoice unique identifier"
 msgstr "Alış faturası benzersiz tanıtıcısını kopyala"
 
+msgid "Copy purchase order number"
+msgstr "Satın alma siparişi numarasını kopyala"
+
 msgid "Copy purchase order unique identifier"
 msgstr "Satın alma siparişi benzersiz tanıtıcısını kopyala"
 
@@ -6808,6 +6814,9 @@ msgstr "müşteri"
 
 msgid "Customer"
 msgstr "Müşteri"
+
+msgid "Customer / Supplier"
+msgstr "Müşteri / Tedarikçi"
 
 msgid "Customer Accounts"
 msgstr "Müşteri Hesapları"
@@ -8215,6 +8224,9 @@ msgstr "Dolar Kullanım Oranı"
 
 msgid "Don't Cancel"
 msgstr "İptal Etme"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "Seri numarası göremiyorsunuz?"
@@ -11443,6 +11455,9 @@ msgstr "Kimlikler ve açıklamalar hammadde için oluşturulur."
 
 msgid "If"
 msgstr "Eğer"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "Amortisman zaten çalıştıysa, sonraki çalıştırma Doğrusal bir varlığın eski maliyette harcadığı ayları yakalama yapar."
@@ -15155,6 +15170,9 @@ msgstr "Açık operasyon yok"
 msgid "No open orders for this item are available to link."
 msgstr "Bu Stok kartı için bağlantı kurmak amacıyla Açık siparişler bulunmamaktadır."
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "Aramanızla eşleşen açık satın alma siparişi satırı yok. Her sözcük eşleşmelidir; boşluklar ve noktalama işaretleri dikkate alınmaz."
+
 msgid "No open reimbursements"
 msgstr "Açık Gider Talebileri Yok"
 
@@ -15269,6 +15287,9 @@ msgstr "Bu operasyon için henüz kaydedilmiş üretim olayı yok"
 
 msgid "No production recorded yet."
 msgstr "Henüz kayıtlı üretim yok."
+
+msgid "No purchase orders are waiting to be received."
+msgstr "Alınması beklenen satın alma siparişi yok."
 
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
@@ -15909,6 +15930,9 @@ msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş 
 
 msgid "Only employees can post receipts."
 msgstr "Yalnızca çalışanlar mal kabul muhasebeleştirebilir."
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
@@ -18310,6 +18334,9 @@ msgstr "Oran Sıklığı"
 
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur (IAS 21). Güncel döviz kurunu kullanmak için boş bırakın."
@@ -21362,6 +21389,9 @@ msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde oku
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Tedarikçi listesinde, tedarikçi formlarında ve açılır menülerde okunabilir bir Tedarikçi Kimliği sütunu gösterir. Tedarikçiler her iki durumda da dahili olarak tanımlanmaya devam eder."
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
+
 msgid "Show All"
 msgstr "Tümünü göster"
 
@@ -23066,8 +23096,8 @@ msgstr "Sözleşme bitiş tarihinde sona erer ve yenilenmez. Bundan sonraki plan
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Sözleşmenin faturaları, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalanacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "Taşeronun beklenen haftalık kullanılabilirliği; planlama bu taşeronun haftasındaki operasyonlara atanırken bunu üst sınır olarak kullanır."
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "Yüklenicinin beklenen haftalık müsaitliği, bilgi amaçlıdır. Planlayıcı yüklenicileri operasyonlara atamaz."
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut eldeki stok, değişiklikten sonra raf ömrü politikasına göre yeniden değerlendirilir."

@@ -301,6 +301,8 @@ import {
   depreciationRunLinesMatch,
   diffJournalLines,
   fiscalYearPeriodDates,
+  type GeneralLedgerDocument,
+  generalLedgerCounterparty,
   hasAccountingCutover,
   hidesSupersededJournals,
   isFutureRunPeriod,
@@ -322,6 +324,7 @@ import type {
   AccountLedgerLine,
   ChartPeriodSeries,
   GeneralLedgerLine,
+  GeneralLedgerRow,
   PeriodCell,
   Transaction,
   TranslatedBalance
@@ -523,7 +526,7 @@ export async function getAccountLedgerLines(
 // only — the lines the trial balance sums. The `journalLines` view filters the
 // same statuses; the report states them so it holds if the view changes.
 const GENERAL_LEDGER_LINE_COLUMNS =
-  "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, account(number, name, class)";
+  "id, journalId, journalEntryId, postingDate, status, sourceType, journalDescription, description, amount, accountId, documentType, documentId, documentLineReference, account(number, name, class)";
 
 type GeneralLedgerArgs = Pick<GenericQueryFilters, "sorts" | "filters"> & {
   search: string | null;
@@ -581,6 +584,191 @@ export async function getAllGeneralLedgerLines(
   return fetchAll<GeneralLedgerLine>(() =>
     generalLedgerLinesQuery(client, companyId, args, undefined)
   );
+}
+
+const NO_DOCUMENT: GeneralLedgerDocument = {
+  invoiceNumber: null,
+  supplierInvoiceNumber: null,
+  customerId: null,
+  supplierId: null,
+  merchantName: null
+};
+
+/**
+ * General ledger lines with their customer or supplier name and invoice
+ * numbers, read from the documents they were posted from — the page's and the
+ * CSV's Customer / Supplier, Invoice Number and Supplier Invoice Number.
+ *
+ * "Invoice" ids are tried against both invoice tables: the opening balance
+ * and revenue recognition journals carry no purchase/sales `sourceType` to
+ * tell them apart. A payment line's `documentLineReference` is the invoice it
+ * settles. Lines of other document types (jobs, inventory, manual entries)
+ * have no counterparty and are not read.
+ */
+export async function withGeneralLedgerCounterparties(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: GeneralLedgerLine[]
+): Promise<
+  | { data: GeneralLedgerRow[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const idsByType = new Map<string, Set<string>>();
+  const addId = (type: string, id: string | null) => {
+    if (!id) return;
+    const ids = idsByType.get(type) ?? new Set<string>();
+    ids.add(id);
+    idsByType.set(type, ids);
+  };
+  for (const line of lines) {
+    if (!line.documentType) continue;
+    addId(line.documentType, line.documentId);
+    if (line.documentType === "Payment") {
+      addId("Invoice", line.documentLineReference);
+    }
+  }
+  const idsOf = (...types: string[]) => [
+    ...new Set(types.flatMap((type) => [...(idsByType.get(type) ?? [])]))
+  ];
+
+  const documents = new Map<string, GeneralLedgerDocument>();
+  const add = (
+    rows: ({ id: string } & Partial<GeneralLedgerDocument>)[] | null
+  ) => {
+    for (const { id, ...document } of rows ?? []) {
+      documents.set(id, { ...NO_DOCUMENT, ...document });
+    }
+  };
+
+  const invoiceIds = idsOf("Invoice");
+  const reads = await Promise.all([
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("salesInvoice")
+        .select("id, invoiceNumber:invoiceId, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("purchaseInvoice")
+        .select(
+          "id, invoiceNumber:invoiceId, supplierInvoiceNumber:supplierReference, supplierId"
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Payment"), (batch) =>
+      client
+        .from("payment")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Memo"), (batch) =>
+      client
+        .from("memo")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Receipt"), (batch) =>
+      client
+        .from("receipt")
+        .select("id, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Sales Shipment", "Return Order"), (batch) =>
+      client
+        .from("shipment")
+        .select("id, customerId, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Charge"), (batch) =>
+      client
+        .from("charge")
+        .select("id, supplierId, merchantName")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Contract"), (batch) =>
+      client
+        .from("customerContract")
+        .select("id, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Rental Agreement"), (batch) =>
+      client
+        .from("rentalAgreement")
+        .select("id, customerId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds(idsOf("Lease"), (batch) =>
+      client
+        .from("lease")
+        .select("id, supplierId")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    )
+  ]);
+  for (const read of reads) {
+    if (read.error) return { data: null, error: read.error };
+    add(read.data);
+  }
+
+  const customerIds = new Set<string>();
+  const supplierIds = new Set<string>();
+  for (const document of documents.values()) {
+    if (document.customerId) customerIds.add(document.customerId);
+    if (document.supplierId) supplierIds.add(document.supplierId);
+  }
+  const [customers, suppliers] = await Promise.all([
+    fetchAllByIds([...customerIds], (batch) =>
+      client
+        .from("customer")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    ),
+    fetchAllByIds([...supplierIds], (batch) =>
+      client
+        .from("supplier")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id")
+    )
+  ]);
+  if (customers.error) return { data: null, error: customers.error };
+  if (suppliers.error) return { data: null, error: suppliers.error };
+
+  const partyNames = new Map<string, string>();
+  for (const party of [...customers.data, ...suppliers.data]) {
+    partyNames.set(party.id, party.name);
+  }
+
+  return {
+    data: lines.map((line) => ({
+      ...line,
+      ...generalLedgerCounterparty(line, documents, partyNames)
+    })),
+    error: null
+  };
 }
 
 export async function getAccountLedgerSummary(

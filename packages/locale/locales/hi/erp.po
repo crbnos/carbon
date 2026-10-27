@@ -2577,6 +2577,9 @@ msgstr "यह भी {otherStationNames} पर"
 msgid "Also notify"
 msgstr "साथ ही सूचित करें"
 
+msgid "Also open on {links}"
+msgstr "{links} पर भी खुला है"
+
 msgid "Always"
 msgstr "हमेशा"
 
@@ -4300,6 +4303,9 @@ msgstr "ब्लाइंड"
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
 
+msgid "Block"
+msgstr ""
+
 msgid "Block with an error"
 msgstr "त्रुटि के साथ ब्लॉक करें"
 
@@ -5204,9 +5210,6 @@ msgstr "समापन तारीख"
 msgid "Close Date"
 msgstr "बंद करने की तारीख"
 
-msgid "Close menu"
-msgstr "मेनू बंद करें"
-
 msgid "Close Period"
 msgstr "अवधि बंद करें"
 
@@ -6072,6 +6075,9 @@ msgstr "कार्यविधि की अद्वितीय पहचा
 msgid "Copy purchase invoice unique identifier"
 msgstr "क्रय चालान की विशिष्ट पहचान नकल करें"
 
+msgid "Copy purchase order number"
+msgstr "क्रय आदेश संख्या कॉपी करें"
+
 msgid "Copy purchase order unique identifier"
 msgstr "क्रय आदेश की विशिष्ट पहचान नकल करें"
 
@@ -6808,6 +6814,9 @@ msgstr "ग्राहक"
 
 msgid "Customer"
 msgstr "ग्राहक"
+
+msgid "Customer / Supplier"
+msgstr "ग्राहक / आपूर्तिकर्ता"
 
 msgid "Customer Accounts"
 msgstr "ग्राहक खाते"
@@ -8215,6 +8224,9 @@ msgstr "डॉलर उपयोग"
 
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
+
+msgid "Don't let them work on this process until they have the ability."
+msgstr ""
 
 msgid "Don't see a serial number?"
 msgstr "सीरियल नंबर नहीं दिख रहा?"
@@ -11443,6 +11455,9 @@ msgstr "कच्चे माल के लिए ID और विवरण उ
 
 msgid "If"
 msgstr "यदि"
+
+msgid "If an operator isn't qualified"
+msgstr ""
 
 msgid "If depreciation has already run, the next run catches up the months a Straight Line asset took at the old cost."
 msgstr "यदि मूल्यह्रास पहले ही चला है, तो अगला रन उन महीनों को पकड़ता है जो एक सीधी रेखा परिसंपत्ति को पुरानी लागत पर ले गए।"
@@ -15155,6 +15170,9 @@ msgstr "कोई खुला ऑपरेशन नहीं"
 msgid "No open orders for this item are available to link."
 msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
 
+msgid "No open purchase order lines match your search. Every word must match; spaces and punctuation are ignored."
+msgstr "कोई खुली क्रय आदेश पंक्तियाँ आपकी खोज से मेल नहीं खाती हैं। खोज में सभी शब्दों का मेल खाना चाहिए; रिक्त स्थान और विराम चिह्न को अनदेखा किया जाता है।"
+
 msgid "No open reimbursements"
 msgstr "कोई खुली प्रतिपूर्ति नहीं"
 
@@ -15269,6 +15287,9 @@ msgstr "इस ऑपरेशन के लिए अभी तक कोई �
 
 msgid "No production recorded yet."
 msgstr "अभी तक कोई उत्पादन दर्ज नहीं किया गया।"
+
+msgid "No purchase orders are waiting to be received."
+msgstr "कोई भी क्रय आदेश प्राप्ति की प्रतीक्षा में नहीं है।"
 
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
@@ -15909,6 +15930,9 @@ msgstr "केवल ड्राफ्ट कार्यविधियाँ 
 
 msgid "Only employees can post receipts."
 msgstr "केवल कर्मचारी प्राप्ति पोस्ट कर सकते हैं।"
+
+msgid "Only employees with the {processName} ability can be scheduled for and run this process"
+msgstr ""
 
 msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
@@ -18310,6 +18334,9 @@ msgstr "दर आवृत्ति"
 
 msgid "Rate Limit"
 msgstr "दर सीमा"
+
+msgid "Rate updated {relative}"
+msgstr ""
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "समेकन में इक्विटी खातों के रूपांतरण के लिए उपयोग की जाने वाली दर (IAS 21)। वर्तमान विनिमय दर का उपयोग करने के लिए खाली छोड़ें।"
@@ -21362,6 +21389,9 @@ msgstr "ग्राहक सूची, ग्राहक फॉर्म औ�
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
 
+msgid "Show a warning on the shop floor, but let them work."
+msgstr ""
+
 msgid "Show All"
 msgstr "सभी दिखाएँ"
 
@@ -23066,8 +23096,8 @@ msgstr "अनुबंध अंतिम तारीख को समाप�
 msgid "The contract's invoices will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "अनुबंध के चालान पहले से इस Carbon ग्राहक से जुड़े Stripe ग्राहक को बिल किए जाएंगे। इसके विवरण बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
 
-msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
-msgstr "ठेकेदार की अपेक्षित साप्ताहिक उपलब्धता; शेड्यूलिंग इसे इस सप्ताह भर में इस ठेकेदार को ऑपरेशन के लिए असाइन करते समय ऊपरी सीमा के रूप में उपयोग करती है।"
+msgid "The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations."
+msgstr "ठेकेदार की अपेक्षित साप्ताहिक उपलब्धता, केवल संदर्भ के लिए। शेड्यूलर ठेकेदारों को ऑपरेशनों पर नहीं लगाता।"
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "इस लॉट/सीरीज़ के लिए सही की गई समाप्ति तिथि; परिवर्तन के बाद मौजूदा ऑन-हैंड स्टॉक को शेल्फ-लाइफ नीति के विरुद्ध पुनः मूल्यांकन किया जाता है।"

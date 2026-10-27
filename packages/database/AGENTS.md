@@ -124,8 +124,8 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 `company-template` job go through the same `applyDataset()` entry point (`./datasets`).
 
 - **Data** — `data/<key>/`, one file per slice, pure TypeScript literals with no SQL and no
-  ids. Registered in `DATASETS` (`datasets/index.ts`). Four keys ship today, one per
-  onboarding industry: `satellite`, `robotics`, `precision`, `motor`. **New seed data goes
+  ids. Registered in `DATASETS` (`datasets/index.ts`). Five keys ship today, one per
+  onboarding industry: `satellite`, `robotics`, `precision`, `motor`, `defense`. **New seed data goes
   here**, not in a tier: the tiers are industry-agnostic shared code, and hard-coding one
   industry's content into them breaks every other dataset.
 - **Engine** — `tiers/01-foundation.ts` … `tiers/12-planning.ts`, run in numeric order because

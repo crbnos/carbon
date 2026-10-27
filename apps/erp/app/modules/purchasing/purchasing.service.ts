@@ -46,7 +46,11 @@ import {
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
-import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
+import {
+  getPurchaseOrderDisplayId,
+  type PurchaseOrderApproval
+} from "@carbon/documents/pdf";
+import { getDocumentApproval } from "@carbon/ee/approvals.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   getCompanyPrivateBucket,
@@ -602,6 +606,33 @@ export async function getPurchaseOrderLocations(
     .select("*")
     .eq("id", purchaseOrderId)
     .single();
+}
+
+/**
+ * Who approved a purchase order and on which day in the company's timezone:
+ * the PDF's `order.approved*` merge fields, the order's properties panel and
+ * `purchasing.getPurchaseOrderApproval`. Null when it was not approved.
+ */
+export async function getPurchaseOrderApproval(
+  serviceRole: SupabaseClient<Database>,
+  {
+    companyId,
+    purchaseOrderId,
+    timezone
+  }: { companyId: string; purchaseOrderId: string; timezone: string }
+): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
+  const approval = await getDocumentApproval(
+    serviceRole,
+    "purchaseOrder",
+    purchaseOrderId,
+    companyId
+  );
+  if (!approval) return null;
+  return {
+    approvedBy: approval.approvedBy,
+    approvedById: approval.approvedById,
+    approvedDate: datetime.businessDay(approval.approvedAt, timezone).toString()
+  };
 }
 
 export async function getPurchaseOrderPayment(
@@ -7727,6 +7758,10 @@ export async function updatePurchasedPrices(
           .set(itemCostUpdate)
           .where("itemId", "=", itemCostUpdate.itemId!)
           .where("companyId", "=", companyId)
+          // An Average item's unit cost is its moving average, kept by the
+          // receipts and invoices that move its value; a year of purchase
+          // history is not what is on hand.
+          .where("costingMethod", "!=", "Average")
           .execute();
       }
     }
