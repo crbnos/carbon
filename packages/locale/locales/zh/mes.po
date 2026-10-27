@@ -1247,8 +1247,8 @@ msgstr "不需要样本。"
 msgid "No scheduled time"
 msgstr "无排定时间"
 
-msgid "No serial number yet"
-msgstr "尚无序列号"
+msgid "No serial number"
+msgstr "无序列号"
 
 msgid "No serial numbers"
 msgstr "无序列号"

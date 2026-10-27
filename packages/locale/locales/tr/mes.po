@@ -1247,8 +1247,8 @@ msgstr "Örnek gerekli değil."
 msgid "No scheduled time"
 msgstr "Planlanmış zaman yok"
 
-msgid "No serial number yet"
-msgstr "Henüz seri numarası yok"
+msgid "No serial number"
+msgstr "Seri numarası yok"
 
 msgid "No serial numbers"
 msgstr "Seri numarası yok"

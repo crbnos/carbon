@@ -94596,11 +94596,12 @@ export type Database = {
         Args: { alphabet: string; mask: number; size: number; step: number }
         Returns: string
       }
-      number_serial_units_for_completion: {
+      number_serial_units_for_receipt: {
         Args: {
           p_company_id: string
-          p_job_id: string
-          p_quantity_complete: number
+          p_item_id: string
+          p_location_id: string
+          p_unit_ids: string[]
         }
         Returns: number
       }
@@ -94772,6 +94773,15 @@ export type Database = {
       snapshotAccountingPeriodBalances: {
         Args: { p_company_id: string; p_period_id: string; p_user_id: string }
         Returns: undefined
+      }
+      split_serial_units_for_completion: {
+        Args: {
+          p_company_id: string
+          p_count: number
+          p_job_id: string
+          p_make_method_id: string
+        }
+        Returns: number
       }
       storage_unit_block_location_change_with_children: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }

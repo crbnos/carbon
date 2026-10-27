@@ -316,9 +316,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ids: ended
   });
 
-  // First touch: number the unit if the company numbers serials at production.
+  // First touch: number the unit if it has no serial number yet.
   if (trackedEntityId) {
-    await assignSerialNumberOnFirstTouch({ trackedEntityId, companyId });
+    await assignSerialNumberOnFirstTouch({
+      trackedEntityId,
+      jobOperationId: operationId,
+      companyId
+    });
   }
 
   throw redirect(path.to.operation(operationId));

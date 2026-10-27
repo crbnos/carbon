@@ -23117,13 +23117,6 @@ async function produceBatchOutput(
     throw new NotFoundError("Tracked entity not found");
   }
 
-  // First-touch numbering (serialNumberTiming = 'production'). A no-op for a
-  // unit already numbered, which is every unit under the default timing.
-  await sequence.assignSerialNumberIfMissing(trx, {
-    trackedEntityId,
-    companyId
-  });
-
   if (trackedEntity.status !== "Consumed") {
     const activityId = nanoid();
     await trx
@@ -23591,47 +23584,14 @@ export async function issueMaterial(
           // token; the reservation runs in this transaction, atomic with the spawn.
           // Under the item's serialNumberTiming = 'production' the spawned
           // unit stays unnumbered until it is first touched.
-          let spawnReadableId: string | null = null;
-          if (
-            trackedEntity.itemId &&
-            (await sequence.getSerialNumberTiming(
-              trx,
-              companyId,
-              trackedEntity.itemId
-            )) !== "production"
-          ) {
-            let locationCode: string | null = null;
-            let locationName: string | null = null;
-            const jobIdForLocation = (
-              trackedEntity.attributes as Record<string, unknown>
-            ).Job;
-            if (typeof jobIdForLocation === "string") {
-              const jobRow = await single(
-                trx,
-                "job",
-                { id: jobIdForLocation, companyId },
-                { columns: ["locationId"] }
-              );
-              if (jobRow.data?.locationId) {
-                const loc = await single(
-                  trx,
-                  "location",
-                  { id: jobRow.data.locationId, companyId },
-                  { columns: ["code", "name"] }
-                );
-                locationCode = loc.data?.code ?? null;
-                locationName = loc.data?.name ?? null;
-              }
-            }
-            const spawnSerials = await sequence.getNextSerialNumbers(trx, {
-              itemId: trackedEntity.itemId,
-              companyId,
-              count: 1,
-              locationCode,
-              locationName
-            });
-            spawnReadableId = spawnSerials[0] ?? null;
-          }
+          const spawnReadableId = trackedEntity.itemId
+            ? await sequence.getSpawnSerialNumber(trx, {
+                itemId: trackedEntity.itemId,
+                companyId,
+                jobId: (trackedEntity.attributes as Record<string, unknown>)
+                  .Job as string | undefined
+              })
+            : null;
 
           // Create a new trackedEntity with the same attributes but status = Reserved
           const newTrackedEntityResult = await trx
@@ -23948,36 +23908,13 @@ export async function issueMaterial(
           if (existingEntityCount < capacity) {
             // Under serialNumberTiming = 'production' the replacement stays
             // unnumbered until it is first touched.
-            let spawnReadableId: string | null = null;
-            if (
-              makeMethod.itemId &&
-              (await sequence.getSerialNumberTiming(
-                trx,
-                companyId,
-                makeMethod.itemId
-              )) !== "production"
-            ) {
-              let locationCode: string | null = null;
-              let locationName: string | null = null;
-              if (job.locationId) {
-                const loc = await single(
-                  trx,
-                  "location",
-                  { id: job.locationId, companyId },
-                  { columns: ["code", "name"] }
-                );
-                locationCode = loc.data?.code ?? null;
-                locationName = loc.data?.name ?? null;
-              }
-              const spawnSerials = await sequence.getNextSerialNumbers(trx, {
-                itemId: makeMethod.itemId,
-                companyId,
-                count: 1,
-                locationCode,
-                locationName
-              });
-              spawnReadableId = spawnSerials[0] ?? null;
-            }
+            const spawnReadableId = makeMethod.itemId
+              ? await sequence.getSpawnSerialNumber(trx, {
+                  itemId: makeMethod.itemId,
+                  companyId,
+                  jobId: job.id
+                })
+              : null;
 
             const scrappedEntity = await trx
               .selectFrom("trackedEntity")
@@ -24939,34 +24876,13 @@ export async function issueMaterial(
             });
 
             if (subMakeMethod.requiresSerialTracking && subMakeMethod.itemId) {
-              let locationCode: string | null = null;
-              let locationName: string | null = null;
-              if (job.locationId) {
-                const loc = await single(
-                  trx,
-                  "location",
-                  { id: job.locationId, companyId },
-                  { columns: ["code", "name"] }
-                );
-                locationCode = loc.data?.code ?? null;
-                locationName = loc.data?.name ?? null;
-              }
               // Under serialNumberTiming = 'production' the replacement stays
               // unnumbered until it is first touched.
-              const spawnSerials =
-                (await sequence.getSerialNumberTiming(
-                  trx,
-                  companyId,
-                  subMakeMethod.itemId
-                )) === "production"
-                  ? []
-                  : await sequence.getNextSerialNumbers(trx, {
-                      itemId: subMakeMethod.itemId,
-                      companyId,
-                      count: 1,
-                      locationCode,
-                      locationName
-                    });
+              const spawnReadableId = await sequence.getSpawnSerialNumber(trx, {
+                itemId: subMakeMethod.itemId,
+                companyId,
+                jobId: job.id
+              });
               await trx
                 .insertInto("trackedEntity")
                 .values({
@@ -24978,7 +24894,7 @@ export async function issueMaterial(
                   attributes: entity.attributes,
                   itemId: subMakeMethod.itemId,
                   expirationDate: entity.expirationDate ?? null,
-                  readableId: spawnSerials[0] ?? null,
+                  readableId: spawnReadableId,
                   companyId,
                   createdBy: userId
                 })

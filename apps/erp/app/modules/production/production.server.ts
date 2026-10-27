@@ -247,6 +247,10 @@ export const planDraftJob = defineServiceFn({
  * each supplier's outside operations from every member job on one PO. The map
  * is returned with those POs filled in, for a caller releasing job by job.
  *
+ * Serial numbering at release never stops it: a job whose units could not be
+ * numbered is listed in `warnings` and released, and its units draw their
+ * numbers at their first touch or at completion.
+ *
  * It stops at the first job that fails, and that is `failure`, not an error:
  * `releasedJobIds` are the jobs that ARE Ready when this returns. After a
  * failure past the status flip (purchase orders, release date) the job is
@@ -265,9 +269,11 @@ export const releaseCheckedJobs = defineServiceFn({
     const userId = ctx.auditUserId;
     const purchaseOrders = { ...purchaseOrdersBySupplierId };
     const releasedJobIds: string[] = [];
+    const warnings: { jobId: string; message: string }[] = [];
     const report = (failure: CarbonError<"internal" | "conflict"> | null) => ({
       purchaseOrdersBySupplierId: purchaseOrders,
       releasedJobIds,
+      warnings,
       failure
     });
 
@@ -330,12 +336,20 @@ export const releaseCheckedJobs = defineServiceFn({
       releasedJobIds.push(id);
 
       // Under the jobRelease serial number timing (the item's, else the
-      // company's) every unit is numbered now. Best-effort: a failure is logged.
-      await service.assignJobSerialNumbersAtRelease(
+      // company's) every unit is numbered now. The job is already Ready, so a
+      // failure is a warning, not a refusal.
+      const numbered = await service.assignJobSerialNumbersAtRelease(
         ctx.asSystem.supabase,
         ctx.asSystem.pg,
         { jobId: id, companyId, userId }
       );
+      if (!numbered) {
+        warnings.push({
+          jobId: id,
+          message:
+            "The job is released, but its serial numbers could not be assigned"
+        });
+      }
 
       const purchaseOrder = await invokeCreate(
         { db: ctx.asSystem.pg, companyId, userId },
@@ -414,7 +428,7 @@ type JobRef = { jobId: string; readableId: string };
  * @param purchaseOrdersBySupplierId - For each supplier, `new` or the id of one of its Draft purchase orders to add to.
  * @param carriedPurchaseOrders - The PO each supplier went on in an earlier call of the same release, as that call returned it
  *
- * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
+ * @returns `released`, `failed` (each with its reason), `skipped` (not Draft or Planned), `warnings` (released, but a purchase order or its serial numbers failed), whether the locations were `scheduled`, and `purchaseOrdersBySupplierId` for the next call.
  *
  * @mcp
  */
@@ -540,6 +554,9 @@ export const releaseJobs = defineServiceFn({
         continue;
       }
       if (failure) warnings.push({ ...ref, message: failure.message });
+      for (const warning of result.data?.warnings ?? []) {
+        warnings.push({ ...ref, message: warning.message });
+      }
       if (job.locationId) locationIds.add(job.locationId);
       released.push(ref);
     }
@@ -883,13 +900,11 @@ export const closeJob = defineServiceFn({
  * job's own), backflushes materials, rolls up cost and, for a Make to Asset
  * job, creates the fixed assets. It refuses a quantity of zero or below what
  * was received, a fractional quantity on a serial job, and the Make to Asset
- * rules; its message says what to fix (a `rule` error). When the item's serial
- * number timing (its own, else the company's) is release or production, the
- * units the completion takes are split off the job's seed, created when no
- * record holds them yet, and numbered first, in the completion's transaction,
- * so a refused completion spends no numbers. Then the picked material the job did not
- * consume is returned to the warehouse; a failure there leaves the job
- * completed and is returned as `warning`.
+ * rules; its message says what to fix (a `rule` error). Units it takes that
+ * have no serial number yet (a deferred serial number timing) are numbered by
+ * the same function, so a refused completion spends no numbers. Then the
+ * picked material the job did not consume is returned to the warehouse; a
+ * failure there leaves the job completed and is returned as `warning`.
  *
  * @mcp
  */
@@ -906,48 +921,23 @@ export const completeJob = defineServiceFn({
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
-    // The units this completion takes may be unnumbered, or still one unsplit
-    // seed (a deferred serial number timing, or a job left so when its timing
-    // changed): the receipt is their first touch, so split and number them
-    // before complete_job_to_inventory receives them. Both run in one
-    // transaction, as in the sync_finish_job_operation interceptor, so a
-    // refused completion spends no serial numbers.
-    const completed = await ctx.transaction(async (tx) => {
-      try {
-        await service.numberSerialUnitsForCompletion(tx.asSystem.pg, {
-          jobId,
-          quantityComplete,
-          companyId
-        });
-      } catch (error) {
-        return ctx.error(
-          "internal",
-          "Failed to number the serial units being completed",
-          error
-        );
-      }
-
-      // It must NOT write job.quantityShipped: that column is advanced only by
-      // post-shipment, and the shipment builder ships quantityComplete less it.
-      try {
-        await service.completeJobToInventory(tx.asSystem.pg, {
-          jobId,
-          quantityComplete,
-          storageUnitId,
-          locationId,
-          companyId,
-          userId
-        });
-      } catch (error) {
-        return ctx.error(
-          "rule",
-          (error instanceof Error && error.message) || "Failed to complete job",
-          error
-        );
-      }
-      return null;
+    // It must NOT write job.quantityShipped: that column is advanced only by
+    // post-shipment, and the shipment builder ships quantityComplete less it.
+    const rpc = await ctx.asCaller.supabase.rpc("complete_job_to_inventory", {
+      p_job_id: jobId,
+      p_quantity_complete: quantityComplete,
+      p_storage_unit_id: storageUnitId,
+      p_location_id: locationId,
+      p_company_id: companyId,
+      p_user_id: userId
     });
-    if (completed.error) return completed.error;
+    if (rpc.error) {
+      return ctx.error(
+        "rule",
+        rpc.error.message || "Failed to complete job",
+        rpc.error
+      );
+    }
 
     // A re-completion is supported; the job id is the idempotency key, so a
     // repeat collapses rather than counting a second completion.

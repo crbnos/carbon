@@ -86,7 +86,7 @@ export function getReceivableSerialUnits(
  * - `numberOnReceipt`: the item has a serial sequence and some units are
  *   unnumbered, still one unsplit seed, or held by no row yet. The completion
  *   numbers the units it receives and creates the missing ones
- *   (`number_serial_units_for_completion`), so the quantity can be chosen up to
+ *   (`complete_job_to_inventory`), so the quantity can be chosen up to
  *   `receivableCount` even though the serials cannot be named yet. This does
  *   not depend on the serial number timing: a job left unnumbered by a timing
  *   that has since changed to `jobCreation` is numbered on receipt too.
@@ -116,15 +116,12 @@ export function getSerialCompleteChoice({
   // received, whatever the timing.
   if (!receivedEntityIds) return { mode: "locked" };
 
-  // With a sequence the completion numbers whatever it receives unnumbered.
-  const numbersOnReceipt = hasSerialSequence;
-
   // The shop floor's first completion or scrap of an unsplit seed leaves it
   // holding one unit and spawns the rest one at a time, so the rows can hold
   // fewer units than the job quantity. Only a completion that numbers on
   // receipt creates the missing units. A scrapped unit does not count: the job
   // still owes it.
-  const unitsWithoutRow = numbersOnReceipt
+  const unitsWithoutRow = hasSerialSequence
     ? Math.max(
         jobQuantity -
           trackedEntities
@@ -136,7 +133,8 @@ export function getSerialCompleteChoice({
 
   const serials = getReceivableSerialUnits(trackedEntities, receivedEntityIds);
   if (serials && unitsWithoutRow === 0) return { mode: "serials", serials };
-  if (!numbersOnReceipt) return { mode: "locked" };
+  // With a sequence the completion numbers whatever it receives unnumbered.
+  if (!hasSerialSequence) return { mode: "locked" };
 
   const receivableCount =
     trackedEntities

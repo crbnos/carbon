@@ -371,8 +371,9 @@ export const updateItemsSettings = defineServiceFn({
  * inventory or a sales job completes, whether opening an operation starts its
  * timer, whether the job traveler lists materials and operations, whether
  * tracked material is pre-selected without a picking list, when a produced
- * unit draws its serial number (when the job is created, or the first time
- * the unit is worked on, scrapped or received), and whether one location
+ * unit draws its serial number (when the job is created, when it is released,
+ * or the first time the unit is worked on, scrapped or received), and whether
+ * one location
  * requires an assigned operator before the scheduler places work there. The
  * staffing rule lives on the location row and is written for the company's
  * own location only, so a settings admin without the resources permission can
@@ -2841,7 +2842,7 @@ export const updateItemSerialSequence = defineServiceFn({
         .nullable()
         .optional()
         .describe(
-          "When this item's units draw their serial numbers. Omit or null to follow the company setting."
+          "When this item's units draw their serial numbers. Null follows the company setting. Omitted, a new sequence follows the company setting and an update keeps the current value."
         ),
       id: z
         .string()

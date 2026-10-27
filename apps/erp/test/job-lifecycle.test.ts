@@ -19,6 +19,7 @@ vi.mock("@carbon/planning", () => ({
 
 import {
   closeJob,
+  completeJob,
   createProductionQuantity,
   pauseJob,
   reopenJob,
@@ -31,8 +32,11 @@ let statusWrites: { status: unknown; fromStatuses?: unknown }[] = [];
 /** Every production quantity row inserted. */
 let quantityInserts: Record<string, unknown>[] = [];
 
-/** The user client: the job as read and its status writes. */
-function callerWith(job: Record<string, unknown> | null) {
+/** The user client: the job as read, its status writes, and the completion RPC's answer. */
+function callerWith(
+  job: Record<string, unknown> | null,
+  rpc: { error: { message: string } | null } = { error: null }
+) {
   const read: Record<string, unknown> = {};
   for (const method of ["select", "eq"]) read[method] = () => read;
   read.maybeSingle = async () => ({ data: job, error: null });
@@ -58,7 +62,10 @@ function callerWith(job: Record<string, unknown> | null) {
       })
     };
   };
-  return { from: () => ({ ...read, update, insert }) };
+  return {
+    from: () => ({ ...read, update, insert }),
+    rpc: async () => ({ data: null, ...rpc })
+  };
 }
 
 const contextWith = (caller: unknown) =>
@@ -206,6 +213,32 @@ describe("closeJob", () => {
     expect(result.error).toBeNull();
     expect(result.data?.warning).toBeTruthy();
     expect(flips()).toEqual([{ status: "Closed", fromStatuses: ["Completed"] }]);
+  });
+});
+
+describe("completeJob", () => {
+  const complete = (caller: unknown) =>
+    completeJob(contextWith(caller), { jobId: "j1", quantityComplete: 5 });
+
+  it("returns the database's refusal as a rule", async () => {
+    const result = await complete(
+      callerWith(null, {
+        error: { message: "Quantity is below what was received" }
+      })
+    );
+    expect(result.error).toMatchObject({
+      category: "rule",
+      message: "Quantity is below what was received"
+    });
+  });
+
+  it("keeps the completion and warns when returning picked material fails", async () => {
+    // The sweep posts through `pg`, which this context lacks.
+    const result = await complete(callerWith(null));
+    expect(result).toEqual({
+      data: { jobId: "j1", warning: expect.any(String) },
+      error: null
+    });
   });
 });
 

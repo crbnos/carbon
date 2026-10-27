@@ -22,11 +22,7 @@ import {
   completeJob,
   releaseCheckedJobs
 } from "../../app/modules/production/production.server";
-import {
-  assignJobSerialNumbers,
-  completeJobToInventory,
-  numberSerialUnitsForCompletion
-} from "../../app/modules/production/production.service";
+import { assignJobSerialNumbers } from "../../app/modules/production/production.service";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 import {
   alwaysPostFixture,
@@ -66,6 +62,31 @@ function contextFor(f: Fixture, system: () => unknown = () => client) {
       throw new Error("completeJob reads no cache");
     }
   });
+}
+
+/** complete_job_to_inventory on the given connection or transaction. */
+async function completeToInventory(
+  db: Fixture["db"],
+  args: { jobId: string; quantityComplete: number; companyId: string }
+) {
+  await sql`
+    SELECT complete_job_to_inventory(
+      p_job_id := ${args.jobId},
+      p_quantity_complete := ${args.quantityComplete}::numeric,
+      p_company_id := ${args.companyId},
+      p_user_id := ${USER}
+    )
+  `.execute(db);
+}
+
+/** The serial sequence's next value: how many numbers were drawn. */
+async function drawn(f: Fixture) {
+  const sequence = await f.db
+    .selectFrom("itemSerialSequence")
+    .select("next")
+    .where("itemId", "=", f.assemblyId)
+    .executeTakeFirstOrThrow();
+  return Number(sequence.next);
 }
 
 /** A serial assembly with a sequence (SN-001, SN-002, ...) and the timing set. */
@@ -257,6 +278,30 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
+  it("leaves a unit of another make method unnumbered on a touch scoped to one", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "scoped", 1);
+      const other = await untouchedSerialJob(f, "scoped-other", 1);
+      const [seedUnit] = await units(f, job.makeMethodId);
+
+      const numbered = await f.db.transaction().execute((trx) =>
+        assignSerialNumberIfMissing(trx, {
+          trackedEntityId: seedUnit!.id,
+          companyId: f.companyId,
+          onlyIfSingleUnit: true,
+          jobMakeMethodId: other.makeMethodId
+        })
+      );
+
+      expect(numbered).toBeNull();
+      expect(await drawn(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
   it("numbers a Batch lot when the job is created, whatever the timing", async () => {
     const f = await alwaysPostFixture();
     try {
@@ -275,7 +320,7 @@ describe.skipIf(!client)("serial number timing", () => {
         itemId: f.assemblyId,
         companyId: f.companyId,
         userId: USER,
-        moment: "creation"
+        at: "jobCreation"
       });
 
       expect(await units(f, job.makeMethodId)).toEqual([
@@ -303,10 +348,11 @@ describe.skipIf(!client)("serial number timing", () => {
         { readableId: "SN-001", quantity: 1 },
         { readableId: "SN-002", quantity: 1 }
       ]);
-      // The seed is the job's last unit, still unnumbered and untouched.
+      // The receipt takes units in creation order: the seed (cut to one
+      // unit) and the first unit split off it. The last unit is untouched.
       const after = await units(f, job.makeMethodId);
       expect(after).toHaveLength(3);
-      expect(after[0]).toMatchObject({ readableId: null, quantity: 1 });
+      expect(after[2]).toMatchObject({ readableId: null, quantity: 1 });
     } finally {
       await f.cleanup();
     }
@@ -315,6 +361,7 @@ describe.skipIf(!client)("serial number timing", () => {
   it("leaves the units of an item with no serial sequence alone", async () => {
     const f = await alwaysPostFixture();
     try {
+      await stockPart(f, 20);
       await serialSetup(f, "jobCreation");
       await seed(f, async (trx) => {
         await trx
@@ -325,13 +372,13 @@ describe.skipIf(!client)("serial number timing", () => {
       });
       const job = await untouchedSerialJob(f, "3", 3);
 
-      const numbered = await numberSerialUnitsForCompletion(f.db, {
+      const result = await completeJob(contextFor(f), {
         jobId: job.jobId,
-        quantityComplete: 2,
-        companyId: f.companyId
+        quantityComplete: 2
       });
+      expect(result.error).toBeNull();
 
-      expect(numbered).toEqual({ numbered: 0 });
+      // Received against the seed, which stays one unnumbered entity.
       expect(await units(f, job.makeMethodId)).toEqual([
         expect.objectContaining({ readableId: null, quantity: 3 })
       ]);
@@ -368,25 +415,24 @@ describe.skipIf(!client)("serial number timing", () => {
     }
   });
 
-  it("spends no number when the job cannot cover the completion", async () => {
+  it("refuses a completion the job cannot cover, and spends no number", async () => {
     const f = await alwaysPostFixture();
     try {
+      await stockPart(f, 20);
       await serialSetup(f, "production");
       const job = await untouchedSerialJob(f, "4", 2);
 
-      const numbered = await numberSerialUnitsForCompletion(f.db, {
+      // Two units exist and none is left to create: three cannot be received.
+      const result = await completeJob(contextFor(f), {
         jobId: job.jobId,
-        quantityComplete: 3,
-        companyId: f.companyId
+        quantityComplete: 3
       });
 
-      expect(numbered).toEqual({ numbered: 0 });
-      const sequence = await f.db
-        .selectFrom("itemSerialSequence")
-        .select("next")
-        .where("itemId", "=", f.assemblyId)
-        .executeTakeFirstOrThrow();
-      expect(Number(sequence.next)).toBe(0);
+      expect(result.error?.category).toBe("rule");
+      expect(await units(f, job.makeMethodId)).toEqual([
+        expect.objectContaining({ readableId: null, quantity: 2 })
+      ]);
+      expect(await drawn(f)).toBe(0);
     } finally {
       await f.cleanup();
     }
@@ -448,23 +494,22 @@ describe.skipIf(!client)("serial number timing", () => {
       // The first completion numbers and receives two units, and keeps its
       // locks until it commits.
       const first = f.db.transaction().execute(async (trx) => {
-        await numberSerialUnitsForCompletion(trx, args);
-        await completeJobToInventory(trx, { ...args, userId: USER });
+        await completeToInventory(trx, args);
         holding();
         await committed;
       });
       await held;
 
-      // The same completion again reads the job before the first commits,
-      // then waits for the units.
-      const repeat = numberSerialUnitsForCompletion(second, args);
+      // The same completion again waits for the job row, then finds the two
+      // units already received.
+      const repeat = completeToInventory(second, args);
       for (let attempt = 0; ; attempt++) {
         const { rows } = await sql<{ waiting: number }>`
           SELECT count(*)::int AS waiting FROM pg_stat_activity
           WHERE datname = current_database()
             AND pid <> pg_backend_pid()
             AND wait_event_type = 'Lock'
-            AND query ILIKE '%number_serial_units_for_completion%'`.execute(
+            AND query ILIKE '%complete_job_to_inventory%'`.execute(
           watcher
         );
         if (rows[0]!.waiting > 0) break;
@@ -474,7 +519,8 @@ describe.skipIf(!client)("serial number timing", () => {
       commit();
       await first;
 
-      expect(await repeat).toEqual({ numbered: 0 });
+      await repeat;
+      expect(await receivedUnits(f, job.jobId)).toHaveLength(2);
       const sequence = await f.db
         .selectFrom("itemSerialSequence")
         .select("next")
@@ -666,7 +712,7 @@ describe.skipIf(!client)("serial number timing", () => {
         itemId: f.assemblyId,
         companyId: f.companyId,
         userId: USER,
-        moment: "creation"
+        at: "jobCreation"
       });
       expect(await units(f, job.makeMethodId)).toEqual([
         expect.objectContaining({ readableId: null, quantity: 3 })
@@ -717,13 +763,15 @@ describe.skipIf(!client)("serial number timing", () => {
       expect(await units(f, job.makeMethodId)).toEqual([
         expect.objectContaining({ readableId: null, quantity: 2 })
       ]);
-      expect(
-        await numberSerialUnitsForCompletion(f.db, {
-          jobId: job.jobId,
-          quantityComplete: 2,
-          companyId: f.companyId
-        })
-      ).toEqual({ numbered: 2 });
+      await completeToInventory(f.db, {
+        jobId: job.jobId,
+        quantityComplete: 2,
+        companyId: f.companyId
+      });
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: "SN-001", quantity: 1 },
+        { readableId: "SN-002", quantity: 1 }
+      ]);
 
       // The company numbers at production; this item at creation, so the
       // job's units are numbered when it is created.

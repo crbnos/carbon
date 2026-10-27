@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -403,12 +404,10 @@ export const returnPickedMaterialTimingValidator = z.object({
 // until the unit is first touched on the floor — its first production event,
 // its first operation completion, its scrap, or its receipt. The company's
 // choice is the default; an item's serial sequence can override it.
-export const serialNumberTimings = [
-  "jobCreation",
-  "jobRelease",
-  "production"
-] as const;
-export type SerialNumberTiming = (typeof serialNumberTimings)[number];
+export {
+  type SerialNumberTiming,
+  serialNumberTimings
+} from "@carbon/database/serial-number-timing";
 
 export const serialNumberTimingValidator = z.object({
   serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")

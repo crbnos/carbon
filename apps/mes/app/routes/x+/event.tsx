@@ -171,10 +171,13 @@ async function productionEventAction({ request }: ActionFunctionArgs) {
       await postEnded(startEvent.data.endedEventIds);
     }
 
-    // First touch: number the unit if the company numbers serials at
-    // production.
+    // First touch: number the unit if it has no serial number yet.
     if (trackedEntityId) {
-      await assignSerialNumberOnFirstTouch({ trackedEntityId, companyId });
+      await assignSerialNumberOnFirstTouch({
+        trackedEntityId,
+        jobOperationId: d.jobOperationId,
+        companyId
+      });
     }
 
     return data(

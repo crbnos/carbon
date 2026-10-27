@@ -1247,8 +1247,8 @@ msgstr "कोई नमूना आवश्यक नहीं है।"
 msgid "No scheduled time"
 msgstr "कोई निर्धारित समय नहीं"
 
-msgid "No serial number yet"
-msgstr "अभी तक कोई सीरियल नंबर नहीं"
+msgid "No serial number"
+msgstr "कोई सीरियल नंबर नहीं"
 
 msgid "No serial numbers"
 msgstr "कोई सीरियल नंबर नहीं"

@@ -1247,8 +1247,8 @@ msgstr "Образцы не требуются."
 msgid "No scheduled time"
 msgstr "Нет запланированного времени"
 
-msgid "No serial number yet"
-msgstr "Серийный номер ещё не присвоен"
+msgid "No serial number"
+msgstr "Нет серийного номера"
 
 msgid "No serial numbers"
 msgstr "Нет серийных номеров"

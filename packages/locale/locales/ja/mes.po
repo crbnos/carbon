@@ -1247,8 +1247,8 @@ msgstr "サンプルは必要ありません。"
 msgid "No scheduled time"
 msgstr "予定時間なし"
 
-msgid "No serial number yet"
-msgstr "シリアル番号はまだありません"
+msgid "No serial number"
+msgstr "シリアル番号なし"
 
 msgid "No serial numbers"
 msgstr "シリアル番号なし"

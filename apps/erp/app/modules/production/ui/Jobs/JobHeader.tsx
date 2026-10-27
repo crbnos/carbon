@@ -102,7 +102,8 @@ import {
   getDefaultSerialCompleteQuantity,
   getFinishedUnreceivedQuantity,
   getSerialCompleteChoice,
-  type JobReceiptSnapshot
+  type JobReceiptSnapshot,
+  type SerialCompleteChoice
 } from "./job-complete-logic";
 import {
   makeMethodsMissingOperations,
@@ -1419,18 +1420,19 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
-  // Serial units the completion can still receive, in the order
-  // complete_job_to_inventory receives them. Null when the quantity is not
-  // chosen per serial unit.
-  const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
-    null
-  );
-  // For an item with a serial sequence whose units are not all numbered: how
-  // many units the completion can still receive and number as it receives
-  // them. Null otherwise.
-  const [unitsNumberedOnReceipt, setUnitsNumberedOnReceipt] = useState<
-    number | null
-  >(null);
+  // How the quantity is chosen for a serial job: the serials a completion
+  // takes, units numbered as they are received, or locked.
+  const [serialChoice, setSerialChoice] = useState<SerialCompleteChoice>({
+    mode: "locked"
+  });
+  const receivableSerials =
+    serialChoice.mode === "serials" ? serialChoice.serials : null;
+  const receivableUnitCount =
+    serialChoice.mode === "serials"
+      ? serialChoice.serials.length
+      : serialChoice.mode === "numberOnReceipt"
+        ? serialChoice.receivableCount
+        : null;
   // The completed quantity is cumulative; this much was already received.
   // Refreshed when the dialog opens, since the route's job may be stale.
   const [priorReceivedQuantity, setPriorReceivedQuantity] = useState<number>(
@@ -1458,7 +1460,7 @@ function JobCompleteModal({
   const hasLeftover = leftoverQuantity > 0;
   // Serial units are received one at a time; the database refuses a fraction.
   const hasFractionalSerialQuantity =
-    (receivableSerials !== null || unitsNumberedOnReceipt !== null) &&
+    serialChoice.mode !== "locked" &&
     Number.isFinite(quantityComplete) &&
     !Number.isInteger(quantityComplete);
 
@@ -1528,14 +1530,15 @@ function JobCompleteModal({
           ? getSerialCompleteChoice({
               trackedEntities: trackedEntities.data,
               receivedEntityIds: receipts ? receivedEntityIds : null,
-              // number_serial_units_for_completion numbers what the
-              // completion takes whenever the item has a sequence. A failed
-              // read keeps the quantity locked.
+              // complete_job_to_inventory numbers what the completion takes
+              // whenever the item has a sequence. A failed read keeps the
+              // quantity locked.
               hasSerialSequence: !serialSequence.error && !!serialSequence.data,
               jobQuantity: job?.quantity ?? 0
             })
           : ({ mode: "locked" } as const);
 
+        setSerialChoice(choice);
         if (choice.mode !== "locked") {
           // Every unit is a numbered serial, or the completion numbers the
           // units it receives: either way the quantity can be chosen here even
@@ -1544,12 +1547,6 @@ function JobCompleteModal({
             choice.mode === "serials"
               ? choice.serials.length
               : choice.receivableCount;
-          setReceivableSerials(
-            choice.mode === "serials" ? choice.serials : null
-          );
-          setUnitsNumberedOnReceipt(
-            choice.mode === "numberOnReceipt" ? choice.receivableCount : null
-          );
           setHasTrackedQuantity(false);
           setQuantityComplete(
             getDefaultSerialCompleteQuantity({
@@ -1697,11 +1694,9 @@ function JobCompleteModal({
                   isDisabled={hasTrackedQuantity}
                   minValue={minimumQuantityComplete}
                   maxValue={
-                    receivableSerials
-                      ? priorReceivedQuantity + receivableSerials.length
-                      : unitsNumberedOnReceipt !== null
-                        ? priorReceivedQuantity + unitsNumberedOnReceipt
-                        : undefined
+                    receivableUnitCount !== null
+                      ? priorReceivedQuantity + receivableUnitCount
+                      : undefined
                   }
                   helperText={
                     hasTrackedQuantity
@@ -1728,7 +1723,7 @@ function JobCompleteModal({
                   </Alert>
                 )}
 
-                {unitsNumberedOnReceipt !== null &&
+                {serialChoice.mode === "numberOnReceipt" &&
                   quantityComplete > priorReceivedQuantity &&
                   !hasFractionalSerialQuantity && (
                     <span className="text-sm text-muted-foreground w-full">

@@ -80,7 +80,7 @@ import {
   getNextRevisionSequence,
   getNextSequence,
   getNextSerialNumbers,
-  getSerialNumberTiming
+  resolveSerialNumberTiming
 } from "@carbon/database/sequence";
 import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
 import {
@@ -3866,16 +3866,14 @@ export async function insertJob(
 
 /**
  * Assign configured serial numbers to a job's tracked entities, when the job is
- * created or when it is released. Best-effort and cheap: it skips the operation
- * entirely unless the item has an `itemSerialSequence` configured. Shared by
- * every job-creation path (insertJob, sales-order conversion, ...) and by
- * `releaseCheckedJobs`, so serial numbering is applied consistently.
+ * created (`at: "jobCreation"`, the default) or released (`at: "jobRelease"`).
+ * Best-effort and cheap: it skips the operation entirely unless the item has an
+ * `itemSerialSequence` configured. Shared by every job-creation path
+ * (insertJob, sales-order conversion, ...) and by `releaseCheckedJobs`, so
+ * serial numbering is applied consistently. The `assign-serial-numbers`
+ * posting decides whether the item's serial number timing names this moment.
  *
- * Runs only at the moment the item's timing names (`getSerialNumberTiming`):
- * `jobCreation` at creation, `jobRelease` at release. Under `production` the
- * job's units stay unnumbered and each draws its number the first time it is
- * touched (see `assignSerialNumberIfMissing` and
- * `numberSerialUnitsForCompletion`).
+ * Returns false when numbering failed (logged), true otherwise.
  */
 export async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
@@ -3885,9 +3883,9 @@ export async function assignJobSerialNumbers(
     itemId: string;
     companyId: string;
     userId: string;
-    moment?: "creation" | "release";
+    at?: "jobCreation" | "jobRelease";
   }
-) {
+): Promise<boolean> {
   const serialSequence = await client
     .from("itemSerialSequence")
     .select("id")
@@ -3902,64 +3900,48 @@ export async function assignJobSerialNumbers(
       itemId: args.itemId,
       companyId: args.companyId
     });
-    return;
+    return false;
   }
-  if (!serialSequence.data) return;
-  // The timing is for serial units. A Batch job's one lot is numbered when the
-  // job is created, as before: number_serial_units_for_completion numbers
-  // serial units only, so a deferred lot would be received with no number.
-  const item = await db
-    .selectFrom("item")
-    .select("itemTrackingType")
-    .where("id", "=", args.itemId)
-    .where("companyId", "=", args.companyId)
-    .executeTakeFirst();
-  const timing =
-    item?.itemTrackingType === "Batch"
-      ? "jobCreation"
-      : await getSerialNumberTiming(db, args.companyId, args.itemId);
-  if (
-    timing !==
-    ((args.moment ?? "creation") === "creation" ? "jobCreation" : "jobRelease")
-  ) {
-    return;
-  }
+  if (!serialSequence.data) return true;
   const { error } = await invokePosting(
     { client, db, companyId: args.companyId, userId: args.userId },
     "assign-serial-numbers",
-    { jobId: args.jobId },
+    { jobId: args.jobId, at: args.at ?? "jobCreation" },
     assignSerialNumbers,
     { as: assignSerialNumbersPermission }
   );
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
+    return false;
   }
+  return true;
 }
 
 /**
  * Number a job's units when `releaseCheckedJobs` releases it, under the
- * `jobRelease` timing (the item's, else the company's). Best-effort: the job is
- * already Ready, so a failure is logged and the release goes on; the units then
- * draw their numbers at their first touch or at completion
- * (`number_serial_units_for_completion`).
+ * `jobRelease` timing (the item's, else the company's). Returns false when
+ * numbering failed (logged): the job is already Ready, so the caller warns and
+ * the release goes on; the units then draw their numbers at their first touch
+ * or at completion (`complete_job_to_inventory`).
  */
 export async function assignJobSerialNumbersAtRelease(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: { jobId: string; companyId: string; userId: string }
-) {
+): Promise<boolean> {
   try {
-    const job = await db
-      .selectFrom("job")
-      .select(["itemId"])
-      .where("id", "=", args.jobId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-    if (!job?.itemId) return;
-    await assignJobSerialNumbers(client, db, {
+    const job = await client
+      .from("job")
+      .select("itemId")
+      .eq("id", args.jobId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    if (job.error) throw job.error;
+    if (!job.data?.itemId) return true;
+    return await assignJobSerialNumbers(client, db, {
       ...args,
-      itemId: job.itemId,
-      moment: "release"
+      itemId: job.data.itemId,
+      at: "jobRelease"
     });
   } catch (error) {
     logger.error("Failed to number serial units at release", {
@@ -3967,6 +3949,7 @@ export async function assignJobSerialNumbersAtRelease(
       jobId: args.jobId,
       companyId: args.companyId
     });
+    return false;
   }
 }
 
@@ -12895,14 +12878,19 @@ export async function closeJob(
   return { success: true };
 }
 export const assignSerialNumbersInput = z.object({
-  jobId: z.string()
+  jobId: z.string(),
+  // The moment calling: it numbers only when the item's timing names it.
+  at: z.enum(["jobCreation", "jobRelease"]).default("jobCreation")
 });
 
 /**
- * Assigns configured serial numbers to a job's tracked entities at creation time.
+ * Assigns configured serial numbers to a job's tracked entities, at creation or
+ * release.
  *
- * Run (best-effort) by `insertJob` only when the job's item has an
- * `itemSerialSequence`. For a Batch item it stamps one number on the single
+ * Run (best-effort) by `assignJobSerialNumbers` only when the job's item has an
+ * `itemSerialSequence`. It numbers only when the item's serial number timing
+ * (its own, else the company's) is `at`; a Batch lot is always numbered at
+ * creation, since the timing is for serial units. For a Batch item it stamps one number on the single
  * whole-quantity seed entity; for a Serial item it splits the seed into N
  * quantity-1 entities and stamps one number on each. Numbers come from the
  * item's sequence (atomic counter) with %{...} date/week/location tokens.
@@ -12917,7 +12905,7 @@ export async function assignSerialNumbers(
   ctx: ServiceContext,
   raw: z.input<typeof assignSerialNumbersInput>
 ) {
-  const { jobId } = assignSerialNumbersInput.parse(raw);
+  const { jobId, at } = assignSerialNumbersInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
 
@@ -12946,11 +12934,23 @@ export async function assignSerialNumbers(
     // 3. The item's serial sequence (optional, at most one)
     const sequence = await trx
       .selectFrom("itemSerialSequence")
-      .select(["prefix", "suffix", "next", "size", "step"])
+      .select(["serialNumberTiming"])
       .where("itemId", "=", job.itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     if (!sequence) return { assigned: 0 };
+
+    // 3b. Only at the moment the item's timing names. A Batch lot is numbered
+    //     at creation: the completion numbers serial units only.
+    const timing =
+      trackingType === "Batch"
+        ? "jobCreation"
+        : await resolveSerialNumberTiming(
+            trx,
+            companyId,
+            sequence.serialNumberTiming
+          );
+    if (timing !== at) return { assigned: 0 };
 
     // 4. Location context for the %{location} token (code, falling back to name)
     let locationCode: string | null = null;
@@ -13053,66 +13053,6 @@ export async function assignSerialNumbers(
 
     return { assigned: count };
   });
-}
-
-/**
- * Receipt as first touch: before `complete_job_to_inventory` takes
- * `quantityComplete` units of a serial job, split what it needs off the job's
- * unsplit seed and number every unit it takes. Without this an untouched job
- * would be received as one unnumbered entity holding every unit.
- *
- * Under the `jobRelease` and `production` timings that is the normal case.
- * Under `jobCreation` every unit is numbered at creation, so it numbers
- * nothing, unless the job was created under another timing before the item or
- * company switched back. The timing is not read here for that reason.
- *
- * The SQL `number_serial_units_for_completion` does the work, so this path and
- * the `sync_finish_job_operation` interceptor (an operation marked Done) share
- * one implementation. It is a no-op when every unit taken is numbered, for an
- * item with no serial sequence, and when the job cannot cover the completion.
- * `completeJob` runs it in the completion's own transaction, so a refused
- * completion rolls the numbering back.
- */
-export async function numberSerialUnitsForCompletion(
-  db: Kysely<KyselyDatabase>,
-  args: { jobId: string; quantityComplete: number; companyId: string }
-): Promise<{ numbered: number }> {
-  const result = await sql<{ numbered: number }>`
-    SELECT number_serial_units_for_completion(
-      ${args.jobId},
-      ${args.quantityComplete}::numeric,
-      ${args.companyId}
-    ) AS numbered
-  `.execute(db);
-  return { numbered: Number(result.rows[0]?.numbered ?? 0) };
-}
-
-/**
- * Receive a job's completion through `complete_job_to_inventory`, on the given
- * connection or transaction. It throws when the function refuses; the message
- * says what to fix.
- */
-export async function completeJobToInventory(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    jobId: string;
-    quantityComplete: number;
-    storageUnitId?: string;
-    locationId?: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  await sql`
-    SELECT complete_job_to_inventory(
-      p_job_id := ${args.jobId},
-      p_quantity_complete := ${args.quantityComplete}::numeric,
-      p_storage_unit_id := ${args.storageUnitId ?? null},
-      p_location_id := ${args.locationId ?? null},
-      p_company_id := ${args.companyId},
-      p_user_id := ${args.userId}
-    )
-  `.execute(db);
 }
 
 const sandboxLogger = getLogger("erp", "configuration-rule");

@@ -1559,7 +1559,7 @@
     {"name":"settings_updateDimensionSync","classification":"WRITE","schema":"42c99362fccd","response":"f95fa90d0071","permission":"settings:update","paginates":false},
     {"name":"settings_updateInventorySettings","classification":"WRITE","schema":"a76084d47705","response":"d62a56ef4842","permission":"settings:update","paginates":false},
     {"name":"settings_updateInvoicingSettings","classification":"WRITE","schema":"48fd9aba9ea8","response":"a32ee5ad2099","permission":"settings:update","paginates":false},
-    {"name":"settings_updateItemSerialSequence","classification":"WRITE","schema":"43ad381904e2","response":"3797626bd17e","permission":"settings:update","paginates":false},
+    {"name":"settings_updateItemSerialSequence","classification":"WRITE","schema":"432dc38ca4a4","response":"3797626bd17e","permission":"settings:update","paginates":false},
     {"name":"settings_updateItemsSettings","classification":"WRITE","schema":"b4f7e7addad9","response":"03604adb2677","permission":"settings:update","paginates":false},
     {"name":"settings_updatePlanningSettings","classification":"WRITE","schema":"0c543ed217a3","response":"0b9572e63423","permission":"settings:update","paginates":false},
     {"name":"settings_updatePostingSync","classification":"WRITE","schema":"a545e3ef8da3","response":"f95fa90d0071","permission":"settings:update","paginates":false},

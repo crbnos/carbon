@@ -1247,8 +1247,8 @@ msgstr "Nessun campione richiesto."
 msgid "No scheduled time"
 msgstr "Nessun orario programmato"
 
-msgid "No serial number yet"
-msgstr "Ancora nessun numero di serie"
+msgid "No serial number"
+msgstr "Nessun numero di serie"
 
 msgid "No serial numbers"
 msgstr "Nessun numero di serie"

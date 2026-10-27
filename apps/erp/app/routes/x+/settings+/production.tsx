@@ -48,6 +48,7 @@ import {
 } from "~/modules/settings/settings.models";
 import type { updateProductionSettings } from "~/modules/settings/settings.server";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { useSerialNumberTimingLabels } from "~/modules/settings/ui/SerialNumbers/useSerialNumberTimingLabels";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -576,6 +577,7 @@ export default function ProductionSettingsRoute() {
 // so the value posts with the surrounding ValidatedForm.
 function SerialNumberTimingChoice() {
   const { t } = useLingui();
+  const labels = useSerialNumberTimingLabels();
   const [value, setValue] =
     useControlField<SerialNumberTiming>("serialNumberTiming");
   const current: SerialNumberTiming = value ?? "jobCreation";
@@ -587,19 +589,19 @@ function SerialNumberTimingChoice() {
         options={[
           {
             value: "jobCreation",
-            title: t`When the job is created`,
+            title: labels.jobCreation,
             description: t`Every unit is numbered up front, so serials can be printed before work starts.`,
             icon: <LuTicket />
           },
           {
             value: "jobRelease",
-            title: t`When the job is released`,
+            title: labels.jobRelease,
             description: t`Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none.`,
             icon: <LuSend />
           },
           {
             value: "production",
-            title: t`When the unit is produced`,
+            title: labels.production,
             description: t`A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none.`,
             icon: <LuFactory />
           }
