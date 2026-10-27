@@ -25,7 +25,7 @@ owns that table and its RLS switch, so sync and the generated migration never ru
 `ENABLE ROW LEVEL SECURITY` on it — sync fails instead if the switch is off. To add another
 external table, extend `ExternalTable` in `rules.ts` and `MANIFEST_SCHEMAS` in the check.
 
-The same machinery owns the event system's 45 functions, its 65 table handlers and the event triggers — see
+The same machinery owns the event system's 45 functions, its 71 table handlers and the event triggers — see
 [Event-system functions](#event-system-functions) below.
 
 | File | What it is |
@@ -107,8 +107,9 @@ RLS helpers — `loadHelpers()` reads both directories, and a `Helper` carries i
   `DROP FUNCTION` (sync refuses a file that would create an overload); the new definition
   goes in the file.
 - **Table handlers are managed too**: `../event-system/handlers/<name>.sql` holds every
-  function a table attaches — the 64 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
-  `storage_unit_*`) and the statement handler `apply_item_stock_quantities`. Same format,
+  function a table attaches — the 67 interceptors (`sync_*`, `prevent_*`, `set_shelf_life_*`,
+  `storage_unit_*`) and the 4 statement handlers (`apply_item_stock_quantities`,
+  `queue_kanban_level_checks`, `queue_model_pipeline`, `queue_pmi_inspection_plans`). Same format,
   same sync, same shipping; checked from `20261004194527` (`ATTACHMENTS_SINCE`). A new
   interceptor is a new file there, never a function in a migration.
 - **Not managed**: `util.send_inngest_event` and `public.set_inngest_event_url`

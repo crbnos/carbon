@@ -72,10 +72,10 @@ import {
   convertDateStringToIsoString,
   formatDate,
   formatDurationMilliseconds,
-  MODEL_RAW_KEEP_MAX_BYTES,
   round
 } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
+import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
@@ -144,7 +144,7 @@ import type {
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 import { useOrigin } from "~/utils/origin";
-import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
 import { MesAppBar } from "../MesAppBar";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
@@ -2251,38 +2251,7 @@ export const JobOperation = ({
                 optimizing={backgroundOptimizing}
                 optimizeFailed={optimizeFailed}
                 sourceMissing={artifacts?.sourceAvailable === false}
-                optimizedUrl={
-                  artifacts?.optimizedModelPath
-                    ? // ?v= busts the immutable preview cache on the STABLE
-                      // optimized.glb path when a re-optimise lands.
-                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
-                        artifacts.optimizedAt
-                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
-                          : ""
-                      }`
-                    : null
-                }
-                glbUrl={
-                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
-                }
-                pmiUrl={
-                  // Unique per optimise run, so no cache-buster is needed.
-                  artifacts?.pmiPath ? getPrivateUrl(artifacts.pmiPath) : null
-                }
-                lodUrl={
-                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
-                }
-                rawUrl={
-                  artifacts?.rawPath &&
-                  (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES
-                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
-                    : null
-                }
-                thumbnailUrl={
-                  artifacts?.thumbnailPath
-                    ? getPrivateUrl(artifacts.thumbnailPath)
-                    : null
-                }
+                {...modelPreviewUrls(artifacts)}
                 mode={mode}
                 className="rounded-none"
                 onRetry={canRetry ? onModelRetry : undefined}

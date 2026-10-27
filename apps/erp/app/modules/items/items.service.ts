@@ -26,6 +26,7 @@ import {
   withTransaction
 } from "@carbon/database/client";
 import { toJson } from "@carbon/database/json";
+import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
 import { insertRows, many, maybeSingle } from "@carbon/database/rows";
 import {
   hasPendingApproval,
@@ -685,6 +686,9 @@ async function deleteItemsWithPriceBreaks(
         .where("companyId", "=", companyId)
     )
     .execute();
+
+  // Plans made from the items' model PMI must not block the delete.
+  await deleteUnusedPmiInspectionPlans(trx, { companyId, itemIds });
 
   await trx
     .deleteFrom("item")

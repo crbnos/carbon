@@ -23,6 +23,7 @@ export { modelCompactFunction } from "./model-compact";
 export { modelOptimizeFunction } from "./model-optimize";
 export { modelThumbnailFunction } from "./model-thumbnail";
 export { onboardFunction } from "./onboard";
+export { pmiInspectionPlanFunction } from "./pmi-inspection-plan";
 export { postTransactionFunction } from "./post-transaction";
 export { printJobFunction } from "./print-job";
 export { printJobDeliverFunction } from "./print-job-deliver";

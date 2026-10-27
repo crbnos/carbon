@@ -107,6 +107,18 @@ Balloons anchor to a region of a specific PDF page (normalized 0–1 coordinates
 
 Inspection plans live under **Quality → Inspection → Inspection Plans**. The editor has no Save button: each change saves itself a moment after you stop editing, and the toolbar shows **Saving…**, **Saved**, or **Could not save**.
 
+### Plans from a model's PMI
+
+A STEP AP242 model can carry its own dimensions and geometric tolerances (PMI, the model-based definition). When you upload such a model to a part, Carbon reads the PMI and makes an inspection plan for that part on its own. The plan holds the 3D model instead of a PDF:
+
+- Each dimension and each geometric tolerance becomes one characteristic, numbered in the model's order. Datums and notes are left out, because they have nothing to measure.
+- A ± dimension keeps its nominal and tolerances. A limit dimension, or one whose tolerances are both above or both below the nominal, is centred on its band, so a reading passes exactly between the drawing's limits.
+- A geometric tolerance is measured as a deviation: nominal 0, with the tolerance zone as the upper limit.
+- A dimension with no numeric tolerance (a fit class only, a min or max) is recorded Pass or Fail.
+- Lengths are in the model's own unit (mm or in); angles are in degrees.
+
+The plan is made once for each part and model. Uploading the same model again does not change it, so your edits are kept; a new model on the part makes a new plan. Assign it to receipts or an inspection operation like any other plan. While you record measurements, the model takes the drawing's place: picking a characteristic highlights its annotation on the model and turns the view to it, and picking an annotation on the model picks its characteristic.
+
 ### Gauges
 
 A characteristic can name the [gauge](/docs/reference/calibration) type it must be measured with, in the plan editor's **Gauge Type** column. Leave it empty to allow any gauge.

@@ -142,6 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const doc = document.data as {
     name?: string | null;
     content?: { pdfUrl?: string | null };
+    model?: { modelUploadId: string; modelPath: string | null } | null;
   } | null;
 
   return data({
@@ -170,6 +171,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })),
     documentName: doc?.name ?? null,
     pdfUrl: doc?.content?.pdfUrl ?? null,
+    model: doc?.model ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
     issueTypes: (issueTypes.data ?? []) as IssueTypeListItem[],
     issues: (issues.data ?? [])
@@ -201,6 +203,7 @@ export default function InspectionExecutionRoute() {
       balloons={loaderData.balloons}
       documentName={loaderData.documentName}
       pdfUrl={loaderData.pdfUrl}
+      model={loaderData.model}
       lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}
       issueTypes={loaderData.issueTypes as IssueTypeListItem[]}
       issues={loaderData.issues}

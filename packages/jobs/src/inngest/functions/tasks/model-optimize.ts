@@ -268,6 +268,15 @@ export const modelOptimizeFunction = inngest.createFunction(
       }
     });
 
+    if (outputs.pmi) {
+      // The model carries PMI: every item on it gets an inspection plan made
+      // from it (once per item and model — a re-optimise makes none).
+      await step.sendEvent("pmi-inspection-plan", {
+        name: "carbon/pmi-inspection-plan",
+        data: { companyId, modelUploadId }
+      });
+    }
+
     if (compact) {
       // The preview now exists, which is what lets an oversized raw be pruned.
       const settled = {
