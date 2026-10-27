@@ -9285,8 +9285,14 @@ msgstr "输入此移动应该的数量。差异的相反移动在原始时期内
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "输入该资产的制造成本。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
 
+msgid "Entered"
+msgstr ""
+
 msgid "Entered At Receipt"
 msgstr "在收货时输入"
+
+msgid "Entered By"
+msgstr ""
 
 msgid "Enterprise"
 msgstr "企业版"
@@ -21891,6 +21897,12 @@ msgstr "州/省"
 
 msgid "State province"
 msgstr "州/省"
+
+msgid "Statement Balance"
+msgstr ""
+
+msgid "Statement Balances"
+msgstr ""
 
 msgid "Station"
 msgstr "工作站"

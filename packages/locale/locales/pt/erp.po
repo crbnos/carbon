@@ -9285,8 +9285,14 @@ msgstr "Insira a quantidade que esse movimento deveria ter sido. Um movimento op
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Digite o custo para fabricar. O valor é registrado no ativo da conta de onde foi gasto: Lucros acumulados para um ano anterior, ou despesa de mão de obra ou de materiais deste ano."
 
+msgid "Entered"
+msgstr ""
+
 msgid "Entered At Receipt"
 msgstr "Inserido no Recebimento"
+
+msgid "Entered By"
+msgstr ""
 
 msgid "Enterprise"
 msgstr "Enterprise"
@@ -21891,6 +21897,12 @@ msgstr "Estado / Província"
 
 msgid "State province"
 msgstr "Estado/Província"
+
+msgid "Statement Balance"
+msgstr ""
+
+msgid "Statement Balances"
+msgstr ""
 
 msgid "Station"
 msgstr "Estação"

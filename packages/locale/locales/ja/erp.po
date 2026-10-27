@@ -9285,8 +9285,14 @@ msgstr "この移動がどの数量であるべきかを入力します。差分
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "製造にかかった原価を入力してください。その価値は、支出元の勘定から資産に計上されます。前年度の利益剰余金、あるいは当年度の労務費または材料費から計上されます。"
 
+msgid "Entered"
+msgstr ""
+
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
+
+msgid "Entered By"
+msgstr ""
 
 msgid "Enterprise"
 msgstr "エンタープライズ"
@@ -21891,6 +21897,12 @@ msgstr "都道府県"
 
 msgid "State province"
 msgstr "都道府県"
+
+msgid "Statement Balance"
+msgstr ""
+
+msgid "Statement Balances"
+msgstr ""
 
 msgid "Station"
 msgstr "ステーション"

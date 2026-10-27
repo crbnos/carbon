@@ -9285,8 +9285,14 @@ msgstr "Wprowadź ilość, która powinna być dla tego ruchu. Przeciwny ruch dl
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Wpisz, ile kosztowało to wytworzenie. Wartość jest księgowana na składnik majątku z konta, z którego została wydatkowana: Zyski zatrzymane za wcześniejszy rok, lub wydatek na robocizę lub materiały za ten rok."
 
+msgid "Entered"
+msgstr ""
+
 msgid "Entered At Receipt"
 msgstr "Wprowadzono przy odbiorze"
+
+msgid "Entered By"
+msgstr ""
 
 msgid "Enterprise"
 msgstr "Enterprise"
@@ -21891,6 +21897,12 @@ msgstr "Stan / Prowincja"
 
 msgid "State province"
 msgstr "Stan/Województwo"
+
+msgid "Statement Balance"
+msgstr ""
+
+msgid "Statement Balances"
+msgstr ""
 
 msgid "Station"
 msgstr "Stacja"

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import CurrencyRevaluationBalancesGrid from "./CurrencyRevaluationBalancesGrid";
 import CurrencyRevaluationLinesTable from "./CurrencyRevaluationLinesTable";
 import CurrencyRevaluationRatesGrid from "./CurrencyRevaluationRatesGrid";
 import CurrencyRevaluationRunDocuments from "./CurrencyRevaluationRunDocuments";
@@ -10,6 +11,7 @@ import CurrencyRevaluationRunStatus from "./CurrencyRevaluationRunStatus";
 import CurrencyRevaluationRunTable from "./CurrencyRevaluationRunTable";
 
 export {
+  CurrencyRevaluationBalancesGrid,
   CurrencyRevaluationLinesTable,
   CurrencyRevaluationRatesGrid,
   CurrencyRevaluationRunDocuments,

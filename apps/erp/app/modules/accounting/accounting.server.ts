@@ -612,6 +612,40 @@ export const updateCurrencyRevaluationRate = defineServiceFn({
 });
 
 /**
+ * Enter the statement balance of an account balance line.
+ *
+ * @remarks
+ * On a Draft currency revaluation run, sets the period-end balance of a
+ * foreign-currency account (in the account's currency) from its statement,
+ * records who entered it, and revalues the line. A run cannot post while an
+ * account balance line has no statement balance.
+ *
+ * @mcp
+ */
+export const updateCurrencyRevaluationBalance = defineServiceFn({
+  input: z.object({
+    runId: z.string(),
+    lineId: z.string(),
+    openAmount: z.number()
+  }),
+  permission: { update: "accounting" },
+  async run(ctx, { runId, lineId, openAmount }) {
+    try {
+      await service.updateCurrencyRevaluationBalance(ctx.asSystem.pg, {
+        runId,
+        lineId,
+        openAmount,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+      return { id: runId };
+    } catch (err) {
+      return service.refusal(ctx, err, "Failed to save the statement balance");
+    }
+  }
+});
+
+/**
  * Post a Draft currency revaluation run.
  *
  * @remarks

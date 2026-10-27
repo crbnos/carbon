@@ -9285,8 +9285,14 @@ msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orij
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Üretim maliyetini girin. Değer, harcanan hesaptan varlığa kaydedilir: önceki yıl için Dağıtılmamış kârlar veya bu yıl'ın İşçilik veya malzeme gideri."
 
+msgid "Entered"
+msgstr ""
+
 msgid "Entered At Receipt"
 msgstr "Alındığında Girildi"
+
+msgid "Entered By"
+msgstr ""
 
 msgid "Enterprise"
 msgstr "Enterprise"
@@ -21891,6 +21897,12 @@ msgstr "Eyalet / İl"
 
 msgid "State province"
 msgstr "İl/Bölge"
+
+msgid "Statement Balance"
+msgstr ""
+
+msgid "Statement Balances"
+msgstr ""
 
 msgid "Station"
 msgstr "İstasyon"

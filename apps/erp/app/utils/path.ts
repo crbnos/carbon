@@ -678,6 +678,8 @@ export const path = {
     creditMemos: `${x}/invoicing/credit-memos`,
     currencyRevaluationRun: (id: string) =>
       generatePath(`${x}/currency-revaluation-run/${id}`),
+    currencyRevaluationRunBalance: (id: string) =>
+      generatePath(`${x}/currency-revaluation-run/${id}/balance`),
     currencyRevaluationRunRate: (id: string) =>
       generatePath(`${x}/currency-revaluation-run/${id}/rate`),
     currencyRevaluationRuns: `${x}/accounting/currency-revaluation-runs`,

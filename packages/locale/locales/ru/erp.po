@@ -9285,8 +9285,14 @@ msgstr "Введите количество, которое должно был�
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "Введите себестоимость производства. Стоимость проводится на актив со счета, с которого она была потрачена: Нераспределенная прибыль за предыдущий год или расходы труда и материалов текущего года."
 
+msgid "Entered"
+msgstr ""
+
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
+
+msgid "Entered By"
+msgstr ""
 
 msgid "Enterprise"
 msgstr "Enterprise"
@@ -21891,6 +21897,12 @@ msgstr "Штат / Провинция"
 
 msgid "State province"
 msgstr "Штат/провинция"
+
+msgid "Statement Balance"
+msgstr ""
+
+msgid "Statement Balances"
+msgstr ""
 
 msgid "Station"
 msgstr "Станция"

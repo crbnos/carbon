@@ -12213,7 +12213,78 @@ export async function readRevaluationExposures(
     }
   }
 
+  // Balance accounts held in a foreign currency (bank, cash, loans). Their
+  // foreign balance comes from the statement: the accountant enters it on
+  // the run, so openAmount starts empty.
+  const balanceAccounts = await db
+    .selectFrom("account")
+    .select(["id", "number", "name", "class", "currencyCode"])
+    .where("companyGroupId", "=", company.companyGroupId!)
+    .where("isGroup", "=", false)
+    .where("active", "=", true)
+    .where("currencyCode", "is not", null)
+    .where("currencyCode", "<>", base)
+    .where("class", "in", ["Asset", "Liability"])
+    .orderBy("number")
+    .execute();
+  if (balanceAccounts.length > 0) {
+    const balances = await sql<{ accountId: string; balanceAtDate: number }>`
+      SELECT "accountId", "balanceAtDate"
+      FROM "accountTreeBalancesByCompany"(
+        ${company.companyGroupId}, ${companyId}, ${periodEnd}::date, ${periodEnd}::date
+      )
+      WHERE "accountId" = ANY(${balanceAccounts.map((a) => a.id)}::text[])
+    `.execute(db);
+    const balanceOf = new Map(
+      balances.rows.map((row) => [row.accountId, Number(row.balanceAtDate)])
+    );
+    for (const account of balanceAccounts) {
+      exposures.push({
+        exposureType: "Account Balance",
+        documentType: null,
+        documentId: null,
+        documentNumber: [account.number, account.name]
+          .filter(Boolean)
+          .join(" "),
+        accountId: account.id,
+        accountClass: account.class === "Liability" ? "Liability" : "Asset",
+        currencyCode: account.currencyCode!,
+        openAmount: null,
+        bookedBaseAmount: balanceOf.get(account.id) ?? 0
+      });
+    }
+  }
+
   return { exposures, notRevalued };
+}
+
+/** Carry the statement balances already entered on a run's Account Balance
+ *  lines onto freshly read exposures, matched by account. */
+function withEnteredBalances(
+  exposures: RevaluationExposure[],
+  stored: {
+    exposureType: string;
+    accountId: string;
+    openAmount: number | null;
+  }[]
+): RevaluationExposure[] {
+  const entered = new Map(
+    stored
+      .filter((line) => line.exposureType === "Account Balance")
+      .map((line) => [line.accountId, line.openAmount])
+  );
+  return exposures.map((exposure) =>
+    exposure.exposureType === "Account Balance" &&
+    entered.has(exposure.accountId)
+      ? {
+          ...exposure,
+          openAmount:
+            entered.get(exposure.accountId) == null
+              ? null
+              : Number(entered.get(exposure.accountId))
+        }
+      : exposure
+  );
 }
 
 /**
@@ -12359,9 +12430,20 @@ function revalueAll(
 
 function revaluationLineRow(
   line: RevaluedLine,
-  args: { runId: string; companyId: string; userId: string }
+  args: {
+    runId: string;
+    companyId: string;
+    userId: string;
+    entered?: Map<string, { by: string | null; at: string | null }>;
+  }
 ) {
+  const entered =
+    line.exposureType === "Account Balance"
+      ? args.entered?.get(line.accountId)
+      : undefined;
   return {
+    openAmountEnteredBy: entered?.by ?? null,
+    openAmountEnteredAt: entered?.at ?? null,
     companyId: args.companyId,
     runId: args.runId,
     exposureType: line.exposureType,
@@ -12579,7 +12661,6 @@ export async function recalculateCurrencyRevaluationRun(
       for (const [code, rate] of added) rates.set(code, rate);
     }
 
-    const lines = revalueAll(exposures, rates);
     const previous = await trx
       .selectFrom("currencyRevaluationLine")
       .select([
@@ -12589,11 +12670,24 @@ export async function recalculateCurrencyRevaluationRun(
         "currencyCode",
         "openAmount",
         "bookedBaseAmount",
-        "differenceAmount"
+        "differenceAmount",
+        "openAmountEnteredBy",
+        sql<string | null>`"openAmountEnteredAt"::text`.as(
+          "openAmountEnteredAt"
+        )
       ])
       .where("runId", "=", runId)
       .where("companyId", "=", companyId)
       .execute();
+    const lines = revalueAll(withEnteredBalances(exposures, previous), rates);
+    const entered = new Map(
+      previous
+        .filter((line) => line.exposureType === "Account Balance")
+        .map((line) => [
+          line.accountId,
+          { by: line.openAmountEnteredBy, at: line.openAmountEnteredAt }
+        ])
+    );
     const changed =
       revaluationLinesSignature(previous) !== revaluationLinesSignature(lines);
 
@@ -12608,7 +12702,7 @@ export async function recalculateCurrencyRevaluationRun(
           .insertInto("currencyRevaluationLine")
           .values(
             lines.map((line) =>
-              revaluationLineRow(line, { runId, companyId, userId })
+              revaluationLineRow(line, { runId, companyId, userId, entered })
             )
           )
           .execute();
@@ -12996,7 +13090,9 @@ export async function isCurrencyRevaluationRunCurrent(
   }
   return (
     revaluationLinesSignature(stored) ===
-    revaluationLinesSignature(revalueAll(exposures, rates))
+    revaluationLinesSignature(
+      revalueAll(withEnteredBalances(exposures, stored), rates)
+    )
   );
 }
 
@@ -13157,6 +13253,66 @@ export async function previewCurrencyRevaluation(
     ),
     error: null
   };
+}
+
+/** Enter the statement balance (in the account's currency) of one Account
+ *  Balance line on a Draft run, and revalue the line at the run's rate. */
+export async function updateCurrencyRevaluationBalance(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    lineId: string;
+    openAmount: number;
+    companyId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { runId, lineId, openAmount, companyId, userId } = args;
+  if (!Number.isFinite(openAmount)) {
+    throw new Error("The statement balance must be a number");
+  }
+  await withTransaction(db, async (trx) => {
+    await lockDraftRevaluationRun(trx, { runId, companyId });
+    const line = await trx
+      .selectFrom("currencyRevaluationLine")
+      .select(["exposureType", "currencyCode"])
+      .where("id", "=", lineId)
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!line) throw new Error("Revaluation line not found");
+    if (line.exposureType !== "Account Balance") {
+      throw new Error("Only an account balance line takes a statement balance");
+    }
+    const rate = await trx
+      .selectFrom("currencyRevaluationRate")
+      .select("rate")
+      .where("runId", "=", runId)
+      .where("companyId", "=", companyId)
+      .where("currencyCode", "=", line.currencyCode)
+      .executeTakeFirstOrThrow();
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("currencyRevaluationLine")
+      .set({
+        openAmount,
+        openAmountEnteredBy: userId,
+        openAmountEnteredAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+    await revalueStoredLines(trx, {
+      runId,
+      companyId,
+      userId,
+      currencyCode: line.currencyCode,
+      rate: Number(rate.rate),
+      lineIds: [lineId]
+    });
+  });
 }
 
 /** Delete a Draft run; its rates and lines cascade. */

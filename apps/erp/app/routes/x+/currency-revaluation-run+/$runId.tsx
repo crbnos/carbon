@@ -33,6 +33,7 @@ import {
   listRevaluationNotRevalued
 } from "~/modules/accounting/accounting.service";
 import {
+  CurrencyRevaluationBalancesGrid,
   CurrencyRevaluationLinesTable,
   CurrencyRevaluationRatesGrid,
   CurrencyRevaluationRunDocuments,
@@ -207,6 +208,19 @@ export default function CurrencyRevaluationRunDetailRoute() {
           <CurrencyRevaluationRatesGrid run={run} rates={rates} />
         </CardContent>
       </Card>
+
+      {lines.some((line) => line.exposureType === "Account Balance") && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Statement Balances</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CurrencyRevaluationBalancesGrid run={run} lines={lines} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
