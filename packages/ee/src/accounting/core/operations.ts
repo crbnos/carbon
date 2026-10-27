@@ -3,7 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import { isUniqueViolation } from "@carbon/utils";
+import { isUniqueViolation, quoteFilterValue } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SYNC_OPERATION_ALLOWED_TRANSITIONS } from "./models";
 import type {
@@ -789,10 +789,16 @@ export async function transitionOperation(
   return { data: updated.data as SyncOperation, error: null };
 }
 
-// A value quoted for a PostgREST `or=(...)` filter: the escape of
-// `apps/erp/app/utils/cursor.ts` (`quoteFilterValue`), which ee cannot import.
-function quoteFilterValue(value: string) {
-  return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+/**
+ * The rows after a cursor of the sync operation lists: newest first, `id`
+ * ascending breaking `createdAt` ties, matching the index. Quoted: a
+ * timestamp carries `.`, `:` and `+`, all reserved in an or-filter, and the
+ * cursor comes from the URL.
+ */
+function afterSyncOperation(after: { createdAt: string; id: string }) {
+  const createdAt = quoteFilterValue(after.createdAt);
+  const id = quoteFilterValue(after.id);
+  return `createdAt.lt.${createdAt},and(createdAt.eq.${createdAt},id.gt.${id})`;
 }
 
 /**
@@ -842,16 +848,7 @@ export async function getSyncOperations(
     query = query.eq("entityType", args.entityType);
   }
 
-  if (args.after) {
-    // Quoted: a timestamp carries `.`, `:` and `+`, all reserved in an
-    // or-filter. The cursor comes from the URL, so a `"` or `\` in it is
-    // escaped too.
-    const createdAt = quoteFilterValue(args.after.createdAt);
-    const id = quoteFilterValue(args.after.id);
-    query = query.or(
-      `createdAt.lt.${createdAt},and(createdAt.eq.${createdAt},id.gt.${id})`
-    );
-  }
+  if (args.after) query = query.or(afterSyncOperation(args.after));
 
   // `id` ascending breaks createdAt ties, so every row has one place.
   const result = await query
@@ -925,14 +922,7 @@ export async function getSyncOperationsExportPage(
       : query.eq("status", args.status);
   }
 
-  if (args.after) {
-    // Quoted: a timestamp carries `.`, `:` and `+`, all reserved in an
-    // or-filter. `id` ascending breaks createdAt ties, matching the index.
-    const { createdAt, id } = args.after;
-    query = query.or(
-      `createdAt.lt."${createdAt}",and(createdAt.eq."${createdAt}",id.gt."${id}")`
-    );
-  }
+  if (args.after) query = query.or(afterSyncOperation(args.after));
 
   const result = await query
     .order("createdAt", { ascending: false })

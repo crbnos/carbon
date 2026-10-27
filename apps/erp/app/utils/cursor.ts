@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
+import { quoteFilterValue } from "@carbon/utils";
 
 /**
  * Cursor (keyset) paging for list loaders.
@@ -167,25 +168,12 @@ function isCursor(value: unknown): value is Cursor {
   );
 }
 
-// A value inside a PostgREST logic tree (`or=(...)`): quoting keeps `,`, `(`,
-// `)`, `.` and `:` from changing the filter's shape.
-// `packages/ee/src/accounting/core/operations.ts` repeats this escape (ee
-// cannot import the app).
-function escapeQuoted(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-
-/** A value quoted for a PostgREST `or=(...)` filter. */
-export function quoteFilterValue(value: string) {
-  return `"${escapeQuoted(value)}"`;
-}
-
+// An array value is a Postgres array literal, itself quoted.
 function quote(value: Exclude<CursorValue, null>) {
   if (Array.isArray(value)) {
-    const literal = `{${value.map((v) => `"${escapeQuoted(v)}"`).join(",")}}`;
-    return `"${escapeQuoted(literal)}"`;
+    return quoteFilterValue(`{${value.map(quoteFilterValue).join(",")}}`);
   }
-  return `"${escapeQuoted(String(value))}"`;
+  return quoteFilterValue(String(value));
 }
 
 function equalTerm(column: string, value: CursorValue) {
