@@ -4913,7 +4913,7 @@ export const insertSupplierContact = defineServiceFn({
     return unwrap(
       ctx,
       await service.insertSupplierContact(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );

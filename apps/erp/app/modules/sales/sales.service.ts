@@ -14,7 +14,12 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { toBaseAmount } from "@carbon/database/accounting-currency";
-import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
 import {
   applyContractMovement,
   EMPTY_POSITION
@@ -155,7 +160,7 @@ import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
@@ -2131,7 +2136,7 @@ export async function getSalesRFQLines(
 }
 
 export async function insertCustomerContact(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   customerContact: {
     customerId: string;
     companyId: string;
@@ -2140,39 +2145,69 @@ export async function insertCustomerContact(
     customFields?: Json;
   }
 ) {
-  const insertContact = await client
-    .from("contact")
-    .insert([
-      {
-        ...customerContact.contact,
-        isCustomer: true,
-        companyId: customerContact.companyId
+  const { customerId, companyId, customerLocationId, contact } =
+    customerContact;
+  try {
+    // One transaction: a contact with no customer link is invisible in the app.
+    const id = await withTransaction(db, async (trx) => {
+      const owner = await trx
+        .selectFrom("customer")
+        .select("id")
+        .where("id", "=", customerId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return "Customer not found";
+      if (customerLocationId) {
+        const location = await trx
+          .selectFrom("customerLocation")
+          .select("id")
+          .where("id", "=", customerLocationId)
+          .where("customerId", "=", customerId)
+          .executeTakeFirst();
+        if (!location) return "Location not found";
       }
-    ])
-    .select("id")
-    .single();
-  if (insertContact.error) {
-    return insertContact;
-  }
 
-  const contactId = insertContact.data?.id;
-  if (!contactId) {
-    return { data: null, error: new Error("Contact ID not found") };
-  }
+      const inserted = await trx
+        .insertInto("contact")
+        .values({
+          companyId,
+          isCustomer: true,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          title: contact.title,
+          email: contact.email,
+          mobilePhone: contact.mobilePhone,
+          homePhone: contact.homePhone,
+          workPhone: contact.workPhone,
+          notes: contact.notes
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
 
-  return client
-    .from("customerContact")
-    .insert([
-      {
-        customerId: customerContact.customerId,
-        contactId,
-        customerLocationId: customerContact.customerLocationId,
-        companyId: customerContact.companyId,
-        customFields: customerContact.customFields
-      }
-    ])
-    .select("id")
-    .single();
+      const link = await trx
+        .insertInto("customerContact")
+        .values({
+          customerId,
+          contactId: inserted.id,
+          customerLocationId,
+          companyId,
+          customFields: toJson(customerContact.customFields)
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return { id: link.id };
+    });
+    return typeof id === "string"
+      ? { data: null, error: ruleError(id) }
+      : { data: id, error: null };
+  } catch (error) {
+    logger.error("Failed to create customer contact", {
+      companyId,
+      customerId,
+      error
+    });
+    return { data: null, error: error as Error };
+  }
 }
 
 export async function insertCustomerLocation(
