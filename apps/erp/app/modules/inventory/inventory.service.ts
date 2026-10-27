@@ -23520,10 +23520,12 @@ export async function issueMaterial(
 
         // First-touch numbering (serialNumberTiming = 'production'). A no-op
         // for a unit already numbered, which is every unit under the default
-        // timing.
+        // timing. A Consumed entity is not cut to one unit below, so it is
+        // numbered only when it already holds one.
         await sequence.assignSerialNumberIfMissing(trx, {
           trackedEntityId,
-          companyId
+          companyId,
+          onlyIfSingleUnit: trackedEntity.status === "Consumed"
         });
 
         if (trackedEntity.status !== "Consumed") {
