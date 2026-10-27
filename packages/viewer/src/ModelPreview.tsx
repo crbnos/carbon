@@ -388,6 +388,7 @@ export function ModelPreview({
                     visibleIds={pmiVisibleIds}
                     selectedId={pmiSelectedId}
                     onSelect={selectPmiItem}
+                    onUnitChange={changeUnit}
                   />
                 )}
               </div>
@@ -644,7 +645,8 @@ function PmiPanel({
   onViewChange,
   visibleIds,
   selectedId,
-  onSelect
+  onSelect,
+  onUnitChange
 }: {
   doc: PmiDocument;
   unit: PmiDisplayUnit;
@@ -655,6 +657,7 @@ function PmiPanel({
   visibleIds: Set<string> | undefined;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onUnitChange: (unit: UnitSystem) => void;
 }) {
   const [open, setOpen] = useState(false);
   const groups = useMemo(
@@ -703,6 +706,12 @@ function PmiPanel({
 
       {open && (
         <>
+          <div className="mt-2 flex justify-end">
+            <UnitToggle
+              unit={unit === "mm" ? "metric" : "imperial"}
+              onChange={onUnitChange}
+            />
+          </div>
           {doc.views.length > 0 && (
             <select
               aria-label="Saved view"
@@ -808,6 +817,8 @@ function usePmiDocument(url: string | null): PmiDocument | null {
         if (!controller.signal.aborted) setDoc(parsePmiDocument(json));
       })
       .catch(() => {
+        // The preview works without PMI: a failed fetch just shows no panel
+        // (the request itself is in the network log).
         if (!controller.signal.aborted) setDoc(null);
       });
     return () => controller.abort();

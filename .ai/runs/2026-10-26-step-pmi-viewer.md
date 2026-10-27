@@ -22,5 +22,7 @@
 - STE-80 pass done on the spec, the plan and this record after the last edits.
 - setup: OCCT V8_0_0_p1 source cloned to `.context/occt-src` for API reference. `STEPCAFControl_Reader` defaults `myGDTMode` and `myViewMode` to true (`STEPCAFControl_Reader.cxx:286-288`), so today's convert already loads the PMI into the XCAF document.
 
+- self-review (second, /self-review): 1 must-fix (picked annotation lying flat read rotated: focus now uses the plane's own up) and docs drift (jobs AGENTS, backup rule, viewer AGENTS, swagger). Fixed; a PMI-panel unit toggle added. Checked in the running ERP on NIST CTC 05: picked frames read upright. The local stack now runs the assembler in Docker (`carbon-assembler-pmi`, forced in `.env`), since this Mac has no native OCCT.
+
 ## Outcome
-- (open)
+- PR: https://github.com/crbnos/carbon/pull/2048 (commit 701ca4df88). Not merged.

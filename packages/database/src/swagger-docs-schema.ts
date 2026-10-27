@@ -70663,6 +70663,9 @@ export default {
             $ref: "#/parameters/rowFilter.modelUpload.originalPath"
           },
           {
+            $ref: "#/parameters/rowFilter.modelUpload.pmiPath"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -70794,6 +70797,9 @@ export default {
             $ref: "#/parameters/rowFilter.modelUpload.originalPath"
           },
           {
+            $ref: "#/parameters/rowFilter.modelUpload.pmiPath"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -70877,6 +70883,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.modelUpload.originalPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.modelUpload.pmiPath"
           },
           {
             $ref: "#/parameters/body.modelUpload"
@@ -151640,6 +151649,10 @@ export default {
         originalPath: {
           format: "text",
           type: "string"
+        },
+        pmiPath: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -205717,6 +205730,12 @@ export default {
     },
     "rowFilter.modelUpload.originalPath": {
       name: "originalPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.modelUpload.pmiPath": {
+      name: "pmiPath",
       required: false,
       in: "query",
       type: "string"

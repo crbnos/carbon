@@ -38,7 +38,7 @@
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/viewer test        # vitest — camera, clip, display, fallback, graph, keyframes, orientation, path-editing, plan, quat, step-flags, subassembly, timing, validate-motion, visibility (shared helpers: src/test-utils.ts)
+pnpm --filter @carbon/viewer test        # vitest — camera, clip, display, fallback, graph, keyframes, orientation, path-editing, plan, pmi, quat, step-flags, subassembly, timing, validate-motion, visibility (shared helpers: src/test-utils.ts)
 pnpm --filter @carbon/viewer typecheck   # tsc --noEmit
 ```
 

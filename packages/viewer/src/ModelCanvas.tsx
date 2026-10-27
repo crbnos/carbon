@@ -395,17 +395,27 @@ function ModelScene({
     if (size < minSize) box.expandByScalar((minSize - size) / 2);
 
     let direction: Vector3 | undefined;
+    let up = MODEL_UP;
     if (item.plane) {
-      direction = new Vector3(...item.plane.normal);
-      if (direction.lengthSq() === 0) direction = undefined;
-      else {
+      const normal = new Vector3(...item.plane.normal);
+      if (normal.lengthSq() > 0) {
         // Face the plane from whichever side the camera is on now.
         const current = camera.position.clone().sub(controls.target);
-        if (direction.dot(current) < 0) direction.negate();
+        direction = normal.dot(current) < 0 ? normal.clone().negate() : normal;
+        // Stand the annotation upright: the plane's own Y axis (normal × X)
+        // is up, so its text reads left to right. Z-up would leave a plane
+        // lying flat (normal ±Z) at whatever turn the camera happens to take.
+        const planeUp = new Vector3()
+          .crossVectors(
+            new Vector3(...item.plane.normal),
+            new Vector3(...item.plane.xDirection)
+          )
+          .normalize();
+        if (planeUp.lengthSq() > 0) up = planeUp;
       }
     }
     // Wider than a model fit: the referenced faces sit at the box's edge.
-    frameBox(box, { direction, up: MODEL_UP, margin: PMI_FOCUS_MARGIN });
+    frameBox(box, { direction, up, margin: PMI_FOCUS_MARGIN });
   }, [focusRequest, pmi, controls, scene, camera, frameBox]);
 
   const allPmiIds = useMemo(

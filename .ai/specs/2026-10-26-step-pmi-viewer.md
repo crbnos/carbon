@@ -231,6 +231,8 @@ These facts came out of the build. They change details, not the design.
 | The local stack could not start (the shared Redis pool was full) | Types came from a throwaway database restored from a sibling worktree's schema with the same 1,238 migrations. Without the migration the generated files matched the committed ones byte for byte. With it, the diff was the 3 `pmiPath` lines. `generate:swagger` needs PostgREST and did not run |
 | The self-review found that a stable `pmi.json` path let two runs of one model delete each other's file | The path is unique per run (`pmi-{run}.json`), as the thumbnail's is |
 | The self-review found that one Latin-1 name made `rust::String` throw and lost the file's PMI | `read_pmi` builds strings with `rust::String::lossy` |
+| A picked annotation lying flat (normal ±Z) read at an arbitrary turn, because the focus kept +Z as the camera's up | The focus uses the annotation plane's own Y axis (normal × X) as up, so the text reads left to right |
+| Switching PMI units meant opening the Measurements panel | The PMI panel has its own mm / in toggle. It shares one unit with Measurements |
 | The browser test ran on a throwaway Vite page that mounts the real `ModelPreview` | The page used the optimized GLB and `pmi.json` that `run_ingest` wrote for NIST CTC 01 and CTC 05. The PMI lines up with the model, picks highlight, and saved views filter and turn the camera |
 
 ## Changelog
