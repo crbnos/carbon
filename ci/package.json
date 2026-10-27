@@ -13,7 +13,7 @@
     "ci:migrations": "tsx src/migrations.ts",
     "ci:deploy": "tsx src/deploy.ts",
     "ci:assembler": "tsx src/assembler.ts",
-    "ci:jobs": "tsx src/jobs.ts",
+    "ci:post-deploy": "tsx src/post-deploy.ts",
     "test": "tsx --test src/*.test.ts"
   },
   "devDependencies": {

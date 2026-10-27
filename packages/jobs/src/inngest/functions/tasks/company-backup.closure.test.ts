@@ -835,7 +835,8 @@ describe("cross-company restore invariants", () => {
     "originalPath",
     "optimizedModelPath",
     "glbPath",
-    "graphPath"
+    "graphPath",
+    "pmiPath"
   ] as const satisfies readonly ModelUploadPathColumn[];
   // Fails to compile when a new `*Path` column exists that the list omits.
   type _EveryPathColumnListed =

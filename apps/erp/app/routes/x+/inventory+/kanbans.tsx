@@ -13,17 +13,21 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getKanbanProjectedQuantities,
-  getKanbans
+  getKanbans,
+  KANBANS_PAGING
 } from "~/modules/inventory/inventory.service";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
 import { getLocationsList } from "~/modules/resources/resources.service";
 import { getKanbanOutputSetting } from "~/modules/settings/settings.service";
 import { getUserDefaults } from "~/modules/users/users.service";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 const logger = getLogger("erp", "kanbans");
+
 export const handle: Handle = {
   breadcrumb: msg`Kanbans`,
   to: path.to.kanbans,
@@ -40,7 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   let locationId = searchParams.get("location");
@@ -78,7 +82,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getKanbans(client, locationId, companyId, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters
     }),
@@ -86,15 +90,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (kanbans.error) {
+    if (cursor) {
+      logger.error("Failed to load a later page of kanbans", {
+        companyId,
+        error: kanbans.error
+      });
+      return listErrorPage("kanbans");
+    }
     throw redirect(
       path.to.authenticatedRoot,
       await flash(request, error(kanbans.error, "Failed to fetch kanbans"))
     );
   }
 
-  // One query for every armed Transfer kanban on the page. A failure only
-  // hides the Projected (To) column; the list still loads.
-  const armedKanbanIds = (kanbans.data ?? [])
+  const page = toPage(kanbans.data ?? [], { limit, sorts }, KANBANS_PAGING);
+
+  // One query for every armed Transfer kanban on the page. Each row carries
+  // its own value, so every loaded page has it. A failure only hides the
+  // Projected (To) column; the list still loads.
+  const armedKanbanIds = page.rows
     .filter(
       (kanban) =>
         kanban.replenishmentSystem === "Transfer" &&
@@ -124,15 +138,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     count: kanbans.count ?? 0,
-    kanbans: kanbans.data ?? [],
+    kanbans: page.rows.map((kanban) => ({
+      ...kanban,
+      projectedQuantity: kanban.id
+        ? (projectedQuantities[kanban.id] ?? null)
+        : null
+    })),
+    nextCursor: page.nextCursor,
     kanbanOutput: kanbanOutput.data?.kanbanOutput ?? "qrcode",
-    locationId,
-    projectedQuantities
+    locationId
   };
 }
 
 export default function KanbansRoute() {
-  const { count, kanbans, locationId, kanbanOutput, projectedQuantities } =
+  const { count, kanbans, nextCursor, locationId, kanbanOutput } =
     useLoaderData<typeof loader>();
 
   return (
@@ -140,9 +159,9 @@ export default function KanbansRoute() {
       <KanbansTable
         data={kanbans}
         count={count}
+        nextCursor={nextCursor}
         locationId={locationId}
         kanbanOutput={kanbanOutput}
-        projectedQuantities={projectedQuantities}
       />
       <RecordOutlet />
     </VStack>

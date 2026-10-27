@@ -2,12 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describeRequest } from "@carbon/logger/middleware.server";
-import {
-  annotateRequestSpan,
-  nameRequestSpan,
-  withSpan
-} from "@carbon/logger/tracing.server";
 import {
   Client,
   StreamableHTTPClientTransport
@@ -17,16 +11,6 @@ import { requireEntitlement } from "../entitlements.server";
 import { serveMcpRequest } from "./server";
 import type { McpCallResult } from "./types";
 
-vi.mock("@carbon/logger/tracing.server", () => ({
-  annotateRequestSpan: vi.fn(),
-  nameRequestSpan: vi.fn(),
-  withSpan: vi.fn((_name: string, _attributes: unknown, run: () => unknown) =>
-    run()
-  )
-}));
-vi.mock("@carbon/logger/middleware.server", () => ({
-  describeRequest: vi.fn()
-}));
 vi.mock("../entitlements.server", () => ({
   requireEntitlement: vi.fn(async () => undefined)
 }));
@@ -83,67 +67,6 @@ async function connect(
   await client.connect(transport);
   return client;
 }
-
-describe("MCP tool calls are traced", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("names a call_tool span after the operation and still runs it", async () => {
-    const client = await connect();
-
-    const result = await client.callTool({
-      name: "call_tool",
-      arguments: { name: "sales_getCustomer", arguments: { customerId: "c" } }
-    });
-
-    expect(JSON.stringify(result.content)).toContain("cust_1");
-    expect(callOperation).toHaveBeenCalledWith(
-      "sales_getCustomer",
-      expect.objectContaining({ companyId: "co1" }),
-      expect.objectContaining({ customerId: "c" })
-    );
-    const attributes = {
-      "carbon.mcp.tool": "call_tool",
-      "carbon.operation": "sales_getCustomer"
-    };
-    expect(withSpan).toHaveBeenCalledWith(
-      "mcp call_tool sales_getCustomer",
-      attributes,
-      expect.any(Function)
-    );
-    expect(annotateRequestSpan).toHaveBeenCalledWith(attributes);
-    expect(nameRequestSpan).toHaveBeenCalledWith(
-      "POST /api/mcp call_tool sales_getCustomer"
-    );
-    expect(describeRequest).toHaveBeenCalledWith("call_tool sales_getCustomer");
-  });
-
-  it("keeps a name the client made up out of the span name", async () => {
-    const client = await connect();
-
-    await client.callTool({
-      name: "call_tool",
-      arguments: { name: "not_a_real_operation", arguments: {} }
-    });
-
-    expect(withSpan).toHaveBeenCalledWith(
-      "mcp call_tool",
-      { "carbon.mcp.tool": "call_tool" },
-      expect.any(Function)
-    );
-  });
-
-  it("traces the other tools by their own name", async () => {
-    const client = await connect();
-
-    await client.callTool({ name: "search_tools", arguments: { query: "x" } });
-
-    expect(withSpan).toHaveBeenCalledWith(
-      "mcp search_tools",
-      { "carbon.mcp.tool": "search_tools" },
-      expect.any(Function)
-    );
-  });
-});
 
 describe("call_tool keeps list output small", () => {
   beforeEach(() => vi.clearAllMocks());

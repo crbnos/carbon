@@ -13,7 +13,7 @@ Single source of truth for all environment variable access. Validates at module 
 
 ## Ask First
 
-- Adding a `required: "error"` variable, or flipping `"warn"` to `"error"` — this changes boot requirements for every deployment. `src/deployments.test.ts` must pass for each of them first.
+- Adding a `required: "error"` variable, or flipping `"warn"` to `"error"` — this changes boot requirements for every deployment. the `deployments-set-required-env` check (`@carbon/checks`) must pass for each of them first.
 - Changing `getAppUrl()` / `getMESUrl()` resolution logic — affects cross-app links across all editions.
 
 ## Never

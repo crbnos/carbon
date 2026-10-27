@@ -21,7 +21,7 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LuBox, LuCirclePlus, LuMapPin, LuX } from "react-icons/lu";
 import type {
   SlideAnnotation,
@@ -201,13 +201,38 @@ export function SlidesEditor({
   const [viewingIndex, setViewingIndex] = useState<number | null>(null);
   const viewing = viewingIndex == null ? null : slides[viewingIndex];
   const models = useSlideModels(slides);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isHidden = isDisabled && slides.length === 0;
 
-  if (isDisabled && slides.length === 0) return null;
+  // A caption saves on blur. Submitting the surrounding form from inside a
+  // caption (⌘/Ctrl+Enter, or Enter) never blurs it, and the step form closes
+  // with the edit unsaved. So a submit first blurs a focused caption of this
+  // editor, which runs its own save.
+  useEffect(() => {
+    if (isHidden) return;
+    const form = containerRef.current?.closest("form");
+    if (!form) return;
+    const saveFocusedCaption = () => {
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLInputElement &&
+        active.dataset.slideCaption !== undefined &&
+        containerRef.current?.contains(active)
+      ) {
+        active.blur();
+      }
+    };
+    form.addEventListener("submit", saveFocusedCaption);
+    return () => form.removeEventListener("submit", saveFocusedCaption);
+  }, [isHidden]);
+
+  if (isHidden) return null;
 
   const withModels = !!modelInputRef && !!onModelFileChange;
 
   return (
     <VStack
+      ref={containerRef}
       spacing={2}
       className="w-full col-span-2 max-md:col-span-full border-t pt-4"
     >
@@ -378,6 +403,7 @@ export function SlidesEditor({
                 )}
                 <input
                   type="text"
+                  data-slide-caption=""
                   aria-label={t`Caption`}
                   placeholder={t`Caption`}
                   defaultValue={slide.caption ?? ""}

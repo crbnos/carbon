@@ -21,10 +21,12 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { withEmailDelivery } from "@carbon/ee";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import { getVapidDetails } from "@carbon/env/push.server";
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
@@ -60,7 +62,7 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
+import { Await, data, Outlet, useLoaderData } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import ChangelogPanel from "~/components/ChangelogPanel";
 import {
@@ -223,6 +225,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
   const companies = read(shell.data?.companies);
   const integrations = read(shell.data?.companyIntegrations);
+  // Whether documents can be emailed, settled once for every
+  // `integrations.has("email")` (withEmailDelivery).
+  const companyIntegrations = withEmailDelivery(
+    integrations.data ?? [],
+    companyId,
+    SERVER_MAIL_CONFIGURED
+  );
   const companySettings = read(shell.data?.companySettings ?? undefined);
   const savedViews = read(shell.data?.savedViews);
   const user = read(shell.data?.user ?? undefined);
@@ -339,7 +348,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
-    integrations: integrations.data ?? [],
+    integrations: companyIntegrations,
     groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan,
@@ -419,7 +428,6 @@ export default function AuthenticatedRoute() {
   useEffect(() => {
     shellLoadedAt = Date.now();
   }, [loaderData]);
-  const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
   const changelogPanel = useChangelogPanel();
@@ -435,15 +443,7 @@ export default function AuthenticatedRoute() {
 
   useNProgress();
   useKeyboardWedge({
-    test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL),
-    callback: (input) => {
-      try {
-        const url = new URL(input);
-        navigate(url.pathname + url.search);
-      } catch {
-        navigate(input);
-      }
-    }
+    test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
 
   const userId = user?.id;

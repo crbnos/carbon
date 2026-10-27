@@ -15,6 +15,10 @@ describe("maintenanceVerdict", () => {
     expect(maintenanceVerdict(true, "/health")).toBe("healthy");
   });
 
+  it("keeps serving Auth's email templates during maintenance", () => {
+    expect(maintenanceVerdict(true, "/templates/magic-link.html")).toBeNull();
+  });
+
   it("refuses pages, the API, webhooks and job callbacks", () => {
     for (const pathname of [
       "/",

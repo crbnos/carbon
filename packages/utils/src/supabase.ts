@@ -26,8 +26,17 @@ export function sanitize<T extends Record<string, any>>(
  * the filter early and the request failed.
  */
 export function searchFilter(columns: string[], term: string): string {
-  const quoted = `"%${escapeLike(term).replace(/["\\]/g, (char) => `\\${char}`)}%"`;
+  const quoted = quoteFilterValue(`%${escapeLike(term)}%`);
   return columns.map((column) => `${column}.ilike.${quoted}`).join(",");
+}
+
+/**
+ * A value quoted for a PostgREST logic tree (`or=(...)`, `and(...)`): the
+ * quotes keep `,`, `(`, `)`, `.` and `:` from changing the filter's shape,
+ * and a `"` or `\` inside is escaped.
+ */
+export function quoteFilterValue(value: string): string {
+  return `"${value.replace(/["\\]/g, (char) => `\\${char}`)}"`;
 }
 
 /** `term` for a LIKE / ILIKE pattern: `\\`, `%` and `_` match themselves. */

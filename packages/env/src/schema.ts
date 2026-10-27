@@ -49,7 +49,8 @@ export type EnvVar = {
   browser?: boolean;
   /**
    * "error" stops startup. "warn" is reported and becomes an error in the next
-   * release; do not flip one without updating deployments.test.ts.
+   * release; do not flip one until every deployment sets it (the
+   * `deployments-set-required-env` check in @carbon/checks).
    */
   required?: "error" | "warn";
   /** Lifts `required` when it returns true. */
@@ -117,6 +118,12 @@ export const schema = define({
     group: "core",
     description: "true for an ITAR / controlled deployment",
     browser: true
+  },
+  TENANT_TYPE: {
+    group: "core",
+    type: z.enum(["single", "multi"]),
+    description:
+      "single for a deployment one customer owns (BYOC, self-hosted); multi (default) for Carbon Cloud"
   },
   MAINTENANCE_MODE: {
     group: "core",
@@ -251,6 +258,12 @@ export const schema = define({
   RATE_LIMIT: {
     group: "auth",
     description: "Sign-in attempts allowed per window (5)",
+    type: number
+  },
+  TRUSTED_PROXIES: {
+    group: "auth",
+    description:
+      "Proxies in front of the app that append to X-Forwarded-For (1); 2 behind an ALB and Traefik",
     type: number
   },
   BOT_PROTECTION: {

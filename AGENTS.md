@@ -94,6 +94,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **UI & Forms** | |
 | Building forms (ValidatedForm + zod) | `.claude/rules/conventions-forms.md` + `packages/form/AGENTS.md` |
 | UI components and conventions | `.claude/rules/conventions-ui.md` + `packages/react/AGENTS.md` |
+| List tables: cursor paging, infinite scroll, list registry | `.claude/rules/table-infinite-scroll.md` + `.claude/rules/table-csv-export.md` |
 | i18n / translations (Lingui) | `.claude/rules/i18n-lingui-system.md` + `packages/locale/AGENTS.md` |
 | Flash messages and toasts | `.claude/rules/flash-system.md` |
 | Document templates / customizer | `.claude/rules/document-template-customizer.md` |
@@ -140,6 +141,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |
 | Client cache (`cachedClientLoader`, `useLoaderQuery`, `useAction`) | `.claude/rules/clientAction-patterns.md` + `packages/query/AGENTS.md` |
 | Realtime (broadcast, `handle.realtime`, live lists, change log) | `.claude/rules/realtime-system.md` + `packages/query/AGENTS.md` |
+| Service workers, offline page, app icon badge, installing the app | `.claude/rules/service-workers.md` |
 | Event triggers and interceptors (attachments manifest) | `.claude/rules/authz-manifest.md` |
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |
@@ -174,7 +176,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Repo audit → handoff plans | `.claude/skills/improve/SKILL.md` |
 | Review your own branch before PR | `.claude/skills/self-review/SKILL.md` |
 | Resolving a merge or rebase conflict (always) | `.claude/skills/resolving-merge-conflicts/SKILL.md` |
-| Test-first work: good tests, seams, anti-patterns | `.claude/skills/tdd/SKILL.md` + `.claude/skills/test-driven-development/SKILL.md` |
+| Writing, reviewing or deleting a test (house style, where a check lives) | `.claude/rules/testing.md` |
+| Test-first work: the red→green loop, proof vs committed test | `.claude/skills/test-driven-development/SKILL.md` + `.claude/skills/tdd/SKILL.md` |
 
 ## Core Principles
 

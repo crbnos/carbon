@@ -196,6 +196,52 @@ export const userFlagValidator = z.object({
 });
 
 export const userFlagsValidator = z.record(userFlagKeyValidator, z.boolean());
+
+// "Every matching row" in place of the selected users: the list and its URL
+// search as JSON (`allMatchingRequest`, `~/components/Table`).
+const allMatchingField = z.string().min(1, { message: "Invalid selection" });
+
+export const bulkPermissionsAllMatchingValidator = bulkPermissionsValidator
+  .omit({ userIds: true })
+  .extend({ allMatching: allMatchingField });
+
+export const deactivateUsersAllMatchingValidator = deactivateUsersValidator
+  .omit({ users: true })
+  .extend({ allMatching: allMatchingField });
+
+export const resendInviteAllMatchingValidator = z.object({
+  allMatching: allMatchingField
+});
+
+/** The Employees table's bulk actions on users. */
+export type BulkUserAction = "deactivate" | "invite" | "permissions";
+
+/**
+ * Whether a bulk action on the Employees table acts on this user: the rule
+ * the table applies to its selection, and the background job to every
+ * matching row. Edit Permissions takes active users, Deactivate active users
+ * other than the actor, and Send Invite inactive users with an email and no
+ * unrevoked invite.
+ */
+export function canBulkActOnUser(
+  action: BulkUserAction,
+  user: { id: string | null; active: boolean | null; email: string | null },
+  context: { actorId: string; unrevokedInviteEmails: ReadonlySet<string> }
+): boolean {
+  switch (action) {
+    case "permissions":
+      return user.active === true;
+    case "deactivate":
+      return user.active === true && user.id !== context.actorId;
+    case "invite":
+      return (
+        user.active === false &&
+        !!user.email &&
+        !context.unrevokedInviteEmails.has(user.email)
+      );
+  }
+}
+
 export const notificationPreferenceValidator = z.object({
   topic: z.nativeEnum(NotificationTopic),
   channel: z.enum(["email", "slack"]),

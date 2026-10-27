@@ -22,11 +22,13 @@ export {
   subtractIntervals
 } from "./scheduling/calendar-utils.ts";
 export {
+  closeHolidays,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
   type WorkCenterAvailabilityInput
 } from "./scheduling/machine-availability.ts";
+export { subtractDates } from "./scheduling/people-utils.ts";
 export {
   type QuoteLeadTimeForecast,
   type QuoteLeadTimeScenario,

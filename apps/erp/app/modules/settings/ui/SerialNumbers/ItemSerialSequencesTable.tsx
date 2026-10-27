@@ -20,6 +20,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { SerialNumberTiming } from "~/modules/settings/settings.models";
 import { serialNumberTimings } from "~/modules/settings/settings.models";
@@ -31,10 +32,11 @@ import { useSerialNumberTimingLabels } from "./useSerialNumberTimingLabels";
 type ItemSerialSequencesTableProps = {
   data: ItemSerialSequence[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ItemSerialSequencesTable = memo(
-  ({ data, count }: ItemSerialSequencesTableProps) => {
+  ({ data, count, infinite }: ItemSerialSequencesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -183,6 +185,7 @@ const ItemSerialSequencesTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

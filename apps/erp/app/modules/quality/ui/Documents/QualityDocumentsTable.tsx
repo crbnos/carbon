@@ -34,6 +34,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import type { action as seedAction } from "~/routes/api+/quality.documents.seed";
 import { path } from "~/utils/path";
@@ -43,11 +44,12 @@ import QualityDocumentStatus from "./QualityDocumentStatus";
 type QualityDocumentsTableProps = {
   data: QualityDocuments[];
   count: number;
+  infinite: InfiniteOptions;
   tags: Array<{ name: string }>;
 };
 
 const QualityDocumentsTable = memo(
-  ({ data, count, tags }: QualityDocumentsTableProps) => {
+  ({ data, count, tags, infinite }: QualityDocumentsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -223,6 +225,7 @@ const QualityDocumentsTable = memo(
       <>
         <Table<QualityDocuments>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={

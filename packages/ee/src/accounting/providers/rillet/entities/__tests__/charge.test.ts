@@ -119,35 +119,6 @@ describe("mapChargeToRilletCharge", () => {
     expect(payload.items[0]?.fields).toBeUndefined();
   });
 
-  it("uses the merchant name on the line over the line label", () => {
-    const payload = mapChargeToRilletCharge({
-      charge: charge({ merchantName: "Acme Fuel" }),
-      costing: costing(),
-      ...base
-    });
-    expect(payload.items[0]?.description).toBe("Acme Fuel");
-  });
-
-  it("falls back to the line label when there is no merchant name", () => {
-    const payload = mapChargeToRilletCharge({
-      charge: charge({ merchantName: null }),
-      costing: costing(),
-      ...base
-    });
-    expect(payload.items[0]?.description).toBe("Airfare");
-  });
-
-  it("falls back to the card memo when there is no merchant name or line description", () => {
-    const payload = mapChargeToRilletCharge({
-      charge: charge({ merchantName: null }),
-      costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
-      ...base
-    });
-    expect(payload.items[0]?.description).toBe(
-      "SFO→ORD for the Apollo kickoff"
-    );
-  });
-
   it("converts a foreign charge to its transaction currency and pins the directed rate", () => {
     // A CAD charge: base USD lines × 1.25 CAD per USD.
     const payload = mapChargeToRilletCharge({

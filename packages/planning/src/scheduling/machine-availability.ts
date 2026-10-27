@@ -27,6 +27,7 @@ import {
   STOCK_WEEK_SHIFTS,
   unionWindows
 } from "./calendar-utils.ts";
+import { subtractDates } from "./people-utils.ts";
 
 /** One weekday window of a shift, with the timezone it is expressed in. */
 export type LadderShiftRow = {
@@ -171,4 +172,24 @@ export function resolveLocationWindows(args: {
     rangeEnd,
     timezone || "UTC"
   );
+}
+
+/**
+ * Close every work center on the company's holidays (whole local days in the
+ * work center's own timezone). A lights-out (`alwaysOn`) station keeps running.
+ */
+export function closeHolidays(args: {
+  windowsByWorkCenter: Map<string, CalendarWindow[]>;
+  workCenters: WorkCenterAvailabilityInput[];
+  holidayDates: Set<string>;
+}): Map<string, CalendarWindow[]> {
+  const { windowsByWorkCenter, workCenters, holidayDates } = args;
+  if (holidayDates.size === 0) return windowsByWorkCenter;
+  const result = new Map(windowsByWorkCenter);
+  for (const wc of workCenters) {
+    const windows = result.get(wc.id);
+    if (!windows || wc.alwaysOn) continue;
+    result.set(wc.id, subtractDates(windows, holidayDates, wc.timezone));
+  }
+  return result;
 }

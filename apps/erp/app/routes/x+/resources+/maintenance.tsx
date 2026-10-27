@@ -2,20 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getFailureModesList,
-  getLocationsList,
-  getMaintenanceDispatchesByLocation
+  getLocationsList
 } from "~/modules/resources/resources.service";
 import MaintenanceDispatchesTable from "~/modules/resources/ui/Maintenance/MaintenanceDispatchesTable";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { maintenanceDispatchesList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Maintenance`,
@@ -23,58 +22,26 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "resources",
-    role: "employee"
+  return loadListPage(request, maintenanceDispatchesList, {
+    dataKey: "dispatches",
+    firstPage: async ({ client, companyId, params }) => {
+      const [locations, failureModes] = await Promise.all([
+        getLocationsList(client, companyId),
+        getFailureModesList(client, companyId)
+      ]);
+      const locationsList = locations.data ?? [];
+      return {
+        failureModes: failureModes.data ?? [],
+        locations: locationsList,
+        // The registry query defaults to the first location too.
+        locationId: params.get("location") ?? locationsList[0]?.id ?? null
+      };
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const status = searchParams.get("status") ?? undefined;
-  const locationId = searchParams.get("location");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const locations = await getLocationsList(client, companyId);
-  const locationsList = locations.data ?? [];
-
-  // Default to first location if none specified
-  const selectedLocationId = locationId ?? locationsList[0]?.id;
-
-  if (!selectedLocationId) {
-    return {
-      dispatches: [],
-      count: 0,
-      failureModes: [],
-      locations: locationsList,
-      locationId: null
-    };
-  }
-
-  const [dispatches, failureModes] = await Promise.all([
-    getMaintenanceDispatchesByLocation(client, companyId, selectedLocationId, {
-      search,
-      status,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    getFailureModesList(client, companyId)
-  ]);
-
-  return {
-    dispatches: dispatches.data ?? [],
-    count: dispatches.count ?? 0,
-    failureModes: failureModes.data ?? [],
-    locations: locationsList,
-    locationId: selectedLocationId
-  };
 }
 
 export default function MaintenanceRoute() {
-  const { dispatches, count, failureModes, locations, locationId } =
+  const { dispatches, count, infinite, failureModes, locations, locationId } =
     useLoaderData<typeof loader>();
 
   return (
@@ -83,6 +50,7 @@ export default function MaintenanceRoute() {
         // @ts-expect-error TS2322 - TODO: fix type
         data={dispatches ?? []}
         count={count ?? 0}
+        infinite={infinite}
         failureModes={failureModes ?? []}
         locations={locations}
         locationId={locationId}

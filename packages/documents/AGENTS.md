@@ -26,7 +26,7 @@ PDF generation, email templates, ZPL labels, and QR/barcode utilities.
 
 ```bash
 pnpm --filter @carbon/documents test        # vitest
-pnpm --filter @carbon/documents typecheck   # tsgo --noEmit
+pnpm --filter @carbon/documents typecheck   # tsc --noEmit
 pnpm --filter @carbon/documents build       # generates fonts.data.ts
 ```
 

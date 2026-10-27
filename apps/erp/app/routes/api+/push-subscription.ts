@@ -64,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 // This browser's Web Push subscription for the signed-in user.
-// PUT saves it (also from push-worker.js after a pushsubscriptionchange),
+// PUT saves it (also from service-worker.js after a pushsubscriptionchange),
 // DELETE removes it.
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});

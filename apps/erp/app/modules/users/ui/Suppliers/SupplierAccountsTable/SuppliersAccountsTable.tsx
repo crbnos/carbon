@@ -39,6 +39,8 @@ import { path } from "~/utils/path";
 type SupplierAccountsTableProps = {
   data: Supplier[];
   count: number;
+  // The loader read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   supplierTypes: ListItem[];
   unrevokedInviteEmails: string[];
 };
@@ -52,6 +54,7 @@ const SupplierAccountsTable = memo(
   ({
     data,
     count,
+    isTruncated,
     supplierTypes,
     unrevokedInviteEmails
   }: SupplierAccountsTableProps) => {
@@ -320,6 +323,7 @@ const SupplierAccountsTable = memo(
       <>
         <Table<(typeof rows)[number]>
           count={count}
+          isTruncated={isTruncated}
           columns={columns}
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}

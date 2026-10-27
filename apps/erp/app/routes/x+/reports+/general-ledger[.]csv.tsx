@@ -6,7 +6,10 @@ import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
 import { toDisplayCredit, toDisplayDebit } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getAllGeneralLedgerLines } from "~/modules/accounting/accounting.service";
+import {
+  getAllGeneralLedgerLines,
+  withGeneralLedgerCounterparties
+} from "~/modules/accounting/accounting.service";
 import type { AccountClass } from "~/modules/accounting/types";
 import { resolveGeneralLedgerRequest } from "./general-ledger.server";
 
@@ -33,8 +36,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
+  const rows = await withGeneralLedgerCounterparties(
+    client,
+    selectedCompany.id,
+    lines.data ?? []
+  );
+  if (rows.error) {
+    logger.error("Failed to read the general ledger's documents", {
+      companyId: selectedCompany.id,
+      error: rows.error
+    });
+    throw new Response("The general ledger could not be exported.", {
+      status: 500
+    });
+  }
+
   const csv = encodeCsv(
-    (lines.data ?? []).map((line) => {
+    rows.data.map((line) => {
       const accountClass = (line.account?.class ?? "Asset") as AccountClass;
       return {
         Date: line.postingDate,
@@ -43,11 +61,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         "Account Number": line.account?.number,
         "Account Name": line.account?.name,
         Description: line.description ?? line.journalDescription,
-        Source: line.sourceType,
-        "Document Type": line.documentType,
         Debit: toDisplayDebit(line.amount ?? 0, accountClass),
         Credit: toDisplayCredit(line.amount ?? 0, accountClass),
-        Currency: selectedCompany.baseCurrencyCode
+        Currency: selectedCompany.baseCurrencyCode,
+        Source: line.sourceType,
+        "Document Type": line.documentType,
+        "Customer / Supplier": line.party,
+        "Invoice Number": line.invoiceNumber,
+        "Supplier Invoice Number": line.supplierInvoiceNumber
       };
     }),
     {
@@ -58,11 +79,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         "Account Number",
         "Account Name",
         "Description",
-        "Source",
-        "Document Type",
         "Debit",
         "Credit",
-        "Currency"
+        "Currency",
+        "Source",
+        "Document Type",
+        "Customer / Supplier",
+        "Invoice Number",
+        "Supplier Invoice Number"
       ]
     }
   );

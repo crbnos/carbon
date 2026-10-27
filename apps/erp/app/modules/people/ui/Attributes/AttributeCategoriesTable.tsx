@@ -20,6 +20,7 @@ import { LuListChecks, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { AttributeCategory } from "../../types";
@@ -27,10 +28,11 @@ import type { AttributeCategory } from "../../types";
 type AttributeCategoriesTableProps = {
   data: AttributeCategory[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const AttributeCategoriesTable = memo(
-  ({ data, count }: AttributeCategoriesTableProps) => {
+  ({ data, count, infinite }: AttributeCategoriesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const [params] = useUrlParams();
@@ -183,6 +185,7 @@ const AttributeCategoriesTable = memo(
       <>
         <Table<AttributeCategory>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count ?? 0}
           primaryAction={

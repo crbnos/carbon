@@ -6,17 +6,20 @@ import {
   Body,
   Container,
   Heading,
+  Hr,
   Link,
   Preview,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
+import { Button } from "./components/Button";
 import { Logo } from "./components/Logo";
+import { notificationStyles } from "./components/notificationStyles";
 import {
-  Button,
   EmailThemeProvider,
-  getEmailInlineStyles,
-  getEmailThemeClasses
+  emailTheme,
+  getEmailThemeClasses,
+  HeadStyle
 } from "./components/Theme";
 
 interface Props {
@@ -31,6 +34,7 @@ interface Props {
   controlledEnvironment?: boolean;
 }
 
+// Sent when an admin invites someone to a company (user-admin job).
 export const InviteEmail = ({
   invitedByEmail = "tom@sawyer.com",
   invitedByName = "Tom Sawyer",
@@ -42,122 +46,121 @@ export const InviteEmail = ({
   location = "Tombstone, AZ",
   controlledEnvironment = false
 }: Props) => {
-  const preview = <Preview>{`Join ${companyName} on Carbon`}</Preview>;
   const themeClasses = getEmailThemeClasses();
-  const lightStyles = getEmailInlineStyles("light");
 
   return (
-    <EmailThemeProvider preview={preview}>
+    <EmailThemeProvider
+      preview={<Preview>{`Join ${companyName} on Carbon`}</Preview>}
+      additionalHeadContent={<HeadStyle css={notificationStyles} />}
+    >
       <Body
-        className={`my-auto mx-auto font-sans ${themeClasses.body}`}
-        style={lightStyles.body}
+        className={`my-auto mx-auto font-sans nf-body ${themeClasses.body}`}
       >
         <Container
-          className={`my-[40px] mx-auto p-[20px] max-w-[600px] ${themeClasses.container}`}
+          className={`my-[40px] mx-auto p-[36px] max-w-[560px] rounded-[16px] nf-card ${themeClasses.container}`}
           style={{
+            borderRadius: 16,
             borderStyle: "solid",
-            borderWidth: 1,
-            borderColor: lightStyles.container.borderColor
+            borderWidth: 1
           }}
         >
           <Logo />
-          <Heading
-            className={`mx-0 my-[30px] p-0 text-[24px] font-normal ${themeClasses.text} text-center`}
-            style={{ color: lightStyles.text.color }}
+
+          <Text
+            className={`text-[11px] leading-[16px] uppercase text-center font-medium m-0 mt-[40px] mb-[10px] nf-eyebrow ${themeClasses.mutedText}`}
+            style={{ letterSpacing: "0.14em" }}
           >
-            Join <strong>{companyName}</strong> on <strong>Carbon</strong>
+            Invitation
+          </Text>
+
+          <Heading
+            className={`text-[26px] font-medium text-center tracking-tight p-0 mt-0 mb-[32px] mx-0 ${themeClasses.heading}`}
+          >
+            Join {companyName} on Carbon
           </Heading>
 
-          <Text
-            className={`text-[14px] leading-[24px] ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            Hi {name ?? ""},
-          </Text>
-
-          <Text
-            className={`text-[14px] leading-[24px] ${themeClasses.text}`}
-            style={{ color: lightStyles.text.color }}
-          >
-            {invitedByName} (
-            <Link
-              href={`mailto:${invitedByEmail}`}
-              className={`${themeClasses.text} no-underline`}
-              style={{ color: lightStyles.text.color }}
-            >
-              {invitedByEmail}
-            </Link>
-            ) has invited you to join <strong>{companyName}</strong> on{" "}
-            <strong>Carbon</strong>.
-          </Text>
-          {controlledEnvironment ? (
-            <Text
-              className={`text-[14px] leading-[24px] ${themeClasses.text}`}
-              style={{ color: lightStyles.text.color }}
-            >
-              This is an ITAR-controlled environment. Access is restricted to
-              U.S. Persons.
-            </Text>
+          {name ? (
+            <Section>
+              <Text
+                className={`text-[15px] leading-[26px] m-0 mb-[16px] ${themeClasses.text}`}
+              >
+                Hi {name},
+              </Text>
+            </Section>
           ) : null}
 
-          <Section className="mb-[42px] mt-[32px] text-center">
-            <Button href={inviteLink}>Accept Invite</Button>
+          <Section
+            className="nf-callout"
+            style={{
+              backgroundColor: "#fafafa",
+              borderColor: "#ececef",
+              borderRadius: 12,
+              borderStyle: "solid",
+              borderWidth: 1,
+              marginBottom: 28,
+              padding: "18px 20px"
+            }}
+          >
+            <table
+              role="presentation"
+              cellPadding={0}
+              cellSpacing={0}
+              width="100%"
+              style={{ borderCollapse: "collapse", width: "100%" }}
+            >
+              <tr>
+                <td style={{ verticalAlign: "middle" }}>
+                  <Text
+                    className={`text-[15px] leading-[24px] m-0 ${themeClasses.text}`}
+                  >
+                    {invitedByName} (
+                    <Link
+                      href={`mailto:${invitedByEmail}`}
+                      className={`${themeClasses.text} no-underline`}
+                      style={{ color: emailTheme.light.foreground }}
+                    >
+                      {invitedByEmail}
+                    </Link>
+                    ) has invited you to join {companyName} on Carbon.
+                  </Text>
+                  {controlledEnvironment ? (
+                    <Text
+                      className={`text-[15px] leading-[24px] m-0 mt-[12px] ${themeClasses.text}`}
+                    >
+                      This is an ITAR-controlled environment. Access is
+                      restricted to U.S. Persons.
+                    </Text>
+                  ) : null}
+                </td>
+              </tr>
+            </table>
+          </Section>
+
+          <Section className="text-center mb-[24px]">
+            <Button href={inviteLink}>Accept invite</Button>
           </Section>
 
           <Text
-            className={`text-[14px] leading-[24px] ${themeClasses.mutedText} break-all`}
-            style={{ color: lightStyles.mutedText.color }}
+            className={`text-[13px] leading-[20px] m-0 text-center break-all nf-fallback ${themeClasses.mutedText}`}
           >
-            You can accept this invite by clicking the button above or by
-            copying and pasting the following link into your browser:{" "}
+            Button not working? Open this link in your browser:{" "}
             <Link
               href={inviteLink}
-              className={`${themeClasses.mutedText} underline`}
-              style={{ color: lightStyles.mutedText.color }}
+              className={`${themeClasses.mutedText} underline nf-fallback`}
             >
               {inviteLink}
             </Link>
           </Text>
 
-          <br />
-          <Section>
-            <Text
-              className={`text-[12px] leading-[24px] ${themeClasses.mutedText}`}
-              style={{ color: lightStyles.mutedText.color }}
-            >
-              This invitation was intended for{" "}
-              <span
-                className={themeClasses.text}
-                style={{ color: lightStyles.text.color }}
-              >
-                {email}
-              </span>
-              . This invite was sent from{" "}
-              <span
-                className={themeClasses.text}
-                style={{ color: lightStyles.text.color }}
-              >
-                {ip}
-              </span>{" "}
-              located in{" "}
-              <span
-                className={themeClasses.text}
-                style={{ color: lightStyles.text.color }}
-              >
-                {location}
-              </span>
-              . If you were not expecting this invitation, you can ignore this
-              email. If you are concerned about your account's safety, please
-              get in touch with us at{" "}
-              <span
-                className={themeClasses.text}
-                style={{ color: lightStyles.text.color }}
-              >
-                support@carbon.ms
-              </span>
-              .
-            </Text>
-          </Section>
+          <Hr className={`my-[32px] nf-divider ${themeClasses.border}`} />
+          <Text
+            className={`text-[12px] leading-[18px] m-0 nf-fallback ${themeClasses.mutedText}`}
+          >
+            This invite was meant for {email} and was sent from {ip}, located in{" "}
+            {location}. If you weren't expecting it, you can ignore this email.
+            If you're concerned about your account's safety, contact
+            support@carbon.ms.
+          </Text>
         </Container>
       </Body>
     </EmailThemeProvider>

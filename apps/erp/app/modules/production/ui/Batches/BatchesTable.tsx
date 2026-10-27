@@ -35,17 +35,30 @@ import {
 import { Link, useFetcher, useNavigate } from "react-router";
 import { DateTime, Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
+import {
+  useAllMatchingLimitLabel,
+  useBulkStartToast
+} from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { action as releaseBatchesAction } from "~/routes/x+/production+/batches.release";
+import {
+  bulkSelectionBody,
+  isOverAllMatchingLimit
+} from "~/utils/bulk-selection";
 import { path } from "~/utils/path";
+import { ALL_MATCHING_RELEASE_LIMIT } from "~/utils/table-jobs";
+import { isBatchDissolvable, isBatchReleasable } from "../../production.models";
 import type { JobOperationBatch } from "../../types";
 import { BatchReleaseModal } from "./BatchReleaseModal";
+import { BATCH_LIST_EXPORT_VALUES } from "./batch-list-export";
 import { useBatchRelease } from "./useBatchRelease";
 
 type BatchesTableProps = {
   data: JobOperationBatch[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const BATCH_STATUSES = [
@@ -97,9 +110,13 @@ function useBatchCountMessages() {
   );
 }
 
-const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
+const BatchesTable = memo(({ data, count, infinite }: BatchesTableProps) => {
   const { t } = useLingui();
   const countMessages = useBatchCountMessages();
+  const showBulkStart = useBulkStartToast();
+  const releaseLimitLabel = useAllMatchingLimitLabel(
+    ALL_MATCHING_RELEASE_LIMIT
+  );
   const permissions = usePermissions();
   const navigate = useNavigate();
   const canUpdate = permissions.can("update", "production");
@@ -171,6 +188,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const dissolveFetcher = useFetcher<{
     success?: boolean;
     message?: string;
+    background?: boolean;
     dissolved?: number;
     failed?: { readableId: string; message: string }[];
   }>();
@@ -183,11 +201,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
     if (!wasDissolving.current) return;
     wasDissolving.current = false;
     const d = dissolveFetcher.data;
-    if (!d) return;
-    if (d.success === false && d.message) {
-      toast.error(d.message);
-      return;
-    }
+    if (!d || showBulkStart(d)) return;
     if (d.dissolved) {
       toast.success(countMessages.dissolved(d.dissolved));
     }
@@ -198,14 +212,22 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           .join(", ")} — production already recorded`
       );
     }
-  }, [dissolveFetcher.state, dissolveFetcher.data, t, countMessages]);
+  }, [
+    dissolveFetcher.state,
+    dissolveFetcher.data,
+    t,
+    countMessages,
+    showBulkStart
+  ]);
 
   // Bulk release for the selected rows — Planned batches only (release is the
   // Planned → Active flip; Active/Completing/Completed batches are already on or
   // off the floor). Posts the ids to the release action, which recalcs member
   // jobs, releases each, and notifies the scheduler; we toast the summary.
   const releaseBatchesFetcher = useAction<typeof releaseBatchesAction>({
-    onSuccess: ({ data }) => {
+    onSuccess: (result) => {
+      if (showBulkStart(result)) return;
+      const { data } = result;
       if (!data) return;
       if (data.released.length) {
         toast.success(countMessages.released(data.released.length));
@@ -217,14 +239,27 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
             .join(", ")}`
         );
       }
+    },
+    onError: (result) => {
+      if (showBulkStart(result)) return;
+      if (result.error?.message) toast.error(result.error.message);
     }
   });
 
   const renderActions = useCallback(
-    (selectedRows: JobOperationBatch[]) => {
-      const releasable = selectedRows.filter((r) => r.status === "Planned");
-      const dissolvable = selectedRows.filter(
-        (r) => r.status === "Planned" || r.status === "Active"
+    (selectedRows: JobOperationBatch[], scope?: BulkActionScope) => {
+      const releasable = selectedRows.filter((r) =>
+        isBatchReleasable(r.status)
+      );
+      const dissolvable = selectedRows.filter((r) =>
+        isBatchDissolvable(r.status)
+      );
+      // Every matching row: the server picks the batches each action may act
+      // on and skips the rest. Release runs on at most 2,000 of them.
+      const allMatching = scope?.allMatching;
+      const overReleaseLimit = isOverAllMatchingLimit(
+        scope,
+        ALL_MATCHING_RELEASE_LIMIT
       );
       return (
         <DropdownMenuContent align="end" className="min-w-[220px]">
@@ -233,10 +268,18 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={releasable.length === 0 || !canUpdate}
+            disabled={
+              (!allMatching && releasable.length === 0) ||
+              overReleaseLimit ||
+              !canUpdate
+            }
             onClick={() =>
               releaseBatchesFetcher.submit(
-                { batchIds: releasable.map((r) => r.id) },
+                bulkSelectionBody({
+                  scope,
+                  idsField: "batchIds",
+                  ids: releasable.map((r) => r.id)
+                }),
                 {
                   method: "post",
                   action: path.to.releaseOperationBatches,
@@ -246,14 +289,29 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
             }
           >
             <DropdownMenuIcon icon={<LuCirclePlay />} />
-            {countMessages.release(releasable.length)}
+            <div className="flex flex-col">
+              {allMatching ? (
+                <Trans>Release batches</Trans>
+              ) : (
+                countMessages.release(releasable.length)
+              )}
+              {overReleaseLimit && (
+                <span className="text-xs text-muted-foreground">
+                  {releaseLimitLabel}
+                </span>
+              )}
+            </div>
           </DropdownMenuItem>
           <DropdownMenuItem
             destructive
-            disabled={dissolvable.length === 0 || !canUpdate}
+            disabled={(!allMatching && dissolvable.length === 0) || !canUpdate}
             onClick={() =>
               dissolveFetcher.submit(
-                { batchIds: dissolvable.map((r) => r.id) },
+                bulkSelectionBody({
+                  scope,
+                  idsField: "batchIds",
+                  ids: dissolvable.map((r) => r.id)
+                }),
                 {
                   method: "post",
                   action: path.to.dissolveOperationBatches,
@@ -263,12 +321,22 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
             }
           >
             <DropdownMenuIcon icon={<LuTrash />} />
-            {countMessages.dissolve(dissolvable.length)}
+            {allMatching ? (
+              <Trans>Dissolve batches</Trans>
+            ) : (
+              countMessages.dissolve(dissolvable.length)
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       );
     },
-    [canUpdate, dissolveFetcher, releaseBatchesFetcher, countMessages]
+    [
+      canUpdate,
+      dissolveFetcher,
+      releaseBatchesFetcher,
+      countMessages,
+      releaseLimitLabel
+    ]
   );
 
   const customColumns =
@@ -312,7 +380,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         meta: {
           icon: <LuLayers />,
           filterHeader: t`Process`,
-          exportValue: (row: JobOperationBatch) => row.process?.name ?? null
+          exportValue: BATCH_LIST_EXPORT_VALUES.process
         }
       },
       {
@@ -325,12 +393,14 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           mobile: "P3",
           icon: <LuFactory />,
           filterHeader: t`Work Center`,
-          exportValue: (row: JobOperationBatch) => row.workCenterName ?? null
+          exportValue: BATCH_LIST_EXPORT_VALUES.workCenter
         }
       },
       {
         accessorKey: "memberCount",
         header: t`Jobs`,
+        // The loader counts the members per page: no column to sort on.
+        enableSorting: false,
         cell: ({ row }) => (
           <span className="tabular-nums">{row.original.memberCount ?? 0}</span>
         ),
@@ -343,6 +413,8 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
       {
         accessorKey: "totalQuantity",
         header: t`Quantity`,
+        // The loader sums the members per page: no column to sort on.
+        enableSorting: false,
         cell: ({ row }) => (
           <span className="tabular-nums">
             {row.original.totalQuantity ?? 0}
@@ -445,6 +517,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         data={data}
         columns={columns}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "production") && (
             <New label={t`Batch`} to={path.to.newOperationBatch} />

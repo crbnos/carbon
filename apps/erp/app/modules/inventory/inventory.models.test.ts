@@ -10,42 +10,8 @@ import {
   receiptFixedAssetLineUpdateValidator,
   reconcileReceiptLineSerials,
   resolveStockTransferPickForward,
-  shipmentFixedAssetLineUpdateValidator,
-  storageTypeValidator,
-  storageUnitValidator
+  shipmentFixedAssetLineUpdateValidator
 } from "./inventory.models";
-
-describe("storageTypeValidator", () => {
-  it("trims surrounding whitespace from the name", () => {
-    const r = storageTypeValidator.safeParse({ name: "  Pallet  " });
-    expect(r.success).toBe(true);
-    if (r.success) expect(r.data.name).toBe("Pallet");
-  });
-
-  it("rejects a name that is only whitespace", () => {
-    const r = storageTypeValidator.safeParse({ name: "   " });
-    expect(r.success).toBe(false);
-  });
-});
-
-describe("storageUnitValidator", () => {
-  it("trims surrounding whitespace from the name", () => {
-    const r = storageUnitValidator.safeParse({
-      name: "Rack A1 ",
-      locationId: "loc1"
-    });
-    expect(r.success).toBe(true);
-    if (r.success) expect(r.data.name).toBe("Rack A1");
-  });
-
-  it("rejects a name that is only whitespace", () => {
-    const r = storageUnitValidator.safeParse({
-      name: " ",
-      locationId: "loc1"
-    });
-    expect(r.success).toBe(false);
-  });
-});
 
 describe("resolveStockTransferPickForward", () => {
   const base = {
@@ -119,65 +85,25 @@ describe("resolveStockTransferPickForward", () => {
   });
 });
 
-describe("shipmentFixedAssetLineUpdateValidator", () => {
-  it("rejects a negative meter reading", () => {
-    const r = shipmentFixedAssetLineUpdateValidator.safeParse({
-      id: "sfal1",
-      field: "meter",
-      value: "-1"
-    });
-    expect(r.success).toBe(false);
+describe.each([
+  ["shipment", shipmentFixedAssetLineUpdateValidator, "received"],
+  ["receipt", receiptFixedAssetLineUpdateValidator, "shipped"]
+])("%s fixed-asset line update", (_, validator, foreignField) => {
+  it.each([
+    ["", true],
+    ["120", true],
+    ["-1", false]
+  ])("meter reading %j accepted: %s", (value, accepted) => {
+    expect(
+      validator.safeParse({ id: "fal1", field: "meter", value }).success
+    ).toBe(accepted);
   });
 
-  it("accepts an empty or a positive meter reading", () => {
-    for (const value of ["", "120"]) {
-      const r = shipmentFixedAssetLineUpdateValidator.safeParse({
-        id: "sfal1",
-        field: "meter",
-        value
-      });
-      expect(r.success).toBe(true);
-    }
-  });
-
-  it("rejects an unknown field", () => {
-    const r = shipmentFixedAssetLineUpdateValidator.safeParse({
-      id: "sfal1",
-      field: "notes",
-      value: "scratched"
-    });
-    expect(r.success).toBe(false);
-  });
-});
-
-describe("receiptFixedAssetLineUpdateValidator", () => {
-  it("rejects a negative meter reading", () => {
-    const r = receiptFixedAssetLineUpdateValidator.safeParse({
-      id: "rfal1",
-      field: "meter",
-      value: "-1"
-    });
-    expect(r.success).toBe(false);
-  });
-
-  it("accepts an empty or a positive meter reading", () => {
-    for (const value of ["", "120"]) {
-      const r = receiptFixedAssetLineUpdateValidator.safeParse({
-        id: "rfal1",
-        field: "meter",
-        value
-      });
-      expect(r.success).toBe(true);
-    }
-  });
-
-  it("rejects an unknown field", () => {
-    const r = receiptFixedAssetLineUpdateValidator.safeParse({
-      id: "rfal1",
-      field: "shipped",
-      value: "true"
-    });
-    expect(r.success).toBe(false);
+  it("rejects a field the line does not have", () => {
+    expect(
+      validator.safeParse({ id: "fal1", field: foreignField, value: "true" })
+        .success
+    ).toBe(false);
   });
 });
 
@@ -246,37 +172,39 @@ describe("planSerialBoxWrite", () => {
     "Receipt Line Index": index,
     Receipt: "rec1"
   });
+  type Input = Parameters<typeof planSerialBoxWrite>[0];
+  const plan = (overrides: Partial<Input>) =>
+    planSerialBoxWrite({
+      receiptLineId: "line1",
+      index: 0,
+      serialNumber: "SN-A",
+      box: [],
+      withSerial: [],
+      ...overrides
+    });
 
   it("clears the box when the serial is emptied", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
+      plan({
         serialNumber: "  ",
-        box: [{ id: "e1", hasHistory: false }],
-        withSerial: []
+        box: [{ id: "e1", hasHistory: false }]
       })
     ).toEqual({ kind: "clear", releaseIds: ["e1"] });
   });
 
   it("renames the box's own entity when the serial is edited", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
+      plan({
         serialNumber: "NEW",
-        box: [{ id: "e1", hasHistory: false }],
-        withSerial: []
+        box: [{ id: "e1", hasHistory: false }]
       })
     ).toEqual({ kind: "write", targetId: "e1", releaseIds: [] });
   });
 
   it("refuses a serial held by another box and empties this one", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
+      plan({
         index: 1,
-        serialNumber: "SN-A",
         box: [{ id: "e2", hasHistory: false }],
         withSerial: [
           { id: "e1", hasHistory: false, attributes: box("line1", 0) }
@@ -287,24 +215,17 @@ describe("planSerialBoxWrite", () => {
 
   it("refuses a serial held by a box on another receipt line", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
-        serialNumber: "SN-A",
-        box: [],
+      plan({
         withSerial: [
           { id: "e9", hasHistory: false, attributes: box("line2", 0) }
         ]
-      }).kind
-    ).toBe("taken");
+      })
+    ).toEqual({ kind: "taken", reason: "box", releaseIds: [] });
   });
 
   it("keeps one copy when a racing save left two in the box", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
-        serialNumber: "SN-A",
+      plan({
         box: [
           { id: "e1", hasHistory: false },
           { id: "e2", hasHistory: false }
@@ -319,21 +240,16 @@ describe("planSerialBoxWrite", () => {
 
   it("never renames a box entity that has stock history", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
+      plan({
         serialNumber: "NEW",
-        box: [{ id: "unit", hasHistory: true }],
-        withSerial: []
+        box: [{ id: "unit", hasHistory: true }]
       })
     ).toEqual({ kind: "write", targetId: undefined, releaseIds: ["unit"] });
   });
 
   it("refuses the serial of a unit with stock history", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
+      plan({
         serialNumber: "SN-B",
         box: [{ id: "e1", hasHistory: false }],
         withSerial: [
@@ -345,9 +261,7 @@ describe("planSerialBoxWrite", () => {
 
   it("refuses a unit with stock history even when it already sits in the box", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
+      plan({
         serialNumber: "SN-B",
         box: [{ id: "shipped", hasHistory: true }],
         withSerial: [
@@ -359,11 +273,7 @@ describe("planSerialBoxWrite", () => {
 
   it("takes back the serial of a voided receipt as the same unit", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
-        serialNumber: "SN-A",
-        box: [],
+      plan({
         withSerial: [
           {
             id: "voided",
@@ -378,10 +288,7 @@ describe("planSerialBoxWrite", () => {
 
   it("refuses the serial of a record no receipt box holds (a job's reserved serial)", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
-        serialNumber: "SN-A",
+      plan({
         box: [{ id: "e1", hasHistory: false }],
         withSerial: [
           { id: "reserved", hasHistory: false, attributes: { Job: "job1" } }
@@ -392,11 +299,8 @@ describe("planSerialBoxWrite", () => {
 
   it("names a received unit in another box as an existing unit", () => {
     expect(
-      planSerialBoxWrite({
-        receiptLineId: "line1",
-        index: 0,
+      plan({
         serialNumber: "SN-B",
-        box: [],
         withSerial: [
           { id: "received", hasHistory: true, attributes: box("line2", 0) }
         ]

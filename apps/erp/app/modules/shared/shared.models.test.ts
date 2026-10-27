@@ -6,6 +6,7 @@ import { TiptapText } from "@carbon/files/markdown";
 import { describe, expect, it } from "vitest";
 import {
   normalizeOperationSourceIds,
+  operationStepValidator,
   optionalPlainTextDoc,
   optionalTiptapDoc,
   toTiptapDoc
@@ -237,5 +238,50 @@ describe("normalizeOperationSourceIds", () => {
     expect(
       normalizeOperationSourceIds({ operationType: "Process" })
     ).not.toHaveProperty("workCenterId");
+  });
+});
+
+// A List step needs at least one option. The error must sit on `listValues`,
+// the field the step forms render: on any other path the form refused the save
+// with no message. Blank rows are dropped first, so the empty row "Add option"
+// leaves behind never blocks a save and is never stored.
+describe("operationStepValidator list options", () => {
+  const listStep = (listValues?: string[]) => ({
+    operationId: "op1",
+    name: "Pick a finish",
+    description: "Choose one",
+    type: "List" as const,
+    listValues
+  });
+
+  const listValuesError = (listValues?: string[]) => {
+    const result = operationStepValidator.safeParse(listStep(listValues));
+    if (result.success) return undefined;
+    return result.error.issues.find(
+      (issue) => issue.path.join(".") === "listValues"
+    )?.message;
+  };
+
+  it("puts the missing-options error on the listValues field", () => {
+    expect(listValuesError(undefined)).toBe("List options are required");
+    expect(listValuesError([])).toBe("List options are required");
+  });
+
+  it("treats a list of blank rows as no options", () => {
+    expect(listValuesError(["", "  "])).toBe("List options are required");
+  });
+
+  it("drops a trailing empty row instead of refusing the save", () => {
+    const result = operationStepValidator.safeParse(
+      listStep(["Matte", "Gloss", ""])
+    );
+    expect(result.success).toBe(true);
+    expect(result.data?.listValues).toEqual(["Matte", "Gloss"]);
+  });
+
+  it("does not require options on other step types", () => {
+    expect(
+      operationStepValidator.safeParse({ ...listStep(), type: "Task" }).success
+    ).toBe(true);
   });
 });

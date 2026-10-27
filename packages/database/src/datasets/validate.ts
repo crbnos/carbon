@@ -47,6 +47,7 @@ import {
   signedNet,
   voidJournal
 } from "./helpers/posting-journals.ts";
+import { allItemSpecs, extensionTableFor } from "./item-tables.ts";
 import { RULE_FIELDS, type RuleValueKind } from "./rule-fields.ts";
 import type {
   AccountClass,
@@ -1544,6 +1545,20 @@ export function foundation(ctx: ValidationCtx): void {
     );
   }
   checkCoverage(fail, { procedureStatus: seenProcedureStatuses });
+
+  // A party's own address (a foreign buyer an export rule must see).
+  for (const [bucket, parties] of [
+    ["customers", f.customers],
+    ["suppliers", f.suppliers]
+  ] as const) {
+    for (const party of parties) {
+      if (party.address && !/^[A-Z]{2}$/.test(party.address.countryCode)) {
+        fail(
+          `foundation.${bucket} "${party.name}": address.countryCode "${party.address.countryCode}" is not a 2-letter upper-case ISO code`
+        );
+      }
+    }
+  }
 }
 
 export function itemIdentity(ctx: ValidationCtx): void {
@@ -1569,6 +1584,37 @@ export function itemIdentity(ctx: ValidationCtx): void {
 export function items(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need, needCustomer } = ctx;
   const f = dataset.foundation;
+
+  // Custom field values: tier 10 places each one by (type table, field name),
+  // and a List value must be one the field's select can show.
+  const customFields = new Map(
+    dataset.ops.customFields.map((field) => [
+      `${field.table}:${field.name}`,
+      field
+    ])
+  );
+  for (const [bucket, specs] of ix.itemBuckets) {
+    for (const spec of specs) {
+      const table = extensionTableFor(spec.type);
+      for (const [name, value] of Object.entries(
+        spec.customFieldValues ?? {}
+      )) {
+        const field = customFields.get(`${table}:${name}`);
+        if (!field) {
+          fail(
+            `${bucket} "${spec.readableId}": customFieldValues "${name}" is not an ops.customFields field on table "${table}"`
+          );
+        } else if (
+          field.dataType === "List" &&
+          !field.listOptions?.includes(String(value))
+        ) {
+          fail(
+            `${bucket} "${spec.readableId}": customFieldValues "${name}" = "${value}" is not one of its listOptions`
+          );
+        }
+      }
+    }
+  }
   const { makePartIds, toolIds, itemBuckets } = ix;
   const procedures = new Set(f.procedures.map((p) => p.name));
   const supplierProcessKeys = new Set(
@@ -5419,14 +5465,7 @@ export function postings(ctx: ValidationCtx): void {
   const { dataset, fail } = ctx;
   const a = dataset.accounting;
   const items = new Map(
-    [
-      ...dataset.items.buyParts,
-      ...dataset.items.materials,
-      ...dataset.items.consumables,
-      ...dataset.items.tools,
-      ...dataset.items.services,
-      ...dataset.items.makeParts
-    ].map((item) => [item.readableId, item])
+    allItemSpecs(dataset.items).map((item) => [item.readableId, item])
   );
   const itemFacts = (readableId: string) => {
     const item = items.get(readableId);

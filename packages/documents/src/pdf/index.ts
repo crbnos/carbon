@@ -7,6 +7,7 @@ import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchListMember } from "./BatchListPDF";
 import { BatchListPDF } from "./BatchListPDF";
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
+import type { PurchaseOrderApproval } from "./blocks/purchaseOrder";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
@@ -31,7 +32,7 @@ import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
 
-export type { BatchListMember, JobTravelerMaterial };
+export type { BatchListMember, JobTravelerMaterial, PurchaseOrderApproval };
 export {
   BatchListPDF,
   DOCUMENT_PDFS,

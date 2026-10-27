@@ -2,238 +2,218 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { DEFAULT_SYNC_CONFIG, ProviderID, validateSyncConfig } from "./models";
 import {
   ensureProviderSubscriptions,
-  getSyncSubscriptionName,
   REQUIRED_SYNC_SUBSCRIPTIONS
 } from "./subscriptions";
 
-/**
- * Minimal mock of the two client surfaces convergence touches: the
- * create/delete subscription RPCs and the `eventSystemSubscription` list
- * read. `existingRows` simulates what is already in the table for the
- * provider's `${id}-sync` name.
- */
-function makeClient(existingRows: Array<{ id: string; table: string }>) {
-  const rpc = vi.fn(async (fn: string) => {
-    if (fn === "create_event_system_subscription") {
-      return { data: [{ id: "sub_new" }], error: null };
-    }
-    return { data: null, error: null };
-  });
+type Row = {
+  id: string;
+  companyId: string;
+  name: string;
+  table: string;
+  handlerType?: string;
+  config?: unknown;
+  active?: boolean;
+};
 
-  const from = vi.fn(() => ({
-    select: () => ({
-      eq: () => ({
-        eq: async () => ({ data: existingRows, error: null })
+/**
+ * An in-memory `eventSystemSubscription` table behind the create (upsert on
+ * companyId + name + table) and delete RPCs and the list read.
+ */
+function makeStore(initial: Row[] = []) {
+  const rows = [...initial];
+  let nextId = 0;
+  const client = {
+    async rpc(fn: string, params: Record<string, any>) {
+      if (fn === "create_event_system_subscription") {
+        const row: Row = {
+          id: `new_${nextId++}`,
+          companyId: params.p_company_id,
+          name: params.p_name,
+          table: params.p_table,
+          handlerType: params.p_handler_type,
+          config: params.p_config,
+          active: params.p_active
+        };
+        const index = rows.findIndex(
+          (r) =>
+            r.companyId === row.companyId &&
+            r.name === row.name &&
+            r.table === row.table
+        );
+        if (index === -1) rows.push(row);
+        else rows[index] = { ...row, id: rows[index]!.id };
+        return { data: [{ id: row.id }], error: null };
+      }
+      if (fn === "delete_event_system_subscription") {
+        const index = rows.findIndex((r) => r.id === params.p_subscription_id);
+        if (index !== -1) rows.splice(index, 1);
+        return { data: null, error: null };
+      }
+      throw new Error(`unexpected rpc ${fn}`);
+    },
+    from: () => ({
+      select: () => ({
+        eq: (_c1: string, companyId: string) => ({
+          eq: async (_c2: string, name: string) => ({
+            data: rows.filter(
+              (r) => r.companyId === companyId && r.name === name
+            ),
+            error: null
+          })
+        })
       })
     })
-  }));
-
-  return { rpc, from } as any;
+  };
+  return { client: client as any, rows };
 }
 
+const tablesOf = (providerId: (typeof ProviderID)[keyof typeof ProviderID]) =>
+  REQUIRED_SYNC_SUBSCRIPTIONS[providerId].map((s) => s.table);
+
 describe("REQUIRED_SYNC_SUBSCRIPTIONS", () => {
-  it("subscribes journal for every provider (posting sync's event source)", () => {
-    for (const providerId of Object.values(ProviderID)) {
-      const tables = REQUIRED_SYNC_SUBSCRIPTIONS[providerId].map(
-        (subscription) => subscription.table
-      );
-      expect(tables, `${providerId} must subscribe journal`).toContain(
-        "journal"
-      );
-    }
-  });
-
-  it("never subscribes address (dead letter — parent bump covers it)", () => {
-    for (const providerId of Object.values(ProviderID)) {
-      const tables = REQUIRED_SYNC_SUBSCRIPTIONS[providerId].map(
-        (subscription) => subscription.table
-      );
-      expect(tables).not.toContain("address");
-    }
-  });
-
-  it("never subscribes item — the part catalog is not accounting data", () => {
-    // Carbon's item master is parts, materials, tools and consumables: tens of
-    // thousands of rows that mean nothing to an accounting system. Subscribing
-    // the table pushed every one of them, on every edit, with no filter (no item
-    // syncer overrides `shouldSync`) — burying the few real sellable goods in
-    // Products & Services and churning the provider on engineering edits.
-    //
-    // No invoice references a Carbon item any more (AR lines carry a synthetic
-    // per-revenue-account product, or are account-coded); the documents that do
-    // — sales orders, purchase orders, inventory adjustments — still push
-    // exactly the items they name, JIT via `ensureDependencySynced("item", …)`.
-    // Re-adding this subscription would silently restore the catalog dump.
-    for (const providerId of Object.values(ProviderID)) {
-      const tables = REQUIRED_SYNC_SUBSCRIPTIONS[providerId].map(
-        (subscription) => subscription.table
-      );
-      expect(tables, `${providerId} must not subscribe item`).not.toContain(
-        "item"
+  it.each(Object.values(ProviderID))(
+    "%s subscribes journal and the master/document tables it owns",
+    (providerId) => {
+      expect(tablesOf(providerId)).toEqual(
+        expect.arrayContaining([
+          "journal",
+          "customer",
+          "supplier",
+          "salesInvoice",
+          "purchaseInvoice"
+        ])
       );
     }
-  });
+  );
 
-  it("still subscribes the tables a provider genuinely owns", () => {
-    // Guards the removal above from over-reaching: dropping `item` must not
-    // disturb the master/document tables the push actually depends on.
-    for (const providerId of Object.values(ProviderID)) {
-      const tables = REQUIRED_SYNC_SUBSCRIPTIONS[providerId].map(
-        (subscription) => subscription.table
-      );
-      for (const table of [
-        "customer",
-        "supplier",
-        "salesInvoice",
-        "purchaseInvoice"
-      ]) {
-        expect(tables, `${providerId} must subscribe ${table}`).toContain(
-          table
-        );
-      }
+  // address is covered by its parent's bump; item would push the whole parts
+  // catalog — documents that need an item sync it on demand.
+  it.each(Object.values(ProviderID))(
+    "%s never subscribes address or item",
+    (providerId) => {
+      expect(tablesOf(providerId)).not.toContain("address");
+      expect(tablesOf(providerId)).not.toContain("item");
     }
-  });
+  );
 
-  it("lets a company sync bills with the item entity turned OFF", () => {
-    // `validateSyncConfig` refuses to enable an entity whose declared dependency
-    // is disabled. `bill` used to declare `dependsOn: ["vendor", "item"]` —
-    // left over from before AP bills became account-costed journal replays — so
-    // "bills on, items off" was an invalid config, blocking the one thing a
-    // customer would most reasonably want. No bill syncer references an item on
-    // the push.
-    const config = structuredClone(DEFAULT_SYNC_CONFIG);
-    config.entities.item.enabled = false;
-    config.entities.bill.enabled = true;
-    config.entities.vendor.enabled = true;
-
-    const errors = validateSyncConfig(config);
-    expect(errors.filter((e) => e.includes("Bills"))).toEqual([]);
-  });
-
-  it("still requires items for the documents that DO reference them", () => {
-    // The guard against over-correcting. Purchase/sales ORDERS and inventory
-    // adjustments genuinely JIT-sync items (they are non-posting or item-keyed,
-    // so item detail is real), and disabling items must still be refused for
-    // them rather than silently producing lines with no product.
-    for (const entity of [
-      "purchaseOrder",
-      "salesOrder",
-      "inventoryAdjustment"
-    ] as const) {
-      const config = structuredClone(DEFAULT_SYNC_CONFIG);
-      config.entities.item.enabled = false;
-      config.entities[entity].enabled = true;
-      config.entities.customer.enabled = true;
-      config.entities.vendor.enabled = true;
-
-      expect(
-        validateSyncConfig(config).some((e) => e.includes("Items")),
-        `${entity} must still require items`
-      ).toBe(true);
-    }
-  });
-
-  it("lets a company sync sales invoices with the item entity turned OFF", () => {
-    // The point of the change: an AR invoice line carries a synthetic
-    // per-revenue-account item (or none, on Xero), never the Carbon item, so
-    // the parts catalog never needs to reach the provider.
-    const config = structuredClone(DEFAULT_SYNC_CONFIG);
-    config.entities.item.enabled = false;
-    config.entities.invoice.enabled = true;
-    config.entities.customer.enabled = true;
-
+  it("subscribes payment only for the push-capable providers", () => {
     expect(
-      validateSyncConfig(config).filter((e) => e.includes("Sales Invoices"))
-    ).toEqual([]);
-  });
-
-  it("subscribes payment for every push-capable provider (Xero, QBO, Rillet)", () => {
-    const withPayment = Object.values(ProviderID).filter((providerId) =>
-      REQUIRED_SYNC_SUBSCRIPTIONS[providerId].some(
-        (subscription) => subscription.table === "payment"
+      Object.values(ProviderID).filter((providerId) =>
+        tablesOf(providerId).includes("payment")
       )
-    );
-    expect(withPayment).toEqual([
-      ProviderID.XERO,
-      ProviderID.QUICKBOOKS,
-      ProviderID.RILLET
-    ]);
+    ).toEqual([ProviderID.XERO, ProviderID.QUICKBOOKS, ProviderID.RILLET]);
   });
 });
 
-describe("ensureProviderSubscriptions", () => {
-  it("upserts every required table under the provider's sync name", async () => {
-    const client = makeClient([]);
+describe("validateSyncConfig item dependency", () => {
+  const withItemsOff = (...entities: string[]) => {
+    const config = structuredClone(DEFAULT_SYNC_CONFIG);
+    config.entities.item.enabled = false;
+    for (const entity of entities) {
+      config.entities[entity as keyof typeof config.entities].enabled = true;
+    }
+    return validateSyncConfig(config);
+  };
 
+  // Bills and AR invoices are account-coded; no line names a Carbon item.
+  it.each([
+    ["bill", "vendor", "Bills"],
+    ["invoice", "customer", "Sales Invoices"]
+  ])("allows %s sync with items off", (entity, party, label) => {
+    expect(
+      withItemsOff(entity, party).filter((e) => e.includes(label))
+    ).toEqual([]);
+  });
+
+  it.each(["purchaseOrder", "salesOrder", "inventoryAdjustment"])(
+    "still requires items for %s, whose lines name them",
+    (entity) => {
+      expect(
+        withItemsOff(entity, "customer", "vendor").some((e) =>
+          e.includes("Items")
+        )
+      ).toBe(true);
+    }
+  );
+});
+
+describe("ensureProviderSubscriptions", () => {
+  it("creates every required table as an active SYNC subscription under the provider's name", async () => {
+    const { client, rows } = makeStore();
     const result = await ensureProviderSubscriptions(
       client,
       "company-1",
       ProviderID.RILLET
     );
 
-    const required = REQUIRED_SYNC_SUBSCRIPTIONS[ProviderID.RILLET];
-    const createCalls = client.rpc.mock.calls.filter(
-      ([fn]: [string]) => fn === "create_event_system_subscription"
+    expect(rows.map((r) => r.table).sort()).toEqual(
+      tablesOf(ProviderID.RILLET).sort()
     );
-
-    expect(createCalls).toHaveLength(required.length);
-    for (const [, params] of createCalls) {
-      expect(params.p_name).toBe(getSyncSubscriptionName(ProviderID.RILLET));
-      expect(params.p_company_id).toBe("company-1");
-      expect(params.p_handler_type).toBe("SYNC");
-      expect(params.p_config).toEqual({ provider: ProviderID.RILLET });
-      expect(params.p_active).toBe(true);
+    for (const row of rows) {
+      expect(row).toMatchObject({
+        companyId: "company-1",
+        name: "rillet-sync",
+        handlerType: "SYNC",
+        config: { provider: ProviderID.RILLET },
+        active: true
+      });
     }
-
-    expect(result.ensured.sort()).toEqual(
-      required.map((subscription) => subscription.table).sort()
-    );
     expect(result.removed).toEqual([]);
   });
 
-  it("removes rows whose table is no longer required (e.g. legacy address)", async () => {
-    const client = makeClient([
-      { id: "sub_addr", table: "address" },
-      { id: "sub_journal", table: "journal" }
+  it("removes this company's rows for tables no longer required, and nobody else's", async () => {
+    const { client, rows } = makeStore([
+      {
+        id: "addr",
+        companyId: "company-1",
+        name: "rillet-sync",
+        table: "address"
+      },
+      {
+        id: "other-name",
+        companyId: "company-1",
+        name: "webhook",
+        table: "address"
+      },
+      {
+        id: "other-company",
+        companyId: "company-2",
+        name: "rillet-sync",
+        table: "address"
+      }
     ]);
-
     const result = await ensureProviderSubscriptions(
       client,
       "company-1",
       ProviderID.RILLET
     );
 
-    const deleteCalls = client.rpc.mock.calls.filter(
-      ([fn]: [string]) => fn === "delete_event_system_subscription"
-    );
-    expect(deleteCalls).toHaveLength(1);
-    expect(deleteCalls[0]?.[1]).toEqual({ p_subscription_id: "sub_addr" });
     expect(result.removed).toEqual(["address"]);
+    expect(rows.filter((r) => r.table === "address").map((r) => r.id)).toEqual([
+      "other-name",
+      "other-company"
+    ]);
   });
 
-  it("is idempotent — a fully-converged install deletes nothing", async () => {
-    const required = REQUIRED_SYNC_SUBSCRIPTIONS[ProviderID.XERO];
-    const client = makeClient(
-      required.map((subscription, index) => ({
-        id: `sub_${index}`,
-        table: subscription.table
-      }))
-    );
-
+  it("keeps the existing rows of a fully converged install", async () => {
+    const existing = tablesOf(ProviderID.XERO).map((table, index) => ({
+      id: `sub_${index}`,
+      companyId: "company-1",
+      name: "xero-sync",
+      table
+    }));
+    const { client, rows } = makeStore(existing);
     const result = await ensureProviderSubscriptions(
       client,
       "company-1",
       ProviderID.XERO
     );
 
-    const deleteCalls = client.rpc.mock.calls.filter(
-      ([fn]: [string]) => fn === "delete_event_system_subscription"
-    );
-    expect(deleteCalls).toHaveLength(0);
     expect(result.removed).toEqual([]);
+    expect(rows.map((r) => r.id)).toEqual(existing.map((r) => r.id));
   });
 });

@@ -24,6 +24,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
@@ -32,6 +33,7 @@ import type { InspectionDocument } from "../../types";
 type InspectionDocumentTableProps = {
   data: InspectionDocument[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -41,7 +43,7 @@ const defaultColumnVisibility = {
 };
 
 const InspectionDocumentTable = memo(
-  ({ data, count }: InspectionDocumentTableProps) => {
+  ({ data, count, infinite }: InspectionDocumentTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -94,6 +96,8 @@ const InspectionDocumentTable = memo(
           accessorKey: "name",
           header: t`Name`,
           cell: ({ row }) => row.original.name,
+          // The service computes `name`; the view has no such column to sort.
+          enableSorting: false,
           meta: { mobile: "P3", icon: <LuTarget /> }
         },
         {
@@ -170,6 +174,7 @@ const InspectionDocumentTable = memo(
       <>
         <Table<InspectionDocument>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}

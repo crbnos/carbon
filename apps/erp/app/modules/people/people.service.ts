@@ -13,8 +13,8 @@ import type { z } from "zod";
 import type { DataType } from "~/modules/shared/types";
 import type { Employee } from "~/modules/users/types";
 import { getEmployees } from "~/modules/users/users.service";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   departmentValidator,
@@ -99,6 +99,10 @@ async function getAttributes(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
+export const ATTRIBUTE_CATEGORIES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getAttributeCategories(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -107,7 +111,7 @@ export async function getAttributeCategories(
   let query = client
     .from("userAttributeCategory")
     .select("*, userAttribute(id, name, attributeDataType(id))", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true)
@@ -118,9 +122,7 @@ export async function getAttributeCategories(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ATTRIBUTE_CATEGORIES_PAGING);
   }
 
   return query;
@@ -239,6 +241,10 @@ export async function getHoliday(
   return client.from("holiday").select("*").eq("id", holidayId).single();
 }
 
+export const HOLIDAYS_PAGING: Paging = {
+  defaultSorts: [{ column: "date", ascending: true }]
+};
+
 export async function getHolidays(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -247,7 +253,7 @@ export async function getHolidays(
   let query = client
     .from("holiday")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -256,9 +262,7 @@ export async function getHolidays(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "date", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, HOLIDAYS_PAGING);
   }
 
   return query;
@@ -408,6 +412,10 @@ export async function getShift(
     .single();
 }
 
+export const SHIFTS_PAGING: Paging = {
+  defaultSorts: [{ column: "locationId", ascending: true }]
+};
+
 export async function getShifts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -416,7 +424,7 @@ export async function getShifts(
   let query = client
     .from("shifts")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -425,9 +433,7 @@ export async function getShifts(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "locationId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIFTS_PAGING);
   return query;
 }
 
@@ -483,6 +489,25 @@ export async function getShiftsWithTimes(
     .eq("locationId", locationId)
     .eq("active", true)
     .order("name");
+}
+
+/**
+ * Active shifts by id, with their times. A work center can be linked to a
+ * shift of another location, which `getShiftsWithTimes` does not return.
+ */
+export async function getShiftsWithTimesByIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  shiftIds: string[]
+) {
+  return client
+    .from("shift")
+    .select(
+      "id, name, startTime, endTime, monday, tuesday, wednesday, thursday, friday, saturday, sunday"
+    )
+    .eq("companyId", companyId)
+    .in("id", shiftIds)
+    .eq("active", true);
 }
 
 export async function insertAttribute(
@@ -987,6 +1012,10 @@ export async function getTimeCardEntries(
   return query;
 }
 
+export const TIMECARD_ENTRIES_PAGING: Paging = {
+  defaultSorts: [{ column: "clockIn", ascending: false }]
+};
+
 export async function getTimecardEntries(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -994,16 +1023,14 @@ export async function getTimecardEntries(
 ) {
   let query = client
     .from("timeCardEntries")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(searchFilter(["firstName", "lastName"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "clockIn", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, TIMECARD_ENTRIES_PAGING);
 
   return query;
 }

@@ -11,8 +11,8 @@ import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/env";
 import { sendEmail } from "@carbon/lib/email.server";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
-import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { inngest } from "../../client";
 
 export const userAdminFunction = inngest.createFunction(

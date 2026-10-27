@@ -39,6 +39,7 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -50,6 +51,7 @@ import AssemblyInstructionStatus from "./AssemblyInstructionStatus";
 type AssemblyInstructionsTableProps = {
   data: AssemblyInstructionListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const itemTypesWithDetails = ["Part", "Material", "Tool", "Consumable"];
@@ -71,7 +73,7 @@ function ProcessingStatus({ status }: { status?: string | null }) {
 }
 
 const AssemblyInstructionsTable = memo(
-  ({ data, count }: AssemblyInstructionsTableProps) => {
+  ({ data, count, infinite }: AssemblyInstructionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -287,6 +289,7 @@ const AssemblyInstructionsTable = memo(
           data={data}
           columns={columns}
           count={count}
+          infinite={infinite}
           primaryAction={
             permissions.can("create", "production") && (
               <New

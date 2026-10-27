@@ -2,16 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSupplierTypes } from "~/modules/purchasing/purchasing.service";
 import { SupplierTypesTable } from "~/modules/purchasing/ui/SupplierTypes";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { supplierTypesList } from "~/utils/list-registry/purchasing.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Supplier Types`,
@@ -19,30 +18,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing",
-    role: "employee"
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts } = getGenericQueryFilters(searchParams);
-
-  return await getSupplierTypes(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts
-  });
+  return loadListPage(request, supplierTypesList, { dataKey: "data" });
 }
 
 export default function SupplierTypesRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <SupplierTypesTable data={data ?? []} count={count ?? 0} />
+      <SupplierTypesTable data={data} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

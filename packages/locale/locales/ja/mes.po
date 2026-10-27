@@ -226,6 +226,9 @@ msgstr "このページを離れてもよろしいですか？"
 msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
 msgstr "この工程を完了としてマークしてもよろしいですか？これにより、この工程のすべてのアクティブな生産イベントが終了します。"
 
+msgid "Ask a supervisor to add the {processName} ability to your profile."
+msgstr ""
+
 msgid "Assembly steps"
 msgstr "組立ステップ"
 
@@ -286,6 +289,9 @@ msgstr "バッチ詳細"
 
 msgid "Batch is not available"
 msgstr "バッチは利用可能ではありません"
+
+msgid "Batch notes"
+msgstr "バッチメモ"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -450,6 +456,9 @@ msgstr "バッチを完了"
 
 msgid "Complete passed"
 msgstr "合格を完了する"
+
+msgid "Complete the {trainingName} training to get the {processName} ability."
+msgstr ""
 
 msgid "Completed"
 msgstr "完了済み"
@@ -1865,6 +1874,9 @@ msgstr "シャッフル"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインしてください。パスキーはFace ID、Touch ID、またはデバイスPINで保護されています。"
 
+msgid "Sign in with code"
+msgstr ""
+
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
 
@@ -1882,6 +1894,9 @@ msgstr "サインアウト"
 
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
+
+msgid "Sign-in code"
+msgstr ""
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
@@ -2233,8 +2248,8 @@ msgstr "保全指示を表示"
 msgid "View or open"
 msgstr "表示または開く"
 
-msgid "We've sent you a magic link to sign in to your account."
-msgstr "アカウントにサインインするためのマジックリンクをお送りしました。"
+msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
@@ -2260,8 +2275,20 @@ msgstr "メモを書く…"
 msgid "Yes"
 msgstr "はい"
 
+msgid "You can still start this operation."
+msgstr ""
+
+msgid "You can't work on this operation"
+msgstr ""
+
+msgid "You don't have the {processName} ability"
+msgstr ""
+
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "作業開始から{hoursElapsed}時間が経過しています。作業終了を忘れていませんか？"
+
+msgid "Your {processName} qualification expired on {expiredDate}."
+msgstr ""
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "あなたのアカウントはまだ会社に属していません。継続するには、Carbon ERP でオンボーディングを完了してください。"

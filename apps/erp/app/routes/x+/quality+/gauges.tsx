@@ -2,19 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import {
-  getGauges,
-  getGaugeTypesList
-} from "~/modules/quality/quality.service";
+import { getGaugeTypesList } from "~/modules/quality/quality.service";
 import GaugesTable from "~/modules/quality/ui/Gauge/GaugesTable";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { gaugesList } from "~/utils/list-registry/quality.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Gauges`,
@@ -22,41 +19,26 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee"
+  return loadListPage(request, gaugesList, {
+    dataKey: "gauges",
+    firstPage: async ({ client, companyId }) => ({
+      gaugeTypes: (await getGaugeTypesList(client, companyId)).data ?? []
+    })
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [gauges, gaugeTypes] = await Promise.all([
-    getGauges(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    getGaugeTypesList(client, companyId)
-  ]);
-
-  return {
-    gauges: gauges.data ?? [],
-    count: gauges.count ?? 0,
-    gaugeTypes: gaugeTypes.data ?? []
-  };
 }
 
 export default function GaugesRoute() {
-  const { gauges, count, gaugeTypes } = useLoaderData<typeof loader>();
+  const { gauges, count, infinite, gaugeTypes } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <GaugesTable data={gauges} count={count} types={gaugeTypes} />
+      <GaugesTable
+        data={gauges}
+        count={count}
+        infinite={infinite}
+        types={gaugeTypes}
+      />
       <RecordOutlet />
     </VStack>
   );

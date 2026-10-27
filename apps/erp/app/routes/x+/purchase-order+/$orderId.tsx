@@ -7,6 +7,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getCompanyTimeZone } from "@carbon/database";
 import {
   canApproveRequest,
   canCancelRequest,
@@ -26,11 +27,13 @@ import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteraction,
-  getSupplierInteractionDocuments
+  getSupplierInteractionDocuments,
+  withoutStoredPurchaseOrderPdfs
 } from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseOrderExplorer,
@@ -144,7 +147,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const [supplier, interaction, approvalRequest, companySettings] =
+  const [supplier, interaction, approvalRequest, companySettings, approval] =
     await Promise.all([
       purchaseOrder.data?.supplierId
         ? getSupplier(client, purchaseOrder.data.supplierId)
@@ -158,7 +161,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             orderId
           )
         : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole, companyId)
+      getCompanySettings(serviceRole, companyId),
+      // Who approved it, for the properties panel.
+      getCompanyTimeZone(serviceRole, companyId).then((timezone) =>
+        getPurchaseOrderApproval(serviceRole, {
+          companyId,
+          purchaseOrderId: orderId,
+          timezone
+        })
+      )
     ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -212,7 +223,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
   const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
   // One listing feeds both the documents panel and the attachment list, and
-  // neither holds up the page.
+  // neither holds up the page. The attachment list leaves out the stored PO
+  // PDFs, as the finalize email does: it attaches this order's new PDF itself.
   const files = supplierInteractionId
     ? getSupplierInteractionDocuments(
         serviceRole,
@@ -226,7 +238,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       supplierId: purchaseOrder.data?.supplierId ?? null,
       itemIds
     }),
-    files
+    supplierInteractionId
+      ? files.then((docs) =>
+          withoutStoredPurchaseOrderPdfs(
+            serviceRole,
+            companyId,
+            supplierInteractionId,
+            docs
+          )
+        )
+      : files
   ])
     .then(([defaults, adHocDocs]) => [
       ...defaults,
@@ -260,6 +281,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     interaction: interaction?.data,
     supplier: supplier?.data ?? null,
     approvalRequest: approvalRequest.data,
+    approval,
     canApprove,
     canReopen,
     canDelete,

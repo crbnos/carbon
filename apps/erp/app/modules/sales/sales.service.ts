@@ -73,7 +73,11 @@ import {
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
-import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
+import {
+  storage,
+  storedDocumentPdfName,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -114,7 +118,6 @@ import {
   wholeRateUnits
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import { renderAsync } from "@react-email/components";
 import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
@@ -124,6 +127,7 @@ import type {
 import { generateText, Output } from "ai";
 import { type Selectable, sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -149,9 +153,8 @@ import {
 } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { stripSpecialCharacters } from "~/utils/string";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -1046,6 +1049,10 @@ function pickBestBreak(
   return best;
 }
 
+export const CUSTOMERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getCustomers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1056,7 +1063,7 @@ export async function getCustomers(
   let query = client
     .from("customers")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1064,9 +1071,7 @@ export async function getCustomers(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CUSTOMERS_PAGING);
   return query;
 }
 
@@ -1093,6 +1098,10 @@ export async function getCustomerStatus(
     .single();
 }
 
+export const CUSTOMER_STATUSES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getCustomerStatuses(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1100,7 +1109,9 @@ export async function getCustomerStatuses(
 ) {
   let query = client
     .from("customerStatus")
-    .select("id, name, customFields", { count: LIST_COUNT })
+    .select("id, name, customFields", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1108,9 +1119,7 @@ export async function getCustomerStatuses(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_STATUSES_PAGING);
   }
 
   return query;
@@ -1138,6 +1147,10 @@ export async function getCustomerType(
     .single();
 }
 
+export const CUSTOMER_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getCustomerTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1145,7 +1158,7 @@ export async function getCustomerTypes(
 ) {
   let query = client
     .from("customerType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1153,9 +1166,7 @@ export async function getCustomerTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_TYPES_PAGING);
   }
 
   return query;
@@ -1195,9 +1206,12 @@ export async function getExternalSalesOrderLines(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "orderDate", ascending: true }
-    ]);
+    // The RPC returns no `id`, so `salesOrderId` is the last order term. The
+    // share page loads one page only and never follows a cursor.
+    query = setGenericQueryFilters(query, args, {
+      defaultSorts: [{ column: "orderDate", ascending: true }],
+      idColumn: "salesOrderId"
+    });
   }
 
   return query;
@@ -1240,6 +1254,10 @@ export async function getNoQuoteReason(
     .single();
 }
 
+export const NO_QUOTE_REASONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getNoQuoteReasons(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1247,7 +1265,7 @@ export async function getNoQuoteReasons(
 ) {
   let query = client
     .from("noQuoteReason")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1255,9 +1273,7 @@ export async function getNoQuoteReasons(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, NO_QUOTE_REASONS_PAGING);
   }
 
   return query;
@@ -1370,6 +1386,9 @@ export async function getPricingRule(
   return client.from("pricingRule").select("*").eq("id", id).single();
 }
 
+// No default order: without a sort the list follows the id.
+export const PRICING_RULES_PAGING: Paging = { defaultSorts: [] };
+
 export async function getPricingRules(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1377,7 +1396,7 @@ export async function getPricingRules(
 ) {
   let query = client
     .from("pricingRule")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1385,7 +1404,7 @@ export async function getPricingRules(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args);
+    query = setGenericQueryFilters(query, args, PRICING_RULES_PAGING);
   }
 
   return query;
@@ -1406,6 +1425,10 @@ export async function getQuote(
   return client.from("quotes").select("*").eq("id", quoteId).single();
 }
 
+export const QUOTES_PAGING: Paging = {
+  defaultSorts: [{ column: "quoteId", ascending: false }]
+};
+
 export async function getQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1415,7 +1438,9 @@ export async function getQuotes(
 ) {
   let query = client
     .from("quotes")
-    .select(QUOTES_LIST_COLUMNS, { count: LIST_COUNT })
+    .select(QUOTES_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1424,9 +1449,7 @@ export async function getQuotes(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "quoteId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, QUOTES_PAGING);
   return query;
 }
 
@@ -1846,6 +1869,10 @@ export async function getSalesOrderRelatedItems(
   };
 }
 
+export const SALES_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getSalesOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1857,7 +1884,10 @@ export async function getSalesOrders(
 ) {
   let query = client
     .from("salesOrders")
-    .select(SALES_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select(SALES_ORDERS_LIST_COLUMNS, {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1874,9 +1904,7 @@ export async function getSalesOrders(
     query = query.eq("status", args.status as never);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SALES_ORDERS_PAGING);
 
   return query;
 }
@@ -2057,6 +2085,10 @@ export async function getSalesRFQ(
   return client.from("salesRfqs").select("*").eq("id", id).single();
 }
 
+export const SALES_RFQS_PAGING: Paging = {
+  defaultSorts: [{ column: "rfqId", ascending: false }]
+};
+
 export async function getSalesRFQs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2066,16 +2098,14 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(searchFilter(["rfqId", "customerReference"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "rfqId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SALES_RFQS_PAGING);
   return query;
 }
 
@@ -2446,29 +2476,39 @@ async function resolvePostingGroupFilter(
 ): Promise<{
   itemIds: string[] | null;
   filters: GenericQueryFilters["filters"];
+  error: PostgrestError | null;
 }> {
   if (!filters || filters.length === 0) {
-    return { itemIds: null, filters };
+    return { itemIds: null, filters, error: null };
   }
   const postingGroupFilters = filters.filter(
     (f): f is { column: string; operator: string; value: string } =>
       f.column === "itemPostingGroupId" && Boolean(f.value)
   );
   if (postingGroupFilters.length === 0) {
-    return { itemIds: null, filters };
+    return { itemIds: null, filters, error: null };
   }
   const remaining = filters.filter((f) => f.column !== "itemPostingGroupId");
   const groupIds = postingGroupFilters.flatMap((f) =>
     f.operator === "in" ? f.value.split(",") : [f.value]
   );
-  const { data } = await client
+  const { data, error } = await client
     .from("itemCost")
     .select("itemId")
     .eq("companyId", companyId)
     .in("itemPostingGroupId", groupIds);
   const itemIds = (data ?? []).map((r) => r.itemId);
-  return { itemIds, filters: remaining };
+  return { itemIds, filters: remaining, error };
 }
+
+// The price list (`resolvePriceList`, `getBaseCatalog`) has no default order:
+// without a sort it follows the item id. Its rows are computed per item, so
+// a row's tie-breaker is `itemId`; the item query itself breaks ties on the
+// item's own `id`, the same value.
+export const PRICE_LIST_PAGING: Paging = {
+  defaultSorts: [],
+  idColumn: "itemId"
+};
 
 export async function resolvePriceList(
   client: SupabaseClient<Database>,
@@ -2496,20 +2536,21 @@ export async function resolvePriceList(
   } else if (args.customerTypeId) {
     scopeQuery = scopeQuery.eq("customerTypeId", args.customerTypeId);
   } else {
-    return { data: [], count: 0 };
+    return { data: [], count: 0, error: null };
   }
 
-  const { data: scopedOverrides } = await scopeQuery;
+  const { data: scopedOverrides, error: scopeError } = await scopeQuery;
+  if (scopeError) return { data: [], count: 0, error: scopeError };
   const overriddenItemIds = (scopedOverrides ?? []).map((r) => r.itemId);
   if (overriddenItemIds.length === 0) {
-    return { data: [], count: 0 };
+    return { data: [], count: 0, error: null };
   }
 
   let itemQuery = client
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("active", true)
     .in("id", overriddenItemIds);
@@ -2518,34 +2559,43 @@ export async function resolvePriceList(
     itemQuery = itemQuery.or(searchFilter(["name", "readableId"], args.search));
   }
 
-  const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
-    await resolvePostingGroupFilter(client, companyId, args.filters);
+  const {
+    itemIds: postingGroupItemIds,
+    filters: filtersWithoutPostingGroup,
+    error: postingGroupError
+  } = await resolvePostingGroupFilter(client, companyId, args.filters);
+  if (postingGroupError) {
+    return { data: [], count: 0, error: postingGroupError };
+  }
   if (postingGroupItemIds !== null) {
     if (postingGroupItemIds.length === 0) {
-      return { data: [], count: 0 };
+      return { data: [], count: 0, error: null };
     }
     itemQuery = itemQuery.in("id", postingGroupItemIds);
   }
 
-  itemQuery = setGenericQueryFilters(itemQuery, {
-    ...args,
-    filters: filtersWithoutPostingGroup
-  });
+  itemQuery = setGenericQueryFilters(
+    itemQuery,
+    { ...args, filters: filtersWithoutPostingGroup },
+    PRICE_LIST_PAGING.defaultSorts
+  );
 
-  const { data: items, count } = await itemQuery;
+  const { data: items, count, error: itemsError } = await itemQuery;
+  if (itemsError) return { data: [], count: 0, error: itemsError };
   if (!items || items.length === 0) {
-    return { data: [], count: count ?? 0 };
+    return { data: [], count: count ?? 0, error: null };
   }
 
   const itemIds = items.map((i) => i.id);
 
   let resolvedCustomerTypeId = args.customerTypeId ?? null;
   if (args.customerId && !resolvedCustomerTypeId) {
-    const { data: cust } = await client
+    const { data: cust, error: customerError } = await client
       .from("customer")
       .select("customerTypeId")
       .eq("id", args.customerId)
       .maybeSingle();
+    if (customerError) return { data: [], count: 0, error: customerError };
     resolvedCustomerTypeId = cust?.customerTypeId ?? null;
   }
 
@@ -2578,28 +2628,30 @@ export async function resolvePriceList(
   const allOverrideMap = new Map<string, OverrideEntry>();
 
   if (args.customerId) {
-    const { data: rows } = await client
+    const { data: rows, error } = await client
       .from("customerItemPriceOverride")
       .select(overrideSelect)
       .eq("companyId", companyId)
       .eq("customerId", args.customerId)
       .eq("active", true)
       .in("itemId", itemIds);
+    if (error) return { data: [], count: 0, error };
     fillMap(rows as unknown as ParentRow[] | null, overrideMap);
   }
 
   if (resolvedCustomerTypeId) {
-    const { data: rows } = await client
+    const { data: rows, error } = await client
       .from("customerItemPriceOverride")
       .select(overrideSelect)
       .eq("companyId", companyId)
       .eq("customerTypeId", resolvedCustomerTypeId)
       .eq("active", true)
       .in("itemId", itemIds);
+    if (error) return { data: [], count: 0, error };
     fillMap(rows as unknown as ParentRow[] | null, typeOverrideMap);
   }
 
-  const { data: allRows } = await client
+  const { data: allRows, error: allRowsError } = await client
     .from("customerItemPriceOverride")
     .select(overrideSelect)
     .eq("companyId", companyId)
@@ -2607,6 +2659,7 @@ export async function resolvePriceList(
     .is("customerTypeId", null)
     .eq("active", true)
     .in("itemId", itemIds);
+  if (allRowsError) return { data: [], count: 0, error: allRowsError };
   fillMap(allRows as unknown as ParentRow[] | null, allOverrideMap);
 
   let rulesQuery = client
@@ -2618,7 +2671,8 @@ export async function resolvePriceList(
   rulesQuery = rulesQuery.or(`validFrom.is.null,validFrom.lte.${date}`);
   rulesQuery = rulesQuery.or(`validTo.is.null,validTo.gte.${date}`);
 
-  const { data: allRules } = await rulesQuery;
+  const { data: allRules, error: rulesError } = await rulesQuery;
+  if (rulesError) return { data: [], count: 0, error: rulesError };
 
   const rows: PriceListRow[] = items.map((item) => {
     const salePriceRow = Array.isArray(item.itemUnitSalePrice)
@@ -2780,7 +2834,8 @@ export async function resolvePriceList(
 
   return {
     data: rows,
-    count: count ?? 0
+    count: count ?? 0,
+    error: null
   };
 }
 
@@ -2793,7 +2848,7 @@ export async function getBaseCatalog(
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId)
     .eq("active", true);
@@ -2802,23 +2857,31 @@ export async function getBaseCatalog(
     query = query.or(searchFilter(["name", "readableId"], args.search));
   }
 
-  const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
-    await resolvePostingGroupFilter(client, companyId, args.filters);
+  const {
+    itemIds: postingGroupItemIds,
+    filters: filtersWithoutPostingGroup,
+    error: postingGroupError
+  } = await resolvePostingGroupFilter(client, companyId, args.filters);
+  if (postingGroupError) {
+    return { data: [], count: 0, error: postingGroupError };
+  }
   if (postingGroupItemIds !== null) {
     if (postingGroupItemIds.length === 0) {
-      return { data: [], count: 0 };
+      return { data: [], count: 0, error: null };
     }
     query = query.in("id", postingGroupItemIds);
   }
 
-  query = setGenericQueryFilters(query, {
-    ...args,
-    filters: filtersWithoutPostingGroup
-  });
+  query = setGenericQueryFilters(
+    query,
+    { ...args, filters: filtersWithoutPostingGroup },
+    PRICE_LIST_PAGING.defaultSorts
+  );
 
-  const { data: items, count } = await query;
+  const { data: items, count, error: itemsError } = await query;
+  if (itemsError) return { data: [], count: 0, error: itemsError };
   if (!items || items.length === 0) {
-    return { data: [], count: count ?? 0 };
+    return { data: [], count: count ?? 0, error: null };
   }
 
   const rows: PriceListRow[] = items.map((item) => {
@@ -2848,7 +2911,7 @@ export async function getBaseCatalog(
     };
   });
 
-  return { data: rows, count: count ?? 0 };
+  return { data: rows, count: count ?? 0, error: null };
 }
 
 export async function upsertCustomer(
@@ -6576,6 +6639,10 @@ export async function updateSalesRFQLineOrder(
 
 // ─── Sales Return Orders (RMAs) ───
 
+export const RETURN_REASONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getReturnReasons(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6583,7 +6650,7 @@ export async function getReturnReasons(
 ) {
   let query = client
     .from("returnReason")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6591,9 +6658,7 @@ export async function getReturnReasons(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, RETURN_REASONS_PAGING);
   }
 
   return query;
@@ -6661,6 +6726,10 @@ export async function deleteReturnReason(
   return client.from("returnReason").delete().eq("id", returnReasonId);
 }
 
+export const SALES_RETURN_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getSalesReturnOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6672,7 +6741,7 @@ export async function getSalesReturnOrders(
 ) {
   let query = client
     .from("salesReturnOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -6692,9 +6761,7 @@ export async function getSalesReturnOrders(
     query = query.eq("customerId", args.customerId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SALES_RETURN_ORDERS_PAGING);
   return query;
 }
 
@@ -8121,6 +8188,10 @@ export async function createOpportunityLineDocumentUploadUrl(
 // the Draft-stage writes.
 // ----------------------------------------------------------------------
 
+export const RENTAL_AGREEMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getRentalAgreements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -8130,7 +8201,7 @@ export async function getRentalAgreements(
 ) {
   let query = client
     .from("rentalAgreements")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -8139,9 +8210,7 @@ export async function getRentalAgreements(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, RENTAL_AGREEMENTS_PAGING);
 
   return query;
 }
@@ -9024,6 +9093,10 @@ export async function getRentalAgreementRelatedDocuments(
 // carry their own guards and build every row from an explicit field picker.
 // ----------------------------------------------------------------------
 
+export const CONTRACTS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 /**
  * Lists contracts with their customer, value invoiced to date and next invoice date.
  */
@@ -9036,7 +9109,7 @@ export async function getContracts(
 ) {
   let query = client
     .from("customerContracts")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -9045,9 +9118,7 @@ export async function getContracts(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, CONTRACTS_PAGING);
 
   return query;
 }
@@ -11934,9 +12005,7 @@ export async function attachDocumentPdf(
   }
   const companyId = ctx.company.id;
   const file = await args.pdf.arrayBuffer();
-  const fileName = stripSpecialCharacters(
-    `${args.identifier} - ${datetime.timestamp().slice(0, -5)}.pdf`
-  );
+  const fileName = storedDocumentPdfName(args.identifier, datetime.timestamp());
   const documentFilePath = `${companyId}/${args.folder}/${fileName}`;
 
   const upload = await storage(ctx.asSystem.supabase)
@@ -12210,8 +12279,8 @@ export async function emailQuote(
       lastName: user.data.lastName
     }
   });
-  const html = await renderAsync(emailTemplate);
-  const text = await renderAsync(emailTemplate, { plainText: true });
+  const html = await render(emailTemplate);
+  const text = await render(emailTemplate, { plainText: true });
   const signed = await storage(serviceRole)
     .company(companyId)
     .createSignedUrl(args.documentFilePath, 3600);
@@ -12223,6 +12292,7 @@ export async function emailQuote(
   }
 
   await trigger("send-email", {
+    document: true,
     to: [user.data.email, customerContact.data.contact!.email!],
     cc: args.cc?.length ? args.cc : undefined,
     from: user.data.email,

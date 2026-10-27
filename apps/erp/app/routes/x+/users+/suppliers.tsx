@@ -17,6 +17,7 @@ import {
   getUnrevokedInviteEmails
 } from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -35,14 +36,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const { sorts, filters } = getGenericQueryFilters(searchParams);
 
   const [suppliers, supplierTypes, invites] = await Promise.all([
     getSuppliers(client, companyId, {
       search,
-      limit,
-      offset,
+      // A single-load list: its default sort is on the joined user, which a
+      // cursor cannot follow.
+      limit: SINGLE_LOAD_LIMIT,
+      offset: 0,
       sorts,
       filters
     }),
@@ -67,21 +69,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     count: suppliers.count ?? 0,
-    suppliers: suppliers.data,
+    suppliers: suppliers.data ?? [],
+    isTruncated: (suppliers.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
     supplierTypes: supplierTypes.data,
     unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? []
   };
 }
 
 export default function UsersSuppliersRoute() {
-  const { count, suppliers, supplierTypes, unrevokedInviteEmails } =
-    useLoaderData<typeof loader>();
+  const {
+    count,
+    suppliers,
+    isTruncated,
+    supplierTypes,
+    unrevokedInviteEmails
+  } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <SupplierAccountsTable
         data={suppliers}
         count={count}
+        isTruncated={isTruncated}
         supplierTypes={supplierTypes}
         unrevokedInviteEmails={unrevokedInviteEmails}
       />

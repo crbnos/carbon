@@ -73,6 +73,21 @@ describe("getForecastNonWorkingIntervals", () => {
     ]);
   });
 
+  it("shades a company holiday as closed all day", () => {
+    // Monday 17 Aug 2026 is a holiday: the 06:00-14:00 shift does not open.
+    const result = getForecastNonWorkingIntervals({
+      timeZone: "America/New_York",
+      shifts: [shift({ monday: true })],
+      windowStartMs: iso("2026-08-17T04:00:00Z"),
+      windowEndMs: iso("2026-08-18T04:00:00Z"),
+      holidayDates: new Set(["2026-08-17"])
+    });
+
+    expect(result).toEqual([
+      { start: iso("2026-08-17T04:00:00Z"), end: iso("2026-08-18T04:00:00Z") }
+    ]);
+  });
+
   it("shades the whole window when it falls on a non-working day", () => {
     // Saturday 2026-08-22: the stock week is Mon–Fri only, so the entire day is
     // non-working — one interval spanning the window.
