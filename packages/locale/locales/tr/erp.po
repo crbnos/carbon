@@ -16576,6 +16576,9 @@ msgstr "Tek bir müşteri için fiyatı geçersiz kıl"
 msgid "Override price for all customers of a type"
 msgstr "Bir müşteri türündeki tüm müşterilerin fiyatını geçersiz kıl"
 
+msgid "Override price for every customer"
+msgstr "Tüm müşteriler için fiyatı geçersiz kıl"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Geçersiz kılma nedeni: {0}"
@@ -17046,8 +17049,8 @@ msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik
 msgid "Pick a column to sort by"
 msgstr "Sıralamak için bir sütun seçin"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Fiyatlandırmalarını görüntülemek için bir müşteri veya müşteri türü seçin."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Fiyatlarını görüntülemek için bir müşteri, bir müşteri türü veya Tüm Müşteriler seçin."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Bir tarih seçin veya temizlemek için boş bırakın."

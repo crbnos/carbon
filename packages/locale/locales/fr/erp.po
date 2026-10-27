@@ -16576,6 +16576,9 @@ msgstr "Modifier le prix pour un seul client"
 msgid "Override price for all customers of a type"
 msgstr "Modifier le prix pour tous les clients d'un type"
 
+msgid "Override price for every customer"
+msgstr "Définir un prix spécifique pour tous les clients"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "Raison de la substitution : {0}"
@@ -17046,8 +17049,8 @@ msgstr "Choisissez une axe analytique Carbon et la cible du fournisseur vers leq
 msgid "Pick a column to sort by"
 msgstr "Choisir une colonne pour trier"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "Choisissez un client ou un type de client pour afficher sa tarification."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "Choisissez un client, un type de client ou Tous les clients pour afficher leurs prix."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "Choisissez une date ou laissez vide pour l'effacer."

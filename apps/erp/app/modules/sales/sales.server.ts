@@ -6943,6 +6943,10 @@ export const resolvePriceList = defineServiceFn({
     offset: z.number().int().default(0),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: z
+      .boolean()
+      .describe("Set true to list the prices set for every customer.")
+      .optional(),
     search: z.string().optional(),
     quantity: z.number().optional()
   }),
@@ -7066,6 +7070,12 @@ export const updateCustomer = defineServiceFn({
 /**
  * Upsert customer item price override
  *
+ * @remarks
+ * Sets an item's price for one customer (`customerId`), one customer type
+ * (`customerTypeId`), or every customer (`allCustomers: true`). Exactly one
+ * scope is required: a price for every customer replaces the item's list
+ * price on every quote, so it is never the default.
+ *
  * @mcp destructive
  */
 export const upsertCustomerItemPriceOverride = defineServiceFn({
@@ -7073,6 +7083,12 @@ export const upsertCustomerItemPriceOverride = defineServiceFn({
     id: z.string().optional(),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: z
+      .boolean()
+      .describe(
+        "Set true to apply the price to every customer. Required when neither customerId nor customerTypeId is sent."
+      )
+      .optional(),
     itemId: z.string(),
     breaks: z.array(
       z.looseObject({
@@ -7841,6 +7857,7 @@ export const upsertQuoteLinePrices = defineServiceFn({
               amount: z.number(),
               adjustment: z.number().optional(),
               ruleId: z.string().optional(),
+              overrideId: z.string().optional(),
               label: z.string().optional()
             })
           )
