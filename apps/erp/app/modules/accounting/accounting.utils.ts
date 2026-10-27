@@ -20,6 +20,28 @@ import {
 } from "@internationalized/date";
 
 /**
+ * The CTA a posting would move: the report's CTA (`liveCta`) less what the
+ * elimination entity already carries. Only CTA journals post to the offset
+ * account, so the posted CTA is the offset balance with the opposite sign. A
+ * movement smaller than one minor unit of the presentation currency is 0.
+ */
+export function ctaMovement(args: {
+  liveCta: number;
+  offsetBalance: number;
+  decimalPlaces: number;
+}): { postedCta: number; movement: number } {
+  const postedCta = round(-args.offsetBalance);
+  const movement = round(args.liveCta - postedCta);
+  return {
+    postedCta: postedCta === 0 ? 0 : postedCta,
+    movement:
+      Math.abs(movement) < 10 ** -args.decimalPlaces || movement === 0
+        ? 0
+        : movement
+  };
+}
+
+/**
  * The translation rate an account takes in a consolidation by default
  * (current-rate method, IAS 21.39 / ASC 830-30-45-3): balance-sheet items
  * other than equity at the closing rate, equity at the historical rate, and

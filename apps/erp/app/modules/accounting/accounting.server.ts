@@ -826,6 +826,49 @@ export const deleteCurrencyRevaluationRun = defineServiceFn({
   }
 });
 
+// ── Posted CTA ──────────────────────────────────────────────────────────────
+/**
+ * Preview the currency translation adjustment for one of the root company's
+ * periods.
+ *
+ * @remarks
+ * Returns the consolidated balance sheet's CTA for the period, the CTA the
+ * root's elimination entity already carries, the movement a posting would
+ * write, and the foreign-currency subsidiaries with no posted revaluation run
+ * for the period. Not applicable (applicable false) when every company in the
+ * group shares the root's currency. Only the group's root company may ask.
+ *
+ * @mcp read
+ */
+export const previewCurrencyTranslation = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { view: "accounting" },
+  async run(ctx, { periodId }) {
+    return service.previewCurrencyTranslationAt(ctx, periodId);
+  }
+});
+
+/**
+ * Post the currency translation adjustment for one of the root company's
+ * periods.
+ *
+ * @remarks
+ * Posts the movement between the consolidated CTA and the CTA already posted
+ * as one journal on the root's elimination entity: Cr Currency Translation /
+ * Dr Currency Translation Offset for a positive movement. Posts nothing when
+ * the movement is zero. Refuses a Locked or Closed elimination-entity period,
+ * and any company other than the group's root.
+ *
+ * @mcp
+ */
+export const postCurrencyTranslation = defineServiceFn({
+  input: z.object({ periodId: z.string() }),
+  permission: { update: "accounting" },
+  async run(ctx, { periodId }) {
+    return service.postCurrencyTranslationAt(ctx, periodId);
+  }
+});
+
 // ── Revenue recognition and lease runs ──────────────────────────────────────
 /**
  * Create a Draft revenue recognition or lease run.

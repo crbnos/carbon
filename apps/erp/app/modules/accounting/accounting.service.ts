@@ -301,6 +301,7 @@ import {
   acquisitionLines,
   activationCutoverDates,
   buildDepreciationLines,
+  ctaMovement,
   type DepreciationLine,
   depreciationFloor,
   depreciationRunLinesMatch,
@@ -23399,4 +23400,306 @@ export async function recalculateRevenueRecognitionRun(
       deleted: false
     };
   });
+}
+
+// -- Posted CTA ---------------------------------------------------------------
+// Spec: .ai/specs/2026-10-26-fx-revaluation-and-cta-posting.md (Phase 3)
+
+export type CurrencyTranslationPreview = {
+  /** False when the company is not the root of a multi-currency group. */
+  applicable: boolean;
+  periodEnd: string;
+  liveCta: number;
+  postedCta: number;
+  movement: number;
+  eliminationCompanyId: string | null;
+  /** Foreign-currency subsidiaries with no posted revaluation run for the
+   *  period: revalue them first (NetSuite close order). */
+  unrevaluedCompanies: { id: string; name: string }[];
+};
+
+/**
+ * What a CTA posting for one of the root company's periods would post: the
+ * consolidated balance sheet's CTA for the period (one bucket, the period
+ * itself), the CTA already posted on the root's elimination entity (−1 × its
+ * offset account balance), and the movement between them. Only the group's
+ * root company may ask.
+ */
+export async function previewCurrencyTranslationAt(
+  ctx: ServiceContext,
+  periodId: string
+): Promise<CurrencyTranslationPreview | CarbonError> {
+  const client = ctx.asCaller.supabase;
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const companyGroupId = ctx.company.groupId;
+
+  // The elimination entity has no cutover of its own: the root's decides.
+  if (!(await readAccountingCutoverDate(db, companyId))) {
+    return ctx.error("rule", ACCOUNTING_NOT_STARTED);
+  }
+
+  const [period, root] = await Promise.all([
+    client
+      .from("accountingPeriod")
+      .select("startDate, endDate, fiscalYear")
+      .eq("id", periodId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    db
+      .selectFrom("company")
+      .select(["id", "parentCompanyId", "baseCurrencyCode"])
+      .where("id", "=", companyId)
+      .where("companyGroupId", "=", companyGroupId)
+      .executeTakeFirst()
+  ]);
+  if (period.error) {
+    return ctx.error("internal", "Failed to load the period", period.error);
+  }
+  if (!period.data) return ctx.error("notFound", "Period not found");
+  if (!root || root.parentCompanyId !== null) {
+    return ctx.error(
+      "forbidden",
+      "Only the group's root company posts the currency translation adjustment"
+    );
+  }
+  const periodEnd = period.data.endDate;
+  const notApplicable: CurrencyTranslationPreview = {
+    applicable: false,
+    periodEnd,
+    liveCta: 0,
+    postedCta: 0,
+    movement: 0,
+    eliminationCompanyId: null,
+    unrevaluedCompanies: []
+  };
+
+  const companies = await getCompaniesInGroup(client, companyGroupId);
+  if (companies.error) {
+    return ctx.error("internal", "Failed to load the group", companies.error);
+  }
+  const operating = companies.data ?? [];
+  const foreign = operating.filter(
+    (company) => company.baseCurrencyCode !== root.baseCurrencyCode
+  );
+  if (foreign.length === 0) return notApplicable;
+
+  const elimination = await db
+    .selectFrom("company")
+    .select("id")
+    .where("companyGroupId", "=", companyGroupId)
+    .where("parentCompanyId", "=", companyId)
+    .where("isEliminationEntity", "=", true)
+    .executeTakeFirst();
+  if (!elimination) {
+    return ctx.error("rule", "The group has no elimination entity");
+  }
+
+  const defaults = await db
+    .selectFrom("accountDefault")
+    .select(["currencyTranslationAccount", "currencyTranslationOffsetAccount"])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (
+    !defaults?.currencyTranslationAccount ||
+    !defaults.currencyTranslationOffsetAccount
+  ) {
+    return ctx.error(
+      "rule",
+      "Set the Currency Translation and Currency Translation Offset account defaults first"
+    );
+  }
+
+  const consolidated = await getConsolidatedPeriodSeries(
+    client,
+    companyGroupId,
+    operating.map((company) => company.id),
+    root.baseCurrencyCode,
+    {
+      buckets: [
+        {
+          key: "cta",
+          start: period.data.startDate,
+          end: periodEnd,
+          fiscalYear: period.data.fiscalYear ?? Number(periodEnd.slice(0, 4)),
+          isPartial: false
+        }
+      ],
+      includeCurrentYearEarnings: true
+    },
+    ctx.asSystem.supabase
+  );
+  if (consolidated.error) {
+    return ctx.error("rule", consolidated.error);
+  }
+
+  const [offset, posted, decimals] = await Promise.all([
+    sql<{ balanceAtDate: number }>`
+      SELECT "balanceAtDate"
+      FROM "accountTreeBalancesByCompany"(
+        ${companyGroupId}, ${elimination.id}, ${periodEnd}::date, ${periodEnd}::date
+      )
+      WHERE "accountId" = ${defaults.currencyTranslationOffsetAccount}
+    `.execute(db),
+    db
+      .selectFrom("currencyRevaluationRun")
+      .select("companyId")
+      .where(
+        "companyId",
+        "in",
+        foreign.map((company) => company.id)
+      )
+      .where("periodEnd", "=", periodEnd)
+      .where("status", "=", "Posted")
+      .execute(),
+    db
+      .selectFrom("currency")
+      .select("decimalPlaces")
+      .where("companyGroupId", "=", companyGroupId)
+      .where("code", "=", root.baseCurrencyCode)
+      .executeTakeFirst()
+  ]);
+
+  const { postedCta, movement } = ctaMovement({
+    liveCta: consolidated.ctaByBucket.cta ?? 0,
+    offsetBalance: Number(offset.rows[0]?.balanceAtDate ?? 0),
+    decimalPlaces: Number(decimals?.decimalPlaces ?? 2)
+  });
+  const revalued = new Set(posted.map((row) => row.companyId));
+
+  return {
+    applicable: true,
+    periodEnd,
+    liveCta: round(consolidated.ctaByBucket.cta ?? 0),
+    postedCta,
+    movement,
+    eliminationCompanyId: elimination.id,
+    unrevaluedCompanies: foreign
+      .filter((company) => !revalued.has(company.id))
+      .map((company) => ({ id: company.id, name: company.name }))
+  };
+}
+
+/**
+ * Post a CTA movement on the root's elimination entity: one Posted journal,
+ * `sourceType` Currency Translation, no `eliminationKind` (so the
+ * intercompany workbench's Regenerate never reverses it), crediting the CTA
+ * account and debiting the offset account for a positive movement. The
+ * period is found or created on the elimination entity; a Locked or Closed
+ * period refuses.
+ */
+export async function insertCurrencyTranslationJournal(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    eliminationCompanyId: string;
+    periodEnd: string;
+    movement: number;
+    ctaAccountId: string;
+    offsetAccountId: string;
+    userId: string;
+  }
+): Promise<{ journalId: string; journalEntryId: string }> {
+  const {
+    eliminationCompanyId,
+    periodEnd,
+    movement,
+    ctaAccountId,
+    offsetAccountId,
+    userId
+  } = args;
+  return withTransaction(db, async (trx) => {
+    const period = await resolveAccountingPeriod(
+      trx,
+      eliminationCompanyId,
+      periodEnd,
+      "historical"
+    );
+    const amount = round(movement);
+    const journal: RunJournal = {
+      description: `Currency translation adjustment ${periodEnd}`,
+      sourceType: "Currency Translation",
+      lines: [
+        {
+          accountId: ctaAccountId,
+          description: "Currency translation adjustment",
+          // Natural (credit-positive) sign: a positive movement credits CTA.
+          amount,
+          dimensions: {}
+        },
+        {
+          accountId: offsetAccountId,
+          description: "Currency translation offset",
+          amount: -amount,
+          dimensions: {}
+        }
+      ]
+    };
+    const inserted = await insertPostedRunJournal(trx, journal, {
+      accountingPeriodId: period.id,
+      postingDate: period.postingDate,
+      dimensionIds: {},
+      companyId: eliminationCompanyId,
+      userId,
+      now: datetime.timestamp()
+    });
+    return { journalId: inserted.id, journalEntryId: inserted.journalEntryId };
+  });
+}
+
+/** Recompute the CTA preview, then post its movement on the elimination
+ *  entity. Posts nothing when the movement is zero or the group has one
+ *  currency. */
+export async function postCurrencyTranslationAt(
+  ctx: ServiceContext,
+  periodId: string
+): Promise<
+  | { posted: false; movement: 0 }
+  | {
+      posted: true;
+      movement: number;
+      journalId: string;
+      journalEntryId: string;
+    }
+  | CarbonError
+> {
+  const preview = await previewCurrencyTranslationAt(ctx, periodId);
+  if (preview instanceof Error) return preview;
+  if (
+    !preview.applicable ||
+    preview.movement === 0 ||
+    !preview.eliminationCompanyId
+  ) {
+    return { posted: false, movement: 0 };
+  }
+  const defaults = await ctx.asSystem.pg
+    .selectFrom("accountDefault")
+    .select(["currencyTranslationAccount", "currencyTranslationOffsetAccount"])
+    .where("companyId", "=", ctx.company.id)
+    .executeTakeFirst();
+  if (
+    !defaults?.currencyTranslationAccount ||
+    !defaults.currencyTranslationOffsetAccount
+  ) {
+    return ctx.error(
+      "rule",
+      "Set the Currency Translation and Currency Translation Offset account defaults first"
+    );
+  }
+  try {
+    const journal = await insertCurrencyTranslationJournal(ctx.asSystem.pg, {
+      eliminationCompanyId: preview.eliminationCompanyId,
+      periodEnd: preview.periodEnd,
+      movement: preview.movement,
+      ctaAccountId: defaults.currencyTranslationAccount,
+      offsetAccountId: defaults.currencyTranslationOffsetAccount,
+      userId: ctx.auditUserId
+    });
+    return { posted: true, movement: preview.movement, ...journal };
+  } catch (err) {
+    return refusal(
+      ctx,
+      err,
+      "Failed to post the currency translation adjustment"
+    );
+  }
 }
