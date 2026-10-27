@@ -4205,7 +4205,8 @@ export async function upsertJob(
 export async function upsertJobMaterial(
   client: SupabaseClient<Database>,
   jobMaterial:
-    | (z.infer<typeof jobMaterialValidator> & {
+    | (Omit<z.infer<typeof jobMaterialValidator>, "id"> & {
+        id?: string;
         jobId: string;
         jobOperationId?: string;
         companyId: string;
@@ -4251,7 +4252,8 @@ export async function upsertJobOperation(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   jobOperation:
-    | (z.infer<typeof jobOperationValidator> & {
+    | (Omit<z.infer<typeof jobOperationValidator>, "id"> & {
+        id?: string;
         jobId: string;
         companyId: string;
         createdBy: string;

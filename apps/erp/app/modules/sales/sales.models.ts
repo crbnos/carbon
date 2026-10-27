@@ -21,6 +21,7 @@ import { currencyCodes } from "../accounting/types";
 import {
   incoterms,
   itemType,
+  jsonInput,
   methodItemType,
   methodOperationOrders,
   methodType,
@@ -30,7 +31,10 @@ import {
   standardFactorType,
   taxExemptionReasons
 } from "../shared/shared.models";
-import { pricingRuleConfigurationPriceValidator } from "./sales.utils";
+import {
+  priceOverrideScopeError,
+  pricingRuleConfigurationPriceValidator
+} from "./sales.utils";
 
 export const KPIs = [
   {
@@ -311,15 +315,17 @@ export const priceOverrideValidator = z
     itemId: z.string().min(1),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: zfd.checkbox(),
     active: zfd.checkbox(),
     applyRulesOnTop: zfd.checkbox(),
     validFrom: zfd.text(z.string().optional()),
     validTo: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional())
   })
-  .refine((d) => !(d.customerId && d.customerTypeId), {
-    message: "Cannot set both Customer and Customer Type",
-    path: ["customerId"]
+  .superRefine((d, ctx) => {
+    const message = priceOverrideScopeError(d);
+    if (message)
+      ctx.addIssue({ code: "custom", message, path: ["customerId"] });
   })
   .refine((d) => !d.validFrom || !d.validTo || d.validFrom <= d.validTo, {
     message: "Valid From must be on or before Valid To",
@@ -351,16 +357,6 @@ export const priceResolutionInputValidator = z.object({
   configuration: z.record(z.string(), z.unknown()).optional()
 });
 
-const parseJsonField = (value: unknown) => {
-  if (typeof value !== "string") return value;
-  if (value.trim() === "") return undefined;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-};
-
 // One step of how a price was resolved — the shape of PriceTraceStep (types.ts).
 export const priceTraceStepValidator = z.object({
   step: z.string(),
@@ -368,6 +364,7 @@ export const priceTraceStepValidator = z.object({
   amount: z.number(),
   adjustment: z.number().optional(),
   ruleId: z.string().optional(),
+  overrideId: z.string().optional(),
   label: z.string().optional()
 });
 
@@ -399,8 +396,7 @@ export const pricingRuleValidator = z
     validTo: zfd.text(z.string().optional()),
     priority: zfd.numeric(z.number().int().min(0).optional().default(0)),
     active: zfd.checkbox(),
-    configurationPrices: z.preprocess(
-      parseJsonField,
+    configurationPrices: jsonInput(
       z.array(pricingRuleConfigurationPriceValidator).optional()
     )
   })
@@ -515,9 +511,9 @@ export const quoteLineValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
-  internalNotes: z.any().optional(),
-  externalNotes: z.any().optional(),
-  configuration: z.any().optional()
+  internalNotes: optionalTiptapDoc,
+  externalNotes: optionalTiptapDoc,
+  configuration: jsonInput(z.record(z.string(), z.any()).nullable().optional())
 });
 
 export const quoteMaterialValidator = z
@@ -1004,14 +1000,12 @@ export const salesOrderLineValidator = z
     unitPrice: zfd.numeric(z.number().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
     // Configurator values keyed by configurationParameter key, posted as JSON.
-    configuration: z.preprocess(
-      parseJsonField,
+    configuration: jsonInput(
       z.record(z.string(), z.any()).nullable().optional()
     ),
     // How unitPrice was resolved, posted as JSON; "null" clears it when the
     // price was typed rather than resolved.
-    priceTrace: z.preprocess(
-      parseJsonField,
+    priceTrace: jsonInput(
       z.array(priceTraceStepValidator).nullable().optional()
     )
   })

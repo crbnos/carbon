@@ -61099,6 +61099,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.pmiItemId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -61224,6 +61227,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.pmiItemId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -61301,6 +61307,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.pmiItemId"
           },
           {
             $ref: "#/parameters/body.inspectionFeature"
@@ -62815,6 +62824,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -62937,6 +62949,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -63011,6 +63026,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
           },
           {
             $ref: "#/parameters/body.inspectionDocument"
@@ -93751,6 +93769,27 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocuments.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.samplingPlanType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.samplingSampleSize"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.samplingPercentage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.samplingAql"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.samplingInspectionLevel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.samplingSeverity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.modelUploadId"
+          },
+          {
             $ref: "#/parameters/rowFilter.inspectionDocuments.partReadableId"
           },
           {
@@ -107768,6 +107807,51 @@ export default {
           }
         },
         tags: ["(rpc) get_foreign_key_map"]
+      }
+    },
+    "/rpc/sync_delete_unlinked_contact": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_delete_unlinked_contact"]
       }
     },
     "/rpc/get_ar_aging": {
@@ -147301,6 +147385,10 @@ export default {
             "Note:\nThis is a Foreign Key to `gaugeType.id`.<fk table='gaugeType' column='id'/>",
           format: "text",
           type: "string"
+        },
+        pmiItemId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -147960,6 +148048,12 @@ export default {
         samplingSeverity: {
           enum: ["Normal", "Tightened", "Reduced"],
           format: 'public."inspectionSeverity"',
+          type: "string"
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
           type: "string"
         }
       },
@@ -162996,6 +163090,39 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        samplingPlanType: {
+          enum: ["All", "First", "Percentage", "AQL"],
+          format: 'public."samplingPlanType"',
+          type: "string"
+        },
+        samplingSampleSize: {
+          format: "integer",
+          type: "integer"
+        },
+        samplingPercentage: {
+          format: "numeric",
+          type: "number"
+        },
+        samplingAql: {
+          format: "numeric",
+          type: "number"
+        },
+        samplingInspectionLevel: {
+          enum: ["I", "II", "III", "S1", "S2", "S3", "S4"],
+          format: 'public."inspectionLevel"',
+          type: "string"
+        },
+        samplingSeverity: {
+          enum: ["Normal", "Tightened", "Reduced"],
+          format: 'public."inspectionSeverity"',
+          type: "string"
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
           type: "string"
         },
         partReadableId: {
@@ -200796,6 +200923,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inspectionFeature.pmiItemId": {
+      name: "pmiItemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itarCertification": {
       name: "itarCertification",
       description: "itarCertification",
@@ -201524,6 +201657,12 @@ export default {
     },
     "rowFilter.inspectionDocument.samplingSeverity": {
       name: "samplingSeverity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.modelUploadId": {
+      name: "modelUploadId",
       required: false,
       in: "query",
       type: "string"
@@ -218318,6 +218457,48 @@ export default {
     },
     "rowFilter.inspectionDocuments.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.samplingPlanType": {
+      name: "samplingPlanType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.samplingSampleSize": {
+      name: "samplingSampleSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.samplingPercentage": {
+      name: "samplingPercentage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.samplingAql": {
+      name: "samplingAql",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.samplingInspectionLevel": {
+      name: "samplingInspectionLevel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.samplingSeverity": {
+      name: "samplingSeverity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.modelUploadId": {
+      name: "modelUploadId",
       required: false,
       in: "query",
       type: "string"

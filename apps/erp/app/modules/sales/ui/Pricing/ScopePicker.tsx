@@ -17,9 +17,13 @@ import {
   Subheading
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { LuCheck, LuSquareUser, LuUsers } from "react-icons/lu";
+import { LuCheck, LuGlobe, LuSquareUser, LuUsers } from "react-icons/lu";
+
+// The scope value for the prices set for every customer (no customer and no
+// customer type). The picker offers it itself; it is not a loader option.
+export const ALL_CUSTOMERS_SCOPE = "all";
 
 export type ScopeOption = {
   value: string;
@@ -85,7 +89,12 @@ export function ScopePicker({
             !value && "text-muted-foreground"
           )}
         >
-          {selected ? (
+          {value === ALL_CUSTOMERS_SCOPE ? (
+            <div className="flex items-center gap-2 truncate">
+              <LuGlobe className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{t`All Customers`}</span>
+            </div>
+          ) : selected ? (
             <div className="flex items-center gap-2 truncate">
               <ScopeIcon
                 helper={selected.helper}
@@ -110,6 +119,21 @@ export function ScopePicker({
             className="h-9"
           />
           <CommandList className="max-h-[320px]">
+            <CommandGroup>
+              <ScopeItem
+                option={{
+                  value: ALL_CUSTOMERS_SCOPE,
+                  label: t`All Customers`,
+                  helper: "Customer"
+                }}
+                icon={<LuGlobe className="size-3.5 text-muted-foreground" />}
+                selected={value === ALL_CUSTOMERS_SCOPE}
+                onSelect={select}
+              />
+            </CommandGroup>
+            {(types.length > 0 || customers.length > 0) && (
+              <CommandSeparator className="my-1" />
+            )}
             {types.length > 0 && (
               <CommandGroup
                 heading={
@@ -171,10 +195,12 @@ function GroupHeading({
 
 function ScopeItem({
   option,
+  icon,
   selected,
   onSelect
 }: {
   option: ScopeOption;
+  icon?: ReactNode;
   selected: boolean;
   onSelect: (value: string) => void;
 }) {
@@ -183,6 +209,7 @@ function ScopeItem({
       value={`${option.label} ${option.helper} ${option.value}`}
       onSelect={() => onSelect(option.value)}
     >
+      {icon}
       <span className="flex-1 truncate">{option.label}</span>
       <LuCheck
         className={cn("ml-2 size-4", selected ? "opacity-100" : "opacity-0")}

@@ -170,7 +170,6 @@ export const path = {
     jobMakeMethodDetail: (jobId: string, makeMethodId: string) =>
       `${getAppUrl()}${x}/job/${jobId}/make/${makeMethodId}`,
     jobs: `${x}/jobs`,
-    kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",

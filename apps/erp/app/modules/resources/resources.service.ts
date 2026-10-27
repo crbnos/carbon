@@ -31,6 +31,7 @@ import {
   searchFilter
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
@@ -149,11 +150,320 @@ export async function processDeactivate(
   return client.from("process").update({ active: false }).eq("id", processId);
 }
 
-export async function deleteProcess(
-  client: SupabaseClient<Database>,
-  processId: string
+/**
+ * A table whose rows point at a work center or process. Deleting the record
+ * would block on some of these (RESTRICT) and silently take others with it
+ * (CASCADE: procedures, trainings, maintenance history), so a delete is
+ * refused while any of them has a row. Link rows that only describe the
+ * record itself — work center processes, shifts, people assignments, rule
+ * assignments, load history — are not listed and go with it.
+ */
+type ReferenceCheck = {
+  key: string;
+  /** English, for the API and MCP refusal; the ERP translates by `key`. */
+  label: string;
+  table: keyof KyselyDatabase;
+  column: string;
+  /** Match through the process's ability instead of the process itself. */
+  viaAbility?: boolean;
+};
+
+export const workCenterReferenceChecks = [
+  {
+    key: "methodOperation",
+    label: "method operations",
+    table: "methodOperation",
+    column: "workCenterId"
+  },
+  {
+    key: "quoteOperation",
+    label: "quote operations",
+    table: "quoteOperation",
+    column: "workCenterId"
+  },
+  {
+    key: "jobOperation",
+    label: "job operations",
+    table: "jobOperation",
+    column: "workCenterId"
+  },
+  {
+    key: "jobOperationBatch",
+    label: "operation batches",
+    table: "jobOperationBatch",
+    column: "workCenterId"
+  },
+  {
+    key: "productionEvent",
+    label: "production events",
+    table: "productionEvent",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceSchedule",
+    label: "maintenance schedules",
+    table: "maintenanceSchedule",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceDispatch",
+    label: "maintenance dispatches",
+    table: "maintenanceDispatch",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceDispatchWorkCenter",
+    label: "maintenance dispatch work centers",
+    table: "maintenanceDispatchWorkCenter",
+    column: "workCenterId"
+  },
+  {
+    key: "maintenanceDispatchEvent",
+    label: "maintenance events",
+    table: "maintenanceDispatchEvent",
+    column: "workCenterId"
+  },
+  {
+    key: "workCenterReplacementPart",
+    label: "replacement parts",
+    table: "workCenterReplacementPart",
+    column: "workCenterId"
+  },
+  {
+    key: "storageUnit",
+    label: "storage units",
+    table: "storageUnit",
+    column: "workCenterId"
+  },
+  {
+    key: "fixedAsset",
+    label: "fixed assets",
+    table: "fixedAsset",
+    column: "workCenterId"
+  },
+  {
+    key: "workCenterDevice",
+    label: "machine devices",
+    table: "workCenterDevice",
+    column: "workCenterId"
+  },
+  {
+    key: "machineStateChange",
+    label: "machine state changes",
+    table: "machineStateChange",
+    column: "workCenterId"
+  },
+  {
+    key: "unattributedMachineTime",
+    label: "unattributed machine time entries",
+    table: "unattributedMachineTime",
+    column: "workCenterId"
+  }
+] as const satisfies readonly ReferenceCheck[];
+
+export const processReferenceChecks = [
+  {
+    key: "methodOperation",
+    label: "method operations",
+    table: "methodOperation",
+    column: "processId"
+  },
+  {
+    key: "quoteOperation",
+    label: "quote operations",
+    table: "quoteOperation",
+    column: "processId"
+  },
+  {
+    key: "jobOperation",
+    label: "job operations",
+    table: "jobOperation",
+    column: "processId"
+  },
+  {
+    key: "jobOperationBatch",
+    label: "operation batches",
+    table: "jobOperationBatch",
+    column: "processId"
+  },
+  {
+    key: "procedure",
+    label: "procedures",
+    table: "procedure",
+    column: "processId"
+  },
+  {
+    key: "training",
+    label: "trainings",
+    table: "training",
+    column: "processId"
+  },
+  {
+    key: "nonConformanceActionProcess",
+    label: "issue actions",
+    table: "nonConformanceActionProcess",
+    column: "processId"
+  },
+  {
+    key: "supplierProcess",
+    label: "supplier processes",
+    table: "supplierProcess",
+    column: "processId"
+  },
+  {
+    key: "itemShelfLife",
+    label: "item shelf life rules",
+    table: "itemShelfLife",
+    column: "triggerProcessId"
+  },
+  {
+    key: "employeeAbility",
+    label: "qualified employees",
+    table: "employeeAbility",
+    column: "abilityId",
+    viaAbility: true
+  },
+  {
+    key: "contractorAbility",
+    label: "contractors",
+    table: "contractorAbility",
+    column: "abilityId",
+    viaAbility: true
+  },
+  {
+    key: "partner",
+    label: "partners",
+    table: "partner",
+    column: "abilityId",
+    viaAbility: true
+  },
+  {
+    key: "requiredAbility",
+    label: "work centers requiring its ability",
+    table: "workCenter",
+    column: "requiredAbilityId",
+    viaAbility: true
+  }
+] as const satisfies readonly ReferenceCheck[];
+
+export type WorkCenterReferenceKey =
+  (typeof workCenterReferenceChecks)[number]["key"];
+export type ProcessReferenceKey =
+  (typeof processReferenceChecks)[number]["key"];
+export type ResourceReference<K extends string = string> = {
+  key: K;
+  label: string;
+  count: number;
+};
+
+/** The refusal a delete answers while `references` is not empty. */
+export function referencedRefusal(
+  record: string,
+  references: ResourceReference[]
 ) {
-  return client.from("process").delete().eq("id", processId);
+  const usages = references
+    .map((reference) => `${reference.label} (${reference.count})`)
+    .join(", ");
+  return `This ${record} is used by ${usages}. Deactivate it instead.`;
+}
+
+/** Every check in one statement; only the tables with rows come back. */
+async function countReferences<C extends ReferenceCheck>(
+  db: Kysely<KyselyDatabase>,
+  checks: readonly C[],
+  { id, companyId }: { id: string; companyId: string }
+): Promise<ResourceReference<C["key"]>[]> {
+  const result = await sql<Record<string, number>>`SELECT ${sql.join(
+    checks.map(
+      (check) =>
+        sql`(SELECT count(*)::int FROM ${sql.table(check.table)} WHERE ${sql.ref(
+          check.column
+        )} ${
+          check.viaAbility
+            ? sql`IN (SELECT "id" FROM "ability" WHERE "processId" = ${id} AND "companyId" = ${companyId})`
+            : sql`= ${id}`
+        } AND "companyId" = ${companyId}) AS ${sql.ref(check.key)}`
+    )
+  )}`.execute(db);
+  const row = result.rows[0] ?? {};
+  return checks
+    .map((check) => ({
+      key: check.key as C["key"],
+      label: check.label,
+      count: Number(row[check.key] ?? 0)
+    }))
+    .filter((reference) => reference.count > 0);
+}
+
+export async function getWorkCenterReferences(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return countReferences(db, workCenterReferenceChecks, args);
+}
+
+export async function getProcessReferences(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return countReferences(db, processReferenceChecks, args);
+}
+
+/**
+ * Lock the row, then delete it only when nothing references it. The lock
+ * conflicts with the key-share lock every referencing insert takes, so no
+ * reference can land between the count and the delete. A process's ability
+ * rows are locked too: a qualification, contractor, partner or required
+ * ability locks the ability, not the process, and deleting the process
+ * cascades through it. Run it inside a transaction.
+ */
+async function deleteIfUnreferenced<C extends ReferenceCheck>(
+  db: Kysely<KyselyDatabase>,
+  table: "workCenter" | "process",
+  checks: readonly C[],
+  args: { id: string; companyId: string }
+): Promise<
+  | { found: false }
+  | { found: true; deleted: boolean; references: ResourceReference<C["key"]>[] }
+> {
+  const locked = await db
+    .selectFrom(table)
+    .select("id")
+    .where("id", "=", args.id)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!locked) return { found: false };
+
+  if (table === "process") {
+    await db
+      .selectFrom("ability")
+      .select("id")
+      .where("processId", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .execute();
+  }
+
+  const references = await countReferences(db, checks, args);
+  if (references.length > 0) {
+    return { found: true, deleted: false, references };
+  }
+
+  await db
+    .deleteFrom(table)
+    .where("id", "=", args.id)
+    .where("companyId", "=", args.companyId)
+    .execute();
+  return { found: true, deleted: true, references };
+}
+
+/** The bare delete under `resources.deleteProcess`. */
+export async function deleteProcess(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return deleteIfUnreferenced(db, "process", processReferenceChecks, args);
 }
 
 export async function deleteShift(
@@ -198,11 +508,24 @@ export async function deleteTrainingQuestion(
 }
 
 /** The bare write under `deactivateWorkCenter`, which also tells the scheduler. */
-export async function deleteWorkCenter(
+export async function deactivateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
   return client.from("workCenter").update({ active: false }).eq("id", id);
+}
+
+/** The bare delete under `resources.deleteWorkCenter`. */
+export async function deleteWorkCenter(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+) {
+  return deleteIfUnreferenced(
+    db,
+    "workCenter",
+    workCenterReferenceChecks,
+    args
+  );
 }
 
 export const ABILITIES_PAGING: Paging = {

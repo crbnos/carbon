@@ -93,6 +93,11 @@ const ResendInviteModal = ({
               </Trans>
             )}
           </p>
+          <p className="text-sm text-muted-foreground mb-2">
+            <Trans>
+              A new invite link is sent. A link sent before stops working.
+            </Trans>
+          </p>
           {allMatching ? (
             <AllMatchingUsersNote />
           ) : (

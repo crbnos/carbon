@@ -719,6 +719,9 @@ msgstr "{missingCount}개의 전표가 공급자에서 누락됨"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount}개의 누락된 전표 및 {mismatchCount}개의 불일치 월"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
@@ -1304,6 +1307,9 @@ msgstr "보기를 저장하려면 이름이 필요합니다"
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "특정 품목에 대해 협상으로 고정된 가격으로 고객, 고객 유형 또는 모든 고객 기준으로 기본 가격을 완전히 대체하며 선택적으로 수량 구간을 포함합니다."
+
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "새 초대 링크가 전송됩니다. 이전에 보낸 링크는 더 이상 작동하지 않습니다."
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "각 공급업체마다 새로운 발주서가 생성됩니다. 또는 공급업체의 기존 초안 발주서를 선택하여 외주 공정을 추가할 수 있습니다."
@@ -3585,8 +3591,14 @@ msgstr "이 체크포인트를 통과하시겠습니까? {0} 단계에 아직 �
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "{0}을(를) 영구적으로 삭제하시겠습니까?"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "공급업체 공법을 영구적으로 삭제하시겠습니까?"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "이 은행 계좌를 영구 삭제하시겠습니까?"
@@ -5900,6 +5912,9 @@ msgstr "축소"
 msgid "Contractor"
 msgstr "외주 인력"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "외주 인력"
 
@@ -7856,6 +7871,9 @@ msgstr "창고 이동 삭제"
 
 msgid "Delete Webhook"
 msgstr "웹훅 삭제"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "워크플로우 삭제"
@@ -10581,6 +10599,9 @@ msgstr "고정자산 클래스"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "고정자산"
 
@@ -11146,6 +11167,9 @@ msgstr "가이드형"
 msgid "Guided implementation"
 msgstr "안내된 실행"
 
+msgid "Halloween surprise"
+msgstr "할로윈 깜짝 선물"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "반복 및 역분개 전표 처리"
 
@@ -11157,6 +11181,9 @@ msgstr "밀착형"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "첫 3–4주간 밀착형으로 신속하게 대응하는 지원"
+
+msgid "Happy Halloween"
+msgstr "해피 할로윈"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "작업의 실제 원가나 마진을 파악하기 어려움"
@@ -12267,6 +12294,9 @@ msgstr "이슈"
 msgid "Issue (material)"
 msgstr "출고(자재)"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "신용권 발행"
 
@@ -12402,6 +12432,9 @@ msgstr "품목 페이지"
 msgid "Item Scope"
 msgstr "품목 범위"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "품목 유형"
 
@@ -12482,6 +12515,9 @@ msgstr "작업 지시 공정"
 
 msgid "Job operation batch"
 msgstr "작업 지시 공정 배치"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "작업 지시 공정"
@@ -13314,6 +13350,9 @@ msgstr "기계"
 msgid "Machine Costs"
 msgstr "기계 비용"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "기계 시간"
 
@@ -13328,6 +13367,9 @@ msgstr "기계 단가"
 
 msgid "Machine Rate (Hourly)"
 msgstr "기계 단가(시간당)"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "기계 시간"
@@ -13380,8 +13422,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "유지보수 지시 알림"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "유지보수 지시"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "유지보수 비용"
@@ -13391,6 +13442,9 @@ msgstr "유지보수 비용(기본값)"
 
 msgid "Maintenance parts"
 msgstr "유지보수 부품"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "유지보수 일정"
@@ -13892,6 +13946,9 @@ msgstr "제조방법 ID"
 
 msgid "Method Materials"
 msgstr "제조방법 자재"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "제조방법 공정작업"
@@ -16291,6 +16348,9 @@ msgstr "공정작업"
 msgid "Operation batch"
 msgstr "공정 배치"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16615,6 +16675,9 @@ msgstr "단일 고객에 대한 가격 재정의"
 msgid "Override price for all customers of a type"
 msgstr "특정 유형의 모든 고객에 대한 가격 재정의"
 
+msgid "Override price for every customer"
+msgstr "모든 고객에게 가격 재정의"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "재정의 사유: {0}"
@@ -16787,6 +16850,9 @@ msgstr "부분 인식됨"
 
 msgid "Partner"
 msgstr "파트너"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "파트너"
@@ -17081,8 +17147,8 @@ msgstr "Carbon 차원과 게시할 제공자 대상을 선택하세요. 자동 �
 msgid "Pick a column to sort by"
 msgstr "정렬할 열을 선택하세요"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "고객 또는 고객 유형을 선택하여 가격 책정을 봅니다."
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "가격을 보려면 고객, 고객 유형 또는 모든 고객을 선택하세요."
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "날짜를 선택하거나 비워두어 지우세요."
@@ -17354,6 +17420,9 @@ msgstr "PO 번호"
 
 msgid "PO PDF"
 msgstr "PO PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "거미를 찔러 보세요… 용기가 있다면"
 
 msgid "Policy"
 msgstr "정책"
@@ -17730,6 +17799,9 @@ msgstr "생산 이벤트"
 
 msgid "Production Event"
 msgstr "생산 이벤트"
+
+msgid "production events"
+msgstr ""
 
 msgid "Production events"
 msgstr "생산 이벤트"
@@ -18182,6 +18254,9 @@ msgstr "자격은 교육 후 이 많은 일 후에 만료됩니다. 공백 = 절
 msgid "Qualified"
 msgstr "자격 있음"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "자격 있는 직원"
 
@@ -18357,6 +18432,9 @@ msgstr "견적을 찾을 수 없습니다"
 
 msgid "Quote Number"
 msgstr "견적 번호"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "견적서에서 수금까지"
@@ -19300,6 +19378,9 @@ msgstr "다음으로 교체"
 msgid "Replacement Order"
 msgstr "대체 주문"
 
+msgid "replacement parts"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF를 교체하면 이 문서의 모든 풍선 배치가 제거됩니다. 특성 행과 해당 값은 유지되며, 새 도면에서 풍선을 다시 배치할 수 있습니다."
 
@@ -19457,6 +19538,9 @@ msgstr "재일정 허용도"
 
 msgid "Reschedule tolerance updated"
 msgstr ""
+
+msgid "Resend Invite"
+msgstr "초대 다시 보내기"
 
 msgid "Reserve floor"
 msgstr "예약 최저 수량"
@@ -25119,6 +25203,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "교육"
 
@@ -25311,6 +25398,9 @@ msgstr "규칙 할당 해제"
 
 msgid "Unassigned"
 msgstr "미배정"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "미귀속 시간"
@@ -27001,6 +27091,9 @@ msgstr "작업장"
 
 msgid "Work Centers"
 msgstr "작업장"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "재공품(WIP)"

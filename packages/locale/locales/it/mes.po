@@ -809,6 +809,12 @@ msgstr "Torna all'operazione"
 msgid "Go to onboarding"
 msgstr "Vai all'onboarding"
 
+msgid "Halloween surprise"
+msgstr "Sorpresa di Halloween"
+
+msgid "Happy Halloween"
+msgstr "Buon Halloween"
+
 msgid "Heading {level}"
 msgstr "Intestazione {level}"
 
@@ -986,6 +992,9 @@ msgstr "Caricato: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "Caricamento in corso. Non è necessario scansionare di nuovo."
 
 msgid "Loading..."
 msgstr "Caricamento..."
@@ -1283,6 +1292,9 @@ msgstr "Nessuno"
 msgid "Notes"
 msgstr "Note"
 
+msgid "Nothing on this page uses that barcode"
+msgstr "Nessun elemento di questa pagina usa quel codice a barre"
+
 msgid "Nothing running"
 msgstr "Niente in esecuzione"
 
@@ -1491,6 +1503,9 @@ msgstr "Selezionare un articolo"
 msgid "PM schedule lapsed"
 msgstr "Pianificazione PM scaduta"
 
+msgid "Poke the spider… if you dare"
+msgstr "Tocca il ragno… se hai il coraggio"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Premi ? su qualsiasi pagina per aprire questo elenco. Le scorciatoie vengono ignorate mentre digiti in un campo."
 
@@ -1693,6 +1708,9 @@ msgstr "Scansiona o cerca numero di serie..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scansiona o seleziona un'entità tracciata da questo lotto per aggiungerla come colonna campione, quindi registra il suo risultato nella griglia."
+
+msgid "Scan received"
+msgstr "Scansione ricevuta"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "Scansiona questo codice QR con la tua app autenticatore (ad esempio Google Authenticator o 1Password), quindi inserisci il codice a 6 cifre che mostra."
@@ -2004,6 +2022,10 @@ msgstr "Il colore di accento utilizzato in Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantità completata per questa operazione è inferiore alla quantità richiesta di {targetQuantity}."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Gli ordini di produzione e i componenti che compongono questa esecuzione."

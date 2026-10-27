@@ -54,7 +54,11 @@ import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
 import { PriceListScopeEmpty } from "./PriceListScopeEmpty";
 import { PriceTraceModal } from "./PriceTraceModal";
-import { type ScopeOption, ScopePicker } from "./ScopePicker";
+import {
+  ALL_CUSTOMERS_SCOPE,
+  type ScopeOption,
+  ScopePicker
+} from "./ScopePicker";
 
 type PriceListTableProps = {
   data: PriceListRow[];
@@ -97,7 +101,11 @@ const PriceListTable = memo(
     const currentCustomerTypeId =
       searchParams.get("customerTypeId") ?? undefined;
 
-    const scopeId = currentCustomerId ?? currentCustomerTypeId ?? "";
+    const isAllCustomers = searchParams.get("scope") === ALL_CUSTOMERS_SCOPE;
+    const scopeId =
+      currentCustomerId ??
+      currentCustomerTypeId ??
+      (isAllCustomers ? ALL_CUSTOMERS_SCOPE : "");
 
     const sourceScope = {
       customerId: currentCustomerId,
@@ -120,7 +128,10 @@ const PriceListTable = memo(
         const next = new URLSearchParams(searchParams);
         next.delete("customerId");
         next.delete("customerTypeId");
-        if (selectedId) {
+        next.delete("scope");
+        if (selectedId === ALL_CUSTOMERS_SCOPE) {
+          next.set("scope", ALL_CUSTOMERS_SCOPE);
+        } else if (selectedId) {
           const picked = scopeOptions.find((o) => o.value === selectedId);
           if (picked) {
             next.set(

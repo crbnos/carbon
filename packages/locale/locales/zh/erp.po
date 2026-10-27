@@ -719,6 +719,9 @@ msgstr "提供商中缺少{missingCount}个凭证"
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "缺少{missingCount}个凭证，{mismatchCount}个月的总计不匹配"
 
+msgid "{name} can't be deleted because it is used by {usages}. Deactivate it instead."
+msgstr ""
+
 msgid "{name} deleted"
 msgstr "{name} 已删除"
 
@@ -1304,6 +1307,9 @@ msgstr "需要名称才能保存查看"
 
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "为特定物料约定的固定价格——按客户、客户类型或所有客户——完全替代基准价格，可选择数量阶梯。"
+
+msgid "A new invite link is sent. A link sent before stops working."
+msgstr "将发送新的邀请链接。之前发送的链接将失效。"
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "将为每个供应商创建一个新的采购订单。或者，您可以选择供应商的现有草稿采购订单以向其添加外协工序。"
@@ -3585,8 +3591,14 @@ msgstr "您确定要通过此检查点吗？{0}阶段仍有未完成的任务。
 msgid "Are you sure you want to permanently delete {0}?"
 msgstr "您确定要永久删除 {0} 吗？"
 
+msgid "Are you sure you want to permanently delete the process: {name}? This cannot be undone."
+msgstr ""
+
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "确定要永久删除供应商工艺吗？"
+
+msgid "Are you sure you want to permanently delete the work center: {name}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to permanently delete this bank account?"
 msgstr "您确定要永久删除此银行账户吗？"
@@ -5900,6 +5912,9 @@ msgstr "缩减"
 msgid "Contractor"
 msgstr "外协人员"
 
+msgid "contractors"
+msgstr ""
+
 msgid "Contractors"
 msgstr "外协人员"
 
@@ -7856,6 +7871,9 @@ msgstr "删除仓库转移"
 
 msgid "Delete Webhook"
 msgstr "删除 Webhook"
+
+msgid "Delete Work Center"
+msgstr ""
 
 msgid "Delete Workflow"
 msgstr "删除工作流"
@@ -10581,6 +10599,9 @@ msgstr "固定资产类别"
 msgid "Fixed asset settings updated"
 msgstr ""
 
+msgid "fixed assets"
+msgstr ""
+
 msgid "Fixed Assets"
 msgstr "固定资产"
 
@@ -11146,6 +11167,9 @@ msgstr "引导式"
 msgid "Guided implementation"
 msgstr "引导式实施"
 
+msgid "Halloween surprise"
+msgstr "万圣节惊喜"
+
 msgid "Handle recurring and reversing journal entries"
 msgstr "处理循环和冲销凭证"
 
@@ -11157,6 +11181,9 @@ msgstr "动手实践"
 
 msgid "Hands-on, fast-response support for the first 3–4 weeks"
 msgstr "动手操作、快速响应的支持，为期前3-4周"
+
+msgid "Happy Halloween"
+msgstr "万圣节快乐"
 
 msgid "Hard to see true cost or margin on a job"
 msgstr "难以看清工作的真实成本或利润"
@@ -12267,6 +12294,9 @@ msgstr "问题"
 msgid "Issue (material)"
 msgstr "领料（原材料）"
 
+msgid "issue actions"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "发放信用"
 
@@ -12402,6 +12432,9 @@ msgstr "物料页面"
 msgid "Item Scope"
 msgstr "物品范围"
 
+msgid "item shelf life rules"
+msgstr ""
+
 msgid "Item Type"
 msgstr "物料类型"
 
@@ -12482,6 +12515,9 @@ msgstr "工单工序"
 
 msgid "Job operation batch"
 msgstr "工单工序批次"
+
+msgid "job operations"
+msgstr ""
 
 msgid "Job Operations"
 msgstr "工单工序"
@@ -13314,6 +13350,9 @@ msgstr "机器"
 msgid "Machine Costs"
 msgstr "机器成本"
 
+msgid "machine devices"
+msgstr ""
+
 msgid "Machine Hours"
 msgstr "机器小时"
 
@@ -13328,6 +13367,9 @@ msgstr "机器费率"
 
 msgid "Machine Rate (Hourly)"
 msgstr "机器费率（每小时）"
+
+msgid "machine state changes"
+msgstr ""
 
 msgid "Machine time"
 msgstr "机器工时"
@@ -13380,8 +13422,17 @@ msgstr ""
 msgid "Maintenance Dispatch Notifications"
 msgstr "维护工单通知"
 
+msgid "maintenance dispatch work centers"
+msgstr ""
+
+msgid "maintenance dispatches"
+msgstr ""
+
 msgid "Maintenance Dispatches"
 msgstr "维护工单"
+
+msgid "maintenance events"
+msgstr ""
 
 msgid "Maintenance Expense"
 msgstr "维护费用"
@@ -13391,6 +13442,9 @@ msgstr "维护费用 (默认)"
 
 msgid "Maintenance parts"
 msgstr "维护零件"
+
+msgid "maintenance schedules"
+msgstr ""
 
 msgid "Maintenance Schedules"
 msgstr "维护排程"
@@ -13892,6 +13946,9 @@ msgstr "方法 ID"
 
 msgid "Method Materials"
 msgstr "方法原材料"
+
+msgid "method operations"
+msgstr ""
 
 msgid "Method Operations"
 msgstr "方法工序"
@@ -16291,6 +16348,9 @@ msgstr "操作"
 msgid "Operation batch"
 msgstr "工序生产批次"
 
+msgid "operation batches"
+msgstr ""
+
 msgid "Operation created"
 msgstr ""
 
@@ -16615,6 +16675,9 @@ msgstr "为单个客户覆盖价格"
 msgid "Override price for all customers of a type"
 msgstr "为所有该类型的客户覆盖价格"
 
+msgid "Override price for every customer"
+msgstr "为所有客户覆盖价格"
+
 #. placeholder {0}: asset.line.classificationOverrideReason
 msgid "Override reason: {0}"
 msgstr "覆盖原因：{0}"
@@ -16787,6 +16850,9 @@ msgstr "部分已确认"
 
 msgid "Partner"
 msgstr "合作伙伴"
+
+msgid "partners"
+msgstr ""
 
 msgid "Partners"
 msgstr "合作伙伴"
@@ -17081,8 +17147,8 @@ msgstr "选择一个 Carbon 维度和它过账到的提供商目标。自动创�
 msgid "Pick a column to sort by"
 msgstr "选择要排序的列"
 
-msgid "Pick a customer or customer type to view their pricing."
-msgstr "选择一个客户或客户类型以查看其定价。"
+msgid "Pick a customer, a customer type, or All Customers to view their pricing."
+msgstr "选择一个客户、一种客户类型或“所有客户”以查看其价格。"
 
 msgid "Pick a date or leave blank to clear it."
 msgstr "选择一个日期或留空以清除它。"
@@ -17354,6 +17420,9 @@ msgstr "采购订单号"
 
 msgid "PO PDF"
 msgstr "采购订单 PDF"
+
+msgid "Poke the spider… if you dare"
+msgstr "戳一下蜘蛛……如果你敢的话"
 
 msgid "Policy"
 msgstr "政策"
@@ -17730,6 +17799,9 @@ msgstr "生产事件"
 
 msgid "Production Event"
 msgstr "生产事件"
+
+msgid "production events"
+msgstr ""
 
 msgid "Production events"
 msgstr "生产事件"
@@ -18182,6 +18254,9 @@ msgstr "资格在培训后这么多天后过期；空白 = 永不"
 msgid "Qualified"
 msgstr "合格"
 
+msgid "qualified employees"
+msgstr ""
+
 msgid "Qualified Employees"
 msgstr "合格员工"
 
@@ -18357,6 +18432,9 @@ msgstr "报价未找到"
 
 msgid "Quote Number"
 msgstr "报价单号"
+
+msgid "quote operations"
+msgstr ""
 
 msgid "Quote to cash"
 msgstr "从报价单到现金"
@@ -19300,6 +19378,9 @@ msgstr "替换为"
 msgid "Replacement Order"
 msgstr "替换订单"
 
+msgid "replacement parts"
+msgstr ""
+
 msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
 msgstr "替换PDF将移除此文件上的所有气泡位置。特性行及其值保持不变；您可以在新绘图上重新放置气泡。"
 
@@ -19457,6 +19538,9 @@ msgstr "重新安排容差"
 
 msgid "Reschedule tolerance updated"
 msgstr ""
+
+msgid "Resend Invite"
+msgstr "重新发送邀请"
 
 msgid "Reserve floor"
 msgstr "储备下限"
@@ -25119,6 +25203,9 @@ msgstr ""
 msgid "Training your team via the Academy and in-app guides"
 msgstr "通过 Academy 和应用内指南培训班组"
 
+msgid "trainings"
+msgstr ""
+
 msgid "Trainings"
 msgstr "培训"
 
@@ -25311,6 +25398,9 @@ msgstr "取消分配规则"
 
 msgid "Unassigned"
 msgstr "未分配"
+
+msgid "unattributed machine time entries"
+msgstr ""
 
 msgid "Unattributed Time"
 msgstr "未归属时间"
@@ -27001,6 +27091,9 @@ msgstr "工作中心"
 
 msgid "Work Centers"
 msgstr "工作中心"
+
+msgid "work centers requiring its ability"
+msgstr ""
 
 msgid "Work in process (WIP)"
 msgstr "在制品(WIP)"

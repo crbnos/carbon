@@ -29,7 +29,13 @@ import {
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
 import { replanAfterItemChange } from "~/modules/production/production.server";
-import { methodType, sourcingType } from "~/modules/shared/shared.models";
+import {
+  booleanField,
+  methodType,
+  optionalTiptapDoc,
+  requiredTiptapDoc,
+  sourcingType
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   isActiveCompanyEmployee,
@@ -1403,6 +1409,8 @@ export const recalculateItemCost = defineServiceFn({
 export const createChangeNotice = defineServiceFn({
   input: changeNoticeValidator.omit({ id: true, type: true }).extend({
     openDate: z.string().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     customFields: customFieldsInput
   }),
   permission: { create: "parts" },
@@ -1415,8 +1423,8 @@ export const createChangeNotice = defineServiceFn({
     const created = await service.insertChangeNotice(client, {
       changeNoticeId: input.changeOrderId || undefined,
       name: input.name,
-      reasonForChange: service.toRichText(input.reasonForChange),
-      description: service.toRichText(input.description),
+      reasonForChange: input.reasonForChange,
+      description: input.description,
       priority: input.priority,
       changeNoticeTypeId: input.changeOrderTypeId || undefined,
       nonConformanceId: input.nonConformanceId || undefined,
@@ -4598,13 +4606,13 @@ export const createMethodMaterial = defineServiceFn({
   input: z.looseObject({
     id: z
       .string()
-      .describe(
-        "Updates the existing record with this key; creates one when there is none."
-      ),
+      .min(1)
+      .optional()
+      .describe("The new material's id; the table makes one when left out."),
     makeMethodId: z.string().min(1),
     order: z.number().min(0),
     itemType: z.enum(["Part", "Material", "Consumable"]),
-    kit: z.enum(["true", "false"]).optional(),
+    kit: booleanField().optional(),
     methodType: z.enum([
       "Purchase to Order",
       "Pull from Inventory",
@@ -4658,7 +4666,7 @@ export const updateMethodMaterial = defineServiceFn({
       makeMethodId: z.string().min(1),
       order: z.number().min(0),
       itemType: z.enum(["Part", "Material", "Consumable"]),
-      kit: z.enum(["true", "false"]).optional(),
+      kit: booleanField().optional(),
       methodType: z.enum([
         "Purchase to Order",
         "Pull from Inventory",
@@ -4966,7 +4974,7 @@ export const createMethodOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -5029,7 +5037,7 @@ export const updateMethodOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -6256,8 +6264,8 @@ export const updateChangeNotice = defineServiceFn({
     changeOrderTypeId: z.string().nullable().optional(),
     nonConformanceId: z.string().nullable().optional(),
     openDate: z.string().optional(),
-    reasonForChange: z.unknown().optional(),
-    description: z.unknown().optional(),
+    reasonForChange: optionalTiptapDoc,
+    description: optionalTiptapDoc,
     dueDate: z.string().nullable().optional(),
     assignee: z.string().nullable().optional(),
     customFields: z.unknown().optional()

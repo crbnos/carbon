@@ -89,8 +89,8 @@ export const rentalAgreementsList = searchList({
   service: getRentalAgreements
 });
 
-// With a customer or a customer type in the URL, the list resolves that
-// scope's prices; without one, it shows the base catalog.
+// With a customer, a customer type or `scope=all` (every customer) in the URL,
+// the list resolves that scope's prices; without one, it shows the base catalog.
 export const priceListList = {
   key: "price-list",
   permission: { view: "sales", role: "employee" },
@@ -103,15 +103,17 @@ export const priceListList = {
     const search = params.get("search") ?? undefined;
     const customerId = params.get("customerId") ?? undefined;
     const customerTypeId = params.get("customerTypeId") ?? undefined;
+    const allCustomers = params.get("scope") === "all";
     const rawQuantity = Number(params.get("quantity") ?? "1");
     const quantity =
       Number.isFinite(rawQuantity) && rawQuantity >= 0 ? rawQuantity : 1;
 
     const result =
-      customerId || customerTypeId
+      customerId || customerTypeId || allCustomers
         ? await resolvePriceList(client, companyId, {
             customerId,
             customerTypeId,
+            allCustomers,
             quantity,
             search,
             limit,

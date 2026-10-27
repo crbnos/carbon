@@ -809,6 +809,12 @@ msgstr "공정작업으로 돌아가기"
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
 
+msgid "Halloween surprise"
+msgstr "할로윈 깜짝 선물"
+
+msgid "Happy Halloween"
+msgstr "해피 할로윈"
+
 msgid "Heading {level}"
 msgstr "{level} 제목"
 
@@ -986,6 +992,9 @@ msgstr "로드됨: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
+
+msgid "Loading. There's no need to scan again."
+msgstr "로드 중입니다. 다시 스캔할 필요가 없습니다."
 
 msgid "Loading..."
 msgstr "불러오는 중..."
@@ -1283,6 +1292,9 @@ msgstr "없음"
 msgid "Notes"
 msgstr "메모"
 
+msgid "Nothing on this page uses that barcode"
+msgstr "이 페이지에서 해당 바코드를 사용하는 항목이 없습니다"
+
 msgid "Nothing running"
 msgstr "실행 중인 것 없음"
 
@@ -1491,6 +1503,9 @@ msgstr "품목을 선택하세요"
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
+msgid "Poke the spider… if you dare"
+msgstr "거미를 찔러 보세요… 용기가 있다면"
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
 
@@ -1693,6 +1708,9 @@ msgstr "시리얼 번호를 스캔하거나 검색하세요..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 결과를 기록하세요."
+
+msgid "Scan received"
+msgstr "스캔을 받았습니다"
 
 msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
 msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코드를 스캔한 후 표시되는 6자리 코드를 입력하십시오."
@@ -2004,6 +2022,10 @@ msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
+
+#. placeholder {0}: inspection.lotSize
+msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."

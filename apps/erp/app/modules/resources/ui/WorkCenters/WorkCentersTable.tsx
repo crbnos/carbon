@@ -37,6 +37,7 @@ import {
   LuDollarSign,
   LuLocateFixed,
   LuPencil,
+  LuPower,
   LuRedoDot,
   LuTrash,
   LuTriangleAlert,
@@ -93,7 +94,7 @@ const WorkCentersTable = memo(
     const [people] = usePeople();
 
     const permissions = usePermissions();
-    const deleteModal = useDisclosure();
+    const deactivateModal = useDisclosure();
     const activateModal = useDisclosure();
     const [selectedWorkCenter, setSelectedWorkCenter] =
       useState<WorkCenter | null>(null);
@@ -106,14 +107,14 @@ const WorkCentersTable = memo(
       activateModal.onOpen();
     };
 
-    const onDelete = (data: WorkCenter) => {
+    const onDeactivate = (data: WorkCenter) => {
       setSelectedWorkCenter(data);
-      deleteModal.onOpen();
+      deactivateModal.onOpen();
     };
 
     const onCancel = () => {
       setSelectedWorkCenter(null);
-      deleteModal.onClose();
+      deactivateModal.onClose();
       activateModal.onClose();
     };
 
@@ -330,11 +331,10 @@ const WorkCentersTable = memo(
           </MenuItem>
           {row.active ? (
             <MenuItem
-              destructive
               disabled={!permissions.can("delete", "resources")}
-              onClick={() => onDelete(row)}
+              onClick={() => onDeactivate(row)}
             >
-              <MenuIcon icon={<LuTrash />} />
+              <MenuIcon icon={<LuPower />} />
               <Trans>Deactivate Work Center</Trans>
             </MenuItem>
           ) : (
@@ -346,6 +346,19 @@ const WorkCentersTable = memo(
               <Trans>Activate Work Center</Trans>
             </MenuItem>
           )}
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
+            destructive
+            disabled={!permissions.can("delete", "resources")}
+            onClick={() => {
+              navigate(
+                `${path.to.deleteWorkCenter(row.id!)}?${params?.toString()}`
+              );
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            <Trans>Delete Work Center</Trans>
+          </MenuItem>
         </>
       ),
 
@@ -378,9 +391,9 @@ const WorkCentersTable = memo(
         />
 
         {selectedWorkCenter && selectedWorkCenter.id && (
-          <DeleteWorkCenterModal
+          <DeactivateWorkCenterModal
             workCenter={selectedWorkCenter}
-            isOpen={deleteModal.isOpen}
+            isOpen={deactivateModal.isOpen}
             onCancel={onCancel}
             onSubmit={onCancel}
           />
@@ -405,7 +418,7 @@ const WorkCentersTable = memo(
 WorkCentersTable.displayName = "WorkCentersTable";
 export default WorkCentersTable;
 
-function DeleteWorkCenterModal({
+function DeactivateWorkCenterModal({
   workCenter,
   isOpen,
   onCancel,
@@ -528,7 +541,7 @@ function DeleteWorkCenterModal({
           </Button>
           <fetcher.Form
             method="post"
-            action={path.to.deleteWorkCenter(workCenter.id!)}
+            action={path.to.workCenterDeactivate(workCenter.id!)}
             onSubmit={() => (submitted.current = true)}
           >
             <Button

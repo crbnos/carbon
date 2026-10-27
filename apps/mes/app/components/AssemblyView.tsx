@@ -116,6 +116,7 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
+import { isKanbanCompleteScan } from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
@@ -595,17 +596,13 @@ export function AssemblyView({
   useRealtime("jobOperation", `id=eq.${operationId}`);
 
   // Kanban barcode scan → complete the operation (matches the operation view).
-  // The returned buffer is non-empty while a scan burst is in flight — the
-  // keyboard-shortcut effect below yields Enter to the wedge during that window.
+  // The wedge takes a scan's Enter in the capture phase, so the Enter/Space
+  // shortcut below never sees it.
   const completeFetcher = useFetcher();
-  const wedgeBuffer = useKeyboardWedge({
-    test: (input) =>
-      kanban?.completedBarcodeOverride
-        ? input === kanban.completedBarcodeOverride
-        : kanban?.id
-          ? input === path.to.kanbanComplete(kanban.id)
-          : false,
+  useKeyboardWedge({
+    test: (input) => !!kanban && isKanbanCompleteScan(input, kanban),
     callback: () => completeFetcher.load(path.to.endOperation(operationId)),
+    inTextFields: true,
     active: !!kanban?.id
   });
 
@@ -1342,9 +1339,6 @@ export function AssemblyView({
       // Any open dialog (RecordModal, issue/scan modals, zoom) keeps native
       // key semantics — the armed-clicker swallow below is the one exception.
       !hasOpenDialog() &&
-      // A barcode wedge scan terminates with Enter — yield it to
-      // useKeyboardWedge while a scan burst is buffered.
-      !(event.key === "Enter" && wedgeBuffer !== "") &&
       // No primary action (step done, gated, or submitting) → leave the
       // action keys native, so a keyboard user who focused Skip can still
       // activate it with Space/Enter.
