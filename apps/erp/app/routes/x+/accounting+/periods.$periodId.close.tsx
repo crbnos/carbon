@@ -115,6 +115,7 @@ const closeForm = z.object({
     "create-revenue-run",
     "create-lease-run",
     "create-depreciation-run",
+    "create-currency-revaluation-run",
     "close"
   ]),
   taskId: z.string().optional(),
@@ -125,7 +126,8 @@ const closeForm = z.object({
 const RUN_OF_INTENT = {
   "create-revenue-run": "Revenue Recognition",
   "create-lease-run": "Lease",
-  "create-depreciation-run": "Depreciation"
+  "create-depreciation-run": "Depreciation",
+  "create-currency-revaluation-run": "Currency Revaluation"
 } as const;
 
 export async function action(args: ActionFunctionArgs) {
@@ -159,6 +161,12 @@ export async function action(args: ActionFunctionArgs) {
       // A Draft already holding the period opens instead, with the refusal.
       const runId = result.data?.id ?? existingDraftRunId(result.error);
       if (!runId) return result;
+      if (run === "Currency Revaluation") {
+        return respond(args.request, result).redirect(
+          path.to.currencyRevaluationRun(runId),
+          { message: "Currency revaluation run created" }
+        );
+      }
       const isDepreciation = run === "Depreciation";
       return respond(args.request, result).redirect(
         isDepreciation
@@ -307,6 +315,8 @@ function PeriodCloseTaskRow({
         return t`Journal entries dated in this period that are still Draft must be posted, or re-dated into a later open period. Draft entries aren't part of the ledger, so their debits and credits would be missing from the close.`;
       case "draft-depreciation":
         return t`Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period.`;
+      case "fx-revaluation":
+        return t`Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency.`;
       case "unmatched-ic":
         return t`Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities.`;
       case "unposted-revenue-schedules":
@@ -349,7 +359,9 @@ function PeriodCloseTaskRow({
         ? "create-lease-run"
         : task.autoCheckKey === "draft-depreciation"
           ? "create-depreciation-run"
-          : null;
+          : task.autoCheckKey === "fx-revaluation"
+            ? "create-currency-revaluation-run"
+            : null;
   const due = task.autoCheck?.due;
   const canCreateRun =
     createRunIntent !== null &&
@@ -441,9 +453,11 @@ function PeriodCloseTaskRow({
                     runType={
                       task.autoCheckKey === "draft-depreciation"
                         ? "depreciation"
-                        : task.autoCheckKey === "unposted-lease-schedules"
-                          ? "lease"
-                          : "revenue"
+                        : task.autoCheckKey === "fx-revaluation"
+                          ? "currencyRevaluation"
+                          : task.autoCheckKey === "unposted-lease-schedules"
+                            ? "lease"
+                            : "revenue"
                     }
                   />
                 )}
@@ -453,6 +467,14 @@ function PeriodCloseTaskRow({
                     className="w-fit text-xs font-normal text-primary hover:underline"
                   >
                     <Trans>Go to depreciation runs</Trans>
+                  </Link>
+                )}
+                {task.autoCheckKey === "fx-revaluation" && (
+                  <Link
+                    to={path.to.currencyRevaluationRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to currency revaluation runs</Trans>
                   </Link>
                 )}
                 {task.autoCheckKey === "unposted-lease-schedules" && (
@@ -617,7 +639,7 @@ function PeriodRunDue({
 }: {
   due: { count: number; amount: number; error: string | null };
   draftRuns: { id: string; readableId: string; periodEnd: string }[];
-  runType: "revenue" | "lease" | "depreciation";
+  runType: "revenue" | "lease" | "depreciation" | "currencyRevaluation";
 }) {
   const { t } = useLingui();
   const currencyFormatter = useCurrencyFormatter();
@@ -632,13 +654,17 @@ function PeriodRunDue({
             ? due.count === 1
               ? t`1 asset to depreciate · ${amount}`
               : t`${due.count} assets to depreciate · ${amount}`
-            : runType === "lease"
+            : runType === "currencyRevaluation"
               ? due.count === 1
-                ? t`1 entry to post · ${amount}`
-                : t`${due.count} entries to post · ${amount}`
-              : due.count === 1
-                ? t`1 entry to recognize · ${amount}`
-                : t`${due.count} entries to recognize · ${amount}`}
+                ? t`1 open foreign-currency item · ${amount}`
+                : t`${due.count} open foreign-currency items · ${amount}`
+              : runType === "lease"
+                ? due.count === 1
+                  ? t`1 entry to post · ${amount}`
+                  : t`${due.count} entries to post · ${amount}`
+                : due.count === 1
+                  ? t`1 entry to recognize · ${amount}`
+                  : t`${due.count} entries to recognize · ${amount}`}
         </span>
       )}
       {draftRuns.map((run) => (
@@ -647,7 +673,9 @@ function PeriodRunDue({
           to={
             runType === "depreciation"
               ? path.to.depreciationRun(run.id)
-              : path.to.revenueRecognitionRun(run.id)
+              : runType === "currencyRevaluation"
+                ? path.to.currencyRevaluationRun(run.id)
+                : path.to.revenueRecognitionRun(run.id)
           }
           className="w-fit text-primary hover:underline"
         >

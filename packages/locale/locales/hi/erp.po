@@ -304,6 +304,10 @@ msgstr "{0} में से {maxSlots} प्रदाता स्लॉट �
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} का {memberCount} सदस्य जॉब अभी तक पूर्ण नहीं हैं — उनका आउटपुट तब तक स्टॉक से बाहर रहेगा जब तक प्रत्येक जॉब पूर्ण न हो जाए।"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} ऑपरेशन · {totalQuantity} पार्ट्स"
@@ -855,6 +859,9 @@ msgstr "1 नौकरी बनाई गई"
 
 msgid "1 line"
 msgstr "1 पंक्ति"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"
@@ -3608,6 +3615,9 @@ msgstr "मूल्यह्रास से पूछता है कि इ�
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "राजस्व स्वीकृति से पूछता है कि इस अवधि के लिए एक नया रन अब क्या स्वीकार करेगा - स्थगित चालान राजस्व और अनुबंध राजस्व - और अवधि के अंत तक राजस्व के लिए ड्राफ्ट रन को धारण करने के लिए जांचता है। रन बनाएँ और पोस्ट करें ताकि राजस्व सामान्य खाता बही तक पहुंचे। यदि कुछ भी स्वीकार नहीं किया जाना चाहिए तो कारण के साथ छोड़ दें।"
+
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr ""
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "पट्टा रन से पूछता है कि इस अवधि के लिए एक नया रन अब क्या पोस्ट करेगा — पट्टा ब्याज और उपयोग अधिकार परिशोधन, किराये का किराया स्थगित या अर्जित करने के लिए, और बिक्रय-प्रकार पट्टा ब्याज — और अवधि के अंत तक भुगतान के लिए प्रविष्टियों को पकड़े हुए ड्राफ्ट पट्टा रन के लिए जाँच करता है। रन बनाएँ और इसे पोस्ट करें ताकि प्रविष्टियाँ खाता तक पहुँचें। यदि कुछ भी पोस्ट न किया जाना चाहिए तो एक कारण के साथ छोड़ दें।"
@@ -10930,6 +10940,9 @@ msgstr "पहली बार ही सही तरीके से लाइ
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "{0} पर जाएं"
+
+msgid "Go to currency revaluation runs"
+msgstr ""
 
 msgid "Go to depreciation runs"
 msgstr "मूल्यह्रास चलाता है पर जाएं"

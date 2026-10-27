@@ -304,6 +304,10 @@ msgstr "{0} of {maxSlots} provider slots used"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr "{0} open foreign-currency items · {amount}"
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operations · {totalQuantity} parts"
@@ -855,6 +859,9 @@ msgstr "1 job created"
 
 msgid "1 line"
 msgstr "1 line"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr "1 open foreign-currency item · {amount}"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 part skipped — it already has an open job"
@@ -3608,6 +3615,9 @@ msgstr "Asks depreciation what a new run for this period would depreciate now, a
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
@@ -10930,6 +10940,9 @@ msgstr "Go live right the first time — with our team alongside you"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Go to {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr "Go to currency revaluation runs"
 
 msgid "Go to depreciation runs"
 msgstr "Go to depreciation runs"

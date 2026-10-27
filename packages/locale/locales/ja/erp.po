@@ -304,6 +304,10 @@ msgstr "{0}個の{maxSlots}プロバイダースロットが使用されてい�
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{memberCount}個の製造指図のうち{0}件がまだ完了していません。各製造指図が完了するまで、それらの出力は在庫に入りません。"
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工程 · {totalQuantity} 部品"
@@ -855,6 +859,9 @@ msgstr "1件のジョブが作成されました"
 
 msgid "1 line"
 msgstr "1明細"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -3608,6 +3615,9 @@ msgstr "この期間の新しい実行が現在減価償却する内容を確認
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "収益認識に対して、この期間の新規実行が現在何を認識するか（繰延請求書収益と契約収益）を要求し、期末までに支払期限のある収益を保持する下書き実行をチェックします。実行を作成し、転記して、収益が総勘定元帳に到達するようにします。認識すべきものがない場合は、理由を付けてスキップしてください。"
+
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr ""
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "このリース実行に対し、この期間の新規実行が今どのような転記を行うかを確認します—リース利息と使用権資産の償却、レンタル賃料の繰延または発生計上、売上型リース利息です。また、期間終了時点で期限が到来する仕訳を保有する下書きリース実行がないかを確認します。実行を作成して転記し、仕訳が台帳に転記されるようにしてください。何も転記する必要がない場合は理由を付けてスキップしてください。"
@@ -10930,6 +10940,9 @@ msgstr "初回から正しく本番運用を開始 — 当社チームがサポ�
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "{0}に移動"
+
+msgid "Go to currency revaluation runs"
+msgstr ""
 
 msgid "Go to depreciation runs"
 msgstr "減価償却実行に移動"

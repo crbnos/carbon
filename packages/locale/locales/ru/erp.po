@@ -304,6 +304,10 @@ msgstr "{0} из {maxSlots} слотов провайдера используе
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} из {memberCount} производственных заказов еще не завершены — их выпуск остается вне запаса до завершения каждого производственного заказа."
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} операций · {totalQuantity} деталей"
@@ -855,6 +859,9 @@ msgstr "1 задание создано"
 
 msgid "1 line"
 msgstr "1 строка"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 деталь пропущена — у неё уже есть открытое задание"
@@ -3608,6 +3615,9 @@ msgstr "Запрашивает амортизацию, что новый рас�
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Спросите признание выручки, что новое выполнение за этот период было бы признано теперь — отложенная выручка по счету и выручка по контракту — и проверьте черновики выполнения, содержащие выручку, подлежащую оплате к концу периода. Создайте выполнение и проведите его, чтобы выручка попала в главную книгу. Пропустите с причиной, если ничего не должно быть признано."
+
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr ""
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Проверяет, что новая операция аренды для этого периода проводила бы сейчас — процент по аренде и амортизацию актива права пользования, плату по аренде для отсрочки или начисления, и процент по аренде типа продажи — и проверяет черновики операций аренды с записями, которые должны быть обработаны к концу периода. Создайте операцию и проведите ее, чтобы записи попали в главную книгу. Пропустите с указанием причины, если ничего не нужно проводить."
@@ -10930,6 +10940,9 @@ msgstr "Запустите систему с первой попытки — с 
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Перейти к {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr ""
 
 msgid "Go to depreciation runs"
 msgstr "Перейти к запускам амортизации"

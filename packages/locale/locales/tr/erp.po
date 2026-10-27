@@ -304,6 +304,10 @@ msgstr "{0}/{maxSlots} sağlayıcı yuvası kullanıldı"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} / {memberCount} üye iş emirlerinin henüz tamamlanmadığı — bunların çıktısı her bir iş emri tamamlanana kadar stok dışında kalır."
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operasyon · {totalQuantity} parça"
@@ -855,6 +859,9 @@ msgstr "1 iş oluşturuldu"
 
 msgid "1 line"
 msgstr "1 satır"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 parça atlandı — zaten açık bir işi var"
@@ -3608,6 +3615,9 @@ msgstr "Amortisman, bu dönem için yeni bir çalışmanın şimdi ne amorti ede
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Hasılat muhasebeleştirmesine bu dönem için yeni bir çalıştırmanın şimdi ne tanıyacağını sorar — ertelenen fatura hasılatı ve sözleşme hasılatı — ve dönem sonunda vadesi gelen hasılatı tutan Taslak çalıştırmalarını kontrol eder. Çalıştırmayı oluşturun ve muhasebeleştirin, böylece hasılat Büyük defter'e ulaşır. Hiçbir şey tanınmaması gerekiyorsa bir neden ile atlayın."
+
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr ""
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Kiralama çalışmasına bu dönem için yeni bir çalışmanın şu anda muhasebeleştirilecek ne olduğunu sorar — kiralama faizi ve kullanım hakkı amortisman, kiralama kirası ertelenecek veya tahakkuk ettirilecek ve satış türü kiralama faizi — ve dönem sonuna kadar muhasebeleştirilecek girişleri içeren Taslak kiralama çalışmaları kontrol eder. Çalışmayı oluştur ve muhasebeleştir böylece giriş deftere ulaşsın. Hiçbir şey muhasebeleştirilmemesi gerekiyorsa bir nedenle atla."
@@ -10930,6 +10940,9 @@ msgstr "İlk seferde canlı yayına geç — ekibimiz yanınızda"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Şuraya git: {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr ""
 
 msgid "Go to depreciation runs"
 msgstr "Amortisman çalışmalarına git"

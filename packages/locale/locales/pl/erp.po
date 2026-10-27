@@ -304,6 +304,10 @@ msgstr "{0} z {maxSlots} slotów dostawcy jest w użyciu"
 msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
 msgstr "{0} z {memberCount} zleceń produkcyjnych nie zostały jeszcze zakończone — ich wyjście pozostaje poza zapasem, dopóki każde zlecenie produkcyjne nie zostanie zakończone."
 
+#. placeholder {0}: due.count
+msgid "{0} open foreign-currency items · {amount}"
+msgstr ""
+
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operacji · {totalQuantity} części"
@@ -855,6 +859,9 @@ msgstr "1 zadanie utworzone"
 
 msgid "1 line"
 msgstr "1 pozycja"
+
+msgid "1 open foreign-currency item · {amount}"
+msgstr ""
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 część pominięta — ma już otwarte zadanie"
@@ -3608,6 +3615,9 @@ msgstr "Pyta amortyzację, co nowy przebieg w tym okresie amortyzowałby teraz, 
 
 msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
 msgstr "Zapytaj system rozpoznawania przychodów, co nowe uruchomienie w tym okresie rozpoznałoby teraz — przychody z odroczoną fakturą i przychody z umowy — i sprawdź wersje robocze przechowujące przychody wymagalne do końca okresu. Utwórz uruchomienie i zaksięguj je, aby przychody trafiły do księgi głównej. Pomiń z przyczyna, jeśli nic nie powinno być rozpoznane."
+
+msgid "Asks the currency revaluation run what is still open in a foreign currency at this period end — open invoices and memos, and unapplied customer receipts and supplier payments — and checks for a Draft run ending in the period. Create the run and post it so the balance sheet carries those items at the closing rate, with the difference in unrealized exchange gain or loss. Skip with a reason if nothing is open in a foreign currency."
+msgstr ""
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Pyta przebieg leasingu, co nowy przebieg w tym okresie byłby teraz zaksięgowany — odsetki z tytułu leasingu i amortyzacja prawa użytkowania, czynsz wynajmu do odłożenia lub naliczenia oraz odsetki z tytułu leasingu typu sprzedażnego — i sprawdza przebiegi leasingu w wersji roboczej zawierające wpisy wymagalne do końca okresu. Utwórz przebieg i zaksięguj go, aby wpisy trafiły do księgi. Pomiń z podaniem przyczyny, jeśli nic nie powinno być zaksięgowane."
@@ -10930,6 +10940,9 @@ msgstr "Wdrażaj bez błędów za pierwszym razem — z naszym zespołem u boku"
 #. placeholder {0}: i18n._(action.refTitle)
 msgid "Go to {0}"
 msgstr "Przejdź do {0}"
+
+msgid "Go to currency revaluation runs"
+msgstr ""
 
 msgid "Go to depreciation runs"
 msgstr "Przejdź do przebiegów amortyzacji"
