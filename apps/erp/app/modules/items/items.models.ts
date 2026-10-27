@@ -248,10 +248,10 @@ export const itemValidator = z.object({
   // itemShelfLife row. Truly absent fields (non-form callers like MCP that
   // don't set shelfLifeMode at all) remain undefined, which the upsert
   // helper treats as a no-op.
-  shelfLifeMode: z.preprocess(
-    (v) => (v === "" ? "NotManaged" : v),
-    z.enum(shelfLifeModes).optional()
-  ),
+  shelfLifeMode: z
+    .union([z.literal(""), z.enum(shelfLifeModes)])
+    .transform((v) => (v === "" ? "NotManaged" : v))
+    .optional(),
   shelfLifeDays: zfd.numeric(z.number().positive().optional()),
   shelfLifeTriggerProcessId: zfd.text(z.string().optional()),
   // Whether the clock starts when the trigger process begins ('Before') or

@@ -49,7 +49,8 @@ import {
 } from "~/modules/settings/settings.service";
 import {
   inspectionPlanRequired,
-  optionalTiptapDoc
+  optionalTiptapDoc,
+  requiredTiptapDoc
 } from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
@@ -150,9 +151,9 @@ export const createSalesRfq = defineServiceFn({
     lines: z
       .array(
         z.object({
-          partNumber: z.coerce.string().nullish(),
-          description: z.coerce.string().nullish(),
-          quantity: z.coerce.number().nullish()
+          partNumber: z.coerce.string<string>().nullish(),
+          description: z.coerce.string<string>().nullish(),
+          quantity: z.coerce.number<number>().nullish()
         })
       )
       .default([]),
@@ -3087,7 +3088,7 @@ const quoteMaterialInput = z.object({
  * @mcp
  */
 export const createQuoteMaterial = defineServiceFn({
-  input: quoteMaterialInput,
+  input: quoteMaterialInput.extend({ id: z.string().min(1).optional() }),
   permission: { create: "sales" },
 
   async run(ctx, { customFields, ...material }) {
@@ -3279,12 +3280,17 @@ export const deleteQuoteMaterialsAndReprice = defineServiceFn({
 // The bill of process form requires times, units and rates; the API fills a
 // new operation's from its work center or process, and an update leaves out
 // what it was not sent.
-const quoteOperationInput = baseQuoteOperationValidator
-  .extend({
-    quoteId: z.string(),
-    quoteLineId: z.string(),
-    customFields: customFieldValues.optional()
-  })
+const quoteOperationFields = baseQuoteOperationValidator.extend({
+  quoteId: z.string(),
+  quoteLineId: z.string(),
+  customFields: customFieldValues.optional()
+});
+const quoteOperationInput = quoteOperationFields.refine(
+  ...inspectionPlanRequired
+);
+// A new operation's id is optional: the table makes one.
+const newQuoteOperationInput = quoteOperationFields
+  .extend({ id: z.string().min(1).optional() })
   .refine(...inspectionPlanRequired);
 
 /**
@@ -3300,7 +3306,7 @@ const quoteOperationInput = baseQuoteOperationValidator
  * @mcp
  */
 export const createQuoteOperation = defineServiceFn({
-  input: quoteOperationInput,
+  input: newQuoteOperationInput,
   permission: { create: "sales" },
 
   async run(ctx, { customFields, ...input }) {
@@ -3320,15 +3326,11 @@ export const createQuoteOperation = defineServiceFn({
       createdBy: ctx.auditUserId,
       customFields
     });
-    if (inserted.error || !inserted.data?.id) {
-      return ctx.error(
-        "internal",
-        "Failed to insert quote operation",
-        inserted.error
-      );
-    }
+    const row = unwrap(ctx, inserted);
+    if (row instanceof CarbonError) return row;
+    if (!row) return ctx.error("internal", "Failed to insert quote operation");
     await service.repriceQuoteLine(ctx, { quoteId, quoteLineId });
-    return { id: inserted.data.id };
+    return { id: row.id };
   }
 });
 
@@ -7915,7 +7917,7 @@ export const createQuoteOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -7963,7 +7965,7 @@ export const updateQuoteOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",

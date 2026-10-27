@@ -52,6 +52,10 @@ import {
   getNextSequence
 } from "~/modules/settings/settings.service";
 import {
+  booleanField,
+  optionalTiptapDoc
+} from "~/modules/shared/shared.models";
+import {
   getCompanyTimeZone,
   getLocationTimeZone,
   invokeCreate,
@@ -1975,7 +1979,7 @@ export const updateShipmentFixedAssetLine = defineServiceFn({
       .from("shipmentFixedAssetLine")
       .update({
         ...(change.field === "shipped"
-          ? { shipped: change.value === "true" }
+          ? { shipped: change.value }
           : change.field === "serialNumber"
             ? { serialNumber: change.value || null }
             : { meter: change.value === "" ? null : Number(change.value) }),
@@ -3247,7 +3251,7 @@ export const updatePickingList = defineServiceFn({
     locationId: z.string().min(1),
     assignee: z.string().optional(),
     dueDate: z.string().optional(),
-    notes: z.string().optional(),
+    notes: optionalTiptapDoc,
     customFields: z.record(z.string(), z.unknown()).optional()
   }),
   permission: { update: "inventory" },
@@ -5983,8 +5987,8 @@ export const createStockTransferLine = defineServiceFn({
     fromStorageUnitId: z.string().optional(),
     toStorageUnitId: z.string().optional(),
     quantity: z.number().min(0),
-    requiresBatchTracking: z.enum(["true", "false"]),
-    requiresSerialTracking: z.enum(["true", "false"])
+    requiresBatchTracking: booleanField(),
+    requiresSerialTracking: booleanField()
   }),
   permission: { create: "inventory" },
   async run(ctx, input) {
@@ -6020,8 +6024,8 @@ export const updateStockTransferLine = defineServiceFn({
       fromStorageUnitId: z.string().optional(),
       toStorageUnitId: z.string().optional(),
       quantity: z.number().min(0),
-      requiresBatchTracking: z.enum(["true", "false"]),
-      requiresSerialTracking: z.enum(["true", "false"]),
+      requiresBatchTracking: booleanField(),
+      requiresSerialTracking: booleanField(),
       id: z.string().describe("The line to update.").optional()
     })
     .required({ id: true }),

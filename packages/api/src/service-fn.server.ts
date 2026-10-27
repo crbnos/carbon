@@ -8,6 +8,7 @@ import type { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { databaseRefusal } from "./database-refusal";
 import {
   hasPermissions,
   type ModulePermissions,
@@ -396,21 +397,29 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
         return { data: out, error: null } as Outcome<R>;
       }
       if (out.category === "internal") {
-        logger.error("Service function failed: {message}: {error}", {
-          message: out.message,
-          companyId: ctx.company.id,
-          inputKeys: keysOf(input),
-          error: out.cause
-        });
+        const refused = refusalFromDatabase(out.message, out.cause);
+        logger[refused ? "warn" : "error"](
+          "Service function failed: {message}: {error}",
+          {
+            message: out.message,
+            companyId: ctx.company.id,
+            inputKeys: keysOf(input),
+            error: out.cause
+          }
+        );
+        if (refused) return failed(refused);
       }
       return failed(out);
     } catch (err) {
-      logger.error("Service function threw: {error}", {
+      const refused = refusalFromDatabase(undefined, err);
+      logger[refused ? "warn" : "error"]("Service function threw: {error}", {
         companyId: ctx.company.id,
         inputKeys: keysOf(input),
         error: err
       });
-      return failed(new CarbonError("internal", "Something went wrong", err));
+      return failed(
+        refused ?? new CarbonError("internal", "Something went wrong", err)
+      );
     }
   };
 
@@ -418,6 +427,26 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
     input: definition.input,
     permission: definition.permission
   });
+}
+
+/**
+ * An `internal` failure whose cause is a database refusal the caller can fix
+ * (a duplicate id, a reference to nothing, a missing value) is that refusal:
+ * its category, and a message that names the field after the operation's own.
+ */
+function refusalFromDatabase(
+  message: string | undefined,
+  cause: unknown
+): CarbonError | null {
+  const known = databaseRefusal(cause);
+  if (!known) return null;
+  return new CarbonError(
+    known.category,
+    message
+      ? `${message.replace(/[.:]\s*$/, "")}: ${known.message}`
+      : known.message,
+    cause
+  );
 }
 
 /** A `CarbonError` as it crosses to the client: its fields, never its cause. */

@@ -16,6 +16,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { getCompany } from "~/modules/settings/settings.service";
+import { optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   invalidateLocationTimeZone,
   refuseUnlessOwned
@@ -688,18 +689,13 @@ export const updateMaintenanceSchedule = defineServiceFn({
  * @mcp
  */
 export const createMaintenanceDispatch = defineServiceFn({
-  input: maintenanceDispatchValidator,
+  input: maintenanceDispatchValidator.extend({
+    content: optionalTiptapDoc
+  }),
   permission: { create: "resources" },
 
   async run(ctx, input) {
-    let content: Json | undefined;
-    if (input.content) {
-      try {
-        content = JSON.parse(input.content);
-      } catch {
-        return ctx.error("validation", "The dispatch notes are not valid");
-      }
-    }
+    const content: Json | undefined = input.content;
 
     const result = await service.insertMaintenanceDispatch(
       ctx.asCaller.supabase,
@@ -3335,7 +3331,7 @@ export const updatePartner = defineServiceFn({
 export const createTraining = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     grantsAbilityId: z.string().optional(),
     id: z
       .string()
@@ -3366,7 +3362,7 @@ export const updateTraining = defineServiceFn({
   input: z
     .looseObject({
       name: z.string().min(1),
-      content: z.string().optional(),
+      content: optionalTiptapDoc,
       grantsAbilityId: z.string().optional(),
       id: z
         .string()
