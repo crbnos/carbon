@@ -637,6 +637,7 @@ describe.skipIf(!client)("serial number timing", () => {
           issue
         )
       );
+      // The replacement carries the seed's two other units and the one owed.
       expect(await units(f, job.makeMethodId)).toEqual([
         expect.objectContaining({
           readableId: "SN-001",
@@ -645,7 +646,7 @@ describe.skipIf(!client)("serial number timing", () => {
         }),
         expect.objectContaining({
           readableId: null,
-          quantity: 1,
+          quantity: 3,
           status: "Reserved"
         })
       ]);
@@ -660,6 +661,56 @@ describe.skipIf(!client)("serial number timing", () => {
         { readableId: "SN-002", quantity: 1 },
         { readableId: "SN-003", quantity: 1 },
         { readableId: "SN-004", quantity: 1 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("completes a job with no serial sequence after its seed was scrapped", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      await seed(f, async (trx) => {
+        await trx
+          .deleteFrom("itemSerialSequence")
+          .where("itemId", "=", f.assemblyId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+      });
+      const job = await untouchedSerialJob(f, "7b", 3);
+      const [seedUnit] = await units(f, job.makeMethodId);
+      const scrapReason = await f.db
+        .insertInto("scrapReason")
+        .values({ name: "Damaged", companyId: f.companyId, createdBy: USER })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      unwrap(
+        await invokePosting(
+          handlesOf(f.ctx),
+          "issue",
+          {
+            type: "jobOperationScrap",
+            jobOperationId: job.operationId,
+            quantity: 1,
+            scrapReasonId: scrapReason.id,
+            trackedEntityId: seedUnit!.id
+          },
+          issue
+        )
+      );
+
+      const result = await completeJob(contextFor(f), {
+        jobId: job.jobId,
+        quantityComplete: 3
+      });
+      expect(result.error).toBeNull();
+
+      // Received against the seed the replacement carries on.
+      expect(await receivedUnits(f, job.jobId)).toEqual([
+        { readableId: null, quantity: 3 }
       ]);
     } finally {
       await f.cleanup();
@@ -702,6 +753,46 @@ describe.skipIf(!client)("serial number timing", () => {
         })
       ]);
       expect(await drawn(f)).toBe(0);
+    } finally {
+      await f.cleanup();
+    }
+  });
+
+  it("refuses to complete another job's unit, and leaves that unit whole", async () => {
+    const f = await alwaysPostFixture();
+    try {
+      await stockPart(f, 20);
+      await serialSetup(f, "production");
+      const job = await untouchedSerialJob(f, "10", 3);
+      const otherJob = await untouchedSerialJob(f, "11", 3);
+      const [otherSeed] = await units(f, otherJob.makeMethodId);
+
+      const result = await invokePosting(
+        handlesOf(f.ctx),
+        "issue",
+        {
+          type: "jobOperationSerialComplete",
+          trackedEntityId: otherSeed!.id,
+          quantity: 1,
+          jobOperationId: job.operationId
+        },
+        issue
+      );
+
+      expect(result.error?.status).toBe(400);
+      expect(await units(f, otherJob.makeMethodId)).toEqual([
+        expect.objectContaining({
+          readableId: null,
+          quantity: 3,
+          status: "Reserved"
+        })
+      ]);
+      const quantities = await f.db
+        .selectFrom("productionQuantity")
+        .select("id")
+        .where("jobOperationId", "=", job.operationId)
+        .execute();
+      expect(quantities).toEqual([]);
     } finally {
       await f.cleanup();
     }

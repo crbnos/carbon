@@ -23446,7 +23446,6 @@ export async function issueMaterial(
       if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
         throw new NotFoundError("Job operation not found");
       }
-      const completedMakeMethodId = jobOperation.data.jobMakeMethodId;
 
       // UNIT-AXIS order, identical to the apps' getTrackedEntitiesByMakeMethodId:
       // position here is the `index` step records are stored under, so the
@@ -23475,6 +23474,13 @@ export async function issueMaterial(
       const completedUnitIndex = trackedEntities.data.findIndex(
         (entity: { id: string }) => entity.id === trackedEntityId
       );
+      // The unit id comes from the request, and a completion cuts an unsplit
+      // seed to one unit: another job's seed would lose the units it holds.
+      if (completedUnitIndex < 0) {
+        throw new InvalidInputError(
+          "The unit does not belong to this operation"
+        );
+      }
 
       const relatedTrackedEntities = trackedEntities.data.filter(
         (trackedEntity) =>
@@ -23516,13 +23522,10 @@ export async function issueMaterial(
         // the timing (under 'production' every unit; otherwise only a unit
         // left unnumbered by a timing change). A Consumed entity is not cut to
         // one unit below, so it is numbered only when it already holds one.
-        // The unit id comes from the request, so only a unit of this
-        // operation's make method draws a number.
         await sequence.assignSerialNumberIfMissing(trx, {
           trackedEntityId,
           companyId,
-          onlyIfSingleUnit: trackedEntity.status === "Consumed",
-          jobMakeMethodId: completedMakeMethodId
+          onlyIfSingleUnit: trackedEntity.status === "Consumed"
         });
 
         if (trackedEntity.status !== "Consumed") {
@@ -23543,7 +23546,7 @@ export async function issueMaterial(
                 Job: jobOperation.data.jobId,
                 "Job Operation": row.jobOperationId,
                 Employee: userId,
-                ...(completedUnitIndex >= 0 ? { Unit: completedUnitIndex } : {})
+                Unit: completedUnitIndex
               },
               companyId,
               createdBy: userId
@@ -23829,6 +23832,8 @@ export async function issueMaterial(
         // 3. Serial: terminal status + Scrap genealogy on the selected unit.
         //    The entity keeps its consumed-material input tree.
         let scrappedEntityAttributes: TrackedEntityAttributes | null = null;
+        // The units an unsplit seed held besides the one scrapped.
+        let seedUnitsLeft = 0;
         if (isSerial && scrapEntityId) {
           const entity = await trx
             .selectFrom("trackedEntity")
@@ -23842,6 +23847,7 @@ export async function issueMaterial(
           }
           scrappedEntityAttributes =
             entity.attributes as TrackedEntityAttributes;
+          seedUnitsLeft = Math.max(Number(entity.quantity) - 1, 0);
 
           // A unit scrapped before it completed an operation never reached a
           // completion hook, so number it here if it has no number yet (it is
@@ -23885,8 +23891,7 @@ export async function issueMaterial(
           // this operation; status is the terminal marker.
           // One unit is scrapped. An unsplit seed (serialNumberTiming =
           // 'production', or an item with no serial sequence) holds every unit
-          // of the job, so it keeps one; the rest are spawned one at a time,
-          // as after a serial completion.
+          // of the job, so it keeps one; its replacement carries the rest.
           await trx
             .updateTable("trackedEntity")
             .set({
@@ -23916,6 +23921,9 @@ export async function issueMaterial(
         //    operationQuantity; the top-up above grew operationQuantity by
         //    the beyond-allowance scrap, and pre-created allowance units
         //    (job.scrapQuantity at release) already cover in-allowance scrap.
+        //    A scrapped unsplit seed's other units go with it: the completion
+        //    of an item with no serial sequence receives against a seed, so
+        //    they would otherwise be lost.
         if (isSerial && scrapEntityId && scrappedEntityAttributes) {
           const updatedOperation = await trx
             .selectFrom("jobOperation")
@@ -23923,16 +23931,19 @@ export async function issueMaterial(
             .where("id", "=", jobOperationId)
             .executeTakeFirst();
           const capacity = Number(updatedOperation?.operationQuantity ?? 0);
-          if (existingEntityCount < capacity) {
+          const replacementUnits =
+            seedUnitsLeft + (existingEntityCount < capacity ? 1 : 0);
+          if (replacementUnits > 0) {
             // Under serialNumberTiming = 'production' the replacement stays
-            // unnumbered until it is first touched.
-            const spawnReadableId = makeMethod.itemId
-              ? await sequence.getSpawnSerialNumber(trx, {
-                  itemId: makeMethod.itemId,
-                  companyId,
-                  jobId: job.id
-                })
-              : null;
+            // unnumbered until it is first touched, and so does a seed.
+            const spawnReadableId =
+              replacementUnits === 1 && makeMethod.itemId
+                ? await sequence.getSpawnSerialNumber(trx, {
+                    itemId: makeMethod.itemId,
+                    companyId,
+                    jobId: job.id
+                  })
+                : null;
 
             const scrappedEntity = await trx
               .selectFrom("trackedEntity")
@@ -23947,7 +23958,7 @@ export async function issueMaterial(
                   scrappedEntity?.sourceDocumentId ?? makeMethod.itemId ?? "",
                 sourceDocumentReadableId:
                   scrappedEntity?.sourceDocumentReadableId,
-                quantity: 1,
+                quantity: replacementUnits,
                 status: "Reserved",
                 attributes: scrappedEntityAttributes as unknown as Json,
                 itemId: makeMethod.itemId ?? null,
