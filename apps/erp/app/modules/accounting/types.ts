@@ -52,6 +52,10 @@ export type Chart = Account & Transaction;
 // Shared so the report tree can recognize and order/decorate the row.
 export const NET_INCOME_ACCOUNT_ID = "net-income";
 
+// Synthetic id for the "Unposted translation adjustment" equity line: the part
+// of the report's CTA no CTA journal has posted yet (never a posted account).
+export const UNPOSTED_CTA_ACCOUNT_ID = "unposted-cta";
+
 export type CostCenter = NonNullable<
   Awaited<ReturnType<typeof getCostCenters>>["data"]
 >[number];

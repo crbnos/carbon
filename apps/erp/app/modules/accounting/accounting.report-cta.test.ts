@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { applyReportCta } from "./accounting.service";
 import { selectReportCompanyIds } from "./accounting.utils";
 import type { ChartPeriodSeries } from "./types";
-import { NET_INCOME_ACCOUNT_ID } from "./types";
+import { NET_INCOME_ACCOUNT_ID, UNPOSTED_CTA_ACCOUNT_ID } from "./types";
 
 const keys = ["2026-07", "2026-08"];
 
@@ -206,5 +206,64 @@ describe("selectReportCompanyIds", () => {
 
   it("refuses all when the group has no companies", () => {
     expect(selectReportCompanyIds("all", [], "parent")).toBeNull();
+  });
+});
+
+// A CTA journal on the elimination entity posted `posted` per bucket:
+// Cr the CTA account, Dr the offset account. Cash is unchanged.
+function postedChart(posted: [number, number]): ChartPeriodSeries[] {
+  return [
+    ...chart().map((row) =>
+      row.id === "custom-cta"
+        ? account("custom-cta", "reserves", "Equity", posted)
+        : row
+    ),
+    account("cta-offset", "reserves", "Equity", [-posted[0], -posted[1]])
+  ];
+}
+
+describe("applyReportCta with a posted CTA", () => {
+  it("shows the posted CTA once and hides the offset when it is fully posted", () => {
+    const { data, error } = applyReportCta(
+      base({ accounts: postedChart([40, 20]), offsetAccountId: "cta-offset" })
+    );
+    expect(error).toBeNull();
+    expect(translated(data, "custom-cta")).toEqual([40, 20]);
+    expect(data?.some((row) => row.id === "cta-offset")).toBe(false);
+    expect(data?.some((row) => row.id === UNPOSTED_CTA_ACCOUNT_ID)).toBe(false);
+    expect(translated(data, "equity")).toEqual([160, 80]);
+    expect(translated(data, "balance-sheet")).toEqual([0, 0]);
+  });
+
+  it("shows the unposted rest on its own line", () => {
+    // Report CTA 40 / 20 against 30 posted in both buckets: 10 / −10 unposted.
+    const { data } = applyReportCta(
+      base({ accounts: postedChart([30, 30]), offsetAccountId: "cta-offset" })
+    );
+    expect(translated(data, "custom-cta")).toEqual([30, 30]);
+    expect(translated(data, UNPOSTED_CTA_ACCOUNT_ID)).toEqual([10, -10]);
+    expect(translated(data, "reserves")).toEqual([40, 20]);
+    expect(translated(data, "balance-sheet")).toEqual([0, 0]);
+  });
+
+  it("behaves as before when the offset account has no balance", () => {
+    const withOffset = applyReportCta(
+      base({
+        accounts: [
+          ...chart(),
+          account("cta-offset", "reserves", "Equity", [0, 0])
+        ],
+        offsetAccountId: "cta-offset"
+      })
+    );
+    expect(translated(withOffset.data, "custom-cta")).toEqual([40, 20]);
+    expect(translated(withOffset.data, "balance-sheet")).toEqual([0, 0]);
+  });
+
+  it("never changes its input", () => {
+    const accounts = postedChart([30, 30]);
+    const before = structuredClone(accounts);
+    applyReportCta(base({ accounts, offsetAccountId: "cta-offset" }));
+    expect(accounts).toEqual(before);
   });
 });

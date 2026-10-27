@@ -334,7 +334,7 @@ import type {
   Transaction,
   TranslatedBalance
 } from "./types";
-import { NET_INCOME_ACCOUNT_ID } from "./types";
+import { NET_INCOME_ACCOUNT_ID, UNPOSTED_CTA_ACCOUNT_ID } from "./types";
 
 /**
  * Sign multiplier for root account aggregation.
@@ -1096,7 +1096,7 @@ export async function applyCtaToReportPeriodSeries(
 }> {
   const defaults = await client
     .from("accountDefault")
-    .select("currencyTranslationAccount")
+    .select("currencyTranslationAccount, currencyTranslationOffsetAccount")
     .eq("companyId", reportingCompanyId)
     .single();
   if (defaults.error) return { data: null, error: defaults.error };
@@ -1109,19 +1109,32 @@ export async function applyCtaToReportPeriodSeries(
       }
     };
   }
-  return applyReportCta({ ...args, companyGroupId, ctaAccountId: accountId });
+  return applyReportCta({
+    ...args,
+    companyGroupId,
+    ctaAccountId: accountId,
+    offsetAccountId: defaults.data?.currencyTranslationOffsetAccount ?? null
+  });
 }
 
 /** Add each bucket's report CTA to the configured Equity account, fill the
  *  synthetic net income from the translated income statement when the
  *  translation left it empty, then roll the translated values up. Returns a
- *  new chart; the input is never mutated. */
+ *  new chart; the input is never mutated.
+ *
+ *  When the chart holds a posted CTA — the offset account (posted only by CTA
+ *  journals on the elimination entity) has a balance — the CTA account
+ *  already carries it. Then only the unposted rest (report CTA − posted CTA,
+ *  posted CTA = −offset balance) is shown, on a synthetic "Unposted
+ *  translation adjustment" line beside the CTA account, and the offset row is
+ *  removed so equity counts the CTA once. */
 export function applyReportCta(args: {
   accounts: ChartPeriodSeries[];
   bucketKeys: string[];
   ctaByBucket: Record<string, number>;
   companyGroupId: string;
   ctaAccountId: string;
+  offsetAccountId?: string | null;
 }): {
   data: ChartPeriodSeries[] | null;
   error: { message: string } | null;
@@ -1154,13 +1167,23 @@ export function applyReportCta(args: {
     };
   }
 
-  const accounts = args.accounts.map((account) => ({
+  const offsetRow = args.offsetAccountId
+    ? args.accounts.find((account) => account.id === args.offsetAccountId)
+    : undefined;
+  const hasPostedCta =
+    offsetRow !== undefined &&
+    args.bucketKeys.some(
+      (key) => (offsetRow.periods[key]?.translatedBalance ?? 0) !== 0
+    );
+
+  let accounts = args.accounts.map((account) => ({
     ...account,
     periods: Object.fromEntries(
       Object.entries(account.periods).map(([key, cell]) => [key, { ...cell }])
     )
   }));
   const translatedCta = accounts.find((account) => account.id === accountId)!;
+  const residuals: Record<string, number> = {};
   const netIncome = accounts.find(
     (account) => account.id === NET_INCOME_ACCOUNT_ID
   );
@@ -1182,10 +1205,15 @@ export function applyReportCta(args: {
         }
       };
     }
-    translatedCta.periods[key] = {
-      ...cell,
-      translatedBalance: round(cell.translatedBalance + cta)
-    };
+    if (hasPostedCta) {
+      const postedCta = -(offsetRow!.periods[key]?.translatedBalance ?? 0);
+      residuals[key] = round(cta - postedCta);
+    } else {
+      translatedCta.periods[key] = {
+        ...cell,
+        translatedBalance: round(cell.translatedBalance + cta)
+      };
+    }
 
     // Single-company translation deliberately excludes the synthetic income
     // leaf. Derive its translated values from the full income statement before
@@ -1212,6 +1240,31 @@ export function applyReportCta(args: {
         translatedBalance: round(translatedBalance),
         translatedNetChange: round(translatedNetChange)
       };
+    }
+  }
+
+  if (hasPostedCta) {
+    accounts = accounts.filter((account) => account.id !== offsetRow!.id);
+    if (args.bucketKeys.some((key) => residuals[key] !== 0)) {
+      const index = accounts.findIndex((account) => account.id === accountId);
+      accounts.splice(index + 1, 0, {
+        ...translatedCta,
+        id: UNPOSTED_CTA_ACCOUNT_ID,
+        number: null,
+        name: "Unposted translation adjustment",
+        isSystem: false,
+        periods: Object.fromEntries(
+          args.bucketKeys.map((key) => [
+            key,
+            {
+              netChange: 0,
+              balanceAtDate: 0,
+              translatedBalance: residuals[key] ?? 0,
+              translatedNetChange: 0
+            }
+          ])
+        )
+      });
     }
   }
 

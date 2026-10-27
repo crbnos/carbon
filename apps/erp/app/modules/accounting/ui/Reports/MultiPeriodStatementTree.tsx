@@ -22,7 +22,7 @@ import { useNavigate } from "react-router";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useRealtime, useUrlParams } from "~/hooks";
 import type { ChartPeriodSeries } from "../../types";
-import { NET_INCOME_ACCOUNT_ID } from "../../types";
+import { NET_INCOME_ACCOUNT_ID, UNPOSTED_CTA_ACCOUNT_ID } from "../../types";
 import { reportFrameClassName, useReportColumnStep } from "./ColumnStepper";
 import { accountsToFlatTree, filterAccounts } from "./reportTree";
 
@@ -222,7 +222,10 @@ const MultiPeriodStatementTree = memo(
             const isGroup = account.isGroup;
             const isExpanded = state.expanded;
             const isDrillable =
-              !isGroup && !!ledgerPath && account.id !== NET_INCOME_ACCOUNT_ID;
+              !isGroup &&
+              !!ledgerPath &&
+              account.id !== NET_INCOME_ACCOUNT_ID &&
+              account.id !== UNPOSTED_CTA_ACCOUNT_ID;
 
             return (
               <div
